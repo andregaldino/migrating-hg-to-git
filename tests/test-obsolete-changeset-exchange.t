@@ -34,6 +34,7 @@ extinct changeset.
   o  base d20a80d4def38df63a4b330b7fb688f3d4cae1e3
   
   $ hg debugobsolete 9d73aac1b2ed7d53835eaeec212ed41ea47da53a f89bcc95eba5174b1ccc3e33a82e84c96e8338ee
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 Push it. The bundle should not refer to the extinct changeset.
@@ -139,6 +140,7 @@ server obsoletes the old head
   $ echo 2b > foo
   $ hg -q commit -m 2b
   $ hg debugobsolete 6a29ed9c68defff1a139e5c6fa9696fb1a75783d bec0734cd68e84477ba7fc1d13e6cff53ab70129
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ cd ..
 
@@ -168,15 +170,15 @@ client only pulls down 1 changeset
   adding manifests
   adding file changes
   adding foo revisions
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   bundle2-input-part: total payload size 476
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
   bundle2-input-part: total payload size 39
-  bundle2-input-bundle: 3 parts total
+  bundle2-input-bundle: 4 parts total
   checking for updated bookmarks
   updating the branch cache
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets bec0734cd68e
   (run 'hg heads' to see heads, 'hg merge' to merge)

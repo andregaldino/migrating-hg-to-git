@@ -1,0 +1,15 @@
+[fix]
+clang-format:command = clang-format --style file -i
+clang-format:pattern = (**.c or **.cc or **.h) and not "listfile:contrib/clang-format-ignorelist"
+
+rustfmt:command = rustfmt {rootpath}
+rustfmt:pattern = set:**.rs
+
+# We use black, but currently with
+# https://github.com/psf/black/pull/826 applied. For now
+# contrib/grey.py is our fork of black. You need to pip install
+# git+https://github.com/python/black/@d9e71a75ccfefa3d9156a64c03313a0d4ad981e5
+# to have the dependencies for grey.
+#
+# black:command = python3.7 contrib/grey.py --config=black.toml -
+# black:pattern = set:**.py - hgext/fsmonitor/pywatchman/** - mercurial/thirdparty/** - "contrib/python-zstandard/** - contrib/grey.py"

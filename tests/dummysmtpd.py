@@ -18,9 +18,11 @@ from mercurial import (
     ui as uimod,
 )
 
+
 def log(msg):
     sys.stdout.write(msg)
     sys.stdout.flush()
+
 
 class dummysmtpserver(smtpd.SMTPServer):
     def __init__(self, localaddr):
@@ -37,6 +39,7 @@ class dummysmtpserver(smtpd.SMTPServer):
         # refused it".  If we eat the error, then the client properly aborts in
         # the expected way, and the server is available for subsequent requests.
         traceback.print_exc()
+
 
 class dummysmtpsecureserver(dummysmtpserver):
     def __init__(self, localaddr, certfile):
@@ -58,24 +61,29 @@ class dummysmtpsecureserver(dummysmtpserver):
             return
         smtpd.SMTPChannel(self, conn, addr)
 
+
 def run():
     try:
         asyncore.loop()
     except KeyboardInterrupt:
         pass
 
+
 def _encodestrsonly(v):
     if isinstance(v, type(u'')):
         return v.encode('ascii')
     return v
+
 
 def bytesvars(obj):
     unidict = vars(obj)
     bd = {k.encode('ascii'): _encodestrsonly(v) for k, v in unidict.items()}
     if bd[b'daemon_postexec'] is not None:
         bd[b'daemon_postexec'] = [
-            _encodestrsonly(v) for v in bd[b'daemon_postexec']]
+            _encodestrsonly(v) for v in bd[b'daemon_postexec']
+        ]
     return bd
+
 
 def main():
     op = optparse.OptionParser()
@@ -92,6 +100,7 @@ def main():
         op.error('--certificate must be specified')
 
     addr = (opts.address, opts.port)
+
     def init():
         if opts.tls == 'none':
             dummysmtpserver(addr)
@@ -100,9 +109,13 @@ def main():
         log('listening at %s:%d\n' % addr)
 
     server.runservice(
-        bytesvars(opts), initfn=init, runfn=run,
-        runargs=[pycompat.sysexecutable,
-                 pycompat.fsencode(__file__)] + pycompat.sysargv[1:])
+        bytesvars(opts),
+        initfn=init,
+        runfn=run,
+        runargs=[pycompat.sysexecutable, pycompat.fsencode(__file__)]
+        + pycompat.sysargv[1:],
+    )
+
 
 if __name__ == '__main__':
     main()

@@ -10,9 +10,7 @@
 import pathlib
 import secrets
 
-from .aws import (
-    AWSConnection,
-)
+from .aws import AWSConnection
 
 
 class HGAutomation:
@@ -53,7 +51,7 @@ class HGAutomation:
 
         return password
 
-    def aws_connection(self, region: str, ensure_ec2_state: bool=True):
+    def aws_connection(self, region: str, ensure_ec2_state: bool = True):
         """Obtain an AWSConnection instance bound to a specific region."""
 
         return AWSConnection(self, region, ensure_ec2_state=ensure_ec2_state)

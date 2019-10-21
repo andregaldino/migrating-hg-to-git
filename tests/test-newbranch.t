@@ -318,7 +318,7 @@ Implicit merge with test branch as parent:
 
   $ hg merge
   abort: branch 'test' has one head - please merge with an explicit rev
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify rev with -r)
   [255]
   $ hg up -C default
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -327,7 +327,7 @@ Implicit merge with default branch as parent:
 
   $ hg merge
   abort: branch 'default' has 3 heads - please merge with an explicit rev
-  (run 'hg heads .' to see heads)
+  (run 'hg heads .' to see heads, specify rev with -r)
   [255]
 
 3 branch heads, explicit merge required:

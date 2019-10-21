@@ -35,9 +35,7 @@
 //! [`MissingAncestors`]: struct.MissingAncestors.html
 //! [`AncestorsIterator`]: struct.AncestorsIterator.html
 use crate::{
-    cindex::Index,
-    conversion::{py_set, rev_pyiter_collect},
-    exceptions::GraphError,
+    cindex::Index, conversion::rev_pyiter_collect, exceptions::GraphError,
 };
 use cpython::{
     ObjectProtocol, PyClone, PyDict, PyList, PyModule, PyObject, PyResult,
@@ -146,13 +144,13 @@ py_class!(pub class MissingAncestors |py| {
         Ok(py.None())
     }
 
-    def bases(&self) -> PyResult<PyObject> {
-        py_set(py, self.inner(py).borrow().get_bases())
+    def bases(&self) -> PyResult<HashSet<Revision>> {
+        Ok(self.inner(py).borrow().get_bases().clone())
     }
 
-    def basesheads(&self) -> PyResult<PyObject> {
+    def basesheads(&self) -> PyResult<HashSet<Revision>> {
         let inner = self.inner(py).borrow();
-        py_set(py, &inner.bases_heads().map_err(|e| GraphError::pynew(py, e))?)
+        inner.bases_heads().map_err(|e| GraphError::pynew(py, e))
     }
 
     def removeancestorsfrom(&self, revs: PyObject) -> PyResult<PyObject> {

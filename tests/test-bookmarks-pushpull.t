@@ -51,10 +51,10 @@ import bookmark by name
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark X
   updating bookmark Y
   adding remote bookmark Z
+  added 1 changesets with 1 changes to 1 files
   new changesets 4e3505fd9583 (1 drafts)
   test-hook-bookmark: X:   -> 4e3505fd95835d721066b76e75dbb8cc554d7f77
   test-hook-bookmark: Y:  0000000000000000000000000000000000000000 -> 4e3505fd95835d721066b76e75dbb8cc554d7f77
@@ -193,7 +193,7 @@ delete a remote bookmark
   bundle2-input: payload chunk size: 0
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
-  bundle2-input-bundle: 3 parts total
+  bundle2-input-bundle: 4 parts total
   running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
   test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
   bundle2-output-bundle: "HG20", 1 parts total
@@ -219,7 +219,7 @@ delete a remote bookmark
   bundle2-input: payload chunk size: 0
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   deleting remote bookmark W
   listing keys for "phases"
   [1]
@@ -307,7 +307,7 @@ delete a remote bookmark
   bundle2-input-part: total payload size 23
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
-  bundle2-input-bundle: 3 parts total
+  bundle2-input-bundle: 4 parts total
   running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
   test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
   bundle2-output-bundle: "HG20", 0 parts total
@@ -414,10 +414,10 @@ divergent bookmarks
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   divergent bookmark @ stored as @foo
   divergent bookmark X stored as X@foo
   updating bookmark Z
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 0d2164f0ce0d (1 drafts)
   test-hook-bookmark: @foo:   -> 0d2164f0ce0d8f1d6f94351eba04b794909be66c
   test-hook-bookmark: X@foo:   -> 0d2164f0ce0d8f1d6f94351eba04b794909be66c
@@ -580,8 +580,8 @@ race conditions
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   updating bookmark Y
+  added 1 changesets with 1 changes to 1 files
   new changesets b0a5eff05604 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
@@ -629,8 +629,8 @@ Update a bookmark right after the initial lookup -B (issue4689)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   updating bookmark Y
+  added 1 changesets with 1 changes to 1 files
   new changesets 35d1ef0a8d1b (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
@@ -672,8 +672,8 @@ Update a bookmark right after the initial lookup -r (issue4700)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   updating bookmark Y
+  added 1 changesets with 1 changes to 1 files
   new changesets 0d60821d2197 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
@@ -742,6 +742,7 @@ diverging a remote bookmark fails
 Unrelated marker does not alter the decision
 
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  1 new obsolescence markers
   $ hg push http://localhost:$HGPORT2/
   pushing to http://localhost:$HGPORT2/
   searching for changes
@@ -763,8 +764,10 @@ Update to a successor works
   $ hg id --debug -r 5
   c922c0139ca03858f655e4a2af4dd02796a63969 tip Y
   $ hg debugobsolete f6fc62dde3c0771e29704af56ba4d8af77abcc2f cccccccccccccccccccccccccccccccccccccccc
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete cccccccccccccccccccccccccccccccccccccccc 4efff6d98829d9c824c621afd6e3f01865f5439f
+  1 new obsolescence markers
   $ hg push http://localhost:$HGPORT2/
   pushing to http://localhost:$HGPORT2/
   searching for changes

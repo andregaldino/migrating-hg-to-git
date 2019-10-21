@@ -30,32 +30,86 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
-@command('glog',
-    [('f', 'follow', None,
-     _('follow changeset history, or file history across copies and renames')),
-    ('', 'follow-first', None,
-     _('only follow the first parent of merge changesets (DEPRECATED)')),
-    ('d', 'date', '', _('show revisions matching date spec'), _('DATE')),
-    ('C', 'copies', None, _('show copied files')),
-    ('k', 'keyword', [],
-     _('do case-insensitive search for a given text'), _('TEXT')),
-    ('r', 'rev', [], _('show the specified revision or revset'), _('REV')),
-    ('', 'removed', None, _('include revisions where files were removed')),
-    ('m', 'only-merges', None, _('show only merges (DEPRECATED)')),
-    ('u', 'user', [], _('revisions committed by user'), _('USER')),
-    ('', 'only-branch', [],
-     _('show only changesets within the given named branch (DEPRECATED)'),
-     _('BRANCH')),
-    ('b', 'branch', [],
-     _('show changesets within the given named branch'), _('BRANCH')),
-    ('P', 'prune', [],
-     _('do not display revision or any of its ancestors'), _('REV')),
-    ] + cmdutil.logopts + cmdutil.walkopts,
-    _('[OPTION]... [FILE]'),
+
+@command(
+    b'glog',
+    [
+        (
+            b'f',
+            b'follow',
+            None,
+            _(
+                b'follow changeset history, or file history across copies and renames'
+            ),
+        ),
+        (
+            b'',
+            b'follow-first',
+            None,
+            _(b'only follow the first parent of merge changesets (DEPRECATED)'),
+        ),
+        (
+            b'd',
+            b'date',
+            b'',
+            _(b'show revisions matching date spec'),
+            _(b'DATE'),
+        ),
+        (b'C', b'copies', None, _(b'show copied files')),
+        (
+            b'k',
+            b'keyword',
+            [],
+            _(b'do case-insensitive search for a given text'),
+            _(b'TEXT'),
+        ),
+        (
+            b'r',
+            b'rev',
+            [],
+            _(b'show the specified revision or revset'),
+            _(b'REV'),
+        ),
+        (
+            b'',
+            b'removed',
+            None,
+            _(b'include revisions where files were removed'),
+        ),
+        (b'm', b'only-merges', None, _(b'show only merges (DEPRECATED)')),
+        (b'u', b'user', [], _(b'revisions committed by user'), _(b'USER')),
+        (
+            b'',
+            b'only-branch',
+            [],
+            _(
+                b'show only changesets within the given named branch (DEPRECATED)'
+            ),
+            _(b'BRANCH'),
+        ),
+        (
+            b'b',
+            b'branch',
+            [],
+            _(b'show changesets within the given named branch'),
+            _(b'BRANCH'),
+        ),
+        (
+            b'P',
+            b'prune',
+            [],
+            _(b'do not display revision or any of its ancestors'),
+            _(b'REV'),
+        ),
+    ]
+    + cmdutil.logopts
+    + cmdutil.walkopts,
+    _(b'[OPTION]... [FILE]'),
     helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
-    inferrepo=True)
+    inferrepo=True,
+)
 def glog(ui, repo, *pats, **opts):
     """show revision history alongside an ASCII revision graph
 

@@ -18,14 +18,16 @@ from mercurial import (
     extensions,
 )
 
+
 def handleexception(orig, ui):
     res = orig(ui)
 
     if not ui.environ.get(b'HGEXCEPTIONSDIR'):
         return res
 
-    dest = os.path.join(ui.environ[b'HGEXCEPTIONSDIR'],
-                        str(uuid.uuid4()).encode('ascii'))
+    dest = os.path.join(
+        ui.environ[b'HGEXCEPTIONSDIR'], str(uuid.uuid4()).encode('ascii')
+    )
 
     exc_type, exc_value, exc_tb = sys.exc_info()
 
@@ -69,6 +71,6 @@ def handleexception(orig, ui):
         ]
         fh.write(b'\0'.join(p.encode('utf-8', 'replace') for p in parts))
 
+
 def extsetup(ui):
-    extensions.wrapfunction(dispatch, 'handlecommandexception',
-                            handleexception)
+    extensions.wrapfunction(dispatch, 'handlecommandexception', handleexception)

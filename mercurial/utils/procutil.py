@@ -20,6 +20,10 @@ import sys
 import time
 
 from ..i18n import _
+from ..pycompat import (
+    getattr,
+    open,
+)
 
 from .. import (
     encoding,
@@ -34,11 +38,13 @@ stderr = pycompat.stderr
 stdin = pycompat.stdin
 stdout = pycompat.stdout
 
+
 def isatty(fp):
     try:
         return fp.isatty()
     except AttributeError:
         return False
+
 
 # glibc determines buffering on first write to stdout - if we replace a TTY
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
@@ -47,11 +53,14 @@ if isatty(stdout):
     if pycompat.iswindows:
         # Windows doesn't support line buffering
         stdout = os.fdopen(stdout.fileno(), r'wb', 0)
-    else:
+    elif not pycompat.ispy3:
+        # on Python 3, stdout (sys.stdout.buffer) is already line buffered and
+        # buffering=1 is not handled in binary mode
         stdout = os.fdopen(stdout.fileno(), r'wb', 1)
 
 if pycompat.iswindows:
     from .. import windows as platform
+
     stdout = platform.winstdout(stdout)
 else:
     from .. import posix as platform
@@ -82,12 +91,14 @@ except AttributeError:
 
 closefds = pycompat.isposix
 
+
 def explainexit(code):
     """return a message describing a subprocess status
     (codes from kill are negative - not os.system/wait encoding)"""
     if code >= 0:
-        return _("exited with status %d") % code
-    return _("killed by signal %d") % -code
+        return _(b"exited with status %d") % code
+    return _(b"killed by signal %d") % -code
+
 
 class _pfile(object):
     """File-like wrapper for a stream opened by subprocess.Popen()"""
@@ -113,58 +124,84 @@ class _pfile(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.close()
 
-def popen(cmd, mode='rb', bufsize=-1):
-    if mode == 'rb':
+
+def popen(cmd, mode=b'rb', bufsize=-1):
+    if mode == b'rb':
         return _popenreader(cmd, bufsize)
-    elif mode == 'wb':
+    elif mode == b'wb':
         return _popenwriter(cmd, bufsize)
-    raise error.ProgrammingError('unsupported mode: %r' % mode)
+    raise error.ProgrammingError(b'unsupported mode: %r' % mode)
+
 
 def _popenreader(cmd, bufsize):
-    p = subprocess.Popen(tonativestr(quotecommand(cmd)),
-                         shell=True, bufsize=bufsize,
-                         close_fds=closefds,
-                         stdout=subprocess.PIPE)
+    p = subprocess.Popen(
+        tonativestr(quotecommand(cmd)),
+        shell=True,
+        bufsize=bufsize,
+        close_fds=closefds,
+        stdout=subprocess.PIPE,
+    )
     return _pfile(p, p.stdout)
 
+
 def _popenwriter(cmd, bufsize):
-    p = subprocess.Popen(tonativestr(quotecommand(cmd)),
-                         shell=True, bufsize=bufsize,
-                         close_fds=closefds,
-                         stdin=subprocess.PIPE)
+    p = subprocess.Popen(
+        tonativestr(quotecommand(cmd)),
+        shell=True,
+        bufsize=bufsize,
+        close_fds=closefds,
+        stdin=subprocess.PIPE,
+    )
     return _pfile(p, p.stdin)
+
 
 def popen2(cmd, env=None):
     # Setting bufsize to -1 lets the system decide the buffer size.
     # The default for bufsize is 0, meaning unbuffered. This leads to
     # poor performance on Mac OS X: http://bugs.python.org/issue4194
-    p = subprocess.Popen(tonativestr(cmd),
-                         shell=True, bufsize=-1,
-                         close_fds=closefds,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         env=tonativeenv(env))
+    p = subprocess.Popen(
+        tonativestr(cmd),
+        shell=True,
+        bufsize=-1,
+        close_fds=closefds,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        env=tonativeenv(env),
+    )
     return p.stdin, p.stdout
+
 
 def popen3(cmd, env=None):
     stdin, stdout, stderr, p = popen4(cmd, env)
     return stdin, stdout, stderr
 
+
 def popen4(cmd, env=None, bufsize=-1):
-    p = subprocess.Popen(tonativestr(cmd),
-                         shell=True, bufsize=bufsize,
-                         close_fds=closefds,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         env=tonativeenv(env))
+    p = subprocess.Popen(
+        tonativestr(cmd),
+        shell=True,
+        bufsize=bufsize,
+        close_fds=closefds,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=tonativeenv(env),
+    )
     return p.stdin, p.stdout, p.stderr, p
+
 
 def pipefilter(s, cmd):
     '''filter string S through command CMD, returning its output'''
-    p = subprocess.Popen(tonativestr(cmd),
-                         shell=True, close_fds=closefds,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    p = subprocess.Popen(
+        tonativestr(cmd),
+        shell=True,
+        close_fds=closefds,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
     pout, perr = p.communicate(s)
     return pout
+
 
 def tempfilter(s, cmd):
     '''filter string S through a pair of temporary files with CMD.
@@ -173,21 +210,22 @@ def tempfilter(s, cmd):
     the temporary files generated.'''
     inname, outname = None, None
     try:
-        infd, inname = pycompat.mkstemp(prefix='hg-filter-in-')
+        infd, inname = pycompat.mkstemp(prefix=b'hg-filter-in-')
         fp = os.fdopen(infd, r'wb')
         fp.write(s)
         fp.close()
-        outfd, outname = pycompat.mkstemp(prefix='hg-filter-out-')
+        outfd, outname = pycompat.mkstemp(prefix=b'hg-filter-out-')
         os.close(outfd)
-        cmd = cmd.replace('INFILE', inname)
-        cmd = cmd.replace('OUTFILE', outname)
+        cmd = cmd.replace(b'INFILE', inname)
+        cmd = cmd.replace(b'OUTFILE', outname)
         code = system(cmd)
-        if pycompat.sysplatform == 'OpenVMS' and code & 1:
+        if pycompat.sysplatform == b'OpenVMS' and code & 1:
             code = 0
         if code:
-            raise error.Abort(_("command '%s' failed: %s") %
-                              (cmd, explainexit(code)))
-        with open(outname, 'rb') as fp:
+            raise error.Abort(
+                _(b"command '%s' failed: %s") % (cmd, explainexit(code))
+            )
+        with open(outname, b'rb') as fp:
             return fp.read()
     finally:
         try:
@@ -201,17 +239,20 @@ def tempfilter(s, cmd):
         except OSError:
             pass
 
+
 _filtertable = {
-    'tempfile:': tempfilter,
-    'pipe:': pipefilter,
+    b'tempfile:': tempfilter,
+    b'pipe:': pipefilter,
 }
 
+
 def filter(s, cmd):
-    "filter a string through a command that transforms its input to its output"
-    for name, fn in _filtertable.iteritems():
+    b"filter a string through a command that transforms its input to its output"
+    for name, fn in pycompat.iteritems(_filtertable):
         if cmd.startswith(name):
-            return fn(s, cmd[len(name):].lstrip())
+            return fn(s, cmd[len(name) :].lstrip())
     return pipefilter(s, cmd)
+
 
 def mainfrozen():
     """return True if we are a frozen executable.
@@ -219,11 +260,15 @@ def mainfrozen():
     The code supports py2exe (most common, Windows only) and tools/freeze
     (portable, not much used).
     """
-    return (pycompat.safehasattr(sys, "frozen") or # new py2exe
-            pycompat.safehasattr(sys, "importers") or # old py2exe
-            imp.is_frozen(r"__main__")) # tools/freeze
+    return (
+        pycompat.safehasattr(sys, "frozen")
+        or pycompat.safehasattr(sys, "importers")  # new py2exe
+        or imp.is_frozen(r"__main__")  # old py2exe
+    )  # tools/freeze
+
 
 _hgexecutable = None
+
 
 def hgexecutable():
     """return location of the 'hg' executable.
@@ -231,41 +276,52 @@ def hgexecutable():
     Defaults to $HG or 'hg' in the search path.
     """
     if _hgexecutable is None:
-        hg = encoding.environ.get('HG')
+        hg = encoding.environ.get(b'HG')
         mainmod = sys.modules[r'__main__']
         if hg:
             _sethgexecutable(hg)
         elif mainfrozen():
-            if getattr(sys, 'frozen', None) == 'macosx_app':
+            if getattr(sys, 'frozen', None) == b'macosx_app':
                 # Env variable set by py2app
-                _sethgexecutable(encoding.environ['EXECUTABLEPATH'])
+                _sethgexecutable(encoding.environ[b'EXECUTABLEPATH'])
             else:
                 _sethgexecutable(pycompat.sysexecutable)
-        elif (not pycompat.iswindows and os.path.basename(
-            pycompat.fsencode(getattr(mainmod, '__file__', ''))) == 'hg'):
+        elif (
+            not pycompat.iswindows
+            and os.path.basename(
+                pycompat.fsencode(getattr(mainmod, '__file__', b''))
+            )
+            == b'hg'
+        ):
             _sethgexecutable(pycompat.fsencode(mainmod.__file__))
         else:
-            exe = findexe('hg') or os.path.basename(sys.argv[0])
-            _sethgexecutable(exe)
+            _sethgexecutable(
+                findexe(b'hg') or os.path.basename(pycompat.sysargv[0])
+            )
     return _hgexecutable
+
 
 def _sethgexecutable(path):
     """set location of the 'hg' executable"""
     global _hgexecutable
     _hgexecutable = path
 
+
 def _testfileno(f, stdf):
     fileno = getattr(f, 'fileno', None)
     try:
         return fileno and fileno() == stdf.fileno()
     except io.UnsupportedOperation:
-        return False # fileno() raised UnsupportedOperation
+        return False  # fileno() raised UnsupportedOperation
+
 
 def isstdin(f):
     return _testfileno(f, sys.__stdin__)
 
+
 def isstdout(f):
     return _testfileno(f, sys.__stdout__)
+
 
 def protectstdio(uin, uout):
     """Duplicate streams and redirect original if (uin, uout) are stdio
@@ -291,6 +347,7 @@ def protectstdio(uin, uout):
         fout = os.fdopen(newfd, r'wb')
     return fin, fout
 
+
 def restorestdio(uin, uout, fin, fout):
     """Restore (uin, uout) streams from possibly duplicated (fin, fout)"""
     uout.flush()
@@ -299,36 +356,44 @@ def restorestdio(uin, uout, fin, fout):
             os.dup2(f.fileno(), uif.fileno())
             f.close()
 
+
 def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""
+
     def py2shell(val):
-        'convert python object into string that is useful to shell'
+        b'convert python object into string that is useful to shell'
         if val is None or val is False:
-            return '0'
+            return b'0'
         if val is True:
-            return '1'
+            return b'1'
         return pycompat.bytestr(val)
+
     env = dict(encoding.environ)
     if environ:
-        env.update((k, py2shell(v)) for k, v in environ.iteritems())
-    env['HG'] = hgexecutable()
+        env.update((k, py2shell(v)) for k, v in pycompat.iteritems(environ))
+    env[b'HG'] = hgexecutable()
     return env
 
+
 if pycompat.iswindows:
+
     def shelltonative(cmd, env):
         return platform.shelltocmdexe(cmd, shellenviron(env))
 
     tonativestr = encoding.strfromlocal
 else:
+
     def shelltonative(cmd, env):
         return cmd
 
     tonativestr = pycompat.identity
 
+
 def tonativeenv(env):
     '''convert the environment from bytes to strings suitable for Popen(), etc.
     '''
     return pycompat.rapply(tonativestr, env)
+
 
 def system(cmd, environ=None, cwd=None, out=None):
     '''enhanced shell command execution.
@@ -343,29 +408,36 @@ def system(cmd, environ=None, cwd=None, out=None):
     cmd = quotecommand(cmd)
     env = shellenviron(environ)
     if out is None or isstdout(out):
-        rc = subprocess.call(tonativestr(cmd),
-                             shell=True, close_fds=closefds,
-                             env=tonativeenv(env),
-                             cwd=pycompat.rapply(tonativestr, cwd))
+        rc = subprocess.call(
+            tonativestr(cmd),
+            shell=True,
+            close_fds=closefds,
+            env=tonativeenv(env),
+            cwd=pycompat.rapply(tonativestr, cwd),
+        )
     else:
-        proc = subprocess.Popen(tonativestr(cmd),
-                                shell=True, close_fds=closefds,
-                                env=tonativeenv(env),
-                                cwd=pycompat.rapply(tonativestr, cwd),
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
-        for line in iter(proc.stdout.readline, ''):
+        proc = subprocess.Popen(
+            tonativestr(cmd),
+            shell=True,
+            close_fds=closefds,
+            env=tonativeenv(env),
+            cwd=pycompat.rapply(tonativestr, cwd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        for line in iter(proc.stdout.readline, b''):
             out.write(line)
         proc.wait()
         rc = proc.returncode
-    if pycompat.sysplatform == 'OpenVMS' and rc & 1:
+    if pycompat.sysplatform == b'OpenVMS' and rc & 1:
         rc = 0
     return rc
+
 
 def gui():
     '''Are we running in a GUI?'''
     if pycompat.isdarwin:
-        if 'SSH_CONNECTION' in encoding.environ:
+        if b'SSH_CONNECTION' in encoding.environ:
             # handle SSH access to a box where the user is logged in
             return False
         elif getattr(osutil, 'isgui', None):
@@ -375,7 +447,8 @@ def gui():
             # pure build; use a safe default
             return True
     else:
-        return pycompat.iswindows or encoding.environ.get("DISPLAY")
+        return pycompat.iswindows or encoding.environ.get(b"DISPLAY")
+
 
 def hgcmd():
     """Return the command used to execute current hg
@@ -385,12 +458,13 @@ def hgcmd():
     get either the python call or current executable.
     """
     if mainfrozen():
-        if getattr(sys, 'frozen', None) == 'macosx_app':
+        if getattr(sys, 'frozen', None) == b'macosx_app':
             # Env variable set by py2app
-            return [encoding.environ['EXECUTABLEPATH']]
+            return [encoding.environ[b'EXECUTABLEPATH']]
         else:
             return [pycompat.sysexecutable]
     return _gethgcmd()
+
 
 def rundetached(args, condfn):
     """Execute the argument list in a detached process.
@@ -409,8 +483,10 @@ def rundetached(args, condfn):
     # running process on success. Instead we listen for SIGCHLD telling
     # us our child process terminated.
     terminated = set()
+
     def handler(signum, frame):
         terminated.add(os.wait())
+
     prevhandler = None
     SIGCHLD = getattr(signal, 'SIGCHLD', None)
     if SIGCHLD is not None:
@@ -418,14 +494,14 @@ def rundetached(args, condfn):
     try:
         pid = spawndetached(args)
         while not condfn():
-            if ((pid in terminated or not testpid(pid))
-                and not condfn()):
+            if (pid in terminated or not testpid(pid)) and not condfn():
                 return -1
             time.sleep(0.1)
         return pid
     finally:
         if prevhandler is not None:
             signal.signal(signal.SIGCHLD, prevhandler)
+
 
 @contextlib.contextmanager
 def uninterruptible(warn):
@@ -460,6 +536,7 @@ def uninterruptible(warn):
         if shouldbail:
             raise KeyboardInterrupt
 
+
 if pycompat.iswindows:
     # no fork on Windows, but we can create a detached process
     # https://msdn.microsoft.com/en-us/library/windows/desktop/ms684863.aspx
@@ -471,18 +548,27 @@ if pycompat.iswindows:
     _creationflags = DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
 
     def runbgcommand(
-      script, env, shell=False, stdout=None, stderr=None, ensurestart=True):
+        script, env, shell=False, stdout=None, stderr=None, ensurestart=True
+    ):
         '''Spawn a command without waiting for it to finish.'''
         # we can't use close_fds *and* redirect stdin. I'm not sure that we
         # need to because the detached process has no console connection.
         subprocess.Popen(
             tonativestr(script),
-            shell=shell, env=tonativeenv(env), close_fds=True,
-            creationflags=_creationflags, stdout=stdout,
-            stderr=stderr)
+            shell=shell,
+            env=tonativeenv(env),
+            close_fds=True,
+            creationflags=_creationflags,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+
 else:
+
     def runbgcommand(
-      cmd, env, shell=False, stdout=None, stderr=None, ensurestart=True):
+        cmd, env, shell=False, stdout=None, stderr=None, ensurestart=True
+    ):
         '''Spawn a command without waiting for it to finish.'''
         # double-fork to completely detach from the parent process
         # based on http://code.activestate.com/recipes/278731
@@ -495,7 +581,7 @@ else:
             if os.WIFEXITED(status):
                 returncode = os.WEXITSTATUS(status)
             else:
-                returncode = -os.WTERMSIG(status)
+                returncode = -(os.WTERMSIG(status))
             if returncode != 0:
                 # The child process's return code is 0 on success, an errno
                 # value on failure, or 255 if we don't have a valid errno
@@ -506,8 +592,10 @@ else:
                 # doesn't seem worth adding that complexity here, though.)
                 if returncode == 255:
                     returncode = errno.EINVAL
-                raise OSError(returncode, 'error running %r: %s' %
-                              (cmd, os.strerror(returncode)))
+                raise OSError(
+                    returncode,
+                    b'error running %r: %s' % (cmd, os.strerror(returncode)),
+                )
             return
 
         returncode = 255
@@ -515,20 +603,26 @@ else:
             # Start a new session
             os.setsid()
 
-            stdin = open(os.devnull, 'r')
+            stdin = open(os.devnull, b'r')
             if stdout is None:
-                stdout = open(os.devnull, 'w')
+                stdout = open(os.devnull, b'w')
             if stderr is None:
-                stderr = open(os.devnull, 'w')
+                stderr = open(os.devnull, b'w')
 
             # connect stdin to devnull to make sure the subprocess can't
             # muck up that stream for mercurial.
             subprocess.Popen(
-                cmd, shell=shell, env=env, close_fds=True,
-                stdin=stdin, stdout=stdout, stderr=stderr)
+                cmd,
+                shell=shell,
+                env=env,
+                close_fds=True,
+                stdin=stdin,
+                stdout=stdout,
+                stderr=stderr,
+            )
             returncode = 0
         except EnvironmentError as ex:
-            returncode = (ex.errno & 0xff)
+            returncode = ex.errno & 0xFF
             if returncode == 0:
                 # This shouldn't happen, but just in case make sure the
                 # return code is never 0 here.

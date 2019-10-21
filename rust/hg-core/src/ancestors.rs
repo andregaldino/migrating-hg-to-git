@@ -784,5 +784,4 @@ mod tests {
         missing_ancestors.remove_ancestors_from(&mut revs).unwrap();
         assert!(!revs.contains(&problem_rev));
     }
-
 }

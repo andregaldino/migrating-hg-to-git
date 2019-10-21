@@ -36,8 +36,13 @@ def bootstrap():
         pip = venv_bin / 'pip'
         python = venv_bin / 'python'
 
-    args = [str(pip), 'install', '-r', str(REQUIREMENTS_TXT),
-            '--disable-pip-version-check']
+    args = [
+        str(pip),
+        'install',
+        '-r',
+        str(REQUIREMENTS_TXT),
+        '--disable-pip-version-check',
+    ]
 
     if not venv_created:
         args.append('-q')
@@ -45,8 +50,7 @@ def bootstrap():
     subprocess.run(args, check=True)
 
     os.environ['HGAUTOMATION_BOOTSTRAPPED'] = '1'
-    os.environ['PATH'] = '%s%s%s' % (
-        venv_bin, os.pathsep, os.environ['PATH'])
+    os.environ['PATH'] = '%s%s%s' % (venv_bin, os.pathsep, os.environ['PATH'])
 
     subprocess.run([str(python), __file__] + sys.argv[1:], check=True)
 

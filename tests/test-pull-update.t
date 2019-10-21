@@ -108,8 +108,8 @@ explicit destination of the update.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark active-after-pull
+  added 1 changesets with 1 changes to 1 files
   new changesets f815b3da6163
   1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -138,8 +138,8 @@ explicit destination of the update.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark active-after-pull
+  added 1 changesets with 1 changes to 1 files
   new changesets f815b3da6163
   1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

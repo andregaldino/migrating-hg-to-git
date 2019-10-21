@@ -58,8 +58,8 @@ The extension requires a repo (currently unused)
   adding changesets
   adding manifests
   adding file changes
-  added 8 changesets with 7 changes to 7 files (+3 heads)
   pre-close-tip:02de42196ebe draft 
+  added 8 changesets with 7 changes to 7 files (+3 heads)
   new changesets cd010b8cd998:02de42196ebe (8 drafts)
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NODE=cd010b8cd998f3981a5a8115f94f8da4ab506089 HG_NODE_LAST=02de42196ebee42ef284b6780a87cdc96e8eaab6 HG_PHASES_MOVED=1 HG_SOURCE=unbundle HG_TXNID=TXN:$ID$ HG_TXNNAME=unbundle
@@ -75,10 +75,12 @@ Add more obsolescence information
 
   $ hg -R main debugobsolete -d '0 0' 1111111111111111111111111111111111111111 `getmainid 9520eea781bc`
   pre-close-tip:02de42196ebe draft 
+  1 new obsolescence markers
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
   $ hg -R main debugobsolete -d '0 0' 2222222222222222222222222222222222222222 `getmainid 24b6387c8c8c`
   pre-close-tip:02de42196ebe draft 
+  1 new obsolescence markers
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
 
@@ -92,9 +94,9 @@ clone --pull
   adding changesets
   adding manifests
   adding file changes
+  pre-close-tip:9520eea781bc draft 
   added 2 changesets with 2 changes to 2 files
   1 new obsolescence markers
-  pre-close-tip:9520eea781bc draft 
   new changesets cd010b8cd998:9520eea781bc (1 drafts)
   postclose-tip:9520eea781bc draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=cd010b8cd998f3981a5a8115f94f8da4ab506089 HG_NODE_LAST=9520eea781bcca16c1e15acc0ba14335a0e8e5ba HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
@@ -121,9 +123,9 @@ pull
   adding changesets
   adding manifests
   adding file changes
+  pre-close-tip:24b6387c8c8c draft 
   added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
-  pre-close-tip:24b6387c8c8c draft 
   new changesets 24b6387c8c8c (1 drafts)
   postclose-tip:24b6387c8c8c draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=24b6387c8c8cae37178880f3fa95ded3cb1cf785 HG_NODE_LAST=24b6387c8c8cae37178880f3fa95ded3cb1cf785 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
@@ -193,6 +195,7 @@ add extra data to test their exchange during push
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 3333333333333333333333333333333333333333 `getmainid eea13746799a`
   pre-close-tip:02de42196ebe draft 
+  1 new obsolescence markers
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
   $ hg -R main bookmark --rev 02de42196ebe book_02de
@@ -201,6 +204,7 @@ add extra data to test their exchange during push
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 4444444444444444444444444444444444444444 `getmainid 02de42196ebe`
   pre-close-tip:02de42196ebe draft book_02de
+  1 new obsolescence markers
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
   $ hg -R main bookmark --rev 42ccdea3bb16 book_42cc
@@ -209,6 +213,7 @@ add extra data to test their exchange during push
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 5555555555555555555555555555555555555555 `getmainid 42ccdea3bb16`
   pre-close-tip:02de42196ebe draft book_02de
+  1 new obsolescence markers
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
   $ hg -R main bookmark --rev 5fddd98957c8 book_5fdd
@@ -217,6 +222,7 @@ add extra data to test their exchange during push
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 6666666666666666666666666666666666666666 `getmainid 5fddd98957c8`
   pre-close-tip:02de42196ebe draft book_02de
+  1 new obsolescence markers
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
   $ hg -R main bookmark --rev 32af7686d403 book_32af
@@ -225,6 +231,7 @@ add extra data to test their exchange during push
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_TXNID=TXN:$ID$ HG_TXNNAME=bookmark
   $ hg -R main debugobsolete -d '0 0' 7777777777777777777777777777777777777777 `getmainid 32af7686d403`
   pre-close-tip:02de42196ebe draft book_02de
+  1 new obsolescence markers
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=debugobsolete
 
@@ -261,9 +268,9 @@ push
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
+  remote: pre-close-tip:eea13746799a public book_eea1
   remote: added 1 changesets with 0 changes to 0 files (-1 heads)
   remote: 1 new obsolescence markers
-  remote: pre-close-tip:eea13746799a public book_eea1
   remote: pushkey: lock state after "bookmarks"
   remote: lock:  free
   remote: wlock: free
@@ -296,10 +303,10 @@ pull over ssh
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
-  1 new obsolescence markers
   updating bookmark book_02de
   pre-close-tip:02de42196ebe draft book_02de
+  added 1 changesets with 1 changes to 1 files (+1 heads)
+  1 new obsolescence markers
   new changesets 02de42196ebe (1 drafts)
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=02de42196ebee42ef284b6780a87cdc96e8eaab6 HG_NODE_LAST=02de42196ebee42ef284b6780a87cdc96e8eaab6 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
@@ -322,10 +329,10 @@ pull over http
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
-  1 new obsolescence markers
   updating bookmark book_42cc
   pre-close-tip:42ccdea3bb16 draft book_42cc
+  added 1 changesets with 1 changes to 1 files (+1 heads)
+  1 new obsolescence markers
   new changesets 42ccdea3bb16 (1 drafts)
   postclose-tip:42ccdea3bb16 draft book_42cc
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 HG_NODE_LAST=42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
@@ -347,9 +354,9 @@ push over ssh
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
+  remote: pre-close-tip:5fddd98957c8 draft book_5fdd
   remote: added 1 changesets with 1 changes to 1 files
   remote: 1 new obsolescence markers
-  remote: pre-close-tip:5fddd98957c8 draft book_5fdd
   remote: pushkey: lock state after "bookmarks"
   remote: lock:  free
   remote: wlock: free
@@ -398,9 +405,9 @@ push over http
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
+  remote: pre-close-tip:32af7686d403 public book_32af
   remote: added 1 changesets with 1 changes to 1 files
   remote: 1 new obsolescence markers
-  remote: pre-close-tip:32af7686d403 public book_32af
   remote: pushkey: lock state after "bookmarks"
   remote: lock:  free
   remote: wlock: free
@@ -624,7 +631,6 @@ Doing the actual push: hook abort
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:e7ec4e813ba6 draft 
   remote: You shall not pass!
   remote: transaction abort!
@@ -639,7 +645,6 @@ Doing the actual push: hook abort
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:e7ec4e813ba6 draft 
   remote: You shall not pass!
   remote: transaction abort!
@@ -655,7 +660,6 @@ Doing the actual push: hook abort
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: pre-close-tip:e7ec4e813ba6 draft 
   remote: You shall not pass!
   remote: transaction abort!
@@ -689,7 +693,6 @@ Check error from hook during the unbundling process itself
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -702,7 +705,6 @@ Check error from hook during the unbundling process itself
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -716,7 +718,6 @@ Check error from hook during the unbundling process itself
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -740,7 +741,6 @@ Check output capture control.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   Fail early!
   transaction abort!
   Cleaning up the mess...
@@ -753,7 +753,6 @@ Check output capture control.
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -767,7 +766,6 @@ Check output capture control.
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: Fail early!
   remote: transaction abort!
   remote: Cleaning up the mess...
@@ -815,7 +813,6 @@ Check abort from mandatory pushkey
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   do not push the key !
   pushkey-abort: prepushkey.failpush hook exited with status 1
   transaction abort!
@@ -829,7 +826,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: do not push the key !
   remote: pushkey-abort: prepushkey.failpush hook exited with status 1
   remote: transaction abort!
@@ -843,7 +839,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: do not push the key !
   remote: pushkey-abort: prepushkey.failpush hook exited with status 1
   remote: transaction abort!
@@ -885,7 +880,6 @@ Check abort from mandatory pushkey
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   transaction abort!
   Cleaning up the mess...
   rollback completed
@@ -900,7 +894,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: transaction abort!
   remote: Cleaning up the mess...
   remote: rollback completed
@@ -915,7 +908,6 @@ Check abort from mandatory pushkey
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: transaction abort!
   remote: Cleaning up the mess...
   remote: rollback completed

@@ -33,6 +33,46 @@ side-effects so they don't impact the local system. e.g. when we SSH
 into a remote machine, we create a temporary directory for the SSH
 config so the user's known hosts file isn't updated.
 
+Try Server
+==========
+
+There exists a *Try Server* which allows automation to run against
+an arbitrary Mercurial changeset and displays results via the web.
+
+.. note::
+
+   The *Try Server* is still experimental infrastructure.
+
+To use the *Try Server*::
+
+   $ ./automation.py try
+
+With a custom AWS profile::
+
+   $ AWS_PROFILE=hg contrib/automation/automation.py try
+
+By default, the ``.`` revision is submitted. **Any uncommitted changes
+are not submitted.**
+
+To switch which revision is used::
+
+   $ ./automation.py try -r abcdef
+
+Access to the *Try Server* requires access to a special AWS account.
+This account is currently run by Gregory Szorc. Here is the procedure
+for accessing the *Try Server*:
+
+1. Email Gregory Szorc at gregory.szorc@gmail.com and request a
+   username. This username will be stored in the public domain.
+2. Wait for an email reply containing your temporary AWS credentials.
+3. Log in at https://gregoryszorc-hg.signin.aws.amazon.com/console
+   and set a new, secure password.
+4. Go to https://console.aws.amazon.com/iam/home?region=us-west-2#/security_credentials
+5. Under ``Access keys for CLI, SDK, & API access``, click the
+   ``Create access key`` button.
+6. See the ``AWS Integration`` section for instructions on
+   configuring your local client to use the generated credentials.
+
 AWS Integration
 ===============
 
@@ -47,12 +87,25 @@ https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html
 for how ``boto3`` works. Once you have configured your environment such
 that ``boto3`` can find credentials, interaction with AWS should *just work*.
 
-.. hint::
+To configure ``boto3``, you can use the ``aws configure`` command to
+write out configuration files. (The ``aws`` command is typically provided
+by an ``awscli`` package available in your package manager, including
+``pip``.) Alternatively, you can write out files in ``~/.aws/`` directly.
+e.g.::
 
-   Typically you have a ``~/.aws/credentials`` file containing AWS
-   credentials. If you manage multiple credentials, you can override which
-   *profile* to use at run-time by setting the ``AWS_PROFILE`` environment
-   variable.
+   # ~/.aws/config
+   [default]
+   region = us-west-2
+
+   # ~/.aws/credentials
+   [default]
+   aws_access_key_id = XXXX
+   aws_secret_access_key = YYYY
+
+If you have multiple AWS accounts, you can name the profile something
+different from ``default``. e.g. ``hg``. You can influence which profile
+is used by ``boto3`` by setting the ``AWS_PROFILE`` environment variable.
+e.g. ``AWS_PROFILE=hg``.
 
 Resource Management
 -------------------
@@ -181,3 +234,25 @@ Various dependencies to run the Mercurial test harness are also required.
 Documenting them is beyond the scope of this document. Various tests
 also require other optional dependencies and missing dependencies will
 be printed by the test runner when a test is skipped.
+
+Releasing Windows Artifacts
+===========================
+
+The `automation.py` script can be used to automate the release of Windows
+artifacts::
+
+   $ ./automation.py build-all-windows-packages --revision 5.1.1
+   $ ./automation.py publish-windows-artifacts 5.1.1
+
+The first command will launch an EC2 instance to build all Windows packages
+and copy them into the `dist` directory relative to the repository root. The
+second command will then attempt to upload these files to PyPI (via `twine`)
+and to `mercurial-scm.org` (via SSH).
+
+Uploading to PyPI requires a PyPI account with write access to the `Mercurial`
+package. You can skip PyPI uploading by passing `--no-pypi`.
+
+Uploading to `mercurial-scm.org` requires an SSH account on that server
+with `windows` group membership and for the SSH key for that account to be the
+default SSH key (e.g. `~/.ssh/id_rsa`) or in a running SSH agent. You can
+skip `mercurial-scm.org` uploading by passing `--no-mercurial-scm-org`.

@@ -16,6 +16,7 @@ import sys
 import traceback
 import warnings
 
+
 def check_compat_py2(f):
     """Check Python 3 compatibility for a file with Python 2"""
     with open(f, 'rb') as fh:
@@ -40,6 +41,7 @@ def check_compat_py2(f):
     if haveprint and 'print_function' not in futures:
         print('%s requires print_function' % f)
 
+
 def check_compat_py3(f):
     """Check Python 3 compatibility of a file with Python 3."""
     with open(f, 'rb') as fh:
@@ -54,8 +56,9 @@ def check_compat_py3(f):
     # Try to import the module.
     # For now we only support modules in packages because figuring out module
     # paths for things not in a package can be confusing.
-    if (f.startswith(('hgdemandimport/', 'hgext/', 'mercurial/'))
-        and not f.endswith('__init__.py')):
+    if f.startswith(
+        ('hgdemandimport/', 'hgext/', 'mercurial/')
+    ) and not f.endswith('__init__.py'):
         assert f.endswith('.py')
         name = f.replace('/', '.')[:-3]
         try:
@@ -79,11 +82,16 @@ def check_compat_py3(f):
 
             if frame.filename:
                 filename = os.path.basename(frame.filename)
-                print('%s: error importing: <%s> %s (error at %s:%d)' % (
-                      f, type(e).__name__, e, filename, frame.lineno))
+                print(
+                    '%s: error importing: <%s> %s (error at %s:%d)'
+                    % (f, type(e).__name__, e, filename, frame.lineno)
+                )
             else:
-                print('%s: error importing module: <%s> %s (line %d)' % (
-                      f, type(e).__name__, e, frame.lineno))
+                print(
+                    '%s: error importing module: <%s> %s (line %d)'
+                    % (f, type(e).__name__, e, frame.lineno)
+                )
+
 
 if __name__ == '__main__':
     if sys.version_info[0] == 2:
@@ -96,7 +104,10 @@ if __name__ == '__main__':
             fn(f)
 
         for w in warns:
-            print(warnings.formatwarning(w.message, w.category,
-                                         w.filename, w.lineno).rstrip())
+            print(
+                warnings.formatwarning(
+                    w.message, w.category, w.filename, w.lineno
+                ).rstrip()
+            )
 
     sys.exit(0)

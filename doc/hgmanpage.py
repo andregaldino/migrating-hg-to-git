@@ -53,6 +53,7 @@ from docutils import (
     nodes,
     writers,
 )
+
 try:
     import roman
 except ImportError:
@@ -65,7 +66,7 @@ BLOCKQOUTE_INDENT = 3.5
 
 # Define two macros so man/roff can calculate the
 # indent/unindent margins by itself
-MACRO_DEF = (r""".
+MACRO_DEF = r""".
 .nr rst2man-indent-level 0
 .
 .de1 rstReportMargin
@@ -92,11 +93,12 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-""")
+"""
+
 
 class Writer(writers.Writer):
 
-    supported = ('manpage')
+    supported = 'manpage'
     """Formats this writer supports."""
 
     output = None
@@ -118,11 +120,14 @@ class Table(object):
         self._options = ['center']
         self._tab_char = '\t'
         self._coldefs = []
+
     def new_row(self):
         self._rows.append([])
+
     def append_separator(self, separator):
         """Append the separator for table head."""
         self._rows.append([separator])
+
     def append_cell(self, cell_lines):
         """cell_lines is an array of lines"""
         start = 0
@@ -131,19 +136,21 @@ class Table(object):
         self._rows[-1].append(cell_lines[start:])
         if len(self._coldefs) < len(self._rows[-1]):
             self._coldefs.append('l')
+
     def _minimize_cell(self, cell_lines):
         """Remove leading and trailing blank and ``.sp`` lines"""
-        while (cell_lines and cell_lines[0] in ('\n', '.sp\n')):
+        while cell_lines and cell_lines[0] in ('\n', '.sp\n'):
             del cell_lines[0]
-        while (cell_lines and cell_lines[-1] in ('\n', '.sp\n')):
+        while cell_lines and cell_lines[-1] in ('\n', '.sp\n'):
             del cell_lines[-1]
+
     def as_list(self):
         text = ['.TS\n']
         text.append(' '.join(self._options) + ';\n')
         text.append('|%s|.\n' % ('|'.join(self._coldefs)))
         for row in self._rows:
             # row = array of cells. cell = array of lines.
-            text.append('_\n')       # line above
+            text.append('_\n')  # line above
             text.append('T{\n')
             for i in range(len(row)):
                 cell = row[i]
@@ -152,12 +159,13 @@ class Table(object):
                 if not text[-1].endswith('\n'):
                     text[-1] += '\n'
                 if i < len(row) - 1:
-                    text.append('T}'+self._tab_char+'T{\n')
+                    text.append('T}' + self._tab_char + 'T{\n')
                 else:
                     text.append('T}\n')
         text.append('_\n')
         text.append('.TE\n')
         return text
+
 
 class Translator(nodes.NodeVisitor):
     """"""
@@ -171,8 +179,9 @@ class Translator(nodes.NodeVisitor):
         lcode = settings.language_code
         arglen = len(inspect.getargspec(languages.get_language)[0])
         if arglen == 2:
-            self.language = languages.get_language(lcode,
-                                                   self.document.reporter)
+            self.language = languages.get_language(
+                lcode, self.document.reporter
+            )
         else:
             self.language = languages.get_language(lcode)
         self.head = []
@@ -189,16 +198,18 @@ class Translator(nodes.NodeVisitor):
         # writing the header .TH and .SH NAME is postboned after
         # docinfo.
         self._docinfo = {
-                "title" : "", "title_upper": "",
-                "subtitle" : "",
-                "manual_section" : "", "manual_group" : "",
-                "author" : [],
-                "date" : "",
-                "copyright" : "",
-                "version" : "",
-                    }
-        self._docinfo_keys = []     # a list to keep the sequence as in source.
-        self._docinfo_names = {}    # to get name from text not normalized.
+            "title": "",
+            "title_upper": "",
+            "subtitle": "",
+            "manual_section": "",
+            "manual_group": "",
+            "author": [],
+            "date": "",
+            "copyright": "",
+            "version": "",
+        }
+        self._docinfo_keys = []  # a list to keep the sequence as in source.
+        self._docinfo_names = {}  # to get name from text not normalized.
         self._in_docinfo = None
         self._active_table = None
         self._in_literal = False
@@ -217,25 +228,21 @@ class Translator(nodes.NodeVisitor):
         # ``B`` bold, ``I`` italic, ``R`` roman should be available.
         # Hopefully ``C`` courier too.
         self.defs = {
-                'indent' : ('.INDENT %.1f\n', '.UNINDENT\n'),
-                'definition_list_item' : ('.TP', ''),
-                'field_name' : ('.TP\n.B ', '\n'),
-                'literal' : ('\\fB', '\\fP'),
-                'literal_block' : ('.sp\n.nf\n.ft C\n', '\n.ft P\n.fi\n'),
-
-                'option_list_item' : ('.TP\n', ''),
-
-                'reference' : (r'\%', r'\:'),
-                'emphasis': ('\\fI', '\\fP'),
-                'strong' : ('\\fB', '\\fP'),
-                'term' : ('\n.B ', '\n'),
-                'title_reference' : ('\\fI', '\\fP'),
-
-                'topic-title' : ('.SS ',),
-                'sidebar-title' : ('.SS ',),
-
-                'problematic' : ('\n.nf\n', '\n.fi\n'),
-                    }
+            'indent': ('.INDENT %.1f\n', '.UNINDENT\n'),
+            'definition_list_item': ('.TP', ''),
+            'field_name': ('.TP\n.B ', '\n'),
+            'literal': ('\\fB', '\\fP'),
+            'literal_block': ('.sp\n.nf\n.ft C\n', '\n.ft P\n.fi\n'),
+            'option_list_item': ('.TP\n', ''),
+            'reference': (r'\%', r'\:'),
+            'emphasis': ('\\fI', '\\fP'),
+            'strong': ('\\fB', '\\fP'),
+            'term': ('\n.B ', '\n'),
+            'title_reference': ('\\fI', '\\fP'),
+            'topic-title': ('.SS ',),
+            'sidebar-title': ('.SS ',),
+            'problematic': ('\n.nf\n', '\n.fi\n'),
+        }
         # NOTE don't specify the newline before a dot-command, but ensure
         # it is there.
 
@@ -244,13 +251,13 @@ class Translator(nodes.NodeVisitor):
         line/comment."""
         prefix = '.\\" '
         out_text = ''.join(
-            [(prefix + in_line + '\n')
-            for in_line in text.split('\n')])
+            [(prefix + in_line + '\n') for in_line in text.split('\n')]
+        )
         return out_text
 
     def comment(self, text):
         """Return commented version of the passed text."""
-        return self.comment_begin(text)+'.\n'
+        return self.comment_begin(text) + '.\n'
 
     def ensure_eol(self):
         """Ensure the last line in body is terminated by new line."""
@@ -266,16 +273,21 @@ class Translator(nodes.NodeVisitor):
         for i in range(len(self.body) - 1, 0, -1):
             # remove superfluous vertical gaps.
             if self.body[i] == '.sp\n':
-                if self.body[i - 1][:4] in ('.BI ','.IP '):
+                if self.body[i - 1][:4] in ('.BI ', '.IP '):
                     self.body[i] = '.\n'
-                elif (self.body[i - 1][:3] == '.B ' and
-                    self.body[i - 2][:4] == '.TP\n'):
+                elif (
+                    self.body[i - 1][:3] == '.B '
+                    and self.body[i - 2][:4] == '.TP\n'
+                ):
                     self.body[i] = '.\n'
-                elif (self.body[i - 1] == '\n' and
-                    self.body[i - 2][0] != '.' and
-                    (self.body[i - 3][:7] == '.TP\n.B '
-                        or self.body[i - 3][:4] == '\n.B ')
-                     ):
+                elif (
+                    self.body[i - 1] == '\n'
+                    and self.body[i - 2][0] != '.'
+                    and (
+                        self.body[i - 3][:7] == '.TP\n.B '
+                        or self.body[i - 3][:4] == '\n.B '
+                    )
+                ):
                     self.body[i] = '.\n'
         return ''.join(self.head + self.body + self.foot)
 
@@ -286,13 +298,13 @@ class Translator(nodes.NodeVisitor):
 
     def visit_Text(self, node):
         text = node.astext()
-        text = text.replace('\\','\\e')
+        text = text.replace('\\', '\\e')
         replace_pairs = [
             (u'-', u'\\-'),
             (u"'", u'\\(aq'),
             (u'´', u"\\'"),
             (u'`', u'\\(ga'),
-            ]
+        ]
         for (in_char, out_markup) in replace_pairs:
             text = text.replace(in_char, out_markup)
         # unicode
@@ -310,9 +322,9 @@ class Translator(nodes.NodeVisitor):
     def list_start(self, node):
         class enum_char(object):
             enum_style = {
-                    'bullet'     : '\\(bu',
-                    'emdash'     : '\\(em',
-                     }
+                'bullet': '\\(bu',
+                'emdash': '\\(em',
+            }
 
             def __init__(self, style):
                 self._style = style
@@ -358,6 +370,7 @@ class Translator(nodes.NodeVisitor):
 
             def get_width(self):
                 return self._indent
+
             def __repr__(self):
                 return 'enum_style-%s' % list(self._style)
 
@@ -376,10 +389,12 @@ class Translator(nodes.NodeVisitor):
         self._list_char.pop()
 
     def header(self):
-        tmpl = (".TH %(title_upper)s %(manual_section)s"
-                " \"%(date)s\" \"%(version)s\" \"%(manual_group)s\"\n"
-                ".SH NAME\n"
-                "%(title)s \\- %(subtitle)s\n")
+        tmpl = (
+            ".TH %(title_upper)s %(manual_section)s"
+            " \"%(date)s\" \"%(version)s\" \"%(manual_group)s\"\n"
+            ".SH NAME\n"
+            "%(title)s \\- %(subtitle)s\n"
+        )
         return tmpl % self._docinfo
 
     def append_header(self):
@@ -400,8 +415,7 @@ class Translator(nodes.NodeVisitor):
 
     def visit_admonition(self, node, name=None):
         if name:
-            self.body.append('.IP %s\n' %
-                        self.language.labels.get(name, name))
+            self.body.append('.IP %s\n' % self.language.labels.get(name, name))
 
     def depart_admonition(self, node):
         self.body.append('.RE\n')
@@ -470,7 +484,7 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def visit_citation_reference(self, node):
-        self.body.append('['+node.astext()+']')
+        self.body.append('[' + node.astext() + ']')
         raise nodes.SkipNode()
 
     def visit_classifier(self, node):
@@ -486,10 +500,9 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def write_colspecs(self):
-        self.body.append("%s.\n" % ('L '*len(self.colspecs)))
+        self.body.append("%s.\n" % ('L ' * len(self.colspecs)))
 
-    def visit_comment(self, node,
-                      sub=re.compile('-(?=-)').sub):
+    def visit_comment(self, node, sub=re.compile('-(?=-)').sub):
         self.body.append(self.comment(node.astext()))
         raise nodes.SkipNode()
 
@@ -569,27 +582,39 @@ class Translator(nodes.NodeVisitor):
 
     def visit_document(self, node):
         # no blank line between comment and header.
-        self.body.append(self.comment(self.document_start).rstrip()+'\n')
+        self.body.append(self.comment(self.document_start).rstrip() + '\n')
         # writing header is postboned
         self.header_written = 0
 
     def depart_document(self, node):
         if self._docinfo['author']:
-            self.body.append('.SH AUTHOR\n%s\n'
-                    % ', '.join(self._docinfo['author']))
-        skip = ('author', 'copyright', 'date',
-                'manual_group', 'manual_section',
-                'subtitle',
-                'title', 'title_upper', 'version')
+            self.body.append(
+                '.SH AUTHOR\n%s\n' % ', '.join(self._docinfo['author'])
+            )
+        skip = (
+            'author',
+            'copyright',
+            'date',
+            'manual_group',
+            'manual_section',
+            'subtitle',
+            'title',
+            'title_upper',
+            'version',
+        )
         for name in self._docinfo_keys:
             if name == 'address':
-                self.body.append("\n%s:\n%s%s.nf\n%s\n.fi\n%s%s" % (
-                                    self.language.labels.get(name, name),
-                                    self.defs['indent'][0] % 0,
-                                    self.defs['indent'][0] % BLOCKQOUTE_INDENT,
-                                    self._docinfo[name],
-                                    self.defs['indent'][1],
-                                    self.defs['indent'][1]))
+                self.body.append(
+                    "\n%s:\n%s%s.nf\n%s\n.fi\n%s%s"
+                    % (
+                        self.language.labels.get(name, name),
+                        self.defs['indent'][0] % 0,
+                        self.defs['indent'][0] % BLOCKQOUTE_INDENT,
+                        self._docinfo[name],
+                        self.defs['indent'][1],
+                        self.defs['indent'][1],
+                    )
+                )
             elif name not in skip:
                 if name in self._docinfo_names:
                     label = self._docinfo_names[name]
@@ -597,10 +622,10 @@ class Translator(nodes.NodeVisitor):
                     label = self.language.labels.get(name, name)
                 self.body.append("\n%s: %s\n" % (label, self._docinfo[name]))
         if self._docinfo['copyright']:
-            self.body.append('.SH COPYRIGHT\n%s\n'
-                    % self._docinfo['copyright'])
-        self.body.append(self.comment(
-                        'Generated by docutils manpage writer.\n'))
+            self.body.append('.SH COPYRIGHT\n%s\n' % self._docinfo['copyright'])
+        self.body.append(
+            self.comment('Generated by docutils manpage writer.\n')
+        )
 
     def visit_emphasis(self, node):
         self.body.append(self.defs['emphasis'][0])
@@ -611,11 +636,13 @@ class Translator(nodes.NodeVisitor):
     def visit_entry(self, node):
         # a cell in a table row
         if 'morerows' in node:
-            self.document.reporter.warning('"table row spanning" not supported',
-                    base_node=node)
+            self.document.reporter.warning(
+                '"table row spanning" not supported', base_node=node
+            )
         if 'morecols' in node:
             self.document.reporter.warning(
-                    '"table cell spanning" not supported', base_node=node)
+                '"table cell spanning" not supported', base_node=node
+            )
         self.context.append(len(self.body))
 
     def depart_entry(self, node):
@@ -642,7 +669,7 @@ class Translator(nodes.NodeVisitor):
 
     def visit_field_body(self, node):
         if self._in_docinfo:
-            name_normalized = self._field_name.lower().replace(" ","_")
+            name_normalized = self._field_name.lower().replace(" ", "_")
             self._docinfo_names[name_normalized] = self._field_name
             self.visit_docinfo_item(node, name_normalized)
             raise nodes.SkipNode()
@@ -675,8 +702,7 @@ class Translator(nodes.NodeVisitor):
         self.dedent()
 
     def visit_footer(self, node):
-        self.document.reporter.warning('"footer" not supported',
-                base_node=node)
+        self.document.reporter.warning('"footer" not supported', base_node=node)
 
     def depart_footer(self, node):
         pass
@@ -690,11 +716,12 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def footnote_backrefs(self, node):
-        self.document.reporter.warning('"footnote_backrefs" not supported',
-                base_node=node)
+        self.document.reporter.warning(
+            '"footnote_backrefs" not supported', base_node=node
+        )
 
     def visit_footnote_reference(self, node):
-        self.body.append('['+self.deunicode(node.astext())+']')
+        self.body.append('[' + self.deunicode(node.astext()) + ']')
         raise nodes.SkipNode()
 
     def depart_footnote_reference(self, node):
@@ -736,8 +763,7 @@ class Translator(nodes.NodeVisitor):
         self.body.append('\n')
 
     def visit_image(self, node):
-        self.document.reporter.warning('"image" not supported',
-                base_node=node)
+        self.document.reporter.warning('"image" not supported', base_node=node)
         text = []
         if 'alt' in node.attributes:
             text.append(node.attributes['alt'])
@@ -753,11 +779,11 @@ class Translator(nodes.NodeVisitor):
 
     def visit_label(self, node):
         # footnote and citation
-        if (isinstance(node.parent, nodes.footnote)
-            or isinstance(node.parent, nodes.citation)):
+        if isinstance(node.parent, nodes.footnote) or isinstance(
+            node.parent, nodes.citation
+        ):
             raise nodes.SkipNode()
-        self.document.reporter.warning('"unsupported "label"',
-                base_node=node)
+        self.document.reporter.warning('"unsupported "label"', base_node=node)
         self.body.append('[')
 
     def depart_label(self, node):
@@ -794,9 +820,10 @@ class Translator(nodes.NodeVisitor):
 
     def visit_list_item(self, node):
         # man 7 man argues to use ".IP" instead of ".TP"
-        self.body.append('.IP %s %d\n' % (
-                next(self._list_char[-1]),
-                self._list_char[-1].get_width(),))
+        self.body.append(
+            '.IP %s %d\n'
+            % (next(self._list_char[-1]), self._list_char[-1].get_width(),)
+        )
 
     def depart_list_item(self, node):
         pass
@@ -855,9 +882,9 @@ class Translator(nodes.NodeVisitor):
         # options with parameter bold italic, .BI, -f file
         #
         # we do not know if .B or .BI
-        self.context.append('.B')           # blind guess
-        self.context.append(len(self.body)) # to be able to insert later
-        self.context.append(0)              # option counter
+        self.context.append('.B')  # blind guess
+        self.context.append(len(self.body))  # to be able to insert later
+        self.context.append(0)  # option counter
 
     def depart_option_group(self, node):
         self.context.pop()  # the counter
@@ -885,7 +912,7 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def visit_option_argument(self, node):
-        self.context[-3] = '.BI' # bold/italic alternate
+        self.context[-3] = '.BI'  # bold/italic alternate
         if node['delimiter'] != ' ':
             self.body.append('\\fB%s ' % node['delimiter'])
         elif self.body[len(self.body) - 1].endswith('='):
@@ -968,8 +995,9 @@ class Translator(nodes.NodeVisitor):
         raise nodes.SkipNode()
 
     def visit_substitution_reference(self, node):
-        self.document.reporter.warning('"substitution_reference" not supported',
-                base_node=node)
+        self.document.reporter.warning(
+            '"substitution_reference" not supported', base_node=node
+        )
 
     def visit_subtitle(self, node):
         if isinstance(node.parent, nodes.sidebar):
@@ -981,11 +1009,11 @@ class Translator(nodes.NodeVisitor):
 
     def depart_subtitle(self, node):
         # document subtitle calls SkipNode
-        self.body.append(self.defs['strong'][1]+'\n.PP\n')
+        self.body.append(self.defs['strong'][1] + '\n.PP\n')
 
     def visit_system_message(self, node):
         # TODO add report_level
-        #if node['level'] < self.document.reporter['writer'].report_level:
+        # if node['level'] < self.document.reporter['writer'].report_level:
         #    Level is too low to display:
         #    raise nodes.SkipNode
         attr = {}
@@ -995,8 +1023,10 @@ class Translator(nodes.NodeVisitor):
             line = ', line %s' % node['line']
         else:
             line = ''
-        self.body.append('.IP "System Message: %s/%s (%s:%s)"\n'
-                         % (node['type'], node['level'], node['source'], line))
+        self.body.append(
+            '.IP "System Message: %s/%s (%s:%s)"\n'
+            % (node['type'], node['level'], node['source'], line)
+        )
 
     def depart_system_message(self, node):
         pass
@@ -1111,7 +1141,9 @@ class Translator(nodes.NodeVisitor):
     depart_warning = depart_admonition
 
     def unimplemented_visit(self, node):
-        raise NotImplementedError('visiting unimplemented node type: %s'
-                                  % node.__class__.__name__)
+        raise NotImplementedError(
+            'visiting unimplemented node type: %s' % node.__class__.__name__
+        )
+
 
 # vim: set fileencoding=utf-8 et ts=4 ai :

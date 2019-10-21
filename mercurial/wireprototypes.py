@@ -10,55 +10,46 @@ from .node import (
     hex,
 )
 from .i18n import _
-from .thirdparty import (
-    attr,
-)
+from .pycompat import getattr
+from .thirdparty import attr
 from . import (
     error,
     util,
 )
-from .utils import (
-    compression,
-    interfaceutil,
-)
+from .interfaces import util as interfaceutil
+from .utils import compression
 
 # Names of the SSH protocol implementations.
-SSHV1 = 'ssh-v1'
+SSHV1 = b'ssh-v1'
 # These are advertised over the wire. Increment the counters at the end
 # to reflect BC breakages.
-SSHV2 = 'exp-ssh-v2-0003'
-HTTP_WIREPROTO_V2 = 'exp-http-v2-0003'
+SSHV2 = b'exp-ssh-v2-0003'
+HTTP_WIREPROTO_V2 = b'exp-http-v2-0003'
 
-NARROWCAP = 'exp-narrow-1'
-ELLIPSESCAP1 = 'exp-ellipses-1'
-ELLIPSESCAP = 'exp-ellipses-2'
+NARROWCAP = b'exp-narrow-1'
+ELLIPSESCAP1 = b'exp-ellipses-1'
+ELLIPSESCAP = b'exp-ellipses-2'
 SUPPORTED_ELLIPSESCAP = (ELLIPSESCAP1, ELLIPSESCAP)
 
 # All available wire protocol transports.
 TRANSPORTS = {
-    SSHV1: {
-        'transport': 'ssh',
-        'version': 1,
-    },
+    SSHV1: {b'transport': b'ssh', b'version': 1,},
     SSHV2: {
-        'transport': 'ssh',
+        b'transport': b'ssh',
         # TODO mark as version 2 once all commands are implemented.
-        'version': 1,
+        b'version': 1,
     },
-    'http-v1': {
-        'transport': 'http',
-        'version': 1,
-    },
-    HTTP_WIREPROTO_V2: {
-        'transport': 'http',
-        'version': 2,
-    }
+    b'http-v1': {b'transport': b'http', b'version': 1,},
+    HTTP_WIREPROTO_V2: {b'transport': b'http', b'version': 2,},
 }
+
 
 class bytesresponse(object):
     """A wire protocol response consisting of raw bytes."""
+
     def __init__(self, data):
         self.data = data
+
 
 class ooberror(object):
     """wireproto reply: failure of a batch of operation
@@ -66,26 +57,32 @@ class ooberror(object):
     Something failed during a batch call. The error message is stored in
     `self.message`.
     """
+
     def __init__(self, message):
         self.message = message
+
 
 class pushres(object):
     """wireproto reply: success with simple integer return
 
     The call was successful and returned an integer contained in `self.res`.
     """
+
     def __init__(self, res, output):
         self.res = res
         self.output = output
+
 
 class pusherr(object):
     """wireproto reply: failure
 
     The call failed. The `self.res` attribute contains the error message.
     """
+
     def __init__(self, res, output):
         self.res = res
         self.output = output
+
 
 class streamres(object):
     """wireproto reply: binary stream
@@ -98,9 +95,11 @@ class streamres(object):
     uncompressable and that the stream should therefore use the ``none``
     engine.
     """
+
     def __init__(self, gen=None, prefer_uncompressed=False):
         self.gen = gen
         self.prefer_uncompressed = prefer_uncompressed
+
 
 class streamreslegacy(object):
     """wireproto reply: uncompressed binary stream
@@ -112,62 +111,72 @@ class streamreslegacy(object):
     Like ``streamres``, but sends an uncompressed data for "version 1" clients
     using the application/mercurial-0.1 media type.
     """
+
     def __init__(self, gen=None):
         self.gen = gen
 
+
 # list of nodes encoding / decoding
-def decodelist(l, sep=' '):
+def decodelist(l, sep=b' '):
     if l:
-        return [bin(v) for v in  l.split(sep)]
+        return [bin(v) for v in l.split(sep)]
     return []
 
-def encodelist(l, sep=' '):
+
+def encodelist(l, sep=b' '):
     try:
         return sep.join(map(hex, l))
     except TypeError:
         raise
 
+
 # batched call argument encoding
 
+
 def escapebatcharg(plain):
-    return (plain
-            .replace(':', ':c')
-            .replace(',', ':o')
-            .replace(';', ':s')
-            .replace('=', ':e'))
+    return (
+        plain.replace(b':', b':c')
+        .replace(b',', b':o')
+        .replace(b';', b':s')
+        .replace(b'=', b':e')
+    )
+
 
 def unescapebatcharg(escaped):
-    return (escaped
-            .replace(':e', '=')
-            .replace(':s', ';')
-            .replace(':o', ',')
-            .replace(':c', ':'))
+    return (
+        escaped.replace(b':e', b'=')
+        .replace(b':s', b';')
+        .replace(b':o', b',')
+        .replace(b':c', b':')
+    )
+
 
 # mapping of options accepted by getbundle and their types
 #
-# Meant to be extended by extensions. It is extensions responsibility to ensure
-# such options are properly processed in exchange.getbundle.
+# Meant to be extended by extensions. It is the extension's responsibility to
+# ensure such options are properly processed in exchange.getbundle.
 #
 # supported types are:
 #
-# :nodes: list of binary nodes
-# :csv:   list of comma-separated values
-# :scsv:  list of comma-separated values return as set
+# :nodes: list of binary nodes, transmitted as space-separated hex nodes
+# :csv:   list of values, transmitted as comma-separated values
+# :scsv:  set of values, transmitted as comma-separated values
 # :plain: string with no transformation needed.
 GETBUNDLE_ARGUMENTS = {
-    'heads':  'nodes',
-    'bookmarks': 'boolean',
-    'common': 'nodes',
-    'obsmarkers': 'boolean',
-    'phases': 'boolean',
-    'bundlecaps': 'scsv',
-    'listkeys': 'csv',
-    'cg': 'boolean',
-    'cbattempted': 'boolean',
-    'stream': 'boolean',
-    'includepats': 'csv',
-    'excludepats': 'csv',
+    b'heads': b'nodes',
+    b'bookmarks': b'boolean',
+    b'common': b'nodes',
+    b'obsmarkers': b'boolean',
+    b'phases': b'boolean',
+    b'bundlecaps': b'scsv',
+    b'listkeys': b'csv',
+    b'cg': b'boolean',
+    b'cbattempted': b'boolean',
+    b'stream': b'boolean',
+    b'includepats': b'csv',
+    b'excludepats': b'csv',
 }
+
 
 class baseprotocolhandler(interfaceutil.Interface):
     """Abstract base class for wire protocol handlers.
@@ -182,7 +191,8 @@ class baseprotocolhandler(interfaceutil.Interface):
         """The name of the protocol implementation.
 
         Used for uniquely identifying the transport type.
-        """)
+        """
+    )
 
     def getargs(args):
         """return the value for arguments in <args>
@@ -237,10 +247,19 @@ class baseprotocolhandler(interfaceutil.Interface):
         in a protocol specific manner.
         """
 
+
 class commandentry(object):
     """Represents a declared wire protocol command."""
-    def __init__(self, func, args='', transports=None,
-                 permission='push', cachekeyfn=None, extracapabilitiesfn=None):
+
+    def __init__(
+        self,
+        func,
+        args=b'',
+        transports=None,
+        permission=b'push',
+        cachekeyfn=None,
+        extracapabilitiesfn=None,
+    ):
         self.func = func
         self.args = args
         self.transports = transports or set()
@@ -256,8 +275,12 @@ class commandentry(object):
         data not captured by the 2-tuple and a new instance containing
         the union of the two objects is returned.
         """
-        return commandentry(func, args=args, transports=set(self.transports),
-                            permission=self.permission)
+        return commandentry(
+            func,
+            args=args,
+            transports=set(self.transports),
+            permission=self.permission,
+        )
 
     # Old code treats instances as 2-tuples. So expose that interface.
     def __iter__(self):
@@ -270,7 +293,8 @@ class commandentry(object):
         elif i == 1:
             return self.args
         else:
-            raise IndexError('can only access elements 0 and 1')
+            raise IndexError(b'can only access elements 0 and 1')
+
 
 class commanddict(dict):
     """Container for registered wire protocol commands.
@@ -278,13 +302,14 @@ class commanddict(dict):
     It behaves like a dict. But __setitem__ is overwritten to allow silent
     coercion of values from 2-tuples for API compatibility.
     """
+
     def __setitem__(self, k, v):
         if isinstance(v, commandentry):
             pass
         # Cast 2-tuples to commandentry instances.
         elif isinstance(v, tuple):
             if len(v) != 2:
-                raise ValueError('command tuples must have exactly 2 elements')
+                raise ValueError(b'command tuples must have exactly 2 elements')
 
             # It is common for extensions to wrap wire protocol commands via
             # e.g. ``wireproto.commands[x] = (newfn, args)``. Because callers
@@ -294,12 +319,17 @@ class commanddict(dict):
                 v = self[k]._merge(v[0], v[1])
             else:
                 # Use default values from @wireprotocommand.
-                v = commandentry(v[0], args=v[1],
-                                 transports=set(TRANSPORTS),
-                                 permission='push')
+                v = commandentry(
+                    v[0],
+                    args=v[1],
+                    transports=set(TRANSPORTS),
+                    permission=b'push',
+                )
         else:
-            raise ValueError('command entries must be commandentry instances '
-                             'or 2-tuples')
+            raise ValueError(
+                b'command entries must be commandentry instances '
+                b'or 2-tuples'
+            )
 
         return super(commanddict, self).__setitem__(k, v)
 
@@ -317,6 +347,7 @@ class commanddict(dict):
 
         return True
 
+
 def supportedcompengines(ui, role):
     """Obtain the list of supported compression engines for a request."""
     assert role in (compression.CLIENTROLE, compression.SERVERROLE)
@@ -325,24 +356,28 @@ def supportedcompengines(ui, role):
 
     # Allow config to override default list and ordering.
     if role == compression.SERVERROLE:
-        configengines = ui.configlist('server', 'compressionengines')
-        config = 'server.compressionengines'
+        configengines = ui.configlist(b'server', b'compressionengines')
+        config = b'server.compressionengines'
     else:
         # This is currently implemented mainly to facilitate testing. In most
         # cases, the server should be in charge of choosing a compression engine
         # because a server has the most to lose from a sub-optimal choice. (e.g.
         # CPU DoS due to an expensive engine or a network DoS due to poor
         # compression ratio).
-        configengines = ui.configlist('experimental',
-                                      'clientcompressionengines')
-        config = 'experimental.clientcompressionengines'
+        configengines = ui.configlist(
+            b'experimental', b'clientcompressionengines'
+        )
+        config = b'experimental.clientcompressionengines'
 
     # No explicit config. Filter out the ones that aren't supposed to be
     # advertised and return default ordering.
     if not configengines:
-        attr = 'serverpriority' if role == util.SERVERROLE else 'clientpriority'
-        return [e for e in compengines
-                if getattr(e.wireprotosupport(), attr) > 0]
+        attr = (
+            b'serverpriority' if role == util.SERVERROLE else b'clientpriority'
+        )
+        return [
+            e for e in compengines if getattr(e.wireprotosupport(), attr) > 0
+        ]
 
     # If compression engines are listed in the config, assume there is a good
     # reason for it (like server operators wanting to achieve specific
@@ -351,20 +386,29 @@ def supportedcompengines(ui, role):
     validnames = set(e.name() for e in compengines)
     invalidnames = set(e for e in configengines if e not in validnames)
     if invalidnames:
-        raise error.Abort(_('invalid compression engine defined in %s: %s') %
-                          (config, ', '.join(sorted(invalidnames))))
+        raise error.Abort(
+            _(b'invalid compression engine defined in %s: %s')
+            % (config, b', '.join(sorted(invalidnames)))
+        )
 
     compengines = [e for e in compengines if e.name() in configengines]
-    compengines = sorted(compengines,
-                         key=lambda e: configengines.index(e.name()))
+    compengines = sorted(
+        compengines, key=lambda e: configengines.index(e.name())
+    )
 
     if not compengines:
-        raise error.Abort(_('%s config option does not specify any known '
-                            'compression engines') % config,
-                          hint=_('usable compression engines: %s') %
-                          ', '.sorted(validnames))
+        raise error.Abort(
+            _(
+                b'%s config option does not specify any known '
+                b'compression engines'
+            )
+            % config,
+            hint=_(b'usable compression engines: %s')
+            % b', '.sorted(validnames),
+        )
 
     return compengines
+
 
 @attr.s
 class encodedresponse(object):
@@ -376,7 +420,9 @@ class encodedresponse(object):
     wire. If commands emit an object of this type, the encoding step is bypassed
     and the content from this object is used instead.
     """
+
     data = attr.ib()
+
 
 @attr.s
 class alternatelocationresponse(object):
@@ -387,6 +433,7 @@ class alternatelocationresponse(object):
 
     Only compatible with wire protocol version 2.
     """
+
     url = attr.ib()
     mediatype = attr.ib()
     size = attr.ib(default=None)
@@ -395,6 +442,7 @@ class alternatelocationresponse(object):
     serverdercerts = attr.ib(default=None)
     servercadercerts = attr.ib(default=None)
 
+
 @attr.s
 class indefinitebytestringresponse(object):
     """Represents an object to be encoded to an indefinite length bytestring.
@@ -402,4 +450,5 @@ class indefinitebytestringresponse(object):
     Instances are initialized from an iterable of chunks, with each chunk being
     a bytes instance.
     """
+
     chunks = attr.ib()

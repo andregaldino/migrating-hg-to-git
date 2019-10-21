@@ -24,31 +24,37 @@ from mercurial import (
     registrar,
 )
 
-MY_NAME = 'bookflow'
+MY_NAME = b'bookflow'
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem(MY_NAME, 'protect', ['@'])
-configitem(MY_NAME, 'require-bookmark', True)
-configitem(MY_NAME, 'enable-branches', False)
+configitem(MY_NAME, b'protect', [b'@'])
+configitem(MY_NAME, b'require-bookmark', True)
+configitem(MY_NAME, b'enable-branches', False)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
 
+
 def commit_hook(ui, repo, **kwargs):
     active = repo._bookmarks.active
     if active:
-        if active in ui.configlist(MY_NAME, 'protect'):
+        if active in ui.configlist(MY_NAME, b'protect'):
             raise error.Abort(
-                _('cannot commit, bookmark %s is protected') % active)
+                _(b'cannot commit, bookmark %s is protected') % active
+            )
         if not cwd_at_bookmark(repo, active):
             raise error.Abort(
-       _('cannot commit, working directory out of sync with active bookmark'),
-                hint=_("run 'hg up %s'") % active)
-    elif ui.configbool(MY_NAME, 'require-bookmark', True):
-        raise error.Abort(_('cannot commit without an active bookmark'))
+                _(
+                    b'cannot commit, working directory out of sync with active bookmark'
+                ),
+                hint=_(b"run 'hg up %s'") % active,
+            )
+    elif ui.configbool(MY_NAME, b'require-bookmark', True):
+        raise error.Abort(_(b'cannot commit without an active bookmark'))
     return 0
+
 
 def bookmarks_update(orig, repo, parents, node):
     if len(parents) == 2:
@@ -58,47 +64,63 @@ def bookmarks_update(orig, repo, parents, node):
         # called during update
         return False
 
+
 def bookmarks_addbookmarks(
-        orig, repo, tr, names, rev=None, force=False, inactive=False):
+    orig, repo, tr, names, rev=None, force=False, inactive=False
+):
     if not rev:
         marks = repo._bookmarks
         for name in names:
             if name in marks:
-                raise error.Abort(_(
-                    "bookmark %s already exists, to move use the --rev option"
-                    ) % name)
+                raise error.Abort(
+                    _(
+                        b"bookmark %s already exists, to move use the --rev option"
+                    )
+                    % name
+                )
     return orig(repo, tr, names, rev, force, inactive)
+
 
 def commands_commit(orig, ui, repo, *args, **opts):
     commit_hook(ui, repo)
     return orig(ui, repo, *args, **opts)
 
+
 def commands_pull(orig, ui, repo, *args, **opts):
     rc = orig(ui, repo, *args, **opts)
     active = repo._bookmarks.active
     if active and not cwd_at_bookmark(repo, active):
-        ui.warn(_(
-            "working directory out of sync with active bookmark, run "
-            "'hg up %s'"
-        ) % active)
+        ui.warn(
+            _(
+                b"working directory out of sync with active bookmark, run "
+                b"'hg up %s'"
+            )
+            % active
+        )
     return rc
+
 
 def commands_branch(orig, ui, repo, label=None, **opts):
     if label and not opts.get(r'clean') and not opts.get(r'rev'):
         raise error.Abort(
-         _("creating named branches is disabled and you should use bookmarks"),
-            hint="see 'hg help bookflow'")
+            _(
+                b"creating named branches is disabled and you should use bookmarks"
+            ),
+            hint=b"see 'hg help bookflow'",
+        )
     return orig(ui, repo, label, **opts)
+
 
 def cwd_at_bookmark(repo, mark):
     mark_id = repo._bookmarks[mark]
-    cur_id = repo.lookup('.')
+    cur_id = repo.lookup(b'.')
     return cur_id == mark_id
 
+
 def uisetup(ui):
-    extensions.wrapfunction(bookmarks, 'update', bookmarks_update)
-    extensions.wrapfunction(bookmarks, 'addbookmarks', bookmarks_addbookmarks)
-    extensions.wrapcommand(commands.table, 'commit', commands_commit)
-    extensions.wrapcommand(commands.table, 'pull', commands_pull)
-    if not ui.configbool(MY_NAME, 'enable-branches'):
-        extensions.wrapcommand(commands.table, 'branch', commands_branch)
+    extensions.wrapfunction(bookmarks, b'update', bookmarks_update)
+    extensions.wrapfunction(bookmarks, b'addbookmarks', bookmarks_addbookmarks)
+    extensions.wrapcommand(commands.table, b'commit', commands_commit)
+    extensions.wrapcommand(commands.table, b'pull', commands_pull)
+    if not ui.configbool(MY_NAME, b'enable-branches'):
+        extensions.wrapcommand(commands.table, b'branch', commands_branch)

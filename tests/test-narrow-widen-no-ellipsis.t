@@ -116,7 +116,7 @@ added upstream revisions.
   query 1; heads
   sending batch command
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   sending narrow_widen command
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "changegroup" (params: * mandatory) supported (glob)
@@ -125,9 +125,9 @@ added upstream revisions.
   adding widest/ revisions (tree !)
   adding file changes
   adding widest/f revisions
-  added 0 changesets with 1 changes to 1 files
   bundle2-input-part: total payload size * (glob)
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
+  added 0 changesets with 1 changes to 1 files
    widest/f: narrowspec updated -> g
   getting widest/f
   $ hg tracked

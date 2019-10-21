@@ -36,10 +36,12 @@ from . import tracing
 
 _deactivated = False
 
+
 class _lazyloaderex(importlib.util.LazyLoader):
     """This is a LazyLoader except it also follows the _deactivated global and
     the ignore list.
     """
+
     def exec_module(self, module):
         """Make the module load lazily."""
         with tracing.log('demandimport %s', module):
@@ -48,13 +50,17 @@ class _lazyloaderex(importlib.util.LazyLoader):
             else:
                 super().exec_module(module)
 
+
 # This is 3.6+ because with Python 3.5 it isn't possible to lazily load
 # extensions. See the discussion in https://bugs.python.org/issue26186 for more.
 _extensions_loader = _lazyloaderex.factory(
-    importlib.machinery.ExtensionFileLoader)
+    importlib.machinery.ExtensionFileLoader
+)
 _bytecode_loader = _lazyloaderex.factory(
-    importlib.machinery.SourcelessFileLoader)
+    importlib.machinery.SourcelessFileLoader
+)
 _source_loader = _lazyloaderex.factory(importlib.machinery.SourceFileLoader)
+
 
 def _makefinder(path):
     return importlib.machinery.FileFinder(
@@ -65,14 +71,18 @@ def _makefinder(path):
         (_bytecode_loader, importlib.machinery.BYTECODE_SUFFIXES),
     )
 
+
 ignores = set()
+
 
 def init(ignoreset):
     global ignores
     ignores = ignoreset
 
+
 def isenabled():
     return _makefinder in sys.path_hooks and not _deactivated
+
 
 def disable():
     try:
@@ -81,8 +91,10 @@ def disable():
     except ValueError:
         pass
 
+
 def enable():
     sys.path_hooks.insert(0, _makefinder)
+
 
 @contextlib.contextmanager
 def deactivated():

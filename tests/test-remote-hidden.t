@@ -36,6 +36,7 @@ Testing the `served.hidden` view
   $ hg ci -m "c_Pruned"
   created new head
   $ hg debugobsolete --record-parents `getid 'desc("c_Pruned")'` -d '0 0'
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up ".^"
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -45,6 +46,7 @@ Testing the `served.hidden` view
   $ echo 5 > a
   $ hg ci -m "c_Secret_Pruned" --secret
   $ hg debugobsolete --record-parents `getid 'desc("c_Secret_Pruned")'` -d '0 0'
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved

@@ -17,8 +17,8 @@ import shlex
 import sys
 import tempfile
 
-ispy3 = (sys.version_info[0] >= 3)
-ispypy = (r'__pypy__' in sys.builtin_module_names)
+ispy3 = sys.version_info[0] >= 3
+ispypy = r'__pypy__' in sys.builtin_module_names
 
 if not ispy3:
     import cookielib
@@ -32,6 +32,8 @@ if not ispy3:
 
     def future_set_exception_info(f, exc_info):
         f.set_exception_info(*exc_info)
+
+
 else:
     import concurrent.futures as futures
     import http.cookiejar as cookielib
@@ -44,8 +46,10 @@ else:
     def future_set_exception_info(f, exc_info):
         f.set_exception(exc_info[0])
 
+
 def identity(a):
     return a
+
 
 def _rapply(f, xs):
     if xs is None:
@@ -56,6 +60,7 @@ def _rapply(f, xs):
     if isinstance(xs, dict):
         return type(xs)((_rapply(f, k), _rapply(f, v)) for k, v in xs.items())
     return f(xs)
+
 
 def rapply(f, xs):
     """Apply function recursively to every item preserving the data structure
@@ -79,6 +84,7 @@ def rapply(f, xs):
         # fast path mainly for py2
         return xs
     return _rapply(f, xs)
+
 
 if ispy3:
     import builtins
@@ -195,9 +201,12 @@ if ispy3:
         def __new__(cls, s=b''):
             if isinstance(s, bytestr):
                 return s
-            if (not isinstance(s, (bytes, bytearray))
-                and not hasattr(s, u'__bytes__')):  # hasattr-py3-only
-                s = str(s).encode(u'ascii')
+            if not isinstance(
+                s, (bytes, bytearray)
+            ) and not hasattr(  # hasattr-py3-only
+                s, u'__bytes__'
+            ):
+                s = str(s).encode('ascii')
             return bytes.__new__(cls, s)
 
         def __getitem__(self, key):
@@ -228,7 +237,7 @@ if ispy3:
         This never raises UnicodeEncodeError, but only ASCII characters
         can be round-trip by sysstr(sysbytes(s)).
         """
-        return s.encode(u'utf-8')
+        return s.encode('utf-8')
 
     def sysstr(s):
         """Return a keyword str to be passed to Python functions such as
@@ -240,18 +249,18 @@ if ispy3:
         """
         if isinstance(s, builtins.str):
             return s
-        return s.decode(u'latin-1')
+        return s.decode('latin-1')
 
     def strurl(url):
         """Converts a bytes url back to str"""
         if isinstance(url, bytes):
-            return url.decode(u'ascii')
+            return url.decode('ascii')
         return url
 
     def bytesurl(url):
         """Converts a str url to bytes by encoding in ascii"""
         if isinstance(url, str):
-            return url.encode(u'ascii')
+            return url.encode('ascii')
         return url
 
     def raisewithtb(exc, tb):
@@ -261,7 +270,7 @@ if ispy3:
     def getdoc(obj):
         """Get docstring as bytes; may be None so gettext() won't confuse it
         with _('')"""
-        doc = getattr(obj, u'__doc__', None)
+        doc = getattr(obj, '__doc__', None)
         if doc is None:
             return doc
         return sysbytes(doc)
@@ -270,6 +279,7 @@ if ispy3:
         @functools.wraps(f)
         def w(object, name, *args):
             return f(object, sysstr(name), *args)
+
         return w
 
     # these wrappers are automagically imported by hgloader
@@ -296,8 +306,7 @@ if ispy3:
         shortlist = shortlist.decode('latin-1')
         namelist = [a.decode('latin-1') for a in namelist]
         opts, args = orig(args, shortlist, namelist)
-        opts = [(a[0].encode('latin-1'), a[1].encode('latin-1'))
-                for a in opts]
+        opts = [(a[0].encode('latin-1'), a[1].encode('latin-1')) for a in opts]
         args = [a.encode('latin-1') for a in args]
         return opts, args
 
@@ -307,7 +316,7 @@ if ispy3:
         they can be passed as keyword arguments as dictonaries with bytes keys
         can't be passed as keyword arguments to functions on Python 3.
         """
-        dic = dict((k.decode('latin-1'), v) for k, v in dic.iteritems())
+        dic = dict((k.decode('latin-1'), v) for k, v in dic.items())
         return dic
 
     def byteskwargs(dic):
@@ -315,7 +324,7 @@ if ispy3:
         Converts keys of python dictonaries to bytes as they were converted to
         str to pass that dictonary as a keyword argument on Python 3.
         """
-        dic = dict((k.encode('latin-1'), v) for k, v in dic.iteritems())
+        dic = dict((k.encode('latin-1'), v) for k, v in dic.items())
         return dic
 
     # TODO: handle shlex.shlex().
@@ -327,6 +336,9 @@ if ispy3:
         """
         ret = shlex.split(s.decode('latin-1'), comments, posix)
         return [a.encode('latin-1') for a in ret]
+
+    iteritems = lambda x: x.items()
+    itervalues = lambda x: x.values()
 
 else:
     import cStringIO
@@ -342,10 +354,14 @@ else:
     sysstr = identity
     strurl = identity
     bytesurl = identity
+    open = open
+    delattr = delattr
+    getattr = getattr
+    hasattr = hasattr
+    setattr = setattr
 
     # this can't be parsed on Python 3
-    exec('def raisewithtb(exc, tb):\n'
-         '    raise exc, None, tb\n')
+    exec(b'def raisewithtb(exc, tb):\n    raise exc, None, tb\n')
 
     def fsencode(filename):
         """
@@ -356,8 +372,7 @@ else:
         if isinstance(filename, str):
             return filename
         else:
-            raise TypeError(
-                r"expect str, not %s" % type(filename).__name__)
+            raise TypeError(r"expect str, not %s" % type(filename).__name__)
 
     # In Python 2, fsdecode() has a very chance to receive bytes. So it's
     # better not to touch Python 2 part as it's already working fine.
@@ -400,6 +415,8 @@ else:
     ziplist = zip
     rawinput = raw_input
     getargspec = inspect.getargspec
+    iteritems = lambda x: x.iteritems()
+    itervalues = lambda x: x.itervalues()
 
 isjython = sysplatform.startswith(b'java')
 
@@ -408,23 +425,30 @@ islinux = sysplatform.startswith(b'linux')
 isposix = osname == b'posix'
 iswindows = osname == b'nt'
 
+
 def getoptb(args, shortlist, namelist):
     return _getoptbwrapper(getopt.getopt, args, shortlist, namelist)
+
 
 def gnugetoptb(args, shortlist, namelist):
     return _getoptbwrapper(getopt.gnu_getopt, args, shortlist, namelist)
 
+
 def mkdtemp(suffix=b'', prefix=b'tmp', dir=None):
     return tempfile.mkdtemp(suffix, prefix, dir)
+
 
 # text=True is not supported; use util.from/tonativeeol() instead
 def mkstemp(suffix=b'', prefix=b'tmp', dir=None):
     return tempfile.mkstemp(suffix, prefix, dir)
 
+
 # mode must include 'b'ytes as encoding= is not supported
-def namedtempfile(mode=b'w+b', bufsize=-1, suffix=b'', prefix=b'tmp', dir=None,
-                  delete=True):
+def namedtempfile(
+    mode=b'w+b', bufsize=-1, suffix=b'', prefix=b'tmp', dir=None, delete=True
+):
     mode = sysstr(mode)
     assert r'b' in mode
-    return tempfile.NamedTemporaryFile(mode, bufsize, suffix=suffix,
-                                       prefix=prefix, dir=dir, delete=delete)
+    return tempfile.NamedTemporaryFile(
+        mode, bufsize, suffix=suffix, prefix=prefix, dir=dir, delete=delete
+    )

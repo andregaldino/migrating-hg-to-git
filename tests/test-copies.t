@@ -1,4 +1,4 @@
-#testcases filelog compatibility changeset
+#testcases filelog compatibility changeset sidedata
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -19,6 +19,13 @@
   > [experimental]
   > copies.read-from = changeset-only
   > copies.write-to = changeset-only
+  > EOF
+#endif
+
+#if sidedata
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-copies-side-data-changeset = yes
   > EOF
 #endif
 
@@ -330,12 +337,14 @@ Copy file that exists on both sides of the merge, different content
      x
   $ hg debugp1copies -r 2
   x -> z (changeset !)
+  x -> z (sidedata !)
   $ hg debugp2copies -r 2
-  x -> z (no-changeset !)
+  x -> z (no-changeset no-sidedata !)
   $ hg debugpathcopies 1 2
   x -> z (changeset !)
+  x -> z (sidedata !)
   $ hg debugpathcopies 0 2
-  x -> z (no-changeset !)
+  x -> z (no-changeset no-sidedata !)
 
 Copy x->y on one side of merge and copy x->z on the other side. Pathcopies from one parent
 of the merge to the merge should include the copy from the other side.
@@ -445,8 +454,7 @@ Try merging the other direction too
   x -> z (no-filelog !)
   $ hg debugpathcopies 0 4
   x -> z (filelog !)
-  y -> z (compatibility !)
-  y -> z (changeset !)
+  y -> z (no-filelog !)
   $ hg debugpathcopies 1 5
   y -> z (no-filelog !)
   $ hg debugpathcopies 2 5

@@ -126,9 +126,12 @@ setup
   $ mkcommit 'C-A1'
   created new head
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A0")'`
+  1 new obsolescence markers
   $ hg debugobsolete `getid 'desc("C-A0")'` a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 `getid 'desc("C-A1")'`
+  1 new obsolescence markers
 
   $ hg up 'desc("ROOT")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -272,10 +275,13 @@ setup
   $ mkcommit 'C-A1'
   created new head
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A0")'`
+  1 new obsolescence markers
   $ hg debugobsolete `getid 'desc("C-A0")'` `getid 'desc("C-A1")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete --record-parents `getid 'desc("C-B0")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up 'desc("ROOT")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -461,9 +467,12 @@ setup
   $ mkcommit 'C-A1'
   created new head
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A0")'`
+  1 new obsolescence markers
   $ hg debugobsolete --record-parents `getid 'desc("C-A0")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid 'desc("C-A0")'` `getid 'desc("C-A1")'`
+  1 new obsolescence markers
   $ hg up 'desc("ROOT")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg log --hidden -G
@@ -606,10 +615,13 @@ setup
   $ mkcommit 'C-A1'
   created new head
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A0")'`
+  1 new obsolescence markers
   $ hg debugobsolete `getid 'desc("C-A0")'` `getid 'desc("C-A1")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete --record-parents `getid 'desc("C-B0")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 (it is annoying to create prune with parent data without the changeset, so we strip it after the fact)
@@ -688,9 +700,12 @@ setup
   $ mkcommit 'C-A1'
   created new head
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A0")'`
+  1 new obsolescence markers
   $ hg debugobsolete --record-parents `getid 'desc("C-A0")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid 'desc("C-A0")'` `getid 'desc("C-A1")'`
+  1 new obsolescence markers
 
 (it is annoying to create prune with parent data without the changeset, so we strip it after the fact)
 
@@ -775,20 +790,29 @@ setup
   $ mkcommit 'C-E'
   created new head
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A")'`
+  1 new obsolescence markers
   $ hg debugobsolete `getid 'desc("C-A")'` `getid 'desc("C-B")'` `getid 'desc("C-C")'` # record split
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid 'desc("C-A")'` `getid 'desc("C-D")'` # other divergent
+  1 new obsolescence markers
   3 new content-divergent changesets
   $ hg debugobsolete `getid 'desc("C-A")'` b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0
+  1 new obsolescence markers
   $ hg debugobsolete b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0 `getid 'desc("C-E")'`
+  1 new obsolescence markers
   1 new content-divergent changesets
   $ hg debugobsolete `getid 'desc("C-B")'` `getid 'desc("C-E")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid 'desc("C-C")'` `getid 'desc("C-E")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid 'desc("C-D")'` `getid 'desc("C-E")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0 `getid 'desc("C-E")'`
+  1 new obsolescence markers
 
   $ hg up 'desc("ROOT")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -1334,6 +1358,7 @@ setup
   $ mkcommit 'C-A'
   $ mkcommit 'C-B'
   $ hg debugobsolete --record-parent `getid 'desc("C-B")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg up 'desc("ROOT")'

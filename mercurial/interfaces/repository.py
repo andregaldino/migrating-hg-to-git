@@ -7,17 +7,13 @@
 
 from __future__ import absolute_import
 
-from .i18n import _
-from . import (
-    error,
-)
-from .utils import (
-    interfaceutil,
-)
+from ..i18n import _
+from .. import error
+from . import util as interfaceutil
 
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.
-NARROW_REQUIREMENT = 'narrowhg-experimental'
+NARROW_REQUIREMENT = b'narrowhg-experimental'
 
 # Local repository feature string.
 
@@ -35,14 +31,20 @@ REPO_FEATURE_SHALLOW_FILE_STORAGE = b'shallowfilestorage'
 REVISION_FLAG_CENSORED = 1 << 15
 REVISION_FLAG_ELLIPSIS = 1 << 14
 REVISION_FLAG_EXTSTORED = 1 << 13
+REVISION_FLAG_SIDEDATA = 1 << 12
 
 REVISION_FLAGS_KNOWN = (
-    REVISION_FLAG_CENSORED | REVISION_FLAG_ELLIPSIS | REVISION_FLAG_EXTSTORED)
+    REVISION_FLAG_CENSORED
+    | REVISION_FLAG_ELLIPSIS
+    | REVISION_FLAG_EXTSTORED
+    | REVISION_FLAG_SIDEDATA
+)
 
 CG_DELTAMODE_STD = b'default'
 CG_DELTAMODE_PREV = b'previous'
 CG_DELTAMODE_FULL = b'fulltext'
 CG_DELTAMODE_P1 = b'p1'
+
 
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.
@@ -53,6 +55,7 @@ class ipeerconnection(interfaceutil.Interface):
     This is not a complete interface definition and should not be used
     outside of this module.
     """
+
     ui = interfaceutil.Attribute("""ui.ui instance""")
 
     def url():
@@ -90,6 +93,7 @@ class ipeerconnection(interfaceutil.Interface):
         associated with the peer should be cleaned up.
         """
 
+
 class ipeercapabilities(interfaceutil.Interface):
     """Peer sub-interface related to capabilities."""
 
@@ -109,6 +113,7 @@ class ipeercapabilities(interfaceutil.Interface):
 
         Raises a ``CapabilityError`` if the capability isn't present.
         """
+
 
 class ipeercommands(interfaceutil.Interface):
     """Client-side interface for communicating over the wire protocol.
@@ -199,6 +204,7 @@ class ipeercommands(interfaceutil.Interface):
         Returns the integer number of heads added to the peer.
         """
 
+
 class ipeerlegacycommands(interfaceutil.Interface):
     """Interface for implementing support for legacy wire protocol commands.
 
@@ -230,6 +236,7 @@ class ipeerlegacycommands(interfaceutil.Interface):
 
     def changegroupsubset(bases, heads, source):
         pass
+
 
 class ipeercommandexecutor(interfaceutil.Interface):
     """Represents a mechanism to execute remote commands.
@@ -288,6 +295,7 @@ class ipeercommandexecutor(interfaceutil.Interface):
         This method may call ``sendcommands()`` if there are buffered commands.
         """
 
+
 class ipeerrequests(interfaceutil.Interface):
     """Interface for executing commands on a peer."""
 
@@ -317,17 +325,21 @@ class ipeerrequests(interfaceutil.Interface):
         being issued.
         """
 
+
 class ipeerbase(ipeerconnection, ipeercapabilities, ipeerrequests):
     """Unified interface for peer repositories.
 
     All peer instances must conform to this interface.
     """
 
+
 class ipeerv2(ipeerconnection, ipeercapabilities, ipeerrequests):
     """Unified peer interface for wire protocol version 2 peers."""
 
     apidescriptor = interfaceutil.Attribute(
-        """Data structure holding description of server API.""")
+        """Data structure holding description of server API."""
+    )
+
 
 @interfaceutil.implementer(ipeerbase)
 class peer(object):
@@ -340,10 +352,10 @@ class peer(object):
         if name in caps:
             return True
 
-        name = '%s=' % name
+        name = b'%s=' % name
         for cap in caps:
             if cap.startswith(name):
-                return cap[len(name):]
+                return cap[len(name) :]
 
         return False
 
@@ -352,8 +364,13 @@ class peer(object):
             return
 
         raise error.CapabilityError(
-            _('cannot %s; remote repository does not support the '
-              '\'%s\' capability') % (purpose, name))
+            _(
+                b'cannot %s; remote repository does not support the '
+                b'\'%s\' capability'
+            )
+            % (purpose, name)
+        )
+
 
 class iverifyproblem(interfaceutil.Interface):
     """Represents a problem with the integrity of the repository.
@@ -363,17 +380,20 @@ class iverifyproblem(interfaceutil.Interface):
 
     Instances are essentially messages associated with severity.
     """
-    warning = interfaceutil.Attribute(
-        """Message indicating a non-fatal problem.""")
 
-    error = interfaceutil.Attribute(
-        """Message indicating a fatal problem.""")
+    warning = interfaceutil.Attribute(
+        """Message indicating a non-fatal problem."""
+    )
+
+    error = interfaceutil.Attribute("""Message indicating a fatal problem.""")
 
     node = interfaceutil.Attribute(
         """Revision encountering the problem.
 
         ``None`` means the problem doesn't apply to a single revision.
-        """)
+        """
+    )
+
 
 class irevisiondelta(interfaceutil.Interface):
     """Represents a delta between one revision and another.
@@ -388,45 +408,53 @@ class irevisiondelta(interfaceutil.Interface):
     Typically used for changegroup generation.
     """
 
-    node = interfaceutil.Attribute(
-        """20 byte node of this revision.""")
+    node = interfaceutil.Attribute("""20 byte node of this revision.""")
 
     p1node = interfaceutil.Attribute(
-        """20 byte node of 1st parent of this revision.""")
+        """20 byte node of 1st parent of this revision."""
+    )
 
     p2node = interfaceutil.Attribute(
-        """20 byte node of 2nd parent of this revision.""")
+        """20 byte node of 2nd parent of this revision."""
+    )
 
     linknode = interfaceutil.Attribute(
-        """20 byte node of the changelog revision this node is linked to.""")
+        """20 byte node of the changelog revision this node is linked to."""
+    )
 
     flags = interfaceutil.Attribute(
         """2 bytes of integer flags that apply to this revision.
 
         This is a bitwise composition of the ``REVISION_FLAG_*`` constants.
-        """)
+        """
+    )
 
     basenode = interfaceutil.Attribute(
         """20 byte node of the revision this data is a delta against.
 
         ``nullid`` indicates that the revision is a full revision and not
         a delta.
-        """)
+        """
+    )
 
     baserevisionsize = interfaceutil.Attribute(
         """Size of base revision this delta is against.
 
         May be ``None`` if ``basenode`` is ``nullid``.
-        """)
+        """
+    )
 
     revision = interfaceutil.Attribute(
-        """Raw fulltext of revision data for this node.""")
+        """Raw fulltext of revision data for this node."""
+    )
 
     delta = interfaceutil.Attribute(
         """Delta between ``basenode`` and ``node``.
 
         Stored in the bdiff delta format.
-        """)
+        """
+    )
+
 
 class ifilerevisionssequence(interfaceutil.Interface):
     """Contains index data for all revisions of a file.
@@ -479,6 +507,7 @@ class ifilerevisionssequence(interfaceutil.Interface):
     def insert(self, i, entry):
         """Add an item to the index at specific revision."""
 
+
 class ifileindex(interfaceutil.Interface):
     """Storage interface for index data of a single file.
 
@@ -491,6 +520,7 @@ class ifileindex(interfaceutil.Interface):
     * DAG data (storing and querying the relationship between nodes).
     * Metadata to facilitate storage.
     """
+
     def __len__():
         """Obtain the number of revisions stored for this file."""
 
@@ -574,12 +604,14 @@ class ifileindex(interfaceutil.Interface):
         Returns a list of nodes.
         """
 
+
 class ifiledata(interfaceutil.Interface):
     """Storage interface for data storage of a specific file.
 
     This complements ``ifileindex`` and provides an interface for accessing
     data for a tracked file.
     """
+
     def size(rev):
         """Obtain the fulltext size of file data.
 
@@ -595,6 +627,10 @@ class ifiledata(interfaceutil.Interface):
 
         The fulltext data may contain a header containing metadata. Most
         consumers should use ``read()`` to obtain the actual file data.
+        """
+
+    def rawdata(node):
+        """Obtain raw data for a node.
         """
 
     def read(node):
@@ -621,11 +657,13 @@ class ifiledata(interfaceutil.Interface):
         TODO better document the copy metadata and censoring logic.
         """
 
-    def emitrevisions(nodes,
-                      nodesorder=None,
-                      revisiondata=False,
-                      assumehaveparentrevisions=False,
-                      deltamode=CG_DELTAMODE_STD):
+    def emitrevisions(
+        nodes,
+        nodesorder=None,
+        revisiondata=False,
+        assumehaveparentrevisions=False,
+        deltamode=CG_DELTAMODE_STD,
+    ):
         """Produce ``irevisiondelta`` for revisions.
 
         Given an iterable of nodes, emits objects conforming to the
@@ -674,6 +712,7 @@ class ifiledata(interfaceutil.Interface):
         1st parent.
         """
 
+
 class ifilemutation(interfaceutil.Interface):
     """Storage interface for mutation events of a tracked file."""
 
@@ -688,8 +727,16 @@ class ifilemutation(interfaceutil.Interface):
         May no-op if a revision matching the supplied data is already stored.
         """
 
-    def addrevision(revisiondata, transaction, linkrev, p1, p2, node=None,
-                    flags=0, cachedelta=None):
+    def addrevision(
+        revisiondata,
+        transaction,
+        linkrev,
+        p1,
+        p2,
+        node=None,
+        flags=0,
+        cachedelta=None,
+    ):
         """Add a new revision to the store.
 
         This is similar to ``add()`` except it operates at a lower level.
@@ -706,8 +753,13 @@ class ifilemutation(interfaceutil.Interface):
         applying raw data from a peer repo.
         """
 
-    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None,
-                 maybemissingparents=False):
+    def addgroup(
+        deltas,
+        linkmapper,
+        transaction,
+        addrevisioncb=None,
+        maybemissingparents=False,
+    ):
         """Process a series of deltas for storage.
 
         ``deltas`` is an iterable of 7-tuples of
@@ -767,6 +819,7 @@ class ifilemutation(interfaceutil.Interface):
         higher-level deletion API.
         """
 
+
 class ifilestorage(ifileindex, ifiledata, ifilemutation):
     """Complete storage interface for a single tracked file."""
 
@@ -777,9 +830,13 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         be a better API for that.
         """
 
-    def storageinfo(exclusivefiles=False, sharedfiles=False,
-                    revisionscount=False, trackedsize=False,
-                    storedsize=False):
+    def storageinfo(
+        exclusivefiles=False,
+        sharedfiles=False,
+        revisionscount=False,
+        trackedsize=False,
+        storedsize=False,
+    ):
         """Obtain information about storage for this file's data.
 
         Returns a dict describing storage for this tracked path. The keys
@@ -827,6 +884,7 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         interface.
         """
 
+
 class idirs(interfaceutil.Interface):
     """Interface representing a collection of directories from paths.
 
@@ -852,6 +910,7 @@ class idirs(interfaceutil.Interface):
 
     def __contains__(path):
         """Whether a specific directory is in this collection."""
+
 
 class imanifestdict(interfaceutil.Interface):
     """Interface representing a manifest data structure.
@@ -966,7 +1025,7 @@ class imanifestdict(interfaceutil.Interface):
     def get(path, default=None):
         """Obtain the node value for a path or a default value if missing."""
 
-    def flags(path, default=''):
+    def flags(path, default=b''):
         """Return the flags value for a path or a default value if missing."""
 
     def copy():
@@ -1002,6 +1061,7 @@ class imanifestdict(interfaceutil.Interface):
         delta between ``base`` and this manifest.
         """
 
+
 class imanifestrevisionbase(interfaceutil.Interface):
     """Base interface representing a single revision of a manifest.
 
@@ -1030,6 +1090,7 @@ class imanifestrevisionbase(interfaceutil.Interface):
 
         The returned object conforms to the ``imanifestdict`` interface.
         """
+
 
 class imanifestrevisionstored(imanifestrevisionbase):
     """Interface representing a manifest revision committed to storage."""
@@ -1062,6 +1123,7 @@ class imanifestrevisionstored(imanifestrevisionbase):
         Returns a 2-tuple of ``(node, flags)`` or raises ``KeyError``.
         """
 
+
 class imanifestrevisionwritable(imanifestrevisionbase):
     """Interface representing a manifest revision that can be committed."""
 
@@ -1080,6 +1142,7 @@ class imanifestrevisionwritable(imanifestrevisionbase):
         Returns the binary node of the created revision.
         """
 
+
 class imanifeststorage(interfaceutil.Interface):
     """Storage interface for manifest data."""
 
@@ -1087,40 +1150,47 @@ class imanifeststorage(interfaceutil.Interface):
         """The path to the directory this manifest tracks.
 
         The empty bytestring represents the root manifest.
-        """)
+        """
+    )
 
     index = interfaceutil.Attribute(
-        """An ``ifilerevisionssequence`` instance.""")
+        """An ``ifilerevisionssequence`` instance."""
+    )
 
     indexfile = interfaceutil.Attribute(
         """Path of revlog index file.
 
         TODO this is revlog specific and should not be exposed.
-        """)
+        """
+    )
 
     opener = interfaceutil.Attribute(
         """VFS opener to use to access underlying files used for storage.
 
         TODO this is revlog specific and should not be exposed.
-        """)
+        """
+    )
 
     version = interfaceutil.Attribute(
         """Revlog version number.
 
         TODO this is revlog specific and should not be exposed.
-        """)
+        """
+    )
 
     _generaldelta = interfaceutil.Attribute(
         """Whether generaldelta storage is being used.
 
         TODO this is revlog specific and should not be exposed.
-        """)
+        """
+    )
 
     fulltextcache = interfaceutil.Attribute(
         """Dict with cache of fulltexts.
 
         TODO this doesn't feel appropriate for the storage interface.
-        """)
+        """
+    )
 
     def __len__():
         """Obtain the number of revisions stored for this manifest."""
@@ -1164,6 +1234,9 @@ class imanifeststorage(interfaceutil.Interface):
     def revision(node, _df=None, raw=False):
         """Obtain fulltext data for a node."""
 
+    def rawdata(node, _df=None):
+        """Obtain raw data for a node."""
+
     def revdiff(rev1, rev2):
         """Obtain a delta between two revision numbers.
 
@@ -1177,10 +1250,12 @@ class imanifeststorage(interfaceutil.Interface):
         Returns True if the fulltext is different from what is stored.
         """
 
-    def emitrevisions(nodes,
-                      nodesorder=None,
-                      revisiondata=False,
-                      assumehaveparentrevisions=False):
+    def emitrevisions(
+        nodes,
+        nodesorder=None,
+        revisiondata=False,
+        assumehaveparentrevisions=False,
+    ):
         """Produce ``irevisiondelta`` describing revisions.
 
         See the documentation for ``ifiledata`` for more.
@@ -1195,7 +1270,7 @@ class imanifeststorage(interfaceutil.Interface):
     def rawsize(rev):
         """Obtain the size of tracked data.
 
-        Is equivalent to ``len(m.revision(node, raw=True))``.
+        Is equivalent to ``len(m.rawdata(node))``.
 
         TODO this method is only used by upgrade code and may be removed.
         """
@@ -1241,8 +1316,9 @@ class imanifeststorage(interfaceutil.Interface):
     def dirlog(d):
         """Obtain a manifest storage instance for a tree."""
 
-    def add(m, transaction, link, p1, p2, added, removed, readtree=None,
-            match=None):
+    def add(
+        m, transaction, link, p1, p2, added, removed, readtree=None, match=None
+    ):
         """Add a revision to storage.
 
         ``m`` is an object conforming to ``imanifestdict``.
@@ -1264,14 +1340,19 @@ class imanifeststorage(interfaceutil.Interface):
         manifest including files that did not match.
         """
 
-    def storageinfo(exclusivefiles=False, sharedfiles=False,
-                    revisionscount=False, trackedsize=False,
-                    storedsize=False):
+    def storageinfo(
+        exclusivefiles=False,
+        sharedfiles=False,
+        revisionscount=False,
+        trackedsize=False,
+        storedsize=False,
+    ):
         """Obtain information about storage for this manifest's data.
 
         See ``ifilestorage.storageinfo()`` for a description of this method.
         This one behaves the same way, except for manifest data.
         """
+
 
 class imanifestlog(interfaceutil.Interface):
     """Interface representing a collection of manifest snapshots.
@@ -1326,6 +1407,7 @@ class imanifestlog(interfaceutil.Interface):
         Raises ``error.LookupError`` if the node is not known.
         """
 
+
 class ilocalrepositoryfilestorage(interfaceutil.Interface):
     """Local repository sub-interface providing access to tracked file storage.
 
@@ -1339,6 +1421,7 @@ class ilocalrepositoryfilestorage(interfaceutil.Interface):
         The returned type conforms to the ``ifilestorage`` interface.
         """
 
+
 class ilocalrepositorymain(interfaceutil.Interface):
     """Main interface for local repositories.
 
@@ -1349,13 +1432,16 @@ class ilocalrepositorymain(interfaceutil.Interface):
         """Set of requirements that apply to stream clone.
 
         This is actually a class attribute and is shared among all instances.
-        """)
+        """
+    )
 
     supported = interfaceutil.Attribute(
-        """Set of requirements that this repo is capable of opening.""")
+        """Set of requirements that this repo is capable of opening."""
+    )
 
     requirements = interfaceutil.Attribute(
-        """Set of requirements this repo uses.""")
+        """Set of requirements this repo uses."""
+    )
 
     features = interfaceutil.Attribute(
         """Set of "features" this repository supports.
@@ -1373,35 +1459,41 @@ class ilocalrepositorymain(interfaceutil.Interface):
         requirements are stored on-disk and represent requirements to open the
         repository. Features are more run-time capabilities of the repository
         and more granular capabilities (which may be derived from requirements).
-        """)
+        """
+    )
 
     filtername = interfaceutil.Attribute(
-        """Name of the repoview that is active on this repo.""")
+        """Name of the repoview that is active on this repo."""
+    )
 
     wvfs = interfaceutil.Attribute(
-        """VFS used to access the working directory.""")
+        """VFS used to access the working directory."""
+    )
 
     vfs = interfaceutil.Attribute(
         """VFS rooted at the .hg directory.
 
         Used to access repository data not in the store.
-        """)
+        """
+    )
 
     svfs = interfaceutil.Attribute(
         """VFS rooted at the store.
 
         Used to access repository data in the store. Typically .hg/store.
         But can point elsewhere if the store is shared.
-        """)
+        """
+    )
 
     root = interfaceutil.Attribute(
-        """Path to the root of the working directory.""")
+        """Path to the root of the working directory."""
+    )
 
-    path = interfaceutil.Attribute(
-        """Path to the .hg directory.""")
+    path = interfaceutil.Attribute("""Path to the .hg directory.""")
 
     origroot = interfaceutil.Attribute(
-        """The filesystem path that was used to construct the repo.""")
+        """The filesystem path that was used to construct the repo."""
+    )
 
     auditor = interfaceutil.Attribute(
         """A pathauditor for the working directory.
@@ -1409,49 +1501,55 @@ class ilocalrepositorymain(interfaceutil.Interface):
         This checks if a path refers to a nested repository.
 
         Operates on the filesystem.
-        """)
+        """
+    )
 
     nofsauditor = interfaceutil.Attribute(
         """A pathauditor for the working directory.
 
         This is like ``auditor`` except it doesn't do filesystem checks.
-        """)
+        """
+    )
 
     baseui = interfaceutil.Attribute(
-        """Original ui instance passed into constructor.""")
+        """Original ui instance passed into constructor."""
+    )
 
-    ui = interfaceutil.Attribute(
-        """Main ui instance for this instance.""")
+    ui = interfaceutil.Attribute("""Main ui instance for this instance.""")
 
     sharedpath = interfaceutil.Attribute(
-        """Path to the .hg directory of the repo this repo was shared from.""")
+        """Path to the .hg directory of the repo this repo was shared from."""
+    )
 
-    store = interfaceutil.Attribute(
-        """A store instance.""")
+    store = interfaceutil.Attribute("""A store instance.""")
 
-    spath = interfaceutil.Attribute(
-        """Path to the store.""")
+    spath = interfaceutil.Attribute("""Path to the store.""")
 
-    sjoin = interfaceutil.Attribute(
-        """Alias to self.store.join.""")
+    sjoin = interfaceutil.Attribute("""Alias to self.store.join.""")
 
     cachevfs = interfaceutil.Attribute(
         """A VFS used to access the cache directory.
 
         Typically .hg/cache.
-        """)
+        """
+    )
 
     wcachevfs = interfaceutil.Attribute(
         """A VFS used to access the cache directory dedicated to working copy
 
         Typically .hg/wcache.
-        """)
+        """
+    )
 
     filteredrevcache = interfaceutil.Attribute(
-        """Holds sets of revisions to be filtered.""")
+        """Holds sets of revisions to be filtered."""
+    )
 
-    names = interfaceutil.Attribute(
-        """A ``namespaces`` instance.""")
+    names = interfaceutil.Attribute("""A ``namespaces`` instance.""")
+
+    filecopiesmode = interfaceutil.Attribute(
+        """The way files copies should be dealt with in this repo."""
+    )
 
     def close():
         """Close the handle on this repository."""
@@ -1465,23 +1563,22 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def filtered(name, visibilityexceptions=None):
         """Obtain a named view of this repository."""
 
-    obsstore = interfaceutil.Attribute(
-        """A store of obsolescence data.""")
+    obsstore = interfaceutil.Attribute("""A store of obsolescence data.""")
 
-    changelog = interfaceutil.Attribute(
-        """A handle on the changelog revlog.""")
+    changelog = interfaceutil.Attribute("""A handle on the changelog revlog.""")
 
     manifestlog = interfaceutil.Attribute(
         """An instance conforming to the ``imanifestlog`` interface.
 
         Provides access to manifests for the repository.
-        """)
+        """
+    )
 
-    dirstate = interfaceutil.Attribute(
-        """Working directory state.""")
+    dirstate = interfaceutil.Attribute("""Working directory state.""")
 
     narrowpats = interfaceutil.Attribute(
-        """Matcher patterns for this repository's narrowspec.""")
+        """Matcher patterns for this repository's narrowspec."""
+    )
 
     def narrowmatch(match=None, includeexact=False):
         """Obtain a matcher for the narrowspec."""
@@ -1652,8 +1749,15 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def checkcommitpatterns(wctx, vdirs, match, status, fail):
         pass
 
-    def commit(text='', user=None, date=None, match=None, force=False,
-               editor=False, extra=None):
+    def commit(
+        text=b'',
+        user=None,
+        date=None,
+        match=None,
+        force=False,
+        editor=False,
+        extra=None,
+    ):
         """Add a new revision to the repository."""
 
     def commitctx(ctx, error=False, origctx=None):
@@ -1665,8 +1769,15 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def destroyed():
         """Inform the repository that nodes have been destroyed."""
 
-    def status(node1='.', node2=None, match=None, ignored=False,
-               clean=False, unknown=False, listsubrepos=False):
+    def status(
+        node1=b'.',
+        node2=None,
+        match=None,
+        ignored=False,
+        clean=False,
+        unknown=False,
+        listsubrepos=False,
+    ):
         """Convenience method to call repo[x].status()."""
 
     def addpostdsstatus(ps):
@@ -1693,8 +1804,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def checkpush(pushop):
         pass
 
-    prepushoutgoinghooks = interfaceutil.Attribute(
-        """util.hooks instance.""")
+    prepushoutgoinghooks = interfaceutil.Attribute("""util.hooks instance.""")
 
     def pushkey(namespace, key, old, new):
         pass
@@ -1708,9 +1818,12 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def savecommitmessage(text):
         pass
 
-class completelocalrepository(ilocalrepositorymain,
-                              ilocalrepositoryfilestorage):
+
+class completelocalrepository(
+    ilocalrepositorymain, ilocalrepositoryfilestorage
+):
     """Complete interface for a local repository."""
+
 
 class iwireprotocolcommandcacher(interfaceutil.Interface):
     """Represents a caching backend for wire protocol commands.
@@ -1794,6 +1907,7 @@ class iwireprotocolcommandcacher(interfaceutil.Interface):
     could wrap the encoded object data in ``wireprototypes.encodedresponse``
     instances to avoid this overhead.
     """
+
     def __enter__():
         """Marks the instance as active.
 

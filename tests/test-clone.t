@@ -759,6 +759,7 @@ Create repositories to test auto sharing functionality
   $ echo initial2 > foo
   $ hg -q commit -A -m initial1
   $ hg debugobsolete c05d5c47a5cf81401869999f3d05f7d699d2b29a e082c1832e09a7d1e78b7fd49a592d372de854c8
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ cd ..
 
@@ -867,9 +868,9 @@ Clone with existing share dir should result in pull + share
   adding changesets
   adding manifests
   adding file changes
-  added 4 changesets with 4 changes to 1 files (+4 heads)
   adding remote bookmark head1
   adding remote bookmark head2
+  added 4 changesets with 4 changes to 1 files (+4 heads)
   new changesets 4a8dc1ab4c13:6bacf4683960
   updating working directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -995,9 +996,9 @@ making another clone should only pull down requested rev
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
   adding remote bookmark head1
   adding remote bookmark head2
+  added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 99f71071f117
   updating working directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

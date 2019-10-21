@@ -33,15 +33,25 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
-@command('children',
-    [('r', 'rev', '.',
-     _('show children of the specified revision'), _('REV')),
-    ] + templateopts,
-    _('hg children [-r REV] [FILE]'),
+
+@command(
+    b'children',
+    [
+        (
+            b'r',
+            b'rev',
+            b'.',
+            _(b'show children of the specified revision'),
+            _(b'REV'),
+        ),
+    ]
+    + templateopts,
+    _(b'hg children [-r REV] [FILE]'),
     helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
-    inferrepo=True)
+    inferrepo=True,
+)
 def children(ui, repo, file_=None, **opts):
     """show the children of the given or working directory revision
 
@@ -60,7 +70,7 @@ def children(ui, repo, file_=None, **opts):
 
     """
     opts = pycompat.byteskwargs(opts)
-    rev = opts.get('rev')
+    rev = opts.get(b'rev')
     ctx = scmutil.revsingle(repo, rev)
     if file_:
         fctx = repo.filectx(file_, changeid=ctx.rev())

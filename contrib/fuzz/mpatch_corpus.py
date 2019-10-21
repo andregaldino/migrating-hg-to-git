@@ -13,6 +13,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument("out", metavar="some.zip", type=str, nargs=1)
 args = ap.parse_args()
 
+
 class deltafrag(object):
     def __init__(self, start, end, data):
         self.start = start
@@ -20,8 +21,11 @@ class deltafrag(object):
         self.data = data
 
     def __str__(self):
-        return struct.pack(
-            ">lll", self.start, self.end, len(self.data)) + self.data
+        return (
+            struct.pack(">lll", self.start, self.end, len(self.data))
+            + self.data
+        )
+
 
 class delta(object):
     def __init__(self, frags):
@@ -30,8 +34,8 @@ class delta(object):
     def __str__(self):
         return ''.join(str(f) for f in self.frags)
 
-class corpus(object):
 
+class corpus(object):
     def __init__(self, base, deltas):
         self.base = base
         self.deltas = deltas
@@ -49,19 +53,19 @@ class corpus(object):
         )
         return "".join(parts)
 
+
 with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     # Manually constructed entries
     zf.writestr(
-        "one_delta_applies",
-        str(corpus('a', [delta([deltafrag(0, 1, 'b')])]))
+        "one_delta_applies", str(corpus('a', [delta([deltafrag(0, 1, 'b')])]))
     )
     zf.writestr(
         "one_delta_starts_late",
-        str(corpus('a', [delta([deltafrag(3, 1, 'b')])]))
+        str(corpus('a', [delta([deltafrag(3, 1, 'b')])])),
     )
     zf.writestr(
         "one_delta_ends_late",
-        str(corpus('a', [delta([deltafrag(0, 20, 'b')])]))
+        str(corpus('a', [delta([deltafrag(0, 20, 'b')])])),
     )
 
     try:
@@ -70,9 +74,8 @@ with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
         fl = r.file('mercurial/manifest.py')
         rl = getattr(fl, '_revlog', fl)
         bins = rl._chunks(rl._deltachain(10)[0])
-        zf.writestr('manifest_py_rev_10',
-                    str(corpus(bins[0], bins[1:])))
-    except: # skip this, so no re-raises
+        zf.writestr('manifest_py_rev_10', str(corpus(bins[0], bins[1:])))
+    except:  # skip this, so no re-raises
         print('skipping seed file from repo data')
     # Automatically discovered by running the fuzzer
     zf.writestr(
@@ -81,7 +84,8 @@ with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     # https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=8876
     zf.writestr(
         "mpatch_ossfuzz_getbe32_ubsan",
-        "\x02\x00\x00\x00\x0c    \xff\xff\xff\xff    ")
+        "\x02\x00\x00\x00\x0c    \xff\xff\xff\xff    ",
+    )
     zf.writestr(
         "mpatch_apply_over_memcpy",
         '\x13\x01\x00\x05\xd0\x00\x00\x00\x00\x00\x00\x00\x00\n \x00\x00\x00'
@@ -342,4 +346,5 @@ with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
         '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00se\x00\x00'
         '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        '\x00\x00\x00\x00')
+        '\x00\x00\x00\x00',
+    )

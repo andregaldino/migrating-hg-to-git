@@ -1676,7 +1676,6 @@ Check debug output for copy tracing
   debug.copies: searching copies from a51f36ab1704 to 1f4aa1fd627b
   debug.copies: search mode: forward
   debug.copies:    looking into rename from a51f36ab1704 to 1f4aa1fd627b
-  debug.copies:      search limit: 3
   debug.copies:      missing files to search: 1
   debug.copies:        tracing file: renamed
   debug.copies:          rename of: f

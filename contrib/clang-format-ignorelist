@@ -1,6 +1,5 @@
 # Files that just need to be migrated to the formatter.
 # Do not add new files here!
-mercurial/cext/dirs.c
 mercurial/cext/manifest.c
 mercurial/cext/osutil.c
 # Vendored code that we should never format:
@@ -49,6 +48,10 @@ contrib/python-zstandard/zstd/compress/hist.h
 contrib/python-zstandard/zstd/compress/huf_compress.c
 contrib/python-zstandard/zstd/compress/zstd_compress.c
 contrib/python-zstandard/zstd/compress/zstd_compress_internal.h
+contrib/python-zstandard/zstd/compress/zstd_compress_literals.c
+contrib/python-zstandard/zstd/compress/zstd_compress_literals.h
+contrib/python-zstandard/zstd/compress/zstd_compress_sequences.c
+contrib/python-zstandard/zstd/compress/zstd_compress_sequences.h
 contrib/python-zstandard/zstd/compress/zstd_double_fast.c
 contrib/python-zstandard/zstd/compress/zstd_double_fast.h
 contrib/python-zstandard/zstd/compress/zstd_fast.c

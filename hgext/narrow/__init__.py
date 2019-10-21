@@ -12,13 +12,14 @@ from __future__ import absolute_import
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 from mercurial import (
     localrepo,
     registrar,
-    repository,
 )
+
+from mercurial.interfaces import repository
 
 from . import (
     narrowbundle2,
@@ -39,16 +40,20 @@ configitem = registrar.configitem(configtable)
 # of this writining in late 2017, all repositories large enough for
 # ellipsis nodes to be a hard requirement also enforce strictly linear
 # history for other scaling reasons.
-configitem('experimental', 'narrowservebrokenellipses',
-           default=False,
-           alias=[('narrow', 'serveellipses')],
+configitem(
+    b'experimental',
+    b'narrowservebrokenellipses',
+    default=False,
+    alias=[(b'narrow', b'serveellipses')],
 )
 
 # Export the commands table for Mercurial to see.
 cmdtable = narrowcommands.table
 
+
 def featuresetup(ui, features):
     features.add(repository.NARROW_REQUIREMENT)
+
 
 def uisetup(ui):
     """Wraps user-facing mercurial commands with narrow-aware versions."""
@@ -57,15 +62,17 @@ def uisetup(ui):
     narrowcommands.setup()
     narrowwirepeer.uisetup()
 
+
 def reposetup(ui, repo):
     """Wraps local repositories with narrow repo support."""
     if not repo.local():
         return
 
-    repo.ui.setconfig('experimental', 'narrow', True, 'narrow-ext')
+    repo.ui.setconfig(b'experimental', b'narrow', True, b'narrow-ext')
     if repository.NARROW_REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo)
         narrowwirepeer.reposetup(repo)
+
 
 templatekeyword = narrowtemplates.templatekeyword
 revsetpredicate = narrowtemplates.revsetpredicate

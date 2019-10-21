@@ -9,6 +9,7 @@ import time
 
 from mercurial.i18n import _
 from mercurial.node import bin, hex
+from mercurial.pycompat import open
 from mercurial import (
     error,
     pycompat,
@@ -18,6 +19,7 @@ from . import (
     constants,
     shallowutil,
 )
+
 
 class basestore(object):
     def __init__(self, repo, path, reponame, shared=False):
@@ -37,13 +39,15 @@ class basestore(object):
         self._shared = shared
         self._uid = os.getuid() if not pycompat.iswindows else None
 
-        self._validatecachelog = self.ui.config("remotefilelog",
-                                                "validatecachelog")
-        self._validatecache = self.ui.config("remotefilelog", "validatecache",
-                                             'on')
-        if self._validatecache not in ('on', 'strict', 'off'):
-            self._validatecache = 'on'
-        if self._validatecache == 'off':
+        self._validatecachelog = self.ui.config(
+            b"remotefilelog", b"validatecachelog"
+        )
+        self._validatecache = self.ui.config(
+            b"remotefilelog", b"validatecache", b'on'
+        )
+        if self._validatecache not in (b'on', b'strict', b'off'):
+            self._validatecache = b'on'
+        if self._validatecache == b'off':
             self._validatecache = False
 
         if shared:
@@ -54,8 +58,11 @@ class basestore(object):
         for name, node in keys:
             filepath = self._getfilepath(name, node)
             exists = os.path.exists(filepath)
-            if (exists and self._validatecache == 'strict' and
-                not self._validatekey(filepath, 'contains')):
+            if (
+                exists
+                and self._validatecache == b'strict'
+                and not self._validatekey(filepath, b'contains')
+            ):
                 exists = False
             if not exists:
                 missing.append((name, node))
@@ -77,8 +84,9 @@ class basestore(object):
         ui = self.ui
         entries = ledger.sources.get(self, [])
         count = 0
-        progress = ui.makeprogress(_("cleaning up"), unit="files",
-                                   total=len(entries))
+        progress = ui.makeprogress(
+            _(b"cleaning up"), unit=b"files", total=len(entries)
+        )
         for entry in entries:
             if entry.gced or (entry.datarepacked and entry.historyrepacked):
                 progress.update(count)
@@ -114,7 +122,7 @@ class basestore(object):
                     pass
 
             elif stat.S_ISREG(mode):
-                if name.endswith('_old'):
+                if name.endswith(b'_old'):
                     oldfiles.add(name[:-4])
                 else:
                     otherfiles.add(name)
@@ -123,7 +131,7 @@ class basestore(object):
         # corresponding file without the suffix '_old'. See addremotefilelognode
         # method for the generation/purpose of files with '_old' suffix.
         for filename in oldfiles - otherfiles:
-            filepath = os.path.join(rootdir, filename + '_old')
+            filepath = os.path.join(rootdir, filename + b'_old')
             util.tryunlink(filepath)
 
     def _getfiles(self):
@@ -140,7 +148,7 @@ class basestore(object):
 
         filenamemap = self._resolvefilenames(existing.keys())
 
-        for filename, sha in filenamemap.iteritems():
+        for filename, sha in pycompat.iteritems(filenamemap):
             yield (filename, existing[sha])
 
     def _resolvefilenames(self, hashes):
@@ -157,7 +165,7 @@ class basestore(object):
         missingfilename = set(hashes)
 
         # Start with a full manifest, since it'll cover the majority of files
-        for filename in self.repo['tip'].manifest():
+        for filename in self.repo[b'tip'].manifest():
             sha = hashlib.sha1(filename).digest()
             if sha in missingfilename:
                 filenames[filename] = sha
@@ -178,8 +186,11 @@ class basestore(object):
         return filenames
 
     def _getrepocachepath(self):
-        return os.path.join(
-            self._path, self._reponame) if self._shared else self._path
+        return (
+            os.path.join(self._path, self._reponame)
+            if self._shared
+            else self._path
+        )
 
     def _listkeys(self):
         """List all the remotefilelog keys that exist in the store.
@@ -214,13 +225,14 @@ class basestore(object):
             data = shallowutil.readfile(filepath)
             if self._validatecache and not self._validatedata(data, filepath):
                 if self._validatecachelog:
-                    with open(self._validatecachelog, 'a+') as f:
-                        f.write("corrupt %s during read\n" % filepath)
-                os.rename(filepath, filepath + ".corrupt")
-                raise KeyError("corrupt local cache file %s" % filepath)
+                    with open(self._validatecachelog, b'a+') as f:
+                        f.write(b"corrupt %s during read\n" % filepath)
+                os.rename(filepath, filepath + b".corrupt")
+                raise KeyError(b"corrupt local cache file %s" % filepath)
         except IOError:
-            raise KeyError("no file found at %s for %s:%s" % (filepath, name,
-                                                              hex(node)))
+            raise KeyError(
+                b"no file found at %s for %s:%s" % (filepath, name, hex(node))
+            )
 
         return data
 
@@ -232,7 +244,7 @@ class basestore(object):
             # if this node already exists, save the old version for
             # recovery/debugging purposes.
             if os.path.exists(filepath):
-                newfilename = filepath + '_old'
+                newfilename = filepath + b'_old'
                 # newfilename can be read-only and shutil.copy will fail.
                 # Delete newfilename to avoid it
                 if os.path.exists(newfilename):
@@ -243,9 +255,10 @@ class basestore(object):
             shallowutil.writefile(filepath, data, readonly=True)
 
             if self._validatecache:
-                if not self._validatekey(filepath, 'write'):
-                    raise error.Abort(_("local cache write was corrupted %s") %
-                                      filepath)
+                if not self._validatekey(filepath, b'write'):
+                    raise error.Abort(
+                        _(b"local cache write was corrupted %s") % filepath
+                    )
         finally:
             os.umask(oldumask)
 
@@ -255,26 +268,26 @@ class basestore(object):
         collection, since it allows us to insecpt the repos to see what nodes
         they want to be kept alive in the store.
         """
-        repospath = os.path.join(self._path, "repos")
-        with open(repospath, 'ab') as reposfile:
-            reposfile.write(os.path.dirname(path) + "\n")
+        repospath = os.path.join(self._path, b"repos")
+        with open(repospath, b'ab') as reposfile:
+            reposfile.write(os.path.dirname(path) + b"\n")
 
         repospathstat = os.stat(repospath)
         if repospathstat.st_uid == self._uid:
             os.chmod(repospath, 0o0664)
 
     def _validatekey(self, path, action):
-        with open(path, 'rb') as f:
+        with open(path, b'rb') as f:
             data = f.read()
 
         if self._validatedata(data, path):
             return True
 
         if self._validatecachelog:
-            with open(self._validatecachelog, 'ab+') as f:
-                f.write("corrupt %s during %s\n" % (path, action))
+            with open(self._validatecachelog, b'ab+') as f:
+                f.write(b"corrupt %s during %s\n" % (path, action))
 
-        os.rename(path, path + ".corrupt")
+        os.rename(path, path + b".corrupt")
         return False
 
     def _validatedata(self, data, path):
@@ -288,7 +301,7 @@ class basestore(object):
 
                 # extract the node from the metadata
                 offset += size
-                datanode = data[offset:offset + 20]
+                datanode = data[offset : offset + 20]
 
                 # and compare against the path
                 if os.path.basename(path) == hex(datanode):
@@ -314,16 +327,17 @@ class basestore(object):
         # keep files newer than a day even if they aren't needed
         limit = time.time() - (60 * 60 * 24)
 
-        progress = ui.makeprogress(_("removing unnecessary files"),
-                                   unit="files")
+        progress = ui.makeprogress(
+            _(b"removing unnecessary files"), unit=b"files"
+        )
         progress.update(0)
         for root, dirs, files in os.walk(cachepath):
             for file in files:
-                if file == 'repos':
+                if file == b'repos':
                     continue
 
                 # Don't delete pack files
-                if '/packs/' in root:
+                if b'/packs/' in root:
                     continue
 
                 progress.update(count)
@@ -336,7 +350,9 @@ class basestore(object):
                     # errno.ENOENT = no such file or directory
                     if e.errno != errno.ENOENT:
                         raise
-                    msg = _("warning: file %s was removed by another process\n")
+                    msg = _(
+                        b"warning: file %s was removed by another process\n"
+                    )
                     ui.warn(msg % path)
                     continue
 
@@ -352,19 +368,22 @@ class basestore(object):
                         # errno.ENOENT = no such file or directory
                         if e.errno != errno.ENOENT:
                             raise
-                        msg = _("warning: file %s was removed by another "
-                                "process\n")
+                        msg = _(
+                            b"warning: file %s was removed by another "
+                            b"process\n"
+                        )
                         ui.warn(msg % path)
                         continue
                     removed += 1
         progress.complete()
 
         # remove oldest files until under limit
-        limit = ui.configbytes("remotefilelog", "cachelimit")
+        limit = ui.configbytes(b"remotefilelog", b"cachelimit")
         if size > limit:
             excess = size - limit
-            progress = ui.makeprogress(_("enforcing cache limit"), unit="bytes",
-                                       total=excess)
+            progress = ui.makeprogress(
+                _(b"enforcing cache limit"), unit=b"bytes", total=excess
+            )
             removedexcess = 0
             while queue and size > limit and size > 0:
                 progress.update(removedexcess)
@@ -375,17 +394,25 @@ class basestore(object):
                     # errno.ENOENT = no such file or directory
                     if e.errno != errno.ENOENT:
                         raise
-                    msg = _("warning: file %s was removed by another process\n")
+                    msg = _(
+                        b"warning: file %s was removed by another process\n"
+                    )
                     ui.warn(msg % oldpath)
                 size -= oldpathstat.st_size
                 removed += 1
                 removedexcess += oldpathstat.st_size
             progress.complete()
 
-        ui.status(_("finished: removed %d of %d files (%0.2f GB to %0.2f GB)\n")
-                  % (removed, count,
-                     float(originalsize) / 1024.0 / 1024.0 / 1024.0,
-                     float(size) / 1024.0 / 1024.0 / 1024.0))
+        ui.status(
+            _(b"finished: removed %d of %d files (%0.2f GB to %0.2f GB)\n")
+            % (
+                removed,
+                count,
+                float(originalsize) / 1024.0 / 1024.0 / 1024.0,
+                float(size) / 1024.0 / 1024.0 / 1024.0,
+            )
+        )
+
 
 class baseunionstore(object):
     def __init__(self, *args, **kwargs):
@@ -400,20 +427,21 @@ class baseunionstore(object):
 
     def markforrefresh(self):
         for store in self.stores:
-            if util.safehasattr(store, 'markforrefresh'):
+            if util.safehasattr(store, b'markforrefresh'):
                 store.markforrefresh()
 
     @staticmethod
     def retriable(fn):
         def noop(*args):
             pass
+
         def wrapped(self, *args, **kwargs):
             retrylog = self.retrylog or noop
             funcname = fn.__name__
             i = 0
             while i < self.numattempts:
                 if i > 0:
-                    retrylog('re-attempting (n=%d) %s\n' % (i, funcname))
+                    retrylog(b're-attempting (n=%d) %s\n' % (i, funcname))
                     self.markforrefresh()
                 i += 1
                 try:
@@ -421,7 +449,10 @@ class baseunionstore(object):
                 except KeyError:
                     if i == self.numattempts:
                         # retries exhausted
-                        retrylog('retries exhausted in %s, raising KeyError\n' %
-                                 pycompat.sysbytes(funcname))
+                        retrylog(
+                            b'retries exhausted in %s, raising KeyError\n'
+                            % pycompat.sysbytes(funcname)
+                        )
                         raise
+
         return wrapped

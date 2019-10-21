@@ -9,6 +9,10 @@ import struct
 import time
 
 from mercurial.i18n import _
+from mercurial.pycompat import (
+    getattr,
+    open,
+)
 from mercurial import (
     node as nodemod,
     policy,
@@ -45,7 +49,7 @@ LARGEFANOUTPREFIX = 2
 # bisect) with (8 step fanout scan + 1 step bisect)
 # 5 step bisect = log(2^16 / 8 / 255)  # fanout
 # 10 step fanout scan = 2^16 / (2^16 / 8)  # fanout space divided by entries
-SMALLFANOUTCUTOFF = 2**16 // 8
+SMALLFANOUTCUTOFF = 2 ** 16 // 8
 
 # The amount of time to wait between checking for new packs. This prevents an
 # exception when data is moved to a new pack after the process has already
@@ -56,9 +60,10 @@ if pycompat.isposix and not pycompat.ispy3:
     # With glibc 2.7+ the 'e' flag uses O_CLOEXEC when opening.
     # The 'e' flag will be ignored on older versions of glibc.
     # Python 3 can't handle the 'e' flag.
-    PACKOPENMODE = 'rbe'
+    PACKOPENMODE = b'rbe'
 else:
-    PACKOPENMODE = 'rb'
+    PACKOPENMODE = b'rb'
+
 
 class _cachebackedpacks(object):
     def __init__(self, packs, cachesize):
@@ -105,6 +110,7 @@ class _cachebackedpacks(object):
         # Data not found in any pack.
         self._lastpack = None
 
+
 class basepackstore(object):
     # Default cache size limit for the pack files.
     DEFAULTCACHESIZE = 100
@@ -130,7 +136,7 @@ class basepackstore(object):
                 # Someone could have removed the file since we retrieved the
                 # list of paths.
                 if getattr(ex, 'errno', None) != errno.ENOENT:
-                    ui.warn(_('unable to load pack %s: %s\n') % (filepath, ex))
+                    ui.warn(_(b'unable to load pack %s: %s\n') % (filepath, ex))
                 continue
             packs.append(pack)
 
@@ -161,11 +167,14 @@ class basepackstore(object):
                 # (the index file and the pack file), we can yield once we see
                 # it twice.
                 if id:
-                    sizes[id] += stat.st_size # Sum both files' sizes together
+                    sizes[id] += stat.st_size  # Sum both files' sizes together
                     mtimes[id].append(stat.st_mtime)
                     if id in ids:
-                        yield (os.path.join(self.path, id), max(mtimes[id]),
-                            sizes[id])
+                        yield (
+                            os.path.join(self.path, id),
+                            max(mtimes[id]),
+                            sizes[id],
+                        )
                     else:
                         ids.add(id)
         except OSError as ex:
@@ -205,8 +214,8 @@ class basepackstore(object):
         """Returns metrics on the state of this store."""
         size, count = self.gettotalsizeandcount()
         return {
-            'numpacks': count,
-            'totalpacksize': size,
+            b'numpacks': count,
+            b'totalpacksize': size,
         }
 
     def getpack(self, path):
@@ -259,6 +268,7 @@ class basepackstore(object):
 
         return newpacks
 
+
 class versionmixin(object):
     # Mix-in for classes with multiple supported versions
     VERSION = None
@@ -270,14 +280,15 @@ class versionmixin(object):
                 # only affect this instance
                 self.VERSION = version
             elif self.VERSION != version:
-                raise RuntimeError('inconsistent version: %d' % version)
+                raise RuntimeError(b'inconsistent version: %d' % version)
         else:
-            raise RuntimeError('unsupported version: %d' % version)
+            raise RuntimeError(b'unsupported version: %d' % version)
+
 
 class basepack(versionmixin):
     # The maximum amount we should read via mmap before remmaping so the old
     # pages can be released (100MB)
-    MAXPAGEDIN = 100 * 1024**2
+    MAXPAGEDIN = 100 * 1024 ** 2
 
     SUPPORTED_VERSIONS = [2]
 
@@ -291,12 +302,12 @@ class basepack(versionmixin):
 
         self._index = None
         self._data = None
-        self.freememory() # initialize the mmap
+        self.freememory()  # initialize the mmap
 
-        version = struct.unpack('!B', self._data[:PACKVERSIONSIZE])[0]
+        version = struct.unpack(b'!B', self._data[:PACKVERSIONSIZE])[0]
         self._checkversion(version)
 
-        version, config = struct.unpack('!BB', self._index[:INDEXVERSIONSIZE])
+        version, config = struct.unpack(b'!BB', self._index[:INDEXVERSIONSIZE])
         self._checkversion(version)
 
         if 0b10000000 & config:
@@ -307,18 +318,19 @@ class basepack(versionmixin):
     @util.propertycache
     def _fanouttable(self):
         params = self.params
-        rawfanout = self._index[FANOUTSTART:FANOUTSTART + params.fanoutsize]
+        rawfanout = self._index[FANOUTSTART : FANOUTSTART + params.fanoutsize]
         fanouttable = []
         for i in pycompat.xrange(0, params.fanoutcount):
             loc = i * 4
-            fanoutentry = struct.unpack('!I', rawfanout[loc:loc + 4])[0]
+            fanoutentry = struct.unpack(b'!I', rawfanout[loc : loc + 4])[0]
             fanouttable.append(fanoutentry)
         return fanouttable
 
     @util.propertycache
     def _indexend(self):
-        nodecount = struct.unpack_from('!Q', self._index,
-                                       self.params.indexstart - 8)[0]
+        nodecount = struct.unpack_from(
+            b'!Q', self._index, self.params.indexstart - 8
+        )[0]
         return self.params.indexstart + nodecount * self.INDEXENTRYLENGTH
 
     def freememory(self):
@@ -335,8 +347,9 @@ class basepack(versionmixin):
         # TODO: use an opener/vfs to access these paths
         with open(self.indexpath, PACKOPENMODE) as indexfp:
             # memory-map the file, size 0 means whole file
-            self._index = mmap.mmap(indexfp.fileno(), 0,
-                                    access=mmap.ACCESS_READ)
+            self._index = mmap.mmap(
+                indexfp.fileno(), 0, access=mmap.ACCESS_READ
+            )
         with open(self.packpath, PACKOPENMODE) as datafp:
             self._data = mmap.mmap(datafp.fileno(), 0, access=mmap.ACCESS_READ)
 
@@ -358,12 +371,12 @@ class basepack(versionmixin):
     def iterentries(self):
         raise NotImplementedError()
 
-class mutablebasepack(versionmixin):
 
+class mutablebasepack(versionmixin):
     def __init__(self, ui, packdir, version=2):
         self._checkversion(version)
         # TODO(augie): make this configurable
-        self._compressor = 'GZ'
+        self._compressor = b'GZ'
         opener = vfsmod.vfs(packdir)
         opener.createmode = 0o444
         self.opener = opener
@@ -372,9 +385,11 @@ class mutablebasepack(versionmixin):
 
         shallowutil.mkstickygroupdir(ui, packdir)
         self.packfp, self.packpath = opener.mkstemp(
-            suffix=self.PACKSUFFIX + '-tmp')
+            suffix=self.PACKSUFFIX + b'-tmp'
+        )
         self.idxfp, self.idxpath = opener.mkstemp(
-            suffix=self.INDEXSUFFIX + '-tmp')
+            suffix=self.INDEXSUFFIX + b'-tmp'
+        )
         self.packfp = os.fdopen(self.packfp, r'wb+')
         self.idxfp = os.fdopen(self.idxfp, r'wb+')
         self.sha = hashlib.sha1()
@@ -389,7 +404,7 @@ class mutablebasepack(versionmixin):
         # Write header
         # TODO: make it extensible (ex: allow specifying compression algorithm,
         # a flexible key/value header, delta algorithm, fanout size, etc)
-        versionbuf = struct.pack('!B', self.VERSION) # unsigned 1 byte int
+        versionbuf = struct.pack(b'!B', self.VERSION)  # unsigned 1 byte int
         self.writeraw(versionbuf)
 
     def __enter__(self):
@@ -474,19 +489,20 @@ class mutablebasepack(versionmixin):
             count += 1
 
             # Must use [0] on the unpack result since it's always a tuple.
-            fanoutkey = struct.unpack(params.fanoutstruct,
-                                      node[:params.fanoutprefix])[0]
+            fanoutkey = struct.unpack(
+                params.fanoutstruct, node[: params.fanoutprefix]
+            )[0]
             if fanouttable[fanoutkey] == EMPTYFANOUT:
                 fanouttable[fanoutkey] = location
 
-        rawfanouttable = ''
+        rawfanouttable = b''
         last = 0
         for offset in fanouttable:
             offset = offset if offset != EMPTYFANOUT else last
             last = offset
-            rawfanouttable += struct.pack('!I', offset)
+            rawfanouttable += struct.pack(b'!I', offset)
 
-        rawentrieslength = struct.pack('!Q', len(self.entries))
+        rawentrieslength = struct.pack(b'!Q', len(self.entries))
 
         # The index offset is the it's location in the file. So after the 2 byte
         # header and the fanouttable.
@@ -509,11 +525,17 @@ class mutablebasepack(versionmixin):
         config = 0
         if indexparams.fanoutprefix == LARGEFANOUTPREFIX:
             config = 0b10000000
-        self.idxfp.write(struct.pack('!BB', self.VERSION, config))
+        self.idxfp.write(struct.pack(b'!BB', self.VERSION, config))
+
 
 class indexparams(object):
-    __slots__ = (r'fanoutprefix', r'fanoutstruct', r'fanoutcount',
-                 r'fanoutsize', r'indexstart')
+    __slots__ = (
+        r'fanoutprefix',
+        r'fanoutstruct',
+        r'fanoutcount',
+        r'fanoutsize',
+        r'indexstart',
+    )
 
     def __init__(self, prefixsize, version):
         self.fanoutprefix = prefixsize
@@ -522,14 +544,14 @@ class indexparams(object):
         # converts the node prefix into an integer location in the fanout
         # table).
         if prefixsize == SMALLFANOUTPREFIX:
-            self.fanoutstruct = '!B'
+            self.fanoutstruct = b'!B'
         elif prefixsize == LARGEFANOUTPREFIX:
-            self.fanoutstruct = '!H'
+            self.fanoutstruct = b'!H'
         else:
-            raise ValueError("invalid fanout prefix size: %s" % prefixsize)
+            raise ValueError(b"invalid fanout prefix size: %s" % prefixsize)
 
         # The number of fanout table entries
-        self.fanoutcount = 2**(prefixsize * 8)
+        self.fanoutcount = 2 ** (prefixsize * 8)
 
         # The total bytes used by the fanout table
         self.fanoutsize = self.fanoutcount * 4

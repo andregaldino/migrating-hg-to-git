@@ -63,7 +63,7 @@ from mercurial.utils import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -71,43 +71,46 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('blackbox', 'dirty',
-    default=False,
+configitem(
+    b'blackbox', b'dirty', default=False,
 )
-configitem('blackbox', 'maxsize',
-    default='1 MB',
+configitem(
+    b'blackbox', b'maxsize', default=b'1 MB',
 )
-configitem('blackbox', 'logsource',
-    default=False,
+configitem(
+    b'blackbox', b'logsource', default=False,
 )
-configitem('blackbox', 'maxfiles',
-    default=7,
+configitem(
+    b'blackbox', b'maxfiles', default=7,
 )
-configitem('blackbox', 'track',
-    default=lambda: ['*'],
+configitem(
+    b'blackbox', b'track', default=lambda: [b'*'],
 )
-configitem('blackbox', 'ignore',
-    default=lambda: ['chgserver', 'cmdserver', 'extension'],
+configitem(
+    b'blackbox',
+    b'ignore',
+    default=lambda: [b'chgserver', b'cmdserver', b'extension'],
 )
-configitem('blackbox', 'date-format',
-    default='%Y/%m/%d %H:%M:%S',
+configitem(
+    b'blackbox', b'date-format', default=b'%Y/%m/%d %H:%M:%S',
 )
 
 _lastlogger = loggingutil.proxylogger()
 
+
 class blackboxlogger(object):
     def __init__(self, ui, repo):
         self._repo = repo
-        self._trackedevents = set(ui.configlist('blackbox', 'track'))
-        self._ignoredevents = set(ui.configlist('blackbox', 'ignore'))
-        self._maxfiles = ui.configint('blackbox', 'maxfiles')
-        self._maxsize = ui.configbytes('blackbox', 'maxsize')
+        self._trackedevents = set(ui.configlist(b'blackbox', b'track'))
+        self._ignoredevents = set(ui.configlist(b'blackbox', b'ignore'))
+        self._maxfiles = ui.configint(b'blackbox', b'maxfiles')
+        self._maxsize = ui.configbytes(b'blackbox', b'maxsize')
         self._inlog = False
 
     def tracked(self, event):
-        return ((b'*' in self._trackedevents
-                 and event not in self._ignoredevents)
-                or event in self._trackedevents)
+        return (
+            b'*' in self._trackedevents and event not in self._ignoredevents
+        ) or event in self._trackedevents
 
     def log(self, ui, event, msg, opts):
         # self._log() -> ctx.dirty() may create new subrepo instance, which
@@ -122,38 +125,47 @@ class blackboxlogger(object):
             self._inlog = False
 
     def _log(self, ui, event, msg, opts):
-        default = ui.configdate('devel', 'default-date')
-        date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
+        default = ui.configdate(b'devel', b'default-date')
+        date = dateutil.datestr(default, ui.config(b'blackbox', b'date-format'))
         user = procutil.getuser()
-        pid = '%d' % procutil.getpid()
-        changed = ''
+        pid = b'%d' % procutil.getpid()
+        changed = b''
         ctx = self._repo[None]
         parents = ctx.parents()
-        rev = ('+'.join([hex(p.node()) for p in parents]))
-        if (ui.configbool('blackbox', 'dirty') and
-            ctx.dirty(missing=True, merge=False, branch=False)):
-            changed = '+'
-        if ui.configbool('blackbox', 'logsource'):
-            src = ' [%s]' % event
+        rev = b'+'.join([hex(p.node()) for p in parents])
+        if ui.configbool(b'blackbox', b'dirty') and ctx.dirty(
+            missing=True, merge=False, branch=False
+        ):
+            changed = b'+'
+        if ui.configbool(b'blackbox', b'logsource'):
+            src = b' [%s]' % event
         else:
-            src = ''
+            src = b''
         try:
-            fmt = '%s %s @%s%s (%s)%s> %s'
+            fmt = b'%s %s @%s%s (%s)%s> %s'
             args = (date, user, rev, changed, pid, src, msg)
             with loggingutil.openlogfile(
-                    ui, self._repo.vfs, name='blackbox.log',
-                    maxfiles=self._maxfiles, maxsize=self._maxsize) as fp:
+                ui,
+                self._repo.vfs,
+                name=b'blackbox.log',
+                maxfiles=self._maxfiles,
+                maxsize=self._maxsize,
+            ) as fp:
                 fp.write(fmt % args)
         except (IOError, OSError) as err:
             # deactivate this to avoid failed logging again
             self._trackedevents.clear()
-            ui.debug('warning: cannot write to blackbox.log: %s\n' %
-                     encoding.strtolocal(err.strerror))
+            ui.debug(
+                b'warning: cannot write to blackbox.log: %s\n'
+                % encoding.strtolocal(err.strerror)
+            )
             return
         _lastlogger.logger = self
 
+
 def uipopulate(ui):
     ui.setlogger(b'blackbox', _lastlogger)
+
 
 def reposetup(ui, repo):
     # During 'hg pull' a httppeer repo is created to represent the remote repo.
@@ -172,24 +184,26 @@ def reposetup(ui, repo):
     if _lastlogger.logger is None:
         _lastlogger.logger = logger
 
-    repo._wlockfreeprefix.add('blackbox.log')
+    repo._wlockfreeprefix.add(b'blackbox.log')
 
-@command('blackbox',
-    [('l', 'limit', 10, _('the number of events to show')),
-    ],
-    _('hg blackbox [OPTION]...'),
+
+@command(
+    b'blackbox',
+    [(b'l', b'limit', 10, _(b'the number of events to show')),],
+    _(b'hg blackbox [OPTION]...'),
     helpcategory=command.CATEGORY_MAINTENANCE,
-    helpbasic=True)
+    helpbasic=True,
+)
 def blackbox(ui, repo, *revs, **opts):
     '''view the recent repository events
     '''
 
-    if not repo.vfs.exists('blackbox.log'):
+    if not repo.vfs.exists(b'blackbox.log'):
         return
 
     limit = opts.get(r'limit')
-    fp = repo.vfs('blackbox.log', 'r')
-    lines = fp.read().split('\n')
+    fp = repo.vfs(b'blackbox.log', b'r')
+    lines = fp.read().split(b'\n')
 
     count = 0
     output = []
@@ -202,4 +216,4 @@ def blackbox(ui, repo, *revs, **opts):
             count += 1
         output.append(line)
 
-    ui.status('\n'.join(reversed(output)))
+    ui.status(b'\n'.join(reversed(output)))

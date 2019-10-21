@@ -27,10 +27,30 @@ simple
   port:4:export
   port:4:vaportight
   port:4:import/export
+  port:3:export
+  port:3:vaportight
+  port:3:import/export
+  port:3:import/export
+  port:2:export
+  port:2:vaportight
+  port:2:import/export
+  port:1:import
+  port:1:export
+  port:0:import
   $ hg grep -r tip:0 port port
   port:4:export
   port:4:vaportight
   port:4:import/export
+  port:3:export
+  port:3:vaportight
+  port:3:import/export
+  port:3:import/export
+  port:2:export
+  port:2:vaportight
+  port:2:import/export
+  port:1:import
+  port:1:export
+  port:0:import
 
 simple from subdirectory
 
@@ -40,10 +60,30 @@ simple from subdirectory
   port:4:export
   port:4:vaportight
   port:4:import/export
+  port:3:export
+  port:3:vaportight
+  port:3:import/export
+  port:3:import/export
+  port:2:export
+  port:2:vaportight
+  port:2:import/export
+  port:1:import
+  port:1:export
+  port:0:import
   $ hg grep -r tip:0 port --config ui.relative-paths=yes
   ../port:4:export
   ../port:4:vaportight
   ../port:4:import/export
+  ../port:3:export
+  ../port:3:vaportight
+  ../port:3:import/export
+  ../port:3:import/export
+  ../port:2:export
+  ../port:2:vaportight
+  ../port:2:import/export
+  ../port:1:import
+  ../port:1:export
+  ../port:0:import
   $ cd ..
 
 simple with color
@@ -53,6 +93,16 @@ simple with color
   \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
   \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
   \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m4\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m3\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m3\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m3\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m3\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m2\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m2\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m2\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m1\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m1\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
+  \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;34m0\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m (esc)
 
 simple templated
 
@@ -61,16 +111,46 @@ simple templated
   port:4:914fa752cdea:exPORT
   port:4:914fa752cdea:vaPORTight
   port:4:914fa752cdea:imPORT/exPORT
+  port:3:95040cfd017d:exPORT
+  port:3:95040cfd017d:vaPORTight
+  port:3:95040cfd017d:imPORT/exPORT
+  port:3:95040cfd017d:imPORT/exPORT
+  port:2:3b325e3481a1:exPORT
+  port:2:3b325e3481a1:vaPORTight
+  port:2:3b325e3481a1:imPORT/exPORT
+  port:1:8b20f75c1585:imPORT
+  port:1:8b20f75c1585:exPORT
+  port:0:f31323c92170:imPORT
 
   $ hg grep port -r tip:0 -T '{path}:{rev}:{texts}\n'
   port:4:export
   port:4:vaportight
   port:4:import/export
+  port:3:export
+  port:3:vaportight
+  port:3:import/export
+  port:3:import/export
+  port:2:export
+  port:2:vaportight
+  port:2:import/export
+  port:1:import
+  port:1:export
+  port:0:import
 
   $ hg grep port -r tip:0 -T '{path}:{tags}:{texts}\n'
   port:tip:export
   port:tip:vaportight
   port:tip:import/export
+  port::export
+  port::vaportight
+  port::import/export
+  port::import/export
+  port::export
+  port::vaportight
+  port::import/export
+  port::import
+  port::export
+  port::import
 
 simple JSON (no "change" field)
 
@@ -102,6 +182,96 @@ simple JSON (no "change" field)
     "rev": 4,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
+   },
+   {
+    "date": [3, 0],
+    "lineno": 1,
+    "node": "95040cfd017d658c536071c6290230a613c4c2a6",
+    "path": "port",
+    "rev": 3,
+    "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
+    "user": "eggs"
+   },
+   {
+    "date": [3, 0],
+    "lineno": 2,
+    "node": "95040cfd017d658c536071c6290230a613c4c2a6",
+    "path": "port",
+    "rev": 3,
+    "texts": [{"matched": false, "text": "va"}, {"matched": true, "text": "port"}, {"matched": false, "text": "ight"}],
+    "user": "eggs"
+   },
+   {
+    "date": [3, 0],
+    "lineno": 3,
+    "node": "95040cfd017d658c536071c6290230a613c4c2a6",
+    "path": "port",
+    "rev": 3,
+    "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
+    "user": "eggs"
+   },
+   {
+    "date": [3, 0],
+    "lineno": 4,
+    "node": "95040cfd017d658c536071c6290230a613c4c2a6",
+    "path": "port",
+    "rev": 3,
+    "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
+    "user": "eggs"
+   },
+   {
+    "date": [2, 0],
+    "lineno": 1,
+    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
+    "rev": 2,
+    "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
+    "user": "spam"
+   },
+   {
+    "date": [2, 0],
+    "lineno": 2,
+    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
+    "rev": 2,
+    "texts": [{"matched": false, "text": "va"}, {"matched": true, "text": "port"}, {"matched": false, "text": "ight"}],
+    "user": "spam"
+   },
+   {
+    "date": [2, 0],
+    "lineno": 3,
+    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
+    "rev": 2,
+    "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
+    "user": "spam"
+   },
+   {
+    "date": [1, 0],
+    "lineno": 1,
+    "node": "8b20f75c158513ff5ac80bd0e5219bfb6f0eb587",
+    "path": "port",
+    "rev": 1,
+    "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}],
+    "user": "eggs"
+   },
+   {
+    "date": [1, 0],
+    "lineno": 2,
+    "node": "8b20f75c158513ff5ac80bd0e5219bfb6f0eb587",
+    "path": "port",
+    "rev": 1,
+    "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
+    "user": "eggs"
+   },
+   {
+    "date": [0, 0],
+    "lineno": 1,
+    "node": "f31323c9217050ba245ee8b537c713ec2e8ab226",
+    "path": "port",
+    "rev": 0,
+    "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}],
+    "user": "spam"
    }
   ]
 
@@ -115,6 +285,38 @@ simple JSON without matching lines
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
     "path": "port",
     "rev": 4,
+    "user": "spam"
+   },
+   {
+    "date": [3, 0],
+    "lineno": 1,
+    "node": "95040cfd017d658c536071c6290230a613c4c2a6",
+    "path": "port",
+    "rev": 3,
+    "user": "eggs"
+   },
+   {
+    "date": [2, 0],
+    "lineno": 1,
+    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
+    "rev": 2,
+    "user": "spam"
+   },
+   {
+    "date": [1, 0],
+    "lineno": 1,
+    "node": "8b20f75c158513ff5ac80bd0e5219bfb6f0eb587",
+    "path": "port",
+    "rev": 1,
+    "user": "eggs"
+   },
+   {
+    "date": [0, 0],
+    "lineno": 1,
+    "node": "f31323c9217050ba245ee8b537c713ec2e8ab226",
+    "path": "port",
+    "rev": 0,
     "user": "spam"
    }
   ]
@@ -232,8 +434,17 @@ other
 
   $ hg grep -r tip:0 -l port port
   port:4
+  port:3
+  port:2
+  port:1
+  port:0
   $ hg grep -r tip:0 import port
   port:4:import/export
+  port:3:import/export
+  port:3:import/export
+  port:2:import/export
+  port:1:import
+  port:0:import
 
   $ hg cp port port2
   $ hg commit -m 4 -u spam -d '5 0'
@@ -241,8 +452,7 @@ other
 follow
 
   $ hg grep -r tip:0 --traceback -f 'import\n\Z' port2
-  port:0:import
-  
+  [1]
   $ echo deport >> port2
   $ hg commit -m 5 -u eggs -d '6 0'
   $ hg grep -f --all -nu port port2
@@ -269,6 +479,9 @@ Test wdir
   $ hg stat
   M port2
   $ hg grep -r 'wdir()' port
+  port:2147483647:export
+  port:2147483647:vaportight
+  port:2147483647:import/export
   port2:2147483647:export
   port2:2147483647:vaportight
   port2:2147483647:import/export
@@ -295,6 +508,7 @@ Test wdir
   $ hg ci -m 3
   $ hg grep -r tip:0 orange
   color:3:orange
+  color:1:orange
   $ hg grep --all orange
   color:3:+:orange
   color:2:-:orange
@@ -320,6 +534,12 @@ test substring match: '^' should only match at the beginning
   [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.match|b]lack
   [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.match|o]range
   [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.match|b]lue
+  [grep.filename|color][grep.sep|:][grep.rev|2][grep.sep|:][grep.match|b]lack
+  [grep.filename|color][grep.sep|:][grep.rev|1][grep.sep|:][grep.match|b]lue
+  [grep.filename|color][grep.sep|:][grep.rev|1][grep.sep|:][grep.match|b]lack
+  [grep.filename|color][grep.sep|:][grep.rev|1][grep.sep|:][grep.match|o]range
+  [grep.filename|color][grep.sep|:][grep.rev|0][grep.sep|:][grep.match|b]lue
+  [grep.filename|color][grep.sep|:][grep.rev|0][grep.sep|:][grep.match|b]lack
 
 match in last "line" without newline
 
@@ -431,39 +651,21 @@ Test for showing working of allfiles flag
   $ hg ci -A -m "second commit"
   adding new
   $ hg grep -r "." "unmod"
-  [1]
-  $ hg grep -r "." "unmod" --all-files
   um:1:unmod
 
-With --all-files, the working directory is searched by default
+Working directory is searched by default
 
   $ echo modified >> new
-  $ hg grep --all-files mod
+  $ hg grep mod
   new:modified
   um:unmod
 
  which can be overridden by -rREV
 
-  $ hg grep --all-files -r. mod
+  $ hg grep -r. mod
   um:1:unmod
 
-commands.all-files can be negated by --no-all-files
-
-  $ hg grep --config commands.grep.all-files=True mod
-  new:modified
-  um:unmod
-  $ hg grep --config commands.grep.all-files=True --no-all-files mod
-  um:0:unmod
-
---diff --all-files makes no sense since --diff is the option to grep history
-
-  $ hg grep --diff --all-files um
-  abort: --diff and --all-files are mutually exclusive
-  [255]
-
-but --diff should precede the commands.grep.all-files option
-
-  $ hg grep --config commands.grep.all-files=True --diff mod
+  $ hg grep --diff mod
   um:0:+:unmod
 
   $ cd ..
@@ -515,18 +717,18 @@ but it should be available in template dict:
 
   $ cd ..
 
-test -rMULTIREV with --all-files
+test -rMULTIREV
 
   $ cd sng
   $ hg rm um
   $ hg commit -m "deletes um"
-  $ hg grep -r "0:2" "unmod" --all-files
+  $ hg grep -r "0:2" "unmod"
   um:0:unmod
   um:1:unmod
-  $ hg grep -r "0:2" "unmod" --all-files um
+  $ hg grep -r "0:2" "unmod" um
   um:0:unmod
   um:1:unmod
-  $ hg grep -r "0:2" "unmod" --all-files "glob:**/um" # Check that patterns also work
+  $ hg grep -r "0:2" "unmod" "glob:**/um" # Check that patterns also work
   um:0:unmod
   um:1:unmod
   $ cd ..

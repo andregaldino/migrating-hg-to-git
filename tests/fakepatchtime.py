@@ -13,18 +13,34 @@ from mercurial.utils import dateutil
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem(b'fakepatchtime', b'fakenow',
-    default=None,
+configitem(
+    b'fakepatchtime', b'fakenow', default=None,
 )
 
-def internalpatch(orig, ui, repo, patchobj, strip,
-                  prefix=b'', files=None,
-                  eolmode=b'strict', similarity=0):
+
+def internalpatch(
+    orig,
+    ui,
+    repo,
+    patchobj,
+    strip,
+    prefix=b'',
+    files=None,
+    eolmode=b'strict',
+    similarity=0,
+):
     if files is None:
         files = set()
-    r = orig(ui, repo, patchobj, strip,
-             prefix=prefix, files=files,
-             eolmode=eolmode, similarity=similarity)
+    r = orig(
+        ui,
+        repo,
+        patchobj,
+        strip,
+        prefix=prefix,
+        files=files,
+        eolmode=eolmode,
+        similarity=similarity,
+    )
 
     fakenow = ui.config(b'fakepatchtime', b'fakenow')
     if fakenow:
@@ -35,6 +51,7 @@ def internalpatch(orig, ui, repo, patchobj, strip,
             repo.wvfs.utime(f, (fakenow, fakenow))
 
     return r
+
 
 def extsetup(ui):
     extensions.wrapfunction(patchmod, 'internalpatch', internalpatch)

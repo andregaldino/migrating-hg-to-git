@@ -7,8 +7,8 @@ from __future__ import absolute_import
 import os
 import time
 
-def reposetup(ui, repo):
 
+def reposetup(ui, repo):
     class delayedlockrepo(repo.__class__):
         def lock(self):
             delay = float(os.environ.get('HGPRELOCKDELAY', '0.0'))
@@ -19,4 +19,5 @@ def reposetup(ui, repo):
             if delay:
                 time.sleep(delay)
             return res
+
     repo.__class__ = delayedlockrepo

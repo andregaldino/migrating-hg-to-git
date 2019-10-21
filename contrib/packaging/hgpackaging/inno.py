@@ -12,12 +12,8 @@ import pathlib
 import shutil
 import subprocess
 
-from .py2exe import (
-    build_py2exe,
-)
-from .util import (
-    find_vc_runtime_files,
-)
+from .py2exe import build_py2exe
+from .util import find_vc_runtime_files
 
 
 EXTRA_PACKAGES = {
@@ -28,9 +24,13 @@ EXTRA_PACKAGES = {
 }
 
 
-def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
-          python_exe: pathlib.Path, iscc_exe: pathlib.Path,
-          version=None):
+def build(
+    source_dir: pathlib.Path,
+    build_dir: pathlib.Path,
+    python_exe: pathlib.Path,
+    iscc_exe: pathlib.Path,
+    version=None,
+):
     """Build the Inno installer.
 
     Build files will be placed in ``build_dir``.
@@ -44,11 +44,18 @@ def build(source_dir: pathlib.Path, build_dir: pathlib.Path,
 
     vc_x64 = r'\x64' in os.environ.get('LIB', '')
 
-    requirements_txt = (source_dir / 'contrib' / 'packaging' /
-                        'inno' / 'requirements.txt')
+    requirements_txt = (
+        source_dir / 'contrib' / 'packaging' / 'inno' / 'requirements.txt'
+    )
 
-    build_py2exe(source_dir, build_dir, python_exe, 'inno',
-                 requirements_txt, extra_packages=EXTRA_PACKAGES)
+    build_py2exe(
+        source_dir,
+        build_dir,
+        python_exe,
+        'inno',
+        requirements_txt,
+        extra_packages=EXTRA_PACKAGES,
+    )
 
     # hg.exe depends on VC9 runtime DLLs. Copy those into place.
     for f in find_vc_runtime_files(vc_x64):

@@ -50,7 +50,12 @@ Check same result using `experimental.extra-filter-revs`
   $ hg -R test --config experimental.extra-filter-revs='not public()' debugupdatecache
   $ ls -1 test/.hg/cache/
   branch2-base%89c45d2fa07e
+  branch2-immutable%89c45d2fa07e
   branch2-served
+  branch2-served%89c45d2fa07e
+  branch2-served.hidden%89c45d2fa07e
+  branch2-visible%89c45d2fa07e
+  branch2-visible-hidden%89c45d2fa07e
   hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1

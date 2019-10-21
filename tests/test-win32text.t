@@ -56,7 +56,6 @@ push should fail
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files
   attempt to commit or push text file(s) using CRLF line endings
   in bc2d09796734: g
   in b1aa5cde7ff4: f
@@ -265,7 +264,6 @@ and now for something completely different
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 4 changes to 4 files
   attempt to commit or push text file(s) using CRLF line endings
   in 67ac5962ab43: d
   in 68c127d1834e: b

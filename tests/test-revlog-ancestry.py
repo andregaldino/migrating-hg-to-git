@@ -11,8 +11,10 @@ u = uimod.ui.load()
 repo = hg.repository(u, b'test1', create=1)
 os.chdir('test1')
 
+
 def commit(text, time):
     repo.commit(text=text, date=b"%d 0" % time)
+
 
 def addcommit(name, time):
     f = open(name, 'wb')
@@ -21,11 +23,14 @@ def addcommit(name, time):
     repo[None].add([name])
     commit(name, time)
 
+
 def update(rev):
     merge.update(repo, rev, branchmerge=False, force=True)
 
+
 def merge_(rev):
     merge.update(repo, rev, branchmerge=True, force=False)
+
 
 if __name__ == '__main__':
     addcommit(b"A", 0)

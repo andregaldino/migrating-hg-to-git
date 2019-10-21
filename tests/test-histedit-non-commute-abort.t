@@ -162,4 +162,26 @@ log after abort
      summary:     a
   
 
+Early tree conflict doesn't leave histedit in a wedged state. Note
+that we don't specify --commands here: we catch the problem before we
+even prompt the user for rules, sidestepping any dataloss issues.
+
+  $ hg rm c
+  $ hg ci -m 'remove c'
+  $ echo collision > c
+
+  $ hg histedit e860deea161a
+  c: untracked file differs
+  abort: untracked files in working directory conflict with files in 055a42cdd887
+  [255]
+
+We should have detected the collision early enough we're not in a
+histedit state, and p1 is unchanged.
+
+  $ hg log -r 'p1()' -T'{node}\n'
+  1b0954ff00fccb15a37b679e4a35e9b01dfe685e
+  $ hg status --config ui.tweakdefaults=yes
+  ? c
+  ? e.orig
+
   $ cd ..

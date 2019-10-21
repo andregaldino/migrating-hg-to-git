@@ -8,13 +8,13 @@ ap = argparse.ArgumentParser()
 ap.add_argument("out", metavar="some.zip", type=str, nargs=1)
 args = ap.parse_args()
 
-reporoot = os.path.normpath(os.path.join(os.path.dirname(__file__),
-                                         '..', '..'))
+reporoot = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..'))
 # typically a standalone index
 changelog = os.path.join(reporoot, '.hg', 'store', '00changelog.i')
 # an inline revlog with only a few revisions
 contributing = os.path.join(
-    reporoot, '.hg', 'store', 'data', 'contrib', 'fuzz', 'mpatch.cc.i')
+    reporoot, '.hg', 'store', 'data', 'contrib', 'fuzz', 'mpatch.cc.i'
+)
 
 print(changelog, os.path.exists(changelog))
 print(contributing, os.path.exists(contributing))

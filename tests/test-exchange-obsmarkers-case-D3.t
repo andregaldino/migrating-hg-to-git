@@ -57,8 +57,10 @@ initial
   created new head
   $ mkcommit A1
   $ hg debugobsolete `getid 'desc(A0)'` `getid 'desc(A1)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg prune -d '0 0' .
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg strip --hidden -q 'desc(A1)'
   $ hg log -G --hidden

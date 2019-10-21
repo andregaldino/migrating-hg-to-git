@@ -98,9 +98,9 @@ Making a new server
   adding changesets
   adding manifests
   adding file changes
-  added 9 changesets with 9 changes to 9 files (+1 heads)
   adding remote bookmark bar
   adding remote bookmark foo
+  added 9 changesets with 9 changes to 9 files (+1 heads)
   new changesets 18d04c59bb5d:3e1487808078
   (run 'hg heads' to see heads)
 

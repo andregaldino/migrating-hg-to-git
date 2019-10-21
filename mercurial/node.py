@@ -20,6 +20,7 @@ def bin(s):
     except binascii.Error as e:
         raise TypeError(e)
 
+
 nullrev = -1
 # In hex, this is '0000000000000000000000000000000000000000'
 nullid = b"\0" * 20
@@ -28,20 +29,21 @@ nullhex = hex(nullid)
 # Phony node value to stand-in for new files in some uses of
 # manifests.
 # In hex, this is '2121212121212121212121212121212121212121'
-newnodeid = '!!!!!!!!!!!!!!!!!!!!'
+newnodeid = b'!!!!!!!!!!!!!!!!!!!!'
 # In hex, this is '3030303030303030303030303030306164646564'
-addednodeid = '000000000000000added'
+addednodeid = b'000000000000000added'
 # In hex, this is '3030303030303030303030306d6f646966696564'
-modifiednodeid = '000000000000modified'
+modifiednodeid = b'000000000000modified'
 
 wdirfilenodeids = {newnodeid, addednodeid, modifiednodeid}
 
 # pseudo identifiers for working directory
 # (they are experimental, so don't add too many dependencies on them)
-wdirrev = 0x7fffffff
+wdirrev = 0x7FFFFFFF
 # In hex, this is 'ffffffffffffffffffffffffffffffffffffffff'
 wdirid = b"\xff" * 20
 wdirhex = hex(wdirid)
+
 
 def short(node):
     return hex(node[:6])

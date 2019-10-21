@@ -102,13 +102,18 @@ cmdtable = {}
 command = registrar.command(cmdtable)
 
 _pipechars = b'\\/+-|'
-_nonpipechars = b''.join(pycompat.bytechr(i) for i in range(33, 127)
-                         if pycompat.bytechr(i) not in _pipechars)
+_nonpipechars = b''.join(
+    pycompat.bytechr(i)
+    for i in range(33, 127)
+    if pycompat.bytechr(i) not in _pipechars
+)
+
 
 def _isname(ch):
     """char -> bool. return True if ch looks like part of a name, False
     otherwise"""
     return ch in _nonpipechars
+
 
 def _parseasciigraph(text):
     r"""str -> {str : [str]}. convert the ASCII graph to edges
@@ -166,7 +171,7 @@ def _parseasciigraph(text):
         if x < 0 or y < 0:
             return b' '
         try:
-            return lines[y][x:x + 1] or b' '
+            return lines[y][x : x + 1] or b' '
         except IndexError:
             return b' '
 
@@ -261,6 +266,7 @@ def _parseasciigraph(text):
 
     return dict(edges)
 
+
 class simplefilectx(object):
     def __init__(self, path, data):
         self._data = data
@@ -280,6 +286,7 @@ class simplefilectx(object):
 
     def flags(self):
         return b''
+
 
 class simplecommitctx(context.committablectx):
     def __init__(self, repo, name, parentctxs, added):
@@ -306,6 +313,7 @@ class simplecommitctx(context.committablectx):
     def p2copies(self):
         return {}
 
+
 def _walkgraph(edges):
     """yield node, parents in topologically order"""
     visible = set(edges.keys())
@@ -327,6 +335,7 @@ def _walkgraph(edges):
                 if leaf in v:
                     v.remove(leaf)
 
+
 def _getcomments(text):
     r"""
     >>> [pycompat.sysstr(s) for s in _getcomments(br'''
@@ -344,6 +353,7 @@ def _getcomments(text):
         if b' # ' not in line:
             continue
         yield line.split(b' # ', 1)[1].split(b' # ')[0].strip()
+
 
 @command(b'debugdrawdag', [])
 def debugdrawdag(ui, repo, **opts):
@@ -368,11 +378,10 @@ def debugdrawdag(ui, repo, **opts):
     edges = _parseasciigraph(text)
     for k, v in edges.items():
         if len(v) > 2:
-            raise error.Abort(_('%s: too many parents: %s')
-                              % (k, b' '.join(v)))
+            raise error.Abort(_('%s: too many parents: %s') % (k, b' '.join(v)))
 
     # parse comments to get extra file content instructions
-    files = collections.defaultdict(dict) # {(name, path): content}
+    files = collections.defaultdict(dict)  # {(name, path): content}
     comments = list(_getcomments(text))
     filere = re.compile(br'^(\w+)/([\w/]+)\s*=\s*(.*)$', re.M)
     for name, path, content in filere.findall(b'\n'.join(comments)):
@@ -410,14 +419,15 @@ def debugdrawdag(ui, repo, **opts):
         ctx = simplecommitctx(repo, name, pctxs, added)
         n = ctx.commit()
         committed[name] = n
-        tagsmod.tag(repo, [name], n, message=None, user=None, date=None,
-                    local=True)
+        tagsmod.tag(
+            repo, [name], n, message=None, user=None, date=None, local=True
+        )
 
     # handle special comments
     with repo.wlock(), repo.lock(), repo.transaction(b'drawdag'):
         getctx = lambda x: repo.unfiltered()[committed[x.strip()]]
         for comment in comments:
-            rels = [] # obsolete relationships
+            rels = []  # obsolete relationships
             args = comment.split(b':', 1)
             if len(args) <= 1:
                 continue

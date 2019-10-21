@@ -1239,6 +1239,7 @@ Abort unshelve while merging (issue5123)
   > y
   > EOF
   unshelving change 'default'
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
   rebasing shelved changes
   diff --git a/d b/d
   new file mode 100644
@@ -1250,6 +1251,10 @@ Abort unshelve while merging (issue5123)
   record this change to 'd'?
   (enter ? for help) [Ynesfdaq?] y
   
+
+  $ hg status -v
+  A c
+  A d
   $ ls
   b
   c
@@ -1267,15 +1272,21 @@ Abort unshelve while merging (issue5123)
   > B
   > C
   > EOF
-  $ hg shelve
+  $ echo > garbage
+  $ hg st
+  M foo
+  ? garbage
+  $ hg shelve --unknown
   shelved as default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ cat foo
   B
   $ hg unshelve -i <<EOF
   > y
   > y
   > n
+  > y
+  > y
   > EOF
   unshelving change 'default'
   rebasing shelved changes
@@ -1287,15 +1298,28 @@ Abort unshelve while merging (issue5123)
   @@ -1,1 +1,2 @@
   +A
    B
-  record change 1/2 to 'foo'?
+  record change 1/3 to 'foo'?
   (enter ? for help) [Ynesfdaq?] y
   
   @@ -1,1 +2,2 @@
    B
   +C
-  record change 2/2 to 'foo'?
+  record change 2/3 to 'foo'?
   (enter ? for help) [Ynesfdaq?] n
   
+  diff --git a/garbage b/garbage
+  new file mode 100644
+  examine changes to 'garbage'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +
+  record change 3/3 to 'garbage'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  $ hg st
+  M foo
+  ? garbage
   $ cat foo
   A
   B
@@ -1347,17 +1371,44 @@ Abort unshelve while merging (issue5123)
   $ hg resolve -m bar1 bar2
   (no more unresolved files)
   continue: hg unshelve --continue
+
+-- using --continue with --interactive should throw an error
+  $ hg unshelve --continue -i
+  abort: cannot use both continue and interactive
+  [255]
+
   $ cat bar1
   A
   B
   C
-  $ hg unshelve --continue -i <<EOF
+
+#if stripbased
+  $ hg log -r 3:: -G
+  @  changeset:   5:f1d5f53e397b
+  |  tag:         tip
+  |  parent:      3:e28fd7fa7938
+  |  user:        shelve@localhost
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     changes to: add A to bars
+  |
+  | @  changeset:   4:fe451a778c81
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     add C to bars
+  |
+  o  changeset:   3:e28fd7fa7938
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     add A to bars
+  
+#endif
+
+  $ hg unshelve --continue <<EOF
   > y
   > y
   > y
-  > y
+  > n
   > EOF
-  unshelving change 'default-01'
   diff --git a/bar1 b/bar1
   1 hunks, 1 lines changed
   examine changes to 'bar1'?
@@ -1380,6 +1431,51 @@ Abort unshelve while merging (issue5123)
   +B
    C
   record change 2/2 to 'bar2'?
-  (enter ? for help) [Ynesfdaq?] y
+  (enter ? for help) [Ynesfdaq?] n
   
   unshelve of 'default-01' complete
+
+#if stripbased
+  $ hg log -r 3:: -G
+  @  changeset:   4:fe451a778c81
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     add C to bars
+  |
+  o  changeset:   3:e28fd7fa7938
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     add A to bars
+  
+#endif
+
+  $ hg unshelve --continue
+  abort: no unshelve in progress
+  [255]
+
+  $ hg shelve --list
+  default-01      (*)* changes to: add A to bars (glob)
+  default         (*)* changes to: add B to foo (glob)
+  $ hg unshelve -n default-01 -i <<EOF
+  > y
+  > y
+  > EOF
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
+  rebasing shelved changes
+  diff --git a/bar2 b/bar2
+  1 hunks, 1 lines changed
+  examine changes to 'bar2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,2 +1,3 @@
+   A
+  +B
+   C
+  record this change to 'bar2'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+-- test for --interactive --keep
+  $ hg unshelve -i --keep
+  abort: --keep on --interactive is not yet supported
+  [255]

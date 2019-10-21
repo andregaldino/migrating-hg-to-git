@@ -132,6 +132,12 @@ non-lfs content, and the extension enabled.
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  sidedata
+     Allows storage of extra data alongside a revision.
+  
+  copies-sdc
+     Allows to use more efficient algorithm to deal with copy tracing.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: * (glob)
@@ -499,8 +505,8 @@ lfs content, and the extension enabled.
   adding changesets
   adding manifests
   adding file changes
-  added 6 changesets with 5 changes to 5 files (+1 heads)
   calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
+  added 6 changesets with 5 changes to 5 files (+1 heads)
   new changesets d437e1d24fbd:d3b84d50eacb
   resolving manifests
   lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs

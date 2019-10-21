@@ -36,9 +36,7 @@ pub struct Index {
 
 impl Index {
     pub fn new(index: IndexPtr) -> Self {
-        Index {
-            index: index,
-        }
+        Index { index: index }
     }
 }
 
@@ -46,8 +44,13 @@ impl Graph for Index {
     /// wrap a call to the C extern parents function
     fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
         let mut res: [c_int; 2] = [0; 2];
-        let code =
-            unsafe { HgRevlogIndex_GetParents(self.index, rev, &mut res as *mut [c_int; 2]) };
+        let code = unsafe {
+            HgRevlogIndex_GetParents(
+                self.index,
+                rev,
+                &mut res as *mut [c_int; 2],
+            )
+        };
         match code {
             0 => Ok(res),
             _ => Err(GraphError::ParentOutOfRange(rev)),
@@ -98,22 +101,26 @@ unsafe fn raw_init<G: Graph>(
 
     let slice = slice::from_raw_parts(initrevs, initrevslen);
 
-    Box::into_raw(Box::new(match AncestorsIterator::new(
-        graph,
-        slice.into_iter().map(|&r| r as Revision),
-        stoprev as Revision,
-        inclb,
-    ) {
-        Ok(it) => it,
-        Err(_) => {
-            return null_mut();
-        }
-    }))
+    Box::into_raw(Box::new(
+        match AncestorsIterator::new(
+            graph,
+            slice.into_iter().map(|&r| r as Revision),
+            stoprev as Revision,
+            inclb,
+        ) {
+            Ok(it) => it,
+            Err(_) => {
+                return null_mut();
+            }
+        },
+    ))
 }
 
 /// Deallocator to be called from C code
 #[no_mangle]
-pub extern "C" fn rustlazyancestors_drop(raw_iter: *mut AncestorsIterator<Index>) {
+pub extern "C" fn rustlazyancestors_drop(
+    raw_iter: *mut AncestorsIterator<Index>,
+) {
     raw_drop(raw_iter);
 }
 
@@ -131,7 +138,9 @@ fn raw_drop<G: Graph>(raw_iter: *mut AncestorsIterator<G>) {
 /// it will be up to the C wrapper to convert that back into a Python end of
 /// iteration
 #[no_mangle]
-pub extern "C" fn rustlazyancestors_next(raw: *mut AncestorsIterator<Index>) -> c_long {
+pub extern "C" fn rustlazyancestors_next(
+    raw: *mut AncestorsIterator<Index>,
+) -> c_long {
     raw_next(raw)
 }
 
@@ -227,7 +236,9 @@ mod tests {
         let mut initrevs: Vec<c_long> = vec![11, 13];
         let initrevs_len = initrevs.len();
         let initrevs_ptr = initrevs.as_mut_ptr() as usize;
-        let handler = thread::spawn(move || stub_raw_init(initrevs_len, initrevs_ptr, 0, 1));
+        let handler = thread::spawn(move || {
+            stub_raw_init(initrevs_len, initrevs_ptr, 0, 1)
+        });
         let raw = handler.join().unwrap() as *mut AncestorsIterator<Stub>;
 
         assert_eq!(raw_next(raw), 13);

@@ -12,6 +12,11 @@ import copy
 import weakref
 
 from .node import nullrev
+from .pycompat import (
+    delattr,
+    getattr,
+    setattr,
+)
 from . import (
     obsolete,
     phases,
@@ -19,9 +24,8 @@ from . import (
     tags as tagsmod,
     util,
 )
-from .utils import (
-    repoviewutil,
-)
+from .utils import repoviewutil
+
 
 def hideablerevs(repo):
     """Revision candidates to be hidden
@@ -32,10 +36,11 @@ def hideablerevs(repo):
     branchmap (see mercurial.utils.repoviewutils.subsettable), you cannot set
     "public" changesets as "hideable". Doing so would break multiple code
     assertions and lead to crashes."""
-    obsoletes = obsolete.getrevs(repo, 'obsolete')
+    obsoletes = obsolete.getrevs(repo, b'obsolete')
     internals = repo._phasecache.getrevset(repo, phases.localhiddenphases)
     internals = frozenset(internals)
     return obsoletes | internals
+
 
 def pinnedrevs(repo):
     """revisions blocking hidden changesets from being filtered
@@ -72,6 +77,7 @@ def _revealancestors(pfunc, hidden, revs):
                 hidden.remove(p)
                 stack.append(p)
 
+
 def computehidden(repo, visibilityexceptions=None):
     """compute the set of hidden revision to filter
 
@@ -90,6 +96,7 @@ def computehidden(repo, visibilityexceptions=None):
         _revealancestors(pfunc, hidden, visible)
     return frozenset(hidden)
 
+
 def computesecret(repo, visibilityexceptions=None):
     """compute the set of revision that can never be exposed through hgweb
 
@@ -98,27 +105,30 @@ def computesecret(repo, visibilityexceptions=None):
     secrets = repo._phasecache.getrevset(repo, phases.remotehiddenphases)
     return frozenset(secrets)
 
+
 def computeunserved(repo, visibilityexceptions=None):
     """compute the set of revision that should be filtered when used a server
 
     Secret and hidden changeset should not pretend to be here."""
     assert not repo.changelog.filteredrevs
     # fast path in simple case to avoid impact of non optimised code
-    hiddens = filterrevs(repo, 'visible')
-    secrets = filterrevs(repo, 'served.hidden')
+    hiddens = filterrevs(repo, b'visible')
+    secrets = filterrevs(repo, b'served.hidden')
     if secrets:
         return frozenset(hiddens | secrets)
     else:
         return hiddens
+
 
 def computemutable(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     # fast check to avoid revset call on huge repo
     if any(repo._phasecache.phaseroots[1:]):
         getphase = repo._phasecache.phase
-        maymutable = filterrevs(repo, 'base')
+        maymutable = filterrevs(repo, b'base')
         return frozenset(r for r in maymutable if getphase(repo, r))
     return frozenset()
+
 
 def computeimpactable(repo, visibilityexceptions=None):
     """Everything impactable by mutable revision
@@ -145,20 +155,24 @@ def computeimpactable(repo, visibilityexceptions=None):
     firstmutable = max(0, firstmutable)
     return frozenset(pycompat.xrange(firstmutable, len(cl)))
 
+
 # function to compute filtered set
 #
 # When adding a new filter you MUST update the table at:
 #     mercurial.utils.repoviewutil.subsettable
 # Otherwise your filter will have to recompute all its branches cache
 # from scratch (very slow).
-filtertable = {'visible': computehidden,
-               'visible-hidden': computehidden,
-               'served.hidden': computesecret,
-               'served': computeunserved,
-               'immutable':  computemutable,
-               'base':  computeimpactable}
+filtertable = {
+    b'visible': computehidden,
+    b'visible-hidden': computehidden,
+    b'served.hidden': computesecret,
+    b'served': computeunserved,
+    b'immutable': computemutable,
+    b'base': computeimpactable,
+}
 
 _basefiltername = list(filtertable)
+
 
 def extrafilter(ui):
     """initialize extra filter and return its id
@@ -166,26 +180,29 @@ def extrafilter(ui):
     If extra filtering is configured, we make sure the associated filtered view
     are declared and return the associated id.
     """
-    frevs = ui.config('experimental', 'extra-filter-revs')
+    frevs = ui.config(b'experimental', b'extra-filter-revs')
     if frevs is None:
         return None
 
-    fid = pycompat.sysbytes(util.DIGESTS['sha1'](frevs).hexdigest())[:12]
+    fid = pycompat.sysbytes(util.DIGESTS[b'sha1'](frevs).hexdigest())[:12]
 
-    combine = lambda fname: fname + '%' + fid
+    combine = lambda fname: fname + b'%' + fid
 
     subsettable = repoviewutil.subsettable
 
-    if combine('base') not in filtertable:
+    if combine(b'base') not in filtertable:
         for name in _basefiltername:
+
             def extrafilteredrevs(repo, *args, **kwargs):
                 baserevs = filtertable[name](repo, *args, **kwargs)
                 extrarevs = frozenset(repo.revs(frevs))
                 return baserevs | extrarevs
+
             filtertable[combine(name)] = extrafilteredrevs
             if name in subsettable:
                 subsettable[combine(name)] = combine(subsettable[name])
     return fid
+
 
 def filterrevs(repo, filtername, visibilityexceptions=None):
     """returns set of filtered revision for this filter name
@@ -199,6 +216,7 @@ def filterrevs(repo, filtername, visibilityexceptions=None):
             return func(repo.unfiltered, visibilityexceptions)
         repo.filteredrevcache[filtername] = func(repo.unfiltered())
     return repo.filteredrevcache[filtername]
+
 
 class repoview(object):
     """Provide a read/write view of a repo through a filtered changelog
@@ -241,8 +259,7 @@ class repoview(object):
         object.__setattr__(self, r'_clcachekey', None)
         object.__setattr__(self, r'_clcache', None)
         # revs which are exceptions and must not be hidden
-        object.__setattr__(self, r'_visibilityexceptions',
-                           visibilityexceptions)
+        object.__setattr__(self, r'_visibilityexceptions', visibilityexceptions)
 
     # not a propertycache on purpose we shall implement a proper cache later
     @property
@@ -257,14 +274,15 @@ class repoview(object):
         unfiindex = unfichangelog.index
         unfilen = len(unfiindex)
         unfinode = unfiindex[unfilen - 1][7]
-
-        revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)
+        with util.timedcm('repo filter for %s', self.filtername):
+            revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)
         cl = self._clcache
         newkey = (unfilen, unfinode, hash(revs), unfichangelog._delayed)
         # if cl.index is not unfiindex, unfi.changelog would be
         # recreated, and our clcache refers to garbage object
-        if (cl is not None and
-            (cl.index is not unfiindex or newkey != self._clcachekey)):
+        if cl is not None and (
+            cl.index is not unfiindex or newkey != self._clcachekey
+        ):
             cl = None
         # could have been made None by the previous if
         if cl is None:
@@ -285,9 +303,11 @@ class repoview(object):
         return self.unfiltered().filtered(name, visibilityexceptions)
 
     def __repr__(self):
-        return r'<%s:%s %r>' % (self.__class__.__name__,
-                                pycompat.sysstr(self.filtername),
-                                self.unfiltered())
+        return r'<%s:%s %r>' % (
+            self.__class__.__name__,
+            pycompat.sysstr(self.filtername),
+            self.unfiltered(),
+        )
 
     # everything access are forwarded to the proxied repo
     def __getattr__(self, attr):
@@ -299,15 +319,19 @@ class repoview(object):
     def __delattr__(self, attr):
         return delattr(self._unfilteredrepo, attr)
 
+
 # Python <3.4 easily leaks types via __mro__. See
 # https://bugs.python.org/issue17950. We cache dynamically created types
 # so they won't be leaked on every invocation of repo.filtered().
 _filteredrepotypes = weakref.WeakKeyDictionary()
 
+
 def newtype(base):
     """Create a new type with the repoview mixin and the given base class"""
     if base not in _filteredrepotypes:
+
         class filteredrepo(repoview, base):
             pass
+
         _filteredrepotypes[base] = filteredrepo
     return _filteredrepotypes[base]

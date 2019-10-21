@@ -272,11 +272,10 @@ ui.write() in hook is redirected to stderr
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 196:
+  e> read(-1) -> 151:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1 line\n
   e>     transaction abort!\n
   e>     rollback completed\n
@@ -328,11 +327,10 @@ ui.write() in hook is redirected to stderr
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 196:
+  e> read(-1) -> 151:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1 line\n
   e>     transaction abort!\n
   e>     rollback completed\n
@@ -398,11 +396,10 @@ And a variation that writes multiple lines using ui.write
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 218:
+  e> read(-1) -> 173:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 2 lines 1\n
   e>     ui.write 2 lines 2\n
   e>     transaction abort!\n
@@ -455,11 +452,10 @@ And a variation that writes multiple lines using ui.write
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 218:
+  e> read(-1) -> 173:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 2 lines 1\n
   e>     ui.write 2 lines 2\n
   e>     transaction abort!\n
@@ -526,11 +522,10 @@ And a variation that does a ui.flush() after writing output
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 202:
+  e> read(-1) -> 157:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1 line flush\n
   e>     transaction abort!\n
   e>     rollback completed\n
@@ -582,11 +577,10 @@ And a variation that does a ui.flush() after writing output
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 202:
+  e> read(-1) -> 157:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1 line flush\n
   e>     transaction abort!\n
   e>     rollback completed\n
@@ -652,11 +646,10 @@ Multiple writes + flush
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 206:
+  e> read(-1) -> 161:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1st\n
   e>     ui.write 2nd\n
   e>     transaction abort!\n
@@ -709,11 +702,10 @@ Multiple writes + flush
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 206:
+  e> read(-1) -> 161:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1st\n
   e>     ui.write 2nd\n
   e>     transaction abort!\n
@@ -780,11 +772,10 @@ ui.write() + ui.write_err() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 232:
+  e> read(-1) -> 187:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1\n
   e>     ui.write_err 1\n
   e>     ui.write 2\n
@@ -839,11 +830,10 @@ ui.write() + ui.write_err() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 232:
+  e> read(-1) -> 187:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1\n
   e>     ui.write_err 1\n
   e>     ui.write 2\n
@@ -912,11 +902,10 @@ print() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 193:
+  e> read(-1) -> 148:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     printed line\n
   e>     transaction abort!\n
   e>     rollback completed\n
@@ -968,11 +957,10 @@ print() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 193:
+  e> read(-1) -> 148:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     printed line\n
   e>     transaction abort!\n
   e>     rollback completed\n
@@ -1038,11 +1026,10 @@ Mixed print() and ui.write() are both captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 218:
+  e> read(-1) -> 173:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     print 1\n
   e>     ui.write 1\n
   e>     print 2\n
@@ -1097,11 +1084,10 @@ Mixed print() and ui.write() are both captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 218:
+  e> read(-1) -> 173:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     print 1\n
   e>     ui.write 1\n
   e>     print 2\n
@@ -1170,11 +1156,10 @@ print() to stdout and stderr both get captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 216:
+  e> read(-1) -> 171:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stdout 1\n
   e>     stderr 1\n
   e>     stdout 2\n
@@ -1229,11 +1214,10 @@ print() to stdout and stderr both get captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 216:
+  e> read(-1) -> 171:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stdout 1\n
   e>     stderr 1\n
   e>     stdout 2\n
@@ -1308,11 +1292,10 @@ Shell hook writing to stdout has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 212:
+  e> read(-1) -> 167:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stdout 1\n
   e>     stdout 2\n
   e>     transaction abort!\n
@@ -1365,11 +1348,10 @@ Shell hook writing to stdout has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 212:
+  e> read(-1) -> 167:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stdout 1\n
   e>     stdout 2\n
   e>     transaction abort!\n
@@ -1437,11 +1419,10 @@ Shell hook writing to stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 212:
+  e> read(-1) -> 167:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stderr 1\n
   e>     stderr 2\n
   e>     transaction abort!\n
@@ -1494,11 +1475,10 @@ Shell hook writing to stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 212:
+  e> read(-1) -> 167:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stderr 1\n
   e>     stderr 2\n
   e>     transaction abort!\n
@@ -1568,11 +1548,10 @@ Shell hook writing to stdout and stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 230:
+  e> read(-1) -> 185:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stdout 1\n
   e>     stderr 1\n
   e>     stdout 2\n
@@ -1627,11 +1606,10 @@ Shell hook writing to stdout and stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 230:
+  e> read(-1) -> 185:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     stdout 1\n
   e>     stderr 1\n
   e>     stdout 2\n
@@ -1709,11 +1687,10 @@ Shell and Python hooks writing to stdout and stderr have output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 273:
+  e> read(-1) -> 228:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     shell stdout 1\n
   e>     shell stderr 1\n
   e>     shell stdout 2\n
@@ -1772,11 +1749,10 @@ Shell and Python hooks writing to stdout and stderr have output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  e> read(-1) -> 273:
+  e> read(-1) -> 228:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     shell stdout 1\n
   e>     shell stderr 1\n
   e>     shell stdout 2\n
@@ -1983,11 +1959,11 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1\n
   e>     ui.write_err 1\n
   e>     ui.write 2\n
   e>     ui.write_err 2\n
+  e>     added 1 changesets with 1 changes to 1 files\n
   
   testing ssh2
   creating ssh peer from handshake results
@@ -2039,8 +2015,8 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
   e>     ui.write 1\n
   e>     ui.write_err 1\n
   e>     ui.write 2\n
   e>     ui.write_err 2\n
+  e>     added 1 changesets with 1 changes to 1 files\n

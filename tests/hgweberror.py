@@ -2,9 +2,8 @@
 
 from __future__ import absolute_import
 
-from mercurial.hgweb import (
-    webcommands,
-)
+from mercurial.hgweb import webcommands
+
 
 def raiseerror(web):
     '''Dummy web command that raises an uncaught Exception.'''
@@ -18,6 +17,7 @@ def raiseerror(web):
         web.res.getbodyfile().write(b'partial content\n')
 
     raise AttributeError('I am an uncaught error!')
+
 
 def extsetup(ui):
     setattr(webcommands, 'raiseerror', raiseerror)

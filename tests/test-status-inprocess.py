@@ -10,6 +10,8 @@ from mercurial import (
 )
 
 print_ = print
+
+
 def print(*args, **kwargs):
     """print() wrapper that flushes stdout buffers to avoid py3 buffer issues
 
@@ -18,6 +20,7 @@ def print(*args, **kwargs):
     """
     print_(*args, **kwargs)
     sys.stdout.flush()
+
 
 u = uimod.ui.load()
 

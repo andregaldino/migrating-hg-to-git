@@ -12,29 +12,25 @@ from __future__ import absolute_import
 
 import os
 
-from .. import (
-    pycompat,
-)
+from ..pycompat import getattr
+from .. import pycompat
 
-from ..utils import (
-    procutil,
-)
+from ..utils import procutil
 
-from . import (
-    common,
-)
+from . import common
+
 
 def launch(application):
     procutil.setbinary(procutil.stdin)
     procutil.setbinary(procutil.stdout)
 
-    environ = dict(os.environ.iteritems()) # re-exports
-    environ.setdefault(r'PATH_INFO', '')
+    environ = dict(pycompat.iteritems(os.environ))  # re-exports
+    environ.setdefault(r'PATH_INFO', b'')
     if environ.get(r'SERVER_SOFTWARE', r'').startswith(r'Microsoft-IIS'):
         # IIS includes script_name in PATH_INFO
         scriptname = environ[r'SCRIPT_NAME']
         if environ[r'PATH_INFO'].startswith(scriptname):
-            environ[r'PATH_INFO'] = environ[r'PATH_INFO'][len(scriptname):]
+            environ[r'PATH_INFO'] = environ[r'PATH_INFO'][len(scriptname) :]
 
     stdin = procutil.stdin
     if environ.get(r'HTTP_EXPECT', r'').lower() == r'100-continue':
@@ -58,16 +54,18 @@ def launch(application):
 
     def write(data):
         if not headers_set:
-            raise AssertionError("write() before start_response()")
+            raise AssertionError(b"write() before start_response()")
 
         elif not headers_sent:
             # Before the first output, send the stored headers
             status, response_headers = headers_sent[:] = headers_set
-            out.write('Status: %s\r\n' % pycompat.bytesurl(status))
+            out.write(b'Status: %s\r\n' % pycompat.bytesurl(status))
             for hk, hv in response_headers:
-                out.write('%s: %s\r\n' % (pycompat.bytesurl(hk),
-                                          pycompat.bytesurl(hv)))
-            out.write('\r\n')
+                out.write(
+                    b'%s: %s\r\n'
+                    % (pycompat.bytesurl(hk), pycompat.bytesurl(hv))
+                )
+            out.write(b'\r\n')
 
         out.write(data)
         out.flush()
@@ -79,9 +77,9 @@ def launch(application):
                     # Re-raise original exception if headers sent
                     raise exc_info[0](exc_info[1], exc_info[2])
             finally:
-                exc_info = None     # avoid dangling circular ref
+                exc_info = None  # avoid dangling circular ref
         elif headers_set:
-            raise AssertionError("Headers already set!")
+            raise AssertionError(b"Headers already set!")
 
         headers_set[:] = [status, response_headers]
         return write
@@ -91,6 +89,6 @@ def launch(application):
         for chunk in content:
             write(chunk)
         if not headers_sent:
-            write('')   # send headers now if body was empty
+            write(b'')  # send headers now if body was empty
     finally:
         getattr(content, 'close', lambda: None)()

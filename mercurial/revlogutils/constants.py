@@ -9,10 +9,7 @@
 
 from __future__ import absolute_import
 
-from .. import (
-    repository,
-    util,
-)
+from ..interfaces import repository
 
 # revlog header flags
 REVLOGV0 = 0
@@ -21,9 +18,9 @@ REVLOGV1 = 1
 # Reminder: change the bounds check in revlog.__init__ when this is changed.
 REVLOGV2 = 0xDEAD
 # Shared across v1 and v2.
-FLAG_INLINE_DATA = (1 << 16)
+FLAG_INLINE_DATA = 1 << 16
 # Only used by v1, implied by v2.
-FLAG_GENERALDELTA = (1 << 17)
+FLAG_GENERALDELTA = 1 << 17
 REVLOG_DEFAULT_FLAGS = FLAG_INLINE_DATA
 REVLOG_DEFAULT_FORMAT = REVLOGV1
 REVLOG_DEFAULT_VERSION = REVLOG_DEFAULT_FORMAT | REVLOG_DEFAULT_FLAGS
@@ -41,16 +38,20 @@ REVIDX_ISCENSORED = repository.REVISION_FLAG_CENSORED
 REVIDX_ELLIPSIS = repository.REVISION_FLAG_ELLIPSIS
 # revision data is stored externally
 REVIDX_EXTSTORED = repository.REVISION_FLAG_EXTSTORED
+# revision data contains extra metadata not part of the official digest
+REVIDX_SIDEDATA = repository.REVISION_FLAG_SIDEDATA
 REVIDX_DEFAULT_FLAGS = 0
 # stable order in which flags need to be processed and their processors applied
 REVIDX_FLAGS_ORDER = [
     REVIDX_ISCENSORED,
     REVIDX_ELLIPSIS,
     REVIDX_EXTSTORED,
+    REVIDX_SIDEDATA,
 ]
-REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
+
 # bitmark for flags that could cause rawdata content change
-REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
+REVIDX_RAWTEXT_CHANGING_FLAGS = (
+    REVIDX_ISCENSORED | REVIDX_EXTSTORED | REVIDX_SIDEDATA
+)
 
 SPARSE_REVLOG_MAX_CHAIN_LENGTH = 1000
-

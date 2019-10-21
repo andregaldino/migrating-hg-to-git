@@ -10,6 +10,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('path', nargs='+')
 opts = ap.parse_args()
 
+
 def gather():
     for p in opts.path:
         if not os.path.exists(p):
@@ -23,5 +24,6 @@ def gather():
                     yield os.path.join(dirpath, f)
         else:
             yield p
+
 
 print('\n'.join(sorted(gather(), key=lambda x: x.replace(os.path.sep, '/'))))

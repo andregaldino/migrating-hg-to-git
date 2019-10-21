@@ -1119,7 +1119,7 @@ Create repo without default path, pull top repo, and see what happens on update
 Ensure a full traceback, not just the SubrepoAbort part
 
   $ hg -R issue1852b update --traceback 2>&1 | grep 'raise error\.Abort'
-      raise error.Abort(_("default path for subrepository not found"))
+      raise error.Abort(_(b"default path for subrepository not found"))
 
 Pull -u now doesn't help
 

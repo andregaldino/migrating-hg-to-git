@@ -49,14 +49,14 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 # storage format version; increment when the format changes
 storageversion = 0
 
 # namespaces
-bookmarktype = 'bookmark'
-wdirparenttype = 'wdirparent'
+bookmarktype = b'bookmark'
+wdirparenttype = b'wdirparent'
 # In a shared repository, what shared feature name is used
 # to indicate this namespace is shared with the source?
 sharednamespaces = {
@@ -65,33 +65,38 @@ sharednamespaces = {
 
 # Journal recording, register hooks and storage object
 def extsetup(ui):
-    extensions.wrapfunction(dispatch, 'runcommand', runcommand)
-    extensions.wrapfunction(bookmarks.bmstore, '_write', recordbookmarks)
+    extensions.wrapfunction(dispatch, b'runcommand', runcommand)
+    extensions.wrapfunction(bookmarks.bmstore, b'_write', recordbookmarks)
     extensions.wrapfilecache(
-        localrepo.localrepository, 'dirstate', wrapdirstate)
-    extensions.wrapfunction(hg, 'postshare', wrappostshare)
-    extensions.wrapfunction(hg, 'copystore', unsharejournal)
+        localrepo.localrepository, b'dirstate', wrapdirstate
+    )
+    extensions.wrapfunction(hg, b'postshare', wrappostshare)
+    extensions.wrapfunction(hg, b'copystore', unsharejournal)
+
 
 def reposetup(ui, repo):
     if repo.local():
         repo.journal = journalstorage(repo)
-        repo._wlockfreeprefix.add('namejournal')
+        repo._wlockfreeprefix.add(b'namejournal')
 
-        dirstate, cached = localrepo.isfilecached(repo, 'dirstate')
+        dirstate, cached = localrepo.isfilecached(repo, b'dirstate')
         if cached:
             # already instantiated dirstate isn't yet marked as
             # "journal"-ing, even though repo.dirstate() was already
             # wrapped by own wrapdirstate()
             _setupdirstate(repo, dirstate)
 
+
 def runcommand(orig, lui, repo, cmd, fullargs, *args):
     """Track the command line options for recording in the journal"""
     journalstorage.recordcommand(*fullargs)
     return orig(lui, repo, cmd, fullargs, *args)
 
+
 def _setupdirstate(repo, dirstate):
     dirstate.journalstorage = repo.journal
-    dirstate.addparentchangecallback('journal', recorddirstateparents)
+    dirstate.addparentchangecallback(b'journal', recorddirstateparents)
+
 
 # hooks to record dirstate changes
 def wrapdirstate(orig, repo):
@@ -100,6 +105,7 @@ def wrapdirstate(orig, repo):
     if util.safehasattr(repo, 'journal'):
         _setupdirstate(repo, dirstate)
     return dirstate
+
 
 def recorddirstateparents(dirstate, old, new):
     """Records all dirstate parent changes in the journal."""
@@ -110,7 +116,9 @@ def recorddirstateparents(dirstate, old, new):
         oldhashes = old[:1] if old[1] == node.nullid else old
         newhashes = new[:1] if new[1] == node.nullid else new
         dirstate.journalstorage.record(
-            wdirparenttype, '.', oldhashes, newhashes)
+            wdirparenttype, b'.', oldhashes, newhashes
+        )
+
 
 # hooks to record bookmark changes (both local and remote)
 def recordbookmarks(orig, store, fp):
@@ -118,21 +126,23 @@ def recordbookmarks(orig, store, fp):
     repo = store._repo
     if util.safehasattr(repo, 'journal'):
         oldmarks = bookmarks.bmstore(repo)
-        for mark, value in store.iteritems():
+        for mark, value in pycompat.iteritems(store):
             oldvalue = oldmarks.get(mark, node.nullid)
             if value != oldvalue:
                 repo.journal.record(bookmarktype, mark, oldvalue, value)
     return orig(store, fp)
 
+
 # shared repository support
 def _readsharedfeatures(repo):
     """A set of shared features for this repository"""
     try:
-        return set(repo.vfs.read('shared').splitlines())
+        return set(repo.vfs.read(b'shared').splitlines())
     except IOError as inst:
         if inst.errno != errno.ENOENT:
             raise
         return set()
+
 
 def _mergeentriesiter(*iterables, **kwargs):
     """Given a set of sorted iterables, yield the next entry in merged order
@@ -154,7 +164,7 @@ def _mergeentriesiter(*iterables, **kwargs):
             pass
 
     while iterable_map:
-        value, key, it = order(iterable_map.itervalues())
+        value, key, it = order(pycompat.itervalues(iterable_map))
         yield value
         try:
             iterable_map[key][0] = next(it)
@@ -162,40 +172,52 @@ def _mergeentriesiter(*iterables, **kwargs):
             # this iterable is empty, remove it from consideration
             del iterable_map[key]
 
+
 def wrappostshare(orig, sourcerepo, destrepo, **kwargs):
     """Mark this shared working copy as sharing journal information"""
     with destrepo.wlock():
         orig(sourcerepo, destrepo, **kwargs)
-        with destrepo.vfs('shared', 'a') as fp:
-            fp.write('journal\n')
+        with destrepo.vfs(b'shared', b'a') as fp:
+            fp.write(b'journal\n')
+
 
 def unsharejournal(orig, ui, repo, repopath):
     """Copy shared journal entries into this repo when unsharing"""
-    if (repo.path == repopath and repo.shared() and
-            util.safehasattr(repo, 'journal')):
+    if (
+        repo.path == repopath
+        and repo.shared()
+        and util.safehasattr(repo, 'journal')
+    ):
         sharedrepo = hg.sharedreposource(repo)
         sharedfeatures = _readsharedfeatures(repo)
-        if sharedrepo and sharedfeatures > {'journal'}:
+        if sharedrepo and sharedfeatures > {b'journal'}:
             # there is a shared repository and there are shared journal entries
             # to copy. move shared date over from source to destination but
             # move the local file first
-            if repo.vfs.exists('namejournal'):
-                journalpath = repo.vfs.join('namejournal')
-                util.rename(journalpath, journalpath + '.bak')
+            if repo.vfs.exists(b'namejournal'):
+                journalpath = repo.vfs.join(b'namejournal')
+                util.rename(journalpath, journalpath + b'.bak')
             storage = repo.journal
             local = storage._open(
-                repo.vfs, filename='namejournal.bak', _newestfirst=False)
+                repo.vfs, filename=b'namejournal.bak', _newestfirst=False
+            )
             shared = (
-                e for e in storage._open(sharedrepo.vfs, _newestfirst=False)
-                if sharednamespaces.get(e.namespace) in sharedfeatures)
+                e
+                for e in storage._open(sharedrepo.vfs, _newestfirst=False)
+                if sharednamespaces.get(e.namespace) in sharedfeatures
+            )
             for entry in _mergeentriesiter(local, shared, order=min):
                 storage._write(repo.vfs, entry)
 
     return orig(ui, repo, repopath)
 
-class journalentry(collections.namedtuple(
+
+class journalentry(
+    collections.namedtuple(
         r'journalentry',
-        r'timestamp user command namespace name oldhashes newhashes')):
+        r'timestamp user command namespace name oldhashes newhashes',
+    )
+):
     """Individual journal entry
 
     * timestamp: a mercurial (time, timezone) tuple
@@ -212,28 +234,51 @@ class journalentry(collections.namedtuple(
     timestamp and timezone are separated by a space.
 
     """
+
     @classmethod
     def fromstorage(cls, line):
-        (time, user, command, namespace, name,
-         oldhashes, newhashes) = line.split('\n')
+        (
+            time,
+            user,
+            command,
+            namespace,
+            name,
+            oldhashes,
+            newhashes,
+        ) = line.split(b'\n')
         timestamp, tz = time.split()
         timestamp, tz = float(timestamp), int(tz)
-        oldhashes = tuple(node.bin(hash) for hash in oldhashes.split(','))
-        newhashes = tuple(node.bin(hash) for hash in newhashes.split(','))
+        oldhashes = tuple(node.bin(hash) for hash in oldhashes.split(b','))
+        newhashes = tuple(node.bin(hash) for hash in newhashes.split(b','))
         return cls(
-            (timestamp, tz), user, command, namespace, name,
-            oldhashes, newhashes)
+            (timestamp, tz),
+            user,
+            command,
+            namespace,
+            name,
+            oldhashes,
+            newhashes,
+        )
 
     def __bytes__(self):
         """bytes representation for storage"""
-        time = ' '.join(map(pycompat.bytestr, self.timestamp))
-        oldhashes = ','.join([node.hex(hash) for hash in self.oldhashes])
-        newhashes = ','.join([node.hex(hash) for hash in self.newhashes])
-        return '\n'.join((
-            time, self.user, self.command, self.namespace, self.name,
-            oldhashes, newhashes))
+        time = b' '.join(map(pycompat.bytestr, self.timestamp))
+        oldhashes = b','.join([node.hex(hash) for hash in self.oldhashes])
+        newhashes = b','.join([node.hex(hash) for hash in self.newhashes])
+        return b'\n'.join(
+            (
+                time,
+                self.user,
+                self.command,
+                self.namespace,
+                self.name,
+                oldhashes,
+                newhashes,
+            )
+        )
 
     __str__ = encoding.strmethod(__bytes__)
+
 
 class journalstorage(object):
     """Storage for journal entries
@@ -252,6 +297,7 @@ class journalstorage(object):
     the dirstate).
 
     """
+
     _currentcommand = ()
     _lockref = None
 
@@ -265,18 +311,19 @@ class journalstorage(object):
         if repo.shared():
             features = _readsharedfeatures(repo)
             sharedrepo = hg.sharedreposource(repo)
-            if sharedrepo is not None and 'journal' in features:
+            if sharedrepo is not None and b'journal' in features:
                 self.sharedvfs = sharedrepo.vfs
                 self.sharedfeatures = features
 
     # track the current command for recording in journal entries
     @property
     def command(self):
-        commandstr = ' '.join(
-            map(procutil.shellquote, journalstorage._currentcommand))
-        if '\n' in commandstr:
+        commandstr = b' '.join(
+            map(procutil.shellquote, journalstorage._currentcommand)
+        )
+        if b'\n' in commandstr:
             # truncate multi-line commands
-            commandstr = commandstr.partition('\n')[0] + ' ...'
+            commandstr = commandstr.partition(b'\n')[0] + b' ...'
         return commandstr
 
     @classmethod
@@ -301,18 +348,22 @@ class journalstorage(object):
     def jlock(self, vfs):
         """Create a lock for the journal file"""
         if self._currentlock(self._lockref) is not None:
-            raise error.Abort(_('journal lock does not support nesting'))
-        desc = _('journal of %s') % vfs.base
+            raise error.Abort(_(b'journal lock does not support nesting'))
+        desc = _(b'journal of %s') % vfs.base
         try:
-            l = lock.lock(vfs, 'namejournal.lock', 0, desc=desc)
+            l = lock.lock(vfs, b'namejournal.lock', 0, desc=desc)
         except error.LockHeld as inst:
             self.ui.warn(
-                _("waiting for lock on %s held by %r\n") % (desc, inst.locker))
+                _(b"waiting for lock on %s held by %r\n") % (desc, inst.locker)
+            )
             # default to 600 seconds timeout
             l = lock.lock(
-                vfs, 'namejournal.lock',
-                self.ui.configint("ui", "timeout"), desc=desc)
-            self.ui.warn(_("got lock after %s seconds\n") % l.delay)
+                vfs,
+                b'namejournal.lock',
+                self.ui.configint(b"ui", b"timeout"),
+                desc=desc,
+            )
+            self.ui.warn(_(b"got lock after %s seconds\n") % l.delay)
         self._lockref = weakref.ref(l)
         return l
 
@@ -334,8 +385,14 @@ class journalstorage(object):
             newhashes = [newhashes]
 
         entry = journalentry(
-            dateutil.makedate(), self.user, self.command, namespace, name,
-            oldhashes, newhashes)
+            dateutil.makedate(),
+            self.user,
+            self.command,
+            namespace,
+            name,
+            oldhashes,
+            newhashes,
+        )
 
         vfs = self.vfs
         if self.sharedvfs is not None:
@@ -349,24 +406,25 @@ class journalstorage(object):
     def _write(self, vfs, entry):
         with self.jlock(vfs):
             # open file in amend mode to ensure it is created if missing
-            with vfs('namejournal', mode='a+b') as f:
+            with vfs(b'namejournal', mode=b'a+b') as f:
                 f.seek(0, os.SEEK_SET)
                 # Read just enough bytes to get a version number (up to 2
                 # digits plus separator)
-                version = f.read(3).partition('\0')[0]
-                if version and version != "%d" % storageversion:
+                version = f.read(3).partition(b'\0')[0]
+                if version and version != b"%d" % storageversion:
                     # different version of the storage. Exit early (and not
                     # write anything) if this is not a version we can handle or
                     # the file is corrupt. In future, perhaps rotate the file
                     # instead?
                     self.ui.warn(
-                        _("unsupported journal file version '%s'\n") % version)
+                        _(b"unsupported journal file version '%s'\n") % version
+                    )
                     return
                 if not version:
                     # empty file, write version first
-                    f.write(("%d" % storageversion) + '\0')
+                    f.write((b"%d" % storageversion) + b'\0')
                 f.seek(0, os.SEEK_END)
-                f.write(bytes(entry) + '\0')
+                f.write(bytes(entry) + b'\0')
 
     def filtered(self, namespace=None, name=None):
         """Yield all journal entries with the given namespace or name
@@ -403,22 +461,24 @@ class journalstorage(object):
         # iterate over both local and shared entries, but only those
         # shared entries that are among the currently shared features
         shared = (
-            e for e in self._open(self.sharedvfs)
-            if sharednamespaces.get(e.namespace) in self.sharedfeatures)
+            e
+            for e in self._open(self.sharedvfs)
+            if sharednamespaces.get(e.namespace) in self.sharedfeatures
+        )
         return _mergeentriesiter(local, shared)
 
-    def _open(self, vfs, filename='namejournal', _newestfirst=True):
+    def _open(self, vfs, filename=b'namejournal', _newestfirst=True):
         if not vfs.exists(filename):
             return
 
         with vfs(filename) as f:
             raw = f.read()
 
-        lines = raw.split('\0')
+        lines = raw.split(b'\0')
         version = lines and lines[0]
-        if version != "%d" % storageversion:
-            version = version or _('not available')
-            raise error.Abort(_("unknown journal file version '%s'") % version)
+        if version != b"%d" % storageversion:
+            version = version or _(b'not available')
+            raise error.Abort(_(b"unknown journal file version '%s'") % version)
 
         # Skip the first line, it's a version number. Normally we iterate over
         # these in reverse order to list newest first; only when copying across
@@ -431,16 +491,22 @@ class journalstorage(object):
                 continue
             yield journalentry.fromstorage(line)
 
+
 # journal reading
 # log options that don't make sense for journal
-_ignoreopts = ('no-merges', 'graph')
+_ignoreopts = (b'no-merges', b'graph')
+
+
 @command(
-    'journal', [
-        ('', 'all', None, 'show history for all names'),
-        ('c', 'commits', None, 'show commit metadata'),
-    ] + [opt for opt in cmdutil.logopts if opt[1] not in _ignoreopts],
-    '[OPTION]... [BOOKMARKNAME]',
-    helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
+    b'journal',
+    [
+        (b'', b'all', None, b'show history for all names'),
+        (b'c', b'commits', None, b'show commit metadata'),
+    ]
+    + [opt for opt in cmdutil.logopts if opt[1] not in _ignoreopts],
+    b'[OPTION]... [BOOKMARKNAME]',
+    helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
+)
 def journal(ui, repo, *args, **opts):
     """show the previous position of bookmarks and the working copy
 
@@ -467,61 +533,72 @@ def journal(ui, repo, *args, **opts):
 
     """
     opts = pycompat.byteskwargs(opts)
-    name = '.'
-    if opts.get('all'):
+    name = b'.'
+    if opts.get(b'all'):
         if args:
             raise error.Abort(
-                _("You can't combine --all and filtering on a name"))
+                _(b"You can't combine --all and filtering on a name")
+            )
         name = None
     if args:
         name = args[0]
 
-    fm = ui.formatter('journal', opts)
-    def formatnodes(nodes):
-        return fm.formatlist(map(fm.hexfunc, nodes), name='node', sep=',')
+    fm = ui.formatter(b'journal', opts)
 
-    if opts.get("template") != "json":
+    def formatnodes(nodes):
+        return fm.formatlist(map(fm.hexfunc, nodes), name=b'node', sep=b',')
+
+    if opts.get(b"template") != b"json":
         if name is None:
-            displayname = _('the working copy and bookmarks')
+            displayname = _(b'the working copy and bookmarks')
         else:
-            displayname = "'%s'" % name
-        ui.status(_("previous locations of %s:\n") % displayname)
+            displayname = b"'%s'" % name
+        ui.status(_(b"previous locations of %s:\n") % displayname)
 
     limit = logcmdutil.getlimit(opts)
     entry = None
-    ui.pager('journal')
+    ui.pager(b'journal')
     for count, entry in enumerate(repo.journal.filtered(name=name)):
         if count == limit:
             break
 
         fm.startitem()
-        fm.condwrite(ui.verbose, 'oldnodes', '%s -> ',
-                     formatnodes(entry.oldhashes))
-        fm.write('newnodes', '%s', formatnodes(entry.newhashes))
-        fm.condwrite(ui.verbose, 'user', ' %-8s', entry.user)
         fm.condwrite(
-            opts.get('all') or name.startswith('re:'),
-            'name', '  %-8s', entry.name)
+            ui.verbose, b'oldnodes', b'%s -> ', formatnodes(entry.oldhashes)
+        )
+        fm.write(b'newnodes', b'%s', formatnodes(entry.newhashes))
+        fm.condwrite(ui.verbose, b'user', b' %-8s', entry.user)
+        fm.condwrite(
+            opts.get(b'all') or name.startswith(b're:'),
+            b'name',
+            b'  %-8s',
+            entry.name,
+        )
 
-        fm.condwrite(ui.verbose, 'date', ' %s',
-                     fm.formatdate(entry.timestamp, '%Y-%m-%d %H:%M %1%2'))
-        fm.write('command', '  %s\n', entry.command)
+        fm.condwrite(
+            ui.verbose,
+            b'date',
+            b' %s',
+            fm.formatdate(entry.timestamp, b'%Y-%m-%d %H:%M %1%2'),
+        )
+        fm.write(b'command', b'  %s\n', entry.command)
 
-        if opts.get("commits"):
+        if opts.get(b"commits"):
             if fm.isplain():
                 displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
             else:
                 displayer = logcmdutil.changesetformatter(
-                    ui, repo, fm.nested('changesets'), diffopts=opts)
+                    ui, repo, fm.nested(b'changesets'), diffopts=opts
+                )
             for hash in entry.newhashes:
                 try:
                     ctx = repo[hash]
                     displayer.show(ctx)
                 except error.RepoLookupError as e:
-                    fm.plain("%s\n\n" % pycompat.bytestr(e))
+                    fm.plain(b"%s\n\n" % pycompat.bytestr(e))
             displayer.close()
 
     fm.end()
 
     if entry is None:
-        ui.status(_("no recorded locations\n"))
+        ui.status(_(b"no recorded locations\n"))

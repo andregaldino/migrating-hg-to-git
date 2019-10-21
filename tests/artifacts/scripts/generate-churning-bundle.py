@@ -39,14 +39,16 @@ MOVE_BACK_RANGE = 5
 #
 # At each revision, the beginning on the file change,
 # and set of other lines changes too.
-FILENAME='SPARSE-REVLOG-TEST-FILE'
+FILENAME = 'SPARSE-REVLOG-TEST-FILE'
 NB_LINES = 10500
 ALWAYS_CHANGE_LINES = 500
 OTHER_CHANGES = 300
 
+
 def nextcontent(previous_content):
     """utility to produce a new file content from the previous one"""
     return hashlib.md5(previous_content).hexdigest()
+
 
 def filecontent(iteridx, oldcontent):
     """generate a new file content
@@ -60,7 +62,7 @@ def filecontent(iteridx, oldcontent):
     else:
         current = str(iteridx)
 
-    for idx in xrange(NB_LINES):
+    for idx in range(NB_LINES):
         do_change_line = True
         if oldcontent is not None and ALWAYS_CHANGE_LINES < idx:
             do_change_line = not ((idx - iteridx) % OTHER_CHANGES)
@@ -72,6 +74,7 @@ def filecontent(iteridx, oldcontent):
             to_write = oldcontent[idx]
         yield to_write
 
+
 def updatefile(filename, idx):
     """update <filename> to be at appropriate content for iteration <idx>"""
     existing = None
@@ -81,6 +84,7 @@ def updatefile(filename, idx):
     with open(filename, 'wb') as target:
         for line in filecontent(idx, existing):
             target.write(line)
+
 
 def hg(command, *args):
     """call a mercurial command with appropriate config and argument"""
@@ -101,6 +105,7 @@ def hg(command, *args):
     env['HGRCPATH'] = ''
     return subprocess.check_call(full_cmd, env=env)
 
+
 def run(target):
     tmpdir = tempfile.mkdtemp(prefix='tmp-hg-test-big-file-bundle-')
     try:
@@ -108,7 +113,7 @@ def run(target):
         hg('init')
         updatefile(FILENAME, None)
         hg('commit', '--addremove', '--message', 'initial commit')
-        for idx in xrange(1, NB_CHANGESET + 1):
+        for idx in range(1, NB_CHANGESET + 1):
             if sys.stdout.isatty():
                 print("generating commit #%d/%d" % (idx, NB_CHANGESET))
             if (idx % PERIOD_BRANCHING) == 0:
@@ -131,8 +136,8 @@ def run(target):
         shutil.rmtree(tmpdir)
     return 0
 
+
 if __name__ == '__main__':
     orig = os.path.realpath(os.path.dirname(sys.argv[0]))
     target = os.path.join(orig, os.pardir, 'cache', BUNDLE_NAME)
     sys.exit(run(target))
-

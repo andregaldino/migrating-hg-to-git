@@ -124,6 +124,7 @@ Show debug commands if there are no other candidates
   debugrevspec
   debugserve
   debugsetparents
+  debugsidedata
   debugssl
   debugsub
   debugsuccessorssets
@@ -305,6 +306,7 @@ Show all commands + options
   debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized
   debugserve: sshstdio, logiofd, logiofile
   debugsetparents: 
+  debugsidedata: changelog, manifest, dir
   debugssl: 
   debugsub: rev
   debugsuccessorssets: closest
@@ -312,7 +314,7 @@ Show all commands + options
   debuguigetpass: prompt
   debuguiprompt: prompt
   debugupdatecaches: 
-  debugupgraderepo: optimize, run, backup
+  debugupgraderepo: optimize, run, backup, changelog, manifest
   debugwalk: include, exclude
   debugwhyunstable: 
   debugwireargs: three, four, five, ssh, remotecmd, insecure

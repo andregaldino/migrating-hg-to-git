@@ -13,11 +13,10 @@ from .node import (
     hex,
     nullid,
 )
-from .thirdparty import (
-    attr,
-)
+from .thirdparty import attr
 
 from . import (
+    copies,
     encoding,
     error,
     pycompat,
@@ -29,7 +28,10 @@ from .utils import (
     stringutil,
 )
 
-_defaultextra = {'branch': 'default'}
+from .revlogutils import sidedata as sidedatamod
+
+_defaultextra = {b'branch': b'default'}
+
 
 def _string_escape(text):
     """
@@ -43,16 +45,22 @@ def _string_escape(text):
     True
     """
     # subset of the string_escape codec
-    text = text.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
-    return text.replace('\0', '\\0')
+    text = (
+        text.replace(b'\\', b'\\\\')
+        .replace(b'\n', b'\\n')
+        .replace(b'\r', b'\\r')
+    )
+    return text.replace(b'\0', b'\\0')
+
 
 def _string_unescape(text):
-    if '\\0' in text:
+    if b'\\0' in text:
         # fix up \0 without getting into trouble with \\0
-        text = text.replace('\\\\', '\\\\\n')
-        text = text.replace('\\0', '\0')
-        text = text.replace('\n', '')
+        text = text.replace(b'\\\\', b'\\\\\n')
+        text = text.replace(b'\\0', b'\0')
+        text = text.replace(b'\n', b'')
     return stringutil.unescapestr(text)
+
 
 def decodeextra(text):
     """
@@ -66,76 +74,31 @@ def decodeextra(text):
     [('baz', '\\\\\\x002'), ('branch', 'default'), ('foo', 'bar')]
     """
     extra = _defaultextra.copy()
-    for l in text.split('\0'):
+    for l in text.split(b'\0'):
         if l:
-            k, v = _string_unescape(l).split(':', 1)
+            k, v = _string_unescape(l).split(b':', 1)
             extra[k] = v
     return extra
+
 
 def encodeextra(d):
     # keys must be sorted to produce a deterministic changelog entry
     items = [
-        _string_escape('%s:%s' % (k, pycompat.bytestr(d[k])))
+        _string_escape(b'%s:%s' % (k, pycompat.bytestr(d[k])))
         for k in sorted(d)
     ]
-    return "\0".join(items)
+    return b"\0".join(items)
 
-def encodecopies(files, copies):
-    items = []
-    for i, dst in enumerate(files):
-        if dst in copies:
-            items.append('%d\0%s' % (i, copies[dst]))
-    if len(items) != len(copies):
-        raise error.ProgrammingError('some copy targets missing from file list')
-    return "\n".join(items)
-
-def decodecopies(files, data):
-    try:
-        copies = {}
-        if not data:
-            return copies
-        for l in data.split('\n'):
-            strindex, src = l.split('\0')
-            i = int(strindex)
-            dst = files[i]
-            copies[dst] = src
-        return copies
-    except (ValueError, IndexError):
-        # Perhaps someone had chosen the same key name (e.g. "p1copies") and
-        # used different syntax for the value.
-        return None
-
-def encodefileindices(files, subset):
-    subset = set(subset)
-    indices = []
-    for i, f in enumerate(files):
-        if f in subset:
-            indices.append('%d' % i)
-    return '\n'.join(indices)
-
-def decodefileindices(files, data):
-    try:
-        subset = []
-        if not data:
-            return subset
-        for strindex in data.split('\n'):
-            i = int(strindex)
-            if i < 0 or i >= len(files):
-                return None
-            subset.append(files[i])
-        return subset
-    except (ValueError, IndexError):
-        # Perhaps someone had chosen the same key name (e.g. "added") and
-        # used different syntax for the value.
-        return None
 
 def stripdesc(desc):
     """strip trailing whitespace and leading and trailing empty lines"""
-    return '\n'.join([l.rstrip() for l in desc.splitlines()]).strip('\n')
+    return b'\n'.join([l.rstrip() for l in desc.splitlines()]).strip(b'\n')
+
 
 class appender(object):
     '''the changelog index must be updated last on disk, so we use this class
     to delay writes to it'''
+
     def __init__(self, vfs, name, mode, buf):
         self.data = buf
         fp = vfs(name, mode)
@@ -146,8 +109,10 @@ class appender(object):
 
     def end(self):
         return self._end
+
     def tell(self):
         return self.offset
+
     def flush(self):
         pass
 
@@ -171,7 +136,7 @@ class appender(object):
 
     def read(self, count=-1):
         '''only trick here is reads that span real file and data'''
-        ret = ""
+        ret = b""
         if self.offset < self.size:
             s = self.fp.read(count)
             ret = s
@@ -180,9 +145,9 @@ class appender(object):
                 count -= len(s)
         if count != 0:
             doff = self.offset - self.size
-            self.data.insert(0, "".join(self.data))
+            self.data.insert(0, b"".join(self.data))
             del self.data[1:]
-            s = self.data[0][doff:doff + count]
+            s = self.data[0][doff : doff + count]
             self.offset += len(s)
             ret += s
         return ret
@@ -199,21 +164,28 @@ class appender(object):
     def __exit__(self, *args):
         return self.fp.__exit__(*args)
 
+
 def _divertopener(opener, target):
     """build an opener that writes in 'target.a' instead of 'target'"""
-    def _divert(name, mode='r', checkambig=False):
+
+    def _divert(name, mode=b'r', checkambig=False):
         if name != target:
             return opener(name, mode)
-        return opener(name + ".a", mode)
+        return opener(name + b".a", mode)
+
     return _divert
+
 
 def _delayopener(opener, target, buf):
     """build an opener that stores chunks in 'buf' instead of 'target'"""
-    def _delay(name, mode='r', checkambig=False):
+
+    def _delay(name, mode=b'r', checkambig=False):
         if name != target:
             return opener(name, mode)
         return appender(opener, name, mode, buf)
+
     return _delay
+
 
 @attr.s
 class _changelogrevision(object):
@@ -221,14 +193,15 @@ class _changelogrevision(object):
     # it in
     extra = attr.ib()
     manifest = attr.ib(default=nullid)
-    user = attr.ib(default='')
+    user = attr.ib(default=b'')
     date = attr.ib(default=(0, 0))
     files = attr.ib(default=attr.Factory(list))
     filesadded = attr.ib(default=None)
     filesremoved = attr.ib(default=None)
     p1copies = attr.ib(default=None)
     p2copies = attr.ib(default=None)
-    description = attr.ib(default='')
+    description = attr.ib(default=b'')
+
 
 class changelogrevision(object):
     """Holds results of a parsed changelog revision.
@@ -241,9 +214,11 @@ class changelogrevision(object):
     __slots__ = (
         r'_offsets',
         r'_text',
+        r'_sidedata',
+        r'_cpsd',
     )
 
-    def __new__(cls, text):
+    def __new__(cls, text, sidedata, cpsd):
         if not text:
             return _changelogrevision(extra=_defaultextra)
 
@@ -262,42 +237,44 @@ class changelogrevision(object):
         #
         # changelog v0 doesn't use extra
 
-        nl1 = text.index('\n')
-        nl2 = text.index('\n', nl1 + 1)
-        nl3 = text.index('\n', nl2 + 1)
+        nl1 = text.index(b'\n')
+        nl2 = text.index(b'\n', nl1 + 1)
+        nl3 = text.index(b'\n', nl2 + 1)
 
         # The list of files may be empty. Which means nl3 is the first of the
         # double newline that precedes the description.
-        if text[nl3 + 1:nl3 + 2] == '\n':
+        if text[nl3 + 1 : nl3 + 2] == b'\n':
             doublenl = nl3
         else:
-            doublenl = text.index('\n\n', nl3 + 1)
+            doublenl = text.index(b'\n\n', nl3 + 1)
 
         self._offsets = (nl1, nl2, nl3, doublenl)
         self._text = text
+        self._sidedata = sidedata
+        self._cpsd = cpsd
 
         return self
 
     @property
     def manifest(self):
-        return bin(self._text[0:self._offsets[0]])
+        return bin(self._text[0 : self._offsets[0]])
 
     @property
     def user(self):
         off = self._offsets
-        return encoding.tolocal(self._text[off[0] + 1:off[1]])
+        return encoding.tolocal(self._text[off[0] + 1 : off[1]])
 
     @property
     def _rawdate(self):
         off = self._offsets
-        dateextra = self._text[off[1] + 1:off[2]]
-        return dateextra.split(' ', 2)[0:2]
+        dateextra = self._text[off[1] + 1 : off[2]]
+        return dateextra.split(b' ', 2)[0:2]
 
     @property
     def _rawextra(self):
         off = self._offsets
-        dateextra = self._text[off[1] + 1:off[2]]
-        fields = dateextra.split(' ', 2)
+        dateextra = self._text[off[1] + 1 : off[2]]
+        fields = dateextra.split(b' ', 2)
         if len(fields) != 3:
             return None
 
@@ -329,31 +306,60 @@ class changelogrevision(object):
         if off[2] == off[3]:
             return []
 
-        return self._text[off[2] + 1:off[3]].split('\n')
+        return self._text[off[2] + 1 : off[3]].split(b'\n')
 
     @property
     def filesadded(self):
-        rawindices = self.extra.get('filesadded')
-        return rawindices and decodefileindices(self.files, rawindices)
+        if self._cpsd:
+            rawindices = self._sidedata.get(sidedatamod.SD_FILESADDED)
+            if not rawindices:
+                return []
+        else:
+            rawindices = self.extra.get(b'filesadded')
+        if rawindices is None:
+            return None
+        return copies.decodefileindices(self.files, rawindices)
 
     @property
     def filesremoved(self):
-        rawindices = self.extra.get('filesremoved')
-        return rawindices and decodefileindices(self.files, rawindices)
+        if self._cpsd:
+            rawindices = self._sidedata.get(sidedatamod.SD_FILESREMOVED)
+            if not rawindices:
+                return []
+        else:
+            rawindices = self.extra.get(b'filesremoved')
+        if rawindices is None:
+            return None
+        return copies.decodefileindices(self.files, rawindices)
 
     @property
     def p1copies(self):
-        rawcopies = self.extra.get('p1copies')
-        return rawcopies and decodecopies(self.files, rawcopies)
+        if self._cpsd:
+            rawcopies = self._sidedata.get(sidedatamod.SD_P1COPIES)
+            if not rawcopies:
+                return {}
+        else:
+            rawcopies = self.extra.get(b'p1copies')
+        if rawcopies is None:
+            return None
+        return copies.decodecopies(self.files, rawcopies)
 
     @property
     def p2copies(self):
-        rawcopies = self.extra.get('p2copies')
-        return rawcopies and decodecopies(self.files, rawcopies)
+        if self._cpsd:
+            rawcopies = self._sidedata.get(sidedatamod.SD_P2COPIES)
+            if not rawcopies:
+                return {}
+        else:
+            rawcopies = self.extra.get(b'p2copies')
+        if rawcopies is None:
+            return None
+        return copies.decodecopies(self.files, rawcopies)
 
     @property
     def description(self):
-        return encoding.tolocal(self._text[self._offsets[3] + 2:])
+        return encoding.tolocal(self._text[self._offsets[3] + 2 :])
+
 
 class changelog(revlog.revlog):
     def __init__(self, opener, trypending=False):
@@ -366,14 +372,20 @@ class changelog(revlog.revlog):
         It exists in a separate file to facilitate readers (such as
         hooks processes) accessing data before a transaction is finalized.
         """
-        if trypending and opener.exists('00changelog.i.a'):
-            indexfile = '00changelog.i.a'
+        if trypending and opener.exists(b'00changelog.i.a'):
+            indexfile = b'00changelog.i.a'
         else:
-            indexfile = '00changelog.i'
+            indexfile = b'00changelog.i'
 
-        datafile = '00changelog.d'
-        revlog.revlog.__init__(self, opener, indexfile, datafile=datafile,
-                               checkambig=True, mmaplargeindex=True)
+        datafile = b'00changelog.d'
+        revlog.revlog.__init__(
+            self,
+            opener,
+            indexfile,
+            datafile=datafile,
+            checkambig=True,
+            mmaplargeindex=True,
+        )
 
         if self._initempty and (self.version & 0xFFFF == revlog.REVLOGV1):
             # changelogs don't benefit from generaldelta.
@@ -391,9 +403,10 @@ class changelog(revlog.revlog):
         self._delaybuf = None
         self._divert = False
         self.filteredrevs = frozenset()
+        self._copiesstorage = opener.options.get(b'copies-storage')
 
     def tiprev(self):
-        for i in pycompat.xrange(len(self) -1, -2, -1):
+        for i in pycompat.xrange(len(self) - 1, -2, -1):
             if i not in self.filteredrevs:
                 return i
 
@@ -403,8 +416,7 @@ class changelog(revlog.revlog):
 
     def __contains__(self, rev):
         """filtered version of revlog.__contains__"""
-        return (0 <= rev < len(self)
-                and rev not in self.filteredrevs)
+        return 0 <= rev < len(self) and rev not in self.filteredrevs
 
     def __iter__(self):
         """filtered version of revlog.__iter__"""
@@ -468,8 +480,9 @@ class changelog(revlog.revlog):
         """filtered version of revlog.rev"""
         r = super(changelog, self).rev(node)
         if r in self.filteredrevs:
-            raise error.FilteredLookupError(hex(node), self.indexfile,
-                                            _('filtered node'))
+            raise error.FilteredLookupError(
+                hex(node), self.indexfile, _(b'filtered node')
+            )
         return r
 
     def node(self, rev):
@@ -497,36 +510,37 @@ class changelog(revlog.revlog):
         return super(changelog, self).flags(rev)
 
     def delayupdate(self, tr):
-        "delay visibility of index updates to other readers"
+        b"delay visibility of index updates to other readers"
 
         if not self._delayed:
             if len(self) == 0:
                 self._divert = True
-                if self._realopener.exists(self.indexfile + '.a'):
-                    self._realopener.unlink(self.indexfile + '.a')
+                if self._realopener.exists(self.indexfile + b'.a'):
+                    self._realopener.unlink(self.indexfile + b'.a')
                 self.opener = _divertopener(self._realopener, self.indexfile)
             else:
                 self._delaybuf = []
-                self.opener = _delayopener(self._realopener, self.indexfile,
-                                           self._delaybuf)
+                self.opener = _delayopener(
+                    self._realopener, self.indexfile, self._delaybuf
+                )
         self._delayed = True
-        tr.addpending('cl-%i' % id(self), self._writepending)
-        tr.addfinalize('cl-%i' % id(self), self._finalize)
+        tr.addpending(b'cl-%i' % id(self), self._writepending)
+        tr.addfinalize(b'cl-%i' % id(self), self._finalize)
 
     def _finalize(self, tr):
-        "finalize index updates"
+        b"finalize index updates"
         self._delayed = False
         self.opener = self._realopener
         # move redirected index data back into place
         if self._divert:
             assert not self._delaybuf
-            tmpname = self.indexfile + ".a"
+            tmpname = self.indexfile + b".a"
             nfile = self.opener.open(tmpname)
             nfile.close()
             self.opener.rename(tmpname, self.indexfile, checkambig=True)
         elif self._delaybuf:
-            fp = self.opener(self.indexfile, 'a', checkambig=True)
-            fp.write("".join(self._delaybuf))
+            fp = self.opener(self.indexfile, b'a', checkambig=True)
+            fp.write(b"".join(self._delaybuf))
             fp.close()
             self._delaybuf = None
         self._divert = False
@@ -534,18 +548,18 @@ class changelog(revlog.revlog):
         self._enforceinlinesize(tr)
 
     def _writepending(self, tr):
-        "create a file containing the unfinalized state for pretxnchangegroup"
+        b"create a file containing the unfinalized state for pretxnchangegroup"
         if self._delaybuf:
             # make a temporary copy of the index
             fp1 = self._realopener(self.indexfile)
-            pendingfilename = self.indexfile + ".a"
+            pendingfilename = self.indexfile + b".a"
             # register as a temp file to ensure cleanup on failure
             tr.registertmp(pendingfilename)
             # write existing data
-            fp2 = self._realopener(pendingfilename, "w")
+            fp2 = self._realopener(pendingfilename, b"w")
             fp2.write(fp1.read())
             # add pending data
-            fp2.write("".join(self._delaybuf))
+            fp2.write(b"".join(self._delaybuf))
             fp2.close()
             # switch modes so finalize can simply rename
             self._delaybuf = None
@@ -577,19 +591,18 @@ class changelog(revlog.revlog):
         ``changelogrevision`` instead, as it is faster for partial object
         access.
         """
-        c = changelogrevision(self.revision(node))
-        return (
-            c.manifest,
-            c.user,
-            c.date,
-            c.files,
-            c.description,
-            c.extra
+        d, s = self._revisiondata(node)
+        c = changelogrevision(
+            d, s, self._copiesstorage == b'changeset-sidedata'
         )
+        return (c.manifest, c.user, c.date, c.files, c.description, c.extra)
 
     def changelogrevision(self, nodeorrev):
         """Obtain a ``changelogrevision`` for a node or revision."""
-        return changelogrevision(self.revision(nodeorrev))
+        text, sidedata = self._revisiondata(nodeorrev)
+        return changelogrevision(
+            text, sidedata, self._copiesstorage == b'changeset-sidedata'
+        )
 
     def readfiles(self, node):
         """
@@ -598,13 +611,26 @@ class changelog(revlog.revlog):
         text = self.revision(node)
         if not text:
             return []
-        last = text.index("\n\n")
-        l = text[:last].split('\n')
+        last = text.index(b"\n\n")
+        l = text[:last].split(b'\n')
         return l[3:]
 
-    def add(self, manifest, files, desc, transaction, p1, p2,
-                  user, date=None, extra=None, p1copies=None, p2copies=None,
-                  filesadded=None, filesremoved=None):
+    def add(
+        self,
+        manifest,
+        files,
+        desc,
+        transaction,
+        p1,
+        p2,
+        user,
+        date=None,
+        extra=None,
+        p1copies=None,
+        p2copies=None,
+        filesadded=None,
+        filesremoved=None,
+    ):
         # Convert to UTF-8 encoded bytestrings as the very first
         # thing: calling any method on a localstr object will turn it
         # into a str object and the cached UTF-8 string is thus lost.
@@ -615,43 +641,77 @@ class changelog(revlog.revlog):
         # revision text contain two "\n\n" sequences -> corrupt
         # repository since read cannot unpack the revision.
         if not user:
-            raise error.StorageError(_("empty username"))
-        if "\n" in user:
-            raise error.StorageError(_("username %r contains a newline")
-                                     % pycompat.bytestr(user))
+            raise error.StorageError(_(b"empty username"))
+        if b"\n" in user:
+            raise error.StorageError(
+                _(b"username %r contains a newline") % pycompat.bytestr(user)
+            )
 
         desc = stripdesc(desc)
 
         if date:
-            parseddate = "%d %d" % dateutil.parsedate(date)
+            parseddate = b"%d %d" % dateutil.parsedate(date)
         else:
-            parseddate = "%d %d" % dateutil.makedate()
+            parseddate = b"%d %d" % dateutil.makedate()
         if extra:
-            branch = extra.get("branch")
-            if branch in ("default", ""):
-                del extra["branch"]
-            elif branch in (".", "null", "tip"):
-                raise error.StorageError(_('the name \'%s\' is reserved')
-                                         % branch)
-        extrasentries = p1copies, p2copies, filesadded, filesremoved
-        if extra is None and any(x is not None for x in extrasentries):
-            extra = {}
+            branch = extra.get(b"branch")
+            if branch in (b"default", b""):
+                del extra[b"branch"]
+            elif branch in (b".", b"null", b"tip"):
+                raise error.StorageError(
+                    _(b'the name \'%s\' is reserved') % branch
+                )
         sortedfiles = sorted(files)
+        sidedata = None
+        if extra is not None:
+            for name in (
+                b'p1copies',
+                b'p2copies',
+                b'filesadded',
+                b'filesremoved',
+            ):
+                extra.pop(name, None)
         if p1copies is not None:
-            extra['p1copies'] = encodecopies(sortedfiles, p1copies)
+            p1copies = copies.encodecopies(sortedfiles, p1copies)
         if p2copies is not None:
-            extra['p2copies'] = encodecopies(sortedfiles, p2copies)
+            p2copies = copies.encodecopies(sortedfiles, p2copies)
         if filesadded is not None:
-            extra['filesadded'] = encodefileindices(sortedfiles, filesadded)
+            filesadded = copies.encodefileindices(sortedfiles, filesadded)
         if filesremoved is not None:
-            extra['filesremoved'] = encodefileindices(sortedfiles, filesremoved)
+            filesremoved = copies.encodefileindices(sortedfiles, filesremoved)
+        if self._copiesstorage == b'extra':
+            extrasentries = p1copies, p2copies, filesadded, filesremoved
+            if extra is None and any(x is not None for x in extrasentries):
+                extra = {}
+            if p1copies is not None:
+                extra[b'p1copies'] = p1copies
+            if p2copies is not None:
+                extra[b'p2copies'] = p2copies
+            if filesadded is not None:
+                extra[b'filesadded'] = filesadded
+            if filesremoved is not None:
+                extra[b'filesremoved'] = filesremoved
+        elif self._copiesstorage == b'changeset-sidedata':
+            sidedata = {}
+            if p1copies:
+                sidedata[sidedatamod.SD_P1COPIES] = p1copies
+            if p2copies:
+                sidedata[sidedatamod.SD_P2COPIES] = p2copies
+            if filesadded:
+                sidedata[sidedatamod.SD_FILESADDED] = filesadded
+            if filesremoved:
+                sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
+            if not sidedata:
+                sidedata = None
 
         if extra:
             extra = encodeextra(extra)
-            parseddate = "%s %s" % (parseddate, extra)
-        l = [hex(manifest), user, parseddate] + sortedfiles + ["", desc]
-        text = "\n".join(l)
-        return self.addrevision(text, transaction, len(self), p1, p2)
+            parseddate = b"%s %s" % (parseddate, extra)
+        l = [hex(manifest), user, parseddate] + sortedfiles + [b"", desc]
+        text = b"\n".join(l)
+        return self.addrevision(
+            text, transaction, len(self), p1, p2, sidedata=sidedata
+        )
 
     def branchinfo(self, rev):
         """return the branch name and open/close state of a revision
@@ -659,11 +719,11 @@ class changelog(revlog.revlog):
         This function exists because creating a changectx object
         just to access this is costly."""
         extra = self.read(rev)[5]
-        return encoding.tolocal(extra.get("branch")), 'close' in extra
+        return encoding.tolocal(extra.get(b"branch")), b'close' in extra
 
     def _nodeduplicatecallback(self, transaction, node):
         # keep track of revisions that got "re-added", eg: unbunde of know rev.
         #
         # We track them in a list to preserve their order from the source bundle
-        duplicates = transaction.changes.setdefault('revduplicates', [])
+        duplicates = transaction.changes.setdefault(b'revduplicates', [])
         duplicates.append(self.rev(node))

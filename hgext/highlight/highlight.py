@@ -11,15 +11,15 @@
 from __future__ import absolute_import
 
 from mercurial import demandimport
-demandimport.IGNORES.update(['pkgutil', 'pkg_resources', '__main__'])
+
+demandimport.IGNORES.update([b'pkgutil', b'pkg_resources', b'__main__'])
 
 from mercurial import (
     encoding,
+    pycompat,
 )
 
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
 
 with demandimport.deactivated():
     import pygments
@@ -38,35 +38,37 @@ guess_lexer_for_filename = pygments.lexers.guess_lexer_for_filename
 TextLexer = pygments.lexers.TextLexer
 HtmlFormatter = pygments.formatters.HtmlFormatter
 
-SYNTAX_CSS = ('\n<link rel="stylesheet" href="{url}highlightcss" '
-              'type="text/css" />')
+SYNTAX_CSS = (
+    b'\n<link rel="stylesheet" href="{url}highlightcss" type="text/css" />'
+)
+
 
 def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
 
     # append a <link ...> to the syntax highlighting css
-    tmpl.load('header')
-    old_header = tmpl.cache['header']
+    tmpl.load(b'header')
+    old_header = tmpl.cache[b'header']
     if SYNTAX_CSS not in old_header:
         new_header = old_header + SYNTAX_CSS
-        tmpl.cache['header'] = new_header
+        tmpl.cache[b'header'] = new_header
 
     text = fctx.data()
     if stringutil.binary(text):
         return
 
     # str.splitlines() != unicode.splitlines() because "reasons"
-    for c in "\x0c\x1c\x1d\x1e":
+    for c in b"\x0c\x1c\x1d\x1e":
         if c in text:
-            text = text.replace(c, '')
+            text = text.replace(c, b'')
 
     # Pygments is best used with Unicode strings:
     # <http://pygments.org/docs/unicode/>
-    text = text.decode(encoding.encoding, 'replace')
+    text = text.decode(pycompat.sysstr(encoding.encoding), 'replace')
 
     # To get multi-line strings right, we can't format line-by-line
     try:
-        lexer = guess_lexer_for_filename(fctx.path(), text[:1024],
-                                         stripnl=False)
+        path = pycompat.sysstr(fctx.path())
+        lexer = guess_lexer_for_filename(path, text[:1024], stripnl=False)
     except (ClassNotFound, ValueError):
         # guess_lexer will return a lexer if *any* lexer matches. There is
         # no way to specify a minimum match score. This can give a high rate of
@@ -84,14 +86,16 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
     if isinstance(lexer, TextLexer):
         return
 
-    formatter = HtmlFormatter(nowrap=True, style=style)
+    formatter = HtmlFormatter(nowrap=True, style=pycompat.sysstr(style))
 
     colorized = highlight(text, lexer, formatter)
-    coloriter = (s.encode(encoding.encoding, 'replace')
-                 for s in colorized.splitlines())
+    coloriter = (
+        s.encode(pycompat.sysstr(encoding.encoding), 'replace')
+        for s in colorized.splitlines()
+    )
 
-    tmpl._filters['colorize'] = lambda x: next(coloriter)
+    tmpl._filters[b'colorize'] = lambda x: next(coloriter)
 
     oldl = tmpl.cache[field]
-    newl = oldl.replace('line|escape', 'line|colorize')
+    newl = oldl.replace(b'line|escape', b'line|colorize')
     tmpl.cache[field] = newl

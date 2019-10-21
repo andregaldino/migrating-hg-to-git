@@ -19,13 +19,14 @@ from . import (
 # Set of flags to not apply boolean negation logic on
 nevernegate = {
     # avoid --no-noninteractive
-    'noninteractive',
+    b'noninteractive',
     # These two flags are special because they cause hg to do one
     # thing and then exit, and so aren't suitable for use in things
     # like aliases anyway.
-    'help',
-    'version',
+    b'help',
+    b'version',
 }
+
 
 def _earlyoptarg(arg, shortlist, namelist):
     """Check if the given arg is a valid unabbreviated option
@@ -76,18 +77,19 @@ def _earlyoptarg(arg, shortlist, namelist):
     >>> opt(b'-:foo')
     ('', False, '', False)
     """
-    if arg.startswith('--'):
-        flag, eq, val = arg.partition('=')
+    if arg.startswith(b'--'):
+        flag, eq, val = arg.partition(b'=')
         if flag[2:] in namelist:
             return flag, bool(eq), val, False
-        if flag[2:] + '=' in namelist:
+        if flag[2:] + b'=' in namelist:
             return flag, bool(eq), val, True
-    elif arg.startswith('-') and arg != '-' and not arg.startswith('-:'):
+    elif arg.startswith(b'-') and arg != b'-' and not arg.startswith(b'-:'):
         flag, val = arg[:2], arg[2:]
         i = shortlist.find(flag[1:])
         if i >= 0:
-            return flag, bool(val), val, shortlist.startswith(':', i + 1)
-    return '', False, '', False
+            return flag, bool(val), val, shortlist.startswith(b':', i + 1)
+    return b'', False, b'', False
+
 
 def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     """Parse options like getopt, but ignores unknown options and abbreviated
@@ -176,7 +178,7 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     pos = 0
     while pos < len(args):
         arg = args[pos]
-        if arg == '--':
+        if arg == b'--':
             pos += not keepsep
             break
         flag, hasval, val, takeval = _earlyoptarg(arg, shortlist, namelist)
@@ -202,6 +204,7 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     parsedargs.extend(args[pos:])
     return parsedopts, parsedargs
 
+
 class customopt(object):
     """Manage defaults and mutations for any type of opt."""
 
@@ -226,12 +229,14 @@ class customopt(object):
 
         On failure, abort can be called with a string error message."""
 
+
 class _simpleopt(customopt):
     def _isboolopt(self):
         return isinstance(self._defaultvalue, (bool, type(None)))
 
     def newstate(self, oldstate, newparam, abort):
         return newparam
+
 
 class _callableopt(customopt):
     def __init__(self, callablefn):
@@ -241,6 +246,7 @@ class _callableopt(customopt):
     def newstate(self, oldstate, newparam, abort):
         return self.callablefn(newparam)
 
+
 class _listopt(customopt):
     def getdefaultvalue(self):
         return self._defaultvalue[:]
@@ -249,12 +255,14 @@ class _listopt(customopt):
         oldstate.append(newparam)
         return oldstate
 
+
 class _intopt(customopt):
     def newstate(self, oldstate, newparam, abort):
         try:
             return int(newparam)
         except ValueError:
-            abort(_('expected int'))
+            abort(_(b'expected int'))
+
 
 def _defaultopt(default):
     """Returns a default opt implementation, given a default value."""
@@ -269,6 +277,7 @@ def _defaultopt(default):
         return _intopt(default)
     else:
         return _simpleopt(default)
+
 
 def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
     """
@@ -301,7 +310,7 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
     if optaliases is None:
         optaliases = {}
     namelist = []
-    shortlist = ''
+    shortlist = b''
     argmap = {}
     defmap = {}
     negations = {}
@@ -315,11 +324,11 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
         # convert opts to getopt format
         onames = [name]
         onames.extend(optaliases.get(name, []))
-        name = name.replace('-', '_')
+        name = name.replace(b'-', b'_')
 
-        argmap['-' + short] = name
+        argmap[b'-' + short] = name
         for n in onames:
-            argmap['--' + n] = name
+            argmap[b'--' + n] = name
         defmap[name] = _defaultopt(default)
 
         # copy defaults to state
@@ -328,20 +337,20 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
         # does it take a parameter?
         if not defmap[name]._isboolopt():
             if short:
-                short += ':'
-            onames = [n + '=' for n in onames]
+                short += b':'
+            onames = [n + b'=' for n in onames]
         elif name not in nevernegate:
             for n in onames:
-                if n.startswith('no-'):
+                if n.startswith(b'no-'):
                     insert = n[3:]
                 else:
-                    insert = 'no-' + n
+                    insert = b'no-' + n
                 # backout (as a practical example) has both --commit and
                 # --no-commit options, so we don't want to allow the
                 # negations of those flags.
                 if insert not in alllong:
-                    assert ('--' + n) not in negations
-                    negations['--' + insert] = '--' + n
+                    assert (b'--' + n) not in negations
+                    negations[b'--' + insert] = b'--' + n
                     namelist.append(insert)
         if short:
             shortlist += short
@@ -369,9 +378,13 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
         if obj._isboolopt():
             state[name] = boolval
         else:
+
             def abort(s):
-                raise error.Abort(_('invalid value %r for option %s, %s')
-                                  % (pycompat.maybebytestr(val), opt, s))
+                raise error.Abort(
+                    _(b'invalid value %r for option %s, %s')
+                    % (pycompat.maybebytestr(val), opt, s)
+                )
+
             state[name] = defmap[name].newstate(state[name], val, abort)
 
     # return unparsed args

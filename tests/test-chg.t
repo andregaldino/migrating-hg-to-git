@@ -127,7 +127,7 @@ chg waits for pager if runcommand raises
   > command = registrar.command(cmdtable)
   > @command(b'crash')
   > def pagercrash(ui, repo, *pats, **opts):
-  >     ui.write('going to crash\n')
+  >     ui.write(b'going to crash\n')
   >     raise Exception('.')
   > EOF
 

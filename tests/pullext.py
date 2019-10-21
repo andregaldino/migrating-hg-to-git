@@ -13,8 +13,9 @@ from mercurial import (
     error,
     extensions,
     localrepo,
-    repository,
 )
+from mercurial.interfaces import repository
+
 
 def clonecommand(orig, ui, repo, *args, **kwargs):
     if kwargs.get(r'include') or kwargs.get(r'exclude'):
@@ -28,8 +29,10 @@ def clonecommand(orig, ui, repo, *args, **kwargs):
 
     return orig(ui, repo, *args, **kwargs)
 
+
 def featuresetup(ui, features):
     features.add(repository.NARROW_REQUIREMENT)
+
 
 def extsetup(ui):
     entry = extensions.wrapcommand(commands.table, b'clone', clonecommand)
@@ -38,13 +41,16 @@ def extsetup(ui):
     hasdepth = any(x[1] == b'depth' for x in entry[1])
 
     if not hasinclude:
-        entry[1].append((b'', b'include', [],
-                         _(b'pattern of file/directory to clone')))
-        entry[1].append((b'', b'exclude', [],
-                         _(b'pattern of file/directory to not clone')))
+        entry[1].append(
+            (b'', b'include', [], _(b'pattern of file/directory to clone'))
+        )
+        entry[1].append(
+            (b'', b'exclude', [], _(b'pattern of file/directory to not clone'))
+        )
 
     if not hasdepth:
-        entry[1].append((b'', b'depth', b'',
-                         _(b'ancestry depth of changesets to fetch')))
+        entry[1].append(
+            (b'', b'depth', b'', _(b'ancestry depth of changesets to fetch'))
+        )
 
     localrepo.featuresetupfuncs.add(featuresetup)

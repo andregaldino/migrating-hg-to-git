@@ -9,9 +9,8 @@ from __future__ import absolute_import
 
 import array
 
-from .. import (
-    pycompat,
-)
+from .. import pycompat
+
 
 def isasciistr(s):
     try:
@@ -20,12 +19,14 @@ def isasciistr(s):
     except UnicodeDecodeError:
         return False
 
+
 def asciilower(s):
     '''convert a string to lowercase if ASCII
 
     Raises UnicodeDecodeError if non-ASCII characters are found.'''
     s.decode('ascii')
     return s.lower()
+
 
 def asciiupper(s):
     '''convert a string to uppercase if ASCII
@@ -34,21 +35,23 @@ def asciiupper(s):
     s.decode('ascii')
     return s.upper()
 
+
 _jsonmap = []
-_jsonmap.extend("\\u%04x" % x for x in range(32))
+_jsonmap.extend(b"\\u%04x" % x for x in range(32))
 _jsonmap.extend(pycompat.bytechr(x) for x in range(32, 127))
-_jsonmap.append('\\u007f')
-_jsonmap[0x09] = '\\t'
-_jsonmap[0x0a] = '\\n'
-_jsonmap[0x22] = '\\"'
-_jsonmap[0x5c] = '\\\\'
-_jsonmap[0x08] = '\\b'
-_jsonmap[0x0c] = '\\f'
-_jsonmap[0x0d] = '\\r'
+_jsonmap.append(b'\\u007f')
+_jsonmap[0x09] = b'\\t'
+_jsonmap[0x0A] = b'\\n'
+_jsonmap[0x22] = b'\\"'
+_jsonmap[0x5C] = b'\\\\'
+_jsonmap[0x08] = b'\\b'
+_jsonmap[0x0C] = b'\\f'
+_jsonmap[0x0D] = b'\\r'
 _paranoidjsonmap = _jsonmap[:]
-_paranoidjsonmap[0x3c] = '\\u003c'  # '<' (e.g. escape "</script>")
-_paranoidjsonmap[0x3e] = '\\u003e'  # '>'
+_paranoidjsonmap[0x3C] = b'\\u003c'  # '<' (e.g. escape "</script>")
+_paranoidjsonmap[0x3E] = b'\\u003e'  # '>'
 _jsonmap.extend(pycompat.bytechr(x) for x in range(128, 256))
+
 
 def jsonescapeu8fast(u8chars, paranoid):
     """Convert a UTF-8 byte string to JSON-escaped form (fast path)
@@ -60,14 +63,16 @@ def jsonescapeu8fast(u8chars, paranoid):
     else:
         jm = _jsonmap
     try:
-        return ''.join(jm[x] for x in bytearray(u8chars))
+        return b''.join(jm[x] for x in bytearray(u8chars))
     except IndexError:
         raise ValueError
+
 
 if pycompat.ispy3:
     _utf8strict = r'surrogatepass'
 else:
     _utf8strict = r'strict'
+
 
 def jsonescapeu8fallback(u8chars, paranoid):
     """Convert a UTF-8 byte string to JSON-escaped form (slow path)
@@ -82,4 +87,4 @@ def jsonescapeu8fallback(u8chars, paranoid):
     u16b = u8chars.decode('utf-8', _utf8strict).encode('utf-16', _utf8strict)
     u16codes = array.array(r'H', u16b)
     u16codes.pop(0)  # drop BOM
-    return ''.join(jm[x] if x < 128 else '\\u%04x' % x for x in u16codes)
+    return b''.join(jm[x] if x < 128 else b'\\u%04x' % x for x in u16codes)

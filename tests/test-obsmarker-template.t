@@ -387,6 +387,7 @@ Test templates with splitted commit
   $ hg commit -A -m "A0"
   adding b
   $ hg debugobsolete `getid "1"` `getid "2"` `getid "3"`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -593,9 +594,11 @@ Simulate a fold
   adding B0
   created new head
   $ hg debugobsolete `getid "desc(A0)"` `getid "desc(C0)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)"` `getid "desc(C0)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -1120,9 +1123,11 @@ Test setup
   adding B0
   created new head
   $ hg debugobsolete `getid "desc(A0)"` `getid "desc(C0)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete `getid "desc(B1)"` `getid "desc(C0)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -1601,11 +1606,14 @@ Test setup
 Create the cycle
 
   $ hg debugobsolete `getid "desc(A0)"` `getid "desc(B0)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)"` `getid "desc(C0)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg debugobsolete `getid "desc(B0)"` `getid "desc(A0)"`
+  1 new obsolescence markers
 
 Check templates
 ---------------
@@ -1854,6 +1862,7 @@ Split it
      summary:     ROOT
   
   $ hg debugobsolete `getid "4"` `getid "5"` `getid "6"` `getid "7"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G
   @  changeset:   7:ba2ed02b0c9a
@@ -2301,6 +2310,7 @@ Test setup
   $ mkcommit ROOT
   $ mkcommit A0
   $ hg debugobsolete --record-parent `getid "."`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 Check output
@@ -2330,6 +2340,7 @@ Test setup
   $ mkcommit A0
   $ hg commit --amend -m "A1"
   $ hg debugobsolete --record-parent `getid "."`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg up -r "desc(A0)" --hidden
@@ -2338,6 +2349,7 @@ Test setup
   (hidden revision '471f378eab4c' is pruned)
   $ hg commit --amend -m "A2"
   $ hg debugobsolete --record-parent `getid "."`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 Check output
@@ -2481,10 +2493,12 @@ Test templates with splitted and pruned commit
   $ hg commit -A -m "A2"
   adding b
   $ hg debugobsolete `getid "1"` `getid "2"` `getid "3"`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 # Simulate prune
   $ hg debugobsolete --record-parent `getid "."`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -2622,6 +2636,7 @@ Test metadata encoding (issue5754)
   > --config devel.user.obsmarker="`cat test2`"
   $ mkcommit B0
   $ HGENCODING=latin-1 hg debugobsolete -u "`cat test2`" "`getid 'desc(B0)'`"
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 metadata should be stored in UTF-8, and debugobsolete doesn't decode it to

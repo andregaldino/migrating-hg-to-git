@@ -19,6 +19,7 @@ import sys
 
 try:
     import msvcrt
+
     msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
     msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
@@ -52,8 +53,7 @@ else:
 
 # variables with empty values may not exist on all platforms, filter
 # them now for portability sake.
-env = [(k, v) for k, v in os.environ.items()
-       if k.startswith("HG_") and v]
+env = [(k, v) for k, v in os.environ.items() if k.startswith("HG_") and v]
 env.sort()
 
 out.write(b"%s hook: " % args.name.encode('ascii'))
@@ -62,8 +62,9 @@ if os.name == 'nt':
 else:
     filter = lambda x: x
 
-vars = [b"%s=%s" % (k.encode('ascii'), filter(v).encode('ascii'))
-        for k, v in env]
+vars = [
+    b"%s=%s" % (k.encode('ascii'), filter(v).encode('ascii')) for k, v in env
+]
 
 # Print variables on out
 if not args.line:

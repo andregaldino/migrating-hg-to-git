@@ -1,4 +1,14 @@
+// utils module
+//
+// Copyright 2019 Raphaël Gomès <rgomes@octobus.net>
+//
+// This software may be used and distributed according to the terms of the
+// GNU General Public License version 2 or any later version.
+
+//! Contains useful functions, traits, structs, etc. for use in core.
+
 pub mod files;
+pub mod hg_path;
 
 /// Replaces the `from` slice with the `to` slice inside the `buf` slice.
 ///
@@ -11,8 +21,7 @@ pub mod files;
 /// assert_eq!(
 ///     line,
 ///     b"I love writing tests!".to_vec()
-///);
-///
+/// );
 /// ```
 pub fn replace_slice<T>(buf: &mut [T], from: &[T], to: &[T])
 where
@@ -32,6 +41,7 @@ pub trait SliceExt {
     fn trim_end(&self) -> &Self;
     fn trim_start(&self) -> &Self;
     fn trim(&self) -> &Self;
+    fn drop_prefix(&self, needle: &Self) -> Option<&Self>;
 }
 
 fn is_not_whitespace(c: &u8) -> bool {
@@ -71,5 +81,13 @@ impl SliceExt for [u8] {
     /// ```
     fn trim(&self) -> &[u8] {
         self.trim_start().trim_end()
+    }
+
+    fn drop_prefix(&self, needle: &Self) -> Option<&Self> {
+        if self.starts_with(needle) {
+            Some(&self[needle.len()..])
+        } else {
+            None
+        }
     }
 }

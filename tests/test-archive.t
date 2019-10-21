@@ -131,7 +131,8 @@ check http return codes
   server: testing stub value
   transfer-encoding: chunked
   
-  body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505
+  body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505 (no-py38 !)
+  body: size=506, sha1=70926a04cb8887d0bcccf5380488100a10222def (py38 !)
   % tar.bz2 and zip disallowed should both give 403
   403 Archive type not allowed: bz2
   content-type: text/html; charset=ascii
@@ -159,7 +160,8 @@ check http return codes
   server: testing stub value
   transfer-encoding: chunked
   
-  body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b
+  body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b (no-py38 !)
+  body: size=506, sha1=1bd1f8e8d3701704bd4385038bd9c09b81c77f4e (py38 !)
   % zip and tar.gz disallowed should both give 403
   403 Archive type not allowed: zip
   content-type: text/html; charset=ascii
@@ -218,7 +220,8 @@ check http return codes (with deprecated option)
   server: testing stub value
   transfer-encoding: chunked
   
-  body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505
+  body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505 (no-py38 !)
+  body: size=506, sha1=70926a04cb8887d0bcccf5380488100a10222def (py38 !)
   % tar.bz2 and zip disallowed should both give 403
   403 Archive type not allowed: bz2
   content-type: text/html; charset=ascii
@@ -246,7 +249,8 @@ check http return codes (with deprecated option)
   server: testing stub value
   transfer-encoding: chunked
   
-  body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b
+  body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b (no-py38 !)
+  body: size=506, sha1=1bd1f8e8d3701704bd4385038bd9c09b81c77f4e (py38 !)
   % zip and tar.gz disallowed should both give 403
   403 Archive type not allowed: zip
   content-type: text/html; charset=ascii
@@ -565,6 +569,19 @@ old file -- date clamped to 1980
   \s*Length.* (re)
   *172*80*00:00*old/.hg_archival.txt (glob)
   *0*80*00:00*old/old (glob)
+
+test xz support only available in Python 3.4
+
+#if py3
+  $ hg archive ../archive.txz
+  $ xz -l ../archive.txz | head -n1
+  Strms  Blocks   Compressed Uncompressed  Ratio  Check   Filename
+  $ rm -f ../archive.txz
+#else
+  $ hg archive ../archive.txz
+  abort: xz compression is only available in Python 3
+  [255]
+#endif
 
 show an error when a provided pattern matches no files
 

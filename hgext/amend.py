@@ -16,7 +16,6 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     commands,
-    error,
     pycompat,
     registrar,
 )
@@ -25,23 +24,40 @@ from mercurial import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 cmdtable = {}
 command = registrar.command(cmdtable)
 
-@command('amend',
-    [('A', 'addremove', None,
-      _('mark new/missing files as added/removed before committing')),
-     ('e', 'edit', None, _('invoke editor on commit messages')),
-     ('i', 'interactive', None, _('use interactive mode')),
-     ('n', 'note', '', _('store a note on the amend')),
-     ('D', 'currentdate', None,
-      _('record the current date as commit date')),
-    ] + cmdutil.walkopts + cmdutil.commitopts + cmdutil.commitopts2,
-    _('[OPTION]... [FILE]...'),
+
+@command(
+    b'amend',
+    [
+        (
+            b'A',
+            b'addremove',
+            None,
+            _(b'mark new/missing files as added/removed before committing'),
+        ),
+        (b'e', b'edit', None, _(b'invoke editor on commit messages')),
+        (b'i', b'interactive', None, _(b'use interactive mode')),
+        (
+            b'',
+            b'close-branch',
+            None,
+            _(b'mark a branch as closed, hiding it from the branch list'),
+        ),
+        (b's', b'secret', None, _(b'use the secret phase for committing')),
+        (b'n', b'note', b'', _(b'store a note on the amend')),
+    ]
+    + cmdutil.walkopts
+    + cmdutil.commitopts
+    + cmdutil.commitopts2
+    + cmdutil.commitopts3,
+    _(b'[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_COMMITTING,
-    inferrepo=True)
+    inferrepo=True,
+)
 def amend(ui, repo, *pats, **opts):
     """amend the working copy parent with all or specified outstanding changes
 
@@ -51,10 +67,10 @@ def amend(ui, repo, *pats, **opts):
     See :hg:`help commit` for more details.
     """
     opts = pycompat.byteskwargs(opts)
-    if len(opts['note']) > 255:
-        raise error.Abort(_("cannot store a note of more than 255 bytes"))
+    cmdutil.checknotesize(ui, opts)
+
     with repo.wlock(), repo.lock():
-        if not opts.get('logfile'):
-            opts['message'] = opts.get('message') or repo['.'].description()
-        opts['amend'] = True
+        if not opts.get(b'logfile'):
+            opts[b'message'] = opts.get(b'message') or repo[b'.'].description()
+        opts[b'amend'] = True
         return commands._docommit(ui, repo, *pats, **pycompat.strkwargs(opts))

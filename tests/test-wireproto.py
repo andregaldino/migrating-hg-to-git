@@ -11,10 +11,10 @@ from mercurial import (
     wireprotov1peer,
     wireprotov1server,
 )
-from mercurial.utils import (
-    stringutil,
-)
+from mercurial.utils import stringutil
+
 stringio = util.stringio
+
 
 class proto(object):
     def __init__(self, args):
@@ -30,10 +30,12 @@ class proto(object):
     def checkperm(self, perm):
         pass
 
+
 wireprototypes.TRANSPORTS['dummyproto'] = {
     'transport': 'dummy',
     'version': 1,
 }
+
 
 class clientpeer(wireprotov1peer.wirepeer):
     def __init__(self, serverrepo, ui):
@@ -77,6 +79,7 @@ class clientpeer(wireprotov1peer.wirepeer):
         yield {b'name': mangle(name)}, f
         yield unmangle(f.value)
 
+
 class serverrepo(object):
     def __init__(self, ui):
         self.ui = ui
@@ -87,23 +90,30 @@ class serverrepo(object):
     def filtered(self, name):
         return self
 
+
 def mangle(s):
     return b''.join(pycompat.bytechr(ord(c) + 1) for c in pycompat.bytestr(s))
+
+
 def unmangle(s):
     return b''.join(pycompat.bytechr(ord(c) - 1) for c in pycompat.bytestr(s))
 
+
 def greet(repo, proto, name):
     return mangle(repo.greet(unmangle(name)))
+
 
 wireprotov1server.commands[b'greet'] = (greet, b'name')
 
 srv = serverrepo(uimod.ui())
 clt = clientpeer(srv, uimod.ui())
 
+
 def printb(data, end=b'\n'):
     out = getattr(sys.stdout, 'buffer', sys.stdout)
     out.write(data + end)
     out.flush()
+
 
 printb(clt.greet(b"Foobar"))
 
@@ -111,5 +121,6 @@ with clt.commandexecutor() as e:
     fgreet1 = e.callcommand(b'greet', {b'name': b'Fo, =;:<o'})
     fgreet2 = e.callcommand(b'greet', {b'name': b'Bar'})
 
-printb(stringutil.pprint([f.result() for f in (fgreet1, fgreet2)],
-                         bprefix=True))
+printb(
+    stringutil.pprint([f.result() for f in (fgreet1, fgreet2)], bprefix=True)
+)

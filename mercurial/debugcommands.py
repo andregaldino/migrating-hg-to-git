@@ -32,6 +32,10 @@ from .node import (
     nullrev,
     short,
 )
+from .pycompat import (
+    getattr,
+    open,
+)
 from . import (
     bundle2,
     changegroup,
@@ -88,15 +92,14 @@ from .utils import (
     stringutil,
 )
 
-from .revlogutils import (
-    deltas as deltautil
-)
+from .revlogutils import deltas as deltautil
 
 release = lockmod.release
 
 command = registrar.command()
 
-@command('debugancestor', [], _('[INDEX] REV1 REV2'), optionalrepo=True)
+
+@command(b'debugancestor', [], _(b'[INDEX] REV1 REV2'), optionalrepo=True)
 def debugancestor(ui, repo, *args):
     """find the ancestor revision of two revisions in a given index"""
     if len(args) == 3:
@@ -105,32 +108,53 @@ def debugancestor(ui, repo, *args):
         lookup = r.lookup
     elif len(args) == 2:
         if not repo:
-            raise error.Abort(_('there is no Mercurial repository here '
-                                '(.hg not found)'))
+            raise error.Abort(
+                _(b'there is no Mercurial repository here (.hg not found)')
+            )
         rev1, rev2 = args
         r = repo.changelog
         lookup = repo.lookup
     else:
-        raise error.Abort(_('either two or three arguments required'))
+        raise error.Abort(_(b'either two or three arguments required'))
     a = r.ancestor(lookup(rev1), lookup(rev2))
-    ui.write('%d:%s\n' % (r.rev(a), hex(a)))
+    ui.write(b'%d:%s\n' % (r.rev(a), hex(a)))
 
-@command('debugapplystreamclonebundle', [], 'FILE')
+
+@command(b'debugapplystreamclonebundle', [], b'FILE')
 def debugapplystreamclonebundle(ui, repo, fname):
     """apply a stream clone bundle file"""
     f = hg.openpath(ui, fname)
     gen = exchange.readbundle(ui, f, fname)
     gen.apply(repo)
 
-@command('debugbuilddag',
-    [('m', 'mergeable-file', None, _('add single file mergeable changes')),
-    ('o', 'overwritten-file', None, _('add single file all revs overwrite')),
-    ('n', 'new-file', None, _('add new file at each rev'))],
-    _('[OPTION]... [TEXT]'))
-def debugbuilddag(ui, repo, text=None,
-                  mergeable_file=False,
-                  overwritten_file=False,
-                  new_file=False):
+
+@command(
+    b'debugbuilddag',
+    [
+        (
+            b'm',
+            b'mergeable-file',
+            None,
+            _(b'add single file mergeable changes'),
+        ),
+        (
+            b'o',
+            b'overwritten-file',
+            None,
+            _(b'add single file all revs overwrite'),
+        ),
+        (b'n', b'new-file', None, _(b'add new file at each rev')),
+    ],
+    _(b'[OPTION]... [TEXT]'),
+)
+def debugbuilddag(
+    ui,
+    repo,
+    text=None,
+    mergeable_file=False,
+    overwritten_file=False,
+    new_file=False,
+):
     """builds a repo with a given DAG from scratch in the current empty repo
 
     The description of the DAG is read from stdin if not given on the
@@ -164,38 +188,40 @@ def debugbuilddag(ui, repo, text=None,
     """
 
     if text is None:
-        ui.status(_("reading DAG from stdin\n"))
+        ui.status(_(b"reading DAG from stdin\n"))
         text = ui.fin.read()
 
     cl = repo.changelog
     if len(cl) > 0:
-        raise error.Abort(_('repository is not empty'))
+        raise error.Abort(_(b'repository is not empty'))
 
     # determine number of revs in DAG
     total = 0
     for type, data in dagparser.parsedag(text):
-        if type == 'n':
+        if type == b'n':
             total += 1
 
     if mergeable_file:
         linesperrev = 2
         # make a file with k lines per rev
-        initialmergedlines = ['%d' % i
-                              for i in pycompat.xrange(0, total * linesperrev)]
-        initialmergedlines.append("")
+        initialmergedlines = [
+            b'%d' % i for i in pycompat.xrange(0, total * linesperrev)
+        ]
+        initialmergedlines.append(b"")
 
     tags = []
-    progress = ui.makeprogress(_('building'), unit=_('revisions'),
-                               total=total)
-    with progress, repo.wlock(), repo.lock(), repo.transaction("builddag"):
+    progress = ui.makeprogress(
+        _(b'building'), unit=_(b'revisions'), total=total
+    )
+    with progress, repo.wlock(), repo.lock(), repo.transaction(b"builddag"):
         at = -1
-        atbranch = 'default'
+        atbranch = b'default'
         nodeids = []
         id = 0
         progress.update(id)
         for type, data in dagparser.parsedag(text):
-            if type == 'n':
-                ui.note(('node %s\n' % pycompat.bytestr(data)))
+            if type == b'n':
+                ui.note((b'node %s\n' % pycompat.bytestr(data)))
                 id, ps = data
 
                 files = []
@@ -203,46 +229,48 @@ def debugbuilddag(ui, repo, text=None,
 
                 p2 = None
                 if mergeable_file:
-                    fn = "mf"
+                    fn = b"mf"
                     p1 = repo[ps[0]]
                     if len(ps) > 1:
                         p2 = repo[ps[1]]
                         pa = p1.ancestor(p2)
-                        base, local, other = [x[fn].data() for x in (pa, p1,
-                                                                     p2)]
+                        base, local, other = [
+                            x[fn].data() for x in (pa, p1, p2)
+                        ]
                         m3 = simplemerge.Merge3Text(base, local, other)
                         ml = [l.strip() for l in m3.merge_lines()]
-                        ml.append("")
+                        ml.append(b"")
                     elif at > 0:
-                        ml = p1[fn].data().split("\n")
+                        ml = p1[fn].data().split(b"\n")
                     else:
                         ml = initialmergedlines
-                    ml[id * linesperrev] += " r%i" % id
-                    mergedtext = "\n".join(ml)
+                    ml[id * linesperrev] += b" r%i" % id
+                    mergedtext = b"\n".join(ml)
                     files.append(fn)
                     filecontent[fn] = mergedtext
 
                 if overwritten_file:
-                    fn = "of"
+                    fn = b"of"
                     files.append(fn)
-                    filecontent[fn] = "r%i\n" % id
+                    filecontent[fn] = b"r%i\n" % id
 
                 if new_file:
-                    fn = "nf%i" % id
+                    fn = b"nf%i" % id
                     files.append(fn)
-                    filecontent[fn] = "r%i\n" % id
+                    filecontent[fn] = b"r%i\n" % id
                     if len(ps) > 1:
                         if not p2:
                             p2 = repo[ps[1]]
                         for fn in p2:
-                            if fn.startswith("nf"):
+                            if fn.startswith(b"nf"):
                                 files.append(fn)
                                 filecontent[fn] = p2[fn].data()
 
                 def fctxfn(repo, cx, path):
                     if path in filecontent:
-                        return context.memfilectx(repo, cx, path,
-                                                  filecontent[path])
+                        return context.memfilectx(
+                            repo, cx, path, filecontent[path]
+                        )
                     return None
 
                 if len(ps) == 0 or ps[0] < 0:
@@ -251,70 +279,89 @@ def debugbuilddag(ui, repo, text=None,
                     pars = [nodeids[ps[0]], None]
                 else:
                     pars = [nodeids[p] for p in ps]
-                cx = context.memctx(repo, pars, "r%i" % id, files, fctxfn,
-                                    date=(id, 0),
-                                    user="debugbuilddag",
-                                    extra={'branch': atbranch})
+                cx = context.memctx(
+                    repo,
+                    pars,
+                    b"r%i" % id,
+                    files,
+                    fctxfn,
+                    date=(id, 0),
+                    user=b"debugbuilddag",
+                    extra={b'branch': atbranch},
+                )
                 nodeid = repo.commitctx(cx)
                 nodeids.append(nodeid)
                 at = id
-            elif type == 'l':
+            elif type == b'l':
                 id, name = data
-                ui.note(('tag %s\n' % name))
-                tags.append("%s %s\n" % (hex(repo.changelog.node(id)), name))
-            elif type == 'a':
-                ui.note(('branch %s\n' % data))
+                ui.note((b'tag %s\n' % name))
+                tags.append(b"%s %s\n" % (hex(repo.changelog.node(id)), name))
+            elif type == b'a':
+                ui.note((b'branch %s\n' % data))
                 atbranch = data
             progress.update(id)
 
         if tags:
-            repo.vfs.write("localtags", "".join(tags))
+            repo.vfs.write(b"localtags", b"".join(tags))
+
 
 def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
-    indent_string = ' ' * indent
+    indent_string = b' ' * indent
     if all:
-        ui.write(("%sformat: id, p1, p2, cset, delta base, len(delta)\n")
-                 % indent_string)
+        ui.writenoi18n(
+            b"%sformat: id, p1, p2, cset, delta base, len(delta)\n"
+            % indent_string
+        )
 
         def showchunks(named):
-            ui.write("\n%s%s\n" % (indent_string, named))
+            ui.write(b"\n%s%s\n" % (indent_string, named))
             for deltadata in gen.deltaiter():
                 node, p1, p2, cs, deltabase, delta, flags = deltadata
-                ui.write("%s%s %s %s %s %s %d\n" %
-                         (indent_string, hex(node), hex(p1), hex(p2),
-                          hex(cs), hex(deltabase), len(delta)))
+                ui.write(
+                    b"%s%s %s %s %s %s %d\n"
+                    % (
+                        indent_string,
+                        hex(node),
+                        hex(p1),
+                        hex(p2),
+                        hex(cs),
+                        hex(deltabase),
+                        len(delta),
+                    )
+                )
 
         chunkdata = gen.changelogheader()
-        showchunks("changelog")
+        showchunks(b"changelog")
         chunkdata = gen.manifestheader()
-        showchunks("manifest")
+        showchunks(b"manifest")
         for chunkdata in iter(gen.filelogheader, {}):
-            fname = chunkdata['filename']
+            fname = chunkdata[b'filename']
             showchunks(fname)
     else:
         if isinstance(gen, bundle2.unbundle20):
-            raise error.Abort(_('use debugbundle2 for this file'))
+            raise error.Abort(_(b'use debugbundle2 for this file'))
         chunkdata = gen.changelogheader()
         for deltadata in gen.deltaiter():
             node, p1, p2, cs, deltabase, delta, flags = deltadata
-            ui.write("%s%s\n" % (indent_string, hex(node)))
+            ui.write(b"%s%s\n" % (indent_string, hex(node)))
+
 
 def _debugobsmarkers(ui, part, indent=0, **opts):
     """display version and markers contained in 'data'"""
     opts = pycompat.byteskwargs(opts)
     data = part.read()
-    indent_string = ' ' * indent
+    indent_string = b' ' * indent
     try:
         version, markers = obsolete._readmarkers(data)
     except error.UnknownVersion as exc:
-        msg = "%sunsupported version: %s (%d bytes)\n"
+        msg = b"%sunsupported version: %s (%d bytes)\n"
         msg %= indent_string, exc.version, len(data)
         ui.write(msg)
     else:
-        msg = "%sversion: %d (%d bytes)\n"
+        msg = b"%sversion: %d (%d bytes)\n"
         msg %= indent_string, version, len(data)
         ui.write(msg)
-        fm = ui.formatter('debugobsolete', opts)
+        fm = ui.formatter(b'debugobsolete', opts)
         for rawmarker in sorted(markers):
             m = obsutil.marker(None, rawmarker)
             fm.startitem()
@@ -322,56 +369,65 @@ def _debugobsmarkers(ui, part, indent=0, **opts):
             cmdutil.showmarker(fm, m)
         fm.end()
 
+
 def _debugphaseheads(ui, data, indent=0):
     """display version and markers contained in 'data'"""
-    indent_string = ' ' * indent
+    indent_string = b' ' * indent
     headsbyphase = phases.binarydecode(data)
     for phase in phases.allphases:
         for head in headsbyphase[phase]:
             ui.write(indent_string)
-            ui.write('%s %s\n' % (hex(head), phases.phasenames[phase]))
+            ui.write(b'%s %s\n' % (hex(head), phases.phasenames[phase]))
+
 
 def _quasirepr(thing):
     if isinstance(thing, (dict, util.sortdict, collections.OrderedDict)):
-        return '{%s}' % (
-            b', '.join(b'%s: %s' % (k, thing[k]) for k in sorted(thing)))
+        return b'{%s}' % (
+            b', '.join(b'%s: %s' % (k, thing[k]) for k in sorted(thing))
+        )
     return pycompat.bytestr(repr(thing))
+
 
 def _debugbundle2(ui, gen, all=None, **opts):
     """lists the contents of a bundle2"""
     if not isinstance(gen, bundle2.unbundle20):
-        raise error.Abort(_('not a bundle2 file'))
-    ui.write(('Stream params: %s\n' % _quasirepr(gen.params)))
+        raise error.Abort(_(b'not a bundle2 file'))
+    ui.write((b'Stream params: %s\n' % _quasirepr(gen.params)))
     parttypes = opts.get(r'part_type', [])
     for part in gen.iterparts():
         if parttypes and part.type not in parttypes:
             continue
-        msg = '%s -- %s (mandatory: %r)\n'
+        msg = b'%s -- %s (mandatory: %r)\n'
         ui.write((msg % (part.type, _quasirepr(part.params), part.mandatory)))
-        if part.type == 'changegroup':
-            version = part.params.get('version', '01')
-            cg = changegroup.getunbundler(version, part, 'UN')
+        if part.type == b'changegroup':
+            version = part.params.get(b'version', b'01')
+            cg = changegroup.getunbundler(version, part, b'UN')
             if not ui.quiet:
                 _debugchangegroup(ui, cg, all=all, indent=4, **opts)
-        if part.type == 'obsmarkers':
+        if part.type == b'obsmarkers':
             if not ui.quiet:
                 _debugobsmarkers(ui, part, indent=4, **opts)
-        if part.type == 'phase-heads':
+        if part.type == b'phase-heads':
             if not ui.quiet:
                 _debugphaseheads(ui, part, indent=4)
 
-@command('debugbundle',
-        [('a', 'all', None, _('show all details')),
-         ('', 'part-type', [], _('show only the named part type')),
-         ('', 'spec', None, _('print the bundlespec of the bundle'))],
-        _('FILE'),
-        norepo=True)
+
+@command(
+    b'debugbundle',
+    [
+        (b'a', b'all', None, _(b'show all details')),
+        (b'', b'part-type', [], _(b'show only the named part type')),
+        (b'', b'spec', None, _(b'print the bundlespec of the bundle')),
+    ],
+    _(b'FILE'),
+    norepo=True,
+)
 def debugbundle(ui, bundlepath, all=None, spec=None, **opts):
     """lists the contents of a bundle"""
     with hg.openpath(ui, bundlepath) as f:
         if spec:
             spec = exchange.getbundlespec(ui, f)
-            ui.write('%s\n' % spec)
+            ui.write(b'%s\n' % spec)
             return
 
         gen = exchange.readbundle(ui, f, bundlepath)
@@ -379,26 +435,26 @@ def debugbundle(ui, bundlepath, all=None, spec=None, **opts):
             return _debugbundle2(ui, gen, all=all, **opts)
         _debugchangegroup(ui, gen, all=all, **opts)
 
-@command('debugcapabilities',
-        [], _('PATH'),
-        norepo=True)
+
+@command(b'debugcapabilities', [], _(b'PATH'), norepo=True)
 def debugcapabilities(ui, path, **opts):
     """lists the capabilities of a remote peer"""
     opts = pycompat.byteskwargs(opts)
     peer = hg.peer(ui, opts, path)
     caps = peer.capabilities()
-    ui.write(('Main capabilities:\n'))
+    ui.writenoi18n(b'Main capabilities:\n')
     for c in sorted(caps):
-        ui.write(('  %s\n') % c)
+        ui.write(b'  %s\n' % c)
     b2caps = bundle2.bundle2caps(peer)
     if b2caps:
-        ui.write(('Bundle2 capabilities:\n'))
-        for key, values in sorted(b2caps.iteritems()):
-            ui.write(('  %s\n') % key)
+        ui.writenoi18n(b'Bundle2 capabilities:\n')
+        for key, values in sorted(pycompat.iteritems(b2caps)):
+            ui.write(b'  %s\n' % key)
             for v in values:
-                ui.write(('    %s\n') % v)
+                ui.write(b'    %s\n' % v)
 
-@command('debugcheckstate', [], '')
+
+@command(b'debugcheckstate', [], b'')
 def debugcheckstate(ui, repo):
     """validate the correctness of the current dirstate"""
     parent1, parent2 = repo.dirstate.parents()
@@ -407,35 +463,40 @@ def debugcheckstate(ui, repo):
     errors = 0
     for f in repo.dirstate:
         state = repo.dirstate[f]
-        if state in "nr" and f not in m1:
-            ui.warn(_("%s in state %s, but not in manifest1\n") % (f, state))
+        if state in b"nr" and f not in m1:
+            ui.warn(_(b"%s in state %s, but not in manifest1\n") % (f, state))
             errors += 1
-        if state in "a" and f in m1:
-            ui.warn(_("%s in state %s, but also in manifest1\n") % (f, state))
+        if state in b"a" and f in m1:
+            ui.warn(_(b"%s in state %s, but also in manifest1\n") % (f, state))
             errors += 1
-        if state in "m" and f not in m1 and f not in m2:
-            ui.warn(_("%s in state %s, but not in either manifest\n") %
-                    (f, state))
+        if state in b"m" and f not in m1 and f not in m2:
+            ui.warn(
+                _(b"%s in state %s, but not in either manifest\n") % (f, state)
+            )
             errors += 1
     for f in m1:
         state = repo.dirstate[f]
-        if state not in "nrm":
-            ui.warn(_("%s in manifest1, but listed as state %s") % (f, state))
+        if state not in b"nrm":
+            ui.warn(_(b"%s in manifest1, but listed as state %s") % (f, state))
             errors += 1
     if errors:
-        error = _(".hg/dirstate inconsistent with current parent's manifest")
+        error = _(b".hg/dirstate inconsistent with current parent's manifest")
         raise error.Abort(error)
 
-@command('debugcolor',
-        [('', 'style', None, _('show all configured styles'))],
-        'hg debugcolor')
+
+@command(
+    b'debugcolor',
+    [(b'', b'style', None, _(b'show all configured styles'))],
+    b'hg debugcolor',
+)
 def debugcolor(ui, repo, **opts):
     """show available color, effects or style"""
-    ui.write(('color mode: %s\n') % stringutil.pprint(ui._colormode))
+    ui.writenoi18n(b'color mode: %s\n' % stringutil.pprint(ui._colormode))
     if opts.get(r'style'):
         return _debugdisplaystyle(ui)
     else:
         return _debugdisplaycolor(ui)
+
 
 def _debugdisplaycolor(ui):
     ui = ui.copy()
@@ -443,33 +504,34 @@ def _debugdisplaycolor(ui):
     for effect in color._activeeffects(ui).keys():
         ui._styles[effect] = effect
     if ui._terminfoparams:
-        for k, v in ui.configitems('color'):
-            if k.startswith('color.'):
+        for k, v in ui.configitems(b'color'):
+            if k.startswith(b'color.'):
                 ui._styles[k] = k[6:]
-            elif k.startswith('terminfo.'):
+            elif k.startswith(b'terminfo.'):
                 ui._styles[k] = k[9:]
-    ui.write(_('available colors:\n'))
+    ui.write(_(b'available colors:\n'))
     # sort label with a '_' after the other to group '_background' entry.
-    items = sorted(ui._styles.items(),
-                   key=lambda i: ('_' in i[0], i[0], i[1]))
+    items = sorted(ui._styles.items(), key=lambda i: (b'_' in i[0], i[0], i[1]))
     for colorname, label in items:
-        ui.write(('%s\n') % colorname, label=label)
+        ui.write(b'%s\n' % colorname, label=label)
+
 
 def _debugdisplaystyle(ui):
-    ui.write(_('available style:\n'))
+    ui.write(_(b'available style:\n'))
     if not ui._styles:
         return
     width = max(len(s) for s in ui._styles)
     for label, effects in sorted(ui._styles.items()):
-        ui.write('%s' % label, label=label)
+        ui.write(b'%s' % label, label=label)
         if effects:
             # 50
-            ui.write(': ')
-            ui.write(' ' * (max(0, width - len(label))))
-            ui.write(', '.join(ui.label(e, e) for e in effects.split()))
-        ui.write('\n')
+            ui.write(b': ')
+            ui.write(b' ' * (max(0, width - len(label))))
+            ui.write(b', '.join(ui.label(e, e) for e in effects.split()))
+        ui.write(b'\n')
 
-@command('debugcreatestreamclonebundle', [], 'FILE')
+
+@command(b'debugcreatestreamclonebundle', [], b'FILE')
 def debugcreatestreamclonebundle(ui, repo, fname):
     """create a stream clone bundle file
 
@@ -479,21 +541,30 @@ def debugcreatestreamclonebundle(ui, repo, fname):
     # TODO we may want to turn this into an abort when this functionality
     # is moved into `hg bundle`.
     if phases.hassecret(repo):
-        ui.warn(_('(warning: stream clone bundle will contain secret '
-                  'revisions)\n'))
+        ui.warn(
+            _(
+                b'(warning: stream clone bundle will contain secret '
+                b'revisions)\n'
+            )
+        )
 
     requirements, gen = streamclone.generatebundlev1(repo)
     changegroup.writechunks(ui, gen, fname)
 
-    ui.write(_('bundle requirements: %s\n') % ', '.join(sorted(requirements)))
+    ui.write(_(b'bundle requirements: %s\n') % b', '.join(sorted(requirements)))
 
-@command('debugdag',
-    [('t', 'tags', None, _('use tags as labels')),
-    ('b', 'branches', None, _('annotate with branch names')),
-    ('', 'dots', None, _('use dots for runs')),
-    ('s', 'spaces', None, _('separate elements by spaces'))],
-    _('[OPTION]... [FILE [REV]...]'),
-    optionalrepo=True)
+
+@command(
+    b'debugdag',
+    [
+        (b't', b'tags', None, _(b'use tags as labels')),
+        (b'b', b'branches', None, _(b'annotate with branch names')),
+        (b'', b'dots', None, _(b'use dots for runs')),
+        (b's', b'spaces', None, _(b'separate elements by spaces')),
+    ],
+    _(b'[OPTION]... [FILE [REV]...]'),
+    optionalrepo=True,
+)
 def debugdag(ui, repo, file_=None, *revs, **opts):
     """format the changelog or an index DAG as a concise textual description
 
@@ -505,15 +576,15 @@ def debugdag(ui, repo, file_=None, *revs, **opts):
     spaces = opts.get(r'spaces')
     dots = opts.get(r'dots')
     if file_:
-        rlog = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False),
-                             file_)
+        rlog = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False), file_)
         revs = set((int(r) for r in revs))
+
         def events():
             for r in rlog:
-                yield 'n', (r, list(p for p in rlog.parentrevs(r)
-                                        if p != -1))
+                yield b'n', (r, list(p for p in rlog.parentrevs(r) if p != -1))
                 if r in revs:
-                    yield 'l', (r, "r%i" % r)
+                    yield b'l', (r, b"r%i" % r)
+
     elif repo:
         cl = repo.changelog
         tags = opts.get(r'tags')
@@ -522,70 +593,81 @@ def debugdag(ui, repo, file_=None, *revs, **opts):
             labels = {}
             for l, n in repo.tags().items():
                 labels.setdefault(cl.rev(n), []).append(l)
+
         def events():
-            b = "default"
+            b = b"default"
             for r in cl:
                 if branches:
-                    newb = cl.read(cl.node(r))[5]['branch']
+                    newb = cl.read(cl.node(r))[5][b'branch']
                     if newb != b:
-                        yield 'a', newb
+                        yield b'a', newb
                         b = newb
-                yield 'n', (r, list(p for p in cl.parentrevs(r)
-                                        if p != -1))
+                yield b'n', (r, list(p for p in cl.parentrevs(r) if p != -1))
                 if tags:
                     ls = labels.get(r)
                     if ls:
                         for l in ls:
-                            yield 'l', (r, l)
+                            yield b'l', (r, l)
+
     else:
-        raise error.Abort(_('need repo for changelog dag'))
+        raise error.Abort(_(b'need repo for changelog dag'))
 
-    for line in dagparser.dagtextlines(events(),
-                                       addspaces=spaces,
-                                       wraplabels=True,
-                                       wrapannotations=True,
-                                       wrapnonlinear=dots,
-                                       usedots=dots,
-                                       maxlinewidth=70):
+    for line in dagparser.dagtextlines(
+        events(),
+        addspaces=spaces,
+        wraplabels=True,
+        wrapannotations=True,
+        wrapnonlinear=dots,
+        usedots=dots,
+        maxlinewidth=70,
+    ):
         ui.write(line)
-        ui.write("\n")
+        ui.write(b"\n")
 
-@command('debugdata', cmdutil.debugrevlogopts, _('-c|-m|FILE REV'))
+
+@command(b'debugdata', cmdutil.debugrevlogopts, _(b'-c|-m|FILE REV'))
 def debugdata(ui, repo, file_, rev=None, **opts):
     """dump the contents of a data file revision"""
     opts = pycompat.byteskwargs(opts)
-    if opts.get('changelog') or opts.get('manifest') or opts.get('dir'):
+    if opts.get(b'changelog') or opts.get(b'manifest') or opts.get(b'dir'):
         if rev is not None:
-            raise error.CommandError('debugdata', _('invalid arguments'))
+            raise error.CommandError(b'debugdata', _(b'invalid arguments'))
         file_, rev = None, file_
     elif rev is None:
-        raise error.CommandError('debugdata', _('invalid arguments'))
-    r = cmdutil.openstorage(repo, 'debugdata', file_, opts)
+        raise error.CommandError(b'debugdata', _(b'invalid arguments'))
+    r = cmdutil.openstorage(repo, b'debugdata', file_, opts)
     try:
-        ui.write(r.revision(r.lookup(rev), raw=True))
+        ui.write(r.rawdata(r.lookup(rev)))
     except KeyError:
-        raise error.Abort(_('invalid revision identifier %s') % rev)
+        raise error.Abort(_(b'invalid revision identifier %s') % rev)
 
-@command('debugdate',
-    [('e', 'extended', None, _('try extended date formats'))],
-    _('[-e] DATE [RANGE]'),
-    norepo=True, optionalrepo=True)
+
+@command(
+    b'debugdate',
+    [(b'e', b'extended', None, _(b'try extended date formats'))],
+    _(b'[-e] DATE [RANGE]'),
+    norepo=True,
+    optionalrepo=True,
+)
 def debugdate(ui, date, range=None, **opts):
     """parse and display a date"""
     if opts[r"extended"]:
         d = dateutil.parsedate(date, util.extendeddateformats)
     else:
         d = dateutil.parsedate(date)
-    ui.write(("internal: %d %d\n") % d)
-    ui.write(("standard: %s\n") % dateutil.datestr(d))
+    ui.writenoi18n(b"internal: %d %d\n" % d)
+    ui.writenoi18n(b"standard: %s\n" % dateutil.datestr(d))
     if range:
         m = dateutil.matchdate(range)
-        ui.write(("match: %s\n") % m(d[0]))
+        ui.writenoi18n(b"match: %s\n" % m(d[0]))
 
-@command('debugdeltachain',
+
+@command(
+    b'debugdeltachain',
     cmdutil.debugrevlogopts + cmdutil.formatteropts,
-    _('-c|-m|FILE'),
-    optionalrepo=True)
+    _(b'-c|-m|FILE'),
+    optionalrepo=True,
+)
 def debugdeltachain(ui, repo, file_=None, **opts):
     """dump information about delta chains in a revlog
 
@@ -622,7 +704,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     The sparse read can be enabled with experimental.sparse-read = True
     """
     opts = pycompat.byteskwargs(opts)
-    r = cmdutil.openrevlog(repo, 'debugdeltachain', file_, opts)
+    r = cmdutil.openrevlog(repo, b'debugdeltachain', file_, opts)
     index = r.index
     start = r.start
     length = r.length
@@ -637,20 +719,20 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 
         if generaldelta:
             if e[3] == e[5]:
-                deltatype = 'p1'
+                deltatype = b'p1'
             elif e[3] == e[6]:
-                deltatype = 'p2'
+                deltatype = b'p2'
             elif e[3] == rev - 1:
-                deltatype = 'prev'
+                deltatype = b'prev'
             elif e[3] == rev:
-                deltatype = 'base'
+                deltatype = b'base'
             else:
-                deltatype = 'other'
+                deltatype = b'other'
         else:
             if e[3] == rev:
-                deltatype = 'base'
+                deltatype = b'base'
             else:
-                deltatype = 'prev'
+                deltatype = b'prev'
 
         chain = r._deltachain(rev)[0]
         for iterrev in chain:
@@ -659,14 +741,16 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 
         return compsize, uncompsize, deltatype, chain, chainsize
 
-    fm = ui.formatter('debugdeltachain', opts)
+    fm = ui.formatter(b'debugdeltachain', opts)
 
-    fm.plain('    rev  chain# chainlen     prev   delta       '
-             'size    rawsize  chainsize     ratio   lindist extradist '
-             'extraratio')
+    fm.plain(
+        b'    rev  chain# chainlen     prev   delta       '
+        b'size    rawsize  chainsize     ratio   lindist extradist '
+        b'extraratio'
+    )
     if withsparseread:
-        fm.plain('   readsize largestblk rddensity srchunks')
-    fm.plain('\n')
+        fm.plain(b'   readsize largestblk rddensity srchunks')
+    fm.plain(b'\n')
 
     chainbases = {}
     for rev in r:
@@ -693,18 +777,36 @@ def debugdeltachain(ui, repo, file_=None, **opts):
             extraratio = extradist
 
         fm.startitem()
-        fm.write('rev chainid chainlen prevrev deltatype compsize '
-                 'uncompsize chainsize chainratio lindist extradist '
-                 'extraratio',
-                 '%7d %7d %8d %8d %7s %10d %10d %10d %9.5f %9d %9d %10.5f',
-                 rev, chainid, len(chain), prevrev, deltatype, comp,
-                 uncomp, chainsize, chainratio, lineardist, extradist,
-                 extraratio,
-                 rev=rev, chainid=chainid, chainlen=len(chain),
-                 prevrev=prevrev, deltatype=deltatype, compsize=comp,
-                 uncompsize=uncomp, chainsize=chainsize,
-                 chainratio=chainratio, lindist=lineardist,
-                 extradist=extradist, extraratio=extraratio)
+        fm.write(
+            b'rev chainid chainlen prevrev deltatype compsize '
+            b'uncompsize chainsize chainratio lindist extradist '
+            b'extraratio',
+            b'%7d %7d %8d %8d %7s %10d %10d %10d %9.5f %9d %9d %10.5f',
+            rev,
+            chainid,
+            len(chain),
+            prevrev,
+            deltatype,
+            comp,
+            uncomp,
+            chainsize,
+            chainratio,
+            lineardist,
+            extradist,
+            extraratio,
+            rev=rev,
+            chainid=chainid,
+            chainlen=len(chain),
+            prevrev=prevrev,
+            deltatype=deltatype,
+            compsize=comp,
+            uncompsize=uncomp,
+            chainsize=chainsize,
+            chainratio=chainratio,
+            lindist=lineardist,
+            extradist=extradist,
+            extraratio=extraratio,
+        )
         if withsparseread:
             readsize = 0
             largestblock = 0
@@ -724,21 +826,38 @@ def debugdeltachain(ui, repo, file_=None, **opts):
             else:
                 readdensity = 1
 
-            fm.write('readsize largestblock readdensity srchunks',
-                     ' %10d %10d %9.5f %8d',
-                     readsize, largestblock, readdensity, srchunks,
-                     readsize=readsize, largestblock=largestblock,
-                     readdensity=readdensity, srchunks=srchunks)
+            fm.write(
+                b'readsize largestblock readdensity srchunks',
+                b' %10d %10d %9.5f %8d',
+                readsize,
+                largestblock,
+                readdensity,
+                srchunks,
+                readsize=readsize,
+                largestblock=largestblock,
+                readdensity=readdensity,
+                srchunks=srchunks,
+            )
 
-        fm.plain('\n')
+        fm.plain(b'\n')
 
     fm.end()
 
-@command('debugdirstate|debugstate',
-    [('', 'nodates', None, _('do not display the saved mtime (DEPRECATED)')),
-     ('', 'dates', True, _('display the saved mtime')),
-     ('', 'datesort', None, _('sort by saved mtime'))],
-    _('[OPTION]...'))
+
+@command(
+    b'debugdirstate|debugstate',
+    [
+        (
+            b'',
+            b'nodates',
+            None,
+            _(b'do not display the saved mtime (DEPRECATED)'),
+        ),
+        (b'', b'dates', True, _(b'display the saved mtime')),
+        (b'', b'datesort', None, _(b'sort by saved mtime')),
+    ],
+    _(b'[OPTION]...'),
+)
 def debugstate(ui, repo, **opts):
     """show the contents of the current dirstate"""
 
@@ -748,74 +867,89 @@ def debugstate(ui, repo, **opts):
     datesort = opts.get(r'datesort')
 
     if datesort:
-        keyfunc = lambda x: (x[1][3], x[0]) # sort by mtime, then by filename
+        keyfunc = lambda x: (x[1][3], x[0])  # sort by mtime, then by filename
     else:
-        keyfunc = None # sort by filename
-    for file_, ent in sorted(repo.dirstate._map.iteritems(), key=keyfunc):
+        keyfunc = None  # sort by filename
+    for file_, ent in sorted(pycompat.iteritems(repo.dirstate), key=keyfunc):
         if ent[3] == -1:
-            timestr = 'unset               '
+            timestr = b'unset               '
         elif nodates:
-            timestr = 'set                 '
+            timestr = b'set                 '
         else:
-            timestr = time.strftime(r"%Y-%m-%d %H:%M:%S ",
-                                    time.localtime(ent[3]))
+            timestr = time.strftime(
+                r"%Y-%m-%d %H:%M:%S ", time.localtime(ent[3])
+            )
             timestr = encoding.strtolocal(timestr)
         if ent[1] & 0o20000:
-            mode = 'lnk'
+            mode = b'lnk'
         else:
-            mode = '%3o' % (ent[1] & 0o777 & ~util.umask)
-        ui.write("%c %s %10d %s%s\n" % (ent[0], mode, ent[2], timestr, file_))
+            mode = b'%3o' % (ent[1] & 0o777 & ~util.umask)
+        ui.write(b"%c %s %10d %s%s\n" % (ent[0], mode, ent[2], timestr, file_))
     for f in repo.dirstate.copies():
-        ui.write(_("copy: %s -> %s\n") % (repo.dirstate.copied(f), f))
+        ui.write(_(b"copy: %s -> %s\n") % (repo.dirstate.copied(f), f))
 
-@command('debugdiscovery',
-    [('', 'old', None, _('use old-style discovery')),
-    ('', 'nonheads', None,
-     _('use old-style discovery with non-heads included')),
-    ('', 'rev', [], 'restrict discovery to this set of revs'),
-    ('', 'seed', '12323', 'specify the random seed use for discovery'),
-    ] + cmdutil.remoteopts,
-    _('[--rev REV] [OTHER]'))
-def debugdiscovery(ui, repo, remoteurl="default", **opts):
+
+@command(
+    b'debugdiscovery',
+    [
+        (b'', b'old', None, _(b'use old-style discovery')),
+        (
+            b'',
+            b'nonheads',
+            None,
+            _(b'use old-style discovery with non-heads included'),
+        ),
+        (b'', b'rev', [], b'restrict discovery to this set of revs'),
+        (b'', b'seed', b'12323', b'specify the random seed use for discovery'),
+    ]
+    + cmdutil.remoteopts,
+    _(b'[--rev REV] [OTHER]'),
+)
+def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     """runs the changeset discovery protocol in isolation"""
     opts = pycompat.byteskwargs(opts)
     remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl))
     remote = hg.peer(repo, opts, remoteurl)
-    ui.status(_('comparing with %s\n') % util.hidepassword(remoteurl))
+    ui.status(_(b'comparing with %s\n') % util.hidepassword(remoteurl))
 
     # make sure tests are repeatable
-    random.seed(int(opts['seed']))
+    random.seed(int(opts[b'seed']))
 
+    if opts.get(b'old'):
 
-
-    if opts.get('old'):
         def doit(pushedrevs, remoteheads, remote=remote):
-            if not util.safehasattr(remote, 'branches'):
+            if not util.safehasattr(remote, b'branches'):
                 # enable in-client legacy support
                 remote = localrepo.locallegacypeer(remote.local())
-            common, _in, hds = treediscovery.findcommonincoming(repo, remote,
-                                                                force=True)
+            common, _in, hds = treediscovery.findcommonincoming(
+                repo, remote, force=True
+            )
             common = set(common)
-            if not opts.get('nonheads'):
-                ui.write(("unpruned common: %s\n") %
-                         " ".join(sorted(short(n) for n in common)))
+            if not opts.get(b'nonheads'):
+                ui.writenoi18n(
+                    b"unpruned common: %s\n"
+                    % b" ".join(sorted(short(n) for n in common))
+                )
 
                 clnode = repo.changelog.node
-                common = repo.revs('heads(::%ln)', common)
+                common = repo.revs(b'heads(::%ln)', common)
                 common = {clnode(r) for r in common}
             return common, hds
+
     else:
+
         def doit(pushedrevs, remoteheads, remote=remote):
             nodes = None
             if pushedrevs:
                 revs = scmutil.revrange(repo, pushedrevs)
                 nodes = [repo[r].node() for r in revs]
-            common, any, hds = setdiscovery.findcommonheads(ui, repo, remote,
-                                                            ancestorsof=nodes)
+            common, any, hds = setdiscovery.findcommonheads(
+                ui, repo, remote, ancestorsof=nodes
+            )
             return common, hds
 
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
-    localrevs = opts['rev']
+    localrevs = opts[b'rev']
     with util.timedcm('debug-discovery') as t:
         common, hds = doit(localrevs, remoterevs)
 
@@ -825,47 +959,48 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     lheads = set(repo.heads())
 
     data = {}
-    data['elapsed'] = t.elapsed
-    data['nb-common'] = len(common)
-    data['nb-common-local'] = len(common & lheads)
-    data['nb-common-remote'] = len(common & rheads)
-    data['nb-common-both'] = len(common & rheads & lheads)
-    data['nb-local'] = len(lheads)
-    data['nb-local-missing'] = data['nb-local'] - data['nb-common-local']
-    data['nb-remote'] = len(rheads)
-    data['nb-remote-unknown'] = data['nb-remote'] - data['nb-common-remote']
-    data['nb-revs'] = len(repo.revs('all()'))
-    data['nb-revs-common'] = len(repo.revs('::%ln', common))
-    data['nb-revs-missing'] = data['nb-revs'] - data['nb-revs-common']
+    data[b'elapsed'] = t.elapsed
+    data[b'nb-common'] = len(common)
+    data[b'nb-common-local'] = len(common & lheads)
+    data[b'nb-common-remote'] = len(common & rheads)
+    data[b'nb-common-both'] = len(common & rheads & lheads)
+    data[b'nb-local'] = len(lheads)
+    data[b'nb-local-missing'] = data[b'nb-local'] - data[b'nb-common-local']
+    data[b'nb-remote'] = len(rheads)
+    data[b'nb-remote-unknown'] = data[b'nb-remote'] - data[b'nb-common-remote']
+    data[b'nb-revs'] = len(repo.revs(b'all()'))
+    data[b'nb-revs-common'] = len(repo.revs(b'::%ln', common))
+    data[b'nb-revs-missing'] = data[b'nb-revs'] - data[b'nb-revs-common']
 
     # display discovery summary
-    ui.write(("elapsed time:  %(elapsed)f seconds\n") % data)
-    ui.write(("heads summary:\n"))
-    ui.write(("  total common heads:  %(nb-common)9d\n") % data)
-    ui.write(("    also local heads:  %(nb-common-local)9d\n") % data)
-    ui.write(("    also remote heads: %(nb-common-remote)9d\n") % data)
-    ui.write(("    both:              %(nb-common-both)9d\n") % data)
-    ui.write(("  local heads:         %(nb-local)9d\n") % data)
-    ui.write(("    common:            %(nb-common-local)9d\n") % data)
-    ui.write(("    missing:           %(nb-local-missing)9d\n") % data)
-    ui.write(("  remote heads:        %(nb-remote)9d\n") % data)
-    ui.write(("    common:            %(nb-common-remote)9d\n") % data)
-    ui.write(("    unknown:           %(nb-remote-unknown)9d\n") % data)
-    ui.write(("local changesets:      %(nb-revs)9d\n") % data)
-    ui.write(("  common:              %(nb-revs-common)9d\n") % data)
-    ui.write(("  missing:             %(nb-revs-missing)9d\n") % data)
+    ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
+    ui.writenoi18n(b"heads summary:\n")
+    ui.writenoi18n(b"  total common heads:  %(nb-common)9d\n" % data)
+    ui.writenoi18n(b"    also local heads:  %(nb-common-local)9d\n" % data)
+    ui.writenoi18n(b"    also remote heads: %(nb-common-remote)9d\n" % data)
+    ui.writenoi18n(b"    both:              %(nb-common-both)9d\n" % data)
+    ui.writenoi18n(b"  local heads:         %(nb-local)9d\n" % data)
+    ui.writenoi18n(b"    common:            %(nb-common-local)9d\n" % data)
+    ui.writenoi18n(b"    missing:           %(nb-local-missing)9d\n" % data)
+    ui.writenoi18n(b"  remote heads:        %(nb-remote)9d\n" % data)
+    ui.writenoi18n(b"    common:            %(nb-common-remote)9d\n" % data)
+    ui.writenoi18n(b"    unknown:           %(nb-remote-unknown)9d\n" % data)
+    ui.writenoi18n(b"local changesets:      %(nb-revs)9d\n" % data)
+    ui.writenoi18n(b"  common:              %(nb-revs-common)9d\n" % data)
+    ui.writenoi18n(b"  missing:             %(nb-revs-missing)9d\n" % data)
 
     if ui.verbose:
-        ui.write(("common heads: %s\n") %
-                 " ".join(sorted(short(n) for n in common)))
+        ui.writenoi18n(
+            b"common heads: %s\n" % b" ".join(sorted(short(n) for n in common))
+        )
+
 
 _chunksize = 4 << 10
 
-@command('debugdownload',
-    [
-        ('o', 'output', '', _('path')),
-    ],
-    optionalrepo=True)
+
+@command(
+    b'debugdownload', [(b'o', b'output', b'', _(b'path')),], optionalrepo=True
+)
 def debugdownload(ui, repo, url, output=None, **opts):
     """download a resource using Mercurial logic and config
     """
@@ -873,7 +1008,7 @@ def debugdownload(ui, repo, url, output=None, **opts):
 
     dest = ui
     if output:
-        dest = open(output, "wb", _chunksize)
+        dest = open(output, b"wb", _chunksize)
     try:
         data = fh.read(_chunksize)
         while data:
@@ -883,121 +1018,163 @@ def debugdownload(ui, repo, url, output=None, **opts):
         if output:
             dest.close()
 
-@command('debugextensions', cmdutil.formatteropts, [], optionalrepo=True)
+
+@command(b'debugextensions', cmdutil.formatteropts, [], optionalrepo=True)
 def debugextensions(ui, repo, **opts):
     '''show information about active extensions'''
     opts = pycompat.byteskwargs(opts)
     exts = extensions.extensions(ui)
     hgver = util.version()
-    fm = ui.formatter('debugextensions', opts)
+    fm = ui.formatter(b'debugextensions', opts)
     for extname, extmod in sorted(exts, key=operator.itemgetter(0)):
         isinternal = extensions.ismoduleinternal(extmod)
         extsource = pycompat.fsencode(extmod.__file__)
         if isinternal:
             exttestedwith = []  # never expose magic string to users
         else:
-            exttestedwith = getattr(extmod, 'testedwith', '').split()
+            exttestedwith = getattr(extmod, 'testedwith', b'').split()
         extbuglink = getattr(extmod, 'buglink', None)
 
         fm.startitem()
 
         if ui.quiet or ui.verbose:
-            fm.write('name', '%s\n', extname)
+            fm.write(b'name', b'%s\n', extname)
         else:
-            fm.write('name', '%s', extname)
+            fm.write(b'name', b'%s', extname)
             if isinternal or hgver in exttestedwith:
-                fm.plain('\n')
+                fm.plain(b'\n')
             elif not exttestedwith:
-                fm.plain(_(' (untested!)\n'))
+                fm.plain(_(b' (untested!)\n'))
             else:
                 lasttestedversion = exttestedwith[-1]
-                fm.plain(' (%s!)\n' % lasttestedversion)
+                fm.plain(b' (%s!)\n' % lasttestedversion)
 
-        fm.condwrite(ui.verbose and extsource, 'source',
-                 _('  location: %s\n'), extsource or "")
+        fm.condwrite(
+            ui.verbose and extsource,
+            b'source',
+            _(b'  location: %s\n'),
+            extsource or b"",
+        )
 
         if ui.verbose:
-            fm.plain(_('  bundled: %s\n') % ['no', 'yes'][isinternal])
+            fm.plain(_(b'  bundled: %s\n') % [b'no', b'yes'][isinternal])
         fm.data(bundled=isinternal)
 
-        fm.condwrite(ui.verbose and exttestedwith, 'testedwith',
-                     _('  tested with: %s\n'),
-                     fm.formatlist(exttestedwith, name='ver'))
+        fm.condwrite(
+            ui.verbose and exttestedwith,
+            b'testedwith',
+            _(b'  tested with: %s\n'),
+            fm.formatlist(exttestedwith, name=b'ver'),
+        )
 
-        fm.condwrite(ui.verbose and extbuglink, 'buglink',
-                 _('  bug reporting: %s\n'), extbuglink or "")
+        fm.condwrite(
+            ui.verbose and extbuglink,
+            b'buglink',
+            _(b'  bug reporting: %s\n'),
+            extbuglink or b"",
+        )
 
     fm.end()
 
-@command('debugfileset',
-    [('r', 'rev', '', _('apply the filespec on this revision'), _('REV')),
-     ('', 'all-files', False,
-      _('test files from all revisions and working directory')),
-     ('s', 'show-matcher', None,
-      _('print internal representation of matcher')),
-     ('p', 'show-stage', [],
-      _('print parsed tree at the given stage'), _('NAME'))],
-    _('[-r REV] [--all-files] [OPTION]... FILESPEC'))
+
+@command(
+    b'debugfileset',
+    [
+        (
+            b'r',
+            b'rev',
+            b'',
+            _(b'apply the filespec on this revision'),
+            _(b'REV'),
+        ),
+        (
+            b'',
+            b'all-files',
+            False,
+            _(b'test files from all revisions and working directory'),
+        ),
+        (
+            b's',
+            b'show-matcher',
+            None,
+            _(b'print internal representation of matcher'),
+        ),
+        (
+            b'p',
+            b'show-stage',
+            [],
+            _(b'print parsed tree at the given stage'),
+            _(b'NAME'),
+        ),
+    ],
+    _(b'[-r REV] [--all-files] [OPTION]... FILESPEC'),
+)
 def debugfileset(ui, repo, expr, **opts):
     '''parse and apply a fileset specification'''
     from . import fileset
-    fileset.symbols # force import of fileset so we have predicates to optimize
+
+    fileset.symbols  # force import of fileset so we have predicates to optimize
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'), None)
+    ctx = scmutil.revsingle(repo, opts.get(b'rev'), None)
 
     stages = [
-        ('parsed', pycompat.identity),
-        ('analyzed', filesetlang.analyze),
-        ('optimized', filesetlang.optimize),
+        (b'parsed', pycompat.identity),
+        (b'analyzed', filesetlang.analyze),
+        (b'optimized', filesetlang.optimize),
     ]
     stagenames = set(n for n, f in stages)
 
     showalways = set()
-    if ui.verbose and not opts['show_stage']:
+    if ui.verbose and not opts[b'show_stage']:
         # show parsed tree by --verbose (deprecated)
-        showalways.add('parsed')
-    if opts['show_stage'] == ['all']:
+        showalways.add(b'parsed')
+    if opts[b'show_stage'] == [b'all']:
         showalways.update(stagenames)
     else:
-        for n in opts['show_stage']:
+        for n in opts[b'show_stage']:
             if n not in stagenames:
-                raise error.Abort(_('invalid stage name: %s') % n)
-        showalways.update(opts['show_stage'])
+                raise error.Abort(_(b'invalid stage name: %s') % n)
+        showalways.update(opts[b'show_stage'])
 
     tree = filesetlang.parse(expr)
     for n, f in stages:
         tree = f(tree)
         if n in showalways:
-            if opts['show_stage'] or n != 'parsed':
-                ui.write(("* %s:\n") % n)
-            ui.write(filesetlang.prettyformat(tree), "\n")
+            if opts[b'show_stage'] or n != b'parsed':
+                ui.write(b"* %s:\n" % n)
+            ui.write(filesetlang.prettyformat(tree), b"\n")
 
     files = set()
-    if opts['all_files']:
+    if opts[b'all_files']:
         for r in repo:
             c = repo[r]
             files.update(c.files())
             files.update(c.substate)
-    if opts['all_files'] or ctx.rev() is None:
+    if opts[b'all_files'] or ctx.rev() is None:
         wctx = repo[None]
-        files.update(repo.dirstate.walk(scmutil.matchall(repo),
-                                        subrepos=list(wctx.substate),
-                                        unknown=True, ignored=True))
+        files.update(
+            repo.dirstate.walk(
+                scmutil.matchall(repo),
+                subrepos=list(wctx.substate),
+                unknown=True,
+                ignored=True,
+            )
+        )
         files.update(wctx.substate)
     else:
         files.update(ctx.files())
         files.update(ctx.substate)
 
     m = ctx.matchfileset(expr)
-    if opts['show_matcher'] or (opts['show_matcher'] is None and ui.verbose):
-        ui.write(('* matcher:\n'), stringutil.prettyrepr(m), '\n')
+    if opts[b'show_matcher'] or (opts[b'show_matcher'] is None and ui.verbose):
+        ui.writenoi18n(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
     for f in sorted(files):
         if not m(f):
             continue
-        ui.write("%s\n" % f)
+        ui.write(b"%s\n" % f)
 
-@command('debugformat',
-         [] + cmdutil.formatteropts)
+
+@command(b'debugformat', [] + cmdutil.formatteropts)
 def debugformat(ui, repo, **opts):
     """display format information about the current repository
 
@@ -1005,82 +1182,110 @@ def debugformat(ui, repo, **opts):
     Mercurial default."""
     opts = pycompat.byteskwargs(opts)
     maxvariantlength = max(len(fv.name) for fv in upgrade.allformatvariant)
-    maxvariantlength = max(len('format-variant'), maxvariantlength)
+    maxvariantlength = max(len(b'format-variant'), maxvariantlength)
 
     def makeformatname(name):
-        return '%s:' + (' ' * (maxvariantlength - len(name)))
+        return b'%s:' + (b' ' * (maxvariantlength - len(name)))
 
-    fm = ui.formatter('debugformat', opts)
+    fm = ui.formatter(b'debugformat', opts)
     if fm.isplain():
+
         def formatvalue(value):
-            if util.safehasattr(value, 'startswith'):
+            if util.safehasattr(value, b'startswith'):
                 return value
             if value:
-                return 'yes'
+                return b'yes'
             else:
-                return 'no'
+                return b'no'
+
     else:
         formatvalue = pycompat.identity
 
-    fm.plain('format-variant')
-    fm.plain(' ' * (maxvariantlength - len('format-variant')))
-    fm.plain(' repo')
+    fm.plain(b'format-variant')
+    fm.plain(b' ' * (maxvariantlength - len(b'format-variant')))
+    fm.plain(b' repo')
     if ui.verbose:
-        fm.plain(' config default')
-    fm.plain('\n')
+        fm.plain(b' config default')
+    fm.plain(b'\n')
     for fv in upgrade.allformatvariant:
         fm.startitem()
         repovalue = fv.fromrepo(repo)
         configvalue = fv.fromconfig(repo)
 
         if repovalue != configvalue:
-            namelabel = 'formatvariant.name.mismatchconfig'
-            repolabel = 'formatvariant.repo.mismatchconfig'
+            namelabel = b'formatvariant.name.mismatchconfig'
+            repolabel = b'formatvariant.repo.mismatchconfig'
         elif repovalue != fv.default:
-            namelabel = 'formatvariant.name.mismatchdefault'
-            repolabel = 'formatvariant.repo.mismatchdefault'
+            namelabel = b'formatvariant.name.mismatchdefault'
+            repolabel = b'formatvariant.repo.mismatchdefault'
         else:
-            namelabel = 'formatvariant.name.uptodate'
-            repolabel = 'formatvariant.repo.uptodate'
+            namelabel = b'formatvariant.name.uptodate'
+            repolabel = b'formatvariant.repo.uptodate'
 
-        fm.write('name', makeformatname(fv.name), fv.name,
-                 label=namelabel)
-        fm.write('repo', ' %3s', formatvalue(repovalue),
-                 label=repolabel)
+        fm.write(b'name', makeformatname(fv.name), fv.name, label=namelabel)
+        fm.write(b'repo', b' %3s', formatvalue(repovalue), label=repolabel)
         if fv.default != configvalue:
-            configlabel = 'formatvariant.config.special'
+            configlabel = b'formatvariant.config.special'
         else:
-            configlabel = 'formatvariant.config.default'
-        fm.condwrite(ui.verbose, 'config', ' %6s', formatvalue(configvalue),
-                     label=configlabel)
-        fm.condwrite(ui.verbose, 'default', ' %7s', formatvalue(fv.default),
-                     label='formatvariant.default')
-        fm.plain('\n')
+            configlabel = b'formatvariant.config.default'
+        fm.condwrite(
+            ui.verbose,
+            b'config',
+            b' %6s',
+            formatvalue(configvalue),
+            label=configlabel,
+        )
+        fm.condwrite(
+            ui.verbose,
+            b'default',
+            b' %7s',
+            formatvalue(fv.default),
+            label=b'formatvariant.default',
+        )
+        fm.plain(b'\n')
     fm.end()
 
-@command('debugfsinfo', [], _('[PATH]'), norepo=True)
-def debugfsinfo(ui, path="."):
+
+@command(b'debugfsinfo', [], _(b'[PATH]'), norepo=True)
+def debugfsinfo(ui, path=b"."):
     """show information detected about current filesystem"""
-    ui.write(('path: %s\n') % path)
-    ui.write(('mounted on: %s\n') % (util.getfsmountpoint(path) or '(unknown)'))
-    ui.write(('exec: %s\n') % (util.checkexec(path) and 'yes' or 'no'))
-    ui.write(('fstype: %s\n') % (util.getfstype(path) or '(unknown)'))
-    ui.write(('symlink: %s\n') % (util.checklink(path) and 'yes' or 'no'))
-    ui.write(('hardlink: %s\n') % (util.checknlink(path) and 'yes' or 'no'))
-    casesensitive = '(unknown)'
+    ui.writenoi18n(b'path: %s\n' % path)
+    ui.writenoi18n(
+        b'mounted on: %s\n' % (util.getfsmountpoint(path) or b'(unknown)')
+    )
+    ui.writenoi18n(b'exec: %s\n' % (util.checkexec(path) and b'yes' or b'no'))
+    ui.writenoi18n(b'fstype: %s\n' % (util.getfstype(path) or b'(unknown)'))
+    ui.writenoi18n(
+        b'symlink: %s\n' % (util.checklink(path) and b'yes' or b'no')
+    )
+    ui.writenoi18n(
+        b'hardlink: %s\n' % (util.checknlink(path) and b'yes' or b'no')
+    )
+    casesensitive = b'(unknown)'
     try:
-        with pycompat.namedtempfile(prefix='.debugfsinfo', dir=path) as f:
-            casesensitive = util.fscasesensitive(f.name) and 'yes' or 'no'
+        with pycompat.namedtempfile(prefix=b'.debugfsinfo', dir=path) as f:
+            casesensitive = util.fscasesensitive(f.name) and b'yes' or b'no'
     except OSError:
         pass
-    ui.write(('case-sensitive: %s\n') % casesensitive)
+    ui.writenoi18n(b'case-sensitive: %s\n' % casesensitive)
 
-@command('debuggetbundle',
-    [('H', 'head', [], _('id of head node'), _('ID')),
-    ('C', 'common', [], _('id of common node'), _('ID')),
-    ('t', 'type', 'bzip2', _('bundle compression type to use'), _('TYPE'))],
-    _('REPO FILE [-H|-C ID]...'),
-    norepo=True)
+
+@command(
+    b'debuggetbundle',
+    [
+        (b'H', b'head', [], _(b'id of head node'), _(b'ID')),
+        (b'C', b'common', [], _(b'id of common node'), _(b'ID')),
+        (
+            b't',
+            b'type',
+            b'bzip2',
+            _(b'bundle compression type to use'),
+            _(b'TYPE'),
+        ),
+    ],
+    _(b'REPO FILE [-H|-C ID]...'),
+    norepo=True,
+)
 def debuggetbundle(ui, repopath, bundlepath, head=None, common=None, **opts):
     """retrieves a bundle from a repo
 
@@ -1089,8 +1294,8 @@ def debuggetbundle(ui, repopath, bundlepath, head=None, common=None, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     repo = hg.peer(ui, opts, repopath)
-    if not repo.capable('getbundle'):
-        raise error.Abort("getbundle() not supported by target repository")
+    if not repo.capable(b'getbundle'):
+        raise error.Abort(b"getbundle() not supported by target repository")
     args = {}
     if common:
         args[r'common'] = [bin(s) for s in common]
@@ -1098,19 +1303,22 @@ def debuggetbundle(ui, repopath, bundlepath, head=None, common=None, **opts):
         args[r'heads'] = [bin(s) for s in head]
     # TODO: get desired bundlecaps from command line.
     args[r'bundlecaps'] = None
-    bundle = repo.getbundle('debug', **args)
+    bundle = repo.getbundle(b'debug', **args)
 
-    bundletype = opts.get('type', 'bzip2').lower()
-    btypes = {'none': 'HG10UN',
-              'bzip2': 'HG10BZ',
-              'gzip': 'HG10GZ',
-              'bundle2': 'HG20'}
+    bundletype = opts.get(b'type', b'bzip2').lower()
+    btypes = {
+        b'none': b'HG10UN',
+        b'bzip2': b'HG10BZ',
+        b'gzip': b'HG10GZ',
+        b'bundle2': b'HG20',
+    }
     bundletype = btypes.get(bundletype)
     if bundletype not in bundle2.bundletypes:
-        raise error.Abort(_('unknown bundle type specified with --type'))
+        raise error.Abort(_(b'unknown bundle type specified with --type'))
     bundle2.writebundle(ui, bundle, bundlepath, bundletype)
 
-@command('debugignore', [], '[FILE]')
+
+@command(b'debugignore', [], b'[FILE]')
 def debugignore(ui, repo, *files, **opts):
     """display the combined ignore pattern and information about ignored files
 
@@ -1122,7 +1330,7 @@ def debugignore(ui, repo, *files, **opts):
     ignore = repo.dirstate._ignore
     if not files:
         # Show all the patterns
-        ui.write("%s\n" % pycompat.byterepr(ignore))
+        ui.write(b"%s\n" % pycompat.byterepr(ignore))
     else:
         m = scmutil.match(repo[None], pats=files)
         uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
@@ -1130,7 +1338,7 @@ def debugignore(ui, repo, *files, **opts):
             nf = util.normpath(f)
             ignored = None
             ignoredata = None
-            if nf != '.':
+            if nf != b'.':
                 if ignore(nf):
                     ignored = nf
                     ignoredata = repo.dirstate._ignorefileandline(nf)
@@ -1142,23 +1350,33 @@ def debugignore(ui, repo, *files, **opts):
                             break
             if ignored:
                 if ignored == nf:
-                    ui.write(_("%s is ignored\n") % uipathfn(f))
+                    ui.write(_(b"%s is ignored\n") % uipathfn(f))
                 else:
-                    ui.write(_("%s is ignored because of "
-                               "containing directory %s\n")
-                             % (uipathfn(f), ignored))
+                    ui.write(
+                        _(
+                            b"%s is ignored because of "
+                            b"containing directory %s\n"
+                        )
+                        % (uipathfn(f), ignored)
+                    )
                 ignorefile, lineno, line = ignoredata
-                ui.write(_("(ignore rule in %s, line %d: '%s')\n")
-                         % (ignorefile, lineno, line))
+                ui.write(
+                    _(b"(ignore rule in %s, line %d: '%s')\n")
+                    % (ignorefile, lineno, line)
+                )
             else:
-                ui.write(_("%s is not ignored\n") % uipathfn(f))
+                ui.write(_(b"%s is not ignored\n") % uipathfn(f))
 
-@command('debugindex', cmdutil.debugrevlogopts + cmdutil.formatteropts,
-         _('-c|-m|FILE'))
+
+@command(
+    b'debugindex',
+    cmdutil.debugrevlogopts + cmdutil.formatteropts,
+    _(b'-c|-m|FILE'),
+)
 def debugindex(ui, repo, file_=None, **opts):
     """dump index data for a storage primitive"""
     opts = pycompat.byteskwargs(opts)
-    store = cmdutil.openstorage(repo, 'debugindex', file_, opts)
+    store = cmdutil.openstorage(repo, b'debugindex', file_, opts)
 
     if ui.debugflag:
         shortfn = hex
@@ -1170,10 +1388,11 @@ def debugindex(ui, repo, file_=None, **opts):
         idlen = len(shortfn(store.node(i)))
         break
 
-    fm = ui.formatter('debugindex', opts)
-    fm.plain(b'   rev linkrev %s %s p2\n' % (
-        b'nodeid'.ljust(idlen),
-        b'p1'.ljust(idlen)))
+    fm = ui.formatter(b'debugindex', opts)
+    fm.plain(
+        b'   rev linkrev %s %s p2\n'
+        % (b'nodeid'.ljust(idlen), b'p1'.ljust(idlen))
+    )
 
     for rev in store:
         node = store.node(rev)
@@ -1181,40 +1400,47 @@ def debugindex(ui, repo, file_=None, **opts):
 
         fm.startitem()
         fm.write(b'rev', b'%6d ', rev)
-        fm.write(b'linkrev', '%7d ', store.linkrev(rev))
-        fm.write(b'node', '%s ', shortfn(node))
-        fm.write(b'p1', '%s ', shortfn(parents[0]))
-        fm.write(b'p2', '%s', shortfn(parents[1]))
+        fm.write(b'linkrev', b'%7d ', store.linkrev(rev))
+        fm.write(b'node', b'%s ', shortfn(node))
+        fm.write(b'p1', b'%s ', shortfn(parents[0]))
+        fm.write(b'p2', b'%s', shortfn(parents[1]))
         fm.plain(b'\n')
 
     fm.end()
 
-@command('debugindexdot', cmdutil.debugrevlogopts,
-    _('-c|-m|FILE'), optionalrepo=True)
+
+@command(
+    b'debugindexdot',
+    cmdutil.debugrevlogopts,
+    _(b'-c|-m|FILE'),
+    optionalrepo=True,
+)
 def debugindexdot(ui, repo, file_=None, **opts):
     """dump an index DAG as a graphviz dot file"""
     opts = pycompat.byteskwargs(opts)
-    r = cmdutil.openstorage(repo, 'debugindexdot', file_, opts)
-    ui.write(("digraph G {\n"))
+    r = cmdutil.openstorage(repo, b'debugindexdot', file_, opts)
+    ui.writenoi18n(b"digraph G {\n")
     for i in r:
         node = r.node(i)
         pp = r.parents(node)
-        ui.write("\t%d -> %d\n" % (r.rev(pp[0]), i))
+        ui.write(b"\t%d -> %d\n" % (r.rev(pp[0]), i))
         if pp[1] != nullid:
-            ui.write("\t%d -> %d\n" % (r.rev(pp[1]), i))
-    ui.write("}\n")
+            ui.write(b"\t%d -> %d\n" % (r.rev(pp[1]), i))
+    ui.write(b"}\n")
 
-@command('debugindexstats', [])
+
+@command(b'debugindexstats', [])
 def debugindexstats(ui, repo):
     """show stats related to the changelog index"""
     repo.changelog.shortest(nullid, 1)
     index = repo.changelog.index
-    if not util.safehasattr(index, 'stats'):
-        raise error.Abort(_('debugindexstats only works with native code'))
+    if not util.safehasattr(index, b'stats'):
+        raise error.Abort(_(b'debugindexstats only works with native code'))
     for k, v in sorted(index.stats().items()):
-        ui.write('%s: %d\n' % (k, v))
+        ui.write(b'%s: %d\n' % (k, v))
 
-@command('debuginstall', [] + cmdutil.formatteropts, '', norepo=True)
+
+@command(b'debuginstall', [] + cmdutil.formatteropts, b'', norepo=True)
 def debuginstall(ui, **opts):
     '''test Mercurial installation
 
@@ -1224,63 +1450,94 @@ def debuginstall(ui, **opts):
 
     problems = 0
 
-    fm = ui.formatter('debuginstall', opts)
+    fm = ui.formatter(b'debuginstall', opts)
     fm.startitem()
 
     # encoding
-    fm.write('encoding', _("checking encoding (%s)...\n"), encoding.encoding)
+    fm.write(b'encoding', _(b"checking encoding (%s)...\n"), encoding.encoding)
     err = None
     try:
         codecs.lookup(pycompat.sysstr(encoding.encoding))
     except LookupError as inst:
         err = stringutil.forcebytestr(inst)
         problems += 1
-    fm.condwrite(err, 'encodingerror', _(" %s\n"
-                 " (check that your locale is properly set)\n"), err)
+    fm.condwrite(
+        err,
+        b'encodingerror',
+        _(b" %s\n (check that your locale is properly set)\n"),
+        err,
+    )
 
     # Python
-    fm.write('pythonexe', _("checking Python executable (%s)\n"),
-             pycompat.sysexecutable or _("unknown"))
-    fm.write('pythonver', _("checking Python version (%s)\n"),
-             ("%d.%d.%d" % sys.version_info[:3]))
-    fm.write('pythonlib', _("checking Python lib (%s)...\n"),
-             os.path.dirname(pycompat.fsencode(os.__file__)))
+    fm.write(
+        b'pythonexe',
+        _(b"checking Python executable (%s)\n"),
+        pycompat.sysexecutable or _(b"unknown"),
+    )
+    fm.write(
+        b'pythonver',
+        _(b"checking Python version (%s)\n"),
+        (b"%d.%d.%d" % sys.version_info[:3]),
+    )
+    fm.write(
+        b'pythonlib',
+        _(b"checking Python lib (%s)...\n"),
+        os.path.dirname(pycompat.fsencode(os.__file__)),
+    )
 
     security = set(sslutil.supportedprotocols)
     if sslutil.hassni:
-        security.add('sni')
+        security.add(b'sni')
 
-    fm.write('pythonsecurity', _("checking Python security support (%s)\n"),
-             fm.formatlist(sorted(security), name='protocol',
-                           fmt='%s', sep=','))
+    fm.write(
+        b'pythonsecurity',
+        _(b"checking Python security support (%s)\n"),
+        fm.formatlist(sorted(security), name=b'protocol', fmt=b'%s', sep=b','),
+    )
 
     # These are warnings, not errors. So don't increment problem count. This
     # may change in the future.
-    if 'tls1.2' not in security:
-        fm.plain(_('  TLS 1.2 not supported by Python install; '
-                   'network connections lack modern security\n'))
-    if 'sni' not in security:
-        fm.plain(_('  SNI not supported by Python install; may have '
-                   'connectivity issues with some servers\n'))
+    if b'tls1.2' not in security:
+        fm.plain(
+            _(
+                b'  TLS 1.2 not supported by Python install; '
+                b'network connections lack modern security\n'
+            )
+        )
+    if b'sni' not in security:
+        fm.plain(
+            _(
+                b'  SNI not supported by Python install; may have '
+                b'connectivity issues with some servers\n'
+            )
+        )
 
     # TODO print CA cert info
 
     # hg version
     hgver = util.version()
-    fm.write('hgver', _("checking Mercurial version (%s)\n"),
-             hgver.split('+')[0])
-    fm.write('hgverextra', _("checking Mercurial custom build (%s)\n"),
-             '+'.join(hgver.split('+')[1:]))
+    fm.write(
+        b'hgver', _(b"checking Mercurial version (%s)\n"), hgver.split(b'+')[0]
+    )
+    fm.write(
+        b'hgverextra',
+        _(b"checking Mercurial custom build (%s)\n"),
+        b'+'.join(hgver.split(b'+')[1:]),
+    )
 
     # compiled modules
-    fm.write('hgmodulepolicy', _("checking module policy (%s)\n"),
-             policy.policy)
-    fm.write('hgmodules', _("checking installed modules (%s)...\n"),
-             os.path.dirname(pycompat.fsencode(__file__)))
+    fm.write(
+        b'hgmodulepolicy', _(b"checking module policy (%s)\n"), policy.policy
+    )
+    fm.write(
+        b'hgmodules',
+        _(b"checking installed modules (%s)...\n"),
+        os.path.dirname(pycompat.fsencode(__file__)),
+    )
 
-    rustandc = policy.policy in ('rust+c', 'rust+c-allow')
+    rustandc = policy.policy in (b'rust+c', b'rust+c-allow')
     rustext = rustandc  # for now, that's the only case
-    cext = policy.policy in ('c', 'allow') or rustandc
+    cext = policy.policy in (b'c', b'allow') or rustandc
     nopure = cext or rustext
     if nopure:
         err = None
@@ -1292,6 +1549,7 @@ def debuginstall(ui, **opts):
                     mpatch,
                     osutil,
                 )
+
                 # quiet pyflakes
                 dir(bdiff), dir(mpatch), dir(base85), dir(osutil)
             if rustext:
@@ -1299,40 +1557,62 @@ def debuginstall(ui, **opts):
                     ancestor,
                     dirstate,
                 )
-                dir(ancestor), dir(dirstate) # quiet pyflakes
+
+                dir(ancestor), dir(dirstate)  # quiet pyflakes
         except Exception as inst:
             err = stringutil.forcebytestr(inst)
             problems += 1
-        fm.condwrite(err, 'extensionserror', " %s\n", err)
+        fm.condwrite(err, b'extensionserror', b" %s\n", err)
 
     compengines = util.compengines._engines.values()
-    fm.write('compengines', _('checking registered compression engines (%s)\n'),
-             fm.formatlist(sorted(e.name() for e in compengines),
-                           name='compengine', fmt='%s', sep=', '))
-    fm.write('compenginesavail', _('checking available compression engines '
-                                   '(%s)\n'),
-             fm.formatlist(sorted(e.name() for e in compengines
-                                  if e.available()),
-                           name='compengine', fmt='%s', sep=', '))
+    fm.write(
+        b'compengines',
+        _(b'checking registered compression engines (%s)\n'),
+        fm.formatlist(
+            sorted(e.name() for e in compengines),
+            name=b'compengine',
+            fmt=b'%s',
+            sep=b', ',
+        ),
+    )
+    fm.write(
+        b'compenginesavail',
+        _(b'checking available compression engines (%s)\n'),
+        fm.formatlist(
+            sorted(e.name() for e in compengines if e.available()),
+            name=b'compengine',
+            fmt=b'%s',
+            sep=b', ',
+        ),
+    )
     wirecompengines = compression.compengines.supportedwireengines(
-        compression.SERVERROLE)
-    fm.write('compenginesserver', _('checking available compression engines '
-                                    'for wire protocol (%s)\n'),
-             fm.formatlist([e.name() for e in wirecompengines
-                            if e.wireprotosupport()],
-                           name='compengine', fmt='%s', sep=', '))
-    re2 = 'missing'
+        compression.SERVERROLE
+    )
+    fm.write(
+        b'compenginesserver',
+        _(
+            b'checking available compression engines '
+            b'for wire protocol (%s)\n'
+        ),
+        fm.formatlist(
+            [e.name() for e in wirecompengines if e.wireprotosupport()],
+            name=b'compengine',
+            fmt=b'%s',
+            sep=b', ',
+        ),
+    )
+    re2 = b'missing'
     if util._re2:
-        re2 = 'available'
-    fm.plain(_('checking "re2" regexp engine (%s)\n') % re2)
+        re2 = b'available'
+    fm.plain(_(b'checking "re2" regexp engine (%s)\n') % re2)
     fm.data(re2=bool(util._re2))
 
     # templates
     p = templater.templatepaths()
-    fm.write('templatedirs', 'checking templates (%s)...\n', ' '.join(p))
-    fm.condwrite(not p, '', _(" no template directories found\n"))
+    fm.write(b'templatedirs', b'checking templates (%s)...\n', b' '.join(p))
+    fm.condwrite(not p, b'', _(b" no template directories found\n"))
     if p:
-        m = templater.templatepath("map-cmdline.default")
+        m = templater.templatepath(b"map-cmdline.default")
         if m:
             # template found, check if it is working
             err = None
@@ -1341,33 +1621,51 @@ def debuginstall(ui, **opts):
             except Exception as inst:
                 err = stringutil.forcebytestr(inst)
                 p = None
-            fm.condwrite(err, 'defaulttemplateerror', " %s\n", err)
+            fm.condwrite(err, b'defaulttemplateerror', b" %s\n", err)
         else:
             p = None
-        fm.condwrite(p, 'defaulttemplate',
-                     _("checking default template (%s)\n"), m)
-        fm.condwrite(not m, 'defaulttemplatenotfound',
-                     _(" template '%s' not found\n"), "default")
+        fm.condwrite(
+            p, b'defaulttemplate', _(b"checking default template (%s)\n"), m
+        )
+        fm.condwrite(
+            not m,
+            b'defaulttemplatenotfound',
+            _(b" template '%s' not found\n"),
+            b"default",
+        )
     if not p:
         problems += 1
-    fm.condwrite(not p, '',
-                 _(" (templates seem to have been installed incorrectly)\n"))
+    fm.condwrite(
+        not p, b'', _(b" (templates seem to have been installed incorrectly)\n")
+    )
 
     # editor
     editor = ui.geteditor()
     editor = util.expandpath(editor)
     editorbin = procutil.shellsplit(editor)[0]
-    fm.write('editor', _("checking commit editor... (%s)\n"), editorbin)
+    fm.write(b'editor', _(b"checking commit editor... (%s)\n"), editorbin)
     cmdpath = procutil.findexe(editorbin)
-    fm.condwrite(not cmdpath and editor == 'vi', 'vinotfound',
-                 _(" No commit editor set and can't find %s in PATH\n"
-                   " (specify a commit editor in your configuration"
-                   " file)\n"), not cmdpath and editor == 'vi' and editorbin)
-    fm.condwrite(not cmdpath and editor != 'vi', 'editornotfound',
-                 _(" Can't find editor '%s' in PATH\n"
-                   " (specify a commit editor in your configuration"
-                   " file)\n"), not cmdpath and editorbin)
-    if not cmdpath and editor != 'vi':
+    fm.condwrite(
+        not cmdpath and editor == b'vi',
+        b'vinotfound',
+        _(
+            b" No commit editor set and can't find %s in PATH\n"
+            b" (specify a commit editor in your configuration"
+            b" file)\n"
+        ),
+        not cmdpath and editor == b'vi' and editorbin,
+    )
+    fm.condwrite(
+        not cmdpath and editor != b'vi',
+        b'editornotfound',
+        _(
+            b" Can't find editor '%s' in PATH\n"
+            b" (specify a commit editor in your configuration"
+            b" file)\n"
+        ),
+        not cmdpath and editorbin,
+    )
+    if not cmdpath and editor != b'vi':
         problems += 1
 
     # check username
@@ -1379,22 +1677,39 @@ def debuginstall(ui, **opts):
         err = stringutil.forcebytestr(e)
         problems += 1
 
-    fm.condwrite(username, 'username',  _("checking username (%s)\n"), username)
-    fm.condwrite(err, 'usernameerror', _("checking username...\n %s\n"
-        " (specify a username in your configuration file)\n"), err)
+    fm.condwrite(
+        username, b'username', _(b"checking username (%s)\n"), username
+    )
+    fm.condwrite(
+        err,
+        b'usernameerror',
+        _(
+            b"checking username...\n %s\n"
+            b" (specify a username in your configuration file)\n"
+        ),
+        err,
+    )
 
-    fm.condwrite(not problems, '',
-                 _("no problems detected\n"))
+    for name, mod in extensions.extensions():
+        handler = getattr(mod, 'debuginstall', None)
+        if handler is not None:
+            problems += handler(ui, fm)
+
+    fm.condwrite(not problems, b'', _(b"no problems detected\n"))
     if not problems:
         fm.data(problems=problems)
-    fm.condwrite(problems, 'problems',
-                 _("%d problems detected,"
-                   " please check your install!\n"), problems)
+    fm.condwrite(
+        problems,
+        b'problems',
+        _(b"%d problems detected, please check your install!\n"),
+        problems,
+    )
     fm.end()
 
     return problems
 
-@command('debugknown', [], _('REPO ID...'), norepo=True)
+
+@command(b'debugknown', [], _(b'REPO ID...'), norepo=True)
 def debugknown(ui, repopath, *ids, **opts):
     """test whether node ids are known to a repo
 
@@ -1403,24 +1718,38 @@ def debugknown(ui, repopath, *ids, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     repo = hg.peer(ui, opts, repopath)
-    if not repo.capable('known'):
-        raise error.Abort("known() not supported by target repository")
+    if not repo.capable(b'known'):
+        raise error.Abort(b"known() not supported by target repository")
     flags = repo.known([bin(s) for s in ids])
-    ui.write("%s\n" % ("".join([f and "1" or "0" for f in flags])))
+    ui.write(b"%s\n" % (b"".join([f and b"1" or b"0" for f in flags])))
 
-@command('debuglabelcomplete', [], _('LABEL...'))
+
+@command(b'debuglabelcomplete', [], _(b'LABEL...'))
 def debuglabelcomplete(ui, repo, *args):
     '''backwards compatibility with old bash completion scripts (DEPRECATED)'''
     debugnamecomplete(ui, repo, *args)
 
-@command('debuglocks',
-         [('L', 'force-lock', None, _('free the store lock (DANGEROUS)')),
-          ('W', 'force-wlock', None,
-           _('free the working state lock (DANGEROUS)')),
-          ('s', 'set-lock', None, _('set the store lock until stopped')),
-          ('S', 'set-wlock', None,
-           _('set the working state lock until stopped'))],
-         _('[OPTION]...'))
+
+@command(
+    b'debuglocks',
+    [
+        (b'L', b'force-lock', None, _(b'free the store lock (DANGEROUS)')),
+        (
+            b'W',
+            b'force-wlock',
+            None,
+            _(b'free the working state lock (DANGEROUS)'),
+        ),
+        (b's', b'set-lock', None, _(b'set the store lock until stopped')),
+        (
+            b'S',
+            b'set-wlock',
+            None,
+            _(b'set the working state lock until stopped'),
+        ),
+    ],
+    _(b'[OPTION]...'),
+)
 def debuglocks(ui, repo, **opts):
     """show or modify state of locks
 
@@ -1447,9 +1776,9 @@ def debuglocks(ui, repo, **opts):
     """
 
     if opts.get(r'force_lock'):
-        repo.svfs.unlink('lock')
+        repo.svfs.unlink(b'lock')
     if opts.get(r'force_wlock'):
-        repo.vfs.unlink('wlock')
+        repo.vfs.unlink(b'wlock')
     if opts.get(r'force_lock') or opts.get(r'force_wlock'):
         return 0
 
@@ -1459,14 +1788,14 @@ def debuglocks(ui, repo, **opts):
             try:
                 locks.append(repo.wlock(False))
             except error.LockHeld:
-                raise error.Abort(_('wlock is already held'))
+                raise error.Abort(_(b'wlock is already held'))
         if opts.get(r'set_lock'):
             try:
                 locks.append(repo.lock(False))
             except error.LockHeld:
-                raise error.Abort(_('lock is already held'))
+                raise error.Abort(_(b'lock is already held'))
         if len(locks):
-            ui.promptchoice(_("ready to release the lock (y)? $$ &Yes"))
+            ui.promptchoice(_(b"ready to release the lock (y)? $$ &Yes"))
             return 0
     finally:
         release(*locks)
@@ -1489,32 +1818,45 @@ def debuglocks(ui, repo, **opts):
                 age = now - st[stat.ST_MTIME]
                 user = util.username(st.st_uid)
                 locker = vfs.readlock(name)
-                if ":" in locker:
-                    host, pid = locker.split(':')
+                if b":" in locker:
+                    host, pid = locker.split(b':')
                     if host == socket.gethostname():
-                        locker = 'user %s, process %s' % (user or b'None', pid)
+                        locker = b'user %s, process %s' % (user or b'None', pid)
                     else:
-                        locker = ('user %s, process %s, host %s'
-                                  % (user or b'None', pid, host))
-                ui.write(("%-6s %s (%ds)\n") % (name + ":", locker, age))
+                        locker = b'user %s, process %s, host %s' % (
+                            user or b'None',
+                            pid,
+                            host,
+                        )
+                ui.writenoi18n(b"%-6s %s (%ds)\n" % (name + b":", locker, age))
                 return 1
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     raise
 
-        ui.write(("%-6s free\n") % (name + ":"))
+        ui.writenoi18n(b"%-6s free\n" % (name + b":"))
         return 0
 
-    held += report(repo.svfs, "lock", repo.lock)
-    held += report(repo.vfs, "wlock", repo.wlock)
+    held += report(repo.svfs, b"lock", repo.lock)
+    held += report(repo.vfs, b"wlock", repo.wlock)
 
     return held
 
-@command('debugmanifestfulltextcache', [
-        ('', 'clear', False, _('clear the cache')),
-        ('a', 'add', [], _('add the given manifest nodes to the cache'),
-         _('NODE'))
-    ], '')
+
+@command(
+    b'debugmanifestfulltextcache',
+    [
+        (b'', b'clear', False, _(b'clear the cache')),
+        (
+            b'a',
+            b'add',
+            [],
+            _(b'add the given manifest nodes to the cache'),
+            _(b'NODE'),
+        ),
+    ],
+    b'',
+)
 def debugmanifestfulltextcache(ui, repo, add=(), **opts):
     """show, clear or amend the contents of the manifest fulltext cache"""
 
@@ -1523,8 +1865,10 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
         try:
             return r._fulltextcache
         except AttributeError:
-            msg = _("Current revlog implementation doesn't appear to have a "
-                    "manifest fulltext cache\n")
+            msg = _(
+                b"Current revlog implementation doesn't appear to have a "
+                b"manifest fulltext cache\n"
+            )
             raise error.Abort(msg)
 
     if opts.get(r'clear'):
@@ -1541,45 +1885,52 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
                 try:
                     manifest = m[store.lookup(n)]
                 except error.LookupError as e:
-                    raise error.Abort(e, hint="Check your manifest node id")
+                    raise error.Abort(e, hint=b"Check your manifest node id")
                 manifest.read()  # stores revisision in cache too
             return
 
     cache = getcache()
     if not len(cache):
-        ui.write(_('cache empty\n'))
+        ui.write(_(b'cache empty\n'))
     else:
         ui.write(
-            _('cache contains %d manifest entries, in order of most to '
-              'least recent:\n') % (len(cache),))
+            _(
+                b'cache contains %d manifest entries, in order of most to '
+                b'least recent:\n'
+            )
+            % (len(cache),)
+        )
         totalsize = 0
         for nodeid in cache:
             # Use cache.get to not update the LRU order
             data = cache.peek(nodeid)
             size = len(data)
-            totalsize += size + 24   # 20 bytes nodeid, 4 bytes size
-            ui.write(_('id: %s, size %s\n') % (
-                hex(nodeid), util.bytecount(size)))
-        ondisk = cache._opener.stat('manifestfulltextcache').st_size
+            totalsize += size + 24  # 20 bytes nodeid, 4 bytes size
+            ui.write(
+                _(b'id: %s, size %s\n') % (hex(nodeid), util.bytecount(size))
+            )
+        ondisk = cache._opener.stat(b'manifestfulltextcache').st_size
         ui.write(
-            _('total cache data size %s, on-disk %s\n') % (
-                util.bytecount(totalsize), util.bytecount(ondisk))
+            _(b'total cache data size %s, on-disk %s\n')
+            % (util.bytecount(totalsize), util.bytecount(ondisk))
         )
 
-@command('debugmergestate', [], '')
+
+@command(b'debugmergestate', [], b'')
 def debugmergestate(ui, repo, *args):
     """print merge state
 
     Use --verbose to print out information about whether v1 or v2 merge state
     was chosen."""
+
     def _hashornull(h):
         if h == nullhex:
-            return 'null'
+            return b'null'
         else:
             return h
 
     def printrecords(version):
-        ui.write(('* version %d records\n') % version)
+        ui.writenoi18n(b'* version %d records\n' % version)
         if version == 1:
             records = v1records
         else:
@@ -1587,51 +1938,64 @@ def debugmergestate(ui, repo, *args):
 
         for rtype, record in records:
             # pretty print some record types
-            if rtype == 'L':
-                ui.write(('local: %s\n') % record)
-            elif rtype == 'O':
-                ui.write(('other: %s\n') % record)
-            elif rtype == 'm':
-                driver, mdstate = record.split('\0', 1)
-                ui.write(('merge driver: %s (state "%s")\n')
-                         % (driver, mdstate))
-            elif rtype in 'FDC':
-                r = record.split('\0')
+            if rtype == b'L':
+                ui.writenoi18n(b'local: %s\n' % record)
+            elif rtype == b'O':
+                ui.writenoi18n(b'other: %s\n' % record)
+            elif rtype == b'm':
+                driver, mdstate = record.split(b'\0', 1)
+                ui.writenoi18n(
+                    b'merge driver: %s (state "%s")\n' % (driver, mdstate)
+                )
+            elif rtype in b'FDC':
+                r = record.split(b'\0')
                 f, state, hash, lfile, afile, anode, ofile = r[0:7]
                 if version == 1:
-                    onode = 'not stored in v1 format'
+                    onode = b'not stored in v1 format'
                     flags = r[7]
                 else:
                     onode, flags = r[7:9]
-                ui.write(('file: %s (record type "%s", state "%s", hash %s)\n')
-                         % (f, rtype, state, _hashornull(hash)))
-                ui.write(('  local path: %s (flags "%s")\n') % (lfile, flags))
-                ui.write(('  ancestor path: %s (node %s)\n')
-                         % (afile, _hashornull(anode)))
-                ui.write(('  other path: %s (node %s)\n')
-                         % (ofile, _hashornull(onode)))
-            elif rtype == 'f':
-                filename, rawextras = record.split('\0', 1)
-                extras = rawextras.split('\0')
+                ui.writenoi18n(
+                    b'file: %s (record type "%s", state "%s", hash %s)\n'
+                    % (f, rtype, state, _hashornull(hash))
+                )
+                ui.writenoi18n(
+                    b'  local path: %s (flags "%s")\n' % (lfile, flags)
+                )
+                ui.writenoi18n(
+                    b'  ancestor path: %s (node %s)\n'
+                    % (afile, _hashornull(anode))
+                )
+                ui.writenoi18n(
+                    b'  other path: %s (node %s)\n'
+                    % (ofile, _hashornull(onode))
+                )
+            elif rtype == b'f':
+                filename, rawextras = record.split(b'\0', 1)
+                extras = rawextras.split(b'\0')
                 i = 0
                 extrastrings = []
                 while i < len(extras):
-                    extrastrings.append('%s = %s' % (extras[i], extras[i + 1]))
+                    extrastrings.append(b'%s = %s' % (extras[i], extras[i + 1]))
                     i += 2
 
-                ui.write(('file extras: %s (%s)\n')
-                         % (filename, ', '.join(extrastrings)))
-            elif rtype == 'l':
-                labels = record.split('\0', 2)
+                ui.writenoi18n(
+                    b'file extras: %s (%s)\n'
+                    % (filename, b', '.join(extrastrings))
+                )
+            elif rtype == b'l':
+                labels = record.split(b'\0', 2)
                 labels = [l for l in labels if len(l) > 0]
-                ui.write(('labels:\n'))
-                ui.write(('  local: %s\n' % labels[0]))
-                ui.write(('  other: %s\n' % labels[1]))
+                ui.writenoi18n(b'labels:\n')
+                ui.write((b'  local: %s\n' % labels[0]))
+                ui.write((b'  other: %s\n' % labels[1]))
                 if len(labels) > 2:
-                    ui.write(('  base:  %s\n' % labels[2]))
+                    ui.write((b'  base:  %s\n' % labels[2]))
             else:
-                ui.write(('unrecognized entry: %s\t%s\n')
-                         % (rtype, record.replace('\0', '\t')))
+                ui.writenoi18n(
+                    b'unrecognized entry: %s\t%s\n'
+                    % (rtype, record.replace(b'\0', b'\t'))
+                )
 
     # Avoid mergestate.read() since it may raise an exception for unsupported
     # merge state records. We shouldn't be doing this, but this is OK since this
@@ -1641,61 +2005,81 @@ def debugmergestate(ui, repo, *args):
     # sort so that reasonable information is on top
     v1records = ms._readrecordsv1()
     v2records = ms._readrecordsv2()
-    order = 'LOml'
+    order = b'LOml'
+
     def key(r):
         idx = order.find(r[0])
         if idx == -1:
             return (1, r[1])
         else:
             return (0, idx)
+
     v1records.sort(key=key)
     v2records.sort(key=key)
 
     if not v1records and not v2records:
-        ui.write(('no merge state found\n'))
+        ui.writenoi18n(b'no merge state found\n')
     elif not v2records:
-        ui.note(('no version 2 merge state\n'))
+        ui.notenoi18n(b'no version 2 merge state\n')
         printrecords(1)
     elif ms._v1v2match(v1records, v2records):
-        ui.note(('v1 and v2 states match: using v2\n'))
+        ui.notenoi18n(b'v1 and v2 states match: using v2\n')
         printrecords(2)
     else:
-        ui.note(('v1 and v2 states mismatch: using v1\n'))
+        ui.notenoi18n(b'v1 and v2 states mismatch: using v1\n')
         printrecords(1)
         if ui.verbose:
             printrecords(2)
 
-@command('debugnamecomplete', [], _('NAME...'))
+
+@command(b'debugnamecomplete', [], _(b'NAME...'))
 def debugnamecomplete(ui, repo, *args):
     '''complete "names" - tags, open branch names, bookmark names'''
 
     names = set()
     # since we previously only listed open branches, we will handle that
     # specially (after this for loop)
-    for name, ns in repo.names.iteritems():
-        if name != 'branches':
+    for name, ns in pycompat.iteritems(repo.names):
+        if name != b'branches':
             names.update(ns.listnames(repo))
-    names.update(tag for (tag, heads, tip, closed)
-                 in repo.branchmap().iterbranches() if not closed)
+    names.update(
+        tag
+        for (tag, heads, tip, closed) in repo.branchmap().iterbranches()
+        if not closed
+    )
     completions = set()
     if not args:
-        args = ['']
+        args = [b'']
     for a in args:
         completions.update(n for n in names if n.startswith(a))
-    ui.write('\n'.join(sorted(completions)))
-    ui.write('\n')
+    ui.write(b'\n'.join(sorted(completions)))
+    ui.write(b'\n')
 
-@command('debugobsolete',
-        [('', 'flags', 0, _('markers flag')),
-         ('', 'record-parents', False,
-          _('record parent information for the precursor')),
-         ('r', 'rev', [], _('display markers relevant to REV')),
-         ('', 'exclusive', False, _('restrict display to markers only '
-                                    'relevant to REV')),
-         ('', 'index', False, _('display index of the marker')),
-         ('', 'delete', [], _('delete markers specified by indices')),
-        ] + cmdutil.commitopts2 + cmdutil.formatteropts,
-         _('[OBSOLETED [REPLACEMENT ...]]'))
+
+@command(
+    b'debugobsolete',
+    [
+        (b'', b'flags', 0, _(b'markers flag')),
+        (
+            b'',
+            b'record-parents',
+            False,
+            _(b'record parent information for the precursor'),
+        ),
+        (b'r', b'rev', [], _(b'display markers relevant to REV')),
+        (
+            b'',
+            b'exclusive',
+            False,
+            _(b'restrict display to markers only relevant to REV'),
+        ),
+        (b'', b'index', False, _(b'display index of the marker')),
+        (b'', b'delete', [], _(b'delete markers specified by indices')),
+    ]
+    + cmdutil.commitopts2
+    + cmdutil.formatteropts,
+    _(b'[OBSOLETED [REPLACEMENT ...]]'),
+)
 def debugobsolete(ui, repo, precursor=None, *successors, **opts):
     """create arbitrary obsolete marker
 
@@ -1713,80 +2097,98 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
                 raise TypeError()
             return n
         except TypeError:
-            raise error.Abort('changeset references must be full hexadecimal '
-                             'node identifiers')
+            raise error.Abort(
+                b'changeset references must be full hexadecimal '
+                b'node identifiers'
+            )
 
-    if opts.get('delete'):
+    if opts.get(b'delete'):
         indices = []
-        for v in opts.get('delete'):
+        for v in opts.get(b'delete'):
             try:
                 indices.append(int(v))
             except ValueError:
-                raise error.Abort(_('invalid index value: %r') % v,
-                                  hint=_('use integers for indices'))
+                raise error.Abort(
+                    _(b'invalid index value: %r') % v,
+                    hint=_(b'use integers for indices'),
+                )
 
         if repo.currenttransaction():
-            raise error.Abort(_('cannot delete obsmarkers in the middle '
-                                'of transaction.'))
+            raise error.Abort(
+                _(b'cannot delete obsmarkers in the middle of transaction.')
+            )
 
         with repo.lock():
             n = repair.deleteobsmarkers(repo.obsstore, indices)
-            ui.write(_('deleted %i obsolescence markers\n') % n)
+            ui.write(_(b'deleted %i obsolescence markers\n') % n)
 
         return
 
     if precursor is not None:
-        if opts['rev']:
-            raise error.Abort('cannot select revision when creating marker')
+        if opts[b'rev']:
+            raise error.Abort(b'cannot select revision when creating marker')
         metadata = {}
-        metadata['user'] = encoding.fromlocal(opts['user'] or ui.username())
+        metadata[b'user'] = encoding.fromlocal(opts[b'user'] or ui.username())
         succs = tuple(parsenodeid(succ) for succ in successors)
         l = repo.lock()
         try:
-            tr = repo.transaction('debugobsolete')
+            tr = repo.transaction(b'debugobsolete')
             try:
-                date = opts.get('date')
+                date = opts.get(b'date')
                 if date:
                     date = dateutil.parsedate(date)
                 else:
                     date = None
                 prec = parsenodeid(precursor)
                 parents = None
-                if opts['record_parents']:
+                if opts[b'record_parents']:
                     if prec not in repo.unfiltered():
-                        raise error.Abort('cannot used --record-parents on '
-                                         'unknown changesets')
+                        raise error.Abort(
+                            b'cannot used --record-parents on '
+                            b'unknown changesets'
+                        )
                     parents = repo.unfiltered()[prec].parents()
                     parents = tuple(p.node() for p in parents)
-                repo.obsstore.create(tr, prec, succs, opts['flags'],
-                                     parents=parents, date=date,
-                                     metadata=metadata, ui=ui)
+                repo.obsstore.create(
+                    tr,
+                    prec,
+                    succs,
+                    opts[b'flags'],
+                    parents=parents,
+                    date=date,
+                    metadata=metadata,
+                    ui=ui,
+                )
                 tr.close()
             except ValueError as exc:
-                raise error.Abort(_('bad obsmarker input: %s') %
-                                  pycompat.bytestr(exc))
+                raise error.Abort(
+                    _(b'bad obsmarker input: %s') % pycompat.bytestr(exc)
+                )
             finally:
                 tr.release()
         finally:
             l.release()
     else:
-        if opts['rev']:
-            revs = scmutil.revrange(repo, opts['rev'])
+        if opts[b'rev']:
+            revs = scmutil.revrange(repo, opts[b'rev'])
             nodes = [repo[r].node() for r in revs]
-            markers = list(obsutil.getmarkers(repo, nodes=nodes,
-                                               exclusive=opts['exclusive']))
+            markers = list(
+                obsutil.getmarkers(
+                    repo, nodes=nodes, exclusive=opts[b'exclusive']
+                )
+            )
             markers.sort(key=lambda x: x._data)
         else:
             markers = obsutil.getmarkers(repo)
 
         markerstoiter = markers
         isrelevant = lambda m: True
-        if opts.get('rev') and opts.get('index'):
+        if opts.get(b'rev') and opts.get(b'index'):
             markerstoiter = obsutil.getmarkers(repo)
             markerset = set(markers)
             isrelevant = lambda m: m in markerset
 
-        fm = ui.formatter('debugobsolete', opts)
+        fm = ui.formatter(b'debugobsolete', opts)
         for i, m in enumerate(markerstoiter):
             if not isrelevant(m):
                 # marker can be irrelevant when we're iterating over a set
@@ -1798,38 +2200,49 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
                 # are relevant to --rev value
                 continue
             fm.startitem()
-            ind = i if opts.get('index') else None
+            ind = i if opts.get(b'index') else None
             cmdutil.showmarker(fm, m, index=ind)
         fm.end()
 
-@command('debugp1copies',
-         [('r', 'rev', '', _('revision to debug'), _('REV'))],
-         _('[-r REV]'))
+
+@command(
+    b'debugp1copies',
+    [(b'r', b'rev', b'', _(b'revision to debug'), _(b'REV'))],
+    _(b'[-r REV]'),
+)
 def debugp1copies(ui, repo, **opts):
     """dump copy information compared to p1"""
 
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'), default=None)
+    ctx = scmutil.revsingle(repo, opts.get(b'rev'), default=None)
     for dst, src in ctx.p1copies().items():
-        ui.write('%s -> %s\n' % (src, dst))
+        ui.write(b'%s -> %s\n' % (src, dst))
 
-@command('debugp2copies',
-         [('r', 'rev', '', _('revision to debug'), _('REV'))],
-         _('[-r REV]'))
+
+@command(
+    b'debugp2copies',
+    [(b'r', b'rev', b'', _(b'revision to debug'), _(b'REV'))],
+    _(b'[-r REV]'),
+)
 def debugp1copies(ui, repo, **opts):
     """dump copy information compared to p2"""
 
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'), default=None)
+    ctx = scmutil.revsingle(repo, opts.get(b'rev'), default=None)
     for dst, src in ctx.p2copies().items():
-        ui.write('%s -> %s\n' % (src, dst))
+        ui.write(b'%s -> %s\n' % (src, dst))
 
-@command('debugpathcomplete',
-         [('f', 'full', None, _('complete an entire path')),
-          ('n', 'normal', None, _('show only normal files')),
-          ('a', 'added', None, _('show only added files')),
-          ('r', 'removed', None, _('show only removed files'))],
-         _('FILESPEC...'))
+
+@command(
+    b'debugpathcomplete',
+    [
+        (b'f', b'full', None, _(b'complete an entire path')),
+        (b'n', b'normal', None, _(b'show only normal files')),
+        (b'a', b'added', None, _(b'show only added files')),
+        (b'r', b'removed', None, _(b'show only removed files')),
+    ],
+    _(b'FILESPEC...'),
+)
 def debugpathcomplete(ui, repo, *specs, **opts):
     '''complete part or all of a tracked path
 
@@ -1846,19 +2259,19 @@ def debugpathcomplete(ui, repo, *specs, **opts):
         if spec != repo.root and not spec.startswith(rootdir):
             return [], []
         if os.path.isdir(spec):
-            spec += '/'
-        spec = spec[len(rootdir):]
-        fixpaths = pycompat.ossep != '/'
+            spec += b'/'
+        spec = spec[len(rootdir) :]
+        fixpaths = pycompat.ossep != b'/'
         if fixpaths:
-            spec = spec.replace(pycompat.ossep, '/')
+            spec = spec.replace(pycompat.ossep, b'/')
         speclen = len(spec)
         fullpaths = opts[r'full']
         files, dirs = set(), set()
         adddir, addfile = dirs.add, files.add
-        for f, st in dirstate.iteritems():
+        for f, st in pycompat.iteritems(dirstate):
             if f.startswith(spec) and st[0] in acceptable:
                 if fixpaths:
-                    f = f.replace('/', pycompat.ossep)
+                    f = f.replace(b'/', pycompat.ossep)
                 if fullpaths:
                     addfile(f)
                     continue
@@ -1869,45 +2282,49 @@ def debugpathcomplete(ui, repo, *specs, **opts):
                     addfile(f)
         return files, dirs
 
-    acceptable = ''
+    acceptable = b''
     if opts[r'normal']:
-        acceptable += 'nm'
+        acceptable += b'nm'
     if opts[r'added']:
-        acceptable += 'a'
+        acceptable += b'a'
     if opts[r'removed']:
-        acceptable += 'r'
+        acceptable += b'r'
     cwd = repo.getcwd()
     if not specs:
-        specs = ['.']
+        specs = [b'.']
 
     files, dirs = set(), set()
     for spec in specs:
-        f, d = complete(spec, acceptable or 'nmar')
+        f, d = complete(spec, acceptable or b'nmar')
         files.update(f)
         dirs.update(d)
     files.update(dirs)
-    ui.write('\n'.join(repo.pathto(p, cwd) for p in sorted(files)))
-    ui.write('\n')
+    ui.write(b'\n'.join(repo.pathto(p, cwd) for p in sorted(files)))
+    ui.write(b'\n')
 
-@command('debugpathcopies',
-         cmdutil.walkopts,
-         'hg debugpathcopies REV1 REV2 [FILE]',
-         inferrepo=True)
+
+@command(
+    b'debugpathcopies',
+    cmdutil.walkopts,
+    b'hg debugpathcopies REV1 REV2 [FILE]',
+    inferrepo=True,
+)
 def debugpathcopies(ui, repo, rev1, rev2, *pats, **opts):
     """show copies between two revisions"""
     ctx1 = scmutil.revsingle(repo, rev1)
     ctx2 = scmutil.revsingle(repo, rev2)
     m = scmutil.match(ctx1, pats, opts)
     for dst, src in sorted(copies.pathcopies(ctx1, ctx2, m).items()):
-        ui.write('%s -> %s\n' % (src, dst))
+        ui.write(b'%s -> %s\n' % (src, dst))
 
-@command('debugpeer', [], _('PATH'), norepo=True)
+
+@command(b'debugpeer', [], _(b'PATH'), norepo=True)
 def debugpeer(ui, path):
     """establish a connection to a peer repository"""
     # Always enable peer request logging. Requires --debug to display
     # though.
     overrides = {
-        ('devel', 'debug.peer-request'): True,
+        (b'devel', b'debug.peer-request'): True,
     }
 
     with ui.configoverride(overrides):
@@ -1916,16 +2333,22 @@ def debugpeer(ui, path):
         local = peer.local() is not None
         canpush = peer.canpush()
 
-        ui.write(_('url: %s\n') % peer.url())
-        ui.write(_('local: %s\n') % (_('yes') if local else _('no')))
-        ui.write(_('pushable: %s\n') % (_('yes') if canpush else _('no')))
+        ui.write(_(b'url: %s\n') % peer.url())
+        ui.write(_(b'local: %s\n') % (_(b'yes') if local else _(b'no')))
+        ui.write(_(b'pushable: %s\n') % (_(b'yes') if canpush else _(b'no')))
 
-@command('debugpickmergetool',
-        [('r', 'rev', '', _('check for files in this revision'), _('REV')),
-         ('', 'changedelete', None, _('emulate merging change and delete')),
-        ] + cmdutil.walkopts + cmdutil.mergetoolopts,
-        _('[PATTERN]...'),
-        inferrepo=True)
+
+@command(
+    b'debugpickmergetool',
+    [
+        (b'r', b'rev', b'', _(b'check for files in this revision'), _(b'REV')),
+        (b'', b'changedelete', None, _(b'emulate merging change and delete')),
+    ]
+    + cmdutil.walkopts
+    + cmdutil.mergetoolopts,
+    _(b'[PATTERN]...'),
+    inferrepo=True,
+)
 def debugpickmergetool(ui, repo, *pats, **opts):
     """examine which merge tool is chosen for specified file
 
@@ -1970,36 +2393,41 @@ def debugpickmergetool(ui, repo, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     overrides = {}
-    if opts['tool']:
-        overrides[('ui', 'forcemerge')] = opts['tool']
-        ui.note(('with --tool %r\n') % (pycompat.bytestr(opts['tool'])))
+    if opts[b'tool']:
+        overrides[(b'ui', b'forcemerge')] = opts[b'tool']
+        ui.notenoi18n(b'with --tool %r\n' % (pycompat.bytestr(opts[b'tool'])))
 
-    with ui.configoverride(overrides, 'debugmergepatterns'):
-        hgmerge = encoding.environ.get("HGMERGE")
+    with ui.configoverride(overrides, b'debugmergepatterns'):
+        hgmerge = encoding.environ.get(b"HGMERGE")
         if hgmerge is not None:
-            ui.note(('with HGMERGE=%r\n') % (pycompat.bytestr(hgmerge)))
-        uimerge = ui.config("ui", "merge")
+            ui.notenoi18n(b'with HGMERGE=%r\n' % (pycompat.bytestr(hgmerge)))
+        uimerge = ui.config(b"ui", b"merge")
         if uimerge:
-            ui.note(('with ui.merge=%r\n') % (pycompat.bytestr(uimerge)))
+            ui.notenoi18n(b'with ui.merge=%r\n' % (pycompat.bytestr(uimerge)))
 
-        ctx = scmutil.revsingle(repo, opts.get('rev'))
+        ctx = scmutil.revsingle(repo, opts.get(b'rev'))
         m = scmutil.match(ctx, pats, opts)
-        changedelete = opts['changedelete']
+        changedelete = opts[b'changedelete']
         for path in ctx.walk(m):
             fctx = ctx[path]
             try:
                 if not ui.debugflag:
                     ui.pushbuffer(error=True)
-                tool, toolpath = filemerge._picktool(repo, ui, path,
-                                                     fctx.isbinary(),
-                                                     'l' in fctx.flags(),
-                                                     changedelete)
+                tool, toolpath = filemerge._picktool(
+                    repo,
+                    ui,
+                    path,
+                    fctx.isbinary(),
+                    b'l' in fctx.flags(),
+                    changedelete,
+                )
             finally:
                 if not ui.debugflag:
                     ui.popbuffer()
-            ui.write(('%s = %s\n') % (path, tool))
+            ui.write(b'%s = %s\n' % (path, tool))
 
-@command('debugpushkey', [], _('REPO NAMESPACE [KEY OLD NEW]'), norepo=True)
+
+@command(b'debugpushkey', [], _(b'REPO NAMESPACE [KEY OLD NEW]'), norepo=True)
 def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
     '''access the pushkey key/value protocol
 
@@ -2013,47 +2441,69 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
     if keyinfo:
         key, old, new = keyinfo
         with target.commandexecutor() as e:
-            r = e.callcommand('pushkey', {
-                'namespace': namespace,
-                'key': key,
-                'old': old,
-                'new': new,
-            }).result()
+            r = e.callcommand(
+                b'pushkey',
+                {
+                    b'namespace': namespace,
+                    b'key': key,
+                    b'old': old,
+                    b'new': new,
+                },
+            ).result()
 
-        ui.status(pycompat.bytestr(r) + '\n')
+        ui.status(pycompat.bytestr(r) + b'\n')
         return not r
     else:
-        for k, v in sorted(target.listkeys(namespace).iteritems()):
-            ui.write("%s\t%s\n" % (stringutil.escapestr(k),
-                                   stringutil.escapestr(v)))
+        for k, v in sorted(pycompat.iteritems(target.listkeys(namespace))):
+            ui.write(
+                b"%s\t%s\n" % (stringutil.escapestr(k), stringutil.escapestr(v))
+            )
 
-@command('debugpvec', [], _('A B'))
+
+@command(b'debugpvec', [], _(b'A B'))
 def debugpvec(ui, repo, a, b=None):
     ca = scmutil.revsingle(repo, a)
     cb = scmutil.revsingle(repo, b)
     pa = pvec.ctxpvec(ca)
     pb = pvec.ctxpvec(cb)
     if pa == pb:
-        rel = "="
+        rel = b"="
     elif pa > pb:
-        rel = ">"
+        rel = b">"
     elif pa < pb:
-        rel = "<"
+        rel = b"<"
     elif pa | pb:
-        rel = "|"
-    ui.write(_("a: %s\n") % pa)
-    ui.write(_("b: %s\n") % pb)
-    ui.write(_("depth(a): %d depth(b): %d\n") % (pa._depth, pb._depth))
-    ui.write(_("delta: %d hdist: %d distance: %d relation: %s\n") %
-             (abs(pa._depth - pb._depth), pvec._hamming(pa._vec, pb._vec),
-              pa.distance(pb), rel))
+        rel = b"|"
+    ui.write(_(b"a: %s\n") % pa)
+    ui.write(_(b"b: %s\n") % pb)
+    ui.write(_(b"depth(a): %d depth(b): %d\n") % (pa._depth, pb._depth))
+    ui.write(
+        _(b"delta: %d hdist: %d distance: %d relation: %s\n")
+        % (
+            abs(pa._depth - pb._depth),
+            pvec._hamming(pa._vec, pb._vec),
+            pa.distance(pb),
+            rel,
+        )
+    )
 
-@command('debugrebuilddirstate|debugrebuildstate',
-    [('r', 'rev', '', _('revision to rebuild to'), _('REV')),
-     ('', 'minimal', None, _('only rebuild files that are inconsistent with '
-                             'the working copy parent')),
+
+@command(
+    b'debugrebuilddirstate|debugrebuildstate',
+    [
+        (b'r', b'rev', b'', _(b'revision to rebuild to'), _(b'REV')),
+        (
+            b'',
+            b'minimal',
+            None,
+            _(
+                b'only rebuild files that are inconsistent with '
+                b'the working copy parent'
+            ),
+        ),
     ],
-    _('[-r REV]'))
+    _(b'[-r REV]'),
+)
 def debugrebuilddirstate(ui, repo, rev, **opts):
     """rebuild the dirstate as it would look like for the given revision
 
@@ -2081,47 +2531,58 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
             dirstatefiles = set(dirstate)
             manifestonly = manifestfiles - dirstatefiles
             dsonly = dirstatefiles - manifestfiles
-            dsnotadded = set(f for f in dsonly if dirstate[f] != 'a')
+            dsnotadded = set(f for f in dsonly if dirstate[f] != b'a')
             changedfiles = manifestonly | dsnotadded
 
         dirstate.rebuild(ctx.node(), ctx.manifest(), changedfiles)
 
-@command('debugrebuildfncache', [], '')
+
+@command(b'debugrebuildfncache', [], b'')
 def debugrebuildfncache(ui, repo):
     """rebuild the fncache file"""
     repair.rebuildfncache(ui, repo)
 
-@command('debugrename',
-    [('r', 'rev', '', _('revision to debug'), _('REV'))],
-    _('[-r REV] [FILE]...'))
+
+@command(
+    b'debugrename',
+    [(b'r', b'rev', b'', _(b'revision to debug'), _(b'REV'))],
+    _(b'[-r REV] [FILE]...'),
+)
 def debugrename(ui, repo, *pats, **opts):
     """dump rename information"""
 
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'))
+    ctx = scmutil.revsingle(repo, opts.get(b'rev'))
     m = scmutil.match(ctx, pats, opts)
     for abs in ctx.walk(m):
         fctx = ctx[abs]
         o = fctx.filelog().renamed(fctx.filenode())
         rel = repo.pathto(abs)
         if o:
-            ui.write(_("%s renamed from %s:%s\n") % (rel, o[0], hex(o[1])))
+            ui.write(_(b"%s renamed from %s:%s\n") % (rel, o[0], hex(o[1])))
         else:
-            ui.write(_("%s not renamed\n") % rel)
+            ui.write(_(b"%s not renamed\n") % rel)
 
-@command('debugrevlog', cmdutil.debugrevlogopts +
-    [('d', 'dump', False, _('dump index data'))],
-    _('-c|-m|FILE'),
-    optionalrepo=True)
+
+@command(
+    b'debugrevlog',
+    cmdutil.debugrevlogopts + [(b'd', b'dump', False, _(b'dump index data'))],
+    _(b'-c|-m|FILE'),
+    optionalrepo=True,
+)
 def debugrevlog(ui, repo, file_=None, **opts):
     """show data and statistics about a revlog"""
     opts = pycompat.byteskwargs(opts)
-    r = cmdutil.openrevlog(repo, 'debugrevlog', file_, opts)
+    r = cmdutil.openrevlog(repo, b'debugrevlog', file_, opts)
 
-    if opts.get("dump"):
+    if opts.get(b"dump"):
         numrevs = len(r)
-        ui.write(("# rev p1rev p2rev start   end deltastart base   p1   p2"
-                 " rawsize totalsize compression heads chainlen\n"))
+        ui.write(
+            (
+                b"# rev p1rev p2rev start   end deltastart base   p1   p2"
+                b" rawsize totalsize compression heads chainlen\n"
+            )
+        )
         ts = 0
         heads = set()
 
@@ -2140,12 +2601,26 @@ def debugrevlog(ui, repo, file_=None, **opts):
                 compression = ts / r.end(rev)
             except ZeroDivisionError:
                 compression = 0
-            ui.write("%5d %5d %5d %5d %5d %10d %4d %4d %4d %7d %9d "
-                     "%11d %5d %8d\n" %
-                     (rev, p1, p2, r.start(rev), r.end(rev),
-                      r.start(dbase), r.start(cbase),
-                      r.start(p1), r.start(p2),
-                      rs, ts, compression, len(heads), clen))
+            ui.write(
+                b"%5d %5d %5d %5d %5d %10d %4d %4d %4d %7d %9d "
+                b"%11d %5d %8d\n"
+                % (
+                    rev,
+                    p1,
+                    p2,
+                    r.start(rev),
+                    r.end(rev),
+                    r.start(dbase),
+                    r.start(cbase),
+                    r.start(p1),
+                    r.start(p2),
+                    rs,
+                    ts,
+                    compression,
+                    len(heads),
+                    clen,
+                )
+            )
         return 0
 
     v = r.version
@@ -2153,12 +2628,12 @@ def debugrevlog(ui, repo, file_=None, **opts):
     flags = []
     gdelta = False
     if v & revlog.FLAG_INLINE_DATA:
-        flags.append('inline')
+        flags.append(b'inline')
     if v & revlog.FLAG_GENERALDELTA:
         gdelta = True
-        flags.append('generaldelta')
+        flags.append(b'generaldelta')
     if not flags:
-        flags = ['(none)']
+        flags = [b'(none)']
 
     ### tracks merge vs single parent
     nummerges = 0
@@ -2260,14 +2735,14 @@ def debugrevlog(ui, repo, file_=None, **opts):
                     numother += 1
 
         # Obtain data on the raw chunks in the revlog.
-        if util.safehasattr(r, '_getsegmentforrevs'):
+        if util.safehasattr(r, b'_getsegmentforrevs'):
             segment = r._getsegmentforrevs(rev, rev)[1]
         else:
             segment = r._revlog._getsegmentforrevs(rev, rev)[1]
         if segment:
             chunktype = bytes(segment[0:1])
         else:
-            chunktype = 'empty'
+            chunktype = b'empty'
 
         if chunktype not in chunktypecounts:
             chunktypecounts[chunktype] = 0
@@ -2309,13 +2784,14 @@ def debugrevlog(ui, repo, file_=None, **opts):
     if totalsize:
         compratio = totalrawsize / totalsize
 
-    basedfmtstr = '%%%dd\n'
-    basepcfmtstr = '%%%dd %s(%%5.2f%%%%)\n'
+    basedfmtstr = b'%%%dd\n'
+    basepcfmtstr = b'%%%dd %s(%%5.2f%%%%)\n'
 
     def dfmtstr(max):
         return basedfmtstr % len(str(max))
+
     def pcfmtstr(max, padding=0):
-        return basepcfmtstr % (len(str(max)), ' ' * padding)
+        return basepcfmtstr % (len(str(max)), b' ' * padding)
 
     def pcfmt(value, total):
         if total:
@@ -2323,106 +2799,141 @@ def debugrevlog(ui, repo, file_=None, **opts):
         else:
             return value, 100.0
 
-    ui.write(('format : %d\n') % format)
-    ui.write(('flags  : %s\n') % ', '.join(flags))
+    ui.writenoi18n(b'format : %d\n' % format)
+    ui.writenoi18n(b'flags  : %s\n' % b', '.join(flags))
 
-    ui.write('\n')
+    ui.write(b'\n')
     fmt = pcfmtstr(totalsize)
     fmt2 = dfmtstr(totalsize)
-    ui.write(('revisions     : ') + fmt2 % numrevs)
-    ui.write(('    merges    : ') + fmt % pcfmt(nummerges, numrevs))
-    ui.write(('    normal    : ') + fmt % pcfmt(numrevs - nummerges, numrevs))
-    ui.write(('revisions     : ') + fmt2 % numrevs)
-    ui.write(('    empty     : ') + fmt % pcfmt(numempty, numrevs))
-    ui.write(('                   text  : ')
-             + fmt % pcfmt(numemptytext, numemptytext + numemptydelta))
-    ui.write(('                   delta : ')
-             + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta))
-    ui.write(('    snapshot  : ') + fmt % pcfmt(numfull + numsemi, numrevs))
+    ui.writenoi18n(b'revisions     : ' + fmt2 % numrevs)
+    ui.writenoi18n(b'    merges    : ' + fmt % pcfmt(nummerges, numrevs))
+    ui.writenoi18n(
+        b'    normal    : ' + fmt % pcfmt(numrevs - nummerges, numrevs)
+    )
+    ui.writenoi18n(b'revisions     : ' + fmt2 % numrevs)
+    ui.writenoi18n(b'    empty     : ' + fmt % pcfmt(numempty, numrevs))
+    ui.writenoi18n(
+        b'                   text  : '
+        + fmt % pcfmt(numemptytext, numemptytext + numemptydelta)
+    )
+    ui.writenoi18n(
+        b'                   delta : '
+        + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta)
+    )
+    ui.writenoi18n(
+        b'    snapshot  : ' + fmt % pcfmt(numfull + numsemi, numrevs)
+    )
     for depth in sorted(numsnapdepth):
-        ui.write(('      lvl-%-3d :       ' % depth)
-                 + fmt % pcfmt(numsnapdepth[depth], numrevs))
-    ui.write(('    deltas    : ') + fmt % pcfmt(numdeltas, numrevs))
-    ui.write(('revision size : ') + fmt2 % totalsize)
-    ui.write(('    snapshot  : ')
-             + fmt % pcfmt(fulltotal + semitotal, totalsize))
+        ui.write(
+            (b'      lvl-%-3d :       ' % depth)
+            + fmt % pcfmt(numsnapdepth[depth], numrevs)
+        )
+    ui.writenoi18n(b'    deltas    : ' + fmt % pcfmt(numdeltas, numrevs))
+    ui.writenoi18n(b'revision size : ' + fmt2 % totalsize)
+    ui.writenoi18n(
+        b'    snapshot  : ' + fmt % pcfmt(fulltotal + semitotal, totalsize)
+    )
     for depth in sorted(numsnapdepth):
-        ui.write(('      lvl-%-3d :       ' % depth)
-                 + fmt % pcfmt(snaptotal[depth], totalsize))
-    ui.write(('    deltas    : ') + fmt % pcfmt(deltatotal, totalsize))
+        ui.write(
+            (b'      lvl-%-3d :       ' % depth)
+            + fmt % pcfmt(snaptotal[depth], totalsize)
+        )
+    ui.writenoi18n(b'    deltas    : ' + fmt % pcfmt(deltatotal, totalsize))
 
     def fmtchunktype(chunktype):
-        if chunktype == 'empty':
-            return '    %s     : ' % chunktype
+        if chunktype == b'empty':
+            return b'    %s     : ' % chunktype
         elif chunktype in pycompat.bytestr(string.ascii_letters):
-            return '    0x%s (%s)  : ' % (hex(chunktype), chunktype)
+            return b'    0x%s (%s)  : ' % (hex(chunktype), chunktype)
         else:
-            return '    0x%s      : ' % hex(chunktype)
+            return b'    0x%s      : ' % hex(chunktype)
 
-    ui.write('\n')
-    ui.write(('chunks        : ') + fmt2 % numrevs)
+    ui.write(b'\n')
+    ui.writenoi18n(b'chunks        : ' + fmt2 % numrevs)
     for chunktype in sorted(chunktypecounts):
         ui.write(fmtchunktype(chunktype))
         ui.write(fmt % pcfmt(chunktypecounts[chunktype], numrevs))
-    ui.write(('chunks size   : ') + fmt2 % totalsize)
+    ui.writenoi18n(b'chunks size   : ' + fmt2 % totalsize)
     for chunktype in sorted(chunktypecounts):
         ui.write(fmtchunktype(chunktype))
         ui.write(fmt % pcfmt(chunktypesizes[chunktype], totalsize))
 
-    ui.write('\n')
+    ui.write(b'\n')
     fmt = dfmtstr(max(avgchainlen, maxchainlen, maxchainspan, compratio))
-    ui.write(('avg chain length  : ') + fmt % avgchainlen)
-    ui.write(('max chain length  : ') + fmt % maxchainlen)
-    ui.write(('max chain reach   : ') + fmt % maxchainspan)
-    ui.write(('compression ratio : ') + fmt % compratio)
+    ui.writenoi18n(b'avg chain length  : ' + fmt % avgchainlen)
+    ui.writenoi18n(b'max chain length  : ' + fmt % maxchainlen)
+    ui.writenoi18n(b'max chain reach   : ' + fmt % maxchainspan)
+    ui.writenoi18n(b'compression ratio : ' + fmt % compratio)
 
     if format > 0:
-        ui.write('\n')
-        ui.write(('uncompressed data size (min/max/avg) : %d / %d / %d\n')
-                 % tuple(datasize))
-    ui.write(('full revision size (min/max/avg)     : %d / %d / %d\n')
-             % tuple(fullsize))
-    ui.write(('inter-snapshot size (min/max/avg)    : %d / %d / %d\n')
-             % tuple(semisize))
+        ui.write(b'\n')
+        ui.writenoi18n(
+            b'uncompressed data size (min/max/avg) : %d / %d / %d\n'
+            % tuple(datasize)
+        )
+    ui.writenoi18n(
+        b'full revision size (min/max/avg)     : %d / %d / %d\n'
+        % tuple(fullsize)
+    )
+    ui.writenoi18n(
+        b'inter-snapshot size (min/max/avg)    : %d / %d / %d\n'
+        % tuple(semisize)
+    )
     for depth in sorted(snapsizedepth):
         if depth == 0:
             continue
-        ui.write(('    level-%-3d (min/max/avg)          : %d / %d / %d\n')
-                 % ((depth,) + tuple(snapsizedepth[depth])))
-    ui.write(('delta size (min/max/avg)             : %d / %d / %d\n')
-             % tuple(deltasize))
+        ui.writenoi18n(
+            b'    level-%-3d (min/max/avg)          : %d / %d / %d\n'
+            % ((depth,) + tuple(snapsizedepth[depth]))
+        )
+    ui.writenoi18n(
+        b'delta size (min/max/avg)             : %d / %d / %d\n'
+        % tuple(deltasize)
+    )
 
     if numdeltas > 0:
-        ui.write('\n')
+        ui.write(b'\n')
         fmt = pcfmtstr(numdeltas)
         fmt2 = pcfmtstr(numdeltas, 4)
-        ui.write(('deltas against prev  : ') + fmt % pcfmt(numprev, numdeltas))
+        ui.writenoi18n(
+            b'deltas against prev  : ' + fmt % pcfmt(numprev, numdeltas)
+        )
         if numprev > 0:
-            ui.write(('    where prev = p1  : ') + fmt2 % pcfmt(nump1prev,
-                                                              numprev))
-            ui.write(('    where prev = p2  : ') + fmt2 % pcfmt(nump2prev,
-                                                              numprev))
-            ui.write(('    other            : ') + fmt2 % pcfmt(numoprev,
-                                                              numprev))
+            ui.writenoi18n(
+                b'    where prev = p1  : ' + fmt2 % pcfmt(nump1prev, numprev)
+            )
+            ui.writenoi18n(
+                b'    where prev = p2  : ' + fmt2 % pcfmt(nump2prev, numprev)
+            )
+            ui.writenoi18n(
+                b'    other            : ' + fmt2 % pcfmt(numoprev, numprev)
+            )
         if gdelta:
-            ui.write(('deltas against p1    : ')
-                     + fmt % pcfmt(nump1, numdeltas))
-            ui.write(('deltas against p2    : ')
-                     + fmt % pcfmt(nump2, numdeltas))
-            ui.write(('deltas against other : ') + fmt % pcfmt(numother,
-                                                             numdeltas))
+            ui.writenoi18n(
+                b'deltas against p1    : ' + fmt % pcfmt(nump1, numdeltas)
+            )
+            ui.writenoi18n(
+                b'deltas against p2    : ' + fmt % pcfmt(nump2, numdeltas)
+            )
+            ui.writenoi18n(
+                b'deltas against other : ' + fmt % pcfmt(numother, numdeltas)
+            )
 
-@command('debugrevlogindex', cmdutil.debugrevlogopts +
-    [('f', 'format', 0, _('revlog format'), _('FORMAT'))],
-    _('[-f FORMAT] -c|-m|FILE'),
-    optionalrepo=True)
+
+@command(
+    b'debugrevlogindex',
+    cmdutil.debugrevlogopts
+    + [(b'f', b'format', 0, _(b'revlog format'), _(b'FORMAT'))],
+    _(b'[-f FORMAT] -c|-m|FILE'),
+    optionalrepo=True,
+)
 def debugrevlogindex(ui, repo, file_=None, **opts):
     """dump the contents of a revlog index"""
     opts = pycompat.byteskwargs(opts)
-    r = cmdutil.openrevlog(repo, 'debugrevlogindex', file_, opts)
-    format = opts.get('format', 0)
+    r = cmdutil.openrevlog(repo, b'debugrevlogindex', file_, opts)
+    format = opts.get(b'format', 0)
     if format not in (0, 1):
-        raise error.Abort(_("unknown format %d") % format)
+        raise error.Abort(_(b"unknown format %d") % format)
 
     if ui.debugflag:
         shortfn = hex
@@ -2437,19 +2948,29 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
 
     if format == 0:
         if ui.verbose:
-            ui.write(("   rev    offset  length linkrev"
-                     " %s %s p2\n") % ("nodeid".ljust(idlen),
-                                       "p1".ljust(idlen)))
+            ui.writenoi18n(
+                b"   rev    offset  length linkrev %s %s p2\n"
+                % (b"nodeid".ljust(idlen), b"p1".ljust(idlen))
+            )
         else:
-            ui.write(("   rev linkrev %s %s p2\n") % (
-                "nodeid".ljust(idlen), "p1".ljust(idlen)))
+            ui.writenoi18n(
+                b"   rev linkrev %s %s p2\n"
+                % (b"nodeid".ljust(idlen), b"p1".ljust(idlen))
+            )
     elif format == 1:
         if ui.verbose:
-            ui.write(("   rev flag   offset   length     size   link     p1"
-                      "     p2 %s\n") % "nodeid".rjust(idlen))
+            ui.writenoi18n(
+                (
+                    b"   rev flag   offset   length     size   link     p1"
+                    b"     p2 %s\n"
+                )
+                % b"nodeid".rjust(idlen)
+            )
         else:
-            ui.write(("   rev flag     size   link     p1     p2 %s\n") %
-                     "nodeid".rjust(idlen))
+            ui.writenoi18n(
+                b"   rev flag     size   link     p1     p2 %s\n"
+                % b"nodeid".rjust(idlen)
+            )
 
     for i in r:
         node = r.node(i)
@@ -2459,35 +2980,94 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
             except Exception:
                 pp = [nullid, nullid]
             if ui.verbose:
-                ui.write("% 6d % 9d % 7d % 7d %s %s %s\n" % (
-                        i, r.start(i), r.length(i), r.linkrev(i),
-                        shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
+                ui.write(
+                    b"% 6d % 9d % 7d % 7d %s %s %s\n"
+                    % (
+                        i,
+                        r.start(i),
+                        r.length(i),
+                        r.linkrev(i),
+                        shortfn(node),
+                        shortfn(pp[0]),
+                        shortfn(pp[1]),
+                    )
+                )
             else:
-                ui.write("% 6d % 7d %s %s %s\n" % (
-                    i, r.linkrev(i), shortfn(node), shortfn(pp[0]),
-                    shortfn(pp[1])))
+                ui.write(
+                    b"% 6d % 7d %s %s %s\n"
+                    % (
+                        i,
+                        r.linkrev(i),
+                        shortfn(node),
+                        shortfn(pp[0]),
+                        shortfn(pp[1]),
+                    )
+                )
         elif format == 1:
             pr = r.parentrevs(i)
             if ui.verbose:
-                ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n" % (
-                        i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
-                        r.linkrev(i), pr[0], pr[1], shortfn(node)))
+                ui.write(
+                    b"% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n"
+                    % (
+                        i,
+                        r.flags(i),
+                        r.start(i),
+                        r.length(i),
+                        r.rawsize(i),
+                        r.linkrev(i),
+                        pr[0],
+                        pr[1],
+                        shortfn(node),
+                    )
+                )
             else:
-                ui.write("% 6d %04x % 8d % 6d % 6d % 6d %s\n" % (
-                    i, r.flags(i), r.rawsize(i), r.linkrev(i), pr[0], pr[1],
-                    shortfn(node)))
+                ui.write(
+                    b"% 6d %04x % 8d % 6d % 6d % 6d %s\n"
+                    % (
+                        i,
+                        r.flags(i),
+                        r.rawsize(i),
+                        r.linkrev(i),
+                        pr[0],
+                        pr[1],
+                        shortfn(node),
+                    )
+                )
 
-@command('debugrevspec',
-    [('', 'optimize', None,
-      _('print parsed tree after optimizing (DEPRECATED)')),
-     ('', 'show-revs', True, _('print list of result revisions (default)')),
-     ('s', 'show-set', None, _('print internal representation of result set')),
-     ('p', 'show-stage', [],
-      _('print parsed tree at the given stage'), _('NAME')),
-     ('', 'no-optimized', False, _('evaluate tree without optimization')),
-     ('', 'verify-optimized', False, _('verify optimized result')),
-     ],
-    ('REVSPEC'))
+
+@command(
+    b'debugrevspec',
+    [
+        (
+            b'',
+            b'optimize',
+            None,
+            _(b'print parsed tree after optimizing (DEPRECATED)'),
+        ),
+        (
+            b'',
+            b'show-revs',
+            True,
+            _(b'print list of result revisions (default)'),
+        ),
+        (
+            b's',
+            b'show-set',
+            None,
+            _(b'print internal representation of result set'),
+        ),
+        (
+            b'p',
+            b'show-stage',
+            [],
+            _(b'print parsed tree at the given stage'),
+            _(b'NAME'),
+        ),
+        (b'', b'no-optimized', False, _(b'evaluate tree without optimization')),
+        (b'', b'verify-optimized', False, _(b'verify optimized result')),
+    ],
+    b'REVSPEC',
+)
 def debugrevspec(ui, repo, expr, **opts):
     """parse and apply a revision specification
 
@@ -2501,39 +3081,42 @@ def debugrevspec(ui, repo, expr, **opts):
     one. Returns 1 if the optimized result differs.
     """
     opts = pycompat.byteskwargs(opts)
-    aliases = ui.configitems('revsetalias')
+    aliases = ui.configitems(b'revsetalias')
     stages = [
-        ('parsed', lambda tree: tree),
-        ('expanded', lambda tree: revsetlang.expandaliases(tree, aliases,
-                                                           ui.warn)),
-        ('concatenated', revsetlang.foldconcat),
-        ('analyzed', revsetlang.analyze),
-        ('optimized', revsetlang.optimize),
+        (b'parsed', lambda tree: tree),
+        (
+            b'expanded',
+            lambda tree: revsetlang.expandaliases(tree, aliases, ui.warn),
+        ),
+        (b'concatenated', revsetlang.foldconcat),
+        (b'analyzed', revsetlang.analyze),
+        (b'optimized', revsetlang.optimize),
     ]
-    if opts['no_optimized']:
+    if opts[b'no_optimized']:
         stages = stages[:-1]
-    if opts['verify_optimized'] and opts['no_optimized']:
-        raise error.Abort(_('cannot use --verify-optimized with '
-                            '--no-optimized'))
+    if opts[b'verify_optimized'] and opts[b'no_optimized']:
+        raise error.Abort(
+            _(b'cannot use --verify-optimized with --no-optimized')
+        )
     stagenames = set(n for n, f in stages)
 
     showalways = set()
     showchanged = set()
-    if ui.verbose and not opts['show_stage']:
+    if ui.verbose and not opts[b'show_stage']:
         # show parsed tree by --verbose (deprecated)
-        showalways.add('parsed')
-        showchanged.update(['expanded', 'concatenated'])
-        if opts['optimize']:
-            showalways.add('optimized')
-    if opts['show_stage'] and opts['optimize']:
-        raise error.Abort(_('cannot use --optimize with --show-stage'))
-    if opts['show_stage'] == ['all']:
+        showalways.add(b'parsed')
+        showchanged.update([b'expanded', b'concatenated'])
+        if opts[b'optimize']:
+            showalways.add(b'optimized')
+    if opts[b'show_stage'] and opts[b'optimize']:
+        raise error.Abort(_(b'cannot use --optimize with --show-stage'))
+    if opts[b'show_stage'] == [b'all']:
         showalways.update(stagenames)
     else:
-        for n in opts['show_stage']:
+        for n in opts[b'show_stage']:
             if n not in stagenames:
-                raise error.Abort(_('invalid stage name: %s') % n)
-        showalways.update(opts['show_stage'])
+                raise error.Abort(_(b'invalid stage name: %s') % n)
+        showalways.update(opts[b'show_stage'])
 
     treebystage = {}
     printedtree = None
@@ -2541,50 +3124,64 @@ def debugrevspec(ui, repo, expr, **opts):
     for n, f in stages:
         treebystage[n] = tree = f(tree)
         if n in showalways or (n in showchanged and tree != printedtree):
-            if opts['show_stage'] or n != 'parsed':
-                ui.write(("* %s:\n") % n)
-            ui.write(revsetlang.prettyformat(tree), "\n")
+            if opts[b'show_stage'] or n != b'parsed':
+                ui.write(b"* %s:\n" % n)
+            ui.write(revsetlang.prettyformat(tree), b"\n")
             printedtree = tree
 
-    if opts['verify_optimized']:
-        arevs = revset.makematcher(treebystage['analyzed'])(repo)
-        brevs = revset.makematcher(treebystage['optimized'])(repo)
-        if opts['show_set'] or (opts['show_set'] is None and ui.verbose):
-            ui.write(("* analyzed set:\n"), stringutil.prettyrepr(arevs), "\n")
-            ui.write(("* optimized set:\n"), stringutil.prettyrepr(brevs), "\n")
+    if opts[b'verify_optimized']:
+        arevs = revset.makematcher(treebystage[b'analyzed'])(repo)
+        brevs = revset.makematcher(treebystage[b'optimized'])(repo)
+        if opts[b'show_set'] or (opts[b'show_set'] is None and ui.verbose):
+            ui.writenoi18n(
+                b"* analyzed set:\n", stringutil.prettyrepr(arevs), b"\n"
+            )
+            ui.writenoi18n(
+                b"* optimized set:\n", stringutil.prettyrepr(brevs), b"\n"
+            )
         arevs = list(arevs)
         brevs = list(brevs)
         if arevs == brevs:
             return 0
-        ui.write(('--- analyzed\n'), label='diff.file_a')
-        ui.write(('+++ optimized\n'), label='diff.file_b')
+        ui.writenoi18n(b'--- analyzed\n', label=b'diff.file_a')
+        ui.writenoi18n(b'+++ optimized\n', label=b'diff.file_b')
         sm = difflib.SequenceMatcher(None, arevs, brevs)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
             if tag in (r'delete', r'replace'):
                 for c in arevs[alo:ahi]:
-                    ui.write('-%d\n' % c, label='diff.deleted')
+                    ui.write(b'-%d\n' % c, label=b'diff.deleted')
             if tag in (r'insert', r'replace'):
                 for c in brevs[blo:bhi]:
-                    ui.write('+%d\n' % c, label='diff.inserted')
+                    ui.write(b'+%d\n' % c, label=b'diff.inserted')
             if tag == r'equal':
                 for c in arevs[alo:ahi]:
-                    ui.write(' %d\n' % c)
+                    ui.write(b' %d\n' % c)
         return 1
 
     func = revset.makematcher(tree)
     revs = func(repo)
-    if opts['show_set'] or (opts['show_set'] is None and ui.verbose):
-        ui.write(("* set:\n"), stringutil.prettyrepr(revs), "\n")
-    if not opts['show_revs']:
+    if opts[b'show_set'] or (opts[b'show_set'] is None and ui.verbose):
+        ui.writenoi18n(b"* set:\n", stringutil.prettyrepr(revs), b"\n")
+    if not opts[b'show_revs']:
         return
     for c in revs:
-        ui.write("%d\n" % c)
+        ui.write(b"%d\n" % c)
 
-@command('debugserve', [
-    ('', 'sshstdio', False, _('run an SSH server bound to process handles')),
-    ('', 'logiofd', '', _('file descriptor to log server I/O to')),
-    ('', 'logiofile', '', _('file to log server I/O to')),
-], '')
+
+@command(
+    b'debugserve',
+    [
+        (
+            b'',
+            b'sshstdio',
+            False,
+            _(b'run an SSH server bound to process handles'),
+        ),
+        (b'', b'logiofd', b'', _(b'file descriptor to log server I/O to')),
+        (b'', b'logiofile', b'', _(b'file to log server I/O to')),
+    ],
+    b'',
+)
 def debugserve(ui, repo, **opts):
     """run a server with advanced settings
 
@@ -2594,30 +3191,31 @@ def debugserve(ui, repo, **opts):
     """
     opts = pycompat.byteskwargs(opts)
 
-    if not opts['sshstdio']:
-        raise error.Abort(_('only --sshstdio is currently supported'))
+    if not opts[b'sshstdio']:
+        raise error.Abort(_(b'only --sshstdio is currently supported'))
 
     logfh = None
 
-    if opts['logiofd'] and opts['logiofile']:
-        raise error.Abort(_('cannot use both --logiofd and --logiofile'))
+    if opts[b'logiofd'] and opts[b'logiofile']:
+        raise error.Abort(_(b'cannot use both --logiofd and --logiofile'))
 
-    if opts['logiofd']:
+    if opts[b'logiofd']:
         # Line buffered because output is line based.
         try:
-            logfh = os.fdopen(int(opts['logiofd']), r'ab', 1)
+            logfh = os.fdopen(int(opts[b'logiofd']), r'ab', 1)
         except OSError as e:
             if e.errno != errno.ESPIPE:
                 raise
             # can't seek a pipe, so `ab` mode fails on py3
-            logfh = os.fdopen(int(opts['logiofd']), r'wb', 1)
-    elif opts['logiofile']:
-        logfh = open(opts['logiofile'], 'ab', 1)
+            logfh = os.fdopen(int(opts[b'logiofd']), r'wb', 1)
+    elif opts[b'logiofile']:
+        logfh = open(opts[b'logiofile'], b'ab', 1)
 
     s = wireprotoserver.sshserver(ui, repo, logfh=logfh)
     s.serve_forever()
 
-@command('debugsetparents', [], _('REV1 [REV2]'))
+
+@command(b'debugsetparents', [], _(b'REV1 [REV2]'))
 def debugsetparents(ui, repo, rev1, rev2=None):
     """manually set the parents of the current working directory
 
@@ -2630,12 +3228,41 @@ def debugsetparents(ui, repo, rev1, rev2=None):
     """
 
     node1 = scmutil.revsingle(repo, rev1).node()
-    node2 = scmutil.revsingle(repo, rev2, 'null').node()
+    node2 = scmutil.revsingle(repo, rev2, b'null').node()
 
     with repo.wlock():
         repo.setparents(node1, node2)
 
-@command('debugssl', [], '[SOURCE]', optionalrepo=True)
+
+@command(b'debugsidedata', cmdutil.debugrevlogopts, _(b'-c|-m|FILE REV'))
+def debugsidedata(ui, repo, file_, rev=None, **opts):
+    """dump the side data for a cl/manifest/file revision
+
+    Use --verbose to dump the sidedata content."""
+    opts = pycompat.byteskwargs(opts)
+    if opts.get(b'changelog') or opts.get(b'manifest') or opts.get(b'dir'):
+        if rev is not None:
+            raise error.CommandError(b'debugdata', _(b'invalid arguments'))
+        file_, rev = None, file_
+    elif rev is None:
+        raise error.CommandError(b'debugdata', _(b'invalid arguments'))
+    r = cmdutil.openstorage(repo, b'debugdata', file_, opts)
+    r = getattr(r, '_revlog', r)
+    try:
+        sidedata = r.sidedata(r.lookup(rev))
+    except KeyError:
+        raise error.Abort(_(b'invalid revision identifier %s') % rev)
+    if sidedata:
+        sidedata = list(sidedata.items())
+        sidedata.sort()
+        ui.writenoi18n(b'%d sidedata entries\n' % len(sidedata))
+        for key, value in sidedata:
+            ui.writenoi18n(b' entry-%04o size %d\n' % (key, len(value)))
+            if ui.verbose:
+                ui.writenoi18n(b'  %s\n' % stringutil.pprint(value))
+
+
+@command(b'debugssl', [], b'[SOURCE]', optionalrepo=True)
 def debugssl(ui, repo, source=None, **opts):
     '''test a secure connection to a server
 
@@ -2650,66 +3277,80 @@ def debugssl(ui, repo, source=None, **opts):
     of the SSL error is likely another issue.
     '''
     if not pycompat.iswindows:
-        raise error.Abort(_('certificate chain building is only possible on '
-                            'Windows'))
+        raise error.Abort(
+            _(b'certificate chain building is only possible on Windows')
+        )
 
     if not source:
         if not repo:
-            raise error.Abort(_("there is no Mercurial repository here, and no "
-                                "server specified"))
-        source = "default"
+            raise error.Abort(
+                _(
+                    b"there is no Mercurial repository here, and no "
+                    b"server specified"
+                )
+            )
+        source = b"default"
 
     source, branches = hg.parseurl(ui.expandpath(source))
     url = util.url(source)
 
-    defaultport = {'https': 443, 'ssh': 22}
+    defaultport = {b'https': 443, b'ssh': 22}
     if url.scheme in defaultport:
         try:
             addr = (url.host, int(url.port or defaultport[url.scheme]))
         except ValueError:
-            raise error.Abort(_("malformed port number in URL"))
+            raise error.Abort(_(b"malformed port number in URL"))
     else:
-        raise error.Abort(_("only https and ssh connections are supported"))
+        raise error.Abort(_(b"only https and ssh connections are supported"))
 
     from . import win32
 
-    s = ssl.wrap_socket(socket.socket(), ssl_version=ssl.PROTOCOL_TLS,
-                        cert_reqs=ssl.CERT_NONE, ca_certs=None)
+    s = ssl.wrap_socket(
+        socket.socket(),
+        ssl_version=ssl.PROTOCOL_TLS,
+        cert_reqs=ssl.CERT_NONE,
+        ca_certs=None,
+    )
 
     try:
         s.connect(addr)
         cert = s.getpeercert(True)
 
-        ui.status(_('checking the certificate chain for %s\n') % url.host)
+        ui.status(_(b'checking the certificate chain for %s\n') % url.host)
 
         complete = win32.checkcertificatechain(cert, build=False)
 
         if not complete:
-            ui.status(_('certificate chain is incomplete, updating... '))
+            ui.status(_(b'certificate chain is incomplete, updating... '))
 
             if not win32.checkcertificatechain(cert):
-                ui.status(_('failed.\n'))
+                ui.status(_(b'failed.\n'))
             else:
-                ui.status(_('done.\n'))
+                ui.status(_(b'done.\n'))
         else:
-            ui.status(_('full certificate chain is available\n'))
+            ui.status(_(b'full certificate chain is available\n'))
     finally:
         s.close()
 
-@command('debugsub',
-    [('r', 'rev', '',
-     _('revision to check'), _('REV'))],
-    _('[-r REV] [REV]'))
+
+@command(
+    b'debugsub',
+    [(b'r', b'rev', b'', _(b'revision to check'), _(b'REV'))],
+    _(b'[-r REV] [REV]'),
+)
 def debugsub(ui, repo, rev=None):
     ctx = scmutil.revsingle(repo, rev, None)
     for k, v in sorted(ctx.substate.items()):
-        ui.write(('path %s\n') % k)
-        ui.write((' source   %s\n') % v[0])
-        ui.write((' revision %s\n') % v[1])
+        ui.writenoi18n(b'path %s\n' % k)
+        ui.writenoi18n(b' source   %s\n' % v[0])
+        ui.writenoi18n(b' revision %s\n' % v[1])
 
-@command('debugsuccessorssets',
-    [('', 'closest', False, _('return closest successors sets only'))],
-    _('[REV]'))
+
+@command(
+    b'debugsuccessorssets',
+    [(b'', b'closest', False, _(b'return closest successors sets only'))],
+    _(b'[REV]'),
+)
 def debugsuccessorssets(ui, repo, *revs, **opts):
     """show set of successors for revision
 
@@ -2748,23 +3389,28 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
     node2str = short
     for rev in scmutil.revrange(repo, revs):
         ctx = repo[rev]
-        ui.write('%s\n'% ctx2str(ctx))
-        for succsset in obsutil.successorssets(repo, ctx.node(),
-                                                closest=opts[r'closest'],
-                                                cache=cache):
+        ui.write(b'%s\n' % ctx2str(ctx))
+        for succsset in obsutil.successorssets(
+            repo, ctx.node(), closest=opts[r'closest'], cache=cache
+        ):
             if succsset:
-                ui.write('    ')
+                ui.write(b'    ')
                 ui.write(node2str(succsset[0]))
                 for node in succsset[1:]:
-                    ui.write(' ')
+                    ui.write(b' ')
                     ui.write(node2str(node))
-            ui.write('\n')
+            ui.write(b'\n')
 
-@command('debugtemplate',
-    [('r', 'rev', [], _('apply template on changesets'), _('REV')),
-     ('D', 'define', [], _('define template keyword'), _('KEY=VALUE'))],
-    _('[-r REV]... [-D KEY=VALUE]... TEMPLATE'),
-    optionalrepo=True)
+
+@command(
+    b'debugtemplate',
+    [
+        (b'r', b'rev', [], _(b'apply template on changesets'), _(b'REV')),
+        (b'D', b'define', [], _(b'define template keyword'), _(b'KEY=VALUE')),
+    ],
+    _(b'[-r REV]... [-D KEY=VALUE]... TEMPLATE'),
+    optionalrepo=True,
+)
 def debugtemplate(ui, repo, tmpl, **opts):
     """parse and apply a template
 
@@ -2777,74 +3423,98 @@ def debugtemplate(ui, repo, tmpl, **opts):
     revs = None
     if opts[r'rev']:
         if repo is None:
-            raise error.RepoError(_('there is no Mercurial repository here '
-                                    '(.hg not found)'))
+            raise error.RepoError(
+                _(b'there is no Mercurial repository here (.hg not found)')
+            )
         revs = scmutil.revrange(repo, opts[r'rev'])
 
     props = {}
     for d in opts[r'define']:
         try:
-            k, v = (e.strip() for e in d.split('=', 1))
-            if not k or k == 'ui':
+            k, v = (e.strip() for e in d.split(b'=', 1))
+            if not k or k == b'ui':
                 raise ValueError
             props[k] = v
         except ValueError:
-            raise error.Abort(_('malformed keyword definition: %s') % d)
+            raise error.Abort(_(b'malformed keyword definition: %s') % d)
 
     if ui.verbose:
-        aliases = ui.configitems('templatealias')
+        aliases = ui.configitems(b'templatealias')
         tree = templater.parse(tmpl)
-        ui.note(templater.prettyformat(tree), '\n')
+        ui.note(templater.prettyformat(tree), b'\n')
         newtree = templater.expandaliases(tree, aliases)
         if newtree != tree:
-            ui.note(("* expanded:\n"), templater.prettyformat(newtree), '\n')
+            ui.notenoi18n(
+                b"* expanded:\n", templater.prettyformat(newtree), b'\n'
+            )
 
     if revs is None:
         tres = formatter.templateresources(ui, repo)
         t = formatter.maketemplater(ui, tmpl, resources=tres)
         if ui.verbose:
             kwds, funcs = t.symbolsuseddefault()
-            ui.write(("* keywords: %s\n") % ', '.join(sorted(kwds)))
-            ui.write(("* functions: %s\n") % ', '.join(sorted(funcs)))
+            ui.writenoi18n(b"* keywords: %s\n" % b', '.join(sorted(kwds)))
+            ui.writenoi18n(b"* functions: %s\n" % b', '.join(sorted(funcs)))
         ui.write(t.renderdefault(props))
     else:
         displayer = logcmdutil.maketemplater(ui, repo, tmpl)
         if ui.verbose:
             kwds, funcs = displayer.t.symbolsuseddefault()
-            ui.write(("* keywords: %s\n") % ', '.join(sorted(kwds)))
-            ui.write(("* functions: %s\n") % ', '.join(sorted(funcs)))
+            ui.writenoi18n(b"* keywords: %s\n" % b', '.join(sorted(kwds)))
+            ui.writenoi18n(b"* functions: %s\n" % b', '.join(sorted(funcs)))
         for r in revs:
             displayer.show(repo[r], **pycompat.strkwargs(props))
         displayer.close()
 
-@command('debuguigetpass', [
-    ('p', 'prompt', '', _('prompt text'), _('TEXT')),
-], _('[-p TEXT]'), norepo=True)
-def debuguigetpass(ui, prompt=''):
+
+@command(
+    b'debuguigetpass',
+    [(b'p', b'prompt', b'', _(b'prompt text'), _(b'TEXT')),],
+    _(b'[-p TEXT]'),
+    norepo=True,
+)
+def debuguigetpass(ui, prompt=b''):
     """show prompt to type password"""
     r = ui.getpass(prompt)
-    ui.write(('respose: %s\n') % r)
+    ui.writenoi18n(b'respose: %s\n' % r)
 
-@command('debuguiprompt', [
-    ('p', 'prompt', '', _('prompt text'), _('TEXT')),
-], _('[-p TEXT]'), norepo=True)
-def debuguiprompt(ui, prompt=''):
+
+@command(
+    b'debuguiprompt',
+    [(b'p', b'prompt', b'', _(b'prompt text'), _(b'TEXT')),],
+    _(b'[-p TEXT]'),
+    norepo=True,
+)
+def debuguiprompt(ui, prompt=b''):
     """show plain prompt"""
     r = ui.prompt(prompt)
-    ui.write(('response: %s\n') % r)
+    ui.writenoi18n(b'response: %s\n' % r)
 
-@command('debugupdatecaches', [])
+
+@command(b'debugupdatecaches', [])
 def debugupdatecaches(ui, repo, *pats, **opts):
     """warm all known caches in the repository"""
     with repo.wlock(), repo.lock():
         repo.updatecaches(full=True)
 
-@command('debugupgraderepo', [
-    ('o', 'optimize', [], _('extra optimization to perform'), _('NAME')),
-    ('', 'run', False, _('performs an upgrade')),
-    ('', 'backup', True, _('keep the old repository content around')),
-])
-def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True):
+
+@command(
+    b'debugupgraderepo',
+    [
+        (
+            b'o',
+            b'optimize',
+            [],
+            _(b'extra optimization to perform'),
+            _(b'NAME'),
+        ),
+        (b'', b'run', False, _(b'performs an upgrade')),
+        (b'', b'backup', True, _(b'keep the old repository content around')),
+        (b'', b'changelog', None, _(b'select the changelog for upgrade')),
+        (b'', b'manifest', None, _(b'select the manifest for upgrade')),
+    ],
+)
+def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True, **opts):
     """upgrade a repository to use different features
 
     If no arguments are specified, the repository is evaluated for upgrade
@@ -2862,65 +3532,95 @@ def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True):
     rename some directories inside the ``.hg`` directory. On most machines, this
     should complete almost instantaneously and the chances of a consumer being
     unable to access the repository should be low.
-    """
-    return upgrade.upgraderepo(ui, repo, run=run, optimize=optimize,
-                               backup=backup)
 
-@command('debugwalk', cmdutil.walkopts, _('[OPTION]... [FILE]...'),
-         inferrepo=True)
+    By default, all revlog will be upgraded. You can restrict this using flag
+    such as `--manifest`:
+
+      * `--manifest`: only optimize the manifest
+      * `--no-manifest`: optimize all revlog but the manifest
+      * `--changelog`: optimize the changelog only
+      * `--no-changelog --no-manifest`: optimize filelogs only
+    """
+    return upgrade.upgraderepo(
+        ui, repo, run=run, optimize=optimize, backup=backup, **opts
+    )
+
+
+@command(
+    b'debugwalk', cmdutil.walkopts, _(b'[OPTION]... [FILE]...'), inferrepo=True
+)
 def debugwalk(ui, repo, *pats, **opts):
     """show how files match on given patterns"""
     opts = pycompat.byteskwargs(opts)
     m = scmutil.match(repo[None], pats, opts)
     if ui.verbose:
-        ui.write(('* matcher:\n'), stringutil.prettyrepr(m), '\n')
+        ui.writenoi18n(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
     items = list(repo[None].walk(m))
     if not items:
         return
     f = lambda fn: fn
-    if ui.configbool('ui', 'slash') and pycompat.ossep != '/':
+    if ui.configbool(b'ui', b'slash') and pycompat.ossep != b'/':
         f = lambda fn: util.normpath(fn)
-    fmt = 'f  %%-%ds  %%-%ds  %%s' % (
+    fmt = b'f  %%-%ds  %%-%ds  %%s' % (
         max([len(abs) for abs in items]),
-        max([len(repo.pathto(abs)) for abs in items]))
+        max([len(repo.pathto(abs)) for abs in items]),
+    )
     for abs in items:
-        line = fmt % (abs, f(repo.pathto(abs)), m.exact(abs) and 'exact' or '')
-        ui.write("%s\n" % line.rstrip())
+        line = fmt % (
+            abs,
+            f(repo.pathto(abs)),
+            m.exact(abs) and b'exact' or b'',
+        )
+        ui.write(b"%s\n" % line.rstrip())
 
-@command('debugwhyunstable', [], _('REV'))
+
+@command(b'debugwhyunstable', [], _(b'REV'))
 def debugwhyunstable(ui, repo, rev):
     """explain instabilities of a changeset"""
     for entry in obsutil.whyunstable(repo, scmutil.revsingle(repo, rev)):
-        dnodes = ''
-        if entry.get('divergentnodes'):
-            dnodes = ' '.join('%s (%s)' % (ctx.hex(), ctx.phasestr())
-                              for ctx in entry['divergentnodes']) + ' '
-        ui.write('%s: %s%s %s\n' % (entry['instability'], dnodes,
-                                    entry['reason'], entry['node']))
+        dnodes = b''
+        if entry.get(b'divergentnodes'):
+            dnodes = (
+                b' '.join(
+                    b'%s (%s)' % (ctx.hex(), ctx.phasestr())
+                    for ctx in entry[b'divergentnodes']
+                )
+                + b' '
+            )
+        ui.write(
+            b'%s: %s%s %s\n'
+            % (entry[b'instability'], dnodes, entry[b'reason'], entry[b'node'])
+        )
 
-@command('debugwireargs',
-    [('', 'three', '', 'three'),
-    ('', 'four', '', 'four'),
-    ('', 'five', '', 'five'),
-    ] + cmdutil.remoteopts,
-    _('REPO [OPTIONS]... [ONE [TWO]]'),
-    norepo=True)
+
+@command(
+    b'debugwireargs',
+    [
+        (b'', b'three', b'', b'three'),
+        (b'', b'four', b'', b'four'),
+        (b'', b'five', b'', b'five'),
+    ]
+    + cmdutil.remoteopts,
+    _(b'REPO [OPTIONS]... [ONE [TWO]]'),
+    norepo=True,
+)
 def debugwireargs(ui, repopath, *vals, **opts):
     opts = pycompat.byteskwargs(opts)
     repo = hg.peer(ui, opts, repopath)
     for opt in cmdutil.remoteopts:
         del opts[opt[1]]
     args = {}
-    for k, v in opts.iteritems():
+    for k, v in pycompat.iteritems(opts):
         if v:
             args[k] = v
     args = pycompat.strkwargs(args)
     # run twice to check that we don't mess up the stream for the next command
     res1 = repo.debugwireargs(*vals, **args)
     res2 = repo.debugwireargs(*vals, **args)
-    ui.write("%s\n" % res1)
+    ui.write(b"%s\n" % res1)
     if res1 != res2:
-        ui.warn("%s\n" % res2)
+        ui.warn(b"%s\n" % res2)
+
 
 def _parsewirelangblocks(fh):
     activeaction = None
@@ -2948,7 +3648,7 @@ def _parsewirelangblocks(fh):
         # Else we start with an indent.
 
         if not activeaction:
-            raise error.Abort(_('indented line outside of block'))
+            raise error.Abort(_(b'indented line outside of block'))
 
         indent = len(line) - len(line.lstrip())
 
@@ -2963,16 +3663,29 @@ def _parsewirelangblocks(fh):
     if activeaction:
         yield activeaction, blocklines
 
-@command('debugwireproto',
+
+@command(
+    b'debugwireproto',
     [
-        ('', 'localssh', False, _('start an SSH server for this repo')),
-        ('', 'peer', '', _('construct a specific version of the peer')),
-        ('', 'noreadstderr', False, _('do not read from stderr of the remote')),
-        ('', 'nologhandshake', False,
-         _('do not log I/O related to the peer handshake')),
-    ] + cmdutil.remoteopts,
-    _('[PATH]'),
-    optionalrepo=True)
+        (b'', b'localssh', False, _(b'start an SSH server for this repo')),
+        (b'', b'peer', b'', _(b'construct a specific version of the peer')),
+        (
+            b'',
+            b'noreadstderr',
+            False,
+            _(b'do not read from stderr of the remote'),
+        ),
+        (
+            b'',
+            b'nologhandshake',
+            False,
+            _(b'do not log I/O related to the peer handshake'),
+        ),
+    ]
+    + cmdutil.remoteopts,
+    _(b'[PATH]'),
+    optionalrepo=True,
+)
 def debugwireproto(ui, repo, path=None, **opts):
     """send wire protocol commands to a server
 
@@ -3156,19 +3869,25 @@ def debugwireproto(ui, repo, path=None, **opts):
     """
     opts = pycompat.byteskwargs(opts)
 
-    if opts['localssh'] and not repo:
-        raise error.Abort(_('--localssh requires a repository'))
+    if opts[b'localssh'] and not repo:
+        raise error.Abort(_(b'--localssh requires a repository'))
 
-    if opts['peer'] and opts['peer'] not in ('raw', 'http2', 'ssh1', 'ssh2'):
-        raise error.Abort(_('invalid value for --peer'),
-                          hint=_('valid values are "raw", "ssh1", and "ssh2"'))
+    if opts[b'peer'] and opts[b'peer'] not in (
+        b'raw',
+        b'http2',
+        b'ssh1',
+        b'ssh2',
+    ):
+        raise error.Abort(
+            _(b'invalid value for --peer'),
+            hint=_(b'valid values are "raw", "ssh1", and "ssh2"'),
+        )
 
-    if path and opts['localssh']:
-        raise error.Abort(_('cannot specify --localssh with an explicit '
-                            'path'))
+    if path and opts[b'localssh']:
+        raise error.Abort(_(b'cannot specify --localssh with an explicit path'))
 
     if ui.interactive():
-        ui.write(_('(waiting for commands on stdin)\n'))
+        ui.write(_(b'(waiting for commands on stdin)\n'))
 
     blocks = list(_parsewirelangblocks(ui.fin))
 
@@ -3178,60 +3897,91 @@ def debugwireproto(ui, repo, path=None, **opts):
     stderr = None
     opener = None
 
-    if opts['localssh']:
+    if opts[b'localssh']:
         # We start the SSH server in its own process so there is process
         # separation. This prevents a whole class of potential bugs around
         # shared state from interfering with server operation.
         args = procutil.hgcmd() + [
-            '-R', repo.root,
-            'debugserve', '--sshstdio',
+            b'-R',
+            repo.root,
+            b'debugserve',
+            b'--sshstdio',
         ]
-        proc = subprocess.Popen(pycompat.rapply(procutil.tonativestr, args),
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                bufsize=0)
+        proc = subprocess.Popen(
+            pycompat.rapply(procutil.tonativestr, args),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=0,
+        )
 
         stdin = proc.stdin
         stdout = proc.stdout
         stderr = proc.stderr
 
         # We turn the pipes into observers so we can log I/O.
-        if ui.verbose or opts['peer'] == 'raw':
-            stdin = util.makeloggingfileobject(ui, proc.stdin, b'i',
-                                               logdata=True)
-            stdout = util.makeloggingfileobject(ui, proc.stdout, b'o',
-                                                logdata=True)
-            stderr = util.makeloggingfileobject(ui, proc.stderr, b'e',
-                                                logdata=True)
+        if ui.verbose or opts[b'peer'] == b'raw':
+            stdin = util.makeloggingfileobject(
+                ui, proc.stdin, b'i', logdata=True
+            )
+            stdout = util.makeloggingfileobject(
+                ui, proc.stdout, b'o', logdata=True
+            )
+            stderr = util.makeloggingfileobject(
+                ui, proc.stderr, b'e', logdata=True
+            )
 
         # --localssh also implies the peer connection settings.
 
-        url = 'ssh://localserver'
-        autoreadstderr = not opts['noreadstderr']
+        url = b'ssh://localserver'
+        autoreadstderr = not opts[b'noreadstderr']
 
-        if opts['peer'] == 'ssh1':
-            ui.write(_('creating ssh peer for wire protocol version 1\n'))
-            peer = sshpeer.sshv1peer(ui, url, proc, stdin, stdout, stderr,
-                                     None, autoreadstderr=autoreadstderr)
-        elif opts['peer'] == 'ssh2':
-            ui.write(_('creating ssh peer for wire protocol version 2\n'))
-            peer = sshpeer.sshv2peer(ui, url, proc, stdin, stdout, stderr,
-                                     None, autoreadstderr=autoreadstderr)
-        elif opts['peer'] == 'raw':
-            ui.write(_('using raw connection to peer\n'))
+        if opts[b'peer'] == b'ssh1':
+            ui.write(_(b'creating ssh peer for wire protocol version 1\n'))
+            peer = sshpeer.sshv1peer(
+                ui,
+                url,
+                proc,
+                stdin,
+                stdout,
+                stderr,
+                None,
+                autoreadstderr=autoreadstderr,
+            )
+        elif opts[b'peer'] == b'ssh2':
+            ui.write(_(b'creating ssh peer for wire protocol version 2\n'))
+            peer = sshpeer.sshv2peer(
+                ui,
+                url,
+                proc,
+                stdin,
+                stdout,
+                stderr,
+                None,
+                autoreadstderr=autoreadstderr,
+            )
+        elif opts[b'peer'] == b'raw':
+            ui.write(_(b'using raw connection to peer\n'))
             peer = None
         else:
-            ui.write(_('creating ssh peer from handshake results\n'))
-            peer = sshpeer.makepeer(ui, url, proc, stdin, stdout, stderr,
-                                    autoreadstderr=autoreadstderr)
+            ui.write(_(b'creating ssh peer from handshake results\n'))
+            peer = sshpeer.makepeer(
+                ui,
+                url,
+                proc,
+                stdin,
+                stdout,
+                stderr,
+                autoreadstderr=autoreadstderr,
+            )
 
     elif path:
         # We bypass hg.peer() so we can proxy the sockets.
         # TODO consider not doing this because we skip
         # ``hg.wirepeersetupfuncs`` and potentially other useful functionality.
         u = util.url(path)
-        if u.scheme != 'http':
-            raise error.Abort(_('only http:// paths are currently supported'))
+        if u.scheme != b'http':
+            raise error.Abort(_(b'only http:// paths are currently supported'))
 
         url, authinfo = u.authinfo()
         openerargs = {
@@ -3240,14 +3990,13 @@ def debugwireproto(ui, repo, path=None, **opts):
 
         # Turn pipes/sockets into observers so we can log I/O.
         if ui.verbose:
-            openerargs.update({
-                r'loggingfh': ui,
-                r'loggingname': b's',
-                r'loggingopts': {
-                    r'logdata': True,
-                    r'logdataapis': False,
-                },
-            })
+            openerargs.update(
+                {
+                    r'loggingfh': ui,
+                    r'loggingname': b's',
+                    r'loggingopts': {r'logdata': True, r'logdataapis': False,},
+                }
+            )
 
         if ui.debugflag:
             openerargs[r'loggingopts'][r'logdataapis'] = True
@@ -3255,82 +4004,94 @@ def debugwireproto(ui, repo, path=None, **opts):
         # Don't send default headers when in raw mode. This allows us to
         # bypass most of the behavior of our URL handling code so we can
         # have near complete control over what's sent on the wire.
-        if opts['peer'] == 'raw':
+        if opts[b'peer'] == b'raw':
             openerargs[r'sendaccept'] = False
 
         opener = urlmod.opener(ui, authinfo, **openerargs)
 
-        if opts['peer'] == 'http2':
-            ui.write(_('creating http peer for wire protocol version 2\n'))
+        if opts[b'peer'] == b'http2':
+            ui.write(_(b'creating http peer for wire protocol version 2\n'))
             # We go through makepeer() because we need an API descriptor for
             # the peer instance to be useful.
-            with ui.configoverride({
-                ('experimental', 'httppeer.advertise-v2'): True}):
-                if opts['nologhandshake']:
+            with ui.configoverride(
+                {(b'experimental', b'httppeer.advertise-v2'): True}
+            ):
+                if opts[b'nologhandshake']:
                     ui.pushbuffer()
 
                 peer = httppeer.makepeer(ui, path, opener=opener)
 
-                if opts['nologhandshake']:
+                if opts[b'nologhandshake']:
                     ui.popbuffer()
 
             if not isinstance(peer, httppeer.httpv2peer):
-                raise error.Abort(_('could not instantiate HTTP peer for '
-                                    'wire protocol version 2'),
-                                  hint=_('the server may not have the feature '
-                                         'enabled or is not allowing this '
-                                         'client version'))
+                raise error.Abort(
+                    _(
+                        b'could not instantiate HTTP peer for '
+                        b'wire protocol version 2'
+                    ),
+                    hint=_(
+                        b'the server may not have the feature '
+                        b'enabled or is not allowing this '
+                        b'client version'
+                    ),
+                )
 
-        elif opts['peer'] == 'raw':
-            ui.write(_('using raw connection to peer\n'))
+        elif opts[b'peer'] == b'raw':
+            ui.write(_(b'using raw connection to peer\n'))
             peer = None
-        elif opts['peer']:
-            raise error.Abort(_('--peer %s not supported with HTTP peers') %
-                              opts['peer'])
+        elif opts[b'peer']:
+            raise error.Abort(
+                _(b'--peer %s not supported with HTTP peers') % opts[b'peer']
+            )
         else:
             peer = httppeer.makepeer(ui, path, opener=opener)
 
         # We /could/ populate stdin/stdout with sock.makefile()...
     else:
-        raise error.Abort(_('unsupported connection configuration'))
+        raise error.Abort(_(b'unsupported connection configuration'))
 
     batchedcommands = None
 
     # Now perform actions based on the parsed wire language instructions.
     for action, lines in blocks:
-        if action in ('raw', 'raw+'):
+        if action in (b'raw', b'raw+'):
             if not stdin:
-                raise error.Abort(_('cannot call raw/raw+ on this peer'))
+                raise error.Abort(_(b'cannot call raw/raw+ on this peer'))
 
             # Concatenate the data together.
-            data = ''.join(l.lstrip() for l in lines)
+            data = b''.join(l.lstrip() for l in lines)
             data = stringutil.unescapestr(data)
             stdin.write(data)
 
-            if action == 'raw+':
+            if action == b'raw+':
                 stdin.flush()
-        elif action == 'flush':
+        elif action == b'flush':
             if not stdin:
-                raise error.Abort(_('cannot call flush on this peer'))
+                raise error.Abort(_(b'cannot call flush on this peer'))
             stdin.flush()
-        elif action.startswith('command'):
+        elif action.startswith(b'command'):
             if not peer:
-                raise error.Abort(_('cannot send commands unless peer instance '
-                                    'is available'))
+                raise error.Abort(
+                    _(
+                        b'cannot send commands unless peer instance '
+                        b'is available'
+                    )
+                )
 
-            command = action.split(' ', 1)[1]
+            command = action.split(b' ', 1)[1]
 
             args = {}
             for line in lines:
                 # We need to allow empty values.
-                fields = line.lstrip().split(' ', 1)
+                fields = line.lstrip().split(b' ', 1)
                 if len(fields) == 1:
                     key = fields[0]
-                    value = ''
+                    value = b''
                 else:
                     key, value = fields
 
-                if value.startswith('eval:'):
+                if value.startswith(b'eval:'):
                     value = stringutil.evalpythonliteral(value[5:])
                 else:
                     value = stringutil.unescapestr(value)
@@ -3341,54 +4102,68 @@ def debugwireproto(ui, repo, path=None, **opts):
                 batchedcommands.append((command, args))
                 continue
 
-            ui.status(_('sending %s command\n') % command)
+            ui.status(_(b'sending %s command\n') % command)
 
-            if 'PUSHFILE' in args:
-                with open(args['PUSHFILE'], r'rb') as fh:
-                    del args['PUSHFILE']
-                    res, output = peer._callpush(command, fh,
-                                                 **pycompat.strkwargs(args))
-                    ui.status(_('result: %s\n') % stringutil.escapestr(res))
-                    ui.status(_('remote output: %s\n') %
-                              stringutil.escapestr(output))
+            if b'PUSHFILE' in args:
+                with open(args[b'PUSHFILE'], r'rb') as fh:
+                    del args[b'PUSHFILE']
+                    res, output = peer._callpush(
+                        command, fh, **pycompat.strkwargs(args)
+                    )
+                    ui.status(_(b'result: %s\n') % stringutil.escapestr(res))
+                    ui.status(
+                        _(b'remote output: %s\n') % stringutil.escapestr(output)
+                    )
             else:
                 with peer.commandexecutor() as e:
                     res = e.callcommand(command, args).result()
 
                 if isinstance(res, wireprotov2peer.commandresponse):
                     val = res.objects()
-                    ui.status(_('response: %s\n') %
-                              stringutil.pprint(val, bprefix=True, indent=2))
+                    ui.status(
+                        _(b'response: %s\n')
+                        % stringutil.pprint(val, bprefix=True, indent=2)
+                    )
                 else:
-                    ui.status(_('response: %s\n') %
-                              stringutil.pprint(res, bprefix=True, indent=2))
+                    ui.status(
+                        _(b'response: %s\n')
+                        % stringutil.pprint(res, bprefix=True, indent=2)
+                    )
 
-        elif action == 'batchbegin':
+        elif action == b'batchbegin':
             if batchedcommands is not None:
-                raise error.Abort(_('nested batchbegin not allowed'))
+                raise error.Abort(_(b'nested batchbegin not allowed'))
 
             batchedcommands = []
-        elif action == 'batchsubmit':
+        elif action == b'batchsubmit':
             # There is a batching API we could go through. But it would be
             # difficult to normalize requests into function calls. It is easier
             # to bypass this layer and normalize to commands + args.
-            ui.status(_('sending batch with %d sub-commands\n') %
-                      len(batchedcommands))
+            ui.status(
+                _(b'sending batch with %d sub-commands\n')
+                % len(batchedcommands)
+            )
             for i, chunk in enumerate(peer._submitbatch(batchedcommands)):
-                ui.status(_('response #%d: %s\n') %
-                          (i, stringutil.escapestr(chunk)))
+                ui.status(
+                    _(b'response #%d: %s\n') % (i, stringutil.escapestr(chunk))
+                )
 
             batchedcommands = None
 
-        elif action.startswith('httprequest '):
+        elif action.startswith(b'httprequest '):
             if not opener:
-                raise error.Abort(_('cannot use httprequest without an HTTP '
-                                    'peer'))
+                raise error.Abort(
+                    _(b'cannot use httprequest without an HTTP peer')
+                )
 
-            request = action.split(' ', 2)
+            request = action.split(b' ', 2)
             if len(request) != 3:
-                raise error.Abort(_('invalid httprequest: expected format is '
-                                    '"httprequest <method> <path>'))
+                raise error.Abort(
+                    _(
+                        b'invalid httprequest: expected format is '
+                        b'"httprequest <method> <path>'
+                    )
+                )
 
             method, httppath = request[1:]
             headers = {}
@@ -3405,16 +4180,18 @@ def debugwireproto(ui, repo, path=None, **opts):
                     continue
 
                 if line.startswith(b'BODYFILE '):
-                    with open(line.split(b' ', 1), 'rb') as fh:
+                    with open(line.split(b' ', 1), b'rb') as fh:
                         body = fh.read()
                 elif line.startswith(b'frame '):
                     frame = wireprotoframing.makeframefromhumanstring(
-                        line[len(b'frame '):])
+                        line[len(b'frame ') :]
+                    )
 
                     frames.append(frame)
                 else:
-                    raise error.Abort(_('unknown argument to httprequest: %s') %
-                                      line)
+                    raise error.Abort(
+                        _(b'unknown argument to httprequest: %s') % line
+                    )
 
             url = path + httppath
 
@@ -3438,44 +4215,48 @@ def debugwireproto(ui, repo, path=None, **opts):
 
             ct = res.headers.get(r'Content-Type')
             if ct == r'application/mercurial-cbor':
-                ui.write(_('cbor> %s\n') %
-                         stringutil.pprint(cborutil.decodeall(body),
-                                           bprefix=True,
-                                           indent=2))
+                ui.write(
+                    _(b'cbor> %s\n')
+                    % stringutil.pprint(
+                        cborutil.decodeall(body), bprefix=True, indent=2
+                    )
+                )
 
-        elif action == 'close':
+        elif action == b'close':
             peer.close()
-        elif action == 'readavailable':
+        elif action == b'readavailable':
             if not stdout or not stderr:
-                raise error.Abort(_('readavailable not available on this peer'))
+                raise error.Abort(
+                    _(b'readavailable not available on this peer')
+                )
 
             stdin.close()
             stdout.read()
             stderr.read()
 
-        elif action == 'readline':
+        elif action == b'readline':
             if not stdout:
-                raise error.Abort(_('readline not available on this peer'))
+                raise error.Abort(_(b'readline not available on this peer'))
             stdout.readline()
-        elif action == 'ereadline':
+        elif action == b'ereadline':
             if not stderr:
-                raise error.Abort(_('ereadline not available on this peer'))
+                raise error.Abort(_(b'ereadline not available on this peer'))
             stderr.readline()
-        elif action.startswith('read '):
-            count = int(action.split(' ', 1)[1])
+        elif action.startswith(b'read '):
+            count = int(action.split(b' ', 1)[1])
             if not stdout:
-                raise error.Abort(_('read not available on this peer'))
+                raise error.Abort(_(b'read not available on this peer'))
             stdout.read(count)
-        elif action.startswith('eread '):
-            count = int(action.split(' ', 1)[1])
+        elif action.startswith(b'eread '):
+            count = int(action.split(b' ', 1)[1])
             if not stderr:
-                raise error.Abort(_('eread not available on this peer'))
+                raise error.Abort(_(b'eread not available on this peer'))
             stderr.read(count)
         else:
-            raise error.Abort(_('unknown action: %s') % action)
+            raise error.Abort(_(b'unknown action: %s') % action)
 
     if batchedcommands is not None:
-        raise error.Abort(_('unclosed "batchbegin" request'))
+        raise error.Abort(_(b'unclosed "batchbegin" request'))
 
     if peer:
         peer.close()

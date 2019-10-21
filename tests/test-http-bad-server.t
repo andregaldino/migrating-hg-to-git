@@ -1092,7 +1092,6 @@ Server stops sending after 0 length payload chunk size
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   transaction abort!
   rollback completed
   abort: HTTP request error (incomplete response) (py3 !)

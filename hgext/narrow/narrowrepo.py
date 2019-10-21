@@ -7,19 +7,15 @@
 
 from __future__ import absolute_import
 
-from mercurial import (
-    wireprototypes,
-)
+from mercurial import wireprototypes
 
-from . import (
-    narrowdirstate,
-)
+from . import narrowdirstate
+
 
 def wraprepo(repo):
     """Enables narrow clone functionality on a single local repository."""
 
     class narrowrepository(repo.__class__):
-
         def _makedirstate(self):
             dirstate = super(narrowrepository, self)._makedirstate()
             return narrowdirstate.wrapdirstate(self, dirstate)

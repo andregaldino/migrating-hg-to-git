@@ -29,6 +29,8 @@ SOURCES = ['zstd/%s' % p for p in (
     'compress/hist.c',
     'compress/huf_compress.c',
     'compress/zstd_compress.c',
+    'compress/zstd_compress_literals.c',
+    'compress/zstd_compress_sequences.c',
     'compress/zstd_double_fast.c',
     'compress/zstd_fast.c',
     'compress/zstd_lazy.c',
@@ -119,7 +121,11 @@ def preprocess(path):
     os.close(fd)
 
     try:
-        process = subprocess.Popen(args + [input_file], stdout=subprocess.PIPE)
+        env = dict(os.environ)
+        if getattr(compiler, '_paths', None):
+            env['PATH'] = compiler._paths
+        process = subprocess.Popen(args + [input_file], stdout=subprocess.PIPE,
+                                   env=env)
         output = process.communicate()[0]
         ret = process.poll()
         if ret:

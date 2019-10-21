@@ -10,12 +10,14 @@
 from __future__ import absolute_import
 
 from mercurial.i18n import _
+from mercurial.pycompat import open
 from mercurial import util
 
 from . import (
     basestore,
     lfutil,
 )
+
 
 class localstore(basestore.basestore):
     '''localstore first attempts to grab files out of the store in the remote
@@ -40,11 +42,11 @@ class localstore(basestore.basestore):
     def _getfile(self, tmpfile, filename, hash):
         path = lfutil.findfile(self.remote, hash)
         if not path:
-            raise basestore.StoreError(filename, hash, self.url,
-                _("can't get file locally"))
-        with open(path, 'rb') as fd:
-            return lfutil.copyandhash(
-                util.filechunkiter(fd), tmpfile)
+            raise basestore.StoreError(
+                filename, hash, self.url, _(b"can't get file locally")
+            )
+        with open(path, b'rb') as fd:
+            return lfutil.copyandhash(util.filechunkiter(fd), tmpfile)
 
     def _verifyfiles(self, contents, filestocheck):
         failed = False
@@ -52,17 +54,20 @@ class localstore(basestore.basestore):
             storepath, exists = lfutil.findstorepath(self.repo, expectedhash)
             if not exists:
                 storepath, exists = lfutil.findstorepath(
-                    self.remote, expectedhash)
+                    self.remote, expectedhash
+                )
             if not exists:
                 self.ui.warn(
-                    _('changeset %s: %s references missing %s\n')
-                    % (cset, filename, storepath))
+                    _(b'changeset %s: %s references missing %s\n')
+                    % (cset, filename, storepath)
+                )
                 failed = True
             elif contents:
                 actualhash = lfutil.hashfile(storepath)
                 if actualhash != expectedhash:
                     self.ui.warn(
-                        _('changeset %s: %s references corrupted %s\n')
-                        % (cset, filename, storepath))
+                        _(b'changeset %s: %s references corrupted %s\n')
+                        % (cset, filename, storepath)
+                    )
                     failed = True
         return failed

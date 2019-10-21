@@ -3035,6 +3035,47 @@ single rev
   sending [PATCH] test ...
   sending mail: $TESTTMP/t2/pretendmail.sh -f test foo
 
+Shell characters in addresses
+
+  $ hg email --date '1980-1-1 0:1' -v -t '~foo/bar@example.com' -f 'me*@example.com' -r '10'
+  this patch series consists of 1 patches.
+  
+  warning: invalid patchbomb.intro value "mpmwearaclownnose"
+  (should be one of always, never, auto)
+  -f me*@example.com ~foo/bar@example.com
+  MIME-Version: 1.0
+  Content-Type: text/plain; charset="us-ascii"
+  Content-Transfer-Encoding: 7bit
+  Subject: [PATCH] dd
+  X-Mercurial-Node: 3b6f1ec9dde933a40a115a7990f8b320477231af
+  X-Mercurial-Series-Index: 1
+  X-Mercurial-Series-Total: 1
+  Message-Id: <3b6f1ec9dde933a40a11.315532860@test-hostname>
+  X-Mercurial-Series-Id: <3b6f1ec9dde933a40a11.315532860@test-hostname>
+  User-Agent: Mercurial-patchbomb/* (glob)
+  Date: Tue, 01 Jan 1980 00:01:00 +0000
+  From: me*@example.com
+  To: ~foo/bar@example.com
+  
+  # HG changeset patch
+  # User test
+  # Date 5 0
+  #      Thu Jan 01 00:00:05 1970 +0000
+  # Branch test
+  # Node ID 3b6f1ec9dde933a40a115a7990f8b320477231af
+  # Parent  2f9fa9b998c5fe3ac2bd9a2b14bfcbeecbc7c268
+  dd
+  
+  diff -r 2f9fa9b998c5 -r 3b6f1ec9dde9 d
+  --- a/d	Thu Jan 01 00:00:04 1970 +0000
+  +++ b/d	Thu Jan 01 00:00:05 1970 +0000
+  @@ -1,1 +1,2 @@
+   d
+  +d
+  
+  sending [PATCH] dd ...
+  sending mail: $TESTTMP/t2/pretendmail.sh -f 'me*@example.com' '~foo/bar@example.com'
+
 Test pull url header
 =================================
 

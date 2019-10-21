@@ -153,6 +153,16 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   1 problems detected, please check your install!
   [1]
 
+debuginstall extension support
+  $ hg debuginstall --config extensions.fsmonitor= --config fsmonitor.watchman_exe=false | grep atchman
+  fsmonitor checking for watchman binary... (false)
+   watchman binary missing or broken: warning: Watchman unavailable: watchman exited with code 1
+Verify the json works too:
+  $ hg debuginstall --config extensions.fsmonitor= --config fsmonitor.watchman_exe=false -Tjson | grep atchman
+    "fsmonitor-watchman": "false",
+    "fsmonitor-watchman-error": "warning: Watchman unavailable: watchman exited with code 1",
+
+
 #if test-repo
   $ . "$TESTDIR/helpers-testrepo.sh"
 
@@ -226,6 +236,11 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
 
 #endif
 
+#if py3
+  $ HGALLOWPYTHON3=1
+  $ export HGALLOWPYTHON3
+#endif
+
 #if virtualenv
 
 Verify that Mercurial is installable with pip. Note that this MUST be
@@ -239,10 +254,12 @@ the default for them.
   $ unset PYTHONPATH
   $ "$PYTHON" -m virtualenv --no-site-packages --never-download installenv >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
+  DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
+  DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
   $ ./installenv/*/hg debuginstall || cat pip.log
   checking encoding (ascii)...
   checking Python executable (*) (glob)

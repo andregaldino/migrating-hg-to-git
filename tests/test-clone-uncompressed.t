@@ -259,7 +259,7 @@ Clone with background file closing enabled
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
@@ -281,7 +281,7 @@ Clone with background file closing enabled
   transferred 96.5 KB in * seconds (* */sec) (glob)
   bundle2-input-part: total payload size 112094
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
   (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
@@ -537,6 +537,7 @@ Clone non-publishing with obsolescence
   $ echo foo > foo
   $ hg -q commit -m 'about to be pruned'
   $ hg debugobsolete `hg log -r . -T '{node}'` -d '0 0' -u test --record-parents
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg up null -q
   $ hg log -T '{rev}: {phase}\n'

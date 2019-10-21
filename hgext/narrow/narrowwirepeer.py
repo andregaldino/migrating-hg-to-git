@@ -13,7 +13,6 @@ from mercurial import (
     extensions,
     hg,
     narrowspec,
-    node as nodemod,
     pycompat,
     wireprototypes,
     wireprotov1peer,
@@ -22,29 +21,47 @@ from mercurial import (
 
 from . import narrowbundle2
 
+
 def uisetup():
     wireprotov1peer.wirepeer.narrow_widen = peernarrowwiden
+
 
 def reposetup(repo):
     def wirereposetup(ui, peer):
         def wrapped(orig, cmd, *args, **kwargs):
-            if cmd == 'unbundle':
+            if cmd == b'unbundle':
                 # TODO: don't blindly add include/exclude wireproto
                 # arguments to unbundle.
                 include, exclude = repo.narrowpats
-                kwargs[r"includepats"] = ','.join(include)
-                kwargs[r"excludepats"] = ','.join(exclude)
+                kwargs[r"includepats"] = b','.join(include)
+                kwargs[r"excludepats"] = b','.join(exclude)
             return orig(cmd, *args, **kwargs)
-        extensions.wrapfunction(peer, '_calltwowaystream', wrapped)
+
+        extensions.wrapfunction(peer, b'_calltwowaystream', wrapped)
+
     hg.wirepeersetupfuncs.append(wirereposetup)
 
-@wireprotov1server.wireprotocommand('narrow_widen', 'oldincludes oldexcludes'
-                                                    ' newincludes newexcludes'
-                                                    ' commonheads cgversion'
-                                                    ' known ellipses',
-                                    permission='pull')
-def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
-                 newexcludes, commonheads, cgversion, known, ellipses):
+
+@wireprotov1server.wireprotocommand(
+    b'narrow_widen',
+    b'oldincludes oldexcludes'
+    b' newincludes newexcludes'
+    b' commonheads cgversion'
+    b' known ellipses',
+    permission=b'pull',
+)
+def narrow_widen(
+    repo,
+    proto,
+    oldincludes,
+    oldexcludes,
+    newincludes,
+    newexcludes,
+    commonheads,
+    cgversion,
+    known,
+    ellipses,
+):
     """wireprotocol command to send data when a narrow clone is widen. We will
     be sending a changegroup here.
 
@@ -61,10 +78,15 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
 
     preferuncompressed = False
     try:
-        oldincludes = wireprototypes.decodelist(oldincludes)
-        newincludes = wireprototypes.decodelist(newincludes)
-        oldexcludes = wireprototypes.decodelist(oldexcludes)
-        newexcludes = wireprototypes.decodelist(newexcludes)
+
+        def splitpaths(data):
+            # work around ''.split(',') => ['']
+            return data.split(b',') if data else []
+
+        oldincludes = splitpaths(oldincludes)
+        newincludes = splitpaths(newincludes)
+        oldexcludes = splitpaths(oldexcludes)
+        newexcludes = splitpaths(newexcludes)
         # validate the patterns
         narrowspec.validatepatterns(set(oldincludes))
         narrowspec.validatepatterns(set(newincludes))
@@ -73,43 +95,56 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
 
         common = wireprototypes.decodelist(commonheads)
         known = wireprototypes.decodelist(known)
-        known = {nodemod.bin(n) for n in known}
-        if ellipses == '0':
+        if ellipses == b'0':
             ellipses = False
         else:
             ellipses = bool(ellipses)
         cgversion = cgversion
 
         bundler = bundle2.bundle20(repo.ui)
+        newmatch = narrowspec.match(
+            repo.root, include=newincludes, exclude=newexcludes
+        )
+        oldmatch = narrowspec.match(
+            repo.root, include=oldincludes, exclude=oldexcludes
+        )
         if not ellipses:
-            newmatch = narrowspec.match(repo.root, include=newincludes,
-                                        exclude=newexcludes)
-            oldmatch = narrowspec.match(repo.root, include=oldincludes,
-                                        exclude=oldexcludes)
-            bundle2.widen_bundle(bundler, repo, oldmatch, newmatch, common,
-                                 known, cgversion, ellipses)
+            bundle2.widen_bundle(
+                bundler,
+                repo,
+                oldmatch,
+                newmatch,
+                common,
+                known,
+                cgversion,
+                ellipses,
+            )
         else:
-            narrowbundle2.generateellipsesbundle2(bundler, repo, oldincludes,
-                    oldexcludes, newincludes, newexcludes, cgversion, common,
-                    list(common), known, None)
+            narrowbundle2.generate_ellipses_bundle2_for_widening(
+                bundler, repo, oldmatch, newmatch, cgversion, common, known,
+            )
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)
-        manargs = [('message', pycompat.bytestr(exc))]
+        manargs = [(b'message', pycompat.bytestr(exc))]
         advargs = []
         if exc.hint is not None:
-            advargs.append(('hint', exc.hint))
-        bundler.addpart(bundle2.bundlepart('error:abort', manargs, advargs))
+            advargs.append((b'hint', exc.hint))
+        bundler.addpart(bundle2.bundlepart(b'error:abort', manargs, advargs))
         preferuncompressed = True
 
     chunks = bundler.getchunks()
-    return wireprototypes.streamres(gen=chunks,
-                                    prefer_uncompressed=preferuncompressed)
+    return wireprototypes.streamres(
+        gen=chunks, prefer_uncompressed=preferuncompressed
+    )
+
 
 def peernarrowwiden(remote, **kwargs):
-    for ch in (r'oldincludes', r'newincludes', r'oldexcludes', r'newexcludes',
-               r'commonheads', r'known'):
+    for ch in (r'commonheads', r'known'):
         kwargs[ch] = wireprototypes.encodelist(kwargs[ch])
 
-    kwargs[r'ellipses'] = '%i' % bool(kwargs[r'ellipses'])
-    f = remote._callcompressable('narrow_widen', **kwargs)
+    for ch in (r'oldincludes', r'newincludes', r'oldexcludes', r'newexcludes'):
+        kwargs[ch] = b','.join(kwargs[ch])
+
+    kwargs[r'ellipses'] = b'%i' % bool(kwargs[r'ellipses'])
+    f = remote._callcompressable(b'narrow_widen', **kwargs)
     return bundle2.getunbundler(remote.ui, f)

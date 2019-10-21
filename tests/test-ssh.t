@@ -546,7 +546,7 @@ debug output
   bundle2-input-part: total payload size 45
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 72
-  bundle2-input-bundle: 2 parts total
+  bundle2-input-bundle: 3 parts total
   checking for updated bookmarks
 
   $ cd $TESTTMP
@@ -644,7 +644,6 @@ remote hook failure is attributed to remote
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: hook failure!
   remote: transaction abort!
   remote: rollback completed

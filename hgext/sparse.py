@@ -74,6 +74,7 @@ certain files::
 from __future__ import absolute_import
 
 from mercurial.i18n import _
+from mercurial.pycompat import setattr
 from mercurial import (
     commands,
     dirstate,
@@ -92,10 +93,11 @@ from mercurial import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 cmdtable = {}
 command = registrar.command(cmdtable)
+
 
 def extsetup(ui):
     sparse.enabled = True
@@ -104,6 +106,7 @@ def extsetup(ui):
     _setuplog(ui)
     _setupadd(ui)
     _setupdirstate(ui)
+
 
 def replacefilecache(cls, propname, replacement):
     """Replace a filecache property with a new class. This allows changing the
@@ -118,24 +121,36 @@ def replacefilecache(cls, propname, replacement):
         cls = cls.__bases__[0]
 
     if cls is object:
-        raise AttributeError(_("type '%s' has no property '%s'") % (origcls,
-                             propname))
+        raise AttributeError(
+            _(b"type '%s' has no property '%s'") % (origcls, propname)
+        )
+
 
 def _setuplog(ui):
-    entry = commands.table['log|history']
-    entry[1].append(('', 'sparse', None,
-        "limit to changesets affecting the sparse checkout"))
+    entry = commands.table[b'log|history']
+    entry[1].append(
+        (
+            b'',
+            b'sparse',
+            None,
+            b"limit to changesets affecting the sparse checkout",
+        )
+    )
 
     def _initialrevs(orig, repo, opts):
         revs = orig(repo, opts)
-        if opts.get('sparse'):
+        if opts.get(b'sparse'):
             sparsematch = sparse.matcher(repo)
+
             def ctxmatch(rev):
                 ctx = repo[rev]
                 return any(f for f in ctx.files() if sparsematch(f))
+
             revs = revs.filter(ctxmatch)
         return revs
-    extensions.wrapfunction(logcmdutil, '_initialrevs', _initialrevs)
+
+    extensions.wrapfunction(logcmdutil, b'_initialrevs', _initialrevs)
+
 
 def _clonesparsecmd(orig, ui, repo, *args, **opts):
     include_pat = opts.get(r'include')
@@ -153,32 +168,45 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
         pat = enableprofile_pat
         enableprofile = True
     if sum([include, exclude, enableprofile]) > 1:
-        raise error.Abort(_("too many flags specified."))
+        raise error.Abort(_(b"too many flags specified."))
     # if --narrow is passed, it means they are includes and excludes for narrow
     # clone
     if not narrow_pat and (include or exclude or enableprofile):
+
         def clonesparse(orig, self, node, overwrite, *args, **kwargs):
-            sparse.updateconfig(self.unfiltered(), pat, {}, include=include,
-                                exclude=exclude, enableprofile=enableprofile,
-                                usereporootpaths=True)
+            sparse.updateconfig(
+                self.unfiltered(),
+                pat,
+                {},
+                include=include,
+                exclude=exclude,
+                enableprofile=enableprofile,
+                usereporootpaths=True,
+            )
             return orig(self, node, overwrite, *args, **kwargs)
-        extensions.wrapfunction(hg, 'updaterepo', clonesparse)
+
+        extensions.wrapfunction(hg, b'updaterepo', clonesparse)
     return orig(ui, repo, *args, **opts)
 
+
 def _setupclone(ui):
-    entry = commands.table['clone']
-    entry[1].append(('', 'enable-profile', [],
-                    'enable a sparse profile'))
-    entry[1].append(('', 'include', [],
-                    'include sparse pattern'))
-    entry[1].append(('', 'exclude', [],
-                    'exclude sparse pattern'))
-    extensions.wrapcommand(commands.table, 'clone', _clonesparsecmd)
+    entry = commands.table[b'clone']
+    entry[1].append((b'', b'enable-profile', [], b'enable a sparse profile'))
+    entry[1].append((b'', b'include', [], b'include sparse pattern'))
+    entry[1].append((b'', b'exclude', [], b'exclude sparse pattern'))
+    extensions.wrapcommand(commands.table, b'clone', _clonesparsecmd)
+
 
 def _setupadd(ui):
-    entry = commands.table['add']
-    entry[1].append(('s', 'sparse', None,
-                    'also include directories of added files in sparse config'))
+    entry = commands.table[b'add']
+    entry[1].append(
+        (
+            b's',
+            b'sparse',
+            None,
+            b'also include directories of added files in sparse config',
+        )
+    )
 
     def _add(orig, ui, repo, *pats, **opts):
         if opts.get(r'sparse'):
@@ -189,7 +217,8 @@ def _setupadd(ui):
             sparse.updateconfig(repo, list(dirs), opts, include=True)
         return orig(ui, repo, *pats, **opts)
 
-    extensions.wrapcommand(commands.table, 'add', _add)
+    extensions.wrapcommand(commands.table, b'add', _add)
+
 
 def _setupdirstate(ui):
     """Modify the dirstate to prevent stat'ing excluded files,
@@ -204,7 +233,7 @@ def _setupdirstate(ui):
         match = matchmod.intersectmatchers(match, sm)
         return orig(self, match, subrepos, unknown, ignored, full)
 
-    extensions.wrapfunction(dirstate.dirstate, 'walk', walk)
+    extensions.wrapfunction(dirstate.dirstate, b'walk', walk)
 
     # dirstate.rebuild should not add non-matching files
     def _rebuild(orig, self, parent, allfiles, changedfiles=None):
@@ -221,39 +250,70 @@ def _setupdirstate(ui):
                 changedfiles = dirstatefilestoremove.union(changedfiles)
 
         return orig(self, parent, allfiles, changedfiles)
-    extensions.wrapfunction(dirstate.dirstate, 'rebuild', _rebuild)
+
+    extensions.wrapfunction(dirstate.dirstate, b'rebuild', _rebuild)
 
     # Prevent adding files that are outside the sparse checkout
-    editfuncs = ['normal', 'add', 'normallookup', 'copy', 'remove', 'merge']
-    hint = _('include file with `hg debugsparse --include <pattern>` or use ' +
-             '`hg add -s <file>` to include file directory while adding')
+    editfuncs = [
+        b'normal',
+        b'add',
+        b'normallookup',
+        b'copy',
+        b'remove',
+        b'merge',
+    ]
+    hint = _(
+        b'include file with `hg debugsparse --include <pattern>` or use '
+        + b'`hg add -s <file>` to include file directory while adding'
+    )
     for func in editfuncs:
+
         def _wrapper(orig, self, *args, **kwargs):
             sparsematch = self._sparsematcher
             if not sparsematch.always():
                 for f in args:
-                    if (f is not None and not sparsematch(f) and
-                        f not in self):
-                        raise error.Abort(_("cannot add '%s' - it is outside "
-                                            "the sparse checkout") % f,
-                                          hint=hint)
+                    if f is not None and not sparsematch(f) and f not in self:
+                        raise error.Abort(
+                            _(
+                                b"cannot add '%s' - it is outside "
+                                b"the sparse checkout"
+                            )
+                            % f,
+                            hint=hint,
+                        )
             return orig(self, *args, **kwargs)
+
         extensions.wrapfunction(dirstate.dirstate, func, _wrapper)
 
-@command('debugsparse', [
-    ('I', 'include', False, _('include files in the sparse checkout')),
-    ('X', 'exclude', False, _('exclude files in the sparse checkout')),
-    ('d', 'delete', False, _('delete an include/exclude rule')),
-    ('f', 'force', False, _('allow changing rules even with pending changes')),
-    ('', 'enable-profile', False, _('enables the specified profile')),
-    ('', 'disable-profile', False, _('disables the specified profile')),
-    ('', 'import-rules', False, _('imports rules from a file')),
-    ('', 'clear-rules', False, _('clears local include/exclude rules')),
-    ('', 'refresh', False, _('updates the working after sparseness changes')),
-    ('', 'reset', False, _('makes the repo full again')),
-    ] + commands.templateopts,
-    _('[--OPTION] PATTERN...'),
-    helpbasic=True)
+
+@command(
+    b'debugsparse',
+    [
+        (b'I', b'include', False, _(b'include files in the sparse checkout')),
+        (b'X', b'exclude', False, _(b'exclude files in the sparse checkout')),
+        (b'd', b'delete', False, _(b'delete an include/exclude rule')),
+        (
+            b'f',
+            b'force',
+            False,
+            _(b'allow changing rules even with pending changes'),
+        ),
+        (b'', b'enable-profile', False, _(b'enables the specified profile')),
+        (b'', b'disable-profile', False, _(b'disables the specified profile')),
+        (b'', b'import-rules', False, _(b'imports rules from a file')),
+        (b'', b'clear-rules', False, _(b'clears local include/exclude rules')),
+        (
+            b'',
+            b'refresh',
+            False,
+            _(b'updates the working after sparseness changes'),
+        ),
+        (b'', b'reset', False, _(b'makes the repo full again')),
+    ]
+    + commands.templateopts,
+    _(b'[--OPTION] PATTERN...'),
+    helpbasic=True,
+)
 def debugsparse(ui, repo, *pats, **opts):
     """make the current checkout sparse, or edit the existing checkout
 
@@ -296,38 +356,63 @@ def debugsparse(ui, repo, *pats, **opts):
     Returns 0 if editing the sparse checkout succeeds.
     """
     opts = pycompat.byteskwargs(opts)
-    include = opts.get('include')
-    exclude = opts.get('exclude')
-    force = opts.get('force')
-    enableprofile = opts.get('enable_profile')
-    disableprofile = opts.get('disable_profile')
-    importrules = opts.get('import_rules')
-    clearrules = opts.get('clear_rules')
-    delete = opts.get('delete')
-    refresh = opts.get('refresh')
-    reset = opts.get('reset')
-    count = sum([include, exclude, enableprofile, disableprofile, delete,
-                 importrules, refresh, clearrules, reset])
+    include = opts.get(b'include')
+    exclude = opts.get(b'exclude')
+    force = opts.get(b'force')
+    enableprofile = opts.get(b'enable_profile')
+    disableprofile = opts.get(b'disable_profile')
+    importrules = opts.get(b'import_rules')
+    clearrules = opts.get(b'clear_rules')
+    delete = opts.get(b'delete')
+    refresh = opts.get(b'refresh')
+    reset = opts.get(b'reset')
+    count = sum(
+        [
+            include,
+            exclude,
+            enableprofile,
+            disableprofile,
+            delete,
+            importrules,
+            refresh,
+            clearrules,
+            reset,
+        ]
+    )
     if count > 1:
-        raise error.Abort(_("too many flags specified"))
+        raise error.Abort(_(b"too many flags specified"))
 
     if count == 0:
-        if repo.vfs.exists('sparse'):
-            ui.status(repo.vfs.read("sparse") + "\n")
+        if repo.vfs.exists(b'sparse'):
+            ui.status(repo.vfs.read(b"sparse") + b"\n")
             temporaryincludes = sparse.readtemporaryincludes(repo)
             if temporaryincludes:
-                ui.status(_("Temporarily Included Files (for merge/rebase):\n"))
-                ui.status(("\n".join(temporaryincludes) + "\n"))
+                ui.status(
+                    _(b"Temporarily Included Files (for merge/rebase):\n")
+                )
+                ui.status((b"\n".join(temporaryincludes) + b"\n"))
             return
         else:
-            raise error.Abort(_('the debugsparse command is only supported on'
-                                ' sparse repositories'))
+            raise error.Abort(
+                _(
+                    b'the debugsparse command is only supported on'
+                    b' sparse repositories'
+                )
+            )
 
     if include or exclude or delete or reset or enableprofile or disableprofile:
-        sparse.updateconfig(repo, pats, opts, include=include, exclude=exclude,
-                            reset=reset, delete=delete,
-                            enableprofile=enableprofile,
-                            disableprofile=disableprofile, force=force)
+        sparse.updateconfig(
+            repo,
+            pats,
+            opts,
+            include=include,
+            exclude=exclude,
+            reset=reset,
+            delete=delete,
+            enableprofile=enableprofile,
+            disableprofile=disableprofile,
+            force=force,
+        )
 
     if importrules:
         sparse.importfromfiles(repo, opts, pats, force=force)
@@ -340,9 +425,16 @@ def debugsparse(ui, repo, *pats, **opts):
             wlock = repo.wlock()
             fcounts = map(
                 len,
-                sparse.refreshwdir(repo, repo.status(), sparse.matcher(repo),
-                                   force=force))
-            sparse.printchanges(ui, opts, added=fcounts[0], dropped=fcounts[1],
-                                conflicting=fcounts[2])
+                sparse.refreshwdir(
+                    repo, repo.status(), sparse.matcher(repo), force=force
+                ),
+            )
+            sparse.printchanges(
+                ui,
+                opts,
+                added=fcounts[0],
+                dropped=fcounts[1],
+                conflicting=fcounts[2],
+            )
         finally:
             wlock.release()

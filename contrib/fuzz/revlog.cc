@@ -20,10 +20,15 @@ for inline in (True, False):
     try:
         index, cache = parse_index2(data, inline)
         index.slicechunktodensity(list(range(len(index))), 0.5, 262144)
+        index.stats()
+        index.findsnapshots({}, 0)
+        10 in index
         for rev in range(len(index)):
+            index.reachableroots(0, [len(index)-1], [rev])
             node = index[rev][7]
             partial = index.shortest(node)
             index.partialmatch(node[:partial])
+            index.deltachain(rev, None, True)
     except Exception as e:
         pass
         # uncomment this print if you're editing this Python code

@@ -36,9 +36,20 @@ substituted into the command::
   {first}   The 1-based line number of the first line in the modified range
   {last}    The 1-based line number of the last line in the modified range
 
+Deleted sections of a file will be ignored by :linerange, because there is no
+corresponding line range in the version being fixed.
+
+By default, tools that set :linerange will only be executed if there is at least
+one changed line range. This is meant to prevent accidents like running a code
+formatter in such a way that it unexpectedly reformats the whole file. If such a
+tool needs to operate on unchanged files, it should set the :skipclean suboption
+to false.
+
 The :pattern suboption determines which files will be passed through each
-configured tool. See :hg:`help patterns` for possible values. If there are file
-arguments to :hg:`fix`, the intersection of these patterns is used.
+configured tool. See :hg:`help patterns` for possible values. However, all
+patterns are relative to the repo root, even if that text says they are relative
+to the current working directory. If there are file arguments to :hg:`fix`, the
+intersection of these patterns is used.
 
 There is also a configurable limit for the maximum size of file that will be
 processed by :hg:`fix`::
@@ -102,6 +113,13 @@ perform other post-fixing work. The supported hooks are::
     mapping fixer tool names to lists of metadata values returned from
     executions that modified a file. This aggregates the same metadata
     previously passed to the "postfixfile" hook.
+
+Fixer tools are run the in repository's root directory. This allows them to read
+configuration files from the working copy, or even write to the working copy.
+The working copy is not updated to match the revision being fixed. In fact,
+several revisions may be fixed in parallel. Writes to the working copy are not
+amended into the revision being fixed; fixer tools should always write fixed
+file content back to stdout as documented above.
 """
 
 from __future__ import absolute_import
@@ -117,15 +135,14 @@ from mercurial.i18n import _
 from mercurial.node import nullrev
 from mercurial.node import wdirrev
 
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 from mercurial import (
     cmdutil,
     context,
     copies,
     error,
+    match as matchmod,
     mdiff,
     merge,
     obsolete,
@@ -140,7 +157,7 @@ from mercurial import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -150,47 +167,65 @@ configitem = registrar.configitem(configtable)
 
 # Register the suboptions allowed for each configured fixer, and default values.
 FIXER_ATTRS = {
-    'command': None,
-    'linerange': None,
-    'fileset': None,
-    'pattern': None,
-    'priority': 0,
-    'metadata': False,
+    b'command': None,
+    b'linerange': None,
+    b'pattern': None,
+    b'priority': 0,
+    b'metadata': False,
+    b'skipclean': True,
+    b'enabled': True,
 }
 
 for key, default in FIXER_ATTRS.items():
-    configitem('fix', '.*(:%s)?' % key, default=default, generic=True)
+    configitem(b'fix', b'.*:%s$' % key, default=default, generic=True)
 
 # A good default size allows most source code files to be fixed, but avoids
 # letting fixer tools choke on huge inputs, which could be surprising to the
 # user.
-configitem('fix', 'maxfilesize', default='2MB')
+configitem(b'fix', b'maxfilesize', default=b'2MB')
 
 # Allow fix commands to exit non-zero if an executed fixer tool exits non-zero.
 # This helps users do shell scripts that stop when a fixer tool signals a
 # problem.
-configitem('fix', 'failure', default='continue')
+configitem(b'fix', b'failure', default=b'continue')
+
 
 def checktoolfailureaction(ui, message, hint=None):
     """Abort with 'message' if fix.failure=abort"""
-    action = ui.config('fix', 'failure')
-    if action not in ('continue', 'abort'):
-        raise error.Abort(_('unknown fix.failure action: %s') % (action,),
-                          hint=_('use "continue" or "abort"'))
-    if action == 'abort':
+    action = ui.config(b'fix', b'failure')
+    if action not in (b'continue', b'abort'):
+        raise error.Abort(
+            _(b'unknown fix.failure action: %s') % (action,),
+            hint=_(b'use "continue" or "abort"'),
+        )
+    if action == b'abort':
         raise error.Abort(message, hint=hint)
 
-allopt = ('', 'all', False, _('fix all non-public non-obsolete revisions'))
-baseopt = ('', 'base', [], _('revisions to diff against (overrides automatic '
-                             'selection, and applies to every revision being '
-                             'fixed)'), _('REV'))
-revopt = ('r', 'rev', [], _('revisions to fix'), _('REV'))
-wdiropt = ('w', 'working-dir', False, _('fix the working directory'))
-wholeopt = ('', 'whole', False, _('always fix every line of a file'))
-usage = _('[OPTION]... [FILE]...')
 
-@command('fix', [allopt, baseopt, revopt, wdiropt, wholeopt], usage,
-        helpcategory=command.CATEGORY_FILE_CONTENTS)
+allopt = (b'', b'all', False, _(b'fix all non-public non-obsolete revisions'))
+baseopt = (
+    b'',
+    b'base',
+    [],
+    _(
+        b'revisions to diff against (overrides automatic '
+        b'selection, and applies to every revision being '
+        b'fixed)'
+    ),
+    _(b'REV'),
+)
+revopt = (b'r', b'rev', [], _(b'revisions to fix'), _(b'REV'))
+wdiropt = (b'w', b'working-dir', False, _(b'fix the working directory'))
+wholeopt = (b'', b'whole', False, _(b'always fix every line of a file'))
+usage = _(b'[OPTION]... [FILE]...')
+
+
+@command(
+    b'fix',
+    [allopt, baseopt, revopt, wdiropt, wholeopt],
+    usage,
+    helpcategory=command.CATEGORY_FILE_CONTENTS,
+)
 def fix(ui, repo, *pats, **opts):
     """rewrite file content in changesets or working directory
 
@@ -215,16 +250,17 @@ def fix(ui, repo, *pats, **opts):
     override this default behavior, though it is not usually desirable to do so.
     """
     opts = pycompat.byteskwargs(opts)
-    if opts['all']:
-        if opts['rev']:
-            raise error.Abort(_('cannot specify both "--rev" and "--all"'))
-        opts['rev'] = ['not public() and not obsolete()']
-        opts['working_dir'] = True
-    with repo.wlock(), repo.lock(), repo.transaction('fix'):
+    if opts[b'all']:
+        if opts[b'rev']:
+            raise error.Abort(_(b'cannot specify both "--rev" and "--all"'))
+        opts[b'rev'] = [b'not public() and not obsolete()']
+        opts[b'working_dir'] = True
+    with repo.wlock(), repo.lock(), repo.transaction(b'fix'):
         revstofix = getrevstofix(ui, repo, opts)
         basectxs = getbasectxs(repo, opts, revstofix)
-        workqueue, numitems = getworkqueue(ui, repo, pats, opts, revstofix,
-                                           basectxs)
+        workqueue, numitems = getworkqueue(
+            ui, repo, pats, opts, revstofix, basectxs
+        )
         fixers = getfixers(ui)
 
         # There are no data dependencies between the workers fixing each file
@@ -233,14 +269,21 @@ def fix(ui, repo, *pats, **opts):
             for rev, path in items:
                 ctx = repo[rev]
                 olddata = ctx[path].data()
-                metadata, newdata = fixfile(ui, opts, fixers, ctx, path,
-                                            basectxs[rev])
+                metadata, newdata = fixfile(
+                    ui, repo, opts, fixers, ctx, path, basectxs[rev]
+                )
                 # Don't waste memory/time passing unchanged content back, but
                 # produce one result per item either way.
-                yield (rev, path, metadata,
-                       newdata if newdata != olddata else None)
-        results = worker.worker(ui, 1.0, getfixes, tuple(), workqueue,
-                                threadsafe=False)
+                yield (
+                    rev,
+                    path,
+                    metadata,
+                    newdata if newdata != olddata else None,
+                )
+
+        results = worker.worker(
+            ui, 1.0, getfixes, tuple(), workqueue, threadsafe=False
+        )
 
         # We have to hold on to the data for each successor revision in memory
         # until all its parents are committed. We ensure this by committing and
@@ -253,8 +296,9 @@ def fix(ui, repo, *pats, **opts):
         replacements = {}
         wdirwritten = False
         commitorder = sorted(revstofix, reverse=True)
-        with ui.makeprogress(topic=_('fixing'), unit=_('files'),
-                             total=sum(numitems.values())) as progress:
+        with ui.makeprogress(
+            topic=_(b'fixing'), unit=_(b'files'), total=sum(numitems.values())
+        ) as progress:
             for rev, path, filerevmetadata, newdata in results:
                 progress.increment(item=path)
                 for fixername, fixermetadata in filerevmetadata.items():
@@ -262,12 +306,15 @@ def fix(ui, repo, *pats, **opts):
                 if newdata is not None:
                     filedata[rev][path] = newdata
                     hookargs = {
-                      'rev': rev,
-                      'path': path,
-                      'metadata': filerevmetadata,
+                        b'rev': rev,
+                        b'path': path,
+                        b'metadata': filerevmetadata,
                     }
-                    repo.hook('postfixfile', throw=False,
-                              **pycompat.strkwargs(hookargs))
+                    repo.hook(
+                        b'postfixfile',
+                        throw=False,
+                        **pycompat.strkwargs(hookargs)
+                    )
                 numitems[rev] -= 1
                 # Apply the fixes for this and any other revisions that are
                 # ready and sitting at the front of the queue. Using a loop here
@@ -285,11 +332,12 @@ def fix(ui, repo, *pats, **opts):
 
         cleanup(repo, replacements, wdirwritten)
         hookargs = {
-            'replacements': replacements,
-            'wdirwritten': wdirwritten,
-            'metadata': aggregatemetadata,
+            b'replacements': replacements,
+            b'wdirwritten': wdirwritten,
+            b'metadata': aggregatemetadata,
         }
-        repo.hook('postfix', throw=True, **pycompat.strkwargs(hookargs))
+        repo.hook(b'postfix', throw=True, **pycompat.strkwargs(hookargs))
+
 
 def cleanup(repo, replacements, wdirwritten):
     """Calls scmutil.cleanupnodes() with the given replacements.
@@ -304,8 +352,11 @@ def cleanup(repo, replacements, wdirwritten):
     Useful as a hook point for extending "hg fix" with output summarizing the
     effects of the command, though we choose not to output anything here.
     """
-    replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
-    scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)
+    replacements = {
+        prec: [succ] for prec, succ in pycompat.iteritems(replacements)
+    }
+    scmutil.cleanupnodes(repo, replacements, b'fix', fixphase=True)
+
 
 def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     """"Constructs the list of files to be fixed at specific revisions
@@ -326,57 +377,72 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     """
     workqueue = []
     numitems = collections.defaultdict(int)
-    maxfilesize = ui.configbytes('fix', 'maxfilesize')
+    maxfilesize = ui.configbytes(b'fix', b'maxfilesize')
     for rev in sorted(revstofix):
         fixctx = repo[rev]
         match = scmutil.match(fixctx, pats, opts)
-        for path in sorted(pathstofix(
-                        ui, repo, pats, opts, match, basectxs[rev], fixctx)):
+        for path in sorted(
+            pathstofix(ui, repo, pats, opts, match, basectxs[rev], fixctx)
+        ):
             fctx = fixctx[path]
             if fctx.islink():
                 continue
             if fctx.size() > maxfilesize:
-                ui.warn(_('ignoring file larger than %s: %s\n') %
-                        (util.bytecount(maxfilesize), path))
+                ui.warn(
+                    _(b'ignoring file larger than %s: %s\n')
+                    % (util.bytecount(maxfilesize), path)
+                )
                 continue
             workqueue.append((rev, path))
             numitems[rev] += 1
     return workqueue, numitems
 
+
 def getrevstofix(ui, repo, opts):
     """Returns the set of revision numbers that should be fixed"""
-    revs = set(scmutil.revrange(repo, opts['rev']))
+    revs = set(scmutil.revrange(repo, opts[b'rev']))
     for rev in revs:
         checkfixablectx(ui, repo, repo[rev])
     if revs:
         cmdutil.checkunfinished(repo)
         checknodescendants(repo, revs)
-    if opts.get('working_dir'):
+    if opts.get(b'working_dir'):
         revs.add(wdirrev)
         if list(merge.mergestate.read(repo).unresolved()):
-            raise error.Abort('unresolved conflicts', hint="use 'hg resolve'")
+            raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
     if not revs:
         raise error.Abort(
-            'no changesets specified', hint='use --rev or --working-dir')
+            b'no changesets specified', hint=b'use --rev or --working-dir'
+        )
     return revs
 
+
 def checknodescendants(repo, revs):
-    if (not obsolete.isenabled(repo, obsolete.allowunstableopt) and
-        repo.revs('(%ld::) - (%ld)', revs, revs)):
-        raise error.Abort(_('can only fix a changeset together '
-                            'with all its descendants'))
+    if not obsolete.isenabled(repo, obsolete.allowunstableopt) and repo.revs(
+        b'(%ld::) - (%ld)', revs, revs
+    ):
+        raise error.Abort(
+            _(b'can only fix a changeset together with all its descendants')
+        )
+
 
 def checkfixablectx(ui, repo, ctx):
     """Aborts if the revision shouldn't be replaced with a fixed one."""
     if not ctx.mutable():
-        raise error.Abort('can\'t fix immutable changeset %s' %
-                          (scmutil.formatchangeid(ctx),))
+        raise error.Abort(
+            b'can\'t fix immutable changeset %s'
+            % (scmutil.formatchangeid(ctx),)
+        )
     if ctx.obsolete():
         # It would be better to actually check if the revision has a successor.
-        allowdivergence = ui.configbool('experimental',
-                                        'evolution.allowdivergence')
+        allowdivergence = ui.configbool(
+            b'experimental', b'evolution.allowdivergence'
+        )
         if not allowdivergence:
-            raise error.Abort('fixing obsolete revision could cause divergence')
+            raise error.Abort(
+                b'fixing obsolete revision could cause divergence'
+            )
+
 
 def pathstofix(ui, repo, pats, opts, match, basectxs, fixctx):
     """Returns the set of files that should be fixed in a context
@@ -387,12 +453,18 @@ def pathstofix(ui, repo, pats, opts, match, basectxs, fixctx):
     """
     files = set()
     for basectx in basectxs:
-        stat = basectx.status(fixctx, match=match, listclean=bool(pats),
-                              listunknown=bool(pats))
+        stat = basectx.status(
+            fixctx, match=match, listclean=bool(pats), listunknown=bool(pats)
+        )
         files.update(
-            set(itertools.chain(stat.added, stat.modified, stat.clean,
-                                stat.unknown)))
+            set(
+                itertools.chain(
+                    stat.added, stat.modified, stat.clean, stat.unknown
+                )
+            )
+        )
     return files
+
 
 def lineranges(opts, path, basectxs, fixctx, content2):
     """Returns the set of line ranges that should be fixed in a file
@@ -406,10 +478,10 @@ def lineranges(opts, path, basectxs, fixctx, content2):
     Another way to understand this is that we exclude line ranges that are
     common to the file in all base contexts.
     """
-    if opts.get('whole'):
+    if opts.get(b'whole'):
         # Return a range containing all lines. Rely on the diff implementation's
         # idea of how many lines are in the file, instead of reimplementing it.
-        return difflineranges('', content2)
+        return difflineranges(b'', content2)
 
     rangeslist = []
     for basectx in basectxs:
@@ -417,9 +489,10 @@ def lineranges(opts, path, basectxs, fixctx, content2):
         if basepath in basectx:
             content1 = basectx[basepath].data()
         else:
-            content1 = ''
+            content1 = b''
         rangeslist.extend(difflineranges(content1, content2))
     return unionranges(rangeslist)
+
 
 def unionranges(rangeslist):
     """Return the union of some closed intervals
@@ -454,6 +527,7 @@ def unionranges(rangeslist):
         else:
             unioned[-1] = (c, max(b, d))
     return unioned
+
 
 def difflineranges(content1, content2):
     """Return list of line number ranges in content2 that differ from content1.
@@ -497,9 +571,10 @@ def difflineranges(content1, content2):
     ranges = []
     for lines, kind in mdiff.allblocks(content1, content2):
         firstline, lastline = lines[2:4]
-        if kind == '!' and firstline != lastline:
+        if kind == b'!' and firstline != lastline:
             ranges.append((firstline + 1, lastline))
     return ranges
+
 
 def getbasectxs(repo, opts, revstofix):
     """Returns a map of the base contexts for each revision
@@ -511,8 +586,8 @@ def getbasectxs(repo, opts, revstofix):
     """
     # The --base flag overrides the usual logic, and we give every revision
     # exactly the set of baserevs that the user specified.
-    if opts.get('base'):
-        baserevs = set(scmutil.revrange(repo, opts.get('base')))
+    if opts.get(b'base'):
+        baserevs = set(scmutil.revrange(repo, opts.get(b'base')))
         if not baserevs:
             baserevs = {nullrev}
         basectxs = {repo[rev] for rev in baserevs}
@@ -530,7 +605,8 @@ def getbasectxs(repo, opts, revstofix):
                 basectxs[rev].add(pctx)
     return basectxs
 
-def fixfile(ui, opts, fixers, fixctx, path, basectxs):
+
+def fixfile(ui, repo, opts, fixers, fixctx, path, basectxs):
     """Run any configured fixers that should affect the file in this context
 
     Returns the file content that results from applying the fixers in some order
@@ -539,35 +615,39 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
     (i.e. they will only avoid lines that are common to all basectxs).
 
     A fixer tool's stdout will become the file's new content if and only if it
-    exits with code zero.
+    exits with code zero. The fixer tool's working directory is the repository's
+    root.
     """
     metadata = {}
     newdata = fixctx[path].data()
-    for fixername, fixer in fixers.iteritems():
+    for fixername, fixer in pycompat.iteritems(fixers):
         if fixer.affects(opts, fixctx, path):
-            rangesfn = lambda: lineranges(opts, path, basectxs, fixctx, newdata)
-            command = fixer.command(ui, path, rangesfn)
+            ranges = lineranges(opts, path, basectxs, fixctx, newdata)
+            command = fixer.command(ui, path, ranges)
             if command is None:
                 continue
-            ui.debug('subprocess: %s\n' % (command,))
+            ui.debug(b'subprocess: %s\n' % (command,))
             proc = subprocess.Popen(
                 procutil.tonativestr(command),
                 shell=True,
-                cwd=procutil.tonativestr(b'/'),
+                cwd=procutil.tonativestr(repo.root),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                stderr=subprocess.PIPE,
+            )
             stdout, stderr = proc.communicate(newdata)
             if stderr:
                 showstderr(ui, fixctx.rev(), fixername, stderr)
             newerdata = stdout
             if fixer.shouldoutputmetadata():
                 try:
-                    metadatajson, newerdata = stdout.split('\0', 1)
+                    metadatajson, newerdata = stdout.split(b'\0', 1)
                     metadata[fixername] = json.loads(metadatajson)
                 except ValueError:
-                    ui.warn(_('ignored invalid output from fixer tool: %s\n') %
-                            (fixername,))
+                    ui.warn(
+                        _(b'ignored invalid output from fixer tool: %s\n')
+                        % (fixername,)
+                    )
                     continue
             else:
                 metadata[fixername] = None
@@ -575,13 +655,18 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
                 newdata = newerdata
             else:
                 if not stderr:
-                    message = _('exited with status %d\n') % (proc.returncode,)
+                    message = _(b'exited with status %d\n') % (proc.returncode,)
                     showstderr(ui, fixctx.rev(), fixername, message)
                 checktoolfailureaction(
-                    ui, _('no fixes will be applied'),
-                    hint=_('use --config fix.failure=continue to apply any '
-                           'successful fixes anyway'))
+                    ui,
+                    _(b'no fixes will be applied'),
+                    hint=_(
+                        b'use --config fix.failure=continue to apply any '
+                        b'successful fixes anyway'
+                    ),
+                )
     return metadata, newdata
+
 
 def showstderr(ui, rev, fixername, stderr):
     """Writes the lines of the stderr string as warnings on the ui
@@ -591,14 +676,15 @@ def showstderr(ui, rev, fixername, stderr):
     space and would tend to be included in the error message if they were
     relevant.
     """
-    for line in re.split('[\r\n]+', stderr):
+    for line in re.split(b'[\r\n]+', stderr):
         if line:
-            ui.warn(('['))
+            ui.warn(b'[')
             if rev is None:
-                ui.warn(_('wdir'), label='evolve.rev')
+                ui.warn(_(b'wdir'), label=b'evolve.rev')
             else:
-                ui.warn((str(rev)), label='evolve.rev')
-            ui.warn(('] %s: %s\n') % (fixername, line))
+                ui.warn((str(rev)), label=b'evolve.rev')
+            ui.warn(b'] %s: %s\n' % (fixername, line))
+
 
 def writeworkingdir(repo, ctx, filedata, replacements):
     """Write new content to the working copy and check out the new p1 if any
@@ -610,16 +696,17 @@ def writeworkingdir(repo, ctx, filedata, replacements):
 
     Directly updates the dirstate for the affected files.
     """
-    for path, data in filedata.iteritems():
+    for path, data in pycompat.iteritems(filedata):
         fctx = ctx[path]
         fctx.write(data, fctx.flags())
-        if repo.dirstate[path] == 'n':
+        if repo.dirstate[path] == b'n':
             repo.dirstate.normallookup(path)
 
     oldparentnodes = repo.dirstate.parents()
     newparentnodes = [replacements.get(n, n) for n in oldparentnodes]
     if newparentnodes != oldparentnodes:
         repo.setparents(*newparentnodes)
+
 
 def replacerev(ui, repo, ctx, filedata, replacements):
     """Commit a new revision like the given one, but with file content changes
@@ -652,9 +739,11 @@ def replacerev(ui, repo, ctx, filedata, replacements):
     # intervention to evolve. We can't rely on commit() to avoid creating the
     # un-needed revision because the extra field added below produces a new hash
     # regardless of file content changes.
-    if (not filedata and
-        p1ctx.node() not in replacements and
-        p2ctx.node() not in replacements):
+    if (
+        not filedata
+        and p1ctx.node() not in replacements
+        and p2ctx.node() not in replacements
+    ):
         return
 
     def filectxfn(repo, memctx, path):
@@ -669,10 +758,11 @@ def replacerev(ui, repo, ctx, filedata, replacements):
             data=filedata.get(path, fctx.data()),
             islink=fctx.islink(),
             isexec=fctx.isexec(),
-            copysource=copysource)
+            copysource=copysource,
+        )
 
     extra = ctx.extra().copy()
-    extra['fix_source'] = ctx.hex()
+    extra[b'fix_source'] = ctx.hex()
 
     memctx = context.memctx(
         repo,
@@ -684,13 +774,15 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         date=ctx.date(),
         extra=extra,
         branch=ctx.branch(),
-        editor=None)
+        editor=None,
+    )
     sucnode = memctx.commit()
     prenode = ctx.node()
     if prenode == sucnode:
-        ui.debug('node %s already existed\n' % (ctx.hex()))
+        ui.debug(b'node %s already existed\n' % (ctx.hex()))
     else:
         replacements[ctx.node()] = sucnode
+
 
 def getfixers(ui):
     """Returns a map of configured fixer tools indexed by their names
@@ -700,54 +792,92 @@ def getfixers(ui):
     """
     fixers = {}
     for name in fixernames(ui):
-        fixers[name] = Fixer()
-        attrs = ui.configsuboptions('fix', name)[1]
-        if 'fileset' in attrs and 'pattern' not in attrs:
-            ui.warn(_('the fix.tool:fileset config name is deprecated; '
-                      'please rename it to fix.tool:pattern\n'))
-            attrs['pattern'] = attrs['fileset']
-        for key, default in FIXER_ATTRS.items():
-            setattr(fixers[name], pycompat.sysstr('_' + key),
-                    attrs.get(key, default))
-        fixers[name]._priority = int(fixers[name]._priority)
+        enabled = ui.configbool(b'fix', name + b':enabled')
+        command = ui.config(b'fix', name + b':command')
+        pattern = ui.config(b'fix', name + b':pattern')
+        linerange = ui.config(b'fix', name + b':linerange')
+        priority = ui.configint(b'fix', name + b':priority')
+        metadata = ui.configbool(b'fix', name + b':metadata')
+        skipclean = ui.configbool(b'fix', name + b':skipclean')
+        # Don't use a fixer if it has no pattern configured. It would be
+        # dangerous to let it affect all files. It would be pointless to let it
+        # affect no files. There is no reasonable subset of files to use as the
+        # default.
+        if command is None:
+            ui.warn(
+                _(b'fixer tool has no command configuration: %s\n') % (name,)
+            )
+        elif pattern is None:
+            ui.warn(
+                _(b'fixer tool has no pattern configuration: %s\n') % (name,)
+            )
+        elif not enabled:
+            ui.debug(b'ignoring disabled fixer tool: %s\n' % (name,))
+        else:
+            fixers[name] = Fixer(
+                command, pattern, linerange, priority, metadata, skipclean
+            )
     return collections.OrderedDict(
-        sorted(fixers.items(), key=lambda item: item[1]._priority,
-               reverse=True))
+        sorted(fixers.items(), key=lambda item: item[1]._priority, reverse=True)
+    )
+
 
 def fixernames(ui):
     """Returns the names of [fix] config options that have suboptions"""
     names = set()
-    for k, v in ui.configitems('fix'):
-        if ':' in k:
-            names.add(k.split(':', 1)[0])
+    for k, v in ui.configitems(b'fix'):
+        if b':' in k:
+            names.add(k.split(b':', 1)[0])
     return names
+
 
 class Fixer(object):
     """Wraps the raw config values for a fixer with methods"""
 
+    def __init__(
+        self, command, pattern, linerange, priority, metadata, skipclean
+    ):
+        self._command = command
+        self._pattern = pattern
+        self._linerange = linerange
+        self._priority = priority
+        self._metadata = metadata
+        self._skipclean = skipclean
+
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
-        return scmutil.match(fixctx, [self._pattern], opts)(path)
+        repo = fixctx.repo()
+        matcher = matchmod.match(
+            repo.root, repo.root, [self._pattern], ctx=fixctx
+        )
+        return matcher(path)
 
     def shouldoutputmetadata(self):
         """Should the stdout of this fixer start with JSON and a null byte?"""
         return self._metadata
 
-    def command(self, ui, path, rangesfn):
+    def command(self, ui, path, ranges):
         """A shell command to use to invoke this fixer on the given file/lines
 
         May return None if there is no appropriate command to run for the given
         parameters.
         """
         expand = cmdutil.rendercommandtemplate
-        parts = [expand(ui, self._command,
-                        {'rootpath': path, 'basename': os.path.basename(path)})]
+        parts = [
+            expand(
+                ui,
+                self._command,
+                {b'rootpath': path, b'basename': os.path.basename(path)},
+            )
+        ]
         if self._linerange:
-            ranges = rangesfn()
-            if not ranges:
+            if self._skipclean and not ranges:
                 # No line ranges to fix, so don't run the fixer.
                 return None
             for first, last in ranges:
-                parts.append(expand(ui, self._linerange,
-                                    {'first': first, 'last': last}))
-        return ' '.join(parts)
+                parts.append(
+                    expand(
+                        ui, self._linerange, {b'first': first, b'last': last}
+                    )
+                )
+        return b' '.join(parts)

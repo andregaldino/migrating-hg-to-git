@@ -85,7 +85,7 @@ These fail:
 
   $ hg rebase --base 6
   abort: branch 'default' has 3 heads - please rebase to an explicit rev
-  (run 'hg heads .' to see heads)
+  (run 'hg heads .' to see heads, specify destination with -d)
   [255]
 
   $ hg rebase --rev '1 & !1' --dest 8

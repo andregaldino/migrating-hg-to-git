@@ -4,9 +4,8 @@ import base64
 import hashlib
 
 from mercurial.hgweb import common
-from mercurial import (
-    node,
-)
+from mercurial import node
+
 
 def parse_keqv_list(req, l):
     """Parse list of key=value strings where keys are not duplicated."""
@@ -17,6 +16,7 @@ def parse_keqv_list(req, l):
             v = v[1:-1]
         parsed[k] = v
     return parsed
+
 
 class digestauthserver(object):
     def __init__(self):
@@ -42,8 +42,10 @@ class digestauthserver(object):
         # We aren't testing the protocol here, just that the bytes make the
         # proper round trip.  So hardcoded seems fine.
         nonce = b'064af982c5b571cea6450d8eda91c20d'
-        return b'realm="%s", nonce="%s", algorithm=MD5, qop="auth"' % (realm,
-                                                                       nonce)
+        return b'realm="%s", nonce="%s", algorithm=MD5, qop="auth"' % (
+            realm,
+            nonce,
+        )
 
     def checkauth(self, req, header):
         log = req.rawenv[b'wsgi.errors']
@@ -53,8 +55,9 @@ class digestauthserver(object):
 
         if resp.get(b'algorithm', b'MD5').upper() != b'MD5':
             log.write(b'Unsupported algorithm: %s' % resp.get(b'algorithm'))
-            raise common.ErrorResponse(common.HTTP_FORBIDDEN,
-                                       b"unknown algorithm")
+            raise common.ErrorResponse(
+                common.HTTP_FORBIDDEN, b"unknown algorithm"
+            )
         user = resp[b'username']
         realm = resp[b'realm']
         nonce = resp[b'nonce']
@@ -79,13 +82,17 @@ class digestauthserver(object):
 
         respdig = kd(ha1, noncebit)
         if respdig != resp[b'response']:
-            log.write(b'User/realm "%s/%s" gave %s, but expected %s'
-                      % (user, realm, resp[b'response'], respdig))
+            log.write(
+                b'User/realm "%s/%s" gave %s, but expected %s'
+                % (user, realm, resp[b'response'], respdig)
+            )
             return False
 
         return True
 
+
 digest = digestauthserver()
+
 
 def perform_authentication(hgweb, req, op):
     auth = req.headers.get(b'Authorization')
@@ -93,8 +100,11 @@ def perform_authentication(hgweb, req, op):
     if req.headers.get(b'X-HgTest-AuthType') == b'Digest':
         if not auth:
             challenge = digest.makechallenge(b'mercurial')
-            raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
-                    [(b'WWW-Authenticate', b'Digest %s' % challenge)])
+            raise common.ErrorResponse(
+                common.HTTP_UNAUTHORIZED,
+                b'who',
+                [(b'WWW-Authenticate', b'Digest %s' % challenge)],
+            )
 
         if not digest.checkauth(req, auth[7:]):
             raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
@@ -102,11 +112,15 @@ def perform_authentication(hgweb, req, op):
         return
 
     if not auth:
-        raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
-                [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
+        raise common.ErrorResponse(
+            common.HTTP_UNAUTHORIZED,
+            b'who',
+            [(b'WWW-Authenticate', b'Basic Realm="mercurial"')],
+        )
 
     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user', b'pass']:
         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
+
 
 def extsetup(ui):
     common.permhooks.insert(0, perform_authentication)

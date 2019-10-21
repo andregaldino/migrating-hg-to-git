@@ -93,7 +93,6 @@
   $TESTTMP/hgcache/master/packs/320dab99b7e3f60512b97f347689625263d22cf5.datapack
   $TESTTMP/hgcache/master/packs/837b83c1ef6485a336eb4421ac5973c0ec130fbb.histidx
   $TESTTMP/hgcache/master/packs/837b83c1ef6485a336eb4421ac5973c0ec130fbb.histpack
-  $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # Test that warning is displayed when there are no valid repos in repofile

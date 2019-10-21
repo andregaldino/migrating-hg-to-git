@@ -147,9 +147,20 @@ Help text for fix.
     {first}   The 1-based line number of the first line in the modified range
     {last}    The 1-based line number of the last line in the modified range
   
+  Deleted sections of a file will be ignored by :linerange, because there is no
+  corresponding line range in the version being fixed.
+  
+  By default, tools that set :linerange will only be executed if there is at
+  least one changed line range. This is meant to prevent accidents like running
+  a code formatter in such a way that it unexpectedly reformats the whole file.
+  If such a tool needs to operate on unchanged files, it should set the
+  :skipclean suboption to false.
+  
   The :pattern suboption determines which files will be passed through each
-  configured tool. See 'hg help patterns' for possible values. If there are file
-  arguments to 'hg fix', the intersection of these patterns is used.
+  configured tool. See 'hg help patterns' for possible values. However, all
+  patterns are relative to the repo root, even if that text says they are
+  relative to the current working directory. If there are file arguments to 'hg
+  fix', the intersection of these patterns is used.
   
   There is also a configurable limit for the maximum size of file that will be
   processed by 'hg fix':
@@ -214,6 +225,13 @@ Help text for fix.
       mapping fixer tool names to lists of metadata values returned from
       executions that modified a file. This aggregates the same metadata
       previously passed to the "postfixfile" hook.
+  
+  Fixer tools are run the in repository's root directory. This allows them to
+  read configuration files from the working copy, or even write to the working
+  copy. The working copy is not updated to match the revision being fixed. In
+  fact, several revisions may be fixed in parallel. Writes to the working copy
+  are not amended into the revision being fixed; fixer tools should always write
+  fixed file content back to stdout as documented above.
   
   list of commands:
   
@@ -439,6 +457,18 @@ Test that --whole fixes all lines regardless of the diffs present.
   $ printf "a\nb\nc\nd\ne\nf\ng\n" > foo.changed
   $ hg commit -Aqm "foo"
   $ printf "zz\na\nc\ndd\nee\nff\nf\ngg\n" > foo.changed
+
+  $ hg fix --working-dir
+  $ cat foo.changed
+  ZZ
+  a
+  c
+  DD
+  EE
+  FF
+  f
+  GG
+
   $ hg fix --working-dir --whole
   $ cat foo.changed
   ZZ
@@ -523,6 +553,21 @@ have changes.
   $ cat *.whole
   FIX ME!
   not me.
+
+  $ cd ..
+
+If we try to fix a missing file, we still fix other files.
+
+  $ hg init fixmissingfile
+  $ cd fixmissingfile
+
+  $ printf "fix me!\n" > foo.whole
+  $ hg add
+  adding foo.whole
+  $ hg fix --working-dir foo.whole bar.whole
+  bar.whole: $ENOENT$
+  $ cat *.whole
+  FIX ME!
 
   $ cd ..
 
@@ -1060,6 +1105,7 @@ obsolete revision.
   $ printf "foo\n" > foo.changed
   $ hg commit -Aqm "foo"
   $ hg debugobsolete `hg parents --template '{node}'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg --hidden fix -r 0
   abort: fixing obsolete revision could cause divergence
@@ -1161,28 +1207,6 @@ until we specify the base, but then we do fix unchanged lines.
 
   $ cd ..
 
-The :fileset subconfig was a misnomer, so we renamed it to :pattern. We will
-still accept :fileset by itself as if it were :pattern, but this will issue a
-warning.
-
-  $ hg init filesetispattern
-  $ cd filesetispattern
-
-  $ printf "foo\n" > foo.whole
-  $ printf "first\nsecond\n" > bar.txt
-  $ hg add -q
-  $ hg fix -w --config fix.sometool:fileset=bar.txt \
-  >           --config fix.sometool:command="sort -r"
-  the fix.tool:fileset config name is deprecated; please rename it to fix.tool:pattern
-
-  $ cat foo.whole
-  FOO
-  $ cat bar.txt
-  second
-  first
-
-  $ cd ..
-
 The execution order of tools can be controlled. This example doesn't work if
 you sort after truncating, but the config defines the correct order while the
 definitions are out of order (which might imply the incorrect order given the
@@ -1264,3 +1288,142 @@ three revisions instead of two.
 
   $ cd ..
 
+We run fixer tools in the repo root so they can look for config files or other
+important things in the working directory. This does NOT mean we are
+reconstructing a working copy of every revision being fixed; we're just giving
+the tool knowledge of the repo's location in case it can do something
+reasonable with that.
+
+  $ hg init subprocesscwd
+  $ cd subprocesscwd
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > printcwd:command = "$PYTHON" -c "import os; print(os.getcwd())"
+  > printcwd:pattern = relpath:foo/bar
+  > EOF
+
+  $ mkdir foo
+  $ printf "bar\n" > foo/bar
+  $ hg commit -Aqm blah
+
+  $ hg fix -w -r . foo/bar
+  $ hg cat -r tip foo/bar
+  $TESTTMP/subprocesscwd
+  $ cat foo/bar
+  $TESTTMP/subprocesscwd
+
+  $ cd foo
+
+  $ hg fix -w -r . bar
+  $ hg cat -r tip bar
+  $TESTTMP/subprocesscwd
+  $ cat bar
+  $TESTTMP/subprocesscwd
+  $ echo modified > bar
+  $ hg fix -w bar
+  $ cat bar
+  $TESTTMP/subprocesscwd
+
+  $ cd ../..
+
+Tools configured without a pattern are ignored. It would be too dangerous to
+run them on all files, because this might happen while testing a configuration
+that also deletes all of the file content. There is no reasonable subset of the
+files to use as a default. Users should be explicit about what files are
+affected by a tool. This test also confirms that we don't crash when the
+pattern config is missing, and that we only warn about it once.
+
+  $ hg init nopatternconfigured
+  $ cd nopatternconfigured
+
+  $ printf "foo" > foo
+  $ printf "bar" > bar
+  $ hg add -q
+  $ hg fix --debug --working-dir --config "fix.nopattern:command=echo fixed"
+  fixer tool has no pattern configuration: nopattern
+  $ cat foo bar
+  foobar (no-eol)
+  $ hg fix --debug --working-dir --config "fix.nocommand:pattern=foo.bar"
+  fixer tool has no command configuration: nocommand
+
+  $ cd ..
+
+Tools can be disabled. Disabled tools do nothing but print a debug message.
+
+  $ hg init disabled
+  $ cd disabled
+
+  $ printf "foo\n" > foo
+  $ hg add -q
+  $ hg fix --debug --working-dir --config "fix.disabled:command=echo fixed" \
+  >                              --config "fix.disabled:pattern=foo" \
+  >                              --config "fix.disabled:enabled=false"
+  ignoring disabled fixer tool: disabled
+  $ cat foo
+  foo
+
+  $ cd ..
+
+Test that we can configure a fixer to affect all files regardless of the cwd.
+The way we invoke matching must not prohibit this.
+
+  $ hg init affectallfiles
+  $ cd affectallfiles
+
+  $ mkdir foo bar
+  $ printf "foo" > foo/file
+  $ printf "bar" > bar/file
+  $ printf "baz" > baz_file
+  $ hg add -q
+
+  $ cd bar
+  $ hg fix --working-dir --config "fix.cooltool:command=echo fixed" \
+  >                      --config "fix.cooltool:pattern=glob:**"
+  $ cd ..
+
+  $ cat foo/file
+  fixed
+  $ cat bar/file
+  fixed
+  $ cat baz_file
+  fixed
+
+  $ cd ..
+
+Tools should be able to run on unchanged files, even if they set :linerange.
+This includes a corner case where deleted chunks of a file are not considered
+changes.
+
+  $ hg init skipclean
+  $ cd skipclean
+
+  $ printf "a\nb\nc\n" > foo
+  $ printf "a\nb\nc\n" > bar
+  $ printf "a\nb\nc\n" > baz
+  $ hg commit -Aqm "base"
+
+  $ printf "a\nc\n" > foo
+  $ printf "a\nx\nc\n" > baz
+
+  $ cat >> print.py <<EOF
+  > import sys
+  > for a in sys.argv[1:]:
+  >    print(a)
+  > EOF
+
+  $ hg fix --working-dir foo bar baz \
+  >        --config "fix.changedlines:command=\"$PYTHON\" print.py \"Line ranges:\"" \
+  >        --config 'fix.changedlines:linerange="{first} through {last}"' \
+  >        --config 'fix.changedlines:pattern=glob:**' \
+  >        --config 'fix.changedlines:skipclean=false'
+
+  $ cat foo
+  Line ranges:
+  $ cat bar
+  Line ranges:
+  $ cat baz
+  Line ranges:
+  2 through 2
+
+  $ cd ..

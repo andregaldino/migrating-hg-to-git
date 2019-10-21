@@ -51,6 +51,10 @@ import struct
 import time
 
 from .i18n import _
+from .pycompat import (
+    getattr,
+    setattr,
+)
 
 from . import (
     commandserver,
@@ -67,24 +71,27 @@ from .utils import (
     stringutil,
 )
 
+
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
     return node.hex(hashlib.sha1(stringutil.pprint(items)).digest())
 
+
 # sensitive config sections affecting confighash
 _configsections = [
-    'alias',  # affects global state commands.table
-    'eol',    # uses setconfig('eol', ...)
-    'extdiff',  # uisetup will register new commands
-    'extensions',
+    b'alias',  # affects global state commands.table
+    b'eol',  # uses setconfig('eol', ...)
+    b'extdiff',  # uisetup will register new commands
+    b'extensions',
 ]
 
 _configsectionitems = [
-    ('commands', 'show.aliasprefix'), # show.py reads it in extsetup
+    (b'commands', b'show.aliasprefix'),  # show.py reads it in extsetup
 ]
 
 # sensitive environment variables affecting confighash
-_envre = re.compile(br'''\A(?:
+_envre = re.compile(
+    br'''\A(?:
                     CHGHG
                     |HG(?:DEMANDIMPORT|EMITWARNINGS|MODULEPOLICY|PROF|RCPATH)?
                     |HG(?:ENCODING|PLAIN).*
@@ -95,7 +102,10 @@ _envre = re.compile(br'''\A(?:
                     |PYTHON.*
                     |TERM(?:INFO)?
                     |TZ
-                    )\Z''', re.X)
+                    )\Z''',
+    re.X,
+)
+
 
 def _confighash(ui):
     """return a quick hash for detecting config/env changes
@@ -115,14 +125,18 @@ def _confighash(ui):
         sectionitems.append(ui.config(section, item))
     sectionhash = _hashlist(sectionitems)
     # If $CHGHG is set, the change to $HG should not trigger a new chg server
-    if 'CHGHG' in encoding.environ:
-        ignored = {'HG'}
+    if b'CHGHG' in encoding.environ:
+        ignored = {b'HG'}
     else:
         ignored = set()
-    envitems = [(k, v) for k, v in encoding.environ.iteritems()
-                if _envre.match(k) and k not in ignored]
+    envitems = [
+        (k, v)
+        for k, v in pycompat.iteritems(encoding.environ)
+        if _envre.match(k) and k not in ignored
+    ]
     envhash = _hashlist(sorted(envitems))
     return sectionhash[:6] + envhash[:6]
+
 
 def _getmtimepaths(ui):
     """get a list of paths that should be checked to detect change
@@ -135,6 +149,7 @@ def _getmtimepaths(ui):
     modules = [m for n, m in extensions.extensions(ui)]
     try:
         from . import __version__
+
         modules.append(__version__)
     except ImportError:
         pass
@@ -147,6 +162,7 @@ def _getmtimepaths(ui):
         except TypeError:
             pass
     return sorted(set(files))
+
 
 def _mtimehash(paths):
     """return a quick hash for detecting file changes
@@ -165,6 +181,7 @@ def _mtimehash(paths):
     extensions after importing them (there is imp.find_module but that faces
     race conditions). We need to calculate confighash without importing.
     """
+
     def trystat(path):
         try:
             st = os.stat(path)
@@ -172,10 +189,13 @@ def _mtimehash(paths):
         except OSError:
             # could be ENOENT, EPERM etc. not fatal in any case
             pass
-    return _hashlist(map(trystat, paths))[:12]
+
+    return _hashlist(pycompat.maplist(trystat, paths))[:12]
+
 
 class hashstate(object):
     """a structure storing confighash, mtimehash, paths used for mtimehash"""
+
     def __init__(self, confighash, mtimehash, mtimepaths):
         self.confighash = confighash
         self.mtimehash = mtimehash
@@ -187,9 +207,14 @@ class hashstate(object):
             mtimepaths = _getmtimepaths(ui)
         confighash = _confighash(ui)
         mtimehash = _mtimehash(mtimepaths)
-        ui.log('cmdserver', 'confighash = %s mtimehash = %s\n',
-               confighash, mtimehash)
+        ui.log(
+            b'cmdserver',
+            b'confighash = %s mtimehash = %s\n',
+            confighash,
+            mtimehash,
+        )
         return hashstate(confighash, mtimehash, mtimepaths)
+
 
 def _newchgui(srcui, csystem, attachio):
     class chgui(srcui.__class__):
@@ -206,46 +231,53 @@ def _newchgui(srcui, csystem, attachio):
             #  b. or stdout is redirected by protectfinout(),
             # because the chg client is not aware of these situations and
             # will behave differently (i.e. write to stdout).
-            if (out is not self.fout
-                or not util.safehasattr(self.fout, 'fileno')
+            if (
+                out is not self.fout
+                or not util.safehasattr(self.fout, b'fileno')
                 or self.fout.fileno() != procutil.stdout.fileno()
-                or self._finoutredirected):
+                or self._finoutredirected
+            ):
                 return procutil.system(cmd, environ=environ, cwd=cwd, out=out)
             self.flush()
             return self._csystem(cmd, procutil.shellenviron(environ), cwd)
 
         def _runpager(self, cmd, env=None):
-            self._csystem(cmd, procutil.shellenviron(env), type='pager',
-                          cmdtable={'attachio': attachio})
+            self._csystem(
+                cmd,
+                procutil.shellenviron(env),
+                type=b'pager',
+                cmdtable={b'attachio': attachio},
+            )
             return True
 
     return chgui(srcui)
+
 
 def _loadnewui(srcui, args, cdebug):
     from . import dispatch  # avoid cycle
 
     newui = srcui.__class__.load()
-    for a in ['fin', 'fout', 'ferr', 'environ']:
+    for a in [b'fin', b'fout', b'ferr', b'environ']:
         setattr(newui, a, getattr(srcui, a))
-    if util.safehasattr(srcui, '_csystem'):
+    if util.safehasattr(srcui, b'_csystem'):
         newui._csystem = srcui._csystem
 
     # command line args
     options = dispatch._earlyparseopts(newui, args)
-    dispatch._parseconfig(newui, options['config'])
+    dispatch._parseconfig(newui, options[b'config'])
 
     # stolen from tortoisehg.util.copydynamicconfig()
     for section, name, value in srcui.walkconfig():
         source = srcui.configsource(section, name)
-        if ':' in source or source == '--config' or source.startswith('$'):
+        if b':' in source or source == b'--config' or source.startswith(b'$'):
             # path:line or command line, or environ
             continue
         newui.setconfig(section, name, value, source)
 
     # load wd and repo config, copied from dispatch.py
-    cwd = options['cwd']
+    cwd = options[b'cwd']
     cwd = cwd and os.path.realpath(cwd) or None
-    rpath = options['repository']
+    rpath = options[b'repository']
     path, newlui = dispatch._getlocal(newui, rpath, wd=cwd)
 
     extensions.populateui(newui)
@@ -255,6 +287,7 @@ def _loadnewui(srcui, args, cdebug):
         commandserver.setuplogging(newlui, fp=cdebug)
 
     return (newui, newlui)
+
 
 class channeledsystem(object):
     """Propagate ui.system() request in the following format:
@@ -276,27 +309,28 @@ class channeledsystem(object):
     and executes it defined by cmdtable, or exits the loop if the command name
     is empty.
     """
+
     def __init__(self, in_, out, channel):
         self.in_ = in_
         self.out = out
         self.channel = channel
 
-    def __call__(self, cmd, environ, cwd=None, type='system', cmdtable=None):
-        args = [type, procutil.quotecommand(cmd), os.path.abspath(cwd or '.')]
-        args.extend('%s=%s' % (k, v) for k, v in environ.iteritems())
-        data = '\0'.join(args)
-        self.out.write(struct.pack('>cI', self.channel, len(data)))
+    def __call__(self, cmd, environ, cwd=None, type=b'system', cmdtable=None):
+        args = [type, procutil.quotecommand(cmd), os.path.abspath(cwd or b'.')]
+        args.extend(b'%s=%s' % (k, v) for k, v in pycompat.iteritems(environ))
+        data = b'\0'.join(args)
+        self.out.write(struct.pack(b'>cI', self.channel, len(data)))
         self.out.write(data)
         self.out.flush()
 
-        if type == 'system':
+        if type == b'system':
             length = self.in_.read(4)
-            length, = struct.unpack('>I', length)
+            (length,) = struct.unpack(b'>I', length)
             if length != 4:
-                raise error.Abort(_('invalid response'))
-            rc, = struct.unpack('>i', self.in_.read(4))
+                raise error.Abort(_(b'invalid response'))
+            (rc,) = struct.unpack(b'>i', self.in_.read(4))
             return rc
-        elif type == 'pager':
+        elif type == b'pager':
             while True:
                 cmd = self.in_.readline()[:-1]
                 if not cmd:
@@ -304,23 +338,30 @@ class channeledsystem(object):
                 if cmdtable and cmd in cmdtable:
                     cmdtable[cmd]()
                 else:
-                    raise error.Abort(_('unexpected command: %s') % cmd)
+                    raise error.Abort(_(b'unexpected command: %s') % cmd)
         else:
-            raise error.ProgrammingError('invalid S channel type: %s' % type)
+            raise error.ProgrammingError(b'invalid S channel type: %s' % type)
+
 
 _iochannels = [
     # server.ch, ui.fp, mode
-    ('cin', 'fin', r'rb'),
-    ('cout', 'fout', r'wb'),
-    ('cerr', 'ferr', r'wb'),
+    (b'cin', b'fin', r'rb'),
+    (b'cout', b'fout', r'wb'),
+    (b'cerr', b'ferr', r'wb'),
 ]
 
+
 class chgcmdserver(commandserver.server):
-    def __init__(self, ui, repo, fin, fout, sock, prereposetups,
-                 hashstate, baseaddress):
+    def __init__(
+        self, ui, repo, fin, fout, sock, prereposetups, hashstate, baseaddress
+    ):
         super(chgcmdserver, self).__init__(
-            _newchgui(ui, channeledsystem(fin, fout, 'S'), self.attachio),
-            repo, fin, fout, prereposetups)
+            _newchgui(ui, channeledsystem(fin, fout, b'S'), self.attachio),
+            repo,
+            fin,
+            fout,
+            prereposetups,
+        )
         self.clientsock = sock
         self._ioattached = False
         self._oldios = []  # original (self.ch, ui.fp, fd) before "attachio"
@@ -328,7 +369,7 @@ class chgcmdserver(commandserver.server):
         self.baseaddress = baseaddress
         if hashstate is not None:
             self.capabilities = self.capabilities.copy()
-            self.capabilities['validate'] = chgcmdserver.validate
+            self.capabilities[b'validate'] = chgcmdserver.validate
 
     def cleanup(self):
         super(chgcmdserver, self).cleanup()
@@ -344,9 +385,9 @@ class chgcmdserver(commandserver.server):
         """
         # tell client to sendmsg() with 1-byte payload, which makes it
         # distinctive from "attachio\n" command consumed by client.read()
-        self.clientsock.sendall(struct.pack('>cI', 'I', 1))
+        self.clientsock.sendall(struct.pack(b'>cI', b'I', 1))
         clientfds = util.recvfds(self.clientsock.fileno())
-        self.ui.log('chgserver', 'received fds: %r\n', clientfds)
+        self.ui.log(b'chgserver', b'received fds: %r\n', clientfds)
 
         ui = self.ui
         ui.flush()
@@ -362,7 +403,7 @@ class chgcmdserver(commandserver.server):
             # to see output immediately on pager, the mode stays unchanged
             # when client re-attached. ferr is unchanged because it should
             # be unbuffered no matter if it is a tty or not.
-            if fn == 'ferr':
+            if fn == b'ferr':
                 newfp = fp
             else:
                 # make it line buffered explicitly because the default is
@@ -376,7 +417,7 @@ class chgcmdserver(commandserver.server):
             setattr(self, cn, newfp)
 
         self._ioattached = True
-        self.cresult.write(struct.pack('>i', len(clientfds)))
+        self.cresult.write(struct.pack(b'>i', len(clientfds)))
 
     def _saveio(self):
         if self._oldios:
@@ -431,29 +472,29 @@ class chgcmdserver(commandserver.server):
         except error.ParseError as inst:
             dispatch._formatparse(self.ui.warn, inst)
             self.ui.flush()
-            self.cresult.write('exit 255')
+            self.cresult.write(b'exit 255')
             return
         except error.Abort as inst:
-            self.ui.error(_("abort: %s\n") % inst)
+            self.ui.error(_(b"abort: %s\n") % inst)
             if inst.hint:
-                self.ui.error(_("(%s)\n") % inst.hint)
+                self.ui.error(_(b"(%s)\n") % inst.hint)
             self.ui.flush()
-            self.cresult.write('exit 255')
+            self.cresult.write(b'exit 255')
             return
         newhash = hashstate.fromui(lui, self.hashstate.mtimepaths)
         insts = []
         if newhash.mtimehash != self.hashstate.mtimehash:
             addr = _hashaddress(self.baseaddress, self.hashstate.confighash)
-            insts.append('unlink %s' % addr)
+            insts.append(b'unlink %s' % addr)
             # mtimehash is empty if one or more extensions fail to load.
             # to be compatible with hg, still serve the client this time.
             if self.hashstate.mtimehash:
-                insts.append('reconnect')
+                insts.append(b'reconnect')
         if newhash.confighash != self.hashstate.confighash:
             addr = _hashaddress(self.baseaddress, newhash.confighash)
-            insts.append('redirect %s' % addr)
-        self.ui.log('chgserver', 'validate: %s\n', stringutil.pprint(insts))
-        self.cresult.write('\0'.join(insts) or '\0')
+            insts.append(b'redirect %s' % addr)
+        self.ui.log(b'chgserver', b'validate: %s\n', stringutil.pprint(insts))
+        self.cresult.write(b'\0'.join(insts) or b'\0')
 
     def chdir(self):
         """Change current directory
@@ -464,7 +505,7 @@ class chgcmdserver(commandserver.server):
         path = self._readstr()
         if not path:
             return
-        self.ui.log('chgserver', 'chdir to %r\n', path)
+        self.ui.log(b'chgserver', b'chdir to %r\n', path)
         os.chdir(path)
 
     def setumask(self):
@@ -477,12 +518,12 @@ class chgcmdserver(commandserver.server):
         """Change umask"""
         data = self._readstr()
         if len(data) != 4:
-            raise ValueError('invalid mask length in setumask2 request')
+            raise ValueError(b'invalid mask length in setumask2 request')
         self._setumask(data)
 
     def _setumask(self, data):
-        mask = struct.unpack('>I', data)[0]
-        self.ui.log('chgserver', 'setumask %r\n', mask)
+        mask = struct.unpack(b'>I', data)[0]
+        self.ui.log(b'chgserver', b'setumask %r\n', mask)
         os.umask(mask)
 
     def runcommand(self):
@@ -504,39 +545,48 @@ class chgcmdserver(commandserver.server):
         """
         l = self._readlist()
         try:
-            newenv = dict(s.split('=', 1) for s in l)
+            newenv = dict(s.split(b'=', 1) for s in l)
         except ValueError:
-            raise ValueError('unexpected value in setenv request')
-        self.ui.log('chgserver', 'setenv: %r\n', sorted(newenv.keys()))
+            raise ValueError(b'unexpected value in setenv request')
+        self.ui.log(b'chgserver', b'setenv: %r\n', sorted(newenv.keys()))
         encoding.environ.clear()
         encoding.environ.update(newenv)
 
     capabilities = commandserver.server.capabilities.copy()
-    capabilities.update({'attachio': attachio,
-                         'chdir': chdir,
-                         'runcommand': runcommand,
-                         'setenv': setenv,
-                         'setumask': setumask,
-                         'setumask2': setumask2})
+    capabilities.update(
+        {
+            b'attachio': attachio,
+            b'chdir': chdir,
+            b'runcommand': runcommand,
+            b'setenv': setenv,
+            b'setumask': setumask,
+            b'setumask2': setumask2,
+        }
+    )
 
-    if util.safehasattr(procutil, 'setprocname'):
+    if util.safehasattr(procutil, b'setprocname'):
+
         def setprocname(self):
             """Change process title"""
             name = self._readstr()
-            self.ui.log('chgserver', 'setprocname: %r\n', name)
+            self.ui.log(b'chgserver', b'setprocname: %r\n', name)
             procutil.setprocname(name)
-        capabilities['setprocname'] = setprocname
+
+        capabilities[b'setprocname'] = setprocname
+
 
 def _tempaddress(address):
-    return '%s.%d.tmp' % (address, os.getpid())
+    return b'%s.%d.tmp' % (address, os.getpid())
+
 
 def _hashaddress(address, hashstr):
     # if the basename of address contains '.', use only the left part. this
     # makes it possible for the client to pass 'server.tmp$PID' and follow by
     # an atomic rename to avoid locking when spawning new servers.
     dirname, basename = os.path.split(address)
-    basename = basename.split('.', 1)[0]
-    return '%s-%s' % (os.path.join(dirname, basename), hashstr)
+    basename = basename.split(b'.', 1)[0]
+    return b'%s-%s' % (os.path.join(dirname, basename), hashstr)
+
 
 class chgunixservicehandler(object):
     """Set of operations for chg services"""
@@ -545,7 +595,7 @@ class chgunixservicehandler(object):
 
     def __init__(self, ui):
         self.ui = ui
-        self._idletimeout = ui.configint('chgserver', 'idletimeout')
+        self._idletimeout = ui.configint(b'chgserver', b'idletimeout')
         self._lastactive = time.time()
 
     def bindsocket(self, sock, address):
@@ -557,7 +607,7 @@ class chgunixservicehandler(object):
 
     def _inithashstate(self, address):
         self._baseaddress = address
-        if self.ui.configbool('chgserver', 'skiphash'):
+        if self.ui.configbool(b'chgserver', b'skiphash'):
             self._hashstate = None
             self._realaddress = address
             return
@@ -571,7 +621,7 @@ class chgunixservicehandler(object):
             # one or more extensions failed to load. mtimehash becomes
             # meaningless because we do not know the paths of those extensions.
             # set mtimehash to an illegal hash value to invalidate the server.
-            self._hashstate.mtimehash = ''
+            self._hashstate.mtimehash = b''
 
     def _bind(self, sock):
         # use a unique temp address so we can stat the file and do ownership
@@ -594,8 +644,10 @@ class chgunixservicehandler(object):
     def _issocketowner(self):
         try:
             st = os.stat(self._realaddress)
-            return (st.st_ino == self._socketstat.st_ino and
-                    st[stat.ST_MTIME] == self._socketstat[stat.ST_MTIME])
+            return (
+                st.st_ino == self._socketstat.st_ino
+                and st[stat.ST_MTIME] == self._socketstat[stat.ST_MTIME]
+            )
         except OSError:
             return False
 
@@ -610,8 +662,9 @@ class chgunixservicehandler(object):
 
     def shouldexit(self):
         if not self._issocketowner():
-            self.ui.log(b'chgserver', b'%s is not owned, exiting.\n',
-                        self._realaddress)
+            self.ui.log(
+                b'chgserver', b'%s is not owned, exiting.\n', self._realaddress
+            )
             return True
         if time.time() - self._lastactive > self._idletimeout:
             self.ui.log(b'chgserver', b'being idle too long. exiting.\n')
@@ -622,8 +675,17 @@ class chgunixservicehandler(object):
         self._lastactive = time.time()
 
     def createcmdserver(self, repo, conn, fin, fout, prereposetups):
-        return chgcmdserver(self.ui, repo, fin, fout, conn, prereposetups,
-                            self._hashstate, self._baseaddress)
+        return chgcmdserver(
+            self.ui,
+            repo,
+            fin,
+            fout,
+            conn,
+            prereposetups,
+            self._hashstate,
+            self._baseaddress,
+        )
+
 
 def chgunixservice(ui, repo, opts):
     # CHGINTERNALMARK is set by chg client. It is an indication of things are
@@ -631,11 +693,11 @@ def chgunixservice(ui, repo, opts):
     # demandimport or detecting chg client started by chg client. When executed
     # here, CHGINTERNALMARK is no longer useful and hence dropped to make
     # environ cleaner.
-    if 'CHGINTERNALMARK' in encoding.environ:
-        del encoding.environ['CHGINTERNALMARK']
+    if b'CHGINTERNALMARK' in encoding.environ:
+        del encoding.environ[b'CHGINTERNALMARK']
 
     if repo:
         # one chgserver can serve multiple repos. drop repo information
-        ui.setconfig('bundle', 'mainreporoot', '', 'repo')
+        ui.setconfig(b'bundle', b'mainreporoot', b'', b'repo')
     h = chgunixservicehandler(ui)
     return commandserver.unixforkingservice(ui, repo=None, opts=opts, handler=h)

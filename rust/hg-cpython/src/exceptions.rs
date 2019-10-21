@@ -41,6 +41,7 @@ impl GraphError {
 
 py_exception!(rustext, PatternError, RuntimeError);
 py_exception!(rustext, PatternFileError, RuntimeError);
+py_exception!(rustext, HgPathPyError, RuntimeError);
 
 impl PatternError {
     pub fn pynew(py: Python, inner: hg::PatternError) -> PyErr {
@@ -67,3 +68,5 @@ impl PatternFileError {
         }
     }
 }
+
+py_exception!(shared_ref, AlreadyBorrowed, RuntimeError);

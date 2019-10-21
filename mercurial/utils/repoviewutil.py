@@ -14,9 +14,11 @@ from __future__ import absolute_import
 # * X - Y is as small as possible.
 # This create and ordering used for branchmap purpose.
 # the ordering may be partial
-subsettable = {None: 'visible',
-               'visible-hidden': 'visible',
-               'visible': 'served',
-               'served.hidden': 'served',
-               'served': 'immutable',
-               'immutable': 'base'}
+subsettable = {
+    None: b'visible',
+    b'visible-hidden': b'visible',
+    b'visible': b'served',
+    b'served.hidden': b'served',
+    b'served': b'immutable',
+    b'immutable': b'base',
+}

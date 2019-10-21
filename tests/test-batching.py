@@ -15,13 +15,16 @@ from mercurial import (
     wireprotov1peer,
 )
 
+
 def bprint(*bs):
     print(*[pycompat.sysstr(b) for b in bs])
+
 
 # equivalent of repo.repository
 class thing(object):
     def hello(self):
         return b"Ready."
+
 
 # equivalent of localrepo.localrepository
 class localthing(thing):
@@ -29,8 +32,10 @@ class localthing(thing):
         if one:
             return b"%s and %s" % (one, two,)
         return b"Nope"
+
     def bar(self, b, a):
         return b"%s und %s" % (b, a,)
+
     def greet(self, name=None):
         return b"Hello, %s" % name
 
@@ -41,6 +46,7 @@ class localthing(thing):
             yield e
         finally:
             e.close()
+
 
 # usage of "thing" interface
 def use(it):
@@ -63,6 +69,7 @@ def use(it):
     bprint(fbar.result())
     bprint(fbar2.result())
 
+
 # local usage
 mylocal = localthing()
 print()
@@ -73,18 +80,24 @@ use(mylocal)
 
 # shared
 
+
 def escapearg(plain):
-    return (plain
-            .replace(b':', b'::')
-            .replace(b',', b':,')
-            .replace(b';', b':;')
-            .replace(b'=', b':='))
+    return (
+        plain.replace(b':', b'::')
+        .replace(b',', b':,')
+        .replace(b';', b':;')
+        .replace(b'=', b':=')
+    )
+
+
 def unescapearg(escaped):
-    return (escaped
-            .replace(b':=', b'=')
-            .replace(b':;', b';')
-            .replace(b':,', b',')
-            .replace(b'::', b':'))
+    return (
+        escaped.replace(b':=', b'=')
+        .replace(b':;', b';')
+        .replace(b':,', b',')
+        .replace(b'::', b':')
+    )
+
 
 # server side
 
@@ -92,9 +105,11 @@ def unescapearg(escaped):
 class server(object):
     def __init__(self, local):
         self.local = local
+
     def _call(self, name, args):
         args = dict(arg.split(b'=', 1) for arg in args)
         return getattr(self, name)(**args)
+
     def perform(self, req):
         bprint(b"REQ:", req)
         name, args = req.split(b'?', 1)
@@ -103,6 +118,7 @@ class server(object):
         res = getattr(self, pycompat.sysstr(name))(**pycompat.strkwargs(vals))
         bprint(b"  ->", res)
         return res
+
     def batch(self, cmds):
         res = []
         for pair in cmds.split(b';'):
@@ -112,15 +128,25 @@ class server(object):
                 if a:
                     n, v = a.split(b'=')
                     vals[n] = unescapearg(v)
-            res.append(escapearg(getattr(self, pycompat.sysstr(name))(
-                **pycompat.strkwargs(vals))))
+            res.append(
+                escapearg(
+                    getattr(self, pycompat.sysstr(name))(
+                        **pycompat.strkwargs(vals)
+                    )
+                )
+            )
         return b';'.join(res)
+
     def foo(self, one, two):
         return mangle(self.local.foo(unmangle(one), unmangle(two)))
+
     def bar(self, b, a):
         return mangle(self.local.bar(unmangle(b), unmangle(a)))
+
     def greet(self, name):
         return mangle(self.local.greet(unmangle(name)))
+
+
 myserver = server(mylocal)
 
 # local side
@@ -129,16 +155,21 @@ myserver = server(mylocal)
 # here we just transform the strings a bit to check we're properly en-/decoding
 def mangle(s):
     return b''.join(pycompat.bytechr(ord(c) + 1) for c in pycompat.bytestr(s))
+
+
 def unmangle(s):
     return b''.join(pycompat.bytechr(ord(c) - 1) for c in pycompat.bytestr(s))
+
 
 # equivalent of wireproto.wirerepository and something like http's wire format
 class remotething(thing):
     def __init__(self, server):
         self.server = server
+
     def _submitone(self, name, args):
         req = name + b'?' + b'&'.join([b'%s=%s' % (n, v) for n, v in args])
         return self.server.perform(req)
+
     def _submitbatch(self, cmds):
         req = []
         for name, args in cmds:
@@ -175,6 +206,7 @@ class remotething(thing):
     # greet is done in its own roundtrip.
     def greet(self, name=None):
         return unmangle(self._submitone(b'greet', [(b'name', mangle(name),)]))
+
 
 # demo remote usage
 

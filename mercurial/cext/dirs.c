@@ -26,14 +26,13 @@
  *
  * We modify Python integers for refcounting, but those integers are
  * never visible to Python code.
- *
- * We mutate strings in-place, but leave them immutable once they can
- * be seen by Python code.
  */
+/* clang-format off */
 typedef struct {
 	PyObject_HEAD
 	PyObject *dict;
 } dirsObject;
+/* clang-format on */
 
 static inline Py_ssize_t _finddir(const char *path, Py_ssize_t pos)
 {
@@ -43,7 +42,7 @@ static inline Py_ssize_t _finddir(const char *path, Py_ssize_t pos)
 		pos -= 1;
 	}
 	if (pos == -1) {
-	  return 0;
+		return 0;
 	}
 
 	return pos;
@@ -57,37 +56,24 @@ static int _addpath(PyObject *dirs, PyObject *path)
 	int ret = -1;
 
 	/* This loop is super critical for performance. That's why we inline
-	* access to Python structs instead of going through a supported API.
-	* The implementation, therefore, is heavily dependent on CPython
-	* implementation details. We also commit violations of the Python
-	* "protocol" such as mutating immutable objects. But since we only
-	* mutate objects created in this function or in other well-defined
-	* locations, the references are known so these violations should go
-	* unnoticed. The code for adjusting the length of a PyBytesObject is
-	* essentially a minimal version of _PyBytes_Resize. */
+	 * access to Python structs instead of going through a supported API.
+	 * The implementation, therefore, is heavily dependent on CPython
+	 * implementation details. We also commit violations of the Python
+	 * "protocol" such as mutating immutable objects. But since we only
+	 * mutate objects created in this function or in other well-defined
+	 * locations, the references are known so these violations should go
+	 * unnoticed. */
 	while ((pos = _finddir(cpath, pos - 1)) != -1) {
 		PyObject *val;
 
-		/* It's likely that every prefix already has an entry
-		   in our dict. Try to avoid allocating and
-		   deallocating a string for each prefix we check. */
-		if (key != NULL)
-			((PyBytesObject *)key)->ob_shash = -1;
-		else {
-			/* Force Python to not reuse a small shared string. */
-			key = PyBytes_FromStringAndSize(cpath,
-							 pos < 2 ? 2 : pos);
-			if (key == NULL)
-				goto bail;
-		}
-		/* Py_SIZE(o) refers to the ob_size member of the struct. Yes,
-		* assigning to what looks like a function seems wrong. */
-		Py_SIZE(key) = pos;
-		((PyBytesObject *)key)->ob_sval[pos] = '\0';
+		key = PyBytes_FromStringAndSize(cpath, pos);
+		if (key == NULL)
+			goto bail;
 
 		val = PyDict_GetItem(dirs, key);
 		if (val != NULL) {
 			PYLONG_VALUE(val) += 1;
+			Py_CLEAR(key);
 			break;
 		}
 
@@ -134,7 +120,7 @@ static int _delpath(PyObject *dirs, PyObject *path)
 		val = PyDict_GetItem(dirs, key);
 		if (val == NULL) {
 			PyErr_SetString(PyExc_ValueError,
-					"expected a value, found none");
+			                "expected a value, found none");
 			goto bail;
 		}
 
@@ -166,7 +152,7 @@ static int dirs_fromdict(PyObject *dirs, PyObject *source, char skipchar)
 		if (skipchar) {
 			if (!dirstate_tuple_check(value)) {
 				PyErr_SetString(PyExc_TypeError,
-						"expected a dirstate tuple");
+				                "expected a dirstate tuple");
 				return -1;
 			}
 			if (((dirstateTupleObject *)value)->state == skipchar)
@@ -232,8 +218,8 @@ static int dirs_init(dirsObject *self, PyObject *args)
 		ret = dirs_fromdict(dirs, source, skipchar);
 	else if (skipchar)
 		PyErr_SetString(PyExc_ValueError,
-				"skip character is only supported "
-				"with a dict source");
+		                "skip character is only supported "
+		                "with a dict source");
 	else
 		ret = dirs_fromiter(dirs, source);
 
@@ -290,12 +276,12 @@ static PyObject *dirs_iter(dirsObject *self)
 static PySequenceMethods dirs_sequence_methods;
 
 static PyMethodDef dirs_methods[] = {
-	{"addpath", (PyCFunction)dirs_addpath, METH_VARARGS, "add a path"},
-	{"delpath", (PyCFunction)dirs_delpath, METH_VARARGS, "remove a path"},
-	{NULL} /* Sentinel */
+    {"addpath", (PyCFunction)dirs_addpath, METH_VARARGS, "add a path"},
+    {"delpath", (PyCFunction)dirs_delpath, METH_VARARGS, "remove a path"},
+    {NULL} /* Sentinel */
 };
 
-static PyTypeObject dirsType = { PyVarObject_HEAD_INIT(NULL, 0) };
+static PyTypeObject dirsType = {PyVarObject_HEAD_INIT(NULL, 0)};
 
 void dirs_module_init(PyObject *mod)
 {

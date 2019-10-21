@@ -13,39 +13,37 @@ import shlex
 import subprocess
 import tempfile
 
-from .ssh import (
-    exec_command,
-)
+from .ssh import exec_command
 
 
 # Linux distributions that are supported.
 DISTROS = {
     'debian9',
+    'debian10',
     'ubuntu18.04',
-    'ubuntu18.10',
     'ubuntu19.04',
 }
 
 INSTALL_PYTHONS = r'''
 PYENV2_VERSIONS="2.7.16 pypy2.7-7.1.1"
-PYENV3_VERSIONS="3.5.7 3.6.8 3.7.3 3.8-dev pypy3.5-7.0.0 pypy3.6-7.1.1"
+PYENV3_VERSIONS="3.5.7 3.6.9 3.7.4 3.8.0 pypy3.5-7.0.0 pypy3.6-7.1.1"
 
 git clone https://github.com/pyenv/pyenv.git /hgdev/pyenv
 pushd /hgdev/pyenv
-git checkout 3faeda67bb33e07750d1a104271369a7384ca45c
+git checkout d6d6bc8bb08bcdcbf4eb79509aa7061011ade1c4
 popd
 
 export PYENV_ROOT="/hgdev/pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 
-# pip 19.0.3.
-PIP_SHA256=efe99298f3fbb1f56201ce6b81d2658067d2f7d7dfc2d412e0d3cacc9a397c61
-wget -O get-pip.py --progress dot:mega https://github.com/pypa/get-pip/raw/fee32c376da1ff6496a798986d7939cd51e1644f/get-pip.py
+# pip 19.2.3.
+PIP_SHA256=57e3643ff19f018f8a00dfaa6b7e4620e3c1a7a2171fd218425366ec006b3bfe
+wget -O get-pip.py --progress dot:mega https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py
 echo "${PIP_SHA256} get-pip.py" | sha256sum --check -
 
-VIRTUALENV_SHA256=984d7e607b0a5d1329425dd8845bd971b957424b5ba664729fab51ab8c11bc39
-VIRTUALENV_TARBALL=virtualenv-16.4.3.tar.gz
-wget -O ${VIRTUALENV_TARBALL} --progress dot:mega https://files.pythonhosted.org/packages/37/db/89d6b043b22052109da35416abc3c397655e4bd3cff031446ba02b9654fa/${VIRTUALENV_TARBALL}
+VIRTUALENV_SHA256=f78d81b62d3147396ac33fc9d77579ddc42cc2a98dd9ea38886f616b33bc7fb2
+VIRTUALENV_TARBALL=virtualenv-16.7.5.tar.gz
+wget -O ${VIRTUALENV_TARBALL} --progress dot:mega https://files.pythonhosted.org/packages/66/f0/6867af06d2e2f511e4e1d7094ff663acdebc4f15d4a0cb0fed1007395124/${VIRTUALENV_TARBALL}
 echo "${VIRTUALENV_SHA256} ${VIRTUALENV_TARBALL}" | sha256sum --check -
 
 for v in ${PYENV2_VERSIONS}; do
@@ -62,23 +60,40 @@ for v in ${PYENV3_VERSIONS}; do
 done
 
 pyenv global ${PYENV2_VERSIONS} ${PYENV3_VERSIONS} system
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
+
+
+INSTALL_RUST = r'''
+RUSTUP_INIT_SHA256=a46fe67199b7bcbbde2dcbc23ae08db6f29883e260e23899a88b9073effc9076
+wget -O rustup-init --progress dot:mega https://static.rust-lang.org/rustup/archive/1.18.3/x86_64-unknown-linux-gnu/rustup-init
+echo "${RUSTUP_INIT_SHA256} rustup-init" | sha256sum --check -
+
+chmod +x rustup-init
+sudo -H -u hg -g hg ./rustup-init -y
+sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.31.1 1.34.2
+sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup component add clippy
+'''
 
 
 BOOTSTRAP_VIRTUALENV = r'''
 /usr/bin/virtualenv /hgdev/venv-bootstrap
 
-HG_SHA256=1bdd21bb87d1e05fb5cd395d488d0e0cc2f2f90ce0fd248e31a03595da5ccb47
-HG_TARBALL=mercurial-4.9.1.tar.gz
+HG_SHA256=35fc8ba5e0379c1b3affa2757e83fb0509e8ac314cbd9f1fd133cf265d16e49f
+HG_TARBALL=mercurial-5.1.1.tar.gz
 
 wget -O ${HG_TARBALL} --progress dot:mega https://www.mercurial-scm.org/release/${HG_TARBALL}
 echo "${HG_SHA256} ${HG_TARBALL}" | sha256sum --check -
 
 /hgdev/venv-bootstrap/bin/pip install ${HG_TARBALL}
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
 
 
-BOOTSTRAP_DEBIAN = r'''
+BOOTSTRAP_DEBIAN = (
+    r'''
 #!/bin/bash
 
 set -ex
@@ -175,18 +190,22 @@ EOF
 
 sudo apt-key add docker-apt-key
 
-if [ "$DEBIAN_VERSION" = "9.8" ]; then
+if [ "$LSB_RELEASE" = "stretch" ]; then
 cat << EOF | sudo tee -a /etc/apt/sources.list
 # Need backports for clang-format-6.0
 deb http://deb.debian.org/debian stretch-backports main
+EOF
+fi
 
+if [ "$LSB_RELEASE" = "stretch" -o "$LSB_RELEASE" = "buster" ]; then
+cat << EOF | sudo tee -a /etc/apt/sources.list
 # Sources are useful if we want to compile things locally.
-deb-src http://deb.debian.org/debian stretch main
-deb-src http://security.debian.org/debian-security stretch/updates main
-deb-src http://deb.debian.org/debian stretch-updates main
-deb-src http://deb.debian.org/debian stretch-backports main
+deb-src http://deb.debian.org/debian $LSB_RELEASE main
+deb-src http://security.debian.org/debian-security $LSB_RELEASE/updates main
+deb-src http://deb.debian.org/debian $LSB_RELEASE-updates main
+deb-src http://deb.debian.org/debian $LSB_RELEASE-backports main
 
-deb [arch=amd64] https://download.docker.com/linux/debian stretch stable
+deb [arch=amd64] https://download.docker.com/linux/debian $LSB_RELEASE stable
 EOF
 
 elif [ "$DISTRO" = "Ubuntu" ]; then
@@ -199,6 +218,7 @@ fi
 sudo apt-get update
 
 PACKAGES="\
+    awscli \
     btrfs-progs \
     build-essential \
     bzr \
@@ -207,6 +227,7 @@ PACKAGES="\
     darcs \
     debhelper \
     devscripts \
+    docker-ce \
     dpkg-dev \
     dstat \
     emacs \
@@ -239,6 +260,7 @@ PACKAGES="\
     python-pygments \
     python-subversion \
     python-vcr \
+    python3-boto3 \
     python3-dev \
     python3-docutils \
     python3-fuzzywuzzy \
@@ -259,21 +281,15 @@ PACKAGES="\
     zip \
     zlib1g-dev"
 
-if [ "$DEBIAN_VERSION" = "9.8" ]; then
+if [ "LSB_RELEASE" = "stretch" ]; then
     PACKAGES="$PACKAGES linux-perf"
 elif [ "$DISTRO" = "Ubuntu" ]; then
     PACKAGES="$PACKAGES linux-tools-common"
 fi
 
-# Ubuntu 19.04 removes monotone.
-if [ "$LSB_RELEASE" != "disco" ]; then
+# Monotone only available in older releases.
+if [ "$LSB_RELEASE" = "stretch" -o "$LSB_RELEASE" = "xenial" ]; then
     PACKAGES="$PACKAGES monotone"
-fi
-
-# As of April 27, 2019, Docker hasn't published packages for
-# Ubuntu 19.04 yet.
-if [ "$LSB_RELEASE" != "disco" ]; then
-    PACKAGES="$PACKAGES docker-ce"
 fi
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends $PACKAGES
@@ -285,6 +301,8 @@ sudo update-alternatives --install /usr/bin/clang-format clang-format \
 sudo mkdir /hgdev
 # Will be normalized to hg:hg later.
 sudo chown `whoami` /hgdev
+
+{install_rust}
 
 cp requirements-py2.txt /hgdev/requirements-py2.txt
 cp requirements-py3.txt /hgdev/requirements-py3.txt
@@ -308,10 +326,14 @@ publish = false
 EOF
 
 sudo chown -R hg:hg /hgdev
-'''.lstrip().format(
-    install_pythons=INSTALL_PYTHONS,
-    bootstrap_virtualenv=BOOTSTRAP_VIRTUALENV
-).replace('\r\n', '\n')
+'''.lstrip()
+    .format(
+        install_rust=INSTALL_RUST,
+        install_pythons=INSTALL_PYTHONS,
+        bootstrap_virtualenv=BOOTSTRAP_VIRTUALENV,
+    )
+    .replace('\r\n', '\n')
+)
 
 
 # Prepares /hgdev for operations.
@@ -393,7 +415,9 @@ mkdir /hgwork/tmp
 chown hg:hg /hgwork/tmp
 
 rsync -a /hgdev/src /hgwork/
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
 
 
 HG_UPDATE_CLEAN = '''
@@ -405,7 +429,9 @@ cd /hgwork/src
 ${HG} --config extensions.purge= purge --all
 ${HG} update -C $1
 ${HG} log -r .
-'''.lstrip().replace('\r\n', '\n')
+'''.lstrip().replace(
+    '\r\n', '\n'
+)
 
 
 def prepare_exec_environment(ssh_client, filesystem='default'):
@@ -440,11 +466,12 @@ def prepare_exec_environment(ssh_client, filesystem='default'):
     res = chan.recv_exit_status()
 
     if res:
-        raise Exception('non-0 exit code updating working directory; %d'
-                        % res)
+        raise Exception('non-0 exit code updating working directory; %d' % res)
 
 
-def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
+def synchronize_hg(
+    source_path: pathlib.Path, ec2_instance, revision: str = None
+):
     """Synchronize a local Mercurial source path to remote EC2 instance."""
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -466,8 +493,10 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
             fh.write('  IdentityFile %s\n' % ec2_instance.ssh_private_key_path)
 
         if not (source_path / '.hg').is_dir():
-            raise Exception('%s is not a Mercurial repository; synchronization '
-                            'not yet supported' % source_path)
+            raise Exception(
+                '%s is not a Mercurial repository; synchronization '
+                'not yet supported' % source_path
+            )
 
         env = dict(os.environ)
         env['HGPLAIN'] = '1'
@@ -477,17 +506,29 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
 
         res = subprocess.run(
             ['python2.7', str(hg_bin), 'log', '-r', revision, '-T', '{node}'],
-            cwd=str(source_path), env=env, check=True, capture_output=True)
+            cwd=str(source_path),
+            env=env,
+            check=True,
+            capture_output=True,
+        )
 
         full_revision = res.stdout.decode('ascii')
 
         args = [
-            'python2.7', str(hg_bin),
-            '--config', 'ui.ssh=ssh -F %s' % ssh_config,
-            '--config', 'ui.remotecmd=/hgdev/venv-bootstrap/bin/hg',
+            'python2.7',
+            str(hg_bin),
+            '--config',
+            'ui.ssh=ssh -F %s' % ssh_config,
+            '--config',
+            'ui.remotecmd=/hgdev/venv-bootstrap/bin/hg',
             # Also ensure .hgtags changes are present so auto version
             # calculation works.
-            'push', '-f', '-r', full_revision, '-r', 'file(.hgtags)',
+            'push',
+            '-f',
+            '-r',
+            full_revision,
+            '-r',
+            'file(.hgtags)',
             'ssh://%s//hgwork/src' % public_ip,
         ]
 
@@ -506,7 +547,8 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
             fh.chmod(0o0700)
 
         chan, stdin, stdout = exec_command(
-            ec2_instance.ssh_client, '/hgdev/hgup %s' % full_revision)
+            ec2_instance.ssh_client, '/hgdev/hgup %s' % full_revision
+        )
         stdin.close()
 
         for line in stdout:
@@ -515,8 +557,9 @@ def synchronize_hg(source_path: pathlib.Path, ec2_instance, revision: str=None):
         res = chan.recv_exit_status()
 
         if res:
-            raise Exception('non-0 exit code updating working directory; %d'
-                            % res)
+            raise Exception(
+                'non-0 exit code updating working directory; %d' % res
+            )
 
 
 def run_tests(ssh_client, python_version, test_flags=None):
@@ -538,8 +581,8 @@ def run_tests(ssh_client, python_version, test_flags=None):
 
     command = (
         '/bin/sh -c "export TMPDIR=/hgwork/tmp; '
-        'cd /hgwork/src/tests && %s run-tests.py %s"' % (
-            python, test_flags))
+        'cd /hgwork/src/tests && %s run-tests.py %s"' % (python, test_flags)
+    )
 
     chan, stdin, stdout = exec_command(ssh_client, command)
 

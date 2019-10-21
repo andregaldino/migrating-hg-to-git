@@ -765,6 +765,8 @@ bail:
 
 #endif /* CMSG_LEN */
 
+/* allow disabling setprocname via compiler flags */
+#ifndef SETPROCNAME_USE_NONE
 #if defined(HAVE_SETPROCTITLE)
 /* setproctitle is the first choice - available in FreeBSD */
 #define SETPROCNAME_USE_SETPROCTITLE
@@ -775,6 +777,7 @@ bail:
 #else
 #define SETPROCNAME_USE_NONE
 #endif
+#endif /* ndef SETPROCNAME_USE_NONE */
 
 #ifndef SETPROCNAME_USE_NONE
 static PyObject *setprocname(PyObject *self, PyObject *args)
@@ -795,10 +798,17 @@ static PyObject *setprocname(PyObject *self, PyObject *args)
 			char *argvend;
 			extern void Py_GetArgcArgv(int *argc, char ***argv);
 			Py_GetArgcArgv(&argc, &argv);
+			/* Py_GetArgcArgv may not do much if a custom python
+			 * launcher is used that doesn't record the information
+			 * it needs. Let's handle this gracefully instead of
+			 * segfaulting. */
+			if (argv != NULL)
+				argvend = argvstart = argv[0];
+			else
+				argvend = argvstart = NULL;
 
 			/* Check the memory we can use. Typically, argv[i] and
 			 * argv[i + 1] are continuous. */
-			argvend = argvstart = argv[0];
 			for (i = 0; i < argc; ++i) {
 				if (argv[i] > argvend || argv[i] < argvstart)
 					break; /* not continuous */

@@ -1608,6 +1608,7 @@ Creating changesets and markers
   $ ID_Q=`hg -R client-racy log -T '{node}\n' -r 'desc("C-Q")'`
   $ ID_V=`hg -R client-racy log -T '{node}\n' -r 'desc("C-V")'`
   $ hg -R client-racy debugobsolete $ID_Q $ID_V
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 Pushing
@@ -1800,6 +1801,7 @@ Creating changesets and markers
   $ ID_V=`hg -R client-other log -T '{node}\n' -r 'desc("C-V")'`
   $ ID_W=`hg -R client-other log -T '{node}\n' -r 'desc("C-W")'`
   $ hg -R client-other debugobsolete $ID_V $ID_W
+  1 new obsolescence markers
   obsoleted 1 changesets
 
 (continue the same head)

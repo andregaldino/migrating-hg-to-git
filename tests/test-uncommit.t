@@ -34,10 +34,17 @@ Help for uncommit
   
   options ([+] can be repeated):
   
-      --keep                     allow an empty commit after uncommiting
+      --keep                     allow an empty commit after uncommitting
       --allow-dirty-working-copy allow uncommit with outstanding changes
+   -n --note TEXT                store a note on uncommit
    -I --include PATTERN [+]      include names matching the given patterns
    -X --exclude PATTERN [+]      exclude names matching the given patterns
+   -m --message TEXT             use text as commit message
+   -l --logfile FILE             read commit message from file
+   -d --date DATE                record the specified date as commit date
+   -u --user USER                record the specified user as committer
+   -D --currentdate              record the current date as commit date
+   -U --currentuser              record the current user as committer
   
   (some details hidden, use --verbose to show complete help)
 
@@ -531,13 +538,30 @@ can be uncommitted.
   $ mkdir dir
   $ echo 1 > dir/file.txt
   $ hg ci -Aqm 'add file in directory'
-  $ hg uncommit dir
+  $ hg uncommit dir -m 'uncommit with message' -u 'different user' \
+  >                 -d 'Jun 30 12:12:12 1980 +0000'
   $ hg status
   A dir/file.txt
+  $ hg log -r .
+  changeset:   8:b4dd26dc42e0
+  tag:         tip
+  parent:      6:2278a4c24330
+  user:        different user
+  date:        Mon Jun 30 12:12:12 1980 +0000
+  summary:     uncommit with message
+  
+Bad option combinations
+
+  $ hg rollback -q --config ui.rollback=True
+  $ hg uncommit -U --user 'user'
+  abort: --user and --currentuser are mutually exclusive
+  [255]
+  $ hg uncommit -D --date today
+  abort: --date and --currentdate are mutually exclusive
+  [255]
 
 `uncommit <dir>` and `cd <dir> && uncommit .` behave the same...
 
-  $ hg rollback -q --config ui.rollback=True
   $ echo 2 > dir/file2.txt
   $ hg ci -Aqm 'add file2 in directory'
   $ hg uncommit dir
@@ -547,7 +571,7 @@ can be uncommitted.
 
   $ hg rollback -q --config ui.rollback=True
   $ cd dir
-  $ hg uncommit .
+  $ hg uncommit . -n 'this is a note'
   note: keeping empty commit
   $ hg status
   A dir/file2.txt

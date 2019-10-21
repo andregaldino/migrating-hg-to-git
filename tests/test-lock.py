@@ -19,9 +19,12 @@ testlockname = b'testlock'
 
 # work around http://bugs.python.org/issue1515
 if types.MethodType not in copy._deepcopy_dispatch:
+
     def _deepcopy_method(x, memo):
         return type(x)(x.__func__, copy.deepcopy(x.__self__, memo), x.im_class)
+
     copy._deepcopy_dispatch[types.MethodType] = _deepcopy_method
+
 
 class lockwrapper(lock.lock):
     def __init__(self, pidoffset, *args, **kwargs):
@@ -29,8 +32,10 @@ class lockwrapper(lock.lock):
         # to be earlier
         self._pidoffset = pidoffset
         super(lockwrapper, self).__init__(*args, **kwargs)
+
     def _getpid(self):
         return super(lockwrapper, self)._getpid() + self._pidoffset
+
 
 class teststate(object):
     def __init__(self, testcase, dir, pidoffset=0):
@@ -42,9 +47,15 @@ class teststate(object):
         self._pidoffset = pidoffset
 
     def makelock(self, *args, **kwargs):
-        l = lockwrapper(self._pidoffset, self.vfs, testlockname,
-                        releasefn=self.releasefn, acquirefn=self.acquirefn,
-                        *args, **kwargs)
+        l = lockwrapper(
+            self._pidoffset,
+            self.vfs,
+            testlockname,
+            releasefn=self.releasefn,
+            acquirefn=self.acquirefn,
+            *args,
+            **kwargs
+        )
         l.postrelease.append(self.postreleasefn)
         return l
 
@@ -59,39 +70,42 @@ class teststate(object):
 
     def assertacquirecalled(self, called):
         self._testcase.assertEqual(
-            self._acquirecalled, called,
-            'expected acquire to be %s but was actually %s' % (
-                self._tocalled(called),
-                self._tocalled(self._acquirecalled),
-            ))
+            self._acquirecalled,
+            called,
+            'expected acquire to be %s but was actually %s'
+            % (self._tocalled(called), self._tocalled(self._acquirecalled),),
+        )
 
     def resetacquirefn(self):
         self._acquirecalled = False
 
     def assertreleasecalled(self, called):
         self._testcase.assertEqual(
-            self._releasecalled, called,
-            'expected release to be %s but was actually %s' % (
-                self._tocalled(called),
-                self._tocalled(self._releasecalled),
-            ))
+            self._releasecalled,
+            called,
+            'expected release to be %s but was actually %s'
+            % (self._tocalled(called), self._tocalled(self._releasecalled),),
+        )
 
     def assertpostreleasecalled(self, called):
         self._testcase.assertEqual(
-            self._postreleasecalled, called,
-            'expected postrelease to be %s but was actually %s' % (
+            self._postreleasecalled,
+            called,
+            'expected postrelease to be %s but was actually %s'
+            % (
                 self._tocalled(called),
                 self._tocalled(self._postreleasecalled),
-            ))
+            ),
+        )
 
     def assertlockexists(self, exists):
         actual = self.vfs.lexists(testlockname)
         self._testcase.assertEqual(
-            actual, exists,
-            'expected lock to %s but actually did %s' % (
-                self._toexists(exists),
-                self._toexists(actual),
-            ))
+            actual,
+            exists,
+            'expected lock to %s but actually did %s'
+            % (self._toexists(exists), self._toexists(actual),),
+        )
 
     def _tocalled(self, called):
         if called:
@@ -104,6 +118,7 @@ class teststate(object):
             return 'exist'
         else:
             return 'not exist'
+
 
 class testlock(unittest.TestCase):
     def testlock(self):
@@ -125,12 +140,12 @@ class testlock(unittest.TestCase):
         # recursive lock should not call acquirefn again
         state.assertacquirecalled(False)
 
-        lock.release() # brings lock refcount down from 2 to 1
+        lock.release()  # brings lock refcount down from 2 to 1
         state.assertreleasecalled(False)
         state.assertpostreleasecalled(False)
         state.assertlockexists(True)
 
-        lock.release() # releases the lock
+        lock.release()  # releases the lock
         state.assertreleasecalled(True)
         state.assertpostreleasecalled(True)
         state.assertlockexists(False)
@@ -256,8 +271,10 @@ class testlock(unittest.TestCase):
     def testinheritcheck(self):
         d = tempfile.mkdtemp(dir=encoding.getcwd())
         state = teststate(self, d)
+
         def check():
             raise error.LockInheritanceContractViolation('check failed')
+
         lock = state.makelock(inheritchecker=check)
         state.assertacquirecalled(True)
 
@@ -279,6 +296,7 @@ class testlock(unittest.TestCase):
 
         def emulatefrequentlock(*args):
             raise OSError(errno.EEXIST, "File exists")
+
         def emulatefrequentunlock(*args):
             raise OSError(errno.ENOENT, "No such file or directory")
 
@@ -292,6 +310,7 @@ class testlock(unittest.TestCase):
             self.assertTrue(why.errno == errno.ETIMEDOUT)
             self.assertTrue(why.locker == b"")
             state.assertlockexists(False)
+
 
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

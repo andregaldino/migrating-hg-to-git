@@ -60,6 +60,7 @@ Test setup
   $ mkcommit C0
   created new head
   $ hg debugobsolete --record-parents `getid "desc(A0)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg log -G --hidden

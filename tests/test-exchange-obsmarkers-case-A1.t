@@ -53,6 +53,7 @@ initial
   $ cd main
   $ mkcommit A
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid 'desc(A)'`
+  1 new obsolescence markers
   $ hg log -G
   @  f5bc6836db60 (draft): A
   |
@@ -201,6 +202,7 @@ initial
   o  a9bdc8b26820 (public): O
   
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid 'desc(A)'`
+  1 new obsolescence markers
   $ inspect_obsmarkers
   obsstore content
   ================

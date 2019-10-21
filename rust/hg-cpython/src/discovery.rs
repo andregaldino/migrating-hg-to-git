@@ -13,32 +13,39 @@
 //!   `mercurial.setdiscovery.partialdiscovery`.
 
 use crate::{
-    cindex::Index,
-    conversion::{py_set, rev_pyiter_collect},
-    exceptions::GraphError,
+    cindex::Index, conversion::rev_pyiter_collect, exceptions::GraphError,
 };
 use cpython::{
-    ObjectProtocol, PyDict, PyModule, PyObject, PyResult, Python,
+    ObjectProtocol, PyDict, PyModule, PyObject, PyResult, PyTuple, Python,
     PythonObject, ToPyObject,
 };
 use hg::discovery::PartialDiscovery as CorePartialDiscovery;
 use hg::Revision;
+use std::collections::HashSet;
 
 use std::cell::RefCell;
 
 py_class!(pub class PartialDiscovery |py| {
     data inner: RefCell<Box<CorePartialDiscovery<Index>>>;
 
+    // `_respectsize` is currently only here to replicate the Python API and
+    // will be used in future patches inside methods that are yet to be
+    // implemented.
     def __new__(
         _cls,
-        index: PyObject,
-        targetheads: PyObject
+        repo: PyObject,
+        targetheads: PyObject,
+        respectsize: bool,
+        randomize: bool = true
     ) -> PyResult<PartialDiscovery> {
+        let index = repo.getattr(py, "changelog")?.getattr(py, "index")?;
         Self::create_instance(
             py,
             RefCell::new(Box::new(CorePartialDiscovery::new(
                 Index::new(py, index)?,
                 rev_pyiter_collect(py, &targetheads)?,
+                respectsize,
+                randomize,
             )))
         )
     }
@@ -98,13 +105,36 @@ py_class!(pub class PartialDiscovery |py| {
         Ok(as_dict)
     }
 
-    def commonheads(&self) -> PyResult<PyObject> {
-        py_set(
-            py,
-            &self.inner(py).borrow().common_heads()
-                .map_err(|e| GraphError::pynew(py, e))?
-        )
+    def commonheads(&self) -> PyResult<HashSet<Revision>> {
+        self.inner(py).borrow().common_heads()
+            .map_err(|e| GraphError::pynew(py, e))
     }
+
+    def takefullsample(&self, _headrevs: PyObject,
+                       size: usize) -> PyResult<PyObject> {
+        let mut inner = self.inner(py).borrow_mut();
+        let sample = inner.take_full_sample(size)
+            .map_err(|e| GraphError::pynew(py, e))?;
+        let as_vec: Vec<PyObject> = sample
+            .iter()
+            .map(|rev| rev.to_py_object(py).into_object())
+            .collect();
+        Ok(PyTuple::new(py, as_vec.as_slice()).into_object())
+    }
+
+    def takequicksample(&self, headrevs: PyObject,
+                        size: usize) -> PyResult<PyObject> {
+        let mut inner = self.inner(py).borrow_mut();
+        let revsvec: Vec<Revision> = rev_pyiter_collect(py, &headrevs)?;
+        let sample = inner.take_quick_sample(revsvec, size)
+            .map_err(|e| GraphError::pynew(py, e))?;
+        let as_vec: Vec<PyObject> = sample
+            .iter()
+            .map(|rev| rev.to_py_object(py).into_object())
+            .collect();
+        Ok(PyTuple::new(py, as_vec.as_slice()).into_object())
+    }
+
 });
 
 /// Create the module, with __package__ given from parent

@@ -490,7 +490,7 @@ Incremental pull of shallow clone fetches new changesets
   received frame(size=2; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   searching for changes
-  all local heads known remotely
+  all local changesets known remotely
   sending 1 commands
   sending command changesetdata: {
     'fields': set([

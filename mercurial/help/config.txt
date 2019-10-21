@@ -442,6 +442,14 @@ effect and style see :hg:`help color`.
     Show status of files in the working directory after successful commit.
     (default: False)
 
+``push.require-revs``
+    Require revisions to push be specified using one or more mechanisms such as
+    specifying them positionally on the command line, using ``-r``, ``-b``,
+    and/or ``-B`` on the command line, or using ``paths.<path>:pushrev`` in the
+    configuration. If this is enabled and revisions are not specified, the
+    command aborts.
+    (default: False)
+
 ``resolve.confirm``
     Confirm before performing action if no filename is passed.
     (default: False)
@@ -1853,7 +1861,8 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
 
 ``update-timestamp``
     If true, updates the date and time of the changeset to current. It is only
-    applicable for hg amend in current version.
+    applicable for `hg amend`, `hg commit --amend` and `hg uncommit` in the
+    current version.
 
 ``storage``
 -----------

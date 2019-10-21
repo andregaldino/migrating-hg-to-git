@@ -549,6 +549,7 @@ changelog and manifest would have invalid node:
   *** runcommand up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   *** runcommand phase -df tip
+  1 new obsolescence markers
   obsoleted 1 changesets
   *** runcommand log --hidden
   changeset:   1:731265503d86

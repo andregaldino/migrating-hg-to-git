@@ -22,7 +22,7 @@ for line in sys.stdin:
     for pat in pats:
         if re.search(pat, line):
             keep = False
-            break # pattern matches
+            break  # pattern matches
     if keep:
         fn = line.split(':', 1)[0]
         f = open(fn)

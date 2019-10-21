@@ -53,15 +53,28 @@ _threadmap = {}
 # Python version and OS
 timer = timeit.default_timer
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('pipe', type=str, nargs=1,
-                        help='Path of named pipe to create and listen on.')
-    parser.add_argument('output', default='trace.json', type=str, nargs='?',
-                        help='Path of json file to create where the traces '
-                             'will be stored.')
-    parser.add_argument('--debug', default=False, action='store_true',
-                        help='Print useful debug messages')
+    parser.add_argument(
+        'pipe',
+        type=str,
+        nargs=1,
+        help='Path of named pipe to create and listen on.',
+    )
+    parser.add_argument(
+        'output',
+        default='trace.json',
+        type=str,
+        nargs='?',
+        help='Path of json file to create where the traces ' 'will be stored.',
+    )
+    parser.add_argument(
+        '--debug',
+        default=False,
+        action='store_true',
+        help='Print useful debug messages',
+    )
     args = parser.parse_args()
     fn = args.pipe[0]
     os.mkfifo(fn)
@@ -86,19 +99,23 @@ def main():
                     payload_args = {}
                 pid = _threadmap[session]
                 ts_micros = (now - start) * 1000000
-                out.write(json.dumps(
-                    {
-                        "name": label,
-                        "cat": "misc",
-                        "ph": _TYPEMAP[verb],
-                        "ts": ts_micros,
-                        "pid": pid,
-                        "tid": 1,
-                        "args": payload_args,
-                    }))
+                out.write(
+                    json.dumps(
+                        {
+                            "name": label,
+                            "cat": "misc",
+                            "ph": _TYPEMAP[verb],
+                            "ts": ts_micros,
+                            "pid": pid,
+                            "tid": 1,
+                            "args": payload_args,
+                        }
+                    )
+                )
                 out.write(',\n')
     finally:
         os.unlink(fn)
+
 
 if __name__ == '__main__':
     main()

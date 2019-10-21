@@ -101,6 +101,8 @@ Testing the --import-rules flag of `hg tracked` command
   
       --addinclude VALUE [+]       new paths to include
       --removeinclude VALUE [+]    old paths to no longer include
+      --auto-remove-includes       automatically choose unused includes to
+                                   remove
       --addexclude VALUE [+]       new paths to exclude
       --import-rules VALUE         import narrowspecs from a file
       --removeexclude VALUE [+]    old paths to no longer exclude
@@ -220,5 +222,5 @@ Testing tracked command on a non-narrow repo
   $ hg init non-narrow
   $ cd non-narrow
   $ hg tracked --addinclude foobar
-  abort: the tracked command is only supported on respositories cloned with --narrow
+  abort: the tracked command is only supported on repositories cloned with --narrow
   [255]

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 
 from mercurial import demandimport
+
 demandimport.enable()
 
 import os
@@ -12,8 +13,9 @@ import types
 ispy3 = sys.version_info[0] >= 3
 
 # Only run if demandimport is allowed
-if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'],
-                    'demandimport']):
+if subprocess.call(
+    ['python', '%s/hghave' % os.environ['TESTDIR'], 'demandimport']
+):
     sys.exit(80)
 
 # We rely on assert, which gets optimized out.
@@ -33,8 +35,11 @@ else:
 if os.name != 'nt':
     try:
         import distutils.msvc9compiler
-        print('distutils.msvc9compiler needs to be an immediate '
-              'importerror on non-windows platforms')
+
+        print(
+            'distutils.msvc9compiler needs to be an immediate '
+            'importerror on non-windows platforms'
+        )
         distutils.msvc9compiler
     except ImportError:
         pass
@@ -42,12 +47,15 @@ if os.name != 'nt':
 import re
 
 rsub = re.sub
+
+
 def f(obj):
     l = repr(obj)
     l = rsub("0x[0-9a-fA-F]+", "0x?", l)
     l = rsub("from '.*'", "from '?'", l)
     l = rsub("'<[a-z]*>'", "'<whatever>'", l)
     return l
+
 
 demandimport.disable()
 os.environ['HGDEMANDIMPORT'] = 'disable'

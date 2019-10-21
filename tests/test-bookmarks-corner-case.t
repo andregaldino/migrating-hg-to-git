@@ -119,7 +119,7 @@ We build a server side extension for this purpose
   > import atexit
   > import os
   > import time
-  > from mercurial import error, extensions, bookmarks
+  > from mercurial import bookmarks, error, extensions
   > 
   > def wait(repo):
   >     if not os.path.exists('push-A-started'):
@@ -200,8 +200,8 @@ Check raced push output.
   $ cat push-output.txt
   pushing to ssh://user@dummy/bookrace-server
   searching for changes
-  remote has heads on branch 'default' that are not known locally: f26c3b5167d1
   remote: setting raced push up
+  remote has heads on branch 'default' that are not known locally: f26c3b5167d1
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes

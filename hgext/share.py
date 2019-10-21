@@ -58,19 +58,23 @@ command = registrar.command(cmdtable)
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
-@command('share',
-    [('U', 'noupdate', None, _('do not create a working directory')),
-     ('B', 'bookmarks', None, _('also share bookmarks')),
-     ('', 'relative', None, _('point to source using a relative path '
-                              '(EXPERIMENTAL)')),
+
+@command(
+    b'share',
+    [
+        (b'U', b'noupdate', None, _(b'do not create a working directory')),
+        (b'B', b'bookmarks', None, _(b'also share bookmarks')),
+        (b'', b'relative', None, _(b'point to source using a relative path'),),
     ],
-    _('[-U] [-B] SOURCE [DEST]'),
+    _(b'[-U] [-B] SOURCE [DEST]'),
     helpcategory=command.CATEGORY_REPO_CREATION,
-    norepo=True)
-def share(ui, source, dest=None, noupdate=False, bookmarks=False,
-          relative=False):
+    norepo=True,
+)
+def share(
+    ui, source, dest=None, noupdate=False, bookmarks=False, relative=False
+):
     """create a new shared repository
 
     Initialize a new repository and working directory that shares its
@@ -88,11 +92,18 @@ def share(ui, source, dest=None, noupdate=False, bookmarks=False,
        the broken clone to reset it to a changeset that still exists.
     """
 
-    hg.share(ui, source, dest=dest, update=not noupdate,
-             bookmarks=bookmarks, relative=relative)
+    hg.share(
+        ui,
+        source,
+        dest=dest,
+        update=not noupdate,
+        bookmarks=bookmarks,
+        relative=relative,
+    )
     return 0
 
-@command('unshare', [], '', helpcategory=command.CATEGORY_MAINTENANCE)
+
+@command(b'unshare', [], b'', helpcategory=command.CATEGORY_MAINTENANCE)
 def unshare(ui, repo):
     """convert a shared repository to a normal one
 
@@ -100,28 +111,31 @@ def unshare(ui, repo):
     """
 
     if not repo.shared():
-        raise error.Abort(_("this is not a shared repo"))
+        raise error.Abort(_(b"this is not a shared repo"))
 
     hg.unshare(ui, repo)
 
+
 # Wrap clone command to pass auto share options.
 def clone(orig, ui, source, *args, **opts):
-    pool = ui.config('share', 'pool')
+    pool = ui.config(b'share', b'pool')
     if pool:
         pool = util.expandpath(pool)
 
     opts[r'shareopts'] = {
-        'pool': pool,
-        'mode': ui.config('share', 'poolnaming'),
+        b'pool': pool,
+        b'mode': ui.config(b'share', b'poolnaming'),
     }
 
     return orig(ui, source, *args, **opts)
 
+
 def extsetup(ui):
-    extensions.wrapfunction(bookmarks, '_getbkfile', getbkfile)
-    extensions.wrapfunction(bookmarks.bmstore, '_recordchange', recordchange)
-    extensions.wrapfunction(bookmarks.bmstore, '_writerepo', writerepo)
-    extensions.wrapcommand(commands.table, 'clone', clone)
+    extensions.wrapfunction(bookmarks, b'_getbkfile', getbkfile)
+    extensions.wrapfunction(bookmarks.bmstore, b'_recordchange', recordchange)
+    extensions.wrapfunction(bookmarks.bmstore, b'_writerepo', writerepo)
+    extensions.wrapcommand(commands.table, b'clone', clone)
+
 
 def _hassharedbookmarks(repo):
     """Returns whether this repo has shared bookmarks"""
@@ -130,12 +144,13 @@ def _hassharedbookmarks(repo):
         # from/to the source repo.
         return False
     try:
-        shared = repo.vfs.read('shared').splitlines()
+        shared = repo.vfs.read(b'shared').splitlines()
     except IOError as inst:
         if inst.errno != errno.ENOENT:
             raise
         return False
     return hg.sharedbookmarks in shared
+
 
 def getbkfile(orig, repo):
     if _hassharedbookmarks(repo):
@@ -144,8 +159,9 @@ def getbkfile(orig, repo):
             # just orig(srcrepo) doesn't work as expected, because
             # HG_PENDING refers repo.root.
             try:
-                fp, pending = txnutil.trypending(repo.root, repo.vfs,
-                                                 'bookmarks')
+                fp, pending = txnutil.trypending(
+                    repo.root, repo.vfs, b'bookmarks'
+                )
                 if pending:
                     # only in this case, bookmark information in repo
                     # is up-to-date.
@@ -165,6 +181,7 @@ def getbkfile(orig, repo):
             # See also https://www.mercurial-scm.org/wiki/SharedRepository
     return orig(repo)
 
+
 def recordchange(orig, self, tr):
     # Continue with write to local bookmarks file as usual
     orig(self, tr)
@@ -172,8 +189,9 @@ def recordchange(orig, self, tr):
     if _hassharedbookmarks(self._repo):
         srcrepo = hg.sharedreposource(self._repo)
         if srcrepo is not None:
-            category = 'share-bookmarks'
+            category = b'share-bookmarks'
             tr.addpostclose(category, lambda tr: self._writerepo(srcrepo))
+
 
 def writerepo(orig, self, repo):
     # First write local bookmarks file in case we ever unshare

@@ -14,8 +14,11 @@ import os
 import stat
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
+    changelog,
     error,
+    manifest,
     node,
     policy,
     pycompat,
@@ -28,6 +31,7 @@ parsers = policy.importmod(r'parsers')
 # It is done to prevent loading large fncache files into memory
 fncache_chunksize = 10 ** 6
 
+
 def _matchtrackedpath(path, matcher):
     """parses a fncache entry and returns whether the entry is tracking a path
     matched by matcher or not.
@@ -37,12 +41,13 @@ def _matchtrackedpath(path, matcher):
     if matcher is None:
         return True
     path = decodedir(path)
-    if path.startswith('data/'):
-        return matcher(path[len('data/'):-len('.i')])
-    elif path.startswith('meta/'):
-        return matcher.visitdir(path[len('meta/'):-len('/00manifest.i')])
+    if path.startswith(b'data/'):
+        return matcher(path[len(b'data/') : -len(b'.i')])
+    elif path.startswith(b'meta/'):
+        return matcher.visitdir(path[len(b'meta/') : -len(b'/00manifest.i')])
 
-    raise error.ProgrammingError("cannot decode path %s" % path)
+    raise error.ProgrammingError(b"cannot decode path %s" % path)
+
 
 # This avoids a collision between a file named foo and a dir named
 # foo.i or foo.d
@@ -57,12 +62,15 @@ def _encodedir(path):
     >>> _encodedir(b'data/foo.i\\ndata/foo.i/bla.i\\ndata/foo.i.hg/bla.i\\n')
     'data/foo.i\\ndata/foo.i.hg/bla.i\\ndata/foo.i.hg.hg/bla.i\\n'
     '''
-    return (path
-            .replace(".hg/", ".hg.hg/")
-            .replace(".i/", ".i.hg/")
-            .replace(".d/", ".d.hg/"))
+    return (
+        path.replace(b".hg/", b".hg.hg/")
+        .replace(b".i/", b".i.hg/")
+        .replace(b".d/", b".d.hg/")
+    )
+
 
 encodedir = getattr(parsers, 'encodedir', _encodedir)
+
 
 def decodedir(path):
     '''
@@ -73,12 +81,14 @@ def decodedir(path):
     >>> decodedir(b'data/foo.i.hg.hg/bla.i')
     'data/foo.i.hg/bla.i'
     '''
-    if ".hg/" not in path:
+    if b".hg/" not in path:
         return path
-    return (path
-            .replace(".d.hg/", ".d/")
-            .replace(".i.hg/", ".i/")
-            .replace(".hg.hg/", ".hg/"))
+    return (
+        path.replace(b".d.hg/", b".d/")
+        .replace(b".i.hg/", b".i/")
+        .replace(b".hg.hg/", b".hg/")
+    )
+
 
 def _reserved():
     ''' characters that are problematic for filesystems
@@ -96,6 +106,7 @@ def _reserved():
         yield x
     for x in winreserved:
         yield x
+
 
 def _buildencodefun():
     '''
@@ -121,37 +132,44 @@ def _buildencodefun():
     >>> dec(b'the~07quick~adshot')
     'the\\x07quick\\xadshot'
     '''
-    e = '_'
+    e = b'_'
     xchr = pycompat.bytechr
     asciistr = list(map(xchr, range(127)))
-    capitals = list(range(ord("A"), ord("Z") + 1))
+    capitals = list(range(ord(b"A"), ord(b"Z") + 1))
 
     cmap = dict((x, x) for x in asciistr)
     for x in _reserved():
-        cmap[xchr(x)] = "~%02x" % x
+        cmap[xchr(x)] = b"~%02x" % x
     for x in capitals + [ord(e)]:
         cmap[xchr(x)] = e + xchr(x).lower()
 
     dmap = {}
-    for k, v in cmap.iteritems():
+    for k, v in pycompat.iteritems(cmap):
         dmap[v] = k
+
     def decode(s):
         i = 0
         while i < len(s):
             for l in pycompat.xrange(1, 4):
                 try:
-                    yield dmap[s[i:i + l]]
+                    yield dmap[s[i : i + l]]
                     i += l
                     break
                 except KeyError:
                     pass
             else:
                 raise KeyError
-    return (lambda s: ''.join([cmap[s[c:c + 1]]
-                               for c in pycompat.xrange(len(s))]),
-            lambda s: ''.join(list(decode(s))))
+
+    return (
+        lambda s: b''.join(
+            [cmap[s[c : c + 1]] for c in pycompat.xrange(len(s))]
+        ),
+        lambda s: b''.join(list(decode(s))),
+    )
+
 
 _encodefname, _decodefname = _buildencodefun()
+
 
 def encodefilename(s):
     '''
@@ -160,12 +178,14 @@ def encodefilename(s):
     '''
     return _encodefname(encodedir(s))
 
+
 def decodefilename(s):
     '''
     >>> decodefilename(b'foo.i.hg/bar.d.hg/bla.hg.hg/hi~3aworld~3f/_h_e_l_l_o')
     'foo.i/bar.d/bla.hg/hi:world?/HELLO'
     '''
     return decodedir(_decodefname(s))
+
 
 def _buildlowerencodefun():
     '''
@@ -182,18 +202,23 @@ def _buildlowerencodefun():
     xchr = pycompat.bytechr
     cmap = dict([(xchr(x), xchr(x)) for x in pycompat.xrange(127)])
     for x in _reserved():
-        cmap[xchr(x)] = "~%02x" % x
-    for x in range(ord("A"), ord("Z") + 1):
+        cmap[xchr(x)] = b"~%02x" % x
+    for x in range(ord(b"A"), ord(b"Z") + 1):
         cmap[xchr(x)] = xchr(x).lower()
+
     def lowerencode(s):
-        return "".join([cmap[c] for c in pycompat.iterbytestr(s)])
+        return b"".join([cmap[c] for c in pycompat.iterbytestr(s)])
+
     return lowerencode
+
 
 lowerencode = getattr(parsers, 'lowerencode', None) or _buildlowerencodefun()
 
 # Windows reserved names: con, prn, aux, nul, com1..com9, lpt1..lpt9
-_winres3 = ('aux', 'con', 'prn', 'nul') # length 3
-_winres4 = ('com', 'lpt')               # length 4 (with trailing 1..9)
+_winres3 = (b'aux', b'con', b'prn', b'nul')  # length 3
+_winres4 = (b'com', b'lpt')  # length 4 (with trailing 1..9)
+
+
 def _auxencode(path, dotencode):
     '''
     Encodes filenames containing names reserved by Windows or which end in
@@ -219,32 +244,37 @@ def _auxencode(path, dotencode):
     for i, n in enumerate(path):
         if not n:
             continue
-        if dotencode and n[0] in '. ':
-            n = "~%02x" % ord(n[0:1]) + n[1:]
+        if dotencode and n[0] in b'. ':
+            n = b"~%02x" % ord(n[0:1]) + n[1:]
             path[i] = n
         else:
-            l = n.find('.')
+            l = n.find(b'.')
             if l == -1:
                 l = len(n)
-            if ((l == 3 and n[:3] in _winres3) or
-                (l == 4 and n[3:4] <= '9' and n[3:4] >= '1'
-                        and n[:3] in _winres4)):
+            if (l == 3 and n[:3] in _winres3) or (
+                l == 4
+                and n[3:4] <= b'9'
+                and n[3:4] >= b'1'
+                and n[:3] in _winres4
+            ):
                 # encode third letter ('aux' -> 'au~78')
-                ec = "~%02x" % ord(n[2:3])
+                ec = b"~%02x" % ord(n[2:3])
                 n = n[0:2] + ec + n[3:]
                 path[i] = n
-        if n[-1] in '. ':
+        if n[-1] in b'. ':
             # encode last period or space ('foo...' -> 'foo..~2e')
-            path[i] = n[:-1] + "~%02x" % ord(n[-1:])
+            path[i] = n[:-1] + b"~%02x" % ord(n[-1:])
     return path
+
 
 _maxstorepathlen = 120
 _dirprefixlen = 8
 _maxshortdirslen = 8 * (_dirprefixlen + 1) - 4
 
+
 def _hashencode(path, dotencode):
     digest = node.hex(hashlib.sha1(path).digest())
-    le = lowerencode(path[5:]).split('/') # skips prefix 'data/' or 'meta/'
+    le = lowerencode(path[5:]).split(b'/')  # skips prefix 'data/' or 'meta/'
     parts = _auxencode(le, dotencode)
     basename = parts[-1]
     _root, ext = os.path.splitext(basename)
@@ -252,9 +282,9 @@ def _hashencode(path, dotencode):
     sdirslen = 0
     for p in parts[:-1]:
         d = p[:_dirprefixlen]
-        if d[-1] in '. ':
+        if d[-1] in b'. ':
             # Windows can't access dirs ending in period or space
-            d = d[:-1] + '_'
+            d = d[:-1] + b'_'
         if sdirslen == 0:
             t = len(d)
         else:
@@ -263,15 +293,16 @@ def _hashencode(path, dotencode):
                 break
         sdirs.append(d)
         sdirslen = t
-    dirs = '/'.join(sdirs)
+    dirs = b'/'.join(sdirs)
     if len(dirs) > 0:
-        dirs += '/'
-    res = 'dh/' + dirs + digest + ext
+        dirs += b'/'
+    res = b'dh/' + dirs + digest + ext
     spaceleft = _maxstorepathlen - len(res)
     if spaceleft > 0:
         filler = basename[:spaceleft]
-        res = 'dh/' + dirs + filler + digest + ext
+        res = b'dh/' + dirs + filler + digest + ext
     return res
+
 
 def _hybridencode(path, dotencode):
     '''encodes path with a length limit
@@ -305,46 +336,56 @@ def _hybridencode(path, dotencode):
     encoding was used.
     '''
     path = encodedir(path)
-    ef = _encodefname(path).split('/')
-    res = '/'.join(_auxencode(ef, dotencode))
+    ef = _encodefname(path).split(b'/')
+    res = b'/'.join(_auxencode(ef, dotencode))
     if len(res) > _maxstorepathlen:
         res = _hashencode(path, dotencode)
     return res
+
 
 def _pathencode(path):
     de = encodedir(path)
     if len(path) > _maxstorepathlen:
         return _hashencode(de, True)
-    ef = _encodefname(de).split('/')
-    res = '/'.join(_auxencode(ef, True))
+    ef = _encodefname(de).split(b'/')
+    res = b'/'.join(_auxencode(ef, True))
     if len(res) > _maxstorepathlen:
         return _hashencode(de, True)
     return res
 
+
 _pathencode = getattr(parsers, 'pathencode', _pathencode)
+
 
 def _plainhybridencode(f):
     return _hybridencode(f, False)
+
 
 def _calcmode(vfs):
     try:
         # files in .hg/ will be created using this mode
         mode = vfs.stat().st_mode
-            # avoid some useless chmods
+        # avoid some useless chmods
         if (0o777 & ~util.umask) == (0o777 & mode):
             mode = None
     except OSError:
         mode = None
     return mode
 
-_data = ('bookmarks narrowspec data meta 00manifest.d 00manifest.i'
-         ' 00changelog.d 00changelog.i phaseroots obsstore')
+
+_data = (
+    b'bookmarks narrowspec data meta 00manifest.d 00manifest.i'
+    b' 00changelog.d 00changelog.i phaseroots obsstore'
+)
+
 
 def isrevlog(f, kind, st):
-    return kind == stat.S_IFREG and f[-2:] in ('.i', '.d')
+    return kind == stat.S_IFREG and f[-2:] in (b'.i', b'.d')
+
 
 class basicstore(object):
     '''base class for local repository stores'''
+
     def __init__(self, path, vfstype):
         vfs = vfstype(path)
         self.path = vfs.base
@@ -355,13 +396,13 @@ class basicstore(object):
         self.opener = self.vfs
 
     def join(self, f):
-        return self.path + '/' + encodedir(f)
+        return self.path + b'/' + encodedir(f)
 
     def _walk(self, relpath, recurse, filefilter=isrevlog):
         '''yields (unencoded, encoded, size)'''
         path = self.path
         if relpath:
-            path += '/' + relpath
+            path += b'/' + relpath
         striplen = len(self.path) + 1
         l = []
         if self.rawvfs.isdir(path):
@@ -370,7 +411,7 @@ class basicstore(object):
             while visit:
                 p = visit.pop()
                 for f, kind, st in readdir(p, stat=True):
-                    fp = p + '/' + f
+                    fp = p + b'/' + f
                     if filefilter(f, kind, st):
                         n = util.pconvert(fp[striplen:])
                         l.append((decodedir(n), n, st.st_size))
@@ -379,12 +420,19 @@ class basicstore(object):
         l.sort()
         return l
 
+    def changelog(self, trypending):
+        return changelog.changelog(self.vfs, trypending=trypending)
+
+    def manifestlog(self, repo, storenarrowmatch):
+        rootstore = manifest.manifestrevlog(self.vfs)
+        return manifest.manifestlog(self.vfs, repo, rootstore, storenarrowmatch)
+
     def datafiles(self, matcher=None):
-        return self._walk('data', True) + self._walk('meta', True)
+        return self._walk(b'data', True) + self._walk(b'meta', True)
 
     def topfiles(self):
         # yield manifest before changelog
-        return reversed(self._walk('', False))
+        return reversed(self._walk(b'', False))
 
     def walk(self, matcher=None):
         '''yields (unencoded, encoded, size)
@@ -399,7 +447,7 @@ class basicstore(object):
             yield x
 
     def copylist(self):
-        return ['requires'] + _data.split()
+        return [b'requires'] + _data.split()
 
     def write(self, tr):
         pass
@@ -412,18 +460,19 @@ class basicstore(object):
 
     def __contains__(self, path):
         '''Checks if the store contains path'''
-        path = "/".join(("data", path))
+        path = b"/".join((b"data", path))
         # file?
-        if self.vfs.exists(path + ".i"):
+        if self.vfs.exists(path + b".i"):
             return True
         # dir?
-        if not path.endswith("/"):
-            path = path + "/"
+        if not path.endswith(b"/"):
+            path = path + b"/"
         return self.vfs.exists(path)
+
 
 class encodedstore(basicstore):
     def __init__(self, path, vfstype):
-        vfs = vfstype(path + '/store')
+        vfs = vfstype(path + b'/store')
         self.path = vfs.base
         self.createmode = _calcmode(vfs)
         vfs.createmode = self.createmode
@@ -442,11 +491,13 @@ class encodedstore(basicstore):
             yield a, b, size
 
     def join(self, f):
-        return self.path + '/' + encodefilename(f)
+        return self.path + b'/' + encodefilename(f)
 
     def copylist(self):
-        return (['requires', '00changelog.i'] +
-                ['store/' + f for f in _data.split()])
+        return [b'requires', b'00changelog.i'] + [
+            b'store/' + f for f in _data.split()
+        ]
+
 
 class fncache(object):
     # the filename used to be partially encoded
@@ -470,7 +521,7 @@ class fncache(object):
         '''fill the entries from the fncache file'''
         self._dirty = False
         try:
-            fp = self.vfs('fncache', mode='rb')
+            fp = self.vfs(b'fncache', mode=b'rb')
         except IOError:
             # skip nonexistent file
             self.entries = set()
@@ -482,33 +533,37 @@ class fncache(object):
             chunk += c
             try:
                 p = chunk.rindex(b'\n')
-                self.entries.update(decodedir(chunk[:p + 1]).splitlines())
-                chunk = chunk[p + 1:]
+                self.entries.update(decodedir(chunk[: p + 1]).splitlines())
+                chunk = chunk[p + 1 :]
             except ValueError:
                 # substring '\n' not found, maybe the entry is bigger than the
                 # chunksize, so let's keep iterating
                 pass
 
         if chunk:
-            msg = _("fncache does not ends with a newline")
+            msg = _(b"fncache does not ends with a newline")
             if warn:
-                warn(msg + '\n')
+                warn(msg + b'\n')
             else:
-                raise error.Abort(msg,
-                                  hint=_("use 'hg debugrebuildfncache' to "
-                                         "rebuild the fncache"))
+                raise error.Abort(
+                    msg,
+                    hint=_(
+                        b"use 'hg debugrebuildfncache' to "
+                        b"rebuild the fncache"
+                    ),
+                )
         self._checkentries(fp, warn)
         fp.close()
 
     def _checkentries(self, fp, warn):
         """ make sure there is no empty string in entries """
-        if '' in self.entries:
+        if b'' in self.entries:
             fp.seek(0)
             for n, line in enumerate(util.iterfile(fp)):
-                if not line.rstrip('\n'):
-                    t = _('invalid entry in fncache, line %d') % (n + 1)
+                if not line.rstrip(b'\n'):
+                    t = _(b'invalid entry in fncache, line %d') % (n + 1)
                     if warn:
-                        warn(t + '\n')
+                        warn(t + b'\n')
                     else:
                         raise error.Abort(t)
 
@@ -517,18 +572,18 @@ class fncache(object):
             assert self.entries is not None
             self.entries = self.entries | self.addls
             self.addls = set()
-            tr.addbackup('fncache')
-            fp = self.vfs('fncache', mode='wb', atomictemp=True)
+            tr.addbackup(b'fncache')
+            fp = self.vfs(b'fncache', mode=b'wb', atomictemp=True)
             if self.entries:
-                fp.write(encodedir('\n'.join(self.entries) + '\n'))
+                fp.write(encodedir(b'\n'.join(self.entries) + b'\n'))
             fp.close()
             self._dirty = False
         if self.addls:
             # if we have just new entries, let's append them to the fncache
-            tr.addbackup('fncache')
-            fp = self.vfs('fncache', mode='ab', atomictemp=True)
+            tr.addbackup(b'fncache')
+            fp = self.vfs(b'fncache', mode=b'ab', atomictemp=True)
             if self.addls:
-                fp.write(encodedir('\n'.join(self.addls) + '\n'))
+                fp.write(encodedir(b'\n'.join(self.addls) + b'\n'))
             fp.close()
             self.entries = None
             self.addls = set()
@@ -563,20 +618,22 @@ class fncache(object):
             self._load()
         return iter(self.entries | self.addls)
 
+
 class _fncachevfs(vfsmod.proxyvfs):
     def __init__(self, vfs, fnc, encode):
         vfsmod.proxyvfs.__init__(self, vfs)
         self.fncache = fnc
         self.encode = encode
 
-    def __call__(self, path, mode='r', *args, **kw):
+    def __call__(self, path, mode=b'r', *args, **kw):
         encoded = self.encode(path)
-        if mode not in ('r', 'rb') and (path.startswith('data/') or
-                                        path.startswith('meta/')):
+        if mode not in (b'r', b'rb') and (
+            path.startswith(b'data/') or path.startswith(b'meta/')
+        ):
             # do not trigger a fncache load when adding a file that already is
             # known to exist.
             notload = self.fncache.entries is None and self.vfs.exists(encoded)
-            if notload and 'a' in mode and not self.vfs.stat(encoded).st_size:
+            if notload and b'a' in mode and not self.vfs.stat(encoded).st_size:
                 # when appending to an existing file, if the file has size zero,
                 # it should be considered as missing. Such zero-size files are
                 # the result of truncation when a transaction is aborted.
@@ -591,6 +648,7 @@ class _fncachevfs(vfsmod.proxyvfs):
         else:
             return self.vfs.join(path)
 
+
 class fncachestore(basicstore):
     def __init__(self, path, vfstype, dotencode):
         if dotencode:
@@ -598,9 +656,9 @@ class fncachestore(basicstore):
         else:
             encode = _plainhybridencode
         self.encode = encode
-        vfs = vfstype(path + '/store')
+        vfs = vfstype(path + b'/store')
         self.path = vfs.base
-        self.pathsep = self.path + '/'
+        self.pathsep = self.path + b'/'
         self.createmode = _calcmode(vfs)
         vfs.createmode = self.createmode
         self.rawvfs = vfs
@@ -627,10 +685,13 @@ class fncachestore(basicstore):
                     raise
 
     def copylist(self):
-        d = ('bookmarks narrowspec data meta dh fncache phaseroots obsstore'
-             ' 00manifest.d 00manifest.i 00changelog.d 00changelog.i')
-        return (['requires', '00changelog.i'] +
-                ['store/' + f for f in d.split()])
+        d = (
+            b'bookmarks narrowspec data meta dh fncache phaseroots obsstore'
+            b' 00manifest.d 00manifest.i 00changelog.d 00changelog.i'
+        )
+        return [b'requires', b'00changelog.i'] + [
+            b'store/' + f for f in d.split()
+        ]
 
     def write(self, tr):
         self.fncache.write(tr)
@@ -655,14 +716,14 @@ class fncachestore(basicstore):
 
     def __contains__(self, path):
         '''Checks if the store contains path'''
-        path = "/".join(("data", path))
+        path = b"/".join((b"data", path))
         # check for files (exact match)
-        e = path + '.i'
+        e = path + b'.i'
         if e in self.fncache and self._exists(e):
             return True
         # now check for directories (prefix match)
-        if not path.endswith('/'):
-            path += '/'
+        if not path.endswith(b'/'):
+            path += b'/'
         for e in self.fncache:
             if e.startswith(path) and self._exists(e):
                 return True

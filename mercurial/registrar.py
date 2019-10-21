@@ -21,6 +21,7 @@ from . import (
 # the other items extensions want might to register.
 configitem = configitems.getitemregister
 
+
 class _funcregistrarbase(object):
     """Base of decorator to register a function for specific purpose
 
@@ -47,6 +48,7 @@ class _funcregistrarbase(object):
     - 'barfunc' is stored as 'bar' in '_table' of an instance 'keyword' above
     - 'barfunc.__doc__' becomes ":bar: Explanation of bar keyword"
     """
+
     def __init__(self, table=None):
         if table is None:
             self._table = {}
@@ -60,7 +62,7 @@ class _funcregistrarbase(object):
         name = self._getname(decl)
 
         if name in self._table:
-            msg = 'duplicate registration for name: "%s"' % name
+            msg = b'duplicate registration for name: "%s"' % name
             raise error.ProgrammingError(msg)
 
         if func.__doc__ and not util.safehasattr(func, '_origdoc'):
@@ -81,13 +83,13 @@ class _funcregistrarbase(object):
         of the two registrars must match.
         """
         if not isinstance(registrarbase, type(self)):
-            msg = "cannot merge different types of registrar"
+            msg = b"cannot merge different types of registrar"
             raise error.ProgrammingError(msg)
 
         dups = set(registrarbase._table).intersection(self._table)
 
         if dups:
-            msg = 'duplicate registration for names: "%s"' % '", "'.join(dups)
+            msg = b'duplicate registration for names: "%s"' % b'", "'.join(dups)
             raise error.ProgrammingError(msg)
 
         self._table.update(registrarbase._table)
@@ -95,7 +97,7 @@ class _funcregistrarbase(object):
     def _parsefuncdecl(self, decl):
         """Parse function declaration and return the name of function in it
         """
-        i = decl.find('(')
+        i = decl.find(b'(')
         if i >= 0:
             return decl[:i]
         else:
@@ -121,6 +123,7 @@ class _funcregistrarbase(object):
     def _extrasetup(self, name, func):
         """Execute exra setup for registered function, if needed
         """
+
 
 class command(_funcregistrarbase):
     """Decorator to register a command function to table
@@ -192,23 +195,33 @@ class command(_funcregistrarbase):
     # [alias]
     # myalias = something
     # myalias:category = repo
-    CATEGORY_REPO_CREATION = 'repo'
-    CATEGORY_REMOTE_REPO_MANAGEMENT = 'remote'
-    CATEGORY_COMMITTING = 'commit'
-    CATEGORY_CHANGE_MANAGEMENT = 'management'
-    CATEGORY_CHANGE_ORGANIZATION = 'organization'
-    CATEGORY_FILE_CONTENTS = 'files'
-    CATEGORY_CHANGE_NAVIGATION  = 'navigation'
-    CATEGORY_WORKING_DIRECTORY = 'wdir'
-    CATEGORY_IMPORT_EXPORT = 'import'
-    CATEGORY_MAINTENANCE = 'maintenance'
-    CATEGORY_HELP = 'help'
-    CATEGORY_MISC = 'misc'
-    CATEGORY_NONE = 'none'
+    CATEGORY_REPO_CREATION = b'repo'
+    CATEGORY_REMOTE_REPO_MANAGEMENT = b'remote'
+    CATEGORY_COMMITTING = b'commit'
+    CATEGORY_CHANGE_MANAGEMENT = b'management'
+    CATEGORY_CHANGE_ORGANIZATION = b'organization'
+    CATEGORY_FILE_CONTENTS = b'files'
+    CATEGORY_CHANGE_NAVIGATION = b'navigation'
+    CATEGORY_WORKING_DIRECTORY = b'wdir'
+    CATEGORY_IMPORT_EXPORT = b'import'
+    CATEGORY_MAINTENANCE = b'maintenance'
+    CATEGORY_HELP = b'help'
+    CATEGORY_MISC = b'misc'
+    CATEGORY_NONE = b'none'
 
-    def _doregister(self, func, name, options=(), synopsis=None,
-                    norepo=False, optionalrepo=False, inferrepo=False,
-                    intents=None, helpcategory=None, helpbasic=False):
+    def _doregister(
+        self,
+        func,
+        name,
+        options=(),
+        synopsis=None,
+        norepo=False,
+        optionalrepo=False,
+        inferrepo=False,
+        intents=None,
+        helpcategory=None,
+        helpbasic=False,
+    ):
         func.norepo = norepo
         func.optionalrepo = optionalrepo
         func.inferrepo = inferrepo
@@ -221,7 +234,9 @@ class command(_funcregistrarbase):
             self._table[name] = func, list(options)
         return func
 
+
 INTENT_READONLY = b'readonly'
+
 
 class revsetpredicate(_funcregistrarbase):
     """Decorator to register revset predicate
@@ -263,13 +278,15 @@ class revsetpredicate(_funcregistrarbase):
 
     Otherwise, explicit 'revset.loadpredicate()' is needed.
     """
+
     _getname = _funcregistrarbase._parsefuncdecl
-    _docformat = "``%s``\n    %s"
+    _docformat = b"``%s``\n    %s"
 
     def _extrasetup(self, name, func, safe=False, takeorder=False, weight=1):
         func._safe = safe
         func._takeorder = takeorder
         func._weight = weight
+
 
 class filesetpredicate(_funcregistrarbase):
     """Decorator to register fileset predicate
@@ -312,17 +329,21 @@ class filesetpredicate(_funcregistrarbase):
 
     Otherwise, explicit 'fileset.loadpredicate()' is needed.
     """
+
     _getname = _funcregistrarbase._parsefuncdecl
-    _docformat = "``%s``\n    %s"
+    _docformat = b"``%s``\n    %s"
 
     def _extrasetup(self, name, func, callstatus=False, weight=1):
         func._callstatus = callstatus
         func._weight = weight
 
+
 class _templateregistrarbase(_funcregistrarbase):
     """Base of decorator to register functions as template specific one
     """
-    _docformat = ":%s: %s"
+
+    _docformat = b":%s: %s"
+
 
 class templatekeyword(_templateregistrarbase):
     """Decorator to register template keyword
@@ -356,6 +377,7 @@ class templatekeyword(_templateregistrarbase):
     def _extrasetup(self, name, func, requires=()):
         func._requires = requires
 
+
 class templatefilter(_templateregistrarbase):
     """Decorator to register template filer
 
@@ -386,6 +408,7 @@ class templatefilter(_templateregistrarbase):
 
     def _extrasetup(self, name, func, intype=None):
         func._intype = intype
+
 
 class templatefunc(_templateregistrarbase):
     """Decorator to register template function
@@ -419,11 +442,13 @@ class templatefunc(_templateregistrarbase):
 
     Otherwise, explicit 'templatefuncs.loadfunction()' is needed.
     """
+
     _getname = _funcregistrarbase._parsefuncdecl
 
     def _extrasetup(self, name, func, argspec=None, requires=()):
         func._argspec = argspec
         func._requires = requires
+
 
 class internalmerge(_funcregistrarbase):
     """Decorator to register in-process merge tool
@@ -480,16 +505,24 @@ class internalmerge(_funcregistrarbase):
 
     Otherwise, explicit 'filemerge.loadinternalmerge()' is needed.
     """
-    _docformat = "``:%s``\n    %s"
+
+    _docformat = b"``:%s``\n    %s"
 
     # merge type definitions:
     nomerge = None
-    mergeonly = 'mergeonly'  # just the full merge, no premerge
-    fullmerge = 'fullmerge'  # both premerge and merge
+    mergeonly = b'mergeonly'  # just the full merge, no premerge
+    fullmerge = b'fullmerge'  # both premerge and merge
 
-    def _extrasetup(self, name, func, mergetype,
-                    onfailure=None, precheck=None,
-                    binary=False, symlink=False):
+    def _extrasetup(
+        self,
+        name,
+        func,
+        mergetype,
+        onfailure=None,
+        precheck=None,
+        binary=False,
+        symlink=False,
+    ):
         func.mergetype = mergetype
         func.onfailure = onfailure
         func.precheck = precheck
@@ -498,4 +531,4 @@ class internalmerge(_funcregistrarbase):
         symlinkcap = symlink or mergetype == self.nomerge
 
         # actual capabilities, which this internal merge tool has
-        func.capabilities = {"binary": binarycap, "symlink": symlinkcap}
+        func.capabilities = {b"binary": binarycap, b"symlink": symlinkcap}

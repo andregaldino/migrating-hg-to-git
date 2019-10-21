@@ -21,9 +21,7 @@ from mercurial.node import (
     nullid,
     nullrev,
 )
-from mercurial.thirdparty import (
-    attr,
-)
+from mercurial.thirdparty import attr
 from mercurial import (
     ancestor,
     bundlerepo,
@@ -32,16 +30,19 @@ from mercurial import (
     localrepo,
     mdiff,
     pycompat,
-    repository,
     revlog,
     store,
     verify,
 )
+from mercurial.interfaces import (
+    repository,
+    util as interfaceutil,
+)
 from mercurial.utils import (
     cborutil,
-    interfaceutil,
     storageutil,
 )
+from mercurial.revlogutils import flagutil
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -51,6 +52,7 @@ testedwith = 'ships-with-hg-core'
 
 REQUIREMENT = 'testonly-simplestore'
 
+
 def validatenode(node):
     if isinstance(node, int):
         raise ValueError('expected node; got int')
@@ -58,12 +60,15 @@ def validatenode(node):
     if len(node) != 20:
         raise ValueError('expected 20 byte node')
 
+
 def validaterev(rev):
     if not isinstance(rev, int):
         raise ValueError('expected int')
 
+
 class simplestoreerror(error.StorageError):
     pass
+
 
 @interfaceutil.implementer(repository.irevisiondelta)
 @attr.s(slots=True)
@@ -78,12 +83,14 @@ class simplestorerevisiondelta(object):
     delta = attr.ib()
     linknode = attr.ib(default=None)
 
+
 @interfaceutil.implementer(repository.iverifyproblem)
 @attr.s(frozen=True)
 class simplefilestoreproblem(object):
     warning = attr.ib(default=None)
     error = attr.ib(default=None)
     node = attr.ib(default=None)
+
 
 @interfaceutil.implementer(repository.ifilestorage)
 class filestorage(object):
@@ -96,6 +103,8 @@ class filestorage(object):
 
     Fulltext data is stored in files having names of the node.
     """
+
+    _flagserrorclass = simplestoreerror
 
     def __init__(self, svfs, path):
         self._svfs = svfs
@@ -113,6 +122,8 @@ class filestorage(object):
         self._indexbyrev = {}
         self._index = []
         self._refreshindex()
+
+        self._flagprocessors = dict(flagutil.flagprocessors)
 
     def _refreshindex(self):
         self._indexbynode.clear()
@@ -143,8 +154,9 @@ class filestorage(object):
             p1rev, p2rev = self.parentrevs(self.rev(entry[b'node']))
 
             # start, length, rawsize, chainbase, linkrev, p1, p2, node
-            self._index.append((0, 0, 0, -1, entry[b'linkrev'], p1rev, p2rev,
-                                entry[b'node']))
+            self._index.append(
+                (0, 0, 0, -1, entry[b'linkrev'], p1rev, p2rev, entry[b'node'])
+            )
 
         self._index.append((0, 0, 0, -1, -1, -1, -1, nullid))
 
@@ -252,57 +264,20 @@ class filestorage(object):
         validaterev(baserev)
         validaterev(rev)
 
-        if ((self._flags(baserev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)
-            or (self._flags(rev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)):
+        if (self._flags(baserev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS) or (
+            self._flags(rev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS
+        ):
             return False
 
         return True
-
-    def _processflags(self, text, flags, operation, raw=False):
-        if flags == 0:
-            return text, True
-
-        if flags & ~revlog.REVIDX_KNOWN_FLAGS:
-            raise simplestoreerror(_("incompatible revision flag '%#x'") %
-                                   (flags & ~revlog.REVIDX_KNOWN_FLAGS))
-
-        validatehash = True
-        # Depending on the operation (read or write), the order might be
-        # reversed due to non-commutative transforms.
-        orderedflags = revlog.REVIDX_FLAGS_ORDER
-        if operation == 'write':
-            orderedflags = reversed(orderedflags)
-
-        for flag in orderedflags:
-            # If a flagprocessor has been registered for a known flag, apply the
-            # related operation transform and update result tuple.
-            if flag & flags:
-                vhash = True
-
-                if flag not in revlog._flagprocessors:
-                    message = _("missing processor for flag '%#x'") % (flag)
-                    raise simplestoreerror(message)
-
-                processor = revlog._flagprocessors[flag]
-                if processor is not None:
-                    readtransform, writetransform, rawtransform = processor
-
-                    if raw:
-                        vhash = rawtransform(self, text)
-                    elif operation == 'read':
-                        text, vhash = readtransform(self, text)
-                    else:  # write operation
-                        text, vhash = writetransform(self, text)
-                validatehash = validatehash and vhash
-
-        return text, validatehash
 
     def checkhash(self, text, node, p1=None, p2=None, rev=None):
         if p1 is None and p2 is None:
             p1, p2 = self.parents(node)
         if node != storageutil.hashrevisionsha1(text, p1, p2):
-            raise simplestoreerror(_("integrity check failed on %s") %
-                self._path)
+            raise simplestoreerror(
+                _("integrity check failed on %s") % self._path
+            )
 
     def revision(self, nodeorrev, raw=False):
         if isinstance(nodeorrev, int):
@@ -320,11 +295,19 @@ class filestorage(object):
         path = b'/'.join([self._storepath, hex(node)])
         rawtext = self._svfs.read(path)
 
-        text, validatehash = self._processflags(rawtext, flags, 'read', raw=raw)
+        if raw:
+            validatehash = flagutil.processflagsraw(self, rawtext, flags)
+            text = rawtext
+        else:
+            r = flagutil.processflagsread(self, rawtext, flags)
+            text, validatehash, sidedata = r
         if validatehash:
             self.checkhash(text, node, rev=rev)
 
         return text
+
+    def rawdata(self, nodeorrev):
+        return self.revision(raw=True)
 
     def read(self, node):
         validatenode(node)
@@ -335,7 +318,7 @@ class filestorage(object):
             return revision
 
         start = revision.index(b'\1\n', 2)
-        return revision[start + 2:]
+        return revision[start + 2 :]
 
     def renamed(self, node):
         validatenode(node)
@@ -427,9 +410,14 @@ class filestorage(object):
 
         return [b'/'.join((self._storepath, f)) for f in entries]
 
-    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
-                    revisionscount=False, trackedsize=False,
-                    storedsize=False):
+    def storageinfo(
+        self,
+        exclusivefiles=False,
+        sharedfiles=False,
+        revisionscount=False,
+        trackedsize=False,
+        storedsize=False,
+    ):
         # TODO do a real implementation of this
         return {
             'exclusivefiles': [],
@@ -447,22 +435,31 @@ class filestorage(object):
                 self.revision(node)
             except Exception as e:
                 yield simplefilestoreproblem(
-                    error='unpacking %s: %s' % (node, e),
-                    node=node)
+                    error='unpacking %s: %s' % (node, e), node=node
+                )
                 state['skipread'].add(node)
 
-    def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
-                      assumehaveparentrevisions=False,
-                      deltamode=repository.CG_DELTAMODE_STD):
+    def emitrevisions(
+        self,
+        nodes,
+        nodesorder=None,
+        revisiondata=False,
+        assumehaveparentrevisions=False,
+        deltamode=repository.CG_DELTAMODE_STD,
+    ):
         # TODO this will probably break on some ordering options.
         nodes = [n for n in nodes if n != nullid]
         if not nodes:
             return
         for delta in storageutil.emitrevisions(
-                self, nodes, nodesorder, simplestorerevisiondelta,
-                revisiondata=revisiondata,
-                assumehaveparentrevisions=assumehaveparentrevisions,
-                deltamode=deltamode):
+            self,
+            nodes,
+            nodesorder,
+            simplestorerevisiondelta,
+            revisiondata=revisiondata,
+            assumehaveparentrevisions=assumehaveparentrevisions,
+            deltamode=deltamode,
+        ):
             yield delta
 
     def add(self, text, meta, transaction, linkrev, p1, p2):
@@ -471,15 +468,24 @@ class filestorage(object):
 
         return self.addrevision(text, transaction, linkrev, p1, p2)
 
-    def addrevision(self, text, transaction, linkrev, p1, p2, node=None,
-                    flags=revlog.REVIDX_DEFAULT_FLAGS, cachedelta=None):
+    def addrevision(
+        self,
+        text,
+        transaction,
+        linkrev,
+        p1,
+        p2,
+        node=None,
+        flags=revlog.REVIDX_DEFAULT_FLAGS,
+        cachedelta=None,
+    ):
         validatenode(p1)
         validatenode(p2)
 
         if flags:
             node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
-        rawtext, validatehash = self._processflags(text, flags, 'write')
+        rawtext, validatehash = flagutil.processflagswrite(self, text, flags)
 
         node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
@@ -489,8 +495,9 @@ class filestorage(object):
         if validatehash:
             self.checkhash(rawtext, node, p1=p1, p2=p2)
 
-        return self._addrawrevision(node, rawtext, transaction, linkrev, p1, p2,
-                                    flags)
+        return self._addrawrevision(
+            node, rawtext, transaction, linkrev, p1, p2, flags
+        )
 
     def _addrawrevision(self, node, rawtext, transaction, link, p1, p2, flags):
         transaction.addbackup(self._indexpath)
@@ -499,13 +506,15 @@ class filestorage(object):
 
         self._svfs.write(path, rawtext)
 
-        self._indexdata.append({
-            b'node': node,
-            b'p1': p1,
-            b'p2': p2,
-            b'linkrev': link,
-            b'flags': flags,
-        })
+        self._indexdata.append(
+            {
+                b'node': node,
+                b'p1': p1,
+                b'p2': p2,
+                b'linkrev': link,
+                b'flags': flags,
+            }
+        )
 
         self._reflectindexupdate()
 
@@ -513,14 +522,22 @@ class filestorage(object):
 
     def _reflectindexupdate(self):
         self._refreshindex()
-        self._svfs.write(self._indexpath,
-                         ''.join(cborutil.streamencode(self._indexdata)))
+        self._svfs.write(
+            self._indexpath, ''.join(cborutil.streamencode(self._indexdata))
+        )
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
-                 maybemissingparents=False):
+    def addgroup(
+        self,
+        deltas,
+        linkmapper,
+        transaction,
+        addrevisioncb=None,
+        maybemissingparents=False,
+    ):
         if maybemissingparents:
-            raise error.Abort(_('simple store does not support missing parents '
-                                'write mode'))
+            raise error.Abort(
+                _('simple store does not support missing parents ' 'write mode')
+            )
 
         nodes = []
 
@@ -541,8 +558,9 @@ class filestorage(object):
             else:
                 text = mdiff.patch(self.revision(deltabase), delta)
 
-            self._addrawrevision(node, text, transaction, linkrev, p1, p2,
-                                 flags)
+            self._addrawrevision(
+                node, text, transaction, linkrev, p1, p2, flags
+            )
 
             if addrevisioncb:
                 addrevisioncb(self, node)
@@ -557,8 +575,7 @@ class filestorage(object):
             revishead[self.rev(entry[b'p1'])] = False
             revishead[self.rev(entry[b'p2'])] = False
 
-        return [rev for rev, ishead in sorted(revishead.items())
-                if ishead]
+        return [rev for rev, ishead in sorted(revishead.items()) if ishead]
 
     def heads(self, start=None, stop=None):
         # This is copied from revlog.py.
@@ -606,8 +623,12 @@ class filestorage(object):
 
     def getstrippoint(self, minlink):
         return storageutil.resolvestripinfo(
-            minlink, len(self) - 1, self._headrevs(), self.linkrev,
-            self.parentrevs)
+            minlink,
+            len(self) - 1,
+            self._headrevs(),
+            self.linkrev,
+            self.parentrevs,
+        )
 
     def strip(self, minlink, transaction):
         if not len(self):
@@ -620,6 +641,7 @@ class filestorage(object):
         # Purge index data starting at the requested revision.
         self._indexdata[rev:] = []
         self._reflectindexupdate()
+
 
 def issimplestorefile(f, kind, st):
     if kind != stat.S_IFREG:
@@ -634,6 +656,7 @@ def issimplestorefile(f, kind, st):
 
     # Otherwise assume it belongs to the simple store.
     return True
+
 
 class simplestore(store.encodedstore):
     def datafiles(self):
@@ -651,6 +674,7 @@ class simplestore(store.encodedstore):
 
             yield unencoded, encoded, size
 
+
 def reposetup(ui, repo):
     if not repo.local():
         return
@@ -664,8 +688,10 @@ def reposetup(ui, repo):
 
     repo.__class__ = simplestorerepo
 
+
 def featuresetup(ui, supported):
     supported.add(REQUIREMENT)
+
 
 def newreporequirements(orig, ui, createopts):
     """Modifies default requirements for new repos to use the simple store."""
@@ -674,20 +700,22 @@ def newreporequirements(orig, ui, createopts):
     # These requirements are only used to affect creation of the store
     # object. We have our own store. So we can remove them.
     # TODO do this once we feel like taking the test hit.
-    #if 'fncache' in requirements:
+    # if 'fncache' in requirements:
     #    requirements.remove('fncache')
-    #if 'dotencode' in requirements:
+    # if 'dotencode' in requirements:
     #    requirements.remove('dotencode')
 
     requirements.add(REQUIREMENT)
 
     return requirements
 
+
 def makestore(orig, requirements, path, vfstype):
     if REQUIREMENT not in requirements:
         return orig(requirements, path, vfstype)
 
     return simplestore(path, vfstype)
+
 
 def verifierinit(orig, self, *args, **kwargs):
     orig(self, *args, **kwargs)
@@ -696,10 +724,12 @@ def verifierinit(orig, self, *args, **kwargs):
     # advertised. So suppress these warnings.
     self.warnorphanstorefiles = False
 
+
 def extsetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
 
-    extensions.wrapfunction(localrepo, 'newreporequirements',
-                            newreporequirements)
+    extensions.wrapfunction(
+        localrepo, 'newreporequirements', newreporequirements
+    )
     extensions.wrapfunction(localrepo, 'makestore', makestore)
     extensions.wrapfunction(verify.verifier, '__init__', verifierinit)

@@ -80,7 +80,6 @@ Pull the new commits in the clone
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   pretxnchangegroup hook: HG_HOOKNAME=pretxnchangegroup
   HG_HOOKTYPE=pretxnchangegroup
   HG_NODE=27547f69f25460a52fff66ad004e58da7ad3fb56
@@ -96,7 +95,6 @@ Pull the new commits in the clone
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   pretxnchangegroup hook: HG_HOOKNAME=pretxnchangegroup
   HG_HOOKTYPE=pretxnchangegroup
   HG_NODE=f838bfaca5c7226600ebcfd84f3c3c13a28d3757
@@ -109,6 +107,7 @@ Pull the new commits in the clone
   file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
+  added 2 changesets with 2 changes to 2 files
   new changesets 27547f69f254:f838bfaca5c7
   changegroup hook: HG_HOOKNAME=changegroup
   HG_HOOKTYPE=changegroup
@@ -208,7 +207,6 @@ pullop.cgresult
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   pretxnchangegroup hook: HG_HOOKNAME=pretxnchangegroup
   HG_HOOKTYPE=pretxnchangegroup
   HG_NODE=b3325c91a4d916bcc4cdc83ea3fe4ece46a42f6e
@@ -224,7 +222,6 @@ pullop.cgresult
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 3 changes to 3 files (+1 heads)
   pretxnchangegroup hook: HG_HOOKNAME=pretxnchangegroup
   HG_HOOKTYPE=pretxnchangegroup
   HG_NODE=7f219660301fe4c8a116f714df5e769695cc2b46
@@ -237,6 +234,7 @@ pullop.cgresult
   file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
+  added 5 changesets with 5 changes to 5 files (+2 heads)
   new changesets b3325c91a4d9:5cd59d311f65
   changegroup hook: HG_HOOKNAME=changegroup
   HG_HOOKTYPE=changegroup
@@ -365,7 +363,6 @@ pullop.cgresult
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 0 changes to 0 files (-1 heads)
   pretxnchangegroup hook: HG_HOOKNAME=pretxnchangegroup
   HG_HOOKTYPE=pretxnchangegroup
   HG_NODE=71bd7b46de72e69a32455bf88d04757d542e6cf4
@@ -381,7 +378,6 @@ pullop.cgresult
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   pretxnchangegroup hook: HG_HOOKNAME=pretxnchangegroup
   HG_HOOKTYPE=pretxnchangegroup
   HG_NODE=9d18e5bd9ab09337802595d49f1dad0c98df4d84
@@ -394,6 +390,7 @@ pullop.cgresult
   file:/*/$TESTTMP/repo (glob)
   HG_URL=file:$TESTTMP/repo
   
+  added 2 changesets with 1 changes to 1 files (-1 heads)
   new changesets 71bd7b46de72:9d18e5bd9ab0
   changegroup hook: HG_HOOKNAME=changegroup
   HG_HOOKTYPE=changegroup

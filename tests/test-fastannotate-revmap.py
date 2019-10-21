@@ -13,8 +13,10 @@ from hgext.fastannotate import error, revmap
 if pycompat.ispy3:
     xrange = range
 
+
 def genhsh(i):
     return pycompat.bytechr(i) + b'\0' * 19
+
 
 def gettemppath():
     fd, path = tempfile.mkstemp()
@@ -22,9 +24,11 @@ def gettemppath():
     os.unlink(path)
     return path
 
+
 def ensure(condition):
     if not condition:
         raise RuntimeError('Unexpected')
+
 
 def testbasicreadwrite():
     path = gettemppath()
@@ -36,7 +40,19 @@ def testbasicreadwrite():
     ensure(rm.hsh2rev(b'\0' * 20) is None)
 
     paths = [
-        b'', b'a', None, b'b', b'b', b'c', b'c', None, b'a', b'b', b'a', b'a']
+        b'',
+        b'a',
+        None,
+        b'b',
+        b'b',
+        b'c',
+        b'c',
+        None,
+        b'a',
+        b'b',
+        b'a',
+        b'a',
+    ]
     for i in xrange(1, 5):
         ensure(rm.append(genhsh(i), sidebranch=(i & 1), path=paths[i]) == i)
 
@@ -56,8 +72,10 @@ def testbasicreadwrite():
 
     # append without calling save() explicitly
     for i in xrange(5, 12):
-        ensure(rm.append(genhsh(i), sidebranch=(i & 1), path=paths[i],
-                         flush=True) == i)
+        ensure(
+            rm.append(genhsh(i), sidebranch=(i & 1), path=paths[i], flush=True)
+            == i
+        )
 
     # re-load and verify
     rm = revmap.revmap(path)
@@ -84,6 +102,7 @@ def testbasicreadwrite():
         ensure(False)
     except Exception:
         pass
+
 
 def testcorruptformat():
     path = gettemppath()
@@ -127,12 +146,15 @@ def testcorruptformat():
 
     os.unlink(path)
 
+
 def testcopyfrom():
     path = gettemppath()
     rm = revmap.revmap(path)
     for i in xrange(1, 10):
-        ensure(rm.append(genhsh(i),
-                         sidebranch=(i & 1), path=(b'%d' % (i // 3))) == i)
+        ensure(
+            rm.append(genhsh(i), sidebranch=(i & 1), path=(b'%d' % (i // 3)))
+            == i
+        )
     rm.flush()
 
     # copy rm to rm2
@@ -148,6 +170,7 @@ def testcopyfrom():
     os.unlink(path)
     os.unlink(path2)
 
+
 class fakefctx(object):
     def __init__(self, node, path=None):
         self._node = node
@@ -158,6 +181,7 @@ class fakefctx(object):
 
     def path(self):
         return self._path
+
 
 def testcontains():
     path = gettemppath()
@@ -181,6 +205,7 @@ def testcontains():
         ensure(fakefctx(genhsh(i), path=(b'%d' % (i // 2))) in rm)
         ensure(fakefctx(genhsh(i), path=b'a') not in rm)
 
+
 def testlastnode():
     path = gettemppath()
     ensure(revmap.getlastnode(path) is None)
@@ -192,6 +217,7 @@ def testlastnode():
         ensure(revmap.getlastnode(path) == hsh)
         rm2 = revmap.revmap(path)
         ensure(rm2.rev2hsh(rm2.maxrev) == hsh)
+
 
 testbasicreadwrite()
 testcorruptformat()

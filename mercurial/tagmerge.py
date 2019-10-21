@@ -78,27 +78,30 @@ from .node import (
     hex,
     nullid,
 )
-from .import (
+from . import (
     tags as tagsmod,
     util,
 )
 
 hexnullid = hex(nullid)
 
-def readtagsformerge(ui, repo, lines, fn='', keeplinenums=False):
+
+def readtagsformerge(ui, repo, lines, fn=b'', keeplinenums=False):
     '''read the .hgtags file into a structure that is suitable for merging
 
     Depending on the keeplinenums flag, clear the line numbers associated
     with each tag. This is done because only the line numbers of the first
     parent are useful for merging.
     '''
-    filetags = tagsmod._readtaghist(ui, repo, lines, fn=fn, recode=None,
-                                    calcnodelines=True)[1]
+    filetags = tagsmod._readtaghist(
+        ui, repo, lines, fn=fn, recode=None, calcnodelines=True
+    )[1]
     for tagname, taginfo in filetags.items():
         if not keeplinenums:
             for el in taginfo:
                 el[1] = None
     return filetags
+
 
 def grouptagnodesbyline(tagnodes):
     '''
@@ -134,6 +137,7 @@ def grouptagnodesbyline(tagnodes):
             prevlinenum = linenum
     return groupednodes
 
+
 def writemergedtags(fcd, mergedtags):
     '''
     write the merged tags while trying to minimize the diff to the first parent
@@ -150,7 +154,7 @@ def writemergedtags(fcd, mergedtags):
     # convert the grouped merged tags dict into a format that resembles the
     # final .hgtags file (i.e. a list of blocks of 'node tag' pairs)
     def taglist2string(tlist, tname):
-        return '\n'.join(['%s %s' % (hexnode, tname) for hexnode in tlist])
+        return b'\n'.join([b'%s %s' % (hexnode, tname) for hexnode in tlist])
 
     finaltags = []
     for tname, tags in mergedtags.items():
@@ -166,8 +170,9 @@ def writemergedtags(fcd, mergedtags):
 
     # finally we can join the sorted groups to get the final contents of the
     # merged .hgtags file, and then write it to disk
-    mergedtagstring = '\n'.join([tags for rank, tags in finaltags if tags])
-    fcd.write(mergedtagstring + '\n', fcd.flags())
+    mergedtagstring = b'\n'.join([tags for rank, tags in finaltags if tags])
+    fcd.write(mergedtagstring + b'\n', fcd.flags())
+
 
 def singletagmerge(p1nodes, p2nodes):
     '''
@@ -214,6 +219,7 @@ def singletagmerge(p1nodes, p2nodes):
     # whole list of lr nodes
     return lrnodes + hrnodes[commonidx:]
 
+
 def merge(repo, fcd, fco, fca):
     '''
     Merge the tags of two revisions, taking into account the base tags
@@ -223,14 +229,14 @@ def merge(repo, fcd, fco, fca):
     # read the p1, p2 and base tags
     # only keep the line numbers for the p1 tags
     p1tags = readtagsformerge(
-        ui, repo, fcd.data().splitlines(), fn="p1 tags",
-        keeplinenums=True)
+        ui, repo, fcd.data().splitlines(), fn=b"p1 tags", keeplinenums=True
+    )
     p2tags = readtagsformerge(
-        ui, repo, fco.data().splitlines(), fn="p2 tags",
-        keeplinenums=False)
+        ui, repo, fco.data().splitlines(), fn=b"p2 tags", keeplinenums=False
+    )
     basetags = readtagsformerge(
-        ui, repo, fca.data().splitlines(), fn="base tags",
-        keeplinenums=False)
+        ui, repo, fca.data().splitlines(), fn=b"base tags", keeplinenums=False
+    )
 
     # recover the list of "lost tags" (i.e. those that were found on the base
     # revision but not on one of the revisions being merged)
@@ -259,11 +265,15 @@ def merge(repo, fcd, fco, fca):
 
     if conflictedtags:
         numconflicts = len(conflictedtags)
-        ui.warn(_('automatic .hgtags merge failed\n'
-            'the following %d tags are in conflict: %s\n')
-            % (numconflicts, ', '.join(sorted(conflictedtags))))
+        ui.warn(
+            _(
+                b'automatic .hgtags merge failed\n'
+                b'the following %d tags are in conflict: %s\n'
+            )
+            % (numconflicts, b', '.join(sorted(conflictedtags)))
+        )
         return True, 1
 
     writemergedtags(fcd, mergedtags)
-    ui.note(_('.hgtags merged successfully\n'))
+    ui.note(_(b'.hgtags merged successfully\n'))
     return False, 0

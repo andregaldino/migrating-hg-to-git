@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import re
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     dagop,
     destutil,
@@ -93,20 +94,22 @@ _virtualrevs = (node.nullrev, node.wdirrev)
 #
 # There are a few revsets that always redefine the order if 'define' is
 # specified: 'sort(X)', 'reverse(X)', 'x:y'.
-anyorder = 'any'        # don't care the order, could be even random-shuffled
-defineorder = 'define'  # ALWAYS redefine, or ALWAYS follow the current order
-followorder = 'follow'  # MUST follow the current order
+anyorder = b'any'  # don't care the order, could be even random-shuffled
+defineorder = b'define'  # ALWAYS redefine, or ALWAYS follow the current order
+followorder = b'follow'  # MUST follow the current order
 
 # helpers
 
+
 def getset(repo, subset, x, order=defineorder):
     if not x:
-        raise error.ParseError(_("missing argument"))
+        raise error.ParseError(_(b"missing argument"))
     return methods[x[0]](repo, subset, *x[1:], order=order)
+
 
 def _getrevsource(repo, r):
     extra = repo[r].extra()
-    for label in ('source', 'transplant_source', 'rebase_source'):
+    for label in (b'source', b'transplant_source', b'rebase_source'):
         if label in extra:
             try:
                 return repo[extra[label]].rev()
@@ -114,18 +117,22 @@ def _getrevsource(repo, r):
                 pass
     return None
 
+
 def _sortedb(xs):
     return sorted(pycompat.rapply(pycompat.maybebytestr, xs))
 
+
 # operator methods
+
 
 def stringset(repo, subset, x, order):
     if not x:
-        raise error.ParseError(_("empty string is not a valid revision"))
+        raise error.ParseError(_(b"empty string is not a valid revision"))
     x = scmutil.intrev(scmutil.revsymbol(repo, x))
     if x in subset or x in _virtualrevs and isinstance(subset, fullreposet):
         return baseset([x])
     return baseset()
+
 
 def rawsmartset(repo, subset, x, order):
     """argument is already a smartset, use that directly"""
@@ -133,6 +140,7 @@ def rawsmartset(repo, subset, x, order):
         return subset & x
     else:
         return x & subset
+
 
 def rangeset(repo, subset, x, y, order):
     m = getset(repo, fullreposet(repo), x)
@@ -142,9 +150,11 @@ def rangeset(repo, subset, x, y, order):
         return baseset()
     return _makerangeset(repo, subset, m.first(), n.last(), order)
 
+
 def rangeall(repo, subset, x, order):
     assert x is None
     return _makerangeset(repo, subset, 0, repo.changelog.tiprev(), order)
+
 
 def rangepre(repo, subset, y, order):
     # ':y' can't be rewritten to '0:y' since '0' may be hidden
@@ -153,12 +163,15 @@ def rangepre(repo, subset, y, order):
         return baseset()
     return _makerangeset(repo, subset, 0, n.last(), order)
 
+
 def rangepost(repo, subset, x, order):
     m = getset(repo, fullreposet(repo), x)
     if not m:
         return baseset()
-    return _makerangeset(repo, subset, m.first(), repo.changelog.tiprev(),
-                         order)
+    return _makerangeset(
+        repo, subset, m.first(), repo.changelog.tiprev(), order
+    )
+
 
 def _makerangeset(repo, subset, m, n, order):
     if m == n:
@@ -178,11 +191,14 @@ def _makerangeset(repo, subset, m, n, order):
         # carrying the sorting over when possible would be more efficient
         return subset & r
 
+
 def dagrange(repo, subset, x, y, order):
     r = fullreposet(repo)
-    xs = dagop.reachableroots(repo, getset(repo, r, x), getset(repo, r, y),
-                              includepath=True)
+    xs = dagop.reachableroots(
+        repo, getset(repo, r, x), getset(repo, r, y), includepath=True
+    )
     return subset & xs
+
 
 def andset(repo, subset, x, y, order):
     if order == anyorder:
@@ -190,6 +206,7 @@ def andset(repo, subset, x, y, order):
     else:
         yorder = followorder
     return getset(repo, getset(repo, subset, x, order), y, yorder)
+
 
 def andsmallyset(repo, subset, x, y, order):
     # 'andsmally(x, y)' is equivalent to 'and(x, y)', but faster when y is small
@@ -199,8 +216,10 @@ def andsmallyset(repo, subset, x, y, order):
         yorder = followorder
     return getset(repo, getset(repo, subset, y, yorder), x, order)
 
+
 def differenceset(repo, subset, x, y, order):
     return getset(repo, subset, x, order) - getset(repo, subset, y, anyorder)
+
 
 def _orsetlist(repo, subset, xs, order):
     assert xs
@@ -210,6 +229,7 @@ def _orsetlist(repo, subset, xs, order):
     a = _orsetlist(repo, subset, xs[:p], order)
     b = _orsetlist(repo, subset, xs[p:], order)
     return a + b
+
 
 def orset(repo, subset, x, order):
     xs = getlist(x)
@@ -221,11 +241,14 @@ def orset(repo, subset, x, order):
     else:
         return _orsetlist(repo, subset, xs, order)
 
+
 def notset(repo, subset, x, order):
     return subset - getset(repo, subset, x, anyorder)
 
+
 def relationset(repo, subset, x, y, order):
-    raise error.ParseError(_("can't use a relation in this context"))
+    raise error.ParseError(_(b"can't use a relation in this context"))
+
 
 def _splitrange(a, b):
     """Split range with bounds a and b into two ranges at 0 and return two
@@ -257,14 +280,17 @@ def _splitrange(a, b):
         descdepths = (max(a, 0), b + 1)
     return ancdepths, descdepths
 
+
 def generationsrel(repo, subset, x, rel, z, order):
     # TODO: rewrite tests, and drop startdepth argument from ancestors() and
     # descendants() predicates
-    a, b = getintrange(z,
-                       _('relation subscript must be an integer or a range'),
-                       _('relation subscript bounds must be integers'),
-                       deffirst=-(dagop.maxlogdepth - 1),
-                       deflast=+(dagop.maxlogdepth - 1))
+    a, b = getintrange(
+        z,
+        _(b'relation subscript must be an integer or a range'),
+        _(b'relation subscript bounds must be integers'),
+        deffirst=-(dagop.maxlogdepth - 1),
+        deflast=+(dagop.maxlogdepth - 1),
+    )
     (ancstart, ancstop), (descstart, descstop) = _splitrange(a, b)
 
     if ancstart is None and descstart is None:
@@ -284,6 +310,7 @@ def generationsrel(repo, subset, x, rel, z, order):
 
     return subset & s
 
+
 def relsubscriptset(repo, subset, x, y, z, order):
     # this is pretty basic implementation of 'x#y[z]' operator, still
     # experimental so undocumented. see the wiki for further ideas.
@@ -295,15 +322,21 @@ def relsubscriptset(repo, subset, x, y, z, order):
     relnames = [r for r in subscriptrelations.keys() if len(r) > 1]
     raise error.UnknownIdentifier(rel, relnames)
 
+
 def subscriptset(repo, subset, x, y, order):
-    raise error.ParseError(_("can't use a subscript in this context"))
+    raise error.ParseError(_(b"can't use a subscript in this context"))
+
 
 def listset(repo, subset, *xs, **opts):
-    raise error.ParseError(_("can't use a list in this context"),
-                           hint=_('see \'hg help "revsets.x or y"\''))
+    raise error.ParseError(
+        _(b"can't use a list in this context"),
+        hint=_(b'see \'hg help "revsets.x or y"\''),
+    )
+
 
 def keyvaluepair(repo, subset, k, v, order):
-    raise error.ParseError(_("can't use a key-value pair in this context"))
+    raise error.ParseError(_(b"can't use a key-value pair in this context"))
+
 
 def func(repo, subset, a, b, order):
     f = getsymbol(a)
@@ -317,6 +350,7 @@ def func(repo, subset, a, b, order):
 
     syms = [s for (s, fn) in symbols.items() if keep(fn)]
     raise error.UnknownIdentifier(f, syms)
+
 
 # functions
 
@@ -335,14 +369,17 @@ safesymbols = set()
 
 predicate = registrar.revsetpredicate()
 
-@predicate('_destupdate')
+
+@predicate(b'_destupdate')
 def _destupdate(repo, subset, x):
     # experimental revset for update destination
-    args = getargsdict(x, 'limit', 'clean')
-    return subset & baseset([destutil.destupdate(repo,
-                            **pycompat.strkwargs(args))[0]])
+    args = getargsdict(x, b'limit', b'clean')
+    return subset & baseset(
+        [destutil.destupdate(repo, **pycompat.strkwargs(args))[0]]
+    )
 
-@predicate('_destmerge')
+
+@predicate(b'_destmerge')
 def _destmerge(repo, subset, x):
     # experimental revset for merge destination
     sourceset = None
@@ -350,7 +387,8 @@ def _destmerge(repo, subset, x):
         sourceset = getset(repo, fullreposet(repo), x)
     return subset & baseset([destutil.destmerge(repo, sourceset=sourceset)])
 
-@predicate('adds(pattern)', safe=True, weight=30)
+
+@predicate(b'adds(pattern)', safe=True, weight=30)
 def adds(repo, subset, x):
     """Changesets that add a file matching pattern.
 
@@ -359,10 +397,11 @@ def adds(repo, subset, x):
     directory.
     """
     # i18n: "adds" is a keyword
-    pat = getstring(x, _("adds requires a pattern"))
+    pat = getstring(x, _(b"adds requires a pattern"))
     return checkstatus(repo, subset, pat, 1)
 
-@predicate('ancestor(*changeset)', safe=True, weight=0.5)
+
+@predicate(b'ancestor(*changeset)', safe=True, weight=0.5)
 def ancestor(repo, subset, x):
     """A greatest common ancestor of the changesets.
 
@@ -383,15 +422,18 @@ def ancestor(repo, subset, x):
         return baseset([r])
     return baseset()
 
-def _ancestors(repo, subset, x, followfirst=False, startdepth=None,
-               stopdepth=None):
+
+def _ancestors(
+    repo, subset, x, followfirst=False, startdepth=None, stopdepth=None
+):
     heads = getset(repo, fullreposet(repo), x)
     if not heads:
         return baseset()
     s = dagop.revancestors(repo, heads, followfirst, startdepth, stopdepth)
     return subset & s
 
-@predicate('ancestors(set[, depth])', safe=True)
+
+@predicate(b'ancestors(set[, depth])', safe=True)
 def ancestors(repo, subset, x):
     """Changesets that are ancestors of changesets in set, including the
     given changesets themselves.
@@ -400,31 +442,35 @@ def ancestors(repo, subset, x):
     the specified generation.
     """
     # startdepth is for internal use only until we can decide the UI
-    args = getargsdict(x, 'ancestors', 'set depth startdepth')
-    if 'set' not in args:
+    args = getargsdict(x, b'ancestors', b'set depth startdepth')
+    if b'set' not in args:
         # i18n: "ancestors" is a keyword
-        raise error.ParseError(_('ancestors takes at least 1 argument'))
+        raise error.ParseError(_(b'ancestors takes at least 1 argument'))
     startdepth = stopdepth = None
-    if 'startdepth' in args:
-        n = getinteger(args['startdepth'],
-                       "ancestors expects an integer startdepth")
+    if b'startdepth' in args:
+        n = getinteger(
+            args[b'startdepth'], b"ancestors expects an integer startdepth"
+        )
         if n < 0:
-            raise error.ParseError("negative startdepth")
+            raise error.ParseError(b"negative startdepth")
         startdepth = n
-    if 'depth' in args:
+    if b'depth' in args:
         # i18n: "ancestors" is a keyword
-        n = getinteger(args['depth'], _("ancestors expects an integer depth"))
+        n = getinteger(args[b'depth'], _(b"ancestors expects an integer depth"))
         if n < 0:
-            raise error.ParseError(_("negative depth"))
+            raise error.ParseError(_(b"negative depth"))
         stopdepth = n + 1
-    return _ancestors(repo, subset, args['set'],
-                      startdepth=startdepth, stopdepth=stopdepth)
+    return _ancestors(
+        repo, subset, args[b'set'], startdepth=startdepth, stopdepth=stopdepth
+    )
 
-@predicate('_firstancestors', safe=True)
+
+@predicate(b'_firstancestors', safe=True)
 def _firstancestors(repo, subset, x):
     # ``_firstancestors(set)``
     # Like ``ancestors(set)`` but follows only the first parents.
     return _ancestors(repo, subset, x, followfirst=True)
+
 
 def _childrenspec(repo, subset, x, n, order):
     """Changesets that are the Nth child of a changeset
@@ -438,18 +484,20 @@ def _childrenspec(repo, subset, x, n, order):
                 break
             if len(c) > 1:
                 raise error.RepoLookupError(
-                    _("revision in set has more than one child"))
+                    _(b"revision in set has more than one child")
+                )
             r = c[0].rev()
         else:
             cs.add(r)
     return subset & cs
+
 
 def ancestorspec(repo, subset, x, n, order):
     """``set~n``
     Changesets that are the Nth ancestor (first parents only) of a changeset
     in set.
     """
-    n = getinteger(n, _("~ expects a number"))
+    n = getinteger(n, _(b"~ expects a number"))
     if n < 0:
         # children lookup
         return _childrenspec(repo, subset, x, -n, order)
@@ -464,17 +512,20 @@ def ancestorspec(repo, subset, x, n, order):
         ps.add(r)
     return subset & ps
 
-@predicate('author(string)', safe=True, weight=10)
+
+@predicate(b'author(string)', safe=True, weight=10)
 def author(repo, subset, x):
     """Alias for ``user(string)``.
     """
     # i18n: "author" is a keyword
-    n = getstring(x, _("author requires a string"))
+    n = getstring(x, _(b"author requires a string"))
     kind, pattern, matcher = _substringmatcher(n, casesensitive=False)
-    return subset.filter(lambda x: matcher(repo[x].user()),
-                         condrepr=('<user %r>', n))
+    return subset.filter(
+        lambda x: matcher(repo[x].user()), condrepr=(b'<user %r>', n)
+    )
 
-@predicate('bisect(string)', safe=True)
+
+@predicate(b'bisect(string)', safe=True)
 def bisect(repo, subset, x):
     """Changesets marked in the specified bisect status:
 
@@ -487,41 +538,46 @@ def bisect(repo, subset, x):
     - ``current``            : the cset currently being bisected
     """
     # i18n: "bisect" is a keyword
-    status = getstring(x, _("bisect requires a string")).lower()
+    status = getstring(x, _(b"bisect requires a string")).lower()
     state = set(hbisect.get(repo, status))
     return subset & state
 
+
 # Backward-compatibility
 # - no help entry so that we do not advertise it any more
-@predicate('bisected', safe=True)
+@predicate(b'bisected', safe=True)
 def bisected(repo, subset, x):
     return bisect(repo, subset, x)
 
-@predicate('bookmark([name])', safe=True)
+
+@predicate(b'bookmark([name])', safe=True)
 def bookmark(repo, subset, x):
     """The named bookmark or all bookmarks.
 
     Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
     """
     # i18n: "bookmark" is a keyword
-    args = getargs(x, 0, 1, _('bookmark takes one or no arguments'))
+    args = getargs(x, 0, 1, _(b'bookmark takes one or no arguments'))
     if args:
-        bm = getstring(args[0],
-                       # i18n: "bookmark" is a keyword
-                       _('the argument to bookmark must be a string'))
+        bm = getstring(
+            args[0],
+            # i18n: "bookmark" is a keyword
+            _(b'the argument to bookmark must be a string'),
+        )
         kind, pattern, matcher = stringutil.stringmatcher(bm)
         bms = set()
-        if kind == 'literal':
+        if kind == b'literal':
             if bm == pattern:
                 pattern = repo._bookmarks.expandname(pattern)
             bmrev = repo._bookmarks.get(pattern, None)
             if not bmrev:
-                raise error.RepoLookupError(_("bookmark '%s' does not exist")
-                                            % pattern)
+                raise error.RepoLookupError(
+                    _(b"bookmark '%s' does not exist") % pattern
+                )
             bms.add(repo[bmrev].rev())
         else:
             matchrevs = set()
-            for name, bmrev in repo._bookmarks.iteritems():
+            for name, bmrev in pycompat.iteritems(repo._bookmarks):
                 if matcher(name):
                     matchrevs.add(bmrev)
             for bmrev in matchrevs:
@@ -531,7 +587,8 @@ def bookmark(repo, subset, x):
     bms -= {node.nullrev}
     return subset & bms
 
-@predicate('branch(string or set)', safe=True, weight=10)
+
+@predicate(b'branch(string or set)', safe=True, weight=10)
 def branch(repo, subset, x):
     """
     All changesets belonging to the given branch or the branches of the given
@@ -541,6 +598,7 @@ def branch(repo, subset, x):
     :hg:`help revisions.patterns`.
     """
     getbi = repo.revbranchcache().branchinfo
+
     def getbranch(r):
         try:
             return getbi(r)[0]
@@ -548,34 +606,41 @@ def branch(repo, subset, x):
             return repo[r].branch()
 
     try:
-        b = getstring(x, '')
+        b = getstring(x, b'')
     except error.ParseError:
         # not a string, but another revspec, e.g. tip()
         pass
     else:
         kind, pattern, matcher = stringutil.stringmatcher(b)
-        if kind == 'literal':
+        if kind == b'literal':
             # note: falls through to the revspec case if no branch with
             # this name exists and pattern kind is not specified explicitly
             if repo.branchmap().hasbranch(pattern):
-                return subset.filter(lambda r: matcher(getbranch(r)),
-                                     condrepr=('<branch %r>', b))
-            if b.startswith('literal:'):
-                raise error.RepoLookupError(_("branch '%s' does not exist")
-                                            % pattern)
+                return subset.filter(
+                    lambda r: matcher(getbranch(r)),
+                    condrepr=(b'<branch %r>', b),
+                )
+            if b.startswith(b'literal:'):
+                raise error.RepoLookupError(
+                    _(b"branch '%s' does not exist") % pattern
+                )
         else:
-            return subset.filter(lambda r: matcher(getbranch(r)),
-                                 condrepr=('<branch %r>', b))
+            return subset.filter(
+                lambda r: matcher(getbranch(r)), condrepr=(b'<branch %r>', b)
+            )
 
     s = getset(repo, fullreposet(repo), x)
     b = set()
     for r in s:
         b.add(getbranch(r))
     c = s.__contains__
-    return subset.filter(lambda r: c(r) or getbranch(r) in b,
-                         condrepr=lambda: '<branch %r>' % _sortedb(b))
+    return subset.filter(
+        lambda r: c(r) or getbranch(r) in b,
+        condrepr=lambda: b'<branch %r>' % _sortedb(b),
+    )
 
-@predicate('phasedivergent()', safe=True)
+
+@predicate(b'phasedivergent()', safe=True)
 def phasedivergent(repo, subset, x):
     """Mutable changesets marked as successors of public changesets.
 
@@ -583,11 +648,12 @@ def phasedivergent(repo, subset, x):
     (EXPERIMENTAL)
     """
     # i18n: "phasedivergent" is a keyword
-    getargs(x, 0, 0, _("phasedivergent takes no arguments"))
-    phasedivergent = obsmod.getrevs(repo, 'phasedivergent')
+    getargs(x, 0, 0, _(b"phasedivergent takes no arguments"))
+    phasedivergent = obsmod.getrevs(repo, b'phasedivergent')
     return subset & phasedivergent
 
-@predicate('bundle()', safe=True)
+
+@predicate(b'bundle()', safe=True)
 def bundle(repo, subset, x):
     """Changesets in the bundle.
 
@@ -596,8 +662,9 @@ def bundle(repo, subset, x):
     try:
         bundlerevs = repo.changelog.bundlerevs
     except AttributeError:
-        raise error.Abort(_("no bundle provided - specify with -R"))
+        raise error.Abort(_(b"no bundle provided - specify with -R"))
     return subset & bundlerevs
+
 
 def checkstatus(repo, subset, pat, field):
     """Helper for status-related revsets (adds, removes, modifies).
@@ -606,9 +673,10 @@ def checkstatus(repo, subset, pat, field):
     1: added
     2: removed
     """
-    hasset = matchmod.patkind(pat) == 'set'
+    hasset = matchmod.patkind(pat) == b'set'
 
     mcache = [None]
+
     def matches(x):
         c = repo[x]
         if not mcache[0] or hasset:
@@ -635,7 +703,8 @@ def checkstatus(repo, subset, pat, field):
                 if m(f):
                     return True
 
-    return subset.filter(matches, condrepr=('<status[%r] %r>', field, pat))
+    return subset.filter(matches, condrepr=(b'<status[%r] %r>', field, pat))
+
 
 def _children(repo, subset, parentset):
     if not parentset:
@@ -654,7 +723,8 @@ def _children(repo, subset, parentset):
             cs.add(r)
     return baseset(cs)
 
-@predicate('children(set)', safe=True)
+
+@predicate(b'children(set)', safe=True)
 def children(repo, subset, x):
     """Child changesets of changesets in set.
     """
@@ -662,17 +732,20 @@ def children(repo, subset, x):
     cs = _children(repo, subset, s)
     return subset & cs
 
-@predicate('closed()', safe=True, weight=10)
+
+@predicate(b'closed()', safe=True, weight=10)
 def closed(repo, subset, x):
     """Changeset is closed.
     """
     # i18n: "closed" is a keyword
-    getargs(x, 0, 0, _("closed takes no arguments"))
-    return subset.filter(lambda r: repo[r].closesbranch(),
-                         condrepr='<branch closed>')
+    getargs(x, 0, 0, _(b"closed takes no arguments"))
+    return subset.filter(
+        lambda r: repo[r].closesbranch(), condrepr=b'<branch closed>'
+    )
+
 
 # for internal use
-@predicate('_commonancestorheads(set)', safe=True)
+@predicate(b'_commonancestorheads(set)', safe=True)
 def _commonancestorheads(repo, subset, x):
     # This is an internal method is for quickly calculating "heads(::x and
     # ::y)"
@@ -684,7 +757,8 @@ def _commonancestorheads(repo, subset, x):
     ancs = repo.changelog._commonancestorsheads(*list(startrevs))
     return subset & baseset(ancs)
 
-@predicate('commonancestors(set)', safe=True)
+
+@predicate(b'commonancestors(set)', safe=True)
 def commonancestors(repo, subset, x):
     """Changesets that are ancestors of every changeset in set.
     """
@@ -695,7 +769,8 @@ def commonancestors(repo, subset, x):
         subset &= dagop.revancestors(repo, baseset([r]))
     return subset
 
-@predicate('contains(pattern)', weight=100)
+
+@predicate(b'contains(pattern)', weight=100)
 def contains(repo, subset, x):
     """The revision's manifest contains a file matching pattern (but might not
     modify it). See :hg:`help patterns` for information about file patterns.
@@ -705,7 +780,7 @@ def contains(repo, subset, x):
     for efficiency.
     """
     # i18n: "contains" is a keyword
-    pat = getstring(x, _("contains requires a pattern"))
+    pat = getstring(x, _(b"contains requires a pattern"))
 
     def matches(x):
         if not matchmod.patkind(pat):
@@ -720,9 +795,10 @@ def contains(repo, subset, x):
                     return True
         return False
 
-    return subset.filter(matches, condrepr=('<contains %r>', pat))
+    return subset.filter(matches, condrepr=(b'<contains %r>', pat))
 
-@predicate('converted([id])', safe=True)
+
+@predicate(b'converted([id])', safe=True)
 def converted(repo, subset, x):
     """Changesets converted from the given identifier in the old repository if
     present, or all converted changesets if no identifier is specified.
@@ -733,29 +809,33 @@ def converted(repo, subset, x):
 
     rev = None
     # i18n: "converted" is a keyword
-    l = getargs(x, 0, 1, _('converted takes one or no arguments'))
+    l = getargs(x, 0, 1, _(b'converted takes one or no arguments'))
     if l:
         # i18n: "converted" is a keyword
-        rev = getstring(l[0], _('converted requires a revision'))
+        rev = getstring(l[0], _(b'converted requires a revision'))
 
     def _matchvalue(r):
-        source = repo[r].extra().get('convert_revision', None)
+        source = repo[r].extra().get(b'convert_revision', None)
         return source is not None and (rev is None or source.startswith(rev))
 
-    return subset.filter(lambda r: _matchvalue(r),
-                         condrepr=('<converted %r>', rev))
+    return subset.filter(
+        lambda r: _matchvalue(r), condrepr=(b'<converted %r>', rev)
+    )
 
-@predicate('date(interval)', safe=True, weight=10)
+
+@predicate(b'date(interval)', safe=True, weight=10)
 def date(repo, subset, x):
     """Changesets within the interval, see :hg:`help dates`.
     """
     # i18n: "date" is a keyword
-    ds = getstring(x, _("date requires a string"))
+    ds = getstring(x, _(b"date requires a string"))
     dm = dateutil.matchdate(ds)
-    return subset.filter(lambda x: dm(repo[x].date()[0]),
-                         condrepr=('<date %r>', ds))
+    return subset.filter(
+        lambda x: dm(repo[x].date()[0]), condrepr=(b'<date %r>', ds)
+    )
 
-@predicate('desc(string)', safe=True, weight=10)
+
+@predicate(b'desc(string)', safe=True, weight=10)
 def desc(repo, subset, x):
     """Search commit message for string. The match is case-insensitive.
 
@@ -763,22 +843,26 @@ def desc(repo, subset, x):
     :hg:`help revisions.patterns`.
     """
     # i18n: "desc" is a keyword
-    ds = getstring(x, _("desc requires a string"))
+    ds = getstring(x, _(b"desc requires a string"))
 
     kind, pattern, matcher = _substringmatcher(ds, casesensitive=False)
 
-    return subset.filter(lambda r: matcher(repo[r].description()),
-                         condrepr=('<desc %r>', ds))
+    return subset.filter(
+        lambda r: matcher(repo[r].description()), condrepr=(b'<desc %r>', ds)
+    )
 
-def _descendants(repo, subset, x, followfirst=False, startdepth=None,
-                 stopdepth=None):
+
+def _descendants(
+    repo, subset, x, followfirst=False, startdepth=None, stopdepth=None
+):
     roots = getset(repo, fullreposet(repo), x)
     if not roots:
         return baseset()
     s = dagop.revdescendants(repo, roots, followfirst, startdepth, stopdepth)
     return subset & s
 
-@predicate('descendants(set[, depth])', safe=True)
+
+@predicate(b'descendants(set[, depth])', safe=True)
 def descendants(repo, subset, x):
     """Changesets which are descendants of changesets in set, including the
     given changesets themselves.
@@ -787,33 +871,39 @@ def descendants(repo, subset, x):
     the specified generation.
     """
     # startdepth is for internal use only until we can decide the UI
-    args = getargsdict(x, 'descendants', 'set depth startdepth')
-    if 'set' not in args:
+    args = getargsdict(x, b'descendants', b'set depth startdepth')
+    if b'set' not in args:
         # i18n: "descendants" is a keyword
-        raise error.ParseError(_('descendants takes at least 1 argument'))
+        raise error.ParseError(_(b'descendants takes at least 1 argument'))
     startdepth = stopdepth = None
-    if 'startdepth' in args:
-        n = getinteger(args['startdepth'],
-                       "descendants expects an integer startdepth")
+    if b'startdepth' in args:
+        n = getinteger(
+            args[b'startdepth'], b"descendants expects an integer startdepth"
+        )
         if n < 0:
-            raise error.ParseError("negative startdepth")
+            raise error.ParseError(b"negative startdepth")
         startdepth = n
-    if 'depth' in args:
+    if b'depth' in args:
         # i18n: "descendants" is a keyword
-        n = getinteger(args['depth'], _("descendants expects an integer depth"))
+        n = getinteger(
+            args[b'depth'], _(b"descendants expects an integer depth")
+        )
         if n < 0:
-            raise error.ParseError(_("negative depth"))
+            raise error.ParseError(_(b"negative depth"))
         stopdepth = n + 1
-    return _descendants(repo, subset, args['set'],
-                        startdepth=startdepth, stopdepth=stopdepth)
+    return _descendants(
+        repo, subset, args[b'set'], startdepth=startdepth, stopdepth=stopdepth
+    )
 
-@predicate('_firstdescendants', safe=True)
+
+@predicate(b'_firstdescendants', safe=True)
 def _firstdescendants(repo, subset, x):
     # ``_firstdescendants(set)``
     # Like ``descendants(set)`` but follows only the first parents.
     return _descendants(repo, subset, x, followfirst=True)
 
-@predicate('destination([set])', safe=True, weight=10)
+
+@predicate(b'destination([set])', safe=True, weight=10)
 def destination(repo, subset, x):
     """Changesets that were created by a graft, transplant or rebase operation,
     with the given revisions specified as the source.  Omitting the optional set
@@ -855,21 +945,25 @@ def destination(repo, subset, x):
             r = src
             src = _getrevsource(repo, r)
 
-    return subset.filter(dests.__contains__,
-                         condrepr=lambda: '<destination %r>' % _sortedb(dests))
+    return subset.filter(
+        dests.__contains__,
+        condrepr=lambda: b'<destination %r>' % _sortedb(dests),
+    )
 
-@predicate('contentdivergent()', safe=True)
+
+@predicate(b'contentdivergent()', safe=True)
 def contentdivergent(repo, subset, x):
     """
     Final successors of changesets with an alternative set of final
     successors. (EXPERIMENTAL)
     """
     # i18n: "contentdivergent" is a keyword
-    getargs(x, 0, 0, _("contentdivergent takes no arguments"))
-    contentdivergent = obsmod.getrevs(repo, 'contentdivergent')
+    getargs(x, 0, 0, _(b"contentdivergent takes no arguments"))
+    contentdivergent = obsmod.getrevs(repo, b'contentdivergent')
     return subset & contentdivergent
 
-@predicate('expectsize(set[, size])', safe=True, takeorder=True)
+
+@predicate(b'expectsize(set[, size])', safe=True, takeorder=True)
 def expectsize(repo, subset, x, order):
     """Return the given revset if size matches the revset size.
     Abort if the revset doesn't expect given size.
@@ -878,27 +972,33 @@ def expectsize(repo, subset, x, order):
     For example, ``expectsize(0:1, 3:5)`` will abort as revset size is 2 and
     2 is not between 3 and 5 inclusive."""
 
-    args = getargsdict(x, 'expectsize', 'set size')
+    args = getargsdict(x, b'expectsize', b'set size')
     minsize = 0
     maxsize = len(repo) + 1
-    err = ''
-    if 'size' not in args or 'set' not in args:
-        raise error.ParseError(_('invalid set of arguments'))
-    minsize, maxsize = getintrange(args['size'],
-                                   _('expectsize requires a size range'
-                                     ' or a positive integer'),
-                                   _('size range bounds must be integers'),
-                                   minsize, maxsize)
+    err = b''
+    if b'size' not in args or b'set' not in args:
+        raise error.ParseError(_(b'invalid set of arguments'))
+    minsize, maxsize = getintrange(
+        args[b'size'],
+        _(b'expectsize requires a size range or a positive integer'),
+        _(b'size range bounds must be integers'),
+        minsize,
+        maxsize,
+    )
     if minsize < 0 or maxsize < 0:
-        raise error.ParseError(_('negative size'))
-    rev = getset(repo, fullreposet(repo), args['set'], order=order)
+        raise error.ParseError(_(b'negative size'))
+    rev = getset(repo, fullreposet(repo), args[b'set'], order=order)
     if minsize != maxsize and (len(rev) < minsize or len(rev) > maxsize):
-        err = _('revset size mismatch.'
-                ' expected between %d and %d, got %d') % (minsize, maxsize,
-                                                          len(rev))
+        err = _(b'revset size mismatch. expected between %d and %d, got %d') % (
+            minsize,
+            maxsize,
+            len(rev),
+        )
     elif minsize == maxsize and len(rev) != minsize:
-        err = _('revset size mismatch.'
-                ' expected %d, got %d') % (minsize, len(rev))
+        err = _(b'revset size mismatch. expected %d, got %d') % (
+            minsize,
+            len(rev),
+        )
     if err:
         raise error.RepoLookupError(err)
     if order == followorder:
@@ -906,27 +1006,32 @@ def expectsize(repo, subset, x, order):
     else:
         return rev & subset
 
-@predicate('extdata(source)', safe=False, weight=100)
+
+@predicate(b'extdata(source)', safe=False, weight=100)
 def extdata(repo, subset, x):
     """Changesets in the specified extdata source. (EXPERIMENTAL)"""
     # i18n: "extdata" is a keyword
-    args = getargsdict(x, 'extdata', 'source')
-    source = getstring(args.get('source'),
-                       # i18n: "extdata" is a keyword
-                       _('extdata takes at least 1 string argument'))
+    args = getargsdict(x, b'extdata', b'source')
+    source = getstring(
+        args.get(b'source'),
+        # i18n: "extdata" is a keyword
+        _(b'extdata takes at least 1 string argument'),
+    )
     data = scmutil.extdatasource(repo, source)
     return subset & baseset(data)
 
-@predicate('extinct()', safe=True)
+
+@predicate(b'extinct()', safe=True)
 def extinct(repo, subset, x):
     """Obsolete changesets with obsolete descendants only.
     """
     # i18n: "extinct" is a keyword
-    getargs(x, 0, 0, _("extinct takes no arguments"))
-    extincts = obsmod.getrevs(repo, 'extinct')
+    getargs(x, 0, 0, _(b"extinct takes no arguments"))
+    extincts = obsmod.getrevs(repo, b'extinct')
     return subset & extincts
 
-@predicate('extra(label, [value])', safe=True)
+
+@predicate(b'extra(label, [value])', safe=True)
 def extra(repo, subset, x):
     """Changesets with the given label in the extra metadata, with the given
     optional value.
@@ -934,29 +1039,33 @@ def extra(repo, subset, x):
     Pattern matching is supported for `value`. See
     :hg:`help revisions.patterns`.
     """
-    args = getargsdict(x, 'extra', 'label value')
-    if 'label' not in args:
+    args = getargsdict(x, b'extra', b'label value')
+    if b'label' not in args:
         # i18n: "extra" is a keyword
-        raise error.ParseError(_('extra takes at least 1 argument'))
+        raise error.ParseError(_(b'extra takes at least 1 argument'))
     # i18n: "extra" is a keyword
-    label = getstring(args['label'], _('first argument to extra must be '
-                                       'a string'))
+    label = getstring(
+        args[b'label'], _(b'first argument to extra must be a string')
+    )
     value = None
 
-    if 'value' in args:
+    if b'value' in args:
         # i18n: "extra" is a keyword
-        value = getstring(args['value'], _('second argument to extra must be '
-                                           'a string'))
+        value = getstring(
+            args[b'value'], _(b'second argument to extra must be a string')
+        )
         kind, value, matcher = stringutil.stringmatcher(value)
 
     def _matchvalue(r):
         extra = repo[r].extra()
         return label in extra and (value is None or matcher(extra[label]))
 
-    return subset.filter(lambda r: _matchvalue(r),
-                         condrepr=('<extra[%r] %r>', label, value))
+    return subset.filter(
+        lambda r: _matchvalue(r), condrepr=(b'<extra[%r] %r>', label, value)
+    )
 
-@predicate('filelog(pattern)', safe=True)
+
+@predicate(b'filelog(pattern)', safe=True)
 def filelog(repo, subset, x):
     """Changesets connected to the specified filelog.
 
@@ -971,7 +1080,7 @@ def filelog(repo, subset, x):
     """
 
     # i18n: "filelog" is a keyword
-    pat = getstring(x, _("filelog requires a pattern"))
+    pat = getstring(x, _(b"filelog requires a pattern"))
     s = set()
     cl = repo.changelog
 
@@ -1019,55 +1128,63 @@ def filelog(repo, subset, x):
 
     return subset & s
 
-@predicate('first(set, [n])', safe=True, takeorder=True, weight=0)
+
+@predicate(b'first(set, [n])', safe=True, takeorder=True, weight=0)
 def first(repo, subset, x, order):
     """An alias for limit().
     """
     return limit(repo, subset, x, order)
 
+
 def _follow(repo, subset, x, name, followfirst=False):
-    args = getargsdict(x, name, 'file startrev')
+    args = getargsdict(x, name, b'file startrev')
     revs = None
-    if 'startrev' in args:
-        revs = getset(repo, fullreposet(repo), args['startrev'])
-    if 'file' in args:
-        x = getstring(args['file'], _("%s expected a pattern") % name)
+    if b'startrev' in args:
+        revs = getset(repo, fullreposet(repo), args[b'startrev'])
+    if b'file' in args:
+        x = getstring(args[b'file'], _(b"%s expected a pattern") % name)
         if revs is None:
             revs = [None]
         fctxs = []
         for r in revs:
             ctx = mctx = repo[r]
             if r is None:
-                ctx = repo['.']
-            m = matchmod.match(repo.root, repo.getcwd(), [x],
-                               ctx=mctx, default='path')
+                ctx = repo[b'.']
+            m = matchmod.match(
+                repo.root, repo.getcwd(), [x], ctx=mctx, default=b'path'
+            )
             fctxs.extend(ctx[f].introfilectx() for f in ctx.manifest().walk(m))
         s = dagop.filerevancestors(fctxs, followfirst)
     else:
         if revs is None:
-            revs = baseset([repo['.'].rev()])
+            revs = baseset([repo[b'.'].rev()])
         s = dagop.revancestors(repo, revs, followfirst)
 
     return subset & s
 
-@predicate('follow([file[, startrev]])', safe=True)
+
+@predicate(b'follow([file[, startrev]])', safe=True)
 def follow(repo, subset, x):
     """
     An alias for ``::.`` (ancestors of the working directory's first parent).
     If file pattern is specified, the histories of files matching given
     pattern in the revision given by startrev are followed, including copies.
     """
-    return _follow(repo, subset, x, 'follow')
+    return _follow(repo, subset, x, b'follow')
 
-@predicate('_followfirst', safe=True)
+
+@predicate(b'_followfirst', safe=True)
 def _followfirst(repo, subset, x):
     # ``followfirst([file[, startrev]])``
     # Like ``follow([file[, startrev]])`` but follows only the first parent
     # of every revisions or files revisions.
-    return _follow(repo, subset, x, '_followfirst', followfirst=True)
+    return _follow(repo, subset, x, b'_followfirst', followfirst=True)
 
-@predicate('followlines(file, fromline:toline[, startrev=., descend=False])',
-           safe=True)
+
+@predicate(
+    b'followlines(file, fromline:toline[, startrev=., descend=False])',
+    safe=True,
+)
 def followlines(repo, subset, x):
     """Changesets modifying `file` in line range ('fromline', 'toline').
 
@@ -1079,56 +1196,74 @@ def followlines(repo, subset, x):
     descendants of 'startrev' are returned though renames are (currently) not
     followed in this direction.
     """
-    args = getargsdict(x, 'followlines', 'file *lines startrev descend')
-    if len(args['lines']) != 1:
-        raise error.ParseError(_("followlines requires a line range"))
+    args = getargsdict(x, b'followlines', b'file *lines startrev descend')
+    if len(args[b'lines']) != 1:
+        raise error.ParseError(_(b"followlines requires a line range"))
 
-    rev = '.'
-    if 'startrev' in args:
-        revs = getset(repo, fullreposet(repo), args['startrev'])
+    rev = b'.'
+    if b'startrev' in args:
+        revs = getset(repo, fullreposet(repo), args[b'startrev'])
         if len(revs) != 1:
             raise error.ParseError(
                 # i18n: "followlines" is a keyword
-                _("followlines expects exactly one revision"))
+                _(b"followlines expects exactly one revision")
+            )
         rev = revs.last()
 
-    pat = getstring(args['file'], _("followlines requires a pattern"))
+    pat = getstring(args[b'file'], _(b"followlines requires a pattern"))
     # i18n: "followlines" is a keyword
-    msg = _("followlines expects exactly one file")
+    msg = _(b"followlines expects exactly one file")
     fname = scmutil.parsefollowlinespattern(repo, rev, pat, msg)
     fromline, toline = util.processlinerange(
-        *getintrange(args['lines'][0],
-                     # i18n: "followlines" is a keyword
-                     _("followlines expects a line number or a range"),
-                     _("line range bounds must be integers")))
+        *getintrange(
+            args[b'lines'][0],
+            # i18n: "followlines" is a keyword
+            _(b"followlines expects a line number or a range"),
+            _(b"line range bounds must be integers"),
+        )
+    )
 
     fctx = repo[rev].filectx(fname)
     descend = False
-    if 'descend' in args:
-        descend = getboolean(args['descend'],
-                             # i18n: "descend" is a keyword
-                             _("descend argument must be a boolean"))
+    if b'descend' in args:
+        descend = getboolean(
+            args[b'descend'],
+            # i18n: "descend" is a keyword
+            _(b"descend argument must be a boolean"),
+        )
     if descend:
         rs = generatorset(
-            (c.rev() for c, _linerange
-             in dagop.blockdescendants(fctx, fromline, toline)),
-            iterasc=True)
+            (
+                c.rev()
+                for c, _linerange in dagop.blockdescendants(
+                    fctx, fromline, toline
+                )
+            ),
+            iterasc=True,
+        )
     else:
         rs = generatorset(
-            (c.rev() for c, _linerange
-             in dagop.blockancestors(fctx, fromline, toline)),
-            iterasc=False)
+            (
+                c.rev()
+                for c, _linerange in dagop.blockancestors(
+                    fctx, fromline, toline
+                )
+            ),
+            iterasc=False,
+        )
     return subset & rs
 
-@predicate('all()', safe=True)
+
+@predicate(b'all()', safe=True)
 def getall(repo, subset, x):
     """All changesets, the same as ``0:tip``.
     """
     # i18n: "all" is a keyword
-    getargs(x, 0, 0, _("all takes no arguments"))
+    getargs(x, 0, 0, _(b"all takes no arguments"))
     return subset & spanset(repo)  # drop "null" if any
 
-@predicate('grep(regex)', weight=10)
+
+@predicate(b'grep(regex)', weight=10)
 def grep(repo, subset, x):
     """Like ``keyword(string)`` but accepts a regex. Use ``grep(r'...')``
     to ensure special escape characters are handled correctly. Unlike
@@ -1136,10 +1271,11 @@ def grep(repo, subset, x):
     """
     try:
         # i18n: "grep" is a keyword
-        gr = re.compile(getstring(x, _("grep requires a string")))
+        gr = re.compile(getstring(x, _(b"grep requires a string")))
     except re.error as e:
         raise error.ParseError(
-            _('invalid match pattern: %s') % stringutil.forcebytestr(e))
+            _(b'invalid match pattern: %s') % stringutil.forcebytestr(e)
+        )
 
     def matches(x):
         c = repo[x]
@@ -1148,9 +1284,10 @@ def grep(repo, subset, x):
                 return True
         return False
 
-    return subset.filter(matches, condrepr=('<grep %r>', gr.pattern))
+    return subset.filter(matches, condrepr=(b'<grep %r>', gr.pattern))
 
-@predicate('_matchfiles', safe=True)
+
+@predicate(b'_matchfiles', safe=True)
 def _matchfiles(repo, subset, x):
     # _matchfiles takes a revset list of prefixed arguments:
     #
@@ -1164,36 +1301,38 @@ def _matchfiles(repo, subset, x):
     # initialized. Use 'd:' to set the default matching mode, default
     # to 'glob'. At most one 'r:' and 'd:' argument can be passed.
 
-    l = getargs(x, 1, -1, "_matchfiles requires at least one argument")
+    l = getargs(x, 1, -1, b"_matchfiles requires at least one argument")
     pats, inc, exc = [], [], []
     rev, default = None, None
     for arg in l:
-        s = getstring(arg, "_matchfiles requires string arguments")
+        s = getstring(arg, b"_matchfiles requires string arguments")
         prefix, value = s[:2], s[2:]
-        if prefix == 'p:':
+        if prefix == b'p:':
             pats.append(value)
-        elif prefix == 'i:':
+        elif prefix == b'i:':
             inc.append(value)
-        elif prefix == 'x:':
+        elif prefix == b'x:':
             exc.append(value)
-        elif prefix == 'r:':
+        elif prefix == b'r:':
             if rev is not None:
-                raise error.ParseError('_matchfiles expected at most one '
-                                       'revision')
-            if value == '': # empty means working directory
+                raise error.ParseError(
+                    b'_matchfiles expected at most one revision'
+                )
+            if value == b'':  # empty means working directory
                 rev = node.wdirrev
             else:
                 rev = value
-        elif prefix == 'd:':
+        elif prefix == b'd:':
             if default is not None:
-                raise error.ParseError('_matchfiles expected at most one '
-                                       'default mode')
+                raise error.ParseError(
+                    b'_matchfiles expected at most one default mode'
+                )
             default = value
         else:
-            raise error.ParseError('invalid _matchfiles prefix: %s' % prefix)
+            raise error.ParseError(b'invalid _matchfiles prefix: %s' % prefix)
     if not default:
-        default = 'glob'
-    hasset = any(matchmod.patkind(p) == 'set' for p in pats + inc + exc)
+        default = b'glob'
+    hasset = any(matchmod.patkind(p) == b'set' for p in pats + inc + exc)
 
     mcache = [None]
 
@@ -1201,6 +1340,7 @@ def _matchfiles(repo, subset, x):
     # revisions is quite expensive.
     getfiles = repo.changelog.readfiles
     wdirrev = node.wdirrev
+
     def matches(x):
         if x == wdirrev:
             files = repo[x].files()
@@ -1209,9 +1349,15 @@ def _matchfiles(repo, subset, x):
 
         if not mcache[0] or (hasset and rev is None):
             r = x if rev is None else rev
-            mcache[0] = matchmod.match(repo.root, repo.getcwd(), pats,
-                                       include=inc, exclude=exc, ctx=repo[r],
-                                       default=default)
+            mcache[0] = matchmod.match(
+                repo.root,
+                repo.getcwd(),
+                pats,
+                include=inc,
+                exclude=exc,
+                ctx=repo[r],
+                default=default,
+            )
         m = mcache[0]
 
         for f in files:
@@ -1219,12 +1365,21 @@ def _matchfiles(repo, subset, x):
                 return True
         return False
 
-    return subset.filter(matches,
-                         condrepr=('<matchfiles patterns=%r, include=%r '
-                                   'exclude=%r, default=%r, rev=%r>',
-                                   pats, inc, exc, default, rev))
+    return subset.filter(
+        matches,
+        condrepr=(
+            b'<matchfiles patterns=%r, include=%r '
+            b'exclude=%r, default=%r, rev=%r>',
+            pats,
+            inc,
+            exc,
+            default,
+            rev,
+        ),
+    )
 
-@predicate('file(pattern)', safe=True, weight=10)
+
+@predicate(b'file(pattern)', safe=True, weight=10)
 def hasfile(repo, subset, x):
     """Changesets affecting files matched by pattern.
 
@@ -1234,22 +1389,24 @@ def hasfile(repo, subset, x):
     This predicate uses ``glob:`` as the default kind of pattern.
     """
     # i18n: "file" is a keyword
-    pat = getstring(x, _("file requires a pattern"))
-    return _matchfiles(repo, subset, ('string', 'p:' + pat))
+    pat = getstring(x, _(b"file requires a pattern"))
+    return _matchfiles(repo, subset, (b'string', b'p:' + pat))
 
-@predicate('head()', safe=True)
+
+@predicate(b'head()', safe=True)
 def head(repo, subset, x):
     """Changeset is a named branch head.
     """
     # i18n: "head" is a keyword
-    getargs(x, 0, 0, _("head takes no arguments"))
+    getargs(x, 0, 0, _(b"head takes no arguments"))
     hs = set()
     cl = repo.changelog
     for ls in repo.branchmap().iterheads():
         hs.update(cl.rev(h) for h in ls)
     return subset & baseset(hs)
 
-@predicate('heads(set)', safe=True, takeorder=True)
+
+@predicate(b'heads(set)', safe=True, takeorder=True)
 def heads(repo, subset, x, order):
     """Members of set with no children in set.
     """
@@ -1270,16 +1427,18 @@ def heads(repo, subset, x, order):
     heads = baseset(heads)
     return subset & heads
 
-@predicate('hidden()', safe=True)
+
+@predicate(b'hidden()', safe=True)
 def hidden(repo, subset, x):
     """Hidden changesets.
     """
     # i18n: "hidden" is a keyword
-    getargs(x, 0, 0, _("hidden takes no arguments"))
-    hiddenrevs = repoview.filterrevs(repo, 'visible')
+    getargs(x, 0, 0, _(b"hidden takes no arguments"))
+    hiddenrevs = repoview.filterrevs(repo, b'visible')
     return subset & hiddenrevs
 
-@predicate('keyword(string)', safe=True, weight=10)
+
+@predicate(b'keyword(string)', safe=True, weight=10)
 def keyword(repo, subset, x):
     """Search commit message, user name, and names of changed files for
     string. The match is case-insensitive.
@@ -1288,49 +1447,55 @@ def keyword(repo, subset, x):
     ``grep(regex)``.
     """
     # i18n: "keyword" is a keyword
-    kw = encoding.lower(getstring(x, _("keyword requires a string")))
+    kw = encoding.lower(getstring(x, _(b"keyword requires a string")))
 
     def matches(r):
         c = repo[r]
-        return any(kw in encoding.lower(t)
-                   for t in c.files() + [c.user(), c.description()])
+        return any(
+            kw in encoding.lower(t)
+            for t in c.files() + [c.user(), c.description()]
+        )
 
-    return subset.filter(matches, condrepr=('<keyword %r>', kw))
+    return subset.filter(matches, condrepr=(b'<keyword %r>', kw))
 
-@predicate('limit(set[, n[, offset]])', safe=True, takeorder=True, weight=0)
+
+@predicate(b'limit(set[, n[, offset]])', safe=True, takeorder=True, weight=0)
 def limit(repo, subset, x, order):
     """First n members of set, defaulting to 1, starting from offset.
     """
-    args = getargsdict(x, 'limit', 'set n offset')
-    if 'set' not in args:
+    args = getargsdict(x, b'limit', b'set n offset')
+    if b'set' not in args:
         # i18n: "limit" is a keyword
-        raise error.ParseError(_("limit requires one to three arguments"))
+        raise error.ParseError(_(b"limit requires one to three arguments"))
     # i18n: "limit" is a keyword
-    lim = getinteger(args.get('n'), _("limit expects a number"), default=1)
+    lim = getinteger(args.get(b'n'), _(b"limit expects a number"), default=1)
     if lim < 0:
-        raise error.ParseError(_("negative number to select"))
+        raise error.ParseError(_(b"negative number to select"))
     # i18n: "limit" is a keyword
-    ofs = getinteger(args.get('offset'), _("limit expects a number"), default=0)
+    ofs = getinteger(
+        args.get(b'offset'), _(b"limit expects a number"), default=0
+    )
     if ofs < 0:
-        raise error.ParseError(_("negative offset"))
-    os = getset(repo, fullreposet(repo), args['set'])
+        raise error.ParseError(_(b"negative offset"))
+    os = getset(repo, fullreposet(repo), args[b'set'])
     ls = os.slice(ofs, ofs + lim)
     if order == followorder and lim > 1:
         return subset & ls
     return ls & subset
 
-@predicate('last(set, [n])', safe=True, takeorder=True)
+
+@predicate(b'last(set, [n])', safe=True, takeorder=True)
 def last(repo, subset, x, order):
     """Last n members of set, defaulting to 1.
     """
     # i18n: "last" is a keyword
-    l = getargs(x, 1, 2, _("last requires one or two arguments"))
+    l = getargs(x, 1, 2, _(b"last requires one or two arguments"))
     lim = 1
     if len(l) == 2:
         # i18n: "last" is a keyword
-        lim = getinteger(l[1], _("last expects a number"))
+        lim = getinteger(l[1], _(b"last expects a number"))
     if lim < 0:
-        raise error.ParseError(_("negative number to select"))
+        raise error.ParseError(_(b"negative number to select"))
     os = getset(repo, fullreposet(repo), l[0])
     os.reverse()
     ls = os.slice(0, lim)
@@ -1339,7 +1504,8 @@ def last(repo, subset, x, order):
     ls.reverse()
     return ls & subset
 
-@predicate('max(set)', safe=True)
+
+@predicate(b'max(set)', safe=True)
 def maxrev(repo, subset, x):
     """Changeset with highest revision number in set.
     """
@@ -1347,49 +1513,55 @@ def maxrev(repo, subset, x):
     try:
         m = os.max()
         if m in subset:
-            return baseset([m], datarepr=('<max %r, %r>', subset, os))
+            return baseset([m], datarepr=(b'<max %r, %r>', subset, os))
     except ValueError:
         # os.max() throws a ValueError when the collection is empty.
         # Same as python's max().
         pass
-    return baseset(datarepr=('<max %r, %r>', subset, os))
+    return baseset(datarepr=(b'<max %r, %r>', subset, os))
 
-@predicate('merge()', safe=True)
+
+@predicate(b'merge()', safe=True)
 def merge(repo, subset, x):
     """Changeset is a merge changeset.
     """
     # i18n: "merge" is a keyword
-    getargs(x, 0, 0, _("merge takes no arguments"))
+    getargs(x, 0, 0, _(b"merge takes no arguments"))
     cl = repo.changelog
     nullrev = node.nullrev
+
     def ismerge(r):
         try:
             return cl.parentrevs(r)[1] != nullrev
         except error.WdirUnsupported:
             return bool(repo[r].p2())
-    return subset.filter(ismerge, condrepr='<merge>')
 
-@predicate('branchpoint()', safe=True)
+    return subset.filter(ismerge, condrepr=b'<merge>')
+
+
+@predicate(b'branchpoint()', safe=True)
 def branchpoint(repo, subset, x):
     """Changesets with more than one child.
     """
     # i18n: "branchpoint" is a keyword
-    getargs(x, 0, 0, _("branchpoint takes no arguments"))
+    getargs(x, 0, 0, _(b"branchpoint takes no arguments"))
     cl = repo.changelog
     if not subset:
         return baseset()
     # XXX this should be 'parentset.min()' assuming 'parentset' is a smartset
     # (and if it is not, it should.)
     baserev = min(subset)
-    parentscount = [0]*(len(repo) - baserev)
+    parentscount = [0] * (len(repo) - baserev)
     for r in cl.revs(start=baserev + 1):
         for p in cl.parentrevs(r):
             if p >= baserev:
                 parentscount[p - baserev] += 1
-    return subset.filter(lambda r: parentscount[r - baserev] > 1,
-                         condrepr='<branchpoint>')
+    return subset.filter(
+        lambda r: parentscount[r - baserev] > 1, condrepr=b'<branchpoint>'
+    )
 
-@predicate('min(set)', safe=True)
+
+@predicate(b'min(set)', safe=True)
 def minrev(repo, subset, x):
     """Changeset with lowest revision number in set.
     """
@@ -1397,14 +1569,15 @@ def minrev(repo, subset, x):
     try:
         m = os.min()
         if m in subset:
-            return baseset([m], datarepr=('<min %r, %r>', subset, os))
+            return baseset([m], datarepr=(b'<min %r, %r>', subset, os))
     except ValueError:
         # os.min() throws a ValueError when the collection is empty.
         # Same as python's min().
         pass
-    return baseset(datarepr=('<min %r, %r>', subset, os))
+    return baseset(datarepr=(b'<min %r, %r>', subset, os))
 
-@predicate('modifies(pattern)', safe=True, weight=30)
+
+@predicate(b'modifies(pattern)', safe=True, weight=30)
 def modifies(repo, subset, x):
     """Changesets modifying files matched by pattern.
 
@@ -1413,10 +1586,11 @@ def modifies(repo, subset, x):
     directory.
     """
     # i18n: "modifies" is a keyword
-    pat = getstring(x, _("modifies requires a pattern"))
+    pat = getstring(x, _(b"modifies requires a pattern"))
     return checkstatus(repo, subset, pat, 0)
 
-@predicate('named(namespace)')
+
+@predicate(b'named(namespace)')
 def named(repo, subset, x):
     """The changesets in a given namespace.
 
@@ -1424,20 +1598,23 @@ def named(repo, subset, x):
     :hg:`help revisions.patterns`.
     """
     # i18n: "named" is a keyword
-    args = getargs(x, 1, 1, _('named requires a namespace argument'))
+    args = getargs(x, 1, 1, _(b'named requires a namespace argument'))
 
-    ns = getstring(args[0],
-                   # i18n: "named" is a keyword
-                   _('the argument to named must be a string'))
+    ns = getstring(
+        args[0],
+        # i18n: "named" is a keyword
+        _(b'the argument to named must be a string'),
+    )
     kind, pattern, matcher = stringutil.stringmatcher(ns)
     namespaces = set()
-    if kind == 'literal':
+    if kind == b'literal':
         if pattern not in repo.names:
-            raise error.RepoLookupError(_("namespace '%s' does not exist")
-                                        % ns)
+            raise error.RepoLookupError(
+                _(b"namespace '%s' does not exist") % ns
+            )
         namespaces.add(repo.names[pattern])
     else:
-        for name, ns in repo.names.iteritems():
+        for name, ns in pycompat.iteritems(repo.names):
             if matcher(name):
                 namespaces.add(ns)
 
@@ -1450,14 +1627,15 @@ def named(repo, subset, x):
     names -= {node.nullrev}
     return subset & names
 
-@predicate('id(string)', safe=True)
+
+@predicate(b'id(string)', safe=True)
 def node_(repo, subset, x):
     """Revision non-ambiguously specified by the given hex string prefix.
     """
     # i18n: "id" is a keyword
-    l = getargs(x, 1, 1, _("id requires one argument"))
+    l = getargs(x, 1, 1, _(b"id requires one argument"))
     # i18n: "id" is a keyword
-    n = getstring(l[0], _("id requires a string"))
+    n = getstring(l[0], _(b"id requires a string"))
     if len(n) == 40:
         try:
             rn = repo.changelog.rev(node.bin(n))
@@ -1481,23 +1659,26 @@ def node_(repo, subset, x):
     result = baseset([rn])
     return result & subset
 
-@predicate('none()', safe=True)
+
+@predicate(b'none()', safe=True)
 def none(repo, subset, x):
     """No changesets.
     """
     # i18n: "none" is a keyword
-    getargs(x, 0, 0, _("none takes no arguments"))
+    getargs(x, 0, 0, _(b"none takes no arguments"))
     return baseset()
 
-@predicate('obsolete()', safe=True)
+
+@predicate(b'obsolete()', safe=True)
 def obsolete(repo, subset, x):
     """Mutable changeset with a newer version."""
     # i18n: "obsolete" is a keyword
-    getargs(x, 0, 0, _("obsolete takes no arguments"))
-    obsoletes = obsmod.getrevs(repo, 'obsolete')
+    getargs(x, 0, 0, _(b"obsolete takes no arguments"))
+    obsoletes = obsmod.getrevs(repo, b'obsolete')
     return subset & obsoletes
 
-@predicate('only(set, [set])', safe=True)
+
+@predicate(b'only(set, [set])', safe=True)
 def only(repo, subset, x):
     """Changesets that are ancestors of the first set that are not ancestors
     of any other head in the repo. If a second set is specified, the result
@@ -1506,15 +1687,18 @@ def only(repo, subset, x):
     """
     cl = repo.changelog
     # i18n: "only" is a keyword
-    args = getargs(x, 1, 2, _('only takes one or two arguments'))
+    args = getargs(x, 1, 2, _(b'only takes one or two arguments'))
     include = getset(repo, fullreposet(repo), args[0])
     if len(args) == 1:
         if not include:
             return baseset()
 
         descendants = set(dagop.revdescendants(repo, include, False))
-        exclude = [rev for rev in cl.headrevs()
-            if not rev in descendants and not rev in include]
+        exclude = [
+            rev
+            for rev in cl.headrevs()
+            if not rev in descendants and not rev in include
+        ]
     else:
         exclude = getset(repo, fullreposet(repo), args[1])
 
@@ -1523,7 +1707,8 @@ def only(repo, subset, x):
     # some optimizations from the fact this is a baseset.
     return subset & results
 
-@predicate('origin([set])', safe=True)
+
+@predicate(b'origin([set])', safe=True)
 def origin(repo, subset, x):
     """
     Changesets that were specified as a source for the grafts, transplants or
@@ -1555,7 +1740,8 @@ def origin(repo, subset, x):
     # some optimizations from the fact this is a baseset.
     return subset & o
 
-@predicate('outgoing([path])', safe=False, weight=10)
+
+@predicate(b'outgoing([path])', safe=False, weight=10)
 def outgoing(repo, subset, x):
     """Changesets not found in the specified destination repository, or the
     default push location.
@@ -1565,17 +1751,22 @@ def outgoing(repo, subset, x):
         discovery,
         hg,
     )
+
     # i18n: "outgoing" is a keyword
-    l = getargs(x, 0, 1, _("outgoing takes one or no arguments"))
+    l = getargs(x, 0, 1, _(b"outgoing takes one or no arguments"))
     # i18n: "outgoing" is a keyword
-    dest = l and getstring(l[0], _("outgoing requires a repository path")) or ''
+    dest = (
+        l and getstring(l[0], _(b"outgoing requires a repository path")) or b''
+    )
     if not dest:
         # ui.paths.getpath() explicitly tests for None, not just a boolean
         dest = None
-    path = repo.ui.paths.getpath(dest, default=('default-push', 'default'))
+    path = repo.ui.paths.getpath(dest, default=(b'default-push', b'default'))
     if not path:
-        raise error.Abort(_('default repository not configured!'),
-                hint=_("see 'hg help config.paths'"))
+        raise error.Abort(
+            _(b'default repository not configured!'),
+            hint=_(b"see 'hg help config.paths'"),
+        )
     dest = path.pushloc or path.loc
     branches = path.branch, []
 
@@ -1590,7 +1781,8 @@ def outgoing(repo, subset, x):
     o = {cl.rev(r) for r in outgoing.missing}
     return subset & o
 
-@predicate('p1([set])', safe=True)
+
+@predicate(b'p1([set])', safe=True)
 def p1(repo, subset, x):
     """First parent of changesets in set, or the working directory.
     """
@@ -1612,7 +1804,8 @@ def p1(repo, subset, x):
     # some optimizations from the fact this is a baseset.
     return subset & ps
 
-@predicate('p2([set])', safe=True)
+
+@predicate(b'p2([set])', safe=True)
 def p2(repo, subset, x):
     """Second parent of changesets in set, or the working directory.
     """
@@ -1640,10 +1833,12 @@ def p2(repo, subset, x):
     # some optimizations from the fact this is a baseset.
     return subset & ps
 
+
 def parentpost(repo, subset, x, order):
     return p1(repo, subset, x)
 
-@predicate('parents([set])', safe=True)
+
+@predicate(b'parents([set])', safe=True)
 def parents(repo, subset, x):
     """
     The set of all parents for all changesets in set, or the working directory.
@@ -1663,39 +1858,44 @@ def parents(repo, subset, x):
     ps -= {node.nullrev}
     return subset & ps
 
+
 def _phase(repo, subset, *targets):
     """helper to select all rev in <targets> phases"""
     return repo._phasecache.getrevset(repo, targets, subset)
 
-@predicate('_phase(idx)', safe=True)
+
+@predicate(b'_phase(idx)', safe=True)
 def phase(repo, subset, x):
-    l = getargs(x, 1, 1, ("_phase requires one argument"))
-    target = getinteger(l[0], ("_phase expects a number"))
+    l = getargs(x, 1, 1, b"_phase requires one argument")
+    target = getinteger(l[0], b"_phase expects a number")
     return _phase(repo, subset, target)
 
-@predicate('draft()', safe=True)
+
+@predicate(b'draft()', safe=True)
 def draft(repo, subset, x):
     """Changeset in draft phase."""
     # i18n: "draft" is a keyword
-    getargs(x, 0, 0, _("draft takes no arguments"))
+    getargs(x, 0, 0, _(b"draft takes no arguments"))
     target = phases.draft
     return _phase(repo, subset, target)
 
-@predicate('secret()', safe=True)
+
+@predicate(b'secret()', safe=True)
 def secret(repo, subset, x):
     """Changeset in secret phase."""
     # i18n: "secret" is a keyword
-    getargs(x, 0, 0, _("secret takes no arguments"))
+    getargs(x, 0, 0, _(b"secret takes no arguments"))
     target = phases.secret
     return _phase(repo, subset, target)
 
-@predicate('stack([revs])', safe=True)
+
+@predicate(b'stack([revs])', safe=True)
 def stack(repo, subset, x):
     """Experimental revset for the stack of changesets or working directory
     parent. (EXPERIMENTAL)
     """
     if x is None:
-        stacks = stackmod.getstack(repo, x)
+        stacks = stackmod.getstack(repo)
     else:
         stacks = smartset.baseset([])
         for revision in getset(repo, fullreposet(repo), x):
@@ -1703,6 +1903,7 @@ def stack(repo, subset, x):
             stacks = stacks + currentstack
 
     return subset & stacks
+
 
 def parentspec(repo, subset, x, n, order):
     """``set^0``
@@ -1715,7 +1916,7 @@ def parentspec(repo, subset, x, n, order):
         if n not in (0, 1, 2):
             raise ValueError
     except (TypeError, ValueError):
-        raise error.ParseError(_("^ expects a number 0, 1, or 2"))
+        raise error.ParseError(_(b"^ expects a number 0, 1, or 2"))
     ps = set()
     cl = repo.changelog
     for r in getset(repo, fullreposet(repo), x):
@@ -1737,7 +1938,8 @@ def parentspec(repo, subset, x, n, order):
                     ps.add(parents[1].rev())
     return subset & ps
 
-@predicate('present(set)', safe=True, takeorder=True)
+
+@predicate(b'present(set)', safe=True, takeorder=True)
 def present(repo, subset, x, order):
     """An empty set, if any revision in set isn't found; otherwise,
     all revisions in set.
@@ -1751,30 +1953,32 @@ def present(repo, subset, x, order):
     except error.RepoLookupError:
         return baseset()
 
-# for internal use
-@predicate('_notpublic', safe=True)
-def _notpublic(repo, subset, x):
-    getargs(x, 0, 0, "_notpublic takes no arguments")
-    return _phase(repo, subset, phases.draft, phases.secret)
 
 # for internal use
-@predicate('_phaseandancestors(phasename, set)', safe=True)
+@predicate(b'_notpublic', safe=True)
+def _notpublic(repo, subset, x):
+    getargs(x, 0, 0, b"_notpublic takes no arguments")
+    return _phase(repo, subset, phases.draft, phases.secret)
+
+
+# for internal use
+@predicate(b'_phaseandancestors(phasename, set)', safe=True)
 def _phaseandancestors(repo, subset, x):
     # equivalent to (phasename() & ancestors(set)) but more efficient
     # phasename could be one of 'draft', 'secret', or '_notpublic'
-    args = getargs(x, 2, 2, "_phaseandancestors requires two arguments")
+    args = getargs(x, 2, 2, b"_phaseandancestors requires two arguments")
     phasename = getsymbol(args[0])
     s = getset(repo, fullreposet(repo), args[1])
 
     draft = phases.draft
     secret = phases.secret
     phasenamemap = {
-        '_notpublic': draft,
-        'draft': draft, # follow secret's ancestors
-        'secret': secret,
+        b'_notpublic': draft,
+        b'draft': draft,  # follow secret's ancestors
+        b'secret': secret,
     }
     if phasename not in phasenamemap:
-        raise error.ParseError('%r is not a valid phasename' % phasename)
+        raise error.ParseError(b'%r is not a valid phasename' % phasename)
 
     minimalphase = phasenamemap[phasename]
     getphase = repo._phasecache.phase
@@ -1784,40 +1988,43 @@ def _phaseandancestors(repo, subset, x):
 
     revs = dagop.revancestors(repo, s, cutfunc=cutfunc)
 
-    if phasename == 'draft': # need to remove secret changesets
+    if phasename == b'draft':  # need to remove secret changesets
         revs = revs.filter(lambda r: getphase(repo, r) == draft)
     return subset & revs
 
-@predicate('public()', safe=True)
+
+@predicate(b'public()', safe=True)
 def public(repo, subset, x):
     """Changeset in public phase."""
     # i18n: "public" is a keyword
-    getargs(x, 0, 0, _("public takes no arguments"))
+    getargs(x, 0, 0, _(b"public takes no arguments"))
     return _phase(repo, subset, phases.public)
 
-@predicate('remote([id [,path]])', safe=False)
+
+@predicate(b'remote([id [,path]])', safe=False)
 def remote(repo, subset, x):
     """Local revision that corresponds to the given identifier in a
     remote repository, if present. Here, the '.' identifier is a
     synonym for the current local branch.
     """
 
-    from . import hg # avoid start-up nasties
-    # i18n: "remote" is a keyword
-    l = getargs(x, 0, 2, _("remote takes zero, one, or two arguments"))
+    from . import hg  # avoid start-up nasties
 
-    q = '.'
+    # i18n: "remote" is a keyword
+    l = getargs(x, 0, 2, _(b"remote takes zero, one, or two arguments"))
+
+    q = b'.'
     if len(l) > 0:
-    # i18n: "remote" is a keyword
-        q = getstring(l[0], _("remote requires a string id"))
-    if q == '.':
-        q = repo['.'].branch()
+        # i18n: "remote" is a keyword
+        q = getstring(l[0], _(b"remote requires a string id"))
+    if q == b'.':
+        q = repo[b'.'].branch()
 
-    dest = ''
+    dest = b''
     if len(l) > 1:
         # i18n: "remote" is a keyword
-        dest = getstring(l[1], _("remote requires a repository path"))
-    dest = repo.ui.expandpath(dest or 'default')
+        dest = getstring(l[1], _(b"remote requires a repository path"))
+    dest = repo.ui.expandpath(dest or b'default')
     dest, branches = hg.parseurl(dest)
     revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
     if revs:
@@ -1830,7 +2037,8 @@ def remote(repo, subset, x):
             return baseset([r])
     return baseset()
 
-@predicate('removes(pattern)', safe=True, weight=30)
+
+@predicate(b'removes(pattern)', safe=True, weight=30)
 def removes(repo, subset, x):
     """Changesets which remove files matching pattern.
 
@@ -1839,40 +2047,43 @@ def removes(repo, subset, x):
     directory.
     """
     # i18n: "removes" is a keyword
-    pat = getstring(x, _("removes requires a pattern"))
+    pat = getstring(x, _(b"removes requires a pattern"))
     return checkstatus(repo, subset, pat, 2)
 
-@predicate('rev(number)', safe=True)
+
+@predicate(b'rev(number)', safe=True)
 def rev(repo, subset, x):
     """Revision with the given numeric identifier.
     """
     # i18n: "rev" is a keyword
-    l = getargs(x, 1, 1, _("rev requires one argument"))
+    l = getargs(x, 1, 1, _(b"rev requires one argument"))
     try:
         # i18n: "rev" is a keyword
-        l = int(getstring(l[0], _("rev requires a number")))
+        l = int(getstring(l[0], _(b"rev requires a number")))
     except (TypeError, ValueError):
         # i18n: "rev" is a keyword
-        raise error.ParseError(_("rev expects a number"))
+        raise error.ParseError(_(b"rev expects a number"))
     if l not in repo.changelog and l not in _virtualrevs:
         return baseset()
     return subset & baseset([l])
 
-@predicate('_rev(number)', safe=True)
+
+@predicate(b'_rev(number)', safe=True)
 def _rev(repo, subset, x):
     # internal version of "rev(x)" that raise error if "x" is invalid
     # i18n: "rev" is a keyword
-    l = getargs(x, 1, 1, _("rev requires one argument"))
+    l = getargs(x, 1, 1, _(b"rev requires one argument"))
     try:
         # i18n: "rev" is a keyword
-        l = int(getstring(l[0], _("rev requires a number")))
+        l = int(getstring(l[0], _(b"rev requires a number")))
     except (TypeError, ValueError):
         # i18n: "rev" is a keyword
-        raise error.ParseError(_("rev expects a number"))
-    repo.changelog.node(l) # check that the rev exists
+        raise error.ParseError(_(b"rev expects a number"))
+    repo.changelog.node(l)  # check that the rev exists
     return subset & baseset([l])
 
-@predicate('revset(set)', safe=True, takeorder=True)
+
+@predicate(b'revset(set)', safe=True, takeorder=True)
 def revsetpredicate(repo, subset, x, order):
     """Strictly interpret the content as a revset.
 
@@ -1882,7 +2093,8 @@ def revsetpredicate(repo, subset, x, order):
     """
     return getset(repo, subset, x, order)
 
-@predicate('matching(revision [, field])', safe=True)
+
+@predicate(b'matching(revision [, field])', safe=True)
 def matching(repo, subset, x):
     """Changesets in which a given set of fields match the set of fields in the
     selected revision or set.
@@ -1908,49 +2120,62 @@ def matching(repo, subset, x):
     specified. You can match more than one field at a time.
     """
     # i18n: "matching" is a keyword
-    l = getargs(x, 1, 2, _("matching takes 1 or 2 arguments"))
+    l = getargs(x, 1, 2, _(b"matching takes 1 or 2 arguments"))
 
     revs = getset(repo, fullreposet(repo), l[0])
 
-    fieldlist = ['metadata']
+    fieldlist = [b'metadata']
     if len(l) > 1:
-            fieldlist = getstring(l[1],
-                # i18n: "matching" is a keyword
-                _("matching requires a string "
-                "as its second argument")).split()
+        fieldlist = getstring(
+            l[1],
+            # i18n: "matching" is a keyword
+            _(b"matching requires a string as its second argument"),
+        ).split()
 
     # Make sure that there are no repeated fields,
     # expand the 'special' 'metadata' field type
     # and check the 'files' whenever we check the 'diff'
     fields = []
     for field in fieldlist:
-        if field == 'metadata':
-            fields += ['user', 'description', 'date']
-        elif field == 'diff':
+        if field == b'metadata':
+            fields += [b'user', b'description', b'date']
+        elif field == b'diff':
             # a revision matching the diff must also match the files
             # since matching the diff is very costly, make sure to
             # also match the files first
-            fields += ['files', 'diff']
+            fields += [b'files', b'diff']
         else:
-            if field == 'author':
-                field = 'user'
+            if field == b'author':
+                field = b'user'
             fields.append(field)
     fields = set(fields)
-    if 'summary' in fields and 'description' in fields:
+    if b'summary' in fields and b'description' in fields:
         # If a revision matches its description it also matches its summary
-        fields.discard('summary')
+        fields.discard(b'summary')
 
     # We may want to match more than one field
     # Not all fields take the same amount of time to be matched
     # Sort the selected fields in order of increasing matching cost
-    fieldorder = ['phase', 'parents', 'user', 'date', 'branch', 'summary',
-        'files', 'description', 'substate', 'diff']
+    fieldorder = [
+        b'phase',
+        b'parents',
+        b'user',
+        b'date',
+        b'branch',
+        b'summary',
+        b'files',
+        b'description',
+        b'substate',
+        b'diff',
+    ]
+
     def fieldkeyfunc(f):
         try:
             return fieldorder.index(f)
         except ValueError:
             # assume an unknown field is very costly
             return len(fieldorder)
+
     fields = list(fields)
     fields.sort(key=fieldkeyfunc)
 
@@ -1958,24 +2183,27 @@ def matching(repo, subset, x):
     # which will be added to the getfieldfuncs array of functions
     getfieldfuncs = []
     _funcs = {
-        'user': lambda r: repo[r].user(),
-        'branch': lambda r: repo[r].branch(),
-        'date': lambda r: repo[r].date(),
-        'description': lambda r: repo[r].description(),
-        'files': lambda r: repo[r].files(),
-        'parents': lambda r: repo[r].parents(),
-        'phase': lambda r: repo[r].phase(),
-        'substate': lambda r: repo[r].substate,
-        'summary': lambda r: repo[r].description().splitlines()[0],
-        'diff': lambda r: list(repo[r].diff(
-            opts=diffutil.diffallopts(repo.ui, {'git': True}))),
+        b'user': lambda r: repo[r].user(),
+        b'branch': lambda r: repo[r].branch(),
+        b'date': lambda r: repo[r].date(),
+        b'description': lambda r: repo[r].description(),
+        b'files': lambda r: repo[r].files(),
+        b'parents': lambda r: repo[r].parents(),
+        b'phase': lambda r: repo[r].phase(),
+        b'substate': lambda r: repo[r].substate,
+        b'summary': lambda r: repo[r].description().splitlines()[0],
+        b'diff': lambda r: list(
+            repo[r].diff(opts=diffutil.diffallopts(repo.ui, {b'git': True}))
+        ),
     }
     for info in fields:
         getfield = _funcs.get(info, None)
         if getfield is None:
             raise error.ParseError(
                 # i18n: "matching" is a keyword
-                _("unexpected field name passed to matching: %s") % info)
+                _(b"unexpected field name passed to matching: %s")
+                % info
+            )
         getfieldfuncs.append(getfield)
     # convert the getfield array of functions into a "getinfo" function
     # which returns an array of field values (or a single value if there
@@ -1993,9 +2221,10 @@ def matching(repo, subset, x):
                 return True
         return False
 
-    return subset.filter(matches, condrepr=('<matching%r %r>', fields, revs))
+    return subset.filter(matches, condrepr=(b'<matching%r %r>', fields, revs))
 
-@predicate('reverse(set)', safe=True, takeorder=True, weight=0)
+
+@predicate(b'reverse(set)', safe=True, takeorder=True, weight=0)
 def reverse(repo, subset, x, order):
     """Reverse order of set.
     """
@@ -2004,68 +2233,81 @@ def reverse(repo, subset, x, order):
         l.reverse()
     return l
 
-@predicate('roots(set)', safe=True)
+
+@predicate(b'roots(set)', safe=True)
 def roots(repo, subset, x):
     """Changesets in set with no parent changeset in set.
     """
     s = getset(repo, fullreposet(repo), x)
     parents = repo.changelog.parentrevs
+
     def filter(r):
         for p in parents(r):
             if 0 <= p and p in s:
                 return False
         return True
-    return subset & s.filter(filter, condrepr='<roots>')
+
+    return subset & s.filter(filter, condrepr=b'<roots>')
+
 
 _sortkeyfuncs = {
-    'rev': lambda c: c.rev(),
-    'branch': lambda c: c.branch(),
-    'desc': lambda c: c.description(),
-    'user': lambda c: c.user(),
-    'author': lambda c: c.user(),
-    'date': lambda c: c.date()[0],
+    b'rev': lambda c: c.rev(),
+    b'branch': lambda c: c.branch(),
+    b'desc': lambda c: c.description(),
+    b'user': lambda c: c.user(),
+    b'author': lambda c: c.user(),
+    b'date': lambda c: c.date()[0],
 }
+
 
 def _getsortargs(x):
     """Parse sort options into (set, [(key, reverse)], opts)"""
-    args = getargsdict(x, 'sort', 'set keys topo.firstbranch')
-    if 'set' not in args:
+    args = getargsdict(x, b'sort', b'set keys topo.firstbranch')
+    if b'set' not in args:
         # i18n: "sort" is a keyword
-        raise error.ParseError(_('sort requires one or two arguments'))
-    keys = "rev"
-    if 'keys' in args:
+        raise error.ParseError(_(b'sort requires one or two arguments'))
+    keys = b"rev"
+    if b'keys' in args:
         # i18n: "sort" is a keyword
-        keys = getstring(args['keys'], _("sort spec must be a string"))
+        keys = getstring(args[b'keys'], _(b"sort spec must be a string"))
 
     keyflags = []
     for k in keys.split():
         fk = k
-        reverse = (k.startswith('-'))
+        reverse = k.startswith(b'-')
         if reverse:
             k = k[1:]
-        if k not in _sortkeyfuncs and k != 'topo':
+        if k not in _sortkeyfuncs and k != b'topo':
             raise error.ParseError(
-                _("unknown sort key %r") % pycompat.bytestr(fk))
+                _(b"unknown sort key %r") % pycompat.bytestr(fk)
+            )
         keyflags.append((k, reverse))
 
-    if len(keyflags) > 1 and any(k == 'topo' for k, reverse in keyflags):
+    if len(keyflags) > 1 and any(k == b'topo' for k, reverse in keyflags):
         # i18n: "topo" is a keyword
-        raise error.ParseError(_('topo sort order cannot be combined '
-                                 'with other sort keys'))
+        raise error.ParseError(
+            _(b'topo sort order cannot be combined with other sort keys')
+        )
 
     opts = {}
-    if 'topo.firstbranch' in args:
-        if any(k == 'topo' for k, reverse in keyflags):
-            opts['topo.firstbranch'] = args['topo.firstbranch']
+    if b'topo.firstbranch' in args:
+        if any(k == b'topo' for k, reverse in keyflags):
+            opts[b'topo.firstbranch'] = args[b'topo.firstbranch']
         else:
             # i18n: "topo" and "topo.firstbranch" are keywords
-            raise error.ParseError(_('topo.firstbranch can only be used '
-                                     'when using the topo sort key'))
+            raise error.ParseError(
+                _(
+                    b'topo.firstbranch can only be used '
+                    b'when using the topo sort key'
+                )
+            )
 
-    return args['set'], keyflags, opts
+    return args[b'set'], keyflags, opts
 
-@predicate('sort(set[, [-]key... [, ...]])', safe=True, takeorder=True,
-           weight=10)
+
+@predicate(
+    b'sort(set[, [-]key... [, ...]])', safe=True, takeorder=True, weight=10
+)
 def sort(repo, subset, x, order):
     """Sort set by keys. The default sort order is ascending, specify a key
     as ``-key`` to sort in descending order.
@@ -2089,16 +2331,17 @@ def sort(repo, subset, x, order):
 
     if not keyflags or order != defineorder:
         return revs
-    if len(keyflags) == 1 and keyflags[0][0] == "rev":
+    if len(keyflags) == 1 and keyflags[0][0] == b"rev":
         revs.sort(reverse=keyflags[0][1])
         return revs
-    elif keyflags[0][0] == "topo":
+    elif keyflags[0][0] == b"topo":
         firstbranch = ()
-        if 'topo.firstbranch' in opts:
-            firstbranch = getset(repo, subset, opts['topo.firstbranch'])
-        revs = baseset(dagop.toposort(revs, repo.changelog.parentrevs,
-                                      firstbranch),
-                       istopo=True)
+        if b'topo.firstbranch' in opts:
+            firstbranch = getset(repo, subset, opts[b'topo.firstbranch'])
+        revs = baseset(
+            dagop.toposort(revs, repo.changelog.parentrevs, firstbranch),
+            istopo=True,
+        )
         if keyflags[0][1]:
             revs.reverse()
         return revs
@@ -2109,18 +2352,19 @@ def sort(repo, subset, x, order):
         ctxs.sort(key=_sortkeyfuncs[k], reverse=reverse)
     return baseset([c.rev() for c in ctxs])
 
-@predicate('subrepo([pattern])')
+
+@predicate(b'subrepo([pattern])')
 def subrepo(repo, subset, x):
     """Changesets that add, modify or remove the given subrepo.  If no subrepo
     pattern is named, any subrepo changes are returned.
     """
     # i18n: "subrepo" is a keyword
-    args = getargs(x, 0, 1, _('subrepo takes at most one argument'))
+    args = getargs(x, 0, 1, _(b'subrepo takes at most one argument'))
     pat = None
     if len(args) != 0:
-        pat = getstring(args[0], _("subrepo requires a pattern"))
+        pat = getstring(args[0], _(b"subrepo requires a pattern"))
 
-    m = matchmod.exact(['.hgsubstate'])
+    m = matchmod.exact([b'.hgsubstate'])
 
     def submatches(names):
         k, p, m = stringutil.stringmatcher(pat)
@@ -2151,7 +2395,8 @@ def subrepo(repo, subset, x):
 
         return False
 
-    return subset.filter(matches, condrepr=('<subrepo %r>', pat))
+    return subset.filter(matches, condrepr=(b'<subrepo %r>', pat))
+
 
 def _mapbynodefunc(repo, s, f):
     """(repo, smartset, [node] -> [node]) -> smartset
@@ -2167,7 +2412,8 @@ def _mapbynodefunc(repo, s, f):
     result = set(torev(n) for n in f(tonode(r) for r in s) if n in nodemap)
     return smartset.baseset(result - repo.changelog.filteredrevs)
 
-@predicate('successors(set)', safe=True)
+
+@predicate(b'successors(set)', safe=True)
 def successors(repo, subset, x):
     """All successors for set, including the given set themselves"""
     s = getset(repo, fullreposet(repo), x)
@@ -2175,10 +2421,12 @@ def successors(repo, subset, x):
     d = _mapbynodefunc(repo, s, f)
     return subset & d
 
+
 def _substringmatcher(pattern, casesensitive=True):
     kind, pattern, matcher = stringutil.stringmatcher(
-        pattern, casesensitive=casesensitive)
-    if kind == 'literal':
+        pattern, casesensitive=casesensitive
+    )
+    if kind == b'literal':
         if not casesensitive:
             pattern = encoding.lower(pattern)
             matcher = lambda s: pattern in encoding.lower(s)
@@ -2186,7 +2434,8 @@ def _substringmatcher(pattern, casesensitive=True):
             matcher = lambda s: pattern in s
     return kind, pattern, matcher
 
-@predicate('tag([name])', safe=True)
+
+@predicate(b'tag([name])', safe=True)
 def tag(repo, subset, x):
     """The specified tag by name, or all tagged revisions if no name is given.
 
@@ -2194,41 +2443,46 @@ def tag(repo, subset, x):
     :hg:`help revisions.patterns`.
     """
     # i18n: "tag" is a keyword
-    args = getargs(x, 0, 1, _("tag takes one or no arguments"))
+    args = getargs(x, 0, 1, _(b"tag takes one or no arguments"))
     cl = repo.changelog
     if args:
-        pattern = getstring(args[0],
-                            # i18n: "tag" is a keyword
-                            _('the argument to tag must be a string'))
+        pattern = getstring(
+            args[0],
+            # i18n: "tag" is a keyword
+            _(b'the argument to tag must be a string'),
+        )
         kind, pattern, matcher = stringutil.stringmatcher(pattern)
-        if kind == 'literal':
+        if kind == b'literal':
             # avoid resolving all tags
             tn = repo._tagscache.tags.get(pattern, None)
             if tn is None:
-                raise error.RepoLookupError(_("tag '%s' does not exist")
-                                            % pattern)
+                raise error.RepoLookupError(
+                    _(b"tag '%s' does not exist") % pattern
+                )
             s = {repo[tn].rev()}
         else:
             s = {cl.rev(n) for t, n in repo.tagslist() if matcher(t)}
     else:
-        s = {cl.rev(n) for t, n in repo.tagslist() if t != 'tip'}
+        s = {cl.rev(n) for t, n in repo.tagslist() if t != b'tip'}
     return subset & s
 
-@predicate('tagged', safe=True)
+
+@predicate(b'tagged', safe=True)
 def tagged(repo, subset, x):
     return tag(repo, subset, x)
 
-@predicate('orphan()', safe=True)
+
+@predicate(b'orphan()', safe=True)
 def orphan(repo, subset, x):
     """Non-obsolete changesets with obsolete ancestors. (EXPERIMENTAL)
     """
     # i18n: "orphan" is a keyword
-    getargs(x, 0, 0, _("orphan takes no arguments"))
-    orphan = obsmod.getrevs(repo, 'orphan')
+    getargs(x, 0, 0, _(b"orphan takes no arguments"))
+    orphan = obsmod.getrevs(repo, b'orphan')
     return subset & orphan
 
 
-@predicate('user(string)', safe=True, weight=10)
+@predicate(b'user(string)', safe=True, weight=10)
 def user(repo, subset, x):
     """User name contains string. The match is case-insensitive.
 
@@ -2237,17 +2491,19 @@ def user(repo, subset, x):
     """
     return author(repo, subset, x)
 
-@predicate('wdir()', safe=True, weight=0)
+
+@predicate(b'wdir()', safe=True, weight=0)
 def wdir(repo, subset, x):
     """Working directory. (EXPERIMENTAL)"""
     # i18n: "wdir" is a keyword
-    getargs(x, 0, 0, _("wdir takes no arguments"))
+    getargs(x, 0, 0, _(b"wdir takes no arguments"))
     if node.wdirrev in subset or isinstance(subset, fullreposet):
         return baseset([node.wdirrev])
     return baseset()
 
+
 def _orderedlist(repo, subset, x):
-    s = getstring(x, "internal error")
+    s = getstring(x, b"internal error")
     if not s:
         return baseset()
     # remove duplicates here. it's difficult for caller to deduplicate sets
@@ -2255,11 +2511,11 @@ def _orderedlist(repo, subset, x):
     cl = repo.changelog
     ls = []
     seen = set()
-    for t in s.split('\0'):
+    for t in s.split(b'\0'):
         try:
             # fast path for integer revision
             r = int(t)
-            if ('%d' % r) != t or r not in cl:
+            if (b'%d' % r) != t or r not in cl:
                 raise ValueError
             revs = [r]
         except ValueError:
@@ -2268,14 +2524,18 @@ def _orderedlist(repo, subset, x):
         for r in revs:
             if r in seen:
                 continue
-            if (r in subset
-                or r in _virtualrevs and isinstance(subset, fullreposet)):
+            if (
+                r in subset
+                or r in _virtualrevs
+                and isinstance(subset, fullreposet)
+            ):
                 ls.append(r)
             seen.add(r)
     return baseset(ls)
 
+
 # for internal use
-@predicate('_list', safe=True, takeorder=True)
+@predicate(b'_list', safe=True, takeorder=True)
 def _list(repo, subset, x, order):
     if order == followorder:
         # slow path to take the subset order
@@ -2283,16 +2543,18 @@ def _list(repo, subset, x, order):
     else:
         return _orderedlist(repo, subset, x)
 
+
 def _orderedintlist(repo, subset, x):
-    s = getstring(x, "internal error")
+    s = getstring(x, b"internal error")
     if not s:
         return baseset()
-    ls = [int(r) for r in s.split('\0')]
+    ls = [int(r) for r in s.split(b'\0')]
     s = subset
     return baseset([r for r in ls if r in s])
 
+
 # for internal use
-@predicate('_intlist', safe=True, takeorder=True, weight=0)
+@predicate(b'_intlist', safe=True, takeorder=True, weight=0)
 def _intlist(repo, subset, x, order):
     if order == followorder:
         # slow path to take the subset order
@@ -2300,17 +2562,19 @@ def _intlist(repo, subset, x, order):
     else:
         return _orderedintlist(repo, subset, x)
 
+
 def _orderedhexlist(repo, subset, x):
-    s = getstring(x, "internal error")
+    s = getstring(x, b"internal error")
     if not s:
         return baseset()
     cl = repo.changelog
-    ls = [cl.rev(node.bin(r)) for r in s.split('\0')]
+    ls = [cl.rev(node.bin(r)) for r in s.split(b'\0')]
     s = subset
     return baseset([r for r in ls if r in s])
 
+
 # for internal use
-@predicate('_hexlist', safe=True, takeorder=True)
+@predicate(b'_hexlist', safe=True, takeorder=True)
 def _hexlist(repo, subset, x, order):
     if order == followorder:
         # slow path to take the subset order
@@ -2318,42 +2582,46 @@ def _hexlist(repo, subset, x, order):
     else:
         return _orderedhexlist(repo, subset, x)
 
+
 methods = {
-    "range": rangeset,
-    "rangeall": rangeall,
-    "rangepre": rangepre,
-    "rangepost": rangepost,
-    "dagrange": dagrange,
-    "string": stringset,
-    "symbol": stringset,
-    "and": andset,
-    "andsmally": andsmallyset,
-    "or": orset,
-    "not": notset,
-    "difference": differenceset,
-    "relation": relationset,
-    "relsubscript": relsubscriptset,
-    "subscript": subscriptset,
-    "list": listset,
-    "keyvalue": keyvaluepair,
-    "func": func,
-    "ancestor": ancestorspec,
-    "parent": parentspec,
-    "parentpost": parentpost,
-    "smartset": rawsmartset,
+    b"range": rangeset,
+    b"rangeall": rangeall,
+    b"rangepre": rangepre,
+    b"rangepost": rangepost,
+    b"dagrange": dagrange,
+    b"string": stringset,
+    b"symbol": stringset,
+    b"and": andset,
+    b"andsmally": andsmallyset,
+    b"or": orset,
+    b"not": notset,
+    b"difference": differenceset,
+    b"relation": relationset,
+    b"relsubscript": relsubscriptset,
+    b"subscript": subscriptset,
+    b"list": listset,
+    b"keyvalue": keyvaluepair,
+    b"func": func,
+    b"ancestor": ancestorspec,
+    b"parent": parentspec,
+    b"parentpost": parentpost,
+    b"smartset": rawsmartset,
 }
 
 subscriptrelations = {
-    "g": generationsrel,
-    "generations": generationsrel,
+    b"g": generationsrel,
+    b"generations": generationsrel,
 }
+
 
 def lookupfn(repo):
     return lambda symbol: scmutil.isrevsymbol(repo, symbol)
 
+
 def match(ui, spec, lookup=None):
     """Create a matcher for a single revision spec"""
     return matchany(ui, [spec], lookup=lookup)
+
 
 def matchany(ui, specs, lookup=None, localalias=None):
     """Create a matcher that will include any revisions matching one of the
@@ -2366,21 +2634,25 @@ def matchany(ui, specs, lookup=None, localalias=None):
     precedence over [revsetalias] config section.
     """
     if not specs:
+
         def mfunc(repo, subset=None):
             return baseset()
+
         return mfunc
     if not all(specs):
-        raise error.ParseError(_("empty query"))
+        raise error.ParseError(_(b"empty query"))
     if len(specs) == 1:
         tree = revsetlang.parse(specs[0], lookup)
     else:
-        tree = ('or',
-                ('list',) + tuple(revsetlang.parse(s, lookup) for s in specs))
+        tree = (
+            b'or',
+            (b'list',) + tuple(revsetlang.parse(s, lookup) for s in specs),
+        )
 
     aliases = []
     warn = None
     if ui:
-        aliases.extend(ui.configitems('revsetalias'))
+        aliases.extend(ui.configitems(b'revsetalias'))
         warn = ui.warn
     if localalias:
         aliases.extend(localalias.items())
@@ -2391,8 +2663,10 @@ def matchany(ui, specs, lookup=None, localalias=None):
     tree = revsetlang.optimize(tree)
     return makematcher(tree)
 
+
 def makematcher(tree):
     """Create a matcher from an evaluatable tree"""
+
     def mfunc(repo, subset=None, order=None):
         if order is None:
             if subset is None:
@@ -2402,15 +2676,18 @@ def makematcher(tree):
         if subset is None:
             subset = fullreposet(repo)
         return getset(repo, subset, tree, order)
+
     return mfunc
+
 
 def loadpredicate(ui, extname, registrarobj):
     """Load revset predicates from specified registrarobj
     """
-    for name, func in registrarobj._table.iteritems():
+    for name, func in pycompat.iteritems(registrarobj._table):
         symbols[name] = func
         if func._safe:
             safesymbols.add(name)
+
 
 # load built-in predicates explicitly to setup safesymbols
 loadpredicate(None, None, predicate)

@@ -11,12 +11,14 @@ from __future__ import absolute_import
 from .node import hex
 
 from . import (
+    pycompat,
     util,
     vfs as vfsmod,
 )
 
 # directory name in .hg/ in which remotenames files will be present
-remotenamedir = 'logexchange'
+remotenamedir = b'logexchange'
+
 
 def readremotenamefile(repo, filename):
     """
@@ -38,12 +40,13 @@ def readremotenamefile(repo, filename):
         if lineno == 0:
             lineno += 1
         try:
-            node, remote, rname = line.split('\0')
+            node, remote, rname = line.split(b'\0')
             yield node, remote, rname
         except ValueError:
             pass
 
     f.close()
+
 
 def readremotenames(repo):
     """
@@ -53,33 +56,35 @@ def readremotenames(repo):
     information, call the respective functions.
     """
 
-    for bmentry in readremotenamefile(repo, 'bookmarks'):
+    for bmentry in readremotenamefile(repo, b'bookmarks'):
         yield bmentry
-    for branchentry in readremotenamefile(repo, 'branches'):
+    for branchentry in readremotenamefile(repo, b'branches'):
         yield branchentry
+
 
 def writeremotenamefile(repo, remotepath, names, nametype):
     vfs = vfsmod.vfs(repo.vfs.join(remotenamedir))
-    f = vfs(nametype, 'w', atomictemp=True)
+    f = vfs(nametype, b'w', atomictemp=True)
     # write the storage version info on top of file
     # version '0' represents the very initial version of the storage format
-    f.write('0\n\n')
+    f.write(b'0\n\n')
 
     olddata = set(readremotenamefile(repo, nametype))
     # re-save the data from a different remote than this one.
     for node, oldpath, rname in sorted(olddata):
         if oldpath != remotepath:
-            f.write('%s\0%s\0%s\n' % (node, oldpath, rname))
+            f.write(b'%s\0%s\0%s\n' % (node, oldpath, rname))
 
-    for name, node in sorted(names.iteritems()):
-        if nametype == "branches":
+    for name, node in sorted(pycompat.iteritems(names)):
+        if nametype == b"branches":
             for n in node:
-                f.write('%s\0%s\0%s\n' % (n, remotepath, name))
-        elif nametype == "bookmarks":
+                f.write(b'%s\0%s\0%s\n' % (n, remotepath, name))
+        elif nametype == b"bookmarks":
             if node:
-                f.write('%s\0%s\0%s\n' % (node, remotepath, name))
+                f.write(b'%s\0%s\0%s\n' % (node, remotepath, name))
 
     f.close()
+
 
 def saveremotenames(repo, remotepath, branches=None, bookmarks=None):
     """
@@ -89,11 +94,12 @@ def saveremotenames(repo, remotepath, branches=None, bookmarks=None):
     wlock = repo.wlock()
     try:
         if bookmarks:
-            writeremotenamefile(repo, remotepath, bookmarks, 'bookmarks')
+            writeremotenamefile(repo, remotepath, bookmarks, b'bookmarks')
         if branches:
-            writeremotenamefile(repo, remotepath, branches, 'branches')
+            writeremotenamefile(repo, remotepath, branches, b'branches')
     finally:
         wlock.release()
+
 
 def activepath(repo, remote):
     """returns remote path"""
@@ -109,7 +115,7 @@ def activepath(repo, remote):
         rpath = remote._url
 
     # represent the remotepath with user defined path name if exists
-    for path, url in repo.ui.configitems('paths'):
+    for path, url in repo.ui.configitems(b'paths'):
         # remove auth info from user defined url
         noauthurl = util.removeauth(url)
 
@@ -123,6 +129,7 @@ def activepath(repo, remote):
 
     return rpath
 
+
 def pullremotenames(localrepo, remoterepo):
     """
     pulls bookmarks and branches information of the remote repo during a
@@ -133,9 +140,9 @@ def pullremotenames(localrepo, remoterepo):
     remotepath = activepath(localrepo, remoterepo)
 
     with remoterepo.commandexecutor() as e:
-        bookmarks = e.callcommand('listkeys', {
-            'namespace': 'bookmarks',
-        }).result()
+        bookmarks = e.callcommand(
+            b'listkeys', {b'namespace': b'bookmarks',}
+        ).result()
 
     # on a push, we don't want to keep obsolete heads since
     # they won't show up as heads on the next pull, so we
@@ -145,9 +152,9 @@ def pullremotenames(localrepo, remoterepo):
     repo = localrepo.unfiltered()
 
     with remoterepo.commandexecutor() as e:
-        branchmap = e.callcommand('branchmap', {}).result()
+        branchmap = e.callcommand(b'branchmap', {}).result()
 
-    for branch, nodes in branchmap.iteritems():
+    for branch, nodes in pycompat.iteritems(branchmap):
         bmap[branch] = []
         for node in nodes:
             if node in repo and not repo[node].obsolete():

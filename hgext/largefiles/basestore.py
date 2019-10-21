@@ -15,9 +15,11 @@ from mercurial import node, util
 
 from . import lfutil
 
+
 class StoreError(Exception):
     '''Raised when there is a problem getting files from or putting
     files to a central store.'''
+
     def __init__(self, filename, hash, url, detail):
         self.filename = filename
         self.hash = hash
@@ -25,12 +27,16 @@ class StoreError(Exception):
         self.detail = detail
 
     def longmessage(self):
-        return (_("error getting id %s from url %s for file %s: %s\n") %
-                 (self.hash, util.hidepassword(self.url), self.filename,
-                  self.detail))
+        return _(b"error getting id %s from url %s for file %s: %s\n") % (
+            self.hash,
+            util.hidepassword(self.url),
+            self.filename,
+            self.detail,
+        )
 
     def __str__(self):
-        return "%s: %s" % (util.hidepassword(self.url), self.detail)
+        return b"%s: %s" % (util.hidepassword(self.url), self.detail)
+
 
 class basestore(object):
     def __init__(self, ui, repo, url):
@@ -40,12 +46,12 @@ class basestore(object):
 
     def put(self, source, hash):
         '''Put source file into the store so it can be retrieved by hash.'''
-        raise NotImplementedError('abstract method')
+        raise NotImplementedError(b'abstract method')
 
     def exists(self, hashes):
         '''Check to see if the store contains the given hashes. Given an
         iterable of hashes it returns a mapping from hash to bool.'''
-        raise NotImplementedError('abstract method')
+        raise NotImplementedError(b'abstract method')
 
     def get(self, files):
         '''Get the specified largefiles from the store and write to local
@@ -62,16 +68,19 @@ class basestore(object):
 
         at = 0
         available = self.exists(set(hash for (_filename, hash) in files))
-        with ui.makeprogress(_('getting largefiles'), unit=_('files'),
-                             total=len(files)) as progress:
+        with ui.makeprogress(
+            _(b'getting largefiles'), unit=_(b'files'), total=len(files)
+        ) as progress:
             for filename, hash in files:
                 progress.update(at)
                 at += 1
-                ui.note(_('getting %s:%s\n') % (filename, hash))
+                ui.note(_(b'getting %s:%s\n') % (filename, hash))
 
                 if not available.get(hash):
-                    ui.warn(_('%s: largefile %s not available from %s\n')
-                            % (filename, hash, util.hidepassword(self.url)))
+                    ui.warn(
+                        _(b'%s: largefile %s not available from %s\n')
+                        % (filename, hash, util.hidepassword(self.url))
+                    )
                     missing.append(filename)
                     continue
 
@@ -87,22 +96,25 @@ class basestore(object):
         store and in the usercache.
         filename is for informational messages only.
         """
-        util.makedirs(lfutil.storepath(self.repo, ''))
+        util.makedirs(lfutil.storepath(self.repo, b''))
         storefilename = lfutil.storepath(self.repo, hash)
 
-        tmpname = storefilename + '.tmp'
-        with util.atomictempfile(tmpname,
-                createmode=self.repo.store.createmode) as tmpfile:
+        tmpname = storefilename + b'.tmp'
+        with util.atomictempfile(
+            tmpname, createmode=self.repo.store.createmode
+        ) as tmpfile:
             try:
                 gothash = self._getfile(tmpfile, filename, hash)
             except StoreError as err:
                 self.ui.warn(err.longmessage())
-                gothash = ""
+                gothash = b""
 
         if gothash != hash:
-            if gothash != "":
-                self.ui.warn(_('%s: data corruption (expected %s, got %s)\n')
-                             % (filename, hash, gothash))
+            if gothash != b"":
+                self.ui.warn(
+                    _(b'%s: data corruption (expected %s, got %s)\n')
+                    % (filename, hash, gothash)
+                )
             util.unlink(tmpname)
             return False
 
@@ -115,13 +127,14 @@ class basestore(object):
         file revision referenced by every changeset in revs.
         Return 0 if all is well, non-zero on any errors.'''
 
-        self.ui.status(_('searching %d changesets for largefiles\n') %
-                       len(revs))
-        verified = set()                # set of (filename, filenode) tuples
-        filestocheck = []               # list of (cset, filename, expectedhash)
+        self.ui.status(
+            _(b'searching %d changesets for largefiles\n') % len(revs)
+        )
+        verified = set()  # set of (filename, filenode) tuples
+        filestocheck = []  # list of (cset, filename, expectedhash)
         for rev in revs:
             cctx = self.repo[rev]
-            cset = "%d:%s" % (cctx.rev(), node.short(cctx.node()))
+            cset = b"%d:%s" % (cctx.rev(), node.short(cctx.node()))
 
             for standin in cctx:
                 filename = lfutil.splitstandin(standin)
@@ -139,12 +152,14 @@ class basestore(object):
         numlfiles = len({fname for (fname, fnode) in verified})
         if contents:
             self.ui.status(
-                _('verified contents of %d revisions of %d largefiles\n')
-                % (numrevs, numlfiles))
+                _(b'verified contents of %d revisions of %d largefiles\n')
+                % (numrevs, numlfiles)
+            )
         else:
             self.ui.status(
-                _('verified existence of %d revisions of %d largefiles\n')
-                % (numrevs, numlfiles))
+                _(b'verified existence of %d revisions of %d largefiles\n')
+                % (numrevs, numlfiles)
+            )
         return int(failed)
 
     def _getfile(self, tmpfile, filename, hash):
@@ -153,7 +168,7 @@ class basestore(object):
         downloads and return the hash.  Close tmpfile.  Raise
         StoreError if unable to download the file (e.g. it does not
         exist in the store).'''
-        raise NotImplementedError('abstract method')
+        raise NotImplementedError(b'abstract method')
 
     def _verifyfiles(self, contents, filestocheck):
         '''Perform the actual verification of files in the store.
@@ -161,4 +176,4 @@ class basestore(object):
         'filestocheck' is list of files to check.
         Returns _true_ if any problems are found!
         '''
-        raise NotImplementedError('abstract method')
+        raise NotImplementedError(b'abstract method')

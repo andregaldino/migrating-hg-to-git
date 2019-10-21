@@ -105,15 +105,15 @@ perfstatus
    perfctxfiles  (no help text available)
    perfdiffwd    Profile diff of working directory changes
    perfdirfoldmap
-                 (no help text available)
+                 benchmap a 'dirstate._map.dirfoldmap.get()' request
    perfdirs      (no help text available)
-   perfdirstate  (no help text available)
+   perfdirstate  benchmap the time of various distate operations
    perfdirstatedirs
-                 (no help text available)
+                 benchmap a 'dirstate.hasdir' call from an empty 'dirs' cache
    perfdirstatefoldmap
-                 (no help text available)
+                 benchmap a 'dirstate._map.filefoldmap.get()' request
    perfdirstatewrite
-                 (no help text available)
+                 benchmap the time it take to write a dirstate on disk
    perfdiscovery
                  benchmark discovery between local repo and the peer at given
                  path
@@ -172,7 +172,7 @@ perfstatus
    perfrevrange  (no help text available)
    perfrevset    benchmark the execution time of a revset
    perfstartup   (no help text available)
-   perfstatus    (no help text available)
+   perfstatus    benchmark the performance of a single status call
    perftags      (no help text available)
    perftemplating
                  test the rendering time of a given template
@@ -205,6 +205,8 @@ perfstatus
   $ hg perfdirfoldmap
   $ hg perfdirs
   $ hg perfdirstate
+  $ hg perfdirstate --contains
+  $ hg perfdirstate --iteration
   $ hg perfdirstatedirs
   $ hg perfdirstatefoldmap
   $ hg perfdirstatewrite

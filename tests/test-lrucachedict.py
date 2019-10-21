@@ -4,9 +4,8 @@ import unittest
 
 import silenttestrunner
 
-from mercurial import (
-    util,
-)
+from mercurial import util
+
 
 class testlrucachedict(unittest.TestCase):
     def testsimple(self):
@@ -362,6 +361,7 @@ class testlrucachedict(unittest.TestCase):
         self.assertNotIn('c', d)
         self.assertIn('d', d)
         self.assertIn('e', d)
+
 
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

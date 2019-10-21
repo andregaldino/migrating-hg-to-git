@@ -10,11 +10,13 @@ from __future__ import absolute_import
 from mercurial import (
     extensions,
     hg,
+    pycompat,
     sshpeer,
     util,
 )
 
 _sshv1peer = sshpeer.sshv1peer
+
 
 class connectionpool(object):
     def __init__(self, repo):
@@ -40,6 +42,7 @@ class connectionpool(object):
                 pass
 
         if conn is None:
+
             def _cleanup(orig):
                 # close pipee first so peer.cleanup reading it won't deadlock,
                 # if there are other processes with pipeo open (i.e. us).
@@ -50,17 +53,18 @@ class connectionpool(object):
 
             peer = hg.peer(self._repo.ui, {}, path)
             if util.safehasattr(peer, 'cleanup'):
-                extensions.wrapfunction(peer, 'cleanup', _cleanup)
+                extensions.wrapfunction(peer, b'cleanup', _cleanup)
 
             conn = connection(pathpool, peer)
 
         return conn
 
     def close(self):
-        for pathpool in self._pool.itervalues():
+        for pathpool in pycompat.itervalues(self._pool):
             for conn in pathpool:
                 conn.close()
             del pathpool[:]
+
 
 class connection(object):
     def __init__(self, pool, peer):

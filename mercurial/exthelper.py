@@ -21,6 +21,7 @@ from . import (
 
 from hgdemandimport import tracing
 
+
 class exthelper(object):
     """Helper for modular extension setup
 
@@ -105,7 +106,7 @@ class exthelper(object):
         self._extcommandwrappers.extend(other._extcommandwrappers)
         self._functionwrappers.extend(other._functionwrappers)
         self.cmdtable.update(other.cmdtable)
-        for section, items in other.configtable.iteritems():
+        for section, items in pycompat.iteritems(other.configtable):
             if section in self.configtable:
                 self.configtable[section].update(items)
             else:
@@ -138,7 +139,7 @@ class exthelper(object):
         for cont, funcname, wrapper in self._functionwrappers:
             extensions.wrapfunction(cont, funcname, wrapper)
         for c in self._uicallables:
-            with tracing.log(b'finaluisetup: %s', pycompat.sysbytes(repr(c))):
+            with tracing.log('finaluisetup: %s', repr(c)):
                 c(ui)
 
     def finaluipopulate(self, ui):
@@ -179,7 +180,7 @@ class exthelper(object):
                     entry[1].append(opt)
 
         for c in self._extcallables:
-            with tracing.log(b'finalextsetup: %s', pycompat.sysbytes(repr(c))):
+            with tracing.log('finalextsetup: %s', repr(c)):
                 c(ui)
 
     def finalreposetup(self, ui, repo):
@@ -192,7 +193,7 @@ class exthelper(object):
         - Changes to repo.__class__, repo.dirstate.__class__
         """
         for c in self._repocallables:
-            with tracing.log(b'finalreposetup: %s', pycompat.sysbytes(repr(c))):
+            with tracing.log('finalreposetup: %s', repr(c)):
                 c(ui, repo)
 
     def uisetup(self, call):
@@ -272,18 +273,20 @@ class exthelper(object):
         else:
             for opt in opts:
                 if not isinstance(opt, tuple):
-                    raise error.ProgrammingError('opts must be list of tuples')
+                    raise error.ProgrammingError(b'opts must be list of tuples')
                 if len(opt) not in (4, 5):
-                    msg = 'each opt tuple must contain 4 or 5 values'
+                    msg = b'each opt tuple must contain 4 or 5 values'
                     raise error.ProgrammingError(msg)
 
         def dec(wrapper):
             if extension is None:
                 self._commandwrappers.append((command, wrapper, opts))
             else:
-                self._extcommandwrappers.append((extension, command, wrapper,
-                                                 opts))
+                self._extcommandwrappers.append(
+                    (extension, command, wrapper, opts)
+                )
             return wrapper
+
         return dec
 
     def wrapfunction(self, container, funcname):
@@ -300,7 +303,9 @@ class exthelper(object):
                 ui.note('His head smashed in and his heart cut out')
                 return orig(*args, **kwargs)
         """
+
         def dec(wrapper):
             self._functionwrappers.append((container, funcname, wrapper))
             return wrapper
+
         return dec

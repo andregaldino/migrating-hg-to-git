@@ -27,11 +27,15 @@ extern crate cpython;
 pub mod ancestors;
 mod cindex;
 mod conversion;
+#[macro_use]
+pub mod ref_sharing;
 pub mod dagops;
 pub mod dirstate;
 pub mod discovery;
 pub mod exceptions;
 pub mod filepatterns;
+pub mod parsers;
+pub mod utils;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     m.add(
@@ -50,6 +54,11 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
         "filepatterns",
         filepatterns::init_module(py, &dotted_name)?,
     )?;
+    m.add(
+        py,
+        "parsers",
+        parsers::init_parsers_module(py, &dotted_name)?,
+    )?;
     m.add(py, "GraphError", py.get_type::<exceptions::GraphError>())?;
     m.add(
         py,
@@ -63,3 +72,10 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     )?;
     Ok(())
 });
+
+#[cfg(not(any(feature = "python27-bin", feature = "python3-bin")))]
+#[test]
+#[ignore]
+fn libpython_must_be_linked_to_run_tests() {
+    // stub function to tell that some tests wouldn't run
+}

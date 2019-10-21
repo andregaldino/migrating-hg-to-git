@@ -638,6 +638,7 @@ test hidden changeset are not cloned as public (issue3935)
 
 (making a changeset hidden; H in that case)
   $ hg debugobsolete `hg id --debug -r 5`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ cd ..

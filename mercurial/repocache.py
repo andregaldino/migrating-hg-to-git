@@ -19,6 +19,7 @@ from . import (
     util,
 )
 
+
 class repoloader(object):
     """Load repositories in background thread
 
@@ -68,8 +69,9 @@ class repoloader(object):
         loader thread.
         """
         if self._thread and self._thread.is_alive():
-            raise error.ProgrammingError(b'cannot obtain cached repo while '
-                                         b'loader is active')
+            raise error.ProgrammingError(
+                b'cannot obtain cached repo while loader is active'
+            )
         return self._cache.peek(path, None)
 
     def _mainloop(self):
@@ -99,9 +101,14 @@ class repoloader(object):
         except KeyError:
             repo = hg.repository(self._ui, path).unfiltered()
         _warmupcache(repo)
-        repo.ui.log(b'repocache', b'loaded repo into cache: %s (in %.3fs)\n',
-                    path, util.timer() - start)
+        repo.ui.log(
+            b'repocache',
+            b'loaded repo into cache: %s (in %.3fs)\n',
+            path,
+            util.timer() - start,
+        )
         self._cache.insert(path, repo)
+
 
 # TODO: think about proper API of preloading cache
 def _warmupcache(repo):
@@ -115,17 +122,18 @@ def _warmupcache(repo):
         obsolete.getrevs(repo, name)
     repo._phasecache.loadphaserevs(repo)
 
+
 # TODO: think about proper API of attaching preloaded attributes
 def copycache(srcrepo, destrepo):
     """Copy cached attributes from srcrepo to destrepo"""
     destfilecache = destrepo._filecache
     srcfilecache = srcrepo._filecache
-    if 'changelog' in srcfilecache:
-        destfilecache['changelog'] = ce = srcfilecache['changelog']
+    if b'changelog' in srcfilecache:
+        destfilecache[b'changelog'] = ce = srcfilecache[b'changelog']
         ce.obj.opener = ce.obj._realopener = destrepo.svfs
-    if 'obsstore' in srcfilecache:
-        destfilecache['obsstore'] = ce = srcfilecache['obsstore']
+    if b'obsstore' in srcfilecache:
+        destfilecache[b'obsstore'] = ce = srcfilecache[b'obsstore']
         ce.obj.svfs = destrepo.svfs
-    if '_phasecache' in srcfilecache:
-        destfilecache['_phasecache'] = ce = srcfilecache['_phasecache']
+    if b'_phasecache' in srcfilecache:
+        destfilecache[b'_phasecache'] = ce = srcfilecache[b'_phasecache']
         ce.obj.opener = destrepo.svfs

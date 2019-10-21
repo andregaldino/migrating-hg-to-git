@@ -87,7 +87,7 @@ Test that we can apply the bundle as a stream clone bundle
   adding [c] rbc-revs-v1 (40 bytes)
   transferred 1.65 KB in \d\.\d seconds \(.*/sec\) (re)
   bundle2-input-part: total payload size 1840
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   updating the branch cache
   finished applying clone bundle
   query 1; heads
@@ -100,7 +100,7 @@ Test that we can apply the bundle as a stream clone bundle
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
   updating to branch default
   resolving manifests
@@ -143,7 +143,7 @@ Test that we can apply the bundle as a stream clone bundle
   adding [c] rbc-revs-v1 (40 bytes)
   transferred 1.65 KB in *.* seconds (*/sec) (glob)
   bundle2-input-part: total payload size 1840
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   updating the branch cache
   finished applying clone bundle
   query 1; heads
@@ -156,7 +156,7 @@ Test that we can apply the bundle as a stream clone bundle
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
   updating to branch default
   resolving manifests

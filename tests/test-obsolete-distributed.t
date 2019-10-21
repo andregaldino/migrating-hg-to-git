@@ -50,6 +50,7 @@ Initial setup
   $ mkcommit c_B0
   created new head
   $ hg debugobsolete `getid 'desc("c_A0")'` `getid 'desc("c_A1")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G --hidden -v
   @  3:e5d7dda7cd28 c_B0
@@ -82,6 +83,7 @@ server side: create new revision on the server (obsoleting another one)
   $ mkcommit c_B1
   created new head
   $ hg debugobsolete `getid 'desc("c_B0")'` `getid 'desc("c_B1")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G
   @  4:391a2bf12b1b c_B1
@@ -111,6 +113,7 @@ client side: create a marker between two common changesets
 
   $ cd client
   $ hg debugobsolete `getid 'desc("c_A1")'` `getid 'desc("c_B0")'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ hg log -G
   @  3:e5d7dda7cd28 c_B0
@@ -537,6 +540,7 @@ Setup
   $ cd repo-a
   $ hg debugbuilddag ..
   $ hg debugobsolete `getid tip`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ cd ../
   $ hg clone --pull repo-a repo-b

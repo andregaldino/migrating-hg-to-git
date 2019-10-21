@@ -53,31 +53,29 @@ locally.  Both committing and downloading an LFS file will link the
 file to a usercache, to speed up future access.  See the `usercache`
 config setting described below.
 
-.hglfs::
+The extension reads its configuration from a versioned ``.hglfs``
+configuration file found in the root of the working directory. The
+``.hglfs`` file uses the same syntax as all other Mercurial
+configuration files. It uses a single section, ``[track]``.
 
-    The extension reads its configuration from a versioned ``.hglfs``
-    configuration file found in the root of the working directory. The
-    ``.hglfs`` file uses the same syntax as all other Mercurial
-    configuration files. It uses a single section, ``[track]``.
+The ``[track]`` section specifies which files are stored as LFS (or
+not). Each line is keyed by a file pattern, with a predicate value.
+The first file pattern match is used, so put more specific patterns
+first.  The available predicates are ``all()``, ``none()``, and
+``size()``. See "hg help filesets.size" for the latter.
 
-    The ``[track]`` section specifies which files are stored as LFS (or
-    not). Each line is keyed by a file pattern, with a predicate value.
-    The first file pattern match is used, so put more specific patterns
-    first.  The available predicates are ``all()``, ``none()``, and
-    ``size()``. See "hg help filesets.size" for the latter.
+Example versioned ``.hglfs`` file::
 
-    Example versioned ``.hglfs`` file::
+  [track]
+  # No Makefile or python file, anywhere, will be LFS
+  **Makefile = none()
+  **.py = none()
 
-      [track]
-      # No Makefile or python file, anywhere, will be LFS
-      **Makefile = none()
-      **.py = none()
+  **.zip = all()
+  **.exe = size(">1MB")
 
-      **.zip = all()
-      **.exe = size(">1MB")
-
-      # Catchall for everything not matched above
-      ** = size(">10MB")
+  # Catchall for everything not matched above
+  ** = size(">10MB")
 
 Configs::
 
@@ -141,12 +139,13 @@ from mercurial import (
     minifileset,
     node,
     pycompat,
-    repository,
     revlog,
     scmutil,
     templateutil,
     util,
 )
+
+from mercurial.interfaces import repository
 
 from . import (
     blobstore,
@@ -158,7 +157,7 @@ from . import (
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
 eh = exthelper.exthelper()
 eh.merge(wrapper.eh)
@@ -172,34 +171,34 @@ filesetpredicate = eh.filesetpredicate
 reposetup = eh.finalreposetup
 templatekeyword = eh.templatekeyword
 
-eh.configitem('experimental', 'lfs.serve',
-    default=True,
+eh.configitem(
+    b'experimental', b'lfs.serve', default=True,
 )
-eh.configitem('experimental', 'lfs.user-agent',
-    default=None,
+eh.configitem(
+    b'experimental', b'lfs.user-agent', default=None,
 )
-eh.configitem('experimental', 'lfs.disableusercache',
-    default=False,
+eh.configitem(
+    b'experimental', b'lfs.disableusercache', default=False,
 )
-eh.configitem('experimental', 'lfs.worker-enable',
-    default=False,
+eh.configitem(
+    b'experimental', b'lfs.worker-enable', default=False,
 )
 
-eh.configitem('lfs', 'url',
-    default=None,
+eh.configitem(
+    b'lfs', b'url', default=None,
 )
-eh.configitem('lfs', 'usercache',
-    default=None,
+eh.configitem(
+    b'lfs', b'usercache', default=None,
 )
 # Deprecated
-eh.configitem('lfs', 'threshold',
-    default=None,
+eh.configitem(
+    b'lfs', b'threshold', default=None,
 )
-eh.configitem('lfs', 'track',
-    default='none()',
+eh.configitem(
+    b'lfs', b'track', default=b'none()',
 )
-eh.configitem('lfs', 'retry',
-    default=5,
+eh.configitem(
+    b'lfs', b'retry', default=5,
 )
 
 lfsprocessor = (
@@ -208,13 +207,16 @@ lfsprocessor = (
     wrapper.bypasscheckhash,
 )
 
+
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the lfs requirement
-    supported |= {'lfs'}
+    supported |= {b'lfs'}
+
 
 @eh.uisetup
 def _uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
+
 
 @eh.reposetup
 def _reposetup(ui, repo):
@@ -228,71 +230,78 @@ def _reposetup(ui, repo):
     class lfsrepo(repo.__class__):
         @localrepo.unfilteredmethod
         def commitctx(self, ctx, error=False, origctx=None):
-            repo.svfs.options['lfstrack'] = _trackedmatcher(self)
+            repo.svfs.options[b'lfstrack'] = _trackedmatcher(self)
             return super(lfsrepo, self).commitctx(ctx, error, origctx=origctx)
 
     repo.__class__ = lfsrepo
 
-    if 'lfs' not in repo.requirements:
+    if b'lfs' not in repo.requirements:
+
         def checkrequireslfs(ui, repo, **kwargs):
-            if 'lfs' in repo.requirements:
+            if b'lfs' in repo.requirements:
                 return 0
 
             last = kwargs.get(r'node_last')
             _bin = node.bin
             if last:
-                s = repo.set('%n:%n', _bin(kwargs[r'node']), _bin(last))
+                s = repo.set(b'%n:%n', _bin(kwargs[r'node']), _bin(last))
             else:
-                s = repo.set('%n', _bin(kwargs[r'node']))
+                s = repo.set(b'%n', _bin(kwargs[r'node']))
             match = repo._storenarrowmatch
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
-                if any(ctx[f].islfs() for f in ctx.files()
-                       if f in ctx and match(f)):
-                    repo.requirements.add('lfs')
+                if any(
+                    ctx[f].islfs() for f in ctx.files() if f in ctx and match(f)
+                ):
+                    repo.requirements.add(b'lfs')
                     repo.features.add(repository.REPO_FEATURE_LFS)
                     repo._writerequirements()
-                    repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
+                    repo.prepushoutgoinghooks.add(b'lfs', wrapper.prepush)
                     break
 
-        ui.setconfig('hooks', 'commit.lfs', checkrequireslfs, 'lfs')
-        ui.setconfig('hooks', 'pretxnchangegroup.lfs', checkrequireslfs, 'lfs')
+        ui.setconfig(b'hooks', b'commit.lfs', checkrequireslfs, b'lfs')
+        ui.setconfig(
+            b'hooks', b'pretxnchangegroup.lfs', checkrequireslfs, b'lfs'
+        )
     else:
-        repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
+        repo.prepushoutgoinghooks.add(b'lfs', wrapper.prepush)
+
 
 def _trackedmatcher(repo):
     """Return a function (path, size) -> bool indicating whether or not to
     track a given file with lfs."""
-    if not repo.wvfs.exists('.hglfs'):
+    if not repo.wvfs.exists(b'.hglfs'):
         # No '.hglfs' in wdir.  Fallback to config for now.
-        trackspec = repo.ui.config('lfs', 'track')
+        trackspec = repo.ui.config(b'lfs', b'track')
 
         # deprecated config: lfs.threshold
-        threshold = repo.ui.configbytes('lfs', 'threshold')
+        threshold = repo.ui.configbytes(b'lfs', b'threshold')
         if threshold:
             filesetlang.parse(trackspec)  # make sure syntax errors are confined
-            trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
+            trackspec = b"(%s) | size('>%d')" % (trackspec, threshold)
 
         return minifileset.compile(trackspec)
 
-    data = repo.wvfs.tryread('.hglfs')
+    data = repo.wvfs.tryread(b'.hglfs')
     if not data:
         return lambda p, s: False
 
     # Parse errors here will abort with a message that points to the .hglfs file
     # and line number.
     cfg = config.config()
-    cfg.parse('.hglfs', data)
+    cfg.parse(b'.hglfs', data)
 
     try:
-        rules = [(minifileset.compile(pattern), minifileset.compile(rule))
-                 for pattern, rule in cfg.items('track')]
+        rules = [
+            (minifileset.compile(pattern), minifileset.compile(rule))
+            for pattern, rule in cfg.items(b'track')
+        ]
     except error.ParseError as e:
         # The original exception gives no indicator that the error is in the
         # .hglfs file, so add that.
 
         # TODO: See if the line number of the file can be made available.
-        raise error.Abort(_('parse error in .hglfs: %s') % e)
+        raise error.Abort(_(b'parse error in .hglfs: %s') % e)
 
     def _match(path, size):
         for pat, rule in rules:
@@ -303,6 +312,7 @@ def _trackedmatcher(repo):
 
     return _match
 
+
 # Called by remotefilelog
 def wrapfilelog(filelog):
     wrapfunction = extensions.wrapfunction
@@ -311,14 +321,17 @@ def wrapfilelog(filelog):
     wrapfunction(filelog, 'renamed', wrapper.filelogrenamed)
     wrapfunction(filelog, 'size', wrapper.filelogsize)
 
-@eh.wrapfunction(localrepo, 'resolverevlogstorevfsoptions')
+
+@eh.wrapfunction(localrepo, b'resolverevlogstorevfsoptions')
 def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
     opts = orig(ui, requirements, features)
     for name, module in extensions.extensions(ui):
         if module is sys.modules[__name__]:
             if revlog.REVIDX_EXTSTORED in opts[b'flagprocessors']:
-                msg = (_(b"cannot register multiple processors on flag '%#x'.")
-                       % revlog.REVIDX_EXTSTORED)
+                msg = (
+                    _(b"cannot register multiple processors on flag '%#x'.")
+                    % revlog.REVIDX_EXTSTORED
+                )
                 raise error.Abort(msg)
 
             opts[b'flagprocessors'][revlog.REVIDX_EXTSTORED] = lfsprocessor
@@ -326,56 +339,64 @@ def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
 
     return opts
 
+
 @eh.extsetup
 def _extsetup(ui):
     wrapfilelog(filelog.filelog)
 
     context.basefilectx.islfs = wrapper.filectxislfs
 
-    scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
+    scmutil.fileprefetchhooks.add(b'lfs', wrapper._prefetchfiles)
 
     # Make bundle choose changegroup3 instead of changegroup2. This affects
     # "hg bundle" command. Note: it does not cover all bundle formats like
     # "packed1". Using "packed1" with lfs will likely cause trouble.
-    exchange._bundlespeccontentopts["v2"]["cg.version"] = "03"
+    exchange._bundlespeccontentopts[b"v2"][b"cg.version"] = b"03"
 
-@eh.filesetpredicate('lfs()')
+
+@eh.filesetpredicate(b'lfs()')
 def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword
-    filesetlang.getargs(x, 0, 0, _("lfs takes no arguments"))
+    filesetlang.getargs(x, 0, 0, _(b"lfs takes no arguments"))
     ctx = mctx.ctx
+
     def lfsfilep(f):
         return wrapper.pointerfromctx(ctx, f, removed=True) is not None
-    return mctx.predicate(lfsfilep, predrepr='<lfs>')
 
-@eh.templatekeyword('lfs_files', requires={'ctx'})
+    return mctx.predicate(lfsfilep, predrepr=b'<lfs>')
+
+
+@eh.templatekeyword(b'lfs_files', requires={b'ctx'})
 def lfsfiles(context, mapping):
     """List of strings. All files modified, added, or removed by this
     changeset."""
-    ctx = context.resource(mapping, 'ctx')
+    ctx = context.resource(mapping, b'ctx')
 
-    pointers = wrapper.pointersfromctx(ctx, removed=True) # {path: pointer}
+    pointers = wrapper.pointersfromctx(ctx, removed=True)  # {path: pointer}
     files = sorted(pointers.keys())
 
     def pointer(v):
         # In the file spec, version is first and the other keys are sorted.
-        sortkeyfunc = lambda x: (x[0] != 'version', x)
-        items = sorted(pointers[v].iteritems(), key=sortkeyfunc)
+        sortkeyfunc = lambda x: (x[0] != b'version', x)
+        items = sorted(pycompat.iteritems(pointers[v]), key=sortkeyfunc)
         return util.sortdict(items)
 
     makemap = lambda v: {
-        'file': v,
-        'lfsoid': pointers[v].oid() if pointers[v] else None,
-        'lfspointer': templateutil.hybriddict(pointer(v)),
+        b'file': v,
+        b'lfsoid': pointers[v].oid() if pointers[v] else None,
+        b'lfspointer': templateutil.hybriddict(pointer(v)),
     }
 
     # TODO: make the separator ', '?
-    f = templateutil._showcompatlist(context, mapping, 'lfs_file', files)
+    f = templateutil._showcompatlist(context, mapping, b'lfs_file', files)
     return templateutil.hybrid(f, files, makemap, pycompat.identity)
 
-@eh.command('debuglfsupload',
-            [('r', 'rev', [], _('upload large files introduced by REV'))])
+
+@eh.command(
+    b'debuglfsupload',
+    [(b'r', b'rev', [], _(b'upload large files introduced by REV'))],
+)
 def debuglfsupload(ui, repo, **opts):
     """upload lfs blobs added by the working copy parent or given revisions"""
     revs = opts.get(r'rev', [])

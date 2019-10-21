@@ -5,9 +5,8 @@ from mercurial import (
     hg,
     ui as uimod,
 )
-from mercurial.hgweb import (
-    hgwebdir_mod,
-)
+from mercurial.hgweb import hgwebdir_mod
+
 hgwebdir = hgwebdir_mod.hgwebdir
 
 os.mkdir(b'webdir')
@@ -24,10 +23,12 @@ os.chdir(b'..')
 hg.repository(u, b'c', create=1)
 os.chdir(b'..')
 
-paths = {b't/a/': b'%s/a' % webdir,
-         b'b': b'%s/b' % webdir,
-         b'coll': b'%s/*' % webdir,
-         b'rcoll': b'%s/**' % webdir}
+paths = {
+    b't/a/': b'%s/a' % webdir,
+    b'b': b'%s/b' % webdir,
+    b'coll': b'%s/*' % webdir,
+    b'rcoll': b'%s/**' % webdir,
+}
 
 config = os.path.join(webdir, b'hgwebdir.conf')
 configfile = open(config, 'wb')

@@ -10,10 +10,12 @@ import contextlib
 import os
 
 from mercurial.i18n import _
+from mercurial.pycompat import open
 from mercurial import (
     error,
     extensions,
     hg,
+    pycompat,
     util,
     wireprotov1peer,
     wireprotov1server,
@@ -22,28 +24,37 @@ from . import context
 
 # common
 
+
 def _getmaster(ui):
     """get the mainbranch, and enforce it is set"""
-    master = ui.config('fastannotate', 'mainbranch')
+    master = ui.config(b'fastannotate', b'mainbranch')
     if not master:
-        raise error.Abort(_('fastannotate.mainbranch is required '
-                            'for both the client and the server'))
+        raise error.Abort(
+            _(
+                b'fastannotate.mainbranch is required '
+                b'for both the client and the server'
+            )
+        )
     return master
+
 
 # server-side
 
+
 def _capabilities(orig, repo, proto):
     result = orig(repo, proto)
-    result.append('getannotate')
+    result.append(b'getannotate')
     return result
+
 
 def _getannotate(repo, proto, path, lastnode):
     # output:
     #   FILE := vfspath + '\0' + str(size) + '\0' + content
     #   OUTPUT := '' | FILE + OUTPUT
-    result = ''
-    buildondemand = repo.ui.configbool('fastannotate', 'serverbuildondemand',
-                                       True)
+    result = b''
+    buildondemand = repo.ui.configbool(
+        b'fastannotate', b'serverbuildondemand', True
+    )
     with context.annotatecontext(repo, path) as actx:
         if buildondemand:
             # update before responding to the client
@@ -57,7 +68,7 @@ def _getannotate(repo, proto, path, lastnode):
                 try:
                     actx.annotate(master, master)
                 except Exception:
-                    actx.rebuild() # delete files
+                    actx.rebuild()  # delete files
             finally:
                 # although the "with" context will also do a close/flush, we
                 # need to do it early so we can send the correct respond to
@@ -71,39 +82,44 @@ def _getannotate(repo, proto, path, lastnode):
             for p in [actx.revmappath, actx.linelogpath]:
                 if not os.path.exists(p):
                     continue
-                with open(p, 'rb') as f:
+                with open(p, b'rb') as f:
                     content = f.read()
-                vfsbaselen = len(repo.vfs.base + '/')
+                vfsbaselen = len(repo.vfs.base + b'/')
                 relpath = p[vfsbaselen:]
-                result += '%s\0%d\0%s' % (relpath, len(content), content)
+                result += b'%s\0%d\0%s' % (relpath, len(content), content)
     return result
 
+
 def _registerwireprotocommand():
-    if 'getannotate' in wireprotov1server.commands:
+    if b'getannotate' in wireprotov1server.commands:
         return
-    wireprotov1server.wireprotocommand(
-        'getannotate', 'path lastnode')(_getannotate)
+    wireprotov1server.wireprotocommand(b'getannotate', b'path lastnode')(
+        _getannotate
+    )
+
 
 def serveruisetup(ui):
     _registerwireprotocommand()
-    extensions.wrapfunction(wireprotov1server, '_capabilities', _capabilities)
+    extensions.wrapfunction(wireprotov1server, b'_capabilities', _capabilities)
+
 
 # client-side
+
 
 def _parseresponse(payload):
     result = {}
     i = 0
     l = len(payload) - 1
-    state = 0 # 0: vfspath, 1: size
-    vfspath = size = ''
+    state = 0  # 0: vfspath, 1: size
+    vfspath = size = b''
     while i < l:
-        ch = payload[i:i + 1]
-        if ch == '\0':
+        ch = payload[i : i + 1]
+        if ch == b'\0':
             if state == 1:
-                result[vfspath] = payload[i + 1:i + 1 + int(size)]
+                result[vfspath] = payload[i + 1 : i + 1 + int(size)]
                 i += int(size)
                 state = 0
-                vfspath = size = ''
+                vfspath = size = b''
             elif state == 0:
                 state = 1
         else:
@@ -114,32 +130,37 @@ def _parseresponse(payload):
         i += 1
     return result
 
+
 def peersetup(ui, peer):
     class fastannotatepeer(peer.__class__):
         @wireprotov1peer.batchable
         def getannotate(self, path, lastnode=None):
-            if not self.capable('getannotate'):
-                ui.warn(_('remote peer cannot provide annotate cache\n'))
+            if not self.capable(b'getannotate'):
+                ui.warn(_(b'remote peer cannot provide annotate cache\n'))
                 yield None, None
             else:
-                args = {'path': path, 'lastnode': lastnode or ''}
+                args = {b'path': path, b'lastnode': lastnode or b''}
                 f = wireprotov1peer.future()
                 yield args, f
                 yield _parseresponse(f.value)
+
     peer.__class__ = fastannotatepeer
+
 
 @contextlib.contextmanager
 def annotatepeer(repo):
     ui = repo.ui
 
     remotepath = ui.expandpath(
-        ui.config('fastannotate', 'remotepath', 'default'))
+        ui.config(b'fastannotate', b'remotepath', b'default')
+    )
     peer = hg.peer(ui, {}, remotepath)
 
     try:
         yield peer
     finally:
         peer.close()
+
 
 def clientfetch(repo, paths, lastnodemap=None, peer=None):
     """download annotate cache from the server for paths"""
@@ -156,35 +177,44 @@ def clientfetch(repo, paths, lastnodemap=None, peer=None):
     ui = repo.ui
     results = []
     with peer.commandexecutor() as batcher:
-        ui.debug('fastannotate: requesting %d files\n' % len(paths))
+        ui.debug(b'fastannotate: requesting %d files\n' % len(paths))
         for p in paths:
-            results.append(batcher.callcommand(
-                'getannotate',
-                {'path': p, 'lastnode':lastnodemap.get(p)}))
+            results.append(
+                batcher.callcommand(
+                    b'getannotate',
+                    {b'path': p, b'lastnode': lastnodemap.get(p)},
+                )
+            )
 
         for result in results:
             r = result.result()
             # TODO: pconvert these paths on the server?
-            r = {util.pconvert(p): v for p, v in r.iteritems()}
+            r = {util.pconvert(p): v for p, v in pycompat.iteritems(r)}
             for path in sorted(r):
                 # ignore malicious paths
-                if (not path.startswith('fastannotate/')
-                    or '/../' in (path + '/')):
-                    ui.debug('fastannotate: ignored malicious path %s\n' % path)
+                if not path.startswith(b'fastannotate/') or b'/../' in (
+                    path + b'/'
+                ):
+                    ui.debug(
+                        b'fastannotate: ignored malicious path %s\n' % path
+                    )
                     continue
                 content = r[path]
                 if ui.debugflag:
-                    ui.debug('fastannotate: writing %d bytes to %s\n'
-                             % (len(content), path))
+                    ui.debug(
+                        b'fastannotate: writing %d bytes to %s\n'
+                        % (len(content), path)
+                    )
                 repo.vfs.makedirs(os.path.dirname(path))
-                with repo.vfs(path, 'wb') as f:
+                with repo.vfs(path, b'wb') as f:
                     f.write(content)
+
 
 def _filterfetchpaths(repo, paths):
     """return a subset of paths whose history is long and need to fetch linelog
     from the server. works with remotefilelog and non-remotefilelog repos.
     """
-    threshold = repo.ui.configint('fastannotate', 'clientfetchthreshold', 10)
+    threshold = repo.ui.configint(b'fastannotate', b'clientfetchthreshold', 10)
     if threshold <= 0:
         return paths
 
@@ -193,10 +223,11 @@ def _filterfetchpaths(repo, paths):
         try:
             if len(repo.file(path)) >= threshold:
                 result.append(path)
-        except Exception: # file not found etc.
+        except Exception:  # file not found etc.
             result.append(path)
 
     return result
+
 
 def localreposetup(ui, repo):
     class fastannotaterepo(repo.__class__):
@@ -214,8 +245,10 @@ def localreposetup(ui, repo):
                     clientfetch(self, needupdatepaths, lastnodemap, peer)
             except Exception as ex:
                 # could be directory not writable or so, not fatal
-                self.ui.debug('fastannotate: prefetch failed: %r\n' % ex)
+                self.ui.debug(b'fastannotate: prefetch failed: %r\n' % ex)
+
     repo.__class__ = fastannotaterepo
+
 
 def clientreposetup(ui, repo):
     _registerwireprotocommand()

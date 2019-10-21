@@ -202,12 +202,11 @@ Test a pull with an remote-changegroup and a following changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   remote: changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 2 changes to 2 files (+1 heads)
+  added 5 changesets with 4 changes to 4 files (+2 heads)
   new changesets 32af7686d403:02de42196ebe
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg -R clone log -G
@@ -252,12 +251,11 @@ Test a pull with a changegroup followed by an remote-changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   remote: remote-changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 2 changes to 2 files (+1 heads)
+  added 5 changesets with 4 changes to 4 files (+2 heads)
   new changesets 32af7686d403:02de42196ebe
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg -R clone log -G
@@ -305,17 +303,15 @@ Test a pull with two remote-changegroups and a changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   remote: remote-changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 1 changes to 1 files
   remote: changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files (+1 heads)
+  added 5 changesets with 4 changes to 4 files (+2 heads)
   new changesets 32af7686d403:02de42196ebe
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg -R clone log -G
@@ -383,7 +379,6 @@ Hash digest mismatch throws an error
   adding changesets
   adding manifests
   adding file changes
-  added 8 changesets with 7 changes to 7 files (+2 heads)
   transaction abort!
   rollback completed
   abort: bundle at http://localhost:$HGPORT/bundle6.hg is corrupted:
@@ -418,7 +413,6 @@ If either of the multiple hash digests mismatches, an error is thrown
   adding changesets
   adding manifests
   adding file changes
-  added 8 changesets with 7 changes to 7 files (+2 heads)
   transaction abort!
   rollback completed
   abort: bundle at http://localhost:$HGPORT/bundle6.hg is corrupted:
@@ -434,7 +428,6 @@ If either of the multiple hash digests mismatches, an error is thrown
   adding changesets
   adding manifests
   adding file changes
-  added 8 changesets with 7 changes to 7 files (+2 heads)
   transaction abort!
   rollback completed
   abort: bundle at http://localhost:$HGPORT/bundle6.hg is corrupted:
@@ -464,12 +457,10 @@ Corruption tests
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   remote: remote-changegroup
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 1 changes to 1 files
   transaction abort!
   rollback completed
   abort: bundle at http://localhost:$HGPORT/bundle5.hg is corrupted:
@@ -534,7 +525,6 @@ Size mismatch
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files (+1 heads)
   transaction abort!
   rollback completed
   abort: bundle at http://localhost:$HGPORT/bundle4.hg is corrupted:

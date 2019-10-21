@@ -176,6 +176,8 @@ Test relative ignore path (issue4473):
   ? .hgignore
   ? a.c
   ? syntax
+  $ hg debugignore
+  <includematcher includes='.*\\.o(?:/|$)'>
 
   $ cd ..
   $ echo > .hg/testhgignorerel
@@ -222,7 +224,7 @@ Test relative ignore path (issue4473):
   A b.o
 
   $ hg debugignore
-  <includematcher includes='(?:|.*/)[^/]*(?:/|$)'>
+  <includematcher includes='.*(?:/|$)'>
 
   $ hg debugignore b.o
   b.o is ignored

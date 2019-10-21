@@ -48,6 +48,7 @@ Test setup
   $ mkcommit A1
   created new head
   $ hg debugobsolete `getid "desc(A0)" ` `getid "desc(A1)"`
+  1 new obsolescence markers
   obsoleted 1 changesets
   $ mkcommit B0
   $ hg log -G --hidden

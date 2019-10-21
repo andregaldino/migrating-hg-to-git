@@ -13,33 +13,36 @@ from mercurial import util
 
 from . import pywatchman
 
+
 class Unavailable(Exception):
     def __init__(self, msg, warn=True, invalidate=False):
         self.msg = msg
         self.warn = warn
-        if self.msg == 'timed out waiting for response':
+        if self.msg == b'timed out waiting for response':
             self.warn = False
         self.invalidate = invalidate
 
     def __str__(self):
         if self.warn:
-            return 'warning: Watchman unavailable: %s' % self.msg
+            return b'warning: Watchman unavailable: %s' % self.msg
         else:
-            return 'Watchman unavailable: %s' % self.msg
+            return b'Watchman unavailable: %s' % self.msg
+
 
 class WatchmanNoRoot(Unavailable):
     def __init__(self, root, msg):
         self.root = root
         super(WatchmanNoRoot, self).__init__(msg)
 
+
 class client(object):
-    def __init__(self, repo, timeout=1.0):
+    def __init__(self, ui, root, timeout=1.0):
         err = None
         if not self._user:
-            err = "couldn't get user"
+            err = b"couldn't get user"
             warn = True
-        if self._user in repo.ui.configlist('fsmonitor', 'blacklistusers'):
-            err = 'user %s in blacklist' % self._user
+        if self._user in ui.configlist(b'fsmonitor', b'blacklistusers'):
+            err = b'user %s in blacklist' % self._user
             warn = False
 
         if err:
@@ -47,8 +50,8 @@ class client(object):
 
         self._timeout = timeout
         self._watchmanclient = None
-        self._root = repo.root
-        self._ui = repo.ui
+        self._root = root
+        self._ui = ui
         self._firsttime = True
 
     def settimeout(self, timeout):
@@ -57,10 +60,11 @@ class client(object):
             self._watchmanclient.setTimeout(timeout)
 
     def getcurrentclock(self):
-        result = self.command('clock')
+        result = self.command(b'clock')
         if not util.safehasattr(result, 'clock'):
-            raise Unavailable('clock result is missing clock value',
-                              invalidate=True)
+            raise Unavailable(
+                b'clock result is missing clock value', invalidate=True
+            )
         return result.clock
 
     def clearconnection(self):
@@ -82,14 +86,17 @@ class client(object):
         try:
             if self._watchmanclient is None:
                 self._firsttime = False
-                watchman_exe = self._ui.configpath('fsmonitor', 'watchman_exe')
+                watchman_exe = self._ui.configpath(
+                    b'fsmonitor', b'watchman_exe'
+                )
                 self._watchmanclient = pywatchman.client(
                     timeout=self._timeout,
                     useImmutableBser=True,
-                    watchman_exe=watchman_exe)
+                    watchman_exe=watchman_exe,
+                )
             return self._watchmanclient.query(*watchmanargs)
         except pywatchman.CommandError as ex:
-            if 'unable to resolve root' in ex.msg:
+            if b'unable to resolve root' in ex.msg:
                 raise WatchmanNoRoot(self._root, ex.msg)
             raise Unavailable(ex.msg)
         except pywatchman.WatchmanError as ex:
@@ -102,7 +109,7 @@ class client(object):
             except WatchmanNoRoot:
                 # this 'watch' command can also raise a WatchmanNoRoot if
                 # watchman refuses to accept this root
-                self._command('watch')
+                self._command(b'watch')
                 return self._command(*args)
         except Unavailable:
             # this is in an outer scope to catch Unavailable form any of the

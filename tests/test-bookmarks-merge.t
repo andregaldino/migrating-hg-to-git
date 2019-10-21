@@ -58,7 +58,7 @@
   (leaving bookmark e)
   $ hg merge
   abort: heads are bookmarked - please merge with an explicit rev
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify rev with -r)
   [255]
 
 # our revision is bookmarked
@@ -68,7 +68,7 @@
   (activating bookmark e)
   $ hg merge
   abort: no matching bookmark to merge - please merge with an explicit rev or bookmark
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify rev with -r)
   [255]
 
 # merge bookmark heads
@@ -148,5 +148,5 @@
   
   $ hg merge
   abort: heads are bookmarked - please merge with an explicit rev
-  (run 'hg heads' to see all heads)
+  (run 'hg heads' to see all heads, specify rev with -r)
   [255]

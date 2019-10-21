@@ -10,7 +10,8 @@ ignore = {b'highlight', b'win32text', b'factotum', b'beautifygraph'}
 
 try:
     import sqlite3
-    del sqlite3 # unused, just checking that import works
+
+    del sqlite3  # unused, just checking that import works
 except ImportError:
     ignore.add(b'sqlitestore')
 
@@ -41,8 +42,9 @@ for cmd, entry in commands.table.items():
     seenshort = globalshort.copy()
     seenlong = globallong.copy()
     for option in entry[1]:
-        if ((option[0] and option[0] in seenshort) or
-            (option[1] and option[1] in seenlong)):
+        if (option[0] and option[0] in seenshort) or (
+            option[1] and option[1] in seenlong
+        ):
             print("command '" + cmd + "' has duplicate option " + str(option))
         seenshort.add(option[0])
         seenlong.add(option[1])

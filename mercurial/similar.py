@@ -10,7 +10,9 @@ from __future__ import absolute_import
 from .i18n import _
 from . import (
     mdiff,
+    pycompat,
 )
+
 
 def _findexactmatches(repo, added, removed):
     '''find renamed files that have no changes
@@ -21,9 +23,11 @@ def _findexactmatches(repo, added, removed):
     # Build table of removed files: {hash(fctx.data()): [fctx, ...]}.
     # We use hash() to discard fctx.data() from memory.
     hashes = {}
-    progress = repo.ui.makeprogress(_('searching for exact renames'),
-                                    total=(len(added) + len(removed)),
-                                    unit=_('files'))
+    progress = repo.ui.makeprogress(
+        _(b'searching for exact renames'),
+        total=(len(added) + len(removed)),
+        unit=_(b'files'),
+    )
     for fctx in removed:
         progress.increment()
         h = hash(fctx.data())
@@ -46,10 +50,12 @@ def _findexactmatches(repo, added, removed):
     # Done
     progress.complete()
 
+
 def _ctxdata(fctx):
     # lazily load text
     orig = fctx.data()
     return orig, mdiff.splitnewlines(orig)
+
 
 def _score(fctx, otherdata):
     orig, lines = otherdata
@@ -65,8 +71,10 @@ def _score(fctx, otherdata):
     lengths = len(text) + len(orig)
     return equal * 2.0 / lengths
 
+
 def score(fctx1, fctx2):
     return _score(fctx1, _ctxdata(fctx2))
+
 
 def _findsimilarmatches(repo, added, removed, threshold):
     '''find potentially renamed files based on similar file content
@@ -75,8 +83,9 @@ def _findsimilarmatches(repo, added, removed, threshold):
     (before, after, score) tuples of partial matches.
     '''
     copies = {}
-    progress = repo.ui.makeprogress(_('searching for similar files'),
-                         unit=_('files'), total=len(removed))
+    progress = repo.ui.makeprogress(
+        _(b'searching for similar files'), unit=_(b'files'), total=len(removed)
+    )
     for r in removed:
         progress.increment()
         data = None
@@ -89,12 +98,14 @@ def _findsimilarmatches(repo, added, removed, threshold):
                 copies[a] = (r, myscore)
     progress.complete()
 
-    for dest, v in copies.iteritems():
+    for dest, v in pycompat.iteritems(copies):
         source, bscore = v
         yield source, dest, bscore
 
+
 def _dropempty(fctxs):
     return [x for x in fctxs if x.size() > 0]
+
 
 def findrenames(repo, added, removed, threshold):
     '''find renamed files -- yields (before, after, score) tuples'''
@@ -116,6 +127,7 @@ def findrenames(repo, added, removed, threshold):
     # If the user requested similar files to be matched, search for them also.
     if threshold < 1.0:
         addedfiles = [x for x in addedfiles if x not in matchedfiles]
-        for (a, b, score) in _findsimilarmatches(repo, addedfiles,
-                                                 removedfiles, threshold):
+        for (a, b, score) in _findsimilarmatches(
+            repo, addedfiles, removedfiles, threshold
+        ):
             yield (a.path(), b.path(), score)

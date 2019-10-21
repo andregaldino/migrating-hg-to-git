@@ -7,6 +7,7 @@ import unittest
 
 from mercurial import pycompat, util, utils
 
+
 @contextlib.contextmanager
 def mocktimer(incr=0.1, *additional_targets):
     """Replaces util.timer and additional_targets with a mock
@@ -46,9 +47,11 @@ def mocktimer(incr=0.1, *additional_targets):
         for args in additional_origs:
             setattr(*args)
 
+
 # attr.s default factory for util.timedstats.start binds the timer we
 # need to mock out.
 _start_default = (util.timedcmstats.start.default, 'factory')
+
 
 @contextlib.contextmanager
 def capturestderr():
@@ -65,6 +68,7 @@ def capturestderr():
         yield utils.procutil.stderr
     finally:
         utils.procutil.stderr = orig
+
 
 class timedtests(unittest.TestCase):
     def testtimedcmstatsstr(self):
@@ -127,11 +131,13 @@ class timedtests(unittest.TestCase):
             with capturestderr() as out:
                 testfunc(2)
 
-        self.assertEqual(out.getvalue(), (
-            b'    testfunc: 1.000 s\n'
-            b'  testfunc: 3.000 s\n'
-        ))
+        self.assertEqual(
+            out.getvalue(),
+            (b'    testfunc: 1.000 s\n' b'  testfunc: 3.000 s\n'),
+        )
+
 
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

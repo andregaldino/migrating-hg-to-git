@@ -720,7 +720,6 @@ incoming changes no longer there after
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   4:539e4b31b6dc
   pretxnchangegroup.forbid hook: HG_HOOKNAME=pretxnchangegroup.forbid1
   HG_HOOKTYPE=pretxnchangegroup
@@ -763,8 +762,8 @@ outgoing hooks can see env vars
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark quux
+  added 1 changesets with 1 changes to 1 files
   new changesets 539e4b31b6dc
   (run 'hg update' to get a working copy)
   $ hg rollback
@@ -969,19 +968,27 @@ test python hooks
   (run with --traceback for stack trace)
   [255]
 
-The second egrep is to filter out lines like '    ^', which are slightly
-different between Python 2.6 and Python 2.7.
-  $ hg pull ../a --traceback 2>&1 | egrep -v '^( +File|    [_a-zA-Z*(])' | egrep -v '^( )+(\^)?$'
+  $ hg pull ../a --traceback 2>&1 | egrep 'pulling|searching|^exception|Traceback|SyntaxError|ImportError|ModuleNotFoundError|HookLoadError|abort'
   pulling from ../a
   searching for changes
   exception from first failed import attempt:
   Traceback (most recent call last):
   SyntaxError: * (glob)
   exception from second failed import attempt:
+  Traceback (most recent call last): (py3 !)
+  SyntaxError: * (glob) (py3 !)
   Traceback (most recent call last):
-  ImportError: No module named hgext_syntaxerror
+  ImportError: No module named hgext_syntaxerror (no-py3 !)
+  ImportError: No module named 'hgext_syntaxerror' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_syntaxerror' (py36 !)
   Traceback (most recent call last):
-  HookLoadError: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed
+  SyntaxError: * (glob) (py3 !)
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'hgext_syntaxerror' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_syntaxerror' (py36 !)
+  Traceback (most recent call last): (py3 !)
+  HookLoadError: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed (no-py3 !)
+  mercurial.error.HookLoadError: b'preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed' (py3 !)
   abort: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed
 
   $ echo '[hooks]' > ../a/.hg/hgrc
@@ -995,8 +1002,8 @@ different between Python 2.6 and Python 2.7.
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   adding remote bookmark quux
+  added 1 changesets with 1 changes to 1 files
   new changesets 539e4b31b6dc
   (run 'hg update' to get a working copy)
 
@@ -1114,7 +1121,8 @@ test python hook configured with python:[file]:[hook] syntax
 
   $ hg id
   loading pre-identify.npmd hook failed:
-  abort: No module named repo!
+  abort: No module named repo! (no-py3 !)
+  abort: No module named 'repo'! (py3 !)
   [255]
 
   $ cd ../../b
@@ -1131,15 +1139,29 @@ make sure --traceback works on hook import failure
   $ echo 'precommit.importfail = python:importfail.whatever' >> .hg/hgrc
 
   $ echo a >> a
-  $ hg --traceback commit -ma 2>&1 | egrep -v '^( +File|    [a-zA-Z(])'
+  $ hg --traceback commit -ma 2>&1 | egrep '^exception|ImportError|ModuleNotFoundError|Traceback|HookLoadError|abort'
   exception from first failed import attempt:
   Traceback (most recent call last):
-  ImportError: No module named somebogusmodule
+  ImportError: No module named somebogusmodule (no-py3 !)
+  ImportError: No module named 'somebogusmodule' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'somebogusmodule' (py36 !)
   exception from second failed import attempt:
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'somebogusmodule' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'somebogusmodule' (py36 !)
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'hgext_importfail' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_importfail' (py36 !)
+  Traceback (most recent call last): (py3 !)
+  ImportError: No module named 'somebogusmodule' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'somebogusmodule' (py36 !)
   Traceback (most recent call last):
-  ImportError: No module named hgext_importfail
+  ImportError: No module named hgext_importfail (no-py3 !)
+  ImportError: No module named 'hgext_importfail' (py3 no-py36 !)
+  ModuleNotFoundError: No module named 'hgext_importfail' (py36 !)
   Traceback (most recent call last):
-  HookLoadError: precommit.importfail hook is invalid: import of "importfail" failed
+  HookLoadError: precommit.importfail hook is invalid: import of "importfail" failed (no-py3 !)
+  mercurial.error.HookLoadError: b'precommit.importfail hook is invalid: import of "importfail" failed' (py3 !)
   abort: precommit.importfail hook is invalid: import of "importfail" failed
 
 Issue1827: Hooks Update & Commit not completely post operation
@@ -1235,13 +1257,13 @@ new commits must be visible in pretxnchangegroup (issue3428)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
   changeset:   1:9836a07b9b9d
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     b
   
+  added 1 changesets with 1 changes to 1 files
 
 pretxnclose hook failure should abort the transaction
 

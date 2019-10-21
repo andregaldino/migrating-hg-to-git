@@ -4,11 +4,14 @@ import stat
 import subprocess
 import sys
 
-if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'],
-                    'cacheable']):
+if subprocess.call(
+    ['python', '%s/hghave' % os.environ['TESTDIR'], 'cacheable']
+):
     sys.exit(80)
 
 print_ = print
+
+
 def print(*args, **kwargs):
     """print() wrapper that flushes stdout buffers to avoid py3 buffer issues
 
@@ -17,6 +20,7 @@ def print(*args, **kwargs):
     """
     print_(*args, **kwargs)
     sys.stdout.flush()
+
 
 from mercurial import (
     extensions,
@@ -31,12 +35,12 @@ from mercurial import (
 if pycompat.ispy3:
     xrange = range
 
+
 class fakerepo(object):
     def __init__(self):
         self._filecache = {}
 
     class fakevfs(object):
-
         def join(self, p):
             return p
 
@@ -59,6 +63,7 @@ class fakerepo(object):
                 delattr(self, pycompat.sysstr(k))
             except AttributeError:
                 pass
+
 
 def basic(repo):
     print("* neither file exists")
@@ -137,6 +142,7 @@ def basic(repo):
     print("* both files changed inode")
     repo.cached
 
+
 def fakeuncacheable():
     def wrapcacheable(orig, *args, **kwargs):
         return False
@@ -145,8 +151,9 @@ def fakeuncacheable():
         pass
 
     originit = extensions.wrapfunction(util.cachestat, '__init__', wrapinit)
-    origcacheable = extensions.wrapfunction(util.cachestat, 'cacheable',
-                                            wrapcacheable)
+    origcacheable = extensions.wrapfunction(
+        util.cachestat, 'cacheable', wrapcacheable
+    )
 
     for fn in ['x', 'y']:
         try:
@@ -158,6 +165,7 @@ def fakeuncacheable():
 
     util.cachestat.cacheable = origcacheable
     util.cachestat.__init__ = originit
+
 
 def test_filecache_synced():
     # test old behavior that caused filecached properties to go out of sync
@@ -173,6 +181,7 @@ def test_filecache_synced():
     # see that it changed, and return the old changelog without reconstructing
     # it
     repo.commit(b'.')
+
 
 def setbeforeget(repo):
     os.remove('x')
@@ -199,6 +208,7 @@ def setbeforeget(repo):
     f.close()
     print("* file y created")
     print(repo.cached)
+
 
 def antiambiguity():
     filename = 'ambigcheck'
@@ -236,11 +246,17 @@ def antiambiguity():
 
         # st_mtime should be advanced "repetition * 2" times, because
         # all changes occurred at same time (in sec)
-        expected = (oldstat[stat.ST_MTIME] + repetition * 2) & 0x7fffffff
+        expected = (oldstat[stat.ST_MTIME] + repetition * 2) & 0x7FFFFFFF
         if newstat[stat.ST_MTIME] != expected:
-            print("'newstat[stat.ST_MTIME] %s is not %s (as %s + %s * 2)" %
-                  (newstat[stat.ST_MTIME], expected,
-                   oldstat[stat.ST_MTIME], repetition))
+            print(
+                "'newstat[stat.ST_MTIME] %s is not %s (as %s + %s * 2)"
+                % (
+                    newstat[stat.ST_MTIME],
+                    expected,
+                    oldstat[stat.ST_MTIME],
+                    repetition,
+                )
+            )
 
         # no more examination is needed regardless of result
         break
@@ -250,6 +266,7 @@ def antiambiguity():
         # bad timing). Exit silently in this case, because running
         # on other faster platforms can detect problems
         pass
+
 
 print('basic:')
 print()

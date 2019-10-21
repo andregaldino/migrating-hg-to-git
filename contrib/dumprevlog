@@ -22,6 +22,7 @@ def binopen(path, mode=b'rb'):
     if b'b' not in mode:
         mode = mode + b'b'
     return open(path, pycompat.sysstr(mode))
+binopen.options = {}
 
 def printb(data, end=b'\n'):
     sys.stdout.flush()

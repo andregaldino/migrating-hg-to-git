@@ -35,43 +35,46 @@ from mercurial import (
     pycompat,
     registrar,
     scmutil,
-    similar
+    similar,
 )
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('automv', 'similarity',
-    default=95,
+configitem(
+    b'automv', b'similarity', default=95,
 )
 
+
 def extsetup(ui):
-    entry = extensions.wrapcommand(
-        commands.table, 'commit', mvcheck)
+    entry = extensions.wrapcommand(commands.table, b'commit', mvcheck)
     entry[1].append(
-        ('', 'no-automv', None,
-         _('disable automatic file move detection')))
+        (b'', b'no-automv', None, _(b'disable automatic file move detection'))
+    )
+
 
 def mvcheck(orig, ui, repo, *pats, **opts):
     """Hook to check for moves at commit time"""
     opts = pycompat.byteskwargs(opts)
     renames = None
-    disabled = opts.pop('no_automv', False)
+    disabled = opts.pop(b'no_automv', False)
     if not disabled:
-        threshold = ui.configint('automv', 'similarity')
+        threshold = ui.configint(b'automv', b'similarity')
         if not 0 <= threshold <= 100:
-            raise error.Abort(_('automv.similarity must be between 0 and 100'))
+            raise error.Abort(_(b'automv.similarity must be between 0 and 100'))
         if threshold > 0:
             match = scmutil.match(repo[None], pats, opts)
             added, removed = _interestingfiles(repo, match)
             uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
-            renames = _findrenames(repo, uipathfn, added, removed,
-                                   threshold / 100.0)
+            renames = _findrenames(
+                repo, uipathfn, added, removed, threshold / 100.0
+            )
 
     with repo.wlock():
         if renames is not None:
             scmutil._markchanges(repo, (), (), renames)
         return orig(ui, repo, *pats, **pycompat.strkwargs(opts))
+
 
 def _interestingfiles(repo, matcher):
     """Find what files were added or removed in this commit.
@@ -84,11 +87,12 @@ def _interestingfiles(repo, matcher):
     added = stat.added
     removed = stat.removed
 
-    copy = copies.pathcopies(repo['.'], repo[None], matcher)
+    copy = copies.pathcopies(repo[b'.'], repo[None], matcher)
     # remove the copy files for which we already have copy info
     added = [f for f in added if f not in copy]
 
     return added, removed
+
 
 def _findrenames(repo, uipathfn, added, removed, similarity):
     """Find what files in added are really moved files.
@@ -100,12 +104,14 @@ def _findrenames(repo, uipathfn, added, removed, similarity):
     renames = {}
     if similarity > 0:
         for src, dst, score in similar.findrenames(
-                repo, added, removed, similarity):
+            repo, added, removed, similarity
+        ):
             if repo.ui.verbose:
                 repo.ui.status(
-                    _('detected move of %s as %s (%d%% similar)\n') % (
-                        uipathfn(src), uipathfn(dst), score * 100))
+                    _(b'detected move of %s as %s (%d%% similar)\n')
+                    % (uipathfn(src), uipathfn(dst), score * 100)
+                )
             renames[dst] = src
     if renames:
-        repo.ui.status(_('detected move of %d files\n') % len(renames))
+        repo.ui.status(_(b'detected move of %d files\n') % len(renames))
     return renames

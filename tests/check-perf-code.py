@@ -9,23 +9,31 @@ import sys
 
 # write static check patterns here
 perfpypats = [
-  [
-    (r'(branchmap|repoview|repoviewutil)\.subsettable',
-     "use getbranchmapsubsettable() for early Mercurial"),
-    (r'\.(vfs|svfs|opener|sopener)',
-     "use getvfs()/getsvfs() for early Mercurial"),
-    (r'ui\.configint',
-     "use getint() instead of ui.configint() for early Mercurial"),
-  ],
-  # warnings
-  [
-  ]
+    [
+        (
+            r'(branchmap|repoview|repoviewutil)\.subsettable',
+            "use getbranchmapsubsettable() for early Mercurial",
+        ),
+        (
+            r'\.(vfs|svfs|opener|sopener)',
+            "use getvfs()/getsvfs() for early Mercurial",
+        ),
+        (
+            r'ui\.configint',
+            "use getint() instead of ui.configint() for early Mercurial",
+        ),
+    ],
+    # warnings
+    [],
 ]
 
+
 def modulewhitelist(names):
-    replacement = [('.py', ''), ('.c', ''), # trim suffix
-                   ('mercurial%s' % ('/'), ''), # trim "mercurial/" path
-                  ]
+    replacement = [
+        ('.py', ''),
+        ('.c', ''),  # trim suffix
+        ('mercurial%s' % '/', ''),  # trim "mercurial/" path
+    ]
     ignored = {'__init__'}
     modules = {}
 
@@ -45,6 +53,7 @@ def modulewhitelist(names):
 
     return whitelist
 
+
 if __name__ == "__main__":
     # in this case, it is assumed that result of "hg files" at
     # multiple revisions is given via stdin
@@ -61,10 +70,14 @@ if __name__ == "__main__":
         #        bar,
         #        baz
         #    )
-        ((r'from mercurial import [(][a-z0-9, \n#]*\n(?! *%s,|^[ #]*\n|[)])'
-          % ',| *'.join(whitelist)),
-         "import newer module separately in try clause for early Mercurial"
-         ))
+        (
+            (
+                r'from mercurial import [(][a-z0-9, \n#]*\n(?! *%s,|^[ #]*\n|[)])'
+                % ',| *'.join(whitelist)
+            ),
+            "import newer module separately in try clause for early Mercurial",
+        )
+    )
 
     # import contrib/check-code.py as checkcode
     assert 'RUNTESTDIR' in os.environ, "use check-perf-code.py in *.t script"
@@ -73,7 +86,8 @@ if __name__ == "__main__":
     checkcode = __import__('check-code')
 
     # register perf.py specific entry with "checks" in check-code.py
-    checkcode.checks.append(('perf.py', r'contrib/perf.py$', '',
-                             checkcode.pyfilters, perfpypats))
+    checkcode.checks.append(
+        ('perf.py', r'contrib/perf.py$', '', checkcode.pyfilters, perfpypats)
+    )
 
     sys.exit(checkcode.main())

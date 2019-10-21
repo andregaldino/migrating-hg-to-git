@@ -58,12 +58,11 @@ from mercurial import (
     error,
     hg,
     patch,
+    pycompat,
     registrar,
     scmutil,
 )
-from mercurial.utils import (
-    dateutil,
-)
+from mercurial.utils import dateutil
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -76,13 +75,16 @@ command = registrar.command(cmdtable)
 
 newfile = {'new fi', 'rename', 'copy f', 'copy t'}
 
+
 def zerodict():
     return collections.defaultdict(lambda: 0)
+
 
 def roundto(x, k):
     if x > k * 2:
         return int(round(x / float(k)) * k)
     return int(round(x))
+
 
 def parsegitdiff(lines):
     filename, mar, lineadd, lineremove = None, None, zerodict(), 0
@@ -109,10 +111,16 @@ def parsegitdiff(lines):
     if filename:
         yield filename, mar, lineadd, lineremove, binary
 
-@command('analyze',
-         [('o', 'output', '', _('write output to given file'), _('FILE')),
-          ('r', 'rev', [], _('analyze specified revisions'), _('REV'))],
-         _('hg analyze'), optionalrepo=True)
+
+@command(
+    'analyze',
+    [
+        ('o', 'output', '', _('write output to given file'), _('FILE')),
+        ('r', 'rev', [], _('analyze specified revisions'), _('REV')),
+    ],
+    _('hg analyze'),
+    optionalrepo=True,
+)
 def analyze(ui, repo, *revs, **opts):
     '''create a simple model of a repository to use for later synthesis
 
@@ -175,8 +183,9 @@ def analyze(ui, repo, *revs, **opts):
         revs = scmutil.revrange(repo, revs)
         revs.sort()
 
-        progress = ui.makeprogress(_('analyzing'), unit=_('changesets'),
-                                   total=len(revs))
+        progress = ui.makeprogress(
+            _('analyzing'), unit=_('changesets'), total=len(revs)
+        )
         for i, rev in enumerate(revs):
             progress.update(i)
             ctx = repo[rev]
@@ -197,17 +206,19 @@ def analyze(ui, repo, *revs, **opts):
                 timedelta = ctx.date()[0] - lastctx.date()[0]
                 interarrival[roundto(timedelta, 300)] += 1
             diffopts = diffutil.diffallopts(ui, {'git': True})
-            diff = sum((d.splitlines()
-                       for d in ctx.diff(pctx, opts=diffopts)), [])
+            diff = sum(
+                (d.splitlines() for d in ctx.diff(pctx, opts=diffopts)), []
+            )
             fileadds, diradds, fileremoves, filechanges = 0, 0, 0, 0
             for filename, mar, lineadd, lineremove, isbin in parsegitdiff(diff):
                 if isbin:
                     continue
-                added = sum(lineadd.itervalues(), 0)
+                added = sum(pycompat.itervalues(lineadd), 0)
                 if mar == 'm':
                     if added and lineremove:
-                        lineschanged[roundto(added, 5),
-                                     roundto(lineremove, 5)] += 1
+                        lineschanged[
+                            roundto(added, 5), roundto(lineremove, 5)
+                        ] += 1
                         filechanges += 1
                 elif mar == 'a':
                     fileadds += 1
@@ -237,30 +248,38 @@ def analyze(ui, repo, *revs, **opts):
     def pronk(d):
         return sorted(d.iteritems(), key=lambda x: x[1], reverse=True)
 
-    json.dump({'revs': len(revs),
-               'initdirs': pronk(dirs),
-               'lineschanged': pronk(lineschanged),
-               'children': pronk(invchildren),
-               'fileschanged': pronk(fileschanged),
-               'filesadded': pronk(filesadded),
-               'linesinfilesadded': pronk(linesinfilesadded),
-               'dirsadded': pronk(dirsadded),
-               'filesremoved': pronk(filesremoved),
-               'linelengths': pronk(linelengths),
-               'parents': pronk(parents),
-               'p1distance': pronk(p1distance),
-               'p2distance': pronk(p2distance),
-               'interarrival': pronk(interarrival),
-               'tzoffset': pronk(tzoffset),
-               },
-              fp)
+    json.dump(
+        {
+            'revs': len(revs),
+            'initdirs': pronk(dirs),
+            'lineschanged': pronk(lineschanged),
+            'children': pronk(invchildren),
+            'fileschanged': pronk(fileschanged),
+            'filesadded': pronk(filesadded),
+            'linesinfilesadded': pronk(linesinfilesadded),
+            'dirsadded': pronk(dirsadded),
+            'filesremoved': pronk(filesremoved),
+            'linelengths': pronk(linelengths),
+            'parents': pronk(parents),
+            'p1distance': pronk(p1distance),
+            'p2distance': pronk(p2distance),
+            'interarrival': pronk(interarrival),
+            'tzoffset': pronk(tzoffset),
+        },
+        fp,
+    )
     fp.close()
 
-@command('synthesize',
-         [('c', 'count', 0, _('create given number of commits'), _('COUNT')),
-          ('', 'dict', '', _('path to a dictionary of words'), _('FILE')),
-          ('', 'initfiles', 0, _('initial file count to create'), _('COUNT'))],
-         _('hg synthesize [OPTION].. DESCFILE'))
+
+@command(
+    'synthesize',
+    [
+        ('c', 'count', 0, _('create given number of commits'), _('COUNT')),
+        ('', 'dict', '', _('path to a dictionary of words'), _('FILE')),
+        ('', 'initfiles', 0, _('initial file count to create'), _('COUNT')),
+    ],
+    _('hg synthesize [OPTION].. DESCFILE'),
+)
 def synthesize(ui, repo, descpath, **opts):
     '''synthesize commits based on a model of an existing repository
 
@@ -365,7 +384,7 @@ def synthesize(ui, repo, descpath, **opts):
             return True
 
         progress = ui.makeprogress(_synthesizing, unit=_files, total=initcount)
-        for i in xrange(0, initcount):
+        for i in pycompat.xrange(0, initcount):
             progress.update(i)
 
             path = pickpath()
@@ -383,22 +402,29 @@ def synthesize(ui, repo, descpath, **opts):
 
         progress.complete()
         message = 'synthesized wide repo with %d files' % (len(files),)
-        mc = context.memctx(repo, [pctx.node(), nullid], message,
-                            files, filectxfn, ui.username(),
-                            '%d %d' % dateutil.makedate())
+        mc = context.memctx(
+            repo,
+            [pctx.node(), nullid],
+            message,
+            files,
+            filectxfn,
+            ui.username(),
+            '%d %d' % dateutil.makedate(),
+        )
         initnode = mc.commit()
         if ui.debugflag:
             hexfn = hex
         else:
             hexfn = short
-        ui.status(_('added commit %s with %d files\n')
-                  % (hexfn(initnode), len(files)))
+        ui.status(
+            _('added commit %s with %d files\n') % (hexfn(initnode), len(files))
+        )
 
     # Synthesize incremental revisions to the repository, adding repo depth.
     count = int(opts['count'])
     heads = set(map(repo.changelog.rev, repo.heads()))
     progress = ui.makeprogress(_synthesizing, unit=_changesets, total=count)
-    for i in xrange(count):
+    for i in pycompat.xrange(count):
         progress.update(i)
 
         node = repo.changelog.node
@@ -432,32 +458,35 @@ def synthesize(ui, repo, descpath, **opts):
         mfk = mf.keys()
         changes = {}
         if mfk:
-            for __ in xrange(pick(fileschanged)):
-                for __ in xrange(10):
+            for __ in pycompat.xrange(pick(fileschanged)):
+                for __ in pycompat.xrange(10):
                     fctx = pctx.filectx(random.choice(mfk))
                     path = fctx.path()
-                    if not (path in nevertouch or fctx.isbinary() or
-                            'l' in fctx.flags()):
+                    if not (
+                        path in nevertouch
+                        or fctx.isbinary()
+                        or 'l' in fctx.flags()
+                    ):
                         break
                 lines = fctx.data().splitlines()
                 add, remove = pick(lineschanged)
-                for __ in xrange(remove):
+                for __ in pycompat.xrange(remove):
                     if not lines:
                         break
                     del lines[random.randrange(0, len(lines))]
-                for __ in xrange(add):
+                for __ in pycompat.xrange(add):
                     lines.insert(random.randint(0, len(lines)), makeline())
                 path = fctx.path()
                 changes[path] = '\n'.join(lines) + '\n'
-            for __ in xrange(pick(filesremoved)):
-                for __ in xrange(10):
+            for __ in pycompat.xrange(pick(filesremoved)):
+                for __ in pycompat.xrange(10):
                     path = random.choice(mfk)
                     if path not in changes:
                         break
         if filesadded:
             dirs = list(pctx.dirs())
             dirs.insert(0, '')
-        for __ in xrange(pick(filesadded)):
+        for __ in pycompat.xrange(pick(filesadded)):
             pathstr = ''
             while pathstr in dirs:
                 path = [random.choice(dirs)]
@@ -465,13 +494,20 @@ def synthesize(ui, repo, descpath, **opts):
                     path.append(random.choice(words))
                 path.append(random.choice(words))
                 pathstr = '/'.join(filter(None, path))
-            data = '\n'.join(makeline()
-                             for __ in xrange(pick(linesinfilesadded))) + '\n'
+            data = (
+                '\n'.join(
+                    makeline()
+                    for __ in pycompat.xrange(pick(linesinfilesadded))
+                )
+                + '\n'
+            )
             changes[pathstr] = data
+
         def filectxfn(repo, memctx, path):
             if path not in changes:
                 return None
             return context.memfilectx(repo, memctx, path, changes[path])
+
         if not changes:
             continue
         if revs:
@@ -479,11 +515,17 @@ def synthesize(ui, repo, descpath, **opts):
         else:
             date = time.time() - (86400 * count)
         # dates in mercurial must be positive, fit in 32-bit signed integers.
-        date = min(0x7fffffff, max(0, date))
+        date = min(0x7FFFFFFF, max(0, date))
         user = random.choice(words) + '@' + random.choice(words)
-        mc = context.memctx(repo, pl, makeline(minimum=2),
-                            sorted(changes),
-                            filectxfn, user, '%d %d' % (date, pick(tzoffset)))
+        mc = context.memctx(
+            repo,
+            pl,
+            makeline(minimum=2),
+            sorted(changes),
+            filectxfn,
+            user,
+            '%d %d' % (date, pick(tzoffset)),
+        )
         newnode = mc.commit()
         heads.add(repo.changelog.rev(newnode))
         heads.discard(r1)
@@ -493,10 +535,12 @@ def synthesize(ui, repo, descpath, **opts):
     lock.release()
     wlock.release()
 
+
 def renamedirs(dirs, words):
     '''Randomly rename the directory names in the per-dir file count dict.'''
     wordgen = itertools.cycle(words)
     replacements = {'': ''}
+
     def rename(dirpath):
         '''Recursively rename the directory and all path prefixes.
 
@@ -514,6 +558,7 @@ def renamedirs(dirs, words):
         renamed = os.path.join(head, next(wordgen))
         replacements[dirpath] = renamed
         return renamed
+
     result = []
     for dirpath, count in dirs.iteritems():
         result.append([rename(dirpath.lstrip(os.sep)), count])

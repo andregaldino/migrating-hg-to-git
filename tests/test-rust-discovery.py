@@ -1,16 +1,9 @@
 from __future__ import absolute_import
 import unittest
 
-try:
-    from mercurial import rustext
-    rustext.__name__  # trigger immediate actual import
-except ImportError:
-    rustext = None
-else:
-    # this would fail already without appropriate ancestor.__package__
-    from mercurial.rustext.discovery import (
-        PartialDiscovery,
-    )
+from mercurial import policy
+
+PartialDiscovery = policy.importrust('discovery', member='PartialDiscovery')
 
 try:
     from mercurial.cext import parsers as cparsers
@@ -36,12 +29,25 @@ data_non_inlined = (
     b'\x00\x00\x00\x03\x00\x00\x00\x02\xff\xff\xff\xff\x12\xcb\xeby1'
     b'\xb6\r\x98B\xcb\x07\xbd`\x8f\x92\xd9\xc4\x84\xbdK\x00\x00\x00'
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-    )
+)
 
 
-@unittest.skipIf(rustext is None or cparsers is None,
-                 "rustext or the C Extension parsers module "
-                 "discovery relies on is not available")
+class fakechangelog(object):
+    def __init__(self, idx):
+        self.index = idx
+
+
+class fakerepo(object):
+    def __init__(self, idx):
+        """Just make so that self.changelog.index is the given idx."""
+        self.changelog = fakechangelog(idx)
+
+
+@unittest.skipIf(
+    PartialDiscovery is None or cparsers is None,
+    "rustext or the C Extension parsers module "
+    "discovery relies on is not available",
+)
 class rustdiscoverytest(unittest.TestCase):
     """Test the correctness of binding to Rust code.
 
@@ -57,18 +63,19 @@ class rustdiscoverytest(unittest.TestCase):
     def parseindex(self):
         return cparsers.parse_index2(data_non_inlined, False)[0]
 
+    def repo(self):
+        return fakerepo(self.parseindex())
+
     def testindex(self):
         idx = self.parseindex()
         # checking our assumptions about the index binary data:
-        self.assertEqual({i: (r[5], r[6]) for i, r in enumerate(idx)},
-                         {0: (-1, -1),
-                          1: (0, -1),
-                          2: (1, -1),
-                          3: (2, -1)})
+        self.assertEqual(
+            {i: (r[5], r[6]) for i, r in enumerate(idx)},
+            {0: (-1, -1), 1: (0, -1), 2: (1, -1), 3: (2, -1)},
+        )
 
     def testaddcommonsmissings(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(self.repo(), [3], True)
         self.assertFalse(disco.hasinfo())
         self.assertFalse(disco.iscomplete())
 
@@ -83,29 +90,31 @@ class rustdiscoverytest(unittest.TestCase):
         self.assertEqual(disco.commonheads(), {1})
 
     def testaddmissingsstats(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(self.repo(), [3], True)
         self.assertIsNone(disco.stats()['undecided'], None)
 
         disco.addmissings([2])
         self.assertEqual(disco.stats()['undecided'], 2)
 
     def testaddinfocommonfirst(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(self.repo(), [3], True)
         disco.addinfo([(1, True), (2, False)])
         self.assertTrue(disco.hasinfo())
         self.assertTrue(disco.iscomplete())
         self.assertEqual(disco.commonheads(), {1})
 
     def testaddinfomissingfirst(self):
-        idx = self.parseindex()
-        disco = PartialDiscovery(idx, [3])
+        disco = PartialDiscovery(self.repo(), [3], True)
         disco.addinfo([(2, False), (1, True)])
         self.assertTrue(disco.hasinfo())
         self.assertTrue(disco.iscomplete())
         self.assertEqual(disco.commonheads(), {1})
 
+    def testinitnorandom(self):
+        PartialDiscovery(self.repo(), [3], True, randomize=False)
+
+
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

@@ -13,6 +13,7 @@ from mercurial import (
     extensions,
 )
 
+
 def nonnormalentries(dmap):
     """Compute nonnormal entries from dirstate's dmap"""
     res = set()
@@ -20,6 +21,7 @@ def nonnormalentries(dmap):
         if e[0] != b'n' or e[3] == -1:
             res.add(f)
     return res
+
 
 def checkconsistency(ui, orig, dmap, _nonnormalset, label):
     """Compute nonnormalset from dmap, check that it matches _nonnormalset"""
@@ -30,14 +32,18 @@ def checkconsistency(ui, orig, dmap, _nonnormalset, label):
         ui.develwarn(b"[nonnormalset] %s\n" % _nonnormalset, config=b'dirstate')
         ui.develwarn(b"[map] %s\n" % nonnormalcomputedmap, config=b'dirstate')
 
+
 def _checkdirstate(orig, self, arg):
     """Check nonnormal set consistency before and after the call to orig"""
-    checkconsistency(self._ui, orig, self._map, self._map.nonnormalset,
-                     b"before")
+    checkconsistency(
+        self._ui, orig, self._map, self._map.nonnormalset, b"before"
+    )
     r = orig(self, arg)
-    checkconsistency(self._ui, orig, self._map, self._map.nonnormalset,
-                     b"after")
+    checkconsistency(
+        self._ui, orig, self._map, self._map.nonnormalset, b"after"
+    )
     return r
+
 
 def extsetup(ui):
     """Wrap functions modifying dirstate to check nonnormalset consistency"""

@@ -135,18 +135,18 @@ store.
   adding manifests
   adding file changes
   adding a revisions
-  added 1 changesets with 1 changes to 1 files
   calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
   bundle2-input-part: total payload size 617
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 3 parts total
+  bundle2-input-bundle: 4 parts total
   updating the branch cache
+  added 1 changesets with 1 changes to 1 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
   $ mv .hg/store/lfs_ .hg/store/lfs
 
@@ -312,17 +312,17 @@ actions property completely.
   adding b revisions
   adding c revisions
   adding d revisions
-  added 1 changesets with 3 changes to 3 files
   bundle2-input-part: total payload size 1315
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 5 parts total
   updating the branch cache
+  added 1 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-bundle: 1 parts total
   listing keys for "phases"
 
 Clear the cache to force a download

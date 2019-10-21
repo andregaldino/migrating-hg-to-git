@@ -100,7 +100,7 @@
   f  mammals/skunk  skunk
   $ hg debugwalk -v -I 'relglob:*k'
   * matcher:
-  <includematcher includes='(?:|.*/)[^/]*k(?:/|$)'>
+  <includematcher includes='.*k(?:/|$)'>
   f  beans/black    ../beans/black
   f  fenugreek      ../fenugreek
   f  mammals/skunk  skunk
@@ -108,7 +108,7 @@
   * matcher:
   <intersectionmatcher
     m1=<patternmatcher patterns='mammals(?:/|$)'>,
-    m2=<includematcher includes='(?:|.*/)[^/]*k(?:/|$)'>>
+    m2=<includematcher includes='.*k(?:/|$)'>>
   f  mammals/skunk  skunk
   $ hg debugwalk -v -I 're:.*k$'
   * matcher:

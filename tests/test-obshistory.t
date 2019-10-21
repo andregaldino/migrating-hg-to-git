@@ -88,6 +88,7 @@ Test setup
      summary:     ROOT
   
   $ hg debugobsolete --record-parents `getid 'desc(B0)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -162,6 +163,7 @@ Test setup
   adding b
 
   $ hg debugobsolete `getid '1'` `getid '2'` `getid '3'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -251,6 +253,7 @@ Test setup
   adding d
 
   $ hg debugobsolete `getid '1'` `getid '2'` `getid '3'` `getid '4'` `getid '5'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -336,9 +339,11 @@ Test setup
   created new head
 
   $ hg debugobsolete `getid 'desc(A0)'` `getid 'desc(C0)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete `getid 'desc(B0)'` `getid 'desc(C0)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G
@@ -507,9 +512,11 @@ Test setup
   created new head
 
   $ hg debugobsolete `getid 'desc(A0)'` `getid 'desc(C0)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
   $ hg debugobsolete `getid 'desc(B1)'` `getid 'desc(C0)'`
+  1 new obsolescence markers
   obsoleted 1 changesets
 
   $ hg log --hidden -G

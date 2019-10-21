@@ -15,9 +15,8 @@ import collections
 import struct
 
 from .i18n import _
-from .thirdparty import (
-    attr,
-)
+from .pycompat import getattr
+from .thirdparty import attr
 from . import (
     encoding,
     error,
@@ -121,17 +120,19 @@ FRAME_TYPE_FLAGS = {
 
 ARGUMENT_RECORD_HEADER = struct.Struct(r'<HH')
 
+
 def humanflags(mapping, value):
     """Convert a numeric flags value to a human value, using a mapping table."""
-    namemap = {v: k for k, v in mapping.iteritems()}
+    namemap = {v: k for k, v in pycompat.iteritems(mapping)}
     flags = []
     val = 1
     while value >= val:
         if value & val:
-            flags.append(namemap.get(val, '<unknown 0x%02x>' % val))
+            flags.append(namemap.get(val, b'<unknown 0x%02x>' % val))
         val <<= 1
 
     return b'|'.join(flags)
+
 
 @attr.s(slots=True)
 class frameheader(object):
@@ -143,6 +144,7 @@ class frameheader(object):
     streamflags = attr.ib()
     typeid = attr.ib()
     flags = attr.ib()
+
 
 @attr.s(slots=True, repr=False)
 class frame(object):
@@ -157,17 +159,25 @@ class frame(object):
 
     @encoding.strmethod
     def __repr__(self):
-        typename = '<unknown 0x%02x>' % self.typeid
-        for name, value in FRAME_TYPES.iteritems():
+        typename = b'<unknown 0x%02x>' % self.typeid
+        for name, value in pycompat.iteritems(FRAME_TYPES):
             if value == self.typeid:
                 typename = name
                 break
 
-        return ('frame(size=%d; request=%d; stream=%d; streamflags=%s; '
-                'type=%s; flags=%s)' % (
-            len(self.payload), self.requestid, self.streamid,
-            humanflags(STREAM_FLAGS, self.streamflags), typename,
-            humanflags(FRAME_TYPE_FLAGS.get(self.typeid, {}), self.flags)))
+        return (
+            b'frame(size=%d; request=%d; stream=%d; streamflags=%s; '
+            b'type=%s; flags=%s)'
+            % (
+                len(self.payload),
+                self.requestid,
+                self.streamid,
+                humanflags(STREAM_FLAGS, self.streamflags),
+                typename,
+                humanflags(FRAME_TYPE_FLAGS.get(self.typeid, {}), self.flags),
+            )
+        )
+
 
 def makeframe(requestid, streamid, streamflags, typeid, flags, payload):
     """Assemble a frame into a byte array."""
@@ -188,6 +198,7 @@ def makeframe(requestid, streamid, streamflags, typeid, flags, payload):
     frame[8:] = payload
 
     return frame
+
 
 def makeframefromhumanstring(s):
     """Create a frame from a human readable string
@@ -238,15 +249,22 @@ def makeframefromhumanstring(s):
             finalflags |= int(flag)
 
     if payload.startswith(b'cbor:'):
-        payload = b''.join(cborutil.streamencode(
-            stringutil.evalpythonliteral(payload[5:])))
+        payload = b''.join(
+            cborutil.streamencode(stringutil.evalpythonliteral(payload[5:]))
+        )
 
     else:
         payload = stringutil.unescapestr(payload)
 
-    return makeframe(requestid=requestid, streamid=streamid,
-                     streamflags=finalstreamflags, typeid=frametype,
-                     flags=finalflags, payload=payload)
+    return makeframe(
+        requestid=requestid,
+        streamid=streamid,
+        streamflags=finalstreamflags,
+        typeid=frametype,
+        flags=finalflags,
+        payload=payload,
+    )
+
 
 def parseheader(data):
     """Parse a unified framing protocol frame header from a buffer.
@@ -265,11 +283,13 @@ def parseheader(data):
     requestid, streamid, streamflags = struct.unpack_from(r'<HBB', data, 3)
     typeflags = data[7]
 
-    frametype = (typeflags & 0xf0) >> 4
-    frameflags = typeflags & 0x0f
+    frametype = (typeflags & 0xF0) >> 4
+    frameflags = typeflags & 0x0F
 
-    return frameheader(framelength, requestid, streamid, streamflags,
-                       frametype, frameflags)
+    return frameheader(
+        framelength, requestid, streamid, streamflags, frametype, frameflags
+    )
+
 
 def readframe(fh):
     """Read a unified framing protocol frame from a file object.
@@ -286,22 +306,34 @@ def readframe(fh):
         return None
 
     if readcount != FRAME_HEADER_SIZE:
-        raise error.Abort(_('received incomplete frame: got %d bytes: %s') %
-                          (readcount, header))
+        raise error.Abort(
+            _(b'received incomplete frame: got %d bytes: %s')
+            % (readcount, header)
+        )
 
     h = parseheader(header)
 
     payload = fh.read(h.length)
     if len(payload) != h.length:
-        raise error.Abort(_('frame length error: expected %d; got %d') %
-                          (h.length, len(payload)))
+        raise error.Abort(
+            _(b'frame length error: expected %d; got %d')
+            % (h.length, len(payload))
+        )
 
-    return frame(h.requestid, h.streamid, h.streamflags, h.typeid, h.flags,
-                 payload)
+    return frame(
+        h.requestid, h.streamid, h.streamflags, h.typeid, h.flags, payload
+    )
 
-def createcommandframes(stream, requestid, cmd, args, datafh=None,
-                        maxframesize=DEFAULT_MAX_FRAME_SIZE,
-                        redirect=None):
+
+def createcommandframes(
+    stream,
+    requestid,
+    cmd,
+    args,
+    datafh=None,
+    maxframesize=DEFAULT_MAX_FRAME_SIZE,
+    redirect=None,
+):
     """Create frames necessary to transmit a request to run a command.
 
     This is a generator of bytearrays. Each item represents a frame
@@ -331,16 +363,18 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
         if datafh:
             flags |= FLAG_COMMAND_REQUEST_EXPECT_DATA
 
-        payload = data[offset:offset + maxframesize]
+        payload = data[offset : offset + maxframesize]
         offset += len(payload)
 
         if len(payload) == maxframesize and offset < len(data):
             flags |= FLAG_COMMAND_REQUEST_MORE_FRAMES
 
-        yield stream.makeframe(requestid=requestid,
-                               typeid=FRAME_TYPE_COMMAND_REQUEST,
-                               flags=flags,
-                               payload=payload)
+        yield stream.makeframe(
+            requestid=requestid,
+            typeid=FRAME_TYPE_COMMAND_REQUEST,
+            flags=flags,
+            payload=payload,
+        )
 
         if not (flags & FLAG_COMMAND_REQUEST_MORE_FRAMES):
             break
@@ -357,13 +391,16 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
                 assert datafh.read(1) == b''
                 done = True
 
-            yield stream.makeframe(requestid=requestid,
-                                   typeid=FRAME_TYPE_COMMAND_DATA,
-                                   flags=flags,
-                                   payload=data)
+            yield stream.makeframe(
+                requestid=requestid,
+                typeid=FRAME_TYPE_COMMAND_DATA,
+                flags=flags,
+                payload=data,
+            )
 
             if done:
                 break
+
 
 def createcommandresponseokframe(stream, requestid):
     overall = b''.join(cborutil.streamencode({b'status': b'ok'}))
@@ -377,20 +414,24 @@ def createcommandresponseokframe(stream, requestid):
     else:
         encoded = False
 
-    return stream.makeframe(requestid=requestid,
-                            typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                            flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
-                            payload=overall,
-                            encoded=encoded)
+    return stream.makeframe(
+        requestid=requestid,
+        typeid=FRAME_TYPE_COMMAND_RESPONSE,
+        flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
+        payload=overall,
+        encoded=encoded,
+    )
 
-def createcommandresponseeosframes(stream, requestid,
-                                   maxframesize=DEFAULT_MAX_FRAME_SIZE):
+
+def createcommandresponseeosframes(
+    stream, requestid, maxframesize=DEFAULT_MAX_FRAME_SIZE
+):
     """Create an empty payload frame representing command end-of-stream."""
     payload = stream.flush()
 
     offset = 0
     while True:
-        chunk = payload[offset:offset + maxframesize]
+        chunk = payload[offset : offset + maxframesize]
         offset += len(chunk)
 
         done = offset == len(payload)
@@ -400,26 +441,31 @@ def createcommandresponseeosframes(stream, requestid,
         else:
             flags = FLAG_COMMAND_RESPONSE_CONTINUATION
 
-        yield stream.makeframe(requestid=requestid,
-                               typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                               flags=flags,
-                               payload=chunk,
-                               encoded=payload != b'')
+        yield stream.makeframe(
+            requestid=requestid,
+            typeid=FRAME_TYPE_COMMAND_RESPONSE,
+            flags=flags,
+            payload=chunk,
+            encoded=payload != b'',
+        )
 
         if done:
             break
 
+
 def createalternatelocationresponseframe(stream, requestid, location):
     data = {
         b'status': b'redirect',
-        b'location': {
-            b'url': location.url,
-            b'mediatype': location.mediatype,
-        }
+        b'location': {b'url': location.url, b'mediatype': location.mediatype,},
     }
 
-    for a in (r'size', r'fullhashes', r'fullhashseed', r'serverdercerts',
-              r'servercadercerts'):
+    for a in (
+        r'size',
+        r'fullhashes',
+        r'fullhashseed',
+        r'serverdercerts',
+        r'servercadercerts',
+    ):
         value = getattr(location, a)
         if value is not None:
             data[b'location'][pycompat.bytestr(a)] = value
@@ -432,48 +478,52 @@ def createalternatelocationresponseframe(stream, requestid, location):
     else:
         encoded = False
 
-    return stream.makeframe(requestid=requestid,
-                            typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                            flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
-                            payload=payload,
-                            encoded=encoded)
+    return stream.makeframe(
+        requestid=requestid,
+        typeid=FRAME_TYPE_COMMAND_RESPONSE,
+        flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
+        payload=payload,
+        encoded=encoded,
+    )
+
 
 def createcommanderrorresponse(stream, requestid, message, args=None):
     # TODO should this be using a list of {'msg': ..., 'args': {}} so atom
     # formatting works consistently?
-    m = {
-        b'status': b'error',
-        b'error': {
-            b'message': message,
-        }
-    }
+    m = {b'status': b'error', b'error': {b'message': message,}}
 
     if args:
         m[b'error'][b'args'] = args
 
     overall = b''.join(cborutil.streamencode(m))
 
-    yield stream.makeframe(requestid=requestid,
-                           typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                           flags=FLAG_COMMAND_RESPONSE_EOS,
-                           payload=overall)
+    yield stream.makeframe(
+        requestid=requestid,
+        typeid=FRAME_TYPE_COMMAND_RESPONSE,
+        flags=FLAG_COMMAND_RESPONSE_EOS,
+        payload=overall,
+    )
+
 
 def createerrorframe(stream, requestid, msg, errtype):
     # TODO properly handle frame size limits.
     assert len(msg) <= DEFAULT_MAX_FRAME_SIZE
 
-    payload = b''.join(cborutil.streamencode({
-        b'type': errtype,
-        b'message': [{b'msg': msg}],
-    }))
+    payload = b''.join(
+        cborutil.streamencode({b'type': errtype, b'message': [{b'msg': msg}],})
+    )
 
-    yield stream.makeframe(requestid=requestid,
-                           typeid=FRAME_TYPE_ERROR_RESPONSE,
-                           flags=0,
-                           payload=payload)
+    yield stream.makeframe(
+        requestid=requestid,
+        typeid=FRAME_TYPE_ERROR_RESPONSE,
+        flags=0,
+        payload=payload,
+    )
 
-def createtextoutputframe(stream, requestid, atoms,
-                          maxframesize=DEFAULT_MAX_FRAME_SIZE):
+
+def createtextoutputframe(
+    stream, requestid, atoms, maxframesize=DEFAULT_MAX_FRAME_SIZE
+):
     """Create a text output frame to render text to people.
 
     ``atoms`` is a 3-tuple of (formatting string, args, labels).
@@ -489,13 +539,13 @@ def createtextoutputframe(stream, requestid, atoms,
         # TODO look for localstr, other types here?
 
         if not isinstance(formatting, bytes):
-            raise ValueError('must use bytes formatting strings')
+            raise ValueError(b'must use bytes formatting strings')
         for arg in args:
             if not isinstance(arg, bytes):
-                raise ValueError('must use bytes for arguments')
+                raise ValueError(b'must use bytes for arguments')
         for label in labels:
             if not isinstance(label, bytes):
-                raise ValueError('must use bytes for labels')
+                raise ValueError(b'must use bytes for labels')
 
         # Formatting string must be ASCII.
         formatting = formatting.decode(r'ascii', r'replace').encode(r'ascii')
@@ -504,8 +554,9 @@ def createtextoutputframe(stream, requestid, atoms,
         args = [a.decode(r'utf-8', r'replace').encode(r'utf-8') for a in args]
 
         # Labels must be ASCII.
-        labels = [l.decode(r'ascii', r'strict').encode(r'ascii')
-                  for l in labels]
+        labels = [
+            l.decode(r'ascii', r'strict').encode(r'ascii') for l in labels
+        ]
 
         atom = {b'msg': formatting}
         if args:
@@ -518,12 +569,15 @@ def createtextoutputframe(stream, requestid, atoms,
     payload = b''.join(cborutil.streamencode(atomdicts))
 
     if len(payload) > maxframesize:
-        raise ValueError('cannot encode data in a single frame')
+        raise ValueError(b'cannot encode data in a single frame')
 
-    yield stream.makeframe(requestid=requestid,
-                           typeid=FRAME_TYPE_TEXT_OUTPUT,
-                           flags=0,
-                           payload=payload)
+    yield stream.makeframe(
+        requestid=requestid,
+        typeid=FRAME_TYPE_TEXT_OUTPUT,
+        flags=0,
+        payload=payload,
+    )
+
 
 class bufferingcommandresponseemitter(object):
     """Helper object to emit command response frames intelligently.
@@ -536,6 +590,7 @@ class bufferingcommandresponseemitter(object):
     So it might make sense to implement this functionality at the stream
     level.
     """
+
     def __init__(self, stream, requestid, maxframesize=DEFAULT_MAX_FRAME_SIZE):
         self._stream = stream
         self._requestid = requestid
@@ -581,7 +636,7 @@ class bufferingcommandresponseemitter(object):
             # Now emit frames for the big chunk.
             offset = 0
             while True:
-                chunk = data[offset:offset + self._maxsize]
+                chunk = data[offset : offset + self._maxsize]
                 offset += len(chunk)
 
                 yield self._stream.makeframe(
@@ -589,7 +644,8 @@ class bufferingcommandresponseemitter(object):
                     typeid=FRAME_TYPE_COMMAND_RESPONSE,
                     flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
                     payload=chunk,
-                    encoded=True)
+                    encoded=True,
+                )
 
                 if offset == len(data):
                     return
@@ -625,13 +681,17 @@ class bufferingcommandresponseemitter(object):
             typeid=FRAME_TYPE_COMMAND_RESPONSE,
             flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
             payload=payload,
-            encoded=True)
+            encoded=True,
+        )
+
 
 # TODO consider defining encoders/decoders using the util.compressionengine
 # mechanism.
 
+
 class identityencoder(object):
     """Encoder for the "identity" stream encoding profile."""
+
     def __init__(self, ui):
         pass
 
@@ -644,20 +704,24 @@ class identityencoder(object):
     def finish(self):
         return b''
 
+
 class identitydecoder(object):
     """Decoder for the "identity" stream encoding profile."""
 
     def __init__(self, ui, extraobjs):
         if extraobjs:
-            raise error.Abort(_('identity decoder received unexpected '
-                                'additional values'))
+            raise error.Abort(
+                _(b'identity decoder received unexpected additional values')
+            )
 
     def decode(self, data):
         return data
 
+
 class zlibencoder(object):
     def __init__(self, ui):
         import zlib
+
         self._zlib = zlib
         self._compressor = zlib.compressobj()
 
@@ -674,13 +738,15 @@ class zlibencoder(object):
         self._compressor = None
         return res
 
+
 class zlibdecoder(object):
     def __init__(self, ui, extraobjs):
         import zlib
 
         if extraobjs:
-            raise error.Abort(_('zlib decoder received unexpected '
-                                'additional values'))
+            raise error.Abort(
+                _(b'zlib decoder received unexpected additional values')
+            )
 
         self._decompressor = zlib.decompressobj()
 
@@ -691,6 +757,7 @@ class zlibdecoder(object):
             data = bytes(data)
 
         return self._decompressor.decompress(data)
+
 
 class zstdbaseencoder(object):
     def __init__(self, level):
@@ -714,31 +781,38 @@ class zstdbaseencoder(object):
         self._compressor = None
         return res
 
+
 class zstd8mbencoder(zstdbaseencoder):
     def __init__(self, ui):
         super(zstd8mbencoder, self).__init__(3)
 
+
 class zstdbasedecoder(object):
     def __init__(self, maxwindowsize):
         from . import zstd
+
         dctx = zstd.ZstdDecompressor(max_window_size=maxwindowsize)
         self._decompressor = dctx.decompressobj()
 
     def decode(self, data):
         return self._decompressor.decompress(data)
 
+
 class zstd8mbdecoder(zstdbasedecoder):
     def __init__(self, ui, extraobjs):
         if extraobjs:
-            raise error.Abort(_('zstd8mb decoder received unexpected '
-                                'additional values'))
+            raise error.Abort(
+                _(b'zstd8mb decoder received unexpected additional values')
+            )
 
         super(zstd8mbdecoder, self).__init__(maxwindowsize=8 * 1048576)
+
 
 # We lazily populate this to avoid excessive module imports when importing
 # this module.
 STREAM_ENCODERS = {}
 STREAM_ENCODERS_ORDER = []
+
 
 def populatestreamencoders():
     if STREAM_ENCODERS:
@@ -746,6 +820,7 @@ def populatestreamencoders():
 
     try:
         from . import zstd
+
         zstd.__version__
     except ImportError:
         zstd = None
@@ -760,6 +835,7 @@ def populatestreamencoders():
 
     STREAM_ENCODERS[b'identity'] = (identityencoder, identitydecoder)
     STREAM_ENCODERS_ORDER.append(b'identity')
+
 
 class stream(object):
     """Represents a logical unidirectional series of frames."""
@@ -778,8 +854,10 @@ class stream(object):
             streamflags |= STREAM_FLAG_BEGIN_STREAM
             self._active = True
 
-        return makeframe(requestid, self.streamid, streamflags, typeid, flags,
-                         payload)
+        return makeframe(
+            requestid, self.streamid, streamflags, typeid, flags, payload
+        )
+
 
 class inputstream(stream):
     """Represents a stream used for receiving data."""
@@ -795,7 +873,7 @@ class inputstream(stream):
         decoded from the stream encoding settings frame payloads.
         """
         if name not in STREAM_ENCODERS:
-            raise error.Abort(_('unknown stream decoder: %s') % name)
+            raise error.Abort(_(b'unknown stream decoder: %s') % name)
 
         self._decoder = STREAM_ENCODERS[name][1](ui, extraobjs)
 
@@ -813,6 +891,7 @@ class inputstream(stream):
 
         return self._decoder.flush()
 
+
 class outputstream(stream):
     """Represents a stream used for sending data."""
 
@@ -828,7 +907,7 @@ class outputstream(stream):
         Receives the stream profile name.
         """
         if name not in STREAM_ENCODERS:
-            raise error.Abort(_('unknown stream encoder: %s') % name)
+            raise error.Abort(_(b'unknown stream encoder: %s') % name)
 
         self._encoder = STREAM_ENCODERS[name][0](ui)
         self._encodername = name
@@ -851,8 +930,7 @@ class outputstream(stream):
 
         self._encoder.finish()
 
-    def makeframe(self, requestid, typeid, flags, payload,
-                  encoded=False):
+    def makeframe(self, requestid, typeid, flags, payload, encoded=False):
         """Create a frame to be sent out over this stream.
 
         Only returns the frame instance. Does not actually send it.
@@ -866,16 +944,20 @@ class outputstream(stream):
             if not self.streamsettingssent:
                 raise error.ProgrammingError(
                     b'attempting to send encoded frame without sending stream '
-                    b'settings')
+                    b'settings'
+                )
 
             streamflags |= STREAM_FLAG_ENCODING_APPLIED
 
-        if (typeid == FRAME_TYPE_STREAM_SETTINGS
-            and flags & FLAG_STREAM_ENCODING_SETTINGS_EOS):
+        if (
+            typeid == FRAME_TYPE_STREAM_SETTINGS
+            and flags & FLAG_STREAM_ENCODING_SETTINGS_EOS
+        ):
             self.streamsettingssent = True
 
-        return makeframe(requestid, self.streamid, streamflags, typeid, flags,
-                         payload)
+        return makeframe(
+            requestid, self.streamid, streamflags, typeid, flags, payload
+        )
 
     def makestreamsettingsframe(self, requestid):
         """Create a stream settings frame for this stream.
@@ -887,18 +969,26 @@ class outputstream(stream):
             return None
 
         payload = b''.join(cborutil.streamencode(self._encodername))
-        return self.makeframe(requestid, FRAME_TYPE_STREAM_SETTINGS,
-                              FLAG_STREAM_ENCODING_SETTINGS_EOS, payload)
+        return self.makeframe(
+            requestid,
+            FRAME_TYPE_STREAM_SETTINGS,
+            FLAG_STREAM_ENCODING_SETTINGS_EOS,
+            payload,
+        )
+
 
 def ensureserverstream(stream):
     if stream.streamid % 2:
-        raise error.ProgrammingError('server should only write to even '
-                                     'numbered streams; %d is not even' %
-                                     stream.streamid)
+        raise error.ProgrammingError(
+            b'server should only write to even '
+            b'numbered streams; %d is not even' % stream.streamid
+        )
+
 
 DEFAULT_PROTOCOL_SETTINGS = {
-    'contentencodings': [b'identity'],
+    b'contentencodings': [b'identity'],
 }
+
 
 class serverreactor(object):
     """Holds state of a server handling frame-based protocol requests.
@@ -977,7 +1067,7 @@ class serverreactor(object):
         """
         self._ui = ui
         self._deferoutput = deferoutput
-        self._state = 'initial'
+        self._state = b'initial'
         self._nextoutgoingstreamid = 2
         self._bufferedframegens = []
         # stream id -> stream instance for all active streams from the client.
@@ -1004,40 +1094,45 @@ class serverreactor(object):
         if any, the consumer should take next.
         """
         if not frame.streamid % 2:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('received frame with even numbered stream ID: %d') %
-                  frame.streamid)
+                _(b'received frame with even numbered stream ID: %d')
+                % frame.streamid
+            )
 
         if frame.streamid not in self._incomingstreams:
             if not frame.streamflags & STREAM_FLAG_BEGIN_STREAM:
-                self._state = 'errored'
+                self._state = b'errored'
                 return self._makeerrorresult(
-                    _('received frame on unknown inactive stream without '
-                      'beginning of stream flag set'))
+                    _(
+                        b'received frame on unknown inactive stream without '
+                        b'beginning of stream flag set'
+                    )
+                )
 
             self._incomingstreams[frame.streamid] = inputstream(frame.streamid)
 
         if frame.streamflags & STREAM_FLAG_ENCODING_APPLIED:
             # TODO handle decoding frames
-            self._state = 'errored'
-            raise error.ProgrammingError('support for decoding stream payloads '
-                                         'not yet implemented')
+            self._state = b'errored'
+            raise error.ProgrammingError(
+                b'support for decoding stream payloads not yet implemented'
+            )
 
         if frame.streamflags & STREAM_FLAG_END_STREAM:
             del self._incomingstreams[frame.streamid]
 
         handlers = {
-            'initial': self._onframeinitial,
-            'protocol-settings-receiving': self._onframeprotocolsettings,
-            'idle': self._onframeidle,
-            'command-receiving': self._onframecommandreceiving,
-            'errored': self._onframeerrored,
+            b'initial': self._onframeinitial,
+            b'protocol-settings-receiving': self._onframeprotocolsettings,
+            b'idle': self._onframeidle,
+            b'command-receiving': self._onframecommandreceiving,
+            b'errored': self._onframeerrored,
         }
 
         meth = handlers.get(self._state)
         if not meth:
-            raise error.ProgrammingError('unhandled state: %s' % self._state)
+            raise error.ProgrammingError(b'unhandled state: %s' % self._state)
 
         return meth(frame)
 
@@ -1080,20 +1175,25 @@ class serverreactor(object):
 
                     if emitted:
                         for frame in createcommandresponseeosframes(
-                            stream, requestid):
+                            stream, requestid
+                        ):
                             yield frame
                     break
 
                 except error.WireprotoCommandError as e:
                     for frame in createcommanderrorresponse(
-                        stream, requestid, e.message, e.messageargs):
+                        stream, requestid, e.message, e.messageargs
+                    ):
                         yield frame
                     break
 
                 except Exception as e:
                     for frame in createerrorframe(
-                        stream, requestid, '%s' % stringutil.forcebytestr(e),
-                        errtype='server'):
+                        stream,
+                        requestid,
+                        b'%s' % stringutil.forcebytestr(e),
+                        errtype=b'server',
+                    ):
 
                         yield frame
 
@@ -1105,15 +1205,17 @@ class serverreactor(object):
                     if isinstance(o, wireprototypes.alternatelocationresponse):
                         if emitted:
                             raise error.ProgrammingError(
-                                'alternatelocationresponse seen after initial '
-                                'output object')
+                                b'alternatelocationresponse seen after initial '
+                                b'output object'
+                            )
 
                         frame = stream.makestreamsettingsframe(requestid)
                         if frame:
                             yield frame
 
                         yield createalternatelocationresponseframe(
-                            stream, requestid, o)
+                            stream, requestid, o
+                        )
 
                         alternatelocationsent = True
                         emitted = True
@@ -1121,7 +1223,8 @@ class serverreactor(object):
 
                     if alternatelocationsent:
                         raise error.ProgrammingError(
-                            'object follows alternatelocationresponse')
+                            b'object follows alternatelocationresponse'
+                        )
 
                     if not emitted:
                         # Frame is optional.
@@ -1147,9 +1250,11 @@ class serverreactor(object):
                             yield frame
 
                     elif isinstance(
-                        o, wireprototypes.indefinitebytestringresponse):
+                        o, wireprototypes.indefinitebytestringresponse
+                    ):
                         for chunk in cborutil.streamencodebytestringfromiter(
-                            o.chunks):
+                            o.chunks
+                        ):
 
                             for frame in emitter.send(chunk):
                                 yield frame
@@ -1161,9 +1266,9 @@ class serverreactor(object):
                                 yield frame
 
                 except Exception as e:
-                    for frame in createerrorframe(stream, requestid,
-                                                  '%s' % e,
-                                                  errtype='server'):
+                    for frame in createerrorframe(
+                        stream, requestid, b'%s' % e, errtype=b'server'
+                    ):
                         yield frame
 
                     break
@@ -1181,7 +1286,7 @@ class serverreactor(object):
         # TODO should we do anything about in-flight commands?
 
         if not self._deferoutput or not self._bufferedframegens:
-            return 'noop', {}
+            return b'noop', {}
 
         # If we buffered all our responses, emit those.
         def makegen():
@@ -1189,25 +1294,22 @@ class serverreactor(object):
                 for frame in gen:
                     yield frame
 
-        return 'sendframes', {
-            'framegen': makegen(),
-        }
+        return b'sendframes', {b'framegen': makegen(),}
 
     def _handlesendframes(self, framegen):
         if self._deferoutput:
             self._bufferedframegens.append(framegen)
-            return 'noop', {}
+            return b'noop', {}
         else:
-            return 'sendframes', {
-                'framegen': framegen,
-            }
+            return b'sendframes', {b'framegen': framegen,}
 
     def onservererror(self, stream, requestid, msg):
         ensureserverstream(stream)
 
         def sendframes():
-            for frame in createerrorframe(stream, requestid, msg,
-                                          errtype='server'):
+            for frame in createerrorframe(
+                stream, requestid, msg, errtype=b'server'
+            ):
                 yield frame
 
             self._activecommands.remove(requestid)
@@ -1219,8 +1321,9 @@ class serverreactor(object):
         ensureserverstream(stream)
 
         def sendframes():
-            for frame in createcommanderrorresponse(stream, requestid, message,
-                                                    args):
+            for frame in createcommanderrorresponse(
+                stream, requestid, message, args
+            ):
                 yield frame
 
             self._activecommands.remove(requestid)
@@ -1243,40 +1346,40 @@ class serverreactor(object):
         # Always use the *server's* preferred encoder over the client's,
         # as servers have more to lose from sub-optimal encoders being used.
         for name in STREAM_ENCODERS_ORDER:
-            if name in self._sendersettings['contentencodings']:
+            if name in self._sendersettings[b'contentencodings']:
                 s.setencoder(self._ui, name)
                 break
 
         return s
 
     def _makeerrorresult(self, msg):
-        return 'error', {
-            'message': msg,
-        }
+        return b'error', {b'message': msg,}
 
     def _makeruncommandresult(self, requestid):
         entry = self._receivingcommands[requestid]
 
-        if not entry['requestdone']:
-            self._state = 'errored'
-            raise error.ProgrammingError('should not be called without '
-                                         'requestdone set')
+        if not entry[b'requestdone']:
+            self._state = b'errored'
+            raise error.ProgrammingError(
+                b'should not be called without requestdone set'
+            )
 
         del self._receivingcommands[requestid]
 
         if self._receivingcommands:
-            self._state = 'command-receiving'
+            self._state = b'command-receiving'
         else:
-            self._state = 'idle'
+            self._state = b'idle'
 
         # Decode the payloads as CBOR.
-        entry['payload'].seek(0)
-        request = cborutil.decodeall(entry['payload'].getvalue())[0]
+        entry[b'payload'].seek(0)
+        request = cborutil.decodeall(entry[b'payload'].getvalue())[0]
 
         if b'name' not in request:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('command request missing "name" field'))
+                _(b'command request missing "name" field')
+            )
 
         if b'args' not in request:
             request[b'args'] = {}
@@ -1284,86 +1387,107 @@ class serverreactor(object):
         assert requestid not in self._activecommands
         self._activecommands.add(requestid)
 
-        return 'runcommand', {
-            'requestid': requestid,
-            'command': request[b'name'],
-            'args': request[b'args'],
-            'redirect': request.get(b'redirect'),
-            'data': entry['data'].getvalue() if entry['data'] else None,
-        }
+        return (
+            b'runcommand',
+            {
+                b'requestid': requestid,
+                b'command': request[b'name'],
+                b'args': request[b'args'],
+                b'redirect': request.get(b'redirect'),
+                b'data': entry[b'data'].getvalue() if entry[b'data'] else None,
+            },
+        )
 
     def _makewantframeresult(self):
-        return 'wantframe', {
-            'state': self._state,
-        }
+        return b'wantframe', {b'state': self._state,}
 
     def _validatecommandrequestframe(self, frame):
         new = frame.flags & FLAG_COMMAND_REQUEST_NEW
         continuation = frame.flags & FLAG_COMMAND_REQUEST_CONTINUATION
 
         if new and continuation:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('received command request frame with both new and '
-                  'continuation flags set'))
+                _(
+                    b'received command request frame with both new and '
+                    b'continuation flags set'
+                )
+            )
 
         if not new and not continuation:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('received command request frame with neither new nor '
-                  'continuation flags set'))
+                _(
+                    b'received command request frame with neither new nor '
+                    b'continuation flags set'
+                )
+            )
 
     def _onframeinitial(self, frame):
         # Called when we receive a frame when in the "initial" state.
         if frame.typeid == FRAME_TYPE_SENDER_PROTOCOL_SETTINGS:
-            self._state = 'protocol-settings-receiving'
+            self._state = b'protocol-settings-receiving'
             self._protocolsettingsdecoder = cborutil.bufferingdecoder()
             return self._onframeprotocolsettings(frame)
 
         elif frame.typeid == FRAME_TYPE_COMMAND_REQUEST:
-            self._state = 'idle'
+            self._state = b'idle'
             return self._onframeidle(frame)
 
         else:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('expected sender protocol settings or command request '
-                  'frame; got %d') % frame.typeid)
+                _(
+                    b'expected sender protocol settings or command request '
+                    b'frame; got %d'
+                )
+                % frame.typeid
+            )
 
     def _onframeprotocolsettings(self, frame):
-        assert self._state == 'protocol-settings-receiving'
+        assert self._state == b'protocol-settings-receiving'
         assert self._protocolsettingsdecoder is not None
 
         if frame.typeid != FRAME_TYPE_SENDER_PROTOCOL_SETTINGS:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('expected sender protocol settings frame; got %d') %
-                frame.typeid)
+                _(b'expected sender protocol settings frame; got %d')
+                % frame.typeid
+            )
 
         more = frame.flags & FLAG_SENDER_PROTOCOL_SETTINGS_CONTINUATION
         eos = frame.flags & FLAG_SENDER_PROTOCOL_SETTINGS_EOS
 
         if more and eos:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('sender protocol settings frame cannot have both '
-                  'continuation and end of stream flags set'))
+                _(
+                    b'sender protocol settings frame cannot have both '
+                    b'continuation and end of stream flags set'
+                )
+            )
 
         if not more and not eos:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('sender protocol settings frame must have continuation or '
-                  'end of stream flag set'))
+                _(
+                    b'sender protocol settings frame must have continuation or '
+                    b'end of stream flag set'
+                )
+            )
 
         # TODO establish limits for maximum amount of data that can be
         # buffered.
         try:
             self._protocolsettingsdecoder.decode(frame.payload)
         except Exception as e:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('error decoding CBOR from sender protocol settings frame: %s')
-                % stringutil.forcebytestr(e))
+                _(
+                    b'error decoding CBOR from sender protocol settings frame: %s'
+                )
+                % stringutil.forcebytestr(e)
+            )
 
         if more:
             return self._makewantframeresult()
@@ -1374,21 +1498,25 @@ class serverreactor(object):
         self._protocolsettingsdecoder = None
 
         if not decoded:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('sender protocol settings frame did not contain CBOR data'))
+                _(b'sender protocol settings frame did not contain CBOR data')
+            )
         elif len(decoded) > 1:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('sender protocol settings frame contained multiple CBOR '
-                  'values'))
+                _(
+                    b'sender protocol settings frame contained multiple CBOR '
+                    b'values'
+                )
+            )
 
         d = decoded[0]
 
         if b'contentencodings' in d:
-            self._sendersettings['contentencodings'] = d[b'contentencodings']
+            self._sendersettings[b'contentencodings'] = d[b'contentencodings']
 
-        self._state = 'idle'
+        self._state = b'idle'
 
         return self._makewantframeresult()
 
@@ -1396,41 +1524,45 @@ class serverreactor(object):
         # The only frame type that should be received in this state is a
         # command request.
         if frame.typeid != FRAME_TYPE_COMMAND_REQUEST:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('expected command request frame; got %d') % frame.typeid)
+                _(b'expected command request frame; got %d') % frame.typeid
+            )
 
         res = self._validatecommandrequestframe(frame)
         if res:
             return res
 
         if frame.requestid in self._receivingcommands:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('request with ID %d already received') % frame.requestid)
+                _(b'request with ID %d already received') % frame.requestid
+            )
 
         if frame.requestid in self._activecommands:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('request with ID %d is already active') % frame.requestid)
+                _(b'request with ID %d is already active') % frame.requestid
+            )
 
         new = frame.flags & FLAG_COMMAND_REQUEST_NEW
         moreframes = frame.flags & FLAG_COMMAND_REQUEST_MORE_FRAMES
         expectingdata = frame.flags & FLAG_COMMAND_REQUEST_EXPECT_DATA
 
         if not new:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('received command request frame without new flag set'))
+                _(b'received command request frame without new flag set')
+            )
 
         payload = util.bytesio()
         payload.write(frame.payload)
 
         self._receivingcommands[frame.requestid] = {
-            'payload': payload,
-            'data': None,
-            'requestdone': not moreframes,
-            'expectingdata': bool(expectingdata),
+            b'payload': payload,
+            b'data': None,
+            b'requestdone': not moreframes,
+            b'expectingdata': bool(expectingdata),
         }
 
         # This is the final frame for this request. Dispatch it.
@@ -1438,7 +1570,7 @@ class serverreactor(object):
             return self._makeruncommandresult(frame.requestid)
 
         assert moreframes or expectingdata
-        self._state = 'command-receiving'
+        self._state = b'command-receiving'
         return self._makewantframeresult()
 
     def _onframecommandreceiving(self, frame):
@@ -1454,16 +1586,18 @@ class serverreactor(object):
         # All other frames should be related to a command that is currently
         # receiving but is not active.
         if frame.requestid in self._activecommands:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('received frame for request that is still active: %d') %
-                frame.requestid)
+                _(b'received frame for request that is still active: %d')
+                % frame.requestid
+            )
 
         if frame.requestid not in self._receivingcommands:
-            self._state = 'errored'
+            self._state = b'errored'
             return self._makeerrorresult(
-                _('received frame for request that is not receiving: %d') %
-                  frame.requestid)
+                _(b'received frame for request that is not receiving: %d')
+                % frame.requestid
+            )
 
         entry = self._receivingcommands[frame.requestid]
 
@@ -1471,21 +1605,25 @@ class serverreactor(object):
             moreframes = frame.flags & FLAG_COMMAND_REQUEST_MORE_FRAMES
             expectingdata = bool(frame.flags & FLAG_COMMAND_REQUEST_EXPECT_DATA)
 
-            if entry['requestdone']:
-                self._state = 'errored'
+            if entry[b'requestdone']:
+                self._state = b'errored'
                 return self._makeerrorresult(
-                    _('received command request frame when request frames '
-                      'were supposedly done'))
+                    _(
+                        b'received command request frame when request frames '
+                        b'were supposedly done'
+                    )
+                )
 
-            if expectingdata != entry['expectingdata']:
-                self._state = 'errored'
+            if expectingdata != entry[b'expectingdata']:
+                self._state = b'errored'
                 return self._makeerrorresult(
-                    _('mismatch between expect data flag and previous frame'))
+                    _(b'mismatch between expect data flag and previous frame')
+                )
 
-            entry['payload'].write(frame.payload)
+            entry[b'payload'].write(frame.payload)
 
             if not moreframes:
-                entry['requestdone'] = True
+                entry[b'requestdone'] = True
 
             if not moreframes and not expectingdata:
                 return self._makeruncommandresult(frame.requestid)
@@ -1493,39 +1631,44 @@ class serverreactor(object):
             return self._makewantframeresult()
 
         elif frame.typeid == FRAME_TYPE_COMMAND_DATA:
-            if not entry['expectingdata']:
-                self._state = 'errored'
-                return self._makeerrorresult(_(
-                    'received command data frame for request that is not '
-                    'expecting data: %d') % frame.requestid)
+            if not entry[b'expectingdata']:
+                self._state = b'errored'
+                return self._makeerrorresult(
+                    _(
+                        b'received command data frame for request that is not '
+                        b'expecting data: %d'
+                    )
+                    % frame.requestid
+                )
 
-            if entry['data'] is None:
-                entry['data'] = util.bytesio()
+            if entry[b'data'] is None:
+                entry[b'data'] = util.bytesio()
 
             return self._handlecommanddataframe(frame, entry)
         else:
-            self._state = 'errored'
-            return self._makeerrorresult(_(
-                'received unexpected frame type: %d') % frame.typeid)
+            self._state = b'errored'
+            return self._makeerrorresult(
+                _(b'received unexpected frame type: %d') % frame.typeid
+            )
 
     def _handlecommanddataframe(self, frame, entry):
         assert frame.typeid == FRAME_TYPE_COMMAND_DATA
 
         # TODO support streaming data instead of buffering it.
-        entry['data'].write(frame.payload)
+        entry[b'data'].write(frame.payload)
 
         if frame.flags & FLAG_COMMAND_DATA_CONTINUATION:
             return self._makewantframeresult()
         elif frame.flags & FLAG_COMMAND_DATA_EOS:
-            entry['data'].seek(0)
+            entry[b'data'].seek(0)
             return self._makeruncommandresult(frame.requestid)
         else:
-            self._state = 'errored'
-            return self._makeerrorresult(_('command data frame without '
-                                           'flags'))
+            self._state = b'errored'
+            return self._makeerrorresult(_(b'command data frame without flags'))
 
     def _onframeerrored(self, frame):
-        return self._makeerrorresult(_('server already errored'))
+        return self._makeerrorresult(_(b'server already errored'))
+
 
 class commandrequest(object):
     """Represents a request to run a command."""
@@ -1536,7 +1679,8 @@ class commandrequest(object):
         self.args = args
         self.datafh = datafh
         self.redirect = redirect
-        self.state = 'pending'
+        self.state = b'pending'
+
 
 class clientreactor(object):
     """Holds state of a client issuing frame-based protocol requests.
@@ -1584,8 +1728,14 @@ class clientreactor(object):
        is expected to follow or we're at the end of the response stream,
        respectively.
     """
-    def __init__(self, ui, hasmultiplesend=False, buffersends=True,
-                 clientcontentencoders=None):
+
+    def __init__(
+        self,
+        ui,
+        hasmultiplesend=False,
+        buffersends=True,
+        clientcontentencoders=None,
+    ):
         """Create a new instance.
 
         ``hasmultiplesend`` indicates whether multiple sends are supported
@@ -1629,29 +1779,33 @@ class clientreactor(object):
         Returns a 3-tuple of (request, action, action data).
         """
         if not self._canissuecommands:
-            raise error.ProgrammingError('cannot issue new commands')
+            raise error.ProgrammingError(b'cannot issue new commands')
 
         requestid = self._nextrequestid
         self._nextrequestid += 2
 
-        request = commandrequest(requestid, name, args, datafh=datafh,
-                                 redirect=redirect)
+        request = commandrequest(
+            requestid, name, args, datafh=datafh, redirect=redirect
+        )
 
         if self._buffersends:
             self._pendingrequests.append(request)
-            return request, 'noop', {}
+            return request, b'noop', {}
         else:
             if not self._cansend:
-                raise error.ProgrammingError('sends cannot be performed on '
-                                             'this instance')
+                raise error.ProgrammingError(
+                    b'sends cannot be performed on this instance'
+                )
 
             if not self._hasmultiplesend:
                 self._cansend = False
                 self._canissuecommands = False
 
-            return request, 'sendframes', {
-                'framegen': self._makecommandframes(request),
-            }
+            return (
+                request,
+                b'sendframes',
+                {b'framegen': self._makecommandframes(request),},
+            )
 
     def flushcommands(self):
         """Request that all queued commands be sent.
@@ -1664,11 +1818,12 @@ class clientreactor(object):
         requests are allowed after this is called.
         """
         if not self._pendingrequests:
-            return 'noop', {}
+            return b'noop', {}
 
         if not self._cansend:
-            raise error.ProgrammingError('sends cannot be performed on this '
-                                         'instance')
+            raise error.ProgrammingError(
+                b'sends cannot be performed on this instance'
+            )
 
         # If the instance only allows sending once, mark that we have fired
         # our one shot.
@@ -1682,9 +1837,7 @@ class clientreactor(object):
                 for frame in self._makecommandframes(request):
                     yield frame
 
-        return 'sendframes', {
-            'framegen': makeframes(),
-        }
+        return b'sendframes', {b'framegen': makeframes(),}
 
     def _makecommandframes(self, request):
         """Emit frames to issue a command request.
@@ -1693,32 +1846,37 @@ class clientreactor(object):
         state.
         """
         self._activerequests[request.requestid] = request
-        request.state = 'sending'
+        request.state = b'sending'
 
         if not self._protocolsettingssent and self._clientcontentencoders:
             self._protocolsettingssent = True
 
-            payload = b''.join(cborutil.streamencode({
-                b'contentencodings': self._clientcontentencoders,
-            }))
+            payload = b''.join(
+                cborutil.streamencode(
+                    {b'contentencodings': self._clientcontentencoders,}
+                )
+            )
 
             yield self._outgoingstream.makeframe(
                 requestid=request.requestid,
                 typeid=FRAME_TYPE_SENDER_PROTOCOL_SETTINGS,
                 flags=FLAG_SENDER_PROTOCOL_SETTINGS_EOS,
-                payload=payload)
+                payload=payload,
+            )
 
-        res = createcommandframes(self._outgoingstream,
-                                  request.requestid,
-                                  request.name,
-                                  request.args,
-                                  datafh=request.datafh,
-                                  redirect=request.redirect)
+        res = createcommandframes(
+            self._outgoingstream,
+            request.requestid,
+            request.name,
+            request.args,
+            datafh=request.datafh,
+            redirect=request.redirect,
+        )
 
         for frame in res:
             yield frame
 
-        request.state = 'sent'
+        request.state = b'sent'
 
     def onframerecv(self, frame):
         """Process a frame that has been received off the wire.
@@ -1727,21 +1885,29 @@ class clientreactor(object):
         caller needs to take as a result of receiving this frame.
         """
         if frame.streamid % 2:
-            return 'error', {
-                'message': (
-                    _('received frame with odd numbered stream ID: %d') %
-                    frame.streamid),
-            }
+            return (
+                b'error',
+                {
+                    b'message': (
+                        _(b'received frame with odd numbered stream ID: %d')
+                        % frame.streamid
+                    ),
+                },
+            )
 
         if frame.streamid not in self._incomingstreams:
             if not frame.streamflags & STREAM_FLAG_BEGIN_STREAM:
-                return 'error', {
-                    'message': _('received frame on unknown stream '
-                                 'without beginning of stream flag set'),
-                }
+                return (
+                    b'error',
+                    {
+                        b'message': _(
+                            b'received frame on unknown stream '
+                            b'without beginning of stream flag set'
+                        ),
+                    },
+                )
 
-            self._incomingstreams[frame.streamid] = inputstream(
-                frame.streamid)
+            self._incomingstreams[frame.streamid] = inputstream(frame.streamid)
 
         stream = self._incomingstreams[frame.streamid]
 
@@ -1758,13 +1924,18 @@ class clientreactor(object):
             return self._onstreamsettingsframe(frame)
 
         if frame.requestid not in self._activerequests:
-            return 'error', {
-                'message': (_('received frame for inactive request ID: %d') %
-                            frame.requestid),
-            }
+            return (
+                b'error',
+                {
+                    b'message': (
+                        _(b'received frame for inactive request ID: %d')
+                        % frame.requestid
+                    ),
+                },
+            )
 
         request = self._activerequests[frame.requestid]
-        request.state = 'receiving'
+        request.state = b'receiving'
 
         handlers = {
             FRAME_TYPE_COMMAND_RESPONSE: self._oncommandresponseframe,
@@ -1773,8 +1944,9 @@ class clientreactor(object):
 
         meth = handlers.get(frame.typeid)
         if not meth:
-            raise error.ProgrammingError('unhandled frame type: %d' %
-                                         frame.typeid)
+            raise error.ProgrammingError(
+                b'unhandled frame type: %d' % frame.typeid
+            )
 
         return meth(request, frame)
 
@@ -1785,16 +1957,28 @@ class clientreactor(object):
         eos = frame.flags & FLAG_STREAM_ENCODING_SETTINGS_EOS
 
         if more and eos:
-            return 'error', {
-                'message': (_('stream encoding settings frame cannot have both '
-                              'continuation and end of stream flags set')),
-            }
+            return (
+                b'error',
+                {
+                    b'message': (
+                        _(
+                            b'stream encoding settings frame cannot have both '
+                            b'continuation and end of stream flags set'
+                        )
+                    ),
+                },
+            )
 
         if not more and not eos:
-            return 'error', {
-                'message': _('stream encoding settings frame must have '
-                             'continuation or end of stream flag set'),
-            }
+            return (
+                b'error',
+                {
+                    b'message': _(
+                        b'stream encoding settings frame must have '
+                        b'continuation or end of stream flag set'
+                    ),
+                },
+            )
 
         if frame.streamid not in self._streamsettingsdecoders:
             decoder = cborutil.bufferingdecoder()
@@ -1805,14 +1989,21 @@ class clientreactor(object):
         try:
             decoder.decode(frame.payload)
         except Exception as e:
-            return 'error', {
-                'message': (_('error decoding CBOR from stream encoding '
-                             'settings frame: %s') %
-                           stringutil.forcebytestr(e)),
-            }
+            return (
+                b'error',
+                {
+                    b'message': (
+                        _(
+                            b'error decoding CBOR from stream encoding '
+                            b'settings frame: %s'
+                        )
+                        % stringutil.forcebytestr(e)
+                    ),
+                },
+            )
 
         if more:
-            return 'noop', {}
+            return b'noop', {}
 
         assert eos
 
@@ -1820,44 +2011,60 @@ class clientreactor(object):
         del self._streamsettingsdecoders[frame.streamid]
 
         if not decoded:
-            return 'error', {
-                'message': _('stream encoding settings frame did not contain '
-                             'CBOR data'),
-            }
+            return (
+                b'error',
+                {
+                    b'message': _(
+                        b'stream encoding settings frame did not contain '
+                        b'CBOR data'
+                    ),
+                },
+            )
 
         try:
-            self._incomingstreams[frame.streamid].setdecoder(self._ui,
-                                                             decoded[0],
-                                                             decoded[1:])
+            self._incomingstreams[frame.streamid].setdecoder(
+                self._ui, decoded[0], decoded[1:]
+            )
         except Exception as e:
-            return 'error', {
-                'message': (_('error setting stream decoder: %s') %
-                            stringutil.forcebytestr(e)),
-            }
+            return (
+                b'error',
+                {
+                    b'message': (
+                        _(b'error setting stream decoder: %s')
+                        % stringutil.forcebytestr(e)
+                    ),
+                },
+            )
 
-        return 'noop', {}
+        return b'noop', {}
 
     def _oncommandresponseframe(self, request, frame):
         if frame.flags & FLAG_COMMAND_RESPONSE_EOS:
-            request.state = 'received'
+            request.state = b'received'
             del self._activerequests[request.requestid]
 
-        return 'responsedata', {
-            'request': request,
-            'expectmore': frame.flags & FLAG_COMMAND_RESPONSE_CONTINUATION,
-            'eos': frame.flags & FLAG_COMMAND_RESPONSE_EOS,
-            'data': frame.payload,
-        }
+        return (
+            b'responsedata',
+            {
+                b'request': request,
+                b'expectmore': frame.flags & FLAG_COMMAND_RESPONSE_CONTINUATION,
+                b'eos': frame.flags & FLAG_COMMAND_RESPONSE_EOS,
+                b'data': frame.payload,
+            },
+        )
 
     def _onerrorresponseframe(self, request, frame):
-        request.state = 'errored'
+        request.state = b'errored'
         del self._activerequests[request.requestid]
 
         # The payload should be a CBOR map.
         m = cborutil.decodeall(frame.payload)[0]
 
-        return 'error', {
-            'request': request,
-            'type': m['type'],
-            'message': m['message'],
-        }
+        return (
+            b'error',
+            {
+                b'request': request,
+                b'type': m[b'type'],
+                b'message': m[b'message'],
+            },
+        )

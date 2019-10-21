@@ -7,10 +7,6 @@
 
 from __future__ import absolute_import
 
-from . import (
-    revsetlang,
-    scmutil,
-)
 
 def getstack(repo, rev=None):
     """return a sorted smartrev of the stack containing either rev if it is
@@ -20,10 +16,9 @@ def getstack(repo, rev=None):
     the revision and are not merges.
     """
     if rev is None:
-        rev = '.'
+        rev = b'.'
 
-    revspec = 'reverse(only(%s) and not public() and not ::merge())'
-    revset = revsetlang.formatspec(revspec, rev)
-    revisions = scmutil.revrange(repo, [revset])
+    revspec = b'only(%s) and not public() and not ::merge()'
+    revisions = repo.revs(revspec, rev)
     revisions.sort()
     return revisions

@@ -11,6 +11,7 @@ import os
 import sys
 
 from .i18n import _
+from .pycompat import getattr
 from . import (
     demandimport,
     encoding,
@@ -23,6 +24,7 @@ from .utils import (
     procutil,
     stringutil,
 )
+
 
 def pythonhook(ui, repo, htype, hname, funcname, args, throw):
     '''call python hook. hook is callable object, looked up as
@@ -38,11 +40,12 @@ def pythonhook(ui, repo, htype, hname, funcname, args, throw):
         obj = funcname
         funcname = pycompat.sysbytes(obj.__module__ + r"." + obj.__name__)
     else:
-        d = funcname.rfind('.')
+        d = funcname.rfind(b'.')
         if d == -1:
             raise error.HookLoadError(
-                _('%s hook is invalid: "%s" not in a module')
-                % (hname, funcname))
+                _(b'%s hook is invalid: "%s" not in a module')
+                % (hname, funcname)
+            )
         modname = funcname[:d]
         oldpaths = sys.path
         if procutil.mainfrozen():
@@ -62,62 +65,82 @@ def pythonhook(ui, repo, htype, hname, funcname, args, throw):
                 except (ImportError, SyntaxError):
                     e2 = sys.exc_info()
                     if ui.tracebackflag:
-                        ui.warn(_('exception from first failed import '
-                                  'attempt:\n'))
+                        ui.warn(
+                            _(
+                                b'exception from first failed import '
+                                b'attempt:\n'
+                            )
+                        )
                     ui.traceback(e1)
                     if ui.tracebackflag:
-                        ui.warn(_('exception from second failed import '
-                                  'attempt:\n'))
+                        ui.warn(
+                            _(
+                                b'exception from second failed import '
+                                b'attempt:\n'
+                            )
+                        )
                     ui.traceback(e2)
 
                     if not ui.tracebackflag:
                         tracebackhint = _(
-                            'run with --traceback for stack trace')
+                            b'run with --traceback for stack trace'
+                        )
                     else:
                         tracebackhint = None
                     raise error.HookLoadError(
-                        _('%s hook is invalid: import of "%s" failed') %
-                        (hname, modname), hint=tracebackhint)
+                        _(b'%s hook is invalid: import of "%s" failed')
+                        % (hname, modname),
+                        hint=tracebackhint,
+                    )
         sys.path = oldpaths
         try:
-            for p in funcname.split('.')[1:]:
+            for p in funcname.split(b'.')[1:]:
                 obj = getattr(obj, p)
         except AttributeError:
             raise error.HookLoadError(
-                _('%s hook is invalid: "%s" is not defined')
-                % (hname, funcname))
+                _(b'%s hook is invalid: "%s" is not defined')
+                % (hname, funcname)
+            )
         if not callable(obj):
             raise error.HookLoadError(
-                _('%s hook is invalid: "%s" is not callable')
-                % (hname, funcname))
+                _(b'%s hook is invalid: "%s" is not callable')
+                % (hname, funcname)
+            )
 
-    ui.note(_("calling hook %s: %s\n") % (hname, funcname))
+    ui.note(_(b"calling hook %s: %s\n") % (hname, funcname))
     starttime = util.timer()
 
     try:
         r = obj(ui=ui, repo=repo, hooktype=htype, **pycompat.strkwargs(args))
     except Exception as exc:
         if isinstance(exc, error.Abort):
-            ui.warn(_('error: %s hook failed: %s\n') %
-                         (hname, exc.args[0]))
+            ui.warn(_(b'error: %s hook failed: %s\n') % (hname, exc.args[0]))
         else:
-            ui.warn(_('error: %s hook raised an exception: '
-                      '%s\n') % (hname, stringutil.forcebytestr(exc)))
+            ui.warn(
+                _(b'error: %s hook raised an exception: %s\n')
+                % (hname, stringutil.forcebytestr(exc))
+            )
         if throw:
             raise
         if not ui.tracebackflag:
-            ui.warn(_('(run with --traceback for stack trace)\n'))
+            ui.warn(_(b'(run with --traceback for stack trace)\n'))
         ui.traceback()
         return True, True
     finally:
         duration = util.timer() - starttime
-        ui.log('pythonhook', 'pythonhook-%s: %s finished in %0.2f seconds\n',
-               htype, funcname, duration)
+        ui.log(
+            b'pythonhook',
+            b'pythonhook-%s: %s finished in %0.2f seconds\n',
+            htype,
+            funcname,
+            duration,
+        )
     if r:
         if throw:
-            raise error.HookAbort(_('%s hook failed') % hname)
-        ui.warn(_('warning: %s hook failed\n') % hname)
+            raise error.HookAbort(_(b'%s hook failed') % hname)
+        ui.warn(_(b'warning: %s hook failed\n') % hname)
     return r, False
+
 
 def _exthook(ui, repo, htype, name, cmd, args, throw):
     starttime = util.timer()
@@ -128,43 +151,50 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
         tr = repo.currenttransaction()
         repo.dirstate.write(tr)
         if tr and tr.writepending():
-            env['HG_PENDING'] = repo.root
-    env['HG_HOOKTYPE'] = htype
-    env['HG_HOOKNAME'] = name
+            env[b'HG_PENDING'] = repo.root
+    env[b'HG_HOOKTYPE'] = htype
+    env[b'HG_HOOKNAME'] = name
 
-    for k, v in args.iteritems():
+    for k, v in pycompat.iteritems(args):
         if callable(v):
             v = v()
         if isinstance(v, (dict, list)):
             v = stringutil.pprint(v)
-        env['HG_' + k.upper()] = v
+        env[b'HG_' + k.upper()] = v
 
-    if ui.configbool('hooks', 'tonative.%s' % name, False):
+    if ui.configbool(b'hooks', b'tonative.%s' % name, False):
         oldcmd = cmd
         cmd = procutil.shelltonative(cmd, env)
         if cmd != oldcmd:
-            ui.note(_('converting hook "%s" to native\n') % name)
+            ui.note(_(b'converting hook "%s" to native\n') % name)
 
-    ui.note(_("running hook %s: %s\n") % (name, cmd))
+    ui.note(_(b"running hook %s: %s\n") % (name, cmd))
 
     if repo:
         cwd = repo.root
     else:
         cwd = encoding.getcwd()
-    r = ui.system(cmd, environ=env, cwd=cwd, blockedtag='exthook-%s' % (name,))
+    r = ui.system(cmd, environ=env, cwd=cwd, blockedtag=b'exthook-%s' % (name,))
 
     duration = util.timer() - starttime
-    ui.log('exthook', 'exthook-%s: %s finished in %0.2f seconds\n',
-           name, cmd, duration)
+    ui.log(
+        b'exthook',
+        b'exthook-%s: %s finished in %0.2f seconds\n',
+        name,
+        cmd,
+        duration,
+    )
     if r:
         desc = procutil.explainexit(r)
         if throw:
-            raise error.HookAbort(_('%s hook %s') % (name, desc))
-        ui.warn(_('warning: %s hook %s\n') % (name, desc))
+            raise error.HookAbort(_(b'%s hook %s') % (name, desc))
+        ui.warn(_(b'warning: %s hook %s\n') % (name, desc))
     return r
+
 
 # represent an untrusted hook command
 _fromuntrusted = object()
+
 
 def _allhooks(ui):
     """return a list of (hook-id, cmd) pairs sorted by priority"""
@@ -181,30 +211,36 @@ def _allhooks(ui):
     # (end of the security sensitive section)
     return [(k, v) for p, o, k, v in sorted(hooks.values())]
 
+
 def _hookitems(ui, _untrusted=False):
     """return all hooks items ready to be sorted"""
     hooks = {}
-    for name, cmd in ui.configitems('hooks', untrusted=_untrusted):
-        if name.startswith('priority.') or name.startswith('tonative.'):
+    for name, cmd in ui.configitems(b'hooks', untrusted=_untrusted):
+        if name.startswith(b'priority.') or name.startswith(b'tonative.'):
             continue
 
-        priority = ui.configint('hooks', 'priority.%s' % name, 0)
+        priority = ui.configint(b'hooks', b'priority.%s' % name, 0)
         hooks[name] = (-priority, len(hooks), name, cmd)
     return hooks
 
+
 _redirect = False
+
+
 def redirect(state):
     global _redirect
     _redirect = state
+
 
 def hashook(ui, htype):
     """return True if a hook is configured for 'htype'"""
     if not ui.callhooks:
         return False
     for hname, cmd in _allhooks(ui):
-        if hname.split('.')[0] == htype and cmd:
+        if hname.split(b'.')[0] == htype and cmd:
             return True
     return False
+
 
 def hook(ui, repo, htype, throw=False, **args):
     if not ui.callhooks:
@@ -212,7 +248,7 @@ def hook(ui, repo, htype, throw=False, **args):
 
     hooks = []
     for hname, cmd in _allhooks(ui):
-        if hname.split('.')[0] == htype and cmd:
+        if hname.split(b'.')[0] == htype and cmd:
             hooks.append((hname, cmd))
 
     res = runhooks(ui, repo, htype, hooks, throw=throw, **args)
@@ -220,6 +256,7 @@ def hook(ui, repo, htype, throw=False, **args):
     for hname, cmd in hooks:
         r = res[hname][0] or r
     return r
+
 
 def runhooks(ui, repo, htype, hooks, throw=False, **args):
     args = pycompat.byteskwargs(args)
@@ -244,30 +281,31 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
             if cmd is _fromuntrusted:
                 if throw:
                     raise error.HookAbort(
-                        _('untrusted hook %s not executed') % hname,
-                        hint = _("see 'hg help config.trusted'"))
-                ui.warn(_('warning: untrusted hook %s not executed\n') % hname)
+                        _(b'untrusted hook %s not executed') % hname,
+                        hint=_(b"see 'hg help config.trusted'"),
+                    )
+                ui.warn(_(b'warning: untrusted hook %s not executed\n') % hname)
                 r = 1
                 raised = False
             elif callable(cmd):
-                r, raised = pythonhook(ui, repo, htype, hname, cmd, args,
-                                        throw)
-            elif cmd.startswith('python:'):
-                if cmd.count(':') >= 2:
-                    path, cmd = cmd[7:].rsplit(':', 1)
+                r, raised = pythonhook(ui, repo, htype, hname, cmd, args, throw)
+            elif cmd.startswith(b'python:'):
+                if cmd.count(b':') >= 2:
+                    path, cmd = cmd[7:].rsplit(b':', 1)
                     path = util.expandpath(path)
                     if repo:
                         path = os.path.join(repo.root, path)
                     try:
-                        mod = extensions.loadpath(path, 'hghook.%s' % hname)
+                        mod = extensions.loadpath(path, b'hghook.%s' % hname)
                     except Exception:
-                        ui.write(_("loading %s hook failed:\n") % hname)
+                        ui.write(_(b"loading %s hook failed:\n") % hname)
                         raise
                     hookfn = getattr(mod, cmd)
                 else:
                     hookfn = cmd[7:].strip()
-                r, raised = pythonhook(ui, repo, htype, hname, hookfn, args,
-                                        throw)
+                r, raised = pythonhook(
+                    ui, repo, htype, hname, hookfn, args, throw
+                )
             else:
                 r = _exthook(ui, repo, htype, hname, cmd, args, throw)
                 raised = False

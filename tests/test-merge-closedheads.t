@@ -43,7 +43,7 @@ fail with three heads
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge
   abort: branch 'default' has 3 heads - please merge with an explicit rev
-  (run 'hg heads .' to see heads)
+  (run 'hg heads .' to see heads, specify rev with -r)
   [255]
 
 close one of the heads

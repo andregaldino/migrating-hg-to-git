@@ -21,15 +21,19 @@ from mercurial import (
     ancestor,
     error,
     mdiff,
+    pycompat,
     revlog,
+    util,
 )
 from mercurial.utils import storageutil
+from mercurial.revlogutils import flagutil
 
 from . import (
     constants,
     fileserverclient,
     shallowutil,
 )
+
 
 class remotefilelognodemap(object):
     def __init__(self, filename, store):
@@ -45,9 +49,11 @@ class remotefilelognodemap(object):
             raise KeyError(node)
         return node
 
+
 class remotefilelog(object):
 
     _generaldelta = True
+    _flagserrorclass = error.RevlogError
 
     def __init__(self, opener, path, repo):
         self.opener = opener
@@ -57,34 +63,38 @@ class remotefilelog(object):
 
         self.version = 1
 
+        self._flagprocessors = dict(flagutil.flagprocessors)
+
     def read(self, node):
         """returns the file contents at this node"""
         t = self.revision(node)
-        if not t.startswith('\1\n'):
+        if not t.startswith(b'\1\n'):
             return t
-        s = t.index('\1\n', 2)
-        return t[s + 2:]
+        s = t.index(b'\1\n', 2)
+        return t[s + 2 :]
 
     def add(self, text, meta, transaction, linknode, p1=None, p2=None):
         # hash with the metadata, like in vanilla filelogs
-        hashtext = shallowutil.createrevlogtext(text, meta.get('copy'),
-                                                meta.get('copyrev'))
+        hashtext = shallowutil.createrevlogtext(
+            text, meta.get(b'copy'), meta.get(b'copyrev')
+        )
         node = storageutil.hashrevisionsha1(hashtext, p1, p2)
-        return self.addrevision(hashtext, transaction, linknode, p1, p2,
-                                node=node)
+        return self.addrevision(
+            hashtext, transaction, linknode, p1, p2, node=node
+        )
 
     def _createfileblob(self, text, meta, flags, p1, p2, node, linknode):
         # text passed to "_createfileblob" does not include filelog metadata
         header = shallowutil.buildfileblobheader(len(text), flags)
-        data = "%s\0%s" % (header, text)
+        data = b"%s\0%s" % (header, text)
 
         realp1 = p1
-        copyfrom = ""
-        if meta and 'copy' in meta:
-            copyfrom = meta['copy']
-            realp1 = bin(meta['copyrev'])
+        copyfrom = b""
+        if meta and b'copy' in meta:
+            copyfrom = meta[b'copy']
+            realp1 = bin(meta[b'copyrev'])
 
-        data += "%s%s%s%s%s\0" % (node, realp1, p2, linknode, copyfrom)
+        data += b"%s%s%s%s%s\0" % (node, realp1, p2, linknode, copyfrom)
 
         visited = set()
 
@@ -103,16 +113,21 @@ class remotefilelog(object):
             queue.append(p2)
             visited.add(p2)
 
-        ancestortext = ""
+        ancestortext = b""
 
         # add the ancestors in topological order
         while queue:
             c = queue.pop(0)
             pa1, pa2, ancestorlinknode, pacopyfrom = pancestors[c]
 
-            pacopyfrom = pacopyfrom or ''
-            ancestortext += "%s%s%s%s%s\0" % (
-                c, pa1, pa2, ancestorlinknode, pacopyfrom)
+            pacopyfrom = pacopyfrom or b''
+            ancestortext += b"%s%s%s%s%s\0" % (
+                c,
+                pa1,
+                pa2,
+                ancestorlinknode,
+                pacopyfrom,
+            )
 
             if pa1 != nullid and pa1 not in visited:
                 queue.append(pa1)
@@ -125,20 +140,52 @@ class remotefilelog(object):
 
         return data
 
-    def addrevision(self, text, transaction, linknode, p1, p2, cachedelta=None,
-                    node=None, flags=revlog.REVIDX_DEFAULT_FLAGS):
+    def addrevision(
+        self,
+        text,
+        transaction,
+        linknode,
+        p1,
+        p2,
+        cachedelta=None,
+        node=None,
+        flags=revlog.REVIDX_DEFAULT_FLAGS,
+        sidedata=None,
+    ):
         # text passed to "addrevision" includes hg filelog metadata header
         if node is None:
             node = storageutil.hashrevisionsha1(text, p1, p2)
+        if sidedata is None:
+            sidedata = {}
 
         meta, metaoffset = storageutil.parsemeta(text)
-        rawtext, validatehash = self._processflags(text, flags, 'write')
-        return self.addrawrevision(rawtext, transaction, linknode, p1, p2,
-                                   node, flags, cachedelta,
-                                   _metatuple=(meta, metaoffset))
+        rawtext, validatehash = flagutil.processflagswrite(
+            self, text, flags, sidedata=sidedata
+        )
+        return self.addrawrevision(
+            rawtext,
+            transaction,
+            linknode,
+            p1,
+            p2,
+            node,
+            flags,
+            cachedelta,
+            _metatuple=(meta, metaoffset),
+        )
 
-    def addrawrevision(self, rawtext, transaction, linknode, p1, p2, node,
-                       flags, cachedelta=None, _metatuple=None):
+    def addrawrevision(
+        self,
+        rawtext,
+        transaction,
+        linknode,
+        p1,
+        p2,
+        node,
+        flags,
+        cachedelta=None,
+        _metatuple=None,
+    ):
         if _metatuple:
             # _metatuple: used by "addrevision" internally by remotefilelog
             # meta was parsed confidently
@@ -164,8 +211,9 @@ class remotefilelog(object):
             blobtext = rawtext[metaoffset:]
         else:
             blobtext = rawtext
-        data = self._createfileblob(blobtext, meta, flags, p1, p2, node,
-                                    linknode)
+        data = self._createfileblob(
+            blobtext, meta, flags, p1, p2, node, linknode
+        )
         self.repo.contentstore.addremotefilelognode(self.filename, node, data)
 
         return node
@@ -202,14 +250,14 @@ class remotefilelog(object):
     __bool__ = __nonzero__
 
     def __len__(self):
-        if self.filename == '.hgtags':
+        if self.filename == b'.hgtags':
             # The length of .hgtags is used to fast path tag checking.
             # remotefilelog doesn't support .hgtags since the entire .hgtags
             # history is needed.  Use the excludepattern setting to make
             # .hgtags a normal filelog.
             return 0
 
-        raise RuntimeError("len not supported")
+        raise RuntimeError(b"len not supported")
 
     def empty(self):
         return False
@@ -217,7 +265,8 @@ class remotefilelog(object):
     def flags(self, node):
         if isinstance(node, int):
             raise error.ProgrammingError(
-                'remotefilelog does not accept integer rev for flags')
+                b'remotefilelog does not accept integer rev for flags'
+            )
         store = self.repo.contentstore
         return store.getmeta(self.filename, node).get(constants.METAKEYFLAG, 0)
 
@@ -245,9 +294,15 @@ class remotefilelog(object):
     def linkrev(self, node):
         return self.repo.unfiltered().changelog.rev(self.linknode(node))
 
-    def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
-                      assumehaveparentrevisions=False, deltaprevious=False,
-                      deltamode=None):
+    def emitrevisions(
+        self,
+        nodes,
+        nodesorder=None,
+        revisiondata=False,
+        assumehaveparentrevisions=False,
+        deltaprevious=False,
+        deltamode=None,
+    ):
         # we don't use any of these parameters here
         del nodesorder, revisiondata, assumehaveparentrevisions, deltaprevious
         del deltamode
@@ -262,7 +317,7 @@ class remotefilelog(object):
                 revision = None
                 delta = self.revdiff(basenode, node)
             else:
-                revision = self.revision(node, raw=True)
+                revision = self.rawdata(node)
                 delta = None
             yield revlog.revlogrevisiondelta(
                 node=node,
@@ -274,18 +329,18 @@ class remotefilelog(object):
                 baserevisionsize=None,
                 revision=revision,
                 delta=delta,
-                )
+            )
 
     def revdiff(self, node1, node2):
-        return mdiff.textdiff(self.revision(node1, raw=True),
-                              self.revision(node2, raw=True))
+        return mdiff.textdiff(self.rawdata(node1), self.rawdata(node2))
 
     def lookup(self, node):
         if len(node) == 40:
             node = bin(node)
         if len(node) != 20:
-            raise error.LookupError(node, self.filename,
-                                    _('invalid lookup input'))
+            raise error.LookupError(
+                node, self.filename, _(b'invalid lookup input')
+            )
 
         return node
 
@@ -297,8 +352,20 @@ class remotefilelog(object):
         # This is a hack.
         if isinstance(rev, int):
             raise error.ProgrammingError(
-                'remotefilelog does not convert integer rev to node')
+                b'remotefilelog does not convert integer rev to node'
+            )
         return rev
+
+    def _processflags(self, text, flags, operation, raw=False):
+        """deprecated entry point to access flag processors"""
+        msg = b'_processflag(...) use the specialized variant'
+        util.nouideprecwarn(msg, b'5.2', stacklevel=2)
+        if raw:
+            return text, flagutil.processflagsraw(self, text, flags)
+        elif operation == b'read':
+            return flagutil.processflagsread(self, text, flags)
+        else:  # write operation
+            return flagutil.processflagswrite(self, text, flags)
 
     def revision(self, node, raw=False):
         """returns the revlog contents at this node.
@@ -307,10 +374,11 @@ class remotefilelog(object):
         hg clients.
         """
         if node == nullid:
-            return ""
+            return b""
         if len(node) != 20:
-            raise error.LookupError(node, self.filename,
-                                    _('invalid revision input'))
+            raise error.LookupError(
+                node, self.filename, _(b'invalid revision input')
+            )
         if node == wdirid or node in wdirfilenodeids:
             raise error.WdirUnsupported
 
@@ -321,37 +389,18 @@ class remotefilelog(object):
         flags = store.getmeta(self.filename, node).get(constants.METAKEYFLAG, 0)
         if flags == 0:
             return rawtext
-        text, verifyhash = self._processflags(rawtext, flags, 'read')
-        return text
+        return flagutil.processflagsread(self, rawtext, flags)[0]
 
-    def _processflags(self, text, flags, operation, raw=False):
-        # mostly copied from hg/mercurial/revlog.py
-        validatehash = True
-        orderedflags = revlog.REVIDX_FLAGS_ORDER
-        if operation == 'write':
-            orderedflags = reversed(orderedflags)
-        for flag in orderedflags:
-            if flag & flags:
-                vhash = True
-                if flag not in revlog._flagprocessors:
-                    message = _("missing processor for flag '%#x'") % (flag)
-                    raise revlog.RevlogError(message)
-                readfunc, writefunc, rawfunc = revlog._flagprocessors[flag]
-                if raw:
-                    vhash = rawfunc(self, text)
-                elif operation == 'read':
-                    text, vhash = readfunc(self, text)
-                elif operation == 'write':
-                    text, vhash = writefunc(self, text)
-                validatehash = validatehash and vhash
-        return text, validatehash
+    def rawdata(self, node):
+        return self.revision(node, raw=False)
 
     def _read(self, id):
         """reads the raw file blob from disk, cache, or server"""
         fileservice = self.repo.fileservice
         localcache = fileservice.localcache
-        cachekey = fileserverclient.getcachekey(self.repo.name, self.filename,
-                                                id)
+        cachekey = fileserverclient.getcachekey(
+            self.repo.name, self.filename, id
+        )
         try:
             return localcache.read(cachekey)
         except KeyError:
@@ -370,7 +419,7 @@ class remotefilelog(object):
         except KeyError:
             pass
 
-        raise error.LookupError(id, self.filename, _('no node'))
+        raise error.LookupError(id, self.filename, _(b'no node'))
 
     def ancestormap(self, node):
         return self.repo.metadatastore.getancestors(self.filename, node)
@@ -380,7 +429,7 @@ class remotefilelog(object):
             return nullid
 
         revmap, parentfunc = self._buildrevgraph(a, b)
-        nodemap = dict(((v, k) for (k, v) in revmap.iteritems()))
+        nodemap = dict(((v, k) for (k, v) in pycompat.iteritems(revmap)))
 
         ancs = ancestor.ancestors(parentfunc, revmap[a], revmap[b])
         if ancs:
@@ -395,7 +444,7 @@ class remotefilelog(object):
             return nullid
 
         revmap, parentfunc = self._buildrevgraph(a, b)
-        nodemap = dict(((v, k) for (k, v) in revmap.iteritems()))
+        nodemap = dict(((v, k) for (k, v) in pycompat.iteritems(revmap)))
 
         ancs = ancestor.commonancestorsheads(parentfunc, revmap[a], revmap[b])
         return map(nodemap.__getitem__, ancs)
@@ -411,7 +460,7 @@ class remotefilelog(object):
         parentsmap = collections.defaultdict(list)
         allparents = set()
         for mapping in (amap, bmap):
-            for node, pdata in mapping.iteritems():
+            for node, pdata in pycompat.iteritems(mapping):
                 parents = parentsmap[node]
                 p1, p2, linknode, copyfrom = pdata
                 # Don't follow renames (copyfrom).
@@ -426,8 +475,9 @@ class remotefilelog(object):
         # Breadth first traversal to build linkrev graph
         parentrevs = collections.defaultdict(list)
         revmap = {}
-        queue = collections.deque(((None, n) for n in parentsmap
-                 if n not in allparents))
+        queue = collections.deque(
+            ((None, n) for n in parentsmap if n not in allparents)
+        )
         while queue:
             prevrev, current = queue.pop()
             if current in revmap:

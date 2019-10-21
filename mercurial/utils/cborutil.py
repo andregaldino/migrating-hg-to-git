@@ -46,11 +46,14 @@ SEMANTIC_TAG_FINITE_SET = 258
 
 # Indefinite types begin with their major type ORd with information value 31.
 BEGIN_INDEFINITE_BYTESTRING = struct.pack(
-    r'>B', MAJOR_TYPE_BYTESTRING << 5 | SUBTYPE_INDEFINITE)
+    r'>B', MAJOR_TYPE_BYTESTRING << 5 | SUBTYPE_INDEFINITE
+)
 BEGIN_INDEFINITE_ARRAY = struct.pack(
-    r'>B', MAJOR_TYPE_ARRAY << 5 | SUBTYPE_INDEFINITE)
+    r'>B', MAJOR_TYPE_ARRAY << 5 | SUBTYPE_INDEFINITE
+)
 BEGIN_INDEFINITE_MAP = struct.pack(
-    r'>B', MAJOR_TYPE_MAP << 5 | SUBTYPE_INDEFINITE)
+    r'>B', MAJOR_TYPE_MAP << 5 | SUBTYPE_INDEFINITE
+)
 
 ENCODED_LENGTH_1 = struct.Struct(r'>B')
 ENCODED_LENGTH_2 = struct.Struct(r'>BB')
@@ -61,6 +64,7 @@ ENCODED_LENGTH_5 = struct.Struct(r'>BQ')
 # The break ends an indefinite length item.
 BREAK = b'\xff'
 BREAK_INT = 255
+
 
 def encodelength(majortype, length):
     """Obtain a value encoding the major type and its length."""
@@ -75,9 +79,11 @@ def encodelength(majortype, length):
     else:
         return ENCODED_LENGTH_5.pack(majortype << 5 | 27, length)
 
+
 def streamencodebytestring(v):
     yield encodelength(MAJOR_TYPE_BYTESTRING, len(v))
     yield v
+
 
 def streamencodebytestringfromiter(it):
     """Convert an iterator of chunks to an indefinite bytestring.
@@ -93,6 +99,7 @@ def streamencodebytestringfromiter(it):
 
     yield BREAK
 
+
 def streamencodeindefinitebytestring(source, chunksize=65536):
     """Given a large source buffer, emit as an indefinite length bytestring.
 
@@ -104,7 +111,7 @@ def streamencodeindefinitebytestring(source, chunksize=65536):
     l = len(source)
 
     while True:
-        chunk = source[i:i + chunksize]
+        chunk = source[i : i + chunksize]
         i += len(chunk)
 
         yield encodelength(MAJOR_TYPE_BYTESTRING, len(chunk))
@@ -115,14 +122,16 @@ def streamencodeindefinitebytestring(source, chunksize=65536):
 
     yield BREAK
 
+
 def streamencodeint(v):
     if v >= 18446744073709551616 or v < -18446744073709551616:
-        raise ValueError('big integers not supported')
+        raise ValueError(b'big integers not supported')
 
     if v >= 0:
         yield encodelength(MAJOR_TYPE_UINT, v)
     else:
         yield encodelength(MAJOR_TYPE_NEGINT, abs(v) - 1)
+
 
 def streamencodearray(l):
     """Encode a known size iterable to an array."""
@@ -132,6 +141,7 @@ def streamencodearray(l):
     for i in l:
         for chunk in streamencode(i):
             yield chunk
+
 
 def streamencodearrayfromiter(it):
     """Encode an iterator of items to an indefinite length array."""
@@ -144,8 +154,10 @@ def streamencodearrayfromiter(it):
 
     yield BREAK
 
+
 def _mixedtypesortkey(v):
     return type(v).__name__, v
+
 
 def streamencodeset(s):
     # https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml defines
@@ -155,6 +167,7 @@ def streamencodeset(s):
     for chunk in streamencodearray(sorted(s, key=_mixedtypesortkey)):
         yield chunk
 
+
 def streamencodemap(d):
     """Encode dictionary to a generator.
 
@@ -162,12 +175,14 @@ def streamencodemap(d):
     """
     yield encodelength(MAJOR_TYPE_MAP, len(d))
 
-    for key, value in sorted(d.iteritems(),
-                             key=lambda x: _mixedtypesortkey(x[0])):
+    for key, value in sorted(
+        pycompat.iteritems(d), key=lambda x: _mixedtypesortkey(x[0])
+    ):
         for chunk in streamencode(key):
             yield chunk
         for chunk in streamencode(value):
             yield chunk
+
 
 def streamencodemapfromiter(it):
     """Given an iterable of (key, value), encode to an indefinite length map."""
@@ -181,13 +196,16 @@ def streamencodemapfromiter(it):
 
     yield BREAK
 
+
 def streamencodebool(b):
     # major type 7, simple value 20 and 21.
     yield b'\xf5' if b else b'\xf4'
 
+
 def streamencodenone(v):
     # major type 7, simple value 22.
     yield b'\xf6'
+
 
 STREAM_ENCODERS = {
     bytes: streamencodebytestring,
@@ -200,6 +218,7 @@ STREAM_ENCODERS = {
     bool: streamencodebool,
     type(None): streamencodenone,
 }
+
 
 def streamencode(v):
     """Encode a value in a streaming manner.
@@ -222,24 +241,31 @@ def streamencode(v):
             break
 
     if not fn:
-        raise ValueError('do not know how to encode %s' % type(v))
+        raise ValueError(b'do not know how to encode %s' % type(v))
 
     return fn(v)
+
 
 class CBORDecodeError(Exception):
     """Represents an error decoding CBOR."""
 
+
 if sys.version_info.major >= 3:
+
     def _elementtointeger(b, i):
         return b[i]
+
+
 else:
+
     def _elementtointeger(b, i):
         return ord(b[i])
 
+
 STRUCT_BIG_UBYTE = struct.Struct(r'>B')
-STRUCT_BIG_USHORT = struct.Struct('>H')
-STRUCT_BIG_ULONG = struct.Struct('>L')
-STRUCT_BIG_ULONGLONG = struct.Struct('>Q')
+STRUCT_BIG_USHORT = struct.Struct(b'>H')
+STRUCT_BIG_ULONG = struct.Struct(b'>L')
+STRUCT_BIG_ULONGLONG = struct.Struct(b'>Q')
 
 SPECIAL_NONE = 0
 SPECIAL_START_INDEFINITE_BYTESTRING = 1
@@ -247,6 +273,7 @@ SPECIAL_START_ARRAY = 2
 SPECIAL_START_MAP = 3
 SPECIAL_START_SET = 4
 SPECIAL_INDEFINITE_BREAK = 5
+
 
 def decodeitem(b, offset=0):
     """Decode a new CBOR value from a buffer at offset.
@@ -301,8 +328,9 @@ def decodeitem(b, offset=0):
     elif majortype == MAJOR_TYPE_BYTESTRING:
         # Beginning of bytestrings are treated as uints in order to
         # decode their length, which may be indefinite.
-        complete, size, readcount = decodeuint(subtype, b, offset,
-                                               allowindefinite=True)
+        complete, size, readcount = decodeuint(
+            subtype, b, offset, allowindefinite=True
+        )
 
         # We don't know the size of the bytestring. It must be a definitive
         # length since the indefinite subtype would be encoded in the initial
@@ -314,7 +342,7 @@ def decodeitem(b, offset=0):
         if size is not None:
             # And the data is available in the buffer.
             if offset + readcount + size <= len(b):
-                value = b[offset + readcount:offset + readcount + size]
+                value = b[offset + readcount : offset + readcount + size]
                 return True, value, readcount + size + 1, SPECIAL_NONE
 
             # And we need more data in order to return the bytestring.
@@ -327,7 +355,7 @@ def decodeitem(b, offset=0):
             return True, None, 1, SPECIAL_START_INDEFINITE_BYTESTRING
 
     elif majortype == MAJOR_TYPE_STRING:
-        raise CBORDecodeError('string major type not supported')
+        raise CBORDecodeError(b'string major type not supported')
 
     elif majortype == MAJOR_TYPE_ARRAY:
         # Beginning of arrays are treated as uints in order to decode their
@@ -367,20 +395,22 @@ def decodeitem(b, offset=0):
             if offset + readcount >= len(b):
                 return False, None, -1, SPECIAL_NONE
 
-            complete, size, readcount2, special = decodeitem(b,
-                                                             offset + readcount)
+            complete, size, readcount2, special = decodeitem(
+                b, offset + readcount
+            )
 
             if not complete:
                 return False, None, readcount2, SPECIAL_NONE
 
             if special != SPECIAL_START_ARRAY:
-                raise CBORDecodeError('expected array after finite set '
-                                      'semantic tag')
+                raise CBORDecodeError(
+                    b'expected array after finite set semantic tag'
+                )
 
             return True, size, readcount + readcount2 + 1, SPECIAL_START_SET
 
         else:
-            raise CBORDecodeError('semantic tag %d not allowed' % tagvalue)
+            raise CBORDecodeError(b'semantic tag %d not allowed' % tagvalue)
 
     elif majortype == MAJOR_TYPE_SPECIAL:
         # Only specific values for the information field are allowed.
@@ -394,9 +424,10 @@ def decodeitem(b, offset=0):
             return True, None, 1, SPECIAL_INDEFINITE_BREAK
         # If value is 24, subtype is in next byte.
         else:
-            raise CBORDecodeError('special type %d not allowed' % subtype)
+            raise CBORDecodeError(b'special type %d not allowed' % subtype)
     else:
         assert False
+
 
 def decodeuint(subtype, b, offset=0, allowindefinite=False):
     """Decode an unsigned integer.
@@ -426,10 +457,11 @@ def decodeuint(subtype, b, offset=0, allowindefinite=False):
         if allowindefinite:
             return True, None, 0
         else:
-            raise CBORDecodeError('indefinite length uint not allowed here')
+            raise CBORDecodeError(b'indefinite length uint not allowed here')
     elif subtype >= 28:
-        raise CBORDecodeError('unsupported subtype on integer type: %d' %
-                              subtype)
+        raise CBORDecodeError(
+            b'unsupported subtype on integer type: %d' % subtype
+        )
 
     if subtype == 24:
         s = STRUCT_BIG_UBYTE
@@ -440,12 +472,13 @@ def decodeuint(subtype, b, offset=0, allowindefinite=False):
     elif subtype == 27:
         s = STRUCT_BIG_ULONGLONG
     else:
-        raise CBORDecodeError('bounds condition checking violation')
+        raise CBORDecodeError(b'bounds condition checking violation')
 
     if len(b) - offset >= s.size:
         return True, s.unpack_from(b, offset)[0], s.size
     else:
         return False, None, len(b) - offset - s.size
+
 
 class bytestringchunk(bytes):
     """Represents a chunk/segment in an indefinite length bytestring.
@@ -461,6 +494,7 @@ class bytestringchunk(bytes):
         self.islast = last
 
         return self
+
 
 class sansiodecoder(object):
     """A CBOR decoder that doesn't perform its own I/O.
@@ -606,40 +640,38 @@ class sansiodecoder(object):
                     self._decodedvalues.append(value)
 
                 elif special == SPECIAL_START_ARRAY:
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': [],
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': [],}
+                    )
                     self._state = self._STATE_WANT_ARRAY_VALUE
 
                 elif special == SPECIAL_START_MAP:
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': {},
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': {},}
+                    )
                     self._state = self._STATE_WANT_MAP_KEY
 
                 elif special == SPECIAL_START_SET:
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': set(),
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': set(),}
+                    )
                     self._state = self._STATE_WANT_SET_VALUE
 
                 elif special == SPECIAL_START_INDEFINITE_BYTESTRING:
                     self._state = self._STATE_WANT_BYTESTRING_CHUNK_FIRST
 
                 else:
-                    raise CBORDecodeError('unhandled special state: %d' %
-                                          special)
+                    raise CBORDecodeError(
+                        b'unhandled special state: %d' % special
+                    )
 
             # This value becomes an element of the current array.
             elif self._state == self._STATE_WANT_ARRAY_VALUE:
                 # Simple values get appended.
                 if special == SPECIAL_NONE:
                     c = self._collectionstack[-1]
-                    c['v'].append(value)
-                    c['remaining'] -= 1
+                    c[b'v'].append(value)
+                    c[b'remaining'] -= 1
 
                     # self._state doesn't need changed.
 
@@ -648,13 +680,12 @@ class sansiodecoder(object):
                     lastc = self._collectionstack[-1]
                     newvalue = []
 
-                    lastc['v'].append(newvalue)
-                    lastc['remaining'] -= 1
+                    lastc[b'v'].append(newvalue)
+                    lastc[b'remaining'] -= 1
 
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': newvalue,
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': newvalue,}
+                    )
 
                     # self._state doesn't need changed.
 
@@ -663,13 +694,12 @@ class sansiodecoder(object):
                     lastc = self._collectionstack[-1]
                     newvalue = {}
 
-                    lastc['v'].append(newvalue)
-                    lastc['remaining'] -= 1
+                    lastc[b'v'].append(newvalue)
+                    lastc[b'remaining'] -= 1
 
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': newvalue
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': newvalue}
+                    )
 
                     self._state = self._STATE_WANT_MAP_KEY
 
@@ -677,23 +707,26 @@ class sansiodecoder(object):
                     lastc = self._collectionstack[-1]
                     newvalue = set()
 
-                    lastc['v'].append(newvalue)
-                    lastc['remaining'] -= 1
+                    lastc[b'v'].append(newvalue)
+                    lastc[b'remaining'] -= 1
 
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': newvalue,
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': newvalue,}
+                    )
 
                     self._state = self._STATE_WANT_SET_VALUE
 
                 elif special == SPECIAL_START_INDEFINITE_BYTESTRING:
-                    raise CBORDecodeError('indefinite length bytestrings '
-                                          'not allowed as array values')
+                    raise CBORDecodeError(
+                        b'indefinite length bytestrings '
+                        b'not allowed as array values'
+                    )
 
                 else:
-                    raise CBORDecodeError('unhandled special item when '
-                                          'expecting array value: %d' % special)
+                    raise CBORDecodeError(
+                        b'unhandled special item when '
+                        b'expecting array value: %d' % special
+                    )
 
             # This value becomes the key of the current map instance.
             elif self._state == self._STATE_WANT_MAP_KEY:
@@ -702,26 +735,34 @@ class sansiodecoder(object):
                     self._state = self._STATE_WANT_MAP_VALUE
 
                 elif special == SPECIAL_START_INDEFINITE_BYTESTRING:
-                    raise CBORDecodeError('indefinite length bytestrings '
-                                          'not allowed as map keys')
+                    raise CBORDecodeError(
+                        b'indefinite length bytestrings '
+                        b'not allowed as map keys'
+                    )
 
-                elif special in (SPECIAL_START_ARRAY, SPECIAL_START_MAP,
-                                 SPECIAL_START_SET):
-                    raise CBORDecodeError('collections not supported as map '
-                                          'keys')
+                elif special in (
+                    SPECIAL_START_ARRAY,
+                    SPECIAL_START_MAP,
+                    SPECIAL_START_SET,
+                ):
+                    raise CBORDecodeError(
+                        b'collections not supported as map keys'
+                    )
 
                 # We do not allow special values to be used as map keys.
                 else:
-                    raise CBORDecodeError('unhandled special item when '
-                                          'expecting map key: %d' % special)
+                    raise CBORDecodeError(
+                        b'unhandled special item when '
+                        b'expecting map key: %d' % special
+                    )
 
             # This value becomes the value of the current map key.
             elif self._state == self._STATE_WANT_MAP_VALUE:
                 # Simple values simply get inserted into the map.
                 if special == SPECIAL_NONE:
                     lastc = self._collectionstack[-1]
-                    lastc['v'][self._currentmapkey] = value
-                    lastc['remaining'] -= 1
+                    lastc[b'v'][self._currentmapkey] = value
+                    lastc[b'remaining'] -= 1
 
                     self._state = self._STATE_WANT_MAP_KEY
 
@@ -730,13 +771,12 @@ class sansiodecoder(object):
                     lastc = self._collectionstack[-1]
                     newvalue = []
 
-                    lastc['v'][self._currentmapkey] = newvalue
-                    lastc['remaining'] -= 1
+                    lastc[b'v'][self._currentmapkey] = newvalue
+                    lastc[b'remaining'] -= 1
 
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': newvalue,
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': newvalue,}
+                    )
 
                     self._state = self._STATE_WANT_ARRAY_VALUE
 
@@ -745,13 +785,12 @@ class sansiodecoder(object):
                     lastc = self._collectionstack[-1]
                     newvalue = {}
 
-                    lastc['v'][self._currentmapkey] = newvalue
-                    lastc['remaining'] -= 1
+                    lastc[b'v'][self._currentmapkey] = newvalue
+                    lastc[b'remaining'] -= 1
 
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': newvalue,
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': newvalue,}
+                    )
 
                     self._state = self._STATE_WANT_MAP_KEY
 
@@ -760,23 +799,26 @@ class sansiodecoder(object):
                     lastc = self._collectionstack[-1]
                     newvalue = set()
 
-                    lastc['v'][self._currentmapkey] = newvalue
-                    lastc['remaining'] -= 1
+                    lastc[b'v'][self._currentmapkey] = newvalue
+                    lastc[b'remaining'] -= 1
 
-                    self._collectionstack.append({
-                        'remaining': value,
-                        'v': newvalue,
-                    })
+                    self._collectionstack.append(
+                        {b'remaining': value, b'v': newvalue,}
+                    )
 
                     self._state = self._STATE_WANT_SET_VALUE
 
                 elif special == SPECIAL_START_INDEFINITE_BYTESTRING:
-                    raise CBORDecodeError('indefinite length bytestrings not '
-                                          'allowed as map values')
+                    raise CBORDecodeError(
+                        b'indefinite length bytestrings not '
+                        b'allowed as map values'
+                    )
 
                 else:
-                    raise CBORDecodeError('unhandled special item when '
-                                          'expecting map value: %d' % special)
+                    raise CBORDecodeError(
+                        b'unhandled special item when '
+                        b'expecting map value: %d' % special
+                    )
 
                 self._currentmapkey = None
 
@@ -784,31 +826,39 @@ class sansiodecoder(object):
             elif self._state == self._STATE_WANT_SET_VALUE:
                 if special == SPECIAL_NONE:
                     lastc = self._collectionstack[-1]
-                    lastc['v'].add(value)
-                    lastc['remaining'] -= 1
+                    lastc[b'v'].add(value)
+                    lastc[b'remaining'] -= 1
 
                 elif special == SPECIAL_START_INDEFINITE_BYTESTRING:
-                    raise CBORDecodeError('indefinite length bytestrings not '
-                                          'allowed as set values')
+                    raise CBORDecodeError(
+                        b'indefinite length bytestrings not '
+                        b'allowed as set values'
+                    )
 
-                elif special in (SPECIAL_START_ARRAY,
-                                 SPECIAL_START_MAP,
-                                 SPECIAL_START_SET):
-                    raise CBORDecodeError('collections not allowed as set '
-                                          'values')
+                elif special in (
+                    SPECIAL_START_ARRAY,
+                    SPECIAL_START_MAP,
+                    SPECIAL_START_SET,
+                ):
+                    raise CBORDecodeError(
+                        b'collections not allowed as set values'
+                    )
 
                 # We don't allow non-trivial types to exist as set values.
                 else:
-                    raise CBORDecodeError('unhandled special item when '
-                                          'expecting set value: %d' % special)
+                    raise CBORDecodeError(
+                        b'unhandled special item when '
+                        b'expecting set value: %d' % special
+                    )
 
             # This value represents the first chunk in an indefinite length
             # bytestring.
             elif self._state == self._STATE_WANT_BYTESTRING_CHUNK_FIRST:
                 # We received a full chunk.
                 if special == SPECIAL_NONE:
-                    self._decodedvalues.append(bytestringchunk(value,
-                                                               first=True))
+                    self._decodedvalues.append(
+                        bytestringchunk(value, first=True)
+                    )
 
                     self._state = self._STATE_WANT_BYTESTRING_CHUNK_SUBSEQUENT
 
@@ -818,9 +868,9 @@ class sansiodecoder(object):
                     # We /could/ convert this to a b''. But we want to preserve
                     # the nature of the underlying data so consumers expecting
                     # an indefinite length bytestring get one.
-                    self._decodedvalues.append(bytestringchunk(b'',
-                                                               first=True,
-                                                               last=True))
+                    self._decodedvalues.append(
+                        bytestringchunk(b'', first=True, last=True)
+                    )
 
                     # Since indefinite length bytestrings can't be used in
                     # collections, we must be at the root level.
@@ -828,9 +878,10 @@ class sansiodecoder(object):
                     self._state = self._STATE_NONE
 
                 else:
-                    raise CBORDecodeError('unexpected special value when '
-                                          'expecting bytestring chunk: %d' %
-                                          special)
+                    raise CBORDecodeError(
+                        b'unexpected special value when '
+                        b'expecting bytestring chunk: %d' % special
+                    )
 
             # This value represents the non-initial chunk in an indefinite
             # length bytestring.
@@ -849,27 +900,31 @@ class sansiodecoder(object):
                     self._state = self._STATE_NONE
 
                 else:
-                    raise CBORDecodeError('unexpected special value when '
-                                          'expecting bytestring chunk: %d' %
-                                          special)
+                    raise CBORDecodeError(
+                        b'unexpected special value when '
+                        b'expecting bytestring chunk: %d' % special
+                    )
 
             else:
-                raise CBORDecodeError('unhandled decoder state: %d' %
-                                      self._state)
+                raise CBORDecodeError(
+                    b'unhandled decoder state: %d' % self._state
+                )
 
             # We could have just added the final value in a collection. End
             # all complete collections at the top of the stack.
             while True:
                 # Bail if we're not waiting on a new collection item.
-                if self._state not in (self._STATE_WANT_ARRAY_VALUE,
-                                       self._STATE_WANT_MAP_KEY,
-                                       self._STATE_WANT_SET_VALUE):
+                if self._state not in (
+                    self._STATE_WANT_ARRAY_VALUE,
+                    self._STATE_WANT_MAP_KEY,
+                    self._STATE_WANT_SET_VALUE,
+                ):
                     break
 
                 # Or we are expecting more items for this collection.
                 lastc = self._collectionstack[-1]
 
-                if lastc['remaining']:
+                if lastc[b'remaining']:
                     break
 
                 # The collection at the top of the stack is complete.
@@ -886,11 +941,11 @@ class sansiodecoder(object):
                         list: self._STATE_WANT_ARRAY_VALUE,
                         dict: self._STATE_WANT_MAP_KEY,
                         set: self._STATE_WANT_SET_VALUE,
-                    }[type(self._collectionstack[-1]['v'])]
+                    }[type(self._collectionstack[-1][b'v'])]
 
                 # If this is the root collection, emit it.
                 else:
-                    self._decodedvalues.append(lastc['v'])
+                    self._decodedvalues.append(lastc[b'v'])
                     self._state = self._STATE_NONE
 
         return (
@@ -909,6 +964,7 @@ class sansiodecoder(object):
         self._decodedvalues = []
         return l
 
+
 class bufferingdecoder(object):
     """A CBOR decoder that buffers undecoded input.
 
@@ -919,6 +975,7 @@ class bufferingdecoder(object):
     TODO consider adding limits as to the maximum amount of data that can
     be buffered.
     """
+
     def __init__(self):
         self._decoder = sansiodecoder()
         self._chunks = []
@@ -978,6 +1035,7 @@ class bufferingdecoder(object):
     def getavailable(self):
         return self._decoder.getavailable()
 
+
 def decodeall(b):
     """Decode all CBOR items present in an iterable of bytes.
 
@@ -995,9 +1053,9 @@ def decodeall(b):
     havevalues, readcount, wantbytes = decoder.decode(b)
 
     if readcount != len(b):
-        raise CBORDecodeError('input data not fully consumed')
+        raise CBORDecodeError(b'input data not fully consumed')
 
     if decoder.inprogress:
-        raise CBORDecodeError('input data not complete')
+        raise CBORDecodeError(b'input data not complete')
 
     return decoder.getavailable()

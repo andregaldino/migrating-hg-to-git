@@ -8,6 +8,7 @@ import os
 import stat
 import sys
 
+
 def modestr(st):
     mode = st.st_mode
     result = ''
@@ -23,12 +24,14 @@ def modestr(st):
                 result += '-'
     return result
 
+
 def sizestr(st):
     if st.st_mode & stat.S_IFREG:
         return '%7d' % st.st_size
     else:
         # do not show size for non regular files
         return ' ' * 7
+
 
 os.chdir((sys.argv[1:] + ['.'])[0])
 

@@ -15,6 +15,7 @@ import shlex
 import subprocess
 
 from mercurial.i18n import _
+from mercurial.pycompat import open
 from mercurial import (
     encoding,
     error,
@@ -22,20 +23,19 @@ from mercurial import (
     pycompat,
     util,
 )
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 pickle = util.pickle
 propertycache = util.propertycache
+
 
 def _encodeornone(d):
     if d is None:
         return
     return d.encode('latin1')
 
-class _shlexpy3proxy(object):
 
+class _shlexpy3proxy(object):
     def __init__(self, l):
         self._l = l
 
@@ -47,22 +47,24 @@ class _shlexpy3proxy(object):
 
     @property
     def infile(self):
-        return self._l.infile or '<unknown>'
+        return self._l.infile or b'<unknown>'
 
     @property
     def lineno(self):
         return self._l.lineno
 
+
 def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
     if data is None:
         if pycompat.ispy3:
-            data = open(filepath, 'r', encoding=r'latin1')
+            data = open(filepath, b'r', encoding=r'latin1')
         else:
-            data = open(filepath, 'r')
+            data = open(filepath, b'r')
     else:
         if filepath is not None:
             raise error.ProgrammingError(
-                'shlexer only accepts data or filepath, not both')
+                b'shlexer only accepts data or filepath, not both'
+            )
         if pycompat.ispy3:
             data = data.decode('latin1')
     l = shlex.shlex(data, infile=filepath, posix=True)
@@ -81,21 +83,25 @@ def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
         return _shlexpy3proxy(l)
     return l
 
+
 def encodeargs(args):
     def encodearg(s):
         lines = base64.encodestring(s)
         lines = [l.splitlines()[0] for l in lines]
-        return ''.join(lines)
+        return b''.join(lines)
 
     s = pickle.dumps(args)
     return encodearg(s)
+
 
 def decodeargs(s):
     s = base64.decodestring(s)
     return pickle.loads(s)
 
+
 class MissingTool(Exception):
     pass
+
 
 def checktool(exe, name=None, abort=True):
     name = name or exe
@@ -104,29 +110,45 @@ def checktool(exe, name=None, abort=True):
             exc = error.Abort
         else:
             exc = MissingTool
-        raise exc(_('cannot find required "%s" tool') % name)
+        raise exc(_(b'cannot find required "%s" tool') % name)
+
 
 class NoRepo(Exception):
     pass
 
-SKIPREV = 'SKIP'
+
+SKIPREV = b'SKIP'
+
 
 class commit(object):
-    def __init__(self, author, date, desc, parents, branch=None, rev=None,
-                 extra=None, sortkey=None, saverev=True, phase=phases.draft,
-                 optparents=None, ctx=None):
-        self.author = author or 'unknown'
-        self.date = date or '0 0'
+    def __init__(
+        self,
+        author,
+        date,
+        desc,
+        parents,
+        branch=None,
+        rev=None,
+        extra=None,
+        sortkey=None,
+        saverev=True,
+        phase=phases.draft,
+        optparents=None,
+        ctx=None,
+    ):
+        self.author = author or b'unknown'
+        self.date = date or b'0 0'
         self.desc = desc
-        self.parents = parents # will be converted and used as parents
-        self.optparents = optparents or [] # will be used if already converted
+        self.parents = parents  # will be converted and used as parents
+        self.optparents = optparents or []  # will be used if already converted
         self.branch = branch
         self.rev = rev
         self.extra = extra or {}
         self.sortkey = sortkey
         self.saverev = saverev
         self.phase = phase
-        self.ctx = ctx # for hg to hg conversions
+        self.ctx = ctx  # for hg to hg conversions
+
 
 class converter_source(object):
     """Conversion source interface"""
@@ -139,15 +161,17 @@ class converter_source(object):
         self.revs = revs
         self.repotype = repotype
 
-        self.encoding = 'utf-8'
+        self.encoding = b'utf-8'
 
-    def checkhexformat(self, revstr, mapname='splicemap'):
+    def checkhexformat(self, revstr, mapname=b'splicemap'):
         """ fails if revstr is not a 40 byte hex. mercurial and git both uses
             such format for their revision numbering
         """
         if not re.match(br'[0-9a-fA-F]{40,40}$', revstr):
-            raise error.Abort(_('%s entry %s is not a valid revision'
-                               ' identifier') % (mapname, revstr))
+            raise error.Abort(
+                _(b'%s entry %s is not a valid revision identifier')
+                % (mapname, revstr)
+            )
 
     def before(self):
         pass
@@ -213,7 +237,7 @@ class converter_source(object):
 
     def recode(self, s, encoding=None):
         if not encoding:
-            encoding = self.encoding or 'utf-8'
+            encoding = self.encoding or b'utf-8'
 
         if isinstance(s, pycompat.unicode):
             return s.encode("utf-8")
@@ -223,8 +247,9 @@ class converter_source(object):
             try:
                 return s.decode("latin-1").encode("utf-8")
             except UnicodeError:
-                return s.decode(pycompat.sysstr(encoding),
-                                "replace").encode("utf-8")
+                return s.decode(pycompat.sysstr(encoding), "replace").encode(
+                    "utf-8"
+                )
 
     def getchangedfiles(self, rev, i):
         """Return the files changed by rev compared to parent[i].
@@ -268,12 +293,13 @@ class converter_source(object):
         """
         return {}
 
-    def checkrevformat(self, revstr, mapname='splicemap'):
+    def checkrevformat(self, revstr, mapname=b'splicemap'):
         """revstr is a string that describes a revision in the given
            source control system.  Return true if revstr has correct
            format.
         """
         return True
+
 
 class converter_sink(object):
     """Conversion sink (target) interface"""
@@ -301,8 +327,9 @@ class converter_sink(object):
         mapping equivalent authors identifiers for each system."""
         return None
 
-    def putcommit(self, files, copies, parents, commit, source, revmap, full,
-                  cleanp2):
+    def putcommit(
+        self, files, copies, parents, commit, source, revmap, full, cleanp2
+    ):
         """Create a revision with all changed files listed in 'files'
         and having listed parents. 'commit' is a commit object
         containing at a minimum the author, date, and message for this
@@ -369,6 +396,7 @@ class converter_sink(object):
         special cases."""
         raise NotImplementedError
 
+
 class commandline(object):
     def __init__(self, ui, command):
         self.ui = ui
@@ -383,31 +411,35 @@ class commandline(object):
     def _cmdline(self, cmd, *args, **kwargs):
         kwargs = pycompat.byteskwargs(kwargs)
         cmdline = [self.command, cmd] + list(args)
-        for k, v in kwargs.iteritems():
+        for k, v in pycompat.iteritems(kwargs):
             if len(k) == 1:
-                cmdline.append('-' + k)
+                cmdline.append(b'-' + k)
             else:
-                cmdline.append('--' + k.replace('_', '-'))
+                cmdline.append(b'--' + k.replace(b'_', b'-'))
             try:
                 if len(k) == 1:
-                    cmdline.append('' + v)
+                    cmdline.append(b'' + v)
                 else:
-                    cmdline[-1] += '=' + v
+                    cmdline[-1] += b'=' + v
             except TypeError:
                 pass
         cmdline = [procutil.shellquote(arg) for arg in cmdline]
         if not self.ui.debugflag:
-            cmdline += ['2>', pycompat.bytestr(os.devnull)]
-        cmdline = ' '.join(cmdline)
+            cmdline += [b'2>', pycompat.bytestr(os.devnull)]
+        cmdline = b' '.join(cmdline)
         return cmdline
 
     def _run(self, cmd, *args, **kwargs):
         def popen(cmdline):
-            p = subprocess.Popen(procutil.tonativestr(cmdline),
-                                 shell=True, bufsize=-1,
-                                 close_fds=procutil.closefds,
-                                 stdout=subprocess.PIPE)
+            p = subprocess.Popen(
+                procutil.tonativestr(cmdline),
+                shell=True,
+                bufsize=-1,
+                close_fds=procutil.closefds,
+                stdout=subprocess.PIPE,
+            )
             return p
+
         return self._dorun(popen, cmd, *args, **kwargs)
 
     def _run2(self, cmd, *args, **kwargs):
@@ -416,9 +448,9 @@ class commandline(object):
     def _run3(self, cmd, *args, **kwargs):
         return self._dorun(procutil.popen3, cmd, *args, **kwargs)
 
-    def _dorun(self, openfunc, cmd,  *args, **kwargs):
+    def _dorun(self, openfunc, cmd, *args, **kwargs):
         cmdline = self._cmdline(cmd, *args, **kwargs)
-        self.ui.debug('running: %s\n' % (cmdline,))
+        self.ui.debug(b'running: %s\n' % (cmdline,))
         self.prerun()
         try:
             return openfunc(cmdline)
@@ -435,16 +467,16 @@ class commandline(object):
         p = self._run(cmd, *args, **kwargs)
         output = p.stdout.readlines()
         p.wait()
-        self.ui.debug(''.join(output))
+        self.ui.debug(b''.join(output))
         return output, p.returncode
 
-    def checkexit(self, status, output=''):
+    def checkexit(self, status, output=b''):
         if status:
             if output:
-                self.ui.warn(_('%s error:\n') % self.command)
+                self.ui.warn(_(b'%s error:\n') % self.command)
                 self.ui.warn(output)
             msg = procutil.explainexit(status)
-            raise error.Abort('%s %s' % (self.command, msg))
+            raise error.Abort(b'%s %s' % (self.command, msg))
 
     def run0(self, cmd, *args, **kwargs):
         output, status = self.run(cmd, *args, **kwargs)
@@ -453,7 +485,7 @@ class commandline(object):
 
     def runlines0(self, cmd, *args, **kwargs):
         output, status = self.runlines(cmd, *args, **kwargs)
-        self.checkexit(status, ''.join(output))
+        self.checkexit(status, b''.join(output))
         return output
 
     @propertycache
@@ -495,6 +527,7 @@ class commandline(object):
         for l in self._limit_arglist(arglist, cmd, *args, **kwargs):
             self.run0(cmd, *(list(args) + l), **kwargs)
 
+
 class mapfile(dict):
     def __init__(self, ui, path):
         super(mapfile, self).__init__()
@@ -508,7 +541,7 @@ class mapfile(dict):
         if not self.path:
             return
         try:
-            fp = open(self.path, 'rb')
+            fp = open(self.path, b'rb')
         except IOError as err:
             if err.errno != errno.ENOENT:
                 raise
@@ -519,11 +552,12 @@ class mapfile(dict):
                 # Ignore blank lines
                 continue
             try:
-                key, value = line.rsplit(' ', 1)
+                key, value = line.rsplit(b' ', 1)
             except ValueError:
                 raise error.Abort(
-                    _('syntax error in %s(%d): key/value pair expected')
-                    % (self.path, i + 1))
+                    _(b'syntax error in %s(%d): key/value pair expected')
+                    % (self.path, i + 1)
+                )
             if key not in self:
                 self.order.append(key)
             super(mapfile, self).__setitem__(key, value)
@@ -532,12 +566,13 @@ class mapfile(dict):
     def __setitem__(self, key, value):
         if self.fp is None:
             try:
-                self.fp = open(self.path, 'ab')
+                self.fp = open(self.path, b'ab')
             except IOError as err:
                 raise error.Abort(
-                    _('could not open map file %r: %s') %
-                    (self.path, encoding.strtolocal(err.strerror)))
-        self.fp.write(util.tonativeeol('%s %s\n' % (key, value)))
+                    _(b'could not open map file %r: %s')
+                    % (self.path, encoding.strtolocal(err.strerror))
+                )
+        self.fp.write(util.tonativeeol(b'%s %s\n' % (key, value)))
         self.fp.flush()
         super(mapfile, self).__setitem__(key, value)
 
@@ -546,9 +581,11 @@ class mapfile(dict):
             self.fp.close()
             self.fp = None
 
+
 def makedatetimestamp(t):
     """Like dateutil.makedate() but for time t instead of current time"""
-    delta = (datetime.datetime.utcfromtimestamp(t) -
-             datetime.datetime.fromtimestamp(t))
+    delta = datetime.datetime.utcfromtimestamp(
+        t
+    ) - datetime.datetime.fromtimestamp(t)
     tz = delta.days * 86400 + delta.seconds
     return t, tz

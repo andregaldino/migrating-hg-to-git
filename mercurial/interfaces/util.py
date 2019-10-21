@@ -1,4 +1,4 @@
-# interfaceutil.py - Utilities for declaring interfaces.
+# util.py - Utilities for declaring interfaces.
 #
 # Copyright 2018 Gregory Szorc <gregory.szorc@gmail.com>
 #
@@ -11,26 +11,24 @@
 
 from __future__ import absolute_import
 
-from .. import (
-    encoding,
-)
+from .. import encoding
 
-if encoding.environ.get('HGREALINTERFACES'):
-    from ..thirdparty.zope import (
-        interface as zi,
-    )
+if encoding.environ.get(b'HGREALINTERFACES'):
+    from ..thirdparty.zope import interface as zi
 
     Attribute = zi.Attribute
     Interface = zi.Interface
     implementer = zi.implementer
 else:
+
     class Attribute(object):
-        def __init__(self, __name__, __doc__=''):
+        def __init__(self, __name__, __doc__=b''):
             pass
 
     class Interface(object):
-        def __init__(self, name, bases=(), attrs=None, __doc__=None,
-                 __module__=None):
+        def __init__(
+            self, name, bases=(), attrs=None, __doc__=None, __module__=None
+        ):
             pass
 
     def implementer(*ifaces):

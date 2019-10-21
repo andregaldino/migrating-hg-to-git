@@ -30,6 +30,7 @@ from . import (
 # a per-repo option, possibly a repo requirement.
 enabled = False
 
+
 def parseconfig(ui, raw, action):
     """Parse sparse config file content.
 
@@ -43,42 +44,58 @@ def parseconfig(ui, raw, action):
     current = None
     havesection = False
 
-    for line in raw.split('\n'):
+    for line in raw.split(b'\n'):
         line = line.strip()
-        if not line or line.startswith('#'):
+        if not line or line.startswith(b'#'):
             # empty or comment line, skip
             continue
-        elif line.startswith('%include '):
+        elif line.startswith(b'%include '):
             line = line[9:].strip()
             if line:
                 profiles.add(line)
-        elif line == '[include]':
+        elif line == b'[include]':
             if havesection and current != includes:
                 # TODO pass filename into this API so we can report it.
-                raise error.Abort(_('%(action)s config cannot have includes '
-                                    'after excludes') % {'action': action})
+                raise error.Abort(
+                    _(
+                        b'%(action)s config cannot have includes '
+                        b'after excludes'
+                    )
+                    % {b'action': action}
+                )
             havesection = True
             current = includes
             continue
-        elif line == '[exclude]':
+        elif line == b'[exclude]':
             havesection = True
             current = excludes
         elif line:
             if current is None:
-                raise error.Abort(_('%(action)s config entry outside of '
-                                    'section: %(line)s')
-                                  % {'action': action, 'line': line},
-                                  hint=_('add an [include] or [exclude] line '
-                                         'to declare the entry type'))
+                raise error.Abort(
+                    _(
+                        b'%(action)s config entry outside of '
+                        b'section: %(line)s'
+                    )
+                    % {b'action': action, b'line': line},
+                    hint=_(
+                        b'add an [include] or [exclude] line '
+                        b'to declare the entry type'
+                    ),
+                )
 
-            if line.strip().startswith('/'):
-                ui.warn(_('warning: %(action)s profile cannot use'
-                          ' paths starting with /, ignoring %(line)s\n')
-                        % {'action': action, 'line': line})
+            if line.strip().startswith(b'/'):
+                ui.warn(
+                    _(
+                        b'warning: %(action)s profile cannot use'
+                        b' paths starting with /, ignoring %(line)s\n'
+                    )
+                    % {b'action': action, b'line': line}
+                )
                 continue
             current.add(line)
 
     return includes, excludes, profiles
+
 
 # Exists as separate function to facilitate monkeypatching.
 def readprofile(repo, profile, changeid):
@@ -86,6 +103,7 @@ def readprofile(repo, profile, changeid):
     # TODO add some kind of cache here because this incurs a manifest
     # resolve and can be slow.
     return repo.filectx(profile, changeid=changeid).data()
+
 
 def patternsforrev(repo, rev):
     """Obtain sparse checkout patterns for the given rev.
@@ -97,15 +115,16 @@ def patternsforrev(repo, rev):
     if not enabled:
         return set(), set(), set()
 
-    raw = repo.vfs.tryread('sparse')
+    raw = repo.vfs.tryread(b'sparse')
     if not raw:
         return set(), set(), set()
 
     if rev is None:
-        raise error.Abort(_('cannot parse sparse patterns from working '
-                            'directory'))
+        raise error.Abort(
+            _(b'cannot parse sparse patterns from working directory')
+        )
 
-    includes, excludes, profiles = parseconfig(repo.ui, raw, 'sparse')
+    includes, excludes, profiles = parseconfig(repo.ui, raw, b'sparse')
     ctx = repo[rev]
 
     if profiles:
@@ -121,17 +140,19 @@ def patternsforrev(repo, rev):
                 raw = readprofile(repo, profile, rev)
             except error.ManifestLookupError:
                 msg = (
-                    "warning: sparse profile '%s' not found "
-                    "in rev %s - ignoring it\n" % (profile, ctx))
+                    b"warning: sparse profile '%s' not found "
+                    b"in rev %s - ignoring it\n" % (profile, ctx)
+                )
                 # experimental config: sparse.missingwarning
-                if repo.ui.configbool(
-                        'sparse', 'missingwarning'):
+                if repo.ui.configbool(b'sparse', b'missingwarning'):
                     repo.ui.warn(msg)
                 else:
                     repo.ui.debug(msg)
                 continue
 
-            pincludes, pexcludes, subprofs = parseconfig(repo.ui, raw, 'sparse')
+            pincludes, pexcludes, subprofs = parseconfig(
+                repo.ui, raw, b'sparse'
+            )
             includes.update(pincludes)
             excludes.update(pexcludes)
             profiles.update(subprofs)
@@ -139,9 +160,10 @@ def patternsforrev(repo, rev):
         profiles = visited
 
     if includes:
-        includes.add('.hg*')
+        includes.add(b'.hg*')
 
     return includes, excludes, profiles
+
 
 def activeconfig(repo):
     """Determine the active sparse config rules.
@@ -149,8 +171,11 @@ def activeconfig(repo):
     Rules are constructed by reading the current sparse config and bringing in
     referenced profiles from parents of the working directory.
     """
-    revs = [repo.changelog.rev(node) for node in
-            repo.dirstate.parents() if node != nullid]
+    revs = [
+        repo.changelog.rev(node)
+        for node in repo.dirstate.parents()
+        if node != nullid
+    ]
 
     allincludes = set()
     allexcludes = set()
@@ -164,6 +189,7 @@ def activeconfig(repo):
 
     return allincludes, allexcludes, allprofiles
 
+
 def configsignature(repo, includetemp=True):
     """Obtain the signature string for the current sparse configuration.
 
@@ -171,54 +197,58 @@ def configsignature(repo, includetemp=True):
     """
     cache = repo._sparsesignaturecache
 
-    signature = cache.get('signature')
+    signature = cache.get(b'signature')
 
     if includetemp:
-        tempsignature = cache.get('tempsignature')
+        tempsignature = cache.get(b'tempsignature')
     else:
-        tempsignature = '0'
+        tempsignature = b'0'
 
     if signature is None or (includetemp and tempsignature is None):
-        signature = hex(hashlib.sha1(repo.vfs.tryread('sparse')).digest())
-        cache['signature'] = signature
+        signature = hex(hashlib.sha1(repo.vfs.tryread(b'sparse')).digest())
+        cache[b'signature'] = signature
 
         if includetemp:
-            raw = repo.vfs.tryread('tempsparse')
+            raw = repo.vfs.tryread(b'tempsparse')
             tempsignature = hex(hashlib.sha1(raw).digest())
-            cache['tempsignature'] = tempsignature
+            cache[b'tempsignature'] = tempsignature
 
-    return '%s %s' % (signature, tempsignature)
+    return b'%s %s' % (signature, tempsignature)
+
 
 def writeconfig(repo, includes, excludes, profiles):
     """Write the sparse config file given a sparse configuration."""
-    with repo.vfs('sparse', 'wb') as fh:
+    with repo.vfs(b'sparse', b'wb') as fh:
         for p in sorted(profiles):
-            fh.write('%%include %s\n' % p)
+            fh.write(b'%%include %s\n' % p)
 
         if includes:
-            fh.write('[include]\n')
+            fh.write(b'[include]\n')
             for i in sorted(includes):
                 fh.write(i)
-                fh.write('\n')
+                fh.write(b'\n')
 
         if excludes:
-            fh.write('[exclude]\n')
+            fh.write(b'[exclude]\n')
             for e in sorted(excludes):
                 fh.write(e)
-                fh.write('\n')
+                fh.write(b'\n')
 
     repo._sparsesignaturecache.clear()
 
+
 def readtemporaryincludes(repo):
-    raw = repo.vfs.tryread('tempsparse')
+    raw = repo.vfs.tryread(b'tempsparse')
     if not raw:
         return set()
 
-    return set(raw.split('\n'))
+    return set(raw.split(b'\n'))
+
 
 def writetemporaryincludes(repo, includes):
-    repo.vfs.write('tempsparse', '\n'.join(sorted(includes)))
+    repo.vfs.write(b'tempsparse', b'\n'.join(sorted(includes)))
     repo._sparsesignaturecache.clear()
+
 
 def addtemporaryincludes(repo, additional):
     includes = readtemporaryincludes(repo)
@@ -226,8 +256,9 @@ def addtemporaryincludes(repo, additional):
         includes.add(i)
     writetemporaryincludes(repo, includes)
 
+
 def prunetemporaryincludes(repo):
-    if not enabled or not repo.vfs.exists('tempsparse'):
+    if not enabled or not repo.vfs.exists(b'tempsparse'):
         return
 
     s = repo.status()
@@ -242,31 +273,36 @@ def prunetemporaryincludes(repo):
     tempincludes = readtemporaryincludes(repo)
     for file in tempincludes:
         if file in dirstate and not sparsematch(file):
-            message = _('dropping temporarily included sparse files')
+            message = _(b'dropping temporarily included sparse files')
             actions.append((file, None, message))
             dropped.append(file)
 
     typeactions = mergemod.emptyactions()
-    typeactions['r'] = actions
-    mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False,
-                          wantfiledata=False)
+    typeactions[b'r'] = actions
+    mergemod.applyupdates(
+        repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+    )
 
     # Fix dirstate
     for file in dropped:
         dirstate.drop(file)
 
-    repo.vfs.unlink('tempsparse')
+    repo.vfs.unlink(b'tempsparse')
     repo._sparsesignaturecache.clear()
-    msg = _('cleaned up %d temporarily added file(s) from the '
-            'sparse checkout\n')
+    msg = _(
+        b'cleaned up %d temporarily added file(s) from the '
+        b'sparse checkout\n'
+    )
     repo.ui.status(msg % len(tempincludes))
+
 
 def forceincludematcher(matcher, includes):
     """Returns a matcher that returns true for any of the forced includes
     before testing against the actual matcher."""
-    kindpats = [('path', include, '') for include in includes]
-    includematcher = matchmod.includematcher('', kindpats)
+    kindpats = [(b'path', include, b'') for include in includes]
+    includematcher = matchmod.includematcher(b'', kindpats)
     return matchmod.unionmatcher([includematcher, matcher])
+
 
 def matcher(repo, revs=None, includetemp=True):
     """Obtain a matcher for sparse working directories for the given revs.
@@ -281,12 +317,15 @@ def matcher(repo, revs=None, includetemp=True):
         return matchmod.always()
 
     if not revs or revs == [None]:
-        revs = [repo.changelog.rev(node)
-                for node in repo.dirstate.parents() if node != nullid]
+        revs = [
+            repo.changelog.rev(node)
+            for node in repo.dirstate.parents()
+            if node != nullid
+        ]
 
     signature = configsignature(repo, includetemp=includetemp)
 
-    key = '%s %s' % (signature, ' '.join(map(pycompat.bytestr, revs)))
+    key = b'%s %s' % (signature, b' '.join(map(pycompat.bytestr, revs)))
 
     result = repo._sparsematchercache.get(key)
     if result:
@@ -298,9 +337,14 @@ def matcher(repo, revs=None, includetemp=True):
             includes, excludes, profiles = patternsforrev(repo, rev)
 
             if includes or excludes:
-                matcher = matchmod.match(repo.root, '', [],
-                                         include=includes, exclude=excludes,
-                                         default='relpath')
+                matcher = matchmod.match(
+                    repo.root,
+                    b'',
+                    [],
+                    include=includes,
+                    exclude=excludes,
+                    default=b'relpath',
+                )
                 matchers.append(matcher)
         except IOError:
             pass
@@ -319,6 +363,7 @@ def matcher(repo, revs=None, includetemp=True):
     repo._sparsematchercache[key] = result
 
     return result
+
 
 def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
     """Filter updates to only lay out files that match the sparse rules."""
@@ -344,22 +389,22 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         sparsematch = matcher(repo, [mctx.rev()])
 
     temporaryfiles = []
-    for file, action in actions.iteritems():
+    for file, action in pycompat.iteritems(actions):
         type, args, msg = action
         files.add(file)
         if sparsematch(file):
             prunedactions[file] = action
-        elif type == 'm':
+        elif type == b'm':
             temporaryfiles.append(file)
             prunedactions[file] = action
         elif branchmerge:
-            if type != 'k':
+            if type != b'k':
                 temporaryfiles.append(file)
                 prunedactions[file] = action
-        elif type == 'f':
+        elif type == b'f':
             prunedactions[file] = action
         elif file in wctx:
-            prunedactions[file] = ('r', args, msg)
+            prunedactions[file] = (b'r', args, msg)
 
         if branchmerge and type == mergemod.ACTION_MERGE:
             f1, f2, fa, move, anc = args
@@ -367,13 +412,18 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
                 temporaryfiles.append(f1)
 
     if len(temporaryfiles) > 0:
-        repo.ui.status(_('temporarily included %d file(s) in the sparse '
-                         'checkout for merging\n') % len(temporaryfiles))
+        repo.ui.status(
+            _(
+                b'temporarily included %d file(s) in the sparse '
+                b'checkout for merging\n'
+            )
+            % len(temporaryfiles)
+        )
         addtemporaryincludes(repo, temporaryfiles)
 
         # Add the new files to the working copy so they can be merged, etc
         actions = []
-        message = 'temporarily adding to sparse checkout'
+        message = b'temporarily adding to sparse checkout'
         wctxmanifest = repo[None].manifest()
         for file in temporaryfiles:
             if file in wctxmanifest:
@@ -381,9 +431,10 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
                 actions.append((file, (fctx.flags(), False), message))
 
         typeactions = mergemod.emptyactions()
-        typeactions['g'] = actions
-        mergemod.applyupdates(repo, typeactions, repo[None], repo['.'],
-                              False, wantfiledata=False)
+        typeactions[b'g'] = actions
+        mergemod.applyupdates(
+            repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+        )
 
         dirstate = repo.dirstate
         for file, flags, msg in actions:
@@ -401,11 +452,12 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
             new = sparsematch(file)
             if not old and new:
                 flags = mf.flags(file)
-                prunedactions[file] = ('g', (flags, False), '')
+                prunedactions[file] = (b'g', (flags, False), b'')
             elif old and not new:
-                prunedactions[file] = ('r', [], '')
+                prunedactions[file] = (b'r', [], b'')
 
     return prunedactions
+
 
 def refreshwdir(repo, origstatus, origsparsematch, force=False):
     """Refreshes working directory by taking sparse config into account.
@@ -426,16 +478,17 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
 
     for f in pending:
         if not sparsematch(f):
-            repo.ui.warn(_("pending changes to '%s'\n") % f)
+            repo.ui.warn(_(b"pending changes to '%s'\n") % f)
             abort = not force
 
     if abort:
-        raise error.Abort(_('could not update sparseness due to pending '
-                            'changes'))
+        raise error.Abort(
+            _(b'could not update sparseness due to pending changes')
+        )
 
     # Calculate actions
     dirstate = repo.dirstate
-    ctx = repo['.']
+    ctx = repo[b'.']
     added = []
     lookup = []
     dropped = []
@@ -452,30 +505,34 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
         if (new and not old) or (old and new and not file in dirstate):
             fl = mf.flags(file)
             if repo.wvfs.exists(file):
-                actions[file] = ('e', (fl,), '')
+                actions[file] = (b'e', (fl,), b'')
                 lookup.append(file)
             else:
-                actions[file] = ('g', (fl, False), '')
+                actions[file] = (b'g', (fl, False), b'')
                 added.append(file)
         # Drop files that are newly excluded, or that still exist in
         # the dirstate.
         elif (old and not new) or (not old and not new and file in dirstate):
             dropped.append(file)
             if file not in pending:
-                actions[file] = ('r', [], '')
+                actions[file] = (b'r', [], b'')
 
     # Verify there are no pending changes in newly included files
     abort = False
     for file in lookup:
-        repo.ui.warn(_("pending changes to '%s'\n") % file)
+        repo.ui.warn(_(b"pending changes to '%s'\n") % file)
         abort = not force
     if abort:
-        raise error.Abort(_('cannot change sparseness due to pending '
-                            'changes (delete the files or use '
-                            '--force to bring them back dirty)'))
+        raise error.Abort(
+            _(
+                b'cannot change sparseness due to pending '
+                b'changes (delete the files or use '
+                b'--force to bring them back dirty)'
+            )
+        )
 
     # Check for files that were only in the dirstate.
-    for file, state in dirstate.iteritems():
+    for file, state in pycompat.iteritems(dirstate):
         if not file in files:
             old = origsparsematch(file)
             new = sparsematch(file)
@@ -484,11 +541,12 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
 
     # Apply changes to disk
     typeactions = mergemod.emptyactions()
-    for f, (m, args, msg) in actions.iteritems():
+    for f, (m, args, msg) in pycompat.iteritems(actions):
         typeactions[m].append((f, args, msg))
 
-    mergemod.applyupdates(repo, typeactions, repo[None], repo['.'], False,
-                          wantfiledata=False)
+    mergemod.applyupdates(
+        repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+    )
 
     # Fix dirstate
     for file in added:
@@ -502,6 +560,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
         dirstate.normallookup(file)
 
     return added, dropped, lookup
+
 
 def aftercommit(repo, node):
     """Perform actions after a working directory commit."""
@@ -519,11 +578,13 @@ def aftercommit(repo, node):
 
     prunetemporaryincludes(repo)
 
-def _updateconfigandrefreshwdir(repo, includes, excludes, profiles,
-                                force=False, removing=False):
+
+def _updateconfigandrefreshwdir(
+    repo, includes, excludes, profiles, force=False, removing=False
+):
     """Update the sparse config and working directory state."""
-    raw = repo.vfs.tryread('sparse')
-    oldincludes, oldexcludes, oldprofiles = parseconfig(repo.ui, raw, 'sparse')
+    raw = repo.vfs.tryread(b'sparse')
+    oldincludes, oldexcludes, oldprofiles = parseconfig(repo.ui, raw, b'sparse')
 
     oldstatus = repo.status()
     oldmatch = matcher(repo)
@@ -537,11 +598,11 @@ def _updateconfigandrefreshwdir(repo, includes, excludes, profiles,
     # updated. But this requires massive rework to matcher() and its
     # consumers.
 
-    if 'exp-sparse' in oldrequires and removing:
-        repo.requirements.discard('exp-sparse')
+    if b'exp-sparse' in oldrequires and removing:
+        repo.requirements.discard(b'exp-sparse')
         scmutil.writerequires(repo.vfs, repo.requirements)
-    elif 'exp-sparse' not in oldrequires:
-        repo.requirements.add('exp-sparse')
+    elif b'exp-sparse' not in oldrequires:
+        repo.requirements.add(b'exp-sparse')
         scmutil.writerequires(repo.vfs, repo.requirements)
 
     try:
@@ -555,6 +616,7 @@ def _updateconfigandrefreshwdir(repo, includes, excludes, profiles,
         writeconfig(repo, oldincludes, oldexcludes, oldprofiles)
         raise
 
+
 def clearrules(repo, force=False):
     """Clears include/exclude rules from the sparse config.
 
@@ -562,13 +624,14 @@ def clearrules(repo, force=False):
     directory is refreshed, as needed.
     """
     with repo.wlock():
-        raw = repo.vfs.tryread('sparse')
-        includes, excludes, profiles = parseconfig(repo.ui, raw, 'sparse')
+        raw = repo.vfs.tryread(b'sparse')
+        includes, excludes, profiles = parseconfig(repo.ui, raw, b'sparse')
 
         if not includes and not excludes:
             return
 
         _updateconfigandrefreshwdir(repo, set(), set(), profiles, force=force)
+
 
 def importfromfiles(repo, opts, paths, force=False):
     """Import sparse config rules from files.
@@ -578,19 +641,20 @@ def importfromfiles(repo, opts, paths, force=False):
     """
     with repo.wlock():
         # read current configuration
-        raw = repo.vfs.tryread('sparse')
-        includes, excludes, profiles = parseconfig(repo.ui, raw, 'sparse')
+        raw = repo.vfs.tryread(b'sparse')
+        includes, excludes, profiles = parseconfig(repo.ui, raw, b'sparse')
         aincludes, aexcludes, aprofiles = activeconfig(repo)
 
         # Import rules on top; only take in rules that are not yet
         # part of the active rules.
         changed = False
         for p in paths:
-            with util.posixfile(util.expandpath(p), mode='rb') as fh:
+            with util.posixfile(util.expandpath(p), mode=b'rb') as fh:
                 raw = fh.read()
 
-            iincludes, iexcludes, iprofiles = parseconfig(repo.ui, raw,
-                                                          'sparse')
+            iincludes, iexcludes, iprofiles = parseconfig(
+                repo.ui, raw, b'sparse'
+            )
             oldsize = len(includes) + len(excludes) + len(profiles)
             includes.update(iincludes - aincludes)
             excludes.update(iexcludes - aexcludes)
@@ -606,15 +670,31 @@ def importfromfiles(repo, opts, paths, force=False):
             includecount = len(includes - aincludes)
             excludecount = len(excludes - aexcludes)
 
-            fcounts = map(len, _updateconfigandrefreshwdir(
-                repo, includes, excludes, profiles, force=force))
+            fcounts = map(
+                len,
+                _updateconfigandrefreshwdir(
+                    repo, includes, excludes, profiles, force=force
+                ),
+            )
 
-        printchanges(repo.ui, opts, profilecount, includecount, excludecount,
-                     *fcounts)
+        printchanges(
+            repo.ui, opts, profilecount, includecount, excludecount, *fcounts
+        )
 
-def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
-                 delete=False, enableprofile=False, disableprofile=False,
-                 force=False, usereporootpaths=False):
+
+def updateconfig(
+    repo,
+    pats,
+    opts,
+    include=False,
+    exclude=False,
+    reset=False,
+    delete=False,
+    enableprofile=False,
+    disableprofile=False,
+    force=False,
+    usereporootpaths=False,
+):
     """Perform a sparse config update.
 
     Only one of the actions may be performed.
@@ -622,9 +702,10 @@ def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
     The new config is written out and a working directory refresh is performed.
     """
     with repo.wlock():
-        raw = repo.vfs.tryread('sparse')
-        oldinclude, oldexclude, oldprofiles = parseconfig(repo.ui, raw,
-                                                          'sparse')
+        raw = repo.vfs.tryread(b'sparse')
+        oldinclude, oldexclude, oldprofiles = parseconfig(
+            repo.ui, raw, b'sparse'
+        )
 
         if reset:
             newinclude = set()
@@ -636,7 +717,7 @@ def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
             newprofiles = set(oldprofiles)
 
         if any(os.path.isabs(pat) for pat in pats):
-            raise error.Abort(_('paths cannot be absolute'))
+            raise error.Abort(_(b'paths cannot be absolute'))
 
         if not usereporootpaths:
             # let's treat paths as relative to cwd
@@ -645,8 +726,9 @@ def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
             for kindpat in pats:
                 kind, pat = matchmod._patsplit(kindpat, None)
                 if kind in matchmod.cwdrelativepatternkinds or kind is None:
-                    ap = ((kind + ':' if kind else '') +
-                          pathutil.canonpath(root, cwd, pat))
+                    ap = (kind + b':' if kind else b'') + pathutil.canonpath(
+                        root, cwd, pat
+                    )
                     abspats.append(ap)
                 else:
                     abspats.append(kindpat)
@@ -664,39 +746,78 @@ def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
             newinclude.difference_update(pats)
             newexclude.difference_update(pats)
 
-        profilecount = (len(newprofiles - oldprofiles) -
-                        len(oldprofiles - newprofiles))
-        includecount = (len(newinclude - oldinclude) -
-                        len(oldinclude - newinclude))
-        excludecount = (len(newexclude - oldexclude) -
-                        len(oldexclude - newexclude))
+        profilecount = len(newprofiles - oldprofiles) - len(
+            oldprofiles - newprofiles
+        )
+        includecount = len(newinclude - oldinclude) - len(
+            oldinclude - newinclude
+        )
+        excludecount = len(newexclude - oldexclude) - len(
+            oldexclude - newexclude
+        )
 
-        fcounts = map(len, _updateconfigandrefreshwdir(
-            repo, newinclude, newexclude, newprofiles, force=force,
-            removing=reset))
+        fcounts = map(
+            len,
+            _updateconfigandrefreshwdir(
+                repo,
+                newinclude,
+                newexclude,
+                newprofiles,
+                force=force,
+                removing=reset,
+            ),
+        )
 
-        printchanges(repo.ui, opts, profilecount, includecount,
-                     excludecount, *fcounts)
+        printchanges(
+            repo.ui, opts, profilecount, includecount, excludecount, *fcounts
+        )
 
-def printchanges(ui, opts, profilecount=0, includecount=0, excludecount=0,
-                 added=0, dropped=0, conflicting=0):
+
+def printchanges(
+    ui,
+    opts,
+    profilecount=0,
+    includecount=0,
+    excludecount=0,
+    added=0,
+    dropped=0,
+    conflicting=0,
+):
     """Print output summarizing sparse config changes."""
-    with ui.formatter('sparse', opts) as fm:
+    with ui.formatter(b'sparse', opts) as fm:
         fm.startitem()
-        fm.condwrite(ui.verbose, 'profiles_added', _('Profiles changed: %d\n'),
-                     profilecount)
-        fm.condwrite(ui.verbose, 'include_rules_added',
-                     _('Include rules changed: %d\n'), includecount)
-        fm.condwrite(ui.verbose, 'exclude_rules_added',
-                     _('Exclude rules changed: %d\n'), excludecount)
+        fm.condwrite(
+            ui.verbose,
+            b'profiles_added',
+            _(b'Profiles changed: %d\n'),
+            profilecount,
+        )
+        fm.condwrite(
+            ui.verbose,
+            b'include_rules_added',
+            _(b'Include rules changed: %d\n'),
+            includecount,
+        )
+        fm.condwrite(
+            ui.verbose,
+            b'exclude_rules_added',
+            _(b'Exclude rules changed: %d\n'),
+            excludecount,
+        )
 
         # In 'plain' verbose mode, mergemod.applyupdates already outputs what
         # files are added or removed outside of the templating formatter
         # framework. No point in repeating ourselves in that case.
         if not fm.isplain():
-            fm.condwrite(ui.verbose, 'files_added', _('Files added: %d\n'),
-                         added)
-            fm.condwrite(ui.verbose, 'files_dropped', _('Files dropped: %d\n'),
-                         dropped)
-            fm.condwrite(ui.verbose, 'files_conflicting',
-                         _('Files conflicting: %d\n'), conflicting)
+            fm.condwrite(
+                ui.verbose, b'files_added', _(b'Files added: %d\n'), added
+            )
+            fm.condwrite(
+                ui.verbose, b'files_dropped', _(b'Files dropped: %d\n'), dropped
+            )
+            fm.condwrite(
+                ui.verbose,
+                b'files_conflicting',
+                _(b'Files conflicting: %d\n'),
+                conflicting,
+            )

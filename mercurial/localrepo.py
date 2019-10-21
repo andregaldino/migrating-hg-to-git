@@ -23,12 +23,15 @@ from .node import (
     nullrev,
     short,
 )
+from .pycompat import (
+    delattr,
+    getattr,
+)
 from . import (
     bookmarks,
     branchmap,
     bundle2,
     changegroup,
-    changelog,
     color,
     context,
     dirstate,
@@ -41,7 +44,6 @@ from . import (
     filelog,
     hook,
     lock as lockmod,
-    manifest,
     match as matchmod,
     merge as mergemod,
     mergeutil,
@@ -52,7 +54,6 @@ from . import (
     phases,
     pushkey,
     pycompat,
-    repository,
     repoview,
     revset,
     revsetlang,
@@ -66,15 +67,18 @@ from . import (
     util,
     vfs as vfsmod,
 )
+
+from .interfaces import (
+    repository,
+    util as interfaceutil,
+)
+
 from .utils import (
-    interfaceutil,
     procutil,
     stringutil,
 )
 
-from .revlogutils import (
-    constants as revlogconst,
-)
+from .revlogutils import constants as revlogconst
 
 release = lockmod.release
 urlerr = util.urlerr
@@ -85,9 +89,11 @@ urlreq = util.urlreq
 # - '' for svfs relative paths
 _cachedfiles = set()
 
+
 class _basefilecache(scmutil.filecache):
     """All filecache usage on repo are done for logic that should be unfiltered
     """
+
     def __get__(self, repo, type=None):
         if repo is None:
             return self
@@ -102,28 +108,34 @@ class _basefilecache(scmutil.filecache):
     def set(self, repo, value):
         return super(_basefilecache, self).set(repo.unfiltered(), value)
 
+
 class repofilecache(_basefilecache):
     """filecache for files in .hg but outside of .hg/store"""
+
     def __init__(self, *paths):
         super(repofilecache, self).__init__(*paths)
         for path in paths:
-            _cachedfiles.add((path, 'plain'))
+            _cachedfiles.add((path, b'plain'))
 
     def join(self, obj, fname):
         return obj.vfs.join(fname)
 
+
 class storecache(_basefilecache):
     """filecache for files in the store"""
+
     def __init__(self, *paths):
         super(storecache, self).__init__(*paths)
         for path in paths:
-            _cachedfiles.add((path, ''))
+            _cachedfiles.add((path, b''))
 
     def join(self, obj, fname):
         return obj.sjoin(fname)
 
+
 class mixedrepostorecache(_basefilecache):
     """filecache for a mix files in .hg/store and outside"""
+
     def __init__(self, *pathsandlocations):
         # scmutil.filecache only uses the path for passing back into our
         # join(), so we can safely pass a list of paths and locations
@@ -132,13 +144,15 @@ class mixedrepostorecache(_basefilecache):
 
     def join(self, obj, fnameandlocation):
         fname, location = fnameandlocation
-        if location == 'plain':
+        if location == b'plain':
             return obj.vfs.join(fname)
         else:
-            if location != '':
-                raise error.ProgrammingError('unexpected location: %s' %
-                                             location)
+            if location != b'':
+                raise error.ProgrammingError(
+                    b'unexpected location: %s' % location
+                )
             return obj.sjoin(fname)
+
 
 def isfilecached(repo, name):
     """check if a repo has already cached "name" filecache-ed property
@@ -150,6 +164,7 @@ def isfilecached(repo, name):
         return None, False
     return cacheentry.obj, True
 
+
 class unfilteredpropertycache(util.propertycache):
     """propertycache that apply to unfiltered repo only"""
 
@@ -158,6 +173,7 @@ class unfilteredpropertycache(util.propertycache):
         if unfi is repo:
             return super(unfilteredpropertycache, self).__get__(unfi)
         return getattr(unfi, self.name)
+
 
 class filteredpropertycache(util.propertycache):
     """propertycache that must take filtering in account"""
@@ -170,15 +186,26 @@ def hasunfilteredcache(repo, name):
     """check if a repo has an unfilteredpropertycache value for <name>"""
     return name in vars(repo.unfiltered())
 
+
 def unfilteredmethod(orig):
     """decorate method that always need to be run on unfiltered version"""
+
     def wrapper(repo, *args, **kwargs):
         return orig(repo.unfiltered(), *args, **kwargs)
+
     return wrapper
 
-moderncaps = {'lookup', 'branchmap', 'pushkey', 'known', 'getbundle',
-              'unbundle'}
-legacycaps = moderncaps.union({'changegroupsubset'})
+
+moderncaps = {
+    b'lookup',
+    b'branchmap',
+    b'pushkey',
+    b'known',
+    b'getbundle',
+    b'unbundle',
+}
+legacycaps = moderncaps.union({b'changegroupsubset'})
+
 
 @interfaceutil.implementer(repository.ipeercommandexecutor)
 class localcommandexecutor(object):
@@ -195,12 +222,14 @@ class localcommandexecutor(object):
 
     def callcommand(self, command, args):
         if self._sent:
-            raise error.ProgrammingError('callcommand() cannot be used after '
-                                         'sendcommands()')
+            raise error.ProgrammingError(
+                b'callcommand() cannot be used after sendcommands()'
+            )
 
         if self._closed:
-            raise error.ProgrammingError('callcommand() cannot be used after '
-                                         'close()')
+            raise error.ProgrammingError(
+                b'callcommand() cannot be used after close()'
+            )
 
         # We don't need to support anything fancy. Just call the named
         # method on the peer and return a resolved future.
@@ -223,6 +252,7 @@ class localcommandexecutor(object):
     def close(self):
         self._closed = True
 
+
 @interfaceutil.implementer(repository.ipeercommands)
 class localpeer(repository.peer):
     '''peer for a local repo; reflects only the most recent API'''
@@ -232,7 +262,7 @@ class localpeer(repository.peer):
 
         if caps is None:
             caps = moderncaps.copy()
-        self._repo = repo.filtered('served')
+        self._repo = repo.filtered(b'served')
         self.ui = repo.ui
         self._caps = repo._restrictcapabilities(caps)
 
@@ -264,19 +294,29 @@ class localpeer(repository.peer):
         return self._caps
 
     def clonebundles(self):
-        return self._repo.tryread('clonebundles.manifest')
+        return self._repo.tryread(b'clonebundles.manifest')
 
     def debugwireargs(self, one, two, three=None, four=None, five=None):
         """Used to test argument passing over the wire"""
-        return "%s %s %s %s %s" % (one, two, pycompat.bytestr(three),
-                                   pycompat.bytestr(four),
-                                   pycompat.bytestr(five))
+        return b"%s %s %s %s %s" % (
+            one,
+            two,
+            pycompat.bytestr(three),
+            pycompat.bytestr(four),
+            pycompat.bytestr(five),
+        )
 
-    def getbundle(self, source, heads=None, common=None, bundlecaps=None,
-                  **kwargs):
-        chunks = exchange.getbundlechunks(self._repo, source, heads=heads,
-                                          common=common, bundlecaps=bundlecaps,
-                                          **kwargs)[1]
+    def getbundle(
+        self, source, heads=None, common=None, bundlecaps=None, **kwargs
+    ):
+        chunks = exchange.getbundlechunks(
+            self._repo,
+            source,
+            heads=heads,
+            common=common,
+            bundlecaps=bundlecaps,
+            **kwargs
+        )[1]
         cb = util.chunkbuffer(chunks)
 
         if exchange.bundle2requested(bundlecaps):
@@ -285,7 +325,7 @@ class localpeer(repository.peer):
             # from it in local peer.
             return bundle2.getunbundler(self.ui, cb)
         else:
-            return changegroup.getunbundler('01', cb, None)
+            return changegroup.getunbundler(b'01', cb, None)
 
     def heads(self):
         return self._repo.heads()
@@ -303,8 +343,7 @@ class localpeer(repository.peer):
         return self._repo.pushkey(namespace, key, old, new)
 
     def stream_out(self):
-        raise error.Abort(_('cannot perform stream clone against local '
-                            'peer'))
+        raise error.Abort(_(b'cannot perform stream clone against local peer'))
 
     def unbundle(self, bundle, heads, url):
         """apply a bundle on a repo
@@ -313,8 +352,8 @@ class localpeer(repository.peer):
         try:
             try:
                 bundle = exchange.readbundle(self.ui, bundle, None)
-                ret = exchange.unbundle(self._repo, bundle, heads, 'push', url)
-                if util.safehasattr(ret, 'getchunks'):
+                ret = exchange.unbundle(self._repo, bundle, heads, b'push', url)
+                if util.safehasattr(ret, b'getchunks'):
                     # This is a bundle20 object, turn it into an unbundler.
                     # This little dance should be dropped eventually when the
                     # API is finally improved.
@@ -339,8 +378,9 @@ class localpeer(repository.peer):
                     bundle2.processbundle(self._repo, b)
                 raise
         except error.PushRaced as exc:
-            raise error.ResponseError(_('push failed:'),
-                                      stringutil.forcebytestr(exc))
+            raise error.ResponseError(
+                _(b'push failed:'), stringutil.forcebytestr(exc)
+            )
 
     # End of _basewirecommands interface.
 
@@ -350,6 +390,7 @@ class localpeer(repository.peer):
         return localcommandexecutor(self)
 
     # End of peer interface.
+
 
 @interfaceutil.implementer(repository.ipeerlegacycommands)
 class locallegacypeer(localpeer):
@@ -368,20 +409,23 @@ class locallegacypeer(localpeer):
         return self._repo.branches(nodes)
 
     def changegroup(self, nodes, source):
-        outgoing = discovery.outgoing(self._repo, missingroots=nodes,
-                                      missingheads=self._repo.heads())
-        return changegroup.makechangegroup(self._repo, outgoing, '01', source)
+        outgoing = discovery.outgoing(
+            self._repo, missingroots=nodes, missingheads=self._repo.heads()
+        )
+        return changegroup.makechangegroup(self._repo, outgoing, b'01', source)
 
     def changegroupsubset(self, bases, heads, source):
-        outgoing = discovery.outgoing(self._repo, missingroots=bases,
-                                      missingheads=heads)
-        return changegroup.makechangegroup(self._repo, outgoing, '01', source)
+        outgoing = discovery.outgoing(
+            self._repo, missingroots=bases, missingheads=heads
+        )
+        return changegroup.makechangegroup(self._repo, outgoing, b'01', source)
 
     # End of baselegacywirecommands interface.
 
+
 # Increment the sub-version when the revlog v2 format changes to lock out old
 # clients.
-REVLOGV2_REQUIREMENT = 'exp-revlogv2.1'
+REVLOGV2_REQUIREMENT = b'exp-revlogv2.1'
 
 # A repository with the sparserevlog feature will have delta chains that
 # can spread over a larger span. Sparse reading cuts these large spans into
@@ -390,7 +434,15 @@ REVLOGV2_REQUIREMENT = 'exp-revlogv2.1'
 # huge amounts of memory, because the whole span would be read at once,
 # including all the intermediate revisions that aren't pertinent for the chain.
 # This is why once a repository has enabled sparse-read, it becomes required.
-SPARSEREVLOG_REQUIREMENT = 'sparserevlog'
+SPARSEREVLOG_REQUIREMENT = b'sparserevlog'
+
+# A repository with the sidedataflag requirement will allow to store extra
+# information for revision without altering their original hashes.
+SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
+
+# A repository with the the copies-sidedata-changeset requirement will store
+# copies related information in changeset's sidedata.
+COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
 
 # Functions receiving (ui, features) that extensions can register to impact
 # the ability to load repositories with custom requirements. Only
@@ -400,6 +452,7 @@ SPARSEREVLOG_REQUIREMENT = 'sparserevlog'
 # is capable of opening. Functions will typically add elements to the
 # set to reflect that the extension knows how to handle that requirements.
 featuresetupfuncs = set()
+
 
 def makelocalrepository(baseui, path, intents=None):
     """Create a local repository object.
@@ -516,8 +569,10 @@ def makelocalrepository(baseui, path, intents=None):
         sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
 
         if not sharedvfs.exists():
-            raise error.RepoError(_(b'.hg/sharedpath points to nonexistent '
-                                    b'directory %s') % sharedvfs.base)
+            raise error.RepoError(
+                _(b'.hg/sharedpath points to nonexistent directory %s')
+                % sharedvfs.base
+            )
 
         features.add(repository.REPO_FEATURE_SHARED_STORAGE)
 
@@ -528,12 +583,14 @@ def makelocalrepository(baseui, path, intents=None):
         cachepath = hgvfs.join(b'cache')
     wcachepath = hgvfs.join(b'wcache')
 
-
     # The store has changed over time and the exact layout is dictated by
     # requirements. The store interface abstracts differences across all
     # of them.
-    store = makestore(requirements, storebasepath,
-                      lambda base: vfsmod.vfs(base, cacheaudited=True))
+    store = makestore(
+        requirements,
+        storebasepath,
+        lambda base: vfsmod.vfs(base, cacheaudited=True),
+    )
     hgvfs.createmode = store.createmode
 
     storevfs = store.vfs
@@ -557,33 +614,36 @@ def makelocalrepository(baseui, path, intents=None):
     for iface, fn in REPO_INTERFACES:
         # We pass all potentially useful state to give extensions tons of
         # flexibility.
-        typ = fn()(ui=ui,
-                 intents=intents,
-                 requirements=requirements,
-                 features=features,
-                 wdirvfs=wdirvfs,
-                 hgvfs=hgvfs,
-                 store=store,
-                 storevfs=storevfs,
-                 storeoptions=storevfs.options,
-                 cachevfs=cachevfs,
-                 wcachevfs=wcachevfs,
-                 extensionmodulenames=extensionmodulenames,
-                 extrastate=extrastate,
-                 baseclasses=bases)
+        typ = fn()(
+            ui=ui,
+            intents=intents,
+            requirements=requirements,
+            features=features,
+            wdirvfs=wdirvfs,
+            hgvfs=hgvfs,
+            store=store,
+            storevfs=storevfs,
+            storeoptions=storevfs.options,
+            cachevfs=cachevfs,
+            wcachevfs=wcachevfs,
+            extensionmodulenames=extensionmodulenames,
+            extrastate=extrastate,
+            baseclasses=bases,
+        )
 
         if not isinstance(typ, type):
-            raise error.ProgrammingError('unable to construct type for %s' %
-                                         iface)
+            raise error.ProgrammingError(
+                b'unable to construct type for %s' % iface
+            )
 
         bases.append(typ)
 
     # type() allows you to use characters in type names that wouldn't be
     # recognized as Python symbols in source code. We abuse that to add
     # rich information about our constructed repo.
-    name = pycompat.sysstr(b'derivedrepo:%s<%s>' % (
-        wdirvfs.base,
-        b','.join(sorted(requirements))))
+    name = pycompat.sysstr(
+        b'derivedrepo:%s<%s>' % (wdirvfs.base, b','.join(sorted(requirements)))
+    )
 
     cls = type(name, tuple(bases), {})
 
@@ -600,7 +660,9 @@ def makelocalrepository(baseui, path, intents=None):
         cachevfs=cachevfs,
         wcachevfs=wcachevfs,
         features=features,
-        intents=intents)
+        intents=intents,
+    )
+
 
 def loadhgrc(ui, wdirvfs, hgvfs, requirements):
     """Load hgrc files/content into a ui instance.
@@ -619,6 +681,7 @@ def loadhgrc(ui, wdirvfs, hgvfs, requirements):
         return True
     except IOError:
         return False
+
 
 def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
     """Perform additional actions after .hg/hgrc is loaded.
@@ -643,7 +706,8 @@ def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
 
         for name in names:
             if not ui.hasconfig(b'extensions', name):
-                ui.setconfig(b'extensions', name, b'', source='autoload')
+                ui.setconfig(b'extensions', name, b'', source=b'autoload')
+
 
 def gathersupportedrequirements(ui):
     """Determine the complete set of recognized requirements."""
@@ -663,10 +727,11 @@ def gathersupportedrequirements(ui):
         engine = util.compengines[name]
         if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
-            if engine.name() == 'zstd':
+            if engine.name() == b'zstd':
                 supported.add(b'revlog-compression-zstd')
 
     return supported
+
 
 def ensurerequirementsrecognized(requirements, supported):
     """Validate that a set of local requirements is recognized.
@@ -690,10 +755,14 @@ def ensurerequirementsrecognized(requirements, supported):
 
     if missing:
         raise error.RequirementError(
-            _(b'repository requires features unknown to this Mercurial: %s') %
-            b' '.join(sorted(missing)),
-            hint=_(b'see https://mercurial-scm.org/wiki/MissingRequirement '
-                   b'for more information'))
+            _(b'repository requires features unknown to this Mercurial: %s')
+            % b' '.join(sorted(missing)),
+            hint=_(
+                b'see https://mercurial-scm.org/wiki/MissingRequirement '
+                b'for more information'
+            ),
+        )
+
 
 def ensurerequirementscompatible(ui, requirements):
     """Validates that a set of recognized requirements is mutually compatible.
@@ -709,20 +778,27 @@ def ensurerequirementscompatible(ui, requirements):
     ``error.RepoError`` should be raised on failure.
     """
     if b'exp-sparse' in requirements and not sparse.enabled:
-        raise error.RepoError(_(b'repository is using sparse feature but '
-                                b'sparse is not enabled; enable the '
-                                b'"sparse" extensions to access'))
+        raise error.RepoError(
+            _(
+                b'repository is using sparse feature but '
+                b'sparse is not enabled; enable the '
+                b'"sparse" extensions to access'
+            )
+        )
+
 
 def makestore(requirements, path, vfstype):
     """Construct a storage object for a repository."""
     if b'store' in requirements:
         if b'fncache' in requirements:
-            return storemod.fncachestore(path, vfstype,
-                                         b'dotencode' in requirements)
+            return storemod.fncachestore(
+                path, vfstype, b'dotencode' in requirements
+            )
 
         return storemod.encodedstore(path, vfstype)
 
     return storemod.basicstore(path, vfstype)
+
 
 def resolvestorevfsoptions(ui, requirements, features):
     """Resolve the options to pass to the store vfs opener.
@@ -746,8 +822,19 @@ def resolvestorevfsoptions(ui, requirements, features):
     # meaningful on such old repos.
     if b'revlogv1' in requirements or REVLOGV2_REQUIREMENT in requirements:
         options.update(resolverevlogstorevfsoptions(ui, requirements, features))
+    else:  # explicitly mark repo as using revlogv0
+        options[b'revlogv0'] = True
+
+    if COPIESSDC_REQUIREMENT in requirements:
+        options[b'copies-storage'] = b'changeset-sidedata'
+    else:
+        writecopiesto = ui.config(b'experimental', b'copies.write-to')
+        copiesextramode = (b'changeset-only', b'compatibility')
+        if writecopiesto in copiesextramode:
+            options[b'copies-storage'] = b'extra'
 
     return options
+
 
 def resolverevlogstorevfsoptions(ui, requirements, features):
     """Resolve opener options specific to revlogs."""
@@ -768,15 +855,17 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if chunkcachesize is not None:
         options[b'chunkcachesize'] = chunkcachesize
 
-    deltabothparents = ui.configbool(b'storage',
-                                     b'revlog.optimize-delta-parent-choice')
+    deltabothparents = ui.configbool(
+        b'storage', b'revlog.optimize-delta-parent-choice'
+    )
     options[b'deltabothparents'] = deltabothparents
 
     lazydelta = ui.configbool(b'storage', b'revlog.reuse-external-delta')
     lazydeltabase = False
     if lazydelta:
-        lazydeltabase = ui.configbool(b'storage',
-                                      b'revlog.reuse-external-delta-parent')
+        lazydeltabase = ui.configbool(
+            b'storage', b'revlog.reuse-external-delta-parent'
+        )
     if lazydeltabase is None:
         lazydeltabase = not scmutil.gddeltaconfig(ui)
     options[b'lazydelta'] = lazydelta
@@ -786,16 +875,15 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if 0 <= chainspan:
         options[b'maxdeltachainspan'] = chainspan
 
-    mmapindexthreshold = ui.configbytes(b'experimental',
-                                        b'mmapindexthreshold')
+    mmapindexthreshold = ui.configbytes(b'experimental', b'mmapindexthreshold')
     if mmapindexthreshold is not None:
         options[b'mmapindexthreshold'] = mmapindexthreshold
 
     withsparseread = ui.configbool(b'experimental', b'sparse-read')
-    srdensitythres = float(ui.config(b'experimental',
-                                     b'sparse-read.density-threshold'))
-    srmingapsize = ui.configbytes(b'experimental',
-                                  b'sparse-read.min-gap-size')
+    srdensitythres = float(
+        ui.config(b'experimental', b'sparse-read.density-threshold')
+    )
+    srmingapsize = ui.configbytes(b'experimental', b'sparse-read.min-gap-size')
     options[b'with-sparse-read'] = withsparseread
     options[b'sparse-read-density-threshold'] = srdensitythres
     options[b'sparse-read-min-gap-size'] = srmingapsize
@@ -804,6 +892,9 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     options[b'sparse-revlog'] = sparserevlog
     if sparserevlog:
         options[b'generaldelta'] = True
+
+    sidedata = SIDEDATA_REQUIREMENT in requirements
+    options[b'side-data'] = sidedata
 
     maxchainlen = None
     if sparserevlog:
@@ -819,18 +910,18 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         #
         # The compression used for new entries will be "the last one"
         prefix = r.startswith
-        if prefix('revlog-compression-') or prefix('exp-compression-'):
-            options[b'compengine'] = r.split('-', 2)[2]
+        if prefix(b'revlog-compression-') or prefix(b'exp-compression-'):
+            options[b'compengine'] = r.split(b'-', 2)[2]
 
     options[b'zlib.level'] = ui.configint(b'storage', b'revlog.zlib.level')
     if options[b'zlib.level'] is not None:
         if not (0 <= options[b'zlib.level'] <= 9):
-            msg = _('invalid value for `storage.revlog.zlib.level` config: %d')
+            msg = _(b'invalid value for `storage.revlog.zlib.level` config: %d')
             raise error.Abort(msg % options[b'zlib.level'])
     options[b'zstd.level'] = ui.configint(b'storage', b'revlog.zstd.level')
     if options[b'zstd.level'] is not None:
         if not (0 <= options[b'zstd.level'] <= 22):
-            msg = _('invalid value for `storage.revlog.zstd.level` config: %d')
+            msg = _(b'invalid value for `storage.revlog.zstd.level` config: %d')
             raise error.Abort(msg % options[b'zstd.level'])
 
     if repository.NARROW_REQUIREMENT in requirements:
@@ -838,9 +929,11 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     return options
 
+
 def makemain(**kwargs):
     """Produce a type conforming to ``ilocalrepositorymain``."""
     return localrepository
+
 
 @interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
 class revlogfilestorage(object):
@@ -852,6 +945,7 @@ class revlogfilestorage(object):
 
         return filelog.filelog(self.svfs, path)
 
+
 @interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
 class revlognarrowfilestorage(object):
     """File storage when using revlogs and narrow files."""
@@ -861,6 +955,7 @@ class revlognarrowfilestorage(object):
             path = path[1:]
 
         return filelog.narrowfilelog(self.svfs, path, self._storenarrowmatch)
+
 
 def makefilestorage(requirements, features, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
@@ -872,6 +967,7 @@ def makefilestorage(requirements, features, **kwargs):
     else:
         return revlogfilestorage
 
+
 # List of repository interfaces and factory functions for them. Each
 # will be called in order during ``makelocalrepository()`` to iteratively
 # derive the final type for a local repository instance. We capture the
@@ -881,6 +977,7 @@ REPO_INTERFACES = [
     (repository.ilocalrepositorymain, lambda: makemain),
     (repository.ilocalrepositoryfilestorage, lambda: makefilestorage),
 ]
+
 
 @interfaceutil.implementer(repository.ilocalrepositorymain)
 class localrepository(object):
@@ -904,21 +1001,23 @@ class localrepository(object):
     #    being successful (repository sizes went up due to worse delta
     #    chains), and the code was deleted in 4.6.
     supportedformats = {
-        'revlogv1',
-        'generaldelta',
-        'treemanifest',
+        b'revlogv1',
+        b'generaldelta',
+        b'treemanifest',
+        COPIESSDC_REQUIREMENT,
         REVLOGV2_REQUIREMENT,
+        SIDEDATA_REQUIREMENT,
         SPARSEREVLOG_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
-        'store',
-        'fncache',
-        'shared',
-        'relshared',
-        'dotencode',
-        'exp-sparse',
-        'internal-phase'
+        b'store',
+        b'fncache',
+        b'shared',
+        b'relshared',
+        b'dotencode',
+        b'exp-sparse',
+        b'internal-phase',
     }
 
     # list of prefix for file which can be written without 'wlock'
@@ -928,22 +1027,35 @@ class localrepository(object):
         # two, but pretty much all the existing code assume
         # wlock is not needed so we keep them excluded for
         # now.
-        'hgrc',
-        'requires',
+        b'hgrc',
+        b'requires',
         # XXX cache is a complicatged business someone
         # should investigate this in depth at some point
-        'cache/',
+        b'cache/',
         # XXX shouldn't be dirstate covered by the wlock?
-        'dirstate',
+        b'dirstate',
         # XXX bisect was still a bit too messy at the time
         # this changeset was introduced. Someone should fix
         # the remainig bit and drop this line
-        'bisect.state',
+        b'bisect.state',
     }
 
-    def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
-                 supportedrequirements, sharedpath, store, cachevfs, wcachevfs,
-                 features, intents=None):
+    def __init__(
+        self,
+        baseui,
+        ui,
+        origroot,
+        wdirvfs,
+        hgvfs,
+        requirements,
+        supportedrequirements,
+        sharedpath,
+        store,
+        cachevfs,
+        wcachevfs,
+        features,
+        intents=None,
+    ):
         """Create a new local repository instance.
 
         Most callers should use ``hg.repository()``, ``localrepo.instance()``,
@@ -1015,8 +1127,9 @@ class localrepository(object):
 
         self.filtername = None
 
-        if (self.ui.configbool('devel', 'all-warnings') or
-            self.ui.configbool('devel', 'check-locks')):
+        if self.ui.configbool(b'devel', b'all-warnings') or self.ui.configbool(
+            b'devel', b'check-locks'
+        ):
             self.vfs.audit = self._getvfsward(self.vfs.audit)
         # A list of callback to shape the phase if no data were found.
         # Callback are in the form: func(repo, roots) --> processed root.
@@ -1028,11 +1141,12 @@ class localrepository(object):
         self.spath = self.store.path
         self.svfs = self.store.vfs
         self.sjoin = self.store.join
-        if (self.ui.configbool('devel', 'all-warnings') or
-            self.ui.configbool('devel', 'check-locks')):
-            if util.safehasattr(self.svfs, 'vfs'): # this is filtervfs
+        if self.ui.configbool(b'devel', b'all-warnings') or self.ui.configbool(
+            b'devel', b'check-locks'
+        ):
+            if util.safehasattr(self.svfs, b'vfs'):  # this is filtervfs
                 self.svfs.vfs.audit = self._getsvfsward(self.svfs.vfs.audit)
-            else: # standard vfs
+            else:  # standard vfs
                 self.svfs.audit = self._getsvfsward(self.svfs.audit)
 
         self._dirstatevalidatewarned = False
@@ -1071,29 +1185,39 @@ class localrepository(object):
 
         self._extrafilterid = repoview.extrafilter(ui)
 
+        self.filecopiesmode = None
+        if COPIESSDC_REQUIREMENT in self.requirements:
+            self.filecopiesmode = b'changeset-sidedata'
+
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""
         rref = weakref.ref(self)
+
         def checkvfs(path, mode=None):
             ret = origfunc(path, mode=mode)
             repo = rref()
-            if (repo is None
-                or not util.safehasattr(repo, '_wlockref')
-                or not util.safehasattr(repo, '_lockref')):
+            if (
+                repo is None
+                or not util.safehasattr(repo, b'_wlockref')
+                or not util.safehasattr(repo, b'_lockref')
+            ):
                 return
-            if mode in (None, 'r', 'rb'):
+            if mode in (None, b'r', b'rb'):
                 return
             if path.startswith(repo.path):
                 # truncate name relative to the repository (.hg)
-                path = path[len(repo.path) + 1:]
-            if path.startswith('cache/'):
-                msg = 'accessing cache with vfs instead of cachevfs: "%s"'
-                repo.ui.develwarn(msg % path, stacklevel=3, config="cache-vfs")
-            if path.startswith('journal.') or path.startswith('undo.'):
+                path = path[len(repo.path) + 1 :]
+            if path.startswith(b'cache/'):
+                msg = b'accessing cache with vfs instead of cachevfs: "%s"'
+                repo.ui.develwarn(msg % path, stacklevel=3, config=b"cache-vfs")
+            if path.startswith(b'journal.') or path.startswith(b'undo.'):
                 # journal is covered by 'lock'
                 if repo._currentlock(repo._lockref) is None:
-                    repo.ui.develwarn('write with no lock: "%s"' % path,
-                                      stacklevel=3, config='check-locks')
+                    repo.ui.develwarn(
+                        b'write with no lock: "%s"' % path,
+                        stacklevel=3,
+                        config=b'check-locks',
+                    )
             elif repo._currentlock(repo._wlockref) is None:
                 # rest of vfs files are covered by 'wlock'
                 #
@@ -1101,28 +1225,35 @@ class localrepository(object):
                 for prefix in self._wlockfreeprefix:
                     if path.startswith(prefix):
                         return
-                repo.ui.develwarn('write with no wlock: "%s"' % path,
-                                  stacklevel=3, config='check-locks')
+                repo.ui.develwarn(
+                    b'write with no wlock: "%s"' % path,
+                    stacklevel=3,
+                    config=b'check-locks',
+                )
             return ret
+
         return checkvfs
 
     def _getsvfsward(self, origfunc):
         """build a ward for self.svfs"""
         rref = weakref.ref(self)
+
         def checksvfs(path, mode=None):
             ret = origfunc(path, mode=mode)
             repo = rref()
-            if repo is None or not util.safehasattr(repo, '_lockref'):
+            if repo is None or not util.safehasattr(repo, b'_lockref'):
                 return
-            if mode in (None, 'r', 'rb'):
+            if mode in (None, b'r', b'rb'):
                 return
             if path.startswith(repo.sharedpath):
                 # truncate name relative to the repository (.hg)
-                path = path[len(repo.sharedpath) + 1:]
+                path = path[len(repo.sharedpath) + 1 :]
             if repo._currentlock(repo._lockref) is None:
-                repo.ui.develwarn('write with no lock: "%s"' % path,
-                                  stacklevel=4)
+                repo.ui.develwarn(
+                    b'write with no lock: "%s"' % path, stacklevel=4
+                )
             return ret
+
         return checksvfs
 
     def close(self):
@@ -1133,11 +1264,12 @@ class localrepository(object):
             self._revbranchcache.write()
 
     def _restrictcapabilities(self, caps):
-        if self.ui.configbool('experimental', 'bundle2-advertise'):
+        if self.ui.configbool(b'experimental', b'bundle2-advertise'):
             caps = set(caps)
-            capsblob = bundle2.encodecaps(bundle2.getrepocaps(self,
-                                                              role='client'))
-            caps.add('bundle2=' + urlreq.quote(capsblob))
+            capsblob = bundle2.encodecaps(
+                bundle2.getrepocaps(self, role=b'client')
+            )
+            caps.add(b'bundle2=' + urlreq.quote(capsblob))
         return caps
 
     def _writerequirements(self):
@@ -1156,14 +1288,15 @@ class localrepository(object):
     def nofsauditor(self):
         # This is only used by context.basectx.match in order to detect
         # files in subrepos.
-        return pathutil.pathauditor(self.root, callback=self._checknested,
-                                    realfs=False, cached=True)
+        return pathutil.pathauditor(
+            self.root, callback=self._checknested, realfs=False, cached=True
+        )
 
     def _checknested(self, path):
         """Determine if path is a legal nested repository."""
         if not path.startswith(self.root):
             return False
-        subpath = path[len(self.root) + 1:]
+        subpath = path[len(self.root) + 1 :]
         normsubpath = util.pconvert(subpath)
 
         # XXX: Checking against the current working copy is wrong in
@@ -1186,19 +1319,19 @@ class localrepository(object):
         ctx = self[None]
         parts = util.splitpath(subpath)
         while parts:
-            prefix = '/'.join(parts)
+            prefix = b'/'.join(parts)
             if prefix in ctx.substate:
                 if prefix == normsubpath:
                     return True
                 else:
                     sub = ctx.sub(prefix)
-                    return sub.checknested(subpath[len(prefix) + 1:])
+                    return sub.checknested(subpath[len(prefix) + 1 :])
             else:
                 parts.pop()
         return False
 
     def peer(self):
-        return localpeer(self) # not cached to avoid reference cycle
+        return localpeer(self)  # not cached to avoid reference cycle
 
     def unfiltered(self):
         """Return unfiltered version of the repository
@@ -1218,14 +1351,18 @@ class localrepository(object):
 
         In other word, there is always only one level of `repoview` "filtering".
         """
-        if self._extrafilterid is not None and '%' not in name:
-            name = name + '%'  + self._extrafilterid
+        if self._extrafilterid is not None and b'%' not in name:
+            name = name + b'%' + self._extrafilterid
 
         cls = repoview.newtype(self.unfiltered().__class__)
         return cls(self, name, visibilityexceptions)
 
-    @mixedrepostorecache(('bookmarks', 'plain'), ('bookmarks.current', 'plain'),
-                         ('bookmarks', ''), ('00changelog.i', ''))
+    @mixedrepostorecache(
+        (b'bookmarks', b'plain'),
+        (b'bookmarks.current', b'plain'),
+        (b'bookmarks', b''),
+        (b'00changelog.i', b''),
+    )
     def _bookmarks(self):
         # Since the multiple files involved in the transaction cannot be
         # written atomically (with current repository format), there is a race
@@ -1280,7 +1417,7 @@ class localrepository(object):
 
     def _refreshchangelog(self):
         """make sure the in memory changelog match the on-disk one"""
-        if ('changelog' in vars(self) and self.currenttransaction() is None):
+        if b'changelog' in vars(self) and self.currenttransaction() is None:
             del self.changelog
 
     @property
@@ -1290,26 +1427,23 @@ class localrepository(object):
     # _phasesets depend on changelog. what we need is to call
     # _phasecache.invalidate() if '00changelog.i' was changed, but it
     # can't be easily expressed in filecache mechanism.
-    @storecache('phaseroots', '00changelog.i')
+    @storecache(b'phaseroots', b'00changelog.i')
     def _phasecache(self):
         return phases.phasecache(self, self._phasedefaults)
 
-    @storecache('obsstore')
+    @storecache(b'obsstore')
     def obsstore(self):
         return obsolete.makestore(self.ui, self)
 
-    @storecache('00changelog.i')
+    @storecache(b'00changelog.i')
     def changelog(self):
-        return changelog.changelog(self.svfs,
-                                   trypending=txnutil.mayhavepending(self.root))
+        return self.store.changelog(txnutil.mayhavepending(self.root))
 
-    @storecache('00manifest.i')
+    @storecache(b'00manifest.i')
     def manifestlog(self):
-        rootstore = manifest.manifestrevlog(self.svfs)
-        return manifest.manifestlog(self.svfs, self, rootstore,
-                                    self._storenarrowmatch)
+        return self.store.manifestlog(self, self._storenarrowmatch)
 
-    @repofilecache('dirstate')
+    @repofilecache(b'dirstate')
     def dirstate(self):
         return self._makedirstate()
 
@@ -1317,8 +1451,9 @@ class localrepository(object):
         """Extension point for wrapping the dirstate per-repo."""
         sparsematchfn = lambda: sparse.matcher(self)
 
-        return dirstate.dirstate(self.vfs, self.ui, self.root,
-                                 self._dirstatevalidate, sparsematchfn)
+        return dirstate.dirstate(
+            self.vfs, self.ui, self.root, self._dirstatevalidate, sparsematchfn
+        )
 
     def _dirstatevalidate(self, node):
         try:
@@ -1327,8 +1462,10 @@ class localrepository(object):
         except error.LookupError:
             if not self._dirstatevalidatewarned:
                 self._dirstatevalidatewarned = True
-                self.ui.warn(_("warning: ignoring unknown"
-                               " working parent %s!\n") % short(node))
+                self.ui.warn(
+                    _(b"warning: ignoring unknown working parent %s!\n")
+                    % short(node)
+                )
             return nullid
 
     @storecache(narrowspec.FILENAME)
@@ -1384,20 +1521,22 @@ class localrepository(object):
             return changeid
         if isinstance(changeid, slice):
             # wdirrev isn't contiguous so the slice shouldn't include it
-            return [self[i]
-                    for i in pycompat.xrange(*changeid.indices(len(self)))
-                    if i not in self.changelog.filteredrevs]
+            return [
+                self[i]
+                for i in pycompat.xrange(*changeid.indices(len(self)))
+                if i not in self.changelog.filteredrevs
+            ]
         try:
             if isinstance(changeid, int):
                 node = self.changelog.node(changeid)
                 rev = changeid
-            elif changeid == 'null':
+            elif changeid == b'null':
                 node = nullid
                 rev = nullrev
-            elif changeid == 'tip':
+            elif changeid == b'tip':
                 node = self.changelog.tip()
                 rev = self.changelog.rev(node)
-            elif changeid == '.':
+            elif changeid == b'.':
                 # this is a hack to delay/avoid loading obsmarkers
                 # when we know that '.' won't be hidden
                 node = self.dirstate.p1()
@@ -1407,18 +1546,20 @@ class localrepository(object):
                     node = changeid
                     rev = self.changelog.rev(changeid)
                 except error.FilteredLookupError:
-                    changeid = hex(changeid) # for the error message
+                    changeid = hex(changeid)  # for the error message
                     raise
                 except LookupError:
                     # check if it might have come from damaged dirstate
                     #
                     # XXX we could avoid the unfiltered if we had a recognizable
                     # exception for filtered changeset access
-                    if (self.local()
-                        and changeid in self.unfiltered().dirstate.parents()):
-                        msg = _("working directory has unknown parent '%s'!")
+                    if (
+                        self.local()
+                        and changeid in self.unfiltered().dirstate.parents()
+                    ):
+                        msg = _(b"working directory has unknown parent '%s'!")
                         raise error.Abort(msg % short(changeid))
-                    changeid = hex(changeid) # for the error message
+                    changeid = hex(changeid)  # for the error message
                     raise
 
             elif len(changeid) == 40:
@@ -1426,17 +1567,20 @@ class localrepository(object):
                 rev = self.changelog.rev(node)
             else:
                 raise error.ProgrammingError(
-                        "unsupported changeid '%s' of type %s" %
-                        (changeid, type(changeid)))
+                    b"unsupported changeid '%s' of type %s"
+                    % (changeid, type(changeid))
+                )
 
             return context.changectx(self, rev, node)
 
         except (error.FilteredIndexError, error.FilteredLookupError):
-            raise error.FilteredRepoLookupError(_("filtered revision '%s'")
-                                                % pycompat.bytestr(changeid))
+            raise error.FilteredRepoLookupError(
+                _(b"filtered revision '%s'") % pycompat.bytestr(changeid)
+            )
         except (IndexError, LookupError):
             raise error.RepoLookupError(
-                _("unknown revision '%s'") % pycompat.bytestr(changeid))
+                _(b"unknown revision '%s'") % pycompat.bytestr(changeid)
+            )
         except error.WdirUnsupported:
             return context.workingctx(self)
 
@@ -1502,15 +1646,18 @@ class localrepository(object):
         ``{name: definitionstring}``.
         '''
         if user:
-            m = revset.matchany(self.ui, specs,
-                                lookup=revset.lookupfn(self),
-                                localalias=localalias)
+            m = revset.matchany(
+                self.ui,
+                specs,
+                lookup=revset.lookupfn(self),
+                localalias=localalias,
+            )
         else:
             m = revset.matchany(None, specs, localalias=localalias)
         return m(self)
 
     def url(self):
-        return 'file:' + self.root
+        return b'file:' + self.root
 
     def hook(self, name, throw=False, **args):
         """Call a hook, passing this repo instance.
@@ -1552,7 +1699,7 @@ class localrepository(object):
         else:
             tags = self._tagscache.tags
         rev = self.changelog.rev
-        for k, v in tags.iteritems():
+        for k, v in pycompat.iteritems(tags):
             try:
                 # ignore tags to unknown nodes
                 rev(v)
@@ -1575,11 +1722,10 @@ class localrepository(object):
         # be one tagtype for all such "virtual" tags?  Or is the status
         # quo fine?
 
-
         # map tag name to (node, hist)
         alltags = tagsmod.findglobaltags(self.ui, self)
         # map tag name to tag type
-        tagtypes = dict((tag, 'global') for tag in alltags)
+        tagtypes = dict((tag, b'global') for tag in alltags)
 
         tagsmod.readlocaltags(self.ui, self, alltags, tagtypes)
 
@@ -1588,12 +1734,16 @@ class localrepository(object):
         # writing to the cache), but the rest of Mercurial wants them in
         # local encoding.
         tags = {}
-        for (name, (node, hist)) in alltags.iteritems():
+        for (name, (node, hist)) in pycompat.iteritems(alltags):
             if node != nullid:
                 tags[encoding.tolocal(name)] = node
-        tags['tip'] = self.changelog.tip()
-        tagtypes = dict([(encoding.tolocal(name), value)
-                         for (name, value) in tagtypes.iteritems()])
+        tags[b'tip'] = self.changelog.tip()
+        tagtypes = dict(
+            [
+                (encoding.tolocal(name), value)
+                for (name, value) in pycompat.iteritems(tagtypes)
+            ]
+        )
         return (tags, tagtypes)
 
     def tagtype(self, tagname):
@@ -1611,7 +1761,7 @@ class localrepository(object):
         '''return a list of tags ordered by revision'''
         if not self._tagscache.tagslist:
             l = []
-            for t, n in self.tags().iteritems():
+            for t, n in pycompat.iteritems(self.tags()):
                 l.append((self.changelog.rev(n), t, n))
             self._tagscache.tagslist = [(t, n) for r, t, n in sorted(l)]
 
@@ -1621,9 +1771,9 @@ class localrepository(object):
         '''return the tags associated with a node'''
         if not self._tagscache.nodetagscache:
             nodetagscache = {}
-            for t, n in self._tagscache.tags.iteritems():
+            for t, n in pycompat.iteritems(self._tagscache.tags):
                 nodetagscache.setdefault(n, []).append(t)
-            for tags in nodetagscache.itervalues():
+            for tags in pycompat.itervalues(nodetagscache):
                 tags.sort()
             self._tagscache.nodetagscache = nodetagscache
         return self._tagscache.nodetagscache.get(node, [])
@@ -1655,14 +1805,14 @@ class localrepository(object):
             return self.branchmap().branchtip(branch)
         except KeyError:
             if not ignoremissing:
-                raise error.RepoLookupError(_("unknown branch '%s'") % branch)
+                raise error.RepoLookupError(_(b"unknown branch '%s'") % branch)
             else:
                 pass
 
     def lookup(self, key):
         node = scmutil.revsymbol(self, key).node()
         if node is None:
-            raise error.RepoLookupError(_("unknown revision '%s'") % key)
+            raise error.RepoLookupError(_(b"unknown revision '%s'") % key)
         return node
 
     def lookupbranch(self, key):
@@ -1688,7 +1838,7 @@ class localrepository(object):
     def publishing(self):
         # it's safe (and desirable) to trust the publish flag unconditionally
         # so that we don't finalize changes shared between users via ssh or nfs
-        return self.ui.configbool('phases', 'publish', untrusted=True)
+        return self.ui.configbool(b'phases', b'publish', untrusted=True)
 
     def cancopy(self):
         # so statichttprepo's override of local() works
@@ -1697,12 +1847,12 @@ class localrepository(object):
         if not self.publishing():
             return True
         # if publishing we can't copy if there is filtered content
-        return not self.filtered('visible').changelog.filteredrevs
+        return not self.filtered(b'visible').changelog.filteredrevs
 
     def shared(self):
         '''the type of shared repository (None if not shared)'''
         if self.sharedpath != self.path:
-            return 'store'
+            return b'store'
         return None
 
     def wjoin(self, f, *insidef):
@@ -1727,8 +1877,9 @@ class localrepository(object):
     def filectx(self, path, changeid=None, fileid=None, changectx=None):
         """changeid must be a changeset revision, if specified.
            fileid can be a file revision or node."""
-        return context.filectx(self, path, changeid, fileid,
-                               changectx=changectx)
+        return context.filectx(
+            self, path, changeid, fileid, changectx=changectx
+        )
 
     def getcwd(self):
         return self.dirstate.getcwd()
@@ -1740,22 +1891,24 @@ class localrepository(object):
         if filter not in self._filterpats:
             l = []
             for pat, cmd in self.ui.configitems(filter):
-                if cmd == '!':
+                if cmd == b'!':
                     continue
-                mf = matchmod.match(self.root, '', [pat])
+                mf = matchmod.match(self.root, b'', [pat])
                 fn = None
                 params = cmd
-                for name, filterfn in self._datafilters.iteritems():
+                for name, filterfn in pycompat.iteritems(self._datafilters):
                     if cmd.startswith(name):
                         fn = filterfn
-                        params = cmd[len(name):].lstrip()
+                        params = cmd[len(name) :].lstrip()
                         break
                 if not fn:
                     fn = lambda s, c, **kwargs: procutil.filter(s, c)
+                    fn.__name__ = 'commandfilter'
                 # Wrap old filters not supporting keyword arguments
                 if not pycompat.getargspec(fn)[2]:
                     oldfn = fn
-                    fn = lambda s, c, **kwargs: oldfn(s, c)
+                    fn = lambda s, c, oldfn=oldfn, **kwargs: oldfn(s, c)
+                    fn.__name__ = 'compat-' + oldfn.__name__
                 l.append((mf, fn, params))
             self._filterpats[filter] = l
         return self._filterpats[filter]
@@ -1763,7 +1916,10 @@ class localrepository(object):
     def _filter(self, filterpats, filename, data):
         for mf, fn, cmd in filterpats:
             if mf(filename):
-                self.ui.debug("filtering %s through %s\n" % (filename, cmd))
+                self.ui.debug(
+                    b"filtering %s through %s\n"
+                    % (filename, cmd or pycompat.sysbytes(fn.__name__))
+                )
                 data = fn(data, cmd, ui=self.ui, repo=self, filename=filename)
                 break
 
@@ -1771,11 +1927,11 @@ class localrepository(object):
 
     @unfilteredpropertycache
     def _encodefilterpats(self):
-        return self._loadfilter('encode')
+        return self._loadfilter(b'encode')
 
     @unfilteredpropertycache
     def _decodefilterpats(self):
-        return self._loadfilter('decode')
+        return self._loadfilter(b'decode')
 
     def adddatafilter(self, name, filter):
         self._datafilters[name] = filter
@@ -1793,12 +1949,13 @@ class localrepository(object):
         This returns length of written (maybe decoded) data.
         """
         data = self._filter(self._decodefilterpats, filename, data)
-        if 'l' in flags:
+        if b'l' in flags:
             self.wvfs.symlink(data, filename)
         else:
-            self.wvfs.write(filename, data, backgroundclose=backgroundclose,
-                            **kwargs)
-            if 'x' in flags:
+            self.wvfs.write(
+                filename, data, backgroundclose=backgroundclose, **kwargs
+            )
+            if b'x' in flags:
                 self.wvfs.setflags(filename, False, True)
             else:
                 self.wvfs.setflags(filename, False, False)
@@ -1819,24 +1976,26 @@ class localrepository(object):
         return None
 
     def transaction(self, desc, report=None):
-        if (self.ui.configbool('devel', 'all-warnings')
-                or self.ui.configbool('devel', 'check-locks')):
+        if self.ui.configbool(b'devel', b'all-warnings') or self.ui.configbool(
+            b'devel', b'check-locks'
+        ):
             if self._currentlock(self._lockref) is None:
-                raise error.ProgrammingError('transaction requires locking')
+                raise error.ProgrammingError(b'transaction requires locking')
         tr = self.currenttransaction()
         if tr is not None:
             return tr.nest(name=desc)
 
         # abort here if the journal already exists
-        if self.svfs.exists("journal"):
+        if self.svfs.exists(b"journal"):
             raise error.RepoError(
-                _("abandoned transaction found"),
-                hint=_("run 'hg recover' to clean up transaction"))
+                _(b"abandoned transaction found"),
+                hint=_(b"run 'hg recover' to clean up transaction"),
+            )
 
-        idbase = "%.40f#%f" % (random.random(), time.time())
+        idbase = b"%.40f#%f" % (random.random(), time.time())
         ha = hex(hashlib.sha1(idbase).digest())
-        txnid = 'TXN:' + ha
-        self.hook('pretxnopen', throw=True, txnname=desc, txnid=txnid)
+        txnid = b'TXN:' + ha
+        self.hook(b'pretxnopen', throw=True, txnname=desc, txnid=txnid)
 
         self._writejournal(desc)
         renames = [(vfs, x, undoname(x)) for vfs, x in self._journalfiles()]
@@ -1844,7 +2003,7 @@ class localrepository(object):
             rp = report
         else:
             rp = self.ui.warn
-        vfsmap = {'plain': self.vfs, 'store': self.svfs} # root of .hg/
+        vfsmap = {b'plain': self.vfs, b'store': self.svfs}  # root of .hg/
         # we must avoid cyclic reference between repo and transaction.
         reporef = weakref.ref(self)
         # Code to track tag movement
@@ -1882,9 +2041,12 @@ class localrepository(object):
         #   "+M": tag is moved (new value),
         tracktags = lambda x: None
         # experimental config: experimental.hook-track-tags
-        shouldtracktags = self.ui.configbool('experimental', 'hook-track-tags')
-        if desc != 'strip' and shouldtracktags:
+        shouldtracktags = self.ui.configbool(
+            b'experimental', b'hook-track-tags'
+        )
+        if desc != b'strip' and shouldtracktags:
             oldheads = self.changelog.headrevs()
+
             def tracktags(tr2):
                 repo = reporef()
                 oldfnodes = tagsmod.fnoderevs(repo.ui, repo, oldheads)
@@ -1894,13 +2056,15 @@ class localrepository(object):
                 # As we do it only once buiding set would not be cheaper
                 changes = tagsmod.difftags(repo.ui, repo, oldfnodes, newfnodes)
                 if changes:
-                    tr2.hookargs['tag_moved'] = '1'
-                    with repo.vfs('changes/tags.changes', 'w',
-                                  atomictemp=True) as changesfile:
+                    tr2.hookargs[b'tag_moved'] = b'1'
+                    with repo.vfs(
+                        b'changes/tags.changes', b'w', atomictemp=True
+                    ) as changesfile:
                         # note: we do not register the file to the transaction
                         # because we needs it to still exist on the transaction
                         # is close (for txnclose hooks)
                         tagsmod.writediff(changesfile, changes)
+
         def validate(tr2):
             """will run pre-closing hooks"""
             # XXX the transaction API is a bit lacking here so we take a hacky
@@ -1921,27 +2085,51 @@ class localrepository(object):
             # gating.
             tracktags(tr2)
             repo = reporef()
-            if repo.ui.configbool('experimental', 'single-head-per-branch'):
-                scmutil.enforcesinglehead(repo, tr2, desc)
-            if hook.hashook(repo.ui, 'pretxnclose-bookmark'):
-                for name, (old, new) in sorted(tr.changes['bookmarks'].items()):
+
+            r = repo.ui.configsuboptions(
+                b'experimental', b'single-head-per-branch'
+            )
+            singlehead, singleheadsub = r
+            if singlehead:
+                accountclosed = singleheadsub.get(
+                    b"account-closed-heads", False
+                )
+                scmutil.enforcesinglehead(repo, tr2, desc, accountclosed)
+            if hook.hashook(repo.ui, b'pretxnclose-bookmark'):
+                for name, (old, new) in sorted(
+                    tr.changes[b'bookmarks'].items()
+                ):
                     args = tr.hookargs.copy()
                     args.update(bookmarks.preparehookargs(name, old, new))
-                    repo.hook('pretxnclose-bookmark', throw=True,
-                              **pycompat.strkwargs(args))
-            if hook.hashook(repo.ui, 'pretxnclose-phase'):
+                    repo.hook(
+                        b'pretxnclose-bookmark',
+                        throw=True,
+                        **pycompat.strkwargs(args)
+                    )
+            if hook.hashook(repo.ui, b'pretxnclose-phase'):
                 cl = repo.unfiltered().changelog
-                for rev, (old, new) in tr.changes['phases'].items():
+                for rev, (old, new) in tr.changes[b'phases'].items():
                     args = tr.hookargs.copy()
                     node = hex(cl.node(rev))
                     args.update(phases.preparehookargs(node, old, new))
-                    repo.hook('pretxnclose-phase', throw=True,
-                              **pycompat.strkwargs(args))
+                    repo.hook(
+                        b'pretxnclose-phase',
+                        throw=True,
+                        **pycompat.strkwargs(args)
+                    )
 
-            repo.hook('pretxnclose', throw=True,
-                      **pycompat.strkwargs(tr.hookargs))
+            repo.hook(
+                b'pretxnclose', throw=True, **pycompat.strkwargs(tr.hookargs)
+            )
+
         def releasefn(tr, success):
             repo = reporef()
+            if repo is None:
+                # If the repo has been GC'd (and this release function is being
+                # called from transaction.__del__), there's not much we can do,
+                # so just leave the unfinished transaction there and let the
+                # user run `hg recover`.
+                return
             if success:
                 # this should be explicitly invoked here, because
                 # in-memory changes aren't written out at closing
@@ -1952,32 +2140,37 @@ class localrepository(object):
             else:
                 # discard all changes (including ones already written
                 # out) in this transaction
-                narrowspec.restorebackup(self, 'journal.narrowspec')
-                narrowspec.restorewcbackup(self, 'journal.narrowspec.dirstate')
-                repo.dirstate.restorebackup(None, 'journal.dirstate')
+                narrowspec.restorebackup(self, b'journal.narrowspec')
+                narrowspec.restorewcbackup(self, b'journal.narrowspec.dirstate')
+                repo.dirstate.restorebackup(None, b'journal.dirstate')
 
                 repo.invalidate(clearfilecache=True)
 
-        tr = transaction.transaction(rp, self.svfs, vfsmap,
-                                     "journal",
-                                     "undo",
-                                     aftertrans(renames),
-                                     self.store.createmode,
-                                     validator=validate,
-                                     releasefn=releasefn,
-                                     checkambigfiles=_cachedfiles,
-                                     name=desc)
-        tr.changes['origrepolen'] = len(self)
-        tr.changes['obsmarkers'] = set()
-        tr.changes['phases'] = {}
-        tr.changes['bookmarks'] = {}
+        tr = transaction.transaction(
+            rp,
+            self.svfs,
+            vfsmap,
+            b"journal",
+            b"undo",
+            aftertrans(renames),
+            self.store.createmode,
+            validator=validate,
+            releasefn=releasefn,
+            checkambigfiles=_cachedfiles,
+            name=desc,
+        )
+        tr.changes[b'origrepolen'] = len(self)
+        tr.changes[b'obsmarkers'] = set()
+        tr.changes[b'phases'] = {}
+        tr.changes[b'bookmarks'] = {}
 
-        tr.hookargs['txnid'] = txnid
-        tr.hookargs['txnname'] = desc
+        tr.hookargs[b'txnid'] = txnid
+        tr.hookargs[b'txnname'] = desc
         # note: writing the fncache only during finalize mean that the file is
         # outdated when running hooks. As fncache is used for streaming clone,
         # this is not expected to break anything that happen during the hooks.
-        tr.addfinalize('flush-fncache', self.store.write)
+        tr.addfinalize(b'flush-fncache', self.store.write)
+
         def txnclosehook(tr2):
             """To be run if transaction is successful, will schedule a hook run
             """
@@ -1989,87 +2182,107 @@ class localrepository(object):
 
             def hookfunc():
                 repo = reporef()
-                if hook.hashook(repo.ui, 'txnclose-bookmark'):
-                    bmchanges = sorted(tr.changes['bookmarks'].items())
+                if hook.hashook(repo.ui, b'txnclose-bookmark'):
+                    bmchanges = sorted(tr.changes[b'bookmarks'].items())
                     for name, (old, new) in bmchanges:
                         args = tr.hookargs.copy()
                         args.update(bookmarks.preparehookargs(name, old, new))
-                        repo.hook('txnclose-bookmark', throw=False,
-                                  **pycompat.strkwargs(args))
+                        repo.hook(
+                            b'txnclose-bookmark',
+                            throw=False,
+                            **pycompat.strkwargs(args)
+                        )
 
-                if hook.hashook(repo.ui, 'txnclose-phase'):
+                if hook.hashook(repo.ui, b'txnclose-phase'):
                     cl = repo.unfiltered().changelog
-                    phasemv = sorted(tr.changes['phases'].items())
+                    phasemv = sorted(tr.changes[b'phases'].items())
                     for rev, (old, new) in phasemv:
                         args = tr.hookargs.copy()
                         node = hex(cl.node(rev))
                         args.update(phases.preparehookargs(node, old, new))
-                        repo.hook('txnclose-phase', throw=False,
-                                  **pycompat.strkwargs(args))
+                        repo.hook(
+                            b'txnclose-phase',
+                            throw=False,
+                            **pycompat.strkwargs(args)
+                        )
 
-                repo.hook('txnclose', throw=False,
-                          **pycompat.strkwargs(hookargs))
+                repo.hook(
+                    b'txnclose', throw=False, **pycompat.strkwargs(hookargs)
+                )
+
             reporef()._afterlock(hookfunc)
-        tr.addfinalize('txnclose-hook', txnclosehook)
+
+        tr.addfinalize(b'txnclose-hook', txnclosehook)
         # Include a leading "-" to make it happen before the transaction summary
         # reports registered via scmutil.registersummarycallback() whose names
         # are 00-txnreport etc. That way, the caches will be warm when the
         # callbacks run.
-        tr.addpostclose('-warm-cache', self._buildcacheupdater(tr))
+        tr.addpostclose(b'-warm-cache', self._buildcacheupdater(tr))
+
         def txnaborthook(tr2):
             """To be run if transaction is aborted
             """
-            reporef().hook('txnabort', throw=False,
-                           **pycompat.strkwargs(tr2.hookargs))
-        tr.addabort('txnabort-hook', txnaborthook)
+            reporef().hook(
+                b'txnabort', throw=False, **pycompat.strkwargs(tr2.hookargs)
+            )
+
+        tr.addabort(b'txnabort-hook', txnaborthook)
         # avoid eager cache invalidation. in-memory data should be identical
         # to stored data if transaction has no error.
-        tr.addpostclose('refresh-filecachestats', self._refreshfilecachestats)
+        tr.addpostclose(b'refresh-filecachestats', self._refreshfilecachestats)
         self._transref = weakref.ref(tr)
         scmutil.registersummarycallback(self, tr, desc)
         return tr
 
     def _journalfiles(self):
-        return ((self.svfs, 'journal'),
-                (self.svfs, 'journal.narrowspec'),
-                (self.vfs, 'journal.narrowspec.dirstate'),
-                (self.vfs, 'journal.dirstate'),
-                (self.vfs, 'journal.branch'),
-                (self.vfs, 'journal.desc'),
-                (bookmarks.bookmarksvfs(self), 'journal.bookmarks'),
-                (self.svfs, 'journal.phaseroots'))
+        return (
+            (self.svfs, b'journal'),
+            (self.svfs, b'journal.narrowspec'),
+            (self.vfs, b'journal.narrowspec.dirstate'),
+            (self.vfs, b'journal.dirstate'),
+            (self.vfs, b'journal.branch'),
+            (self.vfs, b'journal.desc'),
+            (bookmarks.bookmarksvfs(self), b'journal.bookmarks'),
+            (self.svfs, b'journal.phaseroots'),
+        )
 
     def undofiles(self):
         return [(vfs, undoname(x)) for vfs, x in self._journalfiles()]
 
     @unfilteredmethod
     def _writejournal(self, desc):
-        self.dirstate.savebackup(None, 'journal.dirstate')
-        narrowspec.savewcbackup(self, 'journal.narrowspec.dirstate')
-        narrowspec.savebackup(self, 'journal.narrowspec')
-        self.vfs.write("journal.branch",
-                          encoding.fromlocal(self.dirstate.branch()))
-        self.vfs.write("journal.desc",
-                          "%d\n%s\n" % (len(self), desc))
+        self.dirstate.savebackup(None, b'journal.dirstate')
+        narrowspec.savewcbackup(self, b'journal.narrowspec.dirstate')
+        narrowspec.savebackup(self, b'journal.narrowspec')
+        self.vfs.write(
+            b"journal.branch", encoding.fromlocal(self.dirstate.branch())
+        )
+        self.vfs.write(b"journal.desc", b"%d\n%s\n" % (len(self), desc))
         bookmarksvfs = bookmarks.bookmarksvfs(self)
-        bookmarksvfs.write("journal.bookmarks",
-                           bookmarksvfs.tryread("bookmarks"))
-        self.svfs.write("journal.phaseroots",
-                           self.svfs.tryread("phaseroots"))
+        bookmarksvfs.write(
+            b"journal.bookmarks", bookmarksvfs.tryread(b"bookmarks")
+        )
+        self.svfs.write(b"journal.phaseroots", self.svfs.tryread(b"phaseroots"))
 
     def recover(self):
         with self.lock():
-            if self.svfs.exists("journal"):
-                self.ui.status(_("rolling back interrupted transaction\n"))
-                vfsmap = {'': self.svfs,
-                          'plain': self.vfs,}
-                transaction.rollback(self.svfs, vfsmap, "journal",
-                                     self.ui.warn,
-                                     checkambigfiles=_cachedfiles)
+            if self.svfs.exists(b"journal"):
+                self.ui.status(_(b"rolling back interrupted transaction\n"))
+                vfsmap = {
+                    b'': self.svfs,
+                    b'plain': self.vfs,
+                }
+                transaction.rollback(
+                    self.svfs,
+                    vfsmap,
+                    b"journal",
+                    self.ui.warn,
+                    checkambigfiles=_cachedfiles,
+                )
                 self.invalidate()
                 return True
             else:
-                self.ui.warn(_("no interrupted transaction available\n"))
+                self.ui.warn(_(b"no interrupted transaction available\n"))
                 return False
 
     def rollback(self, dryrun=False, force=False):
@@ -2077,42 +2290,47 @@ class localrepository(object):
         try:
             wlock = self.wlock()
             lock = self.lock()
-            if self.svfs.exists("undo"):
-                dsguard = dirstateguard.dirstateguard(self, 'rollback')
+            if self.svfs.exists(b"undo"):
+                dsguard = dirstateguard.dirstateguard(self, b'rollback')
 
                 return self._rollback(dryrun, force, dsguard)
             else:
-                self.ui.warn(_("no rollback information available\n"))
+                self.ui.warn(_(b"no rollback information available\n"))
                 return 1
         finally:
             release(dsguard, lock, wlock)
 
-    @unfilteredmethod # Until we get smarter cache management
+    @unfilteredmethod  # Until we get smarter cache management
     def _rollback(self, dryrun, force, dsguard):
         ui = self.ui
         try:
-            args = self.vfs.read('undo.desc').splitlines()
+            args = self.vfs.read(b'undo.desc').splitlines()
             (oldlen, desc, detail) = (int(args[0]), args[1], None)
             if len(args) >= 3:
                 detail = args[2]
             oldtip = oldlen - 1
 
             if detail and ui.verbose:
-                msg = (_('repository tip rolled back to revision %d'
-                         ' (undo %s: %s)\n')
-                       % (oldtip, desc, detail))
+                msg = _(
+                    b'repository tip rolled back to revision %d'
+                    b' (undo %s: %s)\n'
+                ) % (oldtip, desc, detail)
             else:
-                msg = (_('repository tip rolled back to revision %d'
-                         ' (undo %s)\n')
-                       % (oldtip, desc))
+                msg = _(
+                    b'repository tip rolled back to revision %d (undo %s)\n'
+                ) % (oldtip, desc)
         except IOError:
-            msg = _('rolling back unknown transaction\n')
+            msg = _(b'rolling back unknown transaction\n')
             desc = None
 
-        if not force and self['.'] != self['tip'] and desc == 'commit':
+        if not force and self[b'.'] != self[b'tip'] and desc == b'commit':
             raise error.Abort(
-                _('rollback of last commit while not checked out '
-                  'may lose data'), hint=_('use -f to force'))
+                _(
+                    b'rollback of last commit while not checked out '
+                    b'may lose data'
+                ),
+                hint=_(b'use -f to force'),
+            )
 
         ui.status(msg)
         if dryrun:
@@ -2120,14 +2338,17 @@ class localrepository(object):
 
         parents = self.dirstate.parents()
         self.destroying()
-        vfsmap = {'plain': self.vfs, '': self.svfs}
-        transaction.rollback(self.svfs, vfsmap, 'undo', ui.warn,
-                             checkambigfiles=_cachedfiles)
+        vfsmap = {b'plain': self.vfs, b'': self.svfs}
+        transaction.rollback(
+            self.svfs, vfsmap, b'undo', ui.warn, checkambigfiles=_cachedfiles
+        )
         bookmarksvfs = bookmarks.bookmarksvfs(self)
-        if bookmarksvfs.exists('undo.bookmarks'):
-            bookmarksvfs.rename('undo.bookmarks', 'bookmarks', checkambig=True)
-        if self.svfs.exists('undo.phaseroots'):
-            self.svfs.rename('undo.phaseroots', 'phaseroots', checkambig=True)
+        if bookmarksvfs.exists(b'undo.bookmarks'):
+            bookmarksvfs.rename(
+                b'undo.bookmarks', b'bookmarks', checkambig=True
+            )
+        if self.svfs.exists(b'undo.phaseroots'):
+            self.svfs.rename(b'undo.phaseroots', b'phaseroots', checkambig=True)
         self.invalidate()
 
         parentgone = any(p not in self.changelog.nodemap for p in parents)
@@ -2135,25 +2356,35 @@ class localrepository(object):
             # prevent dirstateguard from overwriting already restored one
             dsguard.close()
 
-            narrowspec.restorebackup(self, 'undo.narrowspec')
-            narrowspec.restorewcbackup(self, 'undo.narrowspec.dirstate')
-            self.dirstate.restorebackup(None, 'undo.dirstate')
+            narrowspec.restorebackup(self, b'undo.narrowspec')
+            narrowspec.restorewcbackup(self, b'undo.narrowspec.dirstate')
+            self.dirstate.restorebackup(None, b'undo.dirstate')
             try:
-                branch = self.vfs.read('undo.branch')
+                branch = self.vfs.read(b'undo.branch')
                 self.dirstate.setbranch(encoding.tolocal(branch))
             except IOError:
-                ui.warn(_('named branch could not be reset: '
-                          'current branch is still \'%s\'\n')
-                        % self.dirstate.branch())
+                ui.warn(
+                    _(
+                        b'named branch could not be reset: '
+                        b'current branch is still \'%s\'\n'
+                    )
+                    % self.dirstate.branch()
+                )
 
             parents = tuple([p.rev() for p in self[None].parents()])
             if len(parents) > 1:
-                ui.status(_('working directory now based on '
-                            'revisions %d and %d\n') % parents)
+                ui.status(
+                    _(
+                        b'working directory now based on '
+                        b'revisions %d and %d\n'
+                    )
+                    % parents
+                )
             else:
-                ui.status(_('working directory now based on '
-                            'revision %d\n') % parents)
-            mergemod.mergestate.clean(self, self['.'].node())
+                ui.status(
+                    _(b'working directory now based on revision %d\n') % parents
+                )
+            mergemod.mergestate.clean(self, self[b'.'].node())
 
         # TODO: if we know which new heads may result from this rollback, pass
         # them to destroy(), which will prevent the branchhead cache from being
@@ -2170,9 +2401,11 @@ class localrepository(object):
         """
         # we must avoid cyclic reference between repo and transaction.
         reporef = weakref.ref(self)
+
         def updater(tr):
             repo = reporef()
             repo.updatecaches(tr)
+
         return updater
 
     @unfilteredmethod
@@ -2186,16 +2419,16 @@ class localrepository(object):
         If 'full' is set, make sure all caches the function knows about have
         up-to-date data. Even the ones usually loaded more lazily.
         """
-        if tr is not None and tr.hookargs.get('source') == 'strip':
+        if tr is not None and tr.hookargs.get(b'source') == b'strip':
             # During strip, many caches are invalid but
             # later call to `destroyed` will refresh them.
             return
 
-        if tr is None or tr.changes['origrepolen'] < len(self):
+        if tr is None or tr.changes[b'origrepolen'] < len(self):
             # accessing the 'ser ved' branchmap should refresh all the others,
-            self.ui.debug('updating the branch cache\n')
-            self.filtered('served').branchmap()
-            self.filtered('served.hidden').branchmap()
+            self.ui.debug(b'updating the branch cache\n')
+            self.filtered(b'served').branchmap()
+            self.filtered(b'served.hidden').branchmap()
 
         if full:
             unfi = self.unfiltered()
@@ -2205,14 +2438,24 @@ class localrepository(object):
             rbc.write()
 
             # ensure the working copy parents are in the manifestfulltextcache
-            for ctx in self['.'].parents():
+            for ctx in self[b'.'].parents():
                 ctx.manifest()  # accessing the manifest is enough
 
             # accessing fnode cache warms the cache
             tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
             # accessing tags warm the cache
             self.tags()
-            self.filtered('served').tags()
+            self.filtered(b'served').tags()
+
+            # The `full` arg is documented as updating even the lazily-loaded
+            # caches immediately, so we're forcing a write to cause these caches
+            # to be warmed up even if they haven't explicitly been requested
+            # yet (if they've never been used by hg, they won't ever have been
+            # written, even if they're a subset of another kind of cache that
+            # *has* been used).
+            for filt in repoview.filtertable.keys():
+                filtered = self.filtered(filt)
+                filtered.branchmap().write(filtered)
 
     def invalidatecaches(self):
 
@@ -2253,14 +2496,16 @@ class localrepository(object):
         (e.g. incomplete fncache causes unintentional failure, but
         redundant one doesn't).
         '''
-        unfiltered = self.unfiltered() # all file caches are stored unfiltered
+        unfiltered = self.unfiltered()  # all file caches are stored unfiltered
         for k in list(self._filecache.keys()):
             # dirstate is invalidated separately in invalidatedirstate()
-            if k == 'dirstate':
+            if k == b'dirstate':
                 continue
-            if (k == 'changelog' and
-                self.currenttransaction() and
-                self.changelog._delayed):
+            if (
+                k == b'changelog'
+                and self.currenttransaction()
+                and self.changelog._delayed
+            ):
                 # The changelog object may store unwritten revisions. We don't
                 # want to lose them.
                 # TODO: Solve the problem instead of working around it.
@@ -2295,8 +2540,17 @@ class localrepository(object):
                 continue
             ce.refresh()
 
-    def _lock(self, vfs, lockname, wait, releasefn, acquirefn, desc,
-              inheritchecker=None, parentenvvar=None):
+    def _lock(
+        self,
+        vfs,
+        lockname,
+        wait,
+        releasefn,
+        acquirefn,
+        desc,
+        inheritchecker=None,
+        parentenvvar=None,
+    ):
         parentlock = None
         # the contents of parentenvvar are used by the underlying lock to
         # determine whether it can be inherited
@@ -2306,17 +2560,24 @@ class localrepository(object):
         timeout = 0
         warntimeout = 0
         if wait:
-            timeout = self.ui.configint("ui", "timeout")
-            warntimeout = self.ui.configint("ui", "timeout.warn")
+            timeout = self.ui.configint(b"ui", b"timeout")
+            warntimeout = self.ui.configint(b"ui", b"timeout.warn")
         # internal config: ui.signal-safe-lock
-        signalsafe = self.ui.configbool('ui', 'signal-safe-lock')
+        signalsafe = self.ui.configbool(b'ui', b'signal-safe-lock')
 
-        l = lockmod.trylock(self.ui, vfs, lockname, timeout, warntimeout,
-                            releasefn=releasefn,
-                            acquirefn=acquirefn, desc=desc,
-                            inheritchecker=inheritchecker,
-                            parentlock=parentlock,
-                            signalsafe=signalsafe)
+        l = lockmod.trylock(
+            self.ui,
+            vfs,
+            lockname,
+            timeout,
+            warntimeout,
+            releasefn=releasefn,
+            acquirefn=acquirefn,
+            desc=desc,
+            inheritchecker=inheritchecker,
+            parentlock=parentlock,
+            signalsafe=signalsafe,
+        )
         return l
 
     def _afterlock(self, callback):
@@ -2329,7 +2590,7 @@ class localrepository(object):
             if l and l.held:
                 l.postrelease.append(callback)
                 break
-        else: # no lock have been found.
+        else:  # no lock have been found.
             callback()
 
     def lock(self, wait=True):
@@ -2344,19 +2605,22 @@ class localrepository(object):
             l.lock()
             return l
 
-        l = self._lock(vfs=self.svfs,
-                       lockname="lock",
-                       wait=wait,
-                       releasefn=None,
-                       acquirefn=self.invalidate,
-                       desc=_('repository %s') % self.origroot)
+        l = self._lock(
+            vfs=self.svfs,
+            lockname=b"lock",
+            wait=wait,
+            releasefn=None,
+            acquirefn=self.invalidate,
+            desc=_(b'repository %s') % self.origroot,
+        )
         self._lockref = weakref.ref(l)
         return l
 
     def _wlockchecktransaction(self):
         if self.currenttransaction() is not None:
             raise error.LockInheritanceContractViolation(
-                'wlock cannot be inherited in the middle of a transaction')
+                b'wlock cannot be inherited in the middle of a transaction'
+            )
 
     def wlock(self, wait=True):
         '''Lock the non-store parts of the repository (everything under
@@ -2373,10 +2637,12 @@ class localrepository(object):
 
         # We do not need to check for non-waiting lock acquisition.  Such
         # acquisition would not cause dead-lock as they would just fail.
-        if wait and (self.ui.configbool('devel', 'all-warnings')
-                     or self.ui.configbool('devel', 'check-locks')):
+        if wait and (
+            self.ui.configbool(b'devel', b'all-warnings')
+            or self.ui.configbool(b'devel', b'check-locks')
+        ):
             if self._currentlock(self._lockref) is not None:
-                self.ui.develwarn('"wlock" acquired after "lock"')
+                self.ui.develwarn(b'"wlock" acquired after "lock"')
 
         def unlock():
             if self.dirstate.pendingparentchange():
@@ -2384,13 +2650,18 @@ class localrepository(object):
             else:
                 self.dirstate.write(None)
 
-            self._filecache['dirstate'].refresh()
+            self._filecache[b'dirstate'].refresh()
 
-        l = self._lock(self.vfs, "wlock", wait, unlock,
-                       self.invalidatedirstate, _('working directory of %s') %
-                       self.origroot,
-                       inheritchecker=self._wlockchecktransaction,
-                       parentenvvar='HG_WLOCK_LOCKER')
+        l = self._lock(
+            self.vfs,
+            b"wlock",
+            wait,
+            unlock,
+            self.invalidatedirstate,
+            _(b'working directory of %s') % self.origroot,
+            inheritchecker=self._wlockchecktransaction,
+            parentenvvar=b'HG_WLOCK_LOCKER',
+        )
         self._wlockref = weakref.ref(l)
         return l
 
@@ -2407,8 +2678,16 @@ class localrepository(object):
         """Returns the wlock if it's held, or None if it's not."""
         return self._currentlock(self._wlockref)
 
-    def _filecommit(self, fctx, manifest1, manifest2, linkrev, tr, changelist,
-                    includecopymeta):
+    def _filecommit(
+        self,
+        fctx,
+        manifest1,
+        manifest2,
+        linkrev,
+        tr,
+        changelist,
+        includecopymeta,
+    ):
         """
         commit an individual file as part of a larger transaction
         """
@@ -2419,11 +2698,14 @@ class localrepository(object):
         if isinstance(fctx, context.filectx):
             node = fctx.filenode()
             if node in [fparent1, fparent2]:
-                self.ui.debug('reusing %s filelog entry\n' % fname)
-                if ((fparent1 != nullid and
-                     manifest1.flags(fname) != fctx.flags()) or
-                    (fparent2 != nullid and
-                     manifest2.flags(fname) != fctx.flags())):
+                self.ui.debug(b'reusing %s filelog entry\n' % fname)
+                if (
+                    fparent1 != nullid
+                    and manifest1.flags(fname) != fctx.flags()
+                ) or (
+                    fparent2 != nullid
+                    and manifest2.flags(fname) != fctx.flags()
+                ):
                     changelist.append(fname)
                 return node
 
@@ -2453,8 +2735,8 @@ class localrepository(object):
             cnode = manifest1.get(cfname)
             newfparent = fparent2
 
-            if manifest2: # branch merge
-                if fparent2 == nullid or cnode is None: # copied on remote side
+            if manifest2:  # branch merge
+                if fparent2 == nullid or cnode is None:  # copied on remote side
                     if cfname in manifest2:
                         cnode = manifest2[cfname]
                         newfparent = fparent1
@@ -2469,14 +2751,21 @@ class localrepository(object):
             # behavior in this circumstance.
 
             if cnode:
-                self.ui.debug(" %s: copy %s:%s\n" % (fname, cfname, hex(cnode)))
+                self.ui.debug(
+                    b" %s: copy %s:%s\n" % (fname, cfname, hex(cnode))
+                )
                 if includecopymeta:
-                    meta["copy"] = cfname
-                    meta["copyrev"] = hex(cnode)
+                    meta[b"copy"] = cfname
+                    meta[b"copyrev"] = hex(cnode)
                 fparent1, fparent2 = nullid, newfparent
             else:
-                self.ui.warn(_("warning: can't find ancestor for '%s' "
-                               "copied from '%s'!\n") % (fname, cfname))
+                self.ui.warn(
+                    _(
+                        b"warning: can't find ancestor for '%s' "
+                        b"copied from '%s'!\n"
+                    )
+                    % (fname, cfname)
+                )
 
         elif fparent1 == nullid:
             fparent1, fparent2 = fparent2, nullid
@@ -2506,23 +2795,31 @@ class localrepository(object):
 
             for f in match.files():
                 f = self.dirstate.normalize(f)
-                if f == '.' or f in matched or f in wctx.substate:
+                if f == b'.' or f in matched or f in wctx.substate:
                     continue
                 if f in status.deleted:
-                    fail(f, _('file not found!'))
-                if f in vdirs: # visited directory
-                    d = f + '/'
+                    fail(f, _(b'file not found!'))
+                if f in vdirs:  # visited directory
+                    d = f + b'/'
                     for mf in matched:
                         if mf.startswith(d):
                             break
                     else:
-                        fail(f, _("no match under directory!"))
+                        fail(f, _(b"no match under directory!"))
                 elif f not in self.dirstate:
-                    fail(f, _("file not tracked!"))
+                    fail(f, _(b"file not tracked!"))
 
     @unfilteredmethod
-    def commit(self, text="", user=None, date=None, match=None, force=False,
-               editor=False, extra=None):
+    def commit(
+        self,
+        text=b"",
+        user=None,
+        date=None,
+        match=None,
+        force=False,
+        editor=False,
+        extra=None,
+    ):
         """Add a new revision to current repository.
 
         Revision information is gathered from the working directory,
@@ -2533,7 +2830,7 @@ class localrepository(object):
             extra = {}
 
         def fail(f, msg):
-            raise error.Abort('%s: %s' % (f, msg))
+            raise error.Abort(b'%s: %s' % (f, msg))
 
         if not match:
             match = matchmod.always()
@@ -2549,40 +2846,52 @@ class localrepository(object):
             merge = len(wctx.parents()) > 1
 
             if not force and merge and not match.always():
-                raise error.Abort(_('cannot partially commit a merge '
-                                   '(do not specify files or patterns)'))
+                raise error.Abort(
+                    _(
+                        b'cannot partially commit a merge '
+                        b'(do not specify files or patterns)'
+                    )
+                )
 
             status = self.status(match=match, clean=force)
             if force:
-                status.modified.extend(status.clean) # mq may commit clean files
+                status.modified.extend(
+                    status.clean
+                )  # mq may commit clean files
 
             # check subrepos
             subs, commitsubs, newstate = subrepoutil.precommit(
-                self.ui, wctx, status, match, force=force)
+                self.ui, wctx, status, match, force=force
+            )
 
             # make sure all explicit patterns are matched
             if not force:
                 self.checkcommitpatterns(wctx, vdirs, match, status, fail)
 
-            cctx = context.workingcommitctx(self, status,
-                                            text, user, date, extra)
+            cctx = context.workingcommitctx(
+                self, status, text, user, date, extra
+            )
 
             # internal config: ui.allowemptycommit
-            allowemptycommit = (wctx.branch() != wctx.p1().branch()
-                                or extra.get('close') or merge or cctx.files()
-                                or self.ui.configbool('ui', 'allowemptycommit'))
+            allowemptycommit = (
+                wctx.branch() != wctx.p1().branch()
+                or extra.get(b'close')
+                or merge
+                or cctx.files()
+                or self.ui.configbool(b'ui', b'allowemptycommit')
+            )
             if not allowemptycommit:
                 return None
 
             if merge and cctx.deleted():
-                raise error.Abort(_("cannot commit merge with missing files"))
+                raise error.Abort(_(b"cannot commit merge with missing files"))
 
             ms = mergemod.mergestate.read(self)
             mergeutil.checkunresolved(ms)
 
             if editor:
                 cctx._text = editor(self, cctx, subs)
-            edited = (text != cctx._text)
+            edited = text != cctx._text
 
             # Save commit message in case this transaction gets rolled back
             # (e.g. by a pretxncommit hook).  Leave the content alone on
@@ -2594,35 +2903,41 @@ class localrepository(object):
                 uipathfn = scmutil.getuipathfn(self)
                 for s in sorted(commitsubs):
                     sub = wctx.sub(s)
-                    self.ui.status(_('committing subrepository %s\n') %
-                                   uipathfn(subrepoutil.subrelpath(sub)))
+                    self.ui.status(
+                        _(b'committing subrepository %s\n')
+                        % uipathfn(subrepoutil.subrelpath(sub))
+                    )
                     sr = sub.commit(cctx._text, user, date)
                     newstate[s] = (newstate[s][0], sr)
                 subrepoutil.writestate(self, newstate)
 
             p1, p2 = self.dirstate.parents()
-            hookp1, hookp2 = hex(p1), (p2 != nullid and hex(p2) or '')
+            hookp1, hookp2 = hex(p1), (p2 != nullid and hex(p2) or b'')
             try:
-                self.hook("precommit", throw=True, parent1=hookp1,
-                          parent2=hookp2)
-                with self.transaction('commit'):
+                self.hook(
+                    b"precommit", throw=True, parent1=hookp1, parent2=hookp2
+                )
+                with self.transaction(b'commit'):
                     ret = self.commitctx(cctx, True)
                     # update bookmarks, dirstate and mergestate
                     bookmarks.update(self, [p1, p2], ret)
                     cctx.markcommitted(ret)
                     ms.reset()
-            except: # re-raises
+            except:  # re-raises
                 if edited:
                     self.ui.write(
-                        _('note: commit message saved in %s\n') % msgfn)
+                        _(b'note: commit message saved in %s\n') % msgfn
+                    )
                 raise
 
         def commithook():
             # hack for command that use a temporary commit (eg: histedit)
             # temporary commit got stripped before hook release
             if self.changelog.hasnode(ret):
-                self.hook("commit", node=hex(ret), parent1=hookp1,
-                          parent2=hookp2)
+                self.hook(
+                    b"commit", node=hex(ret), parent1=hookp1, parent2=hookp2
+                )
+
         self._afterlock(commithook)
         return ret
 
@@ -2646,21 +2961,28 @@ class localrepository(object):
         p1, p2 = ctx.p1(), ctx.p2()
         user = ctx.user()
 
-        writecopiesto = self.ui.config('experimental', 'copies.write-to')
-        writefilecopymeta = writecopiesto != 'changeset-only'
-        writechangesetcopy = (writecopiesto in
-                              ('changeset-only', 'compatibility'))
+        if self.filecopiesmode == b'changeset-sidedata':
+            writechangesetcopy = True
+            writefilecopymeta = True
+            writecopiesto = None
+        else:
+            writecopiesto = self.ui.config(b'experimental', b'copies.write-to')
+            writefilecopymeta = writecopiesto != b'changeset-only'
+            writechangesetcopy = writecopiesto in (
+                b'changeset-only',
+                b'compatibility',
+            )
         p1copies, p2copies = None, None
         if writechangesetcopy:
             p1copies = ctx.p1copies()
             p2copies = ctx.p2copies()
         filesadded, filesremoved = None, None
-        with self.lock(), self.transaction("commit") as tr:
+        with self.lock(), self.transaction(b"commit") as tr:
             trp = weakref.proxy(tr)
 
             if ctx.manifestnode():
                 # reuse an existing manifest revision
-                self.ui.debug('reusing known manifest\n')
+                self.ui.debug(b'reusing known manifest\n')
                 mn = ctx.manifestnode()
                 files = ctx.files()
                 if writechangesetcopy:
@@ -2680,29 +3002,37 @@ class localrepository(object):
                 changed = []
                 removed = list(ctx.removed())
                 linkrev = len(self)
-                self.ui.note(_("committing files:\n"))
+                self.ui.note(_(b"committing files:\n"))
                 uipathfn = scmutil.getuipathfn(self)
                 for f in sorted(ctx.modified() + ctx.added()):
-                    self.ui.note(uipathfn(f) + "\n")
+                    self.ui.note(uipathfn(f) + b"\n")
                     try:
                         fctx = ctx[f]
                         if fctx is None:
                             removed.append(f)
                         else:
                             added.append(f)
-                            m[f] = self._filecommit(fctx, m1, m2, linkrev,
-                                                    trp, changed,
-                                                    writefilecopymeta)
+                            m[f] = self._filecommit(
+                                fctx,
+                                m1,
+                                m2,
+                                linkrev,
+                                trp,
+                                changed,
+                                writefilecopymeta,
+                            )
                             m.setflag(f, fctx.flags())
                     except OSError:
-                        self.ui.warn(_("trouble committing %s!\n") %
-                                     uipathfn(f))
+                        self.ui.warn(
+                            _(b"trouble committing %s!\n") % uipathfn(f)
+                        )
                         raise
                     except IOError as inst:
                         errcode = getattr(inst, 'errno', errno.ENOENT)
                         if error or errcode and errcode != errno.ENOENT:
-                            self.ui.warn(_("trouble committing %s!\n") %
-                                         uipathfn(f))
+                            self.ui.warn(
+                                _(b"trouble committing %s!\n") % uipathfn(f)
+                            )
                         raise
 
                 # update manifest
@@ -2711,6 +3041,7 @@ class localrepository(object):
                 for f in drop:
                     del m[f]
                 if p2.rev() != nullrev:
+
                     @util.cachefunc
                     def mas():
                         p1n = p1.node()
@@ -2719,6 +3050,7 @@ class localrepository(object):
                         if not cahs:
                             cahs = [nullrev]
                         return [self[r].manifest() for r in cahs]
+
                     def deletionfromparent(f):
                         # When a file is removed relative to p1 in a merge, this
                         # function determines whether the absence is due to a
@@ -2741,14 +3073,18 @@ class localrepository(object):
                         # it does something very similar by comparing filelog
                         # nodes.
                         if f in m1:
-                            return (f not in m2
-                                    and all(f in ma and ma.find(f) == m1.find(f)
-                                            for ma in mas()))
+                            return f not in m2 and all(
+                                f in ma and ma.find(f) == m1.find(f)
+                                for ma in mas()
+                            )
                         elif f in m2:
-                            return all(f in ma and ma.find(f) == m2.find(f)
-                                       for ma in mas())
+                            return all(
+                                f in ma and ma.find(f) == m2.find(f)
+                                for ma in mas()
+                            )
                         else:
                             return True
+
                     removed = [f for f in removed if not deletionfromparent(f)]
 
                 files = changed + removed
@@ -2759,10 +3095,12 @@ class localrepository(object):
                     # exact same commit can be reproduced later on convert.
                     md = m1.diff(m, scmutil.matchfiles(self, ctx.files()))
                 if not files and md:
-                    self.ui.debug('not reusing manifest (no file change in '
-                                  'changelog, but manifest differs)\n')
+                    self.ui.debug(
+                        b'not reusing manifest (no file change in '
+                        b'changelog, but manifest differs)\n'
+                    )
                 if files or md:
-                    self.ui.note(_("committing manifest\n"))
+                    self.ui.note(_(b"committing manifest\n"))
                     # we're using narrowmatch here since it's already applied at
                     # other stages (such as dirstate.walk), so we're already
                     # ignoring things outside of narrowspec in most cases. The
@@ -2770,24 +3108,33 @@ class localrepository(object):
                     # at this point is merges, and we already error out in the
                     # case where the merge has files outside of the narrowspec,
                     # so this is safe.
-                    mn = mctx.write(trp, linkrev,
-                                    p1.manifestnode(), p2.manifestnode(),
-                                    added, drop, match=self.narrowmatch())
+                    mn = mctx.write(
+                        trp,
+                        linkrev,
+                        p1.manifestnode(),
+                        p2.manifestnode(),
+                        added,
+                        drop,
+                        match=self.narrowmatch(),
+                    )
 
                     if writechangesetcopy:
-                        filesadded = [f for f in changed
-                                      if not (f in m1 or f in m2)]
+                        filesadded = [
+                            f for f in changed if not (f in m1 or f in m2)
+                        ]
                         filesremoved = removed
                 else:
-                    self.ui.debug('reusing manifest from p1 (listed files '
-                                  'actually unchanged)\n')
+                    self.ui.debug(
+                        b'reusing manifest from p1 (listed files '
+                        b'actually unchanged)\n'
+                    )
                     mn = p1.manifestnode()
             else:
-                self.ui.debug('reusing manifest from p1 (no file change)\n')
+                self.ui.debug(b'reusing manifest from p1 (no file change)\n')
                 mn = p1.manifestnode()
                 files = []
 
-            if writecopiesto == 'changeset-only':
+            if writecopiesto == b'changeset-only':
                 # If writing only to changeset extras, use None to indicate that
                 # no entry should be written. If writing to both, write an empty
                 # entry to prevent the reader from falling back to reading
@@ -2801,15 +3148,31 @@ class localrepository(object):
                 files = origctx.files()
 
             # update changelog
-            self.ui.note(_("committing changelog\n"))
+            self.ui.note(_(b"committing changelog\n"))
             self.changelog.delayupdate(tr)
-            n = self.changelog.add(mn, files, ctx.description(),
-                                   trp, p1.node(), p2.node(),
-                                   user, ctx.date(), ctx.extra().copy(),
-                                   p1copies, p2copies, filesadded, filesremoved)
-            xp1, xp2 = p1.hex(), p2 and p2.hex() or ''
-            self.hook('pretxncommit', throw=True, node=hex(n), parent1=xp1,
-                      parent2=xp2)
+            n = self.changelog.add(
+                mn,
+                files,
+                ctx.description(),
+                trp,
+                p1.node(),
+                p2.node(),
+                user,
+                ctx.date(),
+                ctx.extra().copy(),
+                p1copies,
+                p2copies,
+                filesadded,
+                filesremoved,
+            )
+            xp1, xp2 = p1.hex(), p2 and p2.hex() or b''
+            self.hook(
+                b'pretxncommit',
+                throw=True,
+                node=hex(n),
+                parent1=xp1,
+                parent2=xp2,
+            )
             # set the new commit is proper phase
             targetphase = subrepoutil.newcommitphase(self.ui, ctx)
             if targetphase:
@@ -2836,7 +3199,7 @@ class localrepository(object):
         # When using the same lock to commit and strip, the phasecache is left
         # dirty after committing. Then when we strip, the repo is invalidated,
         # causing those changes to disappear.
-        if '_phasecache' in vars(self):
+        if b'_phasecache' in vars(self):
             self._phasecache.write()
 
     @unfilteredmethod
@@ -2871,12 +3234,20 @@ class localrepository(object):
         # tag cache retrieval" case to work.
         self.invalidate()
 
-    def status(self, node1='.', node2=None, match=None,
-               ignored=False, clean=False, unknown=False,
-               listsubrepos=False):
+    def status(
+        self,
+        node1=b'.',
+        node2=None,
+        match=None,
+        ignored=False,
+        clean=False,
+        unknown=False,
+        listsubrepos=False,
+    ):
         '''a convenience method that calls node1.status(node2)'''
-        return self[node1].status(node2, match, ignored, clean, unknown,
-                                  listsubrepos)
+        return self[node1].status(
+            node2, match, ignored, clean, unknown, listsubrepos
+        )
 
     def addpostdsstatus(self, ps):
         """Add a callback to run within the wlock, at the point at which status
@@ -2996,44 +3367,58 @@ class localrepository(object):
             hookargs[r'key'] = key
             hookargs[r'old'] = old
             hookargs[r'new'] = new
-            self.hook('prepushkey', throw=True, **hookargs)
+            self.hook(b'prepushkey', throw=True, **hookargs)
         except error.HookAbort as exc:
-            self.ui.write_err(_("pushkey-abort: %s\n") % exc)
+            self.ui.write_err(_(b"pushkey-abort: %s\n") % exc)
             if exc.hint:
-                self.ui.write_err(_("(%s)\n") % exc.hint)
+                self.ui.write_err(_(b"(%s)\n") % exc.hint)
             return False
-        self.ui.debug('pushing key for "%s:%s"\n' % (namespace, key))
+        self.ui.debug(b'pushing key for "%s:%s"\n' % (namespace, key))
         ret = pushkey.push(self, namespace, key, old, new)
+
         def runhook():
-            self.hook('pushkey', namespace=namespace, key=key, old=old, new=new,
-                      ret=ret)
+            self.hook(
+                b'pushkey',
+                namespace=namespace,
+                key=key,
+                old=old,
+                new=new,
+                ret=ret,
+            )
+
         self._afterlock(runhook)
         return ret
 
     def listkeys(self, namespace):
-        self.hook('prelistkeys', throw=True, namespace=namespace)
-        self.ui.debug('listing keys for "%s"\n' % namespace)
+        self.hook(b'prelistkeys', throw=True, namespace=namespace)
+        self.ui.debug(b'listing keys for "%s"\n' % namespace)
         values = pushkey.list(self, namespace)
-        self.hook('listkeys', namespace=namespace, values=values)
+        self.hook(b'listkeys', namespace=namespace, values=values)
         return values
 
     def debugwireargs(self, one, two, three=None, four=None, five=None):
         '''used to test argument passing over the wire'''
-        return "%s %s %s %s %s" % (one, two, pycompat.bytestr(three),
-                                   pycompat.bytestr(four),
-                                   pycompat.bytestr(five))
+        return b"%s %s %s %s %s" % (
+            one,
+            two,
+            pycompat.bytestr(three),
+            pycompat.bytestr(four),
+            pycompat.bytestr(five),
+        )
 
     def savecommitmessage(self, text):
-        fp = self.vfs('last-message.txt', 'wb')
+        fp = self.vfs(b'last-message.txt', b'wb')
         try:
             fp.write(text)
         finally:
             fp.close()
-        return self.pathto(fp.name[len(self.root) + 1:])
+        return self.pathto(fp.name[len(self.root) + 1 :])
+
 
 # used to avoid circular references so destructors work
 def aftertrans(files):
     renamefiles = [tuple(t) for t in files]
+
     def a():
         for vfs, src, dest in renamefiles:
             # if src and dest refer to a same file, vfs.rename is a no-op,
@@ -3042,14 +3427,17 @@ def aftertrans(files):
             vfs.tryunlink(dest)
             try:
                 vfs.rename(src, dest)
-            except OSError: # journal file does not yet exist
+            except OSError:  # journal file does not yet exist
                 pass
+
     return a
+
 
 def undoname(fn):
     base, name = os.path.split(fn)
-    assert name.startswith('journal')
-    return os.path.join(base, name.replace('journal', 'undo', 1))
+    assert name.startswith(b'journal')
+    return os.path.join(base, name.replace(b'journal', b'undo', 1))
+
 
 def instance(ui, path, create, intents=None, createopts=None):
     localpath = util.urllocalpath(path)
@@ -3058,8 +3446,10 @@ def instance(ui, path, create, intents=None, createopts=None):
 
     return makelocalrepository(ui, localpath, intents=intents)
 
+
 def islocal(path):
     return True
+
 
 def defaultcreateopts(ui, createopts=None):
     """Populate the default creation options for a repository.
@@ -3069,11 +3459,12 @@ def defaultcreateopts(ui, createopts=None):
     """
     createopts = dict(createopts or {})
 
-    if 'backend' not in createopts:
+    if b'backend' not in createopts:
         # experimental config: storage.new-repo-backend
-        createopts['backend'] = ui.config('storage', 'new-repo-backend')
+        createopts[b'backend'] = ui.config(b'storage', b'new-repo-backend')
 
     return createopts
+
 
 def newreporequirements(ui, createopts):
     """Determine the set of requirements for a new local repository.
@@ -3083,72 +3474,94 @@ def newreporequirements(ui, createopts):
     """
     # If the repo is being created from a shared repository, we copy
     # its requirements.
-    if 'sharedrepo' in createopts:
-        requirements = set(createopts['sharedrepo'].requirements)
-        if createopts.get('sharedrelative'):
-            requirements.add('relshared')
+    if b'sharedrepo' in createopts:
+        requirements = set(createopts[b'sharedrepo'].requirements)
+        if createopts.get(b'sharedrelative'):
+            requirements.add(b'relshared')
         else:
-            requirements.add('shared')
+            requirements.add(b'shared')
 
         return requirements
 
-    if 'backend' not in createopts:
-        raise error.ProgrammingError('backend key not present in createopts; '
-                                     'was defaultcreateopts() called?')
+    if b'backend' not in createopts:
+        raise error.ProgrammingError(
+            b'backend key not present in createopts; '
+            b'was defaultcreateopts() called?'
+        )
 
-    if createopts['backend'] != 'revlogv1':
-        raise error.Abort(_('unable to determine repository requirements for '
-                            'storage backend: %s') % createopts['backend'])
+    if createopts[b'backend'] != b'revlogv1':
+        raise error.Abort(
+            _(
+                b'unable to determine repository requirements for '
+                b'storage backend: %s'
+            )
+            % createopts[b'backend']
+        )
 
-    requirements = {'revlogv1'}
-    if ui.configbool('format', 'usestore'):
-        requirements.add('store')
-        if ui.configbool('format', 'usefncache'):
-            requirements.add('fncache')
-            if ui.configbool('format', 'dotencode'):
-                requirements.add('dotencode')
+    requirements = {b'revlogv1'}
+    if ui.configbool(b'format', b'usestore'):
+        requirements.add(b'store')
+        if ui.configbool(b'format', b'usefncache'):
+            requirements.add(b'fncache')
+            if ui.configbool(b'format', b'dotencode'):
+                requirements.add(b'dotencode')
 
-    compengine = ui.config('format', 'revlog-compression')
+    compengine = ui.config(b'format', b'revlog-compression')
     if compengine not in util.compengines:
-        raise error.Abort(_('compression engine %s defined by '
-                            'format.revlog-compression not available') %
-                          compengine,
-                          hint=_('run "hg debuginstall" to list available '
-                                 'compression engines'))
+        raise error.Abort(
+            _(
+                b'compression engine %s defined by '
+                b'format.revlog-compression not available'
+            )
+            % compengine,
+            hint=_(
+                b'run "hg debuginstall" to list available '
+                b'compression engines'
+            ),
+        )
 
     # zlib is the historical default and doesn't need an explicit requirement.
-    elif compengine == 'zstd':
-        requirements.add('revlog-compression-zstd')
-    elif compengine != 'zlib':
-        requirements.add('exp-compression-%s' % compengine)
+    elif compengine == b'zstd':
+        requirements.add(b'revlog-compression-zstd')
+    elif compengine != b'zlib':
+        requirements.add(b'exp-compression-%s' % compengine)
 
     if scmutil.gdinitconfig(ui):
-        requirements.add('generaldelta')
-        if ui.configbool('format', 'sparse-revlog'):
+        requirements.add(b'generaldelta')
+        if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(SPARSEREVLOG_REQUIREMENT)
-    if ui.configbool('experimental', 'treemanifest'):
-        requirements.add('treemanifest')
 
-    revlogv2 = ui.config('experimental', 'revlogv2')
-    if revlogv2 == 'enable-unstable-format-and-corrupt-my-data':
-        requirements.remove('revlogv1')
+    # experimental config: format.exp-use-side-data
+    if ui.configbool(b'format', b'exp-use-side-data'):
+        requirements.add(SIDEDATA_REQUIREMENT)
+    # experimental config: format.exp-use-copies-side-data-changeset
+    if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
+        requirements.add(SIDEDATA_REQUIREMENT)
+        requirements.add(COPIESSDC_REQUIREMENT)
+    if ui.configbool(b'experimental', b'treemanifest'):
+        requirements.add(b'treemanifest')
+
+    revlogv2 = ui.config(b'experimental', b'revlogv2')
+    if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
+        requirements.remove(b'revlogv1')
         # generaldelta is implied by revlogv2.
-        requirements.discard('generaldelta')
+        requirements.discard(b'generaldelta')
         requirements.add(REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
-    if ui.configbool('format', 'internal-phase'):
-        requirements.add('internal-phase')
+    if ui.configbool(b'format', b'internal-phase'):
+        requirements.add(b'internal-phase')
 
-    if createopts.get('narrowfiles'):
+    if createopts.get(b'narrowfiles'):
         requirements.add(repository.NARROW_REQUIREMENT)
 
-    if createopts.get('lfs'):
-        requirements.add('lfs')
+    if createopts.get(b'lfs'):
+        requirements.add(b'lfs')
 
-    if ui.configbool('format', 'bookmarks-in-store'):
+    if ui.configbool(b'format', b'bookmarks-in-store'):
         requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
 
     return requirements
+
 
 def filterknowncreateopts(ui, createopts):
     """Filters a dict of repo creation options against options that are known.
@@ -3165,16 +3578,17 @@ def filterknowncreateopts(ui, createopts):
     they know how to handle.
     """
     known = {
-        'backend',
-        'lfs',
-        'narrowfiles',
-        'sharedrepo',
-        'sharedrelative',
-        'shareditems',
-        'shallowfilestore',
+        b'backend',
+        b'lfs',
+        b'narrowfiles',
+        b'sharedrepo',
+        b'sharedrelative',
+        b'shareditems',
+        b'shallowfilestore',
     }
 
     return {k: v for k, v in createopts.items() if k not in known}
+
 
 def createrepository(ui, path, createopts=None):
     """Create a new repository in a vfs.
@@ -3208,14 +3622,19 @@ def createrepository(ui, path, createopts=None):
     unknownopts = filterknowncreateopts(ui, createopts)
 
     if not isinstance(unknownopts, dict):
-        raise error.ProgrammingError('filterknowncreateopts() did not return '
-                                     'a dict')
+        raise error.ProgrammingError(
+            b'filterknowncreateopts() did not return a dict'
+        )
 
     if unknownopts:
-        raise error.Abort(_('unable to create repository because of unknown '
-                            'creation option: %s') %
-                          ', '.join(sorted(unknownopts)),
-                          hint=_('is a required extension not loaded?'))
+        raise error.Abort(
+            _(
+                b'unable to create repository because of unknown '
+                b'creation option: %s'
+            )
+            % b', '.join(sorted(unknownopts)),
+            hint=_(b'is a required extension not loaded?'),
+        )
 
     requirements = newreporequirements(ui, createopts=createopts)
 
@@ -3223,29 +3642,31 @@ def createrepository(ui, path, createopts=None):
 
     hgvfs = vfsmod.vfs(wdirvfs.join(b'.hg'))
     if hgvfs.exists():
-        raise error.RepoError(_('repository %s already exists') % path)
+        raise error.RepoError(_(b'repository %s already exists') % path)
 
-    if 'sharedrepo' in createopts:
-        sharedpath = createopts['sharedrepo'].sharedpath
+    if b'sharedrepo' in createopts:
+        sharedpath = createopts[b'sharedrepo'].sharedpath
 
-        if createopts.get('sharedrelative'):
+        if createopts.get(b'sharedrelative'):
             try:
                 sharedpath = os.path.relpath(sharedpath, hgvfs.base)
             except (IOError, ValueError) as e:
                 # ValueError is raised on Windows if the drive letters differ
                 # on each path.
-                raise error.Abort(_('cannot calculate relative path'),
-                                  hint=stringutil.forcebytestr(e))
+                raise error.Abort(
+                    _(b'cannot calculate relative path'),
+                    hint=stringutil.forcebytestr(e),
+                )
 
     if not wdirvfs.exists():
         wdirvfs.makedirs()
 
     hgvfs.makedir(notindexed=True)
-    if 'sharedrepo' not in createopts:
+    if b'sharedrepo' not in createopts:
         hgvfs.mkdir(b'cache')
     hgvfs.mkdir(b'wcache')
 
-    if b'store' in requirements and 'sharedrepo' not in createopts:
+    if b'store' in requirements and b'sharedrepo' not in createopts:
         hgvfs.mkdir(b'store')
 
         # We create an invalid changelog outside the store so very old
@@ -3256,19 +3677,22 @@ def createrepository(ui, path, createopts=None):
         #
         # The revlog header has version 2, which won't be recognized by
         # such old clients.
-        hgvfs.append(b'00changelog.i',
-                     b'\0\0\0\2 dummy changelog to prevent using the old repo '
-                     b'layout')
+        hgvfs.append(
+            b'00changelog.i',
+            b'\0\0\0\2 dummy changelog to prevent using the old repo '
+            b'layout',
+        )
 
     scmutil.writerequires(hgvfs, requirements)
 
     # Write out file telling readers where to find the shared store.
-    if 'sharedrepo' in createopts:
+    if b'sharedrepo' in createopts:
         hgvfs.write(b'sharedpath', sharedpath)
 
-    if createopts.get('shareditems'):
-        shared = b'\n'.join(sorted(createopts['shareditems'])) + b'\n'
+    if createopts.get(b'shareditems'):
+        shared = b'\n'.join(sorted(createopts[b'shareditems'])) + b'\n'
         hgvfs.write(b'shared', shared)
+
 
 def poisonrepository(repo):
     """Poison a repository instance so it can no longer be used."""
@@ -3285,8 +3709,9 @@ def poisonrepository(repo):
             if item == r'close':
                 return object.__getattribute__(self, item)
 
-            raise error.ProgrammingError('repo instances should not be used '
-                                         'after unshare')
+            raise error.ProgrammingError(
+                b'repo instances should not be used after unshare'
+            )
 
         def close(self):
             pass

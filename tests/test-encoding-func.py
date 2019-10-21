@@ -2,9 +2,8 @@ from __future__ import absolute_import
 
 import unittest
 
-from mercurial import (
-    encoding,
-)
+from mercurial import encoding
+
 
 class IsasciistrTest(unittest.TestCase):
     asciistrs = [
@@ -28,11 +27,13 @@ class IsasciistrTest(unittest.TestCase):
                 t[i] |= 0x80
                 self.assertFalse(encoding.isasciistr(bytes(t)))
 
+
 class LocalEncodingTest(unittest.TestCase):
     def testasciifastpath(self):
         s = b'\0' * 100
         self.assertTrue(s is encoding.tolocal(s))
         self.assertTrue(s is encoding.fromlocal(s))
+
 
 class Utf8bEncodingTest(unittest.TestCase):
     def setUp(self):
@@ -75,6 +76,8 @@ class Utf8bEncodingTest(unittest.TestCase):
         self.assertEqual(l, b'\xc5\xed')  # lossless
         self.assertEqual(s, encoding.toutf8b(l))  # convert back to utf-8
 
+
 if __name__ == '__main__':
     import silenttestrunner
+
     silenttestrunner.main(__name__)

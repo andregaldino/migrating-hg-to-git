@@ -16,7 +16,7 @@ BUNDLEPATH = os.path.join(TESTDIR, 'bundles', 'test-no-symlinks.hg')
 
 # only makes sense to test on os which supports symlinks
 if not getattr(os, "symlink", False):
-    sys.exit(80) # SKIPPED_STATUS defined in run-tests.py
+    sys.exit(80)  # SKIPPED_STATUS defined in run-tests.py
 
 u = uimod.ui.load()
 # hide outer repo
@@ -36,9 +36,15 @@ commands.status(u, repo)
 # non-symlink file system
 def symlink_failure(src, dst):
     raise OSError(1, "Operation not permitted")
+
+
 os.symlink = symlink_failure
+
+
 def islink_failure(path):
     return False
+
+
 os.path.islink = islink_failure
 
 # dereference links as if a Samba server has exported this to a
