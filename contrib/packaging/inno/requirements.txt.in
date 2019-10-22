@@ -2,3 +2,6 @@ docutils
 dulwich
 keyring
 pygments
+# Need to list explicitly so dependency gets pulled in when
+# not running on Windows.
+pywin32-ctypes
