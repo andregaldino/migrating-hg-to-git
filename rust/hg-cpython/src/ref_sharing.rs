@@ -283,7 +283,7 @@ macro_rules! py_shared_ref {
 /// borrowed.
 pub struct PyLeaked<T> {
     inner: PyObject,
-    data: Option<T>,
+    data: T,
     py_shared_state: &'static PySharedState,
     /// Generation counter of data `T` captured when PyLeaked is created.
     generation: usize,
@@ -305,7 +305,7 @@ impl<T> PyLeaked<T> {
     ) -> Self {
         Self {
             inner: inner.clone_ref(py),
-            data: Some(data),
+            data: data,
             py_shared_state,
             generation: py_shared_state.current_generation(py),
         }
@@ -321,7 +321,7 @@ impl<T> PyLeaked<T> {
         self.validate_generation(py)?;
         Ok(PyLeakedRef {
             _borrow: BorrowPyShared::new(py, self.py_shared_state),
-            data: self.data.as_ref().unwrap(),
+            data: &self.data,
         })
     }
 
@@ -338,7 +338,7 @@ impl<T> PyLeaked<T> {
         self.validate_generation(py)?;
         Ok(PyLeakedRefMut {
             _borrow: BorrowPyShared::new(py, self.py_shared_state),
-            data: self.data.as_mut().unwrap(),
+            data: &mut self.data,
         })
     }
 
@@ -361,7 +361,7 @@ impl<T> PyLeaked<T> {
     /// corresponding `PyLeaked` is alive. Do not copy it out of the
     /// function call.
     pub unsafe fn map<U>(
-        mut self,
+        self,
         py: Python,
         f: impl FnOnce(T) -> U,
     ) -> PyLeaked<U> {
@@ -374,10 +374,10 @@ impl<T> PyLeaked<T> {
         // In order to make this function safe, maybe we'll need a way to
         // temporarily restrict the lifetime of self.data and translate the
         // returned object back to Something<'static>.
-        let new_data = f(self.data.take().unwrap());
+        let new_data = f(self.data);
         PyLeaked {
-            inner: self.inner.clone_ref(py),
-            data: Some(new_data),
+            inner: self.inner,
+            data: new_data,
             py_shared_state: self.py_shared_state,
             generation: self.generation,
         }
