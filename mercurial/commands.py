@@ -3440,6 +3440,9 @@ def grep(ui, repo, pattern, *pats, **opts):
     def grepbody(fn, rev, body):
         matches[rev].setdefault(fn, [])
         m = matches[rev][fn]
+        if body is None:
+            return
+
         for lnum, cstart, cend, line in matchlines(body):
             s = linestate(line, lnum, cstart, cend)
             m.append(s)
@@ -3575,6 +3578,19 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     getrenamed = scmutil.getrenamedfn(repo)
 
+    def get_file_content(filename, filelog, filenode, context, revision):
+        try:
+            content = filelog.read(filenode)
+        except error.WdirUnsupported:
+            content = context[filename].data()
+        except error.CensoredNodeError:
+            content = None
+            ui.warn(
+                _(b'cannot search in censored file: %(filename)s:%(revnum)s\n')
+                % {b'filename': filename, b'revnum': pycompat.bytestr(revision)}
+            )
+        return content
+
     def prep(ctx, fns):
         rev = ctx.rev()
         pctx = ctx.p1()
@@ -3601,17 +3617,15 @@ def grep(ui, repo, pattern, *pats, **opts):
             files.append(fn)
 
             if fn not in matches[rev]:
-                try:
-                    content = flog.read(fnode)
-                except error.WdirUnsupported:
-                    content = ctx[fn].data()
+                content = get_file_content(fn, flog, fnode, ctx, rev)
                 grepbody(fn, rev, content)
 
             pfn = copy or fn
             if pfn not in matches[parent]:
                 try:
-                    fnode = pctx.filenode(pfn)
-                    grepbody(pfn, parent, flog.read(fnode))
+                    pfnode = pctx.filenode(pfn)
+                    pcontent = get_file_content(pfn, flog, pfnode, pctx, parent)
+                    grepbody(pfn, parent, pcontent)
                 except error.LookupError:
                     pass
 
