@@ -294,7 +294,13 @@ impl<T> PyLeaked<T> {
     /// Immutably borrows the wrapped value.
     ///
     /// Borrowing fails if the underlying reference has been invalidated.
-    pub fn try_borrow<'a>(
+    ///
+    /// # Safety
+    ///
+    /// The lifetime of the innermost object is cheated. Do not obtain and
+    /// copy it out of the borrow scope. See the example of `try_borrow_mut()`
+    /// for details.
+    pub unsafe fn try_borrow<'a>(
         &'a self,
         py: Python<'a>,
     ) -> PyResult<PyLeakedRef<'a, T>> {
@@ -311,7 +317,24 @@ impl<T> PyLeaked<T> {
     ///
     /// Typically `T` is an iterator. If `T` is an immutable reference,
     /// `get_mut()` is useless since the inner value can't be mutated.
-    pub fn try_borrow_mut<'a>(
+    ///
+    /// # Safety
+    ///
+    /// The lifetime of the innermost object is cheated. Do not obtain and
+    /// copy it out of the borrow scope. For example, the following code
+    /// is unsafe:
+    ///
+    /// ```compile_fail
+    /// let slice;
+    /// {
+    ///     let iter = leaked.try_borrow_mut(py);
+    ///     // slice can outlive since the iterator is of Iter<'static, T>
+    ///     // type, but it shouldn't.
+    ///     slice = iter.as_slice();
+    /// }
+    /// println!("{:?}", slice);
+    /// ```
+    pub unsafe fn try_borrow_mut<'a>(
         &'a mut self,
         py: Python<'a>,
     ) -> PyResult<PyLeakedRefMut<'a, T>> {
@@ -423,6 +446,11 @@ impl<T> DerefMut for PyLeakedRefMut<'_, T> {
 /// tuple on iteration success, turning it into something Python understands.
 /// * `$success_func` is the return type of `$success_func`
 ///
+/// # Safety
+///
+/// `$success_func` may take a reference, but it's lifetime may be cheated.
+/// Do not copy it out of the function call.
+///
 /// # Example
 ///
 /// ```
@@ -476,9 +504,10 @@ macro_rules! py_shared_iterator {
 
             def __next__(&self) -> PyResult<$success_type> {
                 let mut leaked = self.inner(py).borrow_mut();
-                let mut iter = leaked.try_borrow_mut(py)?;
+                let mut iter = unsafe { leaked.try_borrow_mut(py)? };
                 match iter.next() {
                     None => Ok(None),
+                    // res may be a reference of cheated 'static lifetime
                     Some(res) => $success_func(py, res),
                 }
             }
@@ -527,7 +556,7 @@ mod test {
         let (gil, owner) = prepare_env();
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable();
-        let leaked_ref = leaked.try_borrow(py).unwrap();
+        let leaked_ref = unsafe { leaked.try_borrow(py) }.unwrap();
         assert_eq!(*leaked_ref, "new");
     }
 
@@ -537,7 +566,8 @@ mod test {
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
-        let mut leaked_ref = leaked_iter.try_borrow_mut(py).unwrap();
+        let mut leaked_ref =
+            unsafe { leaked_iter.try_borrow_mut(py) }.unwrap();
         assert_eq!(leaked_ref.next(), Some('n'));
         assert_eq!(leaked_ref.next(), Some('e'));
         assert_eq!(leaked_ref.next(), Some('w'));
@@ -550,7 +580,7 @@ mod test {
         let py = gil.python();
         let leaked = owner.string_shared(py).leak_immutable();
         owner.string_shared(py).borrow_mut().clear();
-        assert!(leaked.try_borrow(py).is_err());
+        assert!(unsafe { leaked.try_borrow(py) }.is_err());
     }
 
     #[test]
@@ -560,7 +590,7 @@ mod test {
         let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
         owner.string_shared(py).borrow_mut().clear();
-        assert!(leaked_iter.try_borrow_mut(py).is_err());
+        assert!(unsafe { leaked_iter.try_borrow_mut(py) }.is_err());
     }
 
     #[test]
@@ -580,10 +610,10 @@ mod test {
         assert!(owner.string_shared(py).try_borrow_mut().is_ok());
         let leaked = owner.string_shared(py).leak_immutable();
         {
-            let _leaked_ref = leaked.try_borrow(py).unwrap();
+            let _leaked_ref = unsafe { leaked.try_borrow(py) }.unwrap();
             assert!(owner.string_shared(py).try_borrow_mut().is_err());
             {
-                let _leaked_ref2 = leaked.try_borrow(py).unwrap();
+                let _leaked_ref2 = unsafe { leaked.try_borrow(py) }.unwrap();
                 assert!(owner.string_shared(py).try_borrow_mut().is_err());
             }
             assert!(owner.string_shared(py).try_borrow_mut().is_err());
@@ -599,7 +629,8 @@ mod test {
         let leaked = owner.string_shared(py).leak_immutable();
         let mut leaked_iter = unsafe { leaked.map(py, |s| s.chars()) };
         {
-            let _leaked_ref = leaked_iter.try_borrow_mut(py).unwrap();
+            let _leaked_ref =
+                unsafe { leaked_iter.try_borrow_mut(py) }.unwrap();
             assert!(owner.string_shared(py).try_borrow_mut().is_err());
         }
         assert!(owner.string_shared(py).try_borrow_mut().is_ok());
