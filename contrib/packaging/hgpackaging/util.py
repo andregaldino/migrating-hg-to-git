@@ -12,6 +12,7 @@ import getpass
 import glob
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import tarfile
@@ -210,3 +211,16 @@ def process_install_rules(
             full_dest_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(full_source_path, full_dest_path)
             print('copying %s to %s' % (full_source_path, full_dest_path))
+
+
+def read_version_py(source_dir):
+    """Read the mercurial/__version__.py file to resolve the version string."""
+    p = source_dir / 'mercurial' / '__version__.py'
+
+    with p.open('r', encoding='utf-8') as fh:
+        m = re.search('version = b"([^"]+)"', fh.read(), re.MULTILINE)
+
+        if not m:
+            raise Exception('could not parse %s' % p)
+
+        return m.group(1)

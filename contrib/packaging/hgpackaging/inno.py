@@ -18,7 +18,10 @@ from .py2exe import (
     build_py2exe,
     stage_install,
 )
-from .util import find_vc_runtime_files
+from .util import (
+    find_vc_runtime_files,
+    read_version_py,
+)
 
 EXTRA_PACKAGES = {
     'dulwich',
@@ -149,8 +152,10 @@ def build(
     if vc_x64:
         args.append('/dARCH=x64')
 
-    if version:
-        args.append('/dVERSION=%s' % version)
+    if not version:
+        version = read_version_py(source_dir)
+
+    args.append('/dVERSION=%s' % version)
 
     args.append('/Odist')
     args.append(str(inno_build_dir / 'mercurial.iss'))
