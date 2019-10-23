@@ -75,11 +75,11 @@
 
           <Directory Id='HGRCD' Name='hgrc.d'>
             <Component Id='mercurial.rc' Guid='$(var.mercurial.rc.guid)' Win64='$(var.IsX64)'>
-              <File Id='mercurial.rc' Name='Mercurial.rc' Source='contrib\win32\mercurial.ini'
+              <File Id='mercurial.rc' Name='mercurial.rc' Source='contrib\win32\mercurial.ini'
                     ReadOnly='yes' KeyPath='yes'/>
             </Component>
             <Component Id='mergetools.rc' Guid='$(var.mergetools.rc.guid)' Win64='$(var.IsX64)'>
-              <File Id='mergetools.rc' Name='MergeTools.rc' Source='mercurial\default.d\mergetools.rc'
+              <File Id='mergetools.rc' Name='mergetools.rc' Source='mercurial\default.d\mergetools.rc'
                     ReadOnly='yes' KeyPath='yes'/>
             </Component>
           </Directory>
