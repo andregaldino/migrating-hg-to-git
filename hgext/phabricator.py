@@ -1168,7 +1168,7 @@ def phabsend(ui, repo, *revs, **opts):
                         writediffproperties(unfi[newnode], diffmap[old.node()])
                     except util.urlerr.urlerror:
                         ui.warnnoi18n(
-                            b'Failed to update metadata for D%s\n' % drevid
+                            b'Failed to update metadata for D%d\n' % drevid
                         )
                 # Remove local tags since it's no longer necessary
                 tagname = b'D%d' % drevid
@@ -1208,7 +1208,7 @@ def _confirmbeforesend(repo, revs, oldmap):
         desc = ctx.description().splitlines()[0]
         oldnode, olddiff, drevid = oldmap.get(ctx.node(), (None, None, None))
         if drevid:
-            drevdesc = ui.label(b'D%s' % drevid, b'phabricator.drev')
+            drevdesc = ui.label(b'D%d' % drevid, b'phabricator.drev')
         else:
             drevdesc = ui.label(_(b'NEW'), b'phabricator.drev')
 
