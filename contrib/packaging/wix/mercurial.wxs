@@ -136,7 +136,6 @@
       <?endif?>
       <Feature Id='Locales' Title='Translations' Description='Translations' Level='1'>
         <ComponentGroupRef Id='localeFolder' />
-        <ComponentRef Id='i18nFolder' />
       </Feature>
       <Feature Id='Documentation' Title='Documentation' Description='HTML man pages' Level='1'>
         <ComponentGroupRef Id='docFolder' />

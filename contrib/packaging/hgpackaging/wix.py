@@ -28,7 +28,6 @@ SUPPORT_WXS = [
     ('dist.wxs', r'dist'),
     ('doc.wxs', r'doc'),
     ('help.wxs', r'mercurial\help'),
-    ('i18n.wxs', r'i18n'),
     ('locale.wxs', r'mercurial\locale'),
     ('templates.wxs', r'mercurial\templates'),
 ]
