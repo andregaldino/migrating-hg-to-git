@@ -1613,7 +1613,7 @@ def phabupdate(ui, repo, spec, **opts):
 
     actions = []
     for f in flags:
-        actions.append({b'type': f, b'value': b'true'})
+        actions.append({b'type': f, b'value': True})
 
     drevs = querydrev(repo, spec)
     for i, drev in enumerate(drevs):
