@@ -52,6 +52,11 @@ STAGING_RULES = [
     ('COPYING', 'Copying.txt'),
 ]
 
+# List of paths to exclude from the staging area.
+STAGING_EXCLUDES = [
+    'doc/hg-ssh.8.html',
+]
+
 
 def build_py2exe(
     source_dir: pathlib.Path,
@@ -212,3 +217,10 @@ def stage_install(source_dir: pathlib.Path, staging_dir: pathlib.Path):
     files.
     """
     process_install_rules(STAGING_RULES, source_dir, staging_dir)
+
+    # Purge any files we don't want to be there.
+    for f in STAGING_EXCLUDES:
+        p = staging_dir / f
+        if p.exists():
+            print('removing %s' % p)
+            p.unlink()
