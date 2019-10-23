@@ -48,7 +48,6 @@ STAGING_RULES = [
     ('mercurial/default.d/*.rc', 'hgrc.d/'),
     ('mercurial/locale/**/*', 'locale/'),
     ('mercurial/templates/**/*', 'Templates/'),
-    ('CONTRIBUTORS', 'Contributors.txt'),
     ('COPYING', 'Copying.txt'),
 ]
 
