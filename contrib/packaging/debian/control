@@ -17,10 +17,14 @@ X-Python3-Version: >= 3.5
 
 Package: mercurial
 Depends:
+ sensible-utils,
  ${shlibs:Depends},
  ${misc:Depends},
  ${python3:Depends},
- mercurial-common (= ${source:Version})
+Recommends: ca-certificates
+Suggests: wish
+Replaces: mercurial-common (<< ${source:Version})
+Breaks: mercurial-common (<< ${source:Version})
 Architecture: any
 Description: fast, easy to use, distributed revision control tool.
  Mercurial is a fast, lightweight Source Control Management system designed
@@ -35,20 +39,3 @@ Description: fast, easy to use, distributed revision control tool.
   * Easy-to-use command-line interface
   * Integrated stand-alone web interface
   * Small Python codebase
-
-Package: mercurial-common
-Architecture: all
-Depends:
- sensible-utils,
- ${misc:Depends},
- ${python3:Depends},
-Recommends: mercurial (= ${source:Version}), ca-certificates
-Suggests: wish
-Breaks: mercurial (<< ${source:Version})
-Replaces: mercurial (<< 2.6.3)
-Description: easy-to-use, scalable distributed version control system (common files)
- Mercurial is a fast, lightweight Source Control Management system designed
- for efficient handling of very large distributed projects.
- .
- This package contains the architecture independent components of Mercurial,
- and is generally useless without the mercurial package.

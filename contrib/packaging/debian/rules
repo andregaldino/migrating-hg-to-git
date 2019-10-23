@@ -15,7 +15,6 @@ override_dh_auto_test:
 
 override_dh_python3:
 	dh_python3 --shebang=/usr/bin/python3
-	find debian/mercurial/usr/share -type d -empty -delete
 
 override_dh_auto_clean:
 	$(MAKE) cleanbutpackages
@@ -32,24 +31,14 @@ override_dh_auto_install:
 		DESTDIR="$(CURDIR)"/debian/mercurial \
 		PREFIX=/usr \
 		install
-	# remove arch-independent python stuff
-	find "$(CURDIR)"/debian/mercurial/usr/lib \
-		! -name '*.so' ! -type d -delete , \
-		-type d -empty -delete
-	python3 setup.py install --root "$(CURDIR)/debian/mercurial-common" --install-layout=deb
-	make install-doc PREFIX="$(CURDIR)"/debian/mercurial-common/usr
-	# remove arch-dependent python stuff
-	find "$(CURDIR)"/debian/mercurial-common/usr/lib \
-		-name '*.so' ! -type d -delete , \
-		-type d -empty -delete
-	cp contrib/hg-ssh "$(CURDIR)"/debian/mercurial-common/usr/bin
-	mkdir -p "$(CURDIR)"/debian/mercurial-common/usr/share/mercurial
-	cp contrib/hgk "$(CURDIR)"/debian/mercurial-common/usr/share/mercurial
-	mkdir -p "$(CURDIR)"/debian/mercurial-common/etc/mercurial/hgrc.d/
-	cp contrib/packaging/debian/*.rc "$(CURDIR)"/debian/mercurial-common/etc/mercurial/hgrc.d/
+	make install-doc PREFIX="$(CURDIR)"/debian/mercurial/usr
+	cp contrib/hg-ssh "$(CURDIR)"/debian/mercurial/usr/bin
+	mkdir -p "$(CURDIR)"/debian/mercurial/usr/share/mercurial
+	cp contrib/hgk "$(CURDIR)"/debian/mercurial/usr/share/mercurial
+	mkdir -p "$(CURDIR)"/debian/mercurial/etc/mercurial/hgrc.d/
+	cp contrib/packaging/debian/*.rc "$(CURDIR)"/debian/mercurial/etc/mercurial/hgrc.d/
 	# completions
-	mkdir -p "$(CURDIR)"/debian/mercurial-common/usr/share/bash-completion/completions
-	cp contrib/bash_completion "$(CURDIR)"/debian/mercurial-common/usr/share/bash-completion/completions/hg
-	mkdir -p "$(CURDIR)"/debian/mercurial-common/usr/share/zsh/vendor-completions
-	cp contrib/zsh_completion "$(CURDIR)"/debian/mercurial-common/usr/share/zsh/vendor-completions/_hg
-	rm "$(CURDIR)"/debian/mercurial-common/usr/bin/hg
+	mkdir -p "$(CURDIR)"/debian/mercurial/usr/share/bash-completion/completions
+	cp contrib/bash_completion "$(CURDIR)"/debian/mercurial/usr/share/bash-completion/completions/hg
+	mkdir -p "$(CURDIR)"/debian/mercurial/usr/share/zsh/vendor-completions
+	cp contrib/zsh_completion "$(CURDIR)"/debian/mercurial/usr/share/zsh/vendor-completions/_hg
