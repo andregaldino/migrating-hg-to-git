@@ -16,7 +16,7 @@
       <Directory Id="contribdir" Name="contrib" FileSource="$(var.SourceDir)">
         <Component Id="contrib" Guid="$(var.contrib.guid)" Win64='$(var.IsX64)'>
           <File Name="bash_completion" KeyPath="yes" />
-          <File Name="hgk" />
+          <File Name="hgk.tcl" Source="$(var.SourceDir)/hgk" />
           <File Name="hgweb.fcgi" />
           <File Name="hgweb.wsgi" />
           <File Name="logo-droplets.svg" />
