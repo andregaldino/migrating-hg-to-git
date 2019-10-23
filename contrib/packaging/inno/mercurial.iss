@@ -48,11 +48,11 @@ Source: {{ entry.source }}; DestDir: {{ entry.dest_dir }}
 
 [INI]
 Filename: {app}\Mercurial.url; Section: InternetShortcut; Key: URL; String: https://mercurial-scm.org/
-Filename: {app}\default.d\editor.rc; Section: ui; Key: editor; String: notepad
+Filename: {app}\hgrc.d\editor.rc; Section: ui; Key: editor; String: notepad
 
 [UninstallDelete]
 Type: files; Name: {app}\Mercurial.url
-Type: filesandordirs; Name: {app}\default.d
+Type: filesandordirs; Name: {app}\hgrc.d
 
 [Icons]
 Name: {group}\Uninstall Mercurial; Filename: {uninstallexe}
