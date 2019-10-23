@@ -6,32 +6,27 @@
 
 import os
 
-supportedpy = '~= 2.7'
-if os.environ.get('HGALLOWPYTHON3', ''):
-    # Mercurial will never work on Python 3 before 3.5 due to a lack
-    # of % formatting on bytestrings, and can't work on 3.6.0 or 3.6.1
-    # due to a bug in % formatting in bytestrings.
-    # We cannot support Python 3.5.0, 3.5.1, 3.5.2 because of bug in
-    # codecs.escape_encode() where it raises SystemError on empty bytestring
-    # bug link: https://bugs.python.org/issue25270
-    #
-    # TODO: when we actually work on Python 3, use this string as the
-    # actual supportedpy string.
-    supportedpy = ','.join(
-        [
-            '>=2.7',
-            '!=3.0.*',
-            '!=3.1.*',
-            '!=3.2.*',
-            '!=3.3.*',
-            '!=3.4.*',
-            '!=3.5.0',
-            '!=3.5.1',
-            '!=3.5.2',
-            '!=3.6.0',
-            '!=3.6.1',
-        ]
-    )
+# Mercurial will never work on Python 3 before 3.5 due to a lack
+# of % formatting on bytestrings, and can't work on 3.6.0 or 3.6.1
+# due to a bug in % formatting in bytestrings.
+# We cannot support Python 3.5.0, 3.5.1, 3.5.2 because of bug in
+# codecs.escape_encode() where it raises SystemError on empty bytestring
+# bug link: https://bugs.python.org/issue25270
+supportedpy = ','.join(
+    [
+        '>=2.7',
+        '!=3.0.*',
+        '!=3.1.*',
+        '!=3.2.*',
+        '!=3.3.*',
+        '!=3.4.*',
+        '!=3.5.0',
+        '!=3.5.1',
+        '!=3.5.2',
+        '!=3.6.0',
+        '!=3.6.1',
+    ]
+)
 
 import sys, platform
 import sysconfig
@@ -88,39 +83,6 @@ Python {py} detected.
     )
     printf(error, file=sys.stderr)
     sys.exit(1)
-
-# We don't yet officially support Python 3. But we want to allow developers to
-# hack on. Detect and disallow running on Python 3 by default. But provide a
-# backdoor to enable working on Python 3.
-if sys.version_info[0] != 2:
-    badpython = True
-
-    # Allow Python 3 from source checkouts.
-    if os.path.isdir('.hg') or 'HGPYTHON3' in os.environ:
-        badpython = False
-
-    if badpython:
-        error = """
-Python {py} detected.
-
-Mercurial currently has beta support for Python 3 and use of Python 2.7 is
-recommended for the best experience.
-
-Please re-run with Python 2.7 for a faster, less buggy experience.
-
-If you would like to beta test Mercurial with Python 3, this error can
-be suppressed by defining the HGPYTHON3 environment variable when invoking
-this command. No special environment variables or configuration changes are
-necessary to run `hg` with Python 3.
-
-See https://www.mercurial-scm.org/wiki/Python3 for more on Mercurial's
-Python 3 support.
-""".format(
-            py='.'.join('%d' % x for x in sys.version_info[0:2])
-        )
-
-        printf(error, file=sys.stderr)
-        sys.exit(1)
 
 if sys.version_info[0] >= 3:
     DYLIB_SUFFIX = sysconfig.get_config_vars()['EXT_SUFFIX']
