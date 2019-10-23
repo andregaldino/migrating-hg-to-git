@@ -1149,16 +1149,19 @@ class dirstate(object):
             )
             return (lookup, status)
 
+        def noop(f):
+            pass
+
         dcontains = dmap.__contains__
         dget = dmap.__getitem__
         ladd = lookup.append  # aka "unsure"
         madd = modified.append
         aadd = added.append
-        uadd = unknown.append
-        iadd = ignored.append
+        uadd = unknown.append if listunknown else noop
+        iadd = ignored.append if listignored else noop
         radd = removed.append
         dadd = deleted.append
-        cadd = clean.append
+        cadd = clean.append if listclean else noop
         mexact = match.exact
         dirignore = self._dirignore
         checkexec = self._checkexec
