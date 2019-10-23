@@ -17,13 +17,21 @@ override_dh_python3:
 	dh_python3 --shebang=/usr/bin/python3
 	find debian/mercurial/usr/share -type d -empty -delete
 
+override_dh_auto_clean:
+	$(MAKE) cleanbutpackages
+	$(MAKE) -C contrib/chg clean
+
+override_dh_auto_build:
+	$(MAKE) all
+	$(MAKE) -C contrib/chg all
+
 override_dh_install:
 	python3 setup.py install --root "$(CURDIR)"/debian/mercurial --install-layout=deb
 	# chg
 	make -C contrib/chg \
 		DESTDIR="$(CURDIR)"/debian/mercurial \
 		PREFIX=/usr \
-		clean install
+		install
 	# remove arch-independent python stuff
 	find "$(CURDIR)"/debian/mercurial/usr/lib \
 		! -name '*.so' ! -type d -delete , \
