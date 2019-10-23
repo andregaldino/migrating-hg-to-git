@@ -25,6 +25,7 @@ STAGING_RULES = [
     ('contrib/hgk', 'Contrib/hgk.tcl'),
     ('contrib/hgweb.fcgi', 'Contrib/'),
     ('contrib/hgweb.wsgi', 'Contrib/'),
+    ('contrib/logo-droplets.svg', 'Contrib/'),
     ('contrib/mercurial.el', 'Contrib/'),
     ('contrib/mq.el', 'Contrib/'),
     ('contrib/tcsh_completion', 'Contrib/'),
