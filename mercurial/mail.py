@@ -440,6 +440,9 @@ if pycompat.ispy3:
         finally:
             fp.detach()
 
+    def parsebytes(data):
+        ep = email.parser.BytesParser()
+        return ep.parsebytes(data)
 
 else:
 
@@ -448,6 +451,10 @@ else:
     def parse(fp):
         ep = email.parser.Parser()
         return ep.parse(fp)
+
+    def parsebytes(data):
+        ep = email.parser.Parser()
+        return ep.parsestr(data)
 
 
 def headdecode(s):

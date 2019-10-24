@@ -148,7 +148,6 @@ web.baseurl
 from __future__ import absolute_import
 
 import email.errors as emailerrors
-import email.parser as emailparser
 import fnmatch
 import hashlib
 import socket
@@ -382,9 +381,8 @@ class notifier(object):
             )
             return
 
-        p = emailparser.Parser()
         try:
-            msg = p.parsestr(encoding.strfromlocal(data))
+            msg = mail.parsebytes(data)
         except emailerrors.MessageParseError as inst:
             raise error.Abort(inst)
 
