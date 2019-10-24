@@ -391,9 +391,9 @@ class notifier(object):
         sender = msg[r'From']
         subject = msg[r'Subject']
         if sender is not None:
-            sender = encoding.strtolocal(sender)
+            sender = mail.headdecode(sender)
         if subject is not None:
-            subject = encoding.strtolocal(subject)
+            subject = mail.headdecode(subject)
         del msg[r'From'], msg[r'Subject']
 
         if not msg.is_multipart():
