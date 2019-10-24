@@ -458,7 +458,7 @@ def headdecode(s):
             try:
                 uparts.append(part.decode(charset))
                 continue
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, LookupError):
                 pass
         # On Python 3, decode_header() may return either bytes or unicode
         # depending on whether the header has =?<charset>? or not
