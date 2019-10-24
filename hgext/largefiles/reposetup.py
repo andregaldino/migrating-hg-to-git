@@ -360,20 +360,6 @@ def reposetup(ui, repo):
                 )
                 return result
 
-        def push(self, remote, force=False, revs=None, newbranch=False):
-            if remote.local():
-                missing = set(self.requirements) - remote.local().supported
-                if missing:
-                    msg = _(
-                        b"required features are not"
-                        b" supported in the destination:"
-                        b" %s"
-                    ) % (b', '.join(sorted(missing)))
-                    raise error.Abort(msg)
-            return super(lfilesrepo, self).push(
-                remote, force=force, revs=revs, newbranch=newbranch
-            )
-
         # TODO: _subdirlfs should be moved into "lfutil.py", because
         # it is referred only from "lfutil.updatestandinsbymatch"
         def _subdirlfs(self, files, lfiles):
