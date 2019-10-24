@@ -9,8 +9,10 @@
 
 import distutils.version
 import getpass
+import glob
 import os
 import pathlib
+import shutil
 import subprocess
 import tarfile
 import zipfile
@@ -164,3 +166,47 @@ def python_exe_info(python_exe: pathlib.Path):
         'version': version,
         'py3': version >= distutils.version.LooseVersion('3'),
     }
+
+
+def process_install_rules(
+    rules: list, source_dir: pathlib.Path, dest_dir: pathlib.Path
+):
+    for source, dest in rules:
+        if '*' in source:
+            if not dest.endswith('/'):
+                raise ValueError('destination must end in / when globbing')
+
+            # We strip off the source path component before the first glob
+            # character to construct the relative install path.
+            prefix_end_index = source[: source.index('*')].rindex('/')
+            relative_prefix = source_dir / source[0:prefix_end_index]
+
+            for res in glob.glob(str(source_dir / source), recursive=True):
+                source_path = pathlib.Path(res)
+
+                if source_path.is_dir():
+                    continue
+
+                rel_path = source_path.relative_to(relative_prefix)
+
+                dest_path = dest_dir / dest[:-1] / rel_path
+
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
+                print('copying %s to %s' % (source_path, dest_path))
+                shutil.copy(source_path, dest_path)
+
+        # Simple file case.
+        else:
+            source_path = pathlib.Path(source)
+
+            if dest.endswith('/'):
+                dest_path = pathlib.Path(dest) / source_path.name
+            else:
+                dest_path = pathlib.Path(dest)
+
+            full_source_path = source_dir / source_path
+            full_dest_path = dest_dir / dest_path
+
+            full_dest_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(full_source_path, full_dest_path)
+            print('copying %s to %s' % (full_source_path, full_dest_path))

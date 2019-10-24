@@ -14,7 +14,10 @@ import subprocess
 
 import jinja2
 
-from .py2exe import build_py2exe
+from .py2exe import (
+    build_py2exe,
+    stage_install,
+)
 from .util import find_vc_runtime_files
 
 EXTRA_PACKAGES = {
@@ -22,6 +25,11 @@ EXTRA_PACKAGES = {
     'keyring',
     'pygments',
     'win32ctypes',
+}
+
+PACKAGE_FILES_METADATA = {
+    'ReadMe.html': 'Flags: isreadme',
+    'hg.exe': "AfterInstall: Touch('{app}\\hg.exe.local')",
 }
 
 
@@ -47,6 +55,7 @@ def build(
     arch = 'x64' if vc_x64 else 'x86'
     inno_source_dir = source_dir / 'contrib' / 'packaging' / 'inno'
     inno_build_dir = build_dir / ('inno-%s' % arch)
+    staging_dir = inno_build_dir / 'stage'
 
     requirements_txt = (
         source_dir / 'contrib' / 'packaging' / 'inno' / 'requirements.txt'
@@ -63,6 +72,15 @@ def build(
         extra_packages=EXTRA_PACKAGES,
     )
 
+    # Purge the staging directory for every build so packaging is
+    # pristine.
+    if staging_dir.exists():
+        print('purging %s' % staging_dir)
+        shutil.rmtree(staging_dir)
+
+    # Now assemble all the packaged files into the staging directory.
+    stage_install(source_dir, staging_dir)
+
     # hg.exe depends on VC9 runtime DLLs. Copy those into place.
     for f in find_vc_runtime_files(vc_x64):
         if f.name.endswith('.manifest'):
@@ -70,10 +88,33 @@ def build(
         else:
             basename = f.name
 
-        dest_path = source_dir / 'dist' / basename
+        dest_path = staging_dir / basename
 
         print('copying %s to %s' % (f, dest_path))
         shutil.copyfile(f, dest_path)
+
+    # The final package layout is simply a mirror of the staging directory.
+    package_files = []
+    for root, dirs, files in os.walk(staging_dir):
+        dirs.sort()
+
+        root = pathlib.Path(root)
+
+        for f in sorted(files):
+            full = root / f
+            rel = full.relative_to(staging_dir)
+            if str(rel.parent) == '.':
+                dest_dir = '{app}'
+            else:
+                dest_dir = '{app}\\%s' % rel.parent
+
+            package_files.append(
+                {
+                    'source': rel,
+                    'dest_dir': dest_dir,
+                    'metadata': PACKAGE_FILES_METADATA.get(str(rel), None),
+                }
+            )
 
     print('creating installer')
 
@@ -93,10 +134,16 @@ def build(
             % (e.name, e.lineno, e.message,)
         )
 
-    content = template.render()
+    content = template.render(package_files=package_files)
 
     with (inno_build_dir / 'mercurial.iss').open('w', encoding='utf-8') as fh:
         fh.write(content)
+
+    # Copy additional files used by Inno.
+    for p in ('mercurial.ico', 'postinstall.txt'):
+        shutil.copyfile(
+            source_dir / 'contrib' / 'win32' / p, inno_build_dir / p
+        )
 
     args = [str(iscc_exe)]
 
