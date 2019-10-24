@@ -217,6 +217,13 @@ def stage_install(source_dir: pathlib.Path, staging_dir: pathlib.Path):
     """
     process_install_rules(STAGING_RULES, source_dir, staging_dir)
 
+    # Write out a default editor.rc file to configure notepad as the
+    # default editor.
+    with (staging_dir / 'hgrc.d' / 'editor.rc').open(
+        'w', encoding='utf-8'
+    ) as fh:
+        fh.write('[ui]\neditor = notepad\n')
+
     # Purge any files we don't want to be there.
     for f in STAGING_EXCLUDES:
         p = staging_dir / f
