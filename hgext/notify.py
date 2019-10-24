@@ -400,7 +400,7 @@ class notifier(object):
             # create fresh mime message from scratch
             # (multipart templates must take care of this themselves)
             headers = msg.items()
-            payload = msg.get_payload()
+            payload = msg.get_payload(decode=pycompat.ispy3)
             # for notification prefer readability over data precision
             msg = mail.mimeencode(self.ui, payload, self.charsets, self.test)
             # reinstate custom headers
