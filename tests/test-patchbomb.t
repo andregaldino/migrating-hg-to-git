@@ -512,7 +512,8 @@ mime encoded mbox (base64):
   X-Mercurial-Series-Id: <909a00e13e9d78b575ae.240@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:04:00 +0000
-  From: Q <quux>
+  From: Q <quux> (no-py3 !)
+  From: =?iso-8859-1?q?Q?= <quux> (py3 !)
   To: foo
   Cc: bar
   
@@ -2397,9 +2398,12 @@ test multi-address parsing:
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:00 +0000
   From: quux
-  To: spam <spam>, eggs, toast
-  Cc: foo, bar@example.com, "A, B <>" <a@example.com>
-  Bcc: "Quux, A." <quux>
+  To: spam <spam>, eggs, toast (no-py3 !)
+  Cc: foo, bar@example.com, "A, B <>" <a@example.com> (no-py3 !)
+  Bcc: "Quux, A." <quux> (no-py3 !)
+  To: =?iso-8859-1?q?spam?= <spam>, eggs, toast (py3 !)
+  Cc: foo, bar@example.com, =?iso-8859-1?q?A=2C_B_=3C=3E?= <a@example.com> (py3 !)
+  Bcc: =?iso-8859-1?q?Quux=2C_A=2E?= <quux> (py3 !)
   
   # HG changeset patch
   # User test
