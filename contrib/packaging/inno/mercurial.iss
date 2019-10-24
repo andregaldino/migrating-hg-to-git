@@ -40,7 +40,7 @@ AppPublisher=Matt Mackall and others
 AppPublisherURL=https://mercurial-scm.org/
 AppSupportURL=https://mercurial-scm.org/
 AppUpdatesURL=https://mercurial-scm.org/
-AppID={{4B95A5F1-EF59-4B08-BED8-C891C46121B3}
+{{ 'AppID={{4B95A5F1-EF59-4B08-BED8-C891C46121B3}' }}
 AppContact=mercurial@mercurial-scm.org
 DefaultDirName={pf}\Mercurial
 SourceDir=..\..
@@ -121,4 +121,5 @@ begin
     setArrayLength(Result, 1)
     Result[0] := ExpandConstant('{app}');
 end;
-#include "modpath.iss"
+
+{% include 'modpath.iss' %}

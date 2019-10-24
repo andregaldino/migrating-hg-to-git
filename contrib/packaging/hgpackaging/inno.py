@@ -12,6 +12,8 @@ import pathlib
 import shutil
 import subprocess
 
+import jinja2
+
 from .py2exe import build_py2exe
 from .util import find_vc_runtime_files
 
@@ -75,9 +77,26 @@ def build(
 
     print('creating installer')
 
-    # Copy Inno files into place.
-    for p in ('mercurial.iss', 'modpath.iss'):
-        shutil.copyfile(inno_source_dir / p, inno_build_dir / p)
+    # Install Inno files by rendering a template.
+    jinja_env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(str(inno_source_dir)),
+        # Need to change these to prevent conflict with Inno Setup.
+        comment_start_string='{##',
+        comment_end_string='##}',
+    )
+
+    try:
+        template = jinja_env.get_template('mercurial.iss')
+    except jinja2.TemplateSyntaxError as e:
+        raise Exception(
+            'template syntax error at %s:%d: %s'
+            % (e.name, e.lineno, e.message,)
+        )
+
+    content = template.render()
+
+    with (inno_build_dir / 'mercurial.iss').open('w', encoding='utf-8') as fh:
+        fh.write(content)
 
     args = [str(iscc_exe)]
 
