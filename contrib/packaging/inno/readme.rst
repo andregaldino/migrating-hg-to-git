@@ -11,12 +11,12 @@ The following system dependencies must be installed:
 * Inno Setup (http://jrsoftware.org/isdl.php) version 5.4 or newer.
   Be sure to install the optional Inno Setup Preprocessor feature,
   which is required.
-* Python 3.5+ (to run the ``build.py`` script)
+* Python 3.5+ (to run the ``packaging.py`` script)
 
 Building
 ========
 
-The ``build.py`` script automates the process of producing an
+The ``packaging.py`` script automates the process of producing an
 Inno installer. It manages fetching and configuring the
 non-system dependencies (such as py2exe, gettext, and various
 Python packages).
@@ -31,11 +31,11 @@ either ``Visual C++ 2008 32-bit Command Prompt`` or
 From the prompt, change to the Mercurial source directory. e.g.
 ``cd c:\src\hg``.
 
-Next, invoke ``build.py`` to produce an Inno installer. You will
+Next, invoke ``packaging.py`` to produce an Inno installer. You will
 need to supply the path to the Python interpreter to use.::
 
-   $ python3.exe contrib\packaging\inno\build.py \
-       --python c:\python27\python.exe
+   $ python3.exe contrib\packaging\packaging.py \
+       inno --python c:\python27\python.exe
 
 .. note::
 
@@ -49,13 +49,13 @@ configured into the ``build`` sub-directory, Mercurial will be built,
 and an installer placed in the ``dist`` sub-directory. The final
 line of output should print the name of the generated installer.
 
-Additional options may be configured. Run ``build.py --help`` to
-see a list of program flags.
+Additional options may be configured. Run
+``packaging.py inno --help`` to see a list of program flags.
 
 MinGW
 =====
 
 It is theoretically possible to generate an installer that uses
-MinGW. This isn't well tested and ``build.py`` and may properly
+MinGW. This isn't well tested and ``packaging.py`` and may properly
 support it. See old versions of this file in version control for
 potentially useful hints as to how to achieve this.

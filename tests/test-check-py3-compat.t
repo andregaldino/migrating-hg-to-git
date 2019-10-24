@@ -8,6 +8,7 @@
   > -X contrib/automation/ \
   > -X contrib/packaging/hgpackaging/ \
   > -X contrib/packaging/inno/ \
+  > -X contrib/packaging/packaging.py \
   > -X contrib/packaging/wix/ \
   > -X hgdemandimport/demandimportpy2.py \
   > -X mercurial/thirdparty/cbor \
