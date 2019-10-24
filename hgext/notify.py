@@ -148,6 +148,7 @@ web.baseurl
 from __future__ import absolute_import
 
 import email.errors as emailerrors
+import email.utils as emailutils
 import fnmatch
 import hashlib
 import socket
@@ -450,7 +451,7 @@ class notifier(object):
             )
             mail.sendmail(
                 self.ui,
-                stringutil.email(msg[r'From']),
+                emailutils.parseaddr(msg[r'From'])[1],
                 subs,
                 msgtext,
                 mbox=self.mbox,
