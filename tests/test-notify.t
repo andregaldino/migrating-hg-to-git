@@ -211,7 +211,8 @@ pull (minimal config)
   Subject: changeset in $TESTTMP/b: b
   From: test@example.com
   X-Hg-Notification: changeset 00a13f371396
-  Message-Id: <hg.ba3098a36bd4c297288d16788623a841f81f618ea961a0f0fd65de7eb1191b66@example.com>
+  Message-Id: <hg.ba3098a36bd4c297288d16788623a841f81f618ea961a0f0fd65de7eb1191b66@example.com> (no-py3 !)
+  Message-Id:  <hg.ba3098a36bd4c297288d16788623a841f81f618ea961a0f0fd65de7eb1191b66@example.com> (py3 !)
   To: baz@example.com, foo@bar
   
   changeset 00a13f371396 in $TESTTMP/b
