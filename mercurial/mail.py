@@ -342,6 +342,7 @@ def _encode(ui, s, charsets):
         s.decode('ascii')
     except UnicodeDecodeError:
         for ics in (encoding.encoding, encoding.fallbackencoding):
+            ics = pycompat.sysstr(ics)
             try:
                 u = s.decode(ics)
             except UnicodeDecodeError:
