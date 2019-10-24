@@ -15,7 +15,6 @@ import subprocess
 from .py2exe import build_py2exe
 from .util import find_vc_runtime_files
 
-
 EXTRA_PACKAGES = {
     'dulwich',
     'keyring',
@@ -43,10 +42,15 @@ def build(
         raise Exception('%s does not exist' % iscc_exe)
 
     vc_x64 = r'\x64' in os.environ.get('LIB', '')
+    arch = 'x64' if vc_x64 else 'x86'
+    inno_source_dir = source_dir / 'contrib' / 'packaging' / 'inno'
+    inno_build_dir = build_dir / ('inno-%s' % arch)
 
     requirements_txt = (
         source_dir / 'contrib' / 'packaging' / 'inno' / 'requirements.txt'
     )
+
+    inno_build_dir.mkdir(parents=True, exist_ok=True)
 
     build_py2exe(
         source_dir,
@@ -71,6 +75,10 @@ def build(
 
     print('creating installer')
 
+    # Copy Inno files into place.
+    for p in ('mercurial.iss', 'modpath.iss'):
+        shutil.copyfile(inno_source_dir / p, inno_build_dir / p)
+
     args = [str(iscc_exe)]
 
     if vc_x64:
@@ -80,6 +88,6 @@ def build(
         args.append('/dVERSION=%s' % version)
 
     args.append('/Odist')
-    args.append('contrib/packaging/inno/mercurial.iss')
+    args.append(str(inno_build_dir / 'mercurial.iss'))
 
     subprocess.run(args, cwd=str(source_dir), check=True)
