@@ -23,8 +23,8 @@ Depends:
  ${python3:Depends},
 Recommends: ca-certificates
 Suggests: wish
-Replaces: mercurial-common (<< ${source:Version})
-Breaks: mercurial-common (<< ${source:Version})
+Replaces: mercurial-common
+Breaks: mercurial-common
 Architecture: any
 Description: fast, easy to use, distributed revision control tool.
  Mercurial is a fast, lightweight Source Control Management system designed
