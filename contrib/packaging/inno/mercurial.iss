@@ -68,7 +68,6 @@ Filename: {app}\default.d\editor.rc; Section: ui; Key: editor; String: notepad
 [UninstallDelete]
 Type: files; Name: {app}\Mercurial.url
 Type: filesandordirs; Name: {app}\default.d
-Type: files; Name: "{app}\hg.exe.local"
 
 [Icons]
 Name: {group}\Uninstall Mercurial; Filename: {uninstallexe}

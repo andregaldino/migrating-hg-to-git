@@ -29,7 +29,6 @@ EXTRA_PACKAGES = {
 
 PACKAGE_FILES_METADATA = {
     'ReadMe.html': 'Flags: isreadme',
-    'hg.exe': "AfterInstall: Touch('{app}\\hg.exe.local')",
 }
 
 
