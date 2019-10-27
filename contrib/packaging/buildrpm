@@ -51,7 +51,7 @@ fi
 gethgversion
 
 if [ -z "$type" ] ; then
-   release=1
+    release=1
 else
     release=0.9_$type
 fi
