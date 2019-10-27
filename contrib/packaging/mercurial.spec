@@ -15,7 +15,7 @@
 
 %else
 
-%global pythonver %(python -c 'import sys;print ".".join(map(str, sys.version_info[:2]))')
+%global pythonver %(python -c 'import sys;print(".".join(map(str, sys.version_info[:2])))')
 
 %endif
 
