@@ -1,11 +1,6 @@
 #!/bin/bash -e
 #
-# Build a Mercurial RPM from the current repo
-#
-# Tested on
-# - Fedora 20
-# - CentOS 5
-# - centOS 6
+# Build a Mercurial RPM from the current repo, mainly for Fedora/CentOS/RHEL
 
 . $(dirname $0)/packagelib.sh
 
