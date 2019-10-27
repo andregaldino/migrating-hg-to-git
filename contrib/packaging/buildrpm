@@ -11,12 +11,17 @@
 
 BUILD=1
 RPMBUILDDIR="$PWD/rpmbuild"
+PYTHONEXE=python2
 
 while [ "$1" ]; do
     case "$1" in
     --prepare )
         shift
         BUILD=
+        ;;
+    --python3)
+        shift
+        PYTHONEXE=python3
         ;;
     --withpython | --with-python)
         shift
@@ -96,6 +101,7 @@ rpmspec=$RPMBUILDDIR/SPECS/mercurial.spec
 
 sed -e "s,^Version:.*,Version: $version," \
     -e "s,^Release:.*,Release: $release," \
+    -e "s/^%global pythonexe .*/%global pythonexe $PYTHONEXE/" \
     $specfile > $rpmspec
 
 echo >> $rpmspec

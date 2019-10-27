@@ -38,8 +38,8 @@ BuildRequires: make, gcc, gettext
 %if "%{?withpython}"
 BuildRequires: readline-devel, openssl-devel, ncurses-devel, zlib-devel, bzip2-devel
 %else
-BuildRequires: python >= 2.7, python-devel, python-docutils >= 0.5
-Requires: python >= 2.7
+BuildRequires: python >= %{pythonver}, python-devel, python-docutils >= 0.5
+Requires: python >= %{pythonver}
 %endif
 # The hgk extension uses the wish tcl interpreter, but we don't enforce it
 #Requires: tk
@@ -59,6 +59,8 @@ sed -i '1c#! /usr/bin/env %{pythonexe}' %{pythonname}/Lib/cgi.py
 %endif
 
 %build
+
+export HGPYTHON3=1
 
 %if "%{?withpython}"
 
@@ -90,6 +92,8 @@ sed -i -e '1s|#!/usr/bin/env python$|#!/usr/bin/env %{pythonexe}|' contrib/hg-ss
 
 %install
 rm -rf $RPM_BUILD_ROOT
+
+export HGPYTHON3=1
 
 %if "%{?withpython}"
 
