@@ -15,7 +15,8 @@
 
 %else
 
-%global pythonver %(python -c 'import sys;print(".".join(map(str, sys.version_info[:2])))')
+%global pythonexe python2
+%global pythonver %(%{pythonexe} -c 'import sys;print(".".join(map(str, sys.version_info[:2])))')
 
 %endif
 
@@ -52,7 +53,7 @@ for efficient handling of very large distributed projects.
 %if "%{?withpython}"
 %setup -q -n mercurial-%{version}-%{release} -a1 -a2
 # despite the comments in cgi.py, we do this to prevent rpmdeps from picking /usr/local/bin/python up
-sed -i '1c#! /usr/bin/env python' %{pythonname}/Lib/cgi.py
+sed -i '1c#! /usr/bin/env %{pythonexe}' %{pythonname}/Lib/cgi.py
 %else
 %setup -q -n mercurial-%{version}-%{release}
 %endif
@@ -82,8 +83,10 @@ export PYTHONPATH=$PWD/%{docutilsname}
 
 %endif
 
-make all
+make all PYTHON=%{pythonexe}
 make -C contrib/chg
+
+sed -i -e '1s|#!/usr/bin/env python$|#!/usr/bin/env %{pythonexe}|' contrib/hg-ssh
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -101,14 +104,14 @@ cd %{docutilsname}
 LD_LIBRARY_PATH=$PYPATH $PYPATH/python setup.py install --root="$RPM_BUILD_ROOT"
 cd -
 
-PATH=$PYPATH:$PATH LD_LIBRARY_PATH=$PYPATH make install DESTDIR=$RPM_BUILD_ROOT PREFIX=%{hgpyprefix} MANDIR=%{_mandir}
+PATH=$PYPATH:$PATH LD_LIBRARY_PATH=$PYPATH make install PYTHON=%{pythonexe} DESTDIR=$RPM_BUILD_ROOT PREFIX=%{hgpyprefix} MANDIR=%{_mandir}
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ( cd $RPM_BUILD_ROOT%{_bindir}/ && ln -s ../..%{hgpyprefix}/bin/hg . )
 ( cd $RPM_BUILD_ROOT%{_bindir}/ && ln -s ../..%{hgpyprefix}/bin/python2.? %{pythonhg} )
 
 %else
 
-make install DESTDIR=$RPM_BUILD_ROOT PREFIX=%{_prefix} MANDIR=%{_mandir}
+make install PYTHON=%{pythonexe} DESTDIR=$RPM_BUILD_ROOT PREFIX=%{_prefix} MANDIR=%{_mandir}
 
 %endif
 
