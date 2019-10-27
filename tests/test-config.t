@@ -122,7 +122,7 @@ Test config default of various types:
   ]
   $ hg config --config auth.cookiefile= auth -T'json(defaultvalue)'
   [
-   {"defaultvalue": ""}
+   {"defaultvalue": null}
   ]
   $ hg config --config auth.cookiefile= auth -T'{defaultvalue}\n'
   

@@ -515,6 +515,10 @@ class templateformatter(baseformatter):
         if part not in self._parts:
             return
         ref = self._parts[part]
+        # None can't be put in the mapping dict since it means <unset>
+        for k, v in item.items():
+            if v is None:
+                item[k] = templateutil.wrappedvalue(v)
         self._out.write(self._t.render(ref, item))
 
     @util.propertycache
