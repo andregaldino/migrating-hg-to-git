@@ -2267,7 +2267,9 @@ def config(ui, repo, *values, **opts):
             fm.write(b'value', b'%s\n', value)
         else:
             fm.write(b'name value', b'%s=%s\n', entryname, value)
-        fm.data(defaultvalue=defaultvalue)
+        if formatter.isprintable(defaultvalue):
+            fm.data(defaultvalue=defaultvalue)
+        # TODO: no idea how to process unsupported defaultvalue types
         matched = True
     fm.end()
     if matched:

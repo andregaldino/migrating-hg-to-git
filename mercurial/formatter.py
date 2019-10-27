@@ -136,6 +136,16 @@ from .utils import (
 pickle = util.pickle
 
 
+def isprintable(obj):
+    """Check if the given object can be directly passed in to formatter's
+    write() and data() functions
+
+    Returns False if the object is unsupported or must be pre-processed by
+    formatdate(), formatdict(), or formatlist().
+    """
+    return isinstance(obj, (type(None), bool, int, pycompat.long, float, bytes))
+
+
 class _nullconverter(object):
     '''convert non-primitive data types to be processed by formatter'''
 
