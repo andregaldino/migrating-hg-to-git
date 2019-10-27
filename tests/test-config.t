@@ -186,6 +186,7 @@ Test config default of various types:
   $ hg config --config commands.show.aliasprefix= commands -Tjson
   [
    {
+    "defaultvalue": [],
     "name": "commands.show.aliasprefix",
     "source": "--config",
     "value": ""
@@ -193,7 +194,7 @@ Test config default of various types:
   ]
   $ hg config --config commands.show.aliasprefix= commands -T'json(defaultvalue)'
   [
-   {"defaultvalue": ""}
+   {"defaultvalue": []}
   ]
   $ hg config --config commands.show.aliasprefix= commands -T'{defaultvalue}\n'
   
@@ -203,6 +204,7 @@ Test config default of various types:
   $ hg config --config progress.format= progress -Tjson
   [
    {
+    "defaultvalue": ["topic", "bar", "number", "estimate"],
     "name": "progress.format",
     "source": "--config",
     "value": ""
@@ -210,10 +212,10 @@ Test config default of various types:
   ]
   $ hg config --config progress.format= progress -T'json(defaultvalue)'
   [
-   {"defaultvalue": ""}
+   {"defaultvalue": ["topic", "bar", "number", "estimate"]}
   ]
   $ hg config --config progress.format= progress -T'{defaultvalue}\n'
-  
+  topic bar number estimate
 
  int
 
