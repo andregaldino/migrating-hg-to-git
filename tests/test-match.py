@@ -316,7 +316,7 @@ class DifferenceMatcherTests(unittest.TestCase):
 
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
-    def testVisitdirIncludeIncludfe(self):
+    def testVisitdirIncludeInclude(self):
         m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
         m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
         dm = matchmod.differencematcher(m1, m2)
@@ -430,7 +430,7 @@ class IntersectionMatcherTests(unittest.TestCase):
 
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
-    def testVisitdirIncludeIncludfe(self):
+    def testVisitdirIncludeInclude(self):
         m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
         m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
         im = matchmod.intersectmatchers(m1, m2)
@@ -644,7 +644,7 @@ class UnionMatcherTests(unittest.TestCase):
 
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
-    def testVisitdirIncludeIncludfe(self):
+    def testVisitdirIncludeInclude(self):
         m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
         m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
         um = matchmod.unionmatcher([m1, m2])
