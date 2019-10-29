@@ -3116,9 +3116,7 @@ class TestRunner(object):
         vlog("# Using HGTMP", _strpath(self._hgtmp))
         vlog("# Using PATH", os.environ["PATH"])
         vlog(
-            "# Using",
-            _strpath(IMPL_PATH),
-            _strpath(osenvironb[IMPL_PATH]),
+            "# Using", _strpath(IMPL_PATH), _strpath(osenvironb[IMPL_PATH]),
         )
         vlog("# Writing to directory", _strpath(self._outputdir))
 
