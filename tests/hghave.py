@@ -980,12 +980,9 @@ def has_emacs():
     return matchoutput('emacs --version', b'GNU Emacs 2(4.4|4.5|5|6|7|8|9)')
 
 
-# @check('black', 'the black formatter for python')
-@check('grey', 'grey, the fork of the black formatter for python')
+@check('black', 'the black formatter for python')
 def has_black():
     # use that to actual black as soon as possible
-    # blackcmd = 'black --version'
-    blackcmd = 'python3 $RUNTESTDIR/../contrib/grey.py --version'
-    # version_regex = b'black, version \d'
-    version_regex = b'grey.py, version \d'
+    blackcmd = 'black --version'
+    version_regex = b'black, version \d'
     return matchoutput(blackcmd, version_regex)
