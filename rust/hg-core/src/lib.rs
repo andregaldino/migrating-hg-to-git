@@ -17,6 +17,7 @@ pub use dirstate::{
     StateMap, StateMapIter,
 };
 mod filepatterns;
+pub mod matchers;
 pub mod utils;
 
 use crate::utils::hg_path::HgPathBuf;
