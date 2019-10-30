@@ -547,16 +547,6 @@ class predicatematcher(basematcher):
         return b'<predicatenmatcher pred=%s>' % s
 
 
-def normalizerootdir(dir, funcname):
-    if dir == b'.':
-        util.nouideprecwarn(
-            b"match.%s() no longer accepts '.', use '' instead." % funcname,
-            b'5.1',
-        )
-        return b''
-    return dir
-
-
 class patternmatcher(basematcher):
     """Matches a set of (kind, pat, source) against a 'root' directory.
 
@@ -602,7 +592,6 @@ class patternmatcher(basematcher):
         return set(pathutil.dirs(self._fileset))
 
     def visitdir(self, dir):
-        dir = normalizerootdir(dir, b'visitdir')
         if self._prefix and dir in self._fileset:
             return b'all'
         return (
@@ -686,7 +675,6 @@ class includematcher(basematcher):
         self._parents = parents
 
     def visitdir(self, dir):
-        dir = normalizerootdir(dir, b'visitdir')
         if self._prefix and dir in self._roots:
             return b'all'
         return (
@@ -767,12 +755,9 @@ class exactmatcher(basematcher):
         return set(pathutil.dirs(self._fileset))
 
     def visitdir(self, dir):
-        dir = normalizerootdir(dir, b'visitdir')
         return dir in self._dirs
 
     def visitchildrenset(self, dir):
-        dir = normalizerootdir(dir, b'visitchildrenset')
-
         if not self._fileset or dir not in self._dirs:
             return set()
 
@@ -1009,7 +994,6 @@ class subdirmatcher(basematcher):
         return self._matcher.matchfn(self._path + b"/" + f)
 
     def visitdir(self, dir):
-        dir = normalizerootdir(dir, b'visitdir')
         if dir == b'':
             dir = self._path
         else:
@@ -1017,7 +1001,6 @@ class subdirmatcher(basematcher):
         return self._matcher.visitdir(dir)
 
     def visitchildrenset(self, dir):
-        dir = normalizerootdir(dir, b'visitchildrenset')
         if dir == b'':
             dir = self._path
         else:
