@@ -1056,6 +1056,7 @@ ACTION_LABELS = {
 
 COLOR_HELP, COLOR_SELECTED, COLOR_OK, COLOR_WARN, COLOR_CURRENT = 1, 2, 3, 4, 5
 COLOR_DIFF_ADD_LINE, COLOR_DIFF_DEL_LINE, COLOR_DIFF_OFFSET = 6, 7, 8
+COLOR_ROLL, COLOR_ROLL_CURRENT, COLOR_ROLL_SELECTED = 9, 10, 11
 
 E_QUIT, E_HISTEDIT = 1, 2
 E_PAGEDOWN, E_PAGEUP, E_LINEUP, E_LINEDOWN, E_RESIZE = 3, 4, 5, 6, 7
@@ -1392,6 +1393,11 @@ def _chisteditmain(repo, rules, stdscr):
     curses.init_pair(COLOR_DIFF_ADD_LINE, curses.COLOR_GREEN, -1)
     curses.init_pair(COLOR_DIFF_DEL_LINE, curses.COLOR_RED, -1)
     curses.init_pair(COLOR_DIFF_OFFSET, curses.COLOR_MAGENTA, -1)
+    curses.init_pair(COLOR_ROLL, curses.COLOR_RED, -1)
+    curses.init_pair(
+        COLOR_ROLL_CURRENT, curses.COLOR_BLACK, curses.COLOR_MAGENTA
+    )
+    curses.init_pair(COLOR_ROLL_SELECTED, curses.COLOR_RED, curses.COLOR_WHITE)
 
     # don't display the cursor
     try:
