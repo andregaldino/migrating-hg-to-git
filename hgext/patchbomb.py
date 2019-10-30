@@ -960,7 +960,10 @@ def email(ui, repo, *revs, **opts):
                     hdr = pycompat.strurl(hdr)
                     change = True
                 if isinstance(val, bytes):
-                    val = pycompat.strurl(val)
+                    # header value should be ASCII since it's encoded by
+                    # mail.headencode(), but -n/--test disables it and raw
+                    # value of platform encoding is stored.
+                    val = encoding.strfromlocal(val)
                     if not change:
                         # prevent duplicate headers
                         del m[hdr]
