@@ -1499,9 +1499,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                 rulesscr.addstr(y, 0, b" ", curses.color_pair(COLOR_WARN))
             else:
                 rulesscr.addstr(y, 0, b" ", curses.COLOR_BLACK)
+
             if y + start == selected:
+                rollcolor = COLOR_ROLL_SELECTED
                 addln(rulesscr, y, 2, rule, curses.color_pair(COLOR_SELECTED))
             elif y + start == pos:
+                rollcolor = COLOR_ROLL_CURRENT
                 addln(
                     rulesscr,
                     y,
@@ -1510,7 +1513,17 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                     curses.color_pair(COLOR_CURRENT) | curses.A_BOLD,
                 )
             else:
+                rollcolor = COLOR_ROLL
                 addln(rulesscr, y, 2, rule)
+
+            if rule.action == b'roll':
+                rulesscr.addstr(
+                    y,
+                    2 + len(rule.prefix),
+                    rule.desc,
+                    curses.color_pair(rollcolor),
+                )
+
         rulesscr.noutrefresh()
 
     def renderstring(win, state, output, diffcolors=False):
