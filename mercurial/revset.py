@@ -689,19 +689,15 @@ def checkstatus(repo, subset, pat, field):
             if fname not in c.files():
                 return False
         else:
-            for f in c.files():
-                if m(f):
-                    break
-            else:
+            if not any(m(f) for f in c.files()):
                 return False
         files = repo.status(c.p1().node(), c.node())[field]
         if fname is not None:
             if fname in files:
                 return True
         else:
-            for f in files:
-                if m(f):
-                    return True
+            if any(m(f) for f in files):
+                return True
 
     return subset.filter(matches, condrepr=(b'<status[%r] %r>', field, pat))
 
