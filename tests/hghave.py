@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+import distutils.version
 import os
 import re
 import socket
@@ -982,7 +983,8 @@ def has_emacs():
 
 @check('black', 'the black formatter for python')
 def has_black():
-    # use that to actual black as soon as possible
     blackcmd = 'black --version'
-    version_regex = b'black, version \d'
-    return matchoutput(blackcmd, version_regex)
+    version_regex = b'black, version ([0-9a-b.]+)'
+    version = matchoutput(blackcmd, version_regex)
+    sv = distutils.version.StrictVersion
+    return version and sv(version.group(1)) >= sv('19.10b0')
