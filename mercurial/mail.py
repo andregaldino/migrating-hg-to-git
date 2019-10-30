@@ -445,6 +445,7 @@ if pycompat.ispy3:
         ep = email.parser.BytesParser()
         return ep.parsebytes(data)
 
+
 else:
 
     Generator = email.generator.Generator
