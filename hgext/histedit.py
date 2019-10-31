@@ -1322,7 +1322,7 @@ def makecommands(rules):
     our list of rules"""
     commands = []
     for rules in rules:
-        commands.append(b"{0} {1}\n".format(rules.action, rules.ctx))
+        commands.append(b'%s %s\n' % (rules.action, rules.ctx))
     return commands
 
 
