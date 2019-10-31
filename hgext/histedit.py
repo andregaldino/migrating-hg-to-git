@@ -1432,7 +1432,7 @@ def _chisteditmain(repo, rules, stdscr):
 
         conflicts = rule.conflicts
         if len(conflicts) > 0:
-            conflictstr = b','.join(map(lambda r: str(r.ctx), conflicts))
+            conflictstr = b','.join(map(lambda r: r.ctx.hex(), conflicts))
             conflictstr = b"changed files overlap with %s" % conflictstr
         else:
             conflictstr = b'no overlap'
@@ -1471,7 +1471,9 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
         conflicts = [r.ctx for r in rules if r.conflicts]
         if len(conflicts) > 0:
-            line = b"potential conflict in %s" % b','.join(map(str, conflicts))
+            line = b"potential conflict in %s" % b','.join(
+                map(pycompat.bytestr, conflicts)
+            )
             addln(rulesscr, -1, 0, line, curses.color_pair(COLOR_WARN))
 
         for y, rule in enumerate(rules[start:]):
