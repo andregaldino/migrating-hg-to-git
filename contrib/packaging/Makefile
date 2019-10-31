@@ -12,9 +12,6 @@ UBUNTU_CODENAMES := \
   disco
 
 FEDORA_RELEASES := \
-  20 \
-  21 \
-  28 \
   29
 
 CENTOS_RELEASES := \

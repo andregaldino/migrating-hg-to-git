@@ -189,9 +189,6 @@ packaging_targets := \
   docker-centos7 \
   docker-debian-jessie \
   docker-debian-stretch \
-  docker-fedora20 \
-  docker-fedora21 \
-  docker-fedora28 \
   docker-fedora29 \
   docker-ubuntu-trusty \
   docker-ubuntu-trusty-ppa \
@@ -201,9 +198,6 @@ packaging_targets := \
   docker-ubuntu-artful-ppa \
   docker-ubuntu-bionic \
   docker-ubuntu-bionic-ppa \
-  fedora20 \
-  fedora21 \
-  fedora28 \
   fedora29 \
   linux-wheels \
   linux-wheels-x86_64 \
