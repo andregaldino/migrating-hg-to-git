@@ -1684,11 +1684,10 @@ def _chistedit(ui, repo, *freeargs, **opts):
         if type(rc) is list:
             ui.status(_(b"performing changes\n"))
             rules = makecommands(rc)
-            filename = repo.vfs.join(b'chistedit')
-            with open(filename, b'w+') as fp:
+            with repo.vfs(b'chistedit', b'w+') as fp:
                 for r in rules:
                     fp.write(r)
-            opts[b'commands'] = filename
+                opts[b'commands'] = fp.name
             return _texthistedit(ui, repo, *freeargs, **opts)
     except KeyboardInterrupt:
         pass
