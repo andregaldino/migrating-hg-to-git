@@ -1608,7 +1608,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                 renderhelp(helpwin, state)
                 curses.doupdate()
                 # done rendering
-                ch = stdscr.getkey()
+                ch = encoding.strtolocal(stdscr.getkey())
         except curses.error:
             pass
 
