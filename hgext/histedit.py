@@ -1687,7 +1687,7 @@ def _chistedit(ui, repo, *freeargs, **opts):
             with repo.vfs(b'chistedit', b'w+') as fp:
                 for r in rules:
                     fp.write(r)
-                opts[b'commands'] = fp.name
+                opts['commands'] = fp.name
             return _texthistedit(ui, repo, *freeargs, **opts)
     except KeyboardInterrupt:
         pass
