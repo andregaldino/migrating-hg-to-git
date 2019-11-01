@@ -246,12 +246,14 @@ def _watchmantofsencoding(path):
     try:
         decoded = path.decode(_watchmanencoding)
     except UnicodeDecodeError as e:
-        raise error.Abort(str(e), hint=b'watchman encoding error')
+        raise error.Abort(
+            stringutil.forcebytestr(e), hint=b'watchman encoding error'
+        )
 
     try:
         encoded = decoded.encode(_fsencoding, 'strict')
     except UnicodeEncodeError as e:
-        raise error.Abort(str(e))
+        raise error.Abort(stringutil.forcebytestr(e))
 
     return encoded
 
