@@ -1816,7 +1816,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             try:
                 patch = self.ui.edit(patch.getvalue(), b"", action=b"diff")
             except error.Abort as exc:
-                self.errorstr = str(exc)
+                self.errorstr = stringutil.forcebytestr(exc)
                 return None
             finally:
                 self.stdscr.clear()
