@@ -2,6 +2,8 @@
 
 %define withpython %{nil}
 
+%global pythonexe python2
+
 %if "%{?withpython}"
 
 %global pythonver %{withpython}
@@ -15,7 +17,6 @@
 
 %else
 
-%global pythonexe python2
 %global pythonver %(%{pythonexe} -c 'import sys;print(".".join(map(str, sys.version_info[:2])))')
 
 %endif
