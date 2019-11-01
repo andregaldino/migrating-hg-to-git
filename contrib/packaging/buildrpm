@@ -14,9 +14,10 @@ while [ "$1" ]; do
         shift
         BUILD=
         ;;
-    --python3)
+    --python)
         shift
-        PYTHONEXE=python3
+        PYTHONEXE=$1
+        shift
         ;;
     --withpython | --with-python)
         shift

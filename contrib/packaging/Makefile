@@ -116,13 +116,13 @@ define centos_targets
 .PHONY: centos$(1)
 centos$(1):
 	mkdir -p $$(HGROOT)/packages/centos$(1)
-	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
+	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,--python python)
 	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/centos$(1)
 	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/centos$(1)
 
 .PHONY: docker-centos$(1)
 docker-centos$(1):
-	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
+	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,--python python)
 
 endef
 
