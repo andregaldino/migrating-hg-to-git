@@ -11,7 +11,7 @@ UBUNTU_CODENAMES := \
   cosmic \
   disco
 
-FEDORA_RELEASE := 29
+FEDORA_RELEASE := 31
 
 CENTOS_RELEASES := \
   5 \
