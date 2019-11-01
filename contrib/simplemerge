@@ -18,6 +18,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     procutil,
+    stringutil
 )
 
 options = [(b'L', b'label', [], _(b'labels to use on conflict markers')),
@@ -75,8 +76,7 @@ try:
                                      context.arbitraryfilectx(other),
                                      **pycompat.strkwargs(opts)))
 except ParseError as e:
-    if pycompat.ispy3:
-        e = str(e).encode('utf8')
+    e = stringutil.forcebytestr(e)
     pycompat.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))
     showhelp()
     sys.exit(1)
