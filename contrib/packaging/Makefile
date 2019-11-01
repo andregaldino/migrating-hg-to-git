@@ -105,7 +105,6 @@ fedora$(1):
 
 .PHONY: docker-fedora$(1)
 docker-fedora$(1):
-	mkdir -p $$(HGROOT)/packages/fedora$(1)
 	./dockerrpm fedora$(1)
 
 endef
@@ -123,7 +122,6 @@ centos$(1):
 
 .PHONY: docker-centos$(1)
 docker-centos$(1):
-	mkdir -p $$(HGROOT)/packages/centos$(1)
 	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
 
 endef
