@@ -132,6 +132,7 @@ from mercurial import (
     util,
 )
 from mercurial import match as matchmod
+from mercurial.utils import stringutil
 
 from . import (
     pywatchman,
@@ -207,8 +208,8 @@ def _handleunavailable(ui, state, ex):
     if isinstance(ex, watchmanclient.Unavailable):
         # experimental config: fsmonitor.verbose
         if ex.warn and ui.configbool(b'fsmonitor', b'verbose'):
-            if b'illegal_fstypes' not in str(ex):
-                ui.warn(str(ex) + b'\n')
+            if b'illegal_fstypes' not in stringutil.forcebytestr(ex):
+                ui.warn(stringutil.forcebytestr(ex) + b'\n')
         if ex.invalidate:
             state.invalidate()
         # experimental config: fsmonitor.verbose
