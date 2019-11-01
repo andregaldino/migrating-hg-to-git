@@ -1854,7 +1854,7 @@ class simplekeyvaluefile(object):
                 raise error.CorruptedState(e % self.firstlinekey)
             d.update(updatedict)
         except ValueError as e:
-            raise error.CorruptedState(str(e))
+            raise error.CorruptedState(stringutil.forcebytestr(e))
         return d
 
     def write(self, data, firstline=None):
