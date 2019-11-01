@@ -330,27 +330,32 @@ class lock(object):
                 return None
             raise
 
-    def _testlock(self, locker):
+    def _lockshouldbebroken(self, locker):
         if locker is None:
-            return None
+            return False
         try:
             host, pid = locker.split(b":", 1)
         except ValueError:
-            return locker
+            return False
         if host != lock._host:
-            return locker
+            return False
         try:
             pid = int(pid)
         except ValueError:
-            return locker
+            return False
         if procutil.testpid(pid):
+            return False
+        return True
+
+    def _testlock(self, locker):
+        if not self._lockshouldbebroken(locker):
             return locker
+
         # if locker dead, break lock.  must do this with another lock
         # held, or can race and break valid lock.
         try:
-            l = lock(self.vfs, self.f + b'.break', timeout=0)
-            self.vfs.unlink(self.f)
-            l.release()
+            with lock(self.vfs, self.f + b'.break', timeout=0):
+                self.vfs.unlink(self.f)
         except error.LockError:
             return locker
 
