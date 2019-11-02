@@ -213,6 +213,10 @@ class revlogoldindex(list):
             nodemap[n] = r
         return nodemap
 
+    def append(self, tup):
+        self.nodemap[tup[7]] = len(self)
+        super(revlogoldindex, self).append(tup)
+
     def clearcaches(self):
         self.__dict__.pop('nodemap', None)
 
@@ -2189,7 +2193,6 @@ class revlog(object):
             node,
         )
         self.index.append(e)
-        self.nodemap[node] = curr
 
         # Reset the pure node cache start lookup offset to account for new
         # revision.

@@ -62,6 +62,8 @@ class BaseIndexObject(object):
         return self._lgt + len(self._extra)
 
     def append(self, tup):
+        if 'nodemap' in vars(self):
+            self.nodemap[tup[7]] = len(self)
         self._extra.append(tup)
 
     def _check_index(self, i):
