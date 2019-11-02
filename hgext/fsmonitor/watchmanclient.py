@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import getpass
 
 from mercurial import util
+from mercurial.utils import procutil
 
 from . import pywatchman
 
@@ -92,7 +93,7 @@ class client(object):
                 self._watchmanclient = pywatchman.client(
                     timeout=self._timeout,
                     useImmutableBser=True,
-                    watchman_exe=watchman_exe,
+                    binpath=procutil.tonativestr(watchman_exe),
                 )
             return self._watchmanclient.query(*watchmanargs)
         except pywatchman.CommandError as ex:

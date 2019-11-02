@@ -128,38 +128,27 @@ static PyObject* bserobj_getattrro(PyObject* o, PyObject* name) {
   Py_ssize_t i, n;
   PyObject* name_bytes = NULL;
   PyObject* ret = NULL;
-  const char* namestr = NULL;
+  const char* namestr;
 
   if (PyIndex_Check(name)) {
     i = PyNumber_AsSsize_t(name, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred()) {
       goto bail;
     }
+    ret = PySequence_GetItem(obj->values, i);
+    goto bail;
+  }
 
-    if (i == 8 && PySequence_Size(obj->values) < 9) {
-      // Hack alert: Python 3 removed support for os.stat().st_mtime
-      // being an integer.Instead, if you need an integer, you have to
-      // use os.stat()[stat.ST_MTIME] instead. stat.ST_MTIME is 8, and
-      // our stat tuples are shorter than that, so we can detect
-      // requests for index 8 on tuples shorter than that and return
-      // st_mtime instead.
-      namestr = "st_mtime";
-    } else {
-      ret = PySequence_GetItem(obj->values, i);
+  // We can be passed in Unicode objects here -- we don't support anything other
+  // than UTF-8 for keys.
+  if (PyUnicode_Check(name)) {
+    name_bytes = PyUnicode_AsUTF8String(name);
+    if (name_bytes == NULL) {
       goto bail;
     }
+    namestr = PyBytes_AsString(name_bytes);
   } else {
-    // We can be passed in Unicode objects here -- we don't support anything other
-    // than UTF-8 for keys.
-    if (PyUnicode_Check(name)) {
-      name_bytes = PyUnicode_AsUTF8String(name);
-      if (name_bytes == NULL) {
-        goto bail;
-      }
-      namestr = PyBytes_AsString(name_bytes);
-    } else {
-      namestr = PyBytes_AsString(name);
-    }
+    namestr = PyBytes_AsString(name);
   }
 
   if (namestr == NULL) {
@@ -1147,11 +1136,15 @@ static PyObject* bser_loads(PyObject* self, PyObject* args, PyObject* kw) {
 }
 
 static PyObject* bser_load(PyObject* self, PyObject* args, PyObject* kw) {
-  PyObject *load, *string;
+  PyObject* load;
+  PyObject* load_method;
+  PyObject* string;
+  PyObject* load_method_args;
+  PyObject* load_method_kwargs;
   PyObject* fp = NULL;
   PyObject* mutable_obj = NULL;
-  const char* value_encoding = NULL;
-  const char* value_errors = NULL;
+  PyObject* value_encoding = NULL;
+  PyObject* value_errors = NULL;
 
   static char* kw_list[] = {
       "fp", "mutable", "value_encoding", "value_errors", NULL};
@@ -1159,7 +1152,7 @@ static PyObject* bser_load(PyObject* self, PyObject* args, PyObject* kw) {
   if (!PyArg_ParseTupleAndKeywords(
           args,
           kw,
-          "OOzz:load",
+          "O|OOO:load",
           kw_list,
           &fp,
           &mutable_obj,
@@ -1172,8 +1165,33 @@ static PyObject* bser_load(PyObject* self, PyObject* args, PyObject* kw) {
   if (load == NULL) {
     return NULL;
   }
-  string = PyObject_CallMethod(
-      load, "load", "OOzz", fp, mutable_obj, value_encoding, value_errors);
+  load_method = PyObject_GetAttrString(load, "load");
+  if (load_method == NULL) {
+    return NULL;
+  }
+  // Mandatory method arguments
+  load_method_args = Py_BuildValue("(O)", fp);
+  if (load_method_args == NULL) {
+    return NULL;
+  }
+  // Optional method arguments
+  load_method_kwargs = PyDict_New();
+  if (load_method_kwargs == NULL) {
+    return NULL;
+  }
+  if (mutable_obj) {
+    PyDict_SetItemString(load_method_kwargs, "mutable", mutable_obj);
+  }
+  if (value_encoding) {
+    PyDict_SetItemString(load_method_kwargs, "value_encoding", value_encoding);
+  }
+  if (value_errors) {
+    PyDict_SetItemString(load_method_kwargs, "value_errors", value_errors);
+  }
+  string = PyObject_Call(load_method, load_method_args, load_method_kwargs);
+  Py_DECREF(load_method_kwargs);
+  Py_DECREF(load_method_args);
+  Py_DECREF(load_method);
   Py_DECREF(load);
   return string;
 }
