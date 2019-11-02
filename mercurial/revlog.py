@@ -661,7 +661,7 @@ class revlog(object):
 
     def rev(self, node):
         try:
-            return self._nodecache[node]
+            return self.index.nodemap[node]
         except TypeError:
             raise
         except error.RevlogError:
