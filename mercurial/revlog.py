@@ -388,7 +388,6 @@ class revlog(object):
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
         # Mapping of revision integer to full node.
-        self._nodecache = None
         self._nodepos = None
         self._compengine = b'zlib'
         self._compengineopts = {}
@@ -553,7 +552,7 @@ class revlog(object):
                 _(b"index %s is corrupted") % self.indexfile
             )
         self.index, self._chunkcache = d
-        self.nodemap = self._nodecache = self.index.nodemap
+        self.nodemap = self.index.nodemap
         if not self._chunkcache:
             self._chunkclear()
         # revnum -> (chain-length, sum-delta-length)
@@ -630,6 +629,12 @@ class revlog(object):
             # populate mapping down to the initial node
             node0 = self.index[0][7]  # get around changelog filtering
             self.rev(node0)
+        return self.index.nodemap
+
+    @property
+    def _nodecache(self):
+        msg = "revlog._nodecache is deprecated, use revlog.index.nodemap"
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
         return self.index.nodemap
 
     def hasnode(self, node):
