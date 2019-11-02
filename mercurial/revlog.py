@@ -630,7 +630,7 @@ class revlog(object):
             # populate mapping down to the initial node
             node0 = self.index[0][7]  # get around changelog filtering
             self.rev(node0)
-        return self._nodecache
+        return self.index.nodemap
 
     def hasnode(self, node):
         try:
