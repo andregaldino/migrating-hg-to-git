@@ -927,7 +927,7 @@ def reposetup(ui, repo):
             return
 
         try:
-            client = watchmanclient.client(repo.ui, repo._root)
+            client = watchmanclient.client(repo.ui, repo.root)
         except Exception as ex:
             _handleunavailable(ui, fsmonitorstate, ex)
             return
