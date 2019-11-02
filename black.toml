@@ -9,7 +9,6 @@ build/
 | \.mypy_cache/
 | \.venv/
 | mercurial/thirdparty/
-| hgext/fsmonitor/pywatchman/
 | contrib/python-zstandard/
 '''
 skip-string-normalization = true

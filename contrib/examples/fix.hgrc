@@ -6,4 +6,4 @@ rustfmt:command = rustfmt {rootpath}
 rustfmt:pattern = set:**.rs
 
 black:command = black --config=black.toml -
-black:pattern = set:**.py - hgext/fsmonitor/pywatchman/** - mercurial/thirdparty/** - "contrib/python-zstandard/**"
+black:pattern = set:**.py - mercurial/thirdparty/** - "contrib/python-zstandard/**"
