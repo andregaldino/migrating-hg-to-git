@@ -236,8 +236,8 @@ def _hashignore(ignore):
 
     """
     sha1 = hashlib.sha1()
-    sha1.update(repr(ignore))
-    return sha1.hexdigest()
+    sha1.update(pycompat.byterepr(ignore))
+    return pycompat.sysbytes(sha1.hexdigest())
 
 
 _watchmanencoding = pywatchman.encoding.get_local_encoding()
