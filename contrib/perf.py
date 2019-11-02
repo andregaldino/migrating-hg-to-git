@@ -820,6 +820,7 @@ def clearcaches(cl):
     if util.safehasattr(cl, b'clearcaches'):
         cl.clearcaches()
     elif util.safehasattr(cl, b'_nodecache'):
+        # <= hg-5.2
         from mercurial.node import nullid, nullrev
 
         cl._nodecache = {nullid: nullrev}
