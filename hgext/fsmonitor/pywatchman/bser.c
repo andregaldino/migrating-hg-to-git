@@ -175,7 +175,22 @@ static PyObject* bserobj_getattrro(PyObject* o, PyObject* name) {
     const char* item_name = NULL;
     PyObject* key = PyTuple_GET_ITEM(obj->keys, i);
 
-    item_name = PyBytes_AsString(key);
+    if (PyUnicode_Check(key)) {
+#if PY_MAJOR_VERSION >= 3
+      item_name = PyUnicode_AsUTF8(key);
+#else
+      PyObject* utf = PyUnicode_AsEncodedString(key, "utf-8", "ignore");
+      if (utf == NULL) {
+        goto bail;
+      }
+      item_name = PyBytes_AsString(utf);
+#endif
+    } else {
+      item_name = PyBytes_AsString(key);
+    }
+    if (item_name == NULL) {
+      goto bail;
+    }
     if (!strcmp(item_name, namestr)) {
       ret = PySequence_GetItem(obj->values, i);
       goto bail;
