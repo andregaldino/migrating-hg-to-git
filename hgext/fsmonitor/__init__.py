@@ -504,9 +504,9 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     for f in auditfail:
         results[f] = None
 
-    nf = iter(auditpass).next
+    nf = iter(auditpass)
     for st in util.statfiles([join(f) for f in auditpass]):
-        f = nf()
+        f = next(nf)
         if st or f in dmap:
             results[f] = st
 
