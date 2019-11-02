@@ -441,7 +441,7 @@ def getoldnodedrevmap(repo, nodelist):
                 )
                 unfi.ui.warn(
                     _(
-                        b'D%s: local tag removed - does not match '
+                        b'D%d: local tag removed - does not match '
                         b'Differential history\n'
                     )
                     % drev
