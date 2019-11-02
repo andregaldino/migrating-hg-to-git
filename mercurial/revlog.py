@@ -213,6 +213,10 @@ class revlogoldindex(list):
             nodemap[n] = r
         return nodemap
 
+    def has_node(self, node):
+        """return True if the node exist in the index"""
+        return node in self.nodemap
+
     def append(self, tup):
         self.nodemap[tup[7]] = len(self)
         super(revlogoldindex, self).append(tup)

@@ -2065,6 +2065,14 @@ static int index_contains(indexObject *self, PyObject *value)
 	}
 }
 
+static PyObject *index_m_has_node(indexObject *self, PyObject *args)
+{
+	int ret = index_contains(self, args);
+	if (ret < 0)
+		return NULL;
+	return PyBool_FromLong((long)ret);
+}
+
 typedef uint64_t bitmask;
 
 /*
@@ -2723,6 +2731,8 @@ static PyMethodDef index_methods[] = {
     {"clearcaches", (PyCFunction)index_clearcaches, METH_NOARGS,
      "clear the index caches"},
     {"get", (PyCFunction)index_m_get, METH_VARARGS, "get an index entry"},
+    {"has_node", (PyCFunction)index_m_has_node, METH_O,
+     "return True if the node exist in the index"},
     {"computephasesmapsets", (PyCFunction)compute_phases_map_sets, METH_VARARGS,
      "compute phases"},
     {"reachableroots2", (PyCFunction)reachableroots2, METH_VARARGS,

@@ -55,6 +55,10 @@ class BaseIndexObject(object):
             nodemap[n] = r
         return nodemap
 
+    def has_node(self, node):
+        """return True if the node exist in the index"""
+        return node in self.nodemap
+
     def _stripnodes(self, start):
         if 'nodemap' in vars(self):
             for r in range(start, len(self)):
