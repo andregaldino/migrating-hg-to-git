@@ -214,9 +214,17 @@ def _handleunavailable(ui, state, ex):
             state.invalidate()
         # experimental config: fsmonitor.verbose
         if ui.configbool(b'fsmonitor', b'verbose'):
-            ui.log(b'fsmonitor', b'Watchman unavailable: %s\n', ex.msg)
+            ui.log(
+                b'fsmonitor',
+                b'Watchman unavailable: %s\n',
+                stringutil.forcebytestr(ex.msg),
+            )
     else:
-        ui.log(b'fsmonitor', b'Watchman exception: %s\n', ex)
+        ui.log(
+            b'fsmonitor',
+            b'Watchman exception: %s\n',
+            stringutil.forcebytestr(ex),
+        )
 
 
 def _hashignore(ignore):
