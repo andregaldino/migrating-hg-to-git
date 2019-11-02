@@ -190,7 +190,7 @@ def debuginstall(ui, fm):
         fm.write(
             b"fsmonitor-watchman-version",
             _(b" watchman binary version %s\n"),
-            v[b"version"],
+            pycompat.bytestr(v["version"]),
         )
     except watchmanclient.Unavailable as e:
         err = str(e)
