@@ -1402,7 +1402,7 @@ def _chisteditmain(repo, rules, stdscr):
         maxy, maxx = win.getmaxyx()
         length = maxx - 3
 
-        line = b"changeset: %d:%s" % (ctx.rev(), ctx.hex())
+        line = b"changeset: %d:%s" % (ctx.rev(), ctx.hex()[:12])
         win.addstr(1, 1, line[:length])
 
         line = b"user:      %s" % ctx.user()
@@ -1432,7 +1432,7 @@ def _chisteditmain(repo, rules, stdscr):
 
         conflicts = rule.conflicts
         if len(conflicts) > 0:
-            conflictstr = b','.join(map(lambda r: r.ctx.hex(), conflicts))
+            conflictstr = b','.join(map(lambda r: r.ctx.hex()[:12], conflicts))
             conflictstr = b"changed files overlap with %s" % conflictstr
         else:
             conflictstr = b'no overlap'
