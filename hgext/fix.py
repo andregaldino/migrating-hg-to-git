@@ -126,7 +126,6 @@ from __future__ import absolute_import
 
 import collections
 import itertools
-import json
 import os
 import re
 import subprocess
@@ -642,7 +641,7 @@ def fixfile(ui, repo, opts, fixers, fixctx, path, basectxs):
             if fixer.shouldoutputmetadata():
                 try:
                     metadatajson, newerdata = stdout.split(b'\0', 1)
-                    metadata[fixername] = json.loads(metadatajson)
+                    metadata[fixername] = pycompat.json_loads(metadatajson)
                 except ValueError:
                     ui.warn(
                         _(b'ignored invalid output from fixer tool: %s\n')

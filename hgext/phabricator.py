@@ -152,8 +152,8 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
             value = r1params[key][0]
             # we want to compare json payloads without worrying about ordering
             if value.startswith(b'{') and value.endswith(b'}'):
-                r1json = json.loads(value)
-                r2json = json.loads(r2params[key][0])
+                r1json = pycompat.json_loads(value)
+                r2json = pycompat.json_loads(r2params[key][0])
                 if r1json != r2json:
                     return False
             elif r2params[key][0] != value:
@@ -307,7 +307,7 @@ def callconduit(ui, name, params):
         if isinstance(x, pycompat.unicode)
         else x,
         # json.loads only accepts bytes from py3.6+
-        json.loads(encoding.unifromlocal(body)),
+        pycompat.json_loads(encoding.unifromlocal(body)),
     )
     if parsed.get(b'error_code'):
         msg = _(b'Conduit Error (%s): %s') % (
@@ -332,7 +332,7 @@ def debugcallconduit(ui, repo, name):
         lambda x: encoding.unitolocal(x)
         if isinstance(x, pycompat.unicode)
         else x,
-        json.loads(rawparams),
+        pycompat.json_loads(rawparams),
     )
     # json.dumps only accepts unicode strings
     result = pycompat.rapply(

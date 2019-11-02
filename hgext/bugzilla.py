@@ -955,7 +955,7 @@ class bzrestapi(bzaccess):
     def _fetch(self, burl):
         try:
             resp = url.open(self.ui, burl)
-            return json.loads(resp.read())
+            return pycompat.json_loads(resp.read())
         except util.urlerr.httperror as inst:
             if inst.code == 401:
                 raise error.Abort(_(b'authorization failed'))
@@ -978,7 +978,7 @@ class bzrestapi(bzaccess):
         req = request_type(burl, data, {b'Content-Type': b'application/json'})
         try:
             resp = url.opener(self.ui).open(req)
-            return json.loads(resp.read())
+            return pycompat.json_loads(resp.read())
         except util.urlerr.httperror as inst:
             if inst.code == 401:
                 raise error.Abort(_(b'authorization failed'))

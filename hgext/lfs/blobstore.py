@@ -363,7 +363,7 @@ class _gitlfsremote(object):
                 _(b'LFS error: %s') % _urlerrorreason(ex), hint=hint
             )
         try:
-            response = json.loads(rawjson)
+            response = pycompat.json_loads(rawjson)
         except ValueError:
             raise LfsRemoteError(
                 _(b'LFS server returns invalid JSON: %s')
