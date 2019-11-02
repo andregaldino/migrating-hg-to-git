@@ -383,7 +383,7 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     else:
         # We need to propagate the last observed clock up so that we
         # can use it for our next query
-        state.setlastclock(result[b'clock'])
+        state.setlastclock(pycompat.sysbytes(result[b'clock']))
         if result[b'is_fresh_instance']:
             if state.walk_on_invalidate:
                 state.invalidate()
