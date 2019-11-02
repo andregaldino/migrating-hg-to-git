@@ -2306,18 +2306,18 @@ class revlog(object):
 
                 nodes.append(node)
 
-                if node in self.nodemap:
+                if self.index.has_node(node):
                     self._nodeduplicatecallback(transaction, node)
                     # this can happen if two branches make the same change
                     continue
 
                 for p in (p1, p2):
-                    if p not in self.nodemap:
+                    if not self.index.has_node(p):
                         raise error.LookupError(
                             p, self.indexfile, _(b'unknown parent')
                         )
 
-                if deltabase not in self.nodemap:
+                if not self.index.has_node(deltabase):
                     raise error.LookupError(
                         deltabase, self.indexfile, _(b'unknown delta base')
                     )
