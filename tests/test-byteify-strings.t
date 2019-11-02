@@ -1,4 +1,4 @@
-#require py3
+#require py36
 
   $ byteify_strings () {
   >   $PYTHON "$TESTDIR/../contrib/byteify-strings.py" "$@"

@@ -339,7 +339,7 @@ def main():
 
 
 if __name__ == '__main__':
-    if sys.version_info.major < 3:
-        print('This script must be run under Python 3.')
+    if sys.version_info[0:2] < (3, 6):
+        print('This script must be run under Python 3.6+')
         sys.exit(3)
     main()
