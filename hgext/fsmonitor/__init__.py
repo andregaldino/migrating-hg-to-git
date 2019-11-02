@@ -407,8 +407,15 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     # for name case changes.
     for entry in result[b'files']:
         fname = entry[b'name']
+
+        # Watchman always give us a str. Normalize to bytes on Python 3
+        # using Watchman's encoding, if needed.
+        if not isinstance(fname, bytes):
+            fname = fname.encode(_watchmanencoding)
+
         if _fixencoding:
             fname = _watchmantofsencoding(fname)
+
         if switch_slashes:
             fname = fname.replace(b'\\', b'/')
         if normalize:
