@@ -1995,7 +1995,7 @@ class revlog(object):
             )
 
         node = node or self.hash(rawtext, p1, p2)
-        if node in self.nodemap:
+        if self.index.has_node(node):
             return node
 
         if validatehash:
