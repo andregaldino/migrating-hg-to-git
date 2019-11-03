@@ -760,7 +760,10 @@ def perfannotate(ui, repo, f, **opts):
 
 @command(
     b'perfstatus',
-    [(b'u', b'unknown', False, b'ask status to look for unknown files')]
+    [
+        (b'u', b'unknown', False, b'ask status to look for unknown files'),
+        (b'', b'dirstate', False, b'benchmark the internal dirstate call'),
+    ]
     + formatteropts,
 )
 def perfstatus(ui, repo, **opts):
@@ -776,7 +779,20 @@ def perfstatus(ui, repo, **opts):
     # timer(lambda: sum(map(len, repo.dirstate.status(m, [], False, False,
     #                                                False))))
     timer, fm = gettimer(ui, opts)
-    timer(lambda: sum(map(len, repo.status(unknown=opts[b'unknown']))))
+    if opts[b'dirstate']:
+        dirstate = repo.dirstate
+        m = scmutil.matchall(repo)
+        unknown = opts[b'unknown']
+
+        def status_dirstate():
+            s = dirstate.status(
+                m, subrepos=[], ignored=False, clean=False, unknown=unknown
+            )
+            sum(map(len, s))
+
+        timer(status_dirstate)
+    else:
+        timer(lambda: sum(map(len, repo.status(unknown=opts[b'unknown']))))
     fm.end()
 
 

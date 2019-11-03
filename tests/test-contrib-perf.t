@@ -248,6 +248,7 @@ perfstatus
   $ hg perfrevset 'all()'
   $ hg perfstartup
   $ hg perfstatus
+  $ hg perfstatus --dirstate
   $ hg perftags
   $ hg perftemplating
   $ hg perfvolatilesets
