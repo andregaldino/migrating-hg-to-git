@@ -310,7 +310,10 @@ class gnuarch_source(common.converter_source, common.commandline):
 
             # Commit description
             self.changes[rev].summary = b'\n\n'.join(
-                (catlog[r'Summary'], catlog.get_payload())
+                (
+                    self.recode(catlog[r'Summary']),
+                    self.recode(catlog.get_payload()),
+                )
             )
             self.changes[rev].summary = self.recode(self.changes[rev].summary)
 
