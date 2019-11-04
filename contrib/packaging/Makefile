@@ -16,7 +16,8 @@ FEDORA_RELEASE := 31
 CENTOS_RELEASES := \
   5 \
   6 \
-  7
+  7 \
+  8
 
 # Build a Python for these CentOS releases.
 CENTOS_WITH_PYTHON_RELEASES := 5 6
