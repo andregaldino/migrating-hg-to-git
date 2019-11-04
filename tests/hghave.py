@@ -987,4 +987,4 @@ def has_black():
     version_regex = b'black, version ([0-9a-b.]+)'
     version = matchoutput(blackcmd, version_regex)
     sv = distutils.version.StrictVersion
-    return version and sv(version.group(1)) >= sv('19.10b0')
+    return version and sv(_strpath(version.group(1))) >= sv('19.10b0')
