@@ -111,6 +111,9 @@ class Abort(Hint, Exception):
 
     __bytes__ = _tobytes
 
+    def __str__(self):
+        return pycompat.sysstr(self.__bytes__())
+
 
 class HookLoadError(Abort):
     """raised when loading a hook fails, aborting an operation

@@ -209,12 +209,12 @@ Ensure the data got to the server OK
       insertflagprocessor(flag, processor, flagprocessors)
     File "*/mercurial/revlogutils/flagutil.py", line *, in insertflagprocessor (glob)
       raise error.Abort(msg)
-  mercurial.error.Abort: b"cannot register multiple processors on flag '0x8'." (py3 !)
+  mercurial.error.Abort: cannot register multiple processors on flag '0x8'. (py3 !)
   Abort: cannot register multiple processors on flag '0x8'. (no-py3 !)
   *** failed to set up extension duplicate: cannot register multiple processors on flag '0x8'.
   $ hg st 2>&1 | egrep 'cannot register multiple processors|flagprocessorext'
     File "*/tests/flagprocessorext.py", line *, in extsetup (glob)
-  mercurial.error.Abort: b"cannot register multiple processors on flag '0x8'." (py3 !)
+  mercurial.error.Abort: cannot register multiple processors on flag '0x8'. (py3 !)
   Abort: cannot register multiple processors on flag '0x8'. (no-py3 !)
   *** failed to set up extension duplicate: cannot register multiple processors on flag '0x8'.
     File "*/tests/flagprocessorext.py", line *, in b64decode (glob)
