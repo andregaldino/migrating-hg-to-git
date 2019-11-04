@@ -193,7 +193,7 @@ def debuginstall(ui, fm):
             pycompat.bytestr(v["version"]),
         )
     except watchmanclient.Unavailable as e:
-        err = str(e)
+        err = stringutil.forcebytestr(e)
     fm.condwrite(
         err,
         b"fsmonitor-watchman-error",
