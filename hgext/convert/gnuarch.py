@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
-import email.parser as emailparser
 import os
 import shutil
 import stat
@@ -17,6 +16,7 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    mail,
     pycompat,
     util,
 )
@@ -69,7 +69,6 @@ class gnuarch_source(common.converter_source, common.commandline):
         self.changes = {}
         self.parents = {}
         self.tags = {}
-        self.catlogparser = emailparser.Parser()
         self.encoding = encoding.encoding
         self.archives = []
 
@@ -299,7 +298,7 @@ class gnuarch_source(common.converter_source, common.commandline):
 
     def _parsecatlog(self, data, rev):
         try:
-            catlog = self.catlogparser.parsestr(data)
+            catlog = mail.parsebytes(data)
 
             # Commit date
             self.changes[rev].date = dateutil.datestr(
