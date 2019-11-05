@@ -57,7 +57,7 @@ def _parents(f, follow=True):
     # renamed filectx won't have a filelog yet, so set it
     # from the cache to save time
     for p in pl:
-        if not b'_filelog' in p.__dict__:
+        if not '_filelog' in p.__dict__:
             p._filelog = _getflog(f._repo, p.path())
 
     return pl

@@ -3199,7 +3199,7 @@ class localrepository(object):
         # When using the same lock to commit and strip, the phasecache is left
         # dirty after committing. Then when we strip, the repo is invalidated,
         # causing those changes to disappear.
-        if b'_phasecache' in vars(self):
+        if '_phasecache' in vars(self):
             self._phasecache.write()
 
     @unfilteredmethod
