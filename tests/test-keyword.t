@@ -256,7 +256,8 @@ ie. if patch.diff wrapper acts as it should
 
 Pull from bundle and trigger notify
 
-  $ hg pull -u ../kw.hg
+  $ hg pull -u ../kw.hg | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py
   pulling from ../kw.hg
   requesting all changes
   adding changesets

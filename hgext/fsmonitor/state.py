@@ -14,6 +14,7 @@ import struct
 
 from mercurial.i18n import _
 from mercurial import (
+    encoding,
     pathutil,
     util,
 )
@@ -81,7 +82,7 @@ class state(object):
                 self.invalidate()
                 return None, None, None
             diskhostname = state[0]
-            hostname = socket.gethostname()
+            hostname = encoding.strtolocal(socket.gethostname())
             if diskhostname != hostname:
                 # file got moved to a different host
                 self._ui.log(
@@ -127,7 +128,7 @@ class state(object):
 
         with file:
             file.write(struct.pack(_versionformat, _version))
-            file.write(socket.gethostname() + b'\0')
+            file.write(encoding.strtolocal(socket.gethostname()) + b'\0')
             file.write(clock + b'\0')
             file.write(ignorehash + b'\0')
             if notefiles:

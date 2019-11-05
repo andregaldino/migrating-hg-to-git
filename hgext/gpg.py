@@ -76,10 +76,9 @@ class gpg(object):
             fp = os.fdopen(fd, r'wb')
             fp.write(data)
             fp.close()
-            gpgcmd = b"%s --logger-fd 1 --status-fd 1 --verify \"%s\" \"%s\"" % (
-                self.path,
-                sigfile,
-                datafile,
+            gpgcmd = (
+                b"%s --logger-fd 1 --status-fd 1 --verify \"%s\" \"%s\""
+                % (self.path, sigfile, datafile,)
             )
             ret = procutil.filter(b"", gpgcmd)
         finally:

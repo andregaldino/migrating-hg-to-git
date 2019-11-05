@@ -196,7 +196,9 @@ the python call below wraps continuation lines, which appear on Mac OS X 10.5 be
 of the very long subject line
 pull (minimal config)
 
-  $ hg --traceback --cwd b --config notify.domain=example.com --config notify.messageidseed=example pull ../a | "$PYTHON" $TESTTMP/filter.py
+  $ hg --traceback --cwd b --config notify.domain=example.com --config notify.messageidseed=example pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -255,7 +257,9 @@ pull
 
   $ hg --cwd b rollback
   repository tip rolled back to revision 0 (undo pull)
-  $ hg --traceback --cwd b pull ../a  | "$PYTHON" $TESTTMP/filter.py
+  $ hg --traceback --cwd b pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -303,7 +307,9 @@ pull
 
   $ hg --cwd b rollback
   repository tip rolled back to revision 0 (undo pull)
-  $ hg --traceback --config notify.maxdiffstat=1 --cwd b pull ../a | "$PYTHON" $TESTTMP/filter.py
+  $ hg --traceback --config notify.maxdiffstat=1 --cwd b pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -354,7 +360,9 @@ test merge
   (branch merge, don't forget to commit)
   $ hg ci -m merge -d '3 0'
   $ cd ..
-  $ hg --traceback --cwd b pull ../a | "$PYTHON" $TESTTMP/filter.py
+  $ hg --traceback --cwd b pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -418,8 +426,9 @@ non-ascii content and truncation of multi-byte subject
   > EOF
   $ echo a >> a/a
   $ hg --cwd a --encoding utf-8 commit -A -d '0 0' \
-  >   -m `"$PYTHON" -c 'print("\xc3\xa0\xc3\xa1\xc3\xa2\xc3\xa3\xc3\xa4")'`
+  >   -m `"$PYTHON" -c 'import sys; getattr(sys.stdout, "buffer", sys.stdout).write(b"\xc3\xa0\xc3\xa1\xc3\xa2\xc3\xa3\xc3\xa4")'`
   $ hg --traceback --cwd b --encoding utf-8 pull ../a | \
+  >   "$PYTHON" $TESTDIR/unwrap-message-id.py | \
   >   "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
@@ -433,7 +442,8 @@ non-ascii content and truncation of multi-byte subject
   Content-Transfer-Encoding: 8bit
   X-Test: foo
   Date: * (glob)
-  Subject: \xc3\xa0... (esc)
+  Subject: \xc3\xa0... (esc) (no-py3 !)
+  Subject: =?utf-8?b?w6AuLi4=?= (py3 !)
   From: test@test.com
   X-Hg-Notification: changeset 0f25f9c22b4c
   Message-Id: <*> (glob)
@@ -473,7 +483,7 @@ long lines
   new changesets a846b5f6ebb7
   notify: sending 2 subscribers 1 changes
   (run 'hg update' to get a working copy)
-  $ "$PYTHON" $TESTTMP/filter.py < b/mbox
+  $ cat b/mbox | "$PYTHON" $TESTDIR/unwrap-message-id.py | "$PYTHON" $TESTTMP/filter.py
   From test@test.com ... ... .. ..:..:.. .... (re)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="*" (glob)
@@ -533,7 +543,9 @@ long lines
   (branches are permanent and global, did you want a bookmark?)
   $ echo a >> a/a
   $ hg --cwd a ci -m test -d '1 0'
-  $ hg --traceback --cwd b pull ../a | "$PYTHON" $TESTTMP/filter.py
+  $ hg --traceback --cwd b pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -563,7 +575,9 @@ from different branch
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo a >> a/a
   $ hg --cwd a ci -m test -d '1 0'
-  $ hg --traceback --cwd b pull ../a | "$PYTHON" $TESTTMP/filter.py
+  $ hg --traceback --cwd b pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -592,7 +606,9 @@ default template:
   $ mv "$HGRCPATH.new" $HGRCPATH
   $ echo a >> a/a
   $ hg --cwd a commit -m 'default template'
-  $ hg --cwd b pull ../a -q | "$PYTHON" $TESTTMP/filter.py
+  $ hg --cwd b pull ../a -q | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -621,7 +637,9 @@ with style:
   > EOF
   $ echo a >> a/a
   $ hg --cwd a commit -m 'with style'
-  $ hg --cwd b pull ../a -q | "$PYTHON" $TESTTMP/filter.py
+  $ hg --cwd b pull ../a -q | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -644,7 +662,9 @@ with template (overrides style):
   > EOF
   $ echo a >> a/a
   $ hg --cwd a commit -m 'with template'
-  $ hg --cwd b pull ../a -q | "$PYTHON" $TESTTMP/filter.py
+  $ hg --cwd b pull ../a -q | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
+  >  "$PYTHON" $TESTTMP/filter.py
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -675,7 +695,8 @@ showfunc diff
   > EOF
   $ hg commit -Am addfunction
   adding f1
-  $ hg --cwd ../b pull ../a
+  $ hg --cwd ../b pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py
   pulling from ../a
   searching for changes
   adding changesets
@@ -718,7 +739,8 @@ showfunc diff
   > }
   > EOF
   $ hg commit -m changefunction
-  $ hg --cwd ../b --config notify.showfunc=True pull ../a
+  $ hg --cwd ../b --config notify.showfunc=True pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py
   pulling from ../a
   searching for changes
   adding changesets

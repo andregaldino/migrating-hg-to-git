@@ -25,12 +25,12 @@ DISTROS = {
 }
 
 INSTALL_PYTHONS = r'''
-PYENV2_VERSIONS="2.7.16 pypy2.7-7.1.1"
-PYENV3_VERSIONS="3.5.7 3.6.9 3.7.4 3.8.0 pypy3.5-7.0.0 pypy3.6-7.1.1"
+PYENV2_VERSIONS="2.7.17 pypy2.7-7.2.0"
+PYENV3_VERSIONS="3.5.7 3.6.9 3.7.5 3.8.0 pypy3.5-7.0.0 pypy3.6-7.2.0"
 
 git clone https://github.com/pyenv/pyenv.git /hgdev/pyenv
 pushd /hgdev/pyenv
-git checkout d6d6bc8bb08bcdcbf4eb79509aa7061011ade1c4
+git checkout 0e7cfc3b3d4eca46ad83d632e1505f5932cd179b
 popd
 
 export PYENV_ROOT="/hgdev/pyenv"
@@ -266,6 +266,7 @@ PACKAGES="\
     python3-fuzzywuzzy \
     python3-pygments \
     python3-vcr \
+    python3-venv \
     rsync \
     sqlite3 \
     subversion \

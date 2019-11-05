@@ -98,7 +98,7 @@ def request(host, path, show):
         if formatjson:
             # json.dumps() will print trailing newlines. Eliminate them
             # to make tests easier to write.
-            data = json.loads(data)
+            data = pycompat.json_loads(data)
             lines = json.dumps(data, sort_keys=True, indent=2).splitlines()
             for line in lines:
                 bodyfh.write(pycompat.sysbytes(line.rstrip()))

@@ -11,19 +11,17 @@ UBUNTU_CODENAMES := \
   cosmic \
   disco
 
-FEDORA_RELEASES := \
-  20 \
-  21 \
-  28 \
-  29
+FEDORA_RELEASE := 31
 
 CENTOS_RELEASES := \
   5 \
   6 \
-  7
+  7 \
+  8
 
 # Build a Python for these CentOS releases.
 CENTOS_WITH_PYTHON_RELEASES := 5 6
+CENTOS_WITH_NONVERSIONED_PYTHON := 5 6 7
 
 help:
 	@echo 'Packaging Make Targets'
@@ -34,8 +32,8 @@ help:
 	@echo 'docker-debian-{$(strip $(DEBIAN_CODENAMES))}'
 	@echo '   Build Debian packages specific to a Debian distro using Docker.'
 	@echo ''
-	@echo 'docker-fedora{$(strip $(FEDORA_RELEASES))}'
-	@echo '   Build an RPM for a specific Fedora version using Docker.'
+	@echo 'docker-fedora'
+	@echo '   Build an RPM for a Fedora $(FEDORA_RELEASE) using Docker.'
 	@echo ''
 	@echo 'docker-ubuntu-{$(strip $(UBUNTU_CODENAMES))}'
 	@echo '   Build Debian package specific to an Ubuntu distro using Docker.'
@@ -59,8 +57,8 @@ help:
 	@echo 'centos{$(strip $(CENTOS_RELEASES))}'
 	@echo '   Build an RPM for a specific CentOS version locally'
 	@echo ''
-	@echo 'fedora{$(strip $(FEDORA_RELEASES))}'
-	@echo '   Build an RPM for a specific Fedora version locally'
+	@echo 'fedora'
+	@echo '   Build an RPM for Fedora $(FEDORA_RELEASE) locally'
 
 .PHONY: help
 
@@ -97,37 +95,30 @@ endef
 $(foreach codename,$(UBUNTU_CODENAMES),$(eval $(call ubuntu_targets,$(codename))))
 
 # Fedora targets.
-define fedora_targets
-.PHONY: fedora$(1)
-fedora$(1):
-	mkdir -p $$(HGROOT)/packages/fedora$(1)
+.PHONY: fedora
+fedora:
+	mkdir -p $(HGROOT)/packages/fedora$(FEDORA_RELEASE)
 	./buildrpm
-	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/fedora$(1)
-	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/fedora$(1)
+	cp $(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $(HGROOT)/packages/fedora$(FEDORA_RELEASE)
+	cp $(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $(HGROOT)/packages/fedora$(FEDORA_RELEASE)
 	rm -rf $(HGROOT)/rpmbuild
 
-.PHONY: docker-fedora$(1)
-docker-fedora$(1):
-	mkdir -p $$(HGROOT)/packages/fedora$(1)
-	./dockerrpm fedora$(1)
-
-endef
-
-$(foreach release,$(FEDORA_RELEASES),$(eval $(call fedora_targets,$(release))))
+.PHONY: docker-fedora
+docker-fedora:
+	./dockerrpm fedora$(FEDORA_RELEASE)
 
 # CentOS targets.
 define centos_targets
 .PHONY: centos$(1)
 centos$(1):
 	mkdir -p $$(HGROOT)/packages/centos$(1)
-	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
+	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))
 	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/centos$(1)
 	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/centos$(1)
 
 .PHONY: docker-centos$(1)
 docker-centos$(1):
-	mkdir -p $$(HGROOT)/packages/centos$(1)
-	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
+	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))
 
 endef
 

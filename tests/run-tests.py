@@ -1504,7 +1504,7 @@ class PythonTest(Test):
         py3switch = self._py3warnings and b' -3' or b''
         # Quote the python(3) executable for Windows
         cmd = b'"%s"%s "%s"' % (PYTHON, py3switch, self.path)
-        vlog("# Running", cmd)
+        vlog("# Running", cmd.decode("utf-8"))
         normalizenewlines = os.name == 'nt'
         result = self._runcommand(cmd, env, normalizenewlines=normalizenewlines)
         if self._aborted:
@@ -1589,7 +1589,7 @@ class TTest(Test):
                 f.write(l)
 
         cmd = b'%s "%s"' % (self._shell, fname)
-        vlog("# Running", cmd)
+        vlog("# Running", cmd.decode("utf-8"))
 
         exitcode, output = self._runcommand(cmd, env)
 
@@ -1770,7 +1770,9 @@ class TTest(Test):
             if l.startswith(b'#require'):
                 lsplit = l.split()
                 if len(lsplit) < 2 or lsplit[0] != b'#require':
-                    after.setdefault(pos, []).append('  !!! invalid #require\n')
+                    after.setdefault(pos, []).append(
+                        b'  !!! invalid #require\n'
+                    )
                 if not skipping:
                     haveresult, message = self._hghave(lsplit[1:])
                     if not haveresult:
@@ -1780,19 +1782,19 @@ class TTest(Test):
             elif l.startswith(b'#if'):
                 lsplit = l.split()
                 if len(lsplit) < 2 or lsplit[0] != b'#if':
-                    after.setdefault(pos, []).append('  !!! invalid #if\n')
+                    after.setdefault(pos, []).append(b'  !!! invalid #if\n')
                 if skipping is not None:
-                    after.setdefault(pos, []).append('  !!! nested #if\n')
+                    after.setdefault(pos, []).append(b'  !!! nested #if\n')
                 skipping = not self._iftest(lsplit[1:])
                 after.setdefault(pos, []).append(l)
             elif l.startswith(b'#else'):
                 if skipping is None:
-                    after.setdefault(pos, []).append('  !!! missing #if\n')
+                    after.setdefault(pos, []).append(b'  !!! missing #if\n')
                 skipping = not skipping
                 after.setdefault(pos, []).append(l)
             elif l.startswith(b'#endif'):
                 if skipping is None:
-                    after.setdefault(pos, []).append('  !!! missing #if\n')
+                    after.setdefault(pos, []).append(b'  !!! missing #if\n')
                 skipping = None
                 after.setdefault(pos, []).append(l)
             elif skipping:
@@ -1841,7 +1843,7 @@ class TTest(Test):
         if inpython:
             script.append(b'EOF\n')
         if skipping is not None:
-            after.setdefault(pos, []).append('  !!! missing #endif\n')
+            after.setdefault(pos, []).append(b'  !!! missing #endif\n')
         addsalt(n + 1, False)
         # Need to end any current per-command trace
         if activetrace:
@@ -3111,12 +3113,14 @@ class TestRunner(object):
                 'extensions.logexceptions=%s' % logexceptions.decode('utf-8')
             )
 
-        vlog("# Using TESTDIR", self._testdir)
-        vlog("# Using RUNTESTDIR", osenvironb[b'RUNTESTDIR'])
-        vlog("# Using HGTMP", self._hgtmp)
+        vlog("# Using TESTDIR", _strpath(self._testdir))
+        vlog("# Using RUNTESTDIR", _strpath(osenvironb[b'RUNTESTDIR']))
+        vlog("# Using HGTMP", _strpath(self._hgtmp))
         vlog("# Using PATH", os.environ["PATH"])
-        vlog("# Using", IMPL_PATH, osenvironb[IMPL_PATH])
-        vlog("# Writing to directory", self._outputdir)
+        vlog(
+            "# Using", _strpath(IMPL_PATH), _strpath(osenvironb[IMPL_PATH]),
+        )
+        vlog("# Writing to directory", _strpath(self._outputdir))
 
         try:
             return self._runtests(testdescs) or 0
@@ -3357,7 +3361,7 @@ class TestRunner(object):
         if self.options.keep_tmpdir:
             return
 
-        vlog("# Cleaning up HGTMP", self._hgtmp)
+        vlog("# Cleaning up HGTMP", _strpath(self._hgtmp))
         shutil.rmtree(self._hgtmp, True)
         for f in self._createdfiles:
             try:
@@ -3468,7 +3472,7 @@ class TestRunner(object):
         makedirs(self._pythondir)
         makedirs(self._bindir)
 
-        vlog("# Running", cmd)
+        vlog("# Running", cmd.decode("utf-8"))
         if subprocess.call(_strpath(cmd), shell=True) == 0:
             if not self.options.verbose:
                 try:
@@ -3643,13 +3647,11 @@ class TestRunner(object):
             if os.name == 'nt' and not p.endswith(b'.exe'):
                 p += b'.exe'
             found = self._findprogram(p)
+            p = p.decode("utf-8")
             if found:
-                vlog("# Found prerequisite", p, "at", found)
+                vlog("# Found prerequisite", p, "at", _strpath(found))
             else:
-                print(
-                    "WARNING: Did not find prerequisite tool: %s "
-                    % p.decode("utf-8")
-                )
+                print("WARNING: Did not find prerequisite tool: %s " % p)
 
 
 def aggregateexceptions(path):

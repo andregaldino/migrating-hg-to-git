@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 
+import distutils.version
 import os
 import re
 import socket
@@ -828,6 +829,17 @@ def has_dev_full():
     return os.path.exists('/dev/full')
 
 
+@check("ensurepip", "ensurepip module")
+def has_ensurepip():
+    try:
+        import ensurepip
+
+        ensurepip.bootstrap
+        return True
+    except ImportError:
+        return False
+
+
 @check("virtualenv", "Python virtualenv support")
 def has_virtualenv():
     try:
@@ -980,12 +992,10 @@ def has_emacs():
     return matchoutput('emacs --version', b'GNU Emacs 2(4.4|4.5|5|6|7|8|9)')
 
 
-# @check('black', 'the black formatter for python')
-@check('grey', 'grey, the fork of the black formatter for python')
+@check('black', 'the black formatter for python')
 def has_black():
-    # use that to actual black as soon as possible
-    # blackcmd = 'black --version'
-    blackcmd = 'python3 $RUNTESTDIR/../contrib/grey.py --version'
-    # version_regex = b'black, version \d'
-    version_regex = b'grey.py, version \d'
-    return matchoutput(blackcmd, version_regex)
+    blackcmd = 'black --version'
+    version_regex = b'black, version ([0-9a-b.]+)'
+    version = matchoutput(blackcmd, version_regex)
+    sv = distutils.version.StrictVersion
+    return version and sv(_strpath(version.group(1))) >= sv('19.10b0')

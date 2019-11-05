@@ -867,12 +867,15 @@ class treemanifest(object):
         return not self._dirs or all(m._isempty() for m in self._dirs.values())
 
     def __repr__(self):
-        return b'<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>' % (
-            self._dir,
-            hex(self._node),
-            bool(self._loadfunc is _noop),
-            self._dirty,
-            id(self),
+        return (
+            b'<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>'
+            % (
+                self._dir,
+                hex(self._node),
+                bool(self._loadfunc is _noop),
+                self._dirty,
+                id(self),
+            )
         )
 
     def dir(self):

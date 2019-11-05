@@ -133,7 +133,7 @@ def _processbatchrequest(repo, req, res):
         return True
 
     # XXX: specify an encoding?
-    lfsreq = json.loads(req.bodyfh.read())
+    lfsreq = pycompat.json_loads(req.bodyfh.read())
 
     # If no transfer handlers are explicitly requested, 'basic' is assumed.
     if r'basic' not in lfsreq.get(r'transfers', [r'basic']):

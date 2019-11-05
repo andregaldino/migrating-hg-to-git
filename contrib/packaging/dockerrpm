@@ -6,6 +6,14 @@ export ROOTDIR=$(cd $BUILDDIR/../..; pwd)
 PLATFORM="$1"
 shift # extra params are passed to buildrpm
 
+DOCKERFILE="$PLATFORM"
+OS_RELEASE="${PLATFORM//[a-z]/}"
+case "$PLATFORM" in
+fedora*)
+    DOCKERFILE="${PLATFORM//[0-9]/}.template"
+    ;;
+esac
+
 DOCKER=$($BUILDDIR/hg-docker docker-path)
 
 CONTAINER=hg-docker-$PLATFORM
@@ -18,9 +26,14 @@ else
     DOCKERGID=$(id -g)
 fi
 
-$BUILDDIR/hg-docker build --build-arg UID=$DOCKERUID --build-arg GID=$DOCKERGID $BUILDDIR/docker/$PLATFORM $CONTAINER
+$BUILDDIR/hg-docker build \
+    --build-arg UID=$DOCKERUID \
+    --build-arg GID=$DOCKERGID \
+    --build-arg OS_RELEASE=${OS_RELEASE:-latest} \
+    $BUILDDIR/docker/$DOCKERFILE $CONTAINER
 
 RPMBUILDDIR=$ROOTDIR/packages/$PLATFORM
+mkdir -p $RPMBUILDDIR
 $ROOTDIR/contrib/packaging/buildrpm --rpmbuilddir $RPMBUILDDIR --prepare $*
 
 DSHARED=/mnt/shared

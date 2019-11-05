@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
-import email.parser as emailparser
 import os
 import shutil
 import stat
@@ -17,6 +16,7 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    mail,
     pycompat,
     util,
 )
@@ -69,7 +69,6 @@ class gnuarch_source(common.converter_source, common.commandline):
         self.changes = {}
         self.parents = {}
         self.tags = {}
-        self.catlogparser = emailparser.Parser()
         self.encoding = encoding.encoding
         self.archives = []
 
@@ -299,26 +298,29 @@ class gnuarch_source(common.converter_source, common.commandline):
 
     def _parsecatlog(self, data, rev):
         try:
-            catlog = self.catlogparser.parsestr(data)
+            catlog = mail.parsebytes(data)
 
             # Commit date
             self.changes[rev].date = dateutil.datestr(
-                dateutil.strdate(catlog[b'Standard-date'], b'%Y-%m-%d %H:%M:%S')
+                dateutil.strdate(catlog[r'Standard-date'], b'%Y-%m-%d %H:%M:%S')
             )
 
             # Commit author
-            self.changes[rev].author = self.recode(catlog[b'Creator'])
+            self.changes[rev].author = self.recode(catlog[r'Creator'])
 
             # Commit description
             self.changes[rev].summary = b'\n\n'.join(
-                (catlog[b'Summary'], catlog.get_payload())
+                (
+                    self.recode(catlog[r'Summary']),
+                    self.recode(catlog.get_payload()),
+                )
             )
             self.changes[rev].summary = self.recode(self.changes[rev].summary)
 
             # Commit revision origin when dealing with a branch or tag
-            if b'Continuation-of' in catlog:
+            if r'Continuation-of' in catlog:
                 self.changes[rev].continuationof = self.recode(
-                    catlog[b'Continuation-of']
+                    catlog[r'Continuation-of']
                 )
         except Exception:
             raise error.Abort(_(b'could not parse cat-log of %s') % rev)

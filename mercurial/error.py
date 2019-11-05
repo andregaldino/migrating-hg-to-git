@@ -111,6 +111,14 @@ class Abort(Hint, Exception):
 
     __bytes__ = _tobytes
 
+    if pycompat.ispy3:
+
+        def __str__(self):
+            # the output would be unreadable if the message was translated,
+            # but do not replace it with encoding.strfromlocal(), which
+            # may raise another exception.
+            return pycompat.sysstr(self.__bytes__())
+
 
 class HookLoadError(Abort):
     """raised when loading a hook fails, aborting an operation

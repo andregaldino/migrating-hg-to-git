@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import unittest
 from mercurial import error, mdiff
+from mercurial.utils import stringutil
 
 # for readability, line numbers are 0-origin
 text1 = b'''
@@ -228,7 +229,10 @@ class blocksinrangetests(unittest.TestCase):
             try:
                 mdiff.blocksinrange(self.blocks, linerange2)
             except exctype as exc:
-                self.assertTrue('line range exceeds file size' in str(exc))
+                self.assertTrue(
+                    b'line range exceeds file size'
+                    in stringutil.forcebytestr(exc)
+                )
             else:
                 self.fail('%s not raised' % exctype.__name__)
 

@@ -13,18 +13,16 @@ Ensure debuild doesn't run the testsuite, as that could get silly.
   $ make deb > $OUTPUTDIR/build.log 2>&1
   $ cd $OUTPUTDIR
   $ ls *.deb | grep -v 'dbg'
-  mercurial-common_*.deb (glob)
   mercurial_*.deb (glob)
-main deb should have .so but no .py
+should have .so and .py
   $ dpkg --contents mercurial_*.deb | egrep '(localrepo|parsers)'
-  * ./usr/lib/python2.7/dist-packages/mercurial/cext/parsers*.so (glob)
-mercurial-common should have py but no .so or pyc
-  $ dpkg --contents mercurial-common_*.deb | egrep '(localrepo|parsers.*so)'
-  * ./usr/lib/python2.7/dist-packages/mercurial/localrepo.py (glob)
-zsh completions should be in the common package
-  $ dpkg --contents mercurial-common_*.deb | egrep 'zsh.*[^/]$'
+  * ./usr/lib/python3/dist-packages/mercurial/cext/parsers*.so (glob)
+  * ./usr/lib/python3/dist-packages/mercurial/localrepo.py (glob)
+  * ./usr/lib/python3/dist-packages/mercurial/pure/parsers.py (glob)
+should have zsh completions
+  $ dpkg --contents mercurial_*.deb | egrep 'zsh.*[^/]$'
   * ./usr/share/zsh/vendor-completions/_hg (glob)
-chg should be installed alongside hg, in the 'mercurial' package
+should have chg
   $ dpkg --contents mercurial_*.deb | egrep 'chg$'
   * ./usr/bin/chg (glob)
 chg should come with a man page

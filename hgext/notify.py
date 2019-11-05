@@ -148,7 +148,7 @@ web.baseurl
 from __future__ import absolute_import
 
 import email.errors as emailerrors
-import email.parser as emailparser
+import email.utils as emailutils
 import fnmatch
 import hashlib
 import socket
@@ -382,9 +382,8 @@ class notifier(object):
             )
             return
 
-        p = emailparser.Parser()
         try:
-            msg = p.parsestr(encoding.strfromlocal(data))
+            msg = mail.parsebytes(data)
         except emailerrors.MessageParseError as inst:
             raise error.Abort(inst)
 
@@ -392,16 +391,16 @@ class notifier(object):
         sender = msg[r'From']
         subject = msg[r'Subject']
         if sender is not None:
-            sender = encoding.strtolocal(sender)
+            sender = mail.headdecode(sender)
         if subject is not None:
-            subject = encoding.strtolocal(subject)
+            subject = mail.headdecode(subject)
         del msg[r'From'], msg[r'Subject']
 
         if not msg.is_multipart():
             # create fresh mime message from scratch
             # (multipart templates must take care of this themselves)
             headers = msg.items()
-            payload = msg.get_payload()
+            payload = msg.get_payload(decode=pycompat.ispy3)
             # for notification prefer readability over data precision
             msg = mail.mimeencode(self.ui, payload, self.charsets, self.test)
             # reinstate custom headers
@@ -440,7 +439,7 @@ class notifier(object):
             msg[r'Message-Id'] = messageid(ctx, self.domain, self.messageidseed)
         msg[r'To'] = encoding.strfromlocal(b', '.join(sorted(subs)))
 
-        msgtext = encoding.strtolocal(msg.as_string())
+        msgtext = msg.as_bytes() if pycompat.ispy3 else msg.as_string()
         if self.test:
             self.ui.write(msgtext)
             if not msgtext.endswith(b'\n'):
@@ -452,7 +451,7 @@ class notifier(object):
             )
             mail.sendmail(
                 self.ui,
-                stringutil.email(msg[r'From']),
+                emailutils.parseaddr(msg[r'From'])[1],
                 subs,
                 msgtext,
                 mbox=self.mbox,

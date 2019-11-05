@@ -9,9 +9,7 @@ build/
 | \.mypy_cache/
 | \.venv/
 | mercurial/thirdparty/
-| hgext/fsmonitor/pywatchman/
 | contrib/python-zstandard/
-| contrib/grey.py
 '''
 skip-string-normalization = true
 quiet = true

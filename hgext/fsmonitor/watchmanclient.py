@@ -9,7 +9,14 @@ from __future__ import absolute_import
 
 import getpass
 
-from mercurial import util
+from mercurial import (
+    encoding,
+    util,
+)
+from mercurial.utils import (
+    procutil,
+    stringutil,
+)
 
 from . import pywatchman
 
@@ -22,11 +29,13 @@ class Unavailable(Exception):
             self.warn = False
         self.invalidate = invalidate
 
-    def __str__(self):
+    def __bytes__(self):
         if self.warn:
             return b'warning: Watchman unavailable: %s' % self.msg
         else:
             return b'Watchman unavailable: %s' % self.msg
+
+    __str__ = encoding.strmethod(__bytes__)
 
 
 class WatchmanNoRoot(Unavailable):
@@ -92,15 +101,17 @@ class client(object):
                 self._watchmanclient = pywatchman.client(
                     timeout=self._timeout,
                     useImmutableBser=True,
-                    watchman_exe=watchman_exe,
+                    binpath=procutil.tonativestr(watchman_exe),
                 )
             return self._watchmanclient.query(*watchmanargs)
         except pywatchman.CommandError as ex:
             if b'unable to resolve root' in ex.msg:
-                raise WatchmanNoRoot(self._root, ex.msg)
+                raise WatchmanNoRoot(
+                    self._root, stringutil.forcebytestr(ex.msg)
+                )
             raise Unavailable(ex.msg)
         except pywatchman.WatchmanError as ex:
-            raise Unavailable(str(ex))
+            raise Unavailable(stringutil.forcebytestr(ex))
 
     def command(self, *args):
         try:

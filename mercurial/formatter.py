@@ -136,6 +136,16 @@ from .utils import (
 pickle = util.pickle
 
 
+def isprintable(obj):
+    """Check if the given object can be directly passed in to formatter's
+    write() and data() functions
+
+    Returns False if the object is unsupported or must be pre-processed by
+    formatdate(), formatdict(), or formatlist().
+    """
+    return isinstance(obj, (type(None), bool, int, pycompat.long, float, bytes))
+
+
 class _nullconverter(object):
     '''convert non-primitive data types to be processed by formatter'''
 
@@ -505,6 +515,10 @@ class templateformatter(baseformatter):
         if part not in self._parts:
             return
         ref = self._parts[part]
+        # None can't be put in the mapping dict since it means <unset>
+        for k, v in item.items():
+            if v is None:
+                item[k] = templateutil.wrappedvalue(v)
         self._out.write(self._t.render(ref, item))
 
     @util.propertycache

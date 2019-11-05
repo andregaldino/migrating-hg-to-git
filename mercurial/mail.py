@@ -342,6 +342,7 @@ def _encode(ui, s, charsets):
         s.decode('ascii')
     except UnicodeDecodeError:
         for ics in (encoding.encoding, encoding.fallbackencoding):
+            ics = pycompat.sysstr(ics)
             try:
                 u = s.decode(ics)
             except UnicodeDecodeError:
@@ -362,13 +363,13 @@ def headencode(ui, s, charsets=None, display=False):
     if not display:
         # split into words?
         s, cs = _encode(ui, s, charsets)
-        return str(email.header.Header(s, cs))
+        return encoding.strtolocal(email.header.Header(s, cs).encode())
     return s
 
 
 def _addressencode(ui, name, addr, charsets=None):
     assert isinstance(addr, bytes)
-    name = headencode(ui, name, charsets)
+    name = encoding.strfromlocal(headencode(ui, name, charsets))
     try:
         acc, dom = addr.split(b'@')
         acc.decode('ascii')
@@ -440,6 +441,10 @@ if pycompat.ispy3:
         finally:
             fp.detach()
 
+    def parsebytes(data):
+        ep = email.parser.BytesParser()
+        return ep.parsebytes(data)
+
 
 else:
 
@@ -448,6 +453,10 @@ else:
     def parse(fp):
         ep = email.parser.Parser()
         return ep.parse(fp)
+
+    def parsebytes(data):
+        ep = email.parser.Parser()
+        return ep.parsestr(data)
 
 
 def headdecode(s):
@@ -458,7 +467,7 @@ def headdecode(s):
             try:
                 uparts.append(part.decode(charset))
                 continue
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, LookupError):
                 pass
         # On Python 3, decode_header() may return either bytes or unicode
         # depending on whether the header has =?<charset>? or not

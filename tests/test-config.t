@@ -87,6 +87,172 @@ Test case sensitive configuration
    }
   ]
 
+Test config default of various types:
+
+ {"defaultvalue": ""} for -T'json(defaultvalue)' looks weird, but that's
+ how the templater works. Unknown keywords are evaluated to "".
+
+ dynamicdefault
+
+  $ hg config --config alias.foo= alias -Tjson
+  [
+   {
+    "name": "alias.foo",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config alias.foo= alias -T'json(defaultvalue)'
+  [
+   {"defaultvalue": ""}
+  ]
+  $ hg config --config alias.foo= alias -T'{defaultvalue}\n'
+  
+
+ null
+
+  $ hg config --config auth.cookiefile= auth -Tjson
+  [
+   {
+    "defaultvalue": null,
+    "name": "auth.cookiefile",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config auth.cookiefile= auth -T'json(defaultvalue)'
+  [
+   {"defaultvalue": null}
+  ]
+  $ hg config --config auth.cookiefile= auth -T'{defaultvalue}\n'
+  
+
+ false
+
+  $ hg config --config commands.commit.post-status= commands -Tjson
+  [
+   {
+    "defaultvalue": false,
+    "name": "commands.commit.post-status",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config commands.commit.post-status= commands -T'json(defaultvalue)'
+  [
+   {"defaultvalue": false}
+  ]
+  $ hg config --config commands.commit.post-status= commands -T'{defaultvalue}\n'
+  False
+
+ true
+
+  $ hg config --config format.dotencode= format -Tjson
+  [
+   {
+    "defaultvalue": true,
+    "name": "format.dotencode",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config format.dotencode= format -T'json(defaultvalue)'
+  [
+   {"defaultvalue": true}
+  ]
+  $ hg config --config format.dotencode= format -T'{defaultvalue}\n'
+  True
+
+ bytes
+
+  $ hg config --config commands.resolve.mark-check= commands -Tjson
+  [
+   {
+    "defaultvalue": "none",
+    "name": "commands.resolve.mark-check",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config commands.resolve.mark-check= commands -T'json(defaultvalue)'
+  [
+   {"defaultvalue": "none"}
+  ]
+  $ hg config --config commands.resolve.mark-check= commands -T'{defaultvalue}\n'
+  none
+
+ empty list
+
+  $ hg config --config commands.show.aliasprefix= commands -Tjson
+  [
+   {
+    "defaultvalue": [],
+    "name": "commands.show.aliasprefix",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config commands.show.aliasprefix= commands -T'json(defaultvalue)'
+  [
+   {"defaultvalue": []}
+  ]
+  $ hg config --config commands.show.aliasprefix= commands -T'{defaultvalue}\n'
+  
+
+ nonempty list
+
+  $ hg config --config progress.format= progress -Tjson
+  [
+   {
+    "defaultvalue": ["topic", "bar", "number", "estimate"],
+    "name": "progress.format",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config progress.format= progress -T'json(defaultvalue)'
+  [
+   {"defaultvalue": ["topic", "bar", "number", "estimate"]}
+  ]
+  $ hg config --config progress.format= progress -T'{defaultvalue}\n'
+  topic bar number estimate
+
+ int
+
+  $ hg config --config profiling.freq= profiling -Tjson
+  [
+   {
+    "defaultvalue": 1000,
+    "name": "profiling.freq",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config profiling.freq= profiling -T'json(defaultvalue)'
+  [
+   {"defaultvalue": 1000}
+  ]
+  $ hg config --config profiling.freq= profiling -T'{defaultvalue}\n'
+  1000
+
+ float
+
+  $ hg config --config profiling.showmax= profiling -Tjson
+  [
+   {
+    "defaultvalue": 0.999,
+    "name": "profiling.showmax",
+    "source": "--config",
+    "value": ""
+   }
+  ]
+  $ hg config --config profiling.showmax= profiling -T'json(defaultvalue)'
+  [
+   {"defaultvalue": 0.999}
+  ]
+  $ hg config --config profiling.showmax= profiling -T'{defaultvalue}\n'
+  0.999
+
 Test empty config source:
 
   $ cat <<EOF > emptysource.py

@@ -959,7 +959,7 @@ def logservicecall(logger, service, **kwargs):
             service,
             eventtype=b'failure',
             elapsedms=(time.time() - start) * 1000,
-            errormsg=str(e),
+            errormsg=stringutil.forcebytestr(e),
             **kwargs
         )
         raise
@@ -1223,7 +1223,7 @@ def storebundle(op, params, bundlefile):
             scratchbranchparttype,
             eventtype=b'failure',
             elapsedms=(time.time() - parthandlerstart) * 1000,
-            errormsg=str(e),
+            errormsg=stringutil.forcebytestr(e),
         )
         raise
     finally:

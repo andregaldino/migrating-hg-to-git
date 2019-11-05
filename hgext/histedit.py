@@ -217,6 +217,7 @@ from mercurial import (
     copies,
     destutil,
     discovery,
+    encoding,
     error,
     exchange,
     extensions,
@@ -1117,7 +1118,7 @@ class histeditrule(object):
         self.pos = pos
         self.conflicts = []
 
-    def __str__(self):
+    def __bytes__(self):
         # Some actions ('fold' and 'roll') combine a patch with a previous one.
         # Add a marker showing which patch they apply to, and also omit the
         # description for 'roll' (since it will get discarded). Example display:
@@ -1135,9 +1136,15 @@ class histeditrule(object):
         desc = self.ctx.description().splitlines()[0].strip()
         if self.action == b'roll':
             desc = b''
-        return b"#{0:<2} {1:<6} {2}:{3}   {4}".format(
-            self.origpos, action, r, h, desc
+        return b"#%s %s %d:%s   %s" % (
+            (b'%d' % self.origpos).ljust(2),
+            action.ljust(6),
+            r,
+            h,
+            desc,
         )
+
+    __str__ = encoding.strmethod(__bytes__)
 
     def checkconflicts(self, other):
         if other.pos > self.pos and other.origpos <= self.origpos:
@@ -1315,7 +1322,7 @@ def makecommands(rules):
     our list of rules"""
     commands = []
     for rules in rules:
-        commands.append(b"{0} {1}\n".format(rules.action, rules.ctx))
+        commands.append(b'%s %s\n' % (rules.action, rules.ctx))
     return commands
 
 
@@ -1324,7 +1331,7 @@ def addln(win, y, x, line, color=None):
     whitespace characters, so that the color appears on the whole line"""
     maxy, maxx = win.getmaxyx()
     length = maxx - 1 - x
-    line = (b"{0:<%d}" % length).format(str(line).strip())[:length]
+    line = bytes(line).ljust(length)[:length]
     if y < 0:
         y = maxy + y
     if x < 0:
@@ -1395,17 +1402,17 @@ def _chisteditmain(repo, rules, stdscr):
         maxy, maxx = win.getmaxyx()
         length = maxx - 3
 
-        line = b"changeset: {0}:{1:<12}".format(ctx.rev(), ctx)
+        line = b"changeset: %d:%s" % (ctx.rev(), ctx.hex()[:12])
         win.addstr(1, 1, line[:length])
 
-        line = b"user:      {0}".format(ctx.user())
+        line = b"user:      %s" % ctx.user()
         win.addstr(2, 1, line[:length])
 
         bms = repo.nodebookmarks(ctx.node())
-        line = b"bookmark:  {0}".format(b' '.join(bms))
+        line = b"bookmark:  %s" % b' '.join(bms)
         win.addstr(3, 1, line[:length])
 
-        line = b"summary:   {0}".format(ctx.description().splitlines()[0])
+        line = b"summary:   %s" % (ctx.description().splitlines()[0])
         win.addstr(4, 1, line[:length])
 
         line = b"files:     "
@@ -1425,8 +1432,8 @@ def _chisteditmain(repo, rules, stdscr):
 
         conflicts = rule.conflicts
         if len(conflicts) > 0:
-            conflictstr = b','.join(map(lambda r: str(r.ctx), conflicts))
-            conflictstr = b"changed files overlap with {0}".format(conflictstr)
+            conflictstr = b','.join(map(lambda r: r.ctx.hex()[:12], conflicts))
+            conflictstr = b"changed files overlap with %s" % conflictstr
         else:
             conflictstr = b'no overlap'
 
@@ -1464,7 +1471,9 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
         conflicts = [r.ctx for r in rules if r.conflicts]
         if len(conflicts) > 0:
-            line = b"potential conflict in %s" % b','.join(map(str, conflicts))
+            line = b"potential conflict in %s" % b','.join(
+                map(pycompat.bytestr, conflicts)
+            )
             addln(rulesscr, -1, 0, line, curses.color_pair(COLOR_WARN))
 
         for y, rule in enumerate(rules[start:]):
@@ -1601,7 +1610,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                 renderhelp(helpwin, state)
                 curses.doupdate()
                 # done rendering
-                ch = stdscr.getkey()
+                ch = encoding.strtolocal(stdscr.getkey())
         except curses.error:
             pass
 
@@ -1675,11 +1684,10 @@ def _chistedit(ui, repo, *freeargs, **opts):
         if type(rc) is list:
             ui.status(_(b"performing changes\n"))
             rules = makecommands(rc)
-            filename = repo.vfs.join(b'chistedit')
-            with open(filename, b'w+') as fp:
+            with repo.vfs(b'chistedit', b'w+') as fp:
                 for r in rules:
                     fp.write(r)
-            opts[b'commands'] = filename
+                opts['commands'] = fp.name
             return _texthistedit(ui, repo, *freeargs, **opts)
     except KeyboardInterrupt:
         pass

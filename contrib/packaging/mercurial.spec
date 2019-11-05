@@ -2,6 +2,8 @@
 
 %define withpython %{nil}
 
+%global pythonexe python3
+
 %if "%{?withpython}"
 
 %global pythonver %{withpython}
@@ -15,7 +17,7 @@
 
 %else
 
-%global pythonver %(python -c 'import sys;print ".".join(map(str, sys.version_info[:2]))')
+%global pythonver %(%{pythonexe} -c 'import sys;print(".".join(map(str, sys.version_info[:2])))')
 
 %endif
 
@@ -37,8 +39,8 @@ BuildRequires: make, gcc, gettext
 %if "%{?withpython}"
 BuildRequires: readline-devel, openssl-devel, ncurses-devel, zlib-devel, bzip2-devel
 %else
-BuildRequires: python >= 2.7, python-devel, python-docutils >= 0.5
-Requires: python >= 2.7
+BuildRequires: %{pythonexe} >= %{pythonver}, %{pythonexe}-devel, %{pythonexe}-docutils >= 0.5
+Requires: %{pythonexe} >= %{pythonver}
 %endif
 # The hgk extension uses the wish tcl interpreter, but we don't enforce it
 #Requires: tk
@@ -52,12 +54,14 @@ for efficient handling of very large distributed projects.
 %if "%{?withpython}"
 %setup -q -n mercurial-%{version}-%{release} -a1 -a2
 # despite the comments in cgi.py, we do this to prevent rpmdeps from picking /usr/local/bin/python up
-sed -i '1c#! /usr/bin/env python' %{pythonname}/Lib/cgi.py
+sed -i '1c#! /usr/bin/env %{pythonexe}' %{pythonname}/Lib/cgi.py
 %else
 %setup -q -n mercurial-%{version}-%{release}
 %endif
 
 %build
+
+export HGPYTHON3=1
 
 %if "%{?withpython}"
 
@@ -82,11 +86,15 @@ export PYTHONPATH=$PWD/%{docutilsname}
 
 %endif
 
-make all
+make all PYTHON=%{pythonexe}
 make -C contrib/chg
+
+sed -i -e '1s|#!/usr/bin/env python$|#!/usr/bin/env %{pythonexe}|' contrib/hg-ssh
 
 %install
 rm -rf $RPM_BUILD_ROOT
+
+export HGPYTHON3=1
 
 %if "%{?withpython}"
 
@@ -101,14 +109,14 @@ cd %{docutilsname}
 LD_LIBRARY_PATH=$PYPATH $PYPATH/python setup.py install --root="$RPM_BUILD_ROOT"
 cd -
 
-PATH=$PYPATH:$PATH LD_LIBRARY_PATH=$PYPATH make install DESTDIR=$RPM_BUILD_ROOT PREFIX=%{hgpyprefix} MANDIR=%{_mandir}
+PATH=$PYPATH:$PATH LD_LIBRARY_PATH=$PYPATH make install PYTHON=%{pythonexe} DESTDIR=$RPM_BUILD_ROOT PREFIX=%{hgpyprefix} MANDIR=%{_mandir}
 mkdir -p $RPM_BUILD_ROOT%{_bindir}
 ( cd $RPM_BUILD_ROOT%{_bindir}/ && ln -s ../..%{hgpyprefix}/bin/hg . )
 ( cd $RPM_BUILD_ROOT%{_bindir}/ && ln -s ../..%{hgpyprefix}/bin/python2.? %{pythonhg} )
 
 %else
 
-make install DESTDIR=$RPM_BUILD_ROOT PREFIX=%{_prefix} MANDIR=%{_mandir}
+make install PYTHON=%{pythonexe} DESTDIR=$RPM_BUILD_ROOT PREFIX=%{_prefix} MANDIR=%{_mandir}
 
 %endif
 
@@ -135,7 +143,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc CONTRIBUTORS COPYING doc/README doc/hg*.txt doc/hg*.html *.cgi contrib/*.fcgi
+%doc CONTRIBUTORS COPYING doc/README doc/hg*.txt doc/hg*.html *.cgi contrib/*.fcgi contrib/*.wsgi
 %doc %attr(644,root,root) %{_mandir}/man?/hg*
 %doc %attr(644,root,root) contrib/*.svg
 %dir %{_datadir}/zsh/

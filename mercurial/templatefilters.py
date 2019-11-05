@@ -31,9 +31,6 @@ from .utils import (
 urlerr = util.urlerr
 urlreq = util.urlreq
 
-if pycompat.ispy3:
-    long = int
-
 # filters are callables like:
 #   fn(obj)
 # with:
@@ -329,7 +326,7 @@ def json(obj, paranoid=True):
         return b'false'
     elif obj is True:
         return b'true'
-    elif isinstance(obj, (int, long, float)):
+    elif isinstance(obj, (int, pycompat.long, float)):
         return pycompat.bytestr(obj)
     elif isinstance(obj, bytes):
         return b'"%s"' % encoding.jsonescape(obj, paranoid=paranoid)

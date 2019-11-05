@@ -191,6 +191,10 @@ $Key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'
 $Setting = 'LocalAccountTokenFilterPolicy'
 Set-ItemProperty -Path $Key -Name $Setting -Value 1 -Force
 
+# Avoid long usernames in the temp directory path because the '~' causes extra quoting in ssh output
+[System.Environment]::SetEnvironmentVariable('TMP', 'C:\Temp', [System.EnvironmentVariableTarget]::User)
+[System.Environment]::SetEnvironmentVariable('TEMP', 'C:\Temp', [System.EnvironmentVariableTarget]::User)
+
 # Configure and restart the WinRM Service; Enable the required firewall exception
 Stop-Service -Name WinRM
 Set-Service -Name WinRM -StartupType Automatic

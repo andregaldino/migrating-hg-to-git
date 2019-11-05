@@ -132,6 +132,7 @@ from mercurial import (
     util,
 )
 from mercurial import match as matchmod
+from mercurial.utils import stringutil
 
 from . import (
     pywatchman,
@@ -189,10 +190,10 @@ def debuginstall(ui, fm):
         fm.write(
             b"fsmonitor-watchman-version",
             _(b" watchman binary version %s\n"),
-            v[b"version"],
+            pycompat.bytestr(v["version"]),
         )
     except watchmanclient.Unavailable as e:
-        err = str(e)
+        err = stringutil.forcebytestr(e)
     fm.condwrite(
         err,
         b"fsmonitor-watchman-error",
@@ -207,15 +208,23 @@ def _handleunavailable(ui, state, ex):
     if isinstance(ex, watchmanclient.Unavailable):
         # experimental config: fsmonitor.verbose
         if ex.warn and ui.configbool(b'fsmonitor', b'verbose'):
-            if b'illegal_fstypes' not in str(ex):
-                ui.warn(str(ex) + b'\n')
+            if b'illegal_fstypes' not in stringutil.forcebytestr(ex):
+                ui.warn(stringutil.forcebytestr(ex) + b'\n')
         if ex.invalidate:
             state.invalidate()
         # experimental config: fsmonitor.verbose
         if ui.configbool(b'fsmonitor', b'verbose'):
-            ui.log(b'fsmonitor', b'Watchman unavailable: %s\n', ex.msg)
+            ui.log(
+                b'fsmonitor',
+                b'Watchman unavailable: %s\n',
+                stringutil.forcebytestr(ex.msg),
+            )
     else:
-        ui.log(b'fsmonitor', b'Watchman exception: %s\n', ex)
+        ui.log(
+            b'fsmonitor',
+            b'Watchman exception: %s\n',
+            stringutil.forcebytestr(ex),
+        )
 
 
 def _hashignore(ignore):
@@ -227,8 +236,8 @@ def _hashignore(ignore):
 
     """
     sha1 = hashlib.sha1()
-    sha1.update(repr(ignore))
-    return sha1.hexdigest()
+    sha1.update(pycompat.byterepr(ignore))
+    return pycompat.sysbytes(sha1.hexdigest())
 
 
 _watchmanencoding = pywatchman.encoding.get_local_encoding()
@@ -245,12 +254,14 @@ def _watchmantofsencoding(path):
     try:
         decoded = path.decode(_watchmanencoding)
     except UnicodeDecodeError as e:
-        raise error.Abort(str(e), hint=b'watchman encoding error')
+        raise error.Abort(
+            stringutil.forcebytestr(e), hint=b'watchman encoding error'
+        )
 
     try:
         encoded = decoded.encode(_fsencoding, 'strict')
     except UnicodeEncodeError as e:
-        raise error.Abort(str(e))
+        raise error.Abort(stringutil.forcebytestr(e))
 
     return encoded
 
@@ -372,7 +383,7 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     else:
         # We need to propagate the last observed clock up so that we
         # can use it for our next query
-        state.setlastclock(result[b'clock'])
+        state.setlastclock(pycompat.sysbytes(result[b'clock']))
         if result[b'is_fresh_instance']:
             if state.walk_on_invalidate:
                 state.invalidate()
@@ -396,8 +407,15 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     # for name case changes.
     for entry in result[b'files']:
         fname = entry[b'name']
+
+        # Watchman always give us a str. Normalize to bytes on Python 3
+        # using Watchman's encoding, if needed.
+        if not isinstance(fname, bytes):
+            fname = fname.encode(_watchmanencoding)
+
         if _fixencoding:
             fname = _watchmantofsencoding(fname)
+
         if switch_slashes:
             fname = fname.replace(b'\\', b'/')
         if normalize:
@@ -486,9 +504,9 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     for f in auditfail:
         results[f] = None
 
-    nf = iter(auditpass).next
+    nf = iter(auditpass)
     for st in util.statfiles([join(f) for f in auditpass]):
-        f = nf()
+        f = next(nf)
         if st or f in dmap:
             results[f] = st
 
@@ -916,7 +934,7 @@ def reposetup(ui, repo):
             return
 
         try:
-            client = watchmanclient.client(repo.ui, repo._root)
+            client = watchmanclient.client(repo.ui, repo.root)
         except Exception as ex:
             _handleunavailable(ui, fsmonitorstate, ex)
             return

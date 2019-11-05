@@ -1187,10 +1187,9 @@ class filectx(basefilectx):
 
         assert (
             changeid is not None or fileid is not None or changectx is not None
-        ), b"bad args: changeid=%r, fileid=%r, changectx=%r" % (
-            changeid,
-            fileid,
-            changectx,
+        ), (
+            b"bad args: changeid=%r, fileid=%r, changectx=%r"
+            % (changeid, fileid, changectx,)
         )
 
         if filelog is not None:
