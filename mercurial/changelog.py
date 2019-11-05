@@ -404,12 +404,6 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def strip(self, *args, **kwargs):
-        # XXX make something better than assert
-        # We can't expect proper strip behavior if we are filtered.
-        assert not self.filteredrevs
-        super(changelog, self).strip(*args, **kwargs)
-
     def rev(self, node):
         """filtered version of revlog.rev"""
         r = super(changelog, self).rev(node)

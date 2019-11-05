@@ -288,6 +288,12 @@ def wrapchangelog(unfichangelog, filteredrevs):
                 revs = self._checknofilteredinrevs(revs)
             return super(filteredchangelog, self).headrevs(revs)
 
+        def strip(self, *args, **kwargs):
+            # XXX make something better than assert
+            # We can't expect proper strip behavior if we are filtered.
+            assert not self.filteredrevs
+            super(filteredchangelog, self).strip(*args, **kwargs)
+
     cl.__class__ = filteredchangelog
 
     return cl
