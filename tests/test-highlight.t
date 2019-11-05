@@ -966,7 +966,9 @@ errors encountered
   $ cd ..
   $ hg init eucjp
   $ cd eucjp
-  $ "$PYTHON" -c 'print("\265\376")' >> eucjp.txt  # Japanese kanji "Kyo"
+  >>> with open('eucjp.txt', 'wb') as fh:
+  ...     # Japanese kanji "Kyo"
+  ...     fh.write(u'\265\376'.encode('utf-8')) and None
   $ hg ci -Ama
   adding eucjp.txt
   $ hgserveget () {
