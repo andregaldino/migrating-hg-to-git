@@ -431,7 +431,8 @@ def has_p4():
 
 @check("symlink", "symbolic links")
 def has_symlink():
-    if getattr(os, "symlink", None) is None:
+    # mercurial.windows.checklink() is a hard 'no' at the moment
+    if os.name == 'nt' or getattr(os, "symlink", None) is None:
         return False
     name = tempfile.mktemp(dir='.', prefix=tempprefix)
     try:
