@@ -266,6 +266,7 @@ PACKAGES="\
     python3-fuzzywuzzy \
     python3-pygments \
     python3-vcr \
+    python3-venv \
     rsync \
     sqlite3 \
     subversion \
