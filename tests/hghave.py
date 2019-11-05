@@ -829,6 +829,17 @@ def has_dev_full():
     return os.path.exists('/dev/full')
 
 
+@check("ensurepip", "ensurepip module")
+def has_ensurepip():
+    try:
+        import ensurepip
+
+        ensurepip.bootstrap
+        return True
+    except ImportError:
+        return False
+
+
 @check("virtualenv", "Python virtualenv support")
 def has_virtualenv():
     try:

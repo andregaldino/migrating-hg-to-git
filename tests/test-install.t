@@ -241,12 +241,15 @@ the last test in this file, because we do some nasty things to the
 shell environment in order to make the virtualenv work reliably.
 
 On Python 3, we use the venv module, which is part of the standard library.
+But some Linux distros strip out this module's functionality involving pip,
+so we have to look for the ensurepip module, which these distros strip out
+completely.
 On Python 2, we use the 3rd party virtualenv module, if available.
 
   $ cd $TESTTMP
   $ unset PYTHONPATH
 
-#if py3
+#if py3 ensurepip
   $ "$PYTHON" -m venv installenv >> pip.log
 
 Note: we use this weird path to run pip and hg to avoid platform differences,
