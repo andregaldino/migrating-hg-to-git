@@ -1770,7 +1770,9 @@ class TTest(Test):
             if l.startswith(b'#require'):
                 lsplit = l.split()
                 if len(lsplit) < 2 or lsplit[0] != b'#require':
-                    after.setdefault(pos, []).append('  !!! invalid #require\n')
+                    after.setdefault(pos, []).append(
+                        b'  !!! invalid #require\n'
+                    )
                 if not skipping:
                     haveresult, message = self._hghave(lsplit[1:])
                     if not haveresult:
@@ -1780,19 +1782,19 @@ class TTest(Test):
             elif l.startswith(b'#if'):
                 lsplit = l.split()
                 if len(lsplit) < 2 or lsplit[0] != b'#if':
-                    after.setdefault(pos, []).append('  !!! invalid #if\n')
+                    after.setdefault(pos, []).append(b'  !!! invalid #if\n')
                 if skipping is not None:
-                    after.setdefault(pos, []).append('  !!! nested #if\n')
+                    after.setdefault(pos, []).append(b'  !!! nested #if\n')
                 skipping = not self._iftest(lsplit[1:])
                 after.setdefault(pos, []).append(l)
             elif l.startswith(b'#else'):
                 if skipping is None:
-                    after.setdefault(pos, []).append('  !!! missing #if\n')
+                    after.setdefault(pos, []).append(b'  !!! missing #if\n')
                 skipping = not skipping
                 after.setdefault(pos, []).append(l)
             elif l.startswith(b'#endif'):
                 if skipping is None:
-                    after.setdefault(pos, []).append('  !!! missing #if\n')
+                    after.setdefault(pos, []).append(b'  !!! missing #if\n')
                 skipping = None
                 after.setdefault(pos, []).append(l)
             elif skipping:
@@ -1841,7 +1843,7 @@ class TTest(Test):
         if inpython:
             script.append(b'EOF\n')
         if skipping is not None:
-            after.setdefault(pos, []).append('  !!! missing #endif\n')
+            after.setdefault(pos, []).append(b'  !!! missing #endif\n')
         addsalt(n + 1, False)
         # Need to end any current per-command trace
         if activetrace:
