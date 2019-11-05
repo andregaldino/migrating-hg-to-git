@@ -404,12 +404,6 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def flags(self, rev):
-        """filtered version of revlog.flags"""
-        if rev in self.filteredrevs:
-            raise error.FilteredIndexError(rev)
-        return super(changelog, self).flags(rev)
-
     def delayupdate(self, tr):
         b"delay visibility of index updates to other readers"
 

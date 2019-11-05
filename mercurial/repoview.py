@@ -325,6 +325,12 @@ def wrapchangelog(unfichangelog, filteredrevs):
                 raise error.FilteredIndexError(rev)
             return super(filteredchangelog, self).parentrevs(rev)
 
+        def flags(self, rev):
+            """filtered version of revlog.flags"""
+            if rev in self.filteredrevs:
+                raise error.FilteredIndexError(rev)
+            return super(filteredchangelog, self).flags(rev)
+
     cl.__class__ = filteredchangelog
 
     return cl
