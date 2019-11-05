@@ -21,6 +21,7 @@ from . import (
     obsolete,
     phases,
     pycompat,
+    revlog,
     tags as tagsmod,
     util,
 )
@@ -232,6 +233,19 @@ def wrapchangelog(unfichangelog, filteredrevs):
         def __contains__(self, rev):
             """filtered version of revlog.__contains__"""
             return 0 <= rev < len(self) and rev not in self.filteredrevs
+
+        def __iter__(self):
+            """filtered version of revlog.__iter__"""
+            if len(self.filteredrevs) == 0:
+                return revlog.revlog.__iter__(self)
+
+
+            def filterediter():
+                for i in pycompat.xrange(len(self)):
+                    if i not in self.filteredrevs:
+                        yield i
+
+            return filterediter()
 
     cl.__class__ = filteredchangelog
 

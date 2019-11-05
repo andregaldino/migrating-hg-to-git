@@ -405,18 +405,6 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def __iter__(self):
-        """filtered version of revlog.__iter__"""
-        if len(self.filteredrevs) == 0:
-            return revlog.revlog.__iter__(self)
-
-        def filterediter():
-            for i in pycompat.xrange(len(self)):
-                if i not in self.filteredrevs:
-                    yield i
-
-        return filterediter()
-
     def revs(self, start=0, stop=None):
         """filtered version of revlog.revs"""
         for i in super(changelog, self).revs(start, stop):
