@@ -218,6 +218,12 @@ def filterrevs(repo, filtername, visibilityexceptions=None):
     return repo.filteredrevcache[filtername]
 
 
+def wrapchangelog(unfichangelog, filteredrevs):
+    cl = copy.copy(unfichangelog)
+    cl.filteredrevs = filteredrevs
+    return cl
+
+
 class repoview(object):
     """Provide a read/write view of a repo through a filtered changelog
 
@@ -286,8 +292,7 @@ class repoview(object):
             cl = None
         # could have been made None by the previous if
         if cl is None:
-            cl = copy.copy(unfichangelog)
-            cl.filteredrevs = revs
+            cl = wrapchangelog(unfichangelog, revs)
             object.__setattr__(self, r'_clcache', cl)
             object.__setattr__(self, r'_clcachekey', newkey)
         return cl
