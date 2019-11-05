@@ -26,7 +26,6 @@ from . import (
     obsolete,
     phases,
     pycompat,
-    revlog,
     tags as tagsmod,
     util,
 )
@@ -241,9 +240,6 @@ def wrapchangelog(unfichangelog, filteredrevs):
 
         def __iter__(self):
             """filtered version of revlog.__iter__"""
-            if len(self.filteredrevs) == 0:
-                return revlog.revlog.__iter__(self)
-
 
             def filterediter():
                 for i in pycompat.xrange(len(self)):
@@ -280,7 +276,7 @@ def wrapchangelog(unfichangelog, filteredrevs):
             return revs
 
         def headrevs(self, revs=None):
-            if revs is None and self.filteredrevs:
+            if revs is None:
                 try:
                     return self.index.headrevsfiltered(self.filteredrevs)
                 # AttributeError covers non-c-extension environments and
@@ -288,8 +284,7 @@ def wrapchangelog(unfichangelog, filteredrevs):
                 except AttributeError:
                     return self._headrevs()
 
-            if self.filteredrevs:
-                revs = self._checknofilteredinrevs(revs)
+            revs = self._checknofilteredinrevs(revs)
             return super(filteredchangelog, self).headrevs(revs)
 
         def strip(self, *args, **kwargs):
@@ -404,7 +399,8 @@ class repoview(object):
             cl = None
         # could have been made None by the previous if
         if cl is None:
-            cl = wrapchangelog(unfichangelog, revs)
+            # Only filter if there's something to filter
+            cl = wrapchangelog(unfichangelog, revs) if revs else unfichangelog
             object.__setattr__(self, r'_clcache', cl)
             object.__setattr__(self, r'_clcachekey', newkey)
         return cl
