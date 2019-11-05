@@ -1417,7 +1417,7 @@ class localrepository(object):
 
     def _refreshchangelog(self):
         """make sure the in memory changelog match the on-disk one"""
-        if b'changelog' in vars(self) and self.currenttransaction() is None:
+        if 'changelog' in vars(self) and self.currenttransaction() is None:
             del self.changelog
 
     @property
