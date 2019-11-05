@@ -247,6 +247,12 @@ def wrapchangelog(unfichangelog, filteredrevs):
 
             return filterediter()
 
+        def revs(self, start=0, stop=None):
+            """filtered version of revlog.revs"""
+            for i in super(filteredchangelog, self).revs(start, stop):
+                if i not in self.filteredrevs:
+                    yield i
+
     cl.__class__ = filteredchangelog
 
     return cl

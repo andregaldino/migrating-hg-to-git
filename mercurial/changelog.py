@@ -405,12 +405,6 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def revs(self, start=0, stop=None):
-        """filtered version of revlog.revs"""
-        for i in super(changelog, self).revs(start, stop):
-            if i not in self.filteredrevs:
-                yield i
-
     def _checknofilteredinrevs(self, revs):
         """raise the appropriate error if 'revs' contains a filtered revision
 
