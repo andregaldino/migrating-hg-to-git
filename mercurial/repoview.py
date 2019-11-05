@@ -229,6 +229,10 @@ def wrapchangelog(unfichangelog, filteredrevs):
                 if i not in self.filteredrevs:
                     return i
 
+        def __contains__(self, rev):
+            """filtered version of revlog.__contains__"""
+            return 0 <= rev < len(self) and rev not in self.filteredrevs
+
     cl.__class__ = filteredchangelog
 
     return cl

@@ -405,10 +405,6 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def __contains__(self, rev):
-        """filtered version of revlog.__contains__"""
-        return 0 <= rev < len(self) and rev not in self.filteredrevs
-
     def __iter__(self):
         """filtered version of revlog.__iter__"""
         if len(self.filteredrevs) == 0:
