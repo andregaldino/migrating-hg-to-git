@@ -111,8 +111,10 @@ class Abort(Hint, Exception):
 
     __bytes__ = _tobytes
 
-    def __str__(self):
-        return pycompat.sysstr(self.__bytes__())
+    if pycompat.ispy3:
+
+        def __str__(self):
+            return pycompat.sysstr(self.__bytes__())
 
 
 class HookLoadError(Abort):
