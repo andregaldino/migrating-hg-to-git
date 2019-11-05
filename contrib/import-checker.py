@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function
 
 import ast
 import collections
+import io
 import os
 import sys
 
@@ -754,7 +755,11 @@ def sources(f, modname):
             yield src.read(), modname, f, 0
             py = True
     if py or f.endswith('.t'):
-        with open(f, 'r') as src:
+        # Strictly speaking we should sniff for the magic header that denotes
+        # Python source file encoding. But in reality we don't use anything
+        # other than ASCII (mainly) and UTF-8 (in a few exceptions), so
+        # simplicity is fine.
+        with io.open(f, 'r', encoding='utf-8') as src:
             for script, modname, t, line in embedded(f, modname, src):
                 yield script, modname.encode('utf8'), t, line
 
