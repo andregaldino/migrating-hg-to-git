@@ -21,7 +21,6 @@ from . import (
     error,
     pycompat,
     revlog,
-    util,
 )
 from .utils import (
     dateutil,
@@ -404,40 +403,6 @@ class changelog(revlog.revlog):
         self._divert = False
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
-
-    def _checknofilteredinrevs(self, revs):
-        """raise the appropriate error if 'revs' contains a filtered revision
-
-        This returns a version of 'revs' to be used thereafter by the caller.
-        In particular, if revs is an iterator, it is converted into a set.
-        """
-        safehasattr = util.safehasattr
-        if safehasattr(revs, '__next__'):
-            # Note that inspect.isgenerator() is not true for iterators,
-            revs = set(revs)
-
-        filteredrevs = self.filteredrevs
-        if safehasattr(revs, 'first'):  # smartset
-            offenders = revs & filteredrevs
-        else:
-            offenders = filteredrevs.intersection(revs)
-
-        for rev in offenders:
-            raise error.FilteredIndexError(rev)
-        return revs
-
-    def headrevs(self, revs=None):
-        if revs is None and self.filteredrevs:
-            try:
-                return self.index.headrevsfiltered(self.filteredrevs)
-            # AttributeError covers non-c-extension environments and
-            # old c extensions without filter handling.
-            except AttributeError:
-                return self._headrevs()
-
-        if self.filteredrevs:
-            revs = self._checknofilteredinrevs(revs)
-        return super(changelog, self).headrevs(revs)
 
     def strip(self, *args, **kwargs):
         # XXX make something better than assert
