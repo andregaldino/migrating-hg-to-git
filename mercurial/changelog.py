@@ -406,13 +406,10 @@ class changelog(revlog.revlog):
         self._copiesstorage = opener.options.get(b'copies-storage')
 
     def tiprev(self):
+        """filtered version of revlog.tiprev"""
         for i in pycompat.xrange(len(self) - 1, -2, -1):
             if i not in self.filteredrevs:
                 return i
-
-    def tip(self):
-        """filtered version of revlog.tip"""
-        return self.node(self.tiprev())
 
     def __contains__(self, rev):
         """filtered version of revlog.__contains__"""

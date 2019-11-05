@@ -593,8 +593,11 @@ class revlog(object):
             with func() as fp:
                 yield fp
 
+    def tiprev(self):
+        return len(self.index) - 1
+
     def tip(self):
-        return self.node(len(self.index) - 1)
+        return self.node(self.tiprev())
 
     def __contains__(self, rev):
         return 0 <= rev < len(self)
