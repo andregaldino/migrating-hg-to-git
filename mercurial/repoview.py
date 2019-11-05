@@ -223,7 +223,11 @@ def wrapchangelog(unfichangelog, filteredrevs):
     cl.filteredrevs = filteredrevs
 
     class filteredchangelog(cl.__class__):
-        pass
+        def tiprev(self):
+            """filtered version of revlog.tiprev"""
+            for i in pycompat.xrange(len(self) - 1, -2, -1):
+                if i not in self.filteredrevs:
+                    return i
 
     cl.__class__ = filteredchangelog
 
