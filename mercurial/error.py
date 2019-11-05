@@ -114,6 +114,9 @@ class Abort(Hint, Exception):
     if pycompat.ispy3:
 
         def __str__(self):
+            # the output would be unreadable if the message was translated,
+            # but do not replace it with encoding.strfromlocal(), which
+            # may raise another exception.
             return pycompat.sysstr(self.__bytes__())
 
 
