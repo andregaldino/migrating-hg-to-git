@@ -313,6 +313,12 @@ def wrapchangelog(unfichangelog, filteredrevs):
                 raise error.FilteredIndexError(rev)
             return super(filteredchangelog, self).node(rev)
 
+        def linkrev(self, rev):
+            """filtered version of revlog.linkrev"""
+            if rev in self.filteredrevs:
+                raise error.FilteredIndexError(rev)
+            return super(filteredchangelog, self).linkrev(rev)
+
     cl.__class__ = filteredchangelog
 
     return cl
