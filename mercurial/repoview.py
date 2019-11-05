@@ -11,7 +11,11 @@ from __future__ import absolute_import
 import copy
 import weakref
 
-from .node import nullrev
+from .i18n import _
+from .node import (
+    hex,
+    nullrev,
+)
 from .pycompat import (
     delattr,
     getattr,
@@ -293,6 +297,15 @@ def wrapchangelog(unfichangelog, filteredrevs):
             # We can't expect proper strip behavior if we are filtered.
             assert not self.filteredrevs
             super(filteredchangelog, self).strip(*args, **kwargs)
+
+        def rev(self, node):
+            """filtered version of revlog.rev"""
+            r = super(filteredchangelog, self).rev(node)
+            if r in self.filteredrevs:
+                raise error.FilteredLookupError(
+                    hex(node), self.indexfile, _(b'filtered node')
+                )
+            return r
 
     cl.__class__ = filteredchangelog
 

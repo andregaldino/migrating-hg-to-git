@@ -404,15 +404,6 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def rev(self, node):
-        """filtered version of revlog.rev"""
-        r = super(changelog, self).rev(node)
-        if r in self.filteredrevs:
-            raise error.FilteredLookupError(
-                hex(node), self.indexfile, _(b'filtered node')
-            )
-        return r
-
     def node(self, rev):
         """filtered version of revlog.node"""
         if rev in self.filteredrevs:
