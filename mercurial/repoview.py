@@ -307,6 +307,12 @@ def wrapchangelog(unfichangelog, filteredrevs):
                 )
             return r
 
+        def node(self, rev):
+            """filtered version of revlog.node"""
+            if rev in self.filteredrevs:
+                raise error.FilteredIndexError(rev)
+            return super(filteredchangelog, self).node(rev)
+
     cl.__class__ = filteredchangelog
 
     return cl
