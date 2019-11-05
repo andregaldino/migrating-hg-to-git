@@ -853,7 +853,7 @@ small reminder of the repository state
   M b2
   A 1k
   A 2k
-  A b2link (no-windows !)
+  A b2link (symlink !)
   A bin
   A c1
   A con.xml (no-windows !)
@@ -864,7 +864,7 @@ small reminder of the repository state
   M b2
   A 1k
   A 2k
-  A b2link (no-windows !)
+  A b2link (symlink !)
   A bin
   A c1
   A con.xml (no-windows !)
@@ -997,7 +997,7 @@ test with multi revs revset
   A .hgsubstate
   A 1k
   A 2k
-  A b2link (no-windows !)
+  A b2link (symlink !)
   A bin
   A c1
   A con.xml (no-windows !)
@@ -1006,7 +1006,7 @@ test with multi revs revset
   .hgsubstate
   1k
   2k
-  b2link (no-windows !)
+  b2link (symlink !)
   bin
   c1
   con.xml (no-windows !)
