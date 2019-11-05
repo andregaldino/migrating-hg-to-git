@@ -404,12 +404,6 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def parentrevs(self, rev):
-        """filtered version of revlog.parentrevs"""
-        if rev in self.filteredrevs:
-            raise error.FilteredIndexError(rev)
-        return super(changelog, self).parentrevs(rev)
-
     def flags(self, rev):
         """filtered version of revlog.flags"""
         if rev in self.filteredrevs:

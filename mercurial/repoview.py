@@ -319,6 +319,12 @@ def wrapchangelog(unfichangelog, filteredrevs):
                 raise error.FilteredIndexError(rev)
             return super(filteredchangelog, self).linkrev(rev)
 
+        def parentrevs(self, rev):
+            """filtered version of revlog.parentrevs"""
+            if rev in self.filteredrevs:
+                raise error.FilteredIndexError(rev)
+            return super(filteredchangelog, self).parentrevs(rev)
+
     cl.__class__ = filteredchangelog
 
     return cl
