@@ -236,11 +236,6 @@ Verify the json works too:
 
 #endif
 
-#if py3
-  $ HGALLOWPYTHON3=1
-  $ export HGALLOWPYTHON3
-#endif
-
 #if virtualenv
 
 Verify that Mercurial is installable with pip. Note that this MUST be
