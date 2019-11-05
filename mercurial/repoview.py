@@ -221,6 +221,12 @@ def filterrevs(repo, filtername, visibilityexceptions=None):
 def wrapchangelog(unfichangelog, filteredrevs):
     cl = copy.copy(unfichangelog)
     cl.filteredrevs = filteredrevs
+
+    class filteredchangelog(cl.__class__):
+        pass
+
+    cl.__class__ = filteredchangelog
+
     return cl
 
 
