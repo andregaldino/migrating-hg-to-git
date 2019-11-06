@@ -1741,8 +1741,8 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         with self.ui.timeblockedsection(b'crecord'):
             response = self.confirmationwindow(confirmtext)
         if response is None:
-            response = b"n"
-        if response.lower().startswith(b"y"):
+            response = "n"
+        if response.lower().startswith("y"):
             return True
         else:
             return False
