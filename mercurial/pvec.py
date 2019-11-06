@@ -76,7 +76,7 @@ def _bin(bs):
 def _str(v, l):
     bs = b""
     for p in pycompat.xrange(l):
-        bs = chr(v & 255) + bs
+        bs = pycompat.bytechr(v & 255) + bs
         v >>= 8
     return bs
 
