@@ -65,6 +65,7 @@ from . import (
     mdiff,
     policy,
     pycompat,
+    revlogutils,
     templatefilters,
     util,
 )
@@ -217,7 +218,7 @@ class revlogoldio(object):
     def parseindex(self, data, inline):
         s = self.size
         index = []
-        nodemap = {nullid: nullrev}
+        nodemap = revlogutils.NodeMap({nullid: nullrev})
         n = off = 0
         l = len(data)
         while off + s <= l:
@@ -375,7 +376,7 @@ class revlog(object):
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
         # Mapping of revision integer to full node.
-        self._nodecache = {nullid: nullrev}
+        self._nodecache = revlogutils.NodeMap({nullid: nullrev})
         self._nodepos = None
         self._compengine = b'zlib'
         self._compengineopts = {}
@@ -652,7 +653,7 @@ class revlog(object):
             # object.
             self._nodecache.clearcaches()
         except AttributeError:
-            self._nodecache = {nullid: nullrev}
+            self._nodecache = revlogutils.NodeMap({nullid: nullrev})
             self._nodepos = None
 
     def rev(self, node):
@@ -661,28 +662,29 @@ class revlog(object):
         except TypeError:
             raise
         except error.RevlogError:
-            # parsers.c radix tree lookup failed
-            if node == wdirid or node in wdirfilenodeids:
-                raise error.WdirUnsupported
-            raise error.LookupError(node, self.indexfile, _(b'no node'))
-        except KeyError:
-            # pure python cache lookup failed
-            n = self._nodecache
-            i = self.index
-            p = self._nodepos
-            if p is None:
-                p = len(i) - 1
+            if not isinstance(self._nodecache, revlogutils.NodeMap):
+                # parsers.c radix tree lookup failed
+                if node == wdirid or node in wdirfilenodeids:
+                    raise error.WdirUnsupported
+                raise error.LookupError(node, self.indexfile, _(b'no node'))
             else:
-                assert p < len(i)
-            for r in pycompat.xrange(p, -1, -1):
-                v = i[r][7]
-                n[v] = r
-                if v == node:
-                    self._nodepos = r - 1
-                    return r
-            if node == wdirid or node in wdirfilenodeids:
-                raise error.WdirUnsupported
-            raise error.LookupError(node, self.indexfile, _(b'no node'))
+                # pure python cache lookup failed
+                n = self._nodecache
+                i = self.index
+                p = self._nodepos
+                if p is None:
+                    p = len(i) - 1
+                else:
+                    assert p < len(i)
+                for r in pycompat.xrange(p, -1, -1):
+                    v = i[r][7]
+                    n[v] = r
+                    if v == node:
+                        self._nodepos = r - 1
+                        return r
+                if node == wdirid or node in wdirfilenodeids:
+                    raise error.WdirUnsupported
+                raise error.LookupError(node, self.indexfile, _(b'no node'))
 
     # Accessors for index entries.
 
