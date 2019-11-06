@@ -378,7 +378,9 @@ def shellenviron(environ=None):
 if pycompat.iswindows:
 
     def shelltonative(cmd, env):
-        return platform.shelltocmdexe(cmd, shellenviron(env))
+        return platform.shelltocmdexe(  # pytype: disable=module-attr
+            cmd, shellenviron(env)
+        )
 
     tonativestr = encoding.strfromlocal
 else:
@@ -545,7 +547,10 @@ if pycompat.iswindows:
     # Following creation flags might create a console GUI window.
     # Using subprocess.CREATE_NEW_CONSOLE might helps.
     # See https://phab.mercurial-scm.org/D1701 for discussion
-    _creationflags = DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    _creationflags = (
+        DETACHED_PROCESS
+        | subprocess.CREATE_NEW_PROCESS_GROUP  # pytype: disable=module-attr
+    )
 
     def runbgcommand(
         script, env, shell=False, stdout=None, stderr=None, ensurestart=True
