@@ -241,8 +241,15 @@ if pycompat.ispy3:
     strfromlocal = unifromlocal
     strmethod = unimethod
 else:
-    strtolocal = pycompat.identity
-    strfromlocal = pycompat.identity
+
+    def strtolocal(s):
+        # type: (str) -> bytes
+        return s
+
+    def strfromlocal(s):
+        # type: (bytes) -> str
+        return s
+
     strmethod = pycompat.identity
 
 if not _nativeenviron:
