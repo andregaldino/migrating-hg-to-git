@@ -60,6 +60,9 @@ class abstractvfs(object):
     def _auditpath(self, path, mode):
         raise NotImplementedError
 
+    def join(self, path, *insidef):
+        raise NotImplementedError
+
     def tryread(self, path):
         '''gracefully return an empty string for missing files'''
         try:
