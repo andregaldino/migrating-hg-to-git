@@ -487,7 +487,9 @@ class vfs(abstractvfs):
             threading.currentThread(),
             threading._MainThread,  # pytype: disable=module-attr
         ):
-            if not self._backgroundfilecloser:
+            if (
+                not self._backgroundfilecloser  # pytype: disable=attribute-error
+            ):
                 raise error.Abort(
                     _(
                         b'backgroundclose can only be used when a '
@@ -495,7 +497,10 @@ class vfs(abstractvfs):
                     )
                 )
 
-            fp = delayclosedfile(fp, self._backgroundfilecloser)
+            fp = delayclosedfile(
+                fp,
+                self._backgroundfilecloser,  # pytype: disable=attribute-error
+            )
 
         return fp
 
