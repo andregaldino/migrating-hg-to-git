@@ -279,7 +279,9 @@ def mimetextqp(body, subtype, charset):
     '''Return MIME message.
     Quoted-printable transfer encoding will be used if necessary.
     '''
-    cs = email.charset.Charset(charset)
+    # Experimentally charset is okay as a bytes even if the type
+    # stubs disagree.
+    cs = email.charset.Charset(charset)  # pytype: disable=wrong-arg-types
     msg = email.message.Message()
     msg.set_type(pycompat.sysstr(b'text/' + subtype))
 
