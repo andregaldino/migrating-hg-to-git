@@ -24,4 +24,5 @@ run pyflakes on all tracked files ending in .py or without a file ending
   contrib/perf.py:*: undefined name 'xrange' (glob) (?)
   mercurial/hgweb/server.py:*: undefined name 'reload' (glob) (?)
   mercurial/util.py:*: undefined name 'file' (glob) (?)
+  mercurial/encoding.py:*: undefined name 'localstr' (glob) (?)
   
