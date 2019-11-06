@@ -80,7 +80,7 @@ def writeerr(data):
 ####################
 
 
-class embeddedmatcher(object):
+class embeddedmatcher(object):  # pytype: disable=ignored-metaclass
     """Base class to detect embedded code fragments in *.t test script
     """
 

@@ -611,7 +611,7 @@ def unquotestring(s):
     return s[1:-1]
 
 
-class resourcemapper(object):
+class resourcemapper(object):  # pytype: disable=ignored-metaclass
     """Mapper of internal template resources"""
 
     __metaclass__ = abc.ABCMeta

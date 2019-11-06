@@ -29,7 +29,7 @@ class BundleReadException(Exception):
     pass
 
 
-class abstractbundlestore(object):
+class abstractbundlestore(object):  # pytype: disable=ignored-metaclass
     """Defines the interface for bundle stores.
 
     A bundle store is an entity that stores raw bundle data. It is a simple
