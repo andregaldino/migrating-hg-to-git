@@ -323,7 +323,10 @@ def checklink(path):
                     fullpath = os.path.join(cachedir, target)
                     open(fullpath, b'w').close()
                 except IOError as inst:
-                    if inst[0] == errno.EACCES:
+                    if (
+                        inst[0]  # pytype: disable=unsupported-operands
+                        == errno.EACCES
+                    ):
                         # If we can't write to cachedir, just pretend
                         # that the fs is readonly and by association
                         # that the fs won't support symlinks. This
