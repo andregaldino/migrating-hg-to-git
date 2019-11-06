@@ -352,7 +352,7 @@ def start(mechanism=b'thread', track=b'cpu'):
             frame = inspect.currentframe()
             tid = [k for k, f in sys._current_frames().items() if f == frame][0]
             state.thread = threading.Thread(
-                target=samplerthread, args=(tid,), name=b"samplerthread"
+                target=samplerthread, args=(tid,), name="samplerthread"
             )
             state.thread.start()
 
