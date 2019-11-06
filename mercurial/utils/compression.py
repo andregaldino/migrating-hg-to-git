@@ -646,7 +646,7 @@ class _zstdengine(compressionengine):
         # Not all installs have the zstd module available. So defer importing
         # until first access.
         try:
-            from .. import zstd
+            from .. import zstd  # pytype: disable=import-error
 
             # Force delayed import.
             zstd.__version__
