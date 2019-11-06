@@ -154,9 +154,11 @@ class tarit(object):
                 fname = fname[:-3]
             flags = 0
             if fname:
-                flags = gzip.FNAME
+                flags = gzip.FNAME  # pytype: disable=module-attr
             self.fileobj.write(pycompat.bytechr(flags))
-            gzip.write32u(self.fileobj, int(self.timestamp))
+            gzip.write32u(  # pytype: disable=module-attr
+                self.fileobj, int(self.timestamp)
+            )
             self.fileobj.write(b'\002')
             self.fileobj.write(b'\377')
             if fname:
@@ -179,7 +181,7 @@ class tarit(object):
                     timestamp=mtime,
                 )
                 self.fileobj = gzfileobj
-                return tarfile.TarFile.taropen(
+                return tarfile.TarFile.taropen(  # pytype: disable=attribute-error
                     name, pycompat.sysstr(mode), gzfileobj
                 )
             else:
@@ -234,7 +236,7 @@ class zipit(object):
 
     def addfile(self, name, mode, islink, data):
         i = zipfile.ZipInfo(pycompat.fsdecode(name), self.date_time)
-        i.compress_type = self.z.compression
+        i.compress_type = self.z.compression  # pytype: disable=attribute-error
         # unzip will not honor unix file modes unless file creator is
         # set to unix (id 3).
         i.create_system = 3
