@@ -53,7 +53,7 @@ class annotateresult(object):
         return iter(self.lines)
 
 
-class _llinstruction(object):
+class _llinstruction(object):  # pytype: disable=ignored-metaclass
 
     __metaclass__ = abc.ABCMeta
 
