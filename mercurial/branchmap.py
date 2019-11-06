@@ -269,7 +269,13 @@ class branchcache(object):
             if repo.ui.debugflag:
                 msg = b'invalid %s: %s\n'
                 repo.ui.debug(
-                    msg % (_branchcachedesc(repo), pycompat.bytestr(inst))
+                    msg
+                    % (
+                        _branchcachedesc(repo),
+                        pycompat.bytestr(
+                            inst  # pytype: disable=wrong-arg-types
+                        ),
+                    )
                 )
             bcache = None
 
