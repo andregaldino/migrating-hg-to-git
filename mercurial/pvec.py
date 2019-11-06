@@ -48,7 +48,7 @@ Uses:
   different branches
 '''
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from .node import nullrev
 from . import (
@@ -57,12 +57,12 @@ from . import (
 )
 
 _size = 448  # 70 chars b85-encoded
-_bytes = _size / 8
+_bytes = _size // 8
 _depthbits = 24
-_depthbytes = _depthbits / 8
+_depthbytes = _depthbits // 8
 _vecbytes = _bytes - _depthbytes
 _vecbits = _vecbytes * 8
-_radius = (_vecbits - 30) / 2  # high probability vectors are related
+_radius = (_vecbits - 30) // 2  # high probability vectors are related
 
 
 def _bin(bs):
@@ -131,7 +131,7 @@ def _mergevec(x, y, c):
     if hdist > ddist:
         # if delta = 10 and hdist = 100, then we need to go up 55 steps
         # to the ancestor and down 45
-        changes = (hdist - ddist + 1) / 2
+        changes = (hdist - ddist + 1) // 2
     else:
         # must make at least one change
         changes = 1
