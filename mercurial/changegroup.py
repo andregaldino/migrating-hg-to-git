@@ -315,15 +315,15 @@ class cg1unpacker(object):
             )
             self.callback = progress.increment
 
-            efiles = set()
+            efilesset = set()
 
             def onchangelog(cl, node):
-                efiles.update(cl.readfiles(node))
+                efilesset.update(cl.readfiles(node))
 
             self.changelogheader()
             deltas = self.deltaiter()
             cgnodes = cl.addgroup(deltas, csmap, trp, addrevisioncb=onchangelog)
-            efiles = len(efiles)
+            efiles = len(efilesset)
 
             if not cgnodes:
                 repo.ui.develwarn(
