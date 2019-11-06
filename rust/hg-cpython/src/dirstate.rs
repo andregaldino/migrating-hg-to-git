@@ -17,8 +17,8 @@ use crate::dirstate::{
     dirs_multiset::Dirs, dirstate_map::DirstateMap, status::status_wrapper,
 };
 use cpython::{
-    exc, PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult,
-    PySequence, Python,
+    exc, PyBytes, PyDict, PyErr, PyModule, PyObject, PyResult, PySequence,
+    Python,
 };
 use hg::{
     utils::hg_path::HgPathBuf, DirstateEntry, DirstateParseError, EntryState,
@@ -116,7 +116,6 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
             status_wrapper(
                 dmap: DirstateMap,
                 root_dir: PyObject,
-                files: PyList,
                 list_clean: bool,
                 last_normal_time: i64,
                 check_exec: bool

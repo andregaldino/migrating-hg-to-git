@@ -18,8 +18,8 @@ use cpython::{
 };
 use hg::utils::files::get_path_from_bytes;
 
+use hg::status;
 use hg::utils::hg_path::HgPath;
-use hg::{status, utils::hg_path::HgPathBuf};
 
 /// This will be useless once trait impls for collection are added to `PyBytes`
 /// upstream.
@@ -44,7 +44,6 @@ pub fn status_wrapper(
     py: Python,
     dmap: DirstateMap,
     root_dir: PyObject,
-    files: PyList,
     list_clean: bool,
     last_normal_time: i64,
     check_exec: bool,
@@ -55,21 +54,9 @@ pub fn status_wrapper(
     let dmap: DirstateMap = dmap.to_py_object(py);
     let dmap = dmap.get_inner(py);
 
-    let files: PyResult<Vec<HgPathBuf>> = files
-        .iter(py)
-        .map(|f| Ok(HgPathBuf::from_bytes(f.extract::<PyBytes>(py)?.data(py))))
-        .collect();
-    let files = files?;
-
-    let (lookup, status_res) = status(
-        &dmap,
-        &root_dir,
-        &files,
-        list_clean,
-        last_normal_time,
-        check_exec,
-    )
-    .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
+    let (lookup, status_res) =
+        status(&dmap, &root_dir, list_clean, last_normal_time, check_exec)
+            .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
 
     let modified = collect_pybytes_list(py, status_res.modified.as_ref());
     let added = collect_pybytes_list(py, status_res.added.as_ref());

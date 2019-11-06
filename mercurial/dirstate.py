@@ -1120,7 +1120,6 @@ class dirstate(object):
             ) = rustmod.status(
                 dmap._rustmap,
                 self._rootdir,
-                match.files(),
                 bool(listclean),
                 self._lastnormaltime,
                 self._checkexec,

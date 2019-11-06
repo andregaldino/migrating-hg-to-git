@@ -10,68 +10,14 @@
 //! and will only be triggered in narrow cases.
 
 use crate::utils::files::HgMetadata;
-use crate::utils::hg_path::{hg_path_to_path_buf, HgPath, HgPathBuf};
+use crate::utils::hg_path::{hg_path_to_path_buf, HgPathBuf};
 use crate::{DirstateEntry, DirstateMap, EntryState};
 use rayon::prelude::*;
-use std::collections::HashMap;
-use std::fs::Metadata;
 use std::path::Path;
-
-/// Get stat data about the files explicitly specified by match.
-/// TODO subrepos
-fn walk_explicit(
-    files: &[impl AsRef<HgPath> + Sync],
-    dmap: &DirstateMap,
-    root_dir: impl AsRef<Path> + Sync,
-) -> std::io::Result<HashMap<HgPathBuf, Option<HgMetadata>>> {
-    let mut results = HashMap::new();
-
-    // A tuple of the normalized filename and the `Result` of the call to
-    // `symlink_metadata` for separate handling.
-    type WalkTuple<'a> = (&'a HgPath, std::io::Result<Metadata>);
-
-    let stats_res: std::io::Result<Vec<WalkTuple>> = files
-        .par_iter()
-        .map(|filename| {
-            // TODO normalization
-            let normalized = filename.as_ref();
-
-            let target_filename =
-                root_dir.as_ref().join(hg_path_to_path_buf(normalized)?);
-
-            Ok((normalized, target_filename.symlink_metadata()))
-        })
-        .collect();
-
-    for res in stats_res? {
-        match res {
-            (normalized, Ok(stat)) => {
-                if stat.is_file() {
-                    results.insert(
-                        normalized.to_owned(),
-                        Some(HgMetadata::from_metadata(stat)),
-                    );
-                } else {
-                    if dmap.contains_key(normalized) {
-                        results.insert(normalized.to_owned(), None);
-                    }
-                }
-            }
-            (normalized, Err(_)) => {
-                if dmap.contains_key(normalized) {
-                    results.insert(normalized.to_owned(), None);
-                }
-            }
-        };
-    }
-
-    Ok(results)
-}
 
 // Stat all entries in the `DirstateMap` and return their new metadata.
 pub fn stat_dmap_entries(
     dmap: &DirstateMap,
-    results: &HashMap<HgPathBuf, Option<HgMetadata>>,
     root_dir: impl AsRef<Path> + Sync,
 ) -> std::io::Result<Vec<(HgPathBuf, Option<HgMetadata>)>> {
     dmap.par_iter()
@@ -81,9 +27,6 @@ pub fn stat_dmap_entries(
             |(filename, _)| -> Option<
                 std::io::Result<(HgPathBuf, Option<HgMetadata>)>
             > {
-                if results.contains_key(filename) {
-                    return None;
-                }
                 let meta = match hg_path_to_path_buf(filename) {
                     Ok(p) => root_dir.as_ref().join(p).symlink_metadata(),
                     Err(e) => return Some(Err(e.into())),
@@ -132,7 +75,7 @@ fn build_response(
     list_clean: bool,
     last_normal_time: i64,
     check_exec: bool,
-    results: HashMap<HgPathBuf, Option<HgMetadata>>,
+    results: Vec<(HgPathBuf, Option<HgMetadata>)>,
 ) -> (Vec<HgPathBuf>, StatusResult) {
     let mut lookup = vec![];
     let mut modified = vec![];
@@ -229,14 +172,11 @@ fn build_response(
 pub fn status(
     dmap: &DirstateMap,
     root_dir: impl AsRef<Path> + Sync + Copy,
-    files: &[impl AsRef<HgPath> + Sync],
     list_clean: bool,
     last_normal_time: i64,
     check_exec: bool,
 ) -> std::io::Result<(Vec<HgPathBuf>, StatusResult)> {
-    let mut results = walk_explicit(files, &dmap, root_dir)?;
-
-    results.extend(stat_dmap_entries(&dmap, &results, root_dir)?);
+    let results = stat_dmap_entries(&dmap, root_dir)?;
 
     Ok(build_response(
         &dmap,
