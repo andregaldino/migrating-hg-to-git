@@ -278,8 +278,14 @@ class linelog(object):
         fakejge = _decodeone(buf, 0)
         if isinstance(fakejge, _jump):
             maxrev = 0
-        else:
+        elif isinstance(fakejge, (_jge, _jl)):
             maxrev = fakejge._cmprev
+        else:
+            raise LineLogError(
+                'Expected one of _jump, _jge, or _jl. Got %s.'
+                % type(fakejge).__name__
+            )
+        assert isinstance(fakejge, (_jump, _jge, _jl))  # help pytype
         numentries = fakejge._target
         if expected != numentries:
             raise LineLogError(
