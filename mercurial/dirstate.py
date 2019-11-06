@@ -1514,11 +1514,11 @@ class dirstatemap(object):
 
     @propertycache
     def _dirs(self):
-        return util.dirs(self._map, b'r')
+        return pathutil.dirs(self._map, b'r')
 
     @propertycache
     def _alldirs(self):
-        return util.dirs(self._map)
+        return pathutil.dirs(self._map)
 
     def _opendirstatefile(self):
         fp, mode = txnutil.trypending(self._root, self._opener, self._filename)

@@ -2606,7 +2606,7 @@ def remove(
     progress.complete()
 
     # warn about failure to delete explicit files/dirs
-    deleteddirs = util.dirs(deleted)
+    deleteddirs = pathutil.dirs(deleted)
     files = m.files()
     progress = ui.makeprogress(
         _(b'deleting'), total=len(files), unit=_(b'files')

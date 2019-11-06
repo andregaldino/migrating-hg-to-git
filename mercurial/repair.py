@@ -24,6 +24,7 @@ from . import (
     exchange,
     obsolete,
     obsutil,
+    pathutil,
     phases,
     pycompat,
     util,
@@ -476,7 +477,7 @@ def rebuildfncache(ui, repo):
         if b'treemanifest' in repo.requirements:
             # This logic is safe if treemanifest isn't enabled, but also
             # pointless, so we skip it if treemanifest isn't enabled.
-            for dir in util.dirs(seenfiles):
+            for dir in pathutil.dirs(seenfiles):
                 i = b'meta/%s/00manifest.i' % dir
                 d = b'meta/%s/00manifest.d' % dir
 

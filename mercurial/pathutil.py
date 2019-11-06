@@ -9,9 +9,13 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    policy,
     pycompat,
     util,
 )
+
+rustdirs = policy.importrust('dirstate', 'Dirs')
+parsers = policy.importmod('parsers')
 
 
 def _lowerclean(s):
@@ -269,6 +273,58 @@ def normasprefix(path):
         return path + pycompat.ossep
     else:
         return path
+
+
+class dirs(object):
+    '''a multiset of directory names from a set of file paths'''
+
+    def __init__(self, map, skip=None):
+        self._dirs = {}
+        addpath = self.addpath
+        if isinstance(map, dict) and skip is not None:
+            for f, s in pycompat.iteritems(map):
+                if s[0] != skip:
+                    addpath(f)
+        elif skip is not None:
+            raise error.ProgrammingError(
+                b"skip character is only supported with a dict source"
+            )
+        else:
+            for f in map:
+                addpath(f)
+
+    def addpath(self, path):
+        dirs = self._dirs
+        for base in util.finddirs(path):
+            if base.endswith(b'/'):
+                raise ValueError(
+                    "found invalid consecutive slashes in path: %r" % base
+                )
+            if base in dirs:
+                dirs[base] += 1
+                return
+            dirs[base] = 1
+
+    def delpath(self, path):
+        dirs = self._dirs
+        for base in util.finddirs(path):
+            if dirs[base] > 1:
+                dirs[base] -= 1
+                return
+            del dirs[base]
+
+    def __iter__(self):
+        return iter(self._dirs)
+
+    def __contains__(self, d):
+        return d in self._dirs
+
+
+if util.safehasattr(parsers, 'dirs'):
+    dirs = parsers.dirs
+
+if rustdirs is not None:
+    dirs = rustdirs
 
 
 # forward two methods from posixpath that do what we need, but we'd

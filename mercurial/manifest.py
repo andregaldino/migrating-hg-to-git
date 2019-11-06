@@ -23,6 +23,7 @@ from .pycompat import getattr
 from . import (
     error,
     mdiff,
+    pathutil,
     policy,
     pycompat,
     revlog,
@@ -494,7 +495,7 @@ class manifestdict(object):
 
     @propertycache
     def _dirs(self):
-        return util.dirs(self)
+        return pathutil.dirs(self)
 
     def dirs(self):
         return self._dirs
@@ -1104,7 +1105,7 @@ class treemanifest(object):
 
     @propertycache
     def _alldirs(self):
-        return util.dirs(self)
+        return pathutil.dirs(self)
 
     def dirs(self):
         return self._alldirs

@@ -18,6 +18,7 @@ from . import (
     encoding,
     error,
     pathutil,
+    pathutil,
     policy,
     pycompat,
     util,
@@ -598,7 +599,7 @@ class patternmatcher(basematcher):
 
     @propertycache
     def _dirs(self):
-        return set(util.dirs(self._fileset))
+        return set(pathutil.dirs(self._fileset))
 
     def visitdir(self, dir):
         dir = normalizerootdir(dir, b'visitdir')
@@ -629,9 +630,9 @@ class patternmatcher(basematcher):
         return b'<patternmatcher patterns=%r>' % pycompat.bytestr(self._pats)
 
 
-# This is basically a reimplementation of util.dirs that stores the children
-# instead of just a count of them, plus a small optional optimization to avoid
-# some directories we don't need.
+# This is basically a reimplementation of pathutil.dirs that stores the
+# children instead of just a count of them, plus a small optional optimization
+# to avoid some directories we don't need.
 class _dirchildren(object):
     def __init__(self, paths, onlyinclude=None):
         self._dirs = {}
@@ -763,7 +764,7 @@ class exactmatcher(basematcher):
 
     @propertycache
     def _dirs(self):
-        return set(util.dirs(self._fileset))
+        return set(pathutil.dirs(self._fileset))
 
     def visitdir(self, dir):
         dir = normalizerootdir(dir, b'visitdir')
@@ -1510,8 +1511,8 @@ def _rootsdirsandparents(kindpats):
     p = set()
     # Add the parents as non-recursive/exact directories, since they must be
     # scanned to get to either the roots or the other exact directories.
-    p.update(util.dirs(d))
-    p.update(util.dirs(r))
+    p.update(pathutil.dirs(d))
+    p.update(pathutil.dirs(r))
 
     # FIXME: all uses of this function convert these to sets, do so before
     # returning.

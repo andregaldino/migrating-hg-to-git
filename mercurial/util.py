@@ -57,11 +57,8 @@ from .utils import (
     stringutil,
 )
 
-rustdirs = policy.importrust('dirstate', 'Dirs')
-
 base85 = policy.importmod('base85')
 osutil = policy.importmod('osutil')
-parsers = policy.importmod('parsers')
 
 b85decode = base85.b85decode
 b85encode = base85.b85encode
@@ -3492,58 +3489,6 @@ def debugstacktrace(
     for line in getstackframes(skip + 1, depth=depth):
         f.write(line)
     f.flush()
-
-
-class dirs(object):
-    '''a multiset of directory names from a dirstate or manifest'''
-
-    def __init__(self, map, skip=None):
-        self._dirs = {}
-        addpath = self.addpath
-        if isinstance(map, dict) and skip is not None:
-            for f, s in pycompat.iteritems(map):
-                if s[0] != skip:
-                    addpath(f)
-        elif skip is not None:
-            raise error.ProgrammingError(
-                b"skip character is only supported with a dict source"
-            )
-        else:
-            for f in map:
-                addpath(f)
-
-    def addpath(self, path):
-        dirs = self._dirs
-        for base in finddirs(path):
-            if base.endswith(b'/'):
-                raise ValueError(
-                    "found invalid consecutive slashes in path: %r" % base
-                )
-            if base in dirs:
-                dirs[base] += 1
-                return
-            dirs[base] = 1
-
-    def delpath(self, path):
-        dirs = self._dirs
-        for base in finddirs(path):
-            if dirs[base] > 1:
-                dirs[base] -= 1
-                return
-            del dirs[base]
-
-    def __iter__(self):
-        return iter(self._dirs)
-
-    def __contains__(self, d):
-        return d in self._dirs
-
-
-if safehasattr(parsers, 'dirs'):
-    dirs = parsers.dirs
-
-if rustdirs is not None:
-    dirs = rustdirs
 
 
 def finddirs(path):
