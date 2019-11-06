@@ -111,6 +111,8 @@ class wrapped(object):
 class mappable(object):
     """Object which can be converted to a single template mapping"""
 
+    __metaclass__ = abc.ABCMeta
+
     def itermaps(self, context):
         yield self.tomap(context)
 
