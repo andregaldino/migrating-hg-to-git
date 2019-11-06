@@ -54,6 +54,9 @@ class abstractvfs(object):
         '''Prevent instantiation; don't call this from subclasses.'''
         raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
+    def __call__(self, path, mode=b'rb', **kwargs):
+        raise NotImplementedError
+
     def _auditpath(self, path, mode):
         raise NotImplementedError
 
