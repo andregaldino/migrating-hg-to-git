@@ -649,7 +649,7 @@ class backgroundfilecloser(object):
         self._running = True
 
         for i in range(threadcount):
-            t = threading.Thread(target=self._worker, name=b'backgroundcloser')
+            t = threading.Thread(target=self._worker, name='backgroundcloser')
             self._threads.append(t)
             t.start()
 
