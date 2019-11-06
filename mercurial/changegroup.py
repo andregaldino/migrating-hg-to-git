@@ -1150,7 +1150,9 @@ class cgpacker(object):
         def makelookupmflinknode(tree, nodes):
             if fastpathlinkrev:
                 assert not tree
-                return manifests.__getitem__
+                return (
+                    manifests.__getitem__  # pytype: disable=unsupported-operands
+                )
 
             def lookupmflinknode(x):
                 """Callback for looking up the linknode for manifests.
