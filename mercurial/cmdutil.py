@@ -347,7 +347,7 @@ def filterchunks(ui, originalhunks, usecurses, testfile, match, operation=None):
                 ui, originalhunks, recordfn, operation
             )
     except crecordmod.fallbackerror as e:
-        ui.warn(b'%s\n' % e.message)
+        ui.warn(b'%s\n' % e.message)  # pytype: disable=attribute-error
         ui.warn(_(b'falling back to text mode\n'))
 
     return patch.filterpatch(ui, originalhunks, match, operation)
@@ -435,7 +435,7 @@ def dorecord(
                 copymod.copy(status[3]),
                 copymod.copy(status[4]),
                 copymod.copy(status[5]),
-                copymod.copy(status[6]),
+                copymod.copy(status[6]),  # pytype: disable=wrong-arg-count
             )
 
             # Force allows -X subrepo to skip the subrepo.
@@ -1289,7 +1289,7 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
             if isinstance(r, revlog.revlog):
                 pass
             elif util.safehasattr(r, b'_revlog'):
-                r = r._revlog
+                r = r._revlog  # pytype: disable=attribute-error
             elif r is not None:
                 raise error.Abort(_(b'%r does not appear to be a revlog') % r)
 
