@@ -252,7 +252,7 @@ class revlogoldio(object):
             n += 1
 
         index = revlogoldindex(index)
-        return index, index.nodemap, None
+        return index, None
 
     def packentry(self, entry, node, version, rev):
         if gettype(entry[0]):
@@ -299,7 +299,7 @@ class revlogio(object):
     def parseindex(self, data, inline):
         # call the C implementation to parse the index data
         index, cache = parsers.parse_index2(data, inline)
-        return index, index.nodemap, cache
+        return index, cache
 
     def packentry(self, entry, node, version, rev):
         p = indexformatng_pack(*entry)
@@ -552,8 +552,8 @@ class revlog(object):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.indexfile
             )
-        self.index, nodemap, self._chunkcache = d
-        self.nodemap = self._nodecache = nodemap
+        self.index, self._chunkcache = d
+        self.nodemap = self._nodecache = self.index.nodemap
         if not self._chunkcache:
             self._chunkclear()
         # revnum -> (chain-length, sum-delta-length)

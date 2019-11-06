@@ -2592,7 +2592,7 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
                 index[rev]
 
     def resolvenode(node):
-        nodemap = revlogio.parseindex(data, inline)[1]
+        nodemap = getattr(revlogio.parseindex(data, inline)[0], 'nodemap', None)
         # This only works for the C code.
         if nodemap is None:
             return
@@ -2603,7 +2603,7 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
             pass
 
     def resolvenodes(nodes, count=1):
-        nodemap = revlogio.parseindex(data, inline)[1]
+        nodemap = getattr(revlogio.parseindex(data, inline)[0], 'nodemap', None)
         if nodemap is None:
             return
 
