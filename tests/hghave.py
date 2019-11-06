@@ -1000,3 +1000,11 @@ def has_black():
     version = matchoutput(blackcmd, version_regex)
     sv = distutils.version.StrictVersion
     return version and sv(_strpath(version.group(1))) >= sv('19.10b0')
+
+
+@check('pytype', 'the pytype type checker')
+def has_pytype():
+    pytypecmd = 'pytype --version'
+    version = matchoutput(pytypecmd, b'[0-9a-b.]+')
+    sv = distutils.version.StrictVersion
+    return version and sv(_strpath(version.group(0))) >= sv('2019.10.17')
