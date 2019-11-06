@@ -59,6 +59,7 @@ patchhelptext = _(
 
 try:
     import curses
+    import curses.ascii
 
     curses.error
 except ImportError:
@@ -1938,7 +1939,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             self.helpwindow()
             self.stdscr.clear()
             self.stdscr.refresh()
-        elif curses.unctrl(keypressed) in ["^L"]:
+        elif keypressed in [curses.ascii.ctrl("L")]:
             # scroll the current line to the top of the screen, and redraw
             # everything
             self.scrolllines(self.selecteditemstartline)
