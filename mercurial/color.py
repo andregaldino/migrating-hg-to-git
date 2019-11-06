@@ -435,7 +435,7 @@ w32effects = None
 if pycompat.iswindows:
     import ctypes
 
-    _kernel32 = ctypes.windll.kernel32
+    _kernel32 = ctypes.windll.kernel32  # pytype: disable=module-attr
 
     _WORD = ctypes.c_ushort
 
