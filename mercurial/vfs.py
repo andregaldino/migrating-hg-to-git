@@ -52,7 +52,7 @@ class abstractvfs(object):
 
     def __init__(self, *args, **kwargs):
         '''Prevent instantiation; don't call this from subclasses.'''
-        raise NotImplementedError(b'attempted instantiating ' + str(type(self)))
+        raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
     def _auditpath(self, path, mode):
         raise NotImplementedError
@@ -589,10 +589,10 @@ class closewrapbase(object):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        raise NotImplementedError(b'attempted instantiating ' + str(type(self)))
+        raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
     def close(self):
-        raise NotImplementedError(b'attempted instantiating ' + str(type(self)))
+        raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
 
 class delayclosedfile(closewrapbase):
