@@ -227,108 +227,111 @@ def wrapchangelog(unfichangelog, filteredrevs):
     cl = copy.copy(unfichangelog)
     cl.filteredrevs = filteredrevs
 
-    class filteredchangelog(cl.__class__):
-        def tiprev(self):
-            """filtered version of revlog.tiprev"""
-            for i in pycompat.xrange(len(self) - 1, -2, -1):
-                if i not in self.filteredrevs:
-                    return i
+    cl.__class__ = type(
+        'filteredchangelog', (filteredchangelogmixin, cl.__class__), {}
+    )
 
-        def __contains__(self, rev):
-            """filtered version of revlog.__contains__"""
-            return 0 <= rev < len(self) and rev not in self.filteredrevs
+    return cl
 
-        def __iter__(self):
-            """filtered version of revlog.__iter__"""
 
-            def filterediter():
-                for i in pycompat.xrange(len(self)):
-                    if i not in self.filteredrevs:
-                        yield i
+class filteredchangelogmixin(object):
+    def tiprev(self):
+        """filtered version of revlog.tiprev"""
+        for i in pycompat.xrange(len(self) - 1, -2, -1):
+            if i not in self.filteredrevs:
+                return i
 
-            return filterediter()
+    def __contains__(self, rev):
+        """filtered version of revlog.__contains__"""
+        return 0 <= rev < len(self) and rev not in self.filteredrevs
 
-        def revs(self, start=0, stop=None):
-            """filtered version of revlog.revs"""
-            for i in super(filteredchangelog, self).revs(start, stop):
+    def __iter__(self):
+        """filtered version of revlog.__iter__"""
+
+        def filterediter():
+            for i in pycompat.xrange(len(self)):
                 if i not in self.filteredrevs:
                     yield i
 
-        def _checknofilteredinrevs(self, revs):
-            """raise the appropriate error if 'revs' contains a filtered revision
+        return filterediter()
 
-            This returns a version of 'revs' to be used thereafter by the caller.
-            In particular, if revs is an iterator, it is converted into a set.
-            """
-            safehasattr = util.safehasattr
-            if safehasattr(revs, '__next__'):
-                # Note that inspect.isgenerator() is not true for iterators,
-                revs = set(revs)
+    def revs(self, start=0, stop=None):
+        """filtered version of revlog.revs"""
+        for i in super(filteredchangelogmixin, self).revs(start, stop):
+            if i not in self.filteredrevs:
+                yield i
 
-            filteredrevs = self.filteredrevs
-            if safehasattr(revs, 'first'):  # smartset
-                offenders = revs & filteredrevs
-            else:
-                offenders = filteredrevs.intersection(revs)
+    def _checknofilteredinrevs(self, revs):
+        """raise the appropriate error if 'revs' contains a filtered revision
 
-            for rev in offenders:
-                raise error.FilteredIndexError(rev)
-            return revs
+        This returns a version of 'revs' to be used thereafter by the caller.
+        In particular, if revs is an iterator, it is converted into a set.
+        """
+        safehasattr = util.safehasattr
+        if safehasattr(revs, '__next__'):
+            # Note that inspect.isgenerator() is not true for iterators,
+            revs = set(revs)
 
-        def headrevs(self, revs=None):
-            if revs is None:
-                try:
-                    return self.index.headrevsfiltered(self.filteredrevs)
-                # AttributeError covers non-c-extension environments and
-                # old c extensions without filter handling.
-                except AttributeError:
-                    return self._headrevs()
+        filteredrevs = self.filteredrevs
+        if safehasattr(revs, 'first'):  # smartset
+            offenders = revs & filteredrevs
+        else:
+            offenders = filteredrevs.intersection(revs)
 
-            revs = self._checknofilteredinrevs(revs)
-            return super(filteredchangelog, self).headrevs(revs)
+        for rev in offenders:
+            raise error.FilteredIndexError(rev)
+        return revs
 
-        def strip(self, *args, **kwargs):
-            # XXX make something better than assert
-            # We can't expect proper strip behavior if we are filtered.
-            assert not self.filteredrevs
-            super(filteredchangelog, self).strip(*args, **kwargs)
+    def headrevs(self, revs=None):
+        if revs is None:
+            try:
+                return self.index.headrevsfiltered(self.filteredrevs)
+            # AttributeError covers non-c-extension environments and
+            # old c extensions without filter handling.
+            except AttributeError:
+                return self._headrevs()
 
-        def rev(self, node):
-            """filtered version of revlog.rev"""
-            r = super(filteredchangelog, self).rev(node)
-            if r in self.filteredrevs:
-                raise error.FilteredLookupError(
-                    hex(node), self.indexfile, _(b'filtered node')
-                )
-            return r
+        revs = self._checknofilteredinrevs(revs)
+        return super(filteredchangelogmixin, self).headrevs(revs)
 
-        def node(self, rev):
-            """filtered version of revlog.node"""
-            if rev in self.filteredrevs:
-                raise error.FilteredIndexError(rev)
-            return super(filteredchangelog, self).node(rev)
+    def strip(self, *args, **kwargs):
+        # XXX make something better than assert
+        # We can't expect proper strip behavior if we are filtered.
+        assert not self.filteredrevs
+        super(filteredchangelogmixin, self).strip(*args, **kwargs)
 
-        def linkrev(self, rev):
-            """filtered version of revlog.linkrev"""
-            if rev in self.filteredrevs:
-                raise error.FilteredIndexError(rev)
-            return super(filteredchangelog, self).linkrev(rev)
+    def rev(self, node):
+        """filtered version of revlog.rev"""
+        r = super(filteredchangelogmixin, self).rev(node)
+        if r in self.filteredrevs:
+            raise error.FilteredLookupError(
+                hex(node), self.indexfile, _(b'filtered node')
+            )
+        return r
 
-        def parentrevs(self, rev):
-            """filtered version of revlog.parentrevs"""
-            if rev in self.filteredrevs:
-                raise error.FilteredIndexError(rev)
-            return super(filteredchangelog, self).parentrevs(rev)
+    def node(self, rev):
+        """filtered version of revlog.node"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).node(rev)
 
-        def flags(self, rev):
-            """filtered version of revlog.flags"""
-            if rev in self.filteredrevs:
-                raise error.FilteredIndexError(rev)
-            return super(filteredchangelog, self).flags(rev)
+    def linkrev(self, rev):
+        """filtered version of revlog.linkrev"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).linkrev(rev)
 
-    cl.__class__ = filteredchangelog
+    def parentrevs(self, rev):
+        """filtered version of revlog.parentrevs"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).parentrevs(rev)
 
-    return cl
+    def flags(self, rev):
+        """filtered version of revlog.flags"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).flags(rev)
 
 
 class repoview(object):
