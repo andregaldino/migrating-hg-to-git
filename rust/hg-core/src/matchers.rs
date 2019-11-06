@@ -26,13 +26,9 @@ pub trait Matcher {
     /// Explicitly listed files
     fn file_set(&self) -> HashSet<&HgPath>;
     /// Returns whether `filename` is in `file_set`
-    fn exact_match(&self, _filename: impl AsRef<HgPath>) -> bool {
-        false
-    }
+    fn exact_match(&self, filename: impl AsRef<HgPath>) -> bool;
     /// Returns whether `filename` is matched by this matcher
-    fn matches(&self, _filename: impl AsRef<HgPath>) -> bool {
-        false
-    }
+    fn matches(&self, filename: impl AsRef<HgPath>) -> bool;
     /// Decides whether a directory should be visited based on whether it
     /// has potential matches in it or one of its subdirectories, and
     /// potentially lists which subdirectories of that directory should be
@@ -71,20 +67,14 @@ pub trait Matcher {
     /// `VisitChildrenSet::This`).
     fn visit_children_set(
         &self,
-        _directory: impl AsRef<HgPath>,
-    ) -> VisitChildrenSet {
-        VisitChildrenSet::This
-    }
+        directory: impl AsRef<HgPath>,
+    ) -> VisitChildrenSet;
     /// Matcher will match everything and `files_set()` will be empty:
     /// optimization might be possible.
-    fn matches_everything(&self) -> bool {
-        false
-    }
+    fn matches_everything(&self) -> bool;
     /// Matcher will match exactly the files in `files_set()`: optimization
     /// might be possible.
-    fn is_exact(&self) -> bool {
-        false
-    }
+    fn is_exact(&self) -> bool;
 }
 
 /// Matches everything.
@@ -95,11 +85,22 @@ impl Matcher for AlwaysMatcher {
     fn file_set(&self) -> HashSet<&HgPath> {
         HashSet::new()
     }
-
+    fn exact_match(&self, _filename: impl AsRef<HgPath>) -> bool {
+        false
+    }
+    fn matches(&self, _filename: impl AsRef<HgPath>) -> bool {
+        true
+    }
     fn visit_children_set(
         &self,
         _directory: impl AsRef<HgPath>,
     ) -> VisitChildrenSet {
         VisitChildrenSet::Recursive
+    }
+    fn matches_everything(&self) -> bool {
+        true
+    }
+    fn is_exact(&self) -> bool {
+        false
     }
 }
