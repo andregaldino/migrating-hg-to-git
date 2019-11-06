@@ -307,7 +307,10 @@ class abstractvfs(object):
         # Sharing backgroundfilecloser between threads is complex and using
         # multiple instances puts us at risk of running out of file descriptors
         # only allow to use backgroundfilecloser when in main thread.
-        if not isinstance(threading.currentThread(), threading._MainThread):
+        if not isinstance(
+            threading.currentThread(),
+            threading._MainThread,  # pytype: disable=module-attr
+        ):
             yield
             return
         vfs = getattr(self, 'vfs', self)
@@ -318,10 +321,14 @@ class abstractvfs(object):
 
         with backgroundfilecloser(ui, expectedcount=expectedcount) as bfc:
             try:
-                vfs._backgroundfilecloser = bfc
+                vfs._backgroundfilecloser = (
+                    bfc  # pytype: disable=attribute-error
+                )
                 yield bfc
             finally:
-                vfs._backgroundfilecloser = None
+                vfs._backgroundfilecloser = (
+                    None  # pytype: disable=attribute-error
+                )
 
 
 class vfs(abstractvfs):
@@ -477,7 +484,8 @@ class vfs(abstractvfs):
             fp = checkambigatclosing(fp)
 
         if backgroundclose and isinstance(
-            threading.currentThread(), threading._MainThread
+            threading.currentThread(),
+            threading._MainThread,  # pytype: disable=module-attr
         ):
             if not self._backgroundfilecloser:
                 raise error.Abort(
