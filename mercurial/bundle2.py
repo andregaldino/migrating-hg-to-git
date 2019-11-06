@@ -653,7 +653,9 @@ class bundle20(object):
         """add a stream level parameter"""
         if not name:
             raise error.ProgrammingError(b'empty parameter name')
-        if name[0:1] not in pycompat.bytestr(string.ascii_letters):
+        if name[0:1] not in pycompat.bytestr(
+            string.ascii_letters  # pytype: disable=wrong-arg-types
+        ):
             raise error.ProgrammingError(
                 b'non letter first character: %s' % name
             )
@@ -836,7 +838,9 @@ class unbundle20(unpackermixin):
         """
         if not name:
             raise ValueError(r'empty parameter name')
-        if name[0:1] not in pycompat.bytestr(string.ascii_letters):
+        if name[0:1] not in pycompat.bytestr(
+            string.ascii_letters  # pytype: disable=wrong-arg-types
+        ):
             raise ValueError(r'non letter first character: %s' % name)
         try:
             handler = b2streamparamsmap[name.lower()]
