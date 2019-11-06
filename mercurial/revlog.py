@@ -205,6 +205,17 @@ indexformatv0_unpack = indexformatv0.unpack
 
 
 class revlogoldindex(list):
+    @util.propertycache
+    def nodemap(self):
+        nodemap = revlogutils.NodeMap({nullid: nullrev})
+        for r in range(0, len(self)):
+            n = self[r][7]
+            nodemap[n] = r
+        return nodemap
+
+    def clearcaches(self):
+        self.__dict__.pop('nodemap', None)
+
     def __getitem__(self, i):
         if i == -1:
             return (0, 0, 0, -1, -1, -1, -1, nullid)
@@ -240,7 +251,8 @@ class revlogoldio(object):
             nodemap[e[6]] = n
             n += 1
 
-        return revlogoldindex(index), nodemap, None
+        index = revlogoldindex(index)
+        return index, index.nodemap, None
 
     def packentry(self, entry, node, version, rev):
         if gettype(entry[0]):
@@ -287,7 +299,7 @@ class revlogio(object):
     def parseindex(self, data, inline):
         # call the C implementation to parse the index data
         index, cache = parsers.parse_index2(data, inline)
-        return index, getattr(index, 'nodemap', None), cache
+        return index, index.nodemap, cache
 
     def packentry(self, entry, node, version, rev):
         p = indexformatng_pack(*entry)
@@ -372,11 +384,11 @@ class revlog(object):
         self._chunkcachesize = 65536
         self._maxchainlen = None
         self._deltabothparents = True
-        self.index = []
+        self.index = None
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
         # Mapping of revision integer to full node.
-        self._nodecache = revlogutils.NodeMap({nullid: nullrev})
+        self._nodecache = None
         self._nodepos = None
         self._compengine = b'zlib'
         self._compengineopts = {}
@@ -541,8 +553,7 @@ class revlog(object):
                 _(b"index %s is corrupted") % self.indexfile
             )
         self.index, nodemap, self._chunkcache = d
-        if nodemap is not None:
-            self.nodemap = self._nodecache = nodemap
+        self.nodemap = self._nodecache = nodemap
         if not self._chunkcache:
             self._chunkclear()
         # revnum -> (chain-length, sum-delta-length)
@@ -646,15 +657,7 @@ class revlog(object):
         self._chainbasecache.clear()
         self._chunkcache = (0, b'')
         self._pcache = {}
-
-        try:
-            # If we are using the native C version, you are in a fun case
-            # where self.index, self.nodemap and self._nodecaches is the same
-            # object.
-            self._nodecache.clearcaches()
-        except AttributeError:
-            self._nodecache = revlogutils.NodeMap({nullid: nullrev})
-            self._nodepos = None
+        self.index.clearcaches()
 
     def rev(self, node):
         try:
@@ -662,29 +665,10 @@ class revlog(object):
         except TypeError:
             raise
         except error.RevlogError:
-            if not isinstance(self._nodecache, revlogutils.NodeMap):
-                # parsers.c radix tree lookup failed
-                if node == wdirid or node in wdirfilenodeids:
-                    raise error.WdirUnsupported
-                raise error.LookupError(node, self.indexfile, _(b'no node'))
-            else:
-                # pure python cache lookup failed
-                n = self._nodecache
-                i = self.index
-                p = self._nodepos
-                if p is None:
-                    p = len(i) - 1
-                else:
-                    assert p < len(i)
-                for r in pycompat.xrange(p, -1, -1):
-                    v = i[r][7]
-                    n[v] = r
-                    if v == node:
-                        self._nodepos = r - 1
-                        return r
-                if node == wdirid or node in wdirfilenodeids:
-                    raise error.WdirUnsupported
-                raise error.LookupError(node, self.indexfile, _(b'no node'))
+            # parsers.c radix tree lookup failed
+            if node == wdirid or node in wdirfilenodeids:
+                raise error.WdirUnsupported
+            raise error.LookupError(node, self.indexfile, _(b'no node'))
 
     # Accessors for index entries.
 

@@ -10,8 +10,12 @@ from __future__ import absolute_import
 import struct
 import zlib
 
-from ..node import nullid
-from .. import pycompat
+from ..node import nullid, nullrev
+from .. import (
+    pycompat,
+    revlogutils,
+    util,
+)
 
 stringio = pycompat.bytesio
 
@@ -43,6 +47,17 @@ def offset_type(offset, type):
 
 
 class BaseIndexObject(object):
+    @util.propertycache
+    def nodemap(self):
+        nodemap = revlogutils.NodeMap({nullid: nullrev})
+        for r in range(0, len(self)):
+            n = self[r][7]
+            nodemap[n] = r
+        return nodemap
+
+    def clearcaches(self):
+        self.__dict__.pop('nodemap', None)
+
     def __len__(self):
         return self._lgt + len(self._extra)
 
