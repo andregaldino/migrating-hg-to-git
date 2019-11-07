@@ -1,8 +1,8 @@
 # -*- mode: ruby -*-
 
 Vagrant.configure('2') do |config|
-  # Debian 8.1 x86_64 without configuration management software
-  config.vm.box = "debian/jessie64"
+  # Debian 10.1 x86_64 without configuration management software
+  config.vm.box = "debian/buster64"
   config.vm.hostname = "tests"
 
   config.vm.define "tests" do |conf|
