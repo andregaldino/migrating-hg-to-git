@@ -113,53 +113,48 @@ fn dispatch_missing(state: EntryState) -> Dispatch {
 /// the relevant collections.
 fn stat_dmap_entries(
     dmap: &DirstateMap,
-    root_dir: impl AsRef<Path> + Sync,
+    root_dir: impl AsRef<Path> + Sync + Send,
     check_exec: bool,
     list_clean: bool,
     last_normal_time: i64,
-) -> std::io::Result<Vec<(&HgPath, Dispatch)>> {
-    dmap.par_iter()
-        .filter_map(
-            // Getting file metadata is costly, so we don't do it if the
-            // file is already present in the results, hence `filter_map`
-            |(filename, entry)| -> Option<
-                std::io::Result<(&HgPath, Dispatch)>
-            > {
-                let meta = match hg_path_to_path_buf(filename) {
-                    Ok(p) => root_dir.as_ref().join(p).symlink_metadata(),
-                    Err(e) => return Some(Err(e.into())),
-                };
+) -> impl ParallelIterator<Item = std::io::Result<(&HgPath, Dispatch)>> {
+    dmap.par_iter().map(move |(filename, entry)| {
+        let filename: &HgPath = filename;
+        let filename_as_path = hg_path_to_path_buf(filename)?;
+        let meta = root_dir.as_ref().join(filename_as_path).symlink_metadata();
 
-                Some(match meta {
-                    Ok(ref m)
-                        if !(m.file_type().is_file()
-                            || m.file_type().is_symlink()) =>
-                    {
-                        Ok((filename, dispatch_missing(entry.state)))
-                    }
-                    Ok(m) => Ok((filename, dispatch_found(
-                            filename,
-                            *entry,
-                            HgMetadata::from_metadata(m),
-                            &dmap.copy_map,
-                            check_exec,
-                            list_clean,
-                            last_normal_time))),
-                    Err(ref e)
-                        if e.kind() == std::io::ErrorKind::NotFound
-                            || e.raw_os_error() == Some(20) =>
-                    {
-                        // Rust does not yet have an `ErrorKind` for
-                        // `NotADirectory` (errno 20)
-                        // It happens if the dirstate contains `foo/bar` and
-                        // foo is not a directory
-                        Ok((filename, dispatch_missing(entry.state)))
-                    }
-                    Err(e) => Err(e),
-                })
-            },
-        )
-        .collect()
+        match meta {
+            Ok(ref m)
+                if !(m.file_type().is_file()
+                    || m.file_type().is_symlink()) =>
+            {
+                Ok((filename, dispatch_missing(entry.state)))
+            }
+            Ok(m) => Ok((
+                filename,
+                dispatch_found(
+                    filename,
+                    *entry,
+                    HgMetadata::from_metadata(m),
+                    &dmap.copy_map,
+                    check_exec,
+                    list_clean,
+                    last_normal_time,
+                ),
+            )),
+            Err(ref e)
+                if e.kind() == std::io::ErrorKind::NotFound
+                    || e.raw_os_error() == Some(20) =>
+            {
+                // Rust does not yet have an `ErrorKind` for
+                // `NotADirectory` (errno 20)
+                // It happens if the dirstate contains `foo/bar` and
+                // foo is not a directory
+                Ok((filename, dispatch_missing(entry.state)))
+            }
+            Err(e) => Err(e),
+        }
+    })
 }
 
 pub struct StatusResult<'a> {
@@ -208,18 +203,19 @@ fn build_response(
 
 pub fn status(
     dmap: &DirstateMap,
-    root_dir: impl AsRef<Path> + Sync + Copy,
+    root_dir: impl AsRef<Path> + Sync + Send + Copy,
     list_clean: bool,
     last_normal_time: i64,
     check_exec: bool,
 ) -> std::io::Result<(Vec<&HgPath>, StatusResult)> {
-    let results = stat_dmap_entries(
+    let results: std::io::Result<_> = stat_dmap_entries(
         &dmap,
         root_dir,
         check_exec,
         list_clean,
         last_normal_time,
-    )?;
+    )
+    .collect();
 
-    Ok(build_response(results))
+    Ok(build_response(results?))
 }
