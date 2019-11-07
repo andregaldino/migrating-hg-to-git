@@ -249,6 +249,10 @@ Test reporting of path conflicts
   rebasing 8:e147e6e3c490 "c/subdir/file.txt" (tip)
   abort: error: 'c/subdir/file.txt' conflicts with file 'c' in 3.
   [255]
+FIXME: shouldn't need this, but when we hit path conflicts in dryrun mode, we
+don't clean up rebasestate.
+  $ hg rebase --abort
+  rebase aborted
   $ hg rebase -r 3 -d . -n
   starting dry-run rebase; repository will not be changed
   rebasing 3:844a7de3e617 "c"
@@ -504,9 +508,8 @@ Retrying without in-memory merge won't lose merge state
   $ hg resolve -l
   U e
   $ hg rebase -s 2 -d 7
-  rebasing 2:177f92b77385 "c"
-  abort: outstanding merge conflicts
-  (use 'hg resolve' to resolve)
+  abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
   [255]
   $ hg resolve -l
   U e
@@ -862,3 +865,58 @@ Test rebasing when the file we are merging in destination is empty
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
+
+  $ cd $TESTTMP
+
+Test rebasing when we're in the middle of a rebase already
+  $ hg init test_issue6214
+  $ cd test_issue6214
+  $ echo r0 > r0
+  $ hg ci -qAm 'r0'
+  $ echo hi > foo
+  $ hg ci -qAm 'hi from foo'
+  $ hg co -q '.^'
+  $ echo bye > foo
+  $ hg ci -qAm 'bye from foo'
+  $ hg co -q '.^'
+  $ echo unrelated > some_other_file
+  $ hg ci -qAm 'some unrelated changes'
+  $ hg log -G -T'{rev}: {desc}\n{files%"{file}\n"}'
+  @  3: some unrelated changes
+  |  some_other_file
+  | o  2: bye from foo
+  |/   foo
+  | o  1: hi from foo
+  |/   foo
+  o  0: r0
+     r0
+  $ hg rebase -r 2 -d 1 -t:merge3
+  rebasing 2:b4d249fbf8dd "bye from foo"
+  merging foo
+  hit merge conflicts; re-running rebase without in-memory merge
+  rebasing 2:b4d249fbf8dd "bye from foo"
+  merging foo
+  warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase -r 3 -d 1 -t:merge3
+  abort: rebase in progress
+  (use 'hg rebase --continue' or 'hg rebase --abort')
+  [255]
+  $ hg resolve --list
+  U foo
+  $ hg resolve --all --re-merge -t:other
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue
+  rebasing 2:b4d249fbf8dd "bye from foo"
+  saved backup bundle to $TESTTMP/test_issue6214/.hg/strip-backup/b4d249fbf8dd-299ec25c-rebase.hg
+  $ hg log -G -T'{rev}: {desc}\n{files%"{file}\n"}'
+  o  3: bye from foo
+  |  foo
+  | @  2: some unrelated changes
+  | |  some_other_file
+  o |  1: hi from foo
+  |/   foo
+  o  0: r0
+     r0

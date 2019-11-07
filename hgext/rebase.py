@@ -1274,8 +1274,8 @@ def _definedestmap(
     if revf and srcf:
         raise error.Abort(_(b'cannot specify both a revision and a source'))
 
+    cmdutil.checkunfinished(repo)
     if not inmemory:
-        cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
 
     if ui.configbool(b'commands', b'rebase.requiredest') and not destf:
