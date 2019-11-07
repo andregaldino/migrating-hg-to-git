@@ -182,7 +182,7 @@ def tolocal(s):
             if encoding == b'UTF-8':
                 # fast path
                 return s
-            r = u.encode(_sysstr(encoding), r"replace")
+            r = u.encode(_sysstr(encoding), "replace")
             if u == r.decode(_sysstr(encoding)):
                 # r is a safe, non-lossy encoding of s
                 return safelocalstr(r)
@@ -191,7 +191,7 @@ def tolocal(s):
             # we should only get here if we're looking at an ancient changeset
             try:
                 u = s.decode(_sysstr(fallbackencoding))
-                r = u.encode(_sysstr(encoding), r"replace")
+                r = u.encode(_sysstr(encoding), "replace")
                 if u == r.decode(_sysstr(encoding)):
                     # r is a safe, non-lossy encoding of s
                     return safelocalstr(r)
@@ -199,7 +199,7 @@ def tolocal(s):
             except UnicodeDecodeError:
                 u = s.decode("utf-8", "replace")  # last ditch
                 # can't round-trip
-                return u.encode(_sysstr(encoding), r"replace")
+                return u.encode(_sysstr(encoding), "replace")
     except LookupError as k:
         raise error.Abort(k, hint=b"please check your locale settings")
 

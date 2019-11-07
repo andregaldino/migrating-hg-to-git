@@ -167,39 +167,39 @@ PKCS_7_ASN_ENCODING = 0x00010000
 # These structs are only complete enough to achieve what we need.
 class CERT_CHAIN_CONTEXT(ctypes.Structure):
     _fields_ = (
-        (r"cbSize", _DWORD),
+        ("cbSize", _DWORD),
         # CERT_TRUST_STATUS struct
-        (r"dwErrorStatus", _DWORD),
-        (r"dwInfoStatus", _DWORD),
-        (r"cChain", _DWORD),
-        (r"rgpChain", ctypes.c_void_p),
-        (r"cLowerQualityChainContext", _DWORD),
-        (r"rgpLowerQualityChainContext", ctypes.c_void_p),
-        (r"fHasRevocationFreshnessTime", _BOOL),
-        (r"dwRevocationFreshnessTime", _DWORD),
+        ("dwErrorStatus", _DWORD),
+        ("dwInfoStatus", _DWORD),
+        ("cChain", _DWORD),
+        ("rgpChain", ctypes.c_void_p),
+        ("cLowerQualityChainContext", _DWORD),
+        ("rgpLowerQualityChainContext", ctypes.c_void_p),
+        ("fHasRevocationFreshnessTime", _BOOL),
+        ("dwRevocationFreshnessTime", _DWORD),
     )
 
 
 class CERT_USAGE_MATCH(ctypes.Structure):
     _fields_ = (
-        (r"dwType", _DWORD),
+        ("dwType", _DWORD),
         # CERT_ENHKEY_USAGE struct
-        (r"cUsageIdentifier", _DWORD),
-        (r"rgpszUsageIdentifier", ctypes.c_void_p),  # LPSTR *
+        ("cUsageIdentifier", _DWORD),
+        ("rgpszUsageIdentifier", ctypes.c_void_p),  # LPSTR *
     )
 
 
 class CERT_CHAIN_PARA(ctypes.Structure):
     _fields_ = (
-        (r"cbSize", _DWORD),
-        (r"RequestedUsage", CERT_USAGE_MATCH),
-        (r"RequestedIssuancePolicy", CERT_USAGE_MATCH),
-        (r"dwUrlRetrievalTimeout", _DWORD),
-        (r"fCheckRevocationFreshnessTime", _BOOL),
-        (r"dwRevocationFreshnessTime", _DWORD),
-        (r"pftCacheResync", ctypes.c_void_p),  # LPFILETIME
-        (r"pStrongSignPara", ctypes.c_void_p),  # PCCERT_STRONG_SIGN_PARA
-        (r"dwStrongSignFlags", _DWORD),
+        ("cbSize", _DWORD),
+        ("RequestedUsage", CERT_USAGE_MATCH),
+        ("RequestedIssuancePolicy", CERT_USAGE_MATCH),
+        ("dwUrlRetrievalTimeout", _DWORD),
+        ("fCheckRevocationFreshnessTime", _BOOL),
+        ("dwRevocationFreshnessTime", _DWORD),
+        ("pftCacheResync", ctypes.c_void_p),  # LPFILETIME
+        ("pStrongSignPara", ctypes.c_void_p),  # PCCERT_STRONG_SIGN_PARA
+        ("dwStrongSignFlags", _DWORD),
     )
 
 
@@ -732,7 +732,7 @@ def unlink(f):
             if e.errno != errno.EEXIST:
                 raise
     else:
-        raise IOError(errno.EEXIST, r"No usable temporary filename found")
+        raise IOError(errno.EEXIST, "No usable temporary filename found")
 
     try:
         os.unlink(temp)

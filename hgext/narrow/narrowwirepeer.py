@@ -33,8 +33,8 @@ def reposetup(repo):
                 # TODO: don't blindly add include/exclude wireproto
                 # arguments to unbundle.
                 include, exclude = repo.narrowpats
-                kwargs[r"includepats"] = b','.join(include)
-                kwargs[r"excludepats"] = b','.join(exclude)
+                kwargs["includepats"] = b','.join(include)
+                kwargs["excludepats"] = b','.join(exclude)
             return orig(cmd, *args, **kwargs)
 
         extensions.wrapfunction(peer, b'_calltwowaystream', wrapped)

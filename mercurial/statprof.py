@@ -126,20 +126,20 @@ contextmanager = contextlib.contextmanager
 __all__ = [b'start', b'stop', b'reset', b'display', b'profile']
 
 skips = {
-    r"util.py:check",
-    r"extensions.py:closure",
-    r"color.py:colorcmd",
-    r"dispatch.py:checkargs",
-    r"dispatch.py:<lambda>",
-    r"dispatch.py:_runcatch",
-    r"dispatch.py:_dispatch",
-    r"dispatch.py:_runcommand",
-    r"pager.py:pagecmd",
-    r"dispatch.py:run",
-    r"dispatch.py:dispatch",
-    r"dispatch.py:runcommand",
-    r"hg.py:<module>",
-    r"evolve.py:warnobserrors",
+    "util.py:check",
+    "extensions.py:closure",
+    "color.py:colorcmd",
+    "dispatch.py:checkargs",
+    "dispatch.py:<lambda>",
+    "dispatch.py:_runcatch",
+    "dispatch.py:_dispatch",
+    "dispatch.py:_runcommand",
+    "pager.py:pagecmd",
+    "dispatch.py:run",
+    "dispatch.py:dispatch",
+    "dispatch.py:runcommand",
+    "hg.py:<module>",
+    "evolve.py:warnobserrors",
 }
 
 ###########################################################################
@@ -1061,15 +1061,15 @@ def main(argv=None):
     displayargs[b'limit'] = 0.05
     path = None
     for o, value in opts:
-        if o in (r"-l", r"--limit"):
+        if o in ("-l", "--limit"):
             displayargs[b'limit'] = float(value)
-        elif o in (r"-f", r"--file"):
+        elif o in ("-f", "--file"):
             path = value
-        elif o in (r"-o", r"--output-file"):
+        elif o in ("-o", "--output-file"):
             displayargs[b'outputfile'] = value
-        elif o in (r"-p", r"--script-path"):
+        elif o in ("-p", "--script-path"):
             displayargs[b'scriptpath'] = value
-        elif o in (r"-h", r"help"):
+        elif o in ("-h", "help"):
             printusage()
             return 0
         else:
@@ -1086,5 +1086,5 @@ def main(argv=None):
     return 0
 
 
-if __name__ == r"__main__":
+if __name__ == "__main__":
     sys.exit(main())

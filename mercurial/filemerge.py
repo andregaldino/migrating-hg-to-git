@@ -934,10 +934,10 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
             name = os.path.join(tmproot, pre)
             if ext:
                 name += ext
-            f = open(name, r"wb")
+            f = open(name, "wb")
         else:
             fd, name = pycompat.mkstemp(prefix=pre + b'.', suffix=ext)
-            f = os.fdopen(fd, r"wb")
+            f = os.fdopen(fd, "wb")
         return f, name
 
     def tempfromcontext(prefix, ctx):

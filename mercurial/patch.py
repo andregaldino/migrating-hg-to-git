@@ -383,7 +383,7 @@ class patchmeta(object):
         return self._ispatchinga(afile) and self._ispatchingb(bfile)
 
     def __repr__(self):
-        return r"<patchmeta %s %r>" % (self.op, self.path)
+        return "<patchmeta %s %r>" % (self.op, self.path)
 
 
 def readgitpatch(lr):

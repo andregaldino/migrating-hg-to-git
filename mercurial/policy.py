@@ -154,4 +154,4 @@ def importrust(modname, member=None, default=None):
     except AttributeError:
         if _isrustpermissive():
             return default
-        raise ImportError(r"Cannot import name %s" % member)
+        raise ImportError("Cannot import name %s" % member)

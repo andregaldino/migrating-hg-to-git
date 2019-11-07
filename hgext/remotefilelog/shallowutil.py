@@ -260,9 +260,9 @@ def parsesizeflags(raw):
             # v0, str(int(size)) is the header
             size = int(header)
     except ValueError:
-        raise RuntimeError(r"unexpected remotefilelog header: illegal format")
+        raise RuntimeError("unexpected remotefilelog header: illegal format")
     if size is None:
-        raise RuntimeError(r"unexpected remotefilelog header: no size found")
+        raise RuntimeError("unexpected remotefilelog header: no size found")
     return index + 1, size, flags
 
 

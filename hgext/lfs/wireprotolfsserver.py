@@ -249,7 +249,7 @@ def _batchresponseobjects(req, objects, action, store):
             if not exists:
                 rsp[r'error'] = {
                     r'code': 404,
-                    r'message': r"The object does not exist",
+                    r'message': "The object does not exist",
                 }
                 yield rsp
                 continue
@@ -257,7 +257,7 @@ def _batchresponseobjects(req, objects, action, store):
             elif not verifies:
                 rsp[r'error'] = {
                     r'code': 422,  # XXX: is this the right code?
-                    r'message': r"The object is corrupt",
+                    r'message': "The object is corrupt",
                 }
                 yield rsp
                 continue
@@ -287,7 +287,7 @@ def _batchresponseobjects(req, objects, action, store):
                     b'%s%s/.hg/lfs/objects/%s' % (req.baseurl, req.apppath, oid)
                 ),
                 # datetime.isoformat() doesn't include the 'Z' suffix
-                r"expires_at": expiresat.strftime(r'%Y-%m-%dT%H:%M:%SZ'),
+                "expires_at": expiresat.strftime(r'%Y-%m-%dT%H:%M:%SZ'),
                 r'header': _buildheader(),
             }
         }

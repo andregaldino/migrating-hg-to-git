@@ -651,7 +651,7 @@ def debugdata(ui, repo, file_, rev=None, **opts):
 )
 def debugdate(ui, date, range=None, **opts):
     """parse and display a date"""
-    if opts[r"extended"]:
+    if opts["extended"]:
         d = dateutil.parsedate(date, util.extendeddateformats)
     else:
         d = dateutil.parsedate(date)
@@ -877,7 +877,7 @@ def debugstate(ui, repo, **opts):
             timestr = b'set                 '
         else:
             timestr = time.strftime(
-                r"%Y-%m-%d %H:%M:%S ", time.localtime(ent[3])
+                "%Y-%m-%d %H:%M:%S ", time.localtime(ent[3])
             )
             timestr = encoding.strtolocal(timestr)
         if ent[1] & 0o20000:

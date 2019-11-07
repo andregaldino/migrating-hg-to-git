@@ -38,7 +38,7 @@ def pythonhook(ui, repo, htype, hname, funcname, args, throw):
 
     if callable(funcname):
         obj = funcname
-        funcname = pycompat.sysbytes(obj.__module__ + r"." + obj.__name__)
+        funcname = pycompat.sysbytes(obj.__module__ + "." + obj.__name__)
     else:
         d = funcname.rfind(b'.')
         if d == -1:
@@ -61,7 +61,7 @@ def pythonhook(ui, repo, htype, hname, funcname, args, throw):
                 e1 = sys.exc_info()
                 try:
                     # extensions are loaded with hgext_ prefix
-                    obj = __import__(r"hgext_%s" % pycompat.sysstr(modname))
+                    obj = __import__("hgext_%s" % pycompat.sysstr(modname))
                 except (ImportError, SyntaxError):
                     e2 = sys.exc_info()
                     if ui.tracebackflag:

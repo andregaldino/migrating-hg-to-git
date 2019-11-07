@@ -257,7 +257,7 @@ else:
                 creation = _OPEN_ALWAYS
                 flags |= _O_APPEND
             else:
-                raise ValueError(r"invalid mode: %s" % pycompat.sysstr(mode))
+                raise ValueError("invalid mode: %s" % pycompat.sysstr(mode))
 
             fh = _kernel32.CreateFileA(
                 name,

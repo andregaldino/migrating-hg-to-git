@@ -71,7 +71,7 @@ class basectx(object):
     __str__ = encoding.strmethod(__bytes__)
 
     def __repr__(self):
-        return r"<%s %s>" % (type(self).__name__, str(self))
+        return "<%s %s>" % (type(self).__name__, str(self))
 
     def __eq__(self, other):
         try:
@@ -789,7 +789,7 @@ class basefilectx(object):
     __str__ = encoding.strmethod(__bytes__)
 
     def __repr__(self):
-        return r"<%s %s>" % (type(self).__name__, str(self))
+        return "<%s %s>" % (type(self).__name__, str(self))
 
     def __hash__(self):
         try:

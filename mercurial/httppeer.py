@@ -543,7 +543,7 @@ class httppeer(wireprotov1peer.wirepeer):
         try:
             # dump bundle to disk
             fd, filename = pycompat.mkstemp(prefix=b"hg-bundle-", suffix=b".hg")
-            with os.fdopen(fd, r"wb") as fh:
+            with os.fdopen(fd, "wb") as fh:
                 d = fp.read(4096)
                 while d:
                     fh.write(d)

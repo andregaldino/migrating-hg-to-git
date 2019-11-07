@@ -591,9 +591,7 @@ def wrapfilecache(cls, propname, wrapper):
             break
 
     if currcls is object:
-        raise AttributeError(
-            r"type '%s' has no property '%s'" % (cls, propname)
-        )
+        raise AttributeError("type '%s' has no property '%s'" % (cls, propname))
 
 
 class wrappedfunction(object):

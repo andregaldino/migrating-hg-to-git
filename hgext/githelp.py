@@ -90,7 +90,7 @@ def parseoptions(ui, cmdoptions, args):
             args = fancyopts.fancyopts(list(args), cmdoptions, opts, True)
             break
         except getopt.GetoptError as ex:
-            if r"requires argument" in ex.msg:
+            if "requires argument" in ex.msg:
                 raise
             if (r'--' + ex.opt) in ex.msg:
                 flag = b'--' + pycompat.bytestr(ex.opt)

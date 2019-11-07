@@ -1658,7 +1658,7 @@ def perfstartup(ui, repo, **opts):
             )
         else:
             os.environ[r'HGRCPATH'] = r' '
-            os.system(r"%s version -q > NUL" % sys.argv[0])
+            os.system("%s version -q > NUL" % sys.argv[0])
 
     timer(d)
     fm.end()

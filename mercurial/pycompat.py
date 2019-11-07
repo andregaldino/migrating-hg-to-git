@@ -423,7 +423,7 @@ else:
         if isinstance(filename, str):
             return filename
         else:
-            raise TypeError(r"expect str, not %s" % type(filename).__name__)
+            raise TypeError("expect str, not %s" % type(filename).__name__)
 
     # In Python 2, fsdecode() has a very chance to receive bytes. So it's
     # better not to touch Python 2 part as it's already working fine.

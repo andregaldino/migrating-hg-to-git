@@ -62,7 +62,7 @@ class _error_logger(object):
 
     def writelines(self, seq):
         for msg in seq:
-            self.handler.log_error(r"HG error:  %s", encoding.strfromlocal(msg))
+            self.handler.log_error("HG error:  %s", encoding.strfromlocal(msg))
 
 
 class _httprequesthandler(httpservermod.basehttprequesthandler):
@@ -128,20 +128,20 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
                 isinstance(e, (OSError, socket.error))
                 and e.errno == errno.ECONNRESET
             ):
-                tb = r"".join(traceback.format_exception(*sys.exc_info()))
+                tb = "".join(traceback.format_exception(*sys.exc_info()))
                 # We need a native-string newline to poke in the log
                 # message, because we won't get a newline when using an
                 # r-string. This is the easy way out.
                 newline = chr(10)
                 self.log_error(
                     r"Exception happened during processing "
-                    r"request '%s':%s%s",
+                    "request '%s':%s%s",
                     self.path,
                     newline,
                     tb,
                 )
 
-            self._start_response(r"500 Internal Server Error", [])
+            self._start_response("500 Internal Server Error", [])
             self._write(b"Internal Server Error")
             self._done()
 
@@ -335,8 +335,8 @@ class _httprequesthandlerssl(_httprequesthandler):
 
     def setup(self):
         self.connection = self.request
-        self.rfile = self.request.makefile(r"rb", self.rbufsize)
-        self.wfile = self.request.makefile(r"wb", self.wbufsize)
+        self.rfile = self.request.makefile("rb", self.rbufsize)
+        self.wfile = self.request.makefile("wb", self.wbufsize)
 
 
 try:

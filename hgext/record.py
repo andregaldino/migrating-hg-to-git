@@ -72,7 +72,7 @@ def record(ui, repo, *pats, **opts):
             _(b'running non-interactively, use %s instead') % b'commit'
         )
 
-    opts[r"interactive"] = True
+    opts["interactive"] = True
     overrides = {(b'experimental', b'crecord'): False}
     with ui.configoverride(overrides, b'record'):
         return commands.commit(ui, repo, *pats, **opts)

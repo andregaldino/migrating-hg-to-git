@@ -95,7 +95,7 @@ def publish(name, desc, path, port):
 
     hostname = socket.gethostname().split(r'.')[0]
     host = hostname + r".local"
-    name = r"%s-%s" % (hostname, name)
+    name = "%s-%s" % (hostname, name)
 
     # advertise to browsers
     svc = Zeroconf.ServiceInfo(
@@ -180,10 +180,10 @@ def getzcpaths():
     server.close()
     for value in l.found.values():
         name = value.name[: value.name.index(b'.')]
-        url = r"http://%s:%s%s" % (
+        url = "http://%s:%s%s" % (
             socket.inet_ntoa(value.address),
             value.port,
-            value.properties.get(r"path", r"/"),
+            value.properties.get("path", "/"),
         )
         yield b"zc-" + name, pycompat.bytestr(url)
 
