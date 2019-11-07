@@ -32,6 +32,11 @@ pub struct DirstateEntry {
     pub size: i32,
 }
 
+/// A `DirstateEntry` with a size of `-2` means that it was merged from the
+/// other parent. This allows revert to pick the right status back during a
+/// merge.
+pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
+
 pub type StateMap = HashMap<HgPathBuf, DirstateEntry>;
 pub type StateMapIter<'a> = hash_map::Iter<'a, HgPathBuf, DirstateEntry>;
 pub type CopyMap = HashMap<HgPathBuf, HgPathBuf>;

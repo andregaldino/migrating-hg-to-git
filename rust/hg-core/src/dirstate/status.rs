@@ -9,9 +9,14 @@
 //! It is currently missing a lot of functionality compared to the Python one
 //! and will only be triggered in narrow cases.
 
-use crate::utils::files::HgMetadata;
-use crate::utils::hg_path::{hg_path_to_path_buf, HgPath};
-use crate::{CopyMap, DirstateEntry, DirstateMap, EntryState};
+use crate::{
+    dirstate::SIZE_FROM_OTHER_PARENT,
+    utils::{
+        files::HgMetadata,
+        hg_path::{hg_path_to_path_buf, HgPath},
+    },
+    CopyMap, DirstateEntry, DirstateMap, EntryState,
+};
 use rayon::prelude::*;
 use std::path::Path;
 
@@ -69,7 +74,7 @@ fn dispatch_found(
             let mode_changed =
                 (mode ^ st_mode as i32) & 0o100 != 0o000 && check_exec;
             let metadata_changed = size >= 0 && (size_changed || mode_changed);
-            let other_parent = size == -2;
+            let other_parent = size == SIZE_FROM_OTHER_PARENT;
             if metadata_changed
                 || other_parent
                 || copy_map.contains_key(filename.as_ref())

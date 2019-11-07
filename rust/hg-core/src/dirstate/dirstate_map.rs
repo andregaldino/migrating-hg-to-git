@@ -5,11 +5,13 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::{
-    dirstate::{parsers::PARENT_SIZE, EntryState},
+    dirstate::{parsers::PARENT_SIZE, EntryState, SIZE_FROM_OTHER_PARENT},
     pack_dirstate, parse_dirstate,
-    utils::files::normalize_case,
+    utils::{
+        files::normalize_case,
+        hg_path::{HgPath, HgPathBuf},
+    },
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
     DirstateParents, DirstateParseError, StateMap,
 };
@@ -24,7 +26,6 @@ pub type FileFoldMap = HashMap<HgPathBuf, HgPathBuf>;
 
 const NULL_ID: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
-const SIZE_DIRTY: i32 = -2;
 
 #[derive(Default)]
 pub struct DirstateMap {
@@ -100,7 +101,7 @@ impl DirstateMap {
             self.non_normal_set.insert(filename.to_owned());
         }
 
-        if entry.size == SIZE_DIRTY {
+        if entry.size == SIZE_FROM_OTHER_PARENT {
             self.other_parent_set.insert(filename.to_owned());
         }
     }
@@ -212,7 +213,8 @@ impl DirstateMap {
             if *state != EntryState::Normal || *mtime == MTIME_UNSET {
                 non_normal.insert(filename.to_owned());
             }
-            if *state == EntryState::Normal && *size == SIZE_DIRTY {
+            if *state == EntryState::Normal && *size == SIZE_FROM_OTHER_PARENT
+            {
                 other_parent.insert(filename.to_owned());
             }
         }
