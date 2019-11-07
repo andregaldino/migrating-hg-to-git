@@ -121,19 +121,19 @@ CREATE_SCHEMA = [
     # Deltas are stored as content-indexed blobs.
     # compression column holds COMPRESSION_* constant for how the
     # delta is encoded.
-    r'CREATE TABLE delta ('
-    r'    id INTEGER PRIMARY KEY, '
-    r'    compression INTEGER NOT NULL, '
-    r'    hash BLOB UNIQUE ON CONFLICT ABORT, '
-    r'    delta BLOB NOT NULL '
-    r')',
+    'CREATE TABLE delta ('
+    '    id INTEGER PRIMARY KEY, '
+    '    compression INTEGER NOT NULL, '
+    '    hash BLOB UNIQUE ON CONFLICT ABORT, '
+    '    delta BLOB NOT NULL '
+    ')',
     # Tracked paths are denormalized to integers to avoid redundant
     # storage of the path name.
-    r'CREATE TABLE filepath ('
-    r'    id INTEGER PRIMARY KEY, '
-    r'    path BLOB NOT NULL '
-    r')',
-    r'CREATE UNIQUE INDEX filepath_path ' r'    ON filepath (path)',
+    'CREATE TABLE filepath ('
+    '    id INTEGER PRIMARY KEY, '
+    '    path BLOB NOT NULL '
+    ')',
+    'CREATE UNIQUE INDEX filepath_path ON filepath (path)',
     # We have a single table for all file revision data.
     # Each file revision is uniquely described by a (path, rev) and
     # (path, node).
@@ -145,39 +145,38 @@ CREATE_SCHEMA = [
     #
     # flags column holds bitwise integer flags controlling storage options.
     # These flags are defined by the FLAG_* constants.
-    r'CREATE TABLE fileindex ('
-    r'    id INTEGER PRIMARY KEY, '
-    r'    pathid INTEGER REFERENCES filepath(id), '
-    r'    revnum INTEGER NOT NULL, '
-    r'    p1rev INTEGER NOT NULL, '
-    r'    p2rev INTEGER NOT NULL, '
-    r'    linkrev INTEGER NOT NULL, '
-    r'    flags INTEGER NOT NULL, '
-    r'    deltaid INTEGER REFERENCES delta(id), '
-    r'    deltabaseid INTEGER REFERENCES fileindex(id), '
-    r'    node BLOB NOT NULL '
-    r')',
-    r'CREATE UNIQUE INDEX fileindex_pathrevnum '
-    r'    ON fileindex (pathid, revnum)',
-    r'CREATE UNIQUE INDEX fileindex_pathnode '
-    r'    ON fileindex (pathid, node)',
+    'CREATE TABLE fileindex ('
+    '    id INTEGER PRIMARY KEY, '
+    '    pathid INTEGER REFERENCES filepath(id), '
+    '    revnum INTEGER NOT NULL, '
+    '    p1rev INTEGER NOT NULL, '
+    '    p2rev INTEGER NOT NULL, '
+    '    linkrev INTEGER NOT NULL, '
+    '    flags INTEGER NOT NULL, '
+    '    deltaid INTEGER REFERENCES delta(id), '
+    '    deltabaseid INTEGER REFERENCES fileindex(id), '
+    '    node BLOB NOT NULL '
+    ')',
+    'CREATE UNIQUE INDEX fileindex_pathrevnum '
+    '    ON fileindex (pathid, revnum)',
+    'CREATE UNIQUE INDEX fileindex_pathnode ON fileindex (pathid, node)',
     # Provide a view over all file data for convenience.
-    r'CREATE VIEW filedata AS '
-    r'SELECT '
-    r'    fileindex.id AS id, '
-    r'    filepath.id AS pathid, '
-    r'    filepath.path AS path, '
-    r'    fileindex.revnum AS revnum, '
-    r'    fileindex.node AS node, '
-    r'    fileindex.p1rev AS p1rev, '
-    r'    fileindex.p2rev AS p2rev, '
-    r'    fileindex.linkrev AS linkrev, '
-    r'    fileindex.flags AS flags, '
-    r'    fileindex.deltaid AS deltaid, '
-    r'    fileindex.deltabaseid AS deltabaseid '
-    r'FROM filepath, fileindex '
-    r'WHERE fileindex.pathid=filepath.id',
-    r'PRAGMA user_version=%d' % CURRENT_SCHEMA_VERSION,
+    'CREATE VIEW filedata AS '
+    'SELECT '
+    '    fileindex.id AS id, '
+    '    filepath.id AS pathid, '
+    '    filepath.path AS path, '
+    '    fileindex.revnum AS revnum, '
+    '    fileindex.node AS node, '
+    '    fileindex.p1rev AS p1rev, '
+    '    fileindex.p2rev AS p2rev, '
+    '    fileindex.linkrev AS linkrev, '
+    '    fileindex.flags AS flags, '
+    '    fileindex.deltaid AS deltaid, '
+    '    fileindex.deltabaseid AS deltabaseid '
+    'FROM filepath, fileindex '
+    'WHERE fileindex.pathid=filepath.id',
+    'PRAGMA user_version=%d' % CURRENT_SCHEMA_VERSION,
 ]
 
 
@@ -190,22 +189,22 @@ def resolvedeltachain(db, pathid, node, revisioncache, stoprids, zstddctx=None):
     # baseid "poisoned" to null and limited the recursive filter to
     # "is not null".
     res = db.execute(
-        r'WITH RECURSIVE '
-        r'    deltachain(deltaid, baseid) AS ('
-        r'        SELECT deltaid, deltabaseid FROM fileindex '
-        r'            WHERE pathid=? AND node=? '
-        r'        UNION ALL '
-        r'        SELECT fileindex.deltaid, deltabaseid '
-        r'            FROM fileindex, deltachain '
-        r'            WHERE '
-        r'                fileindex.id=deltachain.baseid '
-        r'                AND deltachain.baseid IS NOT NULL '
-        r'                AND fileindex.id NOT IN ({stops}) '
-        r'    ) '
-        r'SELECT deltachain.baseid, compression, delta '
-        r'FROM deltachain, delta '
-        r'WHERE delta.id=deltachain.deltaid'.format(
-            stops=r','.join([r'?'] * len(stoprids))
+        'WITH RECURSIVE '
+        '    deltachain(deltaid, baseid) AS ('
+        '        SELECT deltaid, deltabaseid FROM fileindex '
+        '            WHERE pathid=? AND node=? '
+        '        UNION ALL '
+        '        SELECT fileindex.deltaid, deltabaseid '
+        '            FROM fileindex, deltachain '
+        '            WHERE '
+        '                fileindex.id=deltachain.baseid '
+        '                AND deltachain.baseid IS NOT NULL '
+        '                AND fileindex.id NOT IN ({stops}) '
+        '    ) '
+        'SELECT deltachain.baseid, compression, delta '
+        'FROM deltachain, delta '
+        'WHERE delta.id=deltachain.deltaid'.format(
+            stops=','.join(['?'] * len(stoprids))
         ),
         tuple([pathid, node] + list(stoprids.keys())),
     )
@@ -249,13 +248,12 @@ def resolvedeltachain(db, pathid, node, revisioncache, stoprids, zstddctx=None):
 def insertdelta(db, compression, hash, delta):
     try:
         return db.execute(
-            r'INSERT INTO delta (compression, hash, delta) '
-            r'VALUES (?, ?, ?)',
+            'INSERT INTO delta (compression, hash, delta) VALUES (?, ?, ?)',
             (compression, hash, delta),
         ).lastrowid
     except sqlite3.IntegrityError:
         return db.execute(
-            r'SELECT id FROM delta WHERE hash=?', (hash,)
+            'SELECT id FROM delta WHERE hash=?', (hash,)
         ).fetchone()[0]
 
 
@@ -335,7 +333,7 @@ class sqlitefilestore(object):
 
         res = list(
             self._db.execute(
-                r'SELECT id FROM filepath WHERE path=?', (self._path,)
+                'SELECT id FROM filepath WHERE path=?', (self._path,)
             )
         )
 
@@ -346,10 +344,10 @@ class sqlitefilestore(object):
         self._pathid = res[0][0]
 
         res = self._db.execute(
-            r'SELECT id, revnum, node, p1rev, p2rev, linkrev, flags '
-            r'FROM fileindex '
-            r'WHERE pathid=? '
-            r'ORDER BY revnum ASC',
+            'SELECT id, revnum, node, p1rev, p2rev, linkrev, flags '
+            'FROM fileindex '
+            'WHERE pathid=? '
+            'ORDER BY revnum ASC',
             (self._pathid,),
         )
 
@@ -496,11 +494,11 @@ class sqlitefilestore(object):
         rev = self.rev(node)
 
         res = self._db.execute(
-            r'SELECT'
-            r'  node '
-            r'  FROM filedata '
-            r'  WHERE path=? AND (p1rev=? OR p2rev=?) '
-            r'  ORDER BY revnum ASC',
+            'SELECT'
+            '  node '
+            '  FROM filedata '
+            '  WHERE path=? AND (p1rev=? OR p2rev=?) '
+            '  ORDER BY revnum ASC',
             (self._path, rev, rev),
         )
 
@@ -598,9 +596,9 @@ class sqlitefilestore(object):
 
         # TODO perform in a single query.
         res = self._db.execute(
-            r'SELECT revnum, deltaid FROM fileindex '
-            r'WHERE pathid=? '
-            r'    AND node in (%s)' % (r','.join([r'?'] * len(nodes))),
+            'SELECT revnum, deltaid FROM fileindex '
+            'WHERE pathid=? '
+            '    AND node in (%s)' % (','.join(['?'] * len(nodes))),
             tuple([self._pathid] + nodes),
         )
 
@@ -608,7 +606,7 @@ class sqlitefilestore(object):
 
         for rev, deltaid in res:
             res = self._db.execute(
-                r'SELECT revnum from fileindex WHERE pathid=? AND deltaid=?',
+                'SELECT revnum from fileindex WHERE pathid=? AND deltaid=?',
                 (self._pathid, deltaid),
             )
             deltabases[rev] = res.fetchone()[0]
@@ -726,7 +724,7 @@ class sqlitefilestore(object):
                     entry.flags &= ~FLAG_MISSING_P1
 
                     self._db.execute(
-                        r'UPDATE fileindex SET p1rev=?, flags=? ' r'WHERE id=?',
+                        'UPDATE fileindex SET p1rev=?, flags=? WHERE id=?',
                         (self._nodetorev[p1], entry.flags, entry.rid),
                     )
 
@@ -736,7 +734,7 @@ class sqlitefilestore(object):
                     entry.flags &= ~FLAG_MISSING_P2
 
                     self._db.execute(
-                        r'UPDATE fileindex SET p2rev=?, flags=? ' r'WHERE id=?',
+                        'UPDATE fileindex SET p2rev=?, flags=? WHERE id=?',
                         (self._nodetorev[p1], entry.flags, entry.rid),
                     )
 
@@ -787,7 +785,7 @@ class sqlitefilestore(object):
 
         # Find the delta to be censored.
         censoreddeltaid = self._db.execute(
-            r'SELECT deltaid FROM fileindex WHERE id=?',
+            'SELECT deltaid FROM fileindex WHERE id=?',
             (self._revisions[censornode].rid,),
         ).fetchone()[0]
 
@@ -796,8 +794,8 @@ class sqlitefilestore(object):
         # for those delta chains too.
         rows = list(
             self._db.execute(
-                r'SELECT id, pathid, node FROM fileindex '
-                r'WHERE deltabaseid=? OR deltaid=?',
+                'SELECT id, pathid, node FROM fileindex '
+                'WHERE deltabaseid=? OR deltaid=?',
                 (censoreddeltaid, censoreddeltaid),
             )
         )
@@ -832,8 +830,8 @@ class sqlitefilestore(object):
             deltaid = insertdelta(self._db, compression, deltahash, deltablob)
 
             self._db.execute(
-                r'UPDATE fileindex SET deltaid=?, deltabaseid=NULL '
-                r'WHERE id=?',
+                'UPDATE fileindex SET deltaid=?, deltabaseid=NULL '
+                'WHERE id=?',
                 (deltaid, rid),
             )
 
@@ -848,12 +846,12 @@ class sqlitefilestore(object):
         flags |= FLAG_CENSORED
 
         self._db.execute(
-            r'UPDATE fileindex SET flags=?, deltaid=?, deltabaseid=NULL '
-            r'WHERE pathid=? AND node=?',
+            'UPDATE fileindex SET flags=?, deltaid=?, deltabaseid=NULL '
+            'WHERE pathid=? AND node=?',
             (flags, tombstonedeltaid, self._pathid, censornode),
         )
 
-        self._db.execute(r'DELETE FROM delta WHERE id=?', (censoreddeltaid,))
+        self._db.execute('DELETE FROM delta WHERE id=?', (censoreddeltaid,))
 
         self._refreshindex()
         self._revisioncache.clear()
@@ -878,7 +876,7 @@ class sqlitefilestore(object):
 
         for rev in self.revs(rev):
             self._db.execute(
-                r'DELETE FROM fileindex WHERE pathid=? AND node=?',
+                'DELETE FROM fileindex WHERE pathid=? AND node=?',
                 (self._pathid, self.node(rev)),
             )
 
@@ -971,7 +969,7 @@ class sqlitefilestore(object):
     ):
         if self._pathid is None:
             res = self._db.execute(
-                r'INSERT INTO filepath (path) VALUES (?)', (self._path,)
+                'INSERT INTO filepath (path) VALUES (?)', (self._path,)
             )
             self._pathid = res.lastrowid
 
@@ -1042,10 +1040,10 @@ class sqlitefilestore(object):
             p2rev = self._nodetorev[p2]
 
         rid = self._db.execute(
-            r'INSERT INTO fileindex ('
-            r'    pathid, revnum, node, p1rev, p2rev, linkrev, flags, '
-            r'    deltaid, deltabaseid) '
-            r'    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO fileindex ('
+            '    pathid, revnum, node, p1rev, p2rev, linkrev, flags, '
+            '    deltaid, deltabaseid) '
+            '    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (
                 self._pathid,
                 rev,
@@ -1090,7 +1088,7 @@ class sqliterepository(localrepo.localrepository):
         if current:
             return tr
 
-        self._dbconn.execute(r'BEGIN TRANSACTION')
+        self._dbconn.execute('BEGIN TRANSACTION')
 
         def committransaction(_):
             self._dbconn.commit()
@@ -1122,7 +1120,7 @@ def makedb(path):
     db = sqlite3.connect(encoding.strfromlocal(path))
     db.text_factory = bytes
 
-    res = db.execute(r'PRAGMA user_version').fetchone()[0]
+    res = db.execute('PRAGMA user_version').fetchone()[0]
 
     # New database.
     if res == 0:
@@ -1137,7 +1135,7 @@ def makedb(path):
     else:
         raise error.Abort(_(b'sqlite database has unrecognized version'))
 
-    db.execute(r'PRAGMA journal_mode=WAL')
+    db.execute('PRAGMA journal_mode=WAL')
 
     return db
 
