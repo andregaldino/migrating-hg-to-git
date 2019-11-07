@@ -28,6 +28,17 @@ enum Dispatch {
     Unknown,
 }
 
+/// Dates and times that are outside the 31-bit signed range are compared
+/// modulo 2^31. This should prevent hg from behaving badly with very large
+/// files or corrupt dates while still having a high probability of detecting
+/// changes. (issue2608)
+/// TODO I haven't found a way of having `b` be `Into<i32>`, since `From<u64>`
+/// is not defined for `i32`, and there is no `As` trait. This forces the
+/// caller to cast `b` as `i32`.
+fn mod_compare(a: i32, b: i32) -> bool {
+    a & i32::max_value() != b & i32::max_value()
+}
+
 /// The file corresponding to the dirstate entry was found on the filesystem.
 fn dispatch_found(
     filename: impl AsRef<HgPath>,
@@ -54,26 +65,17 @@ fn dispatch_found(
 
     match state {
         EntryState::Normal => {
-            // Dates and times that are outside the 31-bit signed
-            // range are compared modulo 2^31. This should prevent
-            // it from behaving badly with very large files or
-            // corrupt dates while still having a high probability
-            // of detecting changes. (issue2608)
-            let range_mask = 0x7fffffff;
-
-            let size_changed = (size != st_size as i32)
-                && size != (st_size as i32 & range_mask);
+            let size_changed = mod_compare(size, st_size as i32);
             let mode_changed =
                 (mode ^ st_mode as i32) & 0o100 != 0o000 && check_exec;
-            if size >= 0
-                            && (size_changed || mode_changed)
-                            || size == -2  // other parent
-                            || copy_map.contains_key(filename.as_ref())
+            let metadata_changed = size >= 0 && (size_changed || mode_changed);
+            let other_parent = size == -2;
+            if metadata_changed
+                || other_parent
+                || copy_map.contains_key(filename.as_ref())
             {
                 Dispatch::Modified
-            } else if mtime != st_mtime as i32
-                && mtime != (st_mtime as i32 & range_mask)
-            {
+            } else if mod_compare(mtime, st_mtime as i32) {
                 Dispatch::Unsure
             } else if st_mtime == last_normal_time {
                 // the file may have just been marked as normal and
