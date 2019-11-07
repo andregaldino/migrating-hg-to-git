@@ -10,7 +10,7 @@ Ensure debuild doesn't run the testsuite, as that could get silly.
   $ export OUTPUTDIR
 
   $ cd "$TESTDIR"/..
-  $ make docker-debian-jessie > $OUTPUTDIR/build.log 2>&1
+  $ make docker-debian-buster > $OUTPUTDIR/build.log 2>&1
   $ cd $OUTPUTDIR
   $ ls *.deb
   mercurial-common_*.deb (glob)

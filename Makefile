@@ -189,7 +189,8 @@ packaging_targets := \
   docker-centos6 \
   docker-centos7 \
   docker-centos8 \
-  docker-debian-jessie \
+  docker-debian-bullseye \
+  docker-debian-buster \
   docker-debian-stretch \
   docker-fedora \
   docker-ubuntu-trusty \
