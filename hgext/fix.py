@@ -681,7 +681,7 @@ def showstderr(ui, rev, fixername, stderr):
             if rev is None:
                 ui.warn(_(b'wdir'), label=b'evolve.rev')
             else:
-                ui.warn((str(rev)), label=b'evolve.rev')
+                ui.warn(b'%d' % rev, label=b'evolve.rev')
             ui.warn(b'] %s: %s\n' % (fixername, line))
 
 
