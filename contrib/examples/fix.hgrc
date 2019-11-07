@@ -2,7 +2,7 @@
 clang-format:command = clang-format --style file -i
 clang-format:pattern = (**.c or **.cc or **.h) and not "listfile:contrib/clang-format-ignorelist"
 
-rustfmt:command = rustfmt {rootpath}
+rustfmt:command = rustfmt
 rustfmt:pattern = set:**.rs
 
 black:command = black --config=black.toml -
