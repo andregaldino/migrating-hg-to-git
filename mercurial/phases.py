@@ -512,9 +512,9 @@ class phasecache(object):
         Nothing is lost as unknown nodes only hold data for their descendants.
         """
         filtered = False
-        nodemap = repo.changelog.nodemap  # to filter unknown nodes
+        has_node = repo.changelog.index.has_node  # to filter unknown nodes
         for phase, nodes in enumerate(self.phaseroots):
-            missing = sorted(node for node in nodes if node not in nodemap)
+            missing = sorted(node for node in nodes if not has_node(node))
             if missing:
                 for mnode in missing:
                     repo.ui.debug(
