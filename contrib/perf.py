@@ -691,8 +691,8 @@ def repocleartagscachefunc(repo):
         def clearcache():
             # _tagscache has been filteredpropertycache since 2.5 (or
             # 98c867ac1330), and delattr() can't work in such case
-            if b'_tagscache' in vars(repo):
-                del repo.__dict__[b'_tagscache']
+            if '_tagscache' in vars(repo):
+                del repo.__dict__['_tagscache']
 
         return clearcache
 

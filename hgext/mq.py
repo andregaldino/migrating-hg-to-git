@@ -567,7 +567,7 @@ class queue(object):
         return self.seriesguards
 
     def invalidate(self):
-        for a in b'applied fullseries series seriesguards'.split():
+        for a in 'applied fullseries series seriesguards'.split():
             if a in self.__dict__:
                 delattr(self, a)
         self.applieddirty = False

@@ -160,7 +160,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             self.server.prefix + b'/'
         ):
             self._start_response(pycompat.strurl(common.statusmessage(404)), [])
-            if self.command == b'POST':
+            if self.command == r'POST':
                 # Paranoia: tell the client we're going to close the
                 # socket so they don't try and reuse a socket that
                 # might have a POST body waiting to confuse us. We do

@@ -24,7 +24,6 @@ from . import (
     encoding,
     error,
     patch as patchmod,
-    pycompat,
     scmutil,
     util,
 )
@@ -60,6 +59,7 @@ patchhelptext = _(
 
 try:
     import curses
+    import curses.ascii
 
     curses.error
 except ImportError:
@@ -607,8 +607,8 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
 
     chunkselector.stdscr = dummystdscr()
     if testfn and os.path.exists(testfn):
-        testf = open(testfn, b'rb')
-        testcommands = [x.rstrip(b'\n') for x in testf.readlines()]
+        testf = open(testfn, 'r')
+        testcommands = [x.rstrip('\n') for x in testf.readlines()]
         testf.close()
         while True:
             if chunkselector.handlekeypressed(testcommands.pop(0), test=True):
@@ -1741,8 +1741,8 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         with self.ui.timeblockedsection(b'crecord'):
             response = self.confirmationwindow(confirmtext)
         if response is None:
-            response = b"n"
-        if response.lower().startswith(b"y"):
+            response = "n"
+        if response.lower().startswith("y"):
             return True
         else:
             return False
@@ -1887,60 +1887,59 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
 
         Return true to exit the main loop.
         """
-        keypressed = pycompat.bytestr(keypressed)
-        if keypressed in [b"k", b"KEY_UP"]:
+        if keypressed in ["k", "KEY_UP"]:
             self.uparrowevent()
-        elif keypressed in [b"K", b"KEY_PPAGE"]:
+        elif keypressed in ["K", "KEY_PPAGE"]:
             self.uparrowshiftevent()
-        elif keypressed in [b"j", b"KEY_DOWN"]:
+        elif keypressed in ["j", "KEY_DOWN"]:
             self.downarrowevent()
-        elif keypressed in [b"J", b"KEY_NPAGE"]:
+        elif keypressed in ["J", "KEY_NPAGE"]:
             self.downarrowshiftevent()
-        elif keypressed in [b"l", b"KEY_RIGHT"]:
+        elif keypressed in ["l", "KEY_RIGHT"]:
             self.rightarrowevent()
-        elif keypressed in [b"h", b"KEY_LEFT"]:
+        elif keypressed in ["h", "KEY_LEFT"]:
             self.leftarrowevent()
-        elif keypressed in [b"H", b"KEY_SLEFT"]:
+        elif keypressed in ["H", "KEY_SLEFT"]:
             self.leftarrowshiftevent()
-        elif keypressed in [b"q"]:
+        elif keypressed in ["q"]:
             raise error.Abort(_(b'user quit'))
-        elif keypressed in [b'a']:
+        elif keypressed in ['a']:
             self.toggleamend(self.opts, test)
-        elif keypressed in [b"c"]:
+        elif keypressed in ["c"]:
             return True
-        elif keypressed in [b"r"]:
+        elif keypressed in ["r"]:
             if self.reviewcommit():
                 self.opts[b'review'] = True
                 return True
-        elif test and keypressed in [b'R']:
+        elif test and keypressed in ["R"]:
             self.opts[b'review'] = True
             return True
-        elif keypressed in [b' ', b'x']:
+        elif keypressed in [" ", "x"]:
             self.toggleapply()
-        elif keypressed in [b'\n', b'KEY_ENTER']:
+        elif keypressed in ["\n", "KEY_ENTER"]:
             self.toggleapply()
             self.nextsametype(test=test)
-        elif keypressed in [b'X']:
+        elif keypressed in ["X"]:
             self.toggleallbetween()
-        elif keypressed in [b'A']:
+        elif keypressed in ["A"]:
             self.toggleall()
-        elif keypressed in [b'e']:
+        elif keypressed in ["e"]:
             self.toggleedit(test=test)
-        elif keypressed in [b"f"]:
+        elif keypressed in ["f"]:
             self.togglefolded()
-        elif keypressed in [b"F"]:
+        elif keypressed in ["F"]:
             self.togglefolded(foldparent=True)
-        elif keypressed in [b"m"]:
+        elif keypressed in ["m"]:
             self.commitMessageWindow()
-        elif keypressed in [b"g", b"KEY_HOME"]:
+        elif keypressed in ["g", "KEY_HOME"]:
             self.handlefirstlineevent()
-        elif keypressed in [b"G", b"KEY_END"]:
+        elif keypressed in ["G", "KEY_END"]:
             self.handlelastlineevent()
-        elif keypressed in [b"?"]:
+        elif keypressed in ["?"]:
             self.helpwindow()
             self.stdscr.clear()
             self.stdscr.refresh()
-        elif curses.unctrl(keypressed) in [b"^L"]:
+        elif keypressed in [curses.ascii.ctrl("L")]:
             # scroll the current line to the top of the screen, and redraw
             # everything
             self.scrolllines(self.selecteditemstartline)

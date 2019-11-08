@@ -861,7 +861,7 @@ class unbundle20(unpackermixin):
         needed to move forward to get general delta enabled.
         """
         yield self._magicstring
-        assert b'params' not in vars(self)
+        assert 'params' not in vars(self)
         paramssize = self._unpack(_fstreamparamsize)[0]
         if paramssize < 0:
             raise error.BundleValueError(

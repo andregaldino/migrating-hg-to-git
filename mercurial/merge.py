@@ -171,7 +171,7 @@ class mergestate(object):
         self._local = None
         self._other = None
         self._labels = labels
-        for var in (b'localctx', b'otherctx'):
+        for var in ('localctx', 'otherctx'):
             if var in vars(self):
                 delattr(self, var)
         if node:
@@ -196,7 +196,7 @@ class mergestate(object):
         self._stateextras = {}
         self._local = None
         self._other = None
-        for var in (b'localctx', b'otherctx'):
+        for var in ('localctx', 'otherctx'):
             if var in vars(self):
                 delattr(self, var)
         self._readmergedriver = None
