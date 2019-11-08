@@ -7525,7 +7525,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
             _(b'DATE'),
         ),
     ],
-    _(b'hg unshelve [OPTION]... [FILE]... [-n SHELVED]'),
+    _(b'hg unshelve [OPTION]... [[-n] SHELVED]'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
 )
 def unshelve(ui, repo, *shelved, **opts):
@@ -7549,9 +7549,9 @@ def unshelve(ui, repo, *shelved, **opts):
     that causes a conflict. This reverts the unshelved changes, and
     leaves the bundle in place.)
 
-    If bare shelved change (when no files are specified, without interactive,
-    include and exclude option) was done on newly created branch it would
-    restore branch information to the working directory.
+    If bare shelved change (without interactive, include and exclude
+    option) was done on newly created branch it would restore branch
+    information to the working directory.
 
     After a successful unshelve, the shelved changes are stored in a
     backup directory. Only the N most recent backups are kept. N
