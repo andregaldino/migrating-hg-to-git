@@ -1568,7 +1568,7 @@ class localrepository(object):
             else:
                 raise error.ProgrammingError(
                     b"unsupported changeid '%s' of type %s"
-                    % (changeid, type(changeid))
+                    % (changeid, pycompat.sysstr(type(changeid)))
                 )
 
             return context.changectx(self, rev, node)
