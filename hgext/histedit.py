@@ -2565,8 +2565,8 @@ def cleanupnode(ui, repo, nodes, nobackup=False):
         repo = repo.unfiltered()
         # Find all nodes that need to be stripped
         # (we use %lr instead of %ln to silently ignore unknown items)
-        nm = repo.changelog.nodemap
-        nodes = sorted(n for n in nodes if n in nm)
+        has_node = repo.changelog.index.has_node
+        nodes = sorted(n for n in nodes if has_node(n))
         roots = [c.node() for c in repo.set(b"roots(%ln)", nodes)]
         if roots:
             backup = not nobackup
