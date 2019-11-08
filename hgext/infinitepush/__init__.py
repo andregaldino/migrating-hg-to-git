@@ -548,7 +548,7 @@ def getbundlechunks(orig, repo, source, heads=None, bundlecaps=None, **kwargs):
     allbundlestocleanup = []
     try:
         for head in heads:
-            if head not in repo.changelog.nodemap:
+            if not repo.changelog.index.has_node(head):
                 if head not in nodestobundle:
                     newbundlefile = common.downloadbundle(repo, head)
                     bundlepath = b"bundle:%s+%s" % (repo.root, newbundlefile)
