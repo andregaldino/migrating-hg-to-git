@@ -78,7 +78,7 @@ class bmstore(object):
         self._nodemap = nodemap = {}  # node: sorted([refspec, ...])
         self._clean = True
         self._aclean = True
-        nm = repo.changelog.nodemap
+        has_node = repo.changelog.index.has_node
         tonode = bin  # force local lookup
         try:
             with _getbkfile(repo) as bkfile:
@@ -89,7 +89,7 @@ class bmstore(object):
                     try:
                         sha, refspec = line.split(b' ', 1)
                         node = tonode(sha)
-                        if node in nm:
+                        if has_node(node):
                             refspec = encoding.tolocal(refspec)
                             refmap[refspec] = node
                             nrefs = nodemap.get(node)
