@@ -249,7 +249,7 @@ def exclusivemarkers(repo, nodes):
     unfi = repo.unfiltered()
 
     # shortcut to various useful item
-    nm = unfi.changelog.nodemap
+    has_node = unfi.changelog.index.has_node
     precursorsmarkers = unfi.obsstore.predecessors
     successormarkers = unfi.obsstore.successors
     childrenmarkers = unfi.obsstore.children
@@ -297,7 +297,7 @@ def exclusivemarkers(repo, nodes):
                 continue
 
             # is this a locally known node ?
-            known = prec in nm
+            known = has_node(prec)
             # if locally-known and not in the <nodes> set the traversal
             # stop here.
             if known and prec not in nodes:
