@@ -2489,7 +2489,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 		if (self->ntinitialized) {
 			Py_ssize_t i;
 
-			for (i = start + 1; i < self->length; i++) {
+			for (i = start; i < self->length; i++) {
 				const char *node = index_node_existing(self, i);
 				if (node == NULL)
 					return -1;
