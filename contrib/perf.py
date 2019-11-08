@@ -1421,13 +1421,15 @@ def perfphasesremote(ui, repo, dest=None, **opts):
     else:
         ui.statusnoi18n(b'publishing: no\n')
 
-    nodemap = repo.changelog.nodemap
+    has_node = getattr(repo.changelog.index, 'has_node', None)
+    if has_node is None:
+        has_node = repo.changelog.nodemap.__contains__
     nonpublishroots = 0
     for nhex, phase in remotephases.iteritems():
         if nhex == b'publishing':  # ignore data related to publish option
             continue
         node = bin(nhex)
-        if node in nodemap and int(phase):
+        if has_node(node) and int(phase):
             nonpublishroots += 1
     ui.statusnoi18n(b'number of roots: %d\n' % len(remotephases))
     ui.statusnoi18n(b'number of known non public roots: %d\n' % nonpublishroots)
