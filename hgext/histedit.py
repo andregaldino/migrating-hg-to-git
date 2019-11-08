@@ -2046,11 +2046,11 @@ def _finishhistedit(ui, repo, state, fm):
             mapping[n] = ()
 
     # remove entries about unknown nodes
-    nodemap = repo.unfiltered().changelog.nodemap
+    has_node = repo.unfiltered().changelog.index.has_node
     mapping = {
         k: v
         for k, v in mapping.items()
-        if k in nodemap and all(n in nodemap for n in v)
+        if has_node(k) and all(has_node(n) for n in v)
     }
     scmutil.cleanupnodes(repo, mapping, b'histedit')
     hf = fm.hexfunc
