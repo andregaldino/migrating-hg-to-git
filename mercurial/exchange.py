@@ -1855,7 +1855,7 @@ def _pulldiscoverychangegroup(pullop):
         pullop.repo, pullop.remote, heads=pullop.heads, force=pullop.force
     )
     common, fetch, rheads = tmp
-    nm = pullop.repo.unfiltered().changelog.nodemap
+    has_node = pullop.repo.unfiltered().changelog.index.has_node
     if fetch and rheads:
         # If a remote heads is filtered locally, put in back in common.
         #
@@ -1868,7 +1868,7 @@ def _pulldiscoverychangegroup(pullop):
         # but are not including a remote heads, we'll not be able to detect it,
         scommon = set(common)
         for n in rheads:
-            if n in nm:
+            if has_node(n):
                 if n not in scommon:
                     common.append(n)
         if set(rheads).issubset(set(common)):
