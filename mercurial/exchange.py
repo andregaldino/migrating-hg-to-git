@@ -2197,8 +2197,8 @@ def applynarrowacl(repo, kwargs):
         b'path:.' if p == b'*' else b'path:' + p for p in user_excludes
     ]
 
-    req_includes = set(kwargs.get(r'includepats', []))
-    req_excludes = set(kwargs.get(r'excludepats', []))
+    req_includes = set(kwargs.get('includepats', []))
+    req_excludes = set(kwargs.get('excludepats', []))
 
     req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
         req_includes, req_excludes, user_includes, user_excludes
@@ -2213,11 +2213,11 @@ def applynarrowacl(repo, kwargs):
 
     new_args = {}
     new_args.update(kwargs)
-    new_args[r'narrow'] = True
-    new_args[r'narrow_acl'] = True
-    new_args[r'includepats'] = req_includes
+    new_args['narrow'] = True
+    new_args['narrow_acl'] = True
+    new_args['includepats'] = req_includes
     if req_excludes:
-        new_args[r'excludepats'] = req_excludes
+        new_args['excludepats'] = req_excludes
 
     return new_args
 
@@ -2480,7 +2480,7 @@ def _getbundlechangegrouppart(
     **kwargs
 ):
     """add a changegroup part to the requested bundle"""
-    if not kwargs.get(r'cg', True):
+    if not kwargs.get('cg', True):
         return
 
     version = b'01'
@@ -2499,9 +2499,9 @@ def _getbundlechangegrouppart(
     if not outgoing.missing:
         return
 
-    if kwargs.get(r'narrow', False):
-        include = sorted(filter(bool, kwargs.get(r'includepats', [])))
-        exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+    if kwargs.get('narrow', False):
+        include = sorted(filter(bool, kwargs.get('includepats', [])))
+        exclude = sorted(filter(bool, kwargs.get('excludepats', [])))
         matcher = narrowspec.match(repo.root, include=include, exclude=exclude)
     else:
         matcher = None
@@ -2523,8 +2523,8 @@ def _getbundlechangegrouppart(
         part.addparam(b'exp-sidedata', b'1')
 
     if (
-        kwargs.get(r'narrow', False)
-        and kwargs.get(r'narrow_acl', False)
+        kwargs.get('narrow', False)
+        and kwargs.get('narrow_acl', False)
         and (include or exclude)
     ):
         # this is mandatory because otherwise ACL clients won't work
@@ -2540,7 +2540,7 @@ def _getbundlebookmarkpart(
     bundler, repo, source, bundlecaps=None, b2caps=None, **kwargs
 ):
     """add a bookmark part to the requested bundle"""
-    if not kwargs.get(r'bookmarks', False):
+    if not kwargs.get('bookmarks', False):
         return
     if b'bookmarks' not in b2caps:
         raise error.Abort(_(b'no common bookmarks exchange method'))
@@ -2555,7 +2555,7 @@ def _getbundlelistkeysparts(
     bundler, repo, source, bundlecaps=None, b2caps=None, **kwargs
 ):
     """add parts containing listkeys namespaces to the requested bundle"""
-    listkeys = kwargs.get(r'listkeys', ())
+    listkeys = kwargs.get('listkeys', ())
     for namespace in listkeys:
         part = bundler.newpart(b'listkeys')
         part.addparam(b'namespace', namespace)
@@ -2568,7 +2568,7 @@ def _getbundleobsmarkerpart(
     bundler, repo, source, bundlecaps=None, b2caps=None, heads=None, **kwargs
 ):
     """add an obsolescence markers part to the requested bundle"""
-    if kwargs.get(r'obsmarkers', False):
+    if kwargs.get('obsmarkers', False):
         if heads is None:
             heads = repo.heads()
         subset = [c.node() for c in repo.set(b'::%ln', heads)]
@@ -2582,7 +2582,7 @@ def _getbundlephasespart(
     bundler, repo, source, bundlecaps=None, b2caps=None, heads=None, **kwargs
 ):
     """add phase heads part to the requested bundle"""
-    if kwargs.get(r'phases', False):
+    if kwargs.get('phases', False):
         if not b'heads' in b2caps.get(b'phases'):
             raise error.Abort(_(b'no common phases exchange method'))
         if heads is None:
@@ -2647,7 +2647,7 @@ def _getbundletagsfnodes(
     # Don't send unless:
     # - changeset are being exchanged,
     # - the client supports it.
-    if not (kwargs.get(r'cg', True) and b'hgtagsfnodes' in b2caps):
+    if not (kwargs.get('cg', True) and b'hgtagsfnodes' in b2caps):
         return
 
     outgoing = _computeoutgoing(repo, heads, common)
@@ -2680,9 +2680,9 @@ def _getbundlerevbranchcache(
     # - the client supports it.
     # - narrow bundle isn't in play (not currently compatible).
     if (
-        not kwargs.get(r'cg', True)
+        not kwargs.get('cg', True)
         or b'rev-branch-cache' not in b2caps
-        or kwargs.get(r'narrow', False)
+        or kwargs.get('narrow', False)
         or repo.ui.has_section(_NARROWACL_SECTION)
     ):
         return

@@ -684,7 +684,7 @@ class DNSIncoming(object):
                 break
             t = len & 0xC0
             if t == 0x00:
-                result = r''.join((result, self.readUTF(off, len) + r'.'))
+                result = ''.join((result, self.readUTF(off, len) + '.'))
                 off += len
             elif t == 0xC0:
                 if next < 0:
@@ -1425,7 +1425,7 @@ class Zeroconf(object):
         self.socket.setsockopt(
             socket.SOL_IP,
             socket.IP_ADD_MEMBERSHIP,
-            socket.inet_aton(_MDNS_ADDR) + socket.inet_aton(r'0.0.0.0'),
+            socket.inet_aton(_MDNS_ADDR) + socket.inet_aton('0.0.0.0'),
         )
 
         self.listeners = []
@@ -1841,7 +1841,7 @@ class Zeroconf(object):
             self.socket.setsockopt(
                 socket.SOL_IP,
                 socket.IP_DROP_MEMBERSHIP,
-                socket.inet_aton(_MDNS_ADDR) + socket.inet_aton(r'0.0.0.0'),
+                socket.inet_aton(_MDNS_ADDR) + socket.inet_aton('0.0.0.0'),
             )
             self.socket.close()
 

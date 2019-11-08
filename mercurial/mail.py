@@ -94,7 +94,7 @@ class SMTPS(smtplib.SMTP):
             ui=self._ui,
             serverhostname=self._host,
         )
-        self.file = new_socket.makefile(r'rb')
+        self.file = new_socket.makefile('rb')
         return new_socket
 
 
@@ -201,7 +201,7 @@ def _mbox(mbox, sender, recipients, msg):
     fp = open(mbox, b'ab+')
     # Should be time.asctime(), but Windows prints 2-characters day
     # of month instead of one. Make them print the same thing.
-    date = time.strftime(r'%a %b %d %H:%M:%S %Y', time.localtime())
+    date = time.strftime('%a %b %d %H:%M:%S %Y', time.localtime())
     fp.write(
         b'From %s %s\n'
         % (encoding.strtolocal(sender), encoding.strtolocal(date))
@@ -403,7 +403,7 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
     A single element of input list may contain multiple addresses, but output
     always has one address per item'''
     for a in addrs:
-        assert isinstance(a, bytes), r'%r unexpectedly not a bytestr' % a
+        assert isinstance(a, bytes), '%r unexpectedly not a bytestr' % a
     if display:
         return [a.strip() for a in addrs if a.strip()]
 
@@ -436,7 +436,7 @@ if pycompat.ispy3:
         # I have no idea if ascii/surrogateescape is correct, but that's
         # what the standard Python email parser does.
         fp = io.TextIOWrapper(
-            fp, encoding=r'ascii', errors=r'surrogateescape', newline=chr(10)
+            fp, encoding='ascii', errors='surrogateescape', newline=chr(10)
         )
         try:
             return ep.parse(fp)

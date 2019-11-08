@@ -655,7 +655,7 @@ class savedcmd(object):
         # in an unknown encoding anyway), but avoid double separators on
         # Windows
         docpath = stringutil.escapestr(path).replace(b'\\\\', b'\\')
-        self.__doc__ %= {r'path': pycompat.sysstr(stringutil.uirepr(docpath))}
+        self.__doc__ %= {'path': pycompat.sysstr(stringutil.uirepr(docpath))}
         self._cmdline = cmdline
         self._isgui = isgui
 

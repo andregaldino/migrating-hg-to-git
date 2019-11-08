@@ -99,7 +99,7 @@ class _jge(_llinstruction):
         self._target = op2
 
     def __str__(self):
-        return r'JGE %d %d' % (self._cmprev, self._target)
+        return 'JGE %d %d' % (self._cmprev, self._target)
 
     def __eq__(self, other):
         return (
@@ -126,7 +126,7 @@ class _jump(_llinstruction):
         self._target = op2
 
     def __str__(self):
-        return r'JUMP %d' % (self._target)
+        return 'JUMP %d' % (self._target)
 
     def __eq__(self, other):
         return type(self) == type(other) and self._target == other._target
@@ -168,7 +168,7 @@ class _jl(_llinstruction):
         self._target = op2
 
     def __str__(self):
-        return r'JL %d %d' % (self._cmprev, self._target)
+        return 'JL %d %d' % (self._cmprev, self._target)
 
     def __eq__(self, other):
         return (
@@ -196,7 +196,7 @@ class _line(_llinstruction):
         self._origlineno = op2
 
     def __str__(self):
-        return r'LINE %d %d' % (self._rev, self._origlineno)
+        return 'LINE %d %d' % (self._rev, self._origlineno)
 
     def __eq__(self, other):
         return (
@@ -262,7 +262,7 @@ class linelog(object):
         )
 
     def debugstr(self):
-        fmt = r'%%%dd %%s' % len(str(len(self._program)))
+        fmt = '%%%dd %%s' % len(str(len(self._program)))
         return pycompat.sysstr(b'\n').join(
             fmt % (idx, i) for idx, i in enumerate(self._program[1:], 1)
         )

@@ -135,7 +135,7 @@ class transaction(util.transactional):
         validator=None,
         releasefn=None,
         checkambigfiles=None,
-        name=r'<unnamed>',
+        name='<unnamed>',
     ):
         """Begin a new transaction
 
@@ -220,8 +220,8 @@ class transaction(util.transactional):
         self._abortcallback = {}
 
     def __repr__(self):
-        name = r'/'.join(self._names)
-        return r'<transaction name=%s, count=%d, usages=%d>' % (
+        name = '/'.join(self._names)
+        return '<transaction name=%s, count=%d, usages=%d>' % (
             name,
             self._count,
             self._usages,
@@ -414,7 +414,7 @@ class transaction(util.transactional):
         self._file.flush()
 
     @active
-    def nest(self, name=r'<unnamed>'):
+    def nest(self, name='<unnamed>'):
         self._count += 1
         self._usages += 1
         self._names.append(name)

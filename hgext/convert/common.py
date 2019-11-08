@@ -57,7 +57,7 @@ class _shlexpy3proxy(object):
 def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
     if data is None:
         if pycompat.ispy3:
-            data = open(filepath, b'r', encoding=r'latin1')
+            data = open(filepath, b'r', encoding='latin1')
         else:
             data = open(filepath, b'r')
     else:

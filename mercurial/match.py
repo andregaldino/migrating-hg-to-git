@@ -24,7 +24,7 @@ from . import (
 )
 from .utils import stringutil
 
-rustmod = policy.importrust(r'filepatterns')
+rustmod = policy.importrust('filepatterns')
 
 allpatternkinds = (
     b're',

@@ -64,7 +64,7 @@ class channeledoutput(object):
         self.out.flush()
 
     def __getattr__(self, attr):
-        if attr in (r'isatty', r'fileno', r'tell', r'seek'):
+        if attr in ('isatty', 'fileno', 'tell', 'seek'):
             raise AttributeError(attr)
         return getattr(self.out, attr)
 
@@ -180,7 +180,7 @@ class channeledinput(object):
     __next__ = next
 
     def __getattr__(self, attr):
-        if attr in (r'isatty', r'fileno', r'tell', r'seek'):
+        if attr in ('isatty', 'fileno', 'tell', 'seek'):
             raise AttributeError(attr)
         return getattr(self.in_, attr)
 
@@ -450,8 +450,8 @@ def _initworkerprocess():
 
 
 def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
-    fin = conn.makefile(r'rb')
-    fout = conn.makefile(r'wb')
+    fin = conn.makefile('rb')
+    fout = conn.makefile('wb')
     sv = None
     try:
         sv = createcmdserver(repo, conn, fin, fout, prereposetups)

@@ -167,13 +167,13 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
         return request
 
     def sanitiseresponse(response):
-        if r'set-cookie' in response[r'headers']:
-            del response[r'headers'][r'set-cookie']
+        if 'set-cookie' in response['headers']:
+            del response['headers']['set-cookie']
         return response
 
     def decorate(fn):
         def inner(*args, **kwargs):
-            cassette = pycompat.fsdecode(kwargs.pop(r'test_vcr', None))
+            cassette = pycompat.fsdecode(kwargs.pop('test_vcr', None))
             if cassette:
                 import hgdemandimport
 
@@ -182,24 +182,24 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
                     import vcr.stubs as stubs
 
                     vcr = vcrmod.VCR(
-                        serializer=r'json',
+                        serializer='json',
                         before_record_request=sanitiserequest,
                         before_record_response=sanitiseresponse,
                         custom_patches=[
                             (
                                 urlmod,
-                                r'httpconnection',
+                                'httpconnection',
                                 stubs.VCRHTTPConnection,
                             ),
                             (
                                 urlmod,
-                                r'httpsconnection',
+                                'httpsconnection',
                                 stubs.VCRHTTPSConnection,
                             ),
                         ],
                     )
-                    vcr.register_matcher(r'hgmatcher', hgmatcher)
-                    with vcr.use_cassette(cassette, match_on=[r'hgmatcher']):
+                    vcr.register_matcher('hgmatcher', hgmatcher)
+                    with vcr.use_cassette(cassette, match_on=['hgmatcher']):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
 
@@ -408,7 +408,7 @@ def getoldnodedrevmap(repo, nodelist):
         # Check commit message
         m = _differentialrevisiondescre.search(ctx.description())
         if m:
-            toconfirm[node] = (1, set(precnodes), int(m.group(r'id')))
+            toconfirm[node] = (1, set(precnodes), int(m.group('id')))
 
     # Double check if tags are genuine by collecting all old nodes from
     # Phabricator, and expect precursors overlap with it.
@@ -1088,7 +1088,7 @@ def phabsend(ui, repo, *revs, **opts):
             # Create a local tag to note the association, if commit message
             # does not have it already
             m = _differentialrevisiondescre.search(ctx.description())
-            if not m or int(m.group(r'id')) != newrevid:
+            if not m or int(m.group('id')) != newrevid:
                 tagname = b'D%d' % newrevid
                 tags.tag(
                     repo,
@@ -1635,7 +1635,7 @@ def template_review(context, mapping):
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
         return templateutil.hybriddict(
-            {b'url': m.group(r'url'), b'id': b"D%s" % m.group(r'id'),}
+            {b'url': m.group('url'), b'id': b"D%s" % m.group('id'),}
         )
     else:
         tags = ctx.repo().nodetags(ctx.node())

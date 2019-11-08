@@ -265,14 +265,14 @@ class basectx(object):
         return self._repo[nullrev]
 
     def _fileinfo(self, path):
-        if r'_manifest' in self.__dict__:
+        if '_manifest' in self.__dict__:
             try:
                 return self._manifest[path], self._manifest.flags(path)
             except KeyError:
                 raise error.ManifestLookupError(
                     self._node, path, _(b'not found in manifest')
                 )
-        if r'_manifestdelta' in self.__dict__ or path in self.files():
+        if '_manifestdelta' in self.__dict__ or path in self.files():
             if path in self._manifestdelta:
                 return (
                     self._manifestdelta[path],
@@ -746,9 +746,9 @@ class basefilectx(object):
 
     @propertycache
     def _changeid(self):
-        if r'_changectx' in self.__dict__:
+        if '_changectx' in self.__dict__:
             return self._changectx.rev()
-        elif r'_descendantrev' in self.__dict__:
+        elif '_descendantrev' in self.__dict__:
             # this file context was created from a revision with a known
             # descendant, we can (lazily) correct for linkrev aliases
             return self._adjustlinkrev(self._descendantrev)
@@ -757,7 +757,7 @@ class basefilectx(object):
 
     @propertycache
     def _filenode(self):
-        if r'_fileid' in self.__dict__:
+        if '_fileid' in self.__dict__:
             return self._filelog.lookup(self._fileid)
         else:
             return self._changectx.filenode(self._path)
@@ -1024,16 +1024,16 @@ class basefilectx(object):
         """
         toprev = None
         attrs = vars(self)
-        if r'_changeid' in attrs:
+        if '_changeid' in attrs:
             # We have a cached value already
             toprev = self._changeid
-        elif r'_changectx' in attrs:
+        elif '_changectx' in attrs:
             # We know which changelog entry we are coming from
             toprev = self._changectx.rev()
 
         if toprev is not None:
             return self._adjustlinkrev(toprev, inclusive=True, stoprev=stoprev)
-        elif r'_descendantrev' in attrs:
+        elif '_descendantrev' in attrs:
             introrev = self._adjustlinkrev(self._descendantrev, stoprev=stoprev)
             # be nice and cache the result of the computation
             if introrev is not None:
@@ -1053,14 +1053,14 @@ class basefilectx(object):
     def _parentfilectx(self, path, fileid, filelog):
         """create parent filectx keeping ancestry info for _adjustlinkrev()"""
         fctx = filectx(self._repo, path, fileid=fileid, filelog=filelog)
-        if r'_changeid' in vars(self) or r'_changectx' in vars(self):
+        if '_changeid' in vars(self) or '_changectx' in vars(self):
             # If self is associated with a changeset (probably explicitly
             # fed), ensure the created filectx is associated with a
             # changeset that is an ancestor of self.changectx.
             # This lets us later use _adjustlinkrev to get a correct link.
             fctx._descendantrev = self.rev()
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)
-        elif r'_descendantrev' in vars(self):
+        elif '_descendantrev' in vars(self):
             # Otherwise propagate _descendantrev if we have one associated.
             fctx._descendantrev = self._descendantrev
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)
@@ -1120,7 +1120,7 @@ class basefilectx(object):
             # renamed filectx won't have a filelog yet, so set it
             # from the cache to save time
             for p in pl:
-                if not r'_filelog' in p.__dict__:
+                if not '_filelog' in p.__dict__:
                     p._filelog = getlog(p.path())
 
             return pl
@@ -1534,7 +1534,7 @@ class workingctx(committablectx):
         return self._repo.dirstate.flagfunc(self._buildflagfunc)
 
     def flags(self, path):
-        if r'_manifest' in self.__dict__:
+        if '_manifest' in self.__dict__:
             try:
                 return self._manifest.flags(path)
             except KeyError:

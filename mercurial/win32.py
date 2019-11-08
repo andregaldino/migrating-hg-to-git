@@ -57,21 +57,21 @@ elif ctypes.sizeof(ctypes.c_longlong) == ctypes.sizeof(ctypes.c_void_p):
 
 
 class _FILETIME(ctypes.Structure):
-    _fields_ = [(r'dwLowDateTime', _DWORD), (r'dwHighDateTime', _DWORD)]
+    _fields_ = [('dwLowDateTime', _DWORD), ('dwHighDateTime', _DWORD)]
 
 
 class _BY_HANDLE_FILE_INFORMATION(ctypes.Structure):
     _fields_ = [
-        (r'dwFileAttributes', _DWORD),
-        (r'ftCreationTime', _FILETIME),
-        (r'ftLastAccessTime', _FILETIME),
-        (r'ftLastWriteTime', _FILETIME),
-        (r'dwVolumeSerialNumber', _DWORD),
-        (r'nFileSizeHigh', _DWORD),
-        (r'nFileSizeLow', _DWORD),
-        (r'nNumberOfLinks', _DWORD),
-        (r'nFileIndexHigh', _DWORD),
-        (r'nFileIndexLow', _DWORD),
+        ('dwFileAttributes', _DWORD),
+        ('ftCreationTime', _FILETIME),
+        ('ftLastAccessTime', _FILETIME),
+        ('ftLastWriteTime', _FILETIME),
+        ('dwVolumeSerialNumber', _DWORD),
+        ('nFileSizeHigh', _DWORD),
+        ('nFileSizeLow', _DWORD),
+        ('nNumberOfLinks', _DWORD),
+        ('nFileIndexHigh', _DWORD),
+        ('nFileIndexLow', _DWORD),
     ]
 
 
@@ -97,33 +97,33 @@ _STILL_ACTIVE = 259
 
 class _STARTUPINFO(ctypes.Structure):
     _fields_ = [
-        (r'cb', _DWORD),
-        (r'lpReserved', _LPSTR),
-        (r'lpDesktop', _LPSTR),
-        (r'lpTitle', _LPSTR),
-        (r'dwX', _DWORD),
-        (r'dwY', _DWORD),
-        (r'dwXSize', _DWORD),
-        (r'dwYSize', _DWORD),
-        (r'dwXCountChars', _DWORD),
-        (r'dwYCountChars', _DWORD),
-        (r'dwFillAttribute', _DWORD),
-        (r'dwFlags', _DWORD),
-        (r'wShowWindow', _WORD),
-        (r'cbReserved2', _WORD),
-        (r'lpReserved2', ctypes.c_char_p),
-        (r'hStdInput', _HANDLE),
-        (r'hStdOutput', _HANDLE),
-        (r'hStdError', _HANDLE),
+        ('cb', _DWORD),
+        ('lpReserved', _LPSTR),
+        ('lpDesktop', _LPSTR),
+        ('lpTitle', _LPSTR),
+        ('dwX', _DWORD),
+        ('dwY', _DWORD),
+        ('dwXSize', _DWORD),
+        ('dwYSize', _DWORD),
+        ('dwXCountChars', _DWORD),
+        ('dwYCountChars', _DWORD),
+        ('dwFillAttribute', _DWORD),
+        ('dwFlags', _DWORD),
+        ('wShowWindow', _WORD),
+        ('cbReserved2', _WORD),
+        ('lpReserved2', ctypes.c_char_p),
+        ('hStdInput', _HANDLE),
+        ('hStdOutput', _HANDLE),
+        ('hStdError', _HANDLE),
     ]
 
 
 class _PROCESS_INFORMATION(ctypes.Structure):
     _fields_ = [
-        (r'hProcess', _HANDLE),
-        (r'hThread', _HANDLE),
-        (r'dwProcessId', _DWORD),
-        (r'dwThreadId', _DWORD),
+        ('hProcess', _HANDLE),
+        ('hThread', _HANDLE),
+        ('dwProcessId', _DWORD),
+        ('dwThreadId', _DWORD),
     ]
 
 
@@ -132,25 +132,25 @@ _SW_HIDE = 0
 
 
 class _COORD(ctypes.Structure):
-    _fields_ = [(r'X', ctypes.c_short), (r'Y', ctypes.c_short)]
+    _fields_ = [('X', ctypes.c_short), ('Y', ctypes.c_short)]
 
 
 class _SMALL_RECT(ctypes.Structure):
     _fields_ = [
-        (r'Left', ctypes.c_short),
-        (r'Top', ctypes.c_short),
-        (r'Right', ctypes.c_short),
-        (r'Bottom', ctypes.c_short),
+        ('Left', ctypes.c_short),
+        ('Top', ctypes.c_short),
+        ('Right', ctypes.c_short),
+        ('Bottom', ctypes.c_short),
     ]
 
 
 class _CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
     _fields_ = [
-        (r'dwSize', _COORD),
-        (r'dwCursorPosition', _COORD),
-        (r'wAttributes', _WORD),
-        (r'srWindow', _SMALL_RECT),
-        (r'dwMaximumWindowSize', _COORD),
+        ('dwSize', _COORD),
+        ('dwCursorPosition', _COORD),
+        ('wAttributes', _WORD),
+        ('srWindow', _SMALL_RECT),
+        ('dwMaximumWindowSize', _COORD),
     ]
 
 
@@ -359,7 +359,7 @@ def _raiseoserror(name):
         code -= 2 ** 32
     err = ctypes.WinError(code=code)
     raise OSError(
-        err.errno, r'%s: %s' % (encoding.strfromlocal(name), err.strerror)
+        err.errno, '%s: %s' % (encoding.strfromlocal(name), err.strerror)
     )
 
 

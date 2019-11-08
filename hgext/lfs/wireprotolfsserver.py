@@ -136,7 +136,7 @@ def _processbatchrequest(repo, req, res):
     lfsreq = pycompat.json_loads(req.bodyfh.read())
 
     # If no transfer handlers are explicitly requested, 'basic' is assumed.
-    if r'basic' not in lfsreq.get(r'transfers', [r'basic']):
+    if 'basic' not in lfsreq.get('transfers', ['basic']):
         _sethttperror(
             res,
             HTTP_BAD_REQUEST,
@@ -144,7 +144,7 @@ def _processbatchrequest(repo, req, res):
         )
         return True
 
-    operation = lfsreq.get(r'operation')
+    operation = lfsreq.get('operation')
     operation = pycompat.bytestr(operation)
 
     if operation not in (b'upload', b'download'):
@@ -160,13 +160,13 @@ def _processbatchrequest(repo, req, res):
     objects = [
         p
         for p in _batchresponseobjects(
-            req, lfsreq.get(r'objects', []), operation, localstore
+            req, lfsreq.get('objects', []), operation, localstore
         )
     ]
 
     rsp = {
-        r'transfer': r'basic',
-        r'objects': objects,
+        'transfer': 'basic',
+        'objects': objects,
     }
 
     res.status = hgwebcommon.statusmessage(HTTP_OK)
@@ -206,12 +206,12 @@ def _batchresponseobjects(req, objects, action, store):
 
     for obj in objects:
         # Convert unicode to ASCII to create a filesystem path
-        soid = obj.get(r'oid')
-        oid = soid.encode(r'ascii')
+        soid = obj.get('oid')
+        oid = soid.encode('ascii')
         rsp = {
-            r'oid': soid,
-            r'size': obj.get(r'size'),  # XXX: should this check the local size?
-            # r'authenticated': True,
+            'oid': soid,
+            'size': obj.get('size'),  # XXX: should this check the local size?
+            # 'authenticated': True,
         }
 
         exists = True
@@ -234,9 +234,9 @@ def _batchresponseobjects(req, objects, action, store):
             if inst.errno != errno.ENOENT:
                 _logexception(req)
 
-                rsp[r'error'] = {
-                    r'code': 500,
-                    r'message': inst.strerror or r'Internal Server Server',
+                rsp['error'] = {
+                    'code': 500,
+                    'message': inst.strerror or 'Internal Server Server',
                 }
                 yield rsp
                 continue
@@ -247,17 +247,17 @@ def _batchresponseobjects(req, objects, action, store):
         # IFF they already exist locally.
         if action == b'download':
             if not exists:
-                rsp[r'error'] = {
-                    r'code': 404,
-                    r'message': "The object does not exist",
+                rsp['error'] = {
+                    'code': 404,
+                    'message': "The object does not exist",
                 }
                 yield rsp
                 continue
 
             elif not verifies:
-                rsp[r'error'] = {
-                    r'code': 422,  # XXX: is this the right code?
-                    r'message': "The object is corrupt",
+                rsp['error'] = {
+                    'code': 422,  # XXX: is this the right code?
+                    'message': "The object is corrupt",
                 }
                 yield rsp
                 continue
@@ -272,23 +272,23 @@ def _batchresponseobjects(req, objects, action, store):
             # The spec doesn't mention the Accept header here, but avoid
             # a gratuitous deviation from lfs-test-server in the test
             # output.
-            hdr = {r'Accept': r'application/vnd.git-lfs'}
+            hdr = {'Accept': 'application/vnd.git-lfs'}
 
             auth = req.headers.get(b'Authorization', b'')
             if auth.startswith(b'Basic '):
-                hdr[r'Authorization'] = pycompat.strurl(auth)
+                hdr['Authorization'] = pycompat.strurl(auth)
 
             return hdr
 
-        rsp[r'actions'] = {
-            r'%s'
+        rsp['actions'] = {
+            '%s'
             % pycompat.strurl(action): {
-                r'href': pycompat.strurl(
+                'href': pycompat.strurl(
                     b'%s%s/.hg/lfs/objects/%s' % (req.baseurl, req.apppath, oid)
                 ),
                 # datetime.isoformat() doesn't include the 'Z' suffix
-                "expires_at": expiresat.strftime(r'%Y-%m-%dT%H:%M:%SZ'),
-                r'header': _buildheader(),
+                "expires_at": expiresat.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                'header': _buildheader(),
             }
         }
 

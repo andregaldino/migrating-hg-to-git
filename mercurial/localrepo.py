@@ -2459,9 +2459,9 @@ class localrepository(object):
 
     def invalidatecaches(self):
 
-        if r'_tagscache' in vars(self):
+        if '_tagscache' in vars(self):
             # can't use delattr on proxy
-            del self.__dict__[r'_tagscache']
+            del self.__dict__['_tagscache']
 
         self._branchcaches.clear()
         self.invalidatevolatilesets()
@@ -2480,13 +2480,13 @@ class localrepository(object):
         rereads the dirstate. Use dirstate.invalidate() if you want to
         explicitly read the dirstate again (i.e. restoring it to a previous
         known good state).'''
-        if hasunfilteredcache(self, r'dirstate'):
+        if hasunfilteredcache(self, 'dirstate'):
             for k in self.dirstate._filecache:
                 try:
                     delattr(self.dirstate, k)
                 except AttributeError:
                     pass
-            delattr(self.unfiltered(), r'dirstate')
+            delattr(self.unfiltered(), 'dirstate')
 
     def invalidate(self, clearfilecache=False):
         '''Invalidates both store and non-store parts other than dirstate
@@ -2536,7 +2536,7 @@ class localrepository(object):
         """Reload stats of cached files so that they are flagged as valid"""
         for k, ce in self._filecache.items():
             k = pycompat.sysstr(k)
-            if k == r'dirstate' or k not in self.__dict__:
+            if k == 'dirstate' or k not in self.__dict__:
                 continue
             ce.refresh()
 
@@ -3363,10 +3363,10 @@ class localrepository(object):
             if tr is not None:
                 hookargs.update(tr.hookargs)
             hookargs = pycompat.strkwargs(hookargs)
-            hookargs[r'namespace'] = namespace
-            hookargs[r'key'] = key
-            hookargs[r'old'] = old
-            hookargs[r'new'] = new
+            hookargs['namespace'] = namespace
+            hookargs['key'] = key
+            hookargs['old'] = old
+            hookargs['new'] = new
             self.hook(b'prepushkey', throw=True, **hookargs)
         except error.HookAbort as exc:
             self.ui.write_err(_(b"pushkey-abort: %s\n") % exc)
@@ -3706,7 +3706,7 @@ def poisonrepository(repo):
     # of repos call close() on repo references.
     class poisonedrepository(object):
         def __getattribute__(self, item):
-            if item == r'close':
+            if item == 'close':
                 return object.__getattribute__(self, item)
 
             raise error.ProgrammingError(
@@ -3718,4 +3718,4 @@ def poisonrepository(repo):
 
     # We may have a repoview, which intercepts __setattr__. So be sure
     # we operate at the lowest level possible.
-    object.__setattr__(repo, r'__class__', poisonedrepository)
+    object.__setattr__(repo, '__class__', poisonedrepository)

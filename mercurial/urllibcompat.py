@@ -20,7 +20,7 @@ class _pycompatstub(object):
         """Add items that will be populated at the first access"""
         items = map(_sysstr, items)
         self._aliases.update(
-            (item.replace(r'_', r'').lower(), (origin, item)) for item in items
+            (item.replace('_', '').lower(), (origin, item)) for item in items
         )
 
     def _registeralias(self, origin, attr, name):
@@ -102,7 +102,7 @@ if pycompat.ispy3:
     # urllib.parse.quote() accepts both str and bytes, decodes bytes
     # (if necessary), and returns str. This is wonky. We provide a custom
     # implementation that only accepts bytes and emits bytes.
-    def quote(s, safe=r'/'):
+    def quote(s, safe='/'):
         # bytestr has an __iter__ that emits characters. quote_from_bytes()
         # does an iteration and expects ints. We coerce to bytes to appease it.
         if isinstance(s, pycompat.bytestr):

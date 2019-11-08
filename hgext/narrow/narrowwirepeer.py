@@ -139,12 +139,12 @@ def narrow_widen(
 
 
 def peernarrowwiden(remote, **kwargs):
-    for ch in (r'commonheads', r'known'):
+    for ch in ('commonheads', 'known'):
         kwargs[ch] = wireprototypes.encodelist(kwargs[ch])
 
-    for ch in (r'oldincludes', r'newincludes', r'oldexcludes', r'newexcludes'):
+    for ch in ('oldincludes', 'newincludes', 'oldexcludes', 'newexcludes'):
         kwargs[ch] = b','.join(kwargs[ch])
 
-    kwargs[r'ellipses'] = b'%i' % bool(kwargs[r'ellipses'])
+    kwargs['ellipses'] = b'%i' % bool(kwargs['ellipses'])
     f = remote._callcompressable(b'narrow_widen', **kwargs)
     return bundle2.getunbundler(remote.ui, f)

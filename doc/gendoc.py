@@ -20,7 +20,7 @@ except ImportError:
 
 # This script is executed during installs and may not have C extensions
 # available. Relax C module requirements.
-os.environ[r'HGMODULEPOLICY'] = r'allow'
+os.environ['HGMODULEPOLICY'] = 'allow'
 # import from the live mercurial repo
 sys.path.insert(0, "..")
 from mercurial import demandimport

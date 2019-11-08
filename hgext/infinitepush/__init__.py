@@ -195,7 +195,7 @@ scratchbranchparttype = bundleparts.scratchbranchparttype
 revsetpredicate = registrar.revsetpredicate()
 templatekeyword = registrar.templatekeyword()
 _scratchbranchmatcher = lambda x: False
-_maybehash = re.compile(r'^[a-f0-9]+$').search
+_maybehash = re.compile('^[a-f0-9]+$').search
 
 
 def _buildexternalbundlestore(ui):
@@ -1031,7 +1031,7 @@ def storetobundlestore(orig, repo, op, unbundler):
     fd, bundlefile = pycompat.mkstemp()
     try:
         try:
-            fp = os.fdopen(fd, r'wb')
+            fp = os.fdopen(fd, 'wb')
             fp.write(buf.read())
         finally:
             fp.close()
@@ -1122,7 +1122,7 @@ def processparts(orig, repo, op, unbundler):
         fd, bundlefile = pycompat.mkstemp()
         try:
             try:
-                fp = os.fdopen(fd, r'wb')
+                fp = os.fdopen(fd, 'wb')
                 fp.write(buf.read())
             finally:
                 fp.close()
@@ -1254,7 +1254,7 @@ def bundle2scratchbranch(op, part):
     fd, bundlefile = pycompat.mkstemp()
     try:
         try:
-            fp = os.fdopen(fd, r'wb')
+            fp = os.fdopen(fd, 'wb')
             fp.write(buf.read())
         finally:
             fp.close()

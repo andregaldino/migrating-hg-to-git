@@ -37,7 +37,7 @@ def _makebundlefromraw(data):
     fd, bundlefile = pycompat.mkstemp()
     try:  # guards bundlefile
         try:  # guards fp
-            fp = os.fdopen(fd, r'wb')
+            fp = os.fdopen(fd, 'wb')
             fp.write(data)
         finally:
             fp.close()

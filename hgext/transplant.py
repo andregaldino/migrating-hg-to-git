@@ -235,7 +235,7 @@ class transplanter(object):
                     patchfile = None
                 else:
                     fd, patchfile = pycompat.mkstemp(prefix=b'hg-transplant-')
-                    fp = os.fdopen(fd, r'wb')
+                    fp = os.fdopen(fd, 'wb')
                     gen = patch.diff(source, parent, node, opts=diffopts)
                     for chunk in gen:
                         fp.write(chunk)
@@ -290,7 +290,7 @@ class transplanter(object):
         self.ui.status(_(b'filtering %s\n') % patchfile)
         user, date, msg = (changelog[1], changelog[2], changelog[4])
         fd, headerfile = pycompat.mkstemp(prefix=b'hg-transplant-')
-        fp = os.fdopen(fd, r'wb')
+        fp = os.fdopen(fd, 'wb')
         fp.write(b"# HG changeset patch\n")
         fp.write(b"# User %s\n" % user)
         fp.write(b"# Date %d %d\n" % date)

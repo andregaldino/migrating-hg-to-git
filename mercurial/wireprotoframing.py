@@ -118,7 +118,7 @@ FRAME_TYPE_FLAGS = {
     FRAME_TYPE_STREAM_SETTINGS: FLAGS_STREAM_ENCODING_SETTINGS,
 }
 
-ARGUMENT_RECORD_HEADER = struct.Struct(r'<HH')
+ARGUMENT_RECORD_HEADER = struct.Struct('<HH')
 
 
 def humanflags(mapping, value):
@@ -191,9 +191,9 @@ def makeframe(requestid, streamid, streamflags, typeid, flags, payload):
     # 4 bits type
     # 4 bits flags
 
-    l = struct.pack(r'<I', len(payload))
+    l = struct.pack('<I', len(payload))
     frame[0:3] = l[0:3]
-    struct.pack_into(r'<HBB', frame, 3, requestid, streamid, streamflags)
+    struct.pack_into('<HBB', frame, 3, requestid, streamid, streamflags)
     frame[7] = (typeid << 4) | flags
     frame[8:] = payload
 
@@ -280,7 +280,7 @@ def parseheader(data):
     # 4 bits frame flags
     # ... payload
     framelength = data[0] + 256 * data[1] + 16384 * data[2]
-    requestid, streamid, streamflags = struct.unpack_from(r'<HBB', data, 3)
+    requestid, streamid, streamflags = struct.unpack_from('<HBB', data, 3)
     typeflags = data[7]
 
     frametype = (typeflags & 0xF0) >> 4
@@ -460,11 +460,11 @@ def createalternatelocationresponseframe(stream, requestid, location):
     }
 
     for a in (
-        r'size',
-        r'fullhashes',
-        r'fullhashseed',
-        r'serverdercerts',
-        r'servercadercerts',
+        'size',
+        'fullhashes',
+        'fullhashseed',
+        'serverdercerts',
+        'servercadercerts',
     ):
         value = getattr(location, a)
         if value is not None:
@@ -548,15 +548,13 @@ def createtextoutputframe(
                 raise ValueError(b'must use bytes for labels')
 
         # Formatting string must be ASCII.
-        formatting = formatting.decode(r'ascii', r'replace').encode(r'ascii')
+        formatting = formatting.decode('ascii', 'replace').encode('ascii')
 
         # Arguments must be UTF-8.
-        args = [a.decode(r'utf-8', r'replace').encode(r'utf-8') for a in args]
+        args = [a.decode('utf-8', 'replace').encode('utf-8') for a in args]
 
         # Labels must be ASCII.
-        labels = [
-            l.decode(r'ascii', r'strict').encode(r'ascii') for l in labels
-        ]
+        labels = [l.decode('ascii', 'strict').encode('ascii') for l in labels]
 
         atom = {b'msg': formatting}
         if args:

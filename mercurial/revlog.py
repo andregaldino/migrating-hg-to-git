@@ -102,9 +102,9 @@ REVIDX_DEFAULT_FLAGS
 REVIDX_FLAGS_ORDER
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
-parsers = policy.importmod(r'parsers')
-rustancestor = policy.importrust(r'ancestor')
-rustdagop = policy.importrust(r'dagop')
+parsers = policy.importmod('parsers')
+rustancestor = policy.importrust('ancestor')
+rustdagop = policy.importrust('dagop')
 
 # Aliased for performance.
 _zlibdecompress = zlib.decompress
@@ -556,11 +556,11 @@ class revlog(object):
 
     def _indexfp(self, mode=b'r'):
         """file object for the revlog's index file"""
-        args = {r'mode': mode}
+        args = {'mode': mode}
         if mode != b'r':
-            args[r'checkambig'] = self._checkambig
+            args['checkambig'] = self._checkambig
         if mode == b'w':
-            args[r'atomictemp'] = True
+            args['atomictemp'] = True
         return self.opener(self.indexfile, **args)
 
     def _datafp(self, mode=b'r'):

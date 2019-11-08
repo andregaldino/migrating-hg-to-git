@@ -18,12 +18,12 @@ from mercurial.interfaces import repository
 
 
 def clonecommand(orig, ui, repo, *args, **kwargs):
-    if kwargs.get(r'include') or kwargs.get(r'exclude'):
-        kwargs[r'narrow'] = True
+    if kwargs.get('include') or kwargs.get('exclude'):
+        kwargs['narrow'] = True
 
-    if kwargs.get(r'depth'):
+    if kwargs.get('depth'):
         try:
-            kwargs[r'depth'] = int(kwargs[r'depth'])
+            kwargs['depth'] = int(kwargs['depth'])
         except ValueError:
             raise error.Abort(_('--depth must be an integer'))
 

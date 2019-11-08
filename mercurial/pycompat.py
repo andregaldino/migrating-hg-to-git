@@ -19,7 +19,7 @@ import sys
 import tempfile
 
 ispy3 = sys.version_info[0] >= 3
-ispypy = r'__pypy__' in sys.builtin_module_names
+ispypy = '__pypy__' in sys.builtin_module_names
 
 if not ispy3:
     import cookielib
@@ -151,7 +151,7 @@ if ispy3:
     if getattr(sys, 'argv', None) is not None:
         sysargv = list(map(os.fsencode, sys.argv))
 
-    bytechr = struct.Struct(r'>B').pack
+    bytechr = struct.Struct('>B').pack
     byterepr = b'%r'.__mod__
 
     class bytestr(bytes):
@@ -500,7 +500,7 @@ def namedtempfile(
     mode=b'w+b', bufsize=-1, suffix=b'', prefix=b'tmp', dir=None, delete=True
 ):
     mode = sysstr(mode)
-    assert r'b' in mode
+    assert 'b' in mode
     return tempfile.NamedTemporaryFile(
         mode, bufsize, suffix=suffix, prefix=prefix, dir=dir, delete=delete
     )

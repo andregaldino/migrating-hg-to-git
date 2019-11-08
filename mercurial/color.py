@@ -184,7 +184,7 @@ def _terminfosetup(ui, mode, formatted):
             # noisy and use ui.debug().
             ui.debug(b"no terminfo entry for %s\n" % e)
             del ui._terminfoparams[key]
-    if not curses.tigetstr(r'setaf') or not curses.tigetstr(r'setab'):
+    if not curses.tigetstr('setaf') or not curses.tigetstr('setab'):
         # Only warn about missing terminfo entries if we explicitly asked for
         # terminfo mode and we're in a formatted terminal.
         if mode == b"terminfo" and formatted:
@@ -353,9 +353,9 @@ def _effect_str(ui, effect):
         else:
             return curses.tigetstr(pycompat.sysstr(val))
     elif bg:
-        return curses.tparm(curses.tigetstr(r'setab'), val)
+        return curses.tparm(curses.tigetstr('setab'), val)
     else:
-        return curses.tparm(curses.tigetstr(r'setaf'), val)
+        return curses.tparm(curses.tigetstr('setaf'), val)
 
 
 def _mergeeffects(text, start, stop):
@@ -442,23 +442,23 @@ if pycompat.iswindows:
     _INVALID_HANDLE_VALUE = -1
 
     class _COORD(ctypes.Structure):
-        _fields_ = [(r'X', ctypes.c_short), (r'Y', ctypes.c_short)]
+        _fields_ = [('X', ctypes.c_short), ('Y', ctypes.c_short)]
 
     class _SMALL_RECT(ctypes.Structure):
         _fields_ = [
-            (r'Left', ctypes.c_short),
-            (r'Top', ctypes.c_short),
-            (r'Right', ctypes.c_short),
-            (r'Bottom', ctypes.c_short),
+            ('Left', ctypes.c_short),
+            ('Top', ctypes.c_short),
+            ('Right', ctypes.c_short),
+            ('Bottom', ctypes.c_short),
         ]
 
     class _CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
         _fields_ = [
-            (r'dwSize', _COORD),
-            (r'dwCursorPosition', _COORD),
-            (r'wAttributes', _WORD),
-            (r'srWindow', _SMALL_RECT),
-            (r'dwMaximumWindowSize', _COORD),
+            ('dwSize', _COORD),
+            ('dwCursorPosition', _COORD),
+            ('wAttributes', _WORD),
+            ('srWindow', _SMALL_RECT),
+            ('dwMaximumWindowSize', _COORD),
         ]
 
     _STD_OUTPUT_HANDLE = 0xFFFFFFF5  # (DWORD)-11
@@ -529,7 +529,7 @@ if pycompat.iswindows:
             )
 
     def win32print(ui, writefunc, text, **opts):
-        label = opts.get(r'label', b'')
+        label = opts.get('label', b'')
         attr = origattr
 
         def mapcolor(val, attr):

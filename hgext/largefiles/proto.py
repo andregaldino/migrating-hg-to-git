@@ -116,7 +116,7 @@ def wirereposetup(ui, repo):
                     b'putlfile',
                     data=fd,
                     sha=sha,
-                    headers={r'content-type': r'application/mercurial-0.1'},
+                    headers={'content-type': 'application/mercurial-0.1'},
                 )
                 try:
                     d, output = res.split(b'\n', 1)
@@ -206,7 +206,7 @@ def sshrepocallstream(self, cmd, **args):
     if cmd == b'heads' and self.capable(b'largefiles'):
         cmd = b'lheads'
     if cmd == b'batch' and self.capable(b'largefiles'):
-        args[r'cmds'] = args[r'cmds'].replace(b'heads ', b'lheads ')
+        args['cmds'] = args[r'cmds'].replace(b'heads ', b'lheads ')
     return ssholdcallstream(self, cmd, **args)
 
 
@@ -217,5 +217,5 @@ def httprepocallstream(self, cmd, **args):
     if cmd == b'heads' and self.capable(b'largefiles'):
         cmd = b'lheads'
     if cmd == b'batch' and self.capable(b'largefiles'):
-        args[r'cmds'] = headsre.sub(b'lheads', args[r'cmds'])
+        args['cmds'] = headsre.sub(b'lheads', args['cmds'])
     return httpoldcallstream(self, cmd, **args)

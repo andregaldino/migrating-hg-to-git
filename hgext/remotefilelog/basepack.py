@@ -22,7 +22,7 @@ from mercurial import (
 )
 from . import shallowutil
 
-osutil = policy.importmod(r'osutil')
+osutil = policy.importmod('osutil')
 
 # The pack version supported by this implementation. This will need to be
 # rev'd whenever the byte format changes. Ex: changing the fanout prefix,
@@ -390,8 +390,8 @@ class mutablebasepack(versionmixin):
         self.idxfp, self.idxpath = opener.mkstemp(
             suffix=self.INDEXSUFFIX + b'-tmp'
         )
-        self.packfp = os.fdopen(self.packfp, r'wb+')
-        self.idxfp = os.fdopen(self.idxfp, r'wb+')
+        self.packfp = os.fdopen(self.packfp, 'wb+')
+        self.idxfp = os.fdopen(self.idxfp, 'wb+')
         self.sha = hashlib.sha1()
         self._closed = False
 
@@ -530,11 +530,11 @@ class mutablebasepack(versionmixin):
 
 class indexparams(object):
     __slots__ = (
-        r'fanoutprefix',
-        r'fanoutstruct',
-        r'fanoutcount',
-        r'fanoutsize',
-        r'indexstart',
+        'fanoutprefix',
+        'fanoutstruct',
+        'fanoutcount',
+        'fanoutsize',
+        'indexstart',
     )
 
     def __init__(self, prefixsize, version):

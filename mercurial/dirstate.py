@@ -36,8 +36,8 @@ from .interfaces import (
     util as interfaceutil,
 )
 
-parsers = policy.importmod(r'parsers')
-rustmod = policy.importrust(r'dirstate')
+parsers = policy.importmod('parsers')
+rustmod = policy.importrust('dirstate')
 
 propertycache = util.propertycache
 filecache = scmutil.filecache

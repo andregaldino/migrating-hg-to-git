@@ -612,7 +612,7 @@ class bzmysql(bzaccess):
             self.ui.warn(_(b"Bugzilla/MySQL cannot update bug state\n"))
 
         (user, userid) = self.get_bugzilla_user(committer)
-        now = time.strftime(r'%Y-%m-%d %H:%M:%S')
+        now = time.strftime('%Y-%m-%d %H:%M:%S')
         self.run(
             '''insert into longdescs
                     (bug_id, who, bug_when, thetext)

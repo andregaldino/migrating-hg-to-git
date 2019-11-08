@@ -16,7 +16,7 @@ from . import (
     pycompat,
 )
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 
 
 def commonancestorsheads(pfunc, *nodes):

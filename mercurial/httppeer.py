@@ -63,7 +63,7 @@ def encodevalueinheaders(value, header, limit):
     # and using an r-string to make it portable between Python 2 and 3
     # doesn't work because then the \r is a literal backslash-r
     # instead of a carriage return.
-    valuelen = limit - len(fmt % r'000') - len(b': \r\n')
+    valuelen = limit - len(fmt % '000') - len(b': \r\n')
     result = []
 
     n = 0
@@ -158,7 +158,7 @@ def makev1commandrequest(
             argsio = io.BytesIO(strargs)
             argsio.length = len(strargs)
             data = _multifile(argsio, data)
-        headers[r'X-HgArgs-Post'] = len(strargs)
+        headers['X-HgArgs-Post'] = len(strargs)
     elif args:
         # Calling self.capable() can infinite loop if we are calling
         # "capabilities". But that command should never accept wire
@@ -187,8 +187,8 @@ def makev1commandrequest(
         size = data.length
     elif data is not None:
         size = len(data)
-    if data is not None and r'Content-Type' not in headers:
-        headers[r'Content-Type'] = r'application/mercurial-0.1'
+    if data is not None and 'Content-Type' not in headers:
+        headers['Content-Type'] = 'application/mercurial-0.1'
 
     # Tell the server we accept application/mercurial-0.2 and multiple
     # compression formats if the server is capable of emitting those
@@ -228,17 +228,17 @@ def makev1commandrequest(
 
     varyheaders = []
     for header in headers:
-        if header.lower().startswith(r'x-hg'):
+        if header.lower().startswith('x-hg'):
             varyheaders.append(header)
 
     if varyheaders:
-        headers[r'Vary'] = r','.join(sorted(varyheaders))
+        headers['Vary'] = ','.join(sorted(varyheaders))
 
     req = requestbuilder(pycompat.strurl(cu), data, headers)
 
     if data is not None:
         ui.debug(b"sending %d bytes\n" % size)
-        req.add_unredirected_header(r'Content-Length', r'%d' % size)
+        req.add_unredirected_header('Content-Length', '%d' % size)
 
     return req, cu, qs
 
@@ -348,9 +348,9 @@ def parsev1commandresponse(
             ui.warn(_(b'real URL is %s\n') % respurl)
 
     try:
-        proto = pycompat.bytesurl(resp.getheader(r'content-type', r''))
+        proto = pycompat.bytesurl(resp.getheader('content-type', ''))
     except AttributeError:
-        proto = pycompat.bytesurl(resp.headers.get(r'content-type', r''))
+        proto = pycompat.bytesurl(resp.headers.get('content-type', ''))
 
     safeurl = util.hidepassword(baseurl)
     if proto.startswith(b'application/hg-error'):
@@ -517,7 +517,7 @@ class httppeer(wireprotov1peer.wirepeer):
 
         tempname = bundle2.writebundle(self.ui, cg, None, type)
         fp = httpconnection.httpsendfile(self.ui, tempname, b"rb")
-        headers = {r'Content-Type': r'application/mercurial-0.1'}
+        headers = {'Content-Type': 'application/mercurial-0.1'}
 
         try:
             r = self._call(cmd, data=fp, headers=headers, **args)
@@ -550,7 +550,7 @@ class httppeer(wireprotov1peer.wirepeer):
                     d = fp.read(4096)
             # start http push
             with httpconnection.httpsendfile(self.ui, filename, b"rb") as fp_:
-                headers = {r'Content-Type': r'application/mercurial-0.1'}
+                headers = {'Content-Type': 'application/mercurial-0.1'}
                 return self._callstream(cmd, data=fp_, headers=headers, **args)
         finally:
             if filename is not None:
@@ -621,12 +621,12 @@ def sendv2request(
 
     # TODO modify user-agent to reflect v2
     headers = {
-        r'Accept': wireprotov2server.FRAMINGTYPE,
-        r'Content-Type': wireprotov2server.FRAMINGTYPE,
+        'Accept': wireprotov2server.FRAMINGTYPE,
+        'Content-Type': wireprotov2server.FRAMINGTYPE,
     }
 
     req = requestbuilder(pycompat.strurl(url), body, headers)
-    req.add_unredirected_header(r'Content-Length', r'%d' % len(body))
+    req.add_unredirected_header('Content-Length', '%d' % len(body))
 
     try:
         res = opener.open(req)
@@ -965,7 +965,7 @@ def performhandshake(ui, url, opener, requestbuilder):
 
     if advertisev2:
         args[b'headers'] = {
-            r'X-HgProto-1': r'cbor',
+            'X-HgProto-1': 'cbor',
         }
 
         args[b'headers'].update(

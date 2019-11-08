@@ -167,9 +167,9 @@ def statprofile(ui, fp):
         elif profformat == b'hotpath':
             # inconsistent config: profiling.showmin
             limit = ui.configwith(fraction, b'profiling', b'showmin', 0.05)
-            kwargs[r'limit'] = limit
+            kwargs['limit'] = limit
             showtime = ui.configbool(b'profiling', b'showtime')
-            kwargs[r'showtime'] = showtime
+            kwargs['showtime'] = showtime
 
         statprof.display(fp, data=data, format=displayformat, **kwargs)
 

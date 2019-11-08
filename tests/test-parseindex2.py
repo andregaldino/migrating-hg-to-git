@@ -20,7 +20,7 @@ from mercurial import (
     pycompat,
 )
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 
 # original python implementation
 def gettype(q):

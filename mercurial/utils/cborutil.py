@@ -46,20 +46,20 @@ SEMANTIC_TAG_FINITE_SET = 258
 
 # Indefinite types begin with their major type ORd with information value 31.
 BEGIN_INDEFINITE_BYTESTRING = struct.pack(
-    r'>B', MAJOR_TYPE_BYTESTRING << 5 | SUBTYPE_INDEFINITE
+    '>B', MAJOR_TYPE_BYTESTRING << 5 | SUBTYPE_INDEFINITE
 )
 BEGIN_INDEFINITE_ARRAY = struct.pack(
-    r'>B', MAJOR_TYPE_ARRAY << 5 | SUBTYPE_INDEFINITE
+    '>B', MAJOR_TYPE_ARRAY << 5 | SUBTYPE_INDEFINITE
 )
 BEGIN_INDEFINITE_MAP = struct.pack(
-    r'>B', MAJOR_TYPE_MAP << 5 | SUBTYPE_INDEFINITE
+    '>B', MAJOR_TYPE_MAP << 5 | SUBTYPE_INDEFINITE
 )
 
-ENCODED_LENGTH_1 = struct.Struct(r'>B')
-ENCODED_LENGTH_2 = struct.Struct(r'>BB')
-ENCODED_LENGTH_3 = struct.Struct(r'>BH')
-ENCODED_LENGTH_4 = struct.Struct(r'>BL')
-ENCODED_LENGTH_5 = struct.Struct(r'>BQ')
+ENCODED_LENGTH_1 = struct.Struct('>B')
+ENCODED_LENGTH_2 = struct.Struct('>BB')
+ENCODED_LENGTH_3 = struct.Struct('>BH')
+ENCODED_LENGTH_4 = struct.Struct('>BL')
+ENCODED_LENGTH_5 = struct.Struct('>BQ')
 
 # The break ends an indefinite length item.
 BREAK = b'\xff'
@@ -262,7 +262,7 @@ else:
         return ord(b[i])
 
 
-STRUCT_BIG_UBYTE = struct.Struct(r'>B')
+STRUCT_BIG_UBYTE = struct.Struct('>B')
 STRUCT_BIG_USHORT = struct.Struct(b'>H')
 STRUCT_BIG_ULONG = struct.Struct(b'>L')
 STRUCT_BIG_ULONGLONG = struct.Struct(b'>Q')

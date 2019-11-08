@@ -57,11 +57,11 @@ from .utils import (
     stringutil,
 )
 
-rustdirs = policy.importrust(r'dirstate', r'Dirs')
+rustdirs = policy.importrust('dirstate', 'Dirs')
 
-base85 = policy.importmod(r'base85')
-osutil = policy.importmod(r'osutil')
-parsers = policy.importmod(r'parsers')
+base85 = policy.importmod('base85')
+osutil = policy.importmod('osutil')
+parsers = policy.importmod('parsers')
 
 b85decode = base85.b85decode
 b85encode = base85.b85encode
@@ -165,23 +165,23 @@ if _dowarn:
     # However, module name set through PYTHONWARNINGS was exactly matched, so
     # we cannot set 'mercurial' and have it match eg: 'mercurial.scmutil'. This
     # makes the whole PYTHONWARNINGS thing useless for our usecase.
-    warnings.filterwarnings(r'default', r'', DeprecationWarning, r'mercurial')
-    warnings.filterwarnings(r'default', r'', DeprecationWarning, r'hgext')
-    warnings.filterwarnings(r'default', r'', DeprecationWarning, r'hgext3rd')
+    warnings.filterwarnings('default', '', DeprecationWarning, 'mercurial')
+    warnings.filterwarnings('default', '', DeprecationWarning, 'hgext')
+    warnings.filterwarnings('default', '', DeprecationWarning, 'hgext3rd')
 if _dowarn and pycompat.ispy3:
     # silence warning emitted by passing user string to re.sub()
     warnings.filterwarnings(
-        r'ignore', r'bad escape', DeprecationWarning, r'mercurial'
+        'ignore', 'bad escape', DeprecationWarning, 'mercurial'
     )
     warnings.filterwarnings(
-        r'ignore', r'invalid escape sequence', DeprecationWarning, r'mercurial'
+        'ignore', 'invalid escape sequence', DeprecationWarning, 'mercurial'
     )
     # TODO: reinvent imp.is_frozen()
     warnings.filterwarnings(
-        r'ignore',
-        r'the imp module is deprecated',
+        'ignore',
+        'the imp module is deprecated',
         DeprecationWarning,
-        r'mercurial',
+        'mercurial',
     )
 
 
@@ -438,42 +438,42 @@ class fileobjectproxy(object):
     """
 
     __slots__ = (
-        r'_orig',
-        r'_observer',
+        '_orig',
+        '_observer',
     )
 
     def __init__(self, fh, observer):
-        object.__setattr__(self, r'_orig', fh)
-        object.__setattr__(self, r'_observer', observer)
+        object.__setattr__(self, '_orig', fh)
+        object.__setattr__(self, '_observer', observer)
 
     def __getattribute__(self, name):
         ours = {
-            r'_observer',
+            '_observer',
             # IOBase
-            r'close',
+            'close',
             # closed if a property
-            r'fileno',
-            r'flush',
-            r'isatty',
-            r'readable',
-            r'readline',
-            r'readlines',
-            r'seek',
-            r'seekable',
-            r'tell',
-            r'truncate',
-            r'writable',
-            r'writelines',
+            'fileno',
+            'flush',
+            'isatty',
+            'readable',
+            'readline',
+            'readlines',
+            'seek',
+            'seekable',
+            'tell',
+            'truncate',
+            'writable',
+            'writelines',
             # RawIOBase
-            r'read',
-            r'readall',
-            r'readinto',
-            r'write',
+            'read',
+            'readall',
+            'readinto',
+            'write',
             # BufferedIOBase
             # raw is a property
-            r'detach',
+            'detach',
             # read defined above
-            r'read1',
+            'read1',
             # readinto defined above
             # write defined above
         }
@@ -482,30 +482,30 @@ class fileobjectproxy(object):
         if name in ours:
             return object.__getattribute__(self, name)
 
-        return getattr(object.__getattribute__(self, r'_orig'), name)
+        return getattr(object.__getattribute__(self, '_orig'), name)
 
     def __nonzero__(self):
-        return bool(object.__getattribute__(self, r'_orig'))
+        return bool(object.__getattribute__(self, '_orig'))
 
     __bool__ = __nonzero__
 
     def __delattr__(self, name):
-        return delattr(object.__getattribute__(self, r'_orig'), name)
+        return delattr(object.__getattribute__(self, '_orig'), name)
 
     def __setattr__(self, name, value):
-        return setattr(object.__getattribute__(self, r'_orig'), name, value)
+        return setattr(object.__getattribute__(self, '_orig'), name, value)
 
     def __iter__(self):
-        return object.__getattribute__(self, r'_orig').__iter__()
+        return object.__getattribute__(self, '_orig').__iter__()
 
     def _observedcall(self, name, *args, **kwargs):
         # Call the original object.
-        orig = object.__getattribute__(self, r'_orig')
+        orig = object.__getattribute__(self, '_orig')
         res = getattr(orig, name)(*args, **kwargs)
 
         # Call a method on the observer of the same name with arguments
         # so it can react, log, etc.
-        observer = object.__getattribute__(self, r'_observer')
+        observer = object.__getattribute__(self, '_observer')
         fn = getattr(observer, name, None)
         if fn:
             fn(res, *args, **kwargs)
@@ -513,98 +513,98 @@ class fileobjectproxy(object):
         return res
 
     def close(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'close', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'close', *args, **kwargs
         )
 
     def fileno(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'fileno', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'fileno', *args, **kwargs
         )
 
     def flush(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'flush', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'flush', *args, **kwargs
         )
 
     def isatty(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'isatty', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'isatty', *args, **kwargs
         )
 
     def readable(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readable', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readable', *args, **kwargs
         )
 
     def readline(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readline', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readline', *args, **kwargs
         )
 
     def readlines(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readlines', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readlines', *args, **kwargs
         )
 
     def seek(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'seek', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'seek', *args, **kwargs
         )
 
     def seekable(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'seekable', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'seekable', *args, **kwargs
         )
 
     def tell(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'tell', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'tell', *args, **kwargs
         )
 
     def truncate(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'truncate', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'truncate', *args, **kwargs
         )
 
     def writable(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'writable', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'writable', *args, **kwargs
         )
 
     def writelines(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'writelines', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'writelines', *args, **kwargs
         )
 
     def read(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'read', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'read', *args, **kwargs
         )
 
     def readall(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readall', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readall', *args, **kwargs
         )
 
     def readinto(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readinto', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readinto', *args, **kwargs
         )
 
     def write(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'write', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'write', *args, **kwargs
         )
 
     def detach(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'detach', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'detach', *args, **kwargs
         )
 
     def read1(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'read1', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'read1', *args, **kwargs
         )
 
 
@@ -651,18 +651,18 @@ class observedbufferedinputpipe(bufferedinputpipe):
 
 
 PROXIED_SOCKET_METHODS = {
-    r'makefile',
-    r'recv',
-    r'recvfrom',
-    r'recvfrom_into',
-    r'recv_into',
-    r'send',
-    r'sendall',
-    r'sendto',
-    r'setblocking',
-    r'settimeout',
-    r'gettimeout',
-    r'setsockopt',
+    'makefile',
+    'recv',
+    'recvfrom',
+    'recvfrom_into',
+    'recv_into',
+    'send',
+    'sendall',
+    'sendto',
+    'setblocking',
+    'settimeout',
+    'gettimeout',
+    'setsockopt',
 }
 
 
@@ -676,39 +676,39 @@ class socketproxy(object):
     """
 
     __slots__ = (
-        r'_orig',
-        r'_observer',
+        '_orig',
+        '_observer',
     )
 
     def __init__(self, sock, observer):
-        object.__setattr__(self, r'_orig', sock)
-        object.__setattr__(self, r'_observer', observer)
+        object.__setattr__(self, '_orig', sock)
+        object.__setattr__(self, '_observer', observer)
 
     def __getattribute__(self, name):
         if name in PROXIED_SOCKET_METHODS:
             return object.__getattribute__(self, name)
 
-        return getattr(object.__getattribute__(self, r'_orig'), name)
+        return getattr(object.__getattribute__(self, '_orig'), name)
 
     def __delattr__(self, name):
-        return delattr(object.__getattribute__(self, r'_orig'), name)
+        return delattr(object.__getattribute__(self, '_orig'), name)
 
     def __setattr__(self, name, value):
-        return setattr(object.__getattribute__(self, r'_orig'), name, value)
+        return setattr(object.__getattribute__(self, '_orig'), name, value)
 
     def __nonzero__(self):
-        return bool(object.__getattribute__(self, r'_orig'))
+        return bool(object.__getattribute__(self, '_orig'))
 
     __bool__ = __nonzero__
 
     def _observedcall(self, name, *args, **kwargs):
         # Call the original object.
-        orig = object.__getattribute__(self, r'_orig')
+        orig = object.__getattribute__(self, '_orig')
         res = getattr(orig, name)(*args, **kwargs)
 
         # Call a method on the observer of the same name with arguments
         # so it can react, log, etc.
-        observer = object.__getattribute__(self, r'_observer')
+        observer = object.__getattribute__(self, '_observer')
         fn = getattr(observer, name, None)
         if fn:
             fn(res, *args, **kwargs)
@@ -716,13 +716,13 @@ class socketproxy(object):
         return res
 
     def makefile(self, *args, **kwargs):
-        res = object.__getattribute__(self, r'_observedcall')(
-            r'makefile', *args, **kwargs
+        res = object.__getattribute__(self, '_observedcall')(
+            'makefile', *args, **kwargs
         )
 
         # The file object may be used for I/O. So we turn it into a
         # proxy using our observer.
-        observer = object.__getattribute__(self, r'_observer')
+        observer = object.__getattribute__(self, '_observer')
         return makeloggingfileobject(
             observer.fh,
             res,
@@ -734,58 +734,58 @@ class socketproxy(object):
         )
 
     def recv(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recv', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recv', *args, **kwargs
         )
 
     def recvfrom(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recvfrom', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recvfrom', *args, **kwargs
         )
 
     def recvfrom_into(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recvfrom_into', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recvfrom_into', *args, **kwargs
         )
 
     def recv_into(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recv_info', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recv_info', *args, **kwargs
         )
 
     def send(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'send', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'send', *args, **kwargs
         )
 
     def sendall(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'sendall', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'sendall', *args, **kwargs
         )
 
     def sendto(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'sendto', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'sendto', *args, **kwargs
         )
 
     def setblocking(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'setblocking', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'setblocking', *args, **kwargs
         )
 
     def settimeout(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'settimeout', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'settimeout', *args, **kwargs
         )
 
     def gettimeout(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'gettimeout', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'gettimeout', *args, **kwargs
         )
 
     def setsockopt(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'setsockopt', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'setsockopt', *args, **kwargs
         )
 
 
@@ -1362,7 +1362,7 @@ class _lrucachenode(object):
     pair for the dictionary entry.
     """
 
-    __slots__ = (r'next', r'prev', r'key', r'value', r'cost')
+    __slots__ = ('next', 'prev', 'key', 'value', 'cost')
 
     def __init__(self):
         self.next = None

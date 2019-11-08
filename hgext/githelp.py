@@ -92,9 +92,9 @@ def parseoptions(ui, cmdoptions, args):
         except getopt.GetoptError as ex:
             if "requires argument" in ex.msg:
                 raise
-            if (r'--' + ex.opt) in ex.msg:
+            if ('--' + ex.opt) in ex.msg:
                 flag = b'--' + pycompat.bytestr(ex.opt)
-            elif (r'-' + ex.opt) in ex.msg:
+            elif ('-' + ex.opt) in ex.msg:
                 flag = b'-' + pycompat.bytestr(ex.opt)
             else:
                 raise error.Abort(

@@ -217,7 +217,7 @@ def extract(ui, fileobj):
     fileobj did not contain a patch. Caller must unlink filename when done.'''
 
     fd, tmpname = pycompat.mkstemp(prefix=b'hg-patch-')
-    tmpfp = os.fdopen(fd, r'wb')
+    tmpfp = os.fdopen(fd, 'wb')
     try:
         yield _extract(ui, fileobj, tmpname, tmpfp)
     finally:
@@ -241,8 +241,8 @@ def _extract(ui, fileobj, tmpname, tmpfp):
 
     msg = mail.parse(fileobj)
 
-    subject = msg[r'Subject'] and mail.headdecode(msg[r'Subject'])
-    data[b'user'] = msg[r'From'] and mail.headdecode(msg[r'From'])
+    subject = msg['Subject'] and mail.headdecode(msg['Subject'])
+    data[b'user'] = msg['From'] and mail.headdecode(msg['From'])
     if not subject and not data[b'user']:
         # Not an email, restore parsed headers if any
         subject = (
@@ -255,7 +255,7 @@ def _extract(ui, fileobj, tmpname, tmpfp):
     # should try to parse msg['Date']
     parents = []
 
-    nodeid = msg[r'X-Mercurial-Node']
+    nodeid = msg['X-Mercurial-Node']
     if nodeid:
         data[b'nodeid'] = nodeid = mail.headdecode(nodeid)
         ui.debug(b'Node ID: %s\n' % nodeid)
@@ -1225,7 +1225,7 @@ the hunk is left unchanged.
                 ncpatchfp = None
                 try:
                     # Write the initial patch
-                    f = util.nativeeolwriter(os.fdopen(patchfd, r'wb'))
+                    f = util.nativeeolwriter(os.fdopen(patchfd, 'wb'))
                     chunk.header.write(f)
                     chunk.write(f)
                     f.write(
@@ -1245,7 +1245,7 @@ the hunk is left unchanged.
                         ui.warn(_(b"editor exited with exit code %d\n") % ret)
                         continue
                     # Remove comment lines
-                    patchfp = open(patchfn, r'rb')
+                    patchfp = open(patchfn, 'rb')
                     ncpatchfp = stringio()
                     for line in util.iterfile(patchfp):
                         line = util.fromnativeeol(line)
@@ -2788,7 +2788,7 @@ def diffsinglehunkinline(hunklines):
 
 def difflabel(func, *args, **kw):
     '''yields 2-tuples of (output, label) based on the output of func()'''
-    if kw.get(r'opts') and kw[r'opts'].worddiff:
+    if kw.get('opts') and kw['opts'].worddiff:
         dodiffhunk = diffsinglehunkinline
     else:
         dodiffhunk = diffsinglehunk

@@ -331,7 +331,7 @@ class bundlerepository(object):
         fdtemp, temp = self.vfs.mkstemp(prefix=b"hg-bundle-", suffix=suffix)
         self.tempfile = temp
 
-        with os.fdopen(fdtemp, r'wb') as fptemp:
+        with os.fdopen(fdtemp, 'wb') as fptemp:
             fptemp.write(header)
             while True:
                 chunk = readfn(2 ** 18)
@@ -393,7 +393,7 @@ class bundlerepository(object):
         # manifestlog implementation did not consume the manifests from the
         # changegroup (ex: it might be consuming trees from a separate bundle2
         # part instead). So we need to manually consume it.
-        if r'filestart' not in self.__dict__:
+        if 'filestart' not in self.__dict__:
             self._consumemanifest()
 
         return self.filestart

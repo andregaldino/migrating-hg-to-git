@@ -55,8 +55,8 @@ SD_FILESADDED = 10
 SD_FILESREMOVED = 11
 
 # internal format constant
-SIDEDATA_HEADER = struct.Struct(r'>H')
-SIDEDATA_ENTRY = struct.Struct(r'>HL20s')
+SIDEDATA_HEADER = struct.Struct('>H')
+SIDEDATA_ENTRY = struct.Struct('>HL20s')
 
 
 def sidedatawriteprocessor(rl, text, sidedata):

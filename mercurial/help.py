@@ -805,7 +805,7 @@ def help_(
                     appendcmds(catfns)
 
         ex = opts.get
-        anyopts = ex(r'keyword') or not (ex(r'command') or ex(r'extension'))
+        anyopts = ex('keyword') or not (ex('command') or ex('extension'))
         if not name and anyopts:
             exts = listexts(
                 _(b'enabled extensions:'),

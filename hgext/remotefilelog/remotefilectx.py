@@ -48,11 +48,11 @@ class remotefilectx(context.filectx):
 
     @propertycache
     def _changeid(self):
-        if r'_changeid' in self.__dict__:
+        if '_changeid' in self.__dict__:
             return self._changeid
-        elif r'_changectx' in self.__dict__:
+        elif '_changectx' in self.__dict__:
             return self._changectx.rev()
-        elif r'_descendantrev' in self.__dict__:
+        elif '_descendantrev' in self.__dict__:
             # this file context was created from a revision with a known
             # descendant, we can (lazily) correct for linkrev aliases
             linknode = self._adjustlinknode(
@@ -119,7 +119,7 @@ class remotefilectx(context.filectx):
         """
         lkr = self.linkrev()
         attrs = vars(self)
-        noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
+        noctx = not ('_changeid' in attrs or r'_changectx' in attrs)
         if noctx or self.rev() == lkr:
             return lkr
         linknode = self._adjustlinknode(
@@ -246,11 +246,11 @@ class remotefilectx(context.filectx):
             return linknode
 
         commonlogkwargs = {
-            r'revs': b' '.join([hex(cl.node(rev)) for rev in revs]),
-            r'fnode': hex(fnode),
-            r'filepath': path,
-            r'user': shallowutil.getusername(repo.ui),
-            r'reponame': shallowutil.getreponame(repo.ui),
+            'revs': b' '.join([hex(cl.node(rev)) for rev in revs]),
+            'fnode': hex(fnode),
+            'filepath': path,
+            'user': shallowutil.getusername(repo.ui),
+            'reponame': shallowutil.getreponame(repo.ui),
         }
 
         repo.ui.log(b'linkrevfixup', b'adjusting linknode\n', **commonlogkwargs)
@@ -439,7 +439,7 @@ class remotefilectx(context.filectx):
 
     def annotate(self, *args, **kwargs):
         introctx = self
-        prefetchskip = kwargs.pop(r'prefetchskip', None)
+        prefetchskip = kwargs.pop('prefetchskip', None)
         if prefetchskip:
             # use introrev so prefetchskip can be accurately tested
             introrev = self.introrev()

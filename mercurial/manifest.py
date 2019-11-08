@@ -33,7 +33,7 @@ from .interfaces import (
     util as interfaceutil,
 )
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 propertycache = util.propertycache
 
 # Allow tests to more easily test the alternate path in manifestdict.fastdelta()

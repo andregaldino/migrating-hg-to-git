@@ -135,8 +135,8 @@ class _demandmod(object):
                 if locals:
                     if locals.get(head) is self:
                         locals[head] = mod
-                    elif locals.get(head + r'mod') is self:
-                        locals[head + r'mod'] = mod
+                    elif locals.get(head + 'mod') is self:
+                        locals[head + 'mod'] = mod
 
                 for modname in modrefs:
                     modref = sys.modules.get(modname, None)

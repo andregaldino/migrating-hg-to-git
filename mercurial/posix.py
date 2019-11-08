@@ -32,7 +32,7 @@ from . import (
     pycompat,
 )
 
-osutil = policy.importmod(r'osutil')
+osutil = policy.importmod('osutil')
 
 normpath = os.path.normpath
 samestat = os.path.samestat
@@ -60,11 +60,11 @@ os.umask(umask)
 
 if not pycompat.ispy3:
 
-    def posixfile(name, mode=r'r', buffering=-1):
+    def posixfile(name, mode='r', buffering=-1):
         fp = open(name, mode=mode, buffering=buffering)
         # The position when opening in append mode is implementation defined, so
         # make it consistent by always seeking to the end.
-        if r'a' in mode:
+        if 'a' in mode:
             fp.seek(0, os.SEEK_END)
         return fp
 
@@ -466,7 +466,7 @@ if pycompat.isdarwin:
             u = s.decode('utf-8')
 
         # Decompose then lowercase (HFS+ technote specifies lower)
-        enc = unicodedata.normalize(r'NFD', u).lower().encode('utf-8')
+        enc = unicodedata.normalize('NFD', u).lower().encode('utf-8')
         # drop HFS+ ignored characters
         return encoding.hfsignoreclean(enc)
 

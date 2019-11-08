@@ -345,9 +345,9 @@ class channeledsystem(object):
 
 _iochannels = [
     # server.ch, ui.fp, mode
-    (b'cin', b'fin', r'rb'),
-    (b'cout', b'fout', r'wb'),
-    (b'cerr', b'ferr', r'wb'),
+    (b'cin', b'fin', 'rb'),
+    (b'cout', b'fout', 'wb'),
+    (b'cerr', b'ferr', 'wb'),
 ]
 
 

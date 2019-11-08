@@ -147,7 +147,7 @@ class proxyhandler(urlreq.proxyhandler):
             # Keys and values need to be str because the standard library
             # expects them to be.
             proxyurl = str(proxy)
-            proxies = {r'http': proxyurl, r'https': proxyurl}
+            proxies = {'http': proxyurl, 'https': proxyurl}
             ui.debug(b'proxying through %s\n' % util.hidepassword(bytes(proxy)))
         else:
             proxies = {}
@@ -204,8 +204,8 @@ class httpconnection(keepalive.HTTPConnection):
 def _generic_start_transaction(handler, h, req):
     tunnel_host = req._tunnel_host
     if tunnel_host:
-        if tunnel_host[:7] not in [r'http://', r'https:/']:
-            tunnel_host = r'https://' + tunnel_host
+        if tunnel_host[:7] not in ['http://', 'https:/']:
+            tunnel_host = 'https://' + tunnel_host
         new_tunnel = True
     else:
         tunnel_host = urllibcompat.getselector(req)
@@ -228,7 +228,7 @@ def _generic_proxytunnel(self):
         [
             (x, self.headers[x])
             for x in self.headers
-            if x.lower().startswith(r'proxy-')
+            if x.lower().startswith('proxy-')
         ]
     )
     self.send(b'CONNECT %s HTTP/1.0\r\n' % self.realhostport)
@@ -522,7 +522,7 @@ class httpbasicauthhandler(urlreq.httpbasicauthhandler):
         )
         if pw is not None:
             raw = b"%s:%s" % (pycompat.bytesurl(user), pycompat.bytesurl(pw))
-            auth = r'Basic %s' % pycompat.strurl(base64.b64encode(raw).strip())
+            auth = 'Basic %s' % pycompat.strurl(base64.b64encode(raw).strip())
             if req.get_header(self.auth_header, None) == auth:
                 return None
             self.auth = auth
@@ -655,16 +655,16 @@ def opener(
     # do look at this value.
     if not useragent:
         agent = b'mercurial/proto-1.0 (Mercurial %s)' % util.version()
-        opener.addheaders = [(r'User-agent', pycompat.sysstr(agent))]
+        opener.addheaders = [('User-agent', pycompat.sysstr(agent))]
     else:
-        opener.addheaders = [(r'User-agent', pycompat.sysstr(useragent))]
+        opener.addheaders = [('User-agent', pycompat.sysstr(useragent))]
 
     # This header should only be needed by wire protocol requests. But it has
     # been sent on all requests since forever. We keep sending it for backwards
     # compatibility reasons. Modern versions of the wire protocol use
     # X-HgProto-<N> for advertising client support.
     if sendaccept:
-        opener.addheaders.append((r'Accept', r'application/mercurial-0.1'))
+        opener.addheaders.append(('Accept', 'application/mercurial-0.1'))
 
     return opener
 

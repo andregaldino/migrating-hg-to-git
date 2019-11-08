@@ -26,7 +26,7 @@ from . import (
     vfs as vfsmod,
 )
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 # how much bytes should be read from fncache in one read
 # It is done to prevent loading large fncache files into memory
 fncache_chunksize = 10 ** 6

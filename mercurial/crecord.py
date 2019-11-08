@@ -522,7 +522,7 @@ class uihunk(patchnode):
         return getattr(self._hunk, name)
 
     def __repr__(self):
-        return r'<hunk %r@%d>' % (self.filename(), self.fromline)
+        return '<hunk %r@%d>' % (self.filename(), self.fromline)
 
 
 def filterpatch(ui, chunks, chunkselector, operation=None):
@@ -569,7 +569,7 @@ def chunkselector(ui, headerlist, operation=None):
     chunkselector = curseschunkselector(headerlist, ui, operation)
     # This is required for ncurses to display non-ASCII characters in
     # default user locale encoding correctly.  --immerrr
-    locale.setlocale(locale.LC_ALL, r'')
+    locale.setlocale(locale.LC_ALL, '')
     origsigtstp = sentinel = object()
     if util.safehasattr(signal, b'SIGTSTP'):
         origsigtstp = signal.getsignal(signal.SIGTSTP)

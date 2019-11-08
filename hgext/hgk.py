@@ -115,7 +115,7 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
     ##
 
     while True:
-        if opts[r'stdin']:
+        if opts['stdin']:
             line = ui.fin.readline()
             if not line:
                 break
@@ -131,8 +131,8 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
         else:
             node2 = node1
             node1 = repo.changelog.parents(node1)[0]
-        if opts[r'patch']:
-            if opts[r'pretty']:
+        if opts['patch']:
+            if opts['pretty']:
                 catcommit(ui, repo, node2, b"")
             m = scmutil.match(repo[node1], files)
             diffopts = patch.difffeatureopts(ui)
@@ -142,7 +142,7 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
                 ui.write(chunk)
         else:
             __difftree(repo, node1, node2, files=files)
-        if not opts[r'stdin']:
+        if not opts['stdin']:
             break
 
 
@@ -201,7 +201,7 @@ def catfile(ui, repo, type=None, r=None, **opts):
     # strings
     #
     prefix = b""
-    if opts[r'stdin']:
+    if opts['stdin']:
         line = ui.fin.readline()
         if not line:
             return
@@ -218,7 +218,7 @@ def catfile(ui, repo, type=None, r=None, **opts):
             return 1
         n = repo.lookup(r)
         catcommit(ui, repo, n, prefix)
-        if opts[r'stdin']:
+        if opts['stdin']:
             line = ui.fin.readline()
             if not line:
                 break
@@ -363,7 +363,7 @@ def revlist(ui, repo, *revs, **opts):
     else:
         full = None
     copy = [x for x in revs]
-    revtree(ui, copy, repo, full, opts[r'max_count'], opts[r'parents'])
+    revtree(ui, copy, repo, full, opts['max_count'], opts[r'parents'])
 
 
 @command(

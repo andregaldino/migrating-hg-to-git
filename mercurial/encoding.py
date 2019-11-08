@@ -37,7 +37,7 @@ if not globals():  # hide this from non-pytype users
 
     _Tlocalstr = TypeVar('_Tlocalstr', bound=localstr)
 
-charencode = policy.importmod(r'charencode')
+charencode = policy.importmod('charencode')
 
 isasciistr = charencode.isasciistr
 asciilower = charencode.asciilower
@@ -87,7 +87,7 @@ else:
     # preferred encoding isn't known yet; use utf-8 to avoid unicode error
     # and recreate it once encoding is settled
     environ = dict(
-        (k.encode(r'utf-8'), v.encode(r'utf-8'))
+        (k.encode('utf-8'), v.encode('utf-8'))
         for k, v in os.environ.items()  # re-exports
     )
 
@@ -280,7 +280,7 @@ if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
     environ = dict(
-        (tolocal(k.encode(r'utf-8')), tolocal(v.encode(r'utf-8')))
+        (tolocal(k.encode('utf-8')), tolocal(v.encode('utf-8')))
         for k, v in os.environ.items()  # re-exports
     )
 
@@ -307,7 +307,7 @@ _wide = _sysstr(
 def colwidth(s):
     # type: (bytes) -> int
     b"Find the column width of a string for display in the local encoding"
-    return ucolwidth(s.decode(_sysstr(encoding), r'replace'))
+    return ucolwidth(s.decode(_sysstr(encoding), 'replace'))
 
 
 def ucolwidth(d):

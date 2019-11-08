@@ -1366,26 +1366,26 @@ def makeifileindextests(makefilefn, maketransactionfn, addrawrevisionfn):
     should find and run it automatically.
     """
     d = {
-        r'_makefilefn': makefilefn,
-        r'_maketransactionfn': maketransactionfn,
-        r'_addrawrevisionfn': addrawrevisionfn,
+        '_makefilefn': makefilefn,
+        '_maketransactionfn': maketransactionfn,
+        '_addrawrevisionfn': addrawrevisionfn,
     }
-    return type(r'ifileindextests', (ifileindextests,), d)
+    return type('ifileindextests', (ifileindextests,), d)
 
 
 def makeifiledatatests(makefilefn, maketransactionfn, addrawrevisionfn):
     d = {
-        r'_makefilefn': makefilefn,
-        r'_maketransactionfn': maketransactionfn,
-        r'_addrawrevisionfn': addrawrevisionfn,
+        '_makefilefn': makefilefn,
+        '_maketransactionfn': maketransactionfn,
+        '_addrawrevisionfn': addrawrevisionfn,
     }
-    return type(r'ifiledatatests', (ifiledatatests,), d)
+    return type('ifiledatatests', (ifiledatatests,), d)
 
 
 def makeifilemutationtests(makefilefn, maketransactionfn, addrawrevisionfn):
     d = {
-        r'_makefilefn': makefilefn,
-        r'_maketransactionfn': maketransactionfn,
-        r'_addrawrevisionfn': addrawrevisionfn,
+        '_makefilefn': makefilefn,
+        '_maketransactionfn': maketransactionfn,
+        '_addrawrevisionfn': addrawrevisionfn,
     }
-    return type(r'ifilemutationtests', (ifilemutationtests,), d)
+    return type('ifilemutationtests', (ifilemutationtests,), d)

@@ -94,7 +94,7 @@ def extsetup(ui):
         ui.warn(_(b'beautifygraph: unsupported encoding, UTF-8 required\n'))
         return
 
-    if r'A' in encoding._wide:
+    if 'A' in encoding._wide:
         ui.warn(
             _(
                 b'beautifygraph: unsupported terminal settings, '

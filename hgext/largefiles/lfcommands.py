@@ -648,7 +648,7 @@ def lfpull(ui, repo, source=b"default", **opts):
     """
     repo.lfpullsource = source
 
-    revs = opts.get(r'rev', [])
+    revs = opts.get('rev', [])
     if not revs:
         raise error.Abort(_(b'no revisions specified'))
     revs = scmutil.revrange(repo, revs)

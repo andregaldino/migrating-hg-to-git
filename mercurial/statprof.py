@@ -206,7 +206,7 @@ state = ProfileState()
 class CodeSite(object):
     cache = {}
 
-    __slots__ = (r'path', r'lineno', r'function', r'source')
+    __slots__ = ('path', 'lineno', 'function', 'source')
 
     def __init__(self, path, lineno, function):
         assert isinstance(path, bytes)
@@ -258,11 +258,11 @@ class CodeSite(object):
         return os.path.basename(self.path)
 
     def skipname(self):
-        return r'%s:%s' % (self.filename(), self.function)
+        return '%s:%s' % (self.filename(), self.function)
 
 
 class Sample(object):
-    __slots__ = (r'stack', r'time')
+    __slots__ = ('stack', 'time')
 
     def __init__(self, stack, time):
         self.stack = stack
@@ -738,7 +738,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
     for sample in data.samples:
         root.add(sample.stack[::-1], sample.time - lasttime)
         lasttime = sample.time
-    showtime = kwargs.get(r'showtime', True)
+    showtime = kwargs.get('showtime', True)
 
     def _write(node, depth, multiple_siblings):
         site = node.site
@@ -894,7 +894,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
         parent = stackid(stack[1:])
         myid = len(stack2id)
         stack2id[stack] = myid
-        id2stack.append(dict(category=stack[0][0], name=r'%s %s' % stack[0]))
+        id2stack.append(dict(category=stack[0][0], name='%s %s' % stack[0]))
         if parent is not None:
             id2stack[-1].update(parent=parent)
         return myid
@@ -931,7 +931,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
             sampletime = max(oldtime + clamp, sample.time)
             samples.append(
                 dict(
-                    ph=r'E',
+                    ph='E',
                     name=oldfunc,
                     cat=oldcat,
                     sf=oldsid,
@@ -949,7 +949,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
         stack = tuple(
             (
                 (
-                    r'%s:%d'
+                    '%s:%d'
                     % (simplifypath(pycompat.sysstr(frame.path)), frame.lineno),
                     pycompat.sysstr(frame.function),
                 )
@@ -971,7 +971,7 @@ def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
             sid = stackid(tuple(laststack))
             samples.append(
                 dict(
-                    ph=r'B',
+                    ph='B',
                     name=name,
                     cat=path,
                     ts=sample.time * 1e6,
@@ -1030,17 +1030,17 @@ def main(argv=None):
 
     optstart = 2
     displayargs[b'function'] = None
-    if argv[1] == r'hotpath':
+    if argv[1] == 'hotpath':
         displayargs[b'format'] = DisplayFormats.Hotpath
-    elif argv[1] == r'lines':
+    elif argv[1] == 'lines':
         displayargs[b'format'] = DisplayFormats.ByLine
-    elif argv[1] == r'functions':
+    elif argv[1] == 'functions':
         displayargs[b'format'] = DisplayFormats.ByMethod
-    elif argv[1] == r'function':
+    elif argv[1] == 'function':
         displayargs[b'format'] = DisplayFormats.AboutMethod
         displayargs[b'function'] = argv[2]
         optstart = 3
-    elif argv[1] == r'flame':
+    elif argv[1] == 'flame':
         displayargs[b'format'] = DisplayFormats.FlameGraph
     else:
         printusage()
@@ -1076,7 +1076,7 @@ def main(argv=None):
             assert False, b"unhandled option %s" % o
 
     if not path:
-        print(r'must specify --file to load')
+        print('must specify --file to load')
         return 1
 
     load_data(path=path)

@@ -103,13 +103,13 @@ except AttributeError:
             # in this legacy code since we don't support SNI.
 
             args = {
-                r'keyfile': self._keyfile,
-                r'certfile': self._certfile,
-                r'server_side': server_side,
-                r'cert_reqs': self.verify_mode,
-                r'ssl_version': self.protocol,
-                r'ca_certs': self._cacerts,
-                r'ciphers': self._ciphers,
+                'keyfile': self._keyfile,
+                'certfile': self._certfile,
+                'server_side': server_side,
+                'cert_reqs': self.verify_mode,
+                'ssl_version': self.protocol,
+                'ca_certs': self._cacerts,
+                'ciphers': self._ciphers,
             }
 
             return ssl.wrap_socket(socket, **args)
@@ -499,7 +499,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             # outright. Hopefully the reason for this error is that we require
             # TLS 1.1+ and the server only supports TLS 1.0. Whatever the
             # reason, try to emit an actionable warning.
-            if e.reason == r'UNSUPPORTED_PROTOCOL':
+            if e.reason == 'UNSUPPORTED_PROTOCOL':
                 # We attempted TLS 1.0+.
                 if settings[b'protocolui'] == b'tls1.0':
                     # We support more than just TLS 1.0+. If this happens,
@@ -568,9 +568,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                         )
                     )
 
-            elif (
-                e.reason == r'CERTIFICATE_VERIFY_FAILED' and pycompat.iswindows
-            ):
+            elif e.reason == 'CERTIFICATE_VERIFY_FAILED' and pycompat.iswindows:
 
                 ui.warn(
                     _(
@@ -737,9 +735,9 @@ def _verifycert(cert, hostname):
         return _(b'no certificate received')
 
     dnsnames = []
-    san = cert.get(r'subjectAltName', [])
+    san = cert.get('subjectAltName', [])
     for key, value in san:
-        if key == r'DNS':
+        if key == 'DNS':
             try:
                 if _dnsnamematch(value, hostname):
                     return
@@ -750,11 +748,11 @@ def _verifycert(cert, hostname):
 
     if not dnsnames:
         # The subject is only checked when there is no DNS in subjectAltName.
-        for sub in cert.get(r'subject', []):
+        for sub in cert.get('subject', []):
             for key, value in sub:
                 # According to RFC 2818 the most specific Common Name must
                 # be used.
-                if key == r'commonName':
+                if key == 'commonName':
                     # 'subject' entries are unicode.
                     try:
                         value = value.encode('ascii')

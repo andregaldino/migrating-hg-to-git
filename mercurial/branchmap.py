@@ -124,7 +124,7 @@ class BranchMapCache(object):
 def _unknownnode(node):
     """ raises ValueError when branchcache found a node which does not exists
     """
-    raise ValueError(r'node %s does not exist' % pycompat.sysstr(hex(node)))
+    raise ValueError('node %s does not exist' % pycompat.sysstr(hex(node)))
 
 
 def _branchcachedesc(repo):
@@ -260,7 +260,7 @@ class branchcache(object):
             )
             if not bcache.validfor(repo):
                 # invalidate the cache
-                raise ValueError(r'tip differs')
+                raise ValueError('tip differs')
             bcache.load(repo, lineiter)
         except (IOError, OSError):
             return None
@@ -294,7 +294,7 @@ class branchcache(object):
                 continue
             node, state, label = line.split(b" ", 2)
             if state not in b'oc':
-                raise ValueError(r'invalid branch state')
+                raise ValueError('invalid branch state')
             label = encoding.tolocal(label.strip())
             node = bin(node)
             self._entries.setdefault(label, []).append(node)
@@ -646,7 +646,7 @@ class revbranchcache(object):
         #   self.branchinfo = self._branchinfo
         #
         # Since we now have data in the cache, we need to drop this bypassing.
-        if r'branchinfo' in vars(self):
+        if 'branchinfo' in vars(self):
             del self.branchinfo
 
     def _setcachedata(self, rev, node, branchidx):

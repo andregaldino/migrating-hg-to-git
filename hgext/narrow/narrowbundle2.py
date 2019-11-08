@@ -62,8 +62,8 @@ def getbundlechangegrouppart_narrow(
         raise ValueError(_(b'no common changegroup version'))
     version = max(cgversions)
 
-    include = sorted(filter(bool, kwargs.get(r'includepats', [])))
-    exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+    include = sorted(filter(bool, kwargs.get('includepats', [])))
+    exclude = sorted(filter(bool, kwargs.get('excludepats', [])))
     generateellipsesbundle2(
         bundler,
         repo,
@@ -72,7 +72,7 @@ def getbundlechangegrouppart_narrow(
         version,
         common,
         heads,
-        kwargs.get(r'depth', None),
+        kwargs.get('depth', None),
     )
 
 
@@ -316,7 +316,7 @@ def setup():
         if repo.ui.has_section(_NARROWACL_SECTION):
             kwargs = exchange.applynarrowacl(repo, kwargs)
 
-        if kwargs.get(r'narrow', False) and repo.ui.configbool(
+        if kwargs.get('narrow', False) and repo.ui.configbool(
             b'experimental', b'narrowservebrokenellipses'
         ):
             getbundlechangegrouppart_narrow(*args, **kwargs)

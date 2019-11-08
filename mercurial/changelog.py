@@ -211,10 +211,10 @@ class changelogrevision(object):
     """
 
     __slots__ = (
-        r'_offsets',
-        r'_text',
-        r'_sidedata',
-        r'_cpsd',
+        '_offsets',
+        '_text',
+        '_sidedata',
+        '_cpsd',
     )
 
     def __new__(cls, text, sidedata, cpsd):

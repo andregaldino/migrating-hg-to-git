@@ -719,7 +719,7 @@ def _MBTextWrapper(**kwargs):
 
                 # First chunk on line is whitespace -- drop it, unless this
                 # is the very beginning of the text (i.e. no lines started yet).
-                if self.drop_whitespace and chunks[-1].strip() == r'' and lines:
+                if self.drop_whitespace and chunks[-1].strip() == '' and lines:
                     del chunks[-1]
 
                 while chunks:
@@ -750,7 +750,7 @@ def _MBTextWrapper(**kwargs):
                 # Convert current line back to a string and store it in list
                 # of all lines (return value).
                 if cur_line:
-                    lines.append(indent + r''.join(cur_line))
+                    lines.append(indent + ''.join(cur_line))
 
             return lines
 

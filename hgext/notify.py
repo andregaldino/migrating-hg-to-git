@@ -388,13 +388,13 @@ class notifier(object):
             raise error.Abort(inst)
 
         # store sender and subject
-        sender = msg[r'From']
-        subject = msg[r'Subject']
+        sender = msg['From']
+        subject = msg['Subject']
         if sender is not None:
             sender = mail.headdecode(sender)
         if subject is not None:
             subject = mail.headdecode(subject)
-        del msg[r'From'], msg[r'Subject']
+        del msg['From'], msg['Subject']
 
         if not msg.is_multipart():
             # create fresh mime message from scratch
@@ -407,7 +407,7 @@ class notifier(object):
             for k, v in headers:
                 msg[k] = v
 
-        msg[r'Date'] = encoding.strfromlocal(
+        msg['Date'] = encoding.strfromlocal(
             dateutil.datestr(format=b"%a, %d %b %Y %H:%M:%S %1%2")
         )
 
@@ -421,7 +421,7 @@ class notifier(object):
         maxsubject = int(self.ui.config(b'notify', b'maxsubject'))
         if maxsubject:
             subject = stringutil.ellipsis(subject, maxsubject)
-        msg[r'Subject'] = encoding.strfromlocal(
+        msg['Subject'] = encoding.strfromlocal(
             mail.headencode(self.ui, subject, self.charsets, self.test)
         )
 
@@ -430,14 +430,14 @@ class notifier(object):
             sender = self.ui.config(b'email', b'from') or self.ui.username()
         if b'@' not in sender or b'@localhost' in sender:
             sender = self.fixmail(sender)
-        msg[r'From'] = encoding.strfromlocal(
+        msg['From'] = encoding.strfromlocal(
             mail.addressencode(self.ui, sender, self.charsets, self.test)
         )
 
-        msg[r'X-Hg-Notification'] = r'changeset %s' % ctx
-        if not msg[r'Message-Id']:
-            msg[r'Message-Id'] = messageid(ctx, self.domain, self.messageidseed)
-        msg[r'To'] = encoding.strfromlocal(b', '.join(sorted(subs)))
+        msg['X-Hg-Notification'] = 'changeset %s' % ctx
+        if not msg['Message-Id']:
+            msg['Message-Id'] = messageid(ctx, self.domain, self.messageidseed)
+        msg['To'] = encoding.strfromlocal(b', '.join(sorted(subs)))
 
         msgtext = msg.as_bytes() if pycompat.ispy3 else msg.as_string()
         if self.test:
@@ -451,7 +451,7 @@ class notifier(object):
             )
             mail.sendmail(
                 self.ui,
-                emailutils.parseaddr(msg[r'From'])[1],
+                emailutils.parseaddr(msg['From'])[1],
                 subs,
                 msgtext,
                 mbox=self.mbox,

@@ -834,7 +834,7 @@ def _walkcommand(node):
                 continue
             if not isinstance(d.func, ast.Name):
                 continue
-            if d.func.id != r'command':
+            if d.func.id != 'command':
                 continue
             yield d
 

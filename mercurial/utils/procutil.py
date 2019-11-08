@@ -32,7 +32,7 @@ from .. import (
     pycompat,
 )
 
-osutil = policy.importmod(r'osutil')
+osutil = policy.importmod('osutil')
 
 stderr = pycompat.stderr
 stdin = pycompat.stdin
@@ -52,11 +52,11 @@ def isatty(fp):
 if isatty(stdout):
     if pycompat.iswindows:
         # Windows doesn't support line buffering
-        stdout = os.fdopen(stdout.fileno(), r'wb', 0)
+        stdout = os.fdopen(stdout.fileno(), 'wb', 0)
     elif not pycompat.ispy3:
         # on Python 3, stdout (sys.stdout.buffer) is already line buffered and
         # buffering=1 is not handled in binary mode
-        stdout = os.fdopen(stdout.fileno(), r'wb', 1)
+        stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
 if pycompat.iswindows:
     from .. import windows as platform
@@ -211,7 +211,7 @@ def tempfilter(s, cmd):
     inname, outname = None, None
     try:
         infd, inname = pycompat.mkstemp(prefix=b'hg-filter-in-')
-        fp = os.fdopen(infd, r'wb')
+        fp = os.fdopen(infd, 'wb')
         fp.write(s)
         fp.close()
         outfd, outname = pycompat.mkstemp(prefix=b'hg-filter-out-')
@@ -277,7 +277,7 @@ def hgexecutable():
     """
     if _hgexecutable is None:
         hg = encoding.environ.get(b'HG')
-        mainmod = sys.modules[r'__main__']
+        mainmod = sys.modules['__main__']
         if hg:
             _sethgexecutable(hg)
         elif mainfrozen():
@@ -340,11 +340,11 @@ def protectstdio(uin, uout):
         nullfd = os.open(os.devnull, os.O_RDONLY)
         os.dup2(nullfd, uin.fileno())
         os.close(nullfd)
-        fin = os.fdopen(newfd, r'rb')
+        fin = os.fdopen(newfd, 'rb')
     if _testfileno(uout, stdout):
         newfd = os.dup(uout.fileno())
         os.dup2(stderr.fileno(), uout.fileno())
-        fout = os.fdopen(newfd, r'wb')
+        fout = os.fdopen(newfd, 'wb')
     return fin, fout
 
 

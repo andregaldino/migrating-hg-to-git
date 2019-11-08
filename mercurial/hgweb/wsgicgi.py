@@ -25,28 +25,28 @@ def launch(application):
     procutil.setbinary(procutil.stdout)
 
     environ = dict(pycompat.iteritems(os.environ))  # re-exports
-    environ.setdefault(r'PATH_INFO', b'')
-    if environ.get(r'SERVER_SOFTWARE', r'').startswith(r'Microsoft-IIS'):
+    environ.setdefault('PATH_INFO', b'')
+    if environ.get('SERVER_SOFTWARE', '').startswith('Microsoft-IIS'):
         # IIS includes script_name in PATH_INFO
-        scriptname = environ[r'SCRIPT_NAME']
-        if environ[r'PATH_INFO'].startswith(scriptname):
-            environ[r'PATH_INFO'] = environ[r'PATH_INFO'][len(scriptname) :]
+        scriptname = environ['SCRIPT_NAME']
+        if environ['PATH_INFO'].startswith(scriptname):
+            environ['PATH_INFO'] = environ['PATH_INFO'][len(scriptname) :]
 
     stdin = procutil.stdin
-    if environ.get(r'HTTP_EXPECT', r'').lower() == r'100-continue':
+    if environ.get('HTTP_EXPECT', '').lower() == '100-continue':
         stdin = common.continuereader(stdin, procutil.stdout.write)
 
-    environ[r'wsgi.input'] = stdin
-    environ[r'wsgi.errors'] = procutil.stderr
-    environ[r'wsgi.version'] = (1, 0)
-    environ[r'wsgi.multithread'] = False
-    environ[r'wsgi.multiprocess'] = True
-    environ[r'wsgi.run_once'] = True
+    environ['wsgi.input'] = stdin
+    environ['wsgi.errors'] = procutil.stderr
+    environ['wsgi.version'] = (1, 0)
+    environ['wsgi.multithread'] = False
+    environ['wsgi.multiprocess'] = True
+    environ['wsgi.run_once'] = True
 
-    if environ.get(r'HTTPS', r'off').lower() in (r'on', r'1', r'yes'):
-        environ[r'wsgi.url_scheme'] = r'https'
+    if environ.get('HTTPS', 'off').lower() in ('on', '1', 'yes'):
+        environ['wsgi.url_scheme'] = 'https'
     else:
-        environ[r'wsgi.url_scheme'] = r'http'
+        environ['wsgi.url_scheme'] = 'http'
 
     headers_set = []
     headers_sent = []

@@ -658,10 +658,10 @@ class cmdalias(object):
 
     def __getattr__(self, name):
         adefaults = {
-            r'norepo': True,
-            r'intents': set(),
-            r'optionalrepo': False,
-            r'inferrepo': False,
+            'norepo': True,
+            'intents': set(),
+            'optionalrepo': False,
+            'inferrepo': False,
         }
         if name not in adefaults:
             raise AttributeError(name)

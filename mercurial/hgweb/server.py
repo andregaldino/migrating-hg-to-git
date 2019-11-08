@@ -43,8 +43,8 @@ def _splitURI(uri):
     Just like CGI environment, the path is unquoted, the query is
     not.
     """
-    if r'?' in uri:
-        path, query = uri.split(r'?', 1)
+    if '?' in uri:
+        path, query = uri.split('?', 1)
     else:
         path, query = uri, r''
     return urlreq.unquote(path), query
@@ -97,18 +97,18 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
     def log_message(self, format, *args):
         self._log_any(self.server.accesslog, format, *args)
 
-    def log_request(self, code=r'-', size=r'-'):
+    def log_request(self, code='-', size='-'):
         xheaders = []
         if util.safehasattr(self, b'headers'):
             xheaders = [
-                h for h in self.headers.items() if h[0].startswith(r'x-')
+                h for h in self.headers.items() if h[0].startswith('x-')
             ]
         self.log_message(
-            r'"%s" %s %s%s',
+            '"%s" %s %s%s',
             self.requestline,
             str(code),
             str(size),
-            r''.join([r' %s:%s' % h for h in sorted(xheaders)]),
+            ''.join([' %s:%s' % h for h in sorted(xheaders)]),
         )
 
     def do_write(self):
@@ -160,72 +160,72 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             self.server.prefix + b'/'
         ):
             self._start_response(pycompat.strurl(common.statusmessage(404)), [])
-            if self.command == r'POST':
+            if self.command == 'POST':
                 # Paranoia: tell the client we're going to close the
                 # socket so they don't try and reuse a socket that
                 # might have a POST body waiting to confuse us. We do
                 # this by directly munging self.saved_headers because
                 # self._start_response ignores Connection headers.
-                self.saved_headers = [(r'Connection', r'Close')]
+                self.saved_headers = [('Connection', 'Close')]
             self._write(b"Not Found")
             self._done()
             return
 
         env = {}
-        env[r'GATEWAY_INTERFACE'] = r'CGI/1.1'
-        env[r'REQUEST_METHOD'] = self.command
-        env[r'SERVER_NAME'] = self.server.server_name
-        env[r'SERVER_PORT'] = str(self.server.server_port)
-        env[r'REQUEST_URI'] = self.path
-        env[r'SCRIPT_NAME'] = pycompat.sysstr(self.server.prefix)
-        env[r'PATH_INFO'] = pycompat.sysstr(path[len(self.server.prefix) :])
-        env[r'REMOTE_HOST'] = self.client_address[0]
-        env[r'REMOTE_ADDR'] = self.client_address[0]
-        env[r'QUERY_STRING'] = query or r''
+        env['GATEWAY_INTERFACE'] = 'CGI/1.1'
+        env['REQUEST_METHOD'] = self.command
+        env['SERVER_NAME'] = self.server.server_name
+        env['SERVER_PORT'] = str(self.server.server_port)
+        env['REQUEST_URI'] = self.path
+        env['SCRIPT_NAME'] = pycompat.sysstr(self.server.prefix)
+        env['PATH_INFO'] = pycompat.sysstr(path[len(self.server.prefix) :])
+        env['REMOTE_HOST'] = self.client_address[0]
+        env['REMOTE_ADDR'] = self.client_address[0]
+        env['QUERY_STRING'] = query or ''
 
         if pycompat.ispy3:
             if self.headers.get_content_type() is None:
-                env[r'CONTENT_TYPE'] = self.headers.get_default_type()
+                env['CONTENT_TYPE'] = self.headers.get_default_type()
             else:
-                env[r'CONTENT_TYPE'] = self.headers.get_content_type()
-            length = self.headers.get(r'content-length')
+                env['CONTENT_TYPE'] = self.headers.get_content_type()
+            length = self.headers.get('content-length')
         else:
             if self.headers.typeheader is None:
-                env[r'CONTENT_TYPE'] = self.headers.type
+                env['CONTENT_TYPE'] = self.headers.type
             else:
-                env[r'CONTENT_TYPE'] = self.headers.typeheader
-            length = self.headers.getheader(r'content-length')
+                env['CONTENT_TYPE'] = self.headers.typeheader
+            length = self.headers.getheader('content-length')
         if length:
-            env[r'CONTENT_LENGTH'] = length
+            env['CONTENT_LENGTH'] = length
         for header in [
             h
             for h in self.headers.keys()
-            if h.lower() not in (r'content-type', r'content-length')
+            if h.lower() not in ('content-type', 'content-length')
         ]:
-            hkey = r'HTTP_' + header.replace(r'-', r'_').upper()
+            hkey = 'HTTP_' + header.replace('-', '_').upper()
             hval = self.headers.get(header)
-            hval = hval.replace(r'\n', r'').strip()
+            hval = hval.replace('\n', '').strip()
             if hval:
                 env[hkey] = hval
-        env[r'SERVER_PROTOCOL'] = self.request_version
-        env[r'wsgi.version'] = (1, 0)
-        env[r'wsgi.url_scheme'] = pycompat.sysstr(self.url_scheme)
-        if env.get(r'HTTP_EXPECT', b'').lower() == b'100-continue':
+        env['SERVER_PROTOCOL'] = self.request_version
+        env['wsgi.version'] = (1, 0)
+        env['wsgi.url_scheme'] = pycompat.sysstr(self.url_scheme)
+        if env.get('HTTP_EXPECT', b'').lower() == b'100-continue':
             self.rfile = common.continuereader(self.rfile, self.wfile.write)
 
-        env[r'wsgi.input'] = self.rfile
-        env[r'wsgi.errors'] = _error_logger(self)
-        env[r'wsgi.multithread'] = isinstance(
+        env['wsgi.input'] = self.rfile
+        env['wsgi.errors'] = _error_logger(self)
+        env['wsgi.multithread'] = isinstance(
             self.server, socketserver.ThreadingMixIn
         )
         if util.safehasattr(socketserver, b'ForkingMixIn'):
-            env[r'wsgi.multiprocess'] = isinstance(
+            env['wsgi.multiprocess'] = isinstance(
                 self.server, socketserver.ForkingMixIn
             )
         else:
-            env[r'wsgi.multiprocess'] = False
+            env['wsgi.multiprocess'] = False
 
-        env[r'wsgi.run_once'] = 0
+        env['wsgi.run_once'] = 0
 
         wsgiref.validate.check_environ(env)
 
@@ -251,17 +251,16 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         self._chunked = False
         for h in self.saved_headers:
             self.send_header(*h)
-            if h[0].lower() == r'content-length':
+            if h[0].lower() == 'content-length':
                 self.length = int(h[1])
         if self.length is None and saved_status[0] != common.HTTP_NOT_MODIFIED:
             self._chunked = (
-                not self.close_connection
-                and self.request_version == r'HTTP/1.1'
+                not self.close_connection and self.request_version == 'HTTP/1.1'
             )
             if self._chunked:
-                self.send_header(r'Transfer-Encoding', r'chunked')
+                self.send_header('Transfer-Encoding', 'chunked')
             else:
-                self.send_header(r'Connection', r'close')
+                self.send_header('Connection', 'close')
         self.end_headers()
         self.sent_headers = True
 
@@ -270,7 +269,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         code, msg = http_status.split(None, 1)
         code = int(code)
         self.saved_status = http_status
-        bad_headers = (r'connection', r'transfer-encoding')
+        bad_headers = ('connection', 'transfer-encoding')
         self.saved_headers = [
             h for h in headers if h[0].lower() not in bad_headers
         ]

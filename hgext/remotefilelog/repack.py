@@ -29,7 +29,7 @@ from . import (
     shallowutil,
 )
 
-osutil = policy.importmod(r'osutil')
+osutil = policy.importmod('osutil')
 
 
 class RepackAlreadyRunning(error.Abort):
@@ -876,13 +876,13 @@ class repackentry(object):
     """
 
     __slots__ = (
-        r'filename',
-        r'node',
-        r'datasource',
-        r'historysource',
-        r'datarepacked',
-        r'historyrepacked',
-        r'gced',
+        'filename',
+        'node',
+        'datasource',
+        'historysource',
+        'datarepacked',
+        'historyrepacked',
+        'gced',
     )
 
     def __init__(self, filename, node):

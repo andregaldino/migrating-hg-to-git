@@ -180,7 +180,7 @@ def abort(ui, repo, **opts):
 
     use --dry-run/-n to dry run the command.
     """
-    dryrun = opts.get(r'dry_run')
+    dryrun = opts.get('dry_run')
     abortstate = cmdutil.getunfinishedstate(repo)
     if not abortstate:
         raise error.Abort(_(b'no operation in progress'))
@@ -2019,8 +2019,8 @@ def commit(ui, repo, *pats, **opts):
 
 
 def _docommit(ui, repo, *pats, **opts):
-    if opts.get(r'interactive'):
-        opts.pop(r'interactive')
+    if opts.get('interactive'):
+        opts.pop('interactive')
         ret = cmdutil.dorecord(
             ui, repo, commit, None, False, cmdutil.recordfilter, *pats, **opts
         )
@@ -2295,7 +2295,7 @@ def continuecmd(ui, repo, **opts):
 
     use --dry-run/-n to dry run the command.
     """
-    dryrun = opts.get(r'dry_run')
+    dryrun = opts.get('dry_run')
     contstate = cmdutil.getunfinishedstate(repo)
     if not contstate:
         raise error.Abort(_(b'no operation in progress'))
@@ -2375,7 +2375,7 @@ def debugcommands(ui, cmd=b'', *args):
 def debugcomplete(ui, cmd=b'', **opts):
     """returns the completion list associated with the given command"""
 
-    if opts.get(r'options'):
+    if opts.get('options'):
         options = []
         otables = [globalopts]
         if cmd:
@@ -3456,13 +3456,13 @@ def grep(ui, repo, pattern, *pats, **opts):
     def difflinestates(a, b):
         sm = difflib.SequenceMatcher(None, a, b)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag == r'insert':
+            if tag == 'insert':
                 for i in pycompat.xrange(blo, bhi):
                     yield (b'+', b[i])
-            elif tag == r'delete':
+            elif tag == 'delete':
                 for i in pycompat.xrange(alo, ahi):
                     yield (b'-', a[i])
-            elif tag == r'replace':
+            elif tag == 'replace':
                 for i in pycompat.xrange(alo, ahi):
                     yield (b'-', a[i])
                 for i in pycompat.xrange(blo, bhi):
@@ -3789,7 +3789,7 @@ def help_(ui, name=None, **opts):
     Returns 0 if successful.
     """
 
-    keep = opts.get(r'system') or []
+    keep = opts.get('system') or []
     if len(keep) == 0:
         if pycompat.sysplatform.startswith(b'win'):
             keep.append(b'windows')
@@ -5699,7 +5699,7 @@ def recover(ui, repo, **opts):
     """
     ret = repo.recover()
     if ret:
-        if opts[r'verify']:
+        if opts['verify']:
             return hg.verify(repo)
         else:
             msg = _(
@@ -6344,7 +6344,7 @@ def rollback(ui, repo, **opts):
             _(b'rollback is disabled because it is unsafe'),
             hint=b'see `hg help -v rollback` for information',
         )
-    return repo.rollback(dryrun=opts.get(r'dry_run'), force=opts.get(r'force'))
+    return repo.rollback(dryrun=opts.get('dry_run'), force=opts.get('force'))
 
 
 @command(
@@ -7494,7 +7494,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
                 )
             modheads = bundle2.combinechangegroupresults(op)
 
-    return postincoming(ui, repo, modheads, opts.get(r'update'), None, None)
+    return postincoming(ui, repo, modheads, opts.get('update'), None, None)
 
 
 @command(
@@ -7655,11 +7655,11 @@ def update(ui, repo, node=None, **opts):
 
     Returns 0 on success, 1 if there are unresolved files.
     """
-    rev = opts.get(r'rev')
-    date = opts.get(r'date')
-    clean = opts.get(r'clean')
-    check = opts.get(r'check')
-    merge = opts.get(r'merge')
+    rev = opts.get('rev')
+    date = opts.get('date')
+    clean = opts.get('clean')
+    check = opts.get('check')
+    merge = opts.get('merge')
     if rev and node:
         raise error.Abort(_(b"please specify just one revision"))
 
@@ -7702,7 +7702,7 @@ def update(ui, repo, node=None, **opts):
         ctx = scmutil.revsingle(repo, rev, default=None)
         rev = ctx.rev()
         hidden = ctx.hidden()
-        overrides = {(b'ui', b'forcemerge'): opts.get(r'tool', b'')}
+        overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}
         with ui.configoverride(overrides, b'update'):
             ret = hg.updatetotally(
                 ui, repo, rev, brev, clean=clean, updatecheck=updatecheck

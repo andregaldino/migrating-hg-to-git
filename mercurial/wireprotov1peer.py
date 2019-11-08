@@ -599,9 +599,9 @@ class wirepeer(repository.peer):
         # don't pass optional arguments left at their default value
         opts = {}
         if three is not None:
-            opts[r'three'] = three
+            opts['three'] = three
         if four is not None:
-            opts[r'four'] = four
+            opts['four'] = four
         return self._call(b'debugwireargs', one=one, two=two, **opts)
 
     def _call(self, cmd, **args):

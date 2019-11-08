@@ -624,9 +624,9 @@ def commitfuncfor(repo, src):
     def commitfunc(**kwargs):
         overrides = {(b'phases', b'new-commit'): phasemin}
         with repo.ui.configoverride(overrides, b'histedit'):
-            extra = kwargs.get(r'extra', {}).copy()
+            extra = kwargs.get('extra', {}).copy()
             extra[b'histedit_source'] = src.hex()
-            kwargs[r'extra'] = extra
+            kwargs['extra'] = extra
             return repo.commit(**kwargs)
 
     return commitfunc
@@ -1674,7 +1674,7 @@ def _chistedit(ui, repo, *freeargs, **opts):
         # Curses requires setting the locale or it will default to the C
         # locale. This sets the locale to the user's default system
         # locale.
-        locale.setlocale(locale.LC_ALL, r'')
+        locale.setlocale(locale.LC_ALL, '')
         rc = curses.wrapper(functools.partial(_chisteditmain, repo, ctxs))
         curses.echo()
         curses.endwin()

@@ -2127,15 +2127,15 @@ def clearrebased(
 
 def pullrebase(orig, ui, repo, *args, **opts):
     b'Call rebase after pull if the latter has been invoked with --rebase'
-    if opts.get(r'rebase'):
+    if opts.get('rebase'):
         if ui.configbool(b'commands', b'rebase.requiredest'):
             msg = _(b'rebase destination required by configuration')
             hint = _(b'use hg pull followed by hg rebase -d DEST')
             raise error.Abort(msg, hint=hint)
 
         with repo.wlock(), repo.lock():
-            if opts.get(r'update'):
-                del opts[r'update']
+            if opts.get('update'):
+                del opts['update']
                 ui.debug(
                     b'--update and --rebase are not compatible, ignoring '
                     b'the update flag\n'
@@ -2165,15 +2165,15 @@ def pullrebase(orig, ui, repo, *args, **opts):
             if revspostpull > revsprepull:
                 # --rev option from pull conflict with rebase own --rev
                 # dropping it
-                if r'rev' in opts:
-                    del opts[r'rev']
+                if 'rev' in opts:
+                    del opts['rev']
                 # positional argument from pull conflicts with rebase's own
                 # --source.
-                if r'source' in opts:
-                    del opts[r'source']
+                if 'source' in opts:
+                    del opts['source']
                 # revsprepull is the len of the repo, not revnum of tip.
                 destspace = list(repo.changelog.revs(start=revsprepull))
-                opts[r'_destspace'] = destspace
+                opts['_destspace'] = destspace
                 try:
                     rebase(ui, repo, **opts)
                 except error.NoMergeDestAbort:
@@ -2187,7 +2187,7 @@ def pullrebase(orig, ui, repo, *args, **opts):
                         # with warning and trumpets
                         commands.update(ui, repo)
     else:
-        if opts.get(r'tool'):
+        if opts.get('tool'):
             raise error.Abort(_(b'--tool can only be used with --rebase'))
         ret = orig(ui, repo, *args, **opts)
 

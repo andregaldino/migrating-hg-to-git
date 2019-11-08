@@ -306,8 +306,8 @@ def makepatch(
         disposition = r'inline'
         if opts.get(b'attach'):
             disposition = r'attachment'
-        p[r'Content-Disposition'] = (
-            disposition + r'; filename=' + encoding.strfromlocal(patchname)
+        p['Content-Disposition'] = (
+            disposition + '; filename=' + encoding.strfromlocal(patchname)
         )
         msg.attach(p)
     else:
@@ -358,7 +358,7 @@ def _getbundle(repo, dest, **opts):
     tmpfn = os.path.join(tmpdir, b'bundle')
     btype = ui.config(b'patchbomb', b'bundletype')
     if btype:
-        opts[r'type'] = btype
+        opts['type'] = btype
     try:
         commands.bundle(ui, repo, tmpfn, dest, **opts)
         return util.readfile(tmpfn)
@@ -379,8 +379,8 @@ def _getdescription(repo, defaultbody, sender, **opts):
     the user through the editor.
     """
     ui = repo.ui
-    if opts.get(r'desc'):
-        body = open(opts.get(r'desc')).read()
+    if opts.get('desc'):
+        body = open(opts.get('desc')).read()
     else:
         ui.write(
             _(b'\nWrite the introductory message for the patch series.\n\n')
@@ -403,25 +403,25 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     """
     ui = repo.ui
     _charsets = mail._charsets(ui)
-    subj = opts.get(r'subject') or prompt(
+    subj = opts.get('subject') or prompt(
         ui, b'Subject:', b'A bundle for your repository'
     )
 
     body = _getdescription(repo, b'', sender, **opts)
     msg = emimemultipart.MIMEMultipart()
     if body:
-        msg.attach(mail.mimeencode(ui, body, _charsets, opts.get(r'test')))
-    datapart = emimebase.MIMEBase(r'application', r'x-mercurial-bundle')
+        msg.attach(mail.mimeencode(ui, body, _charsets, opts.get('test')))
+    datapart = emimebase.MIMEBase('application', 'x-mercurial-bundle')
     datapart.set_payload(bundle)
-    bundlename = b'%s.hg' % opts.get(r'bundlename', b'bundle')
+    bundlename = b'%s.hg' % opts.get('bundlename', b'bundle')
     datapart.add_header(
-        r'Content-Disposition',
-        r'attachment',
+        'Content-Disposition',
+        'attachment',
         filename=encoding.strfromlocal(bundlename),
     )
     emailencoders.encode_base64(datapart)
     msg.attach(datapart)
-    msg[b'Subject'] = mail.headencode(ui, subj, _charsets, opts.get(r'test'))
+    msg[b'Subject'] = mail.headencode(ui, subj, _charsets, opts.get('test'))
     return [(msg, subj, None)]
 
 
@@ -434,9 +434,9 @@ def _makeintro(repo, sender, revs, patches, **opts):
 
     # use the last revision which is likely to be a bookmarked head
     prefix = _formatprefix(
-        ui, repo, revs.last(), opts.get(r'flag'), 0, len(patches), numbered=True
+        ui, repo, revs.last(), opts.get('flag'), 0, len(patches), numbered=True
     )
-    subj = opts.get(r'subject') or prompt(
+    subj = opts.get('subject') or prompt(
         ui, b'(optional) Subject: ', rest=prefix, default=b''
     )
     if not subj:
@@ -445,7 +445,7 @@ def _makeintro(repo, sender, revs, patches, **opts):
     subj = prefix + b' ' + subj
 
     body = b''
-    if opts.get(r'diffstat'):
+    if opts.get('diffstat'):
         # generate a cumulative diffstat of the whole patch series
         diffstat = patch.diffstat(sum(patches, []))
         body = b'\n' + diffstat
@@ -453,8 +453,8 @@ def _makeintro(repo, sender, revs, patches, **opts):
         diffstat = None
 
     body = _getdescription(repo, body, sender, **opts)
-    msg = mail.mimeencode(ui, body, _charsets, opts.get(r'test'))
-    msg[b'Subject'] = mail.headencode(ui, subj, _charsets, opts.get(r'test'))
+    msg = mail.mimeencode(ui, body, _charsets, opts.get('test'))
+    msg[b'Subject'] = mail.headencode(ui, subj, _charsets, opts.get('test'))
     return (msg, subj, diffstat)
 
 
@@ -847,7 +847,7 @@ def email(ui, repo, *revs, **opts):
         stropts = pycompat.strkwargs(opts)
         bundledata = _getbundle(repo, dest, **stropts)
         bundleopts = stropts.copy()
-        bundleopts.pop(r'bundle', None)  # already processed
+        bundleopts.pop('bundle', None)  # already processed
         msgs = _getbundlemsgs(repo, sender, bundledata, **bundleopts)
     else:
         msgs = _getpatchmsgs(repo, sender, revs, **pycompat.strkwargs(opts))

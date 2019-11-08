@@ -280,11 +280,11 @@ class lfsauthhandler(util.urlreq.basehandler):
         """Enforces that any authentication performed is HTTP Basic
         Authentication.  No authentication is also acceptable.
         """
-        authreq = headers.get(r'www-authenticate', None)
+        authreq = headers.get('www-authenticate', None)
         if authreq:
             scheme = authreq.split()[0]
 
-            if scheme.lower() != r'basic':
+            if scheme.lower() != 'basic':
                 msg = _(b'the server must support Basic Authentication')
                 raise util.urlerr.httperror(
                     req.get_full_url(),
@@ -324,18 +324,18 @@ class _gitlfsremote(object):
         See https://github.com/git-lfs/git-lfs/blob/master/docs/api/batch.md
         """
         objects = [
-            {r'oid': pycompat.strurl(p.oid()), r'size': p.size()}
+            {'oid': pycompat.strurl(p.oid()), 'size': p.size()}
             for p in pointers
         ]
         requestdata = pycompat.bytesurl(
             json.dumps(
-                {r'objects': objects, r'operation': pycompat.strurl(action),}
+                {'objects': objects, 'operation': pycompat.strurl(action),}
             )
         )
         url = b'%s/objects/batch' % self.baseurl
         batchreq = util.urlreq.request(pycompat.strurl(url), data=requestdata)
-        batchreq.add_header(r'Accept', r'application/vnd.git-lfs+json')
-        batchreq.add_header(r'Content-Type', r'application/vnd.git-lfs+json')
+        batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
+        batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
         try:
             with contextlib.closing(self.urlopener.open(batchreq)) as rsp:
                 rawjson = rsp.read()
@@ -376,9 +376,9 @@ class _gitlfsremote(object):
             headers = pycompat.bytestr(rsp.info()).strip()
             self.ui.debug(b'%s\n' % b'\n'.join(sorted(headers.splitlines())))
 
-            if r'objects' in response:
-                response[r'objects'] = sorted(
-                    response[r'objects'], key=lambda p: p[r'oid']
+            if 'objects' in response:
+                response['objects'] = sorted(
+                    response['objects'], key=lambda p: p['oid']
                 )
             self.ui.debug(
                 b'%s\n'
@@ -386,7 +386,7 @@ class _gitlfsremote(object):
                     json.dumps(
                         response,
                         indent=2,
-                        separators=(r'', r': '),
+                        separators=('', ': '),
                         sort_keys=True,
                     )
                 )
@@ -483,8 +483,8 @@ class _gitlfsremote(object):
                 )
             request.data = filewithprogress(localstore.open(oid), None)
             request.get_method = lambda: r'PUT'
-            request.add_header(r'Content-Type', r'application/octet-stream')
-            request.add_header(r'Content-Length', len(request.data))
+            request.add_header('Content-Type', 'application/octet-stream')
+            request.add_header('Content-Length', len(request.data))
 
         for k, v in headers:
             request.add_header(pycompat.strurl(k), pycompat.strurl(v))

@@ -29,14 +29,14 @@ from .pycompat import getattr
 policy = b'allow'
 _packageprefs = {
     # policy: (versioned package, pure package)
-    b'c': (r'cext', None),
-    b'allow': (r'cext', r'pure'),
-    b'cffi': (r'cffi', None),
-    b'cffi-allow': (r'cffi', r'pure'),
-    b'py': (None, r'pure'),
+    b'c': ('cext', None),
+    b'allow': ('cext', 'pure'),
+    b'cffi': ('cffi', None),
+    b'cffi-allow': ('cffi', 'pure'),
+    b'py': (None, 'pure'),
     # For now, rust policies impact importrust only
-    b'rust+c': (r'cext', None),
-    b'rust+c-allow': (r'cext', r'pure'),
+    b'rust+c': ('cext', None),
+    b'rust+c-allow': ('cext', 'pure'),
 }
 
 try:
@@ -50,15 +50,15 @@ except ImportError:
 #
 # The canonical way to do this is to test platform.python_implementation().
 # But we don't import platform and don't bloat for it here.
-if r'__pypy__' in sys.builtin_module_names:
+if '__pypy__' in sys.builtin_module_names:
     policy = b'cffi'
 
 # Environment variable can always force settings.
 if sys.version_info[0] >= 3:
-    if r'HGMODULEPOLICY' in os.environ:
-        policy = os.environ[r'HGMODULEPOLICY'].encode(r'utf-8')
+    if 'HGMODULEPOLICY' in os.environ:
+        policy = os.environ['HGMODULEPOLICY'].encode('utf-8')
 else:
-    policy = os.environ.get(r'HGMODULEPOLICY', policy)
+    policy = os.environ.get('HGMODULEPOLICY', policy)
 
 
 def _importfrom(pkgname, modname):
@@ -68,7 +68,7 @@ def _importfrom(pkgname, modname):
     try:
         fakelocals[modname] = mod = getattr(pkg, modname)
     except AttributeError:
-        raise ImportError(r'cannot import name %s' % modname)
+        raise ImportError('cannot import name %s' % modname)
     # force import; fakelocals[modname] may be replaced with the real module
     getattr(mod, '__doc__', None)
     return fakelocals[modname]
@@ -76,19 +76,19 @@ def _importfrom(pkgname, modname):
 
 # keep in sync with "version" in C modules
 _cextversions = {
-    (r'cext', r'base85'): 1,
-    (r'cext', r'bdiff'): 3,
-    (r'cext', r'mpatch'): 1,
-    (r'cext', r'osutil'): 4,
-    (r'cext', r'parsers'): 13,
+    ('cext', 'base85'): 1,
+    ('cext', 'bdiff'): 3,
+    ('cext', 'mpatch'): 1,
+    ('cext', 'osutil'): 4,
+    ('cext', 'parsers'): 13,
 }
 
 # map import request to other package or module
 _modredirects = {
-    (r'cext', r'charencode'): (r'cext', r'parsers'),
-    (r'cffi', r'base85'): (r'pure', r'base85'),
-    (r'cffi', r'charencode'): (r'pure', r'charencode'),
-    (r'cffi', r'parsers'): (r'pure', r'parsers'),
+    ('cext', 'charencode'): ('cext', 'parsers'),
+    ('cffi', 'base85'): ('pure', 'base85'),
+    ('cffi', 'charencode'): ('pure', 'charencode'),
+    ('cffi', 'parsers'): ('pure', 'parsers'),
 }
 
 
@@ -97,8 +97,8 @@ def _checkmod(pkgname, modname, mod):
     actual = getattr(mod, 'version', None)
     if actual != expected:
         raise ImportError(
-            r'cannot import module %s.%s '
-            r'(expected version: %d, actual: %r)'
+            'cannot import module %s.%s '
+            '(expected version: %d, actual: %r)'
             % (pkgname, modname, expected, actual)
         )
 
@@ -108,7 +108,7 @@ def importmod(modname):
     try:
         verpkg, purepkg = _packageprefs[policy]
     except KeyError:
-        raise ImportError(r'invalid HGMODULEPOLICY %r' % policy)
+        raise ImportError('invalid HGMODULEPOLICY %r' % policy)
     assert verpkg or purepkg
     if verpkg:
         pn, mn = _modredirects.get((verpkg, modname), (verpkg, modname))
@@ -141,7 +141,7 @@ def importrust(modname, member=None, default=None):
         return default
 
     try:
-        mod = _importfrom(r'rustext', modname)
+        mod = _importfrom('rustext', modname)
     except ImportError:
         if _isrustpermissive():
             return default

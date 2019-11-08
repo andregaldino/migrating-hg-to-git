@@ -57,7 +57,7 @@ if pycompat.iswindows:
 else:
     from . import scmposix as scmplatform
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 
 termsize = scmplatform.termsize
 

@@ -1359,11 +1359,11 @@ class svn_sink(converter_sink, commandline):
         m = set()
         output = self.run0(b'ls', recursive=True, xml=True)
         doc = xml.dom.minidom.parseString(output)
-        for e in doc.getElementsByTagName(r'entry'):
+        for e in doc.getElementsByTagName('entry'):
             for n in e.childNodes:
-                if n.nodeType != n.ELEMENT_NODE or n.tagName != r'name':
+                if n.nodeType != n.ELEMENT_NODE or n.tagName != 'name':
                     continue
-                name = r''.join(
+                name = ''.join(
                     c.data for c in n.childNodes if c.nodeType == c.TEXT_NODE
                 )
                 # Entries are compared with names coming from
@@ -1502,7 +1502,7 @@ class svn_sink(converter_sink, commandline):
             self.setexec = []
 
         fd, messagefile = pycompat.mkstemp(prefix=b'hg-convert-')
-        fp = os.fdopen(fd, r'wb')
+        fp = os.fdopen(fd, 'wb')
         fp.write(util.tonativeeol(commit.desc))
         fp.close()
         try:

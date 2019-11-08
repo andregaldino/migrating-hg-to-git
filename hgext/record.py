@@ -79,7 +79,7 @@ def record(ui, repo, *pats, **opts):
 
 
 def qrefresh(origfn, ui, repo, *pats, **opts):
-    if not opts[r'interactive']:
+    if not opts['interactive']:
         return origfn(ui, repo, *pats, **opts)
 
     mq = extensions.find(b'mq')
@@ -123,7 +123,7 @@ def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
     repo.mq.checkpatchname(patch)
 
     def committomq(ui, repo, *pats, **opts):
-        opts[r'checkname'] = False
+        opts['checkname'] = False
         mq.new(ui, repo, patch, *pats, **opts)
 
     overrides = {(b'experimental', b'crecord'): False}
@@ -142,7 +142,7 @@ def _qrecord(cmdsuggest, ui, repo, patch, *pats, **opts):
 
 
 def qnew(origfn, ui, repo, patch, *args, **opts):
-    if opts[r'interactive']:
+    if opts['interactive']:
         return _qrecord(None, ui, repo, patch, *args, **opts)
     return origfn(ui, repo, patch, *args, **opts)
 

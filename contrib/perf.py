@@ -726,8 +726,8 @@ def clearfilecache(obj, attrname):
 
 def clearchangelog(repo):
     if repo is not repo.unfiltered():
-        object.__setattr__(repo, r'_clcachekey', None)
-        object.__setattr__(repo, r'_clcache', None)
+        object.__setattr__(repo, '_clcachekey', None)
+        object.__setattr__(repo, '_clcache', None)
     clearfilecache(repo.unfiltered(), 'changelog')
 
 
@@ -1652,12 +1652,12 @@ def perfstartup(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
 
     def d():
-        if os.name != r'nt':
+        if os.name != 'nt':
             os.system(
                 b"HGRCPATH= %s version -q > /dev/null" % fsencode(sys.argv[0])
             )
         else:
-            os.environ[r'HGRCPATH'] = r' '
+            os.environ['HGRCPATH'] = r' '
             os.system("%s version -q > NUL" % sys.argv[0])
 
     timer(d)
@@ -1844,7 +1844,7 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
     opts = _byteskwargs(opts)
 
     nullui = ui.copy()
-    nullui.fout = open(os.devnull, r'wb')
+    nullui.fout = open(os.devnull, 'wb')
     nullui.disablepager()
     revs = opts.get(b'rev')
     if not revs:

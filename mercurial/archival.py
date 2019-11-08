@@ -138,8 +138,8 @@ class tarit(object):
     class GzipFileWithTime(gzip.GzipFile):
         def __init__(self, *args, **kw):
             timestamp = None
-            if r'timestamp' in kw:
-                timestamp = kw.pop(r'timestamp')
+            if 'timestamp' in kw:
+                timestamp = kw.pop('timestamp')
             if timestamp is None:
                 self.timestamp = time.time()
             else:
@@ -222,7 +222,7 @@ class zipit(object):
         if isinstance(dest, bytes):
             dest = pycompat.fsdecode(dest)
         self.z = zipfile.ZipFile(
-            dest, r'w', compress and zipfile.ZIP_DEFLATED or zipfile.ZIP_STORED
+            dest, 'w', compress and zipfile.ZIP_DEFLATED or zipfile.ZIP_STORED
         )
 
         # Python's zipfile module emits deprecation warnings if we try

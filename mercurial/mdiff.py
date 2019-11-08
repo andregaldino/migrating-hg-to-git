@@ -27,8 +27,8 @@ from .utils import dateutil
 
 _missing_newline_marker = b"\\ No newline at end of file\n"
 
-bdiff = policy.importmod(r'bdiff')
-mpatch = policy.importmod(r'mpatch')
+bdiff = policy.importmod('bdiff')
+mpatch = policy.importmod('mpatch')
 
 blocks = bdiff.blocks
 fixws = bdiff.fixws

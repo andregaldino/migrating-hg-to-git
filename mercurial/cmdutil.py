@@ -320,7 +320,7 @@ def parsealiases(cmd):
 def setupwrapcolorwrite(ui):
     # wrap ui.write so diff output can be labeled/colorized
     def wrapwrite(orig, *args, **kw):
-        label = kw.pop(r'label', b'')
+        label = kw.pop('label', b'')
         for chunk, l in patch.difflabel(lambda: args):
             orig(chunk, label=label + l)
 
@@ -2397,7 +2397,7 @@ def add(ui, repo, match, prefix, uipathfn, explicitonly, **opts):
             submatch = matchmod.subdirmatcher(subpath, match)
             subprefix = repo.wvfs.reljoin(prefix, subpath)
             subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
-            if opts.get(r'subrepos'):
+            if opts.get('subrepos'):
                 bad.extend(
                     sub.add(ui, submatch, subprefix, subuipathfn, False, **opts)
                 )
@@ -2410,7 +2410,7 @@ def add(ui, repo, match, prefix, uipathfn, explicitonly, **opts):
                 _(b"skipping missing subrepository: %s\n") % uipathfn(subpath)
             )
 
-    if not opts.get(r'dry_run'):
+    if not opts.get('dry_run'):
         rejected = wctx.add(names, prefix)
         bad.extend(f for f in rejected if f in match.files())
     return bad

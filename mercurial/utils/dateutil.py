@@ -223,7 +223,7 @@ def parsedate(date, formats=None, bias=None):
     if date == b'now' or date == _(b'now'):
         return makedate()
     if date == b'today' or date == _(b'today'):
-        date = datetime.date.today().strftime(r'%b %d')
+        date = datetime.date.today().strftime('%b %d')
         date = encoding.strtolocal(date)
     elif date == b'yesterday' or date == _(b'yesterday'):
         date = (datetime.date.today() - datetime.timedelta(days=1)).strftime(

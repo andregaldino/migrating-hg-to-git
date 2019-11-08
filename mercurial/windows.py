@@ -32,7 +32,7 @@ try:
 except ImportError:
     import winreg
 
-osutil = policy.importmod(r'osutil')
+osutil = policy.importmod('osutil')
 
 getfsmountpoint = win32.getvolumename
 getfstype = win32.getfstype
@@ -70,8 +70,8 @@ class mixedfilemodewrapper(object):
     OPWRITE = 2
 
     def __init__(self, fp):
-        object.__setattr__(self, r'_fp', fp)
-        object.__setattr__(self, r'_lastop', 0)
+        object.__setattr__(self, '_fp', fp)
+        object.__setattr__(self, '_lastop', 0)
 
     def __enter__(self):
         self._fp.__enter__()
@@ -90,42 +90,42 @@ class mixedfilemodewrapper(object):
         self._fp.seek(0, os.SEEK_CUR)
 
     def seek(self, *args, **kwargs):
-        object.__setattr__(self, r'_lastop', self.OPNONE)
+        object.__setattr__(self, '_lastop', self.OPNONE)
         return self._fp.seek(*args, **kwargs)
 
     def write(self, d):
         if self._lastop == self.OPREAD:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPWRITE)
+        object.__setattr__(self, '_lastop', self.OPWRITE)
         return self._fp.write(d)
 
     def writelines(self, *args, **kwargs):
         if self._lastop == self.OPREAD:
             self._noopeseek()
 
-        object.__setattr__(self, r'_lastop', self.OPWRITE)
+        object.__setattr__(self, '_lastop', self.OPWRITE)
         return self._fp.writelines(*args, **kwargs)
 
     def read(self, *args, **kwargs):
         if self._lastop == self.OPWRITE:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPREAD)
+        object.__setattr__(self, '_lastop', self.OPREAD)
         return self._fp.read(*args, **kwargs)
 
     def readline(self, *args, **kwargs):
         if self._lastop == self.OPWRITE:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPREAD)
+        object.__setattr__(self, '_lastop', self.OPREAD)
         return self._fp.readline(*args, **kwargs)
 
     def readlines(self, *args, **kwargs):
         if self._lastop == self.OPWRITE:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPREAD)
+        object.__setattr__(self, '_lastop', self.OPREAD)
         return self._fp.readlines(*args, **kwargs)
 
 
@@ -176,7 +176,7 @@ def posixfile(name, mode=b'r', buffering=-1):
     except WindowsError as err:
         # convert to a friendlier exception
         raise IOError(
-            err.errno, r'%s: %s' % (encoding.strfromlocal(name), err.strerror)
+            err.errno, '%s: %s' % (encoding.strfromlocal(name), err.strerror)
         )
 
 
@@ -215,7 +215,7 @@ class winstdout(object):
             if inst.errno != 0 and not win32.lasterrorwaspipeerror(inst):
                 raise
             self.close()
-            raise IOError(errno.EPIPE, r'Broken pipe')
+            raise IOError(errno.EPIPE, 'Broken pipe')
 
     def flush(self):
         try:
@@ -223,7 +223,7 @@ class winstdout(object):
         except IOError as inst:
             if not win32.lasterrorwaspipeerror(inst):
                 raise
-            raise IOError(errno.EPIPE, r'Broken pipe')
+            raise IOError(errno.EPIPE, 'Broken pipe')
 
 
 def _is_win_9x():
@@ -686,4 +686,4 @@ def readpipe(pipe):
 
 
 def bindunixsocket(sock, path):
-    raise NotImplementedError(r'unsupported platform')
+    raise NotImplementedError('unsupported platform')
