@@ -328,7 +328,7 @@ def foreground(repo, nodes):
     if repo.obsstore:
         # We only need this complicated logic if there is obsolescence
         # XXX will probably deserve an optimised revset.
-        nm = repo.changelog.nodemap
+        has_node = repo.changelog.index.has_node
         plen = -1
         # compute the whole set of successors or descendants
         while len(foreground) != plen:
@@ -336,7 +336,7 @@ def foreground(repo, nodes):
             succs = set(c.node() for c in foreground)
             mutable = [c.node() for c in foreground if c.mutable()]
             succs.update(allsuccessors(repo.obsstore, mutable))
-            known = (n for n in succs if n in nm)
+            known = (n for n in succs if has_node(n))
             foreground = set(repo.set(b'%ln::', known))
     return set(c.node() for c in foreground)
 
