@@ -227,9 +227,10 @@ def wrapchangelog(unfichangelog, filteredrevs):
     cl = copy.copy(unfichangelog)
     cl.filteredrevs = filteredrevs
 
-    cl.__class__ = type(
-        'filteredchangelog', (filteredchangelogmixin, cl.__class__), {}
-    )
+    class filteredchangelog(filteredchangelogmixin, cl.__class__):
+        pass
+
+    cl.__class__ = filteredchangelog
 
     return cl
 
