@@ -389,7 +389,7 @@ def getoldnodedrevmap(repo, nodelist):
     corresponding Differential Revision, and exist in the repo.
     """
     unfi = repo.unfiltered()
-    nodemap = unfi.changelog.nodemap
+    has_node = unfi.changelog.index.has_node
 
     result = {}  # {node: (oldnode?, lastdiff?, drev)}
     toconfirm = {}  # {node: (force, {precnode}, drev)}
@@ -398,7 +398,7 @@ def getoldnodedrevmap(repo, nodelist):
         # For tags like "D123", put them into "toconfirm" to verify later
         precnodes = list(obsutil.allpredecessors(unfi.obsstore, [node]))
         for n in precnodes:
-            if n in nodemap:
+            if has_node(n):
                 for tag in unfi.nodetags(n):
                     m = _differentialrevisiontagre.match(tag)
                     if m:
@@ -454,7 +454,7 @@ def getoldnodedrevmap(repo, nodelist):
             if diffs:
                 lastdiff = max(diffs, key=lambda d: int(d[b'id']))
                 oldnode = getnode(lastdiff)
-                if oldnode and oldnode not in nodemap:
+                if oldnode and not has_node(oldnode):
                     oldnode = None
 
             result[newnode] = (oldnode, lastdiff, drev)
