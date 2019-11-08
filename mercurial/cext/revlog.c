@@ -62,10 +62,9 @@ typedef struct {
  * This class has two behaviors.
  *
  * When used in a list-like way (with integer keys), we decode an
- * entry in a RevlogNG index file on demand. Our last entry is a
- * sentinel, always a nullid.  We have limited support for
+ * entry in a RevlogNG index file on demand. We have limited support for
  * integer-keyed insert and delete, only at elements right before the
- * sentinel.
+ * end.
  *
  * With string keys, we lazily perform a reverse mapping from node to
  * rev, using a base-16 trie.
@@ -2466,7 +2465,7 @@ static void index_invalidate_added(indexObject *self, Py_ssize_t start)
 
 /*
  * Delete a numeric range of revs, which must be at the end of the
- * range, but exclude the sentinel nullid entry.
+ * range.
  */
 static int index_slice_del(indexObject *self, PyObject *item)
 {
