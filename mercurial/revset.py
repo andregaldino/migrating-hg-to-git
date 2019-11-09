@@ -2406,10 +2406,10 @@ def _mapbynodefunc(repo, s, f):
     filtering.
     """
     cl = repo.unfiltered().changelog
-    torev = cl.rev
+    torev = cl.index.get_rev
     tonode = cl.node
-    nodemap = cl.nodemap
-    result = set(torev(n) for n in f(tonode(r) for r in s) if n in nodemap)
+    result = set(torev(n) for n in f(tonode(r) for r in s))
+    result.discard(None)
     return smartset.baseset(result - repo.changelog.filteredrevs)
 
 
