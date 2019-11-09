@@ -608,6 +608,17 @@ activate bookmark on working dir parent without --force
   $ hg bookmark --inactive Z
   $ hg bookmark Z
 
+deactivate current 'Z', but also add 'Y'
+
+  $ hg bookmark -d Y
+  $ hg bookmark --inactive Z Y
+  $ hg bookmark -l
+     X2                        1:925d80f479bb
+     Y                         2:db815d6d32e6
+     Z                         2:db815d6d32e6
+     x  y                      2:db815d6d32e6
+  $ hg bookmark Z
+
 test clone
 
   $ hg bookmark -r 2 -i @

@@ -965,7 +965,7 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
             newact = mark
         if inactive and mark == repo._activebookmark:
             deactivate(repo)
-            return
+            continue
         tgt = cur
         if rev:
             ctx = scmutil.revsingle(repo, rev)
@@ -975,6 +975,10 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
         for bm in marks.checkconflict(mark, force, tgt):
             changes.append((bm, None))
         changes.append((mark, tgt))
+
+    # nothing changed but for the one deactivated above
+    if not changes:
+        return
 
     if hiddenrev:
         repo.ui.warn(_(b"bookmarking hidden changeset %s\n") % hiddenrev)
