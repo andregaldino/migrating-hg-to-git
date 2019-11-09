@@ -83,7 +83,6 @@ class unionrevlog(revlog.revlog):
                 node,
             )
             self.index.append(e)
-            self.nodemap[node] = n
             self.bundlerevs.add(n)
             n += 1
 

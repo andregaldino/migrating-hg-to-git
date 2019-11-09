@@ -217,6 +217,13 @@ class revlogoldindex(list):
         self.nodemap[tup[7]] = len(self)
         super(revlogoldindex, self).append(tup)
 
+    def __delitem__(self, i):
+        if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
+            raise ValueError(b"deleting slices only supports a:-1 with step 1")
+        for r in pycompat.xrange(i.start, len(self)):
+            del self.nodemap[self[r][7]]
+        super(revlogoldindex, self).__delitem__(i)
+
     def clearcaches(self):
         self.__dict__.pop('nodemap', None)
 
@@ -2431,8 +2438,6 @@ class revlog(object):
         self._revisioncache = None
         self._chaininfocache = {}
         self._chunkclear()
-        for x in pycompat.xrange(rev, len(self)):
-            del self.nodemap[self.node(x)]
 
         del self.index[rev:-1]
         self._nodepos = None

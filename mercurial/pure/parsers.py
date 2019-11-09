@@ -55,6 +55,12 @@ class BaseIndexObject(object):
             nodemap[n] = r
         return nodemap
 
+    def _stripnodes(self, start):
+        if 'nodemap' in vars(self):
+            for r in range(start, len(self)):
+                n = self[r][7]
+                del self.nodemap[n]
+
     def clearcaches(self):
         self.__dict__.pop('nodemap', None)
 
@@ -103,6 +109,7 @@ class IndexObject(BaseIndexObject):
             raise ValueError(b"deleting slices only supports a:-1 with step 1")
         i = i.start
         self._check_index(i)
+        self._stripnodes(i)
         if i < self._lgt:
             self._data = self._data[: i * indexsize]
             self._lgt = i
@@ -140,6 +147,7 @@ class InlinedIndexObject(BaseIndexObject):
             raise ValueError(b"deleting slices only supports a:-1 with step 1")
         i = i.start
         self._check_index(i)
+        self._stripnodes(i)
         if i < self._lgt:
             self._offsets = self._offsets[:i]
             self._lgt = i
