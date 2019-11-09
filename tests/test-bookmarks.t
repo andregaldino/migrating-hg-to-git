@@ -619,6 +619,16 @@ deactivate current 'Z', but also add 'Y'
      x  y                      2:db815d6d32e6
   $ hg bookmark Z
 
+bookmark wdir to activate it (issue6218)
+
+  $ hg bookmark -d Z
+  $ hg bookmark -r 'wdir()' Z
+  $ hg bookmark -l
+     X2                        1:925d80f479bb
+     Y                         2:db815d6d32e6
+   * Z                         2:db815d6d32e6
+     x  y                      2:db815d6d32e6
+
 test clone
 
   $ hg bookmark -r 2 -i @

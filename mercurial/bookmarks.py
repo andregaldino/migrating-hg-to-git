@@ -958,8 +958,13 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
 
-    ctx = scmutil.revsingle(repo, rev)
+    ctx = scmutil.revsingle(repo, rev, None)
+    # bookmarking wdir means creating a bookmark on p1 and activating it
+    activatenew = not inactive and ctx.rev() is None
+    if ctx.node() is None:
+        ctx = ctx.p1()
     tgt = ctx.node()
+    assert tgt
 
     for mark in names:
         mark = checkformat(repo, mark)
@@ -984,7 +989,7 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
             repo.ui.warn(b"(%s)\n" % msg)
 
     marks.applychanges(repo, tr, changes)
-    if not inactive and cur == marks[newact] and not rev:
+    if activatenew and cur == marks[newact]:
         activate(repo, newact)
     elif cur != tgt and newact == repo._activebookmark:
         deactivate(repo)
