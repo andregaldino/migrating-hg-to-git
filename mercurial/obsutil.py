@@ -478,7 +478,7 @@ def geteffectflag(source, successors):
 
 def getobsoleted(repo, tr):
     """return the set of pre-existing revisions obsoleted by a transaction"""
-    torev = repo.unfiltered().changelog.nodemap.get
+    torev = repo.unfiltered().changelog.index.get_rev
     phase = repo._phasecache.phase
     succsmarkers = repo.obsstore.successors.get
     public = phases.public
