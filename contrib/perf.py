@@ -2599,25 +2599,38 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
                 index[rev]
 
     def resolvenode(node):
-        nodemap = getattr(revlogio.parseindex(data, inline)[0], 'nodemap', None)
-        # This only works for the C code.
-        if nodemap is None:
-            return
+        index = revlogio.parseindex(data, inline)[0]
+        rev = getattr(index, 'rev', None)
+        if rev is None:
+            nodemap = getattr(
+                revlogio.parseindex(data, inline)[0], 'nodemap', None
+            )
+            # This only works for the C code.
+            if nodemap is None:
+                return
+            rev = nodemap.__getitem__
 
         try:
-            nodemap[node]
+            rev(node)
         except error.RevlogError:
             pass
 
     def resolvenodes(nodes, count=1):
-        nodemap = getattr(revlogio.parseindex(data, inline)[0], 'nodemap', None)
-        if nodemap is None:
-            return
+        index = revlogio.parseindex(data, inline)[0]
+        rev = getattr(index, 'rev', None)
+        if rev is None:
+            nodemap = getattr(
+                revlogio.parseindex(data, inline)[0], 'nodemap', None
+            )
+            # This only works for the C code.
+            if nodemap is None:
+                return
+            rev = nodemap.__getitem__
 
         for i in range(count):
             for node in nodes:
                 try:
-                    nodemap[node]
+                    rev(node)
                 except error.RevlogError:
                     pass
 
