@@ -2746,6 +2746,8 @@ static PyMethodDef index_methods[] = {
     {"clearcaches", (PyCFunction)index_clearcaches, METH_NOARGS,
      "clear the index caches"},
     {"get", (PyCFunction)index_m_get, METH_VARARGS, "get an index entry"},
+    {"get_rev", (PyCFunction)index_m_get, METH_VARARGS,
+     "return `rev` associated with a node or None"},
     {"has_node", (PyCFunction)index_m_has_node, METH_O,
      "return True if the node exist in the index"},
     {"rev", (PyCFunction)index_m_rev, METH_O,

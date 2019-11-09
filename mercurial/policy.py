@@ -80,7 +80,7 @@ _cextversions = {
     ('cext', 'bdiff'): 3,
     ('cext', 'mpatch'): 1,
     ('cext', 'osutil'): 4,
-    ('cext', 'parsers'): 15,
+    ('cext', 'parsers'): 16,
 }
 
 # map import request to other package or module

@@ -223,6 +223,12 @@ class revlogoldindex(list):
         If the node is unknown, raise a RevlogError"""
         return self.nodemap[node]
 
+    def get_rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, return None"""
+        return self.nodemap.get(node)
+
     def append(self, tup):
         self.nodemap[tup[7]] = len(self)
         super(revlogoldindex, self).append(tup)

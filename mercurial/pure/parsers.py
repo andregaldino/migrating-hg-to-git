@@ -65,6 +65,12 @@ class BaseIndexObject(object):
         If the node is unknown, raise a RevlogError"""
         return self.nodemap[node]
 
+    def get_rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, return None"""
+        return self.nodemap.get(node)
+
     def _stripnodes(self, start):
         if 'nodemap' in vars(self):
             for r in range(start, len(self)):
