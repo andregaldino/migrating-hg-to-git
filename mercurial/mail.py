@@ -400,15 +400,15 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
     '''Turns a list of addresses into a list of RFC-2047 compliant headers.
     A single element of input list may contain multiple addresses, but output
     always has one address per item'''
+    straddrs = []
     for a in addrs:
         assert isinstance(a, bytes), '%r unexpectedly not a bytestr' % a
+        straddrs.append(encoding.strfromlocal(a))
     if display:
-        return [encoding.strfromlocal(a.strip()) for a in addrs if a.strip()]
+        return [a.strip() for a in straddrs if a.strip()]
 
     result = []
-    for name, addr in email.utils.getaddresses(
-        [encoding.strfromlocal(a) for a in addrs]
-    ):
+    for name, addr in email.utils.getaddresses(straddrs):
         if name or addr:
             r = _addressencode(ui, name, encoding.strtolocal(addr), charsets)
             result.append(r)
