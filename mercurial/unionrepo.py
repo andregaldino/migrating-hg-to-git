@@ -62,9 +62,10 @@ class unionrevlog(revlog.revlog):
             if linkmapper is not None:  # link is to same revlog
                 base = linkmapper(base)
 
-            if node in self.nodemap:
+            this_rev = self.index.get_rev(node)
+            if this_rev is not None:
                 # this happens for the common revlog revisions
-                self.bundlerevs.add(self.nodemap[node])
+                self.bundlerevs.add(this_rev)
                 continue
 
             p1node = self.revlog2.node(p1rev)
