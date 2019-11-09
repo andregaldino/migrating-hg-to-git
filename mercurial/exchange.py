@@ -2101,7 +2101,7 @@ def _pullapplyphases(pullop, remotephases):
         dheads = []
     unfi = pullop.repo.unfiltered()
     phase = unfi._phasecache.phase
-    rev = unfi.changelog.nodemap.get
+    rev = unfi.changelog.index.get_rev
     public = phases.public
     draft = phases.draft
 
