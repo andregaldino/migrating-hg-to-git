@@ -217,6 +217,12 @@ class revlogoldindex(list):
         """return True if the node exist in the index"""
         return node in self.nodemap
 
+    def rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, raise a RevlogError"""
+        return self.nodemap[node]
+
     def append(self, tup):
         self.nodemap[tup[7]] = len(self)
         super(revlogoldindex, self).append(tup)

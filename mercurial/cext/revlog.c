@@ -2073,6 +2073,21 @@ static PyObject *index_m_has_node(indexObject *self, PyObject *args)
 	return PyBool_FromLong((long)ret);
 }
 
+static PyObject *index_m_rev(indexObject *self, PyObject *val)
+{
+	char *node;
+	int rev;
+
+	if (node_check(val, &node) == -1)
+		return NULL;
+	rev = index_find_node(self, node, 20);
+	if (rev >= -1)
+		return PyInt_FromLong(rev);
+	if (rev == -2)
+		raise_revlog_error();
+	return NULL;
+}
+
 typedef uint64_t bitmask;
 
 /*
@@ -2733,6 +2748,8 @@ static PyMethodDef index_methods[] = {
     {"get", (PyCFunction)index_m_get, METH_VARARGS, "get an index entry"},
     {"has_node", (PyCFunction)index_m_has_node, METH_O,
      "return True if the node exist in the index"},
+    {"rev", (PyCFunction)index_m_rev, METH_O,
+     "return `rev` associated with a node or raise RevlogError"},
     {"computephasesmapsets", (PyCFunction)compute_phases_map_sets, METH_VARARGS,
      "compute phases"},
     {"reachableroots2", (PyCFunction)reachableroots2, METH_VARARGS,

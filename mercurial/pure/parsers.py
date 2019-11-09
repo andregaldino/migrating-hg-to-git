@@ -59,6 +59,12 @@ class BaseIndexObject(object):
         """return True if the node exist in the index"""
         return node in self.nodemap
 
+    def rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, raise a RevlogError"""
+        return self.nodemap[node]
+
     def _stripnodes(self, start):
         if 'nodemap' in vars(self):
             for r in range(start, len(self)):
