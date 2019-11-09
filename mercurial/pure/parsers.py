@@ -47,8 +47,14 @@ def offset_type(offset, type):
 
 
 class BaseIndexObject(object):
-    @util.propertycache
+    @property
     def nodemap(self):
+        msg = "index.nodemap is deprecated, " "use index.[has_node|rev|get_rev]"
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
+        return self._nodemap
+
+    @util.propertycache
+    def _nodemap(self):
         nodemap = revlogutils.NodeMap({nullid: nullrev})
         for r in range(0, len(self)):
             n = self[r][7]
@@ -57,35 +63,35 @@ class BaseIndexObject(object):
 
     def has_node(self, node):
         """return True if the node exist in the index"""
-        return node in self.nodemap
+        return node in self._nodemap
 
     def rev(self, node):
         """return a revision for a node
 
         If the node is unknown, raise a RevlogError"""
-        return self.nodemap[node]
+        return self._nodemap[node]
 
     def get_rev(self, node):
         """return a revision for a node
 
         If the node is unknown, return None"""
-        return self.nodemap.get(node)
+        return self._nodemap.get(node)
 
     def _stripnodes(self, start):
-        if 'nodemap' in vars(self):
+        if '_nodemap' in vars(self):
             for r in range(start, len(self)):
                 n = self[r][7]
-                del self.nodemap[n]
+                del self._nodemap[n]
 
     def clearcaches(self):
-        self.__dict__.pop('nodemap', None)
+        self.__dict__.pop('_nodemap', None)
 
     def __len__(self):
         return self._lgt + len(self._extra)
 
     def append(self, tup):
-        if 'nodemap' in vars(self):
-            self.nodemap[tup[7]] = len(self)
+        if '_nodemap' in vars(self):
+            self._nodemap[tup[7]] = len(self)
         self._extra.append(tup)
 
     def _check_index(self, i):

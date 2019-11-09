@@ -205,8 +205,14 @@ indexformatv0_unpack = indexformatv0.unpack
 
 
 class revlogoldindex(list):
-    @util.propertycache
+    @property
     def nodemap(self):
+        msg = "index.nodemap is deprecated, " "use index.[has_node|rev|get_rev]"
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
+        return self._nodemap
+
+    @util.propertycache
+    def _nodemap(self):
         nodemap = revlogutils.NodeMap({nullid: nullrev})
         for r in range(0, len(self)):
             n = self[r][7]
@@ -215,33 +221,33 @@ class revlogoldindex(list):
 
     def has_node(self, node):
         """return True if the node exist in the index"""
-        return node in self.nodemap
+        return node in self._nodemap
 
     def rev(self, node):
         """return a revision for a node
 
         If the node is unknown, raise a RevlogError"""
-        return self.nodemap[node]
+        return self._nodemap[node]
 
     def get_rev(self, node):
         """return a revision for a node
 
         If the node is unknown, return None"""
-        return self.nodemap.get(node)
+        return self._nodemap.get(node)
 
     def append(self, tup):
-        self.nodemap[tup[7]] = len(self)
+        self._nodemap[tup[7]] = len(self)
         super(revlogoldindex, self).append(tup)
 
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
             raise ValueError(b"deleting slices only supports a:-1 with step 1")
         for r in pycompat.xrange(i.start, len(self)):
-            del self.nodemap[self[r][7]]
+            del self._nodemap[self[r][7]]
         super(revlogoldindex, self).__delitem__(i)
 
     def clearcaches(self):
-        self.__dict__.pop('nodemap', None)
+        self.__dict__.pop('_nodemap', None)
 
     def __getitem__(self, i):
         if i == -1:
@@ -579,7 +585,6 @@ class revlog(object):
                 _(b"index %s is corrupted") % self.indexfile
             )
         self.index, self._chunkcache = d
-        self.nodemap = self.index.nodemap
         if not self._chunkcache:
             self._chunkclear()
         # revnum -> (chain-length, sum-delta-length)
@@ -650,8 +655,13 @@ class revlog(object):
         """iterate over all rev in this revlog (from start to stop)"""
         return storageutil.iterrevs(len(self), start=start, stop=stop)
 
-    @util.propertycache
+    @property
     def nodemap(self):
+        msg = (
+            "revlog.nodemap is deprecated, "
+            "use revlog.index.[has_node|rev|get_rev]"
+        )
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
         return self.index.nodemap
 
     @property
