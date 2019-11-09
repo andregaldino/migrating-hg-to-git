@@ -499,7 +499,7 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     repo = pushop.repo
     unfi = repo.unfiltered()
     tonode = unfi.changelog.node
-    torev = unfi.changelog.nodemap.get
+    torev = unfi.changelog.index.get_rev
     public = phases.public
     getphase = unfi._phasecache.phase
     ispublic = lambda r: getphase(unfi, r) == public
