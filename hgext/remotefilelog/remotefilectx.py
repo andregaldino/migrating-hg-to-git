@@ -83,7 +83,7 @@ class remotefilectx(context.filectx):
 
         ancestormap = self.ancestormap()
         p1, p2, linknode, copyfrom = ancestormap[self._filenode]
-        rev = self._repo.changelog.nodemap.get(linknode)
+        rev = self._repo.changelog.index.get_rev(linknode)
         if rev is not None:
             return rev
 
