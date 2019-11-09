@@ -2218,7 +2218,7 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
 
     assert repo.filtername is None
     cl = repo.changelog
-    nodemap = cl.nodemap
+    get_rev = cl.index.get_rev
     extinctrevs = set(repo.revs(b'extinct()'))
     for srcrev in rebaseobsrevs:
         srcnode = cl.node(srcrev)
@@ -2226,7 +2226,8 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         successors = set(obsutil.allsuccessors(repo.obsstore, [srcnode]))
         # obsutil.allsuccessors includes node itself
         successors.remove(srcnode)
-        succrevs = {nodemap[s] for s in successors if s in nodemap}
+        succrevs = {get_rev(s) for s in successors}
+        succrevs.discard(None)
         if succrevs.issubset(extinctrevs):
             # all successors are extinct
             obsoleteextinctsuccessors.add(srcrev)
