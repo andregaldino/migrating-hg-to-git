@@ -66,7 +66,7 @@ class bundlerevlog(revlog.revlog):
             link = linkmapper(cs)
             if self.index.has_node(node):
                 # this can happen if two branches make the same change
-                self.bundlerevs.add(self.nodemap[node])
+                self.bundlerevs.add(self.index.rev(node))
                 continue
 
             for p in (p1, p2):
