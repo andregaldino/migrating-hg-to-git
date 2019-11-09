@@ -528,8 +528,8 @@ class pushoperation(object):
         # We can pick:
         # * missingheads part of common (::commonheads)
         common = self.outgoing.common
-        nm = self.repo.changelog.nodemap
-        cheads = [node for node in self.revs if nm[node] in common]
+        rev = self.repo.changelog.index.rev
+        cheads = [node for node in self.revs if rev(node) in common]
         # and
         # * commonheads parents on missing
         revset = unfi.set(
