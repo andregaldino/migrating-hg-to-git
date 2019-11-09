@@ -421,8 +421,8 @@ class notifier(object):
         maxsubject = int(self.ui.config(b'notify', b'maxsubject'))
         if maxsubject:
             subject = stringutil.ellipsis(subject, maxsubject)
-        msg['Subject'] = encoding.strfromlocal(
-            mail.headencode(self.ui, subject, self.charsets, self.test)
+        msg['Subject'] = mail.headencode(
+            self.ui, subject, self.charsets, self.test
         )
 
         # try to make message have proper sender

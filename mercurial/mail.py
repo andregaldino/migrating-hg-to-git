@@ -365,13 +365,13 @@ def headencode(ui, s, charsets=None, display=False):
     if not display:
         # split into words?
         s, cs = _encode(ui, s, charsets)
-        return encoding.strtolocal(email.header.Header(s, cs).encode())
-    return s
+        return email.header.Header(s, cs).encode()
+    return encoding.strfromlocal(s)
 
 
 def _addressencode(ui, name, addr, charsets=None):
     assert isinstance(addr, bytes)
-    name = encoding.strfromlocal(headencode(ui, name, charsets))
+    name = headencode(ui, name, charsets)
     try:
         acc, dom = addr.split(b'@')
         acc.decode('ascii')
