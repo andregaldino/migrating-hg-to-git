@@ -1823,11 +1823,11 @@ class localrepository(object):
 
     def known(self, nodes):
         cl = self.changelog
-        nm = cl.nodemap
+        get_rev = cl.index.get_rev
         filtered = cl.filteredrevs
         result = []
         for n in nodes:
-            r = nm.get(n)
+            r = get_rev(n)
             resp = not (r is None or r in filtered)
             result.append(resp)
         return result
