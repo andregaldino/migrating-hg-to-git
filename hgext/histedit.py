@@ -2517,9 +2517,9 @@ def processreplacement(state):
         del final[n]
     # we expect all changes involved in final to exist in the repo
     # turn `final` into list (topologically sorted)
-    nm = state.repo.changelog.nodemap
+    get_rev = state.repo.changelog.index.get_rev
     for prec, succs in final.items():
-        final[prec] = sorted(succs, key=nm.get)
+        final[prec] = sorted(succs, key=get_rev)
 
     # computed topmost element (necessary for bookmark)
     if new:
