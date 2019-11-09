@@ -1629,7 +1629,11 @@ def perfnodemap(ui, repo, **opts):
     def setnodeget():
         # probably not necessary, but for good measure
         clearchangelog(unfi)
-        nodeget[0] = makecl(unfi).nodemap.get
+        cl = makecl(unfi)
+        if util.safehasattr(cl.index, 'get_rev'):
+            nodeget[0] = cl.index.get_rev
+        else:
+            nodeget[0] = cl.nodemap.get
 
     def d():
         get = nodeget[0]
