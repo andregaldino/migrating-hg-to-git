@@ -1643,10 +1643,11 @@ def _checkobsrebase(repo, ui, rebaseobsrevs, rebaseobsskipped):
 def successorrevs(unfi, rev):
     """yield revision numbers for successors of rev"""
     assert unfi.filtername is None
-    nodemap = unfi.changelog.nodemap
+    get_rev = unfi.changelog.index.get_rev
     for s in obsutil.allsuccessors(unfi.obsstore, [unfi[rev].node()]):
-        if s in nodemap:
-            yield nodemap[s]
+        r = get_rev(s)
+        if r is not None:
+            yield r
 
 
 def defineparents(repo, rev, destmap, state, skipped, obsskipped):
