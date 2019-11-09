@@ -652,10 +652,6 @@ class revlog(object):
 
     @util.propertycache
     def nodemap(self):
-        if self.index:
-            # populate mapping down to the initial node
-            node0 = self.index[0][7]  # get around changelog filtering
-            self.rev(node0)
         return self.index.nodemap
 
     @property
