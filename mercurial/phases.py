@@ -733,7 +733,7 @@ def newheads(repo, heads, roots):
 
     repo = repo.unfiltered()
     cl = repo.changelog
-    rev = cl.nodemap.get
+    rev = cl.index.get_rev
     if not roots:
         return heads
     if not heads or heads == [nullid]:
