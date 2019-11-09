@@ -28,6 +28,7 @@ from . import (
     logexchange,
     narrowspec,
     obsolete,
+    obsutil,
     phases,
     pushkey,
     pycompat,
@@ -97,11 +98,6 @@ class bundlespec(object):
     wireversion = attr.ib()
     params = attr.ib()
     contentopts = attr.ib()
-
-
-def _sortedmarkers(markers):
-    # last item of marker tuple ('parents') may be None or a tuple
-    return sorted(markers, key=lambda m: m[:-1] + (m[-1] or (),))
 
 
 def parsebundlespec(repo, spec, strict=True):
@@ -1140,7 +1136,7 @@ def _pushb2obsmarkers(pushop, bundler):
         return
     pushop.stepsdone.add(b'obsmarkers')
     if pushop.outobsmarkers:
-        markers = _sortedmarkers(pushop.outobsmarkers)
+        markers = obsutil.sortedmarkers(pushop.outobsmarkers)
         bundle2.buildobsmarkerspart(bundler, markers)
 
 
@@ -1475,7 +1471,7 @@ def _pushobsolete(pushop):
     if pushop.outobsmarkers:
         pushop.ui.debug(b'try to push obsolete markers to remote\n')
         rslts = []
-        markers = _sortedmarkers(pushop.outobsmarkers)
+        markers = obsutil.sortedmarkers(pushop.outobsmarkers)
         remotedata = obsolete._pushkeyescape(markers)
         for key in sorted(remotedata, reverse=True):
             # reverse sort to ensure we end with dump0
@@ -2573,7 +2569,7 @@ def _getbundleobsmarkerpart(
             heads = repo.heads()
         subset = [c.node() for c in repo.set(b'::%ln', heads)]
         markers = repo.obsstore.relevantmarkers(subset)
-        markers = _sortedmarkers(markers)
+        markers = obsutil.sortedmarkers(markers)
         bundle2.buildobsmarkerspart(bundler, markers)
 
 
