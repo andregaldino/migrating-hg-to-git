@@ -430,14 +430,14 @@ class notifier(object):
             sender = self.ui.config(b'email', b'from') or self.ui.username()
         if b'@' not in sender or b'@localhost' in sender:
             sender = self.fixmail(sender)
-        msg['From'] = encoding.strfromlocal(
-            mail.addressencode(self.ui, sender, self.charsets, self.test)
+        msg['From'] = mail.addressencode(
+            self.ui, sender, self.charsets, self.test
         )
 
         msg['X-Hg-Notification'] = 'changeset %s' % ctx
         if not msg['Message-Id']:
             msg['Message-Id'] = messageid(ctx, self.domain, self.messageidseed)
-        msg['To'] = encoding.strfromlocal(b', '.join(sorted(subs)))
+        msg['To'] = ', '.join(sorted(subs))
 
         msgtext = msg.as_bytes() if pycompat.ispy3 else msg.as_string()
         if self.test:

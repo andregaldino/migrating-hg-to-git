@@ -385,15 +385,13 @@ def _addressencode(ui, name, addr, charsets=None):
             addr.decode('ascii')
         except UnicodeDecodeError:
             raise error.Abort(_(b'invalid local address: %s') % addr)
-    return pycompat.bytesurl(
-        email.utils.formataddr((name, encoding.strfromlocal(addr)))
-    )
+    return email.utils.formataddr((name, encoding.strfromlocal(addr)))
 
 
 def addressencode(ui, address, charsets=None, display=False):
     '''Turns address into RFC-2047 compliant header.'''
     if display or not address:
-        return address or b''
+        return encoding.strfromlocal(address or b'')
     name, addr = email.utils.parseaddr(encoding.strfromlocal(address))
     return _addressencode(ui, name, encoding.strtolocal(addr), charsets)
 
@@ -405,7 +403,7 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
     for a in addrs:
         assert isinstance(a, bytes), '%r unexpectedly not a bytestr' % a
     if display:
-        return [a.strip() for a in addrs if a.strip()]
+        return [encoding.strfromlocal(a.strip()) for a in addrs if a.strip()]
 
     result = []
     for name, addr in email.utils.getaddresses(

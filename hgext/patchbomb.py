@@ -943,13 +943,13 @@ def email(ui, repo, *revs, **opts):
 
         start_time = (start_time[0] + 1, start_time[1])
         m[b'From'] = sender
-        m[b'To'] = b', '.join(to)
+        m[b'To'] = ', '.join(to)
         if cc:
-            m[b'Cc'] = b', '.join(cc)
+            m[b'Cc'] = ', '.join(cc)
         if bcc:
-            m[b'Bcc'] = b', '.join(bcc)
+            m[b'Bcc'] = ', '.join(bcc)
         if replyto:
-            m[b'Reply-To'] = b', '.join(replyto)
+            m[b'Reply-To'] = ', '.join(replyto)
         # Fix up all headers to be native strings.
         # TODO(durin42): this should probably be cleaned up above in the future.
         if pycompat.ispy3:
@@ -992,7 +992,6 @@ def email(ui, repo, *revs, **opts):
             generator = mail.Generator(fp, mangle_from_=False)
             generator.flatten(m, 0)
             alldests = to + bcc + cc
-            alldests = [encoding.strfromlocal(d) for d in alldests]
             sendmail(sender_addr, alldests, fp.getvalue())
 
     progress.complete()
