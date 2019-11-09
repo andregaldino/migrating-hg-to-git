@@ -321,10 +321,10 @@ def makepatch(
         subj = b' '.join([prefix, opts.get(b'subject') or subj])
     else:
         subj = b' '.join([prefix, subj])
-    msg[b'Subject'] = mail.headencode(ui, subj, _charsets, opts.get(b'test'))
-    msg[b'X-Mercurial-Node'] = node
-    msg[b'X-Mercurial-Series-Index'] = b'%i' % idx
-    msg[b'X-Mercurial-Series-Total'] = b'%i' % total
+    msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get(b'test'))
+    msg['X-Mercurial-Node'] = pycompat.sysstr(node)
+    msg['X-Mercurial-Series-Index'] = '%i' % idx
+    msg['X-Mercurial-Series-Total'] = '%i' % total
     return msg, subj, ds
 
 
@@ -421,7 +421,7 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     )
     emailencoders.encode_base64(datapart)
     msg.attach(datapart)
-    msg[b'Subject'] = mail.headencode(ui, subj, _charsets, opts.get('test'))
+    msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get('test'))
     return [(msg, subj, None)]
 
 
@@ -454,7 +454,7 @@ def _makeintro(repo, sender, revs, patches, **opts):
 
     body = _getdescription(repo, body, sender, **opts)
     msg = mail.mimeencode(ui, body, _charsets, opts.get('test'))
-    msg[b'Subject'] = mail.headencode(ui, subj, _charsets, opts.get('test'))
+    msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get('test'))
     return (msg, subj, diffstat)
 
 
@@ -522,9 +522,11 @@ def _getoutgoing(repo, dest, revs):
 
 
 def _msgid(node, timestamp):
-    hostname = encoding.strtolocal(socket.getfqdn())
-    hostname = encoding.environ.get(b'HGHOSTNAME', hostname)
-    return b'<%s.%d@%s>' % (node, timestamp, hostname)
+    try:
+        hostname = encoding.strfromlocal(encoding.environ[b'HGHOSTNAME'])
+    except KeyError:
+        hostname = socket.getfqdn()
+    return '<%s.%d@%s>' % (node, timestamp, hostname)
 
 
 emailopts = [
@@ -912,10 +914,11 @@ def email(ui, repo, *revs, **opts):
     parent = opts.get(b'in_reply_to') or None
     # angle brackets may be omitted, they're not semantically part of the msg-id
     if parent is not None:
-        if not parent.startswith(b'<'):
-            parent = b'<' + parent
-        if not parent.endswith(b'>'):
-            parent += b'>'
+        parent = encoding.strfromlocal(parent)
+        if not parent.startswith('<'):
+            parent = '<' + parent
+        if not parent.endswith('>'):
+            parent += '>'
 
     sender_addr = eutil.parseaddr(encoding.strfromlocal(sender))[1]
     sender = mail.addressencode(ui, sender, _charsets, opts.get(b'test'))
@@ -926,50 +929,30 @@ def email(ui, repo, *revs, **opts):
     )
     for i, (m, subj, ds) in enumerate(msgs):
         try:
-            m[b'Message-Id'] = genmsgid(m[b'X-Mercurial-Node'])
+            m['Message-Id'] = genmsgid(m['X-Mercurial-Node'])
             if not firstpatch:
-                firstpatch = m[b'Message-Id']
-            m[b'X-Mercurial-Series-Id'] = firstpatch
+                firstpatch = m['Message-Id']
+            m['X-Mercurial-Series-Id'] = firstpatch
         except TypeError:
-            m[b'Message-Id'] = genmsgid(b'patchbomb')
+            m['Message-Id'] = genmsgid('patchbomb')
         if parent:
-            m[b'In-Reply-To'] = parent
-            m[b'References'] = parent
-        if not parent or b'X-Mercurial-Node' not in m:
-            parent = m[b'Message-Id']
+            m['In-Reply-To'] = parent
+            m['References'] = parent
+        if not parent or 'X-Mercurial-Node' not in m:
+            parent = m['Message-Id']
 
-        m[b'User-Agent'] = b'Mercurial-patchbomb/%s' % util.version()
-        m[b'Date'] = eutil.formatdate(start_time[0], localtime=True)
+        m['User-Agent'] = 'Mercurial-patchbomb/%s' % util.version().decode()
+        m['Date'] = eutil.formatdate(start_time[0], localtime=True)
 
         start_time = (start_time[0] + 1, start_time[1])
-        m[b'From'] = sender
-        m[b'To'] = ', '.join(to)
+        m['From'] = sender
+        m['To'] = ', '.join(to)
         if cc:
-            m[b'Cc'] = ', '.join(cc)
+            m['Cc'] = ', '.join(cc)
         if bcc:
-            m[b'Bcc'] = ', '.join(bcc)
+            m['Bcc'] = ', '.join(bcc)
         if replyto:
-            m[b'Reply-To'] = ', '.join(replyto)
-        # Fix up all headers to be native strings.
-        # TODO(durin42): this should probably be cleaned up above in the future.
-        if pycompat.ispy3:
-            for hdr, val in list(m.items()):
-                change = False
-                if isinstance(hdr, bytes):
-                    del m[hdr]
-                    hdr = pycompat.strurl(hdr)
-                    change = True
-                if isinstance(val, bytes):
-                    # header value should be ASCII since it's encoded by
-                    # mail.headencode(), but -n/--test disables it and raw
-                    # value of platform encoding is stored.
-                    val = encoding.strfromlocal(val)
-                    if not change:
-                        # prevent duplicate headers
-                        del m[hdr]
-                    change = True
-                if change:
-                    m[hdr] = val
+            m['Reply-To'] = ', '.join(replyto)
         if opts.get(b'test'):
             ui.status(_(b'displaying '), subj, b' ...\n')
             ui.pager(b'email')
@@ -987,7 +970,7 @@ def email(ui, repo, *revs, **opts):
             progress.update(i, item=subj)
             if not mbox:
                 # Exim does not remove the Bcc field
-                del m[b'Bcc']
+                del m['Bcc']
             fp = stringio()
             generator = mail.Generator(fp, mangle_from_=False)
             generator.flatten(m, 0)
