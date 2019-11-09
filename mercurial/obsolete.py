@@ -980,7 +980,7 @@ def _computephasedivergentset(repo):
     phase = repo._phasecache.phase  # would be faster to grab the full list
     public = phases.public
     cl = repo.changelog
-    torev = cl.nodemap.get
+    torev = cl.index.get_rev
     tonode = cl.node
     obsstore = repo.obsstore
     for rev in repo.revs(b'(not public()) and (not obsolete())'):
