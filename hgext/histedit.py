@@ -2447,7 +2447,7 @@ def adjustreplacementsfrommarkers(repo, oldreplacements):
         return oldreplacements
 
     unfi = repo.unfiltered()
-    nm = unfi.changelog.nodemap
+    get_rev = unfi.changelog.index.get_rev
     obsstore = repo.obsstore
     newreplacements = list(oldreplacements)
     oldsuccs = [r[1] for r in oldreplacements]
@@ -2458,7 +2458,7 @@ def adjustreplacementsfrommarkers(repo, oldreplacements):
     succstocheck = list(seensuccs)
     while succstocheck:
         n = succstocheck.pop()
-        missing = nm.get(n) is None
+        missing = get_rev(n) is None
         markers = obsstore.successors.get(n, ())
         if missing and not markers:
             # dead end, mark it as such
