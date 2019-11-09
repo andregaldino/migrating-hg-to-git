@@ -59,8 +59,9 @@ def pinnedrevs(repo):
     tags = {}
     tagsmod.readlocaltags(repo.ui, repo, tags, {})
     if tags:
-        rev, nodemap = cl.rev, cl.nodemap
-        pinned.update(rev(t[0]) for t in tags.values() if t[0] in nodemap)
+        rev = cl.index.get_rev
+        pinned.update(rev(t[0]) for t in tags.values())
+        pinned.discard(None)
     return pinned
 
 
