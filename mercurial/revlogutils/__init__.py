@@ -11,4 +11,4 @@ from .. import error
 
 class NodeMap(dict):
     def __missing__(self, x):
-        raise error.RevlogError('unknown node: %s' % x)
+        raise error.RevlogError(b'unknown node: %s' % x)
