@@ -421,7 +421,6 @@ class revlog(object):
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
         # Mapping of revision integer to full node.
-        self._nodepos = None
         self._compengine = b'zlib'
         self._compengineopts = {}
         self._maxdeltachainspan = -1
@@ -2223,11 +2222,6 @@ class revlog(object):
         )
         self.index.append(e)
 
-        # Reset the pure node cache start lookup offset to account for new
-        # revision.
-        if self._nodepos is not None:
-            self._nodepos = curr
-
         entry = self._io.packentry(e, self.node, self.version, curr)
         self._writeentry(
             transaction, ifh, dfh, entry, deltainfo.data, link, offset
@@ -2462,7 +2456,6 @@ class revlog(object):
         self._chunkclear()
 
         del self.index[rev:-1]
-        self._nodepos = None
 
     def checksize(self):
         """Check size of index and data files
