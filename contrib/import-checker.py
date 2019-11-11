@@ -535,6 +535,8 @@ def verify_modern_convention(module, root, localmods, root_col_offset=0):
             if fullname != '__future__':
                 if not fullname or (
                     fullname in stdlib_modules
+                    # allow standard 'from typing import ...' style
+                    and fullname != 'typing'
                     and fullname not in localmods
                     and fullname + '.__init__' not in localmods
                 ):
