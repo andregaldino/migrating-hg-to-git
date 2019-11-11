@@ -1114,7 +1114,9 @@ class dirstate(object):
             # how to read the config file.
             numcpus = self._ui.configint("worker", "numcpus")
             if numcpus is not None:
-                encoding.environ.setdefault(b'RAYON_NUM_THREADS', b'%d' % numcpus)
+                encoding.environ.setdefault(
+                    b'RAYON_NUM_THREADS', b'%d' % numcpus
+                )
 
             workers_enabled = self._ui.configbool("worker", "enabled", True)
             if not workers_enabled:
