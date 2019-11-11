@@ -3,15 +3,6 @@ CXX = clang++
 
 all: bdiff mpatch xdiff
 
-fuzzutil.o: fuzzutil.cc fuzzutil.h
-	$(CXX) $(CXXFLAGS) -g -O1 \
-	  -std=c++17 \
-	  -I../../mercurial -c -o fuzzutil.o fuzzutil.cc
-
-fuzzutil-oss-fuzz.o: fuzzutil.cc fuzzutil.h
-	$(CXX) $(CXXFLAGS) -std=c++17 \
-	  -I../../mercurial -c -o fuzzutil-oss-fuzz.o fuzzutil.cc
-
 pyutil.o: pyutil.cc pyutil.h
 	$(CXX) $(CXXFLAGS) -g -O1 \
 	  `$$OUT/sanpy/bin/python-config --cflags` \
@@ -21,17 +12,17 @@ bdiff.o: ../../mercurial/bdiff.c
 	$(CC) $(CFLAGS) -fsanitize=fuzzer-no-link,address -c -o bdiff.o \
 	  ../../mercurial/bdiff.c
 
-bdiff: bdiff.cc bdiff.o fuzzutil.o
+bdiff: bdiff.cc bdiff.o 
 	$(CXX) $(CXXFLAGS) -DHG_FUZZER_INCLUDE_MAIN=1 -g -O1 -fsanitize=fuzzer-no-link,address \
 	  -std=c++17 \
-	  -I../../mercurial bdiff.cc bdiff.o fuzzutil.o -o bdiff
+	  -I../../mercurial bdiff.cc bdiff.o -o bdiff
 
 bdiff-oss-fuzz.o: ../../mercurial/bdiff.c
 	$(CC) $(CFLAGS) -c -o bdiff-oss-fuzz.o ../../mercurial/bdiff.c
 
-bdiff_fuzzer: bdiff.cc bdiff-oss-fuzz.o fuzzutil-oss-fuzz.o
+bdiff_fuzzer: bdiff.cc bdiff-oss-fuzz.o
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial bdiff.cc \
-	  bdiff-oss-fuzz.o fuzzutil-oss-fuzz.o -lFuzzingEngine -o \
+	  bdiff-oss-fuzz.o -lFuzzingEngine -o \
 	  $$OUT/bdiff_fuzzer
 
 mpatch.o: ../../mercurial/mpatch.c
@@ -39,16 +30,16 @@ mpatch.o: ../../mercurial/mpatch.c
 	  ../../mercurial/mpatch.c
 
 mpatch: CXXFLAGS += -std=c++17
-mpatch: mpatch.cc mpatch.o fuzzutil.o
+mpatch: mpatch.cc mpatch.o
 	$(CXX) $(CXXFLAGS) -DHG_FUZZER_INCLUDE_MAIN=1 -g -O1 -fsanitize=fuzzer-no-link,address \
-	  -I../../mercurial mpatch.cc mpatch.o fuzzutil.o -o mpatch
+	  -I../../mercurial mpatch.cc mpatch.o -o mpatch
 
 mpatch-oss-fuzz.o: ../../mercurial/mpatch.c
 	$(CC) $(CFLAGS) -c -o mpatch-oss-fuzz.o ../../mercurial/mpatch.c
 
-mpatch_fuzzer: mpatch.cc mpatch-oss-fuzz.o fuzzutil-oss-fuzz.o
+mpatch_fuzzer: mpatch.cc mpatch-oss-fuzz.o 
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial mpatch.cc \
-	  mpatch-oss-fuzz.o fuzzutil-oss-fuzz.o -lFuzzingEngine -o \
+	  mpatch-oss-fuzz.o -lFuzzingEngine -o \
 	  $$OUT/mpatch_fuzzer
 
 mpatch_corpus.zip:
@@ -60,19 +51,19 @@ x%.o: ../../mercurial/thirdparty/xdiff/x%.c ../../mercurial/thirdparty/xdiff/*.h
 	  $<
 
 xdiff: CXXFLAGS += -std=c++17
-xdiff: xdiff.cc xdiffi.o xprepare.o xutils.o fuzzutil.o
+xdiff: xdiff.cc xdiffi.o xprepare.o xutils.o 
 	$(CXX) $(CXXFLAGS) -DHG_FUZZER_INCLUDE_MAIN=1 -g -O1 -fsanitize=fuzzer-no-link,address \
 	  -I../../mercurial xdiff.cc \
-	  xdiffi.o xprepare.o xutils.o fuzzutil.o -o xdiff
+	  xdiffi.o xprepare.o xutils.o -o xdiff
 
 fuzz-x%.o: ../../mercurial/thirdparty/xdiff/x%.c ../../mercurial/thirdparty/xdiff/*.h
 	$(CC) $(CFLAGS) -c \
 	  -o $@ \
 	  $<
 
-xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-fuzz.o
+xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o 
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial xdiff.cc \
-	  fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-fuzz.o \
+	  fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o \
 	  -lFuzzingEngine -o $$OUT/xdiff_fuzzer
 
 manifest.o: ../../mercurial/cext/manifest.c
