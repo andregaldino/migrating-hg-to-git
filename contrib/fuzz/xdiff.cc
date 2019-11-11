@@ -10,7 +10,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include "fuzzutil.h"
+#include <fuzzer/FuzzedDataProvider.h>
 
 extern "C" {
 
@@ -27,17 +27,15 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	if (Size > 100000) {
 		return 0;
 	}
-	auto maybe_inputs = SplitInputs(Data, Size);
-	if (!maybe_inputs) {
-		return 0;
-	}
-	auto inputs = std::move(maybe_inputs.value());
+	FuzzedDataProvider provider(Data, Size);
+	std::string left = provider.ConsumeRandomLengthString(Size);
+	std::string right = provider.ConsumeRemainingBytesAsString();
 	mmfile_t a, b;
 
-	a.ptr = inputs.left.get();
-	a.size = inputs.left_size;
-	b.ptr = inputs.right.get();
-	b.size = inputs.right_size;
+	a.ptr = (char *)left.c_str();
+	a.size = left.size();
+	b.ptr = (char *)right.c_str();
+	b.size = right.size();
 	xpparam_t xpp = {
 	    XDF_INDENT_HEURISTIC, /* flags */
 	};
