@@ -336,7 +336,7 @@ def _encode(ui, s, charsets):
                 ui.warn(_(b'ignoring invalid sendcharset: %s\n') % ocs)
         else:
             # Everything failed, ascii-armor what we've got and send it.
-            return s.encode('ascii', 'backslashreplace')
+            return s.encode('ascii', 'backslashreplace'), b'us-ascii'
     # We have a bytes of unknown encoding. We'll try and guess a valid
     # encoding, falling back to pretending we had ascii even though we
     # know that's wrong.
