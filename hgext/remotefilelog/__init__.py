@@ -719,9 +719,9 @@ def onetimeclientsetup(ui):
         remotefilelog.remotefilelog, b'addrawrevision', addrawrevision
     )
 
-    def changelogadd(orig, self, *args):
+    def changelogadd(orig, self, *args, **kwargs):
         oldlen = len(self)
-        node = orig(self, *args)
+        node = orig(self, *args, **kwargs)
         newlen = len(self)
         if oldlen != newlen:
             for oldargs in pendingfilecommits:
