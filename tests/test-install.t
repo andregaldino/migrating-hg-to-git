@@ -223,11 +223,6 @@ Verify the json works too:
 
   $ ( testrepohgenv; "$PYTHON" wixxml.py help )
   Not installed:
-    help/common.txt
-    help/hg-ssh.8.txt
-    help/hg.1.txt
-    help/hgignore.5.txt
-    help/hgrc.5.txt
   Not tracked:
 
   $ ( testrepohgenv; "$PYTHON" wixxml.py templates )

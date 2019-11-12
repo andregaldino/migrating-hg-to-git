@@ -17,6 +17,7 @@
         <Component Id="help.root" Guid="$(var.help.root.guid)" Win64='$(var.IsX64)'>
           <File Name="bundlespec.txt" />
           <File Name="color.txt" />
+          <File Name="common.txt" />
           <File Name="config.txt" KeyPath="yes" />
           <File Name="dates.txt" />
           <File Name="deprecated.txt" />
@@ -26,7 +27,11 @@
           <File Name="filesets.txt" />
           <File Name="flags.txt" />
           <File Name="glossary.txt" />
+          <File Name="hg-ssh.8.txt" />
+          <File Name="hg.1.txt" />
+          <File Name="hgignore.5.txt" />
           <File Name="hgignore.txt" />
+          <File Name="hgrc.5.txt" />
           <File Name="hgweb.txt" />
           <File Name="merge-tools.txt" />
           <File Name="pager.txt" />
