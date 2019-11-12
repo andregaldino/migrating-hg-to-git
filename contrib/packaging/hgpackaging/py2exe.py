@@ -209,13 +209,26 @@ def build_py2exe(
     )
 
 
-def stage_install(source_dir: pathlib.Path, staging_dir: pathlib.Path):
+def stage_install(
+    source_dir: pathlib.Path, staging_dir: pathlib.Path, lower_case=False
+):
     """Copy all files to be installed to a directory.
 
     This allows packaging to simply walk a directory tree to find source
     files.
     """
-    process_install_rules(STAGING_RULES, source_dir, staging_dir)
+    if lower_case:
+        rules = []
+        for source, dest in STAGING_RULES:
+            # Only lower directory names.
+            if '/' in dest:
+                parent, leaf = dest.rsplit('/', 1)
+                dest = '%s/%s' % (parent.lower(), leaf)
+            rules.append((source, dest))
+    else:
+        rules = STAGING_RULES
+
+    process_install_rules(rules, source_dir, staging_dir)
 
     # Write out a default editor.rc file to configure notepad as the
     # default editor.

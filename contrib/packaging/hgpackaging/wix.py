@@ -7,35 +7,57 @@
 
 # no-check-code because Python 3 native.
 
+import collections
 import os
 import pathlib
 import re
+import shutil
 import subprocess
-import tempfile
 import typing
+import uuid
 import xml.dom.minidom
 
 from .downloads import download_entry
-from .py2exe import build_py2exe
+from .py2exe import (
+    build_py2exe,
+    stage_install,
+)
 from .util import (
     extract_zip_to_directory,
+    process_install_rules,
     sign_with_signtool,
 )
-
-
-SUPPORT_WXS = [
-    ('contrib.wxs', r'contrib'),
-    ('dist.wxs', r'dist'),
-    ('doc.wxs', r'doc'),
-    ('help.wxs', r'mercurial\help'),
-    ('locale.wxs', r'mercurial\locale'),
-    ('templates.wxs', r'mercurial\templates'),
-]
 
 
 EXTRA_PACKAGES = {
     'distutils',
     'pygments',
+}
+
+
+EXTRA_INSTALL_RULES = [
+    ('contrib/packaging/wix/COPYING.rtf', 'COPYING.rtf'),
+    ('contrib/win32/mercurial.ini', 'hgrc.d/mercurial.rc'),
+]
+
+STAGING_REMOVE_FILES = [
+    # We use the RTF variant.
+    'copying.txt',
+]
+
+SHORTCUTS = {
+    # hg.1.html'
+    'hg.file.5d3e441c_28d9_5542_afd0_cdd4234f12d5': {
+        'Name': 'Mercurial Command Reference',
+    },
+    # hgignore.5.html
+    'hg.file.5757d8e0_f207_5e10_a2ec_3ba0a062f431': {
+        'Name': 'Mercurial Ignore Files',
+    },
+    # hgrc.5.html
+    'hg.file.92e605fd_1d1a_5dc6_9fc0_5d2998eb8f5e': {
+        'Name': 'Mercurial Configuration Files',
+    },
 }
 
 
@@ -147,49 +169,165 @@ def make_post_build_signing_fn(
     return post_build_sign
 
 
-LIBRARIES_XML = '''
-<?xml version="1.0" encoding="utf-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+def make_files_xml(staging_dir: pathlib.Path, is_x64) -> str:
+    """Create XML string listing every file to be installed."""
 
-  <?include {wix_dir}/guids.wxi ?>
-  <?include {wix_dir}/defines.wxi ?>
+    # We derive GUIDs from a deterministic file path identifier.
+    # We shoehorn the name into something that looks like a URL because
+    # the UUID namespaces are supposed to work that way (even though
+    # the input data probably is never validated).
 
-  <Fragment>
-    <DirectoryRef Id="INSTALLDIR" FileSource="$(var.SourceDir)">
-      <Directory Id="libdir" Name="lib" FileSource="$(var.SourceDir)/lib">
-        <Component Id="libOutput" Guid="$(var.lib.guid)" Win64='$(var.IsX64)'>
-        </Component>
-      </Directory>
-    </DirectoryRef>
-  </Fragment>
-</Wix>
-'''.lstrip()
-
-
-def make_libraries_xml(wix_dir: pathlib.Path, dist_dir: pathlib.Path):
-    """Make XML data for library components WXS."""
-    # We can't use ElementTree because it doesn't handle the
-    # <?include ?> directives.
     doc = xml.dom.minidom.parseString(
-        LIBRARIES_XML.format(wix_dir=str(wix_dir))
+        '<?xml version="1.0" encoding="utf-8"?>'
+        '<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">'
+        '</Wix>'
     )
 
-    component = doc.getElementsByTagName('Component')[0]
+    # Assemble the install layout by directory. This makes it easier to
+    # emit XML, since each directory has separate entities.
+    manifest = collections.defaultdict(dict)
 
-    f = doc.createElement('File')
-    f.setAttribute('Name', 'library.zip')
-    f.setAttribute('KeyPath', 'yes')
-    component.appendChild(f)
+    for root, dirs, files in os.walk(staging_dir):
+        dirs.sort()
 
-    lib_dir = dist_dir / 'lib'
+        root = pathlib.Path(root)
+        rel_dir = root.relative_to(staging_dir)
 
-    for p in sorted(lib_dir.iterdir()):
-        if not p.name.endswith(('.dll', '.pyd')):
-            continue
+        for i in range(len(rel_dir.parts)):
+            parent = '/'.join(rel_dir.parts[0 : i + 1])
+            manifest.setdefault(parent, {})
 
-        f = doc.createElement('File')
-        f.setAttribute('Name', p.name)
-        component.appendChild(f)
+        for f in sorted(files):
+            full = root / f
+            manifest[str(rel_dir).replace('\\', '/')][full.name] = full
+
+    component_groups = collections.defaultdict(list)
+
+    # Now emit a <Fragment> for each directory.
+    # Each directory is composed of a <DirectoryRef> pointing to its parent
+    # and defines child <Directory>'s and a <Component> with all the files.
+    for dir_name, entries in sorted(manifest.items()):
+        # The directory id is derived from the path. But the root directory
+        # is special.
+        if dir_name == '.':
+            parent_directory_id = 'INSTALLDIR'
+        else:
+            parent_directory_id = 'hg.dir.%s' % dir_name.replace('/', '.')
+
+        fragment = doc.createElement('Fragment')
+        directory_ref = doc.createElement('DirectoryRef')
+        directory_ref.setAttribute('Id', parent_directory_id)
+
+        # Add <Directory> entries for immediate children directories.
+        for possible_child in sorted(manifest.keys()):
+            if (
+                dir_name == '.'
+                and '/' not in possible_child
+                and possible_child != '.'
+            ):
+                child_directory_id = 'hg.dir.%s' % possible_child
+                name = possible_child
+            else:
+                if not possible_child.startswith('%s/' % dir_name):
+                    continue
+                name = possible_child[len(dir_name) + 1 :]
+                if '/' in name:
+                    continue
+
+                child_directory_id = 'hg.dir.%s' % possible_child.replace(
+                    '/', '.'
+                )
+
+            directory = doc.createElement('Directory')
+            directory.setAttribute('Id', child_directory_id)
+            directory.setAttribute('Name', name)
+            directory_ref.appendChild(directory)
+
+        # Add <Component>s for files in this directory.
+        for rel, source_path in sorted(entries.items()):
+            if dir_name == '.':
+                full_rel = rel
+            else:
+                full_rel = '%s/%s' % (dir_name, rel)
+
+            component_unique_id = (
+                'https://www.mercurial-scm.org/wix-installer/0/component/%s'
+                % full_rel
+            )
+            component_guid = uuid.uuid5(uuid.NAMESPACE_URL, component_unique_id)
+            component_id = 'hg.component.%s' % str(component_guid).replace(
+                '-', '_'
+            )
+
+            component = doc.createElement('Component')
+
+            component.setAttribute('Id', component_id)
+            component.setAttribute('Guid', str(component_guid).upper())
+            component.setAttribute('Win64', 'yes' if is_x64 else 'no')
+
+            # Assign this component to a top-level group.
+            if dir_name == '.':
+                component_groups['ROOT'].append(component_id)
+            elif '/' in dir_name:
+                component_groups[dir_name[0 : dir_name.index('/')]].append(
+                    component_id
+                )
+            else:
+                component_groups[dir_name].append(component_id)
+
+            unique_id = (
+                'https://www.mercurial-scm.org/wix-installer/0/%s' % full_rel
+            )
+            file_guid = uuid.uuid5(uuid.NAMESPACE_URL, unique_id)
+
+            # IDs have length limits. So use GUID to derive them.
+            file_guid_normalized = str(file_guid).replace('-', '_')
+            file_id = 'hg.file.%s' % file_guid_normalized
+
+            file_element = doc.createElement('File')
+            file_element.setAttribute('Id', file_id)
+            file_element.setAttribute('Source', str(source_path))
+            file_element.setAttribute('KeyPath', 'yes')
+            file_element.setAttribute('ReadOnly', 'yes')
+
+            component.appendChild(file_element)
+            directory_ref.appendChild(component)
+
+        fragment.appendChild(directory_ref)
+        doc.documentElement.appendChild(fragment)
+
+    for group, component_ids in sorted(component_groups.items()):
+        fragment = doc.createElement('Fragment')
+        component_group = doc.createElement('ComponentGroup')
+        component_group.setAttribute('Id', 'hg.group.%s' % group)
+
+        for component_id in component_ids:
+            component_ref = doc.createElement('ComponentRef')
+            component_ref.setAttribute('Id', component_id)
+            component_group.appendChild(component_ref)
+
+        fragment.appendChild(component_group)
+        doc.documentElement.appendChild(fragment)
+
+    # Add <Shortcut> to files that have it defined.
+    for file_id, metadata in sorted(SHORTCUTS.items()):
+        els = doc.getElementsByTagName('File')
+        els = [el for el in els if el.getAttribute('Id') == file_id]
+
+        if not els:
+            raise Exception('could not find File[Id=%s]' % file_id)
+
+        for el in els:
+            shortcut = doc.createElement('Shortcut')
+            shortcut.setAttribute('Id', 'hg.shortcut.%s' % file_id)
+            shortcut.setAttribute('Directory', 'ProgramMenuDir')
+            shortcut.setAttribute('Icon', 'hgIcon.ico')
+            shortcut.setAttribute('IconIndex', '0')
+            shortcut.setAttribute('Advertise', 'yes')
+            for k, v in sorted(metadata.items()):
+                shortcut.setAttribute(k, v)
+
+            el.appendChild(shortcut)
 
     return doc.toprettyxml()
 
@@ -248,8 +386,26 @@ def build_installer(
         post_build_fn(source_dir, hg_build_dir, dist_dir, version)
 
     build_dir = hg_build_dir / ('wix-%s' % arch)
+    staging_dir = build_dir / 'stage'
 
     build_dir.mkdir(exist_ok=True)
+
+    # Purge the staging directory for every build so packaging is pristine.
+    if staging_dir.exists():
+        print('purging %s' % staging_dir)
+        shutil.rmtree(staging_dir)
+
+    stage_install(source_dir, staging_dir, lower_case=True)
+
+    # We also install some extra files.
+    process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
+
+    # And remove some files we don't want.
+    for f in STAGING_REMOVE_FILES:
+        p = staging_dir / f
+        if p.exists():
+            print('removing %s' % p)
+            p.unlink()
 
     wix_pkg, wix_entry = download_entry('wix', hg_build_dir)
     wix_path = hg_build_dir / ('wix-%s' % wix_entry['version'])
@@ -263,24 +419,15 @@ def build_installer(
 
     defines = {'Platform': arch}
 
-    for wxs, rel_path in SUPPORT_WXS:
-        wxs = wix_dir / wxs
-        wxs_source_dir = source_dir / rel_path
-        run_candle(wix_path, build_dir, wxs, wxs_source_dir, defines=defines)
+    # Derive a .wxs file with the staged files.
+    manifest_wxs = build_dir / 'stage.wxs'
+    with manifest_wxs.open('w', encoding='utf-8') as fh:
+        fh.write(make_files_xml(staging_dir, is_x64=arch == 'x64'))
+
+    run_candle(wix_path, build_dir, manifest_wxs, staging_dir, defines=defines)
 
     for source, rel_path in sorted((extra_wxs or {}).items()):
         run_candle(wix_path, build_dir, source, rel_path, defines=defines)
-
-    # candle.exe doesn't like when we have an open handle on the file.
-    # So use TemporaryDirectory() instead of NamedTemporaryFile().
-    with tempfile.TemporaryDirectory() as td:
-        td = pathlib.Path(td)
-
-        tf = td / 'library.wxs'
-        with tf.open('w') as fh:
-            fh.write(make_libraries_xml(wix_dir, dist_dir))
-
-        run_candle(wix_path, build_dir, tf, dist_dir, defines=defines)
 
     source = wix_dir / 'mercurial.wxs'
     defines['Version'] = version
@@ -307,20 +454,13 @@ def build_installer(
         str(msi_path),
     ]
 
-    for source, rel_path in SUPPORT_WXS:
-        assert source.endswith('.wxs')
-        args.append(str(build_dir / ('%s.wixobj' % source[:-4])))
-
     for source, rel_path in sorted((extra_wxs or {}).items()):
         assert source.endswith('.wxs')
         source = os.path.basename(source)
         args.append(str(build_dir / ('%s.wixobj' % source[:-4])))
 
     args.extend(
-        [
-            str(build_dir / 'library.wixobj'),
-            str(build_dir / 'mercurial.wixobj'),
-        ]
+        [str(build_dir / 'stage.wixobj'), str(build_dir / 'mercurial.wixobj'),]
     )
 
     subprocess.run(args, cwd=str(source_dir), check=True)
