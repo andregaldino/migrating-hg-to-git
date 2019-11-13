@@ -207,7 +207,7 @@ indexformatv0_unpack = indexformatv0.unpack
 class revlogoldindex(list):
     @property
     def nodemap(self):
-        msg = "index.nodemap is deprecated, " "use index.[has_node|rev|get_rev]"
+        msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
         util.nouideprecwarn(msg, b'5.3', stacklevel=2)
         return self._nodemap
 
@@ -657,15 +657,15 @@ class revlog(object):
     @property
     def nodemap(self):
         msg = (
-            "revlog.nodemap is deprecated, "
-            "use revlog.index.[has_node|rev|get_rev]"
+            b"revlog.nodemap is deprecated, "
+            b"use revlog.index.[has_node|rev|get_rev]"
         )
         util.nouideprecwarn(msg, b'5.3', stacklevel=2)
         return self.index.nodemap
 
     @property
     def _nodecache(self):
-        msg = "revlog._nodecache is deprecated, use revlog.index.nodemap"
+        msg = b"revlog._nodecache is deprecated, use revlog.index.nodemap"
         util.nouideprecwarn(msg, b'5.3', stacklevel=2)
         return self.index.nodemap
 
