@@ -395,8 +395,8 @@ def headencode(ui, s, charsets=None, display=False):
 
 
 def _addressencode(ui, name, addr, charsets=None):
-    # type: (Any, str, bytes, List[str]) -> str
-    assert isinstance(addr, bytes)
+    # type: (Any, str, str, List[str]) -> str
+    addr = encoding.strtolocal(addr)
     name = headencode(ui, name, charsets)
     try:
         acc, dom = addr.split(b'@')
@@ -420,7 +420,7 @@ def addressencode(ui, address, charsets=None, display=False):
     if display or not address:
         return encoding.strfromlocal(address or b'')
     name, addr = email.utils.parseaddr(encoding.strfromlocal(address))
-    return _addressencode(ui, name, encoding.strtolocal(addr), charsets)
+    return _addressencode(ui, name, addr, charsets)
 
 
 def addrlistencode(ui, addrs, charsets=None, display=False):
@@ -438,7 +438,7 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
     result = []
     for name, addr in email.utils.getaddresses(straddrs):
         if name or addr:
-            r = _addressencode(ui, name, encoding.strtolocal(addr), charsets)
+            r = _addressencode(ui, name, addr, charsets)
             result.append(r)
     return result
 
