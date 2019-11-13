@@ -36,6 +36,12 @@ from .utils import (
     stringutil,
 )
 
+if not globals():  # hide this from non-pytype users
+    from typing import Any, List, Tuple, Union
+
+    # keep pyflakes happy
+    assert all((Any, List, Tuple, Union))
+
 
 class STARTTLS(smtplib.SMTP):
     '''Derived class to verify the peer certificate for STARTTLS.
@@ -99,6 +105,7 @@ class SMTPS(smtplib.SMTP):
 
 
 def _pyhastls():
+    # type: () -> bool
     """Returns true iff Python has TLS support, false otherwise."""
     try:
         import ssl
@@ -246,8 +253,13 @@ def validateconfig(ui):
 
 
 def codec2iana(cs):
+    # type: (bytes) -> bytes
     ''''''
-    cs = pycompat.sysbytes(email.charset.Charset(cs).input_charset.lower())
+    cs = pycompat.sysbytes(
+        email.charset.Charset(
+            cs  # pytype: disable=wrong-arg-types
+        ).input_charset.lower()
+    )
 
     # "latin1" normalizes to "iso8859-1", standard calls for "iso-8859-1"
     if cs.startswith(b"iso") and not cs.startswith(b"iso-"):
@@ -256,6 +268,7 @@ def codec2iana(cs):
 
 
 def mimetextpatch(s, subtype=b'plain', display=False):
+    # type: (bytes, bytes, bool) -> email.message.Message
     '''Return MIME message suitable for a patch.
     Charset will be detected by first trying to decode as us-ascii, then utf-8,
     and finally the global encodings. If all those fail, fall back to
@@ -276,6 +289,7 @@ def mimetextpatch(s, subtype=b'plain', display=False):
 
 
 def mimetextqp(body, subtype, charset):
+    # type: (bytes, bytes, bytes) -> email.message.Message
     '''Return MIME message.
     Quoted-printable transfer encoding will be used if necessary.
     '''
@@ -303,13 +317,16 @@ def mimetextqp(body, subtype, charset):
 
 
 def _charsets(ui):
+    # type: (Any) -> List[bytes]
     '''Obtains charsets to send mail parts not containing patches.'''
-    charsets = [cs.lower() for cs in ui.configlist(b'email', b'charsets')]
+    charsets = [
+        cs.lower() for cs in ui.configlist(b'email', b'charsets')
+    ]  # type: List[bytes]
     fallbacks = [
         encoding.fallbackencoding.lower(),
         encoding.encoding.lower(),
         b'utf-8',
-    ]
+    ]  # type: List[bytes]
     for cs in fallbacks:  # find unique charsets while keeping order
         if cs not in charsets:
             charsets.append(cs)
@@ -317,6 +334,7 @@ def _charsets(ui):
 
 
 def _encode(ui, s, charsets):
+    # type: (Any, bytes, List[bytes]) -> Tuple[bytes, bytes]
     '''Returns (converted) string, charset tuple.
     Finds out best charset by cycling through sendcharsets in descending
     order. Tries both encoding and fallbackencoding for input. Only as
@@ -361,15 +379,19 @@ def _encode(ui, s, charsets):
 
 
 def headencode(ui, s, charsets=None, display=False):
+    # type: (Any, Union[bytes, str], List[bytes], bool) -> str
     '''Returns RFC-2047 compliant header from given string.'''
     if not display:
         # split into words?
         s, cs = _encode(ui, s, charsets)
-        return email.header.Header(s, cs).encode()
+        return email.header.Header(
+            s, cs  # pytype: disable=wrong-arg-types
+        ).encode()
     return encoding.strfromlocal(s)
 
 
 def _addressencode(ui, name, addr, charsets=None):
+    # type: (Any, str, bytes, List[bytes]) -> str
     assert isinstance(addr, bytes)
     name = headencode(ui, name, charsets)
     try:
@@ -389,6 +411,7 @@ def _addressencode(ui, name, addr, charsets=None):
 
 
 def addressencode(ui, address, charsets=None, display=False):
+    # type: (Any, bytes, List[bytes], bool) -> str
     '''Turns address into RFC-2047 compliant header.'''
     if display or not address:
         return encoding.strfromlocal(address or b'')
@@ -397,6 +420,7 @@ def addressencode(ui, address, charsets=None, display=False):
 
 
 def addrlistencode(ui, addrs, charsets=None, display=False):
+    # type: (Any, List[bytes], List[bytes], bool) -> List[str]
     '''Turns a list of addresses into a list of RFC-2047 compliant headers.
     A single element of input list may contain multiple addresses, but output
     always has one address per item'''
@@ -416,6 +440,7 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
 
 
 def mimeencode(ui, s, charsets=None, display=False):
+    # type: (Any, bytes, List[bytes], bool) -> email.message.Message
     '''creates mime text object, encodes it if needed, and sets
     charset and transfer-encoding accordingly.'''
     cs = b'us-ascii'
@@ -429,6 +454,7 @@ if pycompat.ispy3:
     Generator = email.generator.BytesGenerator
 
     def parse(fp):
+        # type: (Any) -> email.message.Message
         ep = email.parser.Parser()
         # disable the "universal newlines" mode, which isn't binary safe.
         # I have no idea if ascii/surrogateescape is correct, but that's
@@ -442,6 +468,7 @@ if pycompat.ispy3:
             fp.detach()
 
     def parsebytes(data):
+        # type: (bytes) -> email.message.Message
         ep = email.parser.BytesParser()
         return ep.parsebytes(data)
 
@@ -451,15 +478,18 @@ else:
     Generator = email.generator.Generator
 
     def parse(fp):
+        # type: (Any) -> email.message.Message
         ep = email.parser.Parser()
         return ep.parse(fp)
 
     def parsebytes(data):
+        # type: (str) -> email.message.Message
         ep = email.parser.Parser()
         return ep.parsestr(data)
 
 
 def headdecode(s):
+    # type: (Union[email.header.Header, bytes]) -> bytes
     '''Decodes RFC-2047 header'''
     uparts = []
     for part, charset in email.header.decode_header(s):
