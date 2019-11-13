@@ -281,10 +281,13 @@ def _changesetforwardcopies(a, b, match):
     iterrevs &= mrset
     iterrevs.update(roots)
     iterrevs.remove(b.rev())
-    all_copies = {r: {} for r in roots}
+    all_copies = {}
     alwaysmatch = match.always()
     for r in sorted(iterrevs):
-        copies = all_copies.pop(r)
+        copies = all_copies.pop(r, None)
+        if copies is None:
+            # this is a root
+            copies = {}
         for i, c in enumerate(children[r]):
             p1, p2, p1copies, p2copies, removed = revinfo(c)
             if r == p1:
