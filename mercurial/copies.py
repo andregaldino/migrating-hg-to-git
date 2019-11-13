@@ -231,7 +231,7 @@ def _revinfogetter(repo):
             else:
                 p1copies = {}
                 p2copies = {}
-                removed = ()
+                removed = []
             return p1, p2, p1copies, p2copies, removed
 
     else:
