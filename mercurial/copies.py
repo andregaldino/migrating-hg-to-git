@@ -281,9 +281,24 @@ def _changesetforwardcopies(a, b, match):
     iterrevs &= mrset
     iterrevs.update(roots)
     iterrevs.remove(b.rev())
+    revs = sorted(iterrevs)
+    return _combinechangesetcopies(revs, children, b.rev(), revinfo, match)
+
+
+def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
+    """combine the copies information for each item of iterrevs
+
+    revs: sorted iterable of revision to visit
+    children: a {parent: [children]} mapping.
+    targetrev: the final copies destination revision (not in iterrevs)
+    revinfo(rev): a function that return (p1, p2, p1copies, p2copies, removed)
+    match: a matcher
+
+    It returns the aggregated copies information for `targetrev`.
+    """
     all_copies = {}
     alwaysmatch = match.always()
-    for r in sorted(iterrevs):
+    for r in revs:
         copies = all_copies.pop(r, None)
         if copies is None:
             # this is a root
@@ -336,7 +351,7 @@ def _changesetforwardcopies(a, b, match):
                 else:
                     newcopies.update(othercopies)
                     all_copies[c] = newcopies
-    return all_copies[b.rev()]
+    return all_copies[targetrev]
 
 
 def _forwardcopies(a, b, base=None, match=None):
