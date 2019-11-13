@@ -285,7 +285,7 @@ def makepatch(
         if body:
             msg.attach(mail.mimeencode(ui, body, _charsets, opts.get(b'test')))
         p = mail.mimetextpatch(
-            b'\n'.join(patchlines), b'x-patch', opts.get(b'test')
+            b'\n'.join(patchlines), 'x-patch', opts.get(b'test')
         )
         binnode = nodemod.bin(node)
         # if node is mq patch, it will have the patch file's name as a tag

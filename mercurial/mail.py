@@ -263,8 +263,8 @@ def codec2iana(cs):
     return cs
 
 
-def mimetextpatch(s, subtype=b'plain', display=False):
-    # type: (bytes, bytes, bool) -> email.message.Message
+def mimetextpatch(s, subtype='plain', display=False):
+    # type: (bytes, str, bool) -> email.message.Message
     '''Return MIME message suitable for a patch.
     Charset will be detected by first trying to decode as us-ascii, then utf-8,
     and finally the global encodings. If all those fail, fall back to
@@ -290,13 +290,13 @@ def mimetextpatch(s, subtype=b'plain', display=False):
 
 
 def mimetextqp(body, subtype, charset):
-    # type: (bytes, bytes, str) -> email.message.Message
+    # type: (bytes, str, str) -> email.message.Message
     '''Return MIME message.
     Quoted-printable transfer encoding will be used if necessary.
     '''
     cs = email.charset.Charset(charset)
     msg = email.message.Message()
-    msg.set_type(pycompat.sysstr(b'text/' + subtype))
+    msg.set_type('text/' + subtype)
 
     for line in body.splitlines():
         if len(line) > 950:
@@ -450,7 +450,7 @@ def mimeencode(ui, s, charsets=None, display=False):
     cs = 'us-ascii'
     if not display:
         s, cs = _encode(ui, s, charsets)
-    return mimetextqp(s, b'plain', cs)
+    return mimetextqp(s, 'plain', cs)
 
 
 if pycompat.ispy3:
