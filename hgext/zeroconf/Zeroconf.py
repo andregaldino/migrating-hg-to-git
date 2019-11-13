@@ -1191,7 +1191,11 @@ class ServiceInfo(object):
                 list.append(b'='.join((key, suffix)))
             for item in list:
                 result = b''.join(
-                    (result, struct.pack(b'!c', chr(len(item))), item)
+                    (
+                        result,
+                        struct.pack(b'!c', pycompat.bytechr(len(item))),
+                        item,
+                    )
                 )
             self.text = result
         else:
