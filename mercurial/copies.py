@@ -63,12 +63,12 @@ def _filter(src, dst, t):
             del t[k]
 
 
-def _chain(a, b):
-    """chain two sets of copies 'a' and 'b'"""
-    t = a.copy()
-    for k, v in pycompat.iteritems(b):
-        t[k] = a.get(v, v)
-    return t
+def _chain(prefix, suffix):
+    """chain two sets of copies 'prefix' and 'suffix'"""
+    result = prefix.copy()
+    for key, value in pycompat.iteritems(suffix):
+        result[key] = prefix.get(value, value)
+    return result
 
 
 def _tracefile(fctx, am, basemf):
