@@ -958,7 +958,7 @@ def email(ui, repo, *revs, **opts):
             ui.pager(b'email')
             generator = mail.Generator(ui, mangle_from_=False)
             try:
-                generator.flatten(m, 0)
+                generator.flatten(m, False)
                 ui.write(b'\n')
             except IOError as inst:
                 if inst.errno != errno.EPIPE:
@@ -973,7 +973,7 @@ def email(ui, repo, *revs, **opts):
                 del m['Bcc']
             fp = stringio()
             generator = mail.Generator(fp, mangle_from_=False)
-            generator.flatten(m, 0)
+            generator.flatten(m, False)
             alldests = to + bcc + cc
             sendmail(sender_addr, alldests, fp.getvalue())
 
