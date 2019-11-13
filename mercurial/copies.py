@@ -67,7 +67,7 @@ def _chain(a, b):
     """chain two sets of copies 'a' and 'b'"""
     t = a.copy()
     for k, v in pycompat.iteritems(b):
-        t[k] = t.get(v, v)
+        t[k] = a.get(v, v)
     return t
 
 
