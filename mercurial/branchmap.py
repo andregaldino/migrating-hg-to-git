@@ -27,6 +27,23 @@ from .utils import (
     stringutil,
 )
 
+if not globals():
+    from typing import (
+        Any,
+        Callable,
+        Dict,
+        Iterable,
+        List,
+        Optional,
+        Set,
+        Tuple,
+        Union,
+    )
+
+    assert any(
+        (Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union,)
+    )
+
 subsettable = repoviewutil.subsettable
 
 calcsize = struct.calcsize
@@ -165,6 +182,7 @@ class branchcache(object):
         closednodes=None,
         hasnode=None,
     ):
+        # type: (Union[Dict[bytes, List[bytes]], Iterable[Tuple[bytes, List[bytes]]]], bytes,  int, Optional[bytes], Optional[Set[bytes]], Optional[Callable[[bytes], bool]]) -> None
         """ hasnode is a function which can be used to verify whether changelog
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog """
@@ -177,7 +195,7 @@ class branchcache(object):
         if closednodes is None:
             self._closednodes = set()
         else:
-            self._closednodes = set(closednodes)
+            self._closednodes = closednodes
         self._entries = dict(entries)
         # whether closed nodes are verified or not
         self._closedverified = False
