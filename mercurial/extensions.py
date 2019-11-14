@@ -781,7 +781,7 @@ def _disabledhelp(path):
 def disabled():
     '''find disabled extensions from hgext. returns a dict of {name: desc}'''
     try:
-        from hgext import __index__
+        from hgext import __index__  # pytype: disable=import-error
 
         return dict(
             (name, gettext(desc))
@@ -807,7 +807,7 @@ def disabled():
 def disabledext(name):
     '''find a specific disabled extension from hgext. returns desc'''
     try:
-        from hgext import __index__
+        from hgext import __index__  # pytype: disable=import-error
 
         if name in _order:  # enabled
             return
