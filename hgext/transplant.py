@@ -443,7 +443,13 @@ class transplanter(object):
                 )
             if merge:
                 repo.setparents(p1, parents[1])
-            modified, added, removed, deleted = repo.status()[:4]
+            st = repo.status()
+            modified, added, removed, deleted = (
+                st.modified,
+                st.added,
+                st.removed,
+                st.deleted,
+            )
             if merge or modified or added or removed or deleted:
                 n = repo.commit(
                     message,
