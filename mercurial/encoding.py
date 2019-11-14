@@ -205,7 +205,7 @@ def tolocal(s):
 
 
 def fromlocal(s):
-    # type: (bytes) -> Text
+    # type: (bytes) -> bytes
     """
     Convert a string from the local character encoding to UTF-8
 
