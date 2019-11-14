@@ -2116,13 +2116,13 @@ def _docommit(ui, repo, *pats, **opts):
 
         if not node:
             stat = cmdutil.postcommitstatus(repo, pats, opts)
-            if stat[3]:
+            if stat.deleted:
                 ui.status(
                     _(
                         b"nothing changed (%d missing files, see "
                         b"'hg status')\n"
                     )
-                    % len(stat[3])
+                    % len(stat.deleted)
                 )
             else:
                 ui.status(_(b"nothing changed\n"))
@@ -6853,7 +6853,11 @@ def status(ui, repo, *pats, **opts):
             opts.get(b'subrepos'),
         )
 
-    changestates = zip(states, pycompat.iterbytestr(b'MAR!?IC'), stat)
+    changestates = zip(
+        states,
+        pycompat.iterbytestr(b'MAR!?IC'),
+        [getattr(stat, s.decode('utf8')) for s in states],
+    )
 
     copy = {}
     if (
