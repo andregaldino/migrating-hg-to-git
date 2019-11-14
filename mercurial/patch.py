@@ -2605,7 +2605,14 @@ def diffhunks(
 
     if not changes:
         changes = ctx1.status(ctx2, match=match)
-    modified, added, removed = changes[:3]
+    if isinstance(changes, list):
+        modified, added, removed = changes[:3]
+    else:
+        modified, added, removed = (
+            changes.modified,
+            changes.added,
+            changes.removed,
+        )
 
     if not modified and not added and not removed:
         return []
