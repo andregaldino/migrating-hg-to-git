@@ -54,7 +54,6 @@ from . import (
 from .utils import (
     compression,
     procutil,
-    resourceutil,
     stringutil,
 )
 
@@ -1821,9 +1820,6 @@ def pathto(root, n1, n2):
         b.pop()
     b.reverse()
     return pycompat.ossep.join(([b'..'] * len(a)) + b) or b'.'
-
-
-datapath = resourceutil.datapath
 
 
 def checksignature(func):

@@ -15,6 +15,8 @@ from . import (
     util,
 )
 
+from .utils import resourceutil
+
 if pycompat.iswindows:
     from . import scmwindows as scmplatform
 else:
@@ -62,7 +64,7 @@ def envrcitems(env=None):
 def defaultrcpath():
     '''return rc paths in defaultrc'''
     path = []
-    defaultpath = os.path.join(util.datapath, b'defaultrc')
+    defaultpath = os.path.join(resourceutil.datapath, b'defaultrc')
     if os.path.isdir(defaultpath):
         path = _expandrcpath(defaultpath)
     return path
