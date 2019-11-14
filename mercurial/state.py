@@ -27,6 +27,15 @@ from . import (
 )
 from .utils import cborutil
 
+if not globals():
+    from typing import (
+        Any,
+        Dict,
+    )
+
+    for t in (Any, Dict):
+        assert t
+
 
 class cmdstate(object):
     """a wrapper class to store the state of commands like `rebase`, `graft`,
@@ -50,6 +59,7 @@ class cmdstate(object):
         self.fname = fname
 
     def read(self):
+        # type: () -> Dict[bytes, Any]
         """read the existing state file and return a dict of data stored"""
         return self._read()
 
