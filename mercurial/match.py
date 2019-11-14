@@ -18,7 +18,6 @@ from . import (
     encoding,
     error,
     pathutil,
-    pathutil,
     policy,
     pycompat,
     util,
@@ -598,7 +597,8 @@ class patternmatcher(basematcher):
             dir in self._fileset
             or dir in self._dirs
             or any(
-                parentdir in self._fileset for parentdir in util.finddirs(dir)
+                parentdir in self._fileset
+                for parentdir in pathutil.finddirs(dir)
             )
         )
 
@@ -643,7 +643,7 @@ class _dirchildren(object):
     @staticmethod
     def _findsplitdirs(path):
         # yields (dirname, basename) tuples, walking back to the root.  This is
-        # very similar to util.finddirs, except:
+        # very similar to pathutil.finddirs, except:
         #  - produces a (dirname, basename) tuple, not just 'dirname'
         # Unlike manifest._splittopdir, this does not suffix `dirname` with a
         # slash.
@@ -681,7 +681,9 @@ class includematcher(basematcher):
             dir in self._roots
             or dir in self._dirs
             or dir in self._parents
-            or any(parentdir in self._roots for parentdir in util.finddirs(dir))
+            or any(
+                parentdir in self._roots for parentdir in pathutil.finddirs(dir)
+            )
         )
 
     @propertycache
@@ -706,7 +708,9 @@ class includematcher(basematcher):
             b'' in self._roots
             or dir in self._roots
             or dir in self._dirs
-            or any(parentdir in self._roots for parentdir in util.finddirs(dir))
+            or any(
+                parentdir in self._roots for parentdir in pathutil.finddirs(dir)
+            )
         ):
             return b'this'
 
@@ -1073,7 +1077,7 @@ class prefixdirmatcher(basematcher):
 
     @propertycache
     def _pathdirs(self):
-        return set(util.finddirs(self._path))
+        return set(pathutil.finddirs(self._path))
 
     def visitdir(self, dir):
         if dir == self._path:

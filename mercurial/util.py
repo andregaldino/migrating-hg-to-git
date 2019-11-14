@@ -3491,14 +3491,6 @@ def debugstacktrace(
     f.flush()
 
 
-def finddirs(path):
-    pos = path.rfind(b'/')
-    while pos != -1:
-        yield path[:pos]
-        pos = path.rfind(b'/', 0, pos)
-    yield b''
-
-
 # convenient shortcut
 dst = debugstacktrace
 

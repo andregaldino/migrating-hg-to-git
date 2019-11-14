@@ -59,6 +59,7 @@ from . import (
     merge as mergemod,
     obsolete,
     obsutil,
+    pathutil,
     phases,
     policy,
     pvec,
@@ -1343,7 +1344,7 @@ def debugignore(ui, repo, *files, **opts):
                     ignored = nf
                     ignoredata = repo.dirstate._ignorefileandline(nf)
                 else:
-                    for p in util.finddirs(nf):
+                    for p in pathutil.finddirs(nf):
                         if ignore(p):
                             ignored = p
                             ignoredata = repo.dirstate._ignorefileandline(p)

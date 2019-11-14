@@ -2080,7 +2080,7 @@ class workingfilectx(committablefilectx):
             # warned and backed up
             if wvfs.isdir(f) and not wvfs.islink(f):
                 wvfs.rmtree(f, forcibly=True)
-            for p in reversed(list(util.finddirs(f))):
+            for p in reversed(list(pathutil.finddirs(f))):
                 if wvfs.isfileorlink(p):
                     wvfs.unlink(p)
                     break

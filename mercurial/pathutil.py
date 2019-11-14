@@ -275,6 +275,14 @@ def normasprefix(path):
         return path
 
 
+def finddirs(path):
+    pos = path.rfind(b'/')
+    while pos != -1:
+        yield path[:pos]
+        pos = path.rfind(b'/', 0, pos)
+    yield b''
+
+
 class dirs(object):
     '''a multiset of directory names from a set of file paths'''
 
@@ -295,7 +303,7 @@ class dirs(object):
 
     def addpath(self, path):
         dirs = self._dirs
-        for base in util.finddirs(path):
+        for base in finddirs(path):
             if base.endswith(b'/'):
                 raise ValueError(
                     "found invalid consecutive slashes in path: %r" % base
@@ -307,7 +315,7 @@ class dirs(object):
 
     def delpath(self, path):
         dirs = self._dirs
-        for base in util.finddirs(path):
+        for base in finddirs(path):
             if dirs[base] > 1:
                 dirs[base] -= 1
                 return

@@ -404,7 +404,7 @@ class dirstate(object):
                     _(b'directory %r already in dirstate') % pycompat.bytestr(f)
                 )
             # shadows
-            for d in util.finddirs(f):
+            for d in pathutil.finddirs(f):
                 if self._map.hastrackeddir(d):
                     break
                 entry = self._map.get(d)
@@ -707,7 +707,7 @@ class dirstate(object):
     def _dirignore(self, f):
         if self._ignore(f):
             return True
-        for p in util.finddirs(f):
+        for p in pathutil.finddirs(f):
             if self._ignore(p):
                 return True
         return False

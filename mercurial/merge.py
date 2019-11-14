@@ -32,6 +32,7 @@ from . import (
     filemerge,
     match as matchmod,
     obsutil,
+    pathutil,
     pycompat,
     scmutil,
     subrepoutil,
@@ -813,7 +814,7 @@ class _unknowndirschecker(object):
             return False
 
         # Check for path prefixes that exist as unknown files.
-        for p in reversed(list(util.finddirs(f))):
+        for p in reversed(list(pathutil.finddirs(f))):
             if p in self._missingdircache:
                 return
             if p in self._unknowndircache:
@@ -947,7 +948,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
             backup = (
                 f in fileconflicts
                 or f in pathconflicts
-                or any(p in pathconflicts for p in util.finddirs(f))
+                or any(p in pathconflicts for p in pathutil.finddirs(f))
             )
             (flags,) = args
             actions[f] = (ACTION_GET, (flags, backup), msg)
@@ -1077,7 +1078,7 @@ def _filesindirs(repo, manifest, dirs):
     in.
     """
     for f in manifest:
-        for p in util.finddirs(f):
+        for p in pathutil.finddirs(f):
             if p in dirs:
                 yield f, p
                 break
@@ -1116,7 +1117,7 @@ def checkpathconflicts(repo, wctx, mctx, actions):
             ACTION_CREATED_MERGE,
         ):
             # This action may create a new local file.
-            createdfiledirs.update(util.finddirs(f))
+            createdfiledirs.update(pathutil.finddirs(f))
             if mf.hasdir(f):
                 # The file aliases a local directory.  This might be ok if all
                 # the files in the local directory are being deleted.  This
@@ -1710,7 +1711,7 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
                 # with a directory this file is in, and if so, back that up.
                 conflicting = f
                 if not repo.wvfs.lexists(f):
-                    for p in util.finddirs(f):
+                    for p in pathutil.finddirs(f):
                         if repo.wvfs.isfileorlink(p):
                             conflicting = p
                             break

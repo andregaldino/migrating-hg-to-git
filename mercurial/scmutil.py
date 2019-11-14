@@ -964,7 +964,7 @@ def backuppath(ui, repo, filepath):
         ui.note(_(b'creating directory: %s\n') % origvfs.join(origbackupdir))
 
         # Remove any files that conflict with the backup file's path
-        for f in reversed(list(util.finddirs(filepath))):
+        for f in reversed(list(pathutil.finddirs(filepath))):
             if origvfs.isfileorlink(f):
                 ui.note(_(b'removing conflicting file: %s\n') % origvfs.join(f))
                 origvfs.unlink(f)
