@@ -1823,13 +1823,7 @@ def pathto(root, n1, n2):
     return pycompat.ossep.join(([b'..'] * len(a)) + b) or b'.'
 
 
-# the location of data files matching the source code
-if resourceutil.mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
-    # executable version (py2exe) doesn't support __file__
-    datapath = os.path.dirname(pycompat.sysexecutable)
-else:
-    datapath = os.path.dirname(pycompat.fsencode(__file__))
-
+datapath = resourceutil.datapath
 i18n.setdatapath(datapath)
 
 
