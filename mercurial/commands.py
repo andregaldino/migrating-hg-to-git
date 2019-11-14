@@ -1073,7 +1073,7 @@ def bisect(
                 raise error.Abort(_(b'current bisect revision is a merge'))
         if rev:
             node = repo[scmutil.revsingle(repo, rev, node)].node()
-        try:
+        with hbisect.restore_state(repo, state, node):
             while changesets:
                 # update state
                 state[b'current'] = [node]
@@ -1105,9 +1105,6 @@ def bisect(
                 # update to next check
                 node = nodes[0]
                 mayupdate(repo, node, show_stats=False)
-        finally:
-            state[b'current'] = [node]
-            hbisect.save_state(repo, state)
         hbisect.printresult(ui, repo, state, displayer, nodes, bgood)
         return
 
