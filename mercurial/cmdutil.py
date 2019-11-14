@@ -429,13 +429,13 @@ def dorecord(
         with repo.ui.configoverride(overrides, b'record'):
             # subrepoutil.precommit() modifies the status
             tmpstatus = scmutil.status(
-                copymod.copy(status[0]),
-                copymod.copy(status[1]),
-                copymod.copy(status[2]),
-                copymod.copy(status[3]),
-                copymod.copy(status[4]),
-                copymod.copy(status[5]),
-                copymod.copy(status[6]),  # pytype: disable=wrong-arg-count
+                copymod.copy(status.modified),
+                copymod.copy(status.added),
+                copymod.copy(status.removed),
+                copymod.copy(status.deleted),
+                copymod.copy(status.unknown),
+                copymod.copy(status.ignored),
+                copymod.copy(status.clean),  # pytype: disable=wrong-arg-count
             )
 
             # Force allows -X subrepo to skip the subrepo.
@@ -991,8 +991,8 @@ def bailifchanged(repo, merge=True, hint=None):
 
     if merge and repo.dirstate.p2() != nullid:
         raise error.Abort(_(b'outstanding uncommitted merge'), hint=hint)
-    modified, added, removed, deleted = repo.status()[:4]
-    if modified or added or removed or deleted:
+    st = repo.status()
+    if st.modified or st.added or st.removed or st.deleted:
         raise error.Abort(_(b'uncommitted changes'), hint=hint)
     ctx = repo[None]
     for s in sorted(ctx.substate):
@@ -2565,7 +2565,7 @@ def remove(
 ):
     ret = 0
     s = repo.status(match=m, clean=True)
-    modified, added, deleted, clean = s[0], s[1], s[3], s[6]
+    modified, added, deleted, clean = s.modified, s.added, s.deleted, s.clean
 
     wctx = repo[None]
 
@@ -2876,7 +2876,8 @@ def amend(ui, repo, old, extra, pats, opts):
         if len(old.parents()) > 1:
             # ctx.files() isn't reliable for merges, so fall back to the
             # slower repo.status() method
-            files = {fn for st in base.status(old)[:3] for fn in st}
+            st = base.status(old)
+            files = set(st.modified) | set(st.added) | set(st.removed)
         else:
             files = set(old.files())
 
