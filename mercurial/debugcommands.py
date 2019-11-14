@@ -4161,6 +4161,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                 _(b'sending batch with %d sub-commands\n')
                 % len(batchedcommands)
             )
+            assert peer is not None
             for i, chunk in enumerate(peer._submitbatch(batchedcommands)):
                 ui.status(
                     _(b'response #%d: %s\n') % (i, stringutil.escapestr(chunk))
@@ -4241,6 +4242,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                 )
 
         elif action == b'close':
+            assert peer is not None
             peer.close()
         elif action == b'readavailable':
             if not stdout or not stderr:
