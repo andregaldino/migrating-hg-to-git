@@ -24,7 +24,7 @@ from . import (
     util,
 )
 from .utils import (
-    procutil,
+    resourceutil,
     stringutil,
 )
 
@@ -786,7 +786,7 @@ def _plainapplepython():
     """
     if (
         not pycompat.isdarwin
-        or procutil.mainfrozen()
+        or resourceutil.mainfrozen()
         or not pycompat.sysexecutable
     ):
         return False

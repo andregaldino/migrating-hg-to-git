@@ -11,7 +11,6 @@ from __future__ import absolute_import
 
 import contextlib
 import errno
-import imp
 import io
 import os
 import signal
@@ -31,6 +30,9 @@ from .. import (
     policy,
     pycompat,
 )
+
+# Import like this to keep import-checker happy
+from ..utils import resourceutil
 
 osutil = policy.importmod('osutil')
 
@@ -254,19 +256,6 @@ def filter(s, cmd):
     return pipefilter(s, cmd)
 
 
-def mainfrozen():
-    """return True if we are a frozen executable.
-
-    The code supports py2exe (most common, Windows only) and tools/freeze
-    (portable, not much used).
-    """
-    return (
-        pycompat.safehasattr(sys, "frozen")
-        or pycompat.safehasattr(sys, "importers")  # new py2exe
-        or imp.is_frozen("__main__")  # old py2exe
-    )  # tools/freeze
-
-
 _hgexecutable = None
 
 
@@ -280,7 +269,7 @@ def hgexecutable():
         mainmod = sys.modules['__main__']
         if hg:
             _sethgexecutable(hg)
-        elif mainfrozen():
+        elif resourceutil.mainfrozen():
             if getattr(sys, 'frozen', None) == 'macosx_app':
                 # Env variable set by py2app
                 _sethgexecutable(encoding.environ[b'EXECUTABLEPATH'])
@@ -456,7 +445,7 @@ def hgcmd():
     to avoid things opening new shell windows like batch files, so we
     get either the python call or current executable.
     """
-    if mainfrozen():
+    if resourceutil.mainfrozen():
         if getattr(sys, 'frozen', None) == 'macosx_app':
             # Env variable set by py2app
             return [encoding.environ[b'EXECUTABLEPATH']]

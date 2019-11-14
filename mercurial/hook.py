@@ -22,6 +22,7 @@ from . import (
 )
 from .utils import (
     procutil,
+    resourceutil,
     stringutil,
 )
 
@@ -48,7 +49,7 @@ def pythonhook(ui, repo, htype, hname, funcname, args, throw):
             )
         modname = funcname[:d]
         oldpaths = sys.path
-        if procutil.mainfrozen():
+        if resourceutil.mainfrozen():
             # binary installs require sys.path manipulation
             modpath, modfile = os.path.split(modname)
             if modpath and modfile:
