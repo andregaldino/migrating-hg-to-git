@@ -761,7 +761,7 @@ def tersedir(statuslist, terseargs):
         tersedict[st].sort()
         tersedlist.append(tersedict[st])
 
-    return tersedlist
+    return scmutil.status(*tersedlist)
 
 
 def _commentlines(raw):
