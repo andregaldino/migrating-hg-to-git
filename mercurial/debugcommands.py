@@ -481,8 +481,8 @@ def debugcheckstate(ui, repo):
             ui.warn(_(b"%s in manifest1, but listed as state %s") % (f, state))
             errors += 1
     if errors:
-        error = _(b".hg/dirstate inconsistent with current parent's manifest")
-        raise error.Abort(error)
+        errstr = _(b".hg/dirstate inconsistent with current parent's manifest")
+        raise error.Abort(errstr)
 
 
 @command(
