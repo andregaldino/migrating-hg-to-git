@@ -281,7 +281,7 @@ def hgexecutable():
         if hg:
             _sethgexecutable(hg)
         elif mainfrozen():
-            if getattr(sys, 'frozen', None) == b'macosx_app':
+            if getattr(sys, 'frozen', None) == 'macosx_app':
                 # Env variable set by py2app
                 _sethgexecutable(encoding.environ[b'EXECUTABLEPATH'])
             else:
@@ -457,7 +457,7 @@ def hgcmd():
     get either the python call or current executable.
     """
     if mainfrozen():
-        if getattr(sys, 'frozen', None) == b'macosx_app':
+        if getattr(sys, 'frozen', None) == 'macosx_app':
             # Env variable set by py2app
             return [encoding.environ[b'EXECUTABLEPATH']]
         else:

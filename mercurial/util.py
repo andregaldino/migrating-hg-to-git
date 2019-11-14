@@ -1823,7 +1823,7 @@ def pathto(root, n1, n2):
 
 
 # the location of data files matching the source code
-if procutil.mainfrozen() and getattr(sys, 'frozen', None) != b'macosx_app':
+if procutil.mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     # executable version (py2exe) doesn't support __file__
     datapath = os.path.dirname(pycompat.sysexecutable)
 else:
