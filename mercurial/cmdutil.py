@@ -61,6 +61,15 @@ from .utils import (
     stringutil,
 )
 
+if not globals():
+    from typing import (
+        Any,
+        Dict,
+    )
+
+    for t in (Any, Dict):
+        assert t
+
 stringio = util.stringio
 
 # templates of common command options
@@ -3959,6 +3968,7 @@ def abortgraft(ui, repo, graftstate):
 
 
 def readgraftstate(repo, graftstate):
+    # type: (Any, statemod.cmdstate) -> Dict[bytes, Any]
     """read the graft state file and return a dict of the data stored in it"""
     try:
         return graftstate.read()
