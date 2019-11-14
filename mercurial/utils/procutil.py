@@ -288,10 +288,7 @@ def hgexecutable():
                 _sethgexecutable(pycompat.sysexecutable)
         elif (
             not pycompat.iswindows
-            and os.path.basename(
-                pycompat.fsencode(getattr(mainmod, '__file__', ''))
-            )
-            == b'hg'
+            and os.path.basename(getattr(mainmod, '__file__', '')) == 'hg'
         ):
             _sethgexecutable(pycompat.fsencode(mainmod.__file__))
         else:
