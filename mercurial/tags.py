@@ -571,7 +571,18 @@ def tag(repo, names, node, message, local, user, date, editor=False):
 
     if not local:
         m = matchmod.exact([b'.hgtags'])
-        if any(repo.status(match=m, unknown=True, ignored=True)):
+        st = repo.status(match=m, unknown=True, ignored=True)
+        if any(
+            (
+                st.modified,
+                st.added,
+                st.removed,
+                st.deleted,
+                st.unknown,
+                st.ignored,
+                st.clean,
+            )
+        ):
             raise error.Abort(
                 _(b'working copy of .hgtags is changed'),
                 hint=_(b'please commit .hgtags manually'),
