@@ -401,13 +401,14 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         if node2 is None:
             raise error.Abort(_(b'--patch requires two revisions'))
     else:
-        mod_a, add_a, rem_a = map(
-            set, repo.status(node1a, node2, matcher, listsubrepos=subrepos)[:3]
-        )
+        st = repo.status(node1a, node2, matcher, listsubrepos=subrepos)
+        mod_a, add_a, rem_a = set(st.modified), set(st.added), set(st.removed)
         if do3way:
-            mod_b, add_b, rem_b = map(
-                set,
-                repo.status(node1b, node2, matcher, listsubrepos=subrepos)[:3],
+            stb = repo.status(node1b, node2, matcher, listsubrepos=subrepos)
+            mod_b, add_b, rem_b = (
+                set(stb.modified),
+                set(stb.added),
+                set(stb.removed),
             )
         else:
             mod_b, add_b, rem_b = set(), set(), set()
