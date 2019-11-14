@@ -788,7 +788,7 @@ def perfstatus(ui, repo, **opts):
             s = dirstate.status(
                 m, subrepos=[], ignored=False, clean=False, unknown=unknown
             )
-            sum(map(len, s))
+            sum(map(bool, s))
 
         timer(status_dirstate)
     else:
