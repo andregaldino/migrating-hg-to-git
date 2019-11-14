@@ -968,7 +968,7 @@ def getlinerangerevs(repo, userrevs, opts):
     differ = changesetdiffer()
     differ._makefilematcher = filematcher
     differ._makehunksfilter = hunksfilter
-    return revs, differ
+    return smartset.baseset(revs), differ
 
 
 def _graphnodeformatter(ui, displayer):
