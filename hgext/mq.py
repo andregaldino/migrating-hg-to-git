@@ -1251,16 +1251,19 @@ class queue(object):
         return None, None
 
     def putsubstate2changes(self, substatestate, changes):
-        for files in changes[:3]:
-            if b'.hgsubstate' in files:
-                return  # already listed up
+        if isinstance(changes, list):
+            mar = changes[:3]
+        else:
+            mar = (changes.modified, changes.added, changes.removed)
+        if any((b'.hgsubstate' in files for files in mar)):
+            return  # already listed up
         # not yet listed up
         if substatestate in b'a?':
-            changes[1].append(b'.hgsubstate')
+            mar[1].append(b'.hgsubstate')
         elif substatestate in b'r':
-            changes[2].append(b'.hgsubstate')
+            mar[2].append(b'.hgsubstate')
         else:  # modified
-            changes[0].append(b'.hgsubstate')
+            mar[0].append(b'.hgsubstate')
 
     def checklocalchanges(self, repo, force=False, refresh=True):
         excsuffix = b''
@@ -1377,8 +1380,9 @@ class queue(object):
         else:
             changes = self.checklocalchanges(repo, force=True)
         commitfiles = list(inclsubs)
-        for files in changes[:3]:
-            commitfiles.extend(files)
+        commitfiles.extend(changes.modified)
+        commitfiles.extend(changes.added)
+        commitfiles.extend(changes.removed)
         match = scmutil.matchfiles(repo, commitfiles)
         if len(repo[None].parents()) > 1:
             raise error.Abort(_(b'cannot manage merge changesets'))
@@ -1818,7 +1822,8 @@ class queue(object):
             if update:
                 qp = self.qparents(repo, rev)
                 ctx = repo[qp]
-                m, a, r, d = repo.status(qp, b'.')[:4]
+                st = repo.status(qp, b'.')
+                m, a, r, d = st.modified, st.added, st.removed, st.deleted
                 if d:
                     raise error.Abort(_(b"deletions found between repo revs"))
 
@@ -1910,10 +1915,11 @@ class queue(object):
             # and then commit.
             #
             # this should really read:
-            #   mm, dd, aa = repo.status(top, patchparent)[:3]
+            #   st = repo.status(top, patchparent)
             # but we do it backwards to take advantage of manifest/changelog
             # caching against the next repo.status call
-            mm, aa, dd = repo.status(patchparent, top)[:3]
+            st = repo.status(patchparent, top)
+            mm, aa, dd = st.modified, st.added, st.removed
             ctx = repo[top]
             aaa = aa[:]
             match1 = scmutil.match(repo[None], pats, opts)
@@ -1927,7 +1933,8 @@ class queue(object):
                 match1 = scmutil.match(repo[None], opts=opts)
             else:
                 match = scmutil.matchall(repo)
-            m, a, r, d = repo.status(match=match)[:4]
+            stb = repo.status(match=match)
+            m, a, r, d = stb.modified, stb.added, stb.removed, stb.deleted
             mm = set(mm)
             aa = set(aa)
             dd = set(dd)
@@ -1966,7 +1973,8 @@ class queue(object):
 
             # create 'match' that includes the files to be recommitted.
             # apply match1 via repo.status to ensure correct case handling.
-            cm, ca, cr, cd = repo.status(patchparent, match=match1)[:4]
+            st = repo.status(patchparent, match=match1)
+            cm, ca, cr, cd = st.modified, st.added, st.removed, st.deleted
             allmatches = set(cm + ca + cr + cd)
             refreshchanges = [x.intersection(allmatches) for x in (mm, aa, dd)]
 
