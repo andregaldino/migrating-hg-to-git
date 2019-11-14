@@ -1561,7 +1561,7 @@ def debuginstall(ui, **opts):
         err = None
         try:
             if cext:
-                from .cext import (
+                from .cext import (  # pytype: disable=import-error
                     base85,
                     bdiff,
                     mpatch,
@@ -1571,7 +1571,7 @@ def debuginstall(ui, **opts):
                 # quiet pyflakes
                 dir(bdiff), dir(mpatch), dir(base85), dir(osutil)
             if rustext:
-                from .rustext import (
+                from .rustext import (  # pytype: disable=import-error
                     ancestor,
                     dirstate,
                 )
