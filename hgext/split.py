@@ -152,7 +152,9 @@ def dosplit(ui, repo, tr, ctx, opts):
         scmutil.movedirstate(repo, ctx.p1())
 
     # Any modified, added, removed, deleted result means split is incomplete
-    incomplete = lambda repo: any(repo.status()[:4])
+    def incomplete(repo):
+        st = repo.status()
+        return any((st.modified, st.added, st.removed, st.deleted))
 
     # Main split loop
     while incomplete(repo):
