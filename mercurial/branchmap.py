@@ -105,7 +105,7 @@ class BranchMapCache(object):
                 remotebranchmap,
                 repo[rtiprev].node(),
                 rtiprev,
-                closednodes=closed,
+                closednodes=set(closed),
             )
 
             # Try to stick it as low as possible
@@ -177,7 +177,7 @@ class branchcache(object):
         if closednodes is None:
             self._closednodes = set()
         else:
-            self._closednodes = closednodes
+            self._closednodes = set(closednodes)
         self._entries = dict(entries)
         # whether closed nodes are verified or not
         self._closedverified = False
