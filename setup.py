@@ -1191,6 +1191,8 @@ packages = [
     'mercurial',
     'mercurial.cext',
     'mercurial.cffi',
+    'mercurial.helptext',
+    'mercurial.helptext.internals',
     'mercurial.hgweb',
     'mercurial.interfaces',
     'mercurial.pure',
@@ -1535,11 +1537,11 @@ if os.name == 'nt':
 packagedata = {
     'mercurial': [
         'locale/*/LC_MESSAGES/hg.mo',
-        'help/*.txt',
-        'help/internals/*.txt',
         'default.d/*.rc',
         'dummycert.pem',
-    ]
+    ],
+    'mercurial.helptext': ['*.txt',],
+    'mercurial.helptext.internals': ['*.txt',],
 }
 
 
