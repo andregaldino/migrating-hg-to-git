@@ -868,6 +868,112 @@ Renames are followed.
   +4
   
 
+Copies.
+
+  $ hg copy baz bbaz
+  $ sed 's/6/6+/' bbaz > bbaz.new
+  $ mv bbaz.new bbaz
+  $ hg commit -m 'cp baz bbaz; 6-6+'
+  $ hg diff -c .
+  diff --git a/dir/baz b/dir/bbaz
+  copy from dir/baz
+  copy to dir/bbaz
+  --- a/dir/baz
+  +++ b/dir/bbaz
+  @@ -7,7 +7,7 @@
+   3+
+   4
+   5
+  -6
+  +6+
+   7
+   8
+   9
+  $ hg log --copies -f -L bbaz,10:11 -p
+  changeset:   10:91a3d3b6c546
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     cp baz bbaz; 6-6+
+  
+  diff --git a/dir/baz b/dir/bbaz
+  copy from dir/baz
+  copy to dir/bbaz
+  --- a/dir/baz
+  +++ b/dir/bbaz
+  @@ -7,7 +7,7 @@
+   3+
+   4
+   5
+  -6
+  +6+
+   7
+   8
+   9
+  
+  changeset:   3:730a61fbaecf
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     to 11
+  
+  diff --git a/foo b/foo
+  --- a/foo
+  +++ b/foo
+  @@ -6,3 +6,10 @@
+   2+
+   3
+   4
+  +5
+  +6
+  +7
+  +8
+  +9
+  +10
+  +11
+  
+  $ hg log -f -L bbaz,10:11 -p
+  changeset:   10:91a3d3b6c546
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     cp baz bbaz; 6-6+
+  
+  diff --git a/dir/baz b/dir/bbaz
+  copy from dir/baz
+  copy to dir/bbaz
+  --- a/dir/baz
+  +++ b/dir/bbaz
+  @@ -7,7 +7,7 @@
+   3+
+   4
+   5
+  -6
+  +6+
+   7
+   8
+   9
+  
+  changeset:   3:730a61fbaecf
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     to 11
+  
+  diff --git a/foo b/foo
+  --- a/foo
+  +++ b/foo
+  @@ -6,3 +6,10 @@
+   2+
+   3
+   4
+  +5
+  +6
+  +7
+  +8
+  +9
+  +10
+  +11
+  
+
 Binary files work but without diff hunks filtering.
 (Checking w/ and w/o diff.git option.)
 
@@ -875,7 +981,7 @@ Binary files work but without diff hunks filtering.
   $ hg add binary
   $ hg ci -m 'add a binary file' --quiet
   $ hg log -f -L binary,1:2 -p
-  changeset:   10:c96381c229df
+  changeset:   11:dc865b608edf
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -890,13 +996,13 @@ Binary files work but without diff hunks filtering.
   
   
   $ hg log -f -L binary,1:2 -p --config diff.git=false
-  changeset:   10:c96381c229df
+  changeset:   11:dc865b608edf
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     add a binary file
   
-  diff -r 6af29c3a778f -r c96381c229df dir/binary
+  diff -r 91a3d3b6c546 -r dc865b608edf dir/binary
   Binary file dir/binary has changed
   
 
