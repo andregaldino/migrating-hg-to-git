@@ -115,6 +115,8 @@ def run():
 
     # In all cases we try to flush stdio streams.
     if util.safehasattr(req.ui, b'fout'):
+        assert req.ui is not None  # help pytype
+        assert req.ui.fout is not None  # help pytype
         try:
             req.ui.fout.flush()
         except IOError as e:
@@ -122,6 +124,8 @@ def run():
             status = -1
 
     if util.safehasattr(req.ui, b'ferr'):
+        assert req.ui is not None  # help pytype
+        assert req.ui.ferr is not None  # help pytype
         try:
             if err is not None and err.errno != errno.EPIPE:
                 req.ui.ferr.write(
@@ -1108,6 +1112,7 @@ def _dispatch(req):
 
         repo = None
         cmdpats = args[:]
+        assert func is not None  # help out pytype
         if not func.norepo:
             # use the repo from the request only if we don't have -R
             if not rpath and not cwd:
