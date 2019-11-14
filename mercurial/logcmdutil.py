@@ -42,6 +42,16 @@ from .utils import (
 )
 
 
+if not globals():
+    from typing import (
+        Any,
+        Tuple,
+    )
+
+    for t in (Any, Tuple):
+        assert t
+
+
 def getlimit(opts):
     """get the log limit according to option -l/--limit"""
     limit = opts.get(b'limit')
@@ -843,6 +853,7 @@ def _initialrevs(repo, opts):
 
 
 def getrevs(repo, pats, opts):
+    # type: (Any, Any, Any) -> Tuple[smartset.BaseSet, changesetdiffer]
     """Return (revs, differ) where revs is a smartset
 
     differ is a changesetdiffer with pre-configured file matcher.
