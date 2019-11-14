@@ -13,6 +13,7 @@ import os
 import sys
 
 from .pycompat import getattr
+from .utils import resourceutil
 from . import (
     encoding,
     pycompat,
@@ -45,18 +46,14 @@ if (
         # ctypes not found or unknown langid
         pass
 
-_ugettext = None
 
-
-def setdatapath(datapath):
-    datapath = pycompat.fsdecode(datapath)
-    localedir = os.path.join(datapath, 'locale')
-    t = gettextmod.translation('hg', localedir, _languages, fallback=True)
-    global _ugettext
-    try:
-        _ugettext = t.ugettext
-    except AttributeError:
-        _ugettext = t.gettext
+datapath = pycompat.fsdecode(resourceutil.datapath)
+localedir = os.path.join(datapath, 'locale')
+t = gettextmod.translation('hg', localedir, _languages, fallback=True)
+try:
+    _ugettext = t.ugettext
+except AttributeError:
+    _ugettext = t.gettext
 
 
 _msgcache = {}  # encoding: {message: translation}

@@ -1824,7 +1824,6 @@ def pathto(root, n1, n2):
 
 
 datapath = resourceutil.datapath
-i18n.setdatapath(datapath)
 
 
 def checksignature(func):
