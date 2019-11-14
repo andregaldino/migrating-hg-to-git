@@ -157,7 +157,8 @@ def uncommit(ui, repo, *pats, **opts):
 
     with repo.wlock(), repo.lock():
 
-        m, a, r, d = repo.status()[:4]
+        st = repo.status()
+        m, a, r, d = st.modified, st.added, st.removed, st.deleted
         isdirtypath = any(set(m + a + r + d) & set(pats))
         allowdirtywcopy = opts[
             b'allow_dirty_working_copy'
