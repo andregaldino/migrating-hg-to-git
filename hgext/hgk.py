@@ -92,21 +92,21 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
         mmap = repo[node1].manifest()
         mmap2 = repo[node2].manifest()
         m = scmutil.match(repo[node1], files)
-        modified, added, removed = repo.status(node1, node2, m)[:3]
+        st = repo.status(node1, node2, m)
         empty = short(nullid)
 
-        for f in modified:
+        for f in st.modified:
             # TODO get file permissions
             ui.writenoi18n(
                 b":100664 100664 %s %s M\t%s\t%s\n"
                 % (short(mmap[f]), short(mmap2[f]), f, f)
             )
-        for f in added:
+        for f in st.added:
             ui.writenoi18n(
                 b":000000 100664 %s %s N\t%s\t%s\n"
                 % (empty, short(mmap2[f]), f, f)
             )
-        for f in removed:
+        for f in st.removed:
             ui.writenoi18n(
                 b":100664 000000 %s %s D\t%s\t%s\n"
                 % (short(mmap[f]), empty, f, f)
