@@ -1995,8 +1995,12 @@ class gitsubrepo(abstractsubrepo):
         if match.always():
             output += self._gitcommand(cmd) + b'\n'
         else:
-            st = self.status(node2)[:3]
-            files = [f for sublist in st for f in sublist]
+            st = self.status(node2)
+            files = [
+                f
+                for sublist in (st.modified, st.added, st.removed)
+                for f in sublist
+            ]
             for f in files:
                 if match(f):
                     output += self._gitcommand(cmd + [b'--', f]) + b'\n'
