@@ -673,6 +673,7 @@ def checkstatus(repo, subset, pat, field):
     1: added
     2: removed
     """
+    label = {0: 'modified', 1: 'added', 2: 'removed'}[field]
     hasset = matchmod.patkind(pat) == b'set'
 
     mcache = [None]
@@ -691,7 +692,7 @@ def checkstatus(repo, subset, pat, field):
         else:
             if not any(m(f) for f in c.files()):
                 return False
-        files = repo.status(c.p1().node(), c.node())[field]
+        files = getattr(repo.status(c.p1().node(), c.node()), label)
         if fname is not None:
             if fname in files:
                 return True
