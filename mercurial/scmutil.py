@@ -27,7 +27,7 @@ from .node import (
     wdirrev,
 )
 from .pycompat import getattr
-
+from .thirdparty import attr
 from . import (
     copies as copiesmod,
     encoding,
@@ -62,58 +62,32 @@ parsers = policy.importmod('parsers')
 termsize = scmplatform.termsize
 
 
-class status(tuple):
-    '''Named tuple with a list of files per status. The 'deleted', 'unknown'
-       and 'ignored' properties are only relevant to the working copy.
+@attr.s(slots=True, repr=False)
+class status(object):
+    '''Struct with a list of files per status.
+
+    The 'deleted', 'unknown' and 'ignored' properties are only
+    relevant to the working copy.
     '''
 
-    __slots__ = ()
+    modified = attr.ib(default=list)
+    added = attr.ib(default=list)
+    removed = attr.ib(default=list)
+    deleted = attr.ib(default=list)
+    unknown = attr.ib(default=list)
+    ignored = attr.ib(default=list)
+    clean = attr.ib(default=list)
 
-    def __new__(
-        cls, modified, added, removed, deleted, unknown, ignored, clean
-    ):
-        return tuple.__new__(
-            cls, (modified, added, removed, deleted, unknown, ignored, clean)
-        )
+    def __iter__(self):
+        yield self.modified
+        yield self.added
+        yield self.removed
+        yield self.deleted
+        yield self.unknown
+        yield self.ignored
+        yield self.clean
 
-    @property
-    def modified(self):
-        '''files that have been modified'''
-        return self[0]
-
-    @property
-    def added(self):
-        '''files that have been added'''
-        return self[1]
-
-    @property
-    def removed(self):
-        '''files that have been removed'''
-        return self[2]
-
-    @property
-    def deleted(self):
-        '''files that are in the dirstate, but have been deleted from the
-           working copy (aka "missing")
-        '''
-        return self[3]
-
-    @property
-    def unknown(self):
-        '''files not in the dirstate that are not ignored'''
-        return self[4]
-
-    @property
-    def ignored(self):
-        '''files not in the dirstate that are ignored (by _dirignore())'''
-        return self[5]
-
-    @property
-    def clean(self):
-        '''files that have not been modified'''
-        return self[6]
-
-    def __repr__(self, *args, **kwargs):
+    def __repr__(self):
         return (
             r'<status modified=%s, added=%s, removed=%s, deleted=%s, '
             r'unknown=%s, ignored=%s, clean=%s>'
