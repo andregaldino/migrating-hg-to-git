@@ -449,11 +449,25 @@ class basectx(object):
                     unknown=listunknown,
                     listsubrepos=True,
                 )
-                for rfiles, sfiles in zip(r, s):
+                for k in (
+                    'modified',
+                    'added',
+                    'removed',
+                    'deleted',
+                    'unknown',
+                    'ignored',
+                    'clean',
+                ):
+                    rfiles, sfiles = getattr(r, k), getattr(s, k)
                     rfiles.extend(b"%s/%s" % (subpath, f) for f in sfiles)
 
-        for l in r:
-            l.sort()
+        r.modified.sort()
+        r.added.sort()
+        r.removed.sort()
+        r.deleted.sort()
+        r.unknown.sort()
+        r.ignored.sort()
+        r.clean.sort()
 
         return r
 
