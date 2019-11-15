@@ -112,6 +112,11 @@ def getmarkers(repo, nodes=None, exclusive=False):
         yield marker(repo, markerdata)
 
 
+def sortedmarkers(markers):
+    # last item of marker tuple ('parents') may be None or a tuple
+    return sorted(markers, key=lambda m: m[:-1] + (m[-1] or (),))
+
+
 def closestpredecessors(repo, nodeid):
     """yield the list of next predecessors pointing on visible changectx nodes
 
@@ -675,7 +680,7 @@ def successorssets(repo, initialnode, closest=False, cache=None):
             #   Having none means pruned node, multiple successors means split,
             #   single successors are standard replacement.
             #
-            for mark in sorted(succmarkers[current]):
+            for mark in sortedmarkers(succmarkers[current]):
                 for suc in mark[1]:
                     if suc not in cache:
                         if suc in stackedset:
@@ -712,7 +717,7 @@ def successorssets(repo, initialnode, closest=False, cache=None):
                 # duplicated entry and successors set that are strict subset of
                 # another one.
                 succssets = []
-                for mark in sorted(succmarkers[current]):
+                for mark in sortedmarkers(succmarkers[current]):
                     # successors sets contributed by this marker
                     base = _succs()
                     base.markers.add(mark)

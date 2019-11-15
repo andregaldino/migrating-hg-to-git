@@ -57,7 +57,7 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
         return
 
     # str.splitlines() != unicode.splitlines() because "reasons"
-    for c in b"\x0c\x1c\x1d\x1e":
+    for c in b"\x0c", b"\x1c", b"\x1d", b"\x1e":
         if c in text:
             text = text.replace(c, b'')
 

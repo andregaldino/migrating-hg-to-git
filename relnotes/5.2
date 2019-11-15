@@ -1,0 +1,30 @@
+== New Features ==
+
+ * The amend extension supports the `--currentuser` argument.
+
+ * The amend extension supports the `--close-branch` argument.
+
+ * The amend extension supports the `--secret` argument.
+
+ * The uncommit extension supports the `rewrite.update-timestamp` config option.
+
+== New Experimental Features ==
+
+
+== Bug Fixes  ==
+
+
+== Backwards Compatibility Changes ==
+
+ * A shell that supports `$(command)`` syntax for command substitution is now
+   required for running the test suite. The test runner normally uses
+   `sh`, so if that is a shell that doesn't support `$(command)` syntax,
+   you can override it by setting `$HGTEST_SHELL` or by passing it to
+   `run-tests.py --shell <shell>`.
+
+ * The (experimental) narrow extension's wire protocol changed. If
+   you're using it, you'll need to make sure to upgrade server and
+   client at the same time.
+
+== Internal API Changes ==
+
