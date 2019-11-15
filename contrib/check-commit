@@ -27,32 +27,42 @@ beforepatch = afterheader + r"(?!\n(?!@@))"
 
 errors = [
     (beforepatch + r".*[(]bc[)]", "(BC) needs to be uppercase"),
-    (beforepatch + r".*[(]issue \d\d\d",
-     "no space allowed between issue and number"),
+    (
+        beforepatch + r".*[(]issue \d\d\d",
+        "no space allowed between issue and number",
+    ),
     (beforepatch + r".*[(]bug(\d|\s)", "use (issueDDDD) instead of bug"),
     (commitheader + r"# User [^@\n]+\n", "username is not an email address"),
-    (commitheader + r"(?!merge with )[^#]\S+[^:] ",
-     "summary line doesn't start with 'topic: '"),
+    (
+        commitheader + r"(?!merge with )[^#]\S+[^:] ",
+        "summary line doesn't start with 'topic: '",
+    ),
     (afterheader + r"[A-Z][a-z]\S+", "don't capitalize summary lines"),
     (afterheader + r"^\S+: *[A-Z][a-z]\S+", "don't capitalize summary lines"),
-    (afterheader + r"\S*[^A-Za-z0-9-_]\S*: ",
-     "summary keyword should be most user-relevant one-word command or topic"),
+    (
+        afterheader + r"\S*[^A-Za-z0-9-_]\S*: ",
+        "summary keyword should be most user-relevant one-word command or topic",
+    ),
     (afterheader + r".*\.\s*\n", "don't add trailing period on summary line"),
     (afterheader + r".{79,}", "summary line too long (limit is 78)"),
 ]
 
 word = re.compile(r'\S')
+
+
 def nonempty(first, second):
     if word.search(first):
         return first
     return second
 
+
 def checkcommit(commit, node=None):
     exitcode = 0
     printed = node is None
     hits = []
-    signtag = (afterheader +
-          r'Added (tag [^ ]+|signature) for changeset [a-f0-9]{12}')
+    signtag = (
+        afterheader + r'Added (tag [^ ]+|signature) for changeset [a-f0-9]{12}'
+    )
     if re.search(signtag, commit):
         return 0
     for exp, msg in errors:
@@ -84,8 +94,10 @@ def checkcommit(commit, node=None):
 
     return exitcode
 
+
 def readcommit(node):
     return os.popen("hg export %s" % node).read()
+
 
 if __name__ == "__main__":
     exitcode = 0

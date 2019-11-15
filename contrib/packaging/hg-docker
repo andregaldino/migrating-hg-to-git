@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 
+
 def get_docker() -> str:
     docker = shutil.which('docker.io') or shutil.which('docker')
     if not docker:
@@ -21,15 +22,16 @@ def get_docker() -> str:
         out = subprocess.check_output([docker, '-h'], stderr=subprocess.STDOUT)
 
         if b'Jansens' in out:
-            print('%s is the Docking System Tray; try installing docker.io' %
-                  docker)
+            print(
+                '%s is the Docking System Tray; try installing docker.io'
+                % docker
+            )
             sys.exit(1)
     except subprocess.CalledProcessError as e:
         print('error calling `%s -h`: %s' % (docker, e.output))
         sys.exit(1)
 
-    out = subprocess.check_output([docker, 'version'],
-                                  stderr=subprocess.STDOUT)
+    out = subprocess.check_output([docker, 'version'], stderr=subprocess.STDOUT)
 
     lines = out.splitlines()
     if not any(l.startswith((b'Client:', b'Client version:')) for l in lines):
@@ -42,6 +44,7 @@ def get_docker() -> str:
 
     return docker
 
+
 def get_dockerfile(path: pathlib.Path, args: list) -> bytes:
     with path.open('rb') as fh:
         df = fh.read()
@@ -50,6 +53,7 @@ def get_dockerfile(path: pathlib.Path, args: list) -> bytes:
         df = df.replace(bytes('%%%s%%' % k.decode(), 'utf-8'), v)
 
     return df
+
 
 def build_docker_image(dockerfile: pathlib.Path, params: list, tag: str):
     """Build a Docker image from a templatized Dockerfile."""
@@ -65,9 +69,12 @@ def build_docker_image(dockerfile: pathlib.Path, params: list, tag: str):
     args = [
         docker,
         'build',
-        '--build-arg', 'http_proxy',
-        '--build-arg', 'https_proxy',
-        '--tag', tag,
+        '--build-arg',
+        'http_proxy',
+        '--build-arg',
+        'https_proxy',
+        '--tag',
+        tag,
         '-',
     ]
 
@@ -76,8 +83,10 @@ def build_docker_image(dockerfile: pathlib.Path, params: list, tag: str):
     p.communicate(input=dockerfile)
     if p.returncode:
         raise subprocess.CalledProcessException(
-                p.returncode, 'failed to build docker image: %s %s'
-                % (p.stdout, p.stderr))
+            p.returncode,
+            'failed to build docker image: %s %s' % (p.stdout, p.stderr),
+        )
+
 
 def command_build(args):
     build_args = []
@@ -85,12 +94,12 @@ def command_build(args):
         k, v = arg.split('=', 1)
         build_args.append((k.encode('utf-8'), v.encode('utf-8')))
 
-    build_docker_image(pathlib.Path(args.dockerfile),
-                       build_args,
-                       args.tag)
+    build_docker_image(pathlib.Path(args.dockerfile), build_args, args.tag)
+
 
 def command_docker(args):
     print(get_docker())
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -99,9 +108,12 @@ def main() -> int:
 
     build = subparsers.add_parser('build', help='Build a Docker image')
     build.set_defaults(func=command_build)
-    build.add_argument('--build-arg', action='append', default=[],
-                        help='Substitution to perform in Dockerfile; '
-                             'format: key=value')
+    build.add_argument(
+        '--build-arg',
+        action='append',
+        default=[],
+        help='Substitution to perform in Dockerfile; ' 'format: key=value',
+    )
     build.add_argument('dockerfile', help='path to Dockerfile to use')
     build.add_argument('tag', help='Tag to apply to created image')
 
@@ -111,6 +123,7 @@ def main() -> int:
     args = parser.parse_args()
 
     return args.func(args)
+
 
 if __name__ == '__main__':
     sys.exit(main())

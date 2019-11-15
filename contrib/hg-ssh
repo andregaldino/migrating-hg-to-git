@@ -35,13 +35,16 @@ import shlex
 import sys
 
 # enable importing on demand to reduce startup time
-import hgdemandimport ; hgdemandimport.enable()
+import hgdemandimport
+
+hgdemandimport.enable()
 
 from mercurial import (
     dispatch,
     pycompat,
     ui as uimod,
 )
+
 
 def main():
     # Prevent insertion/deletion of CRs
@@ -56,9 +59,10 @@ def main():
             args.pop(0)
         else:
             break
-    allowed_paths = [os.path.normpath(os.path.join(cwd,
-                                                   os.path.expanduser(path)))
-                     for path in args]
+    allowed_paths = [
+        os.path.normpath(os.path.join(cwd, os.path.expanduser(path)))
+        for path in args
+    ]
     orig_cmd = os.getenv('SSH_ORIGINAL_COMMAND', '?')
     try:
         cmdargv = shlex.split(orig_cmd)
@@ -75,10 +79,18 @@ def main():
             if readonly:
                 if not req.ui:
                     req.ui = uimod.ui.load()
-                req.ui.setconfig(b'hooks', b'pretxnopen.hg-ssh',
-                                 b'python:__main__.rejectpush', b'hg-ssh')
-                req.ui.setconfig(b'hooks', b'prepushkey.hg-ssh',
-                                 b'python:__main__.rejectpush', b'hg-ssh')
+                req.ui.setconfig(
+                    b'hooks',
+                    b'pretxnopen.hg-ssh',
+                    b'python:__main__.rejectpush',
+                    b'hg-ssh',
+                )
+                req.ui.setconfig(
+                    b'hooks',
+                    b'prepushkey.hg-ssh',
+                    b'python:__main__.rejectpush',
+                    b'hg-ssh',
+                )
             dispatch.dispatch(req)
         else:
             sys.stderr.write('Illegal repository "%s"\n' % repo)
@@ -87,11 +99,13 @@ def main():
         sys.stderr.write('Illegal command "%s"\n' % orig_cmd)
         sys.exit(255)
 
+
 def rejectpush(ui, **kwargs):
     ui.warn((b"Permission denied\n"))
     # mercurial hooks use unix process conventions for hook return values
     # so a truthy return means failure
     return True
+
 
 if __name__ == '__main__':
     main()
