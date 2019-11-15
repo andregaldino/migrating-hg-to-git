@@ -769,7 +769,6 @@ class dirstate(object):
                 kind = _(b'directory')
             return _(b'unsupported file type (type is %s)') % kind
 
-        matchedir = match.explicitdir
         badfn = match.bad
         dmap = self._map
         lstat = os.lstat
@@ -823,8 +822,6 @@ class dirstate(object):
                     if nf in dmap:
                         # file replaced by dir on disk but still in dirstate
                         results[nf] = None
-                    if matchedir:
-                        matchedir(nf)
                     foundadd((nf, ff))
                 elif kind == regkind or kind == lnkkind:
                     results[nf] = st
@@ -837,8 +834,6 @@ class dirstate(object):
                     results[nf] = None
                 else:  # does it match a missing directory?
                     if self._map.hasdir(nf):
-                        if matchedir:
-                            matchedir(nf)
                         notfoundadd(nf)
                     else:
                         badfn(ff, encoding.strtolocal(inst.strerror))
