@@ -61,7 +61,7 @@ ones.
   - ``<install-root>/etc/mercurial/hgrc.d/*.rc`` (per-installation)
   - ``/etc/mercurial/hgrc`` (per-system)
   - ``/etc/mercurial/hgrc.d/*.rc`` (per-system)
-  - ``<internal>/default.d/*.rc`` (defaults)
+  - ``<internal>/*.rc`` (defaults)
 
 .. container:: verbose.windows
 
@@ -75,7 +75,7 @@ ones.
   - ``HKEY_LOCAL_MACHINE\SOFTWARE\Mercurial`` (per-installation)
   - ``<install-dir>\hgrc.d\*.rc`` (per-installation)
   - ``<install-dir>\Mercurial.ini`` (per-installation)
-  - ``<internal>/default.d/*.rc`` (defaults)
+  - ``<internal>/*.rc`` (defaults)
 
   .. note::
 
@@ -96,7 +96,7 @@ ones.
   - ``<install-root>/lib/mercurial/hgrc.d/*.rc`` (per-installation)
   - ``/lib/mercurial/hgrc`` (per-system)
   - ``/lib/mercurial/hgrc.d/*.rc`` (per-system)
-  - ``<internal>/default.d/*.rc`` (defaults)
+  - ``<internal>/*.rc`` (defaults)
 
 Per-repository configuration options only apply in a
 particular repository. This file is not version-controlled, and
