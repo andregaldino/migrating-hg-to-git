@@ -541,8 +541,15 @@ def symrevorshortnode(req, ctx):
 
 def _listfilesgen(context, ctx, stripecount):
     parity = paritygen(stripecount)
+    filesadded = ctx.filesadded()
     for blockno, f in enumerate(ctx.files()):
-        template = b'filenodelink' if f in ctx else b'filenolink'
+        if f not in ctx:
+            status = b'removed'
+        elif f in filesadded:
+            status = b'added'
+        else:
+            status = b'modified'
+        template = b'filenolink' if status == b'removed' else b'filenodelink'
         yield context.process(
             template,
             {
@@ -550,6 +557,7 @@ def _listfilesgen(context, ctx, stripecount):
                 b'file': f,
                 b'blockno': blockno + 1,
                 b'parity': next(parity),
+                b'status': status,
             },
         )
 
