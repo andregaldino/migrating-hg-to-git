@@ -2676,7 +2676,6 @@ def purge(
 
     # There's no API to copy a matcher. So mutate the passed matcher and
     # restore it when we're done.
-    oldexplicitdir = matcher.explicitdir
     oldtraversedir = matcher.traversedir
 
     res = []
@@ -2684,7 +2683,7 @@ def purge(
     try:
         if removeemptydirs:
             directories = []
-            matcher.explicitdir = matcher.traversedir = directories.append
+            matcher.traversedir = directories.append
 
         status = repo.status(match=matcher, ignored=ignored, unknown=True)
 
@@ -2706,5 +2705,4 @@ def purge(
         return res
 
     finally:
-        matcher.explicitdir = oldexplicitdir
         matcher.traversedir = oldtraversedir

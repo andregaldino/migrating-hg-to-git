@@ -939,6 +939,11 @@ class dirstate(object):
 
         # step 1: find all explicit files
         results, work, dirsnotfound = self._walkexplicit(match, subrepos)
+        if matchtdir:
+            for d in work:
+                matchtdir(d[0])
+            for d in dirsnotfound:
+                matchtdir(d)
 
         skipstep3 = skipstep3 and not (work or dirsnotfound)
         work = [d for d in work if not dirignore(d[0])]
