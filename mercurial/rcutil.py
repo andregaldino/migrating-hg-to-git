@@ -60,9 +60,9 @@ def envrcitems(env=None):
 
 
 def defaultrcpath():
-    '''return rc paths in default.d'''
+    '''return rc paths in defaultrc'''
     path = []
-    defaultpath = os.path.join(util.datapath, b'default.d')
+    defaultpath = os.path.join(util.datapath, b'defaultrc')
     if os.path.isdir(defaultpath):
         path = _expandrcpath(defaultpath)
     return path
