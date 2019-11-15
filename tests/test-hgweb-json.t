@@ -782,6 +782,7 @@ changeset/ renders the tip changeset
       0
     ],
     "desc": "merge test-branch into default",
+    "diff": [],
     "files": [
       {
         "file": "foo-new",
@@ -813,6 +814,58 @@ changeset/{revision} shows tags
       0
     ],
     "desc": "move foo",
+    "diff": [
+      {
+        "blockno": 1,
+        "lines": [
+          {
+            "l": "--- a/foo\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 1,
+            "t": "-"
+          },
+          {
+            "l": "+++ /dev/null\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 2,
+            "t": "+"
+          },
+          {
+            "l": "@@ -1,1 +0,0 @@\n",
+            "n": 3,
+            "t": "@"
+          },
+          {
+            "l": "-bar\n",
+            "n": 4,
+            "t": "-"
+          }
+        ]
+      },
+      {
+        "blockno": 2,
+        "lines": [
+          {
+            "l": "--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 1,
+            "t": "-"
+          },
+          {
+            "l": "+++ b/foo-new\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 2,
+            "t": "+"
+          },
+          {
+            "l": "@@ -0,0 +1,1 @@\n",
+            "n": 3,
+            "t": "@"
+          },
+          {
+            "l": "+bar\n",
+            "n": 4,
+            "t": "+"
+          }
+        ]
+      }
+    ],
     "files": [
       {
         "file": "foo",
@@ -849,6 +902,38 @@ changeset/{revision} shows bookmarks
       0
     ],
     "desc": "modify da/foo",
+    "diff": [
+      {
+        "blockno": 1,
+        "lines": [
+          {
+            "l": "--- a/da/foo\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 1,
+            "t": "-"
+          },
+          {
+            "l": "+++ b/da/foo\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 2,
+            "t": "+"
+          },
+          {
+            "l": "@@ -1,1 +1,1 @@\n",
+            "n": 3,
+            "t": "@"
+          },
+          {
+            "l": "-foo\n",
+            "n": 4,
+            "t": "-"
+          },
+          {
+            "l": "+bar\n",
+            "n": 5,
+            "t": "+"
+          }
+        ]
+      }
+    ],
     "files": [
       {
         "file": "da/foo",
@@ -877,6 +962,38 @@ changeset/{revision} shows branches
       0
     ],
     "desc": "create test branch",
+    "diff": [
+      {
+        "blockno": 1,
+        "lines": [
+          {
+            "l": "--- a/foo\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 1,
+            "t": "-"
+          },
+          {
+            "l": "+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n",
+            "n": 2,
+            "t": "+"
+          },
+          {
+            "l": "@@ -1,1 +1,1 @@\n",
+            "n": 3,
+            "t": "@"
+          },
+          {
+            "l": "-foo\n",
+            "n": 4,
+            "t": "-"
+          },
+          {
+            "l": "+branch\n",
+            "n": 5,
+            "t": "+"
+          }
+        ]
+      }
+    ],
     "files": [
       {
         "file": "foo",
