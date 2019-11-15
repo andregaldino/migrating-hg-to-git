@@ -310,13 +310,11 @@ def indent(context, mapping, args):
     text = evalstring(context, mapping, args[0])
     indent = evalstring(context, mapping, args[1])
 
+    firstline = indent
     if len(args) == 3:
         firstline = evalstring(context, mapping, args[2])
-    else:
-        firstline = indent
 
-    # the indent function doesn't indent the first line, so we do it here
-    return templatefilters.indent(firstline + text, indent)
+    return templatefilters.indent(text, indent, firstline=firstline)
 
 
 @templatefunc(b'get(dict, key)')

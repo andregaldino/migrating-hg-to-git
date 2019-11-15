@@ -6,6 +6,9 @@
 
 == Bug Fixes  ==
 
+ * The `indent()` template function was documented to not indent empty lines,
+   but it still indented the first line even if it was empty. It no longer does
+   that.
 
 == Backwards Compatibility Changes ==
 
