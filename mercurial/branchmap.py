@@ -107,14 +107,14 @@ class BranchMapCache(object):
         clrev = cl.rev
         clbranchinfo = cl.branchinfo
         rbheads = []
-        closed = []
+        closed = set()
         for bheads in pycompat.itervalues(remotebranchmap):
             rbheads += bheads
             for h in bheads:
                 r = clrev(h)
                 b, c = clbranchinfo(r)
                 if c:
-                    closed.append(h)
+                    closed.add(h)
 
         if rbheads:
             rtiprev = max((int(clrev(node)) for node in rbheads))
@@ -122,7 +122,7 @@ class BranchMapCache(object):
                 remotebranchmap,
                 repo[rtiprev].node(),
                 rtiprev,
-                closednodes=set(closed),
+                closednodes=closed,
             )
 
             # Try to stick it as low as possible
