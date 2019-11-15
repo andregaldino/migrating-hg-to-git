@@ -2022,7 +2022,7 @@ def finddate(ui, repo, date):
         rev = ctx.rev()
         if rev in results:
             ui.status(
-                _(b"found revision %s from %s\n")
+                _(b"found revision %d from %s\n")
                 % (rev, dateutil.datestr(results[rev]))
             )
             return b'%d' % rev
