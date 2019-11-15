@@ -427,9 +427,7 @@ def dorecord(
 
         force = opts.get(b'force')
         if not force:
-            vdirs = []
             match = matchmod.badmatch(match, fail)
-            match.explicitdir = vdirs.append
 
         status = repo.status(match=match)
 
@@ -457,7 +455,7 @@ def dorecord(
                     raise error.Abort(dirtyreason)
 
         if not force:
-            repo.checkcommitpatterns(wctx, vdirs, match, status, fail)
+            repo.checkcommitpatterns(wctx, match, status, fail)
         diffopts = patch.difffeatureopts(
             ui,
             opts=opts,

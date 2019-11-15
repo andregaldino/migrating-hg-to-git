@@ -1746,7 +1746,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def currentwlock():
         """Return the wlock if it's held or None."""
 
-    def checkcommitpatterns(wctx, vdirs, match, status, fail):
+    def checkcommitpatterns(wctx, match, status, fail):
         pass
 
     def commit(

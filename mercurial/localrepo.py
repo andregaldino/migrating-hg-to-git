@@ -2789,7 +2789,7 @@ class localrepository(object):
 
         return fparent1
 
-    def checkcommitpatterns(self, wctx, vdirs, match, status, fail):
+    def checkcommitpatterns(self, wctx, match, status, fail):
         """check for commit arguments that aren't committable"""
         if match.isexact() or match.prefix():
             matched = set(status.modified + status.added + status.removed)
@@ -2838,8 +2838,6 @@ class localrepository(object):
             match = matchmod.always()
 
         if not force:
-            vdirs = []
-            match.explicitdir = vdirs.append
             match.bad = fail
 
         # lock() for recent changelog (see issue4368)
@@ -2868,7 +2866,7 @@ class localrepository(object):
 
             # make sure all explicit patterns are matched
             if not force:
-                self.checkcommitpatterns(wctx, vdirs, match, status, fail)
+                self.checkcommitpatterns(wctx, match, status, fail)
 
             cctx = context.workingcommitctx(
                 self, status, text, user, date, extra
