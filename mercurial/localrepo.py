@@ -2800,7 +2800,8 @@ class localrepository(object):
                     continue
                 if f in status.deleted:
                     fail(f, _(b'file not found!'))
-                if f in vdirs:  # visited directory
+                # Is it a directory that exists or used to exist?
+                if self.wvfs.isdir(f) or wctx.p1().hasdir(f):
                     d = f + b'/'
                     for mf in matched:
                         if mf.startswith(d):
