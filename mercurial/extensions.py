@@ -92,7 +92,11 @@ def loadpath(path, module_name):
         # module/__init__.py style
         d, f = os.path.split(path)
         fd, fpath, desc = imp.find_module(f, [d])
-        return imp.load_module(module_name, fd, fpath, desc)
+        # When https://github.com/python/typeshed/issues/3466 is fixed
+        # and in a pytype release we can drop this disable.
+        return imp.load_module(
+            module_name, fd, fpath, desc  # pytype: disable=wrong-arg-types
+        )
     else:
         try:
             return imp.load_source(module_name, path)
