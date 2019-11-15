@@ -782,6 +782,12 @@ changeset/ renders the tip changeset
       0
     ],
     "desc": "merge test-branch into default",
+    "files": [
+      {
+        "file": "foo-new",
+        "status": "modified"
+      }
+    ],
     "node": "cc725e08502a79dd1eda913760fbe06ed7a9abc7",
     "parents": [
       "ceed296fe500c3fac9541e31dad860cb49c89e45",
@@ -807,6 +813,16 @@ changeset/{revision} shows tags
       0
     ],
     "desc": "move foo",
+    "files": [
+      {
+        "file": "foo",
+        "status": "removed"
+      },
+      {
+        "file": "foo-new",
+        "status": "added"
+      }
+    ],
     "node": "78896eb0e102174ce9278438a95e12543e4367a7",
     "parents": [
       "8d7c456572acf3557e8ed8a07286b10c408bcec5"
@@ -833,6 +849,12 @@ changeset/{revision} shows bookmarks
       0
     ],
     "desc": "modify da/foo",
+    "files": [
+      {
+        "file": "da/foo",
+        "status": "modified"
+      }
+    ],
     "node": "8d7c456572acf3557e8ed8a07286b10c408bcec5",
     "parents": [
       "f8bbb9024b10f93cdbb8d940337398291d40dea8"
@@ -855,6 +877,12 @@ changeset/{revision} shows branches
       0
     ],
     "desc": "create test branch",
+    "files": [
+      {
+        "file": "foo",
+        "status": "modified"
+      }
+    ],
     "node": "6ab967a8ab3489227a83f80e920faa039a71819f",
     "parents": [
       "06e557f3edf66faa1ccaba5dd8c203c21cc79f1e"
