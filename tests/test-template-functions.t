@@ -1504,6 +1504,21 @@ Test indent and not adding to empty lines
   
   >> other 3
 
+Test indent with empty first line
+
+  $ hg version -T "{indent('', '>> ')}\n"
+  >> 
+
+  $ hg version -T "{indent('
+  > second', '>> ')}\n"
+  >> 
+  >> second
+
+  $ hg version -T "{indent('
+  > second', '>> ', ' > ')}\n"
+   > 
+  >> second
+
 Test with non-strings like dates
 
   $ hg log -T "{indent(date, '   ')}\n" -r 2:3 -R a
