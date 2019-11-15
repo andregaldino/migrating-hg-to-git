@@ -580,7 +580,6 @@ def tag(repo, names, node, message, local, user, date, editor=False):
                 st.deleted,
                 st.unknown,
                 st.ignored,
-                st.clean,
             )
         ):
             raise error.Abort(
