@@ -375,10 +375,6 @@ class basematcher(object):
         '''Callback from dirstate.walk for each explicit file that can't be
         found/accessed, with an error message.'''
 
-    # If an explicitdir is set, it will be called when an explicitly listed
-    # directory is visited.
-    explicitdir = None
-
     # If an traversedir is set, it will be called when a directory discovered
     # by recursive traversal is visited.
     traversedir = None
@@ -792,8 +788,7 @@ class differencematcher(basematcher):
     '''Composes two matchers by matching if the first matches and the second
     does not.
 
-    The second matcher's non-matching-attributes (bad, explicitdir,
-    traversedir) are ignored.
+    The second matcher's non-matching-attributes (bad, traversedir) are ignored.
     '''
 
     def __init__(self, m1, m2):
@@ -801,7 +796,6 @@ class differencematcher(basematcher):
         self._m1 = m1
         self._m2 = m2
         self.bad = m1.bad
-        self.explicitdir = m1.explicitdir
         self.traversedir = m1.traversedir
 
     def matchfn(self, f):
@@ -862,8 +856,7 @@ class differencematcher(basematcher):
 def intersectmatchers(m1, m2):
     '''Composes two matchers by matching if both of them match.
 
-    The second matcher's non-matching-attributes (bad, explicitdir,
-    traversedir) are ignored.
+    The second matcher's non-matching-attributes (bad, traversedir) are ignored.
     '''
     if m1 is None or m2 is None:
         return m1 or m2
@@ -872,7 +865,6 @@ def intersectmatchers(m1, m2):
         # TODO: Consider encapsulating these things in a class so there's only
         # one thing to copy from m1.
         m.bad = m1.bad
-        m.explicitdir = m1.explicitdir
         m.traversedir = m1.traversedir
         return m
     if m2.always():
@@ -887,7 +879,6 @@ class intersectionmatcher(basematcher):
         self._m1 = m1
         self._m2 = m2
         self.bad = m1.bad
-        self.explicitdir = m1.explicitdir
         self.traversedir = m1.traversedir
 
     @propertycache
@@ -1028,8 +1019,7 @@ class subdirmatcher(basematcher):
 class prefixdirmatcher(basematcher):
     """Adapt a matcher to work on a parent directory.
 
-    The matcher's non-matching-attributes (bad, explicitdir, traversedir) are
-    ignored.
+    The matcher's non-matching-attributes (bad, traversedir) are ignored.
 
     The prefix path should usually be the relative path from the root of
     this matcher to the root of the wrapped matcher.
@@ -1112,14 +1102,13 @@ class prefixdirmatcher(basematcher):
 class unionmatcher(basematcher):
     """A matcher that is the union of several matchers.
 
-    The non-matching-attributes (bad, explicitdir, traversedir) are taken from
-    the first matcher.
+    The non-matching-attributes (bad, traversedir) are taken from the first
+    matcher.
     """
 
     def __init__(self, matchers):
         m1 = matchers[0]
         super(unionmatcher, self).__init__()
-        self.explicitdir = m1.explicitdir
         self.traversedir = m1.traversedir
         self._matchers = matchers
 
