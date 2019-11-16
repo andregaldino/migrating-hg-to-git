@@ -83,3 +83,9 @@ Prevent adding modules which could be shadowed by ancient .so/.dylib.
 Keep python3 tests sorted:
   $ sort < contrib/python3-whitelist > $TESTTMP/py3sorted
   $ cmp contrib/python3-whitelist $TESTTMP/py3sorted || echo 'Please sort passing tests!'
+
+Keep Windows line endings in check
+
+  $ hg files 'set:eol(dos)'
+  contrib/win32/hg.bat
+  contrib/win32/mercurial.ini
