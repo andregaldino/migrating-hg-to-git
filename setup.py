@@ -742,7 +742,7 @@ class buildhgexe(build_ext):
             )
 
             hv = sys.hexversion
-            pythonlib = 'python%d%d' % (hv >> 24, (hv >> 16) & 0xFF)
+            pythonlib = b'python%d%d' % (hv >> 24, (hv >> 16) & 0xFF)
 
         log.info('using %s as Python library name' % pythonlib)
         with open('mercurial/hgpythonlib.h', 'wb') as f:
