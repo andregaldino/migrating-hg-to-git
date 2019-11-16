@@ -713,30 +713,34 @@ class buildhgexe(build_ext):
             self.compiler.compiler_so = self.compiler.compiler  # no -mdll
             self.compiler.dll_libraries = []  # no -lmsrvc90
 
-        # Different Python installs can have different Python library
-        # names. e.g. the official CPython distribution uses pythonXY.dll
-        # and MinGW uses libpythonX.Y.dll.
-        _kernel32 = ctypes.windll.kernel32
-        _kernel32.GetModuleFileNameA.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_ulong,
-        ]
-        _kernel32.GetModuleFileNameA.restype = ctypes.c_ulong
-        size = 1000
-        buf = ctypes.create_string_buffer(size + 1)
-        filelen = _kernel32.GetModuleFileNameA(
-            sys.dllhandle, ctypes.byref(buf), size
-        )
+        pythonlib = None
 
-        if filelen > 0 and filelen != size:
-            dllbasename = os.path.basename(buf.value)
-            if not dllbasename.lower().endswith(b'.dll'):
-                raise SystemExit(
-                    'Python DLL does not end with .dll: %s' % dllbasename
-                )
-            pythonlib = dllbasename[:-4]
-        else:
+        if getattr(sys, 'dllhandle', None):
+            # Different Python installs can have different Python library
+            # names. e.g. the official CPython distribution uses pythonXY.dll
+            # and MinGW uses libpythonX.Y.dll.
+            _kernel32 = ctypes.windll.kernel32
+            _kernel32.GetModuleFileNameA.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_ulong,
+            ]
+            _kernel32.GetModuleFileNameA.restype = ctypes.c_ulong
+            size = 1000
+            buf = ctypes.create_string_buffer(size + 1)
+            filelen = _kernel32.GetModuleFileNameA(
+                sys.dllhandle, ctypes.byref(buf), size
+            )
+
+            if filelen > 0 and filelen != size:
+                dllbasename = os.path.basename(buf.value)
+                if not dllbasename.lower().endswith(b'.dll'):
+                    raise SystemExit(
+                        'Python DLL does not end with .dll: %s' % dllbasename
+                    )
+                pythonlib = dllbasename[:-4]
+
+        if not pythonlib:
             log.warn(
                 'could not determine Python DLL filename; assuming pythonXY'
             )
