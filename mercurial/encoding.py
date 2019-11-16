@@ -327,6 +327,7 @@ def getcols(s, start, c):
         t = s[start:x]
         if colwidth(t) == c:
             return t
+    raise ValueError('substring not found')
 
 
 def trim(s, width, ellipsis=b'', leftside=False):
