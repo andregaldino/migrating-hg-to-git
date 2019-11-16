@@ -70,7 +70,7 @@ def b85decode(text):
                     'bad base85 character at position %d' % (i + j)
                 )
         if acc > 4294967295:
-            raise ValueError(b'Base85 overflow in hunk starting at byte %d' % i)
+            raise ValueError('Base85 overflow in hunk starting at byte %d' % i)
         out.append(acc)
 
     # Pad final chunk if necessary
