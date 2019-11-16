@@ -20,11 +20,14 @@ from . import (
 
 from .pure import charencode as charencodepure
 
+_TYPE_CHECKING = False
+
 if not globals():  # hide this from non-pytype users
     from typing import (
         Any,
         Callable,
         List,
+        TYPE_CHECKING as _TYPE_CHECKING,
         Text,
         Type,
         TypeVar,
@@ -117,10 +120,16 @@ class localstr(bytes):
     round-tripped to the local encoding and back'''
 
     def __new__(cls, u, l):
-        # type: (Type[_Tlocalstr], bytes, bytes) -> _Tlocalstr
         s = bytes.__new__(cls, l)
         s._utf8 = u
         return s
+
+    if _TYPE_CHECKING:
+        # pseudo implementation to help pytype see localstr() constructor
+        def __init__(self, u, l):
+            # type: (bytes, bytes) -> None
+            super(localstr, self).__init__(l)
+            self._utf8 = u
 
     def __hash__(self):
         return hash(self._utf8)  # avoid collisions in local string space
