@@ -117,7 +117,7 @@ class localstr(bytes):
     round-tripped to the local encoding and back'''
 
     def __new__(cls, u, l):
-        # type: (Type[_Tlocalstr], Text, bytes) -> _Tlocalstr
+        # type: (Type[_Tlocalstr], bytes, bytes) -> _Tlocalstr
         s = bytes.__new__(cls, l)
         s._utf8 = u
         return s
