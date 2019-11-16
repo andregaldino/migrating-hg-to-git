@@ -15,6 +15,7 @@ import sys
 
 try:
     import msvcrt
+
     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
     msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
 except ImportError:
@@ -25,13 +26,17 @@ stdout = getattr(sys.stdout, 'buffer', sys.stdout)
 leadingline = re.compile(br'(^\s*)(\S.*)$')
 
 checks = [
-  (br""":hg:`[^`]*'[^`]*`""",
-   b"""warning: please avoid nesting ' in :hg:`...`"""),
-  (br'\w:hg:`',
-   b'warning: please have a space before :hg:'),
-  (br"""(?:[^a-z][^'.])hg ([^,;"`]*'(?!hg)){2}""",
-   b'''warning: please use " instead of ' for hg ... "..."'''),
+    (
+        br""":hg:`[^`]*'[^`]*`""",
+        b"""warning: please avoid nesting ' in :hg:`...`""",
+    ),
+    (br'\w:hg:`', b'warning: please have a space before :hg:'),
+    (
+        br"""(?:[^a-z][^'.])hg ([^,;"`]*'(?!hg)){2}""",
+        b'''warning: please use " instead of ' for hg ... "..."''',
+    ),
 ]
+
 
 def check(line):
     messages = []
@@ -42,6 +47,7 @@ def check(line):
         stdout.write(b'%s\n' % line)
         for msg in messages:
             stdout.write(b'%s\n' % msg)
+
 
 def work(file):
     (llead, lline) = (b'', b'')
@@ -55,8 +61,8 @@ def work(file):
             continue
 
         lead, line = match.group(1), match.group(2)
-        if (lead == llead):
-            if (lline != b''):
+        if lead == llead:
+            if lline != b'':
                 lline += b' ' + line
             else:
                 lline = line
@@ -65,6 +71,7 @@ def work(file):
             (llead, lline) = (lead, line)
     check(lline)
 
+
 def main():
     for f in sys.argv[1:]:
         try:
@@ -72,5 +79,6 @@ def main():
                 work(file)
         except BaseException as e:
             sys.stdout.write(r"failed to process %s: %s\n" % (f, e))
+
 
 main()

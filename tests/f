@@ -34,13 +34,17 @@ import re
 import sys
 
 # Python 3 adapters
-ispy3 = (sys.version_info[0] >= 3)
+ispy3 = sys.version_info[0] >= 3
 if ispy3:
+
     def iterbytes(s):
         for i in range(len(s)):
-            yield s[i:i + 1]
+            yield s[i : i + 1]
+
+
 else:
     iterbytes = iter
+
 
 def visit(opts, filenames, outfile):
     """Process filenames in the way specified in opts, writing output to
@@ -88,21 +92,26 @@ def visit(opts, filenames, outfile):
             if opts.newer:
                 # mtime might be in whole seconds so newer file might be same
                 if stat.st_mtime >= os.stat(opts.newer).st_mtime:
-                    facts.append(b'newer than %s' % opts.newer.encode(
-                        'utf8', 'replace'))
+                    facts.append(
+                        b'newer than %s' % opts.newer.encode('utf8', 'replace')
+                    )
                 else:
-                    facts.append(b'older than %s' % opts.newer.encode(
-                        'utf8', 'replace'))
+                    facts.append(
+                        b'older than %s' % opts.newer.encode('utf8', 'replace')
+                    )
         if opts.md5 and content is not None:
             h = hashlib.md5(content)
-            facts.append(b'md5=%s' % binascii.hexlify(h.digest())[:opts.bytes])
+            facts.append(b'md5=%s' % binascii.hexlify(h.digest())[: opts.bytes])
         if opts.sha1 and content is not None:
             h = hashlib.sha1(content)
-            facts.append(b'sha1=%s' % binascii.hexlify(h.digest())[:opts.bytes])
+            facts.append(
+                b'sha1=%s' % binascii.hexlify(h.digest())[: opts.bytes]
+            )
         if opts.sha256 and content is not None:
             h = hashlib.sha256(content)
-            facts.append(b'sha256=%s' %
-                         binascii.hexlify(h.digest())[:opts.bytes])
+            facts.append(
+                b'sha256=%s' % binascii.hexlify(h.digest())[: opts.bytes]
+            )
         if isstdin:
             outfile.write(b', '.join(facts) + b'\n')
         elif facts:
@@ -114,21 +123,25 @@ def visit(opts, filenames, outfile):
             if not islink:
                 if opts.lines:
                     if opts.lines >= 0:
-                        chunk = b''.join(chunk.splitlines(True)[:opts.lines])
+                        chunk = b''.join(chunk.splitlines(True)[: opts.lines])
                     else:
-                        chunk = b''.join(chunk.splitlines(True)[opts.lines:])
+                        chunk = b''.join(chunk.splitlines(True)[opts.lines :])
                 if opts.bytes:
                     if opts.bytes >= 0:
-                        chunk = chunk[:opts.bytes]
+                        chunk = chunk[: opts.bytes]
                     else:
-                        chunk = chunk[opts.bytes:]
+                        chunk = chunk[opts.bytes :]
             if opts.hexdump:
                 for i in range(0, len(chunk), 16):
-                    s = chunk[i:i + 16]
-                    outfile.write(b'%04x: %-47s |%s|\n' %
-                                  (i, b' '.join(
-                                      b'%02x' % ord(c) for c in iterbytes(s)),
-                                   re.sub(b'[^ -~]', b'.', s)))
+                    s = chunk[i : i + 16]
+                    outfile.write(
+                        b'%04x: %-47s |%s|\n'
+                        % (
+                            i,
+                            b' '.join(b'%02x' % ord(c) for c in iterbytes(s)),
+                            re.sub(b'[^ -~]', b'.', s),
+                        )
+                    )
             if opts.dump:
                 if not quiet:
                     outfile.write(b'>>>\n')
@@ -142,36 +155,60 @@ def visit(opts, filenames, outfile):
             assert not isstdin
             visit(opts, dirfiles, outfile)
 
+
 if __name__ == "__main__":
     parser = optparse.OptionParser("%prog [options] [filenames]")
-    parser.add_option("-t", "--type", action="store_true",
-                      help="show file type (file or directory)")
-    parser.add_option("-m", "--mode", action="store_true",
-                      help="show file mode")
-    parser.add_option("-l", "--links", action="store_true",
-                      help="show number of links")
-    parser.add_option("-s", "--size", action="store_true",
-                      help="show size of file")
-    parser.add_option("-n", "--newer", action="store",
-                      help="check if file is newer (or same)")
-    parser.add_option("-r", "--recurse", action="store_true",
-                      help="recurse into directories")
-    parser.add_option("-S", "--sha1", action="store_true",
-                      help="show sha1 hash of the content")
-    parser.add_option("", "--sha256", action="store_true",
-                      help="show sha256 hash of the content")
-    parser.add_option("-M", "--md5", action="store_true",
-                      help="show md5 hash of the content")
-    parser.add_option("-D", "--dump", action="store_true",
-                      help="dump file content")
-    parser.add_option("-H", "--hexdump", action="store_true",
-                      help="hexdump file content")
-    parser.add_option("-B", "--bytes", type="int",
-                      help="number of characters to dump")
-    parser.add_option("-L", "--lines", type="int",
-                      help="number of lines to dump")
-    parser.add_option("-q", "--quiet", action="store_true",
-                      help="no default output")
+    parser.add_option(
+        "-t",
+        "--type",
+        action="store_true",
+        help="show file type (file or directory)",
+    )
+    parser.add_option(
+        "-m", "--mode", action="store_true", help="show file mode"
+    )
+    parser.add_option(
+        "-l", "--links", action="store_true", help="show number of links"
+    )
+    parser.add_option(
+        "-s", "--size", action="store_true", help="show size of file"
+    )
+    parser.add_option(
+        "-n", "--newer", action="store", help="check if file is newer (or same)"
+    )
+    parser.add_option(
+        "-r", "--recurse", action="store_true", help="recurse into directories"
+    )
+    parser.add_option(
+        "-S",
+        "--sha1",
+        action="store_true",
+        help="show sha1 hash of the content",
+    )
+    parser.add_option(
+        "",
+        "--sha256",
+        action="store_true",
+        help="show sha256 hash of the content",
+    )
+    parser.add_option(
+        "-M", "--md5", action="store_true", help="show md5 hash of the content"
+    )
+    parser.add_option(
+        "-D", "--dump", action="store_true", help="dump file content"
+    )
+    parser.add_option(
+        "-H", "--hexdump", action="store_true", help="hexdump file content"
+    )
+    parser.add_option(
+        "-B", "--bytes", type="int", help="number of characters to dump"
+    )
+    parser.add_option(
+        "-L", "--lines", type="int", help="number of lines to dump"
+    )
+    parser.add_option(
+        "-q", "--quiet", action="store_true", help="no default output"
+    )
     (opts, filenames) = parser.parse_args(sys.argv[1:])
     if not filenames:
         filenames = ['-']

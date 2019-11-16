@@ -15,17 +15,23 @@ where WRITER is the name of a Docutils writer such as 'html' or 'manpage'
 from __future__ import absolute_import
 
 import sys
+
 try:
     import docutils.core as core
     import docutils.nodes as nodes
     import docutils.utils as utils
     import docutils.parsers.rst.roles as roles
 except ImportError:
-    sys.stderr.write("abort: couldn't generate documentation: docutils "
-                     "module is missing\n")
-    sys.stderr.write("please install python-docutils or see "
-                     "http://docutils.sourceforge.net/\n")
+    sys.stderr.write(
+        "abort: couldn't generate documentation: docutils "
+        "module is missing\n"
+    )
+    sys.stderr.write(
+        "please install python-docutils or see "
+        "http://docutils.sourceforge.net/\n"
+    )
     sys.exit(-1)
+
 
 def role_hg(name, rawtext, text, lineno, inliner, options=None, content=None):
     text = "hg " + utils.unescape(text)
@@ -46,9 +52,9 @@ def role_hg(name, rawtext, text, lineno, inliner, options=None, content=None):
             refuri = "hg.1.html#%s" % args[1]
         else:
             refuri = "hg.1.html#%s" % args[0]
-    node = nodes.reference(rawtext, '', linktext,
-                           refuri=refuri)
+    node = nodes.reference(rawtext, '', linktext, refuri=refuri)
     return [node], []
+
 
 roles.register_local_role("hg", role_hg)
 
