@@ -35,7 +35,7 @@ if not globals():  # hide this from non-pytype users
     for t in (Any, Callable, List, Text, Type, Union):
         assert t
 
-    _Tlocalstr = TypeVar('_Tlocalstr', bound=localstr)
+    _Tlocalstr = TypeVar('_Tlocalstr', bound='localstr')
 
 charencode = policy.importmod('charencode')
 
