@@ -138,7 +138,7 @@ class safelocalstr(bytes):
 
 
 def tolocal(s):
-    # type: (Text) -> bytes
+    # type: (bytes) -> bytes
     """
     Convert a string from internal UTF-8 to local encoding
 
@@ -648,7 +648,7 @@ def toutf8b(s):
 
 
 def fromutf8b(s):
-    # type: (Text) -> bytes
+    # type: (bytes) -> bytes
     '''Given a UTF-8b string, return a local, possibly-binary string.
 
     return the original binary string. This
