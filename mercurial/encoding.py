@@ -268,11 +268,11 @@ else:
 
     def strtolocal(s):
         # type: (str) -> bytes
-        return s
+        return s  # pytype: disable=bad-return-type
 
     def strfromlocal(s):
         # type: (bytes) -> str
-        return s
+        return s  # pytype: disable=bad-return-type
 
     strmethod = pycompat.identity
 
