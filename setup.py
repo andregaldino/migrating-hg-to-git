@@ -738,7 +738,7 @@ class buildhgexe(build_ext):
             pythonlib = dllbasename[:-4]
         else:
             log.warn(
-                'could not determine Python DLL filename; ' 'assuming pythonXY'
+                'could not determine Python DLL filename; assuming pythonXY'
             )
 
             hv = sys.hexversion
