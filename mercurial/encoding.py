@@ -560,7 +560,7 @@ _utf8len = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4]
 
 
 def getutf8char(s, pos):
-    # type: (Any, Any) -> Any
+    # type: (bytes, int) -> bytes
     '''get the next full utf-8 character in the given string, starting at pos
 
     Raises a UnicodeError if the given location does not start a valid
@@ -579,7 +579,7 @@ def getutf8char(s, pos):
 
 
 def toutf8b(s):
-    # type: (Any) -> Any
+    # type: (bytes) -> bytes
     '''convert a local, possibly-binary string into UTF-8b
 
     This is intended as a generic method to preserve data when working
