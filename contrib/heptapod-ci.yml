@@ -7,7 +7,19 @@ before_script:
     - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
     - cd /tmp/mercurial-ci/
 
-checks-py2:
+variables:
+    PYTHON: python
+
+.runtests_template: &runtests
     script:
         - cd tests/
-        - python run-tests.py --color=always --time test-check-*.*
+        - echo "python used, $PYTHON"
+        - $PYTHON run-tests.py --color=always --time test-check-*.*
+
+checks-py2:
+    <<: *runtests
+
+checks-py3:
+    <<: *runtests
+    variables:
+        PYTHON: python3
