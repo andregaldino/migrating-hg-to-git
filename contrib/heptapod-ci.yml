@@ -60,3 +60,16 @@ test-py3-pure:
     variables:
         RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
         PYTHON: python3
+
+test-py2-rust:
+    <<: *runtests
+    variables:
+        HGWITHRUSTEXT: cpython
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+
+test-py3-rust:
+    <<: *runtests
+    variables:
+        HGWITHRUSTEXT: cpython
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        PYTHON: python3
