@@ -217,6 +217,9 @@ def filterrevs(repo, filtername, visibilityexceptions=None):
     hidden-state and must be visible. They are dynamic and hence we should not
     cache it's result"""
     if filtername not in repo.filteredrevcache:
+        if repo.ui.configbool(b'devel', b'debug.repo-filters'):
+            msg = b'debug.filters: computing revision filter for "%s"\n'
+            repo.ui.debug(msg % filtername)
         func = filtertable[filtername]
         if visibilityexceptions:
             return func(repo.unfiltered, visibilityexceptions)

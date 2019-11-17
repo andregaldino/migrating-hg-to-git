@@ -433,6 +433,9 @@ coreconfigitem(
     b'devel', b'debug.extensions', default=False,
 )
 coreconfigitem(
+    b'devel', b'debug.repo-filters', default=False,
+)
+coreconfigitem(
     b'devel', b'debug.peer-request', default=False,
 )
 coreconfigitem(
