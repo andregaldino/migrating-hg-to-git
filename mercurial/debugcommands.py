@@ -1029,7 +1029,12 @@ def debugextensions(ui, repo, **opts):
     fm = ui.formatter(b'debugextensions', opts)
     for extname, extmod in sorted(exts, key=operator.itemgetter(0)):
         isinternal = extensions.ismoduleinternal(extmod)
-        extsource = pycompat.fsencode(extmod.__file__)
+        extsource = None
+
+        if util.safehasattr(extmod, '__file__'):
+            extsource = pycompat.fsencode(extmod.__file__)
+        elif getattr(sys, 'oxidized', False):
+            extsource = pycompat.sysexecutable
         if isinternal:
             exttestedwith = []  # never expose magic string to users
         else:
