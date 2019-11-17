@@ -58,7 +58,6 @@ Getting basic changeset inforation about `null`
 Getting status of null
 
   $ hg status --change null
-  debug.filters: computing revision filter for "visible"
 
 Getting status of working copy
 

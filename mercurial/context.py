@@ -523,7 +523,12 @@ class changectx(basectx):
     @propertycache
     def _parents(self):
         repo = self._repo
-        p1, p2 = repo.changelog.parentrevs(self._rev)
+        if self._maybe_filtered:
+            cl = repo.changelog
+        else:
+            cl = repo.unfiltered().changelog
+
+        p1, p2 = cl.parentrevs(self._rev)
         if p2 == nullrev:
             return [repo[p1]]
         return [repo[p1], repo[p2]]
