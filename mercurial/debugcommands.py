@@ -1470,6 +1470,12 @@ def debuginstall(ui, **opts):
     )
 
     # Python
+    pythonlib = None
+    if util.safehasattr(os, '__file__'):
+        pythonlib = os.path.dirname(pycompat.fsencode(os.__file__))
+    elif getattr(sys, 'oxidized', False):
+        pythonlib = pycompat.sysexecutable
+
     fm.write(
         b'pythonexe',
         _(b"checking Python executable (%s)\n"),
@@ -1483,7 +1489,7 @@ def debuginstall(ui, **opts):
     fm.write(
         b'pythonlib',
         _(b"checking Python lib (%s)...\n"),
-        os.path.dirname(pycompat.fsencode(os.__file__)),
+        pythonlib or _(b"unknown"),
     )
 
     security = set(sslutil.supportedprotocols)
@@ -1527,13 +1533,19 @@ def debuginstall(ui, **opts):
     )
 
     # compiled modules
+    hgmodules = None
+    if util.safehasattr(sys.modules[__name__], '__file__'):
+        hgmodules = os.path.dirname(pycompat.fsencode(__file__))
+    elif getattr(sys, 'oxidized', False):
+        hgmodules = pycompat.sysexecutable
+
     fm.write(
         b'hgmodulepolicy', _(b"checking module policy (%s)\n"), policy.policy
     )
     fm.write(
         b'hgmodules',
         _(b"checking installed modules (%s)...\n"),
-        os.path.dirname(pycompat.fsencode(__file__)),
+        hgmodules or _(b"unknown"),
     )
 
     rustandc = policy.policy in (b'rust+c', b'rust+c-allow')
