@@ -1652,6 +1652,8 @@ class localrepository(object):
         definitions overriding user aliases, set ``localalias`` to
         ``{name: definitionstring}``.
         '''
+        if specs == [b'null']:
+            return revset.baseset([nullrev])
         if user:
             m = revset.matchany(
                 self.ui,

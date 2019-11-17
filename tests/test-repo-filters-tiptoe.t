@@ -49,5 +49,4 @@ Getting the node of `null`
   $ hg init test-repo
   $ cd test-repo
   $ hg log -r null -T "{node}\n"
-  debug.filters: computing revision filter for "visible"
   0000000000000000000000000000000000000000
