@@ -218,8 +218,18 @@ def filterrevs(repo, filtername, visibilityexceptions=None):
     cache it's result"""
     if filtername not in repo.filteredrevcache:
         if repo.ui.configbool(b'devel', b'debug.repo-filters'):
-            msg = b'debug.filters: computing revision filter for "%s"\n'
-            repo.ui.debug(msg % filtername)
+            msg = b'computing revision filter for "%s"'
+            msg %= filtername
+            if repo.ui.tracebackflag and repo.ui.debugflag:
+                # XXX use ui.write_err
+                util.debugstacktrace(
+                    msg,
+                    f=repo.ui._fout,
+                    otherf=repo.ui._ferr,
+                    prefix=b'debug.filters: ',
+                )
+            else:
+                repo.ui.debug(b'debug.filters: %s\n' % msg)
         func = filtertable[filtername]
         if visibilityexceptions:
             return func(repo.unfiltered, visibilityexceptions)
