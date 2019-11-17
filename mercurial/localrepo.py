@@ -1543,6 +1543,9 @@ class localrepository(object):
             pair = (rev, node)
             quick[rev] = pair
             quick[node] = pair
+        p1node = self.dirstate.p1()
+        if p1node != nullid:
+            quick[b'.'] = quick[p1node]
         return quick
 
     @unfilteredmethod
