@@ -62,7 +62,6 @@ Getting status of null
 Getting status of working copy
 
   $ hg status
-  debug.filters: computing revision filter for "visible"
   M c
   A d
   R a
@@ -78,7 +77,6 @@ Getting data about the working copy parent
 Getting working copy diff
 
   $ hg diff
-  debug.filters: computing revision filter for "visible"
   diff -r c2932ca7786be30b67154d541a8764fae5532261 a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
   +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000

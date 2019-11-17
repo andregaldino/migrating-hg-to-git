@@ -1517,18 +1517,51 @@ class localrepository(object):
         narrowspec.save(self, newincludes, newexcludes)
         self.invalidate(clearfilecache=True)
 
-    @util.propertycache
+    @unfilteredpropertycache
+    def _quick_access_changeid_null(self):
+        return {
+            b'null': (nullrev, nullid),
+            nullrev: (nullrev, nullid),
+            nullid: (nullrev, nullid),
+        }
+
+    @unfilteredpropertycache
+    def _quick_access_changeid_wc(self):
+        # also fast path access to the working copy parents
+        # however, only do it for filter that ensure wc is visible.
+        quick = {}
+        cl = self.unfiltered().changelog
+        for node in self.dirstate.parents():
+            if node == nullid:
+                continue
+            rev = cl.index.get_rev(node)
+            if rev is None:
+                # unknown working copy parent case:
+                #
+                #   skip the fast path and let higher code deal with it
+                continue
+            pair = (rev, node)
+            quick[rev] = pair
+            quick[node] = pair
+        return quick
+
+    @unfilteredmethod
+    def _quick_access_changeid_invalidate(self):
+        if '_quick_access_changeid_wc' in vars(self):
+            del self.__dict__['_quick_access_changeid_wc']
+
+    @property
     def _quick_access_changeid(self):
         """an helper dictionnary for __getitem__ calls
 
         This contains a list of symbol we can recognise right away without
         further processing.
         """
-        return {
-            b'null': (nullrev, nullid),
-            nullrev: (nullrev, nullid),
-            nullid: (nullrev, nullid),
-        }
+        mapping = self._quick_access_changeid_null
+        if self.filtername in repoview.filter_has_wc:
+            mapping = mapping.copy()
+            mapping.update(self._quick_access_changeid_wc)
+        return mapping
 
     def __getitem__(self, changeid):
         # dealing with special cases
@@ -1887,6 +1920,7 @@ class localrepository(object):
 
     def setparents(self, p1, p2=nullid):
         self[None].setparents(p1, p2)
+        self._quick_access_changeid_invalidate()
 
     def filectx(self, path, changeid=None, fileid=None, changectx=None):
         """changeid must be a changeset revision, if specified.
@@ -2484,6 +2518,7 @@ class localrepository(object):
     def invalidatevolatilesets(self):
         self.filteredrevcache.clear()
         obsolete.clearobscaches(self)
+        self._quick_access_changeid_invalidate()
 
     def invalidatedirstate(self):
         '''Invalidates the dirstate, causing the next call to dirstate

@@ -1466,6 +1466,7 @@ def movedirstate(repo, newctx, match=None):
         if src not in newctx or dst in newctx or ds[dst] != b'a':
             src = None
         ds.copy(src, dst)
+    repo._quick_access_changeid_invalidate()
 
 
 def writerequires(opener, requirements):

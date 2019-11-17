@@ -1989,6 +1989,7 @@ class workingctx(committablectx):
             for f in self.removed():
                 self._repo.dirstate.drop(f)
             self._repo.dirstate.setparents(node)
+            self._repo._quick_access_changeid_invalidate()
 
         # write changes out explicitly, because nesting wlock at
         # runtime may prevent 'wlock.release()' in 'repo.commit()'
