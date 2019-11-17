@@ -477,10 +477,17 @@ class changectx(basectx):
     changeset convenient. It represents a read-only context already present in
     the repo."""
 
-    def __init__(self, repo, rev, node):
+    def __init__(self, repo, rev, node, maybe_filtered=True):
         super(changectx, self).__init__(repo)
         self._rev = rev
         self._node = node
+        # When maybe_filtered is True, the revision might be affected by
+        # changelog filtering and operation through the filtered changelog must be used.
+        #
+        # When maybe_filtered is False, the revision has already been checked
+        # against filtering and is not filtered. Operation through the
+        # unfiltered changelog might be used in some case.
+        self._maybe_filtered = maybe_filtered
 
     def __hash__(self):
         try:
@@ -495,7 +502,11 @@ class changectx(basectx):
 
     @propertycache
     def _changeset(self):
-        return self._repo.changelog.changelogrevision(self.rev())
+        if self._maybe_filtered:
+            repo = self._repo
+        else:
+            repo = self._repo.unfiltered()
+        return repo.changelog.changelogrevision(self.rev())
 
     @propertycache
     def _manifest(self):
