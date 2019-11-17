@@ -1708,6 +1708,10 @@ class localrepository(object):
         '''
         if specs == [b'null']:
             return revset.baseset([nullrev])
+        if specs == [b'.']:
+            quick_data = self._quick_access_changeid.get(b'.')
+            if quick_data is not None:
+                return revset.baseset([quick_data[0]])
         if user:
             m = revset.matchany(
                 self.ui,

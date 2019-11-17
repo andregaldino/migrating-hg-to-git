@@ -70,7 +70,6 @@ Getting status of working copy
 Getting data about the working copy parent
 
   $ hg log -r '.' -T "{node}\n{date}\n"
-  debug.filters: computing revision filter for "visible"
   c2932ca7786be30b67154d541a8764fae5532261
   0.00
 
@@ -111,8 +110,8 @@ Getting working copy diff
 exporting the current changeset
 
   $ hg export
-  debug.filters: computing revision filter for "visible"
   exporting patch:
+  debug.filters: computing revision filter for "visible"
   # HG changeset patch
   # User test
   # Date 0 0
