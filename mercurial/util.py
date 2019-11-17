@@ -3466,6 +3466,7 @@ def debugstacktrace(
     f=procutil.stderr,
     otherf=procutil.stdout,
     depth=0,
+    prefix=b'',
 ):
     '''Writes a message to f (stderr) with a nicely formatted stacktrace.
     Skips the 'skip' entries closest to the call, then show 'depth' entries.
@@ -3475,9 +3476,9 @@ def debugstacktrace(
     '''
     if otherf:
         otherf.flush()
-    f.write(b'%s at:\n' % msg.rstrip())
+    f.write(b'%s%s at:\n' % (prefix, msg.rstrip()))
     for line in getstackframes(skip + 1, depth=depth):
-        f.write(line)
+        f.write(prefix + line)
     f.flush()
 
 
