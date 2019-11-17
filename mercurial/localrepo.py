@@ -1515,10 +1515,13 @@ class localrepository(object):
         self.invalidate(clearfilecache=True)
 
     def __getitem__(self, changeid):
+        # dealing with special cases
         if changeid is None:
             return context.workingctx(self)
         if isinstance(changeid, context.basectx):
             return changeid
+
+        # dealing with multiple revisions
         if isinstance(changeid, slice):
             # wdirrev isn't contiguous so the slice shouldn't include it
             return [
@@ -1526,6 +1529,8 @@ class localrepository(object):
                 for i in pycompat.xrange(*changeid.indices(len(self)))
                 if i not in self.changelog.filteredrevs
             ]
+
+        # dealing with arbitrary values
         try:
             if isinstance(changeid, int):
                 node = self.changelog.node(changeid)
