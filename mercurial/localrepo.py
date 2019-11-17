@@ -1531,7 +1531,7 @@ class localrepository(object):
             ]
 
         # dealing with some special values
-        if changeid == b'null':
+        if changeid == b'null' or changeid == nullrev:
             return context.changectx(self, nullrev, nullid)
         if changeid == b'tip':
             node = self.changelog.tip()
