@@ -13,8 +13,7 @@
 //!
 use crate::exceptions::{PatternError, PatternFileError};
 use cpython::{
-    PyBytes, PyDict, PyModule, PyObject, PyResult, PyString, PyTuple, Python,
-    ToPyObject,
+    PyBytes, PyDict, PyModule, PyObject, PyResult, PyTuple, Python, ToPyObject,
 };
 use hg::{
     build_single_regex, read_pattern_file, utils::files::get_path_from_bytes,
@@ -66,12 +65,12 @@ fn read_pattern_file_wrapper(
 fn warnings_to_py_bytes(
     py: Python,
     warnings: &[(PathBuf, Vec<u8>)],
-) -> Vec<(PyString, PyBytes)> {
+) -> Vec<(PyBytes, PyBytes)> {
     warnings
         .iter()
         .map(|(path, syn)| {
             (
-                PyString::new(py, &path.to_string_lossy()),
+                PyBytes::new(py, &path.to_string_lossy().as_bytes()),
                 PyBytes::new(py, syn),
             )
         })
