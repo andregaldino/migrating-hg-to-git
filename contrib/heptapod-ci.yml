@@ -23,3 +23,13 @@ checks-py3:
     <<: *runtests
     variables:
         PYTHON: python3
+
+rust-cargo-test-py2: &rust_cargo_test
+    script:
+        - echo "python used, $PYTHON"
+        - make rust-tests
+
+rust-cargo-test-py3:
+    <<: *rust_cargo_test
+    variables:
+        PYTHON: python3
