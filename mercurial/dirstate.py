@@ -1119,11 +1119,11 @@ class dirstate(object):
             # Force Rayon (Rust parallelism library) to respect the number of
             # workers. This is a temporary workaround until Rust code knows
             # how to read the config file.
-            numcpus = self._ui.configint("worker", "numcpus")
+            numcpus = self._ui.configint(b"worker", b"numcpus")
             if numcpus is not None:
                 encoding.environ.setdefault(b'RAYON_NUM_THREADS', b'%d' % numcpus)
 
-            workers_enabled = self._ui.configbool("worker", "enabled", True)
+            workers_enabled = self._ui.configbool(b"worker", b"enabled", True)
             if not workers_enabled:
                 encoding.environ[b"RAYON_NUM_THREADS"] = b"1"
 
