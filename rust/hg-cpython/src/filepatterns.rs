@@ -68,7 +68,7 @@ fn warnings_to_py_bytes(
         .iter()
         .map(|(path, syn)| {
             (
-                PyBytes::new(py, &path.to_string_lossy().as_bytes()),
+                PyBytes::new(py, &files::get_bytes_from_path(path)),
                 PyBytes::new(py, syn),
             )
         })

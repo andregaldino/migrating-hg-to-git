@@ -29,6 +29,14 @@ pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
     Path::new(os_str)
 }
 
+// TODO: need to convert from WTF8 to MBCS bytes on Windows.
+// that's why Vec<u8> is returned.
+#[cfg(unix)]
+pub fn get_bytes_from_path(path: impl AsRef<Path>) -> Vec<u8> {
+    use std::os::unix::ffi::OsStrExt;
+    path.as_ref().as_os_str().as_bytes().to_vec()
+}
+
 /// An iterator over repository path yielding itself and its ancestors.
 #[derive(Copy, Clone, Debug)]
 pub struct Ancestors<'a> {
