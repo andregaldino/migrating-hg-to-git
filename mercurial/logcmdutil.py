@@ -45,10 +45,11 @@ from .utils import (
 if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
+        Optional,
         Tuple,
     )
 
-    for t in (Any, Tuple):
+    for t in (Any, Optional, Tuple):
         assert t
 
 
@@ -853,7 +854,7 @@ def _initialrevs(repo, opts):
 
 
 def getrevs(repo, pats, opts):
-    # type: (Any, Any, Any) -> Tuple[smartset.BaseSet, changesetdiffer]
+    # type: (Any, Any, Any) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
     """Return (revs, differ) where revs is a smartset
 
     differ is a changesetdiffer with pre-configured file matcher.
