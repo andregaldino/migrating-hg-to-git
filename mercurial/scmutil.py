@@ -1917,6 +1917,7 @@ def registersummarycallback(repo, otr, txnname=b''):
         def wrapped(tr):
             repo = reporef()
             if filtername:
+                assert repo is not None  # help pytype
                 repo = repo.filtered(filtername)
             func(repo, tr)
 
@@ -1936,6 +1937,7 @@ def registersummarycallback(repo, otr, txnname=b''):
             if cgheads:
                 htext = _(b" (%+d heads)") % cgheads
             msg = _(b"added %d changesets with %d changes to %d files%s\n")
+            assert repo is not None  # help pytype
             repo.ui.status(msg % (cgchangesets, cgrevisions, cgfiles, htext))
 
     if txmatch(_reportobsoletedsource):
