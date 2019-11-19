@@ -603,8 +603,8 @@ def deletecmd(ui, repo, pats):
     if not pats:
         raise error.Abort(_(b'no shelved changes specified!'))
     with repo.wlock():
-        try:
-            for name in pats:
+        for name in pats:
+            try:
                 for suffix in shelvefileextensions:
                     shfile = shelvedfile(repo, name, suffix)
                     # patch file is necessary, as it should
@@ -614,11 +614,11 @@ def deletecmd(ui, repo, pats):
                     # bundle
                     if shfile.exists() or suffix == patchextension:
                         shfile.movetobackup()
+            except OSError as err:
+                if err.errno != errno.ENOENT:
+                    raise
+                raise error.Abort(_(b"shelved change '%s' not found") % name)
             cleanupoldbackups(repo)
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
-            raise error.Abort(_(b"shelved change '%s' not found") % name)
 
 
 def listshelves(repo):
