@@ -684,6 +684,8 @@ def checkstatus(repo, subset, pat, field):
             mcache[0] = matchmod.match(repo.root, repo.getcwd(), [pat], ctx=c)
         m = mcache[0]
         fname = None
+
+        assert m is not None  # help pytype
         if not m.anypats() and len(m.files()) == 1:
             fname = m.files()[0]
         if fname is not None:
