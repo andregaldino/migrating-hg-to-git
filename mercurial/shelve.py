@@ -146,7 +146,7 @@ class shelvedfile(object):
     def bundlerepo(self):
         path = self.vfs.join(self.fname)
         return bundlerepo.instance(
-            self.repo.baseui, b'bundle://%s+%s' % (self.repo.root, path)
+            self.repo.baseui, b'bundle://%s+%s' % (self.repo.root, path), False
         )
 
     def writebundle(self, bases, node):
