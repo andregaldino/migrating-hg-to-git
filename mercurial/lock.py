@@ -355,6 +355,9 @@ class lock(object):
         # held, or can race and break valid lock.
         try:
             with lock(self.vfs, self.f + b'.break', timeout=0):
+                locker = self._readlock()
+                if not self._lockshouldbebroken(locker):
+                    return locker
                 self.vfs.unlink(self.f)
         except error.LockError:
             return locker
