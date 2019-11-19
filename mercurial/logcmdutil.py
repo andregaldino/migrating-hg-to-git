@@ -42,7 +42,7 @@ from .utils import (
 )
 
 
-if not globals():
+if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
         Tuple,

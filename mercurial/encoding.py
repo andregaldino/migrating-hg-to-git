@@ -20,14 +20,11 @@ from . import (
 
 from .pure import charencode as charencodepure
 
-_TYPE_CHECKING = False
-
-if not globals():  # hide this from non-pytype users
+if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
         Callable,
         List,
-        TYPE_CHECKING as _TYPE_CHECKING,
         Text,
         Type,
         TypeVar,
@@ -124,7 +121,7 @@ class localstr(bytes):
         s._utf8 = u
         return s
 
-    if _TYPE_CHECKING:
+    if pycompat.TYPE_CHECKING:
         # pseudo implementation to help pytype see localstr() constructor
         def __init__(self, u, l):
             # type: (bytes, bytes) -> None

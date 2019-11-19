@@ -27,7 +27,7 @@ from .utils import (
     stringutil,
 )
 
-if not globals():
+if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
         Callable,

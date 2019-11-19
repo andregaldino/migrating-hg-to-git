@@ -20,6 +20,12 @@ import tempfile
 
 ispy3 = sys.version_info[0] >= 3
 ispypy = '__pypy__' in sys.builtin_module_names
+TYPE_CHECKING = False
+
+if not globals():  # hide this from non-pytype users
+    import typing
+
+    TYPE_CHECKING = typing.TYPE_CHECKING
 
 if not ispy3:
     import cookielib

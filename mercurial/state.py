@@ -23,11 +23,12 @@ from .i18n import _
 
 from . import (
     error,
+    pycompat,
     util,
 )
 from .utils import cborutil
 
-if not globals():
+if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
         Dict,

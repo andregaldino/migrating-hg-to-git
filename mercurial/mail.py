@@ -36,7 +36,7 @@ from .utils import (
     stringutil,
 )
 
-if not globals():  # hide this from non-pytype users
+if pycompat.TYPE_CHECKING:
     from typing import Any, List, Tuple, Union
 
     # keep pyflakes happy
