@@ -119,7 +119,7 @@ class absentfilectx(object):
         """
         return not (
             fctx.isabsent()
-            and fctx.ctx() == self.ctx()
+            and fctx.changectx() == self.changectx()
             and fctx.path() == self.path()
         )
 
