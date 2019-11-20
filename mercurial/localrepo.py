@@ -2086,11 +2086,10 @@ class localrepository(object):
             tracktags(tr2)
             repo = reporef()
 
-            r = repo.ui.configsuboptions(
-                b'experimental', b'single-head-per-branch'
-            )
-            singlehead, singleheadsub = r
+            singleheadopt = (b'experimental', b'single-head-per-branch')
+            singlehead = repo.ui.configbool(*singleheadopt)
             if singlehead:
+                singleheadsub = repo.ui.configsuboptions(*singleheadopt)[1]
                 accountclosed = singleheadsub.get(
                     b"account-closed-heads", False
                 )

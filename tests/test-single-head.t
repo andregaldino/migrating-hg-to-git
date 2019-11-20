@@ -259,3 +259,35 @@ Test that closing heads can be explicitly accounted for
   abort: rejecting multiple heads on branch "branch_A"
   (3 heads: 49003e504178 5254bcccab93 42b9fe70a3c1)
   [255]
+
+
+Test that config can be overriden as the boolean it is
+------------------------------------------------------
+
+  $ cat <<EOF >> $TESTTMP/single-head-server/.hg/hgrc
+  > [experimental]
+  > single-head-per-branch = no
+  > EOF
+
+Because of previous test, we'll also push c_aL0 and c_aM0.
+
+  $ hg out -T "{desc}\n"
+  comparing with $TESTTMP/single-head-server
+  searching for changes
+  c_aL0
+  c_aM0
+
+Let's make a new head and push everythin. The server feedback will mention
+exactly one new head because c_aM0 is closed.
+
+  $ hg up 'desc("c_aG0")'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ mkcommit c_aN0
+  created new head
+  $ hg push -f
+  pushing to $TESTTMP/single-head-server
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 3 changes to 3 files (+1 heads)
