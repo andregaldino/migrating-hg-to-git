@@ -693,7 +693,7 @@ def _describemerge(ui, repo, mynode, fcl, fcb, fco, env, toolpath, args):
     ui.status(t.renderdefault(props))
 
 
-def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     uipathfn = scmutil.getuipathfn(repo)
     if fcd.isabsent() or fco.isabsent():
