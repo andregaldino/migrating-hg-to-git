@@ -1063,7 +1063,7 @@ def wcpprefetch(ui, repo, **kwargs):
     # update a revset with a date limit
     bgprefetchrevs = revdatelimit(ui, bgprefetchrevs)
 
-    def anon():
+    def anon(unused_success):
         if util.safehasattr(repo, b'ranprefetch') and repo.ranprefetch:
             return
         repo.ranprefetch = True

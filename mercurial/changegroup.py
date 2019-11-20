@@ -436,7 +436,7 @@ class cg1unpacker(object):
 
             if changesets > 0:
 
-                def runhooks():
+                def runhooks(unused_success):
                     # These hooks run when the lock releases, not when the
                     # transaction closes. So it's possible for the changelog
                     # to have changed since we last saw it.

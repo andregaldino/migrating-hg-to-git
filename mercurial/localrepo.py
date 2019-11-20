@@ -2203,7 +2203,7 @@ class localrepository(object):
             # fixes the function accumulation.
             hookargs = tr2.hookargs
 
-            def hookfunc():
+            def hookfunc(unused_success):
                 repo = reporef()
                 if hook.hashook(repo.ui, b'txnclose-bookmark'):
                     bmchanges = sorted(tr.changes[b'bookmarks'].items())
@@ -2615,7 +2615,7 @@ class localrepository(object):
                 l.postrelease.append(callback)
                 break
         else:  # no lock have been found.
-            callback()
+            callback(True)
 
     def lock(self, wait=True):
         '''Lock the repository store (.hg/store) and return a weak reference
@@ -2953,7 +2953,7 @@ class localrepository(object):
                     )
                 raise
 
-        def commithook():
+        def commithook(unused_success):
             # hack for command that use a temporary commit (eg: histedit)
             # temporary commit got stripped before hook release
             if self.changelog.hasnode(ret):
@@ -3399,7 +3399,7 @@ class localrepository(object):
         self.ui.debug(b'pushing key for "%s:%s"\n' % (namespace, key))
         ret = pushkey.push(self, namespace, key, old, new)
 
-        def runhook():
+        def runhook(unused_success):
             self.hook(
                 b'pushkey',
                 namespace=namespace,

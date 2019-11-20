@@ -65,7 +65,7 @@ class teststate(object):
     def releasefn(self):
         self._releasecalled = True
 
-    def postreleasefn(self):
+    def postreleasefn(self, success):
         self._postreleasecalled = True
 
     def assertacquirecalled(self, called):

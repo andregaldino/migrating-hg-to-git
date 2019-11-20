@@ -2372,7 +2372,7 @@ def handlebookmark(op, inpart):
 
         if pushkeycompat:
 
-            def runhook():
+            def runhook(unused_success):
                 for hookargs in allhooks:
                     op.repo.hook(b'pushkey', **pycompat.strkwargs(hookargs))
 

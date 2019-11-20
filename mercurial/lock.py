@@ -233,7 +233,8 @@ class lock(object):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        self.release()
+        success = all(a is None for a in (exc_type, exc_value, exc_tb))
+        self.release(success=success)
 
     def __del__(self):
         if self.held:
@@ -408,7 +409,7 @@ class lock(object):
                 self.acquirefn()
             self._inherited = False
 
-    def release(self):
+    def release(self, success=True):
         """release the lock and execute callback function if any
 
         If the lock has been acquired multiple times, the actual release is
@@ -433,7 +434,7 @@ class lock(object):
             # at all.
             if not self._parentheld:
                 for callback in self.postrelease:
-                    callback()
+                    callback(success)
                 # Prevent double usage and help clear cycles.
                 self.postrelease = None
 

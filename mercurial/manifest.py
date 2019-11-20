@@ -1572,7 +1572,11 @@ class manifestrevlog(object):
         reporef = weakref.ref(repo)
         manifestrevlogref = weakref.ref(self)
 
-        def persistmanifestcache():
+        def persistmanifestcache(success):
+            # Repo is in an unknown state, do not persist.
+            if not success:
+                return
+
             repo = reporef()
             self = manifestrevlogref()
             if repo is None or self is None:
