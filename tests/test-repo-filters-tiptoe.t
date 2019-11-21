@@ -93,7 +93,6 @@ Getting working copy diff
   @@ -0,0 +1,1 @@
   +d
   $ hg diff --change .
-  debug.filters: computing revision filter for "visible"
   diff -r 05293e5dd8d1ae4f84a8520a11c6f97cad26deca -r c2932ca7786be30b67154d541a8764fae5532261 c
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/c	Thu Jan 01 00:00:00 1970 +0000
@@ -111,7 +110,6 @@ exporting the current changeset
 
   $ hg export
   exporting patch:
-  debug.filters: computing revision filter for "visible"
   # HG changeset patch
   # User test
   # Date 0 0

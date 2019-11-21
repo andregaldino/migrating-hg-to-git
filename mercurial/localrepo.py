@@ -1543,6 +1543,14 @@ class localrepository(object):
             pair = (rev, node)
             quick[rev] = pair
             quick[node] = pair
+            # also add the parents of the parents
+            for r in cl.parentrevs(rev):
+                if r == nullrev:
+                    continue
+                n = cl.node(r)
+                pair = (r, n)
+                quick[r] = pair
+                quick[n] = pair
         p1node = self.dirstate.p1()
         if p1node != nullid:
             quick[b'.'] = quick[p1node]
