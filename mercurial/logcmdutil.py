@@ -598,6 +598,7 @@ class changesettemplater(changesetprinter):
         # write changeset metadata, then patch if requested
         key = self._parts[self._tref]
         self.ui.write(self.t.render(key, props))
+        self._exthook(ctx)
         self._showpatch(ctx, graphwidth)
 
         if self._parts[b'footer']:
