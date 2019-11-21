@@ -1012,7 +1012,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
     props = props or {}
     formatnode = _graphnodeformatter(ui, displayer)
     state = graphmod.asciistate()
-    styles = state[b'styles']
+    styles = state.styles
 
     # only set graph styling if HGPLAIN is not set.
     if ui.plain(b'graph'):
@@ -1033,7 +1033,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
                 styles[key] = None
 
         # experimental config: experimental.graphshorten
-        state[b'graphshorten'] = ui.configbool(b'experimental', b'graphshorten')
+        state.graphshorten = ui.configbool(b'experimental', b'graphshorten')
 
     for rev, type, ctx, parents in dag:
         char = formatnode(repo, ctx)
