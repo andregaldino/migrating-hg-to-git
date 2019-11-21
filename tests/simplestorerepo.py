@@ -48,9 +48,9 @@ from mercurial.revlogutils import flagutil
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
-testedwith = 'ships-with-hg-core'
+testedwith = b'ships-with-hg-core'
 
-REQUIREMENT = 'testonly-simplestore'
+REQUIREMENT = b'testonly-simplestore'
 
 
 def validatenode(node):
@@ -204,7 +204,7 @@ class filestorage(object):
             if entry[b'node'] == node:
                 return rev
 
-        raise error.ProgrammingError('this should not occur')
+        raise error.ProgrammingError(b'this should not occur')
 
     def node(self, rev):
         validaterev(rev)
