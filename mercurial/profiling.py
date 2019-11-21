@@ -204,7 +204,7 @@ class profile(object):
 
         If the profiler was already started, this has no effect."""
         if not self._entered:
-            raise error.ProgrammingError()
+            raise error.ProgrammingError(b'use a context manager to start')
         if self._started:
             return
         self._started = True
