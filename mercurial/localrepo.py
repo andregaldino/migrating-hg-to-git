@@ -1530,14 +1530,14 @@ class localrepository(object):
                 if i not in self.changelog.filteredrevs
             ]
 
+        # dealing with some special values
+        if changeid == b'null':
+            return context.changectx(self, nullrev, nullid)
         # dealing with arbitrary values
         try:
             if isinstance(changeid, int):
                 node = self.changelog.node(changeid)
                 rev = changeid
-            elif changeid == b'null':
-                node = nullid
-                rev = nullrev
             elif changeid == b'tip':
                 node = self.changelog.tip()
                 rev = self.changelog.rev(node)
