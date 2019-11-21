@@ -70,13 +70,13 @@ class status(object):
     relevant to the working copy.
     '''
 
-    modified = attr.ib(default=list)
-    added = attr.ib(default=list)
-    removed = attr.ib(default=list)
-    deleted = attr.ib(default=list)
-    unknown = attr.ib(default=list)
-    ignored = attr.ib(default=list)
-    clean = attr.ib(default=list)
+    modified = attr.ib(default=attr.Factory(list))
+    added = attr.ib(default=attr.Factory(list))
+    removed = attr.ib(default=attr.Factory(list))
+    deleted = attr.ib(default=attr.Factory(list))
+    unknown = attr.ib(default=attr.Factory(list))
+    ignored = attr.ib(default=attr.Factory(list))
+    clean = attr.ib(default=attr.Factory(list))
 
     def __iter__(self):
         yield self.modified
