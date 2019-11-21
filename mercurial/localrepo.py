@@ -1533,14 +1533,16 @@ class localrepository(object):
         # dealing with some special values
         if changeid == b'null':
             return context.changectx(self, nullrev, nullid)
+        if changeid == b'tip':
+            node = self.changelog.tip()
+            rev = self.changelog.rev(node)
+            return context.changectx(self, rev, node)
+
         # dealing with arbitrary values
         try:
             if isinstance(changeid, int):
                 node = self.changelog.node(changeid)
                 rev = changeid
-            elif changeid == b'tip':
-                node = self.changelog.tip()
-                rev = self.changelog.rev(node)
             elif changeid == b'.':
                 # this is a hack to delay/avoid loading obsmarkers
                 # when we know that '.' won't be hidden
