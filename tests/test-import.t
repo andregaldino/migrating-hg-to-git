@@ -435,6 +435,49 @@ hg email --plain, should read X-Mercurial-Node header
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     second change
   
+  $ hg --cwd b phase tip
+  1: draft
+  $ rm -r b
+
+
+hg import --secret
+
+  $ hg clone -r0 a b -q
+  $ hg --cwd b import --no-commit --secret ../exported-tip.patch
+  abort: cannot use --no-commit with --secret
+  [255]
+  $ hg --cwd b import --secret ../exported-tip.patch
+  applying ../exported-tip.patch
+  $ hg --cwd b diff -c . --nodates
+  diff -r 80971e65b431 -r 1d4bd90af0e4 a
+  --- a/a
+  +++ b/a
+  @@ -1,1 +1,2 @@
+   line 1
+  +line 2
+  $ hg --cwd b phase
+  1: secret
+  $ hg --cwd b --config extensions.strip= strip 1 --no-backup --quiet
+  $ HGEDITOR=cat hg --cwd b import --secret --edit ../exported-tip.patch
+  applying ../exported-tip.patch
+  second change
+  
+  
+  HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  HG: Leave message empty to abort commit.
+  HG: --
+  HG: user: someone
+  HG: branch 'default'
+  HG: changed a
+  $ hg --cwd b diff -c . --nodates
+  diff -r 80971e65b431 -r 1d4bd90af0e4 a
+  --- a/a
+  +++ b/a
+  @@ -1,1 +1,2 @@
+   line 1
+  +line 2
+  $ hg --cwd b phase
+  1: secret
   $ rm -r b
 
 

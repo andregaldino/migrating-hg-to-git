@@ -328,7 +328,7 @@ Show all commands + options
   heads: rev, topo, active, closed, style, template
   help: extension, command, keyword, system
   identify: rev, num, id, branch, tags, bookmarks, ssh, remotecmd, insecure, template
-  import: strip, base, edit, force, no-commit, bypass, partial, exact, prefix, import-branch, message, logfile, date, user, similarity
+  import: strip, base, secret, edit, force, no-commit, bypass, partial, exact, prefix, import-branch, message, logfile, date, user, similarity
   incoming: force, newest-first, bundle, rev, bookmarks, branch, patch, git, limit, no-merges, stat, graph, style, template, ssh, remotecmd, insecure, subrepos
   init: ssh, remotecmd, insecure
   locate: rev, print0, fullpath, include, exclude

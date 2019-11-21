@@ -1771,6 +1771,8 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
             overrides = {}
             if partial:
                 overrides[(b'ui', b'allowemptycommit')] = True
+            if opts.get(b'secret'):
+                overrides[(b'phases', b'new-commit')] = b'secret'
             with repo.ui.configoverride(overrides, b'import'):
                 n = repo.commit(
                     message, user, date, match=m, editor=editor, extra=extra

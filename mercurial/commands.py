@@ -4033,6 +4033,7 @@ def identify(
             _(b'NUM'),
         ),
         (b'b', b'base', b'', _(b'base path (DEPRECATED)'), _(b'PATH')),
+        (b'', b'secret', None, _(b'use the secret phase for committing')),
         (b'e', b'edit', False, _(b'invoke editor on commit messages')),
         (
             b'f',
@@ -4181,6 +4182,8 @@ def import_(ui, repo, patch1=None, *patches, **opts):
     update = not opts.get(b'bypass')
     if not update and opts.get(b'no_commit'):
         raise error.Abort(_(b'cannot use --no-commit with --bypass'))
+    if opts.get(b'secret') and opts.get(b'no_commit'):
+        raise error.Abort(_(b'cannot use --no-commit with --secret'))
     try:
         sim = float(opts.get(b'similarity') or 0)
     except ValueError:
