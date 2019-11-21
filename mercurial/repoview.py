@@ -177,6 +177,9 @@ filtertable = {
     b'base': computeimpactable,
 }
 
+# set of filter level that will include the working copy parent no matter what.
+filter_has_wc = {b'visible', b'visible-hidden'}
+
 _basefiltername = list(filtertable)
 
 
