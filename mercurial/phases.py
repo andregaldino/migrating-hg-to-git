@@ -134,7 +134,7 @@ HIDEABLE_FLAG = 32  # Phases that are hideable
 public, draft, secret = range(3)
 internal = INTERNAL_FLAG | HIDEABLE_FLAG
 archived = HIDEABLE_FLAG
-allphases = range(internal + 1)
+allphases = list(range(internal + 1))
 trackedphases = allphases[1:]
 # record phase names
 cmdphasenames = [b'public', b'draft', b'secret']  # known to `hg phase` command
