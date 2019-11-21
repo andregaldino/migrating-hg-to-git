@@ -533,8 +533,11 @@ class changectx(basectx):
 
         p1, p2 = cl.parentrevs(self._rev)
         if p2 == nullrev:
-            return [repo[p1]]
-        return [repo[p1], repo[p2]]
+            return [changectx(repo, p1, cl.node(p1), maybe_filtered=False)]
+        return [
+            changectx(repo, p1, cl.node(p1), maybe_filtered=False),
+            changectx(repo, p2, cl.node(p2), maybe_filtered=False),
+        ]
 
     def changeset(self):
         c = self._changeset
