@@ -2290,7 +2290,7 @@ def _applydiff(
             try:
                 current_file = patcher(ui, gp, backend, store, eolmode=eolmode)
             except PatchError as inst:
-                ui.warn(str(inst) + b'\n')
+                ui.warn(stringutil.forcebytestr(inst) + b'\n')
                 current_file = None
                 rejects += 1
                 continue
