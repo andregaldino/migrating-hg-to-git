@@ -136,13 +136,11 @@ using annotate
 - file with a single change
 
   $ hg annotate a
-  debug.filters: computing revision filter for "visible"
   0: a
 
 - file with multiple change
 
   $ hg annotate z
-  debug.filters: computing revision filter for "visible"
   0: some line
   1: in a
   2: file

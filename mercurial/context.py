@@ -1161,7 +1161,9 @@ class basefilectx(object):
         # use linkrev to find the first changeset where self appeared
         base = self.introfilectx()
         if getattr(base, '_ancestrycontext', None) is None:
-            cl = self._repo.changelog
+            # it is safe to use an unfiltered repository here because we are
+            # walking ancestors only.
+            cl = self._repo.unfiltered().changelog
             if base.rev() is None:
                 # wctx is not inclusive, but works because _ancestrycontext
                 # is used to test filelog revisions
