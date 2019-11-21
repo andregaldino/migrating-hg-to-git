@@ -1684,6 +1684,28 @@ def template_review(context, mapping):
     return None
 
 
+@eh.templatekeyword(b'phabstatus', requires={b'ctx', b'repo', b'ui'})
+def template_status(context, mapping):
+    """:phabstatus: String. Status of Phabricator differential.
+    """
+    ctx = context.resource(mapping, b'ctx')
+    repo = context.resource(mapping, b'repo')
+    ui = context.resource(mapping, b'ui')
+
+    rev = ctx.rev()
+    try:
+        drevid = getdrevmap(repo, [rev])[rev]
+    except KeyError:
+        return None
+    drevs = callconduit(ui, b'differential.query', {b'ids': [drevid]})
+    for drev in drevs:
+        if int(drev[b'id']) == drevid:
+            return templateutil.hybriddict(
+                {b'url': drev[b'uri'], b'status': drev[b'statusName'],}
+            )
+    return None
+
+
 @show.showview(b'phabstatus', csettopic=b'work')
 def phabstatusshowview(ui, repo, displayer):
     """Phabricator differiential status"""
