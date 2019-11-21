@@ -77,7 +77,7 @@ def lsprofile(ui, fp):
 @contextlib.contextmanager
 def flameprofile(ui, fp):
     try:
-        from flamegraph import flamegraph
+        from flamegraph import flamegraph  # pytype: disable=import-error
     except ImportError:
         raise error.Abort(
             _(
