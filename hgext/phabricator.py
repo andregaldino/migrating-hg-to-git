@@ -403,12 +403,15 @@ def getoldnodedrevmap(repo, nodelist):
                     m = _differentialrevisiontagre.match(tag)
                     if m:
                         toconfirm[node] = (0, set(precnodes), int(m.group(1)))
-                        continue
-
-        # Check commit message
-        m = _differentialrevisiondescre.search(ctx.description())
-        if m:
-            toconfirm[node] = (1, set(precnodes), int(m.group('id')))
+                        break
+                else:
+                    continue  # move to next predecessor
+                break  # found a tag, stop
+        else:
+            # Check commit message
+            m = _differentialrevisiondescre.search(ctx.description())
+            if m:
+                toconfirm[node] = (1, set(precnodes), int(m.group('id')))
 
     # Double check if tags are genuine by collecting all old nodes from
     # Phabricator, and expect precursors overlap with it.
