@@ -15,3 +15,9 @@
 
 == Internal API Changes ==
 
+ * Matcher instances no longer have a `explicitdir` property. Consider
+   rewriting your code to use `repo.wvfs.isdir()` and/or
+   `ctx.hasdir()` instead. Also, the `traversedir` property is now
+   also called when only `explicitdir` used to be called. That may
+   mean that you can simply remove the use of `explicitdir` if you
+   were already using `traversedir`.
