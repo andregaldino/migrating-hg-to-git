@@ -44,7 +44,7 @@ STAGING_RULES = [
     ('dist/python*.dll', './'),
     ('doc/*.html', 'doc/'),
     ('doc/style.css', 'doc/'),
-    ('mercurial/help/**/*.txt', 'help/'),
+    ('mercurial/helptext/**/*.txt', 'helptext/'),
     ('mercurial/default.d/*.rc', 'hgrc.d/'),
     ('mercurial/locale/**/*', 'locale/'),
     ('mercurial/templates/**/*', 'Templates/'),

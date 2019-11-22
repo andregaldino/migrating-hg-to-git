@@ -8,7 +8,7 @@
 
 SCCS Weaves are an implementation of
 https://en.wikipedia.org/wiki/Interleaved_deltas. See
-mercurial/help/internals/linelog.txt for an exploration of SCCS weaves
+mercurial/helptext/internals/linelog.txt for an exploration of SCCS weaves
 and how linelog works in detail.
 
 Here's a hacker's summary: a linelog is a program which is executed in
