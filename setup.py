@@ -935,7 +935,7 @@ class hgbuilddoc(Command):
         # This logic is duplicated in doc/Makefile.
         sources = set(
             f
-            for f in os.listdir('mercurial/help')
+            for f in os.listdir('mercurial/helptext')
             if re.search(r'[0-9]\.txt$', f)
         )
 

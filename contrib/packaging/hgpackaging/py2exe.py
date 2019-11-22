@@ -45,7 +45,7 @@ STAGING_RULES = [
     ('doc/*.html', 'doc/'),
     ('doc/style.css', 'doc/'),
     ('mercurial/helptext/**/*.txt', 'helptext/'),
-    ('mercurial/default.d/*.rc', 'hgrc.d/'),
+    ('mercurial/defaultrc/*.rc', 'hgrc.d/'),
     ('mercurial/locale/**/*', 'locale/'),
     ('mercurial/templates/**/*', 'Templates/'),
     ('COPYING', 'Copying.txt'),
