@@ -101,6 +101,20 @@ impl From<std::io::Error> for DirstatePackError {
 pub enum DirstateMapError {
     PathNotFound(HgPathBuf),
     EmptyPath,
+    ConsecutiveSlashes,
+}
+
+impl ToString for DirstateMapError {
+    fn to_string(&self) -> String {
+        use crate::DirstateMapError::*;
+        match self {
+            PathNotFound(_) => "expected a value, found none".to_string(),
+            EmptyPath => "Overflow in dirstate.".to_string(),
+            ConsecutiveSlashes => {
+                "found invalid consecutive slashes in path".to_string()
+            }
+        }
+    }
 }
 
 pub enum DirstateError {

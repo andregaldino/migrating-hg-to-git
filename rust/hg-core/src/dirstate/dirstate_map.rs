@@ -83,16 +83,16 @@ impl DirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
-    ) {
+    ) -> Result<(), DirstateMapError> {
         if old_state == EntryState::Unknown || old_state == EntryState::Removed
         {
             if let Some(ref mut dirs) = self.dirs {
-                dirs.add_path(filename)
+                dirs.add_path(filename)?;
             }
         }
         if old_state == EntryState::Unknown {
             if let Some(ref mut all_dirs) = self.all_dirs {
-                all_dirs.add_path(filename)
+                all_dirs.add_path(filename)?;
             }
         }
         self.state_map.insert(filename.to_owned(), entry.to_owned());
@@ -104,6 +104,7 @@ impl DirstateMap {
         if entry.size == SIZE_FROM_OTHER_PARENT {
             self.other_parent_set.insert(filename.to_owned());
         }
+        Ok(())
     }
 
     /// Mark a file as removed in the dirstate.

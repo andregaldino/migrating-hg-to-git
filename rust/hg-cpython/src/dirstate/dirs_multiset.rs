@@ -68,8 +68,19 @@ py_class!(pub class Dirs |py| {
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {
         self.inner_shared(py).borrow_mut()?.add_path(
             HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
-        );
-        Ok(py.None())
+        ).and(Ok(py.None())).or_else(|e| {
+            match e {
+                DirstateMapError::EmptyPath => {
+                    Ok(py.None())
+                },
+                e => {
+                    Err(PyErr::new::<exc::ValueError, _>(
+                        py,
+                        e.to_string(),
+                    ))
+                }
+            }
+        })
     }
 
     def delpath(&self, path: PyObject) -> PyResult<PyObject> {
@@ -79,14 +90,14 @@ py_class!(pub class Dirs |py| {
             .and(Ok(py.None()))
             .or_else(|e| {
                 match e {
-                    DirstateMapError::PathNotFound(_p) => {
-                        Err(PyErr::new::<exc::ValueError, _>(
-                            py,
-                            "expected a value, found none".to_string(),
-                        ))
-                    }
                     DirstateMapError::EmptyPath => {
                         Ok(py.None())
+                    },
+                    e => {
+                        Err(PyErr::new::<exc::ValueError, _>(
+                            py,
+                            e.to_string(),
+                        ))
                     }
                 }
             })

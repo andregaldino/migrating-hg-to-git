@@ -25,8 +25,8 @@ use crate::{
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
-    DirstateParents, DirstateParseError, EntryState, StateMapIter,
-    PARENT_SIZE,
+    DirstateMapError, DirstateParents, DirstateParseError, EntryState,
+    StateMapIter, PARENT_SIZE,
 };
 
 // TODO
@@ -97,8 +97,9 @@ py_class!(pub class DirstateMap |py| {
                 size: size.extract(py)?,
                 mtime: mtime.extract(py)?,
             },
-        );
-        Ok(py.None())
+        ).and(Ok(py.None())).or_else(|e: DirstateMapError| {
+            Err(PyErr::new::<exc::ValueError, _>(py, e.to_string()))
+        })
     }
 
     def removefile(

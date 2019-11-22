@@ -65,14 +65,20 @@ impl DirsMultiset {
     /// Increases the count of deepest directory contained in the path.
     ///
     /// If the directory is not yet in the map, adds its parents.
-    pub fn add_path(&mut self, path: &HgPath) {
+    pub fn add_path(&mut self, path: &HgPath) -> Result<(), DirstateMapError> {
         for subpath in files::find_dirs(path) {
+            if subpath.as_bytes().last() == Some(&b'/') {
+                // TODO Remove this once PathAuditor is certified
+                // as the only entrypoint for path data
+                return Err(DirstateMapError::ConsecutiveSlashes);
+            }
             if let Some(val) = self.inner.get_mut(subpath) {
                 *val += 1;
                 break;
             }
             self.inner.insert(subpath.to_owned(), 1);
         }
+        Ok(())
     }
 
     /// Decreases the count of deepest directory contained in the path.
