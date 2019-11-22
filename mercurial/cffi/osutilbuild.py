@@ -4,7 +4,7 @@ import cffi
 
 ffi = cffi.FFI()
 ffi.set_source(
-    b"mercurial.cffi._osutil",
+    "mercurial.cffi._osutil",
     """
 #include <sys/attr.h>
 #include <sys/vnode.h>
@@ -22,7 +22,7 @@ typedef struct val_attrs {
     off_t             datalength;
 } __attribute__((aligned(4), packed)) val_attrs_t;
 """,
-    include_dirs=[b'mercurial'],
+    include_dirs=['mercurial'],
 )
 ffi.cdef(
     '''

@@ -67,10 +67,10 @@ def b85decode(text):
                 acc = acc * 85 + _b85dec[c]
             except KeyError:
                 raise ValueError(
-                    b'bad base85 character at position %d' % (i + j)
+                    'bad base85 character at position %d' % (i + j)
                 )
         if acc > 4294967295:
-            raise ValueError(b'Base85 overflow in hunk starting at byte %d' % i)
+            raise ValueError('Base85 overflow in hunk starting at byte %d' % i)
         out.append(acc)
 
     # Pad final chunk if necessary

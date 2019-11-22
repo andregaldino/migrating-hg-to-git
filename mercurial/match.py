@@ -543,7 +543,7 @@ class predicatematcher(basematcher):
 
 
 class patternmatcher(basematcher):
-    """Matches a set of (kind, pat, source) against a 'root' directory.
+    r"""Matches a set of (kind, pat, source) against a 'root' directory.
 
     >>> kindpats = [
     ...     (b're', br'.*\.c$', b''),
@@ -1152,7 +1152,7 @@ class unionmatcher(basematcher):
 
 
 def patkind(pattern, default=None):
-    '''If pattern is 'kind:pat' with a known kind, return kind.
+    r'''If pattern is 'kind:pat' with a known kind, return kind.
 
     >>> patkind(br're:.*\.c$')
     're'

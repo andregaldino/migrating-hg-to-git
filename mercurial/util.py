@@ -1906,7 +1906,7 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
                         ) & 0x7FFFFFFF
                         os.utime(dest, (advanced, advanced))
         except shutil.Error as inst:
-            raise error.Abort(str(inst))
+            raise error.Abort(stringutil.forcebytestr(inst))
 
 
 def copyfiles(src, dst, hardlink=None, progress=None):

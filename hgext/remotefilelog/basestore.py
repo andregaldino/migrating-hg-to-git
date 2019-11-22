@@ -441,7 +441,10 @@ class baseunionstore(object):
             i = 0
             while i < self.numattempts:
                 if i > 0:
-                    retrylog(b're-attempting (n=%d) %s\n' % (i, funcname))
+                    retrylog(
+                        b're-attempting (n=%d) %s\n'
+                        % (i, pycompat.sysbytes(funcname))
+                    )
                     self.markforrefresh()
                 i += 1
                 try:
