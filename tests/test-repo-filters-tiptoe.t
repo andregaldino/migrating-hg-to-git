@@ -46,8 +46,6 @@ tests
 
 Getting the node of `null`
 
-  $ hg init test-repo
-  $ cd test-repo
   $ hg log -r null -T "{node}\n"
   0000000000000000000000000000000000000000
 
@@ -56,3 +54,101 @@ Getting basic changeset inforation about `null`
   $ hg log -r null -T "{node}\n{date}\n"
   0000000000000000000000000000000000000000
   0.00
+
+Getting status of null
+
+  $ hg status --change null
+  debug.filters: computing revision filter for "visible"
+
+Getting status of working copy
+
+  $ hg status
+  debug.filters: computing revision filter for "visible"
+  M c
+  A d
+  R a
+  ! b
+
+Getting data about the working copy parent
+
+  $ hg log -r '.' -T "{node}\n{date}\n"
+  debug.filters: computing revision filter for "visible"
+  c2932ca7786be30b67154d541a8764fae5532261
+  0.00
+
+Getting working copy diff
+
+  $ hg diff
+  debug.filters: computing revision filter for "visible"
+  diff -r c2932ca7786be30b67154d541a8764fae5532261 a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +0,0 @@
+  -a
+  diff -r c2932ca7786be30b67154d541a8764fae5532261 c
+  --- a/c	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/c	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -c
+  +c1
+  diff -r c2932ca7786be30b67154d541a8764fae5532261 d
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/d	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +d
+  $ hg diff --change .
+  debug.filters: computing revision filter for "visible"
+  diff -r 05293e5dd8d1ae4f84a8520a11c6f97cad26deca -r c2932ca7786be30b67154d541a8764fae5532261 c
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/c	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +c
+  diff -r 05293e5dd8d1ae4f84a8520a11c6f97cad26deca -r c2932ca7786be30b67154d541a8764fae5532261 z
+  --- a/z	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/z	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,2 +1,3 @@
+   some line
+   in a
+  +file
+
+exporting the current changeset
+
+  $ hg export
+  debug.filters: computing revision filter for "visible"
+  exporting patch:
+  # HG changeset patch
+  # User test
+  # Date 0 0
+  #      Thu Jan 01 00:00:00 1970 +0000
+  # Node ID c2932ca7786be30b67154d541a8764fae5532261
+  # Parent  05293e5dd8d1ae4f84a8520a11c6f97cad26deca
+  c
+  
+  diff -r 05293e5dd8d1ae4f84a8520a11c6f97cad26deca -r c2932ca7786be30b67154d541a8764fae5532261 c
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/c	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +c
+  diff -r 05293e5dd8d1ae4f84a8520a11c6f97cad26deca -r c2932ca7786be30b67154d541a8764fae5532261 z
+  --- a/z	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/z	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,2 +1,3 @@
+   some line
+   in a
+  +file
+
+using annotate
+
+- file with a single change
+
+  $ hg annotate a
+  debug.filters: computing revision filter for "visible"
+  0: a
+
+- file with multiple change
+
+  $ hg annotate z
+  debug.filters: computing revision filter for "visible"
+  0: some line
+  1: in a
+  2: file
