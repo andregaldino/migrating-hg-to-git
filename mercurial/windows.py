@@ -26,11 +26,12 @@ from . import (
 )
 
 try:
-    import _winreg as winreg
+    import _winreg as winreg  # pytype: disable=import-error
 
     winreg.CloseKey
 except ImportError:
-    import winreg
+    # py2 only
+    import winreg  # pytype: disable=import-error
 
 osutil = policy.importmod('osutil')
 
@@ -282,7 +283,7 @@ def setbinary(fd):
     # fileno(), usually set to -1.
     fno = getattr(fd, 'fileno', None)
     if fno is not None and fno() >= 0:
-        msvcrt.setmode(fno(), os.O_BINARY)
+        msvcrt.setmode(fno(), os.O_BINARY)  # pytype: disable=module-attr
 
 
 def pconvert(path):

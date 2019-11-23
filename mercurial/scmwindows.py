@@ -10,11 +10,12 @@ from . import (
 )
 
 try:
-    import _winreg as winreg
+    import _winreg as winreg  # pytype: disable=import-error
 
     winreg.CloseKey
 except ImportError:
-    import winreg
+    # py2 only
+    import winreg  # pytype: disable=import-error
 
 # MS-DOS 'more' is the only pager available by default on Windows.
 fallbackpager = b'more'

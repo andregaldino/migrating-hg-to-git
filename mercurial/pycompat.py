@@ -99,7 +99,7 @@ if ispy3:
         # Otherwise non-ASCII filenames in existing repositories would be
         # corrupted.
         # This must be set once prior to any fsencode/fsdecode calls.
-        sys._enablelegacywindowsfsencoding()
+        sys._enablelegacywindowsfsencoding()  # pytype: disable=module-attr
 
     fsencode = os.fsencode
     fsdecode = os.fsdecode
