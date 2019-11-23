@@ -2474,7 +2474,7 @@ def _getbundlechangegrouppart(
     **kwargs
 ):
     """add a changegroup part to the requested bundle"""
-    if not kwargs.get('cg', True):
+    if not kwargs.get('cg', True) or not b2caps:
         return
 
     version = b'01'
@@ -2536,7 +2536,7 @@ def _getbundlebookmarkpart(
     """add a bookmark part to the requested bundle"""
     if not kwargs.get('bookmarks', False):
         return
-    if b'bookmarks' not in b2caps:
+    if not b2caps or b'bookmarks' not in b2caps:
         raise error.Abort(_(b'no common bookmarks exchange method'))
     books = bookmod.listbinbookmarks(repo)
     data = bookmod.binaryencode(books)
@@ -2577,7 +2577,7 @@ def _getbundlephasespart(
 ):
     """add phase heads part to the requested bundle"""
     if kwargs.get('phases', False):
-        if not b'heads' in b2caps.get(b'phases'):
+        if not b2caps or not b'heads' in b2caps.get(b'phases'):
             raise error.Abort(_(b'no common phases exchange method'))
         if heads is None:
             heads = repo.heads()
@@ -2641,7 +2641,7 @@ def _getbundletagsfnodes(
     # Don't send unless:
     # - changeset are being exchanged,
     # - the client supports it.
-    if not (kwargs.get('cg', True) and b'hgtagsfnodes' in b2caps):
+    if not b2caps or not (kwargs.get('cg', True) and b'hgtagsfnodes' in b2caps):
         return
 
     outgoing = _computeoutgoing(repo, heads, common)
@@ -2675,6 +2675,7 @@ def _getbundlerevbranchcache(
     # - narrow bundle isn't in play (not currently compatible).
     if (
         not kwargs.get('cg', True)
+        or not b2caps
         or b'rev-branch-cache' not in b2caps
         or kwargs.get('narrow', False)
         or repo.ui.has_section(_NARROWACL_SECTION)
