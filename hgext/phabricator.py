@@ -11,6 +11,10 @@ changesets to Phabricator, and a ``phabread`` command which prints a stack of
 revisions in a format suitable for :hg:`import`, and a ``phabupdate`` command
 to update statuses in batch.
 
+A "phabstatus" view for :hg:`show` is also provided; it displays status
+information of Phabricator differentials associated with unfinished
+changesets.
+
 By default, Phabricator requires ``Test Plan`` which might prevent some
 changeset from being sent. The requirement could be disabled by changing
 ``differential.require-test-plan-field`` config server side.
@@ -60,7 +64,9 @@ from mercurial import (
     encoding,
     error,
     exthelper,
+    graphmod,
     httpconnection as httpconnectionmod,
+    logcmdutil,
     match,
     mdiff,
     obsutil,
@@ -80,6 +86,8 @@ from mercurial.utils import (
     procutil,
     stringutil,
 )
+from . import show
+
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -461,6 +469,29 @@ def getoldnodedrevmap(repo, nodelist):
                     oldnode = None
 
             result[newnode] = (oldnode, lastdiff, drev)
+
+    return result
+
+
+def getdrevmap(repo, revs):
+    """Return a dict mapping each rev in `revs` to their Differential Revision
+    ID or None.
+    """
+    result = {}
+    for rev in revs:
+        result[rev] = None
+        ctx = repo[rev]
+        # Check commit message
+        m = _differentialrevisiondescre.search(ctx.description())
+        if m:
+            result[rev] = int(m.group('id'))
+            continue
+        # Check tags
+        for tag in repo.nodetags(ctx.node()):
+            m = _differentialrevisiontagre.match(tag)
+            if m:
+                result[rev] = int(m.group(1))
+                break
 
     return result
 
@@ -1651,3 +1682,42 @@ def template_review(context, mapping):
 
                 return templateutil.hybriddict({b'url': url, b'id': t,})
     return None
+
+
+@show.showview(b'phabstatus', csettopic=b'work')
+def phabstatusshowview(ui, repo, displayer):
+    """Phabricator differiential status"""
+    revs = repo.revs('sort(_underway(), topo)')
+    drevmap = getdrevmap(repo, revs)
+    unknownrevs, drevids, revsbydrevid = [], set([]), {}
+    for rev, drevid in pycompat.iteritems(drevmap):
+        if drevid is not None:
+            drevids.add(drevid)
+            revsbydrevid.setdefault(drevid, set([])).add(rev)
+        else:
+            unknownrevs.append(rev)
+
+    drevs = callconduit(ui, b'differential.query', {b'ids': list(drevids)})
+    drevsbyrev = {}
+    for drev in drevs:
+        for rev in revsbydrevid[int(drev[b'id'])]:
+            drevsbyrev[rev] = drev
+
+    def phabstatus(ctx):
+        drev = drevsbyrev[ctx.rev()]
+        ui.write(b"\n%(uri)s %(statusName)s\n" % drev)
+
+    revs -= smartset.baseset(unknownrevs)
+    revdag = graphmod.dagwalker(repo, revs)
+
+    ui.setconfig(b'experimental', b'graphshorten', True)
+    displayer._exthook = phabstatus
+    nodelen = show.longestshortest(repo, revs)
+    logcmdutil.displaygraph(
+        ui,
+        repo,
+        revdag,
+        displayer,
+        graphmod.asciiedges,
+        props={b'nodelen': nodelen},
+    )
