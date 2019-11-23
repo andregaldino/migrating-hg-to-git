@@ -130,6 +130,12 @@ colortable = {
     b'phabricator.desc': b'',
     b'phabricator.drev': b'bold',
     b'phabricator.node': b'',
+    b'phabricator.status.abandoned': b'magenta dim',
+    b'phabricator.status.accepted': b'green bold',
+    b'phabricator.status.closed': b'green',
+    b'phabricator.status.needsreview': b'yellow',
+    b'phabricator.status.needsrevision': b'red',
+    b'phabricator.status.changesplanned': b'red',
 }
 
 _VCR_FLAGS = [
@@ -1728,7 +1734,11 @@ def phabstatusshowview(ui, repo, displayer):
 
     def phabstatus(ctx):
         drev = drevsbyrev[ctx.rev()]
-        ui.write(b"\n%(uri)s %(statusName)s\n" % drev)
+        status = ui.label(
+            b'%(statusName)s' % drev,
+            b'phabricator.status.%s' % _getstatusname(drev),
+        )
+        ui.write(b"\n%s %s\n" % (drev[b'uri'], status))
 
     revs -= smartset.baseset(unknownrevs)
     revdag = graphmod.dagwalker(repo, revs)
