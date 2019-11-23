@@ -2181,9 +2181,8 @@ def applynarrowacl(repo, kwargs):
     )
     if not user_includes:
         raise error.Abort(
-            _(b"{} configuration for user {} is empty").format(
-                _NARROWACL_SECTION, username
-            )
+            _(b"%s configuration for user %s is empty")
+            % (_NARROWACL_SECTION, username)
         )
 
     user_includes = [
@@ -2202,9 +2201,8 @@ def applynarrowacl(repo, kwargs):
 
     if invalid_includes:
         raise error.Abort(
-            _(b"The following includes are not accessible for {}: {}").format(
-                username, invalid_includes
-            )
+            _(b"The following includes are not accessible for %s: %s")
+            % (username, invalid_includes)
         )
 
     new_args = {}
