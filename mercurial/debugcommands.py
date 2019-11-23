@@ -13,6 +13,7 @@ import difflib
 import errno
 import operator
 import os
+import platform
 import random
 import re
 import socket
@@ -1485,6 +1486,11 @@ def debuginstall(ui, **opts):
         b'pythonexe',
         _(b"checking Python executable (%s)\n"),
         pycompat.sysexecutable or _(b"unknown"),
+    )
+    fm.write(
+        b'pythonimplementation',
+        _(b"checking Python implementation (%s)\n"),
+        pycompat.sysbytes(platform.python_implementation()),
     )
     fm.write(
         b'pythonver',

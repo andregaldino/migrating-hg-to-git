@@ -2,6 +2,7 @@ hg debuginstall
   $ hg debuginstall
   checking encoding (ascii)...
   checking Python executable (*) (glob)
+  checking Python implementation (*) (glob)
   checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re)
@@ -43,6 +44,7 @@ hg debuginstall JSON
     "hgverextra": "*", (glob)
     "problems": 0,
     "pythonexe": "*", (glob)
+    "pythonimplementation": "*", (glob)
     "pythonlib": "*", (glob)
     "pythonsecurity": [*], (glob)
     "pythonver": "*.*.*", (glob)
@@ -58,6 +60,7 @@ hg debuginstall with no username
   $ HGUSER= hg debuginstall
   checking encoding (ascii)...
   checking Python executable (*) (glob)
+  checking Python implementation (*) (glob)
   checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re)
@@ -103,6 +106,7 @@ path variables are expanded (~ is the same as $TESTTMP)
   $ HGEDITOR="~/tools/testeditor.exe" hg debuginstall
   checking encoding (ascii)...
   checking Python executable (*) (glob)
+  checking Python implementation (*) (glob)
   checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re)
@@ -128,6 +132,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   $ HGEDITOR="c:\foo\bar\baz.exe -y -z" hg debuginstall
   checking encoding (ascii)...
   checking Python executable (*) (glob)
+  checking Python implementation (*) (glob)
   checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re)
@@ -185,6 +190,7 @@ since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/hg debuginstall || cat pip.log
   checking encoding (ascii)...
   checking Python executable (*) (glob)
+  checking Python implementation (*) (glob)
   checking Python version (3.*) (glob)
   checking Python lib (*)... (glob)
   checking Python security support (*) (glob)
@@ -221,6 +227,7 @@ since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/hg debuginstall || cat pip.log
   checking encoding (ascii)...
   checking Python executable (*) (glob)
+  checking Python implementation (*) (glob)
   checking Python version (2.*) (glob)
   checking Python lib (*)... (glob)
   checking Python security support (*) (glob)
