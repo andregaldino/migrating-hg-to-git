@@ -1518,7 +1518,12 @@ class workingctx(committablectx):
             p = p[:-1]
         # use unfiltered repo to delay/avoid loading obsmarkers
         unfi = self._repo.unfiltered()
-        return [changectx(self._repo, unfi.changelog.rev(n), n) for n in p]
+        return [
+            changectx(
+                self._repo, unfi.changelog.rev(n), n, maybe_filtered=False
+            )
+            for n in p
+        ]
 
     def _fileinfo(self, path):
         # populate __dict__['_manifest'] as workingctx has no _manifestdelta
