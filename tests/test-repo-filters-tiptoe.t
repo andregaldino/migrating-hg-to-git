@@ -54,6 +54,5 @@ Getting the node of `null`
 Getting basic changeset inforation about `null`
 
   $ hg log -r null -T "{node}\n{date}\n"
-  debug.filters: computing revision filter for "visible"
   0000000000000000000000000000000000000000
   0.00
