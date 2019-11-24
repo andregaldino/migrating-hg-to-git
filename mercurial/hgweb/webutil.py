@@ -865,7 +865,7 @@ class sessionvars(templateutil.wrapped):
         raise error.ParseError(_(b'not displayable without template'))
 
     def show(self, context, mapping):
-        return self.join(context, b'')
+        return self.join(context, mapping, b'')
 
     def tobool(self, context, mapping):
         return bool(self._vars)
