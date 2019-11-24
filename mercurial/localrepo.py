@@ -1514,6 +1514,19 @@ class localrepository(object):
         narrowspec.save(self, newincludes, newexcludes)
         self.invalidate(clearfilecache=True)
 
+    @util.propertycache
+    def _quick_access_changeid(self):
+        """an helper dictionnary for __getitem__ calls
+
+        This contains a list of symbol we can recognise right away without
+        further processing.
+        """
+        return {
+            b'null': (nullrev, nullid),
+            nullrev: (nullrev, nullid),
+            nullid: (nullrev, nullid),
+        }
+
     def __getitem__(self, changeid):
         # dealing with special cases
         if changeid is None:
@@ -1531,8 +1544,10 @@ class localrepository(object):
             ]
 
         # dealing with some special values
-        if changeid == b'null' or changeid == nullrev or changeid == nullid:
-            return context.changectx(self, nullrev, nullid, maybe_filtered=False)
+        quick_access = self._quick_access_changeid.get(changeid)
+        if quick_access is not None:
+            rev, node = quick_access
+            return context.changectx(self, rev, node, maybe_filtered=False)
         if changeid == b'tip':
             node = self.changelog.tip()
             rev = self.changelog.rev(node)
