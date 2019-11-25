@@ -209,6 +209,8 @@ def parsedate(date, formats=None, bias=None):
     True
     >>> tz == strtz
     True
+    >>> parsedate(b'2000 UTC', formats=extendeddateformats)
+    (946684800, 0)
     """
     if bias is None:
         bias = {}
@@ -244,7 +246,8 @@ def parsedate(date, formats=None, bias=None):
                 if part[0:1] in b"HMS":
                     b = b"00"
                 else:
-                    b = b"0"
+                    # year, month, and day start from 1
+                    b = b"1"
 
             # this piece is for matching the generic end to today's date
             n = datestr(now, b"%" + part[0:1])
