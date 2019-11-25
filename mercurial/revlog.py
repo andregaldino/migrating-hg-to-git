@@ -1279,7 +1279,7 @@ class revlog(object):
         return bool(self.reachableroots(a, [b], [a], includepath=False))
 
     def reachableroots(self, minroot, heads, roots, includepath=False):
-        """return (heads(::<roots> and <roots>::<heads>))
+        """return (heads(::(<roots> and <roots>::<heads>)))
 
         If includepath is True, return (<roots>::<heads>)."""
         try:
