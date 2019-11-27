@@ -37,6 +37,10 @@ typedef struct {
 	int children[16];
 } nodetreenode;
 
+typedef struct {
+	int (*index_parents)(PyObject *, int, int *);
+} Revlog_CAPI;
+
 /*
  * A base-16 trie for fast node->rev mapping.
  *
@@ -3032,6 +3036,10 @@ static PyTypeObject rustlazyancestorsType = {
 };
 #endif /* WITH_RUST */
 
+static Revlog_CAPI CAPI = {
+    HgRevlogIndex_GetParents,
+};
+
 void revlog_module_init(PyObject *mod)
 {
 	PyObject *caps = NULL;
@@ -3055,11 +3063,9 @@ void revlog_module_init(PyObject *mod)
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);
 
-	caps = PyCapsule_New(HgRevlogIndex_GetParents,
-	                     "mercurial.cext.parsers.index_get_parents_CAPI",
-	                     NULL);
+	caps = PyCapsule_New(&CAPI, "mercurial.cext.parsers.revlog_CAPI", NULL);
 	if (caps != NULL)
-		PyModule_AddObject(mod, "index_get_parents_CAPI", caps);
+		PyModule_AddObject(mod, "revlog_CAPI", caps);
 
 #ifdef WITH_RUST
 	rustlazyancestorsType.tp_new = PyType_GenericNew;

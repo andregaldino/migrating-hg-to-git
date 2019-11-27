@@ -14,15 +14,18 @@ use cpython::{PyClone, PyObject, PyResult, Python};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::c_int;
 
-py_capsule_fn!(
-    from mercurial.cext.parsers import index_get_parents_CAPI
-        as get_parents_capi
-        signature (
-            index: *mut RawPyObject,
-            rev: c_int,
-            ps: *mut [c_int; 2],
-        ) -> c_int
-);
+#[repr(C)]
+pub struct Revlog_CAPI {
+    index_parents: unsafe extern "C" fn(
+        index: *mut revlog_capi::RawPyObject,
+        rev: c_int,
+        ps: *mut [c_int; 2],
+    ) -> c_int,
+}
+
+py_capsule!(
+    from mercurial.cext.parsers import revlog_CAPI
+        as revlog_capi for Revlog_CAPI);
 
 /// A `Graph` backed up by objects and functions from revlog.c
 ///
@@ -58,14 +61,14 @@ py_capsule_fn!(
 /// mechanisms in other contexts.
 pub struct Index {
     index: PyObject,
-    parents: get_parents_capi::CapsuleFn,
+    capi: &'static Revlog_CAPI,
 }
 
 impl Index {
     pub fn new(py: Python, index: PyObject) -> PyResult<Self> {
         Ok(Index {
             index: index,
-            parents: get_parents_capi::retrieve(py)?,
+            capi: unsafe { revlog_capi::retrieve(py)? },
         })
     }
 }
@@ -75,7 +78,7 @@ impl Clone for Index {
         let guard = Python::acquire_gil();
         Index {
             index: self.index.clone_ref(guard.python()),
-            parents: self.parents.clone(),
+            capi: self.capi,
         }
     }
 }
@@ -88,7 +91,7 @@ impl Graph for Index {
         }
         let mut res: [c_int; 2] = [0; 2];
         let code = unsafe {
-            (self.parents)(
+            (self.capi.index_parents)(
                 self.index.as_ptr(),
                 rev as c_int,
                 &mut res as *mut [c_int; 2],
