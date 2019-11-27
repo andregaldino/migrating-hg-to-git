@@ -3054,11 +3054,13 @@ def amend(ui, repo, old, extra, pats, opts):
         # selectively update the dirstate only for the amended files.
         dirstate = repo.dirstate
 
-        # Update the state of the files which were added and
-        # and modified in the amend to "normal" in the dirstate.
+        # Update the state of the files which were added and modified in the
+        # amend to "normal" in the dirstate. We need to use "normallookup" since
+        # the files may have changed since the command started; using "normal"
+        # would mark them as clean but with uncommitted contents.
         normalfiles = set(wctx.modified() + wctx.added()) & filestoamend
         for f in normalfiles:
-            dirstate.normal(f)
+            dirstate.normallookup(f)
 
         # Update the state of files which were removed in the amend
         # to "removed" in the dirstate.
