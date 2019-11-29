@@ -868,6 +868,38 @@ Renames are followed.
   +4
   
 
+Uncommitted changes with a rename
+
+  $ hg mv baz bazn
+  $ hg log -f -L bazn,5:7
+  changeset:   9:6af29c3a778f
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     foo -> dir/baz; 1-1+
+  
+  changeset:   5:cfdf972b3971
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     foo: 3 -> 3+ and 11+ -> 11-; bar: a -> a+
+  
+  changeset:   4:eaec41c1a0c9
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     11 -> 11+; leading space before "1"
+  
+  changeset:   2:63a884426fd0
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     2 -> 2+; added bar
+  
+  changeset:   0:5ae1f82b9a00
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     init
+  
+  $ hg revert -a -C -q
+
 Binary files work but without diff hunks filtering.
 (Checking w/ and w/o diff.git option.)
 
