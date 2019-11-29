@@ -78,6 +78,16 @@ pub trait Matcher {
 }
 
 /// Matches everything.
+///```
+/// use hg::{ matchers::{Matcher, AlwaysMatcher}, utils::hg_path::HgPath };
+///
+/// let matcher = AlwaysMatcher;
+///
+/// assert_eq!(true, matcher.matches(HgPath::new(b"whatever")));
+/// assert_eq!(true, matcher.matches(HgPath::new(b"b.txt")));
+/// assert_eq!(true, matcher.matches(HgPath::new(b"main.c")));
+/// assert_eq!(true, matcher.matches(HgPath::new(br"re:.*\.c$")));
+/// ```
 #[derive(Debug)]
 pub struct AlwaysMatcher;
 
