@@ -7,6 +7,7 @@
 
 use std::borrow::Borrow;
 use std::ffi::{OsStr, OsString};
+use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
@@ -162,6 +163,12 @@ impl HgPath {
     }
 }
 
+impl fmt::Display for HgPath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(&self.inner))
+    }
+}
+
 #[derive(Eq, Ord, Clone, PartialEq, PartialOrd, Debug, Hash)]
 pub struct HgPathBuf {
     inner: Vec<u8>,
@@ -182,6 +189,12 @@ impl HgPathBuf {
     }
     pub fn as_ref(&self) -> &[u8] {
         self.inner.as_ref()
+    }
+}
+
+impl fmt::Display for HgPathBuf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(&self.inner))
     }
 }
 
