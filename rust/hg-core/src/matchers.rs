@@ -10,21 +10,21 @@
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use std::collections::HashSet;
 
-pub enum VisitChildrenSet {
+pub enum VisitChildrenSet<'a> {
     /// Don't visit anything
     Empty,
     /// Only visit this directory
     This,
     /// Visit this directory and these subdirectories
     /// TODO Should we implement a `NonEmptyHashSet`?
-    Set(HashSet<HgPathBuf>),
+    Set(HashSet<&'a HgPath>),
     /// Visit this directory and all subdirectories
     Recursive,
 }
 
 pub trait Matcher {
     /// Explicitly listed files
-    fn file_set(&self) -> HashSet<&HgPath>;
+    fn file_set(&self) -> Option<&HashSet<&HgPath>>;
     /// Returns whether `filename` is in `file_set`
     fn exact_match(&self, filename: impl AsRef<HgPath>) -> bool;
     /// Returns whether `filename` is matched by this matcher
@@ -82,8 +82,8 @@ pub trait Matcher {
 pub struct AlwaysMatcher;
 
 impl Matcher for AlwaysMatcher {
-    fn file_set(&self) -> HashSet<&HgPath> {
-        HashSet::new()
+    fn file_set(&self) -> Option<&HashSet<&HgPath>> {
+        None
     }
     fn exact_match(&self, _filename: impl AsRef<HgPath>) -> bool {
         false
