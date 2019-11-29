@@ -17,6 +17,7 @@ use cpython::{
 };
 use hg::utils::files::get_path_from_bytes;
 
+use hg::matchers::AlwaysMatcher;
 use hg::status;
 use hg::utils::hg_path::HgPath;
 
@@ -53,9 +54,19 @@ pub fn status_wrapper(
     let dmap: DirstateMap = dmap.to_py_object(py);
     let dmap = dmap.get_inner(py);
 
-    let (lookup, status_res) =
-        status(&dmap, &root_dir, list_clean, last_normal_time, check_exec)
-            .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
+    // TODO removed in the next patch to get the code to compile. This patch
+    // is part of a series and does not make real sense on its own.
+    let matcher = AlwaysMatcher;
+
+    let (lookup, status_res) = status(
+        &dmap,
+        &matcher,
+        &root_dir,
+        list_clean,
+        last_normal_time,
+        check_exec,
+    )
+    .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
 
     let modified = collect_pybytes_list(py, status_res.modified.as_ref());
     let added = collect_pybytes_list(py, status_res.added.as_ref());

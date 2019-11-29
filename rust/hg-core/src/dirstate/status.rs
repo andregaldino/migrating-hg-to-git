@@ -11,6 +11,7 @@
 
 use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
+    matchers::Matcher,
     utils::{
         files::HgMetadata,
         hg_path::{hg_path_to_path_buf, HgPath},
@@ -18,6 +19,7 @@ use crate::{
     CopyMap, DirstateEntry, DirstateMap, EntryState,
 };
 use rayon::prelude::*;
+use std::collections::HashSet;
 use std::path::Path;
 
 /// Marker enum used to dispatch new status entries into the right collections.
@@ -32,6 +34,8 @@ enum Dispatch {
     Clean,
     Unknown,
 }
+
+type IoResult<T> = std::io::Result<T>;
 
 /// Dates and times that are outside the 31-bit signed range are compared
 /// modulo 2^31. This should prevent hg from behaving badly with very large
@@ -116,6 +120,63 @@ fn dispatch_missing(state: EntryState) -> Dispatch {
     }
 }
 
+/// Get stat data about the files explicitly specified by match.
+/// TODO subrepos
+fn walk_explicit<'a>(
+    files: &'a HashSet<&HgPath>,
+    dmap: &'a DirstateMap,
+    root_dir: impl AsRef<Path> + Sync + Send,
+    check_exec: bool,
+    list_clean: bool,
+    last_normal_time: i64,
+) -> impl ParallelIterator<Item = IoResult<(&'a HgPath, Dispatch)>> {
+    files.par_iter().filter_map(move |filename| {
+        // TODO normalization
+        let normalized = filename.as_ref();
+
+        let buf = match hg_path_to_path_buf(normalized) {
+            Ok(x) => x,
+            Err(e) => return Some(Err(e.into())),
+        };
+        let target = root_dir.as_ref().join(buf);
+        let st = target.symlink_metadata();
+        match st {
+            Ok(meta) => {
+                let file_type = meta.file_type();
+                if file_type.is_file() || file_type.is_symlink() {
+                    if let Some(entry) = dmap.get(normalized) {
+                        return Some(Ok((
+                            normalized,
+                            dispatch_found(
+                                &normalized,
+                                *entry,
+                                HgMetadata::from_metadata(meta),
+                                &dmap.copy_map,
+                                check_exec,
+                                list_clean,
+                                last_normal_time,
+                            ),
+                        )));
+                    }
+                } else {
+                    if dmap.contains_key(normalized) {
+                        return Some(Ok((normalized, Dispatch::Removed)));
+                    }
+                }
+            }
+            Err(_) => {
+                if let Some(entry) = dmap.get(normalized) {
+                    return Some(Ok((
+                        normalized,
+                        dispatch_missing(entry.state),
+                    )));
+                }
+            }
+        };
+        None
+    })
+}
+
 /// Stat all entries in the `DirstateMap` and mark them for dispatch into
 /// the relevant collections.
 fn stat_dmap_entries(
@@ -124,7 +185,7 @@ fn stat_dmap_entries(
     check_exec: bool,
     list_clean: bool,
     last_normal_time: i64,
-) -> impl ParallelIterator<Item = std::io::Result<(&HgPath, Dispatch)>> {
+) -> impl ParallelIterator<Item = IoResult<(&HgPath, Dispatch)>> {
     dmap.par_iter().map(move |(filename, entry)| {
         let filename: &HgPath = filename;
         let filename_as_path = hg_path_to_path_buf(filename)?;
@@ -174,9 +235,9 @@ pub struct StatusResult<'a> {
      * TODO unknown */
 }
 
-fn build_response(
-    results: Vec<(&HgPath, Dispatch)>,
-) -> (Vec<&HgPath>, StatusResult) {
+fn build_response<'a>(
+    results: impl IntoIterator<Item = IoResult<(&'a HgPath, Dispatch)>>,
+) -> IoResult<(Vec<&'a HgPath>, StatusResult<'a>)> {
     let mut lookup = vec![];
     let mut modified = vec![];
     let mut added = vec![];
@@ -184,7 +245,8 @@ fn build_response(
     let mut deleted = vec![];
     let mut clean = vec![];
 
-    for (filename, dispatch) in results.into_iter() {
+    for res in results.into_iter() {
+        let (filename, dispatch) = res?;
         match dispatch {
             Dispatch::Unknown => {}
             Dispatch::Unsure => lookup.push(filename),
@@ -196,7 +258,7 @@ fn build_response(
         }
     }
 
-    (
+    Ok((
         lookup,
         StatusResult {
             modified,
@@ -205,24 +267,40 @@ fn build_response(
             deleted,
             clean,
         },
-    )
+    ))
 }
 
-pub fn status(
-    dmap: &DirstateMap,
+pub fn status<'a: 'c, 'b: 'c, 'c>(
+    dmap: &'a DirstateMap,
+    matcher: &'b (impl Matcher),
     root_dir: impl AsRef<Path> + Sync + Send + Copy,
     list_clean: bool,
     last_normal_time: i64,
     check_exec: bool,
-) -> std::io::Result<(Vec<&HgPath>, StatusResult)> {
-    let results: std::io::Result<_> = stat_dmap_entries(
-        &dmap,
-        root_dir,
-        check_exec,
-        list_clean,
-        last_normal_time,
-    )
-    .collect();
+) -> IoResult<(Vec<&'c HgPath>, StatusResult<'c>)> {
+    let files = matcher.file_set();
+    let mut results = vec![];
+    if let Some(files) = files {
+        results.par_extend(walk_explicit(
+            &files,
+            &dmap,
+            root_dir,
+            check_exec,
+            list_clean,
+            last_normal_time,
+        ));
+    }
 
-    Ok(build_response(results?))
+    if !matcher.is_exact() {
+        let stat_results = stat_dmap_entries(
+            &dmap,
+            root_dir,
+            check_exec,
+            list_clean,
+            last_normal_time,
+        );
+        results.par_extend(stat_results);
+    }
+
+    build_response(results)
 }
