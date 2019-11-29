@@ -28,14 +28,14 @@ impl DirsMultiset {
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
     pub fn from_dirstate(
-        vec: &FastHashMap<HgPathBuf, DirstateEntry>,
+        dirstate: &FastHashMap<HgPathBuf, DirstateEntry>,
         skip_state: Option<EntryState>,
     ) -> Self {
         let mut multiset = DirsMultiset {
             inner: FastHashMap::default(),
         };
 
-        for (filename, DirstateEntry { state, .. }) in vec {
+        for (filename, DirstateEntry { state, .. }) in dirstate {
             // This `if` is optimized out of the loop
             if let Some(skip) = skip_state {
                 if skip != *state {
@@ -50,13 +50,13 @@ impl DirsMultiset {
     }
 
     /// Initializes the multiset from a manifest.
-    pub fn from_manifest(vec: &Vec<HgPathBuf>) -> Self {
+    pub fn from_manifest(manifest: &[impl AsRef<HgPath>]) -> Self {
         let mut multiset = DirsMultiset {
             inner: FastHashMap::default(),
         };
 
-        for filename in vec {
-            multiset.add_path(filename);
+        for filename in manifest {
+            multiset.add_path(filename.as_ref());
         }
 
         multiset
@@ -65,8 +65,11 @@ impl DirsMultiset {
     /// Increases the count of deepest directory contained in the path.
     ///
     /// If the directory is not yet in the map, adds its parents.
-    pub fn add_path(&mut self, path: &HgPath) -> Result<(), DirstateMapError> {
-        for subpath in files::find_dirs(path) {
+    pub fn add_path(
+        &mut self,
+        path: impl AsRef<HgPath>,
+    ) -> Result<(), DirstateMapError> {
+        for subpath in files::find_dirs(path.as_ref()) {
             if subpath.as_bytes().last() == Some(&b'/') {
                 // TODO Remove this once PathAuditor is certified
                 // as the only entrypoint for path data
@@ -88,9 +91,9 @@ impl DirsMultiset {
     /// If the directory is not in the map, something horrible has happened.
     pub fn delete_path(
         &mut self,
-        path: &HgPath,
+        path: impl AsRef<HgPath>,
     ) -> Result<(), DirstateMapError> {
-        for subpath in files::find_dirs(path) {
+        for subpath in files::find_dirs(path.as_ref()) {
             match self.inner.entry(subpath.to_owned()) {
                 Entry::Occupied(mut entry) => {
                     let val = entry.get().clone();
@@ -102,7 +105,7 @@ impl DirsMultiset {
                 }
                 Entry::Vacant(_) => {
                     return Err(DirstateMapError::PathNotFound(
-                        path.to_owned(),
+                        path.as_ref().to_owned(),
                     ))
                 }
             };
@@ -111,8 +114,8 @@ impl DirsMultiset {
         Ok(())
     }
 
-    pub fn contains(&self, key: &HgPath) -> bool {
-        self.inner.contains_key(key)
+    pub fn contains(&self, key: impl AsRef<HgPath>) -> bool {
+        self.inner.contains_key(key.as_ref())
     }
 
     pub fn iter(&self) -> DirsMultisetIter {
@@ -130,7 +133,8 @@ mod tests {
 
     #[test]
     fn test_delete_path_path_not_found() {
-        let mut map = DirsMultiset::from_manifest(&vec![]);
+        let manifest: Vec<HgPathBuf> = vec![];
+        let mut map = DirsMultiset::from_manifest(&manifest);
         let path = HgPathBuf::from_bytes(b"doesnotexist/");
         assert_eq!(
             Err(DirstateMapError::PathNotFound(path.to_owned())),
@@ -186,7 +190,8 @@ mod tests {
 
     #[test]
     fn test_add_path_empty_path() {
-        let mut map = DirsMultiset::from_manifest(&vec![]);
+        let manifest: Vec<HgPathBuf> = vec![];
+        let mut map = DirsMultiset::from_manifest(&manifest);
         let path = HgPath::new(b"");
         map.add_path(path);
 
@@ -195,7 +200,8 @@ mod tests {
 
     #[test]
     fn test_add_path_successful() {
-        let mut map = DirsMultiset::from_manifest(&vec![]);
+        let manifest: Vec<HgPathBuf> = vec![];
+        let mut map = DirsMultiset::from_manifest(&manifest);
 
         map.add_path(HgPath::new(b"a/"));
         assert_eq!(1, *map.inner.get(HgPath::new(b"a")).unwrap());
@@ -240,7 +246,8 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_empty() {
-        let new = DirsMultiset::from_manifest(&vec![]);
+        let manifest: Vec<HgPathBuf> = vec![];
+        let new = DirsMultiset::from_manifest(&manifest);
         let expected = DirsMultiset {
             inner: FastHashMap::default(),
         };
@@ -255,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_no_skip() {
-        let input_vec = ["a/", "b/", "a/c", "a/d/"]
+        let input_vec: Vec<HgPathBuf> = ["a/", "b/", "a/c", "a/d/"]
             .iter()
             .map(|e| HgPathBuf::from_bytes(e.as_bytes()))
             .collect();
