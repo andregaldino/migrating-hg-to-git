@@ -1107,11 +1107,14 @@ class dirstate(object):
         dmap.preload()
 
         use_rust = True
+
+        allowed_matchers = (matchmod.alwaysmatcher, matchmod.exactmatcher)
+
         if rustmod is None:
             use_rust = False
         elif subrepos:
             use_rust = False
-        if bool(listunknown):
+        elif bool(listunknown):
             # Pathauditor does not exist yet in Rust, unknown files
             # can't be trusted.
             use_rust = False
@@ -1119,7 +1122,7 @@ class dirstate(object):
             # Rust has no ignore mechanism yet, so don't use Rust for
             # commands that need ignore.
             use_rust = False
-        elif not match.always():
+        elif not isinstance(match, allowed_matchers):
             # Matchers have yet to be implemented
             use_rust = False
 
@@ -1147,6 +1150,7 @@ class dirstate(object):
                 clean,
             ) = rustmod.status(
                 dmap._rustmap,
+                match,
                 self._rootdir,
                 bool(listclean),
                 self._lastnormaltime,
