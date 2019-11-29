@@ -1242,25 +1242,31 @@ def upgraderepo(
             ui.warn(msg % b', '.join(sorted(incompatible)))
             revlogs = UPGRADE_ALL_REVLOGS
 
+    def write_labeled(l, label):
+        first = True
+        for r in sorted(l):
+            if not first:
+                ui.write(b', ')
+            ui.write(r, label=label)
+            first = False
+
     def printrequirements():
         ui.write(_(b'requirements\n'))
-        ui.write(
-            _(b'   preserved: %s\n')
-            % _(b', ').join(sorted(newreqs & repo.requirements))
+        ui.write(_(b'   preserved: '))
+        write_labeled(
+            newreqs & repo.requirements, "upgrade-repo.requirement.preserved"
         )
-
+        ui.write((b'\n'))
+        removed = repo.requirements - newreqs
         if repo.requirements - newreqs:
-            ui.write(
-                _(b'   removed: %s\n')
-                % _(b', ').join(sorted(repo.requirements - newreqs))
-            )
-
-        if newreqs - repo.requirements:
-            ui.write(
-                _(b'   added: %s\n')
-                % _(b', ').join(sorted(newreqs - repo.requirements))
-            )
-
+            ui.write(_(b'   removed: '))
+            write_labeled(removed, "upgrade-repo.requirement.removed")
+            ui.write((b'\n'))
+        added = newreqs - repo.requirements
+        if added:
+            ui.write(_(b'   added: '))
+            write_labeled(added, "upgrade-repo.requirement.added")
+            ui.write((b'\n'))
         ui.write(b'\n')
 
     def printupgradeactions():

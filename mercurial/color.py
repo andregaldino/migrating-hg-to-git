@@ -145,6 +145,9 @@ _defaultstyles = {
     b'status.unknown': b'magenta bold underline',
     b'tags.normal': b'green',
     b'tags.local': b'black bold',
+    b'upgrade-repo.requirement.preserved': b'cyan',
+    b'upgrade-repo.requirement.added': b'green',
+    b'upgrade-repo.requirement.removed': b'red',
 }
 
 
