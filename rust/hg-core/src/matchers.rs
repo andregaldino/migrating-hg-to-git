@@ -7,8 +7,9 @@
 
 //! Structs and types for matching files and directories.
 
-use crate::utils::hg_path::HgPath;
+use crate::{utils::hg_path::HgPath, DirsMultiset, DirstateMapError};
 use std::collections::HashSet;
+use std::iter::FromIterator;
 
 pub enum VisitChildrenSet<'a> {
     /// Don't visit anything
@@ -83,10 +84,10 @@ pub trait Matcher {
 ///
 /// let matcher = AlwaysMatcher;
 ///
-/// assert_eq!(true, matcher.matches(HgPath::new(b"whatever")));
-/// assert_eq!(true, matcher.matches(HgPath::new(b"b.txt")));
-/// assert_eq!(true, matcher.matches(HgPath::new(b"main.c")));
-/// assert_eq!(true, matcher.matches(HgPath::new(br"re:.*\.c$")));
+/// assert_eq!(matcher.matches(HgPath::new(b"whatever")), true);
+/// assert_eq!(matcher.matches(HgPath::new(b"b.txt")), true);
+/// assert_eq!(matcher.matches(HgPath::new(b"main.c")), true);
+/// assert_eq!(matcher.matches(HgPath::new(br"re:.*\.c$")), true);
 /// ```
 #[derive(Debug)]
 pub struct AlwaysMatcher;
@@ -112,5 +113,66 @@ impl Matcher for AlwaysMatcher {
     }
     fn is_exact(&self) -> bool {
         false
+    }
+}
+
+/// Matches the input files exactly. They are interpreted as paths, not
+/// patterns.
+///
+///```
+/// use hg::{ matchers::{Matcher, FileMatcher}, utils::hg_path::HgPath };
+///
+/// let files = [HgPath::new(b"a.txt"), HgPath::new(br"re:.*\.c$")];
+/// let matcher = FileMatcher::new(&files).unwrap();
+///
+/// assert_eq!(matcher.matches(HgPath::new(b"a.txt")), true);
+/// assert_eq!(matcher.matches(HgPath::new(b"b.txt")), false);
+/// assert_eq!(matcher.matches(HgPath::new(b"main.c")), false);
+/// assert_eq!(matcher.matches(HgPath::new(br"re:.*\.c$")), true);
+/// ```
+#[derive(Debug)]
+pub struct FileMatcher<'a> {
+    files: HashSet<&'a HgPath>,
+    dirs: DirsMultiset,
+}
+
+impl<'a> FileMatcher<'a> {
+    pub fn new(
+        files: &'a [impl AsRef<HgPath>],
+    ) -> Result<Self, DirstateMapError> {
+        Ok(Self {
+            files: HashSet::from_iter(files.iter().map(|f| f.as_ref())),
+            dirs: DirsMultiset::from_manifest(files)?,
+        })
+    }
+    fn inner_matches(&self, filename: impl AsRef<HgPath>) -> bool {
+        self.files.contains(filename.as_ref())
+    }
+}
+
+impl<'a> Matcher for FileMatcher<'a> {
+    fn file_set(&self) -> Option<&HashSet<&HgPath>> {
+        Some(&self.files)
+    }
+    fn exact_match(&self, filename: impl AsRef<HgPath>) -> bool {
+        self.inner_matches(filename)
+    }
+    fn matches(&self, filename: impl AsRef<HgPath>) -> bool {
+        self.inner_matches(filename)
+    }
+    fn visit_children_set(
+        &self,
+        _directory: impl AsRef<HgPath>,
+    ) -> VisitChildrenSet {
+        // TODO implement once we have `status.traverse`
+        // This is useless until unknown files are taken into account
+        // Which will not need to happen before the `IncludeMatcher`.
+        unimplemented!()
+    }
+    fn matches_everything(&self) -> bool {
+        false
+    }
+    fn is_exact(&self) -> bool {
+        true
     }
 }
