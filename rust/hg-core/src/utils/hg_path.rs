@@ -112,6 +112,9 @@ impl HgPath {
     pub fn contains(&self, other: u8) -> bool {
         self.inner.contains(&other)
     }
+    pub fn starts_with(&self, needle: impl AsRef<HgPath>) -> bool {
+        self.inner.starts_with(needle.as_ref().as_bytes())
+    }
     pub fn join<T: ?Sized + AsRef<HgPath>>(&self, other: &T) -> HgPathBuf {
         let mut inner = self.inner.to_owned();
         if inner.len() != 0 && inner.last() != Some(&b'/') {
@@ -119,6 +122,21 @@ impl HgPath {
         }
         inner.extend(other.as_ref().bytes());
         HgPathBuf::from_bytes(&inner)
+    }
+    /// Given a base directory, returns the slice of `self` relative to the
+    /// base directory. If `base` is not a directory (does not end with a
+    /// `b'/'`), returns `None`.
+    pub fn relative_to(&self, base: impl AsRef<HgPath>) -> Option<&HgPath> {
+        let base = base.as_ref();
+        if base.is_empty() {
+            return Some(self);
+        }
+        let is_dir = base.as_bytes().ends_with(b"/");
+        if is_dir && self.starts_with(base) {
+            Some(HgPath::new(&self.inner[base.len()..]))
+        } else {
+            None
+        }
     }
     /// Checks for errors in the path, short-circuiting at the first one.
     /// This generates fine-grained errors useful for debugging.
@@ -411,5 +429,36 @@ mod tests {
         assert_eq!(b"a//b", path.as_bytes());
         let path = HgPathBuf::from_bytes(b"a").join(HgPath::new(b"/b"));
         assert_eq!(b"a//b", path.as_bytes());
+    }
+
+    #[test]
+    fn test_relative_to() {
+        let path = HgPath::new(b"");
+        let base = HgPath::new(b"");
+        assert_eq!(Some(path), path.relative_to(base));
+
+        let path = HgPath::new(b"path");
+        let base = HgPath::new(b"");
+        assert_eq!(Some(path), path.relative_to(base));
+
+        let path = HgPath::new(b"a");
+        let base = HgPath::new(b"b");
+        assert_eq!(None, path.relative_to(base));
+
+        let path = HgPath::new(b"a/b");
+        let base = HgPath::new(b"a");
+        assert_eq!(None, path.relative_to(base));
+
+        let path = HgPath::new(b"a/b");
+        let base = HgPath::new(b"a/");
+        assert_eq!(Some(HgPath::new(b"b")), path.relative_to(base));
+
+        let path = HgPath::new(b"nested/path/to/b");
+        let base = HgPath::new(b"nested/path/");
+        assert_eq!(Some(HgPath::new(b"to/b")), path.relative_to(base));
+
+        let path = HgPath::new(b"ends/with/dir/");
+        let base = HgPath::new(b"ends/");
+        assert_eq!(Some(HgPath::new(b"with/dir/")), path.relative_to(base));
     }
 }
