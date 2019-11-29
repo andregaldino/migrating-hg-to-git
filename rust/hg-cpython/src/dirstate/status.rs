@@ -12,14 +12,17 @@
 use crate::dirstate::DirstateMap;
 use cpython::exc::ValueError;
 use cpython::{
-    PyBytes, PyErr, PyList, PyObject, PyResult, Python, PythonObject,
-    ToPyObject,
+    ObjectProtocol, PyBytes, PyErr, PyList, PyObject, PyResult, PyTuple,
+    Python, PythonObject, ToPyObject,
 };
-use hg::utils::files::get_path_from_bytes;
-
-use hg::matchers::AlwaysMatcher;
-use hg::status;
-use hg::utils::hg_path::HgPath;
+use hg::utils::hg_path::HgPathBuf;
+use hg::{
+    matchers::{AlwaysMatcher, FileMatcher},
+    status,
+    utils::{files::get_path_from_bytes, hg_path::HgPath},
+    StatusResult,
+};
+use std::borrow::Borrow;
 
 /// This will be useless once trait impls for collection are added to `PyBytes`
 /// upstream.
@@ -43,6 +46,7 @@ fn collect_pybytes_list<P: AsRef<HgPath>>(
 pub fn status_wrapper(
     py: Python,
     dmap: DirstateMap,
+    matcher: PyObject,
     root_dir: PyObject,
     list_clean: bool,
     last_normal_time: i64,
@@ -54,20 +58,65 @@ pub fn status_wrapper(
     let dmap: DirstateMap = dmap.to_py_object(py);
     let dmap = dmap.get_inner(py);
 
-    // TODO removed in the next patch to get the code to compile. This patch
-    // is part of a series and does not make real sense on its own.
-    let matcher = AlwaysMatcher;
+    match matcher.get_type(py).name(py).borrow() {
+        "alwaysmatcher" => {
+            let matcher = AlwaysMatcher;
+            let (lookup, status_res) = status(
+                &dmap,
+                &matcher,
+                &root_dir,
+                list_clean,
+                last_normal_time,
+                check_exec,
+            )
+            .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
+            build_response(lookup, status_res, py)
+        }
+        "exactmatcher" => {
+            let files = matcher.call_method(
+                py,
+                "files",
+                PyTuple::new(py, &[]),
+                None,
+            )?;
+            let files: PyList = files.cast_into(py)?;
+            let files: PyResult<Vec<HgPathBuf>> = files
+                .iter(py)
+                .map(|f| {
+                    Ok(HgPathBuf::from_bytes(
+                        f.extract::<PyBytes>(py)?.data(py),
+                    ))
+                })
+                .collect();
 
-    let (lookup, status_res) = status(
-        &dmap,
-        &matcher,
-        &root_dir,
-        list_clean,
-        last_normal_time,
-        check_exec,
-    )
-    .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
+            let files = files?;
+            let matcher = FileMatcher::new(&files)
+                .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
+            let (lookup, status_res) = status(
+                &dmap,
+                &matcher,
+                &root_dir,
+                list_clean,
+                last_normal_time,
+                check_exec,
+            )
+            .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
+            build_response(lookup, status_res, py)
+        }
+        e => {
+            return Err(PyErr::new::<ValueError, _>(
+                py,
+                format!("Unsupported matcher {}", e),
+            ));
+        }
+    }
+}
 
+fn build_response(
+    lookup: Vec<&HgPath>,
+    status_res: StatusResult,
+    py: Python,
+) -> PyResult<(PyList, PyList, PyList, PyList, PyList, PyList, PyList)> {
     let modified = collect_pybytes_list(py, status_res.modified.as_ref());
     let added = collect_pybytes_list(py, status_res.added.as_ref());
     let removed = collect_pybytes_list(py, status_res.removed.as_ref());

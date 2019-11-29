@@ -116,6 +116,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
             status_wrapper(
                 dmap: DirstateMap,
                 root_dir: PyObject,
+                matcher: PyObject,
                 list_clean: bool,
                 last_normal_time: i64,
                 check_exec: bool
