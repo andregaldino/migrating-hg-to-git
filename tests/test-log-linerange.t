@@ -898,6 +898,99 @@ Uncommitted changes with a rename
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     init
   
+
+Uncommitted changes in requested line range
+
+  $ sed 's/2/  /' bazn > bazn.new
+  $ mv bazn.new bazn
+  $ hg diff
+  diff --git a/dir/baz b/dir/bazn
+  rename from dir/baz
+  rename to dir/bazn
+  --- a/dir/baz
+  +++ b/dir/bazn
+  @@ -3,7 +3,7 @@
+   0
+   0
+    1+
+  -2+
+  +  +
+   3+
+   4
+   5
+  $ hg log -f -L bazn,5:7
+  changeset:   9:6af29c3a778f
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     foo -> dir/baz; 1-1+
+  
+  changeset:   5:cfdf972b3971
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     foo: 3 -> 3+ and 11+ -> 11-; bar: a -> a+
+  
+  changeset:   4:eaec41c1a0c9
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     11 -> 11+; leading space before "1"
+  
+  changeset:   2:63a884426fd0
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     2 -> 2+; added bar
+  
+  changeset:   0:5ae1f82b9a00
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     init
+  
+
+Uncommitted changes in line-range + wdir()
+
+  $ hg log -r 'wdir()' -f -L bazn,5:7 --limit 2 -p
+  changeset:   2147483647:ffffffffffff
+  parent:      9:6af29c3a778f
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  
+  diff --git a/dir/baz b/dir/bazn
+  copy from dir/baz
+  copy to dir/bazn
+  --- a/dir/baz
+  +++ b/dir/bazn
+  @@ -3,7 +3,7 @@
+   0
+   0
+    1+
+  -2+
+  +  +
+   3+
+   4
+   5
+  
+  changeset:   9:6af29c3a778f
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     foo -> dir/baz; 1-1+
+  
+  diff --git a/foo b/dir/baz
+  copy from foo
+  copy to dir/baz
+  --- a/foo
+  +++ b/dir/baz
+  @@ -2,7 +2,7 @@
+   0
+   0
+   0
+  - 1
+  + 1+
+   2+
+   3+
+   4
+  
+
   $ hg revert -a -C -q
 
 Binary files work but without diff hunks filtering.

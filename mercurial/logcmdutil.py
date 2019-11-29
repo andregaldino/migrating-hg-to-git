@@ -930,6 +930,8 @@ def getlinerangerevs(repo, userrevs, opts):
         fctx = wctx.filectx(fname)
         for fctx, linerange in dagop.blockancestors(fctx, fromline, toline):
             rev = fctx.introrev()
+            if rev is None:
+                rev = wdirrev
             if rev not in userrevs:
                 continue
             linerangesbyrev.setdefault(rev, {}).setdefault(
@@ -940,7 +942,7 @@ def getlinerangerevs(repo, userrevs, opts):
         return hunks
 
     def hunksfilter(ctx):
-        fctxlineranges = linerangesbyrev.get(ctx.rev())
+        fctxlineranges = linerangesbyrev.get(scmutil.intrev(ctx))
         if fctxlineranges is None:
             return nofilterhunksfn
 
@@ -960,7 +962,7 @@ def getlinerangerevs(repo, userrevs, opts):
         return filterfn
 
     def filematcher(ctx):
-        files = list(linerangesbyrev.get(ctx.rev(), []))
+        files = list(linerangesbyrev.get(scmutil.intrev(ctx), []))
         return scmutil.matchfiles(repo, files)
 
     revs = sorted(linerangesbyrev, reverse=True)
