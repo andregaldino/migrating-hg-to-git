@@ -2574,7 +2574,7 @@ def cleanupnode(ui, repo, nodes, nobackup=False):
 
 
 def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
-    if isinstance(nodelist, str):
+    if isinstance(nodelist, bytes):
         nodelist = [nodelist]
     state = histeditstate(repo)
     if state.inprogress():
