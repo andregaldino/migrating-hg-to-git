@@ -77,7 +77,7 @@ _encoding = None  # see extsetup
 
 
 def decode(arg):
-    if isinstance(arg, str):
+    if isinstance(arg, bytes):
         uarg = arg.decode(_encoding)
         if arg == uarg.encode(_encoding):
             return uarg
