@@ -130,7 +130,7 @@ def strip(ui, repo, nodelist, backup=True, topic=b'backup'):
     cl = repo.changelog
 
     # TODO handle undo of merge sets
-    if isinstance(nodelist, str):
+    if isinstance(nodelist, bytes):
         nodelist = [nodelist]
     striplist = [cl.rev(node) for node in nodelist]
     striprev = min(striplist)
