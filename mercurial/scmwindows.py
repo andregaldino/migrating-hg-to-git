@@ -37,7 +37,7 @@ def systemrcpath():
     value = util.lookupreg(
         b'SOFTWARE\\Mercurial', None, winreg.HKEY_LOCAL_MACHINE
     )
-    if not isinstance(value, str) or not value:
+    if not isinstance(value, bytes) or not value:
         return rcpath
     value = util.localpath(value)
     for p in value.split(pycompat.ospathsep):
