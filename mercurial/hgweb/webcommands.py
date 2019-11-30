@@ -1321,7 +1321,7 @@ def static(web):
     static = web.config(b"web", b"static", untrusted=False)
     if not static:
         tp = web.templatepath or templater.templatepaths()
-        if isinstance(tp, str):
+        if isinstance(tp, bytes):
             tp = [tp]
         static = [os.path.join(p, b'static') for p in tp]
 

@@ -412,7 +412,7 @@ class hgwebdir(object):
                 static = self.ui.config(b"web", b"static", untrusted=False)
                 if not static:
                     tp = self.templatepath or templater.templatepaths()
-                    if isinstance(tp, str):
+                    if isinstance(tp, bytes):
                         tp = [tp]
                     static = [os.path.join(p, b'static') for p in tp]
 

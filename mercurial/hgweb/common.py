@@ -193,7 +193,7 @@ def staticfile(directory, fname, res):
         return
 
     fpath = os.path.join(*fname.split(b'/'))
-    if isinstance(directory, str):
+    if isinstance(directory, bytes):
         directory = [directory]
     for d in directory:
         path = os.path.join(d, fpath)
