@@ -182,7 +182,7 @@ def ctxpvec(ctx):
 
 class pvec(object):
     def __init__(self, hashorctx):
-        if isinstance(hashorctx, str):
+        if isinstance(hashorctx, bytes):
             self._bs = hashorctx
             self._depth, self._vec = _split(util.b85decode(hashorctx))
         else:
