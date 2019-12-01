@@ -312,13 +312,13 @@ _wide = _sysstr(
 
 def colwidth(s):
     # type: (bytes) -> int
-    b"Find the column width of a string for display in the local encoding"
+    """Find the column width of a string for display in the local encoding"""
     return ucolwidth(s.decode(_sysstr(encoding), 'replace'))
 
 
 def ucolwidth(d):
     # type: (Text) -> int
-    b"Find the column width of a Unicode string for display"
+    """Find the column width of a Unicode string for display"""
     eaw = getattr(unicodedata, 'east_asian_width', None)
     if eaw is not None:
         return sum([eaw(c) in _wide and 2 or 1 for c in d])
@@ -436,7 +436,7 @@ def trim(s, width, ellipsis=b'', leftside=False):
 
 def lower(s):
     # type: (bytes) -> bytes
-    b"best-effort encoding-aware case-folding of local string s"
+    """best-effort encoding-aware case-folding of local string s"""
     try:
         return asciilower(s)
     except UnicodeDecodeError:
@@ -459,7 +459,7 @@ def lower(s):
 
 def upper(s):
     # type: (bytes) -> bytes
-    b"best-effort encoding-aware case-folding of local string s"
+    """best-effort encoding-aware case-folding of local string s"""
     try:
         return asciiupper(s)
     except UnicodeDecodeError:

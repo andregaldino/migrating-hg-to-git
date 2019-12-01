@@ -1528,7 +1528,7 @@ class gitsubrepo(abstractsubrepo):
         return branch2rev, rev2branch
 
     def _gittracking(self, branches):
-        b'return map of remote branch to local tracking branch'
+        """return map of remote branch to local tracking branch"""
         # assumes no more than one local tracking branch for each remote
         tracking = {}
         for b in branches:

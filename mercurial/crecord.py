@@ -102,7 +102,7 @@ class patchnode(object):
         raise NotImplementedError(b"method must be implemented by subclass")
 
     def allchildren(self):
-        b"Return a list of all of the direct children of this node"
+        """Return a list of all of the direct children of this node"""
         raise NotImplementedError(b"method must be implemented by subclass")
 
     def nextsibling(self):
@@ -264,21 +264,23 @@ class uiheader(patchnode):
         return None
 
     def firstchild(self):
-        b"return the first child of this item, if one exists.  otherwise None."
+        """return the first child of this item, if one exists.  otherwise
+        None."""
         if len(self.hunks) > 0:
             return self.hunks[0]
         else:
             return None
 
     def lastchild(self):
-        b"return the last child of this item, if one exists.  otherwise None."
+        """return the last child of this item, if one exists.  otherwise
+        None."""
         if len(self.hunks) > 0:
             return self.hunks[-1]
         else:
             return None
 
     def allchildren(self):
-        b"return a list of all of the direct children of this node"
+        """return a list of all of the direct children of this node"""
         return self.hunks
 
     def __getattr__(self, name):
@@ -286,7 +288,7 @@ class uiheader(patchnode):
 
 
 class uihunkline(patchnode):
-    b"represents a changed line in a hunk"
+    """represents a changed line in a hunk"""
 
     def __init__(self, linetext, hunk):
         self.linetext = linetext
@@ -319,16 +321,18 @@ class uihunkline(patchnode):
             return None
 
     def parentitem(self):
-        b"return the parent to the current item"
+        """return the parent to the current item"""
         return self.hunk
 
     def firstchild(self):
-        b"return the first child of this item, if one exists.  otherwise None."
+        """return the first child of this item, if one exists.  otherwise
+        None."""
         # hunk-lines don't have children
         return None
 
     def lastchild(self):
-        b"return the last child of this item, if one exists.  otherwise None."
+        """return the last child of this item, if one exists.  otherwise
+        None."""
         # hunk-lines don't have children
         return None
 
@@ -372,25 +376,27 @@ class uihunk(patchnode):
             return None
 
     def parentitem(self):
-        b"return the parent to the current item"
+        """return the parent to the current item"""
         return self.header
 
     def firstchild(self):
-        b"return the first child of this item, if one exists.  otherwise None."
+        """return the first child of this item, if one exists.  otherwise
+        None."""
         if len(self.changedlines) > 0:
             return self.changedlines[0]
         else:
             return None
 
     def lastchild(self):
-        b"return the last child of this item, if one exists.  otherwise None."
+        """return the last child of this item, if one exists.  otherwise
+        None."""
         if len(self.changedlines) > 0:
             return self.changedlines[-1]
         else:
             return None
 
     def allchildren(self):
-        b"return a list of all of the direct children of this node"
+        """return a list of all of the direct children of this node"""
         return self.changedlines
 
     def countchanges(self):
@@ -853,7 +859,7 @@ class curseschunkselector(object):
         self.currentselecteditem = currentitem
 
     def updatescroll(self):
-        b"scroll the screen to fully show the currently-selected"
+        """scroll the screen to fully show the currently-selected"""
         selstart = self.selecteditemstartline
         selend = self.selecteditemendline
 
@@ -871,7 +877,7 @@ class curseschunkselector(object):
             self.scrolllines(selstart - padstartbuffered)
 
     def scrolllines(self, numlines):
-        b"scroll the screen up (down) by numlines when numlines >0 (<0)."
+        """scroll the screen up (down) by numlines when numlines >0 (<0)."""
         self.firstlineofpadtoprint += numlines
         if self.firstlineofpadtoprint < 0:
             self.firstlineofpadtoprint = 0
@@ -973,7 +979,7 @@ class curseschunkselector(object):
                 )
 
     def toggleall(self):
-        b"toggle the applied flag of all items."
+        """toggle the applied flag of all items."""
         if self.waslasttoggleallapplied:  # then unapply them this time
             for item in self.headerlist:
                 if item.applied:
@@ -985,7 +991,8 @@ class curseschunkselector(object):
         self.waslasttoggleallapplied = not self.waslasttoggleallapplied
 
     def toggleallbetween(self):
-        b"toggle applied on or off for all items in range [lastapplied,current]."
+        """toggle applied on or off for all items in range [lastapplied,
+        current]. """
         if (
             not self.lastapplieditem
             or self.currentselecteditem == self.lastapplieditem
@@ -1026,7 +1033,8 @@ class curseschunkselector(object):
             nextitem = nextitem.nextitem()
 
     def togglefolded(self, item=None, foldparent=False):
-        b"toggle folded flag of specified item (defaults to currently selected)"
+        """toggle folded flag of specified item (defaults to currently
+        selected)"""
         if item is None:
             item = self.currentselecteditem
         if foldparent or (isinstance(item, uiheader) and item.neverunfolded):
@@ -1320,7 +1328,7 @@ class curseschunkselector(object):
     def printhunklinesbefore(
         self, hunk, selected=False, towin=True, ignorefolding=False
     ):
-        b"includes start/end line indicator"
+        """includes start/end line indicator"""
         outstr = b""
         # where hunk is in list of siblings
         hunkindex = hunk.header.hunks.index(hunk)
@@ -1529,7 +1537,7 @@ class curseschunkselector(object):
         return numlines
 
     def sigwinchhandler(self, n, frame):
-        b"handle window resizing"
+        """handle window resizing"""
         try:
             curses.endwin()
             self.xscreensize, self.yscreensize = scmutil.termsize(self.ui)
@@ -1599,11 +1607,11 @@ class curseschunkselector(object):
         return colorpair
 
     def initcolorpair(self, *args, **kwargs):
-        b"same as getcolorpair."
+        """same as getcolorpair."""
         self.getcolorpair(*args, **kwargs)
 
     def helpwindow(self):
-        b"print a help window to the screen.  exit after any keypress."
+        """print a help window to the screen.  exit after any keypress."""
         helptext = _(
             """            [press any key to return to the patch-display]
 
@@ -1654,7 +1662,7 @@ the following are valid keystrokes:
             pass
 
     def commitMessageWindow(self):
-        b"Create a temporary commit message editing window on the screen."
+        """Create a temporary commit message editing window on the screen."""
 
         curses.raw()
         curses.def_prog_mode()
@@ -1704,7 +1712,8 @@ the following are valid keystrokes:
         self.recenterdisplayedarea()
 
     def confirmationwindow(self, windowtext):
-        b"display an informational window, then wait for and return a keypress."
+        """display an informational window, then wait for and return a
+        keypress."""
 
         confirmwin = curses.newwin(self.yscreensize, 0, 0, 0)
         try:

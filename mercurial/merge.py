@@ -2093,7 +2093,7 @@ def applyupdates(
 
 
 def recordupdates(repo, actions, branchmerge, getfiledata):
-    b"record merge actions to the dirstate"
+    """record merge actions to the dirstate"""
     # remove (must come first)
     for f, args, msg in actions.get(ACTION_REMOVE, []):
         if branchmerge:

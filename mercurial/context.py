@@ -1587,7 +1587,7 @@ class workingctx(committablectx):
         )
 
     def dirty(self, missing=False, merge=True, branch=True):
-        b"check whether a working directory is modified"
+        """check whether a working directory is modified"""
         # check subrepos first
         for s in sorted(self.substate):
             if self.sub(s).dirty(missing=missing):

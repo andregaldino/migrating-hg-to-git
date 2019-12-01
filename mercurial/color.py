@@ -330,7 +330,7 @@ def _activeeffects(ui):
 
 
 def valideffect(ui, effect):
-    b'Determine if the effect is valid or not.'
+    """Determine if the effect is valid or not."""
     return (not ui._terminfoparams and effect in _activeeffects(ui)) or (
         effect in ui._terminfoparams or effect[:-11] in ui._terminfoparams
     )
@@ -377,7 +377,7 @@ def _mergeeffects(text, start, stop):
 
 
 def _render_effects(ui, text, effects):
-    b'Wrap text in commands to turn on each effect.'
+    """Wrap text in commands to turn on each effect."""
     if not text:
         return text
     if ui._terminfoparams:

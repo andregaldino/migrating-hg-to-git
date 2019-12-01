@@ -102,7 +102,7 @@ class request(object):
 
 
 def run():
-    b"run the command in sys.argv"
+    """run the command in sys.argv"""
     initstdio()
     with tracing.log('parse args into request'):
         req = request(pycompat.sysargv[1:])

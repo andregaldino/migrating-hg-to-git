@@ -405,7 +405,7 @@ class changelog(revlog.revlog):
         self._copiesstorage = opener.options.get(b'copies-storage')
 
     def delayupdate(self, tr):
-        b"delay visibility of index updates to other readers"
+        """delay visibility of index updates to other readers"""
 
         if not self._delayed:
             if len(self) == 0:
@@ -423,7 +423,7 @@ class changelog(revlog.revlog):
         tr.addfinalize(b'cl-%i' % id(self), self._finalize)
 
     def _finalize(self, tr):
-        b"finalize index updates"
+        """finalize index updates"""
         self._delayed = False
         self.opener = self._realopener
         # move redirected index data back into place
@@ -443,7 +443,8 @@ class changelog(revlog.revlog):
         self._enforceinlinesize(tr)
 
     def _writepending(self, tr):
-        b"create a file containing the unfinalized state for pretxnchangegroup"
+        """create a file containing the unfinalized state for
+        pretxnchangegroup"""
         if self._delaybuf:
             # make a temporary copy of the index
             fp1 = self._realopener(self.indexfile)

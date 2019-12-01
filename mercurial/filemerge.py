@@ -279,7 +279,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
 
 
 def _eoltype(data):
-    b"Guess the EOL type of a file"
+    """Guess the EOL type of a file"""
     if b'\0' in data:  # binary
         return None
     if b'\r\n' in data:  # Windows
@@ -292,7 +292,7 @@ def _eoltype(data):
 
 
 def _matcheol(file, back):
-    b"Convert EOL markers in a file to match origfile"
+    """Convert EOL markers in a file to match origfile"""
     tostyle = _eoltype(back.data())  # No repo.wread filters?
     if tostyle:
         data = util.readfile(file)

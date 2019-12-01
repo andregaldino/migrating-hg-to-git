@@ -373,7 +373,7 @@ def revlist(ui, repo, *revs, **opts):
     helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
 )
 def view(ui, repo, *etc, **opts):
-    b"start interactive history viewer"
+    """start interactive history viewer"""
     opts = pycompat.byteskwargs(opts)
     os.chdir(repo.root)
     optstr = b' '.join(

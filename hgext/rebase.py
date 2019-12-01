@@ -1497,7 +1497,7 @@ def commitnode(repo, p1, p2, editor, extra, user, date, commitmsg):
 
 
 def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
-    b'Rebase a single revision rev on top of p1 using base as merge ancestor'
+    """Rebase a single revision rev on top of p1 using base as merge ancestor"""
     # Merge phase
     # Update to destination and merge it with local
     if wctx.isinmemory():
@@ -1853,7 +1853,7 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
 
 
 def isagitpatch(repo, patchname):
-    b'Return true if the given patch is in git format'
+    """Return true if the given patch is in git format"""
     mqpatch = os.path.join(repo.mq.path, patchname)
     for line in patch.linereader(open(mqpatch, b'rb')):
         if line.startswith(b'diff --git'):
@@ -1862,7 +1862,7 @@ def isagitpatch(repo, patchname):
 
 
 def updatemq(repo, state, skipped, **opts):
-    b'Update rebased mq patches - finalize and then import them'
+    """Update rebased mq patches - finalize and then import them"""
     mqrebase = {}
     mq = repo.mq
     original_series = mq.fullseries[:]
@@ -1916,7 +1916,7 @@ def updatemq(repo, state, skipped, **opts):
 
 
 def storecollapsemsg(repo, collapsemsg):
-    b'Store the collapse message to allow recovery'
+    """Store the collapse message to allow recovery"""
     collapsemsg = collapsemsg or b''
     f = repo.vfs(b"last-message.txt", b"w")
     f.write(b"%s\n" % collapsemsg)
@@ -1924,12 +1924,12 @@ def storecollapsemsg(repo, collapsemsg):
 
 
 def clearcollapsemsg(repo):
-    b'Remove collapse message file'
+    """Remove collapse message file"""
     repo.vfs.unlinkpath(b"last-message.txt", ignoremissing=True)
 
 
 def restorecollapsemsg(repo, isabort):
-    b'Restore previously stored collapse message'
+    """Restore previously stored collapse message"""
     try:
         f = repo.vfs(b"last-message.txt")
         collapsemsg = f.readline().strip()
@@ -1946,7 +1946,7 @@ def restorecollapsemsg(repo, isabort):
 
 
 def clearstatus(repo):
-    b'Remove the status files'
+    """Remove the status files"""
     # Make sure the active transaction won't write the state file
     tr = repo.currenttransaction()
     if tr:
@@ -2127,7 +2127,7 @@ def clearrebased(
 
 
 def pullrebase(orig, ui, repo, *args, **opts):
-    b'Call rebase after pull if the latter has been invoked with --rebase'
+    """Call rebase after pull if the latter has been invoked with --rebase"""
     if opts.get('rebase'):
         if ui.configbool(b'commands', b'rebase.requiredest'):
             msg = _(b'rebase destination required by configuration')

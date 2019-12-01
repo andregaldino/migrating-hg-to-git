@@ -507,7 +507,7 @@ def findexe(command):
         pathexts = [b'']
 
     def findexisting(pathcommand):
-        b'Will append extension (if needed) and return existing file'
+        """Will append extension (if needed) and return existing file"""
         for ext in pathexts:
             executable = pathcommand + ext
             if os.path.exists(executable):

@@ -303,18 +303,18 @@ def isenabled():
 
 
 def enable():
-    "enable global demand-loading of modules"
+    """enable global demand-loading of modules"""
     builtins.__import__ = _demandimport
 
 
 def disable():
-    "disable global demand-loading of modules"
+    """disable global demand-loading of modules"""
     builtins.__import__ = _origimport
 
 
 @contextmanager
 def deactivated():
-    "context manager for disabling demandimport in 'with' blocks"
+    """context manager for disabling demandimport in 'with' blocks"""
     demandenabled = isenabled()
     if demandenabled:
         disable()

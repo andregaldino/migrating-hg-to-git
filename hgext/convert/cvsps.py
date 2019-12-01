@@ -110,7 +110,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
     _scache = {}
 
     def scache(s):
-        b"return a shared version of a string"
+        """return a shared version of a string"""
         return _scache.setdefault(s, s)
 
     ui.status(_(b'collecting CVS rlog\n'))
@@ -711,7 +711,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     # Sort files in each changeset
 
     def entitycompare(l, r):
-        b'Mimic cvsps sorting order'
+        """Mimic cvsps sorting order"""
         l = l.file.split(b'/')
         r = r.file.split(b'/')
         nl = len(l)

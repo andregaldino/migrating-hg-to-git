@@ -249,7 +249,8 @@ _filtertable = {
 
 
 def filter(s, cmd):
-    b"filter a string through a command that transforms its input to its output"
+    """filter a string through a command that transforms its input to its
+    output"""
     for name, fn in pycompat.iteritems(_filtertable):
         if cmd.startswith(name):
             return fn(s, cmd[len(name) :].lstrip())
@@ -347,7 +348,7 @@ def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""
 
     def py2shell(val):
-        b'convert python object into string that is useful to shell'
+        """convert python object into string that is useful to shell"""
         if val is None or val is False:
             return b'0'
         if val is True:

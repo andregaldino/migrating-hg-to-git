@@ -34,17 +34,17 @@ class parser(object):
         self.current = None
 
     def _advance(self):
-        b'advance the tokenizer'
+        """advance the tokenizer"""
         t = self.current
         self.current = next(self._iter, None)
         return t
 
     def _hasnewterm(self):
-        b'True if next token may start new term'
+        """True if next token may start new term"""
         return any(self._elements[self.current[0]][1:3])
 
     def _match(self, m):
-        b'make sure the tokenizer matches an end condition'
+        """make sure the tokenizer matches an end condition"""
         if self.current[0] != m:
             raise error.ParseError(
                 _(b"unexpected token: %s") % self.current[0], self.current[2]
@@ -52,7 +52,8 @@ class parser(object):
         self._advance()
 
     def _parseoperand(self, bind, m=None):
-        b'gather right-hand-side operand until an end condition or binding met'
+        """gather right-hand-side operand until an end condition or binding
+        met"""
         if m and self.current[0] == m:
             expr = None
         else:
@@ -85,7 +86,7 @@ class parser(object):
         return expr
 
     def parse(self, tokeniter):
-        b'generate a parse tree from tokens'
+        """generate a parse tree from tokens"""
         self._iter = tokeniter
         self._advance()
         res = self._parse()
@@ -93,13 +94,13 @@ class parser(object):
         return res, pos
 
     def eval(self, tree):
-        b'recursively evaluate a parse tree using node methods'
+        """recursively evaluate a parse tree using node methods"""
         if not isinstance(tree, tuple):
             return tree
         return self._methods[tree[0]](*[self.eval(t) for t in tree[1:]])
 
     def __call__(self, tokeniter):
-        b'parse tokens into a parse tree and evaluate if methods given'
+        """parse tokens into a parse tree and evaluate if methods given"""
         t = self.parse(tokeniter)
         if self._methods:
             return self.eval(t)

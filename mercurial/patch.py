@@ -1570,7 +1570,7 @@ class hunk(object):
 
 
 class binhunk(object):
-    b'A binary patch file.'
+    """A binary patch file."""
 
     def __init__(self, lr, fname):
         self.text = None
