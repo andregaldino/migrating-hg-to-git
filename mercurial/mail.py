@@ -197,7 +197,7 @@ def _sendmail(ui, sender, recipients, msg):
         raise error.Abort(
             b'%s %s'
             % (
-                os.path.basename(program.split(None, 1)[0]),
+                os.path.basename(procutil.shellsplit(program)[0]),
                 procutil.explainexit(ret),
             )
         )
