@@ -260,9 +260,11 @@ def validateconfig(ui):
                 )
             )
     else:
-        if not procutil.findexe(method):
+        command = procutil.shellsplit(method)
+        command = command[0] if command else b''
+        if not (command and procutil.findexe(command)):
             raise error.Abort(
-                _(b'%r specified as email transport, but not in PATH') % method
+                _(b'%r specified as email transport, but not in PATH') % command
             )
 
 
