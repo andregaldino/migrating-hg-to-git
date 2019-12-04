@@ -19,7 +19,6 @@ import tarfile
 import xml.dom.minidom
 
 from .i18n import _
-from .pycompat import open
 from . import (
     cmdutil,
     encoding,
@@ -1434,7 +1433,7 @@ class gitsubrepo(abstractsubrepo):
         # which is mostly progress and useful info
         errpipe = None
         if self.ui.quiet:
-            errpipe = open(os.devnull, b'w')
+            errpipe = pycompat.open(os.devnull, b'w')
         if self.ui._colormode and len(commands) and commands[0] == b"diff":
             # insert the argument in the front,
             # the end of git diff arguments is used for paths
