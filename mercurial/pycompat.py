@@ -118,6 +118,7 @@ if ispy3:
     osaltsep = os.altsep
     if osaltsep:
         osaltsep = osaltsep.encode('ascii')
+    osdevnull = os.devnull.encode('ascii')
 
     sysplatform = sys.platform.encode('ascii')
     sysexecutable = sys.executable
@@ -456,6 +457,7 @@ else:
     ospardir = os.pardir
     ossep = os.sep
     osaltsep = os.altsep
+    osdevnull = os.devnull
     long = long
     stdin = sys.stdin
     stdout = sys.stdout

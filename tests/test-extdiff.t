@@ -515,3 +515,27 @@ Test handling of non-ASCII paths in generated docstrings (issue5301)
   $ LC_MESSAGES=ja_JP.UTF-8 hg --config hgext.extdiff= --config extdiff.cmd.td=$U help td \
   > | grep "^      '"
         '\xa5\xa5'
+
+  $ cd $TESTTMP
+
+Test that diffing a single file works, even if that file is new
+
+  $ hg init testsinglefile
+  $ cd testsinglefile
+  $ echo a > a
+  $ hg add a
+  $ hg falabala
+  diffing * */a (glob)
+  [1]
+  $ hg ci -qm a
+  $ hg falabala -c .
+  diffing * */a (glob)
+  [1]
+  $ echo a >> a
+  $ hg falabala
+  diffing */a */a (glob)
+  [1]
+  $ hg ci -qm 2a
+  $ hg falabala -c .
+  diffing */a */a (glob)
+  [1]

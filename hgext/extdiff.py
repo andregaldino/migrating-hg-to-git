@@ -271,7 +271,7 @@ def _runperfilediff(
         path1a = os.path.join(tmproot, dir1a, commonfile)
         label1a = commonfile + rev1a
         if not os.path.isfile(path1a):
-            path1a = os.devnull
+            path1a = pycompat.osdevnull
 
         path1b = b''
         label1b = b''
@@ -279,7 +279,7 @@ def _runperfilediff(
             path1b = os.path.join(tmproot, dir1b, commonfile)
             label1b = commonfile + rev1b
             if not os.path.isfile(path1b):
-                path1b = os.devnull
+                path1b = pycompat.osdevnull
 
         path2 = os.path.join(dir2root, dir2, commonfile)
         label2 = commonfile + rev2
@@ -468,12 +468,12 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
                 dir1a = os.path.join(tmproot, dir1a, common_file)
                 label1a = common_file + rev1a
                 if not os.path.isfile(dir1a):
-                    dir1a = os.devnull
+                    dir1a = pycompat.osdevnull
                 if do3way:
                     dir1b = os.path.join(tmproot, dir1b, common_file)
                     label1b = common_file + rev1b
                     if not os.path.isfile(dir1b):
-                        dir1b = os.devnull
+                        dir1b = pycompat.osdevnull
                 dir2 = os.path.join(dir2root, dir2, common_file)
                 label2 = common_file + rev2
         else:
