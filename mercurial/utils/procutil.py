@@ -423,7 +423,10 @@ def system(cmd, environ=None, cwd=None, out=None):
     return rc
 
 
-def gui():
+_is_gui = None
+
+
+def _gui():
     '''Are we running in a GUI?'''
     if pycompat.isdarwin:
         if b'SSH_CONNECTION' in encoding.environ:
@@ -437,6 +440,13 @@ def gui():
             return True
     else:
         return pycompat.iswindows or encoding.environ.get(b"DISPLAY")
+
+
+def gui():
+    global _is_gui
+    if _is_gui is None:
+        _is_gui = _gui()
+    return _is_gui
 
 
 def hgcmd():
@@ -583,6 +593,11 @@ else:
         `Subprocess.wait` function for the spawned process.  This is mostly
         useful for developers that need to make sure the spawned process
         finished before a certain point. (eg: writing test)'''
+        if pycompat.isdarwin:
+            # avoid crash in CoreFoundation in case another thread
+            # calls gui() while we're calling fork().
+            gui()
+
         # double-fork to completely detach from the parent process
         # based on http://code.activestate.com/recipes/278731
         if record_wait is None:
