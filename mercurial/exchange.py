@@ -2577,7 +2577,7 @@ def _getbundlephasespart(
 ):
     """add phase heads part to the requested bundle"""
     if kwargs.get('phases', False):
-        if not b2caps or not b'heads' in b2caps.get(b'phases'):
+        if not b2caps or b'heads' not in b2caps.get(b'phases'):
             raise error.Abort(_(b'no common phases exchange method'))
         if heads is None:
             heads = repo.heads()
