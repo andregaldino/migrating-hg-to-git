@@ -362,7 +362,7 @@ def addremove(ui, repo, *pats, **opts):
             b'',
             b'skip',
             [],
-            _(b'revision to not display (EXPERIMENTAL)'),
+            _(b'revset to not display (EXPERIMENTAL)'),
             _(b'REV'),
         ),
     ]
