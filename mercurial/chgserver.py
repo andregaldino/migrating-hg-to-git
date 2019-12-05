@@ -549,6 +549,41 @@ class chgcmdserver(commandserver.server):
         except ValueError:
             raise ValueError(b'unexpected value in setenv request')
         self.ui.log(b'chgserver', b'setenv: %r\n', sorted(newenv.keys()))
+
+        # Python3 has some logic to "coerce" the C locale to a UTF-8 capable
+        # one, and it sets LC_CTYPE in the environment to C.UTF-8 if none of
+        # 'LC_CTYPE', 'LC_ALL' or 'LANG' are set (to any value). This can be
+        # disabled with PYTHONCOERCECLOCALE=0 in the environment.
+        #
+        # When fromui is called via _inithashstate, python has already set
+        # this, so that's in the environment right when we start up the hg
+        # process. Then chg will call us and tell us to set the environment to
+        # the one it has; this might NOT have LC_CTYPE, so we'll need to
+        # carry-forward the LC_CTYPE that was coerced in these situations.
+        #
+        # If this is not handled, we will fail config+env validation and fail
+        # to start chg. If this is just ignored instead of carried forward, we
+        # may have different behavior between chg and non-chg.
+        if pycompat.ispy3:
+            # Rename for wordwrapping purposes
+            oldenv = encoding.environ
+            if not any(
+                e.get(b'PYTHONCOERCECLOCALE') == b'0' for e in [oldenv, newenv]
+            ):
+                keys = [b'LC_CTYPE', b'LC_ALL', b'LANG']
+                old_keys = [k for k, v in oldenv.items() if k in keys and v]
+                new_keys = [k for k, v in newenv.items() if k in keys and v]
+                # If the user's environment (from chg) doesn't have ANY of the
+                # keys that python looks for, and the environment (from
+                # initialization) has ONLY LC_CTYPE and it's set to C.UTF-8,
+                # carry it forward.
+                if (
+                    not new_keys
+                    and old_keys == [b'LC_CTYPE']
+                    and oldenv[b'LC_CTYPE'] == b'C.UTF-8'
+                ):
+                    newenv[b'LC_CTYPE'] = oldenv[b'LC_CTYPE']
+
         encoding.environ.clear()
         encoding.environ.update(newenv)
 

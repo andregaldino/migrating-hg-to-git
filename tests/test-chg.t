@@ -331,3 +331,25 @@ check server log:
   YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached2 (in  ...s)
   YYYY/MM/DD HH:MM:SS (PID)> log -R cached
   YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)
+
+Test that chg works even when python "coerces" the locale (py3.7+, which is done
+by default if none of LC_ALL, LC_CTYPE, or LANG are set in the environment)
+
+  $ cat > $TESTTMP/debugenv.py <<EOF
+  > from mercurial import encoding
+  > from mercurial import registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'debugenv', [], b'', norepo=True)
+  > def debugenv(ui):
+  >     for k in [b'LC_ALL', b'LC_CTYPE', b'LANG']:
+  >         v = encoding.environ.get(k)
+  >         if v is not None:
+  >             ui.write(b'%s=%s\n' % (k, encoding.environ[k]))
+  > EOF
+  $ LANG= LC_ALL= LC_CTYPE= chg \
+  >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv
+  LC_ALL=
+  LC_CTYPE=C.UTF-8 (py37 !)
+  LC_CTYPE= (no-py37 !)
+  LANG=
