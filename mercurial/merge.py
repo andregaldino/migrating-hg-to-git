@@ -2626,6 +2626,9 @@ def graft(
         if keepparent and len(parents) == 2 and base in parents:
             parents.remove(base)
             pother = parents[0].node()
+    # Never set both parents equal to each other
+    if pother == pctx.node():
+        pother = nullid
 
     with repo.dirstate.parentchange():
         repo.setparents(pctx.node(), pother)
