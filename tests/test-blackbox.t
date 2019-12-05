@@ -57,8 +57,15 @@ abort exit code
 
 unhandled exception
   $ rm ./.hg/blackbox.log
-  $ hg crash 2> /dev/null
+#if chg
+ (chg exits 255 because it fails to receive an exit code)
+  $ hg crash 2>/dev/null
+  [255]
+#else
+ (hg exits 1 because Python default exit code for uncaught exception is 1)
+  $ hg crash 2>/dev/null
   [1]
+#endif
   $ hg blackbox -l 2
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> crash exited 1 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
