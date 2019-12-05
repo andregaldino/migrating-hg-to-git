@@ -1973,7 +1973,11 @@ class TTest(Test):
     @staticmethod
     def rematch(el, l):
         try:
-            el = b'(?:' + el + b')'
+            # parse any flags at the beginning of the regex. Only 'i' is
+            # supported right now, but this should be easy to extend.
+            flags, el = re.match(br'^(\(\?i\))?(.*)', el).groups()[0:2]
+            flags = flags or b''
+            el = flags + b'(?:' + el + b')'
             # use \Z to ensure that the regex matches to the end of the string
             if os.name == 'nt':
                 return re.match(el + br'\r?\n\Z', l)
