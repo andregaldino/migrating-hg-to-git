@@ -390,7 +390,7 @@ when using chg, blackbox.log should get rotated correctly
   > from mercurial import registrar, scmutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('noop')
+  > @command(b'noop')
   > def noop(ui, repo):
   >     pass
   > EOF
