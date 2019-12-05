@@ -2582,7 +2582,7 @@ def update(
 
 
 def graft(
-    repo, ctx, pctx, labels=None, keepparent=False, keepconflictparent=False
+    repo, ctx, base, labels=None, keepparent=False, keepconflictparent=False
 ):
     """Do a graft-like merge.
 
@@ -2593,7 +2593,7 @@ def graft(
     renames/copies appropriately.
 
     ctx - changeset to rebase
-    pctx - merge base, usually ctx.p1()
+    base - merge base, usually ctx.p1()
     labels - merge labels eg ['local', 'graft']
     keepparent - keep second parent if any
     keepconflictparent - if unresolved, keep parent used for the merge
@@ -2612,7 +2612,7 @@ def graft(
         ctx.node(),
         True,
         True,
-        pctx.node(),
+        base.node(),
         mergeancestor=mergeancestor,
         labels=labels,
     )
@@ -2622,15 +2622,15 @@ def graft(
     else:
         pother = nullid
         parents = ctx.parents()
-        if keepparent and len(parents) == 2 and pctx in parents:
-            parents.remove(pctx)
+        if keepparent and len(parents) == 2 and base in parents:
+            parents.remove(base)
             pother = parents[0].node()
 
     with repo.dirstate.parentchange():
         repo.setparents(repo[b'.'].node(), pother)
         repo.dirstate.write(repo.currenttransaction())
         # fix up dirstate for copies and renames
-        copies.duplicatecopies(repo, repo[None], ctx.rev(), pctx.rev())
+        copies.duplicatecopies(repo, repo[None], ctx.rev(), base.rev())
     return stats
 
 
