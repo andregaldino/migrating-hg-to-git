@@ -2522,7 +2522,10 @@ static int index_slice_del(indexObject *self, PyObject *item)
 				index_invalidate_added(self, 0);
 			if (self->ntrev > start)
 				self->ntrev = (int)start;
+		} else if (self->added) {
+			Py_CLEAR(self->added);
 		}
+
 		self->length = start;
 		if (start < self->raw_length) {
 			if (self->cache) {

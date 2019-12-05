@@ -247,6 +247,32 @@ class parseindex2tests(unittest.TestCase):
         got = index[-1]
         self.assertEqual(want, got)  # no inline data
 
+    def testdelitemwithoutnodetree(self):
+        index, _junk = parsers.parse_index2(data_non_inlined, False)
+
+        def hexrev(rev):
+            if rev == nullrev:
+                return b'\xff\xff\xff\xff'
+            else:
+                return nodemod.bin('%08x' % rev)
+
+        def appendrev(p1, p2=nullrev):
+            # node won't matter for this test, let's just make sure
+            # they don't collide. Other data don't matter either.
+            node = hexrev(p1) + hexrev(p2) + b'.' * 12
+            index.append((0, 0, 12, 1, 34, p1, p2, node))
+
+        appendrev(4)
+        appendrev(5)
+        appendrev(6)
+        self.assertEqual(len(index), 7)
+
+        del index[1:7]
+
+        # assertions that failed before correction
+        self.assertEqual(len(index), 1)  # was 4
+        self.assertEqual(index.headrevs(), [0])  # gave ValueError
+
 
 if __name__ == '__main__':
     import silenttestrunner
