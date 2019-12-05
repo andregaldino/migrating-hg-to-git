@@ -264,6 +264,10 @@ githelp for reuse message using the the long version
   $ hg githelp -- git commit --reuse-message deadbeef
   hg commit -M deadbeef
 
+githelp for reuse message using HEAD
+  $ hg githelp -- git commit --reuse-message HEAD~
+  hg commit -M .~1
+
 githelp for apply with no options
   $ hg githelp -- apply
   hg import --no-commit
