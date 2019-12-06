@@ -55,12 +55,4 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	return 0; // Non-zero return values are reserved for future use.
 }
 
-#ifdef HG_FUZZER_INCLUDE_MAIN
-int main(int argc, char **argv)
-{
-	const char data[] = "asdf";
-	return LLVMFuzzerTestOneInput((const uint8_t *)data, 4);
-}
-#endif
-
 } // extern "C"

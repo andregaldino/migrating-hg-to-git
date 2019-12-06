@@ -111,17 +111,4 @@ cleanup:
 	return 0;
 }
 
-#ifdef HG_FUZZER_INCLUDE_MAIN
-int main(int argc, char **argv)
-{
-	// One text, one patch.
-	const char data[] = "\x02\x00\0x1\x00\x0d"
-	                    // base text
-	                    "a"
-	                    // binary delta that will append a single b
-	                    "\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01b";
-	return LLVMFuzzerTestOneInput((const uint8_t *)data, 19);
-}
-#endif
-
 } // extern "C"
