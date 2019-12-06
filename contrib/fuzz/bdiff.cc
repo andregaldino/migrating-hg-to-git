@@ -14,6 +14,11 @@
 extern "C" {
 #include "bdiff.h"
 
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+	return 0;
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
 	FuzzedDataProvider provider(Data, Size);

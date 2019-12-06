@@ -14,6 +14,11 @@
 
 #include "fuzzutil.h"
 
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+	return 0;
+}
+
 // To avoid having too many OOMs from the fuzzer infrastructure, we'll
 // skip patch application if the resulting fulltext would be bigger
 // than 10MiB.

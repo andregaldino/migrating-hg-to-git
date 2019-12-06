@@ -14,6 +14,11 @@
 
 extern "C" {
 
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+	return 0;
+}
+
 int hunk_consumer(long a1, long a2, long b1, long b2, void *priv)
 {
 	// TODO: probably also test returning -1 from this when things break?
