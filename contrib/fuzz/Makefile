@@ -14,7 +14,7 @@ PYTHON_CONFIG ?= $$OUT/sanpy/bin/python-config
 
 CXXFLAGS += -Wno-deprecated-register
 
-all: bdiff mpatch xdiff
+all: standalone_fuzz_target_runner.o oss-fuzz
 
 standalone_fuzz_target_runner.o: standalone_fuzz_target_runner.cc
 
