@@ -1,6 +1,8 @@
 CC = clang
 CXX = clang++
 
+LIB_FUZZING_ENGINE ?= -lFuzzingEngine
+
 all: bdiff mpatch xdiff
 
 pyutil.o: pyutil.cc pyutil.h
@@ -22,7 +24,7 @@ bdiff-oss-fuzz.o: ../../mercurial/bdiff.c
 
 bdiff_fuzzer: bdiff.cc bdiff-oss-fuzz.o
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial bdiff.cc \
-	  bdiff-oss-fuzz.o -lFuzzingEngine -o \
+	  bdiff-oss-fuzz.o $(LIB_FUZZING_ENGINE) -o \
 	  $$OUT/bdiff_fuzzer
 
 mpatch.o: ../../mercurial/mpatch.c
@@ -39,7 +41,7 @@ mpatch-oss-fuzz.o: ../../mercurial/mpatch.c
 
 mpatch_fuzzer: mpatch.cc mpatch-oss-fuzz.o 
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial mpatch.cc \
-	  mpatch-oss-fuzz.o -lFuzzingEngine -o \
+	  mpatch-oss-fuzz.o $(LIB_FUZZING_ENGINE) -o \
 	  $$OUT/mpatch_fuzzer
 
 mpatch_corpus.zip:
@@ -64,7 +66,7 @@ fuzz-x%.o: ../../mercurial/thirdparty/xdiff/x%.c ../../mercurial/thirdparty/xdif
 xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o 
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial xdiff.cc \
 	  fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o \
-	  -lFuzzingEngine -o $$OUT/xdiff_fuzzer
+	  $(LIB_FUZZING_ENGINE) -o $$OUT/xdiff_fuzzer
 
 manifest.o: ../../mercurial/cext/manifest.c
 	$(CC) $(CFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
@@ -101,7 +103,7 @@ dirs_fuzzer: dirs.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlo
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial dirs.cc \
 	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
-	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/dirs_fuzzer
 
 fncache_fuzzer: fncache.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o
@@ -109,7 +111,7 @@ fncache_fuzzer: fncache.cc manifest.o charencode.o parsers.o dirs.o pathencode.o
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial fncache.cc \
 	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
-	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/fncache_fuzzer
 
 jsonescapeu8fast_fuzzer: jsonescapeu8fast.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o
@@ -117,7 +119,7 @@ jsonescapeu8fast_fuzzer: jsonescapeu8fast.cc manifest.o charencode.o parsers.o d
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial jsonescapeu8fast.cc \
 	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
-	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/jsonescapeu8fast_fuzzer
 
 manifest_corpus.zip:
@@ -128,7 +130,7 @@ manifest_fuzzer: manifest.cc manifest.o charencode.o parsers.o dirs.o pathencode
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial manifest.cc \
 	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
-	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/manifest_fuzzer
 
 revlog_fuzzer: revlog.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o
@@ -136,7 +138,7 @@ revlog_fuzzer: revlog.cc manifest.o charencode.o parsers.o dirs.o pathencode.o r
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial revlog.cc \
 	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
-	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/revlog_fuzzer
 
 revlog_corpus.zip:
@@ -147,7 +149,7 @@ dirstate_fuzzer: dirstate.cc manifest.o charencode.o parsers.o dirs.o pathencode
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial dirstate.cc \
 	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
-	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/dirstate_fuzzer
 
 dirstate_corpus.zip:
@@ -158,7 +160,7 @@ fm1readmarkers_fuzzer: fm1readmarkers.cc manifest.o charencode.o parsers.o dirs.
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial fm1readmarkers.cc \
 	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o pyutil.o \
-	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$$OUT/sanpy/bin/python-config --ldflags` \
 	  -o $$OUT/fm1readmarkers_fuzzer
 
 fm1readmarkers_corpus.zip:
