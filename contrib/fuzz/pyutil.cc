@@ -1,5 +1,6 @@
 #include "pyutil.h"
 
+#include <iostream>
 #include <string>
 
 namespace contrib
@@ -24,7 +25,11 @@ void initpy(const char *cselfpath)
 	auto pos = selfpath.rfind("/");
 	if (pos == std::string::npos) {
 		char wd[8192];
-		getcwd(wd, 8192);
+		if (!getcwd(wd, 8192)) {
+			std::cerr << "Failed to call getcwd: errno " << errno
+			          << std::endl;
+			exit(1);
+		}
 		pypath = std::string(wd) + subdir;
 	} else {
 		pypath = selfpath.substr(0, pos) + subdir;
