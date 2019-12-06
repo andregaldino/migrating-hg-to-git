@@ -17,8 +17,12 @@
 // We deliberately keep this inteface simple and header-free.
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
+extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv);
+
 int main(int argc, char **argv)
 {
+	LLVMFuzzerInitialize(&argc, &argv);
+
 	for (int i = 1; i < argc; i++) {
 		std::ifstream in(argv[i]);
 		in.seekg(0, in.end);
