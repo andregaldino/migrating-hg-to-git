@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import argparse
 import os
@@ -15,9 +15,6 @@ changelog = os.path.join(reporoot, '.hg', 'store', '00changelog.i')
 contributing = os.path.join(
     reporoot, '.hg', 'store', 'data', 'contrib', 'fuzz', 'mpatch.cc.i'
 )
-
-print(changelog, os.path.exists(changelog))
-print(contributing, os.path.exists(contributing))
 
 with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     if os.path.exists(changelog):
