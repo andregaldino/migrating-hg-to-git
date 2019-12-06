@@ -3,6 +3,8 @@ CXX = clang++
 
 LIB_FUZZING_ENGINE ?= -lFuzzingEngine
 
+CXXFLAGS += -Wno-deprecated-register
+
 all: bdiff mpatch xdiff
 
 pyutil.o: pyutil.cc pyutil.h
