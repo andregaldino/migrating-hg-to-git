@@ -1541,7 +1541,7 @@ if os.name == 'nt':
 packagedata = {
     'mercurial': [
         'locale/*/LC_MESSAGES/hg.mo',
-        'default.d/*.rc',
+        'defaultrc/*.rc',
         'dummycert.pem',
     ],
     'mercurial.helptext': ['*.txt',],
