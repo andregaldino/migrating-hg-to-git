@@ -1,13 +1,22 @@
 CC = clang
 CXX = clang++
 
-LIB_FUZZING_ENGINE ?= -lFuzzingEngine
+# By default, use our own standalone_fuzz_target_runner.
+# This runner does no fuzzing, but simply executes the inputs
+# provided via parameters.
+# Run e.g. "make all LIB_FUZZING_ENGINE=/path/to/libFuzzer.a"
+# to link the fuzzer(s) against a real fuzzing engine.
+#
+# OSS-Fuzz will define its own value for LIB_FUZZING_ENGINE.
+LIB_FUZZING_ENGINE ?= standalone_fuzz_target_runner.o
 
 PYTHON_CONFIG ?= $$OUT/sanpy/bin/python-config
 
 CXXFLAGS += -Wno-deprecated-register
 
 all: bdiff mpatch xdiff
+
+standalone_fuzz_target_runner.o: standalone_fuzz_target_runner.cc
 
 pyutil.o: pyutil.cc pyutil.h
 	$(CXX) $(CXXFLAGS) -g -O1 \

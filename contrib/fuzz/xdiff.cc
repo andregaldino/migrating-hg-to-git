@@ -10,7 +10,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <fuzzer/FuzzedDataProvider.h>
+#include "FuzzedDataProvider.h"
 
 extern "C" {
 

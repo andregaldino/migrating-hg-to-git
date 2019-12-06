@@ -5,9 +5,9 @@
 
 #include "pyutil.h"
 
-#include <fuzzer/FuzzedDataProvider.h>
 #include <iostream>
 #include <string>
+#include "FuzzedDataProvider.h"
 
 extern "C" {
 

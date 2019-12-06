@@ -9,7 +9,7 @@
 #include <memory>
 #include <stdlib.h>
 
-#include <fuzzer/FuzzedDataProvider.h>
+#include "FuzzedDataProvider.h"
 
 extern "C" {
 #include "bdiff.h"
