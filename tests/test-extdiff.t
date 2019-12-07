@@ -525,17 +525,21 @@ Test that diffing a single file works, even if that file is new
   $ echo a > a
   $ hg add a
   $ hg falabala
-  diffing * */a (glob)
+  diffing nul "*\\a" (glob) (windows !)
+  diffing /dev/null */a (glob) (no-windows !)
   [1]
   $ hg ci -qm a
   $ hg falabala -c .
-  diffing * */a (glob)
+  diffing nul "*\\a" (glob) (windows !)
+  diffing /dev/null */a (glob) (no-windows !)
   [1]
   $ echo a >> a
   $ hg falabala
-  diffing */a */a (glob)
+  diffing "*\\a" "*\\a" (glob) (windows !)
+  diffing */a */a (glob) (no-windows !)
   [1]
   $ hg ci -qm 2a
   $ hg falabala -c .
-  diffing */a */a (glob)
+  diffing "*\\a" "*\\a" (glob) (windows !)
+  diffing */a */a (glob) (no-windows !)
   [1]
