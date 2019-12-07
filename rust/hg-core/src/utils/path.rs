@@ -47,8 +47,8 @@ pub fn normalize_for_display_bytes(path: &[u8]) -> &[u8] {
 /// For example:
 ///
 /// - On some systems with symlink support, `foo/bar/..` and `foo` can be
-///   different as seen by the kernel, if `foo/bar` is a symlink. This
-///   function always returns `foo` in this case.
+///   different as seen by the kernel, if `foo/bar` is a symlink. This function
+///   always returns `foo` in this case.
 /// - On Windows, the official normalization rules are much more complicated.
 ///   See https://github.com/rust-lang/rust/pull/47363#issuecomment-357069527.
 ///   For example, this function cannot translate "drive relative" path like
@@ -74,7 +74,9 @@ pub fn absolute(path: impl AsRef<Path>) -> io::Result<PathBuf> {
     let mut result = PathBuf::new();
     for component in path.components() {
         match component {
-            Component::Normal(_) | Component::RootDir | Component::Prefix(_) => {
+            Component::Normal(_)
+            | Component::RootDir
+            | Component::Prefix(_) => {
                 result.push(component);
             }
             Component::ParentDir => {
@@ -95,9 +97,10 @@ pub fn remove_file<P: AsRef<Path>>(path: P) -> Result<()> {
 
 /// Remove the file pointed by `path`.
 ///
-/// On Windows, removing a file can fail for various reasons, including if the file is memory
-/// mapped. This can happen when the repository is accessed concurrently while a background task is
-/// trying to remove a packfile. To solve this, we can rename the file before trying to remove it.
+/// On Windows, removing a file can fail for various reasons, including if the
+/// file is memory mapped. This can happen when the repository is accessed
+/// concurrently while a background task is trying to remove a packfile. To
+/// solve this, we can rename the file before trying to remove it.
 /// If the remove operation fails, a future repack will clean it up.
 #[cfg(not(unix))]
 pub fn remove_file<P: AsRef<Path>>(path: P) -> Result<()> {
@@ -116,12 +119,14 @@ pub fn remove_file<P: AsRef<Path>>(path: P) -> Result<()> {
 
     rename(path, &dest_path)?;
 
-    // Ignore errors when removing the file, it will be cleaned up at a later time.
+    // Ignore errors when removing the file, it will be cleaned up at a later
+    // time.
     let _ = fs_remove_file(dest_path);
     Ok(())
 }
 
-/// Create the directory and ignore failures when a directory of the same name already exists.
+/// Create the directory and ignore failures when a directory of the same name
+/// already exists.
 pub fn create_dir(path: impl AsRef<Path>) -> io::Result<()> {
     match fs::create_dir(path.as_ref()) {
         Ok(()) => Ok(()),
@@ -135,28 +140,29 @@ pub fn create_dir(path: impl AsRef<Path>) -> io::Result<()> {
     }
 }
 
-/// Expand the user's home directory and any environment variables references in
-/// the given path.
+/// Expand the user's home directory and any environment variables references
+/// in the given path.
 ///
-/// This function is designed to emulate the behavior of Mercurial's `util.expandpath`
-/// function, which in turn uses Python's `os.path.expand{user,vars}` functions. This
-/// results in behavior that is notably different from the default expansion behavior
-/// of the `shellexpand` crate. In particular:
+/// This function is designed to emulate the behavior of Mercurial's
+/// `util.expandpath` function, which in turn uses Python's
+/// `os.path.expand{user,vars}` functions. This results in behavior that is
+/// notably different from the default expansion behavior of the `shellexpand`
+/// crate. In particular:
 ///
-/// - If a reference to an environment variable is missing or invalid, the reference
-///   is left unchanged in the resulting path rather than emitting an error.
+/// - If a reference to an environment variable is missing or invalid, the
+///   reference is left unchanged in the resulting path rather than emitting an
+///   error.
 ///
 /// - Home directory expansion explicitly happens after environment variable
 ///   expansion, meaning that if an environment variable is expanded into a
 ///   string starting with a tilde (`~`), the tilde will be expanded into the
 ///   user's home directory.
-///
 pub fn expand_path(path: impl AsRef<str>) -> PathBuf {
     expand_path_impl(path.as_ref(), |k| env::var(k).ok(), dirs::home_dir)
 }
 
-/// Same as `expand_path` but explicitly takes closures for environment variable
-/// and home directory lookup for the sake of testability.
+/// Same as `expand_path` but explicitly takes closures for environment
+/// variable and home directory lookup for the sake of testability.
 fn expand_path_impl<E, H>(path: &str, getenv: E, homedir: H) -> PathBuf
 where
     E: FnMut(&str) -> Option<String>,
@@ -238,7 +244,10 @@ mod tests {
 
         #[test]
         fn test_absolute_fullpath() {
-            assert_eq!(absolute("/a/./b\\c/../d/.").unwrap(), Path::new("/a/d"));
+            assert_eq!(
+                absolute("/a/./b\\c/../d/.").unwrap(),
+                Path::new("/a/d")
+            );
             assert_eq!(absolute("/a/../../../../b").unwrap(), Path::new("/b"));
             assert_eq!(absolute("/../../..").unwrap(), Path::new("/"));
             assert_eq!(absolute("/../../../").unwrap(), Path::new("/"));
