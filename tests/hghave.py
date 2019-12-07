@@ -1015,3 +1015,11 @@ def has_pytype():
     version = matchoutput(pytypecmd, b'[0-9a-b.]+')
     sv = distutils.version.StrictVersion
     return version and sv(_strpath(version.group(0))) >= sv('2019.10.17')
+
+
+@check("rustfmt", "rustfmt tool")
+def has_rustfmt():
+    # We use Nightly's rustfmt due to current unstable config options.
+    return matchoutput(
+        '`rustup which --toolchain nightly rustfmt` --version', b'rustfmt'
+    )

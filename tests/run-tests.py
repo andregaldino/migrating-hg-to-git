@@ -1363,6 +1363,20 @@ class Test(unittest.TestCase):
         if PYTHON3 and os.name == 'nt':
             env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
 
+        # Modified HOME in test environment can confuse Rust tools. So set
+        # CARGO_HOME and RUSTUP_HOME automatically if a Rust toolchain is
+        # present and these variables aren't already defined.
+        cargo_home_path = os.path.expanduser('~/.cargo')
+        rustup_home_path = os.path.expanduser('~/.rustup')
+
+        if os.path.exists(cargo_home_path) and b'CARGO_HOME' not in osenvironb:
+            env['CARGO_HOME'] = cargo_home_path
+        if (
+            os.path.exists(rustup_home_path)
+            and b'RUSTUP_HOME' not in osenvironb
+        ):
+            env['RUSTUP_HOME'] = rustup_home_path
+
         # Reset some environment variables to well-known values so that
         # the tests produce repeatable output.
         env['LANG'] = env['LC_ALL'] = env['LANGUAGE'] = 'C'
