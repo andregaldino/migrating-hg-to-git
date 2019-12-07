@@ -200,8 +200,8 @@ class basectx(object):
     def mutable(self):
         return self.phase() > phases.public
 
-    def matchfileset(self, expr, badfn=None):
-        return fileset.match(self, expr, badfn=badfn)
+    def matchfileset(self, cwd, expr, badfn=None):
+        return fileset.match(self, cwd, expr, badfn=badfn)
 
     def obsolete(self):
         """True if the changeset is obsolete"""
@@ -328,11 +328,14 @@ class basectx(object):
         default=b'glob',
         listsubrepos=False,
         badfn=None,
+        cwd=None,
     ):
         r = self._repo
+        if not cwd:
+            cwd = r.getcwd()
         return matchmod.match(
             r.root,
-            r.getcwd(),
+            cwd,
             pats,
             include,
             exclude,
@@ -1694,15 +1697,18 @@ class workingctx(committablectx):
         default=b'glob',
         listsubrepos=False,
         badfn=None,
+        cwd=None,
     ):
         r = self._repo
+        if not cwd:
+            cwd = r.getcwd()
 
         # Only a case insensitive filesystem needs magic to translate user input
         # to actual case in the filesystem.
         icasefs = not util.fscasesensitive(r.root)
         return matchmod.match(
             r.root,
-            r.getcwd(),
+            cwd,
             pats,
             include,
             exclude,

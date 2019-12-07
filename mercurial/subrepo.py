@@ -355,7 +355,7 @@ class abstractsubrepo(object):
         """return file flags"""
         return b''
 
-    def matchfileset(self, expr, badfn=None):
+    def matchfileset(self, cwd, expr, badfn=None):
         """Resolve the fileset expression for this repo"""
         return matchmod.never(badfn=badfn)
 
@@ -896,20 +896,20 @@ class hgsubrepo(abstractsubrepo):
         return cmdutil.files(ui, ctx, m, uipathfn, fm, fmt, subrepos)
 
     @annotatesubrepoerror
-    def matchfileset(self, expr, badfn=None):
+    def matchfileset(self, cwd, expr, badfn=None):
         if self._ctx.rev() is None:
             ctx = self._repo[None]
         else:
             rev = self._state[1]
             ctx = self._repo[rev]
 
-        matchers = [ctx.matchfileset(expr, badfn=badfn)]
+        matchers = [ctx.matchfileset(cwd, expr, badfn=badfn)]
 
         for subpath in ctx.substate:
             sub = ctx.sub(subpath)
 
             try:
-                sm = sub.matchfileset(expr, badfn=badfn)
+                sm = sub.matchfileset(cwd, expr, badfn=badfn)
                 pm = matchmod.prefixdirmatcher(subpath, sm, badfn=badfn)
                 matchers.append(pm)
             except error.LookupError:

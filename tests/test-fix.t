@@ -1335,24 +1335,20 @@ reasonable with that.
 Apparently fixing p1() and its descendants doesn't include wdir() unless
 explicitly stated.
 
-BROKEN: fileset matches aren't relative to repo.root for commits
-
   $ hg fix -r '.::'
   $ hg cat -r . ../quux
   quux
   $ hg cat -r tip ../quux
-  quux
+  fs: $TESTTMP/subprocesscwd
   $ cat ../quux
   quux
 
 Clean files are not fixed unless explicitly named
   $ echo 'dirty' > ../quux
 
-BROKEN: fileset matches aren't relative to repo.root for wdir
-
   $ hg fix --working-dir
   $ cat ../quux
-  dirty
+  fs: $TESTTMP/subprocesscwd
 
   $ cd ../..
 

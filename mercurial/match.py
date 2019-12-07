@@ -57,7 +57,7 @@ def _rematcher(regex):
         return m.match
 
 
-def _expandsets(kindpats, ctx=None, listsubrepos=False, badfn=None):
+def _expandsets(cwd, kindpats, ctx=None, listsubrepos=False, badfn=None):
     '''Returns the kindpats list with the 'set' patterns expanded to matchers'''
     matchers = []
     other = []
@@ -68,11 +68,11 @@ def _expandsets(kindpats, ctx=None, listsubrepos=False, badfn=None):
                 raise error.ProgrammingError(
                     b"fileset expression with no context"
                 )
-            matchers.append(ctx.matchfileset(pat, badfn=badfn))
+            matchers.append(ctx.matchfileset(cwd, pat, badfn=badfn))
 
             if listsubrepos:
                 for subpath in ctx.substate:
-                    sm = ctx.sub(subpath).matchfileset(pat, badfn=badfn)
+                    sm = ctx.sub(subpath).matchfileset(cwd, pat, badfn=badfn)
                     pm = prefixdirmatcher(subpath, sm, badfn=badfn)
                     matchers.append(pm)
 
@@ -117,11 +117,11 @@ def _kindpatsalwaysmatch(kindpats):
 
 
 def _buildkindpatsmatcher(
-    matchercls, root, kindpats, ctx=None, listsubrepos=False, badfn=None
+    matchercls, root, cwd, kindpats, ctx=None, listsubrepos=False, badfn=None,
 ):
     matchers = []
     fms, kindpats = _expandsets(
-        kindpats, ctx=ctx, listsubrepos=listsubrepos, badfn=badfn
+        cwd, kindpats, ctx=ctx, listsubrepos=listsubrepos, badfn=badfn,
     )
     if kindpats:
         m = matchercls(root, kindpats, badfn=badfn)
@@ -261,6 +261,7 @@ def match(
             m = _buildkindpatsmatcher(
                 patternmatcher,
                 root,
+                cwd,
                 kindpats,
                 ctx=ctx,
                 listsubrepos=listsubrepos,
@@ -276,6 +277,7 @@ def match(
         im = _buildkindpatsmatcher(
             includematcher,
             root,
+            cwd,
             kindpats,
             ctx=ctx,
             listsubrepos=listsubrepos,
@@ -287,6 +289,7 @@ def match(
         em = _buildkindpatsmatcher(
             includematcher,
             root,
+            cwd,
             kindpats,
             ctx=ctx,
             listsubrepos=listsubrepos,

@@ -1171,7 +1171,7 @@ def debugfileset(ui, repo, expr, **opts):
         files.update(ctx.files())
         files.update(ctx.substate)
 
-    m = ctx.matchfileset(expr)
+    m = ctx.matchfileset(repo.getcwd(), expr)
     if opts[b'show_matcher'] or (opts[b'show_matcher'] is None and ui.verbose):
         ui.writenoi18n(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
     for f in sorted(files):
