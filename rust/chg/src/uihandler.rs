@@ -3,8 +3,8 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use futures::Future;
 use futures::future::IntoFuture;
+use futures::Future;
 use std::io;
 use std::os::unix::io::AsRawFd;
 use std::os::unix::process::ExitStatusExt;
@@ -33,8 +33,7 @@ pub trait SystemHandler: Sized {
 }
 
 /// Default cHg implementation to process requests received from server.
-pub struct ChgUiHandler {
-}
+pub struct ChgUiHandler {}
 
 impl ChgUiHandler {
     pub fn new() -> ChgUiHandler {
@@ -57,7 +56,7 @@ impl SystemHandler for ChgUiHandler {
         // otherwise the server won't get SIGPIPE if it does not write
         // anything. (issue5278)
         // kill(peerpid, SIGPIPE);
-        tokio::spawn(pager.map(|_| ()).map_err(|_| ()));  // just ignore errors
+        tokio::spawn(pager.map(|_| ()).map_err(|_| ())); // just ignore errors
         Ok((self, pin))
     }
 
@@ -67,7 +66,9 @@ impl SystemHandler for ChgUiHandler {
             .into_future()
             .flatten()
             .map(|status| {
-                let code = status.code().or_else(|| status.signal().map(|n| -n))
+                let code = status
+                    .code()
+                    .or_else(|| status.signal().map(|n| -n))
                     .expect("either exit code or signal should be set");
                 (self, code)
             });
@@ -84,4 +85,4 @@ fn new_shell_command(spec: &CommandSpec) -> Command {
         .env_clear()
         .envs(spec.envs.iter().cloned());
     builder
- }
+}

@@ -5,18 +5,18 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-extern crate libc;
 extern crate cpython;
+extern crate libc;
 extern crate python27_sys;
 
 use cpython::{NoArgs, ObjectProtocol, PyModule, PyResult, Python};
 use libc::{c_char, c_int};
 
 use std::env;
-use std::path::PathBuf;
 use std::ffi::{CString, OsStr};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 struct Environment {

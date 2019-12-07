@@ -8,9 +8,9 @@
 use futures::{Async, Future, Poll};
 use std::io;
 use std::os::unix::io::AsRawFd;
-use tokio_hglib::{Client, Connection};
 use tokio_hglib::codec::ChannelMessage;
 use tokio_hglib::protocol::MessageLoop;
+use tokio_hglib::{Client, Connection};
 
 use super::message;
 use super::procutil;
@@ -28,7 +28,8 @@ use super::procutil;
 /// dispose of the client-side handle once attached.
 #[must_use = "futures do nothing unless polled"]
 pub struct AttachIo<C, I, O, E>
-    where C: Connection,
+where
+    C: Connection,
 {
     msg_loop: MessageLoop<C>,
     stdin: I,
@@ -37,23 +38,34 @@ pub struct AttachIo<C, I, O, E>
 }
 
 impl<C, I, O, E> AttachIo<C, I, O, E>
-    where C: Connection + AsRawFd,
-          I: AsRawFd,
-          O: AsRawFd,
-          E: AsRawFd,
+where
+    C: Connection + AsRawFd,
+    I: AsRawFd,
+    O: AsRawFd,
+    E: AsRawFd,
 {
-    pub fn with_client(client: Client<C>, stdin: I, stdout: O, stderr: Option<E>)
-                       -> AttachIo<C, I, O, E> {
+    pub fn with_client(
+        client: Client<C>,
+        stdin: I,
+        stdout: O,
+        stderr: Option<E>,
+    ) -> AttachIo<C, I, O, E> {
         let msg_loop = MessageLoop::start(client, b"attachio");
-        AttachIo { msg_loop, stdin, stdout, stderr }
+        AttachIo {
+            msg_loop,
+            stdin,
+            stdout,
+            stderr,
+        }
     }
 }
 
 impl<C, I, O, E> Future for AttachIo<C, I, O, E>
-    where C: Connection + AsRawFd,
-          I: AsRawFd,
-          O: AsRawFd,
-          E: AsRawFd,
+where
+    C: Connection + AsRawFd,
+    I: AsRawFd,
+    O: AsRawFd,
+    E: AsRawFd,
 {
     type Item = Client<C>;
     type Error = io::Error;
@@ -67,8 +79,10 @@ impl<C, I, O, E> Future for AttachIo<C, I, O, E>
                     if fd_cnt == 3 {
                         return Ok(Async::Ready(client));
                     } else {
-                        return Err(io::Error::new(io::ErrorKind::InvalidData,
-                                                  "unexpected attachio result"));
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            "unexpected attachio result",
+                        ));
                     }
                 }
                 ChannelMessage::Data(..) => {
@@ -86,10 +100,13 @@ impl<C, I, O, E> Future for AttachIo<C, I, O, E>
                     procutil::send_raw_fds(sock_fd, &[ifd, ofd, efd])?;
                     self.msg_loop = MessageLoop::resume(client);
                 }
-                ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) |
-                ChannelMessage::SystemRequest(..) => {
-                    return Err(io::Error::new(io::ErrorKind::InvalidData,
-                                              "unsupported request while attaching io"));
+                ChannelMessage::InputRequest(..)
+                | ChannelMessage::LineRequest(..)
+                | ChannelMessage::SystemRequest(..) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "unsupported request while attaching io",
+                    ));
                 }
             }
         }

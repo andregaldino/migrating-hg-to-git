@@ -9,7 +9,6 @@
 //! `hg-core` package.
 //!
 //! From Python, this will be seen as `mercurial.rustext.parsers`
-//!
 use cpython::{
     exc, PyBytes, PyDict, PyErr, PyInt, PyModule, PyResult, PyTuple, Python,
     PythonObject, ToPyObject,

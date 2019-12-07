@@ -11,9 +11,9 @@ use futures::{Async, Future, Poll};
 use std::io;
 use std::mem;
 use std::os::unix::io::AsRawFd;
-use tokio_hglib::{Client, Connection};
 use tokio_hglib::codec::ChannelMessage;
 use tokio_hglib::protocol::MessageLoop;
+use tokio_hglib::{Client, Connection};
 
 use super::attachio::AttachIo;
 use super::message::{self, CommandType};
@@ -26,8 +26,9 @@ enum AsyncS<R, S> {
 }
 
 enum CommandState<C, H>
-    where C: Connection,
-          H: SystemHandler,
+where
+    C: Connection,
+    H: SystemHandler,
 {
     Running(MessageLoop<C>, H),
     SpawningPager(Client<C>, <H::SpawnPagerResult as IntoFuture>::Future),
@@ -41,18 +42,19 @@ type CommandPoll<C, H> = io::Result<(AsyncS<(Client<C>, H, i32), CommandState<C,
 /// Future resolves to `(exit_code, client)`.
 #[must_use = "futures do nothing unless polled"]
 pub struct ChgRunCommand<C, H>
-    where C: Connection,
-          H: SystemHandler,
+where
+    C: Connection,
+    H: SystemHandler,
 {
     state: CommandState<C, H>,
 }
 
 impl<C, H> ChgRunCommand<C, H>
-    where C: Connection + AsRawFd,
-          H: SystemHandler,
+where
+    C: Connection + AsRawFd,
+    H: SystemHandler,
 {
-    pub fn with_client(client: Client<C>, handler: H, packed_args: Bytes)
-                       -> ChgRunCommand<C, H> {
+    pub fn with_client(client: Client<C>, handler: H, packed_args: Bytes) -> ChgRunCommand<C, H> {
         let msg_loop = MessageLoop::start_with_args(client, b"runcommand", packed_args);
         ChgRunCommand {
             state: CommandState::Running(msg_loop, handler),
@@ -61,8 +63,9 @@ impl<C, H> ChgRunCommand<C, H>
 }
 
 impl<C, H> Future for ChgRunCommand<C, H>
-    where C: Connection + AsRawFd,
-          H: SystemHandler,
+where
+    C: Connection + AsRawFd,
+    H: SystemHandler,
 {
     type Item = (Client<C>, H, i32);
     type Error = io::Error;
@@ -87,8 +90,9 @@ impl<C, H> Future for ChgRunCommand<C, H>
 }
 
 impl<C, H> CommandState<C, H>
-    where C: Connection + AsRawFd,
-          H: SystemHandler,
+where
+    C: Connection + AsRawFd,
+    H: SystemHandler,
 {
     fn poll(self) -> CommandPoll<C, H> {
         match self {
@@ -102,14 +106,16 @@ impl<C, H> CommandState<C, H>
             CommandState::SpawningPager(client, mut fut) => {
                 if let Async::Ready((handler, pin)) = fut.poll()? {
                     let fut = AttachIo::with_client(client, io::stdin(), pin, None);
-                    Ok(AsyncS::PollAgain(CommandState::AttachingPager(fut, handler)))
+                    Ok(AsyncS::PollAgain(CommandState::AttachingPager(
+                        fut, handler,
+                    )))
                 } else {
                     Ok(AsyncS::NotReady(CommandState::SpawningPager(client, fut)))
                 }
             }
             CommandState::AttachingPager(mut fut, handler) => {
                 if let Async::Ready(client) = fut.poll()? {
-                    let msg_loop = MessageLoop::start(client, b"");  // terminator
+                    let msg_loop = MessageLoop::start(client, b""); // terminator
                     Ok(AsyncS::PollAgain(CommandState::Running(msg_loop, handler)))
                 } else {
                     Ok(AsyncS::NotReady(CommandState::AttachingPager(fut, handler)))
@@ -124,14 +130,15 @@ impl<C, H> CommandState<C, H>
                     Ok(AsyncS::NotReady(CommandState::WaitingSystem(client, fut)))
                 }
             }
-            CommandState::Finished => panic!("poll ChgRunCommand after it's done")
+            CommandState::Finished => panic!("poll ChgRunCommand after it's done"),
         }
     }
 }
 
 fn process_message<C, H>(client: Client<C>, handler: H, msg: ChannelMessage) -> CommandPoll<C, H>
-    where C: Connection,
-          H: SystemHandler,
+where
+    C: Connection,
+    H: SystemHandler,
 {
     match msg {
         ChannelMessage::Data(b'r', data) => {
@@ -143,9 +150,10 @@ fn process_message<C, H>(client: Client<C>, handler: H, msg: ChannelMessage) -> 
             let msg_loop = MessageLoop::resume(client);
             Ok(AsyncS::PollAgain(CommandState::Running(msg_loop, handler)))
         }
-        ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) => {
-            Err(io::Error::new(io::ErrorKind::InvalidData, "unsupported request"))
-        }
+        ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "unsupported request",
+        )),
         ChannelMessage::SystemRequest(data) => {
             let (cmd_type, cmd_spec) = message::parse_command_spec(data)?;
             match cmd_type {

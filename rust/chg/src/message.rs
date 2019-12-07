@@ -11,7 +11,7 @@ use std::ffi::{OsStr, OsString};
 use std::io;
 use std::os::unix::ffi::OsStrExt;
 
-pub use tokio_hglib::message::*;  // re-exports
+pub use tokio_hglib::message::*; // re-exports
 
 /// Shell command type requested by the server.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -42,7 +42,10 @@ pub fn parse_command_spec(data: Bytes) -> io::Result<(CommandType, CommandSpec)>
         let mut s = l.splitn(2, |&c| c == b'=');
         let k = s.next().unwrap();
         let v = s.next().ok_or(new_parse_error("malformed env"))?;
-        envs.push((OsStr::from_bytes(k).to_owned(), OsStr::from_bytes(v).to_owned()));
+        envs.push((
+            OsStr::from_bytes(k).to_owned(),
+            OsStr::from_bytes(v).to_owned(),
+        ));
     }
 
     let spec = CommandSpec {
@@ -57,41 +60,54 @@ fn parse_command_type(value: &[u8]) -> io::Result<CommandType> {
     match value {
         b"pager" => Ok(CommandType::Pager),
         b"system" => Ok(CommandType::System),
-        _ => Err(new_parse_error(format!("unknown command type: {}", decode_latin1(value)))),
+        _ => Err(new_parse_error(format!(
+            "unknown command type: {}",
+            decode_latin1(value)
+        ))),
     }
 }
 
 fn decode_latin1<S>(s: S) -> String
-    where S: AsRef<[u8]>,
+where
+    S: AsRef<[u8]>,
 {
     s.as_ref().iter().map(|&c| c as char).collect()
 }
 
 fn new_parse_error<E>(error: E) -> io::Error
-    where E: Into<Box<error::Error + Send + Sync>>,
+where
+    E: Into<Box<error::Error + Send + Sync>>,
 {
     io::Error::new(io::ErrorKind::InvalidData, error)
 }
 
 #[cfg(test)]
 mod tests {
-    use std::os::unix::ffi::OsStringExt;
     use super::*;
+    use std::os::unix::ffi::OsStringExt;
 
     #[test]
     fn parse_command_spec_good() {
-        let src = [b"pager".as_ref(),
-                   b"less -FRX".as_ref(),
-                   b"/tmp".as_ref(),
-                   b"LANG=C".as_ref(),
-                   b"HGPLAIN=".as_ref()].join(&0);
+        let src = [
+            b"pager".as_ref(),
+            b"less -FRX".as_ref(),
+            b"/tmp".as_ref(),
+            b"LANG=C".as_ref(),
+            b"HGPLAIN=".as_ref(),
+        ]
+        .join(&0);
         let spec = CommandSpec {
             command: os_string_from(b"less -FRX"),
             current_dir: os_string_from(b"/tmp"),
-            envs: vec![(os_string_from(b"LANG"), os_string_from(b"C")),
-                       (os_string_from(b"HGPLAIN"), os_string_from(b""))],
+            envs: vec![
+                (os_string_from(b"LANG"), os_string_from(b"C")),
+                (os_string_from(b"HGPLAIN"), os_string_from(b"")),
+            ],
         };
-        assert_eq!(parse_command_spec(Bytes::from(src)).unwrap(), (CommandType::Pager, spec));
+        assert_eq!(
+            parse_command_spec(Bytes::from(src)).unwrap(),
+            (CommandType::Pager, spec)
+        );
     }
 
     #[test]

@@ -91,11 +91,16 @@ pub fn default_server_socket_dir() -> PathBuf {
 /// Determines the default hg command.
 pub fn default_hg_command() -> OsString {
     // TODO: maybe allow embedding the path at compile time (or load from hgrc)
-    env::var_os("CHGHG").or(env::var_os("HG")).unwrap_or(OsStr::new("hg").to_owned())
+    env::var_os("CHGHG")
+        .or(env::var_os("HG"))
+        .unwrap_or(OsStr::new("hg").to_owned())
 }
 
 fn default_timeout() -> Duration {
-    let secs = env::var("CHGTIMEOUT").ok().and_then(|s| s.parse().ok()).unwrap_or(60);
+    let secs = env::var("CHGTIMEOUT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(60);
     Duration::from_secs(secs)
 }
 
@@ -103,19 +108,24 @@ fn default_timeout() -> Duration {
 ///
 /// If the directory already exists, tests its permission.
 fn create_secure_dir<P>(path: P) -> io::Result<()>
-    where P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
-    DirBuilder::new().mode(0o700).create(path.as_ref()).or_else(|err| {
-        if err.kind() == io::ErrorKind::AlreadyExists {
-            check_secure_dir(path).map(|_| ())
-        } else {
-            Err(err)
-        }
-    })
+    DirBuilder::new()
+        .mode(0o700)
+        .create(path.as_ref())
+        .or_else(|err| {
+            if err.kind() == io::ErrorKind::AlreadyExists {
+                check_secure_dir(path).map(|_| ())
+            } else {
+                Err(err)
+            }
+        })
 }
 
 fn check_secure_dir<P>(path: P) -> io::Result<P>
-    where P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     let a = fs::symlink_metadata(path.as_ref())?;
     if a.is_dir() && a.uid() == procutil::get_effective_uid() && (a.mode() & 0o777) == 0o700 {

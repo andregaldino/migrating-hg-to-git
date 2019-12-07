@@ -8,7 +8,6 @@
 //! Bindings for the `hg::status` module provided by the
 //! `hg-core` crate. From Python, this will be seen as
 //! `rustext.dirstate.status`.
-//!
 
 use crate::dirstate::DirstateMap;
 use cpython::exc::ValueError;

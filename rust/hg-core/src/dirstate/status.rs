@@ -170,8 +170,8 @@ pub struct StatusResult<'a> {
     pub removed: Vec<&'a HgPath>,
     pub deleted: Vec<&'a HgPath>,
     pub clean: Vec<&'a HgPath>,
-    // TODO ignored
-    // TODO unknown
+    /* TODO ignored
+     * TODO unknown */
 }
 
 fn build_response(

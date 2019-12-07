@@ -33,7 +33,7 @@ pub fn set_blocking_fd(fd: RawFd) -> io::Result<()> {
     }
     let r = unsafe { libc::fcntl(fd, libc::F_SETFL, flags & !libc::O_NONBLOCK) };
     if r < 0 {
-        return Err(io::Error::last_os_error())
+        return Err(io::Error::last_os_error());
     }
     Ok(())
 }
