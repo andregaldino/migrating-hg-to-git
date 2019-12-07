@@ -1303,10 +1303,13 @@ reasonable with that.
   > [fix]
   > printcwd:command = "$PYTHON" -c "import os; print(os.getcwd())"
   > printcwd:pattern = relpath:foo/bar
+  > filesetpwd:command = "$PYTHON" -c "import os; print('fs: ' + os.getcwd())"
+  > filesetpwd:pattern = set:**quux
   > EOF
 
   $ mkdir foo
   $ printf "bar\n" > foo/bar
+  $ printf "quux\n" > quux
   $ hg commit -Aqm blah
 
   $ hg fix -w -r . foo/bar
@@ -1318,14 +1321,38 @@ reasonable with that.
   $ cd foo
 
   $ hg fix -w -r . bar
-  $ hg cat -r tip bar
+  $ hg cat -r tip bar ../quux
   $TESTTMP/subprocesscwd
-  $ cat bar
+  quux
+  $ cat bar ../quux
   $TESTTMP/subprocesscwd
+  quux
   $ echo modified > bar
   $ hg fix -w bar
   $ cat bar
   $TESTTMP/subprocesscwd
+
+Apparently fixing p1() and its descendants doesn't include wdir() unless
+explicitly stated.
+
+BROKEN: fileset matches aren't relative to repo.root for commits
+
+  $ hg fix -r '.::'
+  $ hg cat -r . ../quux
+  quux
+  $ hg cat -r tip ../quux
+  quux
+  $ cat ../quux
+  quux
+
+Clean files are not fixed unless explicitly named
+  $ echo 'dirty' > ../quux
+
+BROKEN: fileset matches aren't relative to repo.root for wdir
+
+  $ hg fix --working-dir
+  $ cat ../quux
+  dirty
 
   $ cd ../..
 
