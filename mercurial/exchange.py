@@ -2202,7 +2202,7 @@ def applynarrowacl(repo, kwargs):
     if invalid_includes:
         raise error.Abort(
             _(b"The following includes are not accessible for %s: %s")
-            % (username, invalid_includes)
+            % (username, stringutil.pprint(invalid_includes))
         )
 
     new_args = {}
