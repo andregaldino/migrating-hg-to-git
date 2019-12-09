@@ -6,6 +6,7 @@
   $ cat >> $HGRCPATH <<EOF
   > [devel]
   > remotefilelog.ensurestart=True
+  > remotefilelog.bg-wait=True
   > EOF
 
   $ hg init master
