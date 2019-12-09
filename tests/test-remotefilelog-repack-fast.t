@@ -1,13 +1,11 @@
 #require no-windows
 
   $ . "$TESTDIR/remotefilelog-library.sh"
-# devel.remotefilelog.ensurestart: reduce race condition with
-# waiton{repack/prefetch}
+
   $ cat >> $HGRCPATH <<EOF
   > [remotefilelog]
   > fastdatapack=True
   > [devel]
-  > remotefilelog.ensurestart=True
   > remotefilelog.bg-wait=True
   > EOF
 

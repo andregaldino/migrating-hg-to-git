@@ -215,13 +215,7 @@ def wraprepo(repo):
             )
 
         def backgroundprefetch(
-            self,
-            revs,
-            base=None,
-            repack=False,
-            pats=None,
-            opts=None,
-            ensurestart=False,
+            self, revs, base=None, repack=False, pats=None, opts=None
         ):
             """Runs prefetch in background with optional repack
             """
@@ -237,7 +231,7 @@ def wraprepo(repo):
                 kwargs['record_wait'] = repo.ui.atexit
 
             procutil.runbgcommand(
-                cmd, encoding.environ, ensurestart=ensurestart, **kwargs
+                cmd, encoding.environ, ensurestart=False, **kwargs
             )
 
         def prefetch(self, revs, base=None, pats=None, opts=None):

@@ -229,7 +229,6 @@ configitem(b'repack', b'chainorphansbysize', default=True, experimental=True)
 configitem(b'packs', b'maxpacksize', default=0)
 configitem(b'packs', b'maxchainlen', default=1000)
 
-configitem(b'devel', b'remotefilelog.ensurestart', default=False)
 configitem(b'devel', b'remotefilelog.bg-wait', default=False)
 
 #  default TTL limit is 30 days
@@ -1085,26 +1084,19 @@ def pull(orig, ui, repo, *pats, **opts):
         prefetchrevset = ui.config(b'remotefilelog', b'pullprefetch')
         bgrepack = repo.ui.configbool(b'remotefilelog', b'backgroundrepack')
         bgprefetch = repo.ui.configbool(b'remotefilelog', b'backgroundprefetch')
-        ensurestart = repo.ui.configbool(b'devel', b'remotefilelog.ensurestart')
 
         if prefetchrevset:
             ui.status(_(b"prefetching file contents\n"))
             revs = scmutil.revrange(repo, [prefetchrevset])
             base = repo[b'.'].rev()
             if bgprefetch:
-                repo.backgroundprefetch(
-                    prefetchrevset, repack=bgrepack, ensurestart=ensurestart
-                )
+                repo.backgroundprefetch(prefetchrevset, repack=bgrepack)
             else:
                 repo.prefetch(revs, base=base)
                 if bgrepack:
-                    repackmod.backgroundrepack(
-                        repo, incremental=True, ensurestart=ensurestart
-                    )
+                    repackmod.backgroundrepack(repo, incremental=True)
         elif bgrepack:
-            repackmod.backgroundrepack(
-                repo, incremental=True, ensurestart=ensurestart
-            )
+            repackmod.backgroundrepack(repo, incremental=True)
 
     return result
 
@@ -1255,13 +1247,9 @@ def prefetch(ui, repo, *pats, **opts):
     revs = scmutil.revrange(repo, opts.get(b'rev'))
     repo.prefetch(revs, opts.get(b'base'), pats, opts)
 
-    ensurestart = repo.ui.configbool(b'devel', b'remotefilelog.ensurestart')
-
     # Run repack in background
     if opts.get(b'repack'):
-        repackmod.backgroundrepack(
-            repo, incremental=True, ensurestart=ensurestart
-        )
+        repackmod.backgroundrepack(repo, incremental=True)
 
 
 @command(
@@ -1281,12 +1269,10 @@ def prefetch(ui, repo, *pats, **opts):
 )
 def repack_(ui, repo, *pats, **opts):
     if opts.get(r'background'):
-        ensurestart = repo.ui.configbool(b'devel', b'remotefilelog.ensurestart')
         repackmod.backgroundrepack(
             repo,
             incremental=opts.get(r'incremental'),
             packsonly=opts.get(r'packsonly', False),
-            ensurestart=ensurestart,
         )
         return
 
