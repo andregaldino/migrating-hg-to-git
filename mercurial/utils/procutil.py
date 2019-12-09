@@ -548,12 +548,18 @@ if pycompat.iswindows:
     _creationflags = DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
 
     def runbgcommand(
-        script, env, shell=False, stdout=None, stderr=None, ensurestart=True
+        script,
+        env,
+        shell=False,
+        stdout=None,
+        stderr=None,
+        ensurestart=True,
+        record_wait=None,
     ):
         '''Spawn a command without waiting for it to finish.'''
         # we can't use close_fds *and* redirect stdin. I'm not sure that we
         # need to because the detached process has no console connection.
-        subprocess.Popen(
+        p = subprocess.Popen(
             tonativestr(script),
             shell=shell,
             env=tonativeenv(env),
@@ -562,46 +568,64 @@ if pycompat.iswindows:
             stdout=stdout,
             stderr=stderr,
         )
+        if record_wait is not None:
+            record_wait(p.wait)
 
 
 else:
 
     def runbgcommand(
-        cmd, env, shell=False, stdout=None, stderr=None, ensurestart=True
+        cmd,
+        env,
+        shell=False,
+        stdout=None,
+        stderr=None,
+        ensurestart=True,
+        record_wait=None,
     ):
-        '''Spawn a command without waiting for it to finish.'''
+        '''Spawn a command without waiting for it to finish.
+
+
+        When `record_wait` is not None, the spawned process will not be fully
+        detached and the `record_wait` argument will be called with a the
+        `Subprocess.wait` function for the spawned process.  This is mostly
+        useful for developers that need to make sure the spawned process
+        finished before a certain point. (eg: writing test)'''
         # double-fork to completely detach from the parent process
         # based on http://code.activestate.com/recipes/278731
-        pid = os.fork()
-        if pid:
-            if not ensurestart:
+        if record_wait is None:
+            pid = os.fork()
+            if pid:
+                if not ensurestart:
+                    return
+                # Parent process
+                (_pid, status) = os.waitpid(pid, 0)
+                if os.WIFEXITED(status):
+                    returncode = os.WEXITSTATUS(status)
+                else:
+                    returncode = -(os.WTERMSIG(status))
+                if returncode != 0:
+                    # The child process's return code is 0 on success, an errno
+                    # value on failure, or 255 if we don't have a valid errno
+                    # value.
+                    #
+                    # (It would be slightly nicer to return the full exception info
+                    # over a pipe as the subprocess module does.  For now it
+                    # doesn't seem worth adding that complexity here, though.)
+                    if returncode == 255:
+                        returncode = errno.EINVAL
+                    raise OSError(
+                        returncode,
+                        b'error running %r: %s'
+                        % (cmd, os.strerror(returncode)),
+                    )
                 return
-            # Parent process
-            (_pid, status) = os.waitpid(pid, 0)
-            if os.WIFEXITED(status):
-                returncode = os.WEXITSTATUS(status)
-            else:
-                returncode = -(os.WTERMSIG(status))
-            if returncode != 0:
-                # The child process's return code is 0 on success, an errno
-                # value on failure, or 255 if we don't have a valid errno
-                # value.
-                #
-                # (It would be slightly nicer to return the full exception info
-                # over a pipe as the subprocess module does.  For now it
-                # doesn't seem worth adding that complexity here, though.)
-                if returncode == 255:
-                    returncode = errno.EINVAL
-                raise OSError(
-                    returncode,
-                    b'error running %r: %s' % (cmd, os.strerror(returncode)),
-                )
-            return
 
         returncode = 255
         try:
-            # Start a new session
-            os.setsid()
+            if record_wait is None:
+                # Start a new session
+                os.setsid()
 
             stdin = open(os.devnull, b'r')
             if stdout is None:
@@ -611,7 +635,7 @@ else:
 
             # connect stdin to devnull to make sure the subprocess can't
             # muck up that stream for mercurial.
-            subprocess.Popen(
+            p = subprocess.Popen(
                 cmd,
                 shell=shell,
                 env=env,
@@ -620,6 +644,8 @@ else:
                 stdout=stdout,
                 stderr=stderr,
             )
+            if record_wait is not None:
+                record_wait(p.wait)
             returncode = 0
         except EnvironmentError as ex:
             returncode = ex.errno & 0xFF
@@ -632,4 +658,5 @@ else:
         finally:
             # mission accomplished, this child needs to exit and not
             # continue the hg process here.
-            os._exit(returncode)
+            if record_wait is None:
+                os._exit(returncode)
