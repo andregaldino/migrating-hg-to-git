@@ -40,7 +40,6 @@
   $ hg prefetch
   2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
   $ hg repack
-  $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | egrep ".datapack|.histpack"
@@ -73,7 +72,6 @@
   > EOF
 
   $ hg repack
-  $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | egrep ".datapack|.histpack"
@@ -101,7 +99,6 @@
   $ hg prefetch
   2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
   $ hg repack
-  $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | egrep ".datapack|.histpack"
@@ -135,7 +132,6 @@
   > EOF
 
   $ hg repack
-  $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | egrep ".datapack|.histpack"

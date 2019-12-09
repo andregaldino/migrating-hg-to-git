@@ -79,7 +79,6 @@
   new changesets 6b4b6f66ef8c
   (run 'hg update' to get a working copy)
   prefetching file contents
-  $ sleep 0.5
   $ hg debugwaitonprefetch >/dev/null 2>%1
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/11/f6ad8ec52a2984abaafd7c3b516503785c2072/ef95c5376f34698742fe34f315fd82136f8f68c0
@@ -108,11 +107,8 @@
   new changesets 6b4b6f66ef8c
   (run 'hg update' to get a working copy)
   prefetching file contents
-  $ sleep 0.5
   $ hg debugwaitonprefetch >/dev/null 2>%1
-  $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
-  $ sleep 0.5
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/6e8633deba6e544e5f8edbd7b996d6e31a2c42ae.histidx
   $TESTTMP/hgcache/master/packs/6e8633deba6e544e5f8edbd7b996d6e31a2c42ae.histpack
@@ -144,11 +140,8 @@
   $ hg up -r 0
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   * files fetched over * fetches - (* misses, 0.00% hit ratio) over *s (glob)
-  $ sleep 1
   $ hg debugwaitonprefetch >/dev/null 2>%1
-  $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
-  $ sleep 1
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
@@ -196,11 +189,8 @@
   $ hg commit -qAm b
   * files fetched over 1 fetches - (* misses, 0.00% hit ratio) over *s (glob)
   $ hg bookmark temporary
-  $ sleep 1
   $ hg debugwaitonprefetch >/dev/null 2>%1
-  $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
-  $ sleep 1
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
@@ -246,11 +236,8 @@
   rebasing 3:58147a5b5242 "b" (temporary tip)
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/58147a5b5242-c3678817-rebase.hg
   3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over *s (glob)
-  $ sleep 1
   $ hg debugwaitonprefetch >/dev/null 2>%1
-  $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
-  $ sleep 1
 
 # Ensure that file 'y' was prefetched - it was not part of the rebase operation and therefore
 # could only be downloaded by the background prefetch
@@ -290,9 +277,7 @@
   (running background incremental repack)
   * files fetched over 1 fetches - (* misses, 0.00% hit ratio) over *s (glob) (?)
 
-  $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
-  $ sleep 0.5
 
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
@@ -334,9 +319,7 @@
   got lock after * seconds (glob) (?)
   (running background incremental repack)
   * files fetched over 1 fetches - (* misses, 0.00% hit ratio) over *s (glob) (?)
-  $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
-  $ sleep 0.5
 
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
