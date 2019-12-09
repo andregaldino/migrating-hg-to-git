@@ -48,7 +48,13 @@ def backgroundrepack(
         cmd.append(b'--packsonly')
     repo.ui.warn(msg)
     # We know this command will find a binary, so don't block on it starting.
-    procutil.runbgcommand(cmd, encoding.environ, ensurestart=ensurestart)
+    kwargs = {}
+    if repo.ui.configbool(b'devel', b'remotefilelog.bg-wait'):
+        kwargs['record_wait'] = repo.ui.atexit
+
+    procutil.runbgcommand(
+        cmd, encoding.environ, ensurestart=ensurestart, **kwargs
+    )
 
 
 def fullrepack(repo, options=None):

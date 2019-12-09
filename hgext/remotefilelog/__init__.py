@@ -230,6 +230,7 @@ configitem(b'packs', b'maxpacksize', default=0)
 configitem(b'packs', b'maxchainlen', default=1000)
 
 configitem(b'devel', b'remotefilelog.ensurestart', default=False)
+configitem(b'devel', b'remotefilelog.bg-wait', default=False)
 
 #  default TTL limit is 30 days
 _defaultlimit = 60 * 60 * 24 * 30
