@@ -783,13 +783,12 @@ def _conflictsmsg(repo):
     if not mergestate.active():
         return
 
-    m = scmutil.match(repo[None])
-    unresolvedlist = [f for f in mergestate.unresolved() if m(f)]
+    unresolvedlist = sorted(mergestate.unresolved())
     if unresolvedlist:
         mergeliststr = b'\n'.join(
             [
                 b'    %s' % util.pathto(repo.root, encoding.getcwd(), path)
-                for path in sorted(unresolvedlist)
+                for path in unresolvedlist
             ]
         )
         msg = (
