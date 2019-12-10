@@ -6,17 +6,26 @@
 namespace contrib
 {
 
+#if PY_MAJOR_VERSION >= 3
+#define HG_FUZZER_PY3 1
+PyMODINIT_FUNC PyInit_parsers(void);
+#else
+PyMODINIT_FUNC initparsers(void);
+#endif
+
 static char cpypath[8192] = "\0";
 
 static PyObject *mainmod;
 static PyObject *globals;
 
-/* TODO: use Python 3 for this fuzzing? */
-PyMODINIT_FUNC initparsers(void);
-
 void initpy(const char *cselfpath)
 {
+#ifdef HG_FUZZER_PY3
+	const std::string subdir = "/sanpy/lib/python3.7";
+#else
 	const std::string subdir = "/sanpy/lib/python2.7";
+#endif
+
 	/* HACK ALERT: we need a full Python installation built without
 	   pymalloc and with ASAN, so we dump one in
 	   $OUT/sanpy/lib/python2.7. This helps us wire that up. */
@@ -39,11 +48,24 @@ void initpy(const char *cselfpath)
 	setenv("PYTHONNOUSERSITE", "1", 1);
 	/* prevent Python from looking up users in the fuzz environment */
 	setenv("PYTHONUSERBASE", cpypath, 1);
+#ifdef HG_FUZZER_PY3
+	std::wstring wcpypath(pypath.begin(), pypath.end());
+	Py_SetPythonHome(wcpypath.c_str());
+#else
 	Py_SetPythonHome(cpypath);
+#endif
 	Py_InitializeEx(0);
 	mainmod = PyImport_AddModule("__main__");
 	globals = PyModule_GetDict(mainmod);
+
+#ifdef HG_FUZZER_PY3
+	PyObject *mod = PyInit_parsers();
+#else
 	initparsers();
+	PyObject *mod = PyImport_ImportModule("parsers");
+#endif
+
+	PyDict_SetItemString(globals, "parsers", mod);
 }
 
 PyObject *pyglobals()
