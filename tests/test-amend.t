@@ -493,7 +493,7 @@ Modifying a file while the editor is open can cause dirstate corruption
   $ sleep 1
   $ echo delta >> foo
   $ sleep 3
-  $ if (hg diff -c . | grep 'delta' >/dev/null) || [[ -n "$(hg status)" ]]; then
+  $ if (hg diff -c . | grep 'delta' >/dev/null) || [ -n "$(hg status)" ]; then
   >   echo "OK."
   > else
   >   echo "Bug detected. 'delta' is not part of the commit OR the wdir"
