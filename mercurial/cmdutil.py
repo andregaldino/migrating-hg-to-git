@@ -24,6 +24,7 @@ from .pycompat import (
     open,
     setattr,
 )
+from .thirdparty import attr
 
 from . import (
     bookmarks,
@@ -778,47 +779,66 @@ def _commentlines(raw):
     return b'\n'.join(commentedlines) + b'\n'
 
 
-def _conflictsmsg(repo):
-    mergestate = mergemod.mergestate.read(repo)
-    if not mergestate.active():
-        return
+@attr.s(frozen=True)
+class morestatus(object):
+    reporoot = attr.ib()
+    unfinishedop = attr.ib()
+    unfinishedmsg = attr.ib()
+    inmergestate = attr.ib()
+    unresolvedpaths = attr.ib()
+    _label = b'status.morestatus'
 
-    unresolvedlist = sorted(mergestate.unresolved())
-    if unresolvedlist:
-        mergeliststr = b'\n'.join(
-            [
-                b'    %s' % util.pathto(repo.root, encoding.getcwd(), path)
-                for path in unresolvedlist
-            ]
-        )
-        msg = (
-            _(
-                '''Unresolved merge conflicts:
+    def formatfooter(self, fm):
+        statemsg = _(b'The repository is in an unfinished *%s* state.'
+                     ) % self.unfinishedop
+        fm.plain(b'%s\n' % _commentlines(statemsg), label=self._label)
+
+        self._formatconflicts(fm)
+        if self.unfinishedmsg:
+            fm.plain(b'%s\n' % _commentlines(self.unfinishedmsg),
+                     label=self._label)
+
+    def _formatconflicts(self, fm):
+        if not self.inmergestate:
+            return
+
+        if self.unresolvedpaths:
+            mergeliststr = b'\n'.join(
+                [
+                    b'    %s' % util.pathto(self.reporoot, encoding.getcwd(),
+                                            path)
+                    for path in self.unresolvedpaths
+                ]
+            )
+            msg = (
+                _(
+                    '''Unresolved merge conflicts:
 
 %s
 
 To mark files as resolved:  hg resolve --mark FILE'''
+                )
+                % mergeliststr
             )
-            % mergeliststr
-        )
-    else:
-        msg = _(b'No unresolved merge conflicts.')
+        else:
+            msg = _(b'No unresolved merge conflicts.')
 
-    return _commentlines(msg)
+        fm.plain(b'%s\n' % _commentlines(msg), label=self._label)
 
 
-def morestatus(repo, fm):
+def readmorestatus(repo):
+    """Returns a morestatus object if the repo has unfinished state."""
     statetuple = statemod.getrepostate(repo)
-    label = b'status.morestatus'
-    if statetuple:
-        state, helpfulmsg = statetuple
-        statemsg = _(b'The repository is in an unfinished *%s* state.') % state
-        fm.plain(b'%s\n' % _commentlines(statemsg), label=label)
-        conmsg = _conflictsmsg(repo)
-        if conmsg:
-            fm.plain(b'%s\n' % conmsg, label=label)
-        if helpfulmsg:
-            fm.plain(b'%s\n' % _commentlines(helpfulmsg), label=label)
+    if not statetuple:
+        return None
+
+    unfinishedop, unfinishedmsg = statetuple
+    mergestate = mergemod.mergestate.read(repo)
+    unresolved = None
+    if mergestate.active():
+        unresolved = sorted(mergestate.unresolved())
+    return morestatus(repo.root, unfinishedop, unfinishedmsg,
+                      unresolved is not None, unresolved)
 
 
 def findpossible(cmd, table, strict=False):

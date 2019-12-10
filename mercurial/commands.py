@@ -6867,6 +6867,12 @@ def status(ui, repo, *pats, **opts):
     ) and not opts.get(b'no_status'):
         copy = copies.pathcopies(ctx1, ctx2, m)
 
+    morestatus = None
+    if (
+        ui.verbose or ui.configbool(b'commands', b'status.verbose')
+    ) and not ui.plain():
+        morestatus = cmdutil.readmorestatus(repo)
+
     ui.pager(b'status')
     fm = ui.formatter(b'status', opts)
     fmt = b'%s' + end
@@ -6888,10 +6894,8 @@ def status(ui, repo, *pats, **opts):
                         label=b'status.copied',
                     )
 
-    if (
-        ui.verbose or ui.configbool(b'commands', b'status.verbose')
-    ) and not ui.plain():
-        cmdutil.morestatus(repo, fm)
+    if morestatus:
+        morestatus.formatfooter(fm)
     fm.end()
 
 
