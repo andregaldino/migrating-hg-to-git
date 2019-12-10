@@ -663,5 +663,5 @@ class fileserverclient(object):
         self.ui.log(
             b'remotefilelog',
             b'excess remotefilelog fetching:\n%s\n',
-            b''.join(traceback.format_stack()),
+            b''.join(pycompat.sysbytes(traceback.format_stack())),
         )
