@@ -990,6 +990,16 @@ class curseschunkselector(object):
                     self.toggleapply(item)
         self.waslasttoggleallapplied = not self.waslasttoggleallapplied
 
+    def flipselections(self):
+        """
+        Flip all selections. Every selected line is unselected and vice
+        versa.
+        """
+        for header in self.headerlist:
+            for hunk in header.allchildren():
+                for line in hunk.allchildren():
+                    self.toggleapply(line)
+
     def toggleallbetween(self):
         """toggle applied on or off for all items in range [lastapplied,
         current]. """
@@ -1638,7 +1648,7 @@ smaller changesets. the following are valid keystrokes:
                  ctrl-l : scroll the selected line to the top of the screen
                       m : edit / resume editing the commit message
                       e : edit the currently selected hunk
-                      a : toggle amend mode, only with commit -i
+                      a : toggle all selections
                       c : confirm selected changes
                       r : review/edit and confirm selected changes
                       q : quit without confirming (no changes will be made)
@@ -1914,7 +1924,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         elif keypressed in ["q"]:
             raise error.Abort(_(b'user quit'))
         elif keypressed in ['a']:
-            self.toggleamend(self.opts, test)
+            self.flipselections()
         elif keypressed in ["c"]:
             return True
         elif keypressed in ["r"]:

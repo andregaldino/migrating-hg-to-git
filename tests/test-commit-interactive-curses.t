@@ -95,7 +95,7 @@ Committing only one hunk while aborting edition of hunk
 - unfold it
 - go down to second hunk (1 for the first hunk, 1 for the first hunkline, 1 for the second hunk, 1 for the second hunklike)
 - toggle the second hunk
-- toggle on and off the amend mode (to check that it toggles off)
+- toggle all lines twice (to check that it does nothing)
 - edit the hunk and quit the editor immediately with non-zero status
 - commit
 
@@ -193,20 +193,39 @@ Newly added files can be selected with the curses interface
   $ hg st
   ? testModeCommands
 
-Amend option works
+Test toggling all selections works
+
+- Change one line
+- Add an extra line at the end
+- Unselect all
+- Select the extra line at the end
+- Toggle all selections (so the extra line at the is unselected and the modified line is selected)
+- Commit
+
   $ echo "hello world" > x
-  $ hg diff -c .
-  diff -r a6735021574d -r 2b0e9be4d336 x
-  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  $ echo "goodbye world" >> x
+  $ hg diff
+  diff -r 2b0e9be4d336 x
+  --- a/x	Thu Jan 01 00:00:00 1970 +0000
   +++ b/x	Thu Jan 01 00:00:00 1970 +0000
-  @@ -0,0 +1,1 @@
-  +hello
+  @@ -1,1 +1,2 @@
+  -hello
+  +hello world
+  +goodbye world
   $ cat <<EOF >testModeCommands
+  > f
+  > j
+  > x
+  > j
+  > j
+  > j
+  > x
   > a
   > c
   > EOF
-  $ hg commit -i  -m "newly added file" -d "0 0"
+  $ hg commit -i --amend  -m "newly added file" -d "0 0" x
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/2b0e9be4d336-3cf0bc8c-amend.hg
+  $ hg rev x --no-backup
   $ hg diff -c .
   diff -r a6735021574d -r c1d239d165ae x
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
