@@ -6884,7 +6884,7 @@ def status(ui, repo, *pats, **opts):
             for f in files:
                 fm.startitem()
                 fm.context(ctx=ctx2)
-                fm.data(path=f)
+                fm.data(itemtype=b'file', path=f)
                 fm.condwrite(showchar, b'status', b'%s ', char, label=label)
                 fm.plain(fmt % uipathfn(f), label=label)
                 if f in copy:

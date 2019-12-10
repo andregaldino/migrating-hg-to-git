@@ -793,6 +793,13 @@ class morestatus(object):
             fm.data(unresolved=True)
 
     def formatfooter(self, fm):
+        fm.startitem()
+        fm.data(
+            itemtype=b'morestatus',
+            unfinished=self.unfinishedop,
+            unfinishedmsg=self.unfinishedmsg,
+        )
+
         statemsg = (
             _(b'The repository is in an unfinished *%s* state.')
             % self.unfinishedop
