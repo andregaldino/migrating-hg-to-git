@@ -1767,32 +1767,6 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         else:
             return False
 
-    def toggleamend(self, opts, test):
-        """Toggle the amend flag.
-
-        When the amend flag is set, a commit will modify the most recently
-        committed changeset, instead of creating a new changeset.  Otherwise, a
-        new changeset will be created (the normal commit behavior).
-        """
-
-        if opts.get(b'amend') is None:
-            opts[b'amend'] = True
-            msg = _(
-                b"Amend option is turned on -- committing the currently "
-                b"selected changes will not create a new changeset, but "
-                b"instead update the most recently committed changeset.\n\n"
-                b"Press any key to continue."
-            )
-        elif opts.get(b'amend') is True:
-            opts[b'amend'] = None
-            msg = _(
-                b"Amend option is turned off -- committing the currently "
-                b"selected changes will create a new changeset.\n\n"
-                b"Press any key to continue."
-            )
-        if not test:
-            self.confirmationwindow(msg)
-
     def recenterdisplayedarea(self):
         """
         once we scrolled with pg up pg down we can be pointing outside of the
