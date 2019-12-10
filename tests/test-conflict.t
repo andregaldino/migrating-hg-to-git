@@ -64,7 +64,8 @@
   [
    {
     "path": "a",
-    "status": "M"
+    "status": "M",
+    "unresolved": true
    },
    {
     "path": "a.orig",

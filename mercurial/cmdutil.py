@@ -788,6 +788,10 @@ class morestatus(object):
     unresolvedpaths = attr.ib()
     _label = b'status.morestatus'
 
+    def formatfile(self, path, fm):
+        if self.inmergestate and path in self.unresolvedpaths:
+            fm.data(unresolved=True)
+
     def formatfooter(self, fm):
         statemsg = _(b'The repository is in an unfinished *%s* state.'
                      ) % self.unfinishedop

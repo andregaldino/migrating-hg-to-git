@@ -6893,6 +6893,8 @@ def status(ui, repo, *pats, **opts):
                         (b'  %s' + end) % uipathfn(copy[f]),
                         label=b'status.copied',
                     )
+                if morestatus:
+                    morestatus.formatfile(f, fm)
 
     if morestatus:
         morestatus.formatfooter(fm)
