@@ -62,7 +62,7 @@ parsers-%.o: ../../mercurial/cext/%.c
 
 PARSERS_OBJS=parsers-manifest.o parsers-charencode.o parsers-parsers.o parsers-dirs.o parsers-pathencode.o parsers-revlog.o
 
-dirs_fuzzer: dirs.cc pyutil.o $(PARSERS_OBJS)
+dirs_fuzzer: dirs.cc pyutil.o $(PARSERS_OBJS) $$OUT/dirs_fuzzer_seed_corpus.zip
 	$(CXX) $(CXXFLAGS) `$(PYTHON_CONFIG) --cflags` \
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial dirs.cc \
