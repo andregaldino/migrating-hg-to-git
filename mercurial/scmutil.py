@@ -545,12 +545,10 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
             if cache is not None:
                 nodetree = cache.get(b'disambiguationnodetree')
             if not nodetree:
-                try:
+                if util.safehasattr(parsers, 'nodetree'):
+                    # The CExt is the only implementation to provide a nodetree
+                    # class so far.
                     nodetree = parsers.nodetree(cl.index, len(revs))
-                except AttributeError:
-                    # no native nodetree
-                    pass
-                else:
                     for r in revs:
                         nodetree.insert(r)
                     if cache is not None:
