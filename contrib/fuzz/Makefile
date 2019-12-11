@@ -18,6 +18,9 @@ all: standalone_fuzz_target_runner.o oss-fuzz
 
 standalone_fuzz_target_runner.o: standalone_fuzz_target_runner.cc
 
+$$OUT/%_fuzzer_seed_corpus.zip: %_corpus.py
+	python $< $@
+
 pyutil.o: pyutil.cc pyutil.h
 	$(CXX) $(CXXFLAGS) -g -O1 \
 	  `$(PYTHON_CONFIG) --cflags` \
@@ -38,13 +41,10 @@ mpatch.o: ../../mercurial/mpatch.c
 mpatch-oss-fuzz.o: ../../mercurial/mpatch.c
 	$(CC) $(CFLAGS) -c -o mpatch-oss-fuzz.o ../../mercurial/mpatch.c
 
-mpatch_fuzzer: mpatch.cc mpatch-oss-fuzz.o 
+mpatch_fuzzer: mpatch.cc mpatch-oss-fuzz.o $$OUT/mpatch_fuzzer_seed_corpus.zip
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial mpatch.cc \
 	  mpatch-oss-fuzz.o $(LIB_FUZZING_ENGINE) -o \
 	  $$OUT/mpatch_fuzzer
-
-mpatch_corpus.zip:
-	python mpatch_corpus.py $$OUT/mpatch_fuzzer_seed_corpus.zip
 
 fuzz-x%.o: ../../mercurial/thirdparty/xdiff/x%.c ../../mercurial/thirdparty/xdiff/*.h
 	$(CC) $(CFLAGS) -c \
@@ -86,10 +86,7 @@ jsonescapeu8fast_fuzzer: jsonescapeu8fast.cc pyutil.o $(PARSERS_OBJS)
 	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
 	  -o $$OUT/jsonescapeu8fast_fuzzer
 
-manifest_corpus.zip:
-	python manifest_corpus.py $$OUT/manifest_fuzzer_seed_corpus.zip
-
-manifest_fuzzer: manifest.cc pyutil.o $(PARSERS_OBJS)
+manifest_fuzzer: manifest.cc pyutil.o $(PARSERS_OBJS) $$OUT/manifest_fuzzer_seed_corpus.zip
 	$(CXX) $(CXXFLAGS) `$(PYTHON_CONFIG) --cflags` \
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial manifest.cc \
@@ -97,7 +94,7 @@ manifest_fuzzer: manifest.cc pyutil.o $(PARSERS_OBJS)
 	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
 	  -o $$OUT/manifest_fuzzer
 
-revlog_fuzzer: revlog.cc pyutil.o $(PARSERS_OBJS)
+revlog_fuzzer: revlog.cc pyutil.o $(PARSERS_OBJS) $$OUT/revlog_fuzzer_seed_corpus.zip
 	$(CXX) $(CXXFLAGS) `$(PYTHON_CONFIG) --cflags` \
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial revlog.cc \
@@ -105,10 +102,7 @@ revlog_fuzzer: revlog.cc pyutil.o $(PARSERS_OBJS)
 	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
 	  -o $$OUT/revlog_fuzzer
 
-revlog_corpus.zip:
-	python revlog_corpus.py $$OUT/revlog_fuzzer_seed_corpus.zip
-
-dirstate_fuzzer: dirstate.cc pyutil.o $(PARSERS_OBJS)
+dirstate_fuzzer: dirstate.cc pyutil.o $(PARSERS_OBJS) $$OUT/dirstate_fuzzer_seed_corpus.zip
 	$(CXX) $(CXXFLAGS) `$(PYTHON_CONFIG) --cflags` \
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial dirstate.cc \
@@ -116,10 +110,7 @@ dirstate_fuzzer: dirstate.cc pyutil.o $(PARSERS_OBJS)
 	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
 	  -o $$OUT/dirstate_fuzzer
 
-dirstate_corpus.zip:
-	python dirstate_corpus.py $$OUT/dirstate_fuzzer_seed_corpus.zip
-
-fm1readmarkers_fuzzer: fm1readmarkers.cc pyutil.o $(PARSERS_OBJS)
+fm1readmarkers_fuzzer: fm1readmarkers.cc pyutil.o $(PARSERS_OBJS) $$OUT/fm1readmarkers_fuzzer_seed_corpus.zip
 	$(CXX) $(CXXFLAGS) `$(PYTHON_CONFIG) --cflags` \
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial fm1readmarkers.cc \
@@ -127,15 +118,12 @@ fm1readmarkers_fuzzer: fm1readmarkers.cc pyutil.o $(PARSERS_OBJS)
 	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
 	  -o $$OUT/fm1readmarkers_fuzzer
 
-fm1readmarkers_corpus.zip:
-	python fm1readmarkers_corpus.py $$OUT/fm1readmarkers_fuzzer_seed_corpus.zip
-
 clean:
 	$(RM) *.o *_fuzzer \
 	  bdiff \
 	  mpatch \
 	  xdiff
 
-oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer dirs_fuzzer fncache_fuzzer jsonescapeu8fast_fuzzer manifest_fuzzer manifest_corpus.zip revlog_fuzzer revlog_corpus.zip dirstate_fuzzer dirstate_corpus.zip fm1readmarkers_fuzzer fm1readmarkers_corpus.zip
+oss-fuzz: bdiff_fuzzer mpatch_fuzzer xdiff_fuzzer dirs_fuzzer fncache_fuzzer jsonescapeu8fast_fuzzer manifest_fuzzer revlog_fuzzer dirstate_fuzzer fm1readmarkers_fuzzer
 
 .PHONY: all clean oss-fuzz
