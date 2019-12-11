@@ -276,3 +276,103 @@ A mix of adds and removes should remove all dropped entries.
   crosschecking files in changesets and manifests
   checking files
   checked 2 changesets with 9 changes to 9 files
+  $ cd ..
+
+Test manifest cache interraction with shares
+============================================
+
+  $ echo '[extensions]' >> $HGRCPATH
+  $ echo 'share=' >> $HGRCPATH
+
+creating some history
+
+  $ hg init share-source
+  $ hg debugbuilddag .+10 -n -R share-source
+  $ hg log --debug -r . -R share-source | grep 'manifest:'
+  manifest:    -1:0000000000000000000000000000000000000000
+  $ hg log -r . -R share-source
+  changeset:   -1:000000000000
+  user:        
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  
+  $ hg debugmanifestfulltextcache -R share-source
+  cache contains 4 manifest entries, in order of most to least recent:
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  id: c6e7b359cbbb5469e98f35acd73ac4757989c4d8, size 450 bytes
+  id: 8de636143b0acc5236cb47ca914bd482d82e6f35, size 405 bytes
+  id: 7d32499319983d90f97ca02a6c2057a1030bebbb, size 360 bytes
+  total cache data size 1.76 KB, on-disk 1.76 KB
+  $ hg -R share-source update 1
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg debugmanifestfulltextcache -R share-source
+  cache contains 4 manifest entries, in order of most to least recent:
+  id: fffc37b38c401b1ab4f8b99da4b72325e31b985f, size 90 bytes
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  id: c6e7b359cbbb5469e98f35acd73ac4757989c4d8, size 450 bytes
+  id: 8de636143b0acc5236cb47ca914bd482d82e6f35, size 405 bytes
+  total cache data size 1.50 KB, on-disk 1.50 KB
+
+making a share out of it. It should have its manifest cache updated
+
+  $ hg share share-source share-dest
+  updating working directory
+  11 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg log --debug -r . -R share-dest | grep 'manifest:'
+  manifest:    10:b264454d7033405774b9f353b9b37a082c1a8fba
+  $ hg debugmanifestfulltextcache -R share-dest
+  cache contains 1 manifest entries, in order of most to least recent:
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  total cache data size 520 bytes, on-disk 520 bytes
+
+update on various side should only affect the target share
+
+  $ hg update -R share-dest 4
+  0 files updated, 0 files merged, 6 files removed, 0 files unresolved
+  $ hg log --debug -r . -R share-dest | grep 'manifest:'
+  manifest:    4:d45ead487afec2588272fcec88a25413c0ec7dc8
+  $ hg debugmanifestfulltextcache -R share-dest
+  cache contains 2 manifest entries, in order of most to least recent:
+  id: d45ead487afec2588272fcec88a25413c0ec7dc8, size 225 bytes
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  total cache data size 769 bytes, on-disk 769 bytes
+  $ hg debugmanifestfulltextcache -R share-source
+  cache contains 4 manifest entries, in order of most to least recent:
+  id: fffc37b38c401b1ab4f8b99da4b72325e31b985f, size 90 bytes
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  id: c6e7b359cbbb5469e98f35acd73ac4757989c4d8, size 450 bytes
+  id: 8de636143b0acc5236cb47ca914bd482d82e6f35, size 405 bytes
+  total cache data size 1.50 KB, on-disk 1.50 KB
+  $ hg update -R share-source 7
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg log --debug -r . -R share-source | grep 'manifest:'
+  manifest:    7:7d32499319983d90f97ca02a6c2057a1030bebbb
+  $ hg debugmanifestfulltextcache -R share-dest
+  cache contains 2 manifest entries, in order of most to least recent:
+  id: d45ead487afec2588272fcec88a25413c0ec7dc8, size 225 bytes
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  total cache data size 769 bytes, on-disk 769 bytes
+  $ hg debugmanifestfulltextcache -R share-source
+  cache contains 4 manifest entries, in order of most to least recent:
+  id: 7d32499319983d90f97ca02a6c2057a1030bebbb, size 360 bytes
+  id: fffc37b38c401b1ab4f8b99da4b72325e31b985f, size 90 bytes
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  id: c6e7b359cbbb5469e98f35acd73ac4757989c4d8, size 450 bytes
+  total cache data size 1.46 KB, on-disk 1.46 KB
+  $ hg update -R share-dest 8
+  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg log --debug -r . -R share-dest | grep 'manifest:'
+  manifest:    8:8de636143b0acc5236cb47ca914bd482d82e6f35
+  $ hg debugmanifestfulltextcache -R share-dest
+  cache contains 3 manifest entries, in order of most to least recent:
+  id: 8de636143b0acc5236cb47ca914bd482d82e6f35, size 405 bytes
+  id: d45ead487afec2588272fcec88a25413c0ec7dc8, size 225 bytes
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  total cache data size 1.17 KB, on-disk 1.17 KB
+  $ hg debugmanifestfulltextcache -R share-source
+  cache contains 4 manifest entries, in order of most to least recent:
+  id: 7d32499319983d90f97ca02a6c2057a1030bebbb, size 360 bytes
+  id: fffc37b38c401b1ab4f8b99da4b72325e31b985f, size 90 bytes
+  id: b264454d7033405774b9f353b9b37a082c1a8fba, size 496 bytes
+  id: c6e7b359cbbb5469e98f35acd73ac4757989c4d8, size 450 bytes
+  total cache data size 1.46 KB, on-disk 1.46 KB
+
