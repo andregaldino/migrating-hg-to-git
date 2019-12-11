@@ -434,16 +434,16 @@ class ui(object):
                 return
             raise
 
-        cfg = config.config()
-        trusted = sections or trust or self._trusted(fp, filename)
+        with fp:
+            cfg = config.config()
+            trusted = sections or trust or self._trusted(fp, filename)
 
-        try:
-            cfg.read(filename, fp, sections=sections, remap=remap)
-            fp.close()
-        except error.ParseError as inst:
-            if trusted:
-                raise
-            self.warn(_(b"ignored: %s\n") % stringutil.forcebytestr(inst))
+            try:
+                cfg.read(filename, fp, sections=sections, remap=remap)
+            except error.ParseError as inst:
+                if trusted:
+                    raise
+                self.warn(_(b'ignored: %s\n') % stringutil.forcebytestr(inst))
 
         if self.plain():
             for k in (
