@@ -77,7 +77,7 @@ impl From<HgPathError> for std::io::Error {
 // `#[repr(transparent)]`.
 // Anyway, `Slice` representation and layout are considered implementation
 // detail, are not documented and must not be relied upon.
-#[derive(Eq, Ord, PartialEq, PartialOrd, Debug, Hash)]
+#[derive(Eq, Ord, PartialEq, PartialOrd, Hash)]
 pub struct HgPath {
     inner: [u8],
 }
@@ -181,13 +181,19 @@ impl HgPath {
     }
 }
 
+impl fmt::Debug for HgPath {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "HgPath({:?})", String::from_utf8_lossy(&self.inner))
+    }
+}
+
 impl fmt::Display for HgPath {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", String::from_utf8_lossy(&self.inner))
     }
 }
 
-#[derive(Eq, Ord, Clone, PartialEq, PartialOrd, Debug, Hash)]
+#[derive(Eq, Ord, Clone, PartialEq, PartialOrd, Hash)]
 pub struct HgPathBuf {
     inner: Vec<u8>,
 }
@@ -207,6 +213,12 @@ impl HgPathBuf {
     }
     pub fn as_ref(&self) -> &[u8] {
         self.inner.as_ref()
+    }
+}
+
+impl fmt::Debug for HgPathBuf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "HgPathBuf({:?})", String::from_utf8_lossy(&self.inner))
     }
 }
 
