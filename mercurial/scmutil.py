@@ -58,6 +58,7 @@ else:
     from . import scmposix as scmplatform
 
 parsers = policy.importmod('parsers')
+rustrevlog = policy.importrust('revlog')
 
 termsize = scmplatform.termsize
 
@@ -548,7 +549,11 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
                 if util.safehasattr(parsers, 'nodetree'):
                     # The CExt is the only implementation to provide a nodetree
                     # class so far.
-                    nodetree = parsers.nodetree(cl.index, len(revs))
+                    index = cl.index
+                    if util.safehasattr(index, 'get_cindex'):
+                        # the rust wrapped need to give access to its internal index
+                        index = index.get_cindex()
+                    nodetree = parsers.nodetree(index, len(revs))
                     for r in revs:
                         nodetree.insert(r)
                     if cache is not None:
