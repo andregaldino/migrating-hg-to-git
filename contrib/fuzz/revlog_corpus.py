@@ -18,8 +18,8 @@ contributing = os.path.join(
 
 with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     if os.path.exists(changelog):
-        with open(changelog) as f:
+        with open(changelog, 'rb') as f:
             zf.writestr("00changelog.i", f.read())
     if os.path.exists(contributing):
-        with open(contributing) as f:
+        with open(contributing, 'rb') as f:
             zf.writestr("contributing.i", f.read())
