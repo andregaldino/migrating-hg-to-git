@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 import argparse
 import struct
+import sys
 import zipfile
 
 from mercurial import (
@@ -14,15 +15,25 @@ ap.add_argument("out", metavar="some.zip", type=str, nargs=1)
 args = ap.parse_args()
 
 
-class deltafrag(object):
+if sys.version_info[0] < 3:
+
+    class py2reprhack(object):
+        def __repr__(self):
+            """Py2 calls __repr__ for `bytes(foo)`, forward to __bytes__"""
+            return self.__bytes__()
+
+
+else:
+
+    class py2reprhack(object):
+        """Not needed on py3."""
+
+
+class deltafrag(py2reprhack):
     def __init__(self, start, end, data):
         self.start = start
         self.end = end
         self.data = data
-
-    def __repr__(self):
-        # py2 calls __repr__ when you do `bytes(foo)`
-        return self.__bytes__()
 
     def __bytes__(self):
         return (
@@ -31,26 +42,18 @@ class deltafrag(object):
         )
 
 
-class delta(object):
+class delta(py2reprhack):
     def __init__(self, frags):
         self.frags = frags
-
-    def __repr__(self):
-        # py2 calls __repr__ when you do `bytes(foo)`
-        return self.__bytes__()
 
     def __bytes__(self):
         return b''.join(bytes(f) for f in self.frags)
 
 
-class corpus(object):
+class corpus(py2reprhack):
     def __init__(self, base, deltas):
         self.base = base
         self.deltas = deltas
-
-    def __repr__(self):
-        # py2 calls __repr__ when you do `bytes(foo)`
-        return self.__bytes__()
 
     def __bytes__(self):
         deltas = [bytes(d) for d in self.deltas]
