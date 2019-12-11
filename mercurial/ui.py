@@ -440,7 +440,7 @@ class ui(object):
         try:
             cfg.read(filename, fp, sections=sections, remap=remap)
             fp.close()
-        except error.ConfigError as inst:
+        except error.ParseError as inst:
             if trusted:
                 raise
             self.warn(_(b"ignored: %s\n") % stringutil.forcebytestr(inst))
