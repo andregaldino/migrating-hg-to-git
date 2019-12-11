@@ -793,14 +793,17 @@ class morestatus(object):
             fm.data(unresolved=True)
 
     def formatfooter(self, fm):
-        statemsg = _(b'The repository is in an unfinished *%s* state.'
-                     ) % self.unfinishedop
+        statemsg = (
+            _(b'The repository is in an unfinished *%s* state.')
+            % self.unfinishedop
+        )
         fm.plain(b'%s\n' % _commentlines(statemsg), label=self._label)
 
         self._formatconflicts(fm)
         if self.unfinishedmsg:
-            fm.plain(b'%s\n' % _commentlines(self.unfinishedmsg),
-                     label=self._label)
+            fm.plain(
+                b'%s\n' % _commentlines(self.unfinishedmsg), label=self._label
+            )
 
     def _formatconflicts(self, fm):
         if not self.inmergestate:
@@ -809,8 +812,8 @@ class morestatus(object):
         if self.unresolvedpaths:
             mergeliststr = b'\n'.join(
                 [
-                    b'    %s' % util.pathto(self.reporoot, encoding.getcwd(),
-                                            path)
+                    b'    %s'
+                    % util.pathto(self.reporoot, encoding.getcwd(), path)
                     for path in self.unresolvedpaths
                 ]
             )
@@ -841,8 +844,13 @@ def readmorestatus(repo):
     unresolved = None
     if mergestate.active():
         unresolved = sorted(mergestate.unresolved())
-    return morestatus(repo.root, unfinishedop, unfinishedmsg,
-                      unresolved is not None, unresolved)
+    return morestatus(
+        repo.root,
+        unfinishedop,
+        unfinishedmsg,
+        unresolved is not None,
+        unresolved,
+    )
 
 
 def findpossible(cmd, table, strict=False):

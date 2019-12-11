@@ -70,15 +70,15 @@ with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     # Manually constructed entries
     zf.writestr(
         "one_delta_applies",
-        bytes(corpus(b'a', [delta([deltafrag(0, 1, b'b')])]))
+        bytes(corpus(b'a', [delta([deltafrag(0, 1, b'b')])])),
     )
     zf.writestr(
         "one_delta_starts_late",
-        bytes(corpus(b'a', [delta([deltafrag(3, 1, b'b')])]))
+        bytes(corpus(b'a', [delta([deltafrag(3, 1, b'b')])])),
     )
     zf.writestr(
         "one_delta_ends_late",
-        bytes(corpus(b'a', [delta([deltafrag(0, 20, b'b')])]))
+        bytes(corpus(b'a', [delta([deltafrag(0, 20, b'b')])])),
     )
 
     try:
