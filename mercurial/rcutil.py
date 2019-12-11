@@ -63,11 +63,8 @@ def envrcitems(env=None):
 
 def defaultrcpath():
     '''return rc paths in defaultrc'''
-    path = []
     defaultpath = os.path.join(resourceutil.datapath, b'defaultrc')
-    if os.path.isdir(defaultpath):
-        path = _expandrcpath(defaultpath)
-    return path
+    return _expandrcpath(defaultpath)
 
 
 def rccomponents():
