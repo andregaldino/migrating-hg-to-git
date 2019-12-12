@@ -260,6 +260,18 @@ debugrevlogopts = [
 _linebelow = b"^HG: ------------------------ >8 ------------------------$"
 
 
+def check_at_most_one_arg(opts, *args):
+    """abort if more than one of the arguments are in opts"""
+    previous = None
+    for x in args:
+        if opts.get(x):
+            if previous:
+                raise error.Abort(
+                    _(b'cannot specify both --%s and --%s') % (previous, x)
+                )
+            previous = x
+
+
 def resolvecommitoptions(ui, opts):
     """modify commit options dict to handle related options
 

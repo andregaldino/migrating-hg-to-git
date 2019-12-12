@@ -1889,8 +1889,7 @@ def clone(ui, source, dest=None, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'noupdate') and opts.get(b'updaterev'):
-        raise error.Abort(_(b"cannot specify both --noupdate and --updaterev"))
+    cmdutil.check_at_most_one_arg(opts, b'noupdate', b'updaterev')
 
     # --include/--exclude can come from narrow or sparse.
     includepats, excludepats = None, None
