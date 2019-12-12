@@ -1615,12 +1615,13 @@ class curseschunkselector(object):
         helptext = _(
             """            [press any key to return to the patch-display]
 
-crecord allows you to interactively choose among the changes you have made,
-and confirm only those changes you select for further processing by the command
-you are running (commit/shelve/revert), after confirming the selected
-changes, the unselected changes are still present in your working copy, so you
-can use crecord multiple times to split large changes into smaller changesets.
-the following are valid keystrokes:
+The curses hunk selector allows you to interactively choose among the
+changes you have made, and confirm only those changes you select for
+further processing by the command you are running (such as commit,
+shelve, or revert). After confirming the selected changes, the
+unselected changes are still present in your working copy, so you can
+use the hunk selector multiple times to split large changes into
+smaller changesets. the following are valid keystrokes:
 
               x [space] : (un-)select item ([~]/[x] = partly/fully applied)
                 [enter] : (un-)select item and go to next item of same type
