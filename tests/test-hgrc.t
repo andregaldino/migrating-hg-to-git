@@ -197,9 +197,6 @@ plain hgrc
 with environment variables
 
   $ PAGER=p1 EDITOR=e1 VISUAL=e2 hg showconfig --debug
-  set config by: $EDITOR
-  set config by: $VISUAL
-  set config by: $PAGER
   read config from: $TESTTMP/hgrc
   repo: bundle.mainreporoot=$TESTTMP
   $PAGER: pager.pager=p1
