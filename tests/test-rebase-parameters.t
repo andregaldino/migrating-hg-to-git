@@ -61,7 +61,7 @@ These fail:
   [1]
 
   $ hg rebase --continue --abort
-  abort: cannot use --abort with --continue
+  abort: cannot specify both --abort and --continue
   [255]
 
   $ hg rebase --continue --collapse

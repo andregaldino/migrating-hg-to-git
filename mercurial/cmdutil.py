@@ -261,7 +261,10 @@ _linebelow = b"^HG: ------------------------ >8 ------------------------$"
 
 
 def check_at_most_one_arg(opts, *args):
-    """abort if more than one of the arguments are in opts"""
+    """abort if more than one of the arguments are in opts
+
+    Returns the unique argument or None if none of them were specified.
+    """
     previous = None
     for x in args:
         if opts.get(x):
@@ -270,6 +273,7 @@ def check_at_most_one_arg(opts, *args):
                     _(b'cannot specify both --%s and --%s') % (previous, x)
                 )
             previous = x
+    return previous
 
 
 def check_incompatible_arguments(opts, first, *others):

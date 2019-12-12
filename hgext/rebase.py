@@ -1021,12 +1021,7 @@ def rebase(ui, repo, **opts):
     inmemory = ui.configbool(b'rebase', b'experimental.inmemory')
     dryrun = opts.get(b'dry_run')
     confirm = opts.get(b'confirm')
-    selactions = [k for k in [b'abort', b'stop', b'continue'] if opts.get(k)]
-    if len(selactions) > 1:
-        raise error.Abort(
-            _(b'cannot use --%s with --%s') % tuple(selactions[:2])
-        )
-    action = selactions[0] if selactions else None
+    action = cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
     if dryrun and action:
         raise error.Abort(_(b'cannot specify both --dry-run and --%s') % action)
     if confirm and action:
