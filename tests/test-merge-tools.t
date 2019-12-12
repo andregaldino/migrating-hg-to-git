@@ -4,6 +4,8 @@ test merge-tools configuration - mostly exercising filemerge.py
   $ cat >> $HGRCPATH << EOF
   > [ui]
   > merge=
+  > [commands]
+  > merge.require-rev=True
   > EOF
   $ hg init repo
   $ cd repo
@@ -1908,6 +1910,7 @@ checked strictly.
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
+(Testing that commands.merge.require-rev doesn't break --abort)
   $ hg merge --abort -q
 
 (for ui.merge, ignored unintentionally)

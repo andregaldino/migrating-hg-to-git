@@ -4888,6 +4888,13 @@ def merge(ui, repo, node=None, **opts):
         node = scmutil.revsingle(repo, node).node()
 
     if not node and not abort:
+        if ui.configbool(b'commands', b'merge.require-rev'):
+            raise error.Abort(
+                _(
+                    b'configuration requires specifying revision to merge '
+                    b'with'
+                )
+            )
         node = repo[destutil.destmerge(repo)].node()
 
     if opts.get(b'preview'):

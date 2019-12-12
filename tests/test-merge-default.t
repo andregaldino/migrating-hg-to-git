@@ -44,9 +44,10 @@ Should fail because > 2 heads:
   (run 'hg heads .' to see heads, specify rev with -r)
   [255]
 
-Should succeed:
+Should succeed (we're specifying commands.merge.require-rev=True just to test
+that it allows merge to succeed if we specify a revision):
 
-  $ hg merge 2
+  $ hg merge 2 --config commands.merge.require-rev=True
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg id -Tjson
@@ -62,6 +63,13 @@ Should succeed:
    }
   ]
   $ hg commit -mm1
+
+Should fail because we didn't specify a revision (even though it would have
+succeeded without this):
+
+  $ hg merge --config commands.merge.require-rev=True
+  abort: configuration requires specifying revision to merge with
+  [255]
 
 Should succeed - 2 heads:
 
@@ -87,6 +95,13 @@ Should succeed - 2 heads:
     "tags": []
    }
   ]
+
+Should fail because we didn't specify a revision (even though it would have
+failed without this due to being on tip, but this check comes first):
+
+  $ hg merge --config commands.merge.require-rev=True
+  abort: configuration requires specifying revision to merge with
+  [255]
 
 Should fail because at tip:
 

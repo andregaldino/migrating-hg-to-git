@@ -442,6 +442,12 @@ effect and style see :hg:`help color`.
     Show status of files in the working directory after successful commit.
     (default: False)
 
+``merge.require-rev``
+    Require that the revision to merge the current commit with be specified on
+    the command line. If this is enabled and a revision is not specified, the
+    command aborts.
+    (default: False)
+
 ``push.require-revs``
     Require revisions to push be specified using one or more mechanisms such as
     specifying them positionally on the command line, using ``-r``, ``-b``,
