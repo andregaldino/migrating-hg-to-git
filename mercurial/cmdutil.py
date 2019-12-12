@@ -1056,13 +1056,12 @@ def bailifchanged(repo, merge=True, hint=None):
 
 def logmessage(ui, opts):
     """ get the log message according to -m and -l option """
+
+    check_at_most_one_arg(opts, b'message', b'logfile')
+
     message = opts.get(b'message')
     logfile = opts.get(b'logfile')
 
-    if message and logfile:
-        raise error.Abort(
-            _(b'options --message and --logfile are mutually exclusive')
-        )
     if not message and logfile:
         try:
             if isstdiofilename(logfile):

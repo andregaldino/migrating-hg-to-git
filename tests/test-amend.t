@@ -129,7 +129,7 @@ Amend with editor
 
   $ echo FOO > $TESTTMP/msg
   $ hg amend -l $TESTTMP/msg -m BAR
-  abort: options --message and --logfile are mutually exclusive
+  abort: cannot specify both --message and --logfile
   [255]
   $ hg amend -l $TESTTMP/msg
   saved backup bundle to $TESTTMP/repo1/.hg/strip-backup/974f07f28537-edb6470a-amend.hg (obsstore-off !)
