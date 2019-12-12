@@ -249,9 +249,8 @@ def fix(ui, repo, *pats, **opts):
     override this default behavior, though it is not usually desirable to do so.
     """
     opts = pycompat.byteskwargs(opts)
+    cmdutil.check_at_most_one_arg(opts, b'all', b'rev')
     if opts[b'all']:
-        if opts[b'rev']:
-            raise error.Abort(_(b'cannot specify both "--rev" and "--all"'))
         opts[b'rev'] = [b'not public() and not obsolete()']
         opts[b'working_dir'] = True
     with repo.wlock(), repo.lock(), repo.transaction(b'fix'):
