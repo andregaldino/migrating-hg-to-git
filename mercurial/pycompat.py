@@ -253,6 +253,8 @@ if ispy3:
         This never raises UnicodeEncodeError, but only ASCII characters
         can be round-trip by sysstr(sysbytes(s)).
         """
+        if isinstance(s, bytes):
+            return s
         return s.encode('utf-8')
 
     def sysstr(s):
