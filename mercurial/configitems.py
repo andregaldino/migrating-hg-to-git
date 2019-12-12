@@ -657,6 +657,9 @@ coreconfigitem(
     b'experimental', b'revisions.disambiguatewithin', default=None,
 )
 coreconfigitem(
+    b'experimental', b'rust.index', default=False,
+)
+coreconfigitem(
     b'experimental', b'server.filesdata.recommended-batch-size', default=50000,
 )
 coreconfigitem(

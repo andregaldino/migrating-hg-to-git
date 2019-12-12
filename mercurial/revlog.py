@@ -106,6 +106,7 @@ REVIDX_RAWTEXT_CHANGING_FLAGS
 parsers = policy.importmod('parsers')
 rustancestor = policy.importrust('ancestor')
 rustdagop = policy.importrust('dagop')
+rustrevlog = policy.importrust('revlog')
 
 # Aliased for performance.
 _zlibdecompress = zlib.decompress
@@ -351,6 +352,12 @@ class revlogio(object):
         return p
 
 
+class rustrevlogio(revlogio):
+    def parseindex(self, data, inline):
+        index, cache = super(rustrevlogio, self).parseindex(data, inline)
+        return rustrevlog.MixedIndex(index), cache
+
+
 class revlog(object):
     """
     the underlying revision storage object
@@ -585,6 +592,8 @@ class revlog(object):
         self._storedeltachains = True
 
         self._io = revlogio()
+        if rustrevlog is not None and self.opener.options.get('rust.index'):
+            self._io = rustrevlogio()
         if self.version == REVLOGV0:
             self._io = revlogoldio()
         try:
