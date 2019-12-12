@@ -126,7 +126,7 @@ impl DirstateMap {
         }
         if old_state == EntryState::Unknown {
             if let Some(ref mut all_dirs) = self.all_dirs {
-                all_dirs.add_path(filename);
+                all_dirs.add_path(filename)?;
             }
         }
 
@@ -227,30 +227,38 @@ impl DirstateMap {
     /// emulate a Python lazy property, but it is ugly and unidiomatic.
     /// TODO One day, rewriting this struct using the typestate might be a
     /// good idea.
-    pub fn set_all_dirs(&mut self) {
+    pub fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
         if self.all_dirs.is_none() {
             self.all_dirs =
-                Some(DirsMultiset::from_dirstate(&self.state_map, None));
+                Some(DirsMultiset::from_dirstate(&self.state_map, None)?);
         }
+        Ok(())
     }
 
-    pub fn set_dirs(&mut self) {
+    pub fn set_dirs(&mut self) -> Result<(), DirstateMapError> {
         if self.dirs.is_none() {
             self.dirs = Some(DirsMultiset::from_dirstate(
                 &self.state_map,
                 Some(EntryState::Removed),
-            ));
+            )?);
         }
+        Ok(())
     }
 
-    pub fn has_tracked_dir(&mut self, directory: &HgPath) -> bool {
-        self.set_dirs();
-        self.dirs.as_ref().unwrap().contains(directory)
+    pub fn has_tracked_dir(
+        &mut self,
+        directory: &HgPath,
+    ) -> Result<bool, DirstateMapError> {
+        self.set_dirs()?;
+        Ok(self.dirs.as_ref().unwrap().contains(directory))
     }
 
-    pub fn has_dir(&mut self, directory: &HgPath) -> bool {
-        self.set_all_dirs();
-        self.all_dirs.as_ref().unwrap().contains(directory)
+    pub fn has_dir(
+        &mut self,
+        directory: &HgPath,
+    ) -> Result<bool, DirstateMapError> {
+        self.set_all_dirs()?;
+        Ok(self.all_dirs.as_ref().unwrap().contains(directory))
     }
 
     pub fn parents(
@@ -350,11 +358,11 @@ mod tests {
         assert!(map.dirs.is_none());
         assert!(map.all_dirs.is_none());
 
-        assert_eq!(false, map.has_dir(HgPath::new(b"nope")));
+        assert_eq!(map.has_dir(HgPath::new(b"nope")).unwrap(), false);
         assert!(map.all_dirs.is_some());
         assert!(map.dirs.is_none());
 
-        assert_eq!(false, map.has_tracked_dir(HgPath::new(b"nope")));
+        assert_eq!(map.has_tracked_dir(HgPath::new(b"nope")).unwrap(), false);
         assert!(map.dirs.is_some());
     }
 

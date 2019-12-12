@@ -47,6 +47,9 @@ py_class!(pub class Dirs |py| {
         let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
             let dirstate = extract_dirstate(py, &map)?;
             DirsMultiset::from_dirstate(&dirstate, skip_state)
+                .map_err(|e| {
+                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
+                })?
         } else {
             let map: Result<Vec<HgPathBuf>, PyErr> = map
                 .iter(py)?
@@ -57,6 +60,9 @@ py_class!(pub class Dirs |py| {
                 })
                 .collect();
             DirsMultiset::from_manifest(&map?)
+                .map_err(|e| {
+                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
+                })?
         };
 
         Self::create_instance(

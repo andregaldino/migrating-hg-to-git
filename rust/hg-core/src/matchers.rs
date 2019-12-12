@@ -7,7 +7,7 @@
 
 //! Structs and types for matching files and directories.
 
-use crate::utils::hg_path::{HgPath, HgPathBuf};
+use crate::utils::hg_path::HgPath;
 use std::collections::HashSet;
 
 pub enum VisitChildrenSet<'a> {

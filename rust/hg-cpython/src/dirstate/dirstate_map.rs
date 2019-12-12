@@ -200,6 +200,9 @@ py_class!(pub class DirstateMap |py| {
         let d = d.extract::<PyBytes>(py)?;
         Ok(self.inner_shared(py).borrow_mut()?
             .has_tracked_dir(HgPath::new(d.data(py)))
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?
             .to_py_object(py))
     }
 
@@ -207,6 +210,9 @@ py_class!(pub class DirstateMap |py| {
         let d = d.extract::<PyBytes>(py)?;
         Ok(self.inner_shared(py).borrow_mut()?
             .has_dir(HgPath::new(d.data(py)))
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?
             .to_py_object(py))
     }
 
@@ -330,24 +336,35 @@ py_class!(pub class DirstateMap |py| {
 
     def getdirs(&self) -> PyResult<Dirs> {
         // TODO don't copy, share the reference
-        self.inner_shared(py).borrow_mut()?.set_dirs();
+        self.inner_shared(py).borrow_mut()?.set_dirs()
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?;
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
                 &self.inner_shared(py).borrow(),
                 Some(EntryState::Removed),
-            ),
+            )
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?,
         )
     }
     def getalldirs(&self) -> PyResult<Dirs> {
         // TODO don't copy, share the reference
-        self.inner_shared(py).borrow_mut()?.set_all_dirs();
+        self.inner_shared(py).borrow_mut()?.set_all_dirs()
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?;
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
                 &self.inner_shared(py).borrow(),
                 None,
-            ),
+            ).map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?,
         )
     }
 
