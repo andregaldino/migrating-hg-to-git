@@ -29,6 +29,17 @@ py_class!(pub class MixedIndex |py| {
             cindex::Index::new(py, cindex)?))
     }
 
+    /// Compatibility layer used for Python consumers needing access to the C index
+    ///
+    /// Only use case so far is `scmutil.shortesthexnodeidprefix`,
+    /// that may need to build a custom `nodetree`, based on a specified revset.
+    /// With a Rust implementation of the nodemap, we will be able to get rid of
+    /// this, by exposing our own standalone nodemap class,
+    /// ready to accept `MixedIndex`.
+    def get_cindex(&self) -> PyResult<PyObject> {
+        Ok(self.cindex(py).borrow().inner().clone_ref(py))
+    }
+
 
     // Reforwarded C index API
 

@@ -25,6 +25,13 @@ class RustRevlogIndexTest(revlogtesting.RevlogBasedTestBase):
         rustidx = revlog.MixedIndex(idx)
         self.assertEqual(rustidx.headrevs(), idx.headrevs())
 
+    def test_get_cindex(self):
+        # drop me once we no longer need the method for shortest node
+        idx = self.parseindex()
+        rustidx = revlog.MixedIndex(idx)
+        cidx = rustidx.get_cindex()
+        self.assertTrue(idx is cidx)
+
     def test_len(self):
         idx = self.parseindex()
         rustidx = revlog.MixedIndex(idx)
