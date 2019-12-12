@@ -429,10 +429,12 @@ class abstractsubrepo(object):
         convert this repository from shared to normal storage.
         '''
 
-    def verify(self):
-        '''verify the integrity of the repository.  Return 0 on success or
-        warning, 1 on any error.
-        '''
+    def verify(self, onpush=False):
+        """verify the revision of this repository that is held in `_state` is
+        present and not hidden.  Return 0 on success or warning, 1 on any
+        error.  In the case of ``onpush``, warnings or errors will raise an
+        exception if the result of pushing would be a broken remote repository.
+        """
         return 0
 
     @propertycache
@@ -1013,26 +1015,35 @@ class hgsubrepo(abstractsubrepo):
 
         hg.unshare(self.ui, self._repo)
 
-    def verify(self):
+    def verify(self, onpush=False):
         try:
             rev = self._state[1]
             ctx = self._repo.unfiltered()[rev]
             if ctx.hidden():
                 # Since hidden revisions aren't pushed/pulled, it seems worth an
                 # explicit warning.
-                ui = self._repo.ui
-                ui.warn(
-                    _(b"subrepo '%s' is hidden in revision %s\n")
-                    % (self._relpath, node.short(self._ctx.node()))
+                msg = _(b"subrepo '%s' is hidden in revision %s") % (
+                    self._relpath,
+                    node.short(self._ctx.node()),
                 )
+
+                if onpush:
+                    raise error.Abort(msg)
+                else:
+                    self._repo.ui.warn(b'%s\n' % msg)
             return 0
         except error.RepoLookupError:
             # A missing subrepo revision may be a case of needing to pull it, so
-            # don't treat this as an error.
-            self._repo.ui.warn(
-                _(b"subrepo '%s' not found in revision %s\n")
-                % (self._relpath, node.short(self._ctx.node()))
+            # don't treat this as an error for `hg verify`.
+            msg = _(b"subrepo '%s' not found in revision %s") % (
+                self._relpath,
+                node.short(self._ctx.node()),
             )
+
+            if onpush:
+                raise error.Abort(msg)
+            else:
+                self._repo.ui.warn(b'%s\n' % msg)
             return 0
 
     @propertycache

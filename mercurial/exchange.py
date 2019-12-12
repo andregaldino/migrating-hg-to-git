@@ -646,6 +646,8 @@ def push(
                 pushop.repo.checkpush(pushop)
                 _checkpublish(pushop)
                 _pushdiscovery(pushop)
+                if not pushop.force:
+                    _checksubrepostate(pushop)
                 if not _forcebundle1(pushop):
                     _pushbundle2(pushop)
                 _pushchangeset(pushop)
@@ -692,6 +694,17 @@ def _pushdiscovery(pushop):
     for stepname in pushdiscoveryorder:
         step = pushdiscoverymapping[stepname]
         step(pushop)
+
+
+def _checksubrepostate(pushop):
+    """Ensure all outgoing referenced subrepo revisions are present locally"""
+    for n in pushop.outgoing.missing:
+        ctx = pushop.repo[n]
+
+        if b'.hgsub' in ctx.manifest() and b'.hgsubstate' in ctx.files():
+            for subpath in sorted(ctx.substate):
+                sub = ctx.sub(subpath)
+                sub.verify(onpush=True)
 
 
 @pushdiscovery(b'changeset')
