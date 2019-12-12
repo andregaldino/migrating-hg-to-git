@@ -35,3 +35,25 @@ if mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     datapath = os.path.dirname(pycompat.sysexecutable)
 else:
     datapath = os.path.dirname(os.path.dirname(pycompat.fsencode(__file__)))
+
+try:
+    import importlib
+
+    # Force loading of the resources module
+    importlib.resources.open_binary
+
+    def open_resource(package, name):
+        package = b'mercurial.' + package
+        return importlib.resources.open_binary(
+            pycompat.sysstr(package), pycompat.sysstr(name)
+        )
+
+
+except AttributeError:
+
+    def _package_path(package):
+        return os.path.join(datapath, *package.split(b'.'))
+
+    def open_resource(package, name):
+        path = os.path.join(_package_path(package), name)
+        return open(path, 'rb')

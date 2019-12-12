@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import itertools
-import os
 import re
 import textwrap
 
@@ -314,11 +313,11 @@ def loaddoc(topic, subdir=None):
     """Return a delayed loader for help/topic.txt."""
 
     def loader(ui):
-        docdir = os.path.join(resourceutil.datapath, b'helptext')
+        package = b'helptext'
         if subdir:
-            docdir = os.path.join(docdir, subdir)
-        path = os.path.join(docdir, topic + b".txt")
-        doc = gettext(util.readfile(path))
+            package = b'helptext' + b'.' + subdir
+        with resourceutil.open_resource(package, topic + b'.txt') as fp:
+            doc = gettext(fp.read())
         for rewriter in helphooks.get(topic, []):
             doc = rewriter(ui, topic, doc)
         return doc
