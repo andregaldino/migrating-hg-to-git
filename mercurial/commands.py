@@ -2971,14 +2971,7 @@ def _dograft(ui, repo, *revs, **opts):
     # list of new nodes created by ongoing graft
     statedata[b'newnodes'] = []
 
-    if opts.get(b'user') and opts.get(b'currentuser'):
-        raise error.Abort(_(b'--user and --currentuser are mutually exclusive'))
-    if opts.get(b'date') and opts.get(b'currentdate'):
-        raise error.Abort(_(b'--date and --currentdate are mutually exclusive'))
-    if not opts.get(b'user') and opts.get(b'currentuser'):
-        opts[b'user'] = ui.username()
-    if not opts.get(b'date') and opts.get(b'currentdate'):
-        opts[b'date'] = b"%d %d" % dateutil.makedate()
+    cmdutil.resolvecommitoptions(ui, opts)
 
     editor = cmdutil.getcommiteditor(
         editform=b'graft', **pycompat.strkwargs(opts)
