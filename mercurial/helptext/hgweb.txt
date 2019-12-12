@@ -61,7 +61,7 @@ The web server has a default style associated with it. Styles map to
 a collection of named templates. Each template is used to render a
 specific piece of data, such as a changeset or diff.
 
-The style for the current request can be overwritten two ways. First,
+The style for the current request can be overridden two ways. First,
 if ``{command}`` contains a hyphen (``-``), the text before the hyphen
 defines the style. For example, ``/atom-log`` will render the ``log``
 command handler with the ``atom`` style. The second way to set the
