@@ -71,6 +71,11 @@ impl Index {
             capi: unsafe { revlog_capi::retrieve(py)? },
         })
     }
+
+    /// return a reference to the CPython Index object in this Struct
+    pub fn inner(&self) -> &PyObject {
+        &self.index
+    }
 }
 
 impl Clone for Index {
