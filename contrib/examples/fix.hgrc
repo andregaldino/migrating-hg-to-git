@@ -1,6 +1,6 @@
 [fix]
-clang-format:command = clang-format --style file -i
-clang-format:pattern = (**.c or **.cc or **.h) and not "listfile:contrib/clang-format-ignorelist"
+clang-format:command = clang-format --style file
+clang-format:pattern = set:(**.c or **.cc or **.h) and not "include:contrib/clang-format-ignorelist"
 
 rustfmt:command = rustfmt
 rustfmt:pattern = set:**.rs
