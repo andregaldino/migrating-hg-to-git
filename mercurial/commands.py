@@ -2610,8 +2610,7 @@ def export(ui, repo, *changesets, **opts):
     bookmark = opts.get(b'bookmark')
     changesets += tuple(opts.get(b'rev', []))
 
-    if bookmark and changesets:
-        raise error.Abort(_(b"-r and -B are mutually exclusive"))
+    cmdutil.check_at_most_one_arg(opts, b'rev', b'bookmark')
 
     if bookmark:
         if bookmark not in repo._bookmarks:
