@@ -10,6 +10,9 @@ except ImportError:
 else:
     from mercurial.rustext import revlog
 
+    # this would fail already without appropriate ancestor.__package__
+    from mercurial.rustext.ancestor import LazyAncestors
+
 from mercurial.testing import revlog as revlogtesting
 
 
@@ -26,6 +29,22 @@ class RustRevlogIndexTest(revlogtesting.RevlogBasedTestBase):
         idx = self.parseindex()
         rustidx = revlog.MixedIndex(idx)
         self.assertEqual(len(rustidx), len(idx))
+
+    def test_ancestors(self):
+        idx = self.parseindex()
+        rustidx = revlog.MixedIndex(idx)
+        lazy = LazyAncestors(rustidx, [3], 0, True)
+        # we have two more references to the index:
+        # - in its inner iterator for __contains__ and __bool__
+        # - in the LazyAncestors instance itself (to spawn new iterators)
+        self.assertTrue(2 in lazy)
+        self.assertTrue(bool(lazy))
+        self.assertEqual(list(lazy), [3, 2, 1, 0])
+        # a second time to validate that we spawn new iterators
+        self.assertEqual(list(lazy), [3, 2, 1, 0])
+
+        # let's check bool for an empty one
+        self.assertFalse(LazyAncestors(idx, [0], 0, False))
 
 
 if __name__ == '__main__':

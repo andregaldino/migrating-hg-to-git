@@ -15,7 +15,10 @@ use std::cell::RefCell;
 
 /// Return a Struct implementing the Graph trait
 pub(crate) fn pyindex_to_graph(py: Python, index: PyObject) -> PyResult<cindex::Index> {
-    cindex::Index::new(py, index)
+    match index.extract::<MixedIndex>(py) {
+        Ok(midx) => Ok(midx.clone_cindex(py)),
+        Err(_) => cindex::Index::new(py, index),
+    }
 }
 
 py_class!(pub class MixedIndex |py| {
