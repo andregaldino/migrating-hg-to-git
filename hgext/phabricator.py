@@ -1268,6 +1268,7 @@ _knownstatusnames = {
     b'needsrevision',
     b'closed',
     b'abandoned',
+    b'changesplanned',
 }
 
 
