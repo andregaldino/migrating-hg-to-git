@@ -278,10 +278,8 @@ def resolvecommitoptions(ui, opts):
     The return value indicates that ``rewrite.update-timestamp`` is the reason
     the ``date`` option is set.
     """
-    if opts.get(b'date') and opts.get(b'currentdate'):
-        raise error.Abort(_(b'--date and --currentdate are mutually exclusive'))
-    if opts.get(b'user') and opts.get(b'currentuser'):
-        raise error.Abort(_(b'--user and --currentuser are mutually exclusive'))
+    check_at_most_one_arg(opts, b'date', b'currentdate')
+    check_at_most_one_arg(opts, b'user', b'currentuser')
 
     datemaydiffer = False  # date-only change should be ignored?
 

@@ -127,10 +127,10 @@ Conflicting date/user options:
 
   $ hg up -q 0
   $ hg graft -U --user foo 2
-  abort: --user and --currentuser are mutually exclusive
+  abort: cannot specify both --user and --currentuser
   [255]
   $ hg graft -D --date '0 0' 2
-  abort: --date and --currentdate are mutually exclusive
+  abort: cannot specify both --date and --currentdate
   [255]
 
 Can't graft with dirty wd:

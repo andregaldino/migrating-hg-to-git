@@ -447,7 +447,7 @@ rewrite.update-timestamp can be negated by --no-currentdate
 Bad combination of date options:
 
   $ hg amend -D --date '0 0'
-  abort: --date and --currentdate are mutually exclusive
+  abort: cannot specify both --date and --currentdate
   [255]
 
 Close branch
