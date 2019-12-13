@@ -1226,13 +1226,9 @@ def bookmark(ui, repo, *names, **opts):
     rev = opts.get(b'rev')
     inactive = opts.get(b'inactive')  # meaning add/rename to inactive bookmark
 
-    selactions = [k for k in [b'delete', b'rename', b'list'] if opts.get(k)]
-    if len(selactions) > 1:
-        raise error.Abort(
-            _(b'--%s and --%s are incompatible') % tuple(selactions[:2])
-        )
-    if selactions:
-        action = selactions[0]
+    action = cmdutil.check_at_most_one_arg(opts, b'delete', b'rename', b'list')
+    if action:
+        pass
     elif names or rev:
         action = b'add'
     elif inactive:

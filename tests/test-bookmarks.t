@@ -475,7 +475,7 @@ incompatible options
   $ cd repo
 
   $ hg bookmark -m Y -d Z
-  abort: --delete and --rename are incompatible
+  abort: cannot specify both --delete and --rename
   [255]
 
   $ hg bookmark -r 1 -d Z
