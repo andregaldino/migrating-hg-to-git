@@ -229,6 +229,7 @@ def match(
     False
     """
     assert os.path.isabs(root)
+    cwd = util.normpath(os.path.join(root, cwd))
     normalize = _donormalize
     if icasefs:
         dirstate = ctx.repo().dirstate
