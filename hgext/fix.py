@@ -400,15 +400,16 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
 def getrevstofix(ui, repo, opts):
     """Returns the set of revision numbers that should be fixed"""
     revs = set(scmutil.revrange(repo, opts[b'rev']))
-    for rev in revs:
-        checkfixablectx(ui, repo, repo[rev])
-    if revs:
-        cmdutil.checkunfinished(repo)
-        rewriteutil.precheck(repo, revs, b'fix')
     if opts.get(b'working_dir'):
         revs.add(wdirrev)
-        if list(merge.mergestate.read(repo).unresolved()):
-            raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
+    for rev in revs:
+        checkfixablectx(ui, repo, repo[rev])
+    # Allow fixing only wdir() even if there's an unfinished operation
+    if not (len(revs) == 1 and wdirrev in revs):
+        cmdutil.checkunfinished(repo)
+        rewriteutil.precheck(repo, revs, b'fix')
+    if wdirrev in revs and list(merge.mergestate.read(repo).unresolved()):
+        raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
     if not revs:
         raise error.Abort(
             b'no changesets specified', hint=b'use --rev or --working-dir'
