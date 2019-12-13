@@ -1022,10 +1022,10 @@ def rebase(ui, repo, **opts):
     dryrun = opts.get(b'dry_run')
     confirm = opts.get(b'confirm')
     action = cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
-    if dryrun and action:
-        raise error.Abort(_(b'cannot specify both --dry-run and --%s') % action)
-    if confirm and action:
-        raise error.Abort(_(b'cannot specify both --confirm and --%s') % action)
+    if action:
+        cmdutil.check_incompatible_arguments(
+            opts, action, b'confirm', b'dry_run'
+        )
     cmdutil.check_at_most_one_arg(opts, b'confirm', b'dry_run')
 
     if action or repo.currenttransaction() is not None:

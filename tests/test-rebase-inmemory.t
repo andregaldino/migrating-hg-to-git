@@ -332,10 +332,10 @@ Test dry-run rebasing
   
 Make sure it throws error while passing --continue or --abort with --dry-run
   $ hg rebase -s 2 -d 6 -n --continue
-  abort: cannot specify both --dry-run and --continue
+  abort: cannot specify both --continue and --dry-run
   [255]
   $ hg rebase -s 2 -d 6 -n --abort
-  abort: cannot specify both --dry-run and --abort
+  abort: cannot specify both --abort and --dry-run
   [255]
 
 Check dryrun gives correct results when there is no conflict in rebasing
@@ -548,10 +548,10 @@ Check it gives error when both --dryrun and --confirm is used:
   abort: cannot specify both --confirm and --dry-run
   [255]
   $ hg rebase -s 2 -d . --confirm --abort
-  abort: cannot specify both --confirm and --abort
+  abort: cannot specify both --abort and --confirm
   [255]
   $ hg rebase -s 2 -d . --confirm --continue
-  abort: cannot specify both --confirm and --continue
+  abort: cannot specify both --continue and --confirm
   [255]
 
 Test --confirm option when there are no conflicts:
