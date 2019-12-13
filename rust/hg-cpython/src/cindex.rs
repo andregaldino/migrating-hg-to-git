@@ -88,6 +88,15 @@ impl Clone for Index {
     }
 }
 
+impl PyClone for Index {
+    fn clone_ref(&self, py: Python) -> Self {
+        Index {
+            index: self.index.clone_ref(py),
+            capi: self.capi,
+        }
+    }
+}
+
 impl Graph for Index {
     /// wrap a call to the C extern parents function
     fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError> {
