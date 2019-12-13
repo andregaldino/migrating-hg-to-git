@@ -1019,8 +1019,6 @@ def rebase(ui, repo, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     inmemory = ui.configbool(b'rebase', b'experimental.inmemory')
-    dryrun = opts.get(b'dry_run')
-    confirm = opts.get(b'confirm')
     action = cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
     if action:
         cmdutil.check_incompatible_arguments(
@@ -1044,7 +1042,7 @@ def rebase(ui, repo, **opts):
         opts[b'rev'] = [revsetlang.formatspec(b'%ld and orphan()', userrevs)]
         opts[b'dest'] = b'_destautoorphanrebase(SRC)'
 
-    if dryrun or confirm:
+    if opts.get(b'dry_run') or opts.get(b'confirm'):
         return _dryrunrebase(ui, repo, action, opts)
     elif action == b'stop':
         rbsrt = rebaseruntime(repo, ui)
