@@ -69,7 +69,7 @@ These fail:
   [255]
 
   $ hg rebase --continue --dest 4
-  abort: abort and continue do not allow specifying revisions
+  abort: cannot specify both --continue and --dest
   [255]
 
   $ hg rebase --base 5 --source 4

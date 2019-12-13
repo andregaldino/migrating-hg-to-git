@@ -1024,6 +1024,9 @@ def rebase(ui, repo, **opts):
         cmdutil.check_incompatible_arguments(
             opts, action, b'confirm', b'dry_run'
         )
+        cmdutil.check_incompatible_arguments(
+            opts, action, b'rev', b'source', b'base', b'dest'
+        )
     cmdutil.check_at_most_one_arg(opts, b'confirm', b'dry_run')
     cmdutil.check_at_most_one_arg(opts, b'rev', b'source', b'base')
 
@@ -1191,10 +1194,6 @@ def _origrebase(
             if rbsrt.collapsef:
                 raise error.Abort(
                     _(b'cannot use collapse with continue or abort')
-                )
-            if srcf or basef or destf:
-                raise error.Abort(
-                    _(b'abort and continue do not allow specifying revisions')
                 )
             if action == b'abort' and opts.get(b'tool', False):
                 ui.warn(_(b'tool option will be ignored\n'))
