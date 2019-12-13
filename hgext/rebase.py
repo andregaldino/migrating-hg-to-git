@@ -1026,8 +1026,7 @@ def rebase(ui, repo, **opts):
         raise error.Abort(_(b'cannot specify both --dry-run and --%s') % action)
     if confirm and action:
         raise error.Abort(_(b'cannot specify both --confirm and --%s') % action)
-    if dryrun and confirm:
-        raise error.Abort(_(b'cannot specify both --confirm and --dry-run'))
+    cmdutil.check_at_most_one_arg(opts, b'confirm', b'dry_run')
 
     if action or repo.currenttransaction() is not None:
         # in-memory rebase is not compatible with resuming rebases.

@@ -268,6 +268,7 @@ def check_at_most_one_arg(opts, *args):
     previous = None
     for x in args:
         if opts.get(x):
+            x = x.replace(b'_', b'-')
             if previous:
                 raise error.Abort(
                     _(b'cannot specify both --%s and --%s') % (previous, x)
