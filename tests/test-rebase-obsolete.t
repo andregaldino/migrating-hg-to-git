@@ -487,7 +487,7 @@ Test that rewriting leaving instability behind is allowed
   $ cp -R hidden stabilize
   $ cd stabilize
   $ hg rebase --auto-orphans '0::' -d 10
-  abort: --auto-orphans is incompatible with --dest
+  abort: cannot specify both --auto-orphans and --dest
   [255]
   $ hg rebase --auto-orphans '0::'
   rebasing 9:cf44d2f5a9f4 "D"

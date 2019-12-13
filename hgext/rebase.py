@@ -1034,11 +1034,11 @@ def rebase(ui, repo, **opts):
         inmemory = False
 
     if opts.get(b'auto_orphans'):
-        for key in opts:
-            if key != b'auto_orphans' and opts.get(key):
-                raise error.Abort(
-                    _(b'--auto-orphans is incompatible with %s') % (b'--' + key)
-                )
+        disallowed_opts = set(opts) - {b'auto_orphans'}
+        cmdutil.check_incompatible_arguments(
+            opts, b'auto_orphans', *disallowed_opts
+        )
+
         userrevs = list(repo.revs(opts.get(b'auto_orphans')))
         opts[b'rev'] = [revsetlang.formatspec(b'%ld and orphan()', userrevs)]
         opts[b'dest'] = b'_destautoorphanrebase(SRC)'
