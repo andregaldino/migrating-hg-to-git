@@ -603,19 +603,34 @@ class dirstate(object):
     def rebuild(self, parent, allfiles, changedfiles=None):
         if changedfiles is None:
             # Rebuild entire dirstate
-            changedfiles = allfiles
+            to_lookup = allfiles
+            to_drop = []
             lastnormaltime = self._lastnormaltime
             self.clear()
             self._lastnormaltime = lastnormaltime
+        elif len(changedfiles) < 10:
+            # Avoid turning allfiles into a set, which can be expensive if it's
+            # large.
+            to_lookup = []
+            to_drop = []
+            for f in changedfiles:
+                if f in allfiles:
+                    to_lookup.append(f)
+                else:
+                    to_drop.append(f)
+        else:
+            changedfilesset = set(changedfiles)
+            to_lookup = changedfilesset & set(allfiles)
+            to_drop = changedfilesset - to_lookup
 
         if self._origpl is None:
             self._origpl = self._pl
         self._map.setparents(parent, nullid)
-        for f in changedfiles:
-            if f in allfiles:
-                self.normallookup(f)
-            else:
-                self.drop(f)
+
+        for f in to_lookup:
+            self.normallookup(f)
+        for f in to_drop:
+            self.drop(f)
 
         self._dirty = True
 
