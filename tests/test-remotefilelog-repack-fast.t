@@ -1,13 +1,12 @@
 #require no-windows
 
   $ . "$TESTDIR/remotefilelog-library.sh"
-# devel.remotefilelog.ensurestart: reduce race condition with
-# waiton{repack/prefetch}
+
   $ cat >> $HGRCPATH <<EOF
   > [remotefilelog]
   > fastdatapack=True
   > [devel]
-  > remotefilelog.ensurestart=True
+  > remotefilelog.bg-wait=True
   > EOF
 
   $ hg init master
@@ -142,8 +141,6 @@
 
   $ hg repack --background
   (running background repack)
-  $ sleep 0.5
-  $ hg debugwaitonrepack >/dev/null 2>&1
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/packs/39443fa1064182e93d968b5cba292eb5283260d0.dataidx
   $TESTTMP/hgcache/master/packs/39443fa1064182e93d968b5cba292eb5283260d0.datapack
@@ -342,8 +339,6 @@ Pull should run background repack
   searching for changes
   no changes found
   (running background incremental repack)
-  $ sleep 0.5
-  $ hg debugwaitonrepack >/dev/null 2>&1
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
   -r--r--r--     303 156a6c1c83aeb69422d7936e0a46ba9bc06a71c0.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack

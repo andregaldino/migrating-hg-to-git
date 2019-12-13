@@ -36,9 +36,7 @@ class RepackAlreadyRunning(error.Abort):
     pass
 
 
-def backgroundrepack(
-    repo, incremental=True, packsonly=False, ensurestart=False
-):
+def backgroundrepack(repo, incremental=True, packsonly=False):
     cmd = [procutil.hgexecutable(), b'-R', repo.origroot, b'repack']
     msg = _(b"(running background repack)\n")
     if incremental:
@@ -48,7 +46,11 @@ def backgroundrepack(
         cmd.append(b'--packsonly')
     repo.ui.warn(msg)
     # We know this command will find a binary, so don't block on it starting.
-    procutil.runbgcommand(cmd, encoding.environ, ensurestart=ensurestart)
+    kwargs = {}
+    if repo.ui.configbool(b'devel', b'remotefilelog.bg-wait'):
+        kwargs['record_wait'] = repo.ui.atexit
+
+    procutil.runbgcommand(cmd, encoding.environ, ensurestart=False, **kwargs)
 
 
 def fullrepack(repo, options=None):

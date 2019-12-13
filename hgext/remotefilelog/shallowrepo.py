@@ -215,13 +215,7 @@ def wraprepo(repo):
             )
 
         def backgroundprefetch(
-            self,
-            revs,
-            base=None,
-            repack=False,
-            pats=None,
-            opts=None,
-            ensurestart=False,
+            self, revs, base=None, repack=False, pats=None, opts=None
         ):
             """Runs prefetch in background with optional repack
             """
@@ -232,8 +226,12 @@ def wraprepo(repo):
                 cmd += [b'-r', revs]
             # We know this command will find a binary, so don't block
             # on it starting.
+            kwargs = {}
+            if repo.ui.configbool(b'devel', b'remotefilelog.bg-wait'):
+                kwargs['record_wait'] = repo.ui.atexit
+
             procutil.runbgcommand(
-                cmd, encoding.environ, ensurestart=ensurestart
+                cmd, encoding.environ, ensurestart=False, **kwargs
             )
 
         def prefetch(self, revs, base=None, pats=None, opts=None):
