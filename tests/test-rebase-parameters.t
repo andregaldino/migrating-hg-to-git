@@ -73,14 +73,14 @@ These fail:
   [255]
 
   $ hg rebase --base 5 --source 4
-  abort: cannot specify both a source and a base
+  abort: cannot specify both --source and --base
   [255]
 
   $ hg rebase --rev 5 --source 4
-  abort: cannot specify both a revision and a source
+  abort: cannot specify both --rev and --source
   [255]
   $ hg rebase --base 5 --rev 4
-  abort: cannot specify both a revision and a base
+  abort: cannot specify both --rev and --base
   [255]
 
   $ hg rebase --base 6

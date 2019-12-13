@@ -1025,6 +1025,7 @@ def rebase(ui, repo, **opts):
             opts, action, b'confirm', b'dry_run'
         )
     cmdutil.check_at_most_one_arg(opts, b'confirm', b'dry_run')
+    cmdutil.check_at_most_one_arg(opts, b'rev', b'source', b'base')
 
     if action or repo.currenttransaction() is not None:
         # in-memory rebase is not compatible with resuming rebases.
@@ -1259,12 +1260,6 @@ def _definedestmap(
 
     # destspace is here to work around issues with `hg pull --rebase` see
     # issue5214 for details
-    if srcf and basef:
-        raise error.Abort(_(b'cannot specify both a source and a base'))
-    if revf and basef:
-        raise error.Abort(_(b'cannot specify both a revision and a base'))
-    if revf and srcf:
-        raise error.Abort(_(b'cannot specify both a revision and a source'))
 
     cmdutil.checkunfinished(repo)
     if not inmemory:
