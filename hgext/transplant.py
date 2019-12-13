@@ -760,22 +760,14 @@ def _dotransplant(ui, repo, *revs, **opts):
 
     def checkopts(opts, revs):
         if opts.get(b'continue'):
-            if opts.get(b'branch') or opts.get(b'all') or opts.get(b'merge'):
-                raise error.Abort(
-                    _(
-                        b'--continue is incompatible with '
-                        b'--branch, --all and --merge'
-                    )
-                )
+            cmdutil.check_incompatible_arguments(
+                opts, b'continue', b'branch', b'all', b'merge'
+            )
             return
         if opts.get(b'stop'):
-            if opts.get(b'branch') or opts.get(b'all') or opts.get(b'merge'):
-                raise error.Abort(
-                    _(
-                        b'--stop is incompatible with '
-                        b'--branch, --all and --merge'
-                    )
-                )
+            cmdutil.check_incompatible_arguments(
+                opts, b'stop', b'branch', b'all', b'merge'
+            )
             return
         if not (
             opts.get(b'source')

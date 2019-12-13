@@ -18,10 +18,10 @@
   abort: no source URL, branch revision, or revision list provided
   [255]
   $ hg transplant --continue --all
-  abort: --continue is incompatible with --branch, --all and --merge
+  abort: cannot specify both --continue and --all
   [255]
   $ hg transplant --stop --all
-  abort: --stop is incompatible with --branch, --all and --merge
+  abort: cannot specify both --stop and --all
   [255]
   $ hg transplant --all tip
   abort: --all requires a branch revision
