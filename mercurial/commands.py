@@ -1236,8 +1236,7 @@ def bookmark(ui, repo, *names, **opts):
     else:
         action = b'list'
 
-    if inactive and action in {b'delete', b'list'}:
-        raise error.Abort(_(b"--inactive is incompatible with --%s") % action)
+    cmdutil.check_incompatible_arguments(opts, b'inactive', b'delete', b'list')
     if not names and action in {b'add', b'delete'}:
         raise error.Abort(_(b"bookmark name required"))
 

@@ -84,7 +84,7 @@ list bookmarks
   abort: cannot specify both --list and --rev
   [255]
   $ hg bookmarks -l --inactive
-  abort: --inactive is incompatible with --list
+  abort: cannot specify both --inactive and --list
   [255]
 
   $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
@@ -347,7 +347,7 @@ delete nonexistent bookmark
 delete with --inactive
 
   $ hg bookmark -d --inactive Y
-  abort: --inactive is incompatible with --delete
+  abort: cannot specify both --inactive and --delete
   [255]
 
 bookmark name with spaces should be stripped
