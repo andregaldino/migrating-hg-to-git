@@ -1228,7 +1228,7 @@ def bookmark(ui, repo, *names, **opts):
 
     action = cmdutil.check_at_most_one_arg(opts, b'delete', b'rename', b'list')
     if action:
-        pass
+        cmdutil.check_incompatible_arguments(opts, action, b'rev')
     elif names or rev:
         action = b'add'
     elif inactive:
@@ -1236,8 +1236,6 @@ def bookmark(ui, repo, *names, **opts):
     else:
         action = b'list'
 
-    if rev and action in {b'delete', b'rename', b'list'}:
-        raise error.Abort(_(b"--rev is incompatible with --%s") % action)
     if inactive and action in {b'delete', b'list'}:
         raise error.Abort(_(b"--inactive is incompatible with --%s") % action)
     if not names and action in {b'add', b'delete'}:

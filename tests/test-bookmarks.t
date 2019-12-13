@@ -81,7 +81,7 @@ list bookmarks
   abort: bookmark 'A' does not exist
   [255]
   $ hg bookmarks -l -r0
-  abort: --rev is incompatible with --list
+  abort: cannot specify both --list and --rev
   [255]
   $ hg bookmarks -l --inactive
   abort: --inactive is incompatible with --list
@@ -479,11 +479,11 @@ incompatible options
   [255]
 
   $ hg bookmark -r 1 -d Z
-  abort: --rev is incompatible with --delete
+  abort: cannot specify both --delete and --rev
   [255]
 
   $ hg bookmark -r 1 -m Z Y
-  abort: --rev is incompatible with --rename
+  abort: cannot specify both --rename and --rev
   [255]
 
 force bookmark with existing name
