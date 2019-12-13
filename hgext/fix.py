@@ -250,6 +250,7 @@ def fix(ui, repo, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     cmdutil.check_at_most_one_arg(opts, b'all', b'rev')
+    cmdutil.check_incompatible_arguments(opts, b'working_dir', [b'all'])
     if opts[b'all']:
         opts[b'rev'] = [b'not public() and not obsolete()']
         opts[b'working_dir'] = True

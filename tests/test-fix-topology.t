@@ -271,6 +271,9 @@ replacing anything that isn't public.
 
   $ hg init fixall
   $ cd fixall
+  $ hg fix --all --working-dir
+  abort: cannot specify both --working-dir and --all
+  [255]
 
 #if obsstore-on
   $ printf "one\n" > foo.whole
