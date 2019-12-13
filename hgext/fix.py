@@ -251,9 +251,7 @@ def fix(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     cmdutil.check_at_most_one_arg(opts, b'all', b'rev')
     cmdutil.check_incompatible_arguments(opts, b'working_dir', [b'all'])
-    if opts[b'all']:
-        opts[b'rev'] = [b'not public() and not obsolete()']
-        opts[b'working_dir'] = True
+
     with repo.wlock(), repo.lock(), repo.transaction(b'fix'):
         revstofix = getrevstofix(ui, repo, opts)
         basectxs = getbasectxs(repo, opts, revstofix)
@@ -399,9 +397,12 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
 
 def getrevstofix(ui, repo, opts):
     """Returns the set of revision numbers that should be fixed"""
-    revs = set(scmutil.revrange(repo, opts[b'rev']))
-    if opts.get(b'working_dir'):
-        revs.add(wdirrev)
+    if opts[b'all']:
+        revs = repo.revs(b'(not public() and not obsolete()) or wdir()')
+    else:
+        revs = set(scmutil.revrange(repo, opts[b'rev']))
+        if opts.get(b'working_dir'):
+            revs.add(wdirrev)
     for rev in revs:
         checkfixablectx(ui, repo, repo[rev])
     # Allow fixing only wdir() even if there's an unfinished operation
