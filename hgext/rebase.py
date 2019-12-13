@@ -1163,14 +1163,6 @@ def _origrebase(
 ):
     assert action != b'stop'
     with repo.wlock(), repo.lock():
-        # Validate input and define rebasing points
-        destf = opts.get(b'dest', None)
-        srcf = opts.get(b'source', None)
-        basef = opts.get(b'base', None)
-        revf = opts.get(b'rev', [])
-        # search default destination in this space
-        # used in the 'hg pull --rebase' case, see issue 5214.
-        destspace = opts.get(b'_destspace')
         if opts.get(b'interactive'):
             try:
                 if extensions.find(b'histedit'):
@@ -1207,14 +1199,17 @@ def _origrebase(
             if retcode is not None:
                 return retcode
         else:
+            # search default destination in this space
+            # used in the 'hg pull --rebase' case, see issue 5214.
+            destspace = opts.get(b'_destspace')
             destmap = _definedestmap(
                 ui,
                 repo,
                 inmemory,
-                destf,
-                srcf,
-                basef,
-                revf,
+                opts.get(b'dest', None),
+                opts.get(b'source', None),
+                opts.get(b'base', None),
+                opts.get(b'rev', []),
                 destspace=destspace,
             )
             retcode = rbsrt._preparenewrebase(destmap)
