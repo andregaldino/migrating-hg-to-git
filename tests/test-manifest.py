@@ -169,7 +169,7 @@ class basemanifesttests(object):
         m[b'foo'] = want + b'+'
         self.assertEqual(want, m[b'foo'])
         # make sure the suffix survives a copy
-        match = matchmod.match(b'', b'', [b're:foo'])
+        match = matchmod.match(b'/repo', b'', [b're:foo'])
         m2 = m.matches(match)
         self.assertEqual(want, m2[b'foo'])
         self.assertEqual(1, len(m2))
@@ -186,7 +186,7 @@ class basemanifesttests(object):
 
     def testMatchException(self):
         m = self.parsemanifest(A_SHORT_MANIFEST)
-        match = matchmod.match(b'', b'', [b're:.*'])
+        match = matchmod.match(b'/repo', b'', [b're:.*'])
 
         def filt(path):
             if path == b'foo':
@@ -328,7 +328,7 @@ class basemanifesttests(object):
         actually exist.'''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.match(b'/', b'', [b'a/f'], default=b'relpath')
+        match = matchmod.match(b'/repo', b'', [b'a/f'], default=b'relpath')
         m2 = m.matches(match)
 
         self.assertEqual([], m2.keys())
@@ -348,7 +348,7 @@ class basemanifesttests(object):
         '''Tests matches() for what should be a full match.'''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.match(b'/', b'', [b''])
+        match = matchmod.match(b'/repo', b'', [b''])
         m2 = m.matches(match)
 
         self.assertEqual(m.keys(), m2.keys())
@@ -358,7 +358,7 @@ class basemanifesttests(object):
         match against all files within said directory.'''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.match(b'/', b'', [b'a/b'], default=b'relpath')
+        match = matchmod.match(b'/repo', b'', [b'a/b'], default=b'relpath')
         m2 = m.matches(match)
 
         self.assertEqual(
@@ -392,7 +392,7 @@ class basemanifesttests(object):
         when not in the root directory.'''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.match(b'/', b'a/b', [b'.'], default=b'relpath')
+        match = matchmod.match(b'/repo', b'a/b', [b'.'], default=b'relpath')
         m2 = m.matches(match)
 
         self.assertEqual(
@@ -415,7 +415,7 @@ class basemanifesttests(object):
         deeper than the specified directory.'''
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
-        match = matchmod.match(b'/', b'', [b'a/b/*/*.txt'])
+        match = matchmod.match(b'/repo', b'', [b'a/b/*/*.txt'])
         m2 = m.matches(match)
 
         self.assertEqual(
@@ -467,7 +467,7 @@ class testtreemanifest(unittest.TestCase, basemanifesttests):
             sorted(dirs),
         )
 
-        match = matchmod.match(b'/', b'', [b'path:a/b/'])
+        match = matchmod.match(b'/repo', b'', [b'path:a/b/'])
         dirs = [s._dir for s in m.walksubtrees(matcher=match)]
         self.assertEqual(sorted([b'a/b/', b'a/b/c/', b'a/b/d/']), sorted(dirs))
 

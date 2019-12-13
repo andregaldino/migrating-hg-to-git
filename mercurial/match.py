@@ -183,34 +183,34 @@ def match(
     '<something>' - a pattern of the specified default type
 
     Usually a patternmatcher is returned:
-    >>> match(b'foo', b'.', [b're:.*\.c$', b'path:foo/a', b'*.py'])
+    >>> match(b'/foo', b'.', [b're:.*\.c$', b'path:foo/a', b'*.py'])
     <patternmatcher patterns='.*\\.c$|foo/a(?:/|$)|[^/]*\\.py$'>
 
     Combining 'patterns' with 'include' (resp. 'exclude') gives an
     intersectionmatcher (resp. a differencematcher):
-    >>> type(match(b'foo', b'.', [b're:.*\.c$'], include=[b'path:lib']))
+    >>> type(match(b'/foo', b'.', [b're:.*\.c$'], include=[b'path:lib']))
     <class 'mercurial.match.intersectionmatcher'>
-    >>> type(match(b'foo', b'.', [b're:.*\.c$'], exclude=[b'path:build']))
+    >>> type(match(b'/foo', b'.', [b're:.*\.c$'], exclude=[b'path:build']))
     <class 'mercurial.match.differencematcher'>
 
     Notice that, if 'patterns' is empty, an alwaysmatcher is returned:
-    >>> match(b'foo', b'.', [])
+    >>> match(b'/foo', b'.', [])
     <alwaysmatcher>
 
     The 'default' argument determines which kind of pattern is assumed if a
     pattern has no prefix:
-    >>> match(b'foo', b'.', [b'.*\.c$'], default=b're')
+    >>> match(b'/foo', b'.', [b'.*\.c$'], default=b're')
     <patternmatcher patterns='.*\\.c$'>
-    >>> match(b'foo', b'.', [b'main.py'], default=b'relpath')
+    >>> match(b'/foo', b'.', [b'main.py'], default=b'relpath')
     <patternmatcher patterns='main\\.py(?:/|$)'>
-    >>> match(b'foo', b'.', [b'main.py'], default=b're')
+    >>> match(b'/foo', b'.', [b'main.py'], default=b're')
     <patternmatcher patterns='main.py'>
 
     The primary use of matchers is to check whether a value (usually a file
     name) matches againset one of the patterns given at initialization. There
     are two ways of doing this check.
 
-    >>> m = match(b'foo', b'', [b're:.*\.c$', b'relpath:a'])
+    >>> m = match(b'/foo', b'', [b're:.*\.c$', b'relpath:a'])
 
     1. Calling the matcher with a file name returns True if any pattern
     matches that file name:
@@ -228,6 +228,7 @@ def match(
     >>> m.exact(b'main.c')
     False
     """
+    assert os.path.isabs(root)
     normalize = _donormalize
     if icasefs:
         dirstate = ctx.repo().dirstate
@@ -940,7 +941,7 @@ class subdirmatcher(basematcher):
     The paths are remapped to remove/insert the path as needed:
 
     >>> from . import pycompat
-    >>> m1 = match(b'root', b'', [b'a.txt', b'sub/b.txt'])
+    >>> m1 = match(b'/root', b'', [b'a.txt', b'sub/b.txt'])
     >>> m2 = subdirmatcher(b'sub', m1)
     >>> m2(b'a.txt')
     False
@@ -1024,7 +1025,7 @@ class prefixdirmatcher(basematcher):
     The prefix path should usually be the relative path from the root of
     this matcher to the root of the wrapped matcher.
 
-    >>> m1 = match(util.localpath(b'root/d/e'), b'f', [b'../a.txt', b'b.txt'])
+    >>> m1 = match(util.localpath(b'/root/d/e'), b'f', [b'../a.txt', b'b.txt'], auditor=lambda name: None)
     >>> m2 = prefixdirmatcher(b'd/e', m1)
     >>> m2(b'a.txt')
     False
