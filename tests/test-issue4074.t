@@ -25,5 +25,5 @@ Modify it:
 
 Time a check-in, should never take more than 10 seconds user time:
 
-  $ hg ci --time -m1
+  $ hg ci --time -m1 --config worker.enabled=no
   time: real .* secs .user [0-9][.].* sys .* (re)
