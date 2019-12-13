@@ -9,13 +9,13 @@
 //! `hg-core` package.
 //!
 //! From Python, this will be seen as `mercurial.rustext.dagop`
-use crate::{
-    cindex::Index, conversion::rev_pyiter_collect, exceptions::GraphError,
-};
+use crate::{conversion::rev_pyiter_collect, exceptions::GraphError};
 use cpython::{PyDict, PyModule, PyObject, PyResult, Python};
 use hg::dagops;
 use hg::Revision;
 use std::collections::HashSet;
+
+use crate::revlog::pyindex_to_graph;
 
 /// Using the the `index`, return heads out of any Python iterable of Revisions
 ///
@@ -26,7 +26,7 @@ pub fn headrevs(
     revs: PyObject,
 ) -> PyResult<HashSet<Revision>> {
     let mut as_set: HashSet<Revision> = rev_pyiter_collect(py, &revs)?;
-    dagops::retain_heads(&Index::new(py, index)?, &mut as_set)
+    dagops::retain_heads(&pyindex_to_graph(py, index)?, &mut as_set)
         .map_err(|e| GraphError::pynew(py, e))?;
     Ok(as_set)
 }
