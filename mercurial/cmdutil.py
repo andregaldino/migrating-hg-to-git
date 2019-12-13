@@ -272,6 +272,16 @@ def check_at_most_one_arg(opts, *args):
             previous = x
 
 
+def check_incompatible_arguments(opts, first, *others):
+    """abort if the first argument is given along with any of the others
+
+    Unlike check_at_most_one_arg(), `others` are not mutually exclusive
+    among themselves.
+    """
+    for other in others:
+        check_at_most_one_arg(opts, first, other)
+
+
 def resolvecommitoptions(ui, opts):
     """modify commit options dict to handle related options
 

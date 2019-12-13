@@ -20,6 +20,7 @@ import re
 from mercurial.i18n import _
 from mercurial.pycompat import open
 from mercurial import (
+    cmdutil,
     config,
     error,
     minirst,
@@ -653,14 +654,9 @@ def releasenotes(ui, repo, file_=None, **opts):
     opts = pycompat.byteskwargs(opts)
     sections = releasenotessections(ui, repo)
 
-    listflag = opts.get(b'list')
+    cmdutil.check_incompatible_arguments(opts, b'list', b'rev', b'check')
 
-    if listflag and opts.get(b'rev'):
-        raise error.Abort(_(b'cannot use both \'--list\' and \'--rev\''))
-    if listflag and opts.get(b'check'):
-        raise error.Abort(_(b'cannot use both \'--list\' and \'--check\''))
-
-    if listflag:
+    if opts.get(b'list'):
         return _getadmonitionlist(ui, sections)
 
     rev = opts.get(b'rev')
