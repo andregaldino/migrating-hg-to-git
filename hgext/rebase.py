@@ -1791,7 +1791,7 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
     # But our merge base candidates (D and E in above case) could still be
     # better than the default (ancestor(F, Z) == null). Therefore still
     # pick one (so choose p1 above).
-    if sum(1 for b in bases if b != nullrev) > 1:
+    if sum(1 for b in set(bases) if b != nullrev) > 1:
         unwanted = [None, None]  # unwanted[i]: unwanted revs if choose bases[i]
         for i, base in enumerate(bases):
             if base == nullrev:
