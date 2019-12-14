@@ -1,3 +1,8 @@
+  $ cat >> $HGRCPATH <<EOF
+  > [commands]
+  > status.verbose=1
+  > EOF
+
 # Construct the following history tree:
 #
 # @  5:e1bb631146ca  b1
@@ -308,6 +313,10 @@ File conflict is not allowed
   use 'hg resolve' to retry unresolved file merges
   [1]
   $ rm a.orig
+  $ hg status
+  M a
+  $ hg resolve -l
+  U a
 
 Change/delete conflict is not allowed
   $ hg up -qC 3
@@ -536,9 +545,46 @@ Test that we still warn also when there are conflicts
   updated to hidden changeset 6efa171f091b
   (hidden revision '6efa171f091b' was rewritten as: d047485b3896)
   [1]
+
+Test that statuses are reported properly before and after merge resolution.
+  $ rm a.orig
+  $ hg resolve -l
+  U a
+  $ hg status
+  M a
+  M foo
+
   $ hg revert -r . a
+
+  $ rm a.orig
+  $ hg resolve -l
+  U a
+  $ hg status
+  M foo
+  $ hg status -Tjson
+  [
+   {
+    "itemtype": "file",
+    "path": "foo",
+    "status": "M"
+   }
+  ]
+
   $ hg resolve -m
   (no more unresolved files)
+
+  $ hg resolve -l
+  R a
+  $ hg status
+  M foo
+  $ hg status -Tjson
+  [
+   {
+    "itemtype": "file",
+    "path": "foo",
+    "status": "M"
+   }
+  ]
 
 Test that 4 is detected as the no-argument destination from 3 and also moves
 the bookmark with it
