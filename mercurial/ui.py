@@ -1766,9 +1766,8 @@ class ui(object):
             prefix=b'hg-' + extra[b'prefix'] + b'-', suffix=suffix, dir=rdir
         )
         try:
-            f = os.fdopen(fd, 'wb')
-            f.write(util.tonativeeol(text))
-            f.close()
+            with os.fdopen(fd, 'wb') as f:
+                f.write(util.tonativeeol(text))
 
             environ = {b'HGUSER': user}
             if b'transplant_source' in extra:
@@ -1794,9 +1793,8 @@ class ui(object):
                 blockedtag=b'editor',
             )
 
-            f = open(name, 'rb')
-            t = util.fromnativeeol(f.read())
-            f.close()
+            with open(name, 'rb') as f:
+                t = util.fromnativeeol(f.read())
         finally:
             os.unlink(name)
 
