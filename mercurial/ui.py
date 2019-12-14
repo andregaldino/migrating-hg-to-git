@@ -1857,9 +1857,9 @@ class ui(object):
                 # exclude frame where 'exc' was chained and rethrown from exctb
                 self.write_err(
                     b'Traceback (most recent call last):\n',
-                    b''.join(exctb[:-1]),
-                    b''.join(causetb),
-                    b''.join(exconly),
+                    encoding.strtolocal(''.join(exctb[:-1])),
+                    encoding.strtolocal(''.join(causetb)),
+                    encoding.strtolocal(''.join(exconly)),
                 )
             else:
                 output = traceback.format_exception(exc[0], exc[1], exc[2])
