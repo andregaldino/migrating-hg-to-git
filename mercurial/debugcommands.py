@@ -653,7 +653,7 @@ def debugdata(ui, repo, file_, rev=None, **opts):
 def debugdate(ui, date, range=None, **opts):
     """parse and display a date"""
     if opts["extended"]:
-        d = dateutil.parsedate(date, util.extendeddateformats)
+        d = dateutil.parsedate(date, dateutil.extendeddateformats)
     else:
         d = dateutil.parsedate(date)
     ui.writenoi18n(b"internal: %d %d\n" % d)
