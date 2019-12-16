@@ -21,3 +21,8 @@
    also called when only `explicitdir` used to be called. That may
    mean that you can simply remove the use of `explicitdir` if you
    were already using `traversedir`.
+
+ * The `revlog.nodemap` object have been merged into the `revlog.index` object.
+   * `n in revlog.nodemap` becomes `revlog.index.has_node(n)`,
+   * `revlog.nodemap[n]` becomes `revlog.index.rev(n)`,
+   * `revlog.nodemap.get(n)` becomes `revlog.index.get_rev(n)`.
