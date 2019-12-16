@@ -1195,12 +1195,12 @@ def cachefunc(func):
     '''cache the result of function calls'''
     # XXX doesn't handle keywords args
     if func.__code__.co_argcount == 0:
-        cache = []
+        listcache = []
 
         def f():
-            if len(cache) == 0:
-                cache.append(func())
-            return cache[0]
+            if len(listcache) == 0:
+                listcache.append(func())
+            return listcache[0]
 
         return f
     cache = {}
