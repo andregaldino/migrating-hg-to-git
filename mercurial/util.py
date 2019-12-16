@@ -787,6 +787,12 @@ class socketproxy(object):
 
 
 class baseproxyobserver(object):
+    def __init__(self, fh, name, logdata, logdataapis):
+        self.fh = fh
+        self.name = name
+        self.logdata = logdata
+        self.logdataapis = logdataapis
+
     def _writedata(self, data):
         if not self.logdata:
             if self.logdataapis:
@@ -823,10 +829,7 @@ class fileobjectobserver(baseproxyobserver):
     def __init__(
         self, fh, name, reads=True, writes=True, logdata=False, logdataapis=True
     ):
-        self.fh = fh
-        self.name = name
-        self.logdata = logdata
-        self.logdataapis = logdataapis
+        super(fileobjectobserver, self).__init__(fh, name, logdata, logdataapis)
         self.reads = reads
         self.writes = writes
 
@@ -949,13 +952,10 @@ class socketobserver(baseproxyobserver):
         logdata=False,
         logdataapis=True,
     ):
-        self.fh = fh
-        self.name = name
+        super(socketobserver, self).__init__(fh, name, logdata, logdataapis)
         self.reads = reads
         self.writes = writes
         self.states = states
-        self.logdata = logdata
-        self.logdataapis = logdataapis
 
     def makefile(self, res, mode=None, bufsize=None):
         if not self.states:
