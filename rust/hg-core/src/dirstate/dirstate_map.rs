@@ -381,7 +381,8 @@ mod tests {
                 mtime: 1337,
                 size: 1337,
             },
-        );
+        )
+        .unwrap();
 
         assert_eq!(1, map.len());
         assert_eq!(0, map.non_normal_set.len());

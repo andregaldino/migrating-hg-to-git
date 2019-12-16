@@ -196,7 +196,7 @@ mod tests {
         let manifest: Vec<HgPathBuf> = vec![];
         let mut map = DirsMultiset::from_manifest(&manifest).unwrap();
         let path = HgPath::new(b"");
-        map.add_path(path);
+        map.add_path(path).unwrap();
 
         assert_eq!(1, map.len());
     }
@@ -206,36 +206,36 @@ mod tests {
         let manifest: Vec<HgPathBuf> = vec![];
         let mut map = DirsMultiset::from_manifest(&manifest).unwrap();
 
-        map.add_path(HgPath::new(b"a/"));
+        map.add_path(HgPath::new(b"a/")).unwrap();
         assert_eq!(1, *map.inner.get(HgPath::new(b"a")).unwrap());
         assert_eq!(1, *map.inner.get(HgPath::new(b"")).unwrap());
         assert_eq!(2, map.len());
 
         // Non directory should be ignored
-        map.add_path(HgPath::new(b"a"));
+        map.add_path(HgPath::new(b"a")).unwrap();
         assert_eq!(1, *map.inner.get(HgPath::new(b"a")).unwrap());
         assert_eq!(2, map.len());
 
         // Non directory will still add its base
-        map.add_path(HgPath::new(b"a/b"));
+        map.add_path(HgPath::new(b"a/b")).unwrap();
         assert_eq!(2, *map.inner.get(HgPath::new(b"a")).unwrap());
         assert_eq!(2, map.len());
 
         // Duplicate path works
-        map.add_path(HgPath::new(b"a/"));
+        map.add_path(HgPath::new(b"a/")).unwrap();
         assert_eq!(3, *map.inner.get(HgPath::new(b"a")).unwrap());
 
         // Nested dir adds to its base
-        map.add_path(HgPath::new(b"a/b/"));
+        map.add_path(HgPath::new(b"a/b/")).unwrap();
         assert_eq!(4, *map.inner.get(HgPath::new(b"a")).unwrap());
         assert_eq!(1, *map.inner.get(HgPath::new(b"a/b")).unwrap());
 
         // but not its base's base, because it already existed
-        map.add_path(HgPath::new(b"a/b/c/"));
+        map.add_path(HgPath::new(b"a/b/c/")).unwrap();
         assert_eq!(4, *map.inner.get(HgPath::new(b"a")).unwrap());
         assert_eq!(2, *map.inner.get(HgPath::new(b"a/b")).unwrap());
 
-        map.add_path(HgPath::new(b"a/c/"));
+        map.add_path(HgPath::new(b"a/c/")).unwrap();
         assert_eq!(1, *map.inner.get(HgPath::new(b"a/c")).unwrap());
 
         let expected = DirsMultiset {
