@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import errno
+import getpass
 import msvcrt
 import os
 import re
@@ -563,6 +564,8 @@ def username(uid=None):
     """Return the name of the user with the given uid.
 
     If uid is None, return the name of the current user."""
+    if not uid:
+        return pycompat.fsencode(getpass.getuser())
     return None
 
 
