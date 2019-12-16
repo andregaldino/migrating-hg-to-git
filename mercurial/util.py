@@ -1480,6 +1480,8 @@ class lrucachedict(object):
             if default is _notset:
                 raise
             return default
+
+        assert node is not None  # help pytype
         value = node.value
         self.totalcost -= node.cost
         node.markempty()
@@ -1566,6 +1568,8 @@ class lrucachedict(object):
         n = self._head.prev
         while n.key is _notset:
             n = n.prev
+
+        assert n is not None  # help pytype
 
         key, value = n.key, n.value
 
