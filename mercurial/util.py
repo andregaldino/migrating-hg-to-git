@@ -1253,6 +1253,9 @@ class sortdict(collections.OrderedDict):
     >>> d2.update([(b'a', 2)])
     >>> list(d2.keys()) # should still be in last-set order
     ['b', 'a']
+    >>> d1.insert(1, b'a.5', 0.5)
+    >>> d1
+    sortdict([('a', 0), ('a.5', 0.5), ('b', 1)])
     '''
 
     def __setitem__(self, key, value):
@@ -1266,6 +1269,14 @@ class sortdict(collections.OrderedDict):
             if isinstance(src, dict):
                 src = pycompat.iteritems(src)
             for k, v in src:
+                self[k] = v
+
+    def insert(self, position, key, value):
+        for (i, (k, v)) in enumerate(list(self.items())):
+            if i == position:
+                self[key] = value
+            if i >= position:
+                del self[k]
                 self[k] = v
 
 
