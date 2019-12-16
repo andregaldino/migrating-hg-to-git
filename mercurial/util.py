@@ -1173,6 +1173,8 @@ def versiontuple(v=None, n=4):
     else:
         vparts, extra = m.group(1), None
 
+    assert vparts is not None  # help pytype
+
     vints = []
     for i in vparts.split(b'.'):
         try:
