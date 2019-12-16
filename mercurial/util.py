@@ -2119,7 +2119,7 @@ def fscasesensitive(path):
 
 
 try:
-    import re2
+    import re2  # pytype: disable=import-error
 
     _re2 = None
 except ImportError:
