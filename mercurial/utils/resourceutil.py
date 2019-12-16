@@ -40,11 +40,11 @@ try:
     import importlib
 
     # Force loading of the resources module
-    importlib.resources.open_binary
+    importlib.resources.open_binary  # pytype: disable=module-attr
 
     def open_resource(package, name):
         package = b'mercurial.' + package
-        return importlib.resources.open_binary(
+        return importlib.resources.open_binary(  # pytype: disable=module-attr
             pycompat.sysstr(package), pycompat.sysstr(name)
         )
 
