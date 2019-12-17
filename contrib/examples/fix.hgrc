@@ -7,3 +7,8 @@ rustfmt:pattern = set:**.rs
 
 black:command = black --config=black.toml -
 black:pattern = set:**.py - mercurial/thirdparty/** - "contrib/python-zstandard/**"
+
+# Mercurial doesn't have any Go code, but if we did this is how we
+# would configure `hg fix` for Go:
+go:command = gofmt
+go:pattern = set:**.go
