@@ -230,6 +230,7 @@ from mercurial import (
     pycompat,
     registrar,
     repair,
+    rewriteutil,
     scmutil,
     state as statemod,
     util,
@@ -2306,23 +2307,9 @@ def between(repo, old, new, keep):
     When keep is false, the specified set can't have children."""
     revs = repo.revs(b'%n::%n', old, new)
     if revs and not keep:
-        if not obsolete.isenabled(
-            repo, obsolete.allowunstableopt
-        ) and repo.revs(b'(%ld::) - (%ld)', revs, revs):
-            raise error.Abort(
-                _(
-                    b'can only histedit a changeset together '
-                    b'with all its descendants'
-                )
-            )
+        rewriteutil.precheck(repo, revs, b'edit')
         if repo.revs(b'(%ld) and merge()', revs):
             raise error.Abort(_(b'cannot edit history that contains merges'))
-        root = repo[revs.first()]  # list is already sorted by repo.revs()
-        if not root.mutable():
-            raise error.Abort(
-                _(b'cannot edit public changeset: %s') % root,
-                hint=_(b"see 'hg help phases' for details"),
-            )
     return pycompat.maplist(repo.changelog.node, revs)
 
 
