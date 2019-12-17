@@ -144,9 +144,9 @@ from mercurial import (
     match as matchmod,
     mdiff,
     merge,
-    obsolete,
     pycompat,
     registrar,
+    rewriteutil,
     scmutil,
     util,
     worker,
@@ -403,7 +403,7 @@ def getrevstofix(ui, repo, opts):
         checkfixablectx(ui, repo, repo[rev])
     if revs:
         cmdutil.checkunfinished(repo)
-        checknodescendants(repo, revs)
+        rewriteutil.precheck(repo, revs, b'fix')
     if opts.get(b'working_dir'):
         revs.add(wdirrev)
         if list(merge.mergestate.read(repo).unresolved()):
@@ -415,22 +415,8 @@ def getrevstofix(ui, repo, opts):
     return revs
 
 
-def checknodescendants(repo, revs):
-    if not obsolete.isenabled(repo, obsolete.allowunstableopt) and repo.revs(
-        b'(%ld::) - (%ld)', revs, revs
-    ):
-        raise error.Abort(
-            _(b'can only fix a changeset together with all its descendants')
-        )
-
-
 def checkfixablectx(ui, repo, ctx):
     """Aborts if the revision shouldn't be replaced with a fixed one."""
-    if not ctx.mutable():
-        raise error.Abort(
-            b'can\'t fix immutable changeset %s'
-            % (scmutil.formatchangeid(ctx),)
-        )
     if ctx.obsolete():
         # It would be better to actually check if the revision has a successor.
         allowdivergence = ui.configbool(

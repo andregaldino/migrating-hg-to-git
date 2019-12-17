@@ -264,10 +264,12 @@ nothing happens, even to the working directory.
   $ hg commit -Aqm "hello"
   $ hg phase -r 0 --public
   $ hg fix -r 0
-  abort: can't fix immutable changeset 0:6470986d2e7b
+  abort: cannot fix public changesets
+  (see 'hg help phases' for details)
   [255]
   $ hg fix -r 0 --working-dir
-  abort: can't fix immutable changeset 0:6470986d2e7b
+  abort: cannot fix public changesets
+  (see 'hg help phases' for details)
   [255]
   $ hg cat -r tip hello.whole
   hello
@@ -1171,7 +1173,7 @@ an orphan. We must respect experimental.evolution.allowunstable.
   $ printf "two\n" > foo.whole
   $ hg commit -m "second"
   $ hg --config experimental.evolution.allowunstable=False fix -r '.^'
-  abort: can only fix a changeset together with all its descendants
+  abort: cannot fix changeset with children
   [255]
   $ hg fix -r '.^'
   1 new orphan changesets
