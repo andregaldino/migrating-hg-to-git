@@ -767,8 +767,7 @@ def email(ui, repo, *revs, **opts):
                 b" do not re-specify --outgoing"
             )
         )
-    if rev and bookmark:
-        raise error.Abort(_(b"-r and -B are mutually exclusive"))
+    cmdutil.check_at_most_one_arg(opts, b'rev', b'bookmark')
 
     if outgoing or bundle:
         if len(revs) > 1:
