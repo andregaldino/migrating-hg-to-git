@@ -22,11 +22,10 @@ from mercurial import (
     commands,
     error,
     hg,
-    obsolete,
-    phases,
     pycompat,
     registrar,
     revsetlang,
+    rewriteutil,
     scmutil,
 )
 
@@ -77,45 +76,26 @@ def split(ui, repo, *revs, **opts):
 
         rev = revs.first()
         ctx = repo[rev]
+        # Handle nullid specially here (instead of leaving for precheck()
+        # below) so we get a nicer message and error code.
         if rev is None or ctx.node() == nullid:
             ui.status(_(b'nothing to split\n'))
             return 1
         if ctx.node() is None:
             raise error.Abort(_(b'cannot split working directory'))
 
-        # rewriteutil.precheck is not very useful here because:
-        # 1. null check is done above and it's more friendly to return 1
-        #    instead of abort
-        # 2. mergestate check is done below by cmdutil.bailifchanged
-        # 3. unstable check is more complex here because of --rebase
-        #
-        # So only "public" check is useful and it's checked directly here.
-        if ctx.phase() == phases.public:
-            raise error.Abort(
-                _(b'cannot split public changeset'),
-                hint=_(b"see 'hg help phases' for details"),
-            )
-
-        descendants = list(repo.revs(b'(%d::) - (%d)', rev, rev))
-        alloworphaned = obsolete.isenabled(repo, obsolete.allowunstableopt)
         if opts.get(b'rebase'):
             # Skip obsoleted descendants and their descendants so the rebase
             # won't cause conflicts for sure.
+            descendants = list(repo.revs(b'(%d::) - (%d)', rev, rev))
             torebase = list(
                 repo.revs(
                     b'%ld - (%ld & obsolete())::', descendants, descendants
                 )
             )
-            if not alloworphaned and len(torebase) != len(descendants):
-                raise error.Abort(
-                    _(b'split would leave orphaned changesets behind')
-                )
         else:
-            if not alloworphaned and descendants:
-                raise error.Abort(
-                    _(b'cannot split changeset with children without rebase')
-                )
-            torebase = ()
+            torebase = []
+        rewriteutil.precheck(repo, [rev] + torebase, b'split')
 
         if len(ctx.parents()) > 1:
             raise error.Abort(_(b'cannot split a merge changeset'))
