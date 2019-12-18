@@ -730,36 +730,40 @@ def replacerev(ui, repo, ctx, filedata, replacements):
     ):
         return
 
-    def filectxfn(repo, memctx, path):
-        if path not in ctx:
-            return None
-        fctx = ctx[path]
-        copysource = fctx.copysource()
-        return context.memfilectx(
-            repo,
-            memctx,
-            path=fctx.path(),
-            data=filedata.get(path, fctx.data()),
-            islink=fctx.islink(),
-            isexec=fctx.isexec(),
-            copysource=copysource,
-        )
-
     extra = ctx.extra().copy()
     extra[b'fix_source'] = ctx.hex()
 
-    memctx = context.memctx(
+    wctx = context.overlayworkingctx(repo)
+    wctx.setbase(repo[newp1node])
+    merge.update(
         repo,
-        parents=(newp1node, newp2node),
-        text=ctx.description(),
-        files=set(ctx.files()) | set(filedata.keys()),
-        filectxfn=filectxfn,
-        user=ctx.user(),
-        date=ctx.date(),
-        extra=extra,
-        branch=ctx.branch(),
-        editor=None,
+        ctx.rev(),
+        branchmerge=False,
+        force=True,
+        ancestor=p1rev,
+        mergeancestor=False,
+        wc=wctx,
     )
+    copies.duplicatecopies(
+        repo, wctx, ctx.rev(), ctx.p1().rev(), skiprev=newp1node
+    )
+
+    for path in filedata.keys():
+        fctx = ctx[path]
+        copysource = fctx.copysource()
+        wctx.write(path, filedata[path], flags=fctx.flags())
+        if copysource:
+            wctx.markcopied(path, copysource)
+
+    memctx = wctx.tomemctx(
+        text=ctx.description(),
+        branch=ctx.branch(),
+        extra=extra,
+        date=ctx.date(),
+        parents=(newp1node, newp2node),
+        user=ctx.user(),
+    )
+
     sucnode = memctx.commit()
     prenode = ctx.node()
     if prenode == sucnode:

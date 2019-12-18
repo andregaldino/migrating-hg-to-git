@@ -1456,3 +1456,242 @@ changes.
   2 through 2
 
   $ cd ..
+
+Test various cases around merges. We were previously dropping files if they were
+created on only the p2 side of the merge, so let's test permutations of:
+*   added, was fixed
+*   added, considered for fixing but was already good
+*   added, not considered for fixing
+*   modified, was fixed
+*   modified, considered for fixing but was already good
+*   modified, not considered for fixing
+
+Before the bug was fixed where we would drop files, this test demonstrated the
+following issues:
+*   new_in_r1.ignored, new_in_r1_already_good.changed, and
+>   mod_in_r1_already_good.changed were NOT in the manifest for the merge commit
+*   mod_in_r1.ignored had its contents from r0, NOT r1.
+
+We're also setting a named branch for every commit to demonstrate that the
+branch is kept intact and there aren't issues updating to another branch in the
+middle of fix.
+
+  $ hg init merge_keeps_files
+  $ cd merge_keeps_files
+  $ for f in r0 mod_in_r1 mod_in_r2 mod_in_merge mod_in_child; do
+  >   for c in changed whole ignored; do
+  >     printf "hello\n" > $f.$c
+  >   done
+  >   printf "HELLO\n" > "mod_in_${f}_already_good.changed"
+  > done
+  $ hg branch -q r0
+  $ hg ci -Aqm 'r0'
+  $ hg phase -p
+  $ make_test_files() {
+  >   printf "world\n" >> "mod_in_$1.changed"
+  >   printf "world\n" >> "mod_in_$1.whole"
+  >   printf "world\n" >> "mod_in_$1.ignored"
+  >   printf "WORLD\n" >> "mod_in_$1_already_good.changed"
+  >   printf "new in $1\n" > "new_in_$1.changed"
+  >   printf "new in $1\n" > "new_in_$1.whole"
+  >   printf "new in $1\n" > "new_in_$1.ignored"
+  >   printf "ALREADY GOOD, NEW IN THIS REV\n" > "new_in_$1_already_good.changed"
+  > }
+  $ make_test_commit() {
+  >   make_test_files "$1"
+  >   hg branch -q "$1"
+  >   hg ci -Aqm "$2"
+  > }
+  $ make_test_commit r1 "merge me, pt1"
+  $ hg co -q ".^"
+  $ make_test_commit r2 "merge me, pt2"
+  $ hg merge -qr 1
+  $ make_test_commit merge "evil merge"
+  $ make_test_commit child "child of merge"
+  $ make_test_files wdir
+  $ hg fix -r 'not public()' -w
+  $ hg log -G -T'{rev}:{shortest(node,8)}: branch:{branch} desc:{desc}'
+  @  8:c22ce900: branch:child desc:child of merge
+  |
+  o    7:5a30615a: branch:merge desc:evil merge
+  |\
+  | o  6:4e5acdc4: branch:r2 desc:merge me, pt2
+  | |
+  o |  5:eea01878: branch:r1 desc:merge me, pt1
+  |/
+  o  0:0c548d87: branch:r0 desc:r0
+  
+  $ hg files -r tip
+  mod_in_child.changed
+  mod_in_child.ignored
+  mod_in_child.whole
+  mod_in_child_already_good.changed
+  mod_in_merge.changed
+  mod_in_merge.ignored
+  mod_in_merge.whole
+  mod_in_merge_already_good.changed
+  mod_in_mod_in_child_already_good.changed
+  mod_in_mod_in_merge_already_good.changed
+  mod_in_mod_in_r1_already_good.changed
+  mod_in_mod_in_r2_already_good.changed
+  mod_in_r0_already_good.changed
+  mod_in_r1.changed
+  mod_in_r1.ignored
+  mod_in_r1.whole
+  mod_in_r1_already_good.changed
+  mod_in_r2.changed
+  mod_in_r2.ignored
+  mod_in_r2.whole
+  mod_in_r2_already_good.changed
+  new_in_child.changed
+  new_in_child.ignored
+  new_in_child.whole
+  new_in_child_already_good.changed
+  new_in_merge.changed
+  new_in_merge.ignored
+  new_in_merge.whole
+  new_in_merge_already_good.changed
+  new_in_r1.changed
+  new_in_r1.ignored
+  new_in_r1.whole
+  new_in_r1_already_good.changed
+  new_in_r2.changed
+  new_in_r2.ignored
+  new_in_r2.whole
+  new_in_r2_already_good.changed
+  r0.changed
+  r0.ignored
+  r0.whole
+  $ for f in "$(hg files -r tip)"; do hg cat -r tip $f -T'{path}:\n{data}\n'; done
+  mod_in_child.changed:
+  hello
+  WORLD
+  
+  mod_in_child.ignored:
+  hello
+  world
+  
+  mod_in_child.whole:
+  HELLO
+  WORLD
+  
+  mod_in_child_already_good.changed:
+  WORLD
+  
+  mod_in_merge.changed:
+  hello
+  WORLD
+  
+  mod_in_merge.ignored:
+  hello
+  world
+  
+  mod_in_merge.whole:
+  HELLO
+  WORLD
+  
+  mod_in_merge_already_good.changed:
+  WORLD
+  
+  mod_in_mod_in_child_already_good.changed:
+  HELLO
+  
+  mod_in_mod_in_merge_already_good.changed:
+  HELLO
+  
+  mod_in_mod_in_r1_already_good.changed:
+  HELLO
+  
+  mod_in_mod_in_r2_already_good.changed:
+  HELLO
+  
+  mod_in_r0_already_good.changed:
+  HELLO
+  
+  mod_in_r1.changed:
+  hello
+  WORLD
+  
+  mod_in_r1.ignored:
+  hello
+  world
+  
+  mod_in_r1.whole:
+  HELLO
+  WORLD
+  
+  mod_in_r1_already_good.changed:
+  WORLD
+  
+  mod_in_r2.changed:
+  hello
+  WORLD
+  
+  mod_in_r2.ignored:
+  hello
+  world
+  
+  mod_in_r2.whole:
+  HELLO
+  WORLD
+  
+  mod_in_r2_already_good.changed:
+  WORLD
+  
+  new_in_child.changed:
+  NEW IN CHILD
+  
+  new_in_child.ignored:
+  new in child
+  
+  new_in_child.whole:
+  NEW IN CHILD
+  
+  new_in_child_already_good.changed:
+  ALREADY GOOD, NEW IN THIS REV
+  
+  new_in_merge.changed:
+  NEW IN MERGE
+  
+  new_in_merge.ignored:
+  new in merge
+  
+  new_in_merge.whole:
+  NEW IN MERGE
+  
+  new_in_merge_already_good.changed:
+  ALREADY GOOD, NEW IN THIS REV
+  
+  new_in_r1.changed:
+  NEW IN R1
+  
+  new_in_r1.ignored:
+  new in r1
+  
+  new_in_r1.whole:
+  NEW IN R1
+  
+  new_in_r1_already_good.changed:
+  ALREADY GOOD, NEW IN THIS REV
+  
+  new_in_r2.changed:
+  NEW IN R2
+  
+  new_in_r2.ignored:
+  new in r2
+  
+  new_in_r2.whole:
+  NEW IN R2
+  
+  new_in_r2_already_good.changed:
+  ALREADY GOOD, NEW IN THIS REV
+  
+  r0.changed:
+  hello
+  
+  r0.ignored:
+  hello
+  
+  r0.whole:
+  hello
+  
