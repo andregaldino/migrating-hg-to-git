@@ -1,5 +1,7 @@
 == New Features ==
 
+ * Windows will process hgrc files in %PROGRAMDATA%\Mercurial\hgrc.d.
+
 
 == New Experimental Features ==
 

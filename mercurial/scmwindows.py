@@ -38,6 +38,20 @@ def systemrcpath():
     # Use hgrc.d found in directory with hg.exe
     _processdir(os.path.join(os.path.dirname(filename), b'hgrc.d'))
 
+    # treat a PROGRAMDATA directory as equivalent to /etc/mercurial
+    programdata = encoding.environ.get(b'PROGRAMDATA')
+    if programdata:
+        programdata = os.path.join(programdata, b'Mercurial')
+        _processdir(os.path.join(programdata, b'hgrc.d'))
+
+        ini = os.path.join(programdata, b'mercurial.ini')
+        if os.path.isfile(ini):
+            rcpath.append(ini)
+
+        ini = os.path.join(programdata, b'hgrc')
+        if os.path.isfile(ini):
+            rcpath.append(ini)
+
     # next look for a system rcpath in the registry
     value = util.lookupreg(
         b'SOFTWARE\\Mercurial', None, winreg.HKEY_LOCAL_MACHINE

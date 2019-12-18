@@ -75,6 +75,9 @@ ones.
   - ``HKEY_LOCAL_MACHINE\SOFTWARE\Mercurial`` (per-installation)
   - ``<install-dir>\hgrc.d\*.rc`` (per-installation)
   - ``<install-dir>\Mercurial.ini`` (per-installation)
+  - ``%PROGRAMDATA%\Mercurial\hgrc`` (per-system)
+  - ``%PROGRAMDATA%\Mercurial\Mercurial.ini`` (per-system)
+  - ``%PROGRAMDATA%\Mercurial\hgrc.d\*.rc`` (per-system)
   - ``<internal>/*.rc`` (defaults)
 
   .. note::
