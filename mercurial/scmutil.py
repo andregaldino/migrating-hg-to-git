@@ -262,7 +262,7 @@ def callcatch(ui, func):
             if isinstance(reason, pycompat.unicode):
                 # SSLError of Python 2.7.9 contains a unicode
                 reason = encoding.unitolocal(reason)
-            ui.error(_(b"abort: error: %s\n") % reason)
+            ui.error(_(b"abort: error: %s\n") % stringutil.forcebytestr(reason))
         elif (
             util.safehasattr(inst, b"args")
             and inst.args

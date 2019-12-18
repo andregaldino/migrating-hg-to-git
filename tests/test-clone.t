@@ -614,6 +614,12 @@ No local source
   abort: repository a not found!
   [255]
 
+Invalid URL
+
+  $ hg clone http://invalid:url/a b
+  abort: error: nonnumeric port: 'url'
+  [255]
+
 No remote source
 
 #if windows
