@@ -37,19 +37,19 @@ else:
     datapath = os.path.dirname(os.path.dirname(pycompat.fsencode(__file__)))
 
 try:
-    import importlib
+    from importlib import resources
 
     # Force loading of the resources module
-    importlib.resources.open_binary  # pytype: disable=module-attr
+    resources.open_binary  # pytype: disable=module-attr
 
     def open_resource(package, name):
         package = b'mercurial.' + package
-        return importlib.resources.open_binary(  # pytype: disable=module-attr
+        return resources.open_binary(  # pytype: disable=module-attr
             pycompat.sysstr(package), pycompat.sysstr(name)
         )
 
 
-except AttributeError:
+except (ImportError, AttributeError):
 
     def _package_path(package):
         return os.path.join(datapath, *package.split(b'.'))
