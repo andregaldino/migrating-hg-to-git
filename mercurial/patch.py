@@ -963,7 +963,9 @@ class header(object):
         return self.files()[-1]
 
     def __repr__(self):
-        return '<header %s>' % (' '.join(map(repr, self.files())))
+        return '<header %s>' % (
+            ' '.join(pycompat.rapply(pycompat.fsdecode, self.files()))
+        )
 
     def isnewfile(self):
         return any(self.newfile_re.match(h) for h in self.header)
