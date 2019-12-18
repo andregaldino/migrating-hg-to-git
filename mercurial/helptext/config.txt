@@ -85,10 +85,6 @@ ones.
    The registry key ``HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Mercurial``
    is used when running 32-bit Python on 64-bit Windows.
 
-.. container:: windows
-
-  On Windows 9x, ``%HOME%`` is replaced by ``%APPDATA%``.
-
 .. container:: verbose.plan9
 
   On Plan9, the following files are consulted:
