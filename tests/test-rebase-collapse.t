@@ -592,7 +592,7 @@ Test collapsing a middle revision in-place
   o  0: f447d5abf5ea 'add'
   
   $ hg rebase --collapse -r 1 -d 0
-  abort: can't remove original changesets with unrebased descendants
+  abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
   [255]
 

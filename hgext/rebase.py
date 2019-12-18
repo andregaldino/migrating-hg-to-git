@@ -46,6 +46,7 @@ from mercurial import (
     repair,
     revset,
     revsetlang,
+    rewriteutil,
     scmutil,
     smartset,
     state as statemod,
@@ -393,17 +394,13 @@ class rebaseruntime(object):
             return _nothingtorebase()
 
         rebaseset = destmap.keys()
-        allowunstable = obsolete.isenabled(self.repo, obsolete.allowunstableopt)
-        if not (self.keepf or allowunstable) and self.repo.revs(
-            b'first(children(%ld) - %ld)', rebaseset, rebaseset
-        ):
-            raise error.Abort(
-                _(
-                    b"can't remove original changesets with"
-                    b" unrebased descendants"
-                ),
-                hint=_(b'use --keep to keep original changesets'),
-            )
+        if not self.keepf:
+            try:
+                rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
+            except error.Abort as e:
+                if e.hint is None:
+                    e.hint = b'use --keep to keep original changesets'
+                raise e
 
         result = buildstate(self.repo, destmap, self.collapsef)
 
@@ -411,13 +408,6 @@ class rebaseruntime(object):
             # Empty state built, nothing to rebase
             self.ui.status(_(b'nothing to rebase\n'))
             return _nothingtorebase()
-
-        for root in self.repo.set(b'roots(%ld)', rebaseset):
-            if not self.keepf and not root.mutable():
-                raise error.Abort(
-                    _(b"can't rebase public changeset %s") % root,
-                    hint=_(b"see 'hg help phases' for details"),
-                )
 
         (self.originalwd, self.destmap, self.state) = result
         if self.collapsef:
