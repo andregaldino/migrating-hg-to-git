@@ -38,16 +38,15 @@ def systemrcpath():
     value = util.lookupreg(
         b'SOFTWARE\\Mercurial', None, winreg.HKEY_LOCAL_MACHINE
     )
-    if not isinstance(value, bytes) or not value:
-        return rcpath
-    value = util.localpath(value)
-    for p in value.split(pycompat.ospathsep):
-        if p.lower().endswith(b'mercurial.ini'):
-            rcpath.append(p)
-        elif os.path.isdir(p):
-            for f, kind in util.listdir(p):
-                if f.endswith(b'.rc'):
-                    rcpath.append(os.path.join(p, f))
+    if value and isinstance(value, bytes):
+        value = util.localpath(value)
+        for p in value.split(pycompat.ospathsep):
+            if p.lower().endswith(b'mercurial.ini'):
+                rcpath.append(p)
+            elif os.path.isdir(p):
+                for f, kind in util.listdir(p):
+                    if f.endswith(b'.rc'):
+                        rcpath.append(os.path.join(p, f))
     return rcpath
 
 
