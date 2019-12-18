@@ -536,7 +536,7 @@ def verify_modern_convention(module, root, localmods, root_col_offset=0):
                 if not fullname or (
                     fullname in stdlib_modules
                     # allow standard 'from typing import ...' style
-                    and fullname != 'typing'
+                    and fullname.startswith('.')
                     and fullname not in localmods
                     and fullname + '.__init__' not in localmods
                 ):
