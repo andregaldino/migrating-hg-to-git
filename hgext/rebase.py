@@ -399,7 +399,7 @@ class rebaseruntime(object):
                 rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
             except error.Abort as e:
                 if e.hint is None:
-                    e.hint = b'use --keep to keep original changesets'
+                    e.hint = _(b'use --keep to keep original changesets')
                 raise e
 
         result = buildstate(self.repo, destmap, self.collapsef)
