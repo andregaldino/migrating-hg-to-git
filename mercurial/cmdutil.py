@@ -267,7 +267,7 @@ def check_at_most_one_arg(opts, *args):
     """
 
     def to_display(name):
-        return name.replace(b'_', b'-')
+        return pycompat.sysbytes(name).replace(b'_', b'-')
 
     previous = None
     for x in args:
