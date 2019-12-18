@@ -228,16 +228,8 @@ class winstdout(object):
             raise IOError(errno.EPIPE, 'Broken pipe')
 
 
-def _is_win_9x():
-    '''return true if run on windows 95, 98 or me.'''
-    try:
-        return sys.getwindowsversion()[3] == 1
-    except AttributeError:
-        return b'command' in encoding.environ.get(b'comspec', b'')
-
-
 def openhardlinks():
-    return not _is_win_9x()
+    return True
 
 
 def parsepatchoutput(output_line):
