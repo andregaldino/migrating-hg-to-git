@@ -265,13 +265,17 @@ def check_at_most_one_arg(opts, *args):
 
     Returns the unique argument or None if none of them were specified.
     """
+
+    def to_display(name):
+        return name.replace(b'_', b'-')
+
     previous = None
     for x in args:
         if opts.get(x):
-            x = x.replace(b'_', b'-')
             if previous:
                 raise error.Abort(
-                    _(b'cannot specify both --%s and --%s') % (previous, x)
+                    _(b'cannot specify both --%s and --%s')
+                    % (to_display(previous), to_display(x))
                 )
             previous = x
     return previous
