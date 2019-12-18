@@ -34,7 +34,7 @@ def systemrcpath():
         for f, kind in util.listdir(progrcd):
             if f.endswith(b'.rc'):
                 rcpath.append(os.path.join(progrcd, f))
-    # else look for a system rcpath in the registry
+    # next look for a system rcpath in the registry
     value = util.lookupreg(
         b'SOFTWARE\\Mercurial', None, winreg.HKEY_LOCAL_MACHINE
     )
