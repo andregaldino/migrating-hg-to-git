@@ -68,79 +68,42 @@ begin
 	for d := 0 to GetArrayLength(pathdir)-1 do begin
 		updatepath := true;
 
-		// Modify WinNT path
-		if UsingWinNT() = true then begin
+		// Get current path, split into an array
+		RegQueryStringValue(regroot, regpath, 'Path', oldpath);
+		oldpath := oldpath + ';';
+		i := 0;
 
-			// Get current path, split into an array
-			RegQueryStringValue(regroot, regpath, 'Path', oldpath);
-			oldpath := oldpath + ';';
-			i := 0;
+		while (Pos(';', oldpath) > 0) do begin
+			SetArrayLength(pathArr, i+1);
+			pathArr[i] := Copy(oldpath, 0, Pos(';', oldpath)-1);
+			oldpath := Copy(oldpath, Pos(';', oldpath)+1, Length(oldpath));
+			i := i + 1;
 
-			while (Pos(';', oldpath) > 0) do begin
-				SetArrayLength(pathArr, i+1);
-				pathArr[i] := Copy(oldpath, 0, Pos(';', oldpath)-1);
-				oldpath := Copy(oldpath, Pos(';', oldpath)+1, Length(oldpath));
-				i := i + 1;
-
-				// Check if current directory matches app dir
-				if pathdir[d] = pathArr[i-1] then begin
-					// if uninstalling, remove dir from path
-					if IsUninstaller() = true then begin
-						continue;
-					// if installing, flag that dir already exists in path
-					end else begin
-						updatepath := false;
-					end;
-				end;
-
-				// Add current directory to new path
-				if i = 1 then begin
-					newpath := pathArr[i-1];
+			// Check if current directory matches app dir
+			if pathdir[d] = pathArr[i-1] then begin
+				// if uninstalling, remove dir from path
+				if IsUninstaller() = true then begin
+					continue;
+				// if installing, flag that dir already exists in path
 				end else begin
-					newpath := newpath + ';' + pathArr[i-1];
+					updatepath := false;
 				end;
 			end;
 
-			// Append app dir to path if not already included
-			if (IsUninstaller() = false) AND (updatepath = true) then
-				newpath := newpath + ';' + pathdir[d];
-
-			// Write new path
-			RegWriteStringValue(regroot, regpath, 'Path', newpath);
-
-		// Modify Win9x path
-		end else begin
-
-			// Convert to shortened dirname
-			pathdir[d] := GetShortName(pathdir[d]);
-
-			// If autoexec.bat exists, check if app dir already exists in path
-			aExecFile := 'C:\AUTOEXEC.BAT';
-			if FileExists(aExecFile) then begin
-				LoadStringsFromFile(aExecFile, aExecArr);
-				for i := 0 to GetArrayLength(aExecArr)-1 do begin
-					if IsUninstaller() = false then begin
-						// If app dir already exists while installing, skip add
-						if (Pos(pathdir[d], aExecArr[i]) > 0) then
-							updatepath := false;
-							break;
-					end else begin
-						// If app dir exists and = what we originally set, then delete at uninstall
-						if aExecArr[i] = 'SET PATH=%PATH%;' + pathdir[d] then
-							aExecArr[i] := '';
-					end;
-				end;
-			end;
-
-			// If app dir not found, or autoexec.bat didn't exist, then (create and) append to current path
-			if (IsUninstaller() = false) AND (updatepath = true) then begin
-				SaveStringToFile(aExecFile, #13#10 + 'SET PATH=%PATH%;' + pathdir[d], True);
-
-			// If uninstalling, write the full autoexec out
+			// Add current directory to new path
+			if i = 1 then begin
+				newpath := pathArr[i-1];
 			end else begin
-				SaveStringsToFile(aExecFile, aExecArr, False);
+				newpath := newpath + ';' + pathArr[i-1];
 			end;
 		end;
+
+		// Append app dir to path if not already included
+		if (IsUninstaller() = false) AND (updatepath = true) then
+			newpath := newpath + ';' + pathdir[d];
+
+		// Write new path
+		RegWriteStringValue(regroot, regpath, 'Path', newpath);
 	end;
 end;
 
@@ -207,13 +170,6 @@ begin
 end;
 
 function NeedRestart(): Boolean;
-var
-	taskname:	String;
 begin
-	taskname := ModPathName;
-	if IsTaskSelected(taskname) and not UsingWinNT() then begin
-		Result := True;
-	end else begin
-		Result := False;
-	end;
+	Result := False;
 end;
