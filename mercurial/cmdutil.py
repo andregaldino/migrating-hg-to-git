@@ -818,20 +818,22 @@ class morestatus(object):
             fm.data(unresolved=True)
 
     def formatfooter(self, fm):
-        fm.startitem()
-        fm.data(
-            itemtype=b'morestatus',
-            unfinished=self.unfinishedop,
-            unfinishedmsg=self.unfinishedmsg,
-        )
+        if self.unfinishedop or self.unfinishedmsg:
+            fm.startitem()
+            fm.data(itemtype=b'morestatus')
 
-        statemsg = (
-            _(b'The repository is in an unfinished *%s* state.')
-            % self.unfinishedop
-        )
-        fm.plain(b'%s\n' % _commentlines(statemsg), label=self._label)
+        if self.unfinishedop:
+            fm.data(unfinished=self.unfinishedop)
+            statemsg = (
+                _(b'The repository is in an unfinished *%s* state.')
+                % self.unfinishedop
+            )
+            fm.plain(b'%s\n' % _commentlines(statemsg), label=self._label)
+        if self.unfinishedmsg:
+            fm.data(unfinishedmsg=self.unfinishedmsg)
 
         self._formatconflicts(fm)
+
         if self.unfinishedmsg:
             fm.plain(
                 b'%s\n' % _commentlines(self.unfinishedmsg), label=self._label
@@ -870,12 +872,12 @@ def readmorestatus(repo):
     statetuple = statemod.getrepostate(repo)
     mergestate = mergemod.mergestate.read(repo)
     activemerge = mergestate.active()
-    if not statetuple:
+    if not statetuple and not activemerge:
         return None
 
-    unfinishedop, unfinishedmsg = statetuple
-    mergestate = mergemod.mergestate.read(repo)
-    unresolved = None
+    unfinishedop = unfinishedmsg = unresolved = None
+    if statetuple:
+        unfinishedop, unfinishedmsg = statetuple
     if activemerge:
         unresolved = sorted(mergestate.unresolved())
     return morestatus(

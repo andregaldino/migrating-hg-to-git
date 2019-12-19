@@ -252,6 +252,12 @@ Cases are run as shown in that table, row by row.
   $ hg st
   M a
   ? a.orig
+  # Unresolved merge conflicts:
+  # 
+  #     a
+  # 
+  # To mark files as resolved:  hg resolve --mark FILE
+  
   $ cat a
   <<<<<<< working copy: 6efa171f091b - test: 3
   three
@@ -315,6 +321,12 @@ File conflict is not allowed
   $ rm a.orig
   $ hg status
   M a
+  # Unresolved merge conflicts:
+  # 
+  #     a
+  # 
+  # To mark files as resolved:  hg resolve --mark FILE
+  
   $ hg resolve -l
   U a
 
@@ -553,6 +565,12 @@ Test that statuses are reported properly before and after merge resolution.
   $ hg status
   M a
   M foo
+  # Unresolved merge conflicts:
+  # 
+  #     a
+  # 
+  # To mark files as resolved:  hg resolve --mark FILE
+  
 
   $ hg revert -r . a
 
@@ -561,6 +579,12 @@ Test that statuses are reported properly before and after merge resolution.
   U a
   $ hg status
   M foo
+  # Unresolved merge conflicts:
+  # 
+  #     a
+  # 
+  # To mark files as resolved:  hg resolve --mark FILE
+  
   $ hg status -Tjson
   [
    {
@@ -577,6 +601,8 @@ Test that statuses are reported properly before and after merge resolution.
   R a
   $ hg status
   M foo
+  # No unresolved merge conflicts.
+  
   $ hg status -Tjson
   [
    {
@@ -589,6 +615,8 @@ Test that statuses are reported properly before and after merge resolution.
 Test that 4 is detected as the no-argument destination from 3 and also moves
 the bookmark with it
   $ hg up --quiet 0          # we should be able to update to 3 directly
+  $ hg status
+  M foo
   $ hg up --quiet --hidden 3 # but not implemented yet.
   updated to hidden changeset 6efa171f091b
   (hidden revision '6efa171f091b' was rewritten as: d047485b3896)
