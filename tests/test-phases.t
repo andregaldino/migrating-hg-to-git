@@ -48,13 +48,58 @@ Following commit are draft too
   1 1 B
   0 1 A
 
-Draft commit are properly created over public one:
+Working directory phase is secret when its parent is secret.
+
+  $ hg phase --force --secret .
+  test-debug-phase: move rev 0: 1 -> 2
+  test-debug-phase: move rev 1: 1 -> 2
+  test-hook-close-phase: 4a2df7238c3b48766b5e22fafbb8a2f506ec8256:  draft -> secret
+  test-hook-close-phase: 27547f69f25460a52fff66ad004e58da7ad3fb56:  draft -> secret
+  $ hg log -r 'wdir()' -T '{phase}\n'
+  secret
+  $ hg log -r 'wdir() and public()' -T '{phase}\n'
+  $ hg log -r 'wdir() and draft()' -T '{phase}\n'
+  $ hg log -r 'wdir() and secret()' -T '{phase}\n'
+  secret
+
+Working directory phase is draft when its parent is draft.
+
+  $ hg phase --draft .
+  test-debug-phase: move rev 1: 2 -> 1
+  test-hook-close-phase: 27547f69f25460a52fff66ad004e58da7ad3fb56:  secret -> draft
+  $ hg log -r 'wdir()' -T '{phase}\n'
+  draft
+  $ hg log -r 'wdir() and public()' -T '{phase}\n'
+  $ hg log -r 'wdir() and draft()' -T '{phase}\n'
+  draft
+  $ hg log -r 'wdir() and secret()' -T '{phase}\n'
+
+Working directory phase is secret when a new commit will be created as secret,
+even if the parent is draft.
+
+  $ hg log -r 'wdir() and secret()' -T '{phase}\n' \
+  > --config phases.new-commit='secret'
+  secret
+
+Working directory phase is draft when its parent is public.
 
   $ hg phase --public .
   test-debug-phase: move rev 0: 1 -> 0
   test-debug-phase: move rev 1: 1 -> 0
   test-hook-close-phase: 4a2df7238c3b48766b5e22fafbb8a2f506ec8256:  draft -> public
   test-hook-close-phase: 27547f69f25460a52fff66ad004e58da7ad3fb56:  draft -> public
+  $ hg log -r 'wdir()' -T '{phase}\n'
+  draft
+  $ hg log -r 'wdir() and public()' -T '{phase}\n'
+  $ hg log -r 'wdir() and draft()' -T '{phase}\n'
+  draft
+  $ hg log -r 'wdir() and secret()' -T '{phase}\n'
+  $ hg log -r 'wdir() and secret()' -T '{phase}\n' \
+  > --config phases.new-commit='secret'
+  secret
+
+Draft commit are properly created over public one:
+
   $ hg phase
   1: public
   $ hglog
