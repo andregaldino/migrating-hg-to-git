@@ -809,12 +809,12 @@ class morestatus(object):
     reporoot = attr.ib()
     unfinishedop = attr.ib()
     unfinishedmsg = attr.ib()
-    inmergestate = attr.ib()
+    activemerge = attr.ib()
     unresolvedpaths = attr.ib()
     _label = b'status.morestatus'
 
     def formatfile(self, path, fm):
-        if self.inmergestate and path in self.unresolvedpaths:
+        if self.activemerge and path in self.unresolvedpaths:
             fm.data(unresolved=True)
 
     def formatfooter(self, fm):
@@ -838,7 +838,7 @@ class morestatus(object):
             )
 
     def _formatconflicts(self, fm):
-        if not self.inmergestate:
+        if not self.activemerge:
             return
 
         if self.unresolvedpaths:
@@ -868,20 +868,18 @@ To mark files as resolved:  hg resolve --mark FILE'''
 def readmorestatus(repo):
     """Returns a morestatus object if the repo has unfinished state."""
     statetuple = statemod.getrepostate(repo)
+    mergestate = mergemod.mergestate.read(repo)
+    activemerge = mergestate.active()
     if not statetuple:
         return None
 
     unfinishedop, unfinishedmsg = statetuple
     mergestate = mergemod.mergestate.read(repo)
     unresolved = None
-    if mergestate.active():
+    if activemerge:
         unresolved = sorted(mergestate.unresolved())
     return morestatus(
-        repo.root,
-        unfinishedop,
-        unfinishedmsg,
-        unresolved is not None,
-        unresolved,
+        repo.root, unfinishedop, unfinishedmsg, activemerge, unresolved
     )
 
 
