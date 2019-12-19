@@ -591,6 +591,11 @@ Test that statuses are reported properly before and after merge resolution.
     "itemtype": "file",
     "path": "foo",
     "status": "M"
+   },
+   {
+    "itemtype": "file",
+    "path": "a",
+    "unresolved": true
    }
   ]
 

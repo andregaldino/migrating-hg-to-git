@@ -811,9 +811,11 @@ class morestatus(object):
     unfinishedmsg = attr.ib()
     activemerge = attr.ib()
     unresolvedpaths = attr.ib()
+    _formattedpaths = attr.ib(init=False, default=set())
     _label = b'status.morestatus'
 
     def formatfile(self, path, fm):
+        self._formattedpaths.add(path)
         if self.activemerge and path in self.unresolvedpaths:
             fm.data(unresolved=True)
 
@@ -832,6 +834,7 @@ class morestatus(object):
         if self.unfinishedmsg:
             fm.data(unfinishedmsg=self.unfinishedmsg)
 
+        # May also start new data items.
         self._formatconflicts(fm)
 
         if self.unfinishedmsg:
@@ -861,6 +864,19 @@ To mark files as resolved:  hg resolve --mark FILE'''
                 )
                 % mergeliststr
             )
+
+            # If any paths with unresolved conflicts were not previously
+            # formatted, output them now.
+            for f in self.unresolvedpaths:
+                if f in self._formattedpaths:
+                    # Already output.
+                    continue
+                fm.startitem()
+                # We can't claim to know the status of the file - it may just
+                # have been in one of the states that were not requested for
+                # display, so it could be anything.
+                fm.data(itemtype=b'file', path=f, unresolved=True)
+
         else:
             msg = _(b'No unresolved merge conflicts.')
 
