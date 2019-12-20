@@ -1419,32 +1419,35 @@ def copy(ui, repo, pats, opts, rename=False):
     after = opts.get(b"after")
     dryrun = opts.get(b"dry_run")
     wctx = repo[None]
+    pctx = wctx.p1()
 
     uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
 
     def walkpat(pat):
         srcs = []
-        if after:
-            badstates = b'?'
-        else:
-            badstates = b'?r'
         m = scmutil.match(wctx, [pat], opts, globbed=True)
         for abs in wctx.walk(m):
-            state = repo.dirstate[abs]
             rel = uipathfn(abs)
             exact = m.exact(abs)
-            if state in badstates:
-                if exact and state == b'?':
-                    ui.warn(_(b'%s: not copying - file is not managed\n') % rel)
-                if exact and state == b'r':
-                    ui.warn(
-                        _(
-                            b'%s: not copying - file has been marked for'
-                            b' remove\n'
+            if abs not in wctx:
+                if abs in pctx:
+                    if not after:
+                        if exact:
+                            ui.warn(
+                                _(
+                                    b'%s: not copying - file has been marked '
+                                    b'for remove\n'
+                                )
+                                % rel
+                            )
+                        continue
+                else:
+                    if exact:
+                        ui.warn(
+                            _(b'%s: not copying - file is not managed\n') % rel
                         )
-                        % rel
-                    )
-                continue
+                    continue
+
             # abs: hgsep
             # rel: ossep
             srcs.append((abs, rel, exact))
