@@ -1421,17 +1421,23 @@ def copy(ui, repo, pats, opts, rename=False):
     forget = opts.get(b"forget")
     after = opts.get(b"after")
     dryrun = opts.get(b"dry_run")
-    ctx = repo[None]
+    rev = opts.get(b'at_rev')
+    if rev:
+        if not forget and not after:
+            # TODO: Remove this restriction and make it also create the copy
+            #       targets (and remove the rename source if rename==True).
+            raise error.Abort(_(b'--at-rev requires --after'))
+        ctx = scmutil.revsingle(repo, rev)
+        if len(ctx.parents()) > 1:
+            raise error.Abort(_(b'cannot mark/unmark copy in merge commit'))
+    else:
+        ctx = repo[None]
+
     pctx = ctx.p1()
 
     uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
 
     if forget:
-        rev = opts[b'at_rev']
-        if rev:
-            ctx = scmutil.revsingle(repo, rev)
-        else:
-            ctx = repo[None]
         if ctx.rev() is None:
             new_ctx = ctx
         else:
@@ -1484,9 +1490,6 @@ def copy(ui, repo, pats, opts, rename=False):
         raise error.Abort(_(b'no destination specified'))
     dest = pats.pop()
 
-    if opts.get(b'at_rev'):
-        raise error.Abort(_("--at-rev is only supported with --forget"))
-
     def walkpat(pat):
         srcs = []
         m = scmutil.match(ctx, [pat], opts, globbed=True)
@@ -1516,6 +1519,55 @@ def copy(ui, repo, pats, opts, rename=False):
             # rel: ossep
             srcs.append((abs, rel, exact))
         return srcs
+
+    if ctx.rev() is not None:
+        rewriteutil.precheck(repo, [ctx.rev()], b'uncopy')
+        absdest = pathutil.canonpath(repo.root, cwd, dest)
+        if ctx.hasdir(absdest):
+            raise error.Abort(
+                _(b'%s: --at-rev does not support a directory as destination')
+                % uipathfn(absdest)
+            )
+        if absdest not in ctx:
+            raise error.Abort(
+                _(b'%s: copy destination does not exist in %s')
+                % (uipathfn(absdest), ctx)
+            )
+
+        # avoid cycle context -> subrepo -> cmdutil
+        from . import context
+
+        copylist = []
+        for pat in pats:
+            srcs = walkpat(pat)
+            if not srcs:
+                continue
+            for abs, rel, exact in srcs:
+                copylist.append(abs)
+
+        # TODO: Add support for `hg cp --at-rev . foo bar dir` and
+        # `hg cp --at-rev . dir1 dir2`, preferably unifying the code with the
+        # existing functions below.
+        if len(copylist) != 1:
+            raise error.Abort(_(b'--at-rev requires a single source'))
+
+        new_ctx = context.overlayworkingctx(repo)
+        new_ctx.setbase(ctx.p1())
+        mergemod.graft(repo, ctx, wctx=new_ctx)
+
+        new_ctx.markcopied(absdest, copylist[0])
+
+        with repo.lock():
+            mem_ctx = new_ctx.tomemctx_for_amend(ctx)
+            new_node = mem_ctx.commit()
+
+            if repo.dirstate.p1() == ctx.node():
+                with repo.dirstate.parentchange():
+                    scmutil.movedirstate(repo, repo[new_node])
+            replacements = {ctx.node(): [new_node]}
+            scmutil.cleanupnodes(repo, replacements, b'copy', fixphase=True)
+
+        return
 
     # abssrc: hgsep
     # relsrc: ossep

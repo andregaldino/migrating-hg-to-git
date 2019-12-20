@@ -2315,7 +2315,7 @@ def continuecmd(ui, repo, **opts):
             b'',
             b'at-rev',
             b'',
-            _(b'unmark copies in the given revision (EXPERIMENTAL)'),
+            _(b'(un)mark copies in the given revision (EXPERIMENTAL)'),
             _(b'REV'),
         ),
         (
@@ -2345,7 +2345,7 @@ def copy(ui, repo, *pats, **opts):
     all given (positional) arguments are unmarked as copies. The destination
     file(s) will be left in place (still tracked).
 
-    This command takes effect with the next commit.
+    This command takes effect with the next commit by default.
 
     Returns 0 on success, 1 if errors are encountered.
     """

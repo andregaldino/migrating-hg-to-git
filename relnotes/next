@@ -14,8 +14,12 @@
 
  * `hg copy --forget` can be used to unmark a file as copied.
 
-
 == New Experimental Features ==
+
+ * `hg copy` now supports a `--at-rev` argument to mark files as
+   copied in the specified commit. It only works with `--after` for
+   now (i.e., it's only useful for marking files copied using non-hg
+   `cp` as copied).
 
  * Use `hg copy --forget --at-rev REV` to unmark already committed
    copies.
