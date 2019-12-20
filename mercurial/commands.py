@@ -2309,6 +2309,7 @@ def continuecmd(ui, repo, **opts):
 @command(
     b'copy|cp',
     [
+        (b'', b'forget', None, _(b'unmark a file as copied')),
         (b'A', b'after', None, _(b'record a copy that has already occurred')),
         (
             b'f',
@@ -2333,8 +2334,11 @@ def copy(ui, repo, *pats, **opts):
     exist in the working directory. If invoked with -A/--after, the
     operation is recorded, but no copying is performed.
 
-    This command takes effect with the next commit. To undo a copy
-    before that, see :hg:`revert`.
+    To undo marking a file as copied, use --forget. With that option,
+    all given (positional) arguments are unmarked as copies. The destination
+    file(s) will be left in place (still tracked).
+
+    This command takes effect with the next commit.
 
     Returns 0 on success, 1 if errors are encountered.
     """

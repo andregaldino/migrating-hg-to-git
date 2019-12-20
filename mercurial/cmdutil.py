@@ -1410,18 +1410,39 @@ def openrevlog(repo, cmd, file_, opts):
 
 
 def copy(ui, repo, pats, opts, rename=False):
+    check_incompatible_arguments(opts, b'forget', [b'dry_run'])
+
     # called with the repo lock held
     #
     # hgsep => pathname that uses "/" to separate directories
     # ossep => pathname that uses os.sep to separate directories
     cwd = repo.getcwd()
     targets = {}
+    forget = opts.get(b"forget")
     after = opts.get(b"after")
     dryrun = opts.get(b"dry_run")
     ctx = repo[None]
     pctx = ctx.p1()
 
     uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
+
+    if forget:
+        match = scmutil.match(wctx, pats, opts)
+
+        current_copies = wctx.p1copies()
+        current_copies.update(wctx.p2copies())
+
+        for f in wctx.walk(match):
+            if f in current_copies:
+                wctx[f].markcopied(None)
+            elif match.exact(f):
+                ui.warn(
+                    _(
+                        b'%s: not unmarking as copy - file is not marked as copied\n'
+                    )
+                    % uipathfn(f)
+                )
+        return
 
     def walkpat(pat):
         srcs = []

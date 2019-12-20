@@ -12,6 +12,8 @@
    commits that are being merged, when there are conflicts. Also works
    for conflicts caused by e.g. `hg graft`.
 
+ * `hg copy --forget` can be used to unmark a file as copied.
+
 
 == New Experimental Features ==
 

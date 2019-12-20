@@ -257,7 +257,7 @@ Show all commands + options
   commit: addremove, close-branch, amend, secret, edit, force-close-branch, interactive, include, exclude, message, logfile, date, user, subrepos
   config: untrusted, edit, local, global, template
   continue: dry-run
-  copy: after, force, include, exclude, dry-run
+  copy: forget, after, force, include, exclude, dry-run
   debugancestor: 
   debugapplystreamclonebundle: 
   debugbuilddag: mergeable-file, overwritten-file, new-file

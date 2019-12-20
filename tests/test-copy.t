@@ -262,5 +262,62 @@ mention --force:
   xyzzy: not overwriting - file exists
   ('hg copy --after' to record the copy)
   [1]
+  $ hg co -qC .
+  $ rm baz xyzzy
+
+
+Test unmarking copy of a single file
+
+# Set up by creating a copy
+  $ hg cp bar baz
+# Test uncopying a non-existent file
+  $ hg copy --forget non-existent
+  non-existent: $ENOENT$
+# Test uncopying an tracked but unrelated file
+  $ hg copy --forget foo
+  foo: not unmarking as copy - file is not marked as copied
+# Test uncopying a copy source
+  $ hg copy --forget bar
+  bar: not unmarking as copy - file is not marked as copied
+# baz should still be marked as a copy
+  $ hg st -C
+  A baz
+    bar
+# Test the normal case
+  $ hg copy --forget baz
+  $ hg st -C
+  A baz
+# Test uncopy with matching an non-matching patterns
+  $ hg cp bar baz --after
+  $ hg copy --forget bar baz
+  bar: not unmarking as copy - file is not marked as copied
+  $ hg st -C
+  A baz
+# Test uncopy with no exact matches
+  $ hg cp bar baz --after
+  $ hg copy --forget .
+  $ hg st -C
+  A baz
+  $ hg forget baz
+  $ rm baz
+
+Test unmarking copy of a directory
+
+  $ mkdir dir
+  $ echo foo > dir/foo
+  $ echo bar > dir/bar
+  $ hg add dir
+  adding dir/bar
+  adding dir/foo
+  $ hg ci -m 'add dir/'
+  $ hg cp dir dir2
+  copying dir/bar to dir2/bar
+  copying dir/foo to dir2/foo
+  $ touch dir2/untracked
+  $ hg copy --forget dir2
+  $ hg st -C
+  A dir2/bar
+  A dir2/foo
+  ? dir2/untracked
 
   $ cd ..
