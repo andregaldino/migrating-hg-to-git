@@ -267,11 +267,13 @@ class parseindex2tests(unittest.TestCase):
         appendrev(6)
         self.assertEqual(len(index), 7)
 
-        del index[1:7]
+        del index[1:-1]
 
         # assertions that failed before correction
         self.assertEqual(len(index), 1)  # was 4
-        self.assertEqual(index.headrevs(), [0])  # gave ValueError
+        headrevs = getattr(index, 'headrevs', None)
+        if headrevs is not None:  # not implemented in pure
+            self.assertEqual(index.headrevs(), [0])  # gave ValueError
 
 
 if __name__ == '__main__':
