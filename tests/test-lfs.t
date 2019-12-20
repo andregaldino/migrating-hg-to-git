@@ -796,6 +796,27 @@ because they aren't accessed.
   $ test -f fromcorrupt/.hg/store/lfs/objects/66/100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
   [1]
 
+Verify will not try to download lfs blobs, if told not to process lfs content
+
+  $ hg -R fromcorrupt --config lfs.usercache=emptycache verify -v --no-lfs
+  repository uses revlog format 1
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 5 changesets with 10 changes to 4 files
+
+Verify will not try to download lfs blobs, if told not to by the config option
+
+  $ hg -R fromcorrupt --config lfs.usercache=emptycache verify -v \
+  >                   --config verify.skipflags=8192
+  repository uses revlog format 1
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 5 changesets with 10 changes to 4 files
+
 Verify will copy/link all lfs objects into the local store that aren't already
 present.  Bypass the corrupted usercache to show that verify works when fed by
 the (uncorrupted) remote store.

@@ -402,3 +402,24 @@ def debuglfsupload(ui, repo, **opts):
     revs = opts.get('rev', [])
     pointers = wrapper.extractpointers(repo, scmutil.revrange(repo, revs))
     wrapper.uploadblobs(repo, pointers)
+
+
+@eh.wrapcommand(
+    b'verify', opts=[(b'', b'no-lfs', None, _(b'skip all lfs blob content'))]
+)
+def verify(orig, ui, repo, **opts):
+    skipflags = repo.ui.configint(b'verify', b'skipflags')
+    no_lfs = opts.pop('no_lfs')
+
+    if skipflags:
+        # --lfs overrides the config bit, if set.
+        if no_lfs is False:
+            skipflags &= ~repository.REVISION_FLAG_EXTSTORED
+    else:
+        skipflags = 0
+
+    if no_lfs is True:
+        skipflags |= repository.REVISION_FLAG_EXTSTORED
+
+    with ui.configoverride({(b'verify', b'skipflags'): skipflags}):
+        return orig(ui, repo, **opts)
