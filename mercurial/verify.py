@@ -565,8 +565,9 @@ class verifier(object):
 
                 # check renames
                 try:
-                    # This requires resolving fulltext (at least on revlogs). We
-                    # may want ``verifyintegrity()`` to pass a set of nodes with
+                    # This requires resolving fulltext (at least on revlogs,
+                    # though not with LFS revisions). We may want
+                    # ``verifyintegrity()`` to pass a set of nodes with
                     # rename metadata as an optimization.
                     rp = fl.renamed(n)
                     if rp:
