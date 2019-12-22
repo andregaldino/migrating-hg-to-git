@@ -148,6 +148,16 @@ def offset_type(offset, type):
     return int(int(offset) << 16 | type)
 
 
+def _verify_revision(rl, skipflags, state, node):
+    """Verify the integrity of the given revlog ``node`` while providing a hook
+    point for extensions to influence the operation."""
+    if skipflags:
+        state[b'skipread'].add(node)
+    else:
+        # Side-effect: read content and verify hash.
+        rl.revision(node)
+
+
 @attr.s(slots=True, frozen=True)
 class _revisioninfo(object):
     """Information about a revision that allows building its fulltext
@@ -2914,11 +2924,7 @@ class revlog(object):
                 if skipflags:
                     skipflags &= self.flags(rev)
 
-                if skipflags:
-                    state[b'skipread'].add(node)
-                else:
-                    # Side-effect: read content and verify hash.
-                    self.revision(node)
+                _verify_revision(self, skipflags, state, node)
 
                 l1 = self.rawsize(rev)
                 l2 = len(self.rawdata(node))
