@@ -18,6 +18,7 @@ use std::cmp::{max, min};
 use std::collections::{HashSet, VecDeque};
 
 type Rng = rand_pcg::Pcg32;
+type Seed = [u8; 16];
 
 pub struct PartialDiscovery<G: Graph + Clone> {
     target_heads: Option<Vec<Revision>>,
@@ -158,7 +159,7 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
         respect_size: bool,
         randomize: bool,
     ) -> Self {
-        let mut seed: [u8; 16] = [0; 16];
+        let mut seed = [0; 16];
         if randomize {
             thread_rng().fill_bytes(&mut seed);
         }
@@ -168,7 +169,7 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
     pub fn new_with_seed(
         graph: G,
         target_heads: Vec<Revision>,
-        seed: [u8; 16],
+        seed: Seed,
         respect_size: bool,
         randomize: bool,
     ) -> Self {
