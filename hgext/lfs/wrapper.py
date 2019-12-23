@@ -151,12 +151,12 @@ def _islfs(rlog, node=None, rev=None):
         if node is None:
             # both None - likely working copy content where node is not ready
             return False
-        rev = rlog._revlog.rev(node)
+        rev = rlog.rev(node)
     else:
-        node = rlog._revlog.node(rev)
+        node = rlog.node(rev)
     if node == nullid:
         return False
-    flags = rlog._revlog.flags(rev)
+    flags = rlog.flags(rev)
     return bool(flags & revlog.REVIDX_EXTSTORED)
 
 
@@ -203,7 +203,7 @@ def filelogaddrevision(
 
 # Wrapping may also be applied by remotefilelog
 def filelogrenamed(orig, self, node):
-    if _islfs(self, node):
+    if _islfs(self._revlog, node):
         rawtext = self._revlog.rawdata(node)
         if not rawtext:
             return False
@@ -217,7 +217,7 @@ def filelogrenamed(orig, self, node):
 
 # Wrapping may also be applied by remotefilelog
 def filelogsize(orig, self, rev):
-    if _islfs(self, rev=rev):
+    if _islfs(self._revlog, rev=rev):
         # fast path: use lfs metadata to answer size
         rawtext = self._revlog.rawdata(rev)
         metadata = pointer.deserialize(rawtext)
@@ -248,7 +248,7 @@ def filectxisbinary(orig, self):
 
 
 def filectxislfs(self):
-    return _islfs(self.filelog(), self.filenode())
+    return _islfs(self.filelog()._revlog, self.filenode())
 
 
 @eh.wrapfunction(cmdutil, b'_updatecatformatter')
@@ -459,7 +459,7 @@ def pointerfromctx(ctx, f, removed=False):
         else:
             return None
     fctx = _ctx[f]
-    if not _islfs(fctx.filelog(), fctx.filenode()):
+    if not _islfs(fctx.filelog()._revlog, fctx.filenode()):
         return None
     try:
         p = pointer.deserialize(fctx.rawdata())
