@@ -405,7 +405,8 @@ def debuglfsupload(ui, repo, **opts):
 
 
 @eh.wrapcommand(
-    b'verify', opts=[(b'', b'no-lfs', None, _(b'skip all lfs blob content'))]
+    b'verify',
+    opts=[(b'', b'no-lfs', None, _(b'skip missing lfs blob content'))],
 )
 def verify(orig, ui, repo, **opts):
     skipflags = repo.ui.configint(b'verify', b'skipflags')

@@ -804,6 +804,7 @@ Verify will not try to download lfs blobs, if told not to process lfs content
   checking manifests
   crosschecking files in changesets and manifests
   checking files
+  lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
   checked 5 changesets with 10 changes to 4 files
 
 Verify will not try to download lfs blobs, if told not to by the config option
@@ -815,6 +816,7 @@ Verify will not try to download lfs blobs, if told not to by the config option
   checking manifests
   crosschecking files in changesets and manifests
   checking files
+  lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
   checked 5 changesets with 10 changes to 4 files
 
 Verify will copy/link all lfs objects into the local store that aren't already

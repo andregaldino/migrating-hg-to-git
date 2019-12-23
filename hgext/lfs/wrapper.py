@@ -225,6 +225,21 @@ def filelogsize(orig, self, rev):
     return orig(self, rev)
 
 
+@eh.wrapfunction(revlog, b'_verify_revision')
+def _verify_revision(orig, rl, skipflags, state, node):
+    if _islfs(rl, node=node):
+        rawtext = rl.rawdata(node)
+        metadata = pointer.deserialize(rawtext)
+
+        # Don't skip blobs that are stored locally, as local verification is
+        # relatively cheap and there's no other way to verify the raw data in
+        # the revlog.
+        if rl.opener.lfslocalblobstore.has(metadata.oid()):
+            skipflags &= ~revlog.REVIDX_EXTSTORED
+
+    orig(rl, skipflags, state, node)
+
+
 @eh.wrapfunction(context.basefilectx, b'cmp')
 def filectxcmp(orig, self, fctx):
     """returns True if text is different than fctx"""
