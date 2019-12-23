@@ -878,7 +878,9 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
 
         If individual revisions cannot have their revision content resolved,
         the method is expected to set the ``skipread`` key to a set of nodes
-        that encountered problems.
+        that encountered problems.  If set, the method can also add the node(s)
+        to ``safe_renamed`` in order to indicate nodes that may perform the
+        rename checks with currently accessible data.
 
         The method yields objects conforming to the ``iverifyproblem``
         interface.

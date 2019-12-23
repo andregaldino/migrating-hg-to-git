@@ -2874,6 +2874,7 @@ class revlog(object):
             )
 
         state[b'skipread'] = set()
+        state[b'safe_renamed'] = set()
 
         for rev in self:
             node = self.node(rev)

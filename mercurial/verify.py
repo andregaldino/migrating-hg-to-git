@@ -529,6 +529,8 @@ class verifier(object):
             else:
                 # Guard against implementations not setting this.
                 state[b'skipread'] = set()
+                state[b'safe_renamed'] = set()
+
                 for problem in fl.verifyintegrity(state):
                     if problem.node is not None:
                         linkrev = fl.linkrev(fl.rev(problem.node))
@@ -560,7 +562,7 @@ class verifier(object):
                     else:
                         del filenodes[f][n]
 
-                if n in state[b'skipread']:
+                if n in state[b'skipread'] and n not in state[b'safe_renamed']:
                     continue
 
                 # check renames

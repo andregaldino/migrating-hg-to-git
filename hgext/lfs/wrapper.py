@@ -236,6 +236,10 @@ def _verify_revision(orig, rl, skipflags, state, node):
         # the revlog.
         if rl.opener.lfslocalblobstore.has(metadata.oid()):
             skipflags &= ~revlog.REVIDX_EXTSTORED
+        elif skipflags & revlog.REVIDX_EXTSTORED:
+            # The wrapped method will set `skipread`, but there's enough local
+            # info to check renames.
+            state[b'safe_renamed'].add(node)
 
     orig(rl, skipflags, state, node)
 

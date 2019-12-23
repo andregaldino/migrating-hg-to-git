@@ -218,6 +218,15 @@ enabled adds the lfs requirement
   R large
   $ hg commit -m 'renames'
 
+  $ hg cat -r . l -T '{rawdata}\n'
+  version https://git-lfs.github.com/spec/v1
+  oid sha256:66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
+  size 39
+  x-hg-copy large
+  x-hg-copyrev 2c531e0992ff3107c511b53cb82a91b6436de8b2
+  x-is-binary 0
+  
+
   $ hg files -r . 'set:copied()'
   l
   s
@@ -796,27 +805,57 @@ because they aren't accessed.
   $ test -f fromcorrupt/.hg/store/lfs/objects/66/100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
   [1]
 
-Verify will not try to download lfs blobs, if told not to process lfs content
+Verify will not try to download lfs blobs, if told not to process lfs content.
+The extension makes sure that the filelog.renamed() path is taken on a missing
+blob, and the output shows that it isn't fetched.
 
-  $ hg -R fromcorrupt --config lfs.usercache=emptycache verify -v --no-lfs
+  $ cat > $TESTTMP/lfsrename.py <<EOF
+  > from mercurial import (
+  >     exthelper,
+  > )
+  > 
+  > from hgext.lfs import (
+  >     pointer,
+  >     wrapper,
+  > )
+  > 
+  > eh = exthelper.exthelper()
+  > uisetup = eh.finaluisetup
+  > 
+  > @eh.wrapfunction(wrapper, b'filelogrenamed')
+  > def filelogrenamed(orig, orig1, self, node):
+  >     ret = orig(orig1, self, node)
+  >     if wrapper._islfs(self._revlog, node) and ret:
+  >         rawtext = self._revlog.rawdata(node)
+  >         metadata = pointer.deserialize(rawtext)
+  >         print('lfs blob %s renamed %s -> %s'
+  >               % (metadata[b'oid'], ret[0], self._revlog.filename))
+  >     return ret
+  > EOF
+
+  $ hg -R fromcorrupt --config lfs.usercache=emptycache verify -v --no-lfs \
+  >                   --config extensions.x=$TESTTMP/lfsrename.py
   repository uses revlog format 1
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
+  lfs blob sha256:66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e renamed large -> l
   checked 5 changesets with 10 changes to 4 files
 
 Verify will not try to download lfs blobs, if told not to by the config option
 
   $ hg -R fromcorrupt --config lfs.usercache=emptycache verify -v \
-  >                   --config verify.skipflags=8192
+  >                   --config verify.skipflags=8192 \
+  >                   --config extensions.x=$TESTTMP/lfsrename.py
   repository uses revlog format 1
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
+  lfs blob sha256:66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e renamed large -> l
   checked 5 changesets with 10 changes to 4 files
 
 Verify will copy/link all lfs objects into the local store that aren't already
