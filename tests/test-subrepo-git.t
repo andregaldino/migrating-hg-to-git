@@ -376,6 +376,15 @@ archive subrepos
   a
   s/g
 
+  $ hg -R ../tc archive -S ../lf_archive.tgz --prefix '.' \
+  >       --config extensions.largefiles= 2>/dev/null
+  $ tar -tzf ../lf_archive.tgz | sort | grep -v pax_global_header
+  .hg_archival.txt
+  .hgsub
+  .hgsubstate
+  a
+  s/g
+
 create nested repo
 
   $ cd ..
