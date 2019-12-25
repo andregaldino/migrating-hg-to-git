@@ -43,6 +43,7 @@ pub trait Matcher {
     /// visit_children_set is capable of recognizing this; some implementations
     /// are not).
     ///
+    /// ```text
     /// ```ignore
     /// '' -> {'foo', 'qux'}
     /// 'baz' -> set()
