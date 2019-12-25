@@ -19,6 +19,8 @@ pub use dirstate::{
 };
 mod filepatterns;
 pub mod matchers;
+pub mod revlog;
+pub use revlog::*;
 pub mod utils;
 
 use crate::utils::hg_path::HgPathBuf;
@@ -28,44 +30,12 @@ pub use filepatterns::{
 use std::collections::HashMap;
 use twox_hash::RandomXxHashBuilder64;
 
-/// Mercurial revision numbers
-///
-/// As noted in revlog.c, revision numbers are actually encoded in
-/// 4 bytes, and are liberally converted to ints, whence the i32
-pub type Revision = i32;
-
-/// Marker expressing the absence of a parent
-///
-/// Independently of the actual representation, `NULL_REVISION` is guaranteed
-/// to be smaller that all existing revisions.
-pub const NULL_REVISION: Revision = -1;
-
-/// Same as `mercurial.node.wdirrev`
-///
-/// This is also equal to `i32::max_value()`, but it's better to spell
-/// it out explicitely, same as in `mercurial.node`
-pub const WORKING_DIRECTORY_REVISION: Revision = 0x7fffffff;
-
-/// The simplest expression of what we need of Mercurial DAGs.
-pub trait Graph {
-    /// Return the two parents of the given `Revision`.
-    ///
-    /// Each of the parents can be independently `NULL_REVISION`
-    fn parents(&self, rev: Revision) -> Result<[Revision; 2], GraphError>;
-}
-
 pub type LineNumber = usize;
 
 /// Rust's default hasher is too slow because it tries to prevent collision
 /// attacks. We are not concerned about those: if an ill-minded person has
 /// write access to your repository, you have other issues.
 pub type FastHashMap<K, V> = HashMap<K, V, RandomXxHashBuilder64>;
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum GraphError {
-    ParentOutOfRange(Revision),
-    WorkingDirectoryUnsupported,
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DirstateParseError {
