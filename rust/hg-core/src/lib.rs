@@ -1,4 +1,5 @@
-// Copyright 2018 Georges Racinet <gracinet@anybox.fr>
+// Copyright 2018-2020 Georges Racinet <georges.racinet@octobus.net>
+//           and Mercurial contributors
 //
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
