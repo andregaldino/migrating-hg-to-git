@@ -17,6 +17,7 @@ use super::{
 };
 use std::fmt;
 use std::ops::Deref;
+use std::ops::Index;
 
 #[derive(Debug, PartialEq)]
 pub enum NodeMapError {
@@ -195,6 +196,14 @@ pub struct NodeTree {
     readonly: Box<dyn Deref<Target = [Block]> + Send>,
 }
 
+impl Index<usize> for NodeTree {
+    type Output = Block;
+
+    fn index(&self, i: usize) -> &Block {
+        &self.readonly[i]
+    }
+}
+
 /// Return `None` unless the `Node` for `rev` has given prefix in `index`.
 fn has_prefix_or_none<'p>(
     idx: &impl RevlogIndex,
@@ -213,6 +222,14 @@ fn has_prefix_or_none<'p>(
 }
 
 impl NodeTree {
+    fn len(&self) -> usize {
+        self.readonly.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Main working method for `NodeTree` searches
     ///
     /// This partial implementation lacks special cases for NULL_REVISION
@@ -220,14 +237,13 @@ impl NodeTree {
         &self,
         prefix: NodePrefixRef<'p>,
     ) -> Result<Option<Revision>, NodeMapError> {
-        let blocks: &[Block] = &*self.readonly;
-        if blocks.is_empty() {
+        if self.is_empty() {
             return Ok(None);
         }
-        let mut visit = blocks.len() - 1;
+        let mut visit = self.len() - 1;
         for i in 0..prefix.len() {
             let nybble = prefix.get_nybble(i);
-            match blocks[visit].get(nybble) {
+            match self[visit].get(nybble) {
                 Element::None => return Ok(None),
                 Element::Rev(r) => return Ok(Some(r)),
                 Element::Block(idx) => visit = idx,
