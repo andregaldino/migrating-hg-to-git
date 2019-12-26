@@ -1418,18 +1418,18 @@ def copy(ui, repo, pats, opts, rename=False):
     targets = {}
     after = opts.get(b"after")
     dryrun = opts.get(b"dry_run")
-    wctx = repo[None]
-    pctx = wctx.p1()
+    ctx = repo[None]
+    pctx = ctx.p1()
 
     uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
 
     def walkpat(pat):
         srcs = []
-        m = scmutil.match(wctx, [pat], opts, globbed=True)
-        for abs in wctx.walk(m):
+        m = scmutil.match(ctx, [pat], opts, globbed=True)
+        for abs in ctx.walk(m):
             rel = uipathfn(abs)
             exact = m.exact(abs)
-            if abs not in wctx:
+            if abs not in ctx:
                 if abs in pctx:
                     if not after:
                         if exact:
@@ -1582,13 +1582,13 @@ def copy(ui, repo, pats, opts, rename=False):
 
         # fix up dirstate
         scmutil.dirstatecopy(
-            ui, repo, wctx, abssrc, abstarget, dryrun=dryrun, cwd=cwd
+            ui, repo, ctx, abssrc, abstarget, dryrun=dryrun, cwd=cwd
         )
         if rename and not dryrun:
             if not after and srcexists and not samefile:
                 rmdir = repo.ui.configbool(b'experimental', b'removeemptydirs')
                 repo.wvfs.unlinkpath(abssrc, rmdir=rmdir)
-            wctx.forget([abssrc])
+            ctx.forget([abssrc])
 
     # pat: ossep
     # dest ossep
