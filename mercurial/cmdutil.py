@@ -1477,6 +1477,13 @@ def copy(ui, repo, pats, opts, rename=False):
 
         return
 
+    pats = scmutil.expandpats(pats)
+    if not pats:
+        raise error.Abort(_(b'no source or destination specified'))
+    if len(pats) == 1:
+        raise error.Abort(_(b'no destination specified'))
+    dest = pats.pop()
+
     if opts.get(b'at_rev'):
         raise error.Abort(_("--at-rev is only supported with --forget"))
 
@@ -1715,12 +1722,6 @@ def copy(ui, repo, pats, opts, rename=False):
                     res = lambda p: dest
         return res
 
-    pats = scmutil.expandpats(pats)
-    if not pats:
-        raise error.Abort(_(b'no source or destination specified'))
-    if len(pats) == 1:
-        raise error.Abort(_(b'no destination specified'))
-    dest = pats.pop()
     destdirexists = os.path.isdir(dest) and not os.path.islink(dest)
     if not destdirexists:
         if len(pats) > 1 or matchmod.patkind(pats[0]):
