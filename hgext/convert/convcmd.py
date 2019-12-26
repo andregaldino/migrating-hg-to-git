@@ -56,6 +56,36 @@ svn_source = subversion.svn_source
 orig_encoding = b'ascii'
 
 
+def readauthormap(ui, authorfile, authors=None):
+    if authors is None:
+        authors = {}
+    with open(authorfile, b'rb') as afile:
+        for line in afile:
+
+            line = line.strip()
+            if not line or line.startswith(b'#'):
+                continue
+
+            try:
+                srcauthor, dstauthor = line.split(b'=', 1)
+            except ValueError:
+                msg = _(b'ignoring bad line in author map file %s: %s\n')
+                ui.warn(msg % (authorfile, line.rstrip()))
+                continue
+
+            srcauthor = srcauthor.strip()
+            dstauthor = dstauthor.strip()
+            if authors.get(srcauthor) in (None, dstauthor):
+                msg = _(b'mapping author %s to %s\n')
+                ui.debug(msg % (srcauthor, dstauthor))
+                authors[srcauthor] = dstauthor
+                continue
+
+            m = _(b'overriding mapping for author %s, was %s, will be %s\n')
+            ui.status(m % (srcauthor, authors[srcauthor], dstauthor))
+    return authors
+
+
 def recode(s):
     if isinstance(s, pycompat.unicode):
         return s.encode(pycompat.sysstr(orig_encoding), 'replace')
@@ -448,32 +478,7 @@ class converter(object):
             ofile.close()
 
     def readauthormap(self, authorfile):
-        afile = open(authorfile, b'rb')
-        for line in afile:
-
-            line = line.strip()
-            if not line or line.startswith(b'#'):
-                continue
-
-            try:
-                srcauthor, dstauthor = line.split(b'=', 1)
-            except ValueError:
-                msg = _(b'ignoring bad line in author map file %s: %s\n')
-                self.ui.warn(msg % (authorfile, line.rstrip()))
-                continue
-
-            srcauthor = srcauthor.strip()
-            dstauthor = dstauthor.strip()
-            if self.authors.get(srcauthor) in (None, dstauthor):
-                msg = _(b'mapping author %s to %s\n')
-                self.ui.debug(msg % (srcauthor, dstauthor))
-                self.authors[srcauthor] = dstauthor
-                continue
-
-            m = _(b'overriding mapping for author %s, was %s, will be %s\n')
-            self.ui.status(m % (srcauthor, self.authors[srcauthor], dstauthor))
-
-        afile.close()
+        self.authors = readauthormap(self.ui, authorfile, self.authors)
 
     def cachecommit(self, rev):
         commit = self.source.getcommit(rev)
