@@ -287,8 +287,6 @@ class cg1unpacker(object):
         def revmap(x):
             return cl.rev(x)
 
-        changesets = 0
-
         try:
             # The transaction may already carry source information. In this
             # case we use the top level data. We overwrite the argument
