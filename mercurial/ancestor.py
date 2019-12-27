@@ -108,12 +108,12 @@ def ancestors(pfunc, *orignodes):
                 if p == nullrev:
                     continue
                 dp = depth[p]
-                nsp = sp = seen[p]
+                sp = seen[p]
                 if dp <= dv:
                     depth[p] = dv + 1
                     if sp != sv:
                         interesting[sv] += 1
-                        nsp = seen[p] = sv
+                        seen[p] = sv
                         if sp:
                             interesting[sp] -= 1
                             if interesting[sp] == 0:
