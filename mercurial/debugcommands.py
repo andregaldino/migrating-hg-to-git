@@ -331,9 +331,9 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
                     )
                 )
 
-        chunkdata = gen.changelogheader()
+        gen.changelogheader()
         showchunks(b"changelog")
-        chunkdata = gen.manifestheader()
+        gen.manifestheader()
         showchunks(b"manifest")
         for chunkdata in iter(gen.filelogheader, {}):
             fname = chunkdata[b'filename']
@@ -341,7 +341,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
     else:
         if isinstance(gen, bundle2.unbundle20):
             raise error.Abort(_(b'use debugbundle2 for this file'))
-        chunkdata = gen.changelogheader()
+        gen.changelogheader()
         for deltadata in gen.deltaiter():
             node, p1, p2, cs, deltabase, delta, flags = deltadata
             ui.write(b"%s%s\n" % (indent_string, hex(node)))
