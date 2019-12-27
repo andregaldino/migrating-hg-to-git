@@ -2220,9 +2220,6 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
 
     fm.end()
     if dostats:
-        # use a second formatter because the data are quite different, not sure
-        # how it flies with the templater.
-        fm = ui.formatter(b'perf', opts)
         entries = [
             ('nbrevs', 'number of revision covered'),
             ('nbmissingfiles', 'number of missing files at head'),
