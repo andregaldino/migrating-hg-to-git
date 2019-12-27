@@ -486,7 +486,7 @@ class hgwebdir(object):
             )
             return res.sendresponse()
         finally:
-            tmpl = None
+            del tmpl
 
     def makeindex(self, req, res, tmpl, subdir=b""):
         self.refresh()
