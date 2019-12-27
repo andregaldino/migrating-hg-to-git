@@ -172,7 +172,7 @@ class linelogtests(unittest.TestCase):
                 ll.replacelines_vec(rev, a1, a2, blines)
             else:
                 ll.replacelines(rev, a1, a2, b1, b2)
-            ar = ll.annotate(rev)
+            ll.annotate(rev)
             self.assertEqual(ll.annotateresult, lines)
         # Verify we can get back these states by annotating each rev
         for lines, rev, a1, a2, b1, b2, blines, usevec in _genedits(
