@@ -1431,8 +1431,8 @@ def movedirstate(repo, newctx, match=None):
     """
     oldctx = repo[b'.']
     ds = repo.dirstate
-    ds.setparents(newctx.node(), nullid)
     copies = dict(ds.copies())
+    ds.setparents(newctx.node(), nullid)
     s = newctx.status(oldctx, match=match)
     for f in s.modified:
         if ds[f] == b'r':
