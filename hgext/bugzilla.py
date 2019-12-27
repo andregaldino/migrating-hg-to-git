@@ -1099,7 +1099,6 @@ class bugzilla(object):
         the given changeset in their comments.
         '''
         start = 0
-        hours = 0.0
         bugs = {}
         bugmatch = self.bug_re.search(ctx.description(), start)
         fixmatch = self.fix_re.search(ctx.description(), start)
