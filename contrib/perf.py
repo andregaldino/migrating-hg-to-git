@@ -1878,7 +1878,6 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
 
 
 def _displaystats(ui, opts, entries, data):
-    pass
     # use a second formatter because the data are quite different, not sure
     # how it flies with the templater.
     fm = ui.formatter(b'perf-stats', opts)
