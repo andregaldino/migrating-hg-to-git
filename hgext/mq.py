@@ -2256,7 +2256,6 @@ class queue(object):
     def restore(self, repo, rev, delete=None, qupdate=None):
         desc = repo[rev].description().strip()
         lines = desc.splitlines()
-        i = 0
         datastart = None
         series = []
         applied = []
