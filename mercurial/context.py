@@ -1439,7 +1439,7 @@ class committablectx(basectx):
         return b
 
     def phase(self):
-        phase = phases.draft  # default phase to draft
+        phase = phases.newcommitphase(self._repo.ui)
         for p in self.parents():
             phase = max(phase, p.phase())
         return phase
