@@ -62,6 +62,7 @@ impl From<NodeData> for Node {
 #[derive(Debug, PartialEq)]
 pub enum NodeError {
     ExactLengthRequired(usize, String),
+    PrefixTooLong(String),
     HexError(FromHexError, String),
 }
 
@@ -119,17 +120,119 @@ impl Node {
     }
 }
 
-impl From<(FromHexError, &str)> for NodeError {
-    fn from(err_offender: (FromHexError, &str)) -> Self {
+impl<T: AsRef<str>> From<(FromHexError, T)> for NodeError {
+    fn from(err_offender: (FromHexError, T)) -> Self {
         let (err, offender) = err_offender;
         match err {
             FromHexError::InvalidStringLength => {
                 NodeError::ExactLengthRequired(
                     NODE_NYBBLES_LENGTH,
-                    offender.to_string(),
+                    offender.as_ref().to_owned(),
                 )
             }
-            _ => NodeError::HexError(err, offender.to_string()),
+            _ => NodeError::HexError(err, offender.as_ref().to_owned()),
+        }
+    }
+}
+
+/// The beginning of a binary revision SHA.
+///
+/// Since it can potentially come from an hexadecimal representation with
+/// odd length, it needs to carry around whether the last 4 bits are relevant
+/// or not.
+#[derive(Debug, PartialEq)]
+pub struct NodePrefix {
+    buf: Vec<u8>,
+    is_odd: bool,
+}
+
+impl NodePrefix {
+    /// Convert from hexadecimal string representation
+    ///
+    /// Similarly to `hex::decode`, can be used with Unicode string types
+    /// (`String`, `&str`) as well as bytes.
+    ///
+    /// To be used in FFI and I/O only, in order to facilitate future
+    /// changes of hash format.
+    pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Self, NodeError> {
+        let hex = hex.as_ref();
+        let len = hex.len();
+        if len > NODE_NYBBLES_LENGTH {
+            return Err(NodeError::PrefixTooLong(
+                String::from_utf8_lossy(hex).to_owned().to_string(),
+            ));
+        }
+
+        let is_odd = len % 2 == 1;
+        let even_part = if is_odd { &hex[..len - 1] } else { hex };
+        let mut buf: Vec<u8> = Vec::from_hex(&even_part)
+            .map_err(|e| (e, String::from_utf8_lossy(hex)))?;
+
+        if is_odd {
+            let latest_char = char::from(hex[len - 1]);
+            let latest_nybble = latest_char.to_digit(16).ok_or_else(|| {
+                (
+                    FromHexError::InvalidHexCharacter {
+                        c: latest_char,
+                        index: len - 1,
+                    },
+                    String::from_utf8_lossy(hex),
+                )
+            })? as u8;
+            buf.push(latest_nybble << 4);
+        }
+        Ok(NodePrefix { buf, is_odd })
+    }
+
+    pub fn borrow(&self) -> NodePrefixRef {
+        NodePrefixRef {
+            buf: &self.buf,
+            is_odd: self.is_odd,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct NodePrefixRef<'a> {
+    buf: &'a [u8],
+    is_odd: bool,
+}
+
+impl<'a> NodePrefixRef<'a> {
+    pub fn len(&self) -> usize {
+        if self.is_odd {
+            self.buf.len() * 2 - 1
+        } else {
+            self.buf.len() * 2
+        }
+    }
+
+    pub fn is_prefix_of(&self, node: &Node) -> bool {
+        if self.is_odd {
+            let buf = self.buf;
+            let last_pos = buf.len() - 1;
+            node.data.starts_with(buf.split_at(last_pos).0)
+                && node.data[last_pos] >> 4 == buf[last_pos] >> 4
+        } else {
+            node.data.starts_with(self.buf)
+        }
+    }
+
+    /// Retrieve the `i`th half-byte from the prefix.
+    ///
+    /// This is also the `i`th hexadecimal digit in numeric form,
+    /// also called a [nybble](https://en.wikipedia.org/wiki/Nibble).
+    pub fn get_nybble(&self, i: usize) -> u8 {
+        get_nybble(self.buf, i)
+    }
+}
+
+/// A shortcut for full `Node` references
+impl<'a> From<&'a Node> for NodePrefixRef<'a> {
+    fn from(node: &'a Node) -> Self {
+        NodePrefixRef {
+            buf: &node.data,
+            is_odd: false,
         }
     }
 }
@@ -187,5 +290,75 @@ mod tests {
     #[test]
     fn test_node_encode_hex() {
         assert_eq!(sample_node().encode_hex(), sample_node_hex());
+    }
+
+    #[test]
+    fn test_prefix_from_hex() -> Result<(), NodeError> {
+        assert_eq!(
+            NodePrefix::from_hex("0e1")?,
+            NodePrefix {
+                buf: vec![14, 16],
+                is_odd: true
+            }
+        );
+        assert_eq!(
+            NodePrefix::from_hex("0e1a")?,
+            NodePrefix {
+                buf: vec![14, 26],
+                is_odd: false
+            }
+        );
+
+        // checking limit case
+        let node_as_vec = sample_node().data.iter().cloned().collect();
+        assert_eq!(
+            NodePrefix::from_hex(sample_node_hex())?,
+            NodePrefix {
+                buf: node_as_vec,
+                is_odd: false
+            }
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_prefix_from_hex_errors() {
+        assert_eq!(
+            NodePrefix::from_hex("testgr"),
+            Err(NodeError::HexError(
+                FromHexError::InvalidHexCharacter { c: 't', index: 0 },
+                "testgr".to_string()
+            ))
+        );
+        let mut long = NULL_NODE.encode_hex();
+        long.push('c');
+        match NodePrefix::from_hex(&long)
+            .expect_err("should be refused as too long")
+        {
+            NodeError::PrefixTooLong(s) => assert_eq!(s, long),
+            err => panic!(format!("Should have been TooLong, got {:?}", err)),
+        }
+    }
+
+    #[test]
+    fn test_is_prefix_of() -> Result<(), NodeError> {
+        let mut node_data = [0; NODE_BYTES_LENGTH];
+        node_data[0] = 0x12;
+        node_data[1] = 0xca;
+        let node = Node::from(node_data);
+        assert!(NodePrefix::from_hex("12")?.borrow().is_prefix_of(&node));
+        assert!(!NodePrefix::from_hex("1a")?.borrow().is_prefix_of(&node));
+        assert!(NodePrefix::from_hex("12c")?.borrow().is_prefix_of(&node));
+        assert!(!NodePrefix::from_hex("12d")?.borrow().is_prefix_of(&node));
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_nybble() -> Result<(), NodeError> {
+        let prefix = NodePrefix::from_hex("dead6789cafe")?;
+        assert_eq!(prefix.borrow().get_nybble(0), 13);
+        assert_eq!(prefix.borrow().get_nybble(7), 9);
+        Ok(())
     }
 }

@@ -7,7 +7,7 @@
 
 pub mod node;
 pub mod nodemap;
-pub use node::{Node, NodeError};
+pub use node::{Node, NodeError, NodePrefix, NodePrefixRef};
 
 /// Mercurial revision numbers
 ///
