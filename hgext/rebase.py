@@ -787,7 +787,6 @@ class rebaseruntime(object):
                 cleanup = False
 
             if cleanup:
-                shouldupdate = False
                 if rebased:
                     strippoints = [
                         c.node() for c in repo.set(b'roots(%ld)', rebased)
