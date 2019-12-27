@@ -2224,7 +2224,7 @@ class overlayworkingctx(committablectx):
         ]
 
     def p1copies(self):
-        copies = self._repo._wrappedctx.p1copies().copy()
+        copies = {}
         narrowmatch = self._repo.narrowmatch()
         for f in self._cache.keys():
             if not narrowmatch(f):
@@ -2236,7 +2236,7 @@ class overlayworkingctx(committablectx):
         return copies
 
     def p2copies(self):
-        copies = self._repo._wrappedctx.p2copies().copy()
+        copies = {}
         narrowmatch = self._repo.narrowmatch()
         for f in self._cache.keys():
             if not narrowmatch(f):
