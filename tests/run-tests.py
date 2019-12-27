@@ -1839,7 +1839,7 @@ class TTest(Test):
                 cmd = rawcmd.split()
                 toggletrace(rawcmd)
                 if len(cmd) == 2 and cmd[0] == b'cd':
-                    l = b'  $ cd %s || exit 1\n' % cmd[1]
+                    rawcmd = b'cd %s || exit 1\n' % cmd[1]
                 script.append(rawcmd)
             elif l.startswith(b'  > '):  # continuations
                 after.setdefault(prepos, []).append(l)
