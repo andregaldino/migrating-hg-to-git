@@ -191,16 +191,31 @@ impl fmt::Debug for Block {
     }
 }
 
-/// A 16-radix tree with the root block at the end
+/// A mutable 16-radix tree with the root block logically at the end
+///
+/// Because of the append only nature of our node trees, we need to
+/// keep the original untouched and store new blocks separately.
+///
+/// The mutable root `Block` is kept apart so that we don't have to rebump
+/// it on each insertion.
 pub struct NodeTree {
     readonly: Box<dyn Deref<Target = [Block]> + Send>,
+    growable: Vec<Block>,
+    root: Block,
 }
 
 impl Index<usize> for NodeTree {
     type Output = Block;
 
     fn index(&self, i: usize) -> &Block {
-        &self.readonly[i]
+        let ro_len = self.readonly.len();
+        if i < ro_len {
+            &self.readonly[i]
+        } else if i == ro_len + self.growable.len() {
+            &self.root
+        } else {
+            &self.growable[i - ro_len]
+        }
     }
 }
 
@@ -222,12 +237,32 @@ fn has_prefix_or_none<'p>(
 }
 
 impl NodeTree {
-    fn len(&self) -> usize {
-        self.readonly.len()
+    /// Initiate a NodeTree from an immutable slice-like of `Block`
+    ///
+    /// We keep `readonly` and clone its root block if it isn't empty.
+    fn new(readonly: Box<dyn Deref<Target = [Block]> + Send>) -> Self {
+        let root = readonly
+            .last()
+            .map(|b| b.clone())
+            .unwrap_or_else(|| Block::new());
+        NodeTree {
+            readonly: readonly,
+            growable: Vec::new(),
+            root: root,
+        }
     }
 
+    /// Total number of blocks
+    fn len(&self) -> usize {
+        self.readonly.len() + self.growable.len() + 1
+    }
+
+    /// Implemented for completeness
+    ///
+    /// A `NodeTree` always has at least the mutable root block.
+    #[allow(dead_code)]
     fn is_empty(&self) -> bool {
-        self.len() == 0
+        false
     }
 
     /// Main working method for `NodeTree` searches
@@ -237,9 +272,6 @@ impl NodeTree {
         &self,
         prefix: NodePrefixRef<'p>,
     ) -> Result<Option<Revision>, NodeMapError> {
-        if self.is_empty() {
-            return Ok(None);
-        }
         let mut visit = self.len() - 1;
         for i in 0..prefix.len() {
             let nybble = prefix.get_nybble(i);
@@ -255,16 +287,18 @@ impl NodeTree {
 
 impl From<Vec<Block>> for NodeTree {
     fn from(vec: Vec<Block>) -> Self {
-        NodeTree {
-            readonly: Box::new(vec),
-        }
+        Self::new(Box::new(vec))
     }
 }
 
 impl fmt::Debug for NodeTree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let blocks: &[Block] = &*self.readonly;
-        write!(f, "readonly: {:?}", blocks)
+        let readonly: &[Block] = &*self.readonly;
+        write!(
+            f,
+            "readonly: {:?}, growable: {:?}, root: {:?}",
+            readonly, self.growable, self.root
+        )
     }
 }
 
@@ -365,7 +399,9 @@ mod tests {
         assert_eq!(
             format!("{:?}", nt),
             "readonly: \
-             [{0: Rev(9)}, {0: Rev(0), 1: Rev(9)}, {0: Block(1), 1: Rev(1)}]"
+             [{0: Rev(9)}, {0: Rev(0), 1: Rev(9)}, {0: Block(1), 1: Rev(1)}], \
+             growable: [], \
+             root: {0: Block(1), 1: Rev(1)}",
         );
     }
 
@@ -374,7 +410,7 @@ mod tests {
         let mut idx: TestIndex = HashMap::new();
         pad_insert(&mut idx, 1, "1234deadcafe");
 
-        let nt = NodeTree::from(vec![block![1: Rev(1)]]);
+        let nt = NodeTree::from(vec![block! {1: Rev(1)}]);
         assert_eq!(nt.find_hex(&idx, "1")?, Some(1));
         assert_eq!(nt.find_hex(&idx, "12")?, Some(1));
         assert_eq!(nt.find_hex(&idx, "1234de")?, Some(1));
@@ -400,5 +436,26 @@ mod tests {
         assert_eq!(nt.find_hex(&idx, "01"), Ok(Some(9)));
         assert_eq!(nt.find_hex(&idx, "00"), Ok(Some(0)));
         assert_eq!(nt.find_hex(&idx, "00a"), Ok(Some(0)));
+    }
+
+    #[test]
+    fn test_mutated_find() -> Result<(), NodeMapError> {
+        let mut idx = TestIndex::new();
+        pad_insert(&mut idx, 9, "012");
+        pad_insert(&mut idx, 0, "00a");
+        pad_insert(&mut idx, 2, "cafe");
+        pad_insert(&mut idx, 3, "15");
+        pad_insert(&mut idx, 1, "10");
+
+        let nt = NodeTree {
+            readonly: sample_nodetree().readonly,
+            growable: vec![block![0: Rev(1), 5: Rev(3)]],
+            root: block![0: Block(1), 1:Block(3), 12: Rev(2)],
+        };
+        assert_eq!(nt.find_hex(&idx, "10")?, Some(1));
+        assert_eq!(nt.find_hex(&idx, "c")?, Some(2));
+        assert_eq!(nt.find_hex(&idx, "00")?, Some(0));
+        assert_eq!(nt.find_hex(&idx, "01")?, Some(9));
+        Ok(())
     }
 }
