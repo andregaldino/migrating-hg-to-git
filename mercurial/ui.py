@@ -2032,7 +2032,10 @@ class ui(object):
             self.log(
                 b'develwarn', b'%s at: %s:%d (%s)\n', msg, fname, lineno, fmsg
             )
-            curframe = calframe = None  # avoid cycles
+
+            # avoid cycles
+            del curframe
+            del calframe
 
     def deprecwarn(self, msg, version, stacklevel=2):
         """issue a deprecation warning
