@@ -1497,16 +1497,13 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
         labels=[b'dest', b'source'],
         wc=wctx,
     )
-    destctx = repo[dest]
     if collapse:
-        copies.graftcopies(repo, wctx, ctx, destctx)
+        copies.graftcopies(wctx, ctx, repo[dest])
     else:
         # If we're not using --collapse, we need to
         # duplicate copies between the revision we're
-        # rebasing and its first parent, but *not*
-        # duplicate any copies that have already been
-        # performed in the destination.
-        copies.graftcopies(repo, wctx, ctx, ctx.p1(), skip=destctx)
+        # rebasing and its first parent.
+        copies.graftcopies(wctx, ctx, ctx.p1())
     return stats
 
 

@@ -31,4 +31,5 @@
 
  * `copies.duplicatecopies()` was renamed to
    `copies.graftcopies()`. Its arguments changed from revision numbers
-   to context objects.
+   to context objects. It also lost its `repo` and `skip` arguments
+   (they should no longer be needed).

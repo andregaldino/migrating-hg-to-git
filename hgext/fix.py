@@ -734,8 +734,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
     extra[b'fix_source'] = ctx.hex()
 
     wctx = context.overlayworkingctx(repo)
-    newp1ctx = repo[newp1node]
-    wctx.setbase(newp1ctx)
+    wctx.setbase(repo[newp1node])
     merge.update(
         repo,
         ctx.rev(),
@@ -745,7 +744,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         mergeancestor=False,
         wc=wctx,
     )
-    copies.graftcopies(repo, wctx, ctx, ctx.p1(), skip=newp1ctx)
+    copies.graftcopies(wctx, ctx, ctx.p1())
 
     for path in filedata.keys():
         fctx = ctx[path]
