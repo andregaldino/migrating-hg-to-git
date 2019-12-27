@@ -209,7 +209,7 @@ def add(ui, repo, *args, **kwargs):
 
 def am(ui, repo, *args, **kwargs):
     cmdoptions = []
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
     cmd = Command(b'import')
     ui.status(bytes(cmd), b"\n")
 
@@ -1139,7 +1139,7 @@ def svn(ui, repo, *args, **kwargs):
 
 def svndcommit(ui, repo, *args, **kwargs):
     cmdoptions = []
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
 
     cmd = Command(b'push')
 
@@ -1148,7 +1148,7 @@ def svndcommit(ui, repo, *args, **kwargs):
 
 def svnfetch(ui, repo, *args, **kwargs):
     cmdoptions = []
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
 
     cmd = Command(b'pull')
     cmd.append(b'default-push')
@@ -1173,7 +1173,7 @@ def svnrebase(ui, repo, *args, **kwargs):
     cmdoptions = [
         (b'l', b'local', None, b''),
     ]
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
 
     pullcmd = Command(b'pull')
     pullcmd.append(b'default-push')
