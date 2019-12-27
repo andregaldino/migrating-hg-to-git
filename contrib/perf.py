@@ -2048,8 +2048,8 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
                 data['p1.time'] = end - begin
                 begin = util.timer()
                 p2renames = copies.pathcopies(b, p2)
-                data['p2.time'] = end - begin
                 end = util.timer()
+                data['p2.time'] = end - begin
                 data['p1.renamedfiles'] = len(p1renames)
                 data['p2.renamedfiles'] = len(p2renames)
 
