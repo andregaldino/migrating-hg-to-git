@@ -272,16 +272,81 @@ impl NodeTree {
         &self,
         prefix: NodePrefixRef<'p>,
     ) -> Result<Option<Revision>, NodeMapError> {
-        let mut visit = self.len() - 1;
-        for i in 0..prefix.len() {
-            let nybble = prefix.get_nybble(i);
-            match self[visit].get(nybble) {
-                Element::None => return Ok(None),
-                Element::Rev(r) => return Ok(Some(r)),
-                Element::Block(idx) => visit = idx,
+        for visit_item in self.visit(prefix) {
+            if let Some(opt) = visit_item.final_revision() {
+                return Ok(opt);
             }
         }
         Err(NodeMapError::MultipleResults)
+    }
+
+    fn visit<'n, 'p>(
+        &'n self,
+        prefix: NodePrefixRef<'p>,
+    ) -> NodeTreeVisitor<'n, 'p> {
+        NodeTreeVisitor {
+            nt: self,
+            prefix: prefix,
+            visit: self.len() - 1,
+            nybble_idx: 0,
+            done: false,
+        }
+    }
+}
+
+struct NodeTreeVisitor<'n, 'p> {
+    nt: &'n NodeTree,
+    prefix: NodePrefixRef<'p>,
+    visit: usize,
+    nybble_idx: usize,
+    done: bool,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+struct NodeTreeVisitItem {
+    block_idx: usize,
+    nybble: u8,
+    element: Element,
+}
+
+impl<'n, 'p> Iterator for NodeTreeVisitor<'n, 'p> {
+    type Item = NodeTreeVisitItem;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done || self.nybble_idx >= self.prefix.len() {
+            return None;
+        }
+
+        let nybble = self.prefix.get_nybble(self.nybble_idx);
+        self.nybble_idx += 1;
+
+        let visit = self.visit;
+        let element = self.nt[visit].get(nybble);
+        if let Element::Block(idx) = element {
+            self.visit = idx;
+        } else {
+            self.done = true;
+        }
+
+        Some(NodeTreeVisitItem {
+            block_idx: visit,
+            nybble: nybble,
+            element: element,
+        })
+    }
+}
+
+impl NodeTreeVisitItem {
+    // Return `Some(opt)` if this item is final, with `opt` being the
+    // `Revision` that it may represent.
+    //
+    // If the item is not terminal, return `None`
+    fn final_revision(&self) -> Option<Option<Revision>> {
+        match self.element {
+            Element::Block(_) => None,
+            Element::Rev(r) => Some(Some(r)),
+            Element::None => Some(None),
+        }
     }
 }
 
