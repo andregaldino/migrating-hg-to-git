@@ -2605,7 +2605,8 @@ def graft(
     # to copy commits), and 2) informs update that the incoming changes are
     # newer than the destination so it doesn't prompt about "remote changed foo
     # which local deleted".
-    pctx = repo[b'.']
+    wctx = repo[None]
+    pctx = wctx.p1()
     mergeancestor = repo.changelog.isancestor(pctx.node(), ctx.node())
 
     stats = update(
@@ -2634,7 +2635,7 @@ def graft(
         repo.setparents(pctx.node(), pother)
         repo.dirstate.write(repo.currenttransaction())
         # fix up dirstate for copies and renames
-        copies.duplicatecopies(repo, repo[None], ctx.rev(), base.rev())
+        copies.duplicatecopies(repo, wctx, ctx.rev(), base.rev())
     return stats
 
 
