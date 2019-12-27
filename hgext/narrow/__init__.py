@@ -8,12 +8,6 @@
 
 from __future__ import absolute_import
 
-# Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
-# extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
-# be specifying the version(s) of Mercurial they are tested with, or
-# leave the attribute unspecified.
-testedwith = b'ships-with-hg-core'
-
 from mercurial import (
     localrepo,
     registrar,
@@ -28,6 +22,12 @@ from . import (
     narrowtemplates,
     narrowwirepeer,
 )
+
+# Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
+# extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
+# be specifying the version(s) of Mercurial they are tested with, or
+# leave the attribute unspecified.
+testedwith = b'ships-with-hg-core'
 
 configtable = {}
 configitem = registrar.configitem(configtable)
