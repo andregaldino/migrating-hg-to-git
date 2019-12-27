@@ -308,7 +308,7 @@ Commands:
         if len(a.verbs):
             v = b', '.join(sorted(a.verbs, key=lambda v: len(v)))
         actions.append(b" %s = %s" % (v, lines[0]))
-        actions.extend([b'  %s' for l in lines[1:]])
+        actions.extend([b'  %s'] * (len(lines) - 1))
 
     for v in (
         sorted(primaryactions)
