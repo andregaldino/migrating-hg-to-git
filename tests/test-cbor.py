@@ -1230,7 +1230,7 @@ class BufferingDecoderTests(TestCase):
             True,
             False,
             None,
-            [None for i in range(128)],
+            [None] * 128,
         ]
 
         encoded = b''.join(cborutil.streamencode(source))
