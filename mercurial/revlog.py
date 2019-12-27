@@ -1772,10 +1772,8 @@ class revlog(object):
         if node == nullid:
             return b"", {}
 
-        # The text as stored inside the revlog. Might be the revision or might
-        # need to be processed to retrieve the revision.
-        rawtext = None
-
+        # ``rawtext`` is the text as stored inside the revlog. Might be the
+        # revision or might need to be processed to retrieve the revision.
         rev, rawtext, validated = self._rawtext(node, rev, _df=_df)
 
         if raw and validated:
