@@ -74,7 +74,6 @@ def _doannotate(fctx, follow=True, diffopts=None):
     may raise Exception, and always return line numbers.
     """
     master = _getmaster(fctx)
-    annotated = contents = None
 
     with context.fctxannotatecontext(fctx, follow, diffopts) as ac:
         try:
