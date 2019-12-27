@@ -506,7 +506,6 @@ class Bunser(object):
 
 
 def _pdu_info_helper(buf):
-    bser_version = -1
     if buf[0:2] == EMPTY_HEADER[0:2]:
         bser_version = 1
         bser_capabilities = 0
