@@ -559,7 +559,7 @@ def annotate(ui, repo, *pats, **opts):
                 ml = max(sizes)
                 formats.append([sep + b' ' * (ml - w) + b'%s' for w in sizes])
             else:
-                formats.append([b'%s' for x in l])
+                formats.append([b'%s'] * len(l))
             pieces.append(l)
 
         for f, p, n in zip(zip(*formats), zip(*pieces), lines):
