@@ -118,7 +118,6 @@ two renames actually converge to the same name (thus no actual divergence).
   grafting 2:f58c7e2b28fa "C0"
   merging f1a and f1b to f1a
   merging f5a
-  warning: can't find ancestor for 'f5a' copied from 'f5b'!
   $ hg status --change .
   M f1a
   M f5a
@@ -137,7 +136,6 @@ Test the cases A.0 (f4x) and A.6 (f3x)
   note: possible conflict - f3b was renamed multiple times to:
    f3a
    f3d
-  warning: can't find ancestor for 'f3d' copied from 'f3b'!
 
 Set up the repository for some further tests
 
@@ -224,7 +222,6 @@ Test the cases A.1 (f4x) and A.7 (f3x).
    f3d
    f3e
   merging f4e and f4a to f4e
-  warning: can't find ancestor for 'f3d' copied from 'f3b'!
 
   $ hg cat f2c
   c2e
@@ -232,7 +229,6 @@ Test the cases A.1 (f4x) and A.7 (f3x).
 Test the case A.5 (move case, f1x).
 
   $ hg up -q "desc("C0")"
-BROKEN: Shouldn't get the warning about missing ancestor
   $ HGEDITOR="echo E1 >" hg graft -r 'desc("E0")' --edit
   grafting 6:6bd1736cab86 "E0"
   note: possible conflict - f1a was renamed multiple times to:
@@ -243,18 +239,14 @@ BROKEN: Shouldn't get the warning about missing ancestor
    f3e
   merging f2c and f2a to f2c
   merging f5a and f5b to f5b
-  warning: can't find ancestor for 'f1e' copied from 'f1a'!
-  warning: can't find ancestor for 'f3e' copied from 'f3a'!
   $ cat f1e
   c1a
 
 Test the case A.5 (copy case, f1x).
 
   $ hg up -q "desc("C0")"
-BROKEN: Shouldn't get the warning about missing ancestor
   $ HGEDITOR="echo F1 >" hg graft -r 'desc("F0")' --edit
   grafting 7:d376ab0d7fda "F0"
-  warning: can't find ancestor for 'f1f' copied from 'f1a'!
 BROKEN: f1f should be marked a copy from f1b
   $ hg st --copies --change .
   A f1f
@@ -270,7 +262,6 @@ BROKEN: We should get a merge conflict from the 3-way merge between f1b in C0
 "c1a")
   $ HGEDITOR="echo G1 >" hg graft -r 'desc("G0")' --edit
   grafting 8:ba67f08fb15a "G0"
-  warning: can't find ancestor for 'f1g' copied from 'f1a'!
 
 Check the results of the grafts tested
 

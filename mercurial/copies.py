@@ -875,11 +875,12 @@ def graftcopies(repo, wctx, ctx, base, skip=None):
         # of the function is much faster (and is required for carrying copy
         # metadata across the rebase anyway).
         exclude = pathcopies(base, skip)
-    for dst, src in pycompat.iteritems(pathcopies(base, ctx)):
+    new_copies = pathcopies(base, ctx)
+    _filter(wctx.p1(), wctx, new_copies)
+    for dst, src in pycompat.iteritems(new_copies):
         if dst in exclude:
             continue
-        if dst in wctx:
-            wctx[dst].markcopied(src)
+        wctx[dst].markcopied(src)
 
 
 def computechangesetfilesadded(ctx):

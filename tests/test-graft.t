@@ -493,7 +493,6 @@ Graft with --log
   $ hg up -Cq 1
   $ hg graft 3 --log -u foo
   grafting 3:4c60f11aa304 "3"
-  warning: can't find ancestor for 'c' copied from 'b'!
   $ hg log --template '{rev}:{node|short} {parents} {desc}\n' -r tip
   14:0c921c65ef1e 1:5d205f8b35b6  3
   (grafted from 4c60f11aa304a54ae1c199feb94e7fc771e51ed8)
@@ -753,12 +752,7 @@ Transplants of grafts can find a destination...
    branchmerge: True, force: True, partial: False
    ancestor: b592ea63bb0c, local: 7e61b508e709+, remote: 7a4785234d87
   starting 4 threads for background file closing (?)
-  committing files:
-  b
-  warning: can't find ancestor for 'b' copied from 'a'!
-  reusing manifest from p1 (listed files actually unchanged)
-  committing changelog
-  updating the branch cache
+  note: graft of 13:7a4785234d87 created no changes to commit
   $ hg log -r 'destination(13)'
 All copies of a cset
   $ hg log -r 'origin(13) or destination(origin(13))'
@@ -785,12 +779,6 @@ All copies of a cset
   
   changeset:   21:7e61b508e709
   branch:      dev
-  user:        foo
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     2
-  
-  changeset:   22:3a4e92d81b97
-  branch:      dev
   tag:         tip
   user:        foo
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -809,27 +797,28 @@ graft with --force (still doesn't graft merges)
   $ hg graft 19 0 6
   skipping ungraftable merge revision 6
   skipping ancestor revision 0:68795b066622
-  skipping already grafted revision 19:9627f653b421 (22:3a4e92d81b97 also has origin 2:5c095ad7e90f)
-  [255]
+  grafting 19:9627f653b421 "2"
+  merging b
+  note: graft of 19:9627f653b421 created no changes to commit
   $ hg graft 19 0 6 --force
   skipping ungraftable merge revision 6
   grafting 19:9627f653b421 "2"
   merging b
-  warning: can't find ancestor for 'b' copied from 'a'!
+  note: graft of 19:9627f653b421 created no changes to commit
   grafting 0:68795b066622 "0"
 
 graft --force after backout
 
   $ echo abc > a
-  $ hg ci -m 26
-  $ hg backout 26
+  $ hg ci -m 24
+  $ hg backout 24
   reverting a
-  changeset 27:e25e17192dc4 backs out changeset 26:44f862488a35
-  $ hg graft 26
-  skipping ancestor revision 26:44f862488a35
+  changeset 25:71c4e63d4f98 backs out changeset 24:2e7ea477be26
+  $ hg graft 24
+  skipping ancestor revision 24:2e7ea477be26
   [255]
-  $ hg graft 26 --force
-  grafting 26:44f862488a35 "26"
+  $ hg graft 24 --force
+  grafting 24:2e7ea477be26 "24"
   merging a
   $ cat a
   abc
@@ -837,9 +826,9 @@ graft --force after backout
 graft --continue after --force
 
   $ echo def > a
-  $ hg ci -m 29
-  $ hg graft 26 --force --tool internal:fail
-  grafting 26:44f862488a35 "26"
+  $ hg ci -m 27
+  $ hg graft 24 --force --tool internal:fail
+  grafting 24:2e7ea477be26 "24"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
   [255]
@@ -852,7 +841,7 @@ graft --continue after --force
   (no more unresolved files)
   continue: hg graft --continue
   $ hg graft -c
-  grafting 26:44f862488a35 "26"
+  grafting 24:2e7ea477be26 "24"
   $ cat a
   abc
 
@@ -869,12 +858,12 @@ but do some destructive editing of the repo:
 
 Empty graft
 
-  $ hg up -qr 24
+  $ hg up -qr 22
   $ hg tag -f something
-  $ hg graft -qr 25
-  $ hg graft -f 25
-  grafting 25:bd0c98709948 "26"
-  note: graft of 25:bd0c98709948 created no changes to commit
+  $ hg graft -qr 23
+  $ hg graft -f 23
+  grafting 23:72d9c7c75bcc "24"
+  note: graft of 23:72d9c7c75bcc created no changes to commit
 
   $ cd ..
 
