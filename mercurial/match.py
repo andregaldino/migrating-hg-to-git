@@ -945,7 +945,7 @@ class subdirmatcher(basematcher):
     The paths are remapped to remove/insert the path as needed:
 
     >>> from . import pycompat
-    >>> m1 = match(util.localpath(b'/root'), b'', [b'a.txt', b'sub/b.txt'])
+    >>> m1 = match(util.localpath(b'/root'), b'', [b'a.txt', b'sub/b.txt'], auditor=lambda name: None)
     >>> m2 = subdirmatcher(b'sub', m1)
     >>> m2(b'a.txt')
     False
