@@ -52,6 +52,7 @@ contrib/python-zstandard/zstd/compress/zstd_compress_literals.c
 contrib/python-zstandard/zstd/compress/zstd_compress_literals.h
 contrib/python-zstandard/zstd/compress/zstd_compress_sequences.c
 contrib/python-zstandard/zstd/compress/zstd_compress_sequences.h
+contrib/python-zstandard/zstd/compress/zstd_cwksp.h
 contrib/python-zstandard/zstd/compress/zstd_double_fast.c
 contrib/python-zstandard/zstd/compress/zstd_double_fast.h
 contrib/python-zstandard/zstd/compress/zstd_fast.c
