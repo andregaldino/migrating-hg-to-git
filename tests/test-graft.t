@@ -797,19 +797,12 @@ All copies of a cset
   summary:     2
   
 
-graft works on complex revset
+graft skips ancestors
 
-  $ hg graft 'origin(13) or destination(origin(13))'
+  $ hg graft 21 3
   skipping ancestor revision 21:7e61b508e709
-  skipping ancestor revision 22:3a4e92d81b97
-  skipping revision 2:5c095ad7e90f (already grafted to 22:3a4e92d81b97)
-  grafting 7:ef0ef43d49e7 "2"
-  warning: can't find ancestor for 'b' copied from 'a'!
-  grafting 13:7a4785234d87 "2"
-  warning: can't find ancestor for 'b' copied from 'a'!
-  grafting 19:9627f653b421 "2"
-  merging b
-  warning: can't find ancestor for 'b' copied from 'a'!
+  grafting 3:4c60f11aa304 "3"
+  merging b and c to c
 
 graft with --force (still doesn't graft merges)
 
@@ -828,15 +821,15 @@ graft with --force (still doesn't graft merges)
 graft --force after backout
 
   $ echo abc > a
-  $ hg ci -m 28
-  $ hg backout 28
+  $ hg ci -m 26
+  $ hg backout 26
   reverting a
-  changeset 29:9d95e865b00c backs out changeset 28:cc20d29aec8d
-  $ hg graft 28
-  skipping ancestor revision 28:cc20d29aec8d
+  changeset 27:e25e17192dc4 backs out changeset 26:44f862488a35
+  $ hg graft 26
+  skipping ancestor revision 26:44f862488a35
   [255]
-  $ hg graft 28 --force
-  grafting 28:cc20d29aec8d "28"
+  $ hg graft 26 --force
+  grafting 26:44f862488a35 "26"
   merging a
   $ cat a
   abc
@@ -844,9 +837,9 @@ graft --force after backout
 graft --continue after --force
 
   $ echo def > a
-  $ hg ci -m 31
-  $ hg graft 28 --force --tool internal:fail
-  grafting 28:cc20d29aec8d "28"
+  $ hg ci -m 29
+  $ hg graft 26 --force --tool internal:fail
+  grafting 26:44f862488a35 "26"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
   [255]
@@ -859,7 +852,7 @@ graft --continue after --force
   (no more unresolved files)
   continue: hg graft --continue
   $ hg graft -c
-  grafting 28:cc20d29aec8d "28"
+  grafting 26:44f862488a35 "26"
   $ cat a
   abc
 
@@ -876,12 +869,12 @@ but do some destructive editing of the repo:
 
 Empty graft
 
-  $ hg up -qr 26
+  $ hg up -qr 24
   $ hg tag -f something
-  $ hg graft -qr 27
-  $ hg graft -f 27
-  grafting 27:17d42b8f5d50 "28"
-  note: graft of 27:17d42b8f5d50 created no changes to commit
+  $ hg graft -qr 25
+  $ hg graft -f 25
+  grafting 25:bd0c98709948 "26"
+  note: graft of 25:bd0c98709948 created no changes to commit
 
   $ cd ..
 
