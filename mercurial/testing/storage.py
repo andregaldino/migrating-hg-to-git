@@ -964,7 +964,7 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(error.StorageError):
             f.rawdata(node1)
 
-    def testbadnoderevisionraw(self):
+    def testbadnoderevision(self):
         # Like above except we test read() first to isolate revision caching
         # behavior.
         f = self._makefilefn()
