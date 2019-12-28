@@ -593,7 +593,7 @@ def mapname(mailmap, author):
     )
 
 
-_correctauthorformat = remod.compile(br'^[^<]+\s\<[^<>]+@[^<>]+\>$')
+_correctauthorformat = remod.compile(br'^[^<]+\s<[^<>]+@[^<>]+>$')
 
 
 def isauthorwellformed(author):

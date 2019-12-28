@@ -643,7 +643,7 @@ class svn_source(converter_source):
         if not re.match(
             r'svn:[0-9a-f]{8,8}-[0-9a-f]{4,4}-'
             r'[0-9a-f]{4,4}-[0-9a-f]{4,4}-[0-9a-f]'
-            r'{12,12}(.*)\@[0-9]+$',
+            r'{12,12}(.*)@[0-9]+$',
             revstr,
         ):
             raise error.Abort(
@@ -1303,7 +1303,7 @@ class svn_sink(converter_sink, commandline):
             self.wc = os.path.realpath(path)
             self.run0(b'update')
         else:
-            if not re.search(br'^(file|http|https|svn|svn\+ssh)\://', path):
+            if not re.search(br'^(file|http|https|svn|svn\+ssh)://', path):
                 path = os.path.realpath(path)
                 if os.path.isdir(os.path.dirname(path)):
                     if not os.path.exists(
