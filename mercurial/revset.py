@@ -2025,9 +2025,7 @@ def remote(repo, subset, x):
         dest = getstring(l[1], _(b"remote requires a repository path"))
     dest = repo.ui.expandpath(dest or b'default')
     dest, branches = hg.parseurl(dest)
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
-    if revs:
-        revs = [repo.lookup(rev) for rev in revs]
+
     other = hg.peer(repo, {}, dest)
     n = other.lookup(q)
     if n in repo:
