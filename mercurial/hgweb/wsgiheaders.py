@@ -13,7 +13,7 @@ from __future__ import absolute_import, print_function
 
 import re
 
-tspecials = re.compile(br'[ \(\)<>@,;:\\"/\[\]\?=]')
+tspecials = re.compile(br'[ ()<>@,;:\\"/\[\]?=]')
 
 
 def _formatparam(param, value=None, quote=1):

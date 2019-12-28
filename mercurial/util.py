@@ -1165,7 +1165,7 @@ def versiontuple(v=None, n=4):
     """
     if not v:
         v = version()
-    m = remod.match(br'(\d+(?:\.\d+){,2})[\+-]?(.*)', v)
+    m = remod.match(br'(\d+(?:\.\d+){,2})[+-]?(.*)', v)
     if not m:
         vparts, extra = b'', v
     elif m.group(2):
