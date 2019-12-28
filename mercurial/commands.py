@@ -3082,14 +3082,13 @@ def _dograft(ui, repo, *revs, **opts):
         crev = repo[b'.'].rev()
         ancestors = repo.changelog.ancestors([crev], inclusive=True)
         # XXX make this lazy in the future
-        # don't mutate while iterating, create a copy
-        for rev in list(revs):
+        for rev in revs:
             if rev in ancestors:
                 ui.warn(
                     _(b'skipping ancestor revision %d:%s\n') % (rev, repo[rev])
                 )
-                # XXX remove on list is slow
-                revs.remove(rev)
+        revs = [r for r in revs if r not in ancestors]
+
         if not revs:
             return -1
 
