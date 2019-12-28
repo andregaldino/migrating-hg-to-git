@@ -331,9 +331,9 @@ class fileheredocmatcher(embeddedmatcher):
         )
         self._fileres = [
             # "cat > NAME << LIMIT" case
-            re.compile(r'  \$ \s*cat' + namepat + heredoclimitpat),
+            re.compile(r' {2}\$ \s*cat' + namepat + heredoclimitpat),
             # "cat << LIMIT > NAME" case
-            re.compile(r'  \$ \s*cat' + heredoclimitpat + namepat),
+            re.compile(r' {2}\$ \s*cat' + heredoclimitpat + namepat),
         ]
 
     def startsat(self, line):
@@ -426,7 +426,7 @@ class pydoctestmatcher(embeddedmatcher):
     """
 
     _prefix = '  >>> '
-    _prefixre = re.compile(r'  (>>>|\.\.\.) ')
+    _prefixre = re.compile(r' {2}(>>>|\.\.\.) ')
 
     # If a line matches against not _prefixre but _outputre, that line
     # is "an expected output line" (= not a part of code fragment).
@@ -436,7 +436,7 @@ class pydoctestmatcher(embeddedmatcher):
     # run-tests.py. But "directive line inside inline python code"
     # should be rejected by Mercurial reviewers. Therefore, this
     # regexp does not matche against such directive lines.
-    _outputre = re.compile(r'  $|  [^$]')
+    _outputre = re.compile(r' {2}$| {2}[^$]')
 
     def __init__(self):
         super(pydoctestmatcher, self).__init__("doctest style python code")
@@ -509,7 +509,7 @@ class pyheredocmatcher(embeddedmatcher):
     _prefix = '  > '
 
     _startre = re.compile(
-        r'  \$ (\$PYTHON|"\$PYTHON"|python).*' + heredoclimitpat
+        r' {2}\$ (\$PYTHON|"\$PYTHON"|python).*' + heredoclimitpat
     )
 
     def __init__(self):

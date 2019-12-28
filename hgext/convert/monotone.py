@@ -239,7 +239,7 @@ class monotone_source(common.converter_source, common.commandline):
         #   key "test@selenic.com"
         # mtn >= 0.45:
         #   key [ff58a7ffb771907c4ff68995eada1c4da068d328]
-        certlist = re.split(br'\n\n      key ["\[]', certlist)
+        certlist = re.split(br'\n\n {6}key ["\[]', certlist)
         for e in certlist:
             m = self.cert_re.match(e)
             if m:
