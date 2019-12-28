@@ -2738,7 +2738,7 @@ class memctx(committablectx):
         date=None,
         extra=None,
         branch=None,
-        editor=False,
+        editor=None,
     ):
         super(memctx, self).__init__(
             repo, text, user, date, extra, branch=branch
@@ -2899,7 +2899,7 @@ class metadataonlyctx(committablectx):
         user=None,
         date=None,
         extra=None,
-        editor=False,
+        editor=None,
     ):
         if text is None:
             text = originalctx.description()

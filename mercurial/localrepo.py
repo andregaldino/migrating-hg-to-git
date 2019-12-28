@@ -2845,7 +2845,7 @@ class localrepository(object):
         date=None,
         match=None,
         force=False,
-        editor=False,
+        editor=None,
         extra=None,
     ):
         """Add a new revision to current repository.
