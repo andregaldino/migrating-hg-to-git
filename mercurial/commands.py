@@ -3079,14 +3079,10 @@ def _dograft(ui, repo, *revs, **opts):
     # already, they'd have been in the graftstate.
     if not (cont or opts.get(b'force')) and basectx is None:
         # check for ancestors of dest branch
-        crev = repo[b'.'].rev()
-        ancestors = repo.changelog.ancestors([crev], inclusive=True)
-        # XXX make this lazy in the future
-        for rev in revs:
-            if rev in ancestors:
-                ui.warn(
-                    _(b'skipping ancestor revision %d:%s\n') % (rev, repo[rev])
-                )
+        ancestors = repo.revs(b'%ld & (::.)', revs)
+        for rev in ancestors:
+            ui.warn(_(b'skipping ancestor revision %d:%s\n') % (rev, repo[rev]))
+
         revs = [r for r in revs if r not in ancestors]
 
         if not revs:
@@ -3105,7 +3101,7 @@ def _dograft(ui, repo, *revs, **opts):
 
         # The only changesets we can be sure doesn't contain grafts of any
         # revs, are the ones that are common ancestors of *all* revs:
-        for rev in repo.revs(b'only(%d,ancestor(%ld))', crev, revs):
+        for rev in repo.revs(b'only(%d,ancestor(%ld))', repo[b'.'].rev(), revs):
             ctx = repo[rev]
             n = ctx.extra().get(b'source')
             if n in ids:
