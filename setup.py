@@ -1195,6 +1195,7 @@ packages = [
     'mercurial',
     'mercurial.cext',
     'mercurial.cffi',
+    'mercurial.defaultrc',
     'mercurial.helptext',
     'mercurial.helptext.internals',
     'mercurial.hgweb',
