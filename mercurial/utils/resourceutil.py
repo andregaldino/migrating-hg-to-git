@@ -35,6 +35,7 @@ if mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     datapath = os.path.dirname(pycompat.sysexecutable)
 else:
     datapath = os.path.dirname(os.path.dirname(pycompat.fsencode(__file__)))
+    _rootpath = os.path.dirname(datapath)
 
 try:
     from importlib import resources
@@ -43,7 +44,6 @@ try:
     resources.open_binary  # pytype: disable=module-attr
 
     def open_resource(package, name):
-        package = b'mercurial.' + package
         return resources.open_binary(  # pytype: disable=module-attr
             pycompat.sysstr(package), pycompat.sysstr(name)
         )
@@ -52,7 +52,7 @@ try:
 except (ImportError, AttributeError):
 
     def _package_path(package):
-        return os.path.join(datapath, *package.split(b'.'))
+        return os.path.join(_rootpath, *package.split(b'.'))
 
     def open_resource(package, name):
         path = os.path.join(_package_path(package), name)

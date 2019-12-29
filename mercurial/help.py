@@ -313,9 +313,9 @@ def loaddoc(topic, subdir=None):
     """Return a delayed loader for help/topic.txt."""
 
     def loader(ui):
-        package = b'helptext'
+        package = b'mercurial.helptext'
         if subdir:
-            package = b'helptext' + b'.' + subdir
+            package += b'.' + subdir
         with resourceutil.open_resource(package, topic + b'.txt') as fp:
             doc = gettext(fp.read())
         for rewriter in helphooks.get(topic, []):
