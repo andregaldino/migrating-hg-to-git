@@ -61,12 +61,6 @@ def envrcitems(env=None):
     return result
 
 
-def defaultrcpath():
-    '''return rc paths in defaultrc'''
-    defaultpath = os.path.join(resourceutil.datapath, b'defaultrc')
-    return _expandrcpath(defaultpath)
-
-
 def default_rc_resources():
     """return rc resource IDs in defaultrc"""
     rsrcs = resourceutil.contents(b'mercurial.defaultrc')
@@ -107,7 +101,7 @@ def rccomponents():
         normpaths = lambda paths: [
             (b'path', os.path.normpath(p)) for p in paths
         ]
-        _rccomponents.extend(normpaths(defaultrcpath() + systemrcpath()))
+        _rccomponents.extend(normpaths(systemrcpath()))
         _rccomponents.append(envrc)
         _rccomponents.extend(normpaths(userrcpath()))
     return _rccomponents

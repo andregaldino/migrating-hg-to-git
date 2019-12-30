@@ -36,7 +36,6 @@ def userrcpath():
     return [join(b'userrc')]
 
 
-extensions.wrapfunction(rcutil, 'defaultrcpath', lambda orig: [])
 extensions.wrapfunction(rcutil, 'default_rc_resources', lambda orig: [])
 
 rcutil.systemrcpath = systemrcpath
