@@ -40,12 +40,19 @@ else:
 try:
     from importlib import resources
 
+    from .. import encoding
+
     # Force loading of the resources module
     resources.open_binary  # pytype: disable=module-attr
 
     def open_resource(package, name):
         return resources.open_binary(  # pytype: disable=module-attr
             pycompat.sysstr(package), pycompat.sysstr(name)
+        )
+
+    def is_resource(package, name):
+        return resources.is_resource(
+            pycompat.sysstr(package), encoding.strfromlocal(name)
         )
 
 
@@ -57,3 +64,11 @@ except (ImportError, AttributeError):
     def open_resource(package, name):
         path = os.path.join(_package_path(package), name)
         return open(path, 'rb')
+
+    def is_resource(package, name):
+        path = os.path.join(_package_path(package), name)
+
+        try:
+            return os.path.isfile(pycompat.fsdecode(path))
+        except (IOError, OSError):
+            return False
