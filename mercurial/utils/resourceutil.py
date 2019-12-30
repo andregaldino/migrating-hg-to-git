@@ -55,6 +55,10 @@ try:
             pycompat.sysstr(package), encoding.strfromlocal(name)
         )
 
+    def contents(package):
+        for r in resources.contents(pycompat.sysstr(package)):
+            yield encoding.strtolocal(r)
+
 
 except (ImportError, AttributeError):
 
@@ -72,3 +76,9 @@ except (ImportError, AttributeError):
             return os.path.isfile(pycompat.fsdecode(path))
         except (IOError, OSError):
             return False
+
+    def contents(package):
+        path = pycompat.fsdecode(_package_path(package))
+
+        for p in os.listdir(path):
+            yield pycompat.fsencode(p)
