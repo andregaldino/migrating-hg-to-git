@@ -68,6 +68,7 @@ import errno
 import os
 import re
 import shutil
+import sys
 from mercurial.i18n import _
 from mercurial.node import (
     bin,
@@ -4277,8 +4278,9 @@ def extsetup(ui):
 
     dotable(commands.table)
 
+    thismodule = sys.modules["hgext.mq"]
     for extname, extmodule in extensions.extensions():
-        if extmodule.__file__ != __file__:
+        if extmodule != thismodule:
             dotable(getattr(extmodule, 'cmdtable', {}))
 
 
