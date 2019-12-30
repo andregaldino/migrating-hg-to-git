@@ -2223,6 +2223,8 @@ def config(ui, repo, *values, **opts):
     for t, f in rcutil.rccomponents():
         if t == b'path':
             ui.debug(b'read config from: %s\n' % f)
+        elif t == b'resource':
+            ui.debug(b'read config from: resource:%s.%s\n' % (f[0], f[1]))
         elif t == b'items':
             # Don't print anything for 'items'.
             pass

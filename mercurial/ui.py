@@ -308,6 +308,8 @@ class ui(object):
         for t, f in rcutil.rccomponents():
             if t == b'path':
                 u.readconfig(f, trust=True)
+            elif t == b'resource':
+                u.read_resource_config(f, trust=True)
             elif t == b'items':
                 sections = set()
                 for section, name, value, source in f:

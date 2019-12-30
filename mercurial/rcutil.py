@@ -67,6 +67,17 @@ def defaultrcpath():
     return _expandrcpath(defaultpath)
 
 
+def default_rc_resources():
+    """return rc resource IDs in defaultrc"""
+    rsrcs = resourceutil.contents(b'mercurial.defaultrc')
+    return [
+        (b'mercurial.defaultrc', r)
+        for r in sorted(rsrcs)
+        if resourceutil.is_resource(b'mercurial.defaultrc', r)
+        and r.endswith(b'.rc')
+    ]
+
+
 def rccomponents():
     '''return an ordered [(type, obj)] about where to load configs.
 
@@ -75,9 +86,10 @@ def rccomponents():
 
     if a directory is provided, *.rc files under it will be used.
 
-    type could be either 'path' or 'items', if type is 'path', obj is a string,
-    and is the config file path. if type is 'items', obj is a list of (section,
-    name, value, source) that should fill the config directly.
+    type could be either 'path', 'items' or 'resource'. If type is 'path',
+    obj is a string, and is the config file path. if type is 'items', obj is a
+    list of (section, name, value, source) that should fill the config directly.
+    If type is 'resource', obj is a tuple of (package name, resource name).
     '''
     envrc = (b'items', envrcitems())
 
@@ -90,10 +102,12 @@ def rccomponents():
                 continue
             _rccomponents.extend((b'path', p) for p in _expandrcpath(p))
     else:
+        _rccomponents = [(b'resource', r) for r in default_rc_resources()]
+
         normpaths = lambda paths: [
             (b'path', os.path.normpath(p)) for p in paths
         ]
-        _rccomponents = normpaths(defaultrcpath() + systemrcpath())
+        _rccomponents.extend(normpaths(defaultrcpath() + systemrcpath()))
         _rccomponents.append(envrc)
         _rccomponents.extend(normpaths(userrcpath()))
     return _rccomponents
