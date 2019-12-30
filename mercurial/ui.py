@@ -45,6 +45,7 @@ from . import (
 from .utils import (
     dateutil,
     procutil,
+    resourceutil,
     stringutil,
 )
 
@@ -424,6 +425,20 @@ class ui(object):
             )
         return False
 
+    def read_resource_config(
+        self, name, root=None, trust=False, sections=None, remap=None
+    ):
+        try:
+            fp = resourceutil.open_resource(name[0], name[1])
+        except IOError:
+            if not sections:  # ignore unless we were looking for something
+                return
+            raise
+
+        self._readconfig(
+            b'resource:%s.%s' % name, fp, root, trust, sections, remap
+        )
+
     def readconfig(
         self, filename, root=None, trust=False, sections=None, remap=None
     ):
@@ -434,6 +449,11 @@ class ui(object):
                 return
             raise
 
+        self._readconfig(filename, fp, root, trust, sections, remap)
+
+    def _readconfig(
+        self, filename, fp, root=None, trust=False, sections=None, remap=None
+    ):
         with fp:
             cfg = config.config()
             trusted = sections or trust or self._trusted(fp, filename)
