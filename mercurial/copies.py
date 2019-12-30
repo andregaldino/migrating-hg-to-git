@@ -857,7 +857,21 @@ def _related(f1, f2):
 
 
 def graftcopies(wctx, ctx, base):
-    """reproduce copies between base and ctx in the wctx"""
+    """reproduce copies between base and ctx in the wctx
+
+    Unlike mergecopies(), this function will only consider copies between base
+    and ctx; it will ignore copies between base and wctx. Also unlike
+    mergecopies(), this function will apply copies to the working copy (instead
+    of just returning information about the copies). That makes it cheaper
+    (especially in the common case of base==ctx.p1()) and useful also when
+    experimental.copytrace=off.
+
+    merge.update() will have already marked most copies, but it will only
+    mark copies if it thinks the source files are related (see
+    merge._related()). It will also not mark copies if the file wasn't modified
+    on the local side. This function adds the copies that were "missed"
+    by merge.update().
+    """
     new_copies = pathcopies(base, ctx)
     _filter(wctx.p1(), wctx, new_copies)
     for dst, src in pycompat.iteritems(new_copies):
