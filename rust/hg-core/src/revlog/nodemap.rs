@@ -15,6 +15,7 @@
 use super::{
     Node, NodeError, NodePrefix, NodePrefixRef, Revision, RevlogIndex,
 };
+
 use std::fmt;
 use std::ops::Deref;
 use std::ops::Index;
@@ -94,6 +95,15 @@ pub trait NodeMap {
     ) -> Result<Option<Revision>, NodeMapError> {
         self.find_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
     }
+}
+
+pub trait MutableNodeMap: NodeMap {
+    fn insert<I: RevlogIndex>(
+        &mut self,
+        index: &I,
+        node: &Node,
+        rev: Revision,
+    ) -> Result<(), NodeMapError>;
 }
 
 /// Low level NodeTree [`Blocks`] elements
@@ -292,6 +302,112 @@ impl NodeTree {
             done: false,
         }
     }
+    /// Return a mutable reference for `Block` at index `idx`.
+    ///
+    /// If `idx` lies in the immutable area, then the reference is to
+    /// a newly appended copy.
+    ///
+    /// Returns (new_idx, glen, mut_ref) where
+    ///
+    /// - `new_idx` is the index of the mutable `Block`
+    /// - `mut_ref` is a mutable reference to the mutable Block.
+    /// - `glen` is the new length of `self.growable`
+    ///
+    /// Note: the caller wouldn't be allowed to query `self.growable.len()`
+    /// itself because of the mutable borrow taken with the returned `Block`
+    fn mutable_block(&mut self, idx: usize) -> (usize, &mut Block, usize) {
+        let ro_blocks = &self.readonly;
+        let ro_len = ro_blocks.len();
+        let glen = self.growable.len();
+        if idx < ro_len {
+            // TODO OPTIM I think this makes two copies
+            self.growable.push(ro_blocks[idx].clone());
+            (glen + ro_len, &mut self.growable[glen], glen + 1)
+        } else if glen + ro_len == idx {
+            (idx, &mut self.root, glen)
+        } else {
+            (idx, &mut self.growable[idx - ro_len], glen)
+        }
+    }
+
+    /// Main insertion method
+    ///
+    /// This will dive in the node tree to find the deepest `Block` for
+    /// `node`, split it as much as needed and record `node` in there.
+    /// The method then backtracks, updating references in all the visited
+    /// blocks from the root.
+    ///
+    /// All the mutated `Block` are copied first to the growable part if
+    /// needed. That happens for those in the immutable part except the root.
+    pub fn insert<I: RevlogIndex>(
+        &mut self,
+        index: &I,
+        node: &Node,
+        rev: Revision,
+    ) -> Result<(), NodeMapError> {
+        let ro_len = &self.readonly.len();
+
+        let mut visit_steps: Vec<_> = self.visit(node.into()).collect();
+        let read_nybbles = visit_steps.len();
+        // visit_steps cannot be empty, since we always visit the root block
+        let deepest = visit_steps.pop().unwrap();
+
+        let (mut block_idx, mut block, mut glen) =
+            self.mutable_block(deepest.block_idx);
+
+        if let Element::Rev(old_rev) = deepest.element {
+            let old_node = index
+                .node(old_rev)
+                .ok_or_else(|| NodeMapError::RevisionNotInIndex(old_rev))?;
+            if old_node == node {
+                return Ok(()); // avoid creating lots of useless blocks
+            }
+
+            // Looping over the tail of nybbles in both nodes, creating
+            // new blocks until we find the difference
+            let mut new_block_idx = ro_len + glen;
+            let mut nybble = deepest.nybble;
+            for nybble_pos in read_nybbles..node.nybbles_len() {
+                block.set(nybble, Element::Block(new_block_idx));
+
+                let new_nybble = node.get_nybble(nybble_pos);
+                let old_nybble = old_node.get_nybble(nybble_pos);
+
+                if old_nybble == new_nybble {
+                    self.growable.push(Block::new());
+                    block = &mut self.growable[glen];
+                    glen += 1;
+                    new_block_idx += 1;
+                    nybble = new_nybble;
+                } else {
+                    let mut new_block = Block::new();
+                    new_block.set(old_nybble, Element::Rev(old_rev));
+                    new_block.set(new_nybble, Element::Rev(rev));
+                    self.growable.push(new_block);
+                    break;
+                }
+            }
+        } else {
+            // Free slot in the deepest block: no splitting has to be done
+            block.set(deepest.nybble, Element::Rev(rev));
+        }
+
+        // Backtrack over visit steps to update references
+        while let Some(visited) = visit_steps.pop() {
+            let to_write = Element::Block(block_idx);
+            if visit_steps.is_empty() {
+                self.root.set(visited.nybble, to_write);
+                break;
+            }
+            let (new_idx, block, _) = self.mutable_block(visited.block_idx);
+            if block.get(visited.nybble) == to_write {
+                break;
+            }
+            block.set(visited.nybble, to_write);
+            block_idx = new_idx;
+        }
+        Ok(())
+    }
 }
 
 struct NodeTreeVisitor<'n, 'p> {
@@ -364,6 +480,13 @@ impl fmt::Debug for NodeTree {
             "readonly: {:?}, growable: {:?}, root: {:?}",
             readonly, self.growable, self.root
         )
+    }
+}
+
+impl Default for NodeTree {
+    /// Create a fully mutable empty NodeTree
+    fn default() -> Self {
+        NodeTree::new(Box::new(Vec::new()))
     }
 }
 
@@ -442,12 +565,18 @@ mod tests {
         }
     }
 
-    /// Pad hexadecimal Node prefix with zeros on the right, then insert
+    /// Pad hexadecimal Node prefix with zeros on the right
     ///
     /// This avoids having to repeatedly write very long hexadecimal
     /// strings for test data, and brings actual hash size independency.
+    #[cfg(test)]
+    fn pad_node(hex: &str) -> Node {
+        Node::from_hex(&hex_pad_right(hex)).unwrap()
+    }
+
+    /// Pad hexadecimal Node prefix with zeros on the right, then insert
     fn pad_insert(idx: &mut TestIndex, rev: Revision, hex: &str) {
-        idx.insert(rev, Node::from_hex(&hex_pad_right(hex)).unwrap());
+        idx.insert(rev, pad_node(hex));
     }
 
     fn sample_nodetree() -> NodeTree {
@@ -521,6 +650,141 @@ mod tests {
         assert_eq!(nt.find_hex(&idx, "c")?, Some(2));
         assert_eq!(nt.find_hex(&idx, "00")?, Some(0));
         assert_eq!(nt.find_hex(&idx, "01")?, Some(9));
+        Ok(())
+    }
+
+    struct TestNtIndex {
+        index: TestIndex,
+        nt: NodeTree,
+    }
+
+    impl TestNtIndex {
+        fn new() -> Self {
+            TestNtIndex {
+                index: HashMap::new(),
+                nt: NodeTree::default(),
+            }
+        }
+
+        fn insert(
+            &mut self,
+            rev: Revision,
+            hex: &str,
+        ) -> Result<(), NodeMapError> {
+            let node = pad_node(hex);
+            self.index.insert(rev, node.clone());
+            self.nt.insert(&self.index, &node, rev)?;
+            Ok(())
+        }
+
+        fn find_hex(
+            &self,
+            prefix: &str,
+        ) -> Result<Option<Revision>, NodeMapError> {
+            self.nt.find_hex(&self.index, prefix)
+        }
+
+        /// Drain `added` and restart a new one
+        fn commit(self) -> Self {
+            let mut as_vec: Vec<Block> =
+                self.nt.readonly.iter().map(|block| block.clone()).collect();
+            as_vec.extend(self.nt.growable);
+            as_vec.push(self.nt.root);
+
+            Self {
+                index: self.index,
+                nt: NodeTree::from(as_vec).into(),
+            }
+        }
+    }
+
+    #[test]
+    fn test_insert_full_mutable() -> Result<(), NodeMapError> {
+        let mut idx = TestNtIndex::new();
+        idx.insert(0, "1234")?;
+        assert_eq!(idx.find_hex("1")?, Some(0));
+        assert_eq!(idx.find_hex("12")?, Some(0));
+
+        // let's trigger a simple split
+        idx.insert(1, "1a34")?;
+        assert_eq!(idx.nt.growable.len(), 1);
+        assert_eq!(idx.find_hex("12")?, Some(0));
+        assert_eq!(idx.find_hex("1a")?, Some(1));
+
+        // reinserting is a no_op
+        idx.insert(1, "1a34")?;
+        assert_eq!(idx.nt.growable.len(), 1);
+        assert_eq!(idx.find_hex("12")?, Some(0));
+        assert_eq!(idx.find_hex("1a")?, Some(1));
+
+        idx.insert(2, "1a01")?;
+        assert_eq!(idx.nt.growable.len(), 2);
+        assert_eq!(idx.find_hex("1a"), Err(NodeMapError::MultipleResults));
+        assert_eq!(idx.find_hex("12")?, Some(0));
+        assert_eq!(idx.find_hex("1a3")?, Some(1));
+        assert_eq!(idx.find_hex("1a0")?, Some(2));
+        assert_eq!(idx.find_hex("1a12")?, None);
+
+        // now let's make it split and create more than one additional block
+        idx.insert(3, "1a345")?;
+        assert_eq!(idx.nt.growable.len(), 4);
+        assert_eq!(idx.find_hex("1a340")?, Some(1));
+        assert_eq!(idx.find_hex("1a345")?, Some(3));
+        assert_eq!(idx.find_hex("1a341")?, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_insert_extreme_splitting() -> Result<(), NodeMapError> {
+        // check that the splitting loop is long enough
+        let mut nt_idx = TestNtIndex::new();
+        let nt = &mut nt_idx.nt;
+        let idx = &mut nt_idx.index;
+
+        let node0_hex = hex_pad_right("444444");
+        let mut node1_hex = hex_pad_right("444444").clone();
+        node1_hex.pop();
+        node1_hex.push('5');
+        let node0 = Node::from_hex(&node0_hex).unwrap();
+        let node1 = Node::from_hex(&node1_hex).unwrap();
+
+        idx.insert(0, node0.clone());
+        nt.insert(idx, &node0, 0)?;
+        idx.insert(1, node1.clone());
+        nt.insert(idx, &node1, 1)?;
+
+        assert_eq!(nt.find_bin(idx, (&node0).into())?, Some(0));
+        assert_eq!(nt.find_bin(idx, (&node1).into())?, Some(1));
+        Ok(())
+    }
+
+    #[test]
+    fn test_insert_partly_immutable() -> Result<(), NodeMapError> {
+        let mut idx = TestNtIndex::new();
+        idx.insert(0, "1234")?;
+        idx.insert(1, "1235")?;
+        idx.insert(2, "131")?;
+        idx.insert(3, "cafe")?;
+        let mut idx = idx.commit();
+        assert_eq!(idx.find_hex("1234")?, Some(0));
+        assert_eq!(idx.find_hex("1235")?, Some(1));
+        assert_eq!(idx.find_hex("131")?, Some(2));
+        assert_eq!(idx.find_hex("cafe")?, Some(3));
+
+        idx.insert(4, "123A")?;
+        assert_eq!(idx.find_hex("1234")?, Some(0));
+        assert_eq!(idx.find_hex("1235")?, Some(1));
+        assert_eq!(idx.find_hex("131")?, Some(2));
+        assert_eq!(idx.find_hex("cafe")?, Some(3));
+        assert_eq!(idx.find_hex("123A")?, Some(4));
+
+        idx.insert(5, "c0")?;
+        assert_eq!(idx.find_hex("cafe")?, Some(3));
+        assert_eq!(idx.find_hex("c0")?, Some(5));
+        assert_eq!(idx.find_hex("c1")?, None);
+        assert_eq!(idx.find_hex("1234")?, Some(0));
+
         Ok(())
     }
 }
