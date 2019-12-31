@@ -2057,16 +2057,17 @@ def checkwinfilename(path):
             )
 
 
+timer = getattr(time, "perf_counter", None)
+
 if pycompat.iswindows:
     checkosfilename = checkwinfilename
-    timer = time.clock
+    if not timer:
+        timer = time.clock
 else:
     # mercurial.windows doesn't have platform.checkosfilename
     checkosfilename = platform.checkosfilename  # pytype: disable=module-attr
-    timer = time.time
-
-if safehasattr(time, "perf_counter"):
-    timer = time.perf_counter
+    if not timer:
+        timer = time.time
 
 
 def makelock(info, pathname):
