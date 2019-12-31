@@ -15,7 +15,6 @@ import pdb
 import re
 import signal
 import sys
-import time
 import traceback
 
 
@@ -1040,8 +1039,8 @@ def _dispatch(req):
             def get_times():
                 t = os.times()
                 if t[4] == 0.0:
-                    # Windows leaves this as zero, so use time.clock()
-                    t = (t[0], t[1], t[2], t[3], time.clock())
+                    # Windows leaves this as zero, so use time.perf_counter()
+                    t = (t[0], t[1], t[2], t[3], util.timer())
                 return t
 
             s = get_times()
