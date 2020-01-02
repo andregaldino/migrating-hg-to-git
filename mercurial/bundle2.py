@@ -1013,6 +1013,7 @@ class bundlepart(object):
         self._generated = None
         self.mandatory = mandatory
 
+    @encoding.strmethod
     def __repr__(self):
         cls = b"%s.%s" % (self.__class__.__module__, self.__class__.__name__)
         return b'<%s object at %x; id: %s; type: %s; mandatory: %s>' % (

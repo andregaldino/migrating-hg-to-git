@@ -255,7 +255,7 @@ class linelog(object):
         )
 
     def __repr__(self):
-        return b'<linelog at %s: maxrev=%d size=%d>' % (
+        return '<linelog at %s: maxrev=%d size=%d>' % (
             hex(id(self)),
             self._maxrev,
             len(self._program),
