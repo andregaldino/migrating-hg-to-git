@@ -1481,7 +1481,8 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
         # as well as other data we litter on it in other places.
         wctx = repo[None]
         repo.dirstate.write(repo.currenttransaction())
-    repo.ui.debug(b" merge against %d:%s\n" % (rev, repo[rev]))
+    ctx = repo[rev]
+    repo.ui.debug(b" merge against %d:%s\n" % (rev, ctx))
     if base is not None:
         repo.ui.debug(b"   detach base %d:%s\n" % (base, repo[base]))
     # When collapsing in-place, the parent is the common ancestor, we
@@ -1496,16 +1497,16 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
         labels=[b'dest', b'source'],
         wc=wctx,
     )
+    destctx = repo[dest]
     if collapse:
-        copies.duplicatecopies(repo, wctx, rev, dest)
+        copies.graftcopies(repo, wctx, ctx, destctx)
     else:
         # If we're not using --collapse, we need to
         # duplicate copies between the revision we're
         # rebasing and its first parent, but *not*
         # duplicate any copies that have already been
         # performed in the destination.
-        p1rev = repo[rev].p1().rev()
-        copies.duplicatecopies(repo, wctx, rev, p1rev, skiprev=dest)
+        copies.graftcopies(repo, wctx, ctx, ctx.p1(), skip=destctx)
     return stats
 
 

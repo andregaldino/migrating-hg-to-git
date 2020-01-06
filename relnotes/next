@@ -28,3 +28,7 @@
    * `n in revlog.nodemap` becomes `revlog.index.has_node(n)`,
    * `revlog.nodemap[n]` becomes `revlog.index.rev(n)`,
    * `revlog.nodemap.get(n)` becomes `revlog.index.get_rev(n)`.
+
+ * `copies.duplicatecopies()` was renamed to
+   `copies.graftcopies()`. Its arguments changed from revision numbers
+   to context objects.

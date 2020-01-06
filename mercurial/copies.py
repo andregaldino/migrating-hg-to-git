@@ -856,26 +856,26 @@ def _related(f1, f2):
         return False
 
 
-def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
-    """reproduce copies from fromrev to rev in the dirstate
+def graftcopies(repo, wctx, ctx, base, skip=None):
+    """reproduce copies between base and ctx in the wctx
 
-    If skiprev is specified, it's a revision that should be used to
-    filter copy records. Any copies that occur between fromrev and
-    skiprev will not be duplicated, even if they appear in the set of
-    copies between fromrev and rev.
+    If skip is specified, it's a revision that should be used to
+    filter copy records. Any copies that occur between base and
+    skip will not be duplicated, even if they appear in the set of
+    copies between base and ctx.
     """
     exclude = {}
     ctraceconfig = repo.ui.config(b'experimental', b'copytrace')
     bctrace = stringutil.parsebool(ctraceconfig)
-    if skiprev is not None and (
+    if skip is not None and (
         ctraceconfig == b'heuristics' or bctrace or bctrace is None
     ):
         # copytrace='off' skips this line, but not the entire function because
         # the line below is O(size of the repo) during a rebase, while the rest
         # of the function is much faster (and is required for carrying copy
         # metadata across the rebase anyway).
-        exclude = pathcopies(repo[fromrev], repo[skiprev])
-    for dst, src in pycompat.iteritems(pathcopies(repo[fromrev], repo[rev])):
+        exclude = pathcopies(base, skip)
+    for dst, src in pycompat.iteritems(pathcopies(base, ctx)):
         if dst in exclude:
             continue
         if dst in wctx:
