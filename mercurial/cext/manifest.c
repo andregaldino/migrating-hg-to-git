@@ -53,21 +53,35 @@ static PyObject *nodeof(line *l)
 {
 	char *s = l->start;
 	Py_ssize_t llen = pathlen(l);
+	Py_ssize_t hlen = l->len - llen - 2;
+	Py_ssize_t hlen_raw = 20;
 	PyObject *hash;
 	if (llen + 1 + 40 + 1 > l->len) { /* path '\0' hash '\n' */
 		PyErr_SetString(PyExc_ValueError, "manifest line too short");
 		return NULL;
 	}
-	hash = unhexlify(s + llen + 1, 40);
+	switch (hlen) {
+	case 40: /* sha1 */
+	case 41: /* sha1 with cruft for a merge */
+		break;
+	case 64: /* new hash */
+	case 65: /* new hash with cruft for a merge */
+		hlen_raw = 32;
+		break;
+	default:
+		PyErr_SetString(PyExc_ValueError, "invalid node length in manifest");
+		return NULL;
+	}
+	hash = unhexlify(s + llen + 1, hlen_raw * 2);
 	if (!hash) {
 		return NULL;
 	}
 	if (l->hash_suffix != '\0') {
-		char newhash[21];
-		memcpy(newhash, PyBytes_AsString(hash), 20);
+		char newhash[33];
+		memcpy(newhash, PyBytes_AsString(hash), hlen_raw);
 		Py_DECREF(hash);
-		newhash[20] = l->hash_suffix;
-		hash = PyBytes_FromStringAndSize(newhash, 21);
+		newhash[hlen_raw] = l->hash_suffix;
+		hash = PyBytes_FromStringAndSize(newhash, hlen_raw+1);
 	}
 	return hash;
 }
@@ -78,15 +92,20 @@ static PyObject *hashflags(line *l)
 	char *s = l->start;
 	Py_ssize_t plen = pathlen(l);
 	PyObject *hash = nodeof(l);
-
-	/* 40 for hash, 1 for null byte, 1 for newline */
-	Py_ssize_t hplen = plen + 42;
-	Py_ssize_t flen = l->len - hplen;
+	ssize_t hlen;
+	Py_ssize_t hplen, flen;
 	PyObject *flags;
 	PyObject *tup;
 
 	if (!hash)
 		return NULL;
+	/* hash is either 20 or 21 bytes for an old hash, so we use a
+	   ternary here to get the "real" hexlified sha length. */
+	hlen = PyBytes_GET_SIZE(hash) < 22 ? 40 : 64;
+	/* 1 for null byte, 1 for newline */
+	hplen = plen + hlen + 2;
+	flen = l->len - hplen;
+
 	flags = PyBytes_FromStringAndSize(s + hplen - 1, flen);
 	if (!flags) {
 		Py_DECREF(hash);
