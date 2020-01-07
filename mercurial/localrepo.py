@@ -676,6 +676,8 @@ def loadhgrc(ui, wdirvfs, hgvfs, requirements):
     configs are loaded. For example, an extension may wish to pull in
     configs from alternate files or sources.
     """
+    if b'HGRCSKIPREPO' in encoding.environ:
+        return False
     try:
         ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
         return True

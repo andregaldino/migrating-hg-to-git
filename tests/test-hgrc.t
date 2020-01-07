@@ -258,3 +258,16 @@ source of paths is not mangled
   plain: True
   read config from: $TESTTMP/hgrc
   $TESTTMP/hgrc:17: paths.foo=$TESTTMP/bar
+
+Test we can skip the user configuration
+
+  $ cat >> .hg/hgrc <<EOF
+  > [paths]
+  > elephant = babar
+  > EOF
+  $ hg path
+  elephant = $TESTTMP/babar
+  foo = $TESTTMP/bar
+  $ HGRCSKIPREPO=1 hg path
+  foo = $TESTTMP/bar
+
