@@ -415,10 +415,16 @@ class bufferedinputpipe(object):
         return data
 
 
-def mmapread(fp):
+def mmapread(fp, size=None):
+    if size == 0:
+        # size of 0 to mmap.mmap() means "all data"
+        # rather than "zero bytes", so special case that.
+        return b''
+    elif size is None:
+        size = 0
     try:
         fd = getattr(fp, 'fileno', lambda: fp)()
-        return mmap.mmap(fd, 0, access=mmap.ACCESS_READ)
+        return mmap.mmap(fd, size, access=mmap.ACCESS_READ)
     except ValueError:
         # Empty files cannot be mmapped, but mmapread should still work.  Check
         # if the file is empty, and if so, return an empty buffer.
