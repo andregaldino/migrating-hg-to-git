@@ -65,7 +65,6 @@ from . import (
     mdiff,
     policy,
     pycompat,
-    revlogutils,
     templatefilters,
     util,
 )
@@ -76,6 +75,7 @@ from .interfaces import (
 from .revlogutils import (
     deltas as deltautil,
     flagutil,
+    nodemap as nodemaputil,
     sidedata as sidedatautil,
 )
 from .utils import (
@@ -224,7 +224,7 @@ class revlogoldindex(list):
 
     @util.propertycache
     def _nodemap(self):
-        nodemap = revlogutils.NodeMap({nullid: nullrev})
+        nodemap = nodemaputil.NodeMap({nullid: nullrev})
         for r in range(0, len(self)):
             n = self[r][7]
             nodemap[n] = r
@@ -273,7 +273,7 @@ class revlogoldio(object):
     def parseindex(self, data, inline):
         s = self.size
         index = []
-        nodemap = revlogutils.NodeMap({nullid: nullrev})
+        nodemap = nodemaputil.NodeMap({nullid: nullrev})
         n = off = 0
         l = len(data)
         while off + s <= l:

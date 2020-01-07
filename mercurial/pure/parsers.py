@@ -13,9 +13,10 @@ import zlib
 from ..node import nullid, nullrev
 from .. import (
     pycompat,
-    revlogutils,
     util,
 )
+
+from ..revlogutils import nodemap as nodemaputil
 
 stringio = pycompat.bytesio
 
@@ -55,7 +56,7 @@ class BaseIndexObject(object):
 
     @util.propertycache
     def _nodemap(self):
-        nodemap = revlogutils.NodeMap({nullid: nullrev})
+        nodemap = nodemaputil.NodeMap({nullid: nullrev})
         for r in range(0, len(self)):
             n = self[r][7]
             nodemap[n] = r
