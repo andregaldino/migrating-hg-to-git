@@ -386,7 +386,11 @@ class _lazymanifest(object):
         self.extradata = []
 
     def _pack(self, d):
-        return d[0] + b'\x00' + hex(d[1][:20]) + d[2] + b'\n'
+        n = d[1]
+        if len(n) == 21 or len(n) == 33:
+            n = n[:-1]
+        assert len(n) == 20 or len(n) == 32
+        return d[0] + b'\x00' + hex(n) + d[2] + b'\n'
 
     def text(self):
         self._compact()
