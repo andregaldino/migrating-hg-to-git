@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "FuzzedDataProvider.h"
 #include "pyutil.h"
 
 #include <string>
@@ -24,7 +25,7 @@ try:
       lm[e]
       e in lm
       (e + 'nope') in lm
-  lm[b'xyzzy'] = (b'\0' * 20, 'x')
+  lm[b'xyzzy'] = (b'\0' * nlen, 'x')
   # do an insert, text should change
   assert lm.text() != mdata, "insert should change text and didn't: %r %r" % (lm.text(), mdata)
   cloned = lm.filtercopy(lambda x: x != 'xyzzy')
@@ -51,10 +52,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	if (Size > 100000) {
 		return 0;
 	}
+	FuzzedDataProvider provider(Data, Size);
+	Py_ssize_t nodelength = provider.ConsumeBool() ? 20 : 32;
+	PyObject *nlen = PyLong_FromSsize_t(nodelength);
 	PyObject *mtext =
 	    PyBytes_FromStringAndSize((const char *)Data, (Py_ssize_t)Size);
 	PyObject *locals = PyDict_New();
 	PyDict_SetItemString(locals, "mdata", mtext);
+	PyDict_SetItemString(locals, "nlen", nlen);
 	PyObject *res = PyEval_EvalCode(code, contrib::pyglobals(), locals);
 	if (!res) {
 		PyErr_Print();
