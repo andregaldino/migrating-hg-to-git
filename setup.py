@@ -1481,6 +1481,14 @@ extmodules = [
         ],
     ),
     Extension(
+        'mercurial.thirdparty.sha1dc',
+        [
+            'mercurial/thirdparty/sha1dc/cext.c',
+            'mercurial/thirdparty/sha1dc/lib/sha1.c',
+            'mercurial/thirdparty/sha1dc/lib/ubc_check.c',
+        ],
+    ),
+    Extension(
         'hgext.fsmonitor.pywatchman.bser', ['hgext/fsmonitor/pywatchman/bser.c']
     ),
     RustStandaloneExtension(
