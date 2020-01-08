@@ -250,7 +250,7 @@
   >         try:
   >             hexid = (b'%02x' % (i + 1)) * 20
   >             repo.fileservice.prefetch([(b'somefile.txt', hexid)])
-  >         except:
+  >         except Exception:
   >             pass
   > EOF
 
