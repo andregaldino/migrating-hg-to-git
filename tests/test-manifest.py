@@ -88,6 +88,10 @@ class basemanifesttests(object):
         with self.assertRaises(KeyError):
             m[b'wat']
 
+    def testManifestLongHashes(self):
+        m = self.parsemanifest(b'a\0' + b'f' * 64 + b'\n')
+        self.assertEqual(binascii.unhexlify(b'f' * 64), m[b'a'])
+
     def testSetItem(self):
         want = BIN_HASH_1
 
