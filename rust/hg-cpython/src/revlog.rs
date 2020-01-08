@@ -7,14 +7,17 @@
 
 use crate::cindex;
 use cpython::{
-    ObjectProtocol, PyClone, PyDict, PyModule, PyObject, PyResult, PyTuple, Python, PythonObject,
-    ToPyObject,
+    ObjectProtocol, PyClone, PyDict, PyModule, PyObject, PyResult, PyTuple,
+    Python, PythonObject, ToPyObject,
 };
 use hg::Revision;
 use std::cell::RefCell;
 
 /// Return a Struct implementing the Graph trait
-pub(crate) fn pyindex_to_graph(py: Python, index: PyObject) -> PyResult<cindex::Index> {
+pub(crate) fn pyindex_to_graph(
+    py: Python,
+    index: PyObject,
+) -> PyResult<cindex::Index> {
     match index.extract::<MixedIndex>(py) {
         Ok(midx) => Ok(midx.clone_cindex(py)),
         Err(_) => cindex::Index::new(py, index),
