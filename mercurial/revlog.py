@@ -592,7 +592,7 @@ class revlog(object):
         self._storedeltachains = True
 
         self._io = revlogio()
-        if rustrevlog is not None and self.opener.options.get('rust.index'):
+        if rustrevlog is not None and self.opener.options.get(b'rust.index'):
             self._io = rustrevlogio()
         if self.version == REVLOGV0:
             self._io = revlogoldio()
