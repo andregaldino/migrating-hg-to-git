@@ -927,7 +927,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if repository.NARROW_REQUIREMENT in requirements:
         options[b'enableellipsis'] = True
 
-    if ui.configbool('experimental', 'rust.index'):
+    if ui.configbool(b'experimental', b'rust.index'):
         options[b'rust.index'] = True
 
     return options
