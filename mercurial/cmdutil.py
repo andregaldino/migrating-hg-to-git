@@ -2429,12 +2429,16 @@ def walkchangerevs(repo, match, opts, prepare):
 
                     def fns_generator():
                         if allfiles:
-                            fiter = iter(ctx)
-                        else:
-                            fiter = ctx.files()
-                        for f in fiter:
-                            if match(f):
+
+                            def bad(f, msg):
+                                pass
+
+                            for f in ctx.matches(matchmod.badmatch(match, bad)):
                                 yield f
+                        else:
+                            for f in ctx.files():
+                                if match(f):
+                                    yield f
 
                     fns = fns_generator()
                 prepare(ctx, fns)
