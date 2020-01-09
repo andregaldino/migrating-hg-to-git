@@ -215,7 +215,7 @@ Help text for fix.
       to the file content. Provides "$HG_REV" and "$HG_PATH" to identify the file,
       and "$HG_METADATA" with a map of fixer names to metadata values from fixer
       tools that affected the file. Fixer tools that didn't affect the file have a
-      valueof None. Only fixer tools that executed are present in the metadata.
+      value of None. Only fixer tools that executed are present in the metadata.
   
     "postfix"
       Run once after all files and revisions have been handled. Provides
@@ -226,7 +226,7 @@ Help text for fix.
       executions that modified a file. This aggregates the same metadata
       previously passed to the "postfixfile" hook.
   
-  Fixer tools are run the in repository's root directory. This allows them to
+  Fixer tools are run in the repository's root directory. This allows them to
   read configuration files from the working copy, or even write to the working
   copy. The working copy is not updated to match the revision being fixed. In
   fact, several revisions may be fixed in parallel. Writes to the working copy
