@@ -798,7 +798,7 @@ class rebaseruntime(object):
                 shouldupdate = repo[b'.'].rev() in updateifonnodes
 
                 # Update away from the rebase if necessary
-                if shouldupdate or needupdate(repo, self.state):
+                if shouldupdate:
                     mergemod.update(
                         repo, self.originalwd, branchmerge=False, force=True
                     )
@@ -1056,10 +1056,9 @@ def rebase(ui, repo, **opts):
                         b'changesets'
                     ),
                 )
-            if needupdate(repo, rbsrt.state):
-                # update to the current working revision
-                # to clear interrupted merge
-                hg.updaterepo(repo, rbsrt.originalwd, overwrite=True)
+            # update to the current working revision
+            # to clear interrupted merge
+            hg.updaterepo(repo, rbsrt.originalwd, overwrite=True)
             rbsrt._finishrebase()
             return 0
     elif inmemory:
@@ -1922,25 +1921,6 @@ def clearstatus(repo):
     if tr:
         tr.removefilegenerator(b'rebasestate')
     repo.vfs.unlinkpath(b"rebasestate", ignoremissing=True)
-
-
-def needupdate(repo, state):
-    '''check whether we should `update --clean` away from a merge, or if
-    somehow the working dir got forcibly updated, e.g. by older hg'''
-    parents = [p.rev() for p in repo[None].parents()]
-
-    # Are we in a merge state at all?
-    if len(parents) < 2:
-        return False
-
-    # We should be standing on the first as-of-yet unrebased commit.
-    firstunrebased = min(
-        [old for old, new in pycompat.iteritems(state) if new == nullrev]
-    )
-    if firstunrebased in parents:
-        return True
-
-    return False
 
 
 def sortsource(destmap):
