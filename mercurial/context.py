@@ -1528,6 +1528,23 @@ class workingctx(committablectx):
             for n in p
         ]
 
+    def setparents(self, p1node, p2node=nullid):
+        dirstate = self._repo.dirstate
+        with dirstate.parentchange():
+            copies = dirstate.setparents(p1node, p2node)
+            pctx = self._repo[p1node]
+            if copies:
+                # Adjust copy records, the dirstate cannot do it, it
+                # requires access to parents manifests. Preserve them
+                # only for entries added to first parent.
+                for f in copies:
+                    if f not in pctx and copies[f] in pctx:
+                        dirstate.copy(copies[f], f)
+            if p2node == nullid:
+                for f, s in sorted(dirstate.copies().items()):
+                    if f not in pctx and s not in pctx:
+                        dirstate.copy(None, f)
+
     def _fileinfo(self, path):
         # populate __dict__['_manifest'] as workingctx has no _manifestdelta
         self._manifest
