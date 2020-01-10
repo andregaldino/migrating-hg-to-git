@@ -2590,7 +2590,13 @@ def update(
 
 
 def graft(
-    repo, ctx, base, labels=None, keepparent=False, keepconflictparent=False
+    repo,
+    ctx,
+    base,
+    labels=None,
+    keepparent=False,
+    keepconflictparent=False,
+    wctx=None,
 ):
     """Do a graft-like merge.
 
@@ -2613,7 +2619,7 @@ def graft(
     # to copy commits), and 2) informs update that the incoming changes are
     # newer than the destination so it doesn't prompt about "remote changed foo
     # which local deleted".
-    wctx = repo[None]
+    wctx = wctx or repo[None]
     pctx = wctx.p1()
     mergeancestor = repo.changelog.isancestor(pctx.node(), ctx.node())
 
@@ -2625,6 +2631,7 @@ def graft(
         base.node(),
         mergeancestor=mergeancestor,
         labels=labels,
+        wc=wctx,
     )
 
     if keepconflictparent and stats.unresolvedcount:
@@ -2639,11 +2646,16 @@ def graft(
     if pother == pctx.node():
         pother = nullid
 
-    with repo.dirstate.parentchange():
-        repo.setparents(pctx.node(), pother)
-        repo.dirstate.write(repo.currenttransaction())
+    if wctx.isinmemory():
+        wctx.setparents(pctx.node(), pother)
         # fix up dirstate for copies and renames
         copies.graftcopies(wctx, ctx, base)
+    else:
+        with repo.dirstate.parentchange():
+            repo.setparents(pctx.node(), pother)
+            repo.dirstate.write(repo.currenttransaction())
+            # fix up dirstate for copies and renames
+            copies.graftcopies(wctx, ctx, base)
     return stats
 
 
