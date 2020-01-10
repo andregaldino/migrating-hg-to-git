@@ -236,7 +236,7 @@ Rebase and abort without generating new changesets:
   [1]
 
   $ hg tglog
-  @  4:draft 'C1'
+  %  4:draft 'C1'
   |
   o  3:draft 'B bis'
   |

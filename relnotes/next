@@ -21,6 +21,11 @@
 
 == Backwards Compatibility Changes ==
 
+ * When `hg rebase` pauses for merge conflict resolution, the working
+   copy will no longer have the rebased node as a second parent. You
+   can use the new `conflictparents()` revset for finding the other
+   parent during a conflict.
+
 
 == Internal API Changes ==
 

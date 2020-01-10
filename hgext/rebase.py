@@ -618,6 +618,7 @@ class rebaseruntime(object):
                         repo,
                         rev,
                         p1,
+                        p2,
                         base,
                         self.collapsef,
                         dest,
@@ -642,10 +643,6 @@ class rebaseruntime(object):
                 newnode = self._concludenode(rev, p1, p2, editor)
             else:
                 # Skip commit if we are collapsing
-                if self.inmemory:
-                    self.wctx.setbase(repo[p1])
-                else:
-                    repo.setparents(repo[p1].node())
                 newnode = None
             # Update the state
             if newnode is not None:
@@ -1468,7 +1465,7 @@ def commitnode(repo, p1, p2, editor, extra, user, date, commitmsg):
         return newnode
 
 
-def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
+def rebasenode(repo, rev, p1, p2, base, collapse, dest, wctx):
     """Rebase a single revision rev on top of p1 using base as merge ancestor"""
     # Merge phase
     # Update to destination and merge it with local
@@ -1502,6 +1499,7 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
         labels=[b'dest', b'source'],
         wc=wctx,
     )
+    wctx.setparents(p1ctx.node(), repo[p2].node())
     if collapse:
         copies.graftcopies(wctx, ctx, repo[dest])
     else:

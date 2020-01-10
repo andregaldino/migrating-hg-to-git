@@ -712,7 +712,7 @@ Test aborted editor on final message
   |
   | @  2: 82b8abf9c185 'D'
   | |
-  @ |  1: f899f3910ce7 'B'
+  % |  1: f899f3910ce7 'B'
   |/
   o  0: 4a2df7238c3b 'A'
   
@@ -736,7 +736,7 @@ Test aborted editor on final message
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
   $ hg tglog
-  @  3: 63668d570d21 'C'
+  %  3: 63668d570d21 'C'
   |
   | @  2: 82b8abf9c185 'D'
   | |

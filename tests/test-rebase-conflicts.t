@@ -456,15 +456,14 @@ Test where the conflict happens when rebasing a merge commit
   warning: conflicts while merging conflict! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
-The current parents are not 7 and 8 even though that's what we're merging
   $ hg tglog
   @  8:draft 'E'
   |
-  | o  7:draft 'D'
+  | @  7:draft 'D'
   |/
   o  6:draft 'C'
   |
-  | @    5:draft 'F'
+  | %    5:draft 'F'
   | |\
   | | o  4:draft 'E'
   | | |

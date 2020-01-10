@@ -294,7 +294,7 @@ Test rebase interrupted by hooks
   $ hg tglogp
   @  7: 401ccec5e39f secret 'C'
   |
-  | @  6: a0b2430ebfb8 secret 'F'
+  | o  6: a0b2430ebfb8 secret 'F'
   | |
   o |  5: 45396c49d53b public 'B'
   | |
@@ -345,7 +345,7 @@ Test rebase interrupted by hooks
   $ hg tglogp
   @  7: 401ccec5e39f secret 'C'
   |
-  | @  6: a0b2430ebfb8 secret 'F'
+  | o  6: a0b2430ebfb8 secret 'F'
   | |
   o |  5: 45396c49d53b public 'B'
   | |
@@ -395,7 +395,7 @@ Test rebase interrupted by hooks
   $ hg tglogp
   @  7: 401ccec5e39f secret 'C'
   |
-  | @  6: a0b2430ebfb8 secret 'F'
+  | o  6: a0b2430ebfb8 secret 'F'
   | |
   o |  5: 45396c49d53b public 'B'
   | |
