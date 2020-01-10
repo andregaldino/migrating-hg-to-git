@@ -178,6 +178,7 @@ class rebaseruntime(object):
         # --continue or --abort)), the original repo should be used so
         # visibility-dependent revsets are correct.
         self.prepared = False
+        self.resume = False
         self._repo = repo
 
         self.ui = ui
@@ -367,6 +368,7 @@ class rebaseruntime(object):
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
 
     def _prepareabortorcontinue(self, isabort, backup=True, suppwarns=False):
+        self.resume = True
         try:
             self.restorestatus()
             self.collapsemsg = restorecollapsemsg(self.repo, isabort)
@@ -606,8 +608,9 @@ class rebaseruntime(object):
                 self.skipped,
                 self.obsoletenotrebased,
             )
-            if not self.inmemory and len(repo[None].parents()) == 2:
+            if self.resume and self.wctx.p1().rev() == p1:
                 repo.ui.debug(b'resuming interrupted rebase\n')
+                self.resume = False
             else:
                 overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
                 with ui.configoverride(overrides, b'rebase'):
