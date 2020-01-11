@@ -2161,6 +2161,10 @@ class overlayworkingctx(committablectx):
         # ``overlayworkingctx`` (e.g. with --collapse).
         util.clearcachedproperty(self, b'_manifest')
 
+    def setparents(self, p1node, p2node=nullid):
+        assert p1node == self._wrappedctx.node()
+        self._parents = [self._wrappedctx, self._repo.unfiltered()[p2node]]
+
     def data(self, path):
         if self.isdirty(path):
             if self._cache[path][b'exists']:
@@ -2415,9 +2419,9 @@ class overlayworkingctx(committablectx):
         ``text`` is the commit message.
         ``parents`` (optional) are rev numbers.
         """
-        # Default parents to the wrapped contexts' if not passed.
+        # Default parents to the wrapped context if not passed.
         if parents is None:
-            parents = self._wrappedctx.parents()
+            parents = self.parents()
             if len(parents) == 1:
                 parents = (parents[0], None)
 

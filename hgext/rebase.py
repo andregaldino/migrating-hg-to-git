@@ -1434,9 +1434,9 @@ def commitmemorynode(repo, p1, p2, wctx, editor, extra, user, date, commitmsg):
     if b'branch' in extra:
         branch = extra[b'branch']
 
+    wctx.setparents(repo[p1].node(), repo[p2].node())
     memctx = wctx.tomemctx(
         commitmsg,
-        parents=(p1, p2),
         date=date,
         extra=extra,
         user=user,
