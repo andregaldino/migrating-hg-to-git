@@ -456,6 +456,12 @@ class transaction(util.transactional):
         return self._anypending
 
     @active
+    def hasfinalize(self, category):
+        """check is a callback already exist for a category
+        """
+        return category in self._finalizecallback
+
+    @active
     def addfinalize(self, category, callback):
         """add a callback to be called when the transaction is closed
 
