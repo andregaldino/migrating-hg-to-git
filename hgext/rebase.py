@@ -506,7 +506,7 @@ class rebaseruntime(object):
         p.complete()
         ui.note(_(b'rebase merging completed\n'))
 
-    def _concludenode(self, rev, p1, p2, editor, commitmsg=None):
+    def _concludenode(self, rev, p1, editor, commitmsg=None):
         '''Commit the wd changes with parents p1 and p2.
 
         Reuse commit info from rev but also store useful information in extra.
@@ -530,8 +530,6 @@ class rebaseruntime(object):
             if self.inmemory:
                 newnode = commitmemorynode(
                     repo,
-                    p1,
-                    p2,
                     wctx=self.wctx,
                     extra=extra,
                     commitmsg=commitmsg,
@@ -543,8 +541,6 @@ class rebaseruntime(object):
             else:
                 newnode = commitnode(
                     repo,
-                    p1,
-                    p2,
                     extra=extra,
                     commitmsg=commitmsg,
                     editor=editor,
@@ -640,7 +636,7 @@ class rebaseruntime(object):
                 editor = cmdutil.getcommiteditor(
                     editform=editform, **pycompat.strkwargs(opts)
                 )
-                newnode = self._concludenode(rev, p1, p2, editor)
+                newnode = self._concludenode(rev, p1, editor)
             else:
                 # Skip commit if we are collapsing
                 newnode = None
@@ -699,7 +695,7 @@ class rebaseruntime(object):
 
             self.wctx.setparents(repo[p1].node(), repo[self.external].node())
             newnode = self._concludenode(
-                revtoreuse, p1, self.external, editor, commitmsg=commitmsg
+                revtoreuse, p1, editor, commitmsg=commitmsg
             )
 
             if newnode is not None:
@@ -1421,7 +1417,7 @@ def externalparent(repo, state, destancestors):
     )
 
 
-def commitmemorynode(repo, p1, p2, wctx, editor, extra, user, date, commitmsg):
+def commitmemorynode(repo, wctx, editor, extra, user, date, commitmsg):
     '''Commit the memory changes with parents p1 and p2.
     Return node of committed revision.'''
     # Replicates the empty check in ``repo.commit``.
@@ -1447,7 +1443,7 @@ def commitmemorynode(repo, p1, p2, wctx, editor, extra, user, date, commitmsg):
     return commitres
 
 
-def commitnode(repo, p1, p2, editor, extra, user, date, commitmsg):
+def commitnode(repo, editor, extra, user, date, commitmsg):
     '''Commit the wd changes with parents p1 and p2.
     Return node of committed revision.'''
     dsguard = util.nullcontextmanager()
