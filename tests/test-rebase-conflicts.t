@@ -429,3 +429,73 @@ Test rebase with obsstore turned on and off (issue5606)
   |/
   o  0:draft 'A'
   
+
+Test where the conflict happens when rebasing a merge commit
+
+  $ cd $TESTTMP
+  $ hg init conflict-in-merge
+  $ cd conflict-in-merge
+  $ hg debugdrawdag <<'EOS'
+  > F # F/conflict = foo\n
+  > |\
+  > D E
+  > |/
+  > C B # B/conflict = bar\n
+  > |/
+  > A
+  > EOS
+
+  $ hg co F
+  5 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg rebase -d B
+  rebasing 2:dc0947a82db8 "C" (C)
+  rebasing 3:e7b3f00ed42e "D" (D)
+  rebasing 4:03ca77807e91 "E" (E)
+  rebasing 5:9a6b91dc2044 "F" (F tip)
+  merging conflict
+  warning: conflicts while merging conflict! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+The current parents are not 7 and 8 even though that's what we're merging
+  $ hg tglog
+  @  8:draft 'E'
+  |
+  | o  7:draft 'D'
+  |/
+  o  6:draft 'C'
+  |
+  | @    5:draft 'F'
+  | |\
+  | | o  4:draft 'E'
+  | | |
+  | o |  3:draft 'D'
+  | |/
+  | o  2:draft 'C'
+  | |
+  o |  1:draft 'B'
+  |/
+  o  0:draft 'A'
+  
+  $ echo baz > conflict
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase -c
+  already rebased 2:dc0947a82db8 "C" (C) as 0199610c343e
+  already rebased 3:e7b3f00ed42e "D" (D) as f0dd538aaa63
+  already rebased 4:03ca77807e91 "E" (E) as cbf25af8347d
+  rebasing 5:9a6b91dc2044 "F" (F)
+  saved backup bundle to $TESTTMP/conflict-in-merge/.hg/strip-backup/dc0947a82db8-ca7e7d5b-rebase.hg
+  $ hg tglog
+  @    5:draft 'F'
+  |\
+  | o  4:draft 'E'
+  | |
+  o |  3:draft 'D'
+  |/
+  o  2:draft 'C'
+  |
+  o  1:draft 'B'
+  |
+  o  0:draft 'A'
+  
