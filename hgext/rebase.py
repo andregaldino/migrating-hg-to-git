@@ -697,6 +697,7 @@ class rebaseruntime(object):
             editor = cmdutil.getcommiteditor(edit=editopt, editform=editform)
             revtoreuse = max(self.state)
 
+            self.wctx.setparents(repo[p1].node(), repo[self.external].node())
             newnode = self._concludenode(
                 revtoreuse, p1, self.external, editor, commitmsg=commitmsg
             )
@@ -1433,7 +1434,6 @@ def commitmemorynode(repo, p1, p2, wctx, editor, extra, user, date, commitmsg):
     if b'branch' in extra:
         branch = extra[b'branch']
 
-    wctx.setparents(repo[p1].node(), repo[p2].node())
     memctx = wctx.tomemctx(
         commitmsg,
         date=date,
@@ -1454,8 +1454,6 @@ def commitnode(repo, p1, p2, editor, extra, user, date, commitmsg):
     if not repo.ui.configbool(b'rebase', b'singletransaction'):
         dsguard = dirstateguard.dirstateguard(repo, b'rebase')
     with dsguard:
-        repo.setparents(repo[p1].node(), repo[p2].node())
-
         # Commit might fail if unresolved files exist
         newnode = repo.commit(
             text=commitmsg, user=user, date=date, extra=extra, editor=editor
