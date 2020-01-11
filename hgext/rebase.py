@@ -1430,7 +1430,7 @@ def commitmemorynode(repo, p1, p2, wctx, editor, extra, user, date, commitmsg):
 
     # By convention, ``extra['branch']`` (set by extrafn) clobbers
     # ``branch`` (used when passing ``--keepbranches``).
-    branch = repo[p1].branch()
+    branch = None
     if b'branch' in extra:
         branch = extra[b'branch']
 

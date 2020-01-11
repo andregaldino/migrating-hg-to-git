@@ -2445,6 +2445,9 @@ class overlayworkingctx(committablectx):
                 # necessary for memctx to register a deletion.
                 return None
 
+        if branch is None:
+            branch = self._wrappedctx.branch()
+
         return memctx(
             self._repo,
             parents,
