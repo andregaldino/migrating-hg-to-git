@@ -1760,6 +1760,7 @@ class progress(object):
         self._updatebar(self.topic, self.pos, b"", self.unit, self.total)
 
     def _printdebug(self, item):
+        unit = b''
         if self.unit:
             unit = b' ' + self.unit
         if item:
