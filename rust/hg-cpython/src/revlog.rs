@@ -28,8 +28,7 @@ py_class!(pub class MixedIndex |py| {
     data cindex: RefCell<cindex::Index>;
 
     def __new__(_cls, cindex: PyObject) -> PyResult<MixedIndex> {
-        Self::create_instance(py, RefCell::new(
-            cindex::Index::new(py, cindex)?))
+        Self::new(py, cindex)
     }
 
     /// Compatibility layer used for Python consumers needing access to the C index
@@ -199,6 +198,13 @@ py_class!(pub class MixedIndex |py| {
 });
 
 impl MixedIndex {
+    fn new(py: Python, cindex: PyObject) -> PyResult<MixedIndex> {
+        Self::create_instance(
+            py,
+            RefCell::new(cindex::Index::new(py, cindex)?),
+        )
+    }
+
     /// forward a method call to the underlying C index
     fn call_cindex(
         &self,
