@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import errno
 import functools
-import hashlib
 import os
 import stat
 
@@ -25,6 +24,7 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import hashutil
 
 parsers = policy.importmod('parsers')
 # how much bytes should be read from fncache in one read
@@ -273,7 +273,7 @@ _maxshortdirslen = 8 * (_dirprefixlen + 1) - 4
 
 
 def _hashencode(path, dotencode):
-    digest = node.hex(hashlib.sha1(path).digest())
+    digest = node.hex(hashutil.sha1(path).digest())
     le = lowerencode(path[5:]).split(b'/')  # skips prefix 'data/' or 'meta/'
     parts = _auxencode(le, dotencode)
     basename = parts[-1]

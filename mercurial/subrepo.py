@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import copy
 import errno
-import hashlib
 import os
 import re
 import stat
@@ -37,6 +36,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    hashutil,
     procutil,
     stringutil,
 )
@@ -61,7 +61,7 @@ def _expandedabspath(path):
 
 def _getstorehashcachename(remotepath):
     '''get a unique filename for the store hash cache of a remote repository'''
-    return node.hex(hashlib.sha1(_expandedabspath(remotepath)).digest())[0:12]
+    return node.hex(hashutil.sha1(_expandedabspath(remotepath)).digest())[0:12]
 
 
 class SubrepoAbort(error.Abort):
@@ -514,7 +514,7 @@ class hgsubrepo(abstractsubrepo):
         yield b'# %s\n' % _expandedabspath(remotepath)
         vfs = self._repo.vfs
         for relname in filelist:
-            filehash = node.hex(hashlib.sha1(vfs.tryread(relname)).digest())
+            filehash = node.hex(hashutil.sha1(vfs.tryread(relname)).digest())
             yield b'%s = %s\n' % (relname, filehash)
 
     @propertycache

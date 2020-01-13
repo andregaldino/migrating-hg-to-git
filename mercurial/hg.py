@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import os
 import shutil
 import stat
@@ -48,7 +47,7 @@ from . import (
     verify as verifymod,
     vfs as vfsmod,
 )
-
+from .utils import hashutil
 from .interfaces import repository as repositorymod
 
 release = lock.release
@@ -738,7 +737,7 @@ def clone(
                 )
         elif sharenamemode == b'remote':
             sharepath = os.path.join(
-                sharepool, node.hex(hashlib.sha1(source).digest())
+                sharepool, node.hex(hashutil.sha1(source).digest())
             )
         else:
             raise error.Abort(

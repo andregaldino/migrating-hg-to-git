@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import errno
 import glob
-import hashlib
 import os
 import posixpath
 import re
@@ -48,6 +47,7 @@ from . import (
 )
 
 from .utils import (
+    hashutil,
     procutil,
     stringutil,
 )
@@ -366,7 +366,7 @@ def filteredhash(repo, maxrev):
     key = None
     revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
     if revs:
-        s = hashlib.sha1()
+        s = hashutil.sha1()
         for rev in revs:
             s.update(b'%d;' % rev)
         key = s.digest()

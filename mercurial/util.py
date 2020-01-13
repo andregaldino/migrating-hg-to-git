@@ -53,6 +53,7 @@ from . import (
 )
 from .utils import (
     compression,
+    hashutil,
     procutil,
     stringutil,
 )
@@ -197,7 +198,7 @@ def nouideprecwarn(msg, version, stacklevel=1):
 
 DIGESTS = {
     b'md5': hashlib.md5,
-    b'sha1': hashlib.sha1,
+    b'sha1': hashutil.sha1,
     b'sha512': hashlib.sha512,
 }
 # List of digest types from strongest to weakest

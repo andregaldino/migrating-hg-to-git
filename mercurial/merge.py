@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import shutil
 import stat
 import struct
@@ -39,6 +38,7 @@ from . import (
     util,
     worker,
 )
+from .utils import hashutil
 
 _pack = struct.pack
 _unpack = struct.unpack
@@ -512,7 +512,7 @@ class mergestate(object):
         """hash the path of a local file context for storage in the .hg/merge
         directory."""
 
-        return hex(hashlib.sha1(path).digest())
+        return hex(hashutil.sha1(path).digest())
 
     def add(self, fcl, fco, fca, fd):
         """add a new (potentially?) conflicting file the merge state

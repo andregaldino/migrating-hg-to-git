@@ -41,7 +41,6 @@ Config
 
 from __future__ import absolute_import
 
-import hashlib
 import inspect
 import os
 import re
@@ -67,6 +66,7 @@ from . import (
 )
 
 from .utils import (
+    hashutil,
     procutil,
     stringutil,
 )
@@ -74,7 +74,7 @@ from .utils import (
 
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
-    return node.hex(hashlib.sha1(stringutil.pprint(items)).digest())
+    return node.hex(hashutil.sha1(stringutil.pprint(items)).digest())
 
 
 # sensitive config sections affecting confighash

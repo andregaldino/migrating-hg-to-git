@@ -8,7 +8,6 @@ from __future__ import absolute_import
 
 import collections
 import contextlib
-import hashlib
 
 from .i18n import _
 from .node import (
@@ -31,6 +30,7 @@ from . import (
 from .interfaces import util as interfaceutil
 from .utils import (
     cborutil,
+    hashutil,
     stringutil,
 )
 
@@ -858,7 +858,7 @@ def makecommandcachekeyfn(command, localversion=None, allargs=False):
 
         cacher.adjustcachekeystate(state)
 
-        hasher = hashlib.sha1()
+        hasher = hashutil.sha1()
         for chunk in cborutil.streamencode(state):
             hasher.update(chunk)
 

@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import collections
-import hashlib
 
 from .i18n import _
 from .node import (
@@ -40,7 +39,10 @@ from . import (
     wireprototypes,
 )
 from .interfaces import repository
-from .utils import stringutil
+from .utils import (
+    hashutil,
+    stringutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -2705,7 +2707,7 @@ def check_heads(repo, their_heads, context):
     Used by peer for unbundling.
     """
     heads = repo.heads()
-    heads_hash = hashlib.sha1(b''.join(sorted(heads))).digest()
+    heads_hash = hashutil.sha1(b''.join(sorted(heads))).digest()
     if not (
         their_heads == [b'force']
         or their_heads == heads

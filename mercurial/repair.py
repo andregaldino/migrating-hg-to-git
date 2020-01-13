@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 
 from .i18n import _
 from .node import (
@@ -29,7 +28,10 @@ from . import (
     pycompat,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    hashutil,
+    stringutil,
+)
 
 
 def backupbundle(
@@ -45,7 +47,7 @@ def backupbundle(
     # Include a hash of all the nodes in the filename for uniqueness
     allcommits = repo.set(b'%ln::%ln', bases, heads)
     allhashes = sorted(c.hex() for c in allcommits)
-    totalhash = hashlib.sha1(b''.join(allhashes)).digest()
+    totalhash = hashutil.sha1(b''.join(allhashes)).digest()
     name = b"%s/%s-%s-%s.hg" % (
         backupdir,
         short(node),

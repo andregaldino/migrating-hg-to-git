@@ -12,7 +12,6 @@ import collections
 import contextlib
 import copy
 import errno
-import hashlib
 import os
 import re
 import shutil
@@ -41,6 +40,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    hashutil,
     procutil,
     stringutil,
 )
@@ -2943,7 +2943,7 @@ def trydiff(
         if not text:
             text = b""
         l = len(text)
-        s = hashlib.sha1(b'blob %d\0' % l)
+        s = hashutil.sha1(b'blob %d\0' % l)
         s.update(text)
         return hex(s.digest())
 

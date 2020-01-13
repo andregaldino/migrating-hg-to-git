@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import os
 import random
 import sys
@@ -74,6 +73,7 @@ from .interfaces import (
 )
 
 from .utils import (
+    hashutil,
     procutil,
     stringutil,
 )
@@ -2007,7 +2007,7 @@ class localrepository(object):
             )
 
         idbase = b"%.40f#%f" % (random.random(), time.time())
-        ha = hex(hashlib.sha1(idbase).digest())
+        ha = hex(hashutil.sha1(idbase).digest())
         txnid = b'TXN:' + ha
         self.hook(b'pretxnopen', throw=True, txnname=desc, txnid=txnid)
 

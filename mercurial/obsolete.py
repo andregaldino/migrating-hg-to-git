@@ -70,7 +70,6 @@ comment associated with each format for details.
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import struct
 
 from .i18n import _
@@ -85,7 +84,10 @@ from . import (
     pycompat,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    hashutil,
+)
 
 parsers = policy.importmod('parsers')
 
@@ -1028,7 +1030,7 @@ def _computecontentdivergentset(repo):
 
 def makefoldid(relation, user):
 
-    folddigest = hashlib.sha1(user)
+    folddigest = hashutil.sha1(user)
     for p in relation[0] + relation[1]:
         folddigest.update(b'%d' % p.rev())
         folddigest.update(p.node())
