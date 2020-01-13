@@ -8,7 +8,6 @@ from __future__ import absolute_import
 
 import collections
 import errno
-import hashlib
 import os
 import stat
 import struct
@@ -24,6 +23,7 @@ from mercurial import (
     util,
 )
 from mercurial.utils import (
+    hashutil,
     storageutil,
     stringutil,
 )
@@ -39,12 +39,12 @@ def isenabled(repo):
 
 
 def getcachekey(reponame, file, id):
-    pathhash = node.hex(hashlib.sha1(file).digest())
+    pathhash = node.hex(hashutil.sha1(file).digest())
     return os.path.join(reponame, pathhash[:2], pathhash[2:], id)
 
 
 def getlocalkey(file, id):
-    pathhash = node.hex(hashlib.sha1(file).digest())
+    pathhash = node.hex(hashutil.sha1(file).digest())
     return os.path.join(pathhash, id)
 
 

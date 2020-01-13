@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import collections
 import contextlib
-import hashlib
 import os
 
 from mercurial.i18n import _
@@ -28,7 +27,10 @@ from mercurial import (
     scmutil,
     util,
 )
-from mercurial.utils import stringutil
+from mercurial.utils import (
+    hashutil,
+    stringutil,
+)
 
 from . import (
     error as faerror,
@@ -148,7 +150,7 @@ def hashdiffopts(diffopts):
     diffoptstr = stringutil.pprint(
         sorted((k, getattr(diffopts, k)) for k in mdiff.diffopts.defaults)
     )
-    return node.hex(hashlib.sha1(diffoptstr).digest())[:6]
+    return node.hex(hashutil.sha1(diffoptstr).digest())[:6]
 
 
 _defaultdiffopthash = hashdiffopts(mdiff.defaultopts)

@@ -45,7 +45,6 @@ option to ``sqlite`` to enable new repositories to use SQLite for storage.
 
 from __future__ import absolute_import
 
-import hashlib
 import sqlite3
 import struct
 import threading
@@ -75,7 +74,10 @@ from mercurial.interfaces import (
     repository,
     util as interfaceutil,
 )
-from mercurial.utils import storageutil
+from mercurial.utils import (
+    hashutil,
+    storageutil,
+)
 
 try:
     from mercurial import zstd
@@ -807,7 +809,7 @@ class sqlitefilestore(object):
                 self._db, pathid, node, {}, {-1: None}, zstddctx=self._dctx
             )
 
-            deltahash = hashlib.sha1(fulltext).digest()
+            deltahash = hashutil.sha1(fulltext).digest()
 
             if self._compengine == b'zstd':
                 deltablob = self._cctx.compress(fulltext)
@@ -837,7 +839,7 @@ class sqlitefilestore(object):
 
         # Now create the tombstone delta and replace the delta on the censored
         # node.
-        deltahash = hashlib.sha1(tombstone).digest()
+        deltahash = hashutil.sha1(tombstone).digest()
         tombstonedeltaid = insertdelta(
             self._db, COMPRESSION_NONE, deltahash, tombstone
         )
@@ -1004,7 +1006,7 @@ class sqlitefilestore(object):
         # us to de-duplicate. The table is configured to ignore conflicts
         # and it is faster to just insert and silently noop than to look
         # first.
-        deltahash = hashlib.sha1(delta).digest()
+        deltahash = hashutil.sha1(delta).digest()
 
         if self._compengine == b'zstd':
             deltablob = self._cctx.compress(delta)

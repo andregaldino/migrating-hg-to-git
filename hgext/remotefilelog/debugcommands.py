@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
-import hashlib
 import os
 import zlib
 
@@ -21,6 +20,7 @@ from mercurial import (
     pycompat,
     revlog,
 )
+from mercurial.utils import hashutil
 from . import (
     constants,
     datapack,
@@ -61,7 +61,7 @@ def debugremotefilelog(ui, path, **opts):
 
 def buildtemprevlog(repo, file):
     # get filename key
-    filekey = nodemod.hex(hashlib.sha1(file).digest())
+    filekey = nodemod.hex(hashutil.sha1(file).digest())
     filedir = os.path.join(repo.path, b'store/data', filekey)
 
     # sort all entries based on linkrev
@@ -421,7 +421,7 @@ def dumpdeltachain(ui, deltachain, **opts):
             % (
                 hashformatter(node),
                 hashformatter(deltabasenode),
-                nodemod.hex(hashlib.sha1(delta).digest()),
+                nodemod.hex(hashutil.sha1(delta).digest()),
                 len(delta),
             )
         )

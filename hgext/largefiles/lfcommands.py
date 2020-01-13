@@ -10,7 +10,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import os
 import shutil
 
@@ -29,6 +28,7 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import hashutil
 
 from ..convert import (
     convcmd,
@@ -273,7 +273,7 @@ def _lfconvert_addchangeset(
                         )
 
                 # largefile was modified, update standins
-                m = hashlib.sha1(b'')
+                m = hashutil.sha1(b'')
                 m.update(ctx[f].data())
                 hash = node.hex(m.digest())
                 if f not in lfiletohash or lfiletohash[f] != hash:

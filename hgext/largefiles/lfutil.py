@@ -11,7 +11,6 @@ from __future__ import absolute_import
 
 import contextlib
 import copy
-import hashlib
 import os
 import stat
 
@@ -32,6 +31,7 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
+from mercurial.utils import hashutil
 
 shortname = b'.hglf'
 shortnameslash = shortname + b'/'
@@ -432,7 +432,7 @@ def writestandin(repo, standin, hash, executable):
 def copyandhash(instream, outfile):
     '''Read bytes from instream (iterable) and write them to outfile,
     computing the SHA-1 hash of the data along the way. Return the hash.'''
-    hasher = hashlib.sha1(b'')
+    hasher = hashutil.sha1(b'')
     for data in instream:
         hasher.update(data)
         outfile.write(data)
@@ -472,7 +472,7 @@ def urljoin(first, second, *arg):
 def hexsha1(fileobj):
     """hexsha1 returns the hex-encoded sha1 sum of the data in the file-like
     object data"""
-    h = hashlib.sha1()
+    h = hashutil.sha1()
     for chunk in util.filechunkiter(fileobj):
         h.update(chunk)
     return hex(h.digest())

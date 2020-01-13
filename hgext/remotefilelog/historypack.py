@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import hashlib
 import struct
 
 from mercurial.node import hex, nullid
@@ -8,6 +7,7 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import hashutil
 from . import (
     basepack,
     constants,
@@ -197,7 +197,7 @@ class historypack(basepack.basepack):
 
     def _findsection(self, name):
         params = self.params
-        namehash = hashlib.sha1(name).digest()
+        namehash = hashutil.sha1(name).digest()
         fanoutkey = struct.unpack(
             params.fanoutstruct, namehash[: params.fanoutprefix]
         )[0]
@@ -499,7 +499,7 @@ class mutablehistorypack(basepack.mutablebasepack):
 
             # Record metadata for the index
             self.files[filename] = (sectionstart, sectionlen)
-            node = hashlib.sha1(filename).digest()
+            node = hashutil.sha1(filename).digest()
             self.entries[node] = node
 
     def close(self, ledger=None):
@@ -517,7 +517,7 @@ class mutablehistorypack(basepack.mutablebasepack):
         nodeindexlength = self.NODEINDEXENTRYLENGTH
 
         files = (
-            (hashlib.sha1(filename).digest(), filename, offset, size)
+            (hashutil.sha1(filename).digest(), filename, offset, size)
             for filename, (offset, size) in pycompat.iteritems(self.files)
         )
         files = sorted(files)

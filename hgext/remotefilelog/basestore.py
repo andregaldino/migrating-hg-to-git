@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import os
 import shutil
 import stat
@@ -15,6 +14,7 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import hashutil
 from . import (
     constants,
     shallowutil,
@@ -166,7 +166,7 @@ class basestore(object):
 
         # Start with a full manifest, since it'll cover the majority of files
         for filename in self.repo[b'tip'].manifest():
-            sha = hashlib.sha1(filename).digest()
+            sha = hashutil.sha1(filename).digest()
             if sha in missingfilename:
                 filenames[filename] = sha
                 missingfilename.discard(sha)
@@ -178,7 +178,7 @@ class basestore(object):
                 break
             files = cl.readfiles(cl.node(rev))
             for filename in files:
-                sha = hashlib.sha1(filename).digest()
+                sha = hashutil.sha1(filename).digest()
                 if sha in missingfilename:
                     filenames[filename] = sha
                     missingfilename.discard(sha)

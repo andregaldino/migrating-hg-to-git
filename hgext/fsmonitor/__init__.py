@@ -108,7 +108,6 @@ created.
 from __future__ import absolute_import
 
 import codecs
-import hashlib
 import os
 import stat
 import sys
@@ -132,7 +131,10 @@ from mercurial import (
     util,
 )
 from mercurial import match as matchmod
-from mercurial.utils import stringutil
+from mercurial.utils import (
+    hashutil,
+    stringutil,
+)
 
 from . import (
     pywatchman,
@@ -235,7 +237,7 @@ def _hashignore(ignore):
     copy.
 
     """
-    sha1 = hashlib.sha1()
+    sha1 = hashutil.sha1()
     sha1.update(pycompat.byterepr(ignore))
     return pycompat.sysbytes(sha1.hexdigest())
 

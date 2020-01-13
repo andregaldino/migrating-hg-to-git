@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import collections
 import errno
-import hashlib
 import mmap
 import os
 import struct
@@ -20,6 +19,7 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
+from mercurial.utils import hashutil
 from . import shallowutil
 
 osutil = policy.importmod('osutil')
@@ -392,7 +392,7 @@ class mutablebasepack(versionmixin):
         )
         self.packfp = os.fdopen(self.packfp, 'wb+')
         self.idxfp = os.fdopen(self.idxfp, 'wb+')
-        self.sha = hashlib.sha1()
+        self.sha = hashutil.sha1()
         self._closed = False
 
         # The opener provides no way of doing permission fixup on files created
