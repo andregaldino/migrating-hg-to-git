@@ -1469,11 +1469,12 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
     """Rebase a single revision rev on top of p1 using base as merge ancestor"""
     # Merge phase
     # Update to destination and merge it with local
+    p1ctx = repo[p1]
     if wctx.isinmemory():
-        wctx.setbase(repo[p1])
+        wctx.setbase(p1ctx)
     else:
         if repo[b'.'].rev() != p1:
-            repo.ui.debug(b" update to %d:%s\n" % (p1, repo[p1]))
+            repo.ui.debug(b" update to %d:%s\n" % (p1, p1ctx))
             mergemod.update(repo, p1, branchmerge=False, force=True)
         else:
             repo.ui.debug(b" already in destination\n")
