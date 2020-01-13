@@ -1486,15 +1486,16 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
     repo.ui.debug(b" merge against %d:%s\n" % (rev, ctx))
     if base is not None:
         repo.ui.debug(b"   detach base %d:%s\n" % (base, repo[base]))
-    # When collapsing in-place, the parent is the common ancestor, we
-    # have to allow merging with it.
+
+    # See explanation in merge.graft()
+    mergeancestor = repo.changelog.isancestor(p1ctx.node(), ctx.node())
     stats = mergemod.update(
         repo,
         rev,
         branchmerge=True,
         force=True,
         ancestor=base,
-        mergeancestor=collapse,
+        mergeancestor=mergeancestor,
         labels=[b'dest', b'source'],
         wc=wctx,
     )

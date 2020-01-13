@@ -288,6 +288,18 @@ Preserves external parent
 
   $ hg rebase -s F --dest I --collapse # root (F) is not a merge
   rebasing 6:c82b08f646f1 "F" (F)
+  file 'E' was deleted in local [dest] but was modified in other [source].
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+
+  $ echo F > E
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase -c
+  rebasing 6:c82b08f646f1 "F" (F)
   rebasing 7:a6db7fa104e1 "G" (G)
   rebasing 8:e1d201b72d91 "H" (H tip)
   saved backup bundle to $TESTTMP/external-parent/.hg/strip-backup/c82b08f646f1-f2721fbf-rebase.hg
