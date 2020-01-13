@@ -39,6 +39,8 @@ typedef struct {
 
 typedef struct {
 	int abi_version;
+	Py_ssize_t (*index_length)(const indexObject *);
+	const char *(*index_node)(indexObject *, Py_ssize_t);
 	int (*index_parents)(PyObject *, int, int *);
 } Revlog_CAPI;
 
@@ -2877,7 +2879,9 @@ bail:
 static Revlog_CAPI CAPI = {
     /* increment the abi_version field upon each change in the Revlog_CAPI
        struct or in the ABI of the listed functions */
-    1,
+    2,
+    index_length,
+    index_node,
     HgRevlogIndex_GetParents,
 };
 

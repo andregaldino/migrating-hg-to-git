@@ -44,6 +44,7 @@ type NodeData = [u8; NODE_BYTES_LENGTH];
 /// [`nybbles_len`]: #method.nybbles_len
 /// [`ExactLengthRequired`]: struct.NodeError#variant.ExactLengthRequired
 #[derive(Clone, Debug, PartialEq)]
+#[repr(transparent)]
 pub struct Node {
     data: NodeData,
 }

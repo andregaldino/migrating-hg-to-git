@@ -11,14 +11,21 @@
 //! but this will take some time to get there.
 
 use cpython::{exc::ImportError, PyClone, PyErr, PyObject, PyResult, Python};
+use hg::revlog::{Node, RevlogIndex};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::c_int;
 
-const REVLOG_CABI_VERSION: c_int = 1;
+const REVLOG_CABI_VERSION: c_int = 2;
 
 #[repr(C)]
 pub struct Revlog_CAPI {
     abi_version: c_int,
+    index_length:
+        unsafe extern "C" fn(index: *mut revlog_capi::RawPyObject) -> c_int,
+    index_node: unsafe extern "C" fn(
+        index: *mut revlog_capi::RawPyObject,
+        rev: c_int,
+    ) -> *const Node,
     index_parents: unsafe extern "C" fn(
         index: *mut revlog_capi::RawPyObject,
         rev: c_int,
@@ -128,6 +135,33 @@ impl Graph for Index {
         match code {
             0 => Ok(res),
             _ => Err(GraphError::ParentOutOfRange(rev)),
+        }
+    }
+}
+
+impl RevlogIndex for Index {
+    /// Note C return type is Py_ssize_t (hence signed), but we shall
+    /// force it to unsigned, because it's a length
+    fn len(&self) -> usize {
+        unsafe { (self.capi.index_length)(self.index.as_ptr()) as usize }
+    }
+
+    fn node<'a>(&'a self, rev: Revision) -> Option<&'a Node> {
+        let raw = unsafe {
+            (self.capi.index_node)(self.index.as_ptr(), rev as c_int)
+        };
+        if raw.is_null() {
+            None
+        } else {
+            // TODO it would be much better for the C layer to give us
+            // a length, since the hash length will change in the near
+            // future, but that's probably out of scope for the nodemap
+            // patch series.
+            //
+            // The root of that unsafety relies in the signature of
+            // `capi.index_node()` itself: returning a `Node` pointer
+            // whereas it's a `char *` in the C counterpart.
+            Some(unsafe { &*raw })
         }
     }
 }
