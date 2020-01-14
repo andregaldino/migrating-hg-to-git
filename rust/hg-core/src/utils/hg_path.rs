@@ -138,6 +138,79 @@ impl HgPath {
             None
         }
     }
+
+    #[cfg(windows)]
+    /// Copied from the Python stdlib's `os.path.splitdrive` implementation.
+    ///
+    /// Split a pathname into drive/UNC sharepoint and relative path specifiers.
+    /// Returns a 2-tuple (drive_or_unc, path); either part may be empty.
+    ///
+    /// If you assign
+    ///  result = split_drive(p)
+    /// It is always true that:
+    ///  result[0] + result[1] == p
+    ///
+    /// If the path contained a drive letter, drive_or_unc will contain everything
+    /// up to and including the colon.
+    /// e.g. split_drive("c:/dir") returns ("c:", "/dir")
+    ///
+    /// If the path contained a UNC path, the drive_or_unc will contain the host
+    /// name and share up to but not including the fourth directory separator
+    /// character.
+    /// e.g. split_drive("//host/computer/dir") returns ("//host/computer", "/dir")
+    ///
+    /// Paths cannot contain both a drive letter and a UNC path.
+    pub fn split_drive<'a>(&self) -> (&HgPath, &HgPath) {
+        let bytes = self.as_bytes();
+        let is_sep = |b| std::path::is_separator(b as char);
+
+        if self.len() < 2 {
+            (HgPath::new(b""), &self)
+        } else if is_sep(bytes[0])
+            && is_sep(bytes[1])
+            && (self.len() == 2 || !is_sep(bytes[2]))
+        {
+            // Is a UNC path:
+            // vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
+            // \\machine\mountpoint\directory\etc\...
+            //           directory ^^^^^^^^^^^^^^^
+
+            let machine_end_index = bytes[2..].iter().position(|b| is_sep(*b));
+            let mountpoint_start_index = if let Some(i) = machine_end_index {
+                i + 2
+            } else {
+                return (HgPath::new(b""), &self);
+            };
+
+            match bytes[mountpoint_start_index + 1..]
+                .iter()
+                .position(|b| is_sep(*b))
+            {
+                // A UNC path can't have two slashes in a row
+                // (after the initial two)
+                Some(0) => (HgPath::new(b""), &self),
+                Some(i) => {
+                    let (a, b) =
+                        bytes.split_at(mountpoint_start_index + 1 + i);
+                    (HgPath::new(a), HgPath::new(b))
+                }
+                None => (&self, HgPath::new(b"")),
+            }
+        } else if bytes[1] == b':' {
+            // Drive path c:\directory
+            let (a, b) = bytes.split_at(2);
+            (HgPath::new(a), HgPath::new(b))
+        } else {
+            (HgPath::new(b""), &self)
+        }
+    }
+
+    #[cfg(unix)]
+    /// Split a pathname into drive and path. On Posix, drive is always empty.
+    pub fn split_drive(&self) -> (&HgPath, &HgPath) {
+        (HgPath::new(b""), &self)
+    }
+
     /// Checks for errors in the path, short-circuiting at the first one.
     /// This generates fine-grained errors useful for debugging.
     /// To simply check if the path is valid during tests, use `is_valid`.
@@ -472,5 +545,102 @@ mod tests {
         let path = HgPath::new(b"ends/with/dir/");
         let base = HgPath::new(b"ends/");
         assert_eq!(Some(HgPath::new(b"with/dir/")), path.relative_to(base));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_split_drive() {
+        // Taken from the Python stdlib's tests
+        assert_eq!(
+            HgPath::new(br"/foo/bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"/foo/bar"))
+        );
+        assert_eq!(
+            HgPath::new(br"foo:bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"foo:bar"))
+        );
+        assert_eq!(
+            HgPath::new(br":foo:bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br":foo:bar"))
+        );
+        // Also try NT paths; should not split them
+        assert_eq!(
+            HgPath::new(br"c:\foo\bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"c:\foo\bar"))
+        );
+        assert_eq!(
+            HgPath::new(b"c:/foo/bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"c:/foo/bar"))
+        );
+        assert_eq!(
+            HgPath::new(br"\\conky\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(b""),
+                HgPath::new(br"\\conky\mountpoint\foo\bar")
+            )
+        );
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_split_drive() {
+        assert_eq!(
+            HgPath::new(br"c:\foo\bar").split_drive(),
+            (HgPath::new(br"c:"), HgPath::new(br"\foo\bar"))
+        );
+        assert_eq!(
+            HgPath::new(b"c:/foo/bar").split_drive(),
+            (HgPath::new(br"c:"), HgPath::new(br"/foo/bar"))
+        );
+        assert_eq!(
+            HgPath::new(br"\\conky\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(br"\\conky\mountpoint"),
+                HgPath::new(br"\foo\bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"//conky/mountpoint/foo/bar").split_drive(),
+            (
+                HgPath::new(br"//conky/mountpoint"),
+                HgPath::new(br"/foo/bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"\\\conky\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"\\\conky\mountpoint\foo\bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"///conky/mountpoint/foo/bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"///conky/mountpoint/foo/bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"\\conky\\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"\\conky\\mountpoint\foo\bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"//conky//mountpoint/foo/bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"//conky//mountpoint/foo/bar")
+            )
+        );
+        // UNC part containing U+0130
+        assert_eq!(
+            HgPath::new(b"//conky/MOUNTPO\xc4\xb0NT/foo/bar").split_drive(),
+            (
+                HgPath::new(b"//conky/MOUNTPO\xc4\xb0NT"),
+                HgPath::new(br"/foo/bar")
+            )
+        );
     }
 }
