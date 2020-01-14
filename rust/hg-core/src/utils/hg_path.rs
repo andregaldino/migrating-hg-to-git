@@ -183,6 +183,29 @@ impl HgPath {
             &self.inner[..]
         })
     }
+    /// Returns a tuple of slices `(base, filename)` resulting from the split
+    /// at the rightmost `/`, if any.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use hg::utils::hg_path::HgPath;
+    ///
+    /// let path = HgPath::new(b"cool/hg/path").split_filename();
+    /// assert_eq!(path, (HgPath::new(b"cool/hg"), HgPath::new(b"path")));
+    ///
+    /// let path = HgPath::new(b"pathwithoutsep").split_filename();
+    /// assert_eq!(path, (HgPath::new(b""), HgPath::new(b"pathwithoutsep")));
+    /// ```
+    pub fn split_filename(&self) -> (&Self, &Self) {
+        match &self.inner.iter().rposition(|c| *c == b'/') {
+            None => (HgPath::new(""), &self),
+            Some(size) => (
+                HgPath::new(&self.inner[..*size]),
+                HgPath::new(&self.inner[*size + 1..]),
+            ),
+        }
+    }
     pub fn join<T: ?Sized + AsRef<Self>>(&self, other: &T) -> HgPathBuf {
         let mut inner = self.inner.to_owned();
         if inner.len() != 0 && inner.last() != Some(&b'/') {

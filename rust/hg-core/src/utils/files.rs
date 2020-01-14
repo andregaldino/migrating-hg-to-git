@@ -10,11 +10,11 @@
 //! Functions for fiddling with files.
 
 use crate::utils::hg_path::{HgPath, HgPathBuf};
-use std::iter::FusedIterator;
 
 use crate::utils::replace_slice;
 use lazy_static::lazy_static;
 use std::fs::Metadata;
+use std::iter::FusedIterator;
 use std::path::Path;
 
 pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
@@ -64,6 +64,28 @@ impl<'a> Iterator for Ancestors<'a> {
 
 impl<'a> FusedIterator for Ancestors<'a> {}
 
+/// An iterator over repository path yielding itself and its ancestors.
+#[derive(Copy, Clone, Debug)]
+pub(crate) struct AncestorsWithBase<'a> {
+    next: Option<(&'a HgPath, &'a HgPath)>,
+}
+
+impl<'a> Iterator for AncestorsWithBase<'a> {
+    type Item = (&'a HgPath, &'a HgPath);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.next;
+        self.next = match self.next {
+            Some((s, _)) if s.is_empty() => None,
+            Some((s, _)) => Some(s.split_filename()),
+            None => None,
+        };
+        next
+    }
+}
+
+impl<'a> FusedIterator for AncestorsWithBase<'a> {}
+
 /// Returns an iterator yielding ancestor directories of the given repository
 /// path.
 ///
@@ -73,6 +95,25 @@ impl<'a> FusedIterator for Ancestors<'a> {}
 /// directory.)
 pub fn find_dirs<'a>(path: &'a HgPath) -> Ancestors<'a> {
     let mut dirs = Ancestors { next: Some(path) };
+    if !path.is_empty() {
+        dirs.next(); // skip itself
+    }
+    dirs
+}
+
+/// Returns an iterator yielding ancestor directories of the given repository
+/// path.
+///
+/// The path is separated by '/', and must not start with '/'.
+///
+/// The path itself isn't included unless it is b"" (meaning the root
+/// directory.)
+pub(crate) fn find_dirs_with_base<'a>(
+    path: &'a HgPath,
+) -> AncestorsWithBase<'a> {
+    let mut dirs = AncestorsWithBase {
+        next: Some((path, HgPath::new(b""))),
+    };
     if !path.is_empty() {
         dirs.next(); // skip itself
     }
@@ -167,6 +208,30 @@ mod tests {
         // looks weird, but mercurial.pathutil.finddirs(b"") yields b""
         let mut dirs = super::find_dirs(HgPath::new(b""));
         assert_eq!(dirs.next(), Some(HgPath::new(b"")));
+        assert_eq!(dirs.next(), None);
+        assert_eq!(dirs.next(), None);
+    }
+
+    #[test]
+    fn test_find_dirs_with_base_some() {
+        let mut dirs = super::find_dirs_with_base(HgPath::new(b"foo/bar/baz"));
+        assert_eq!(
+            dirs.next(),
+            Some((HgPath::new(b"foo/bar"), HgPath::new(b"baz")))
+        );
+        assert_eq!(
+            dirs.next(),
+            Some((HgPath::new(b"foo"), HgPath::new(b"bar")))
+        );
+        assert_eq!(dirs.next(), Some((HgPath::new(b""), HgPath::new(b"foo"))));
+        assert_eq!(dirs.next(), None);
+        assert_eq!(dirs.next(), None);
+    }
+
+    #[test]
+    fn test_find_dirs_with_base_empty() {
+        let mut dirs = super::find_dirs_with_base(HgPath::new(b""));
+        assert_eq!(dirs.next(), Some((HgPath::new(b""), HgPath::new(b""))));
         assert_eq!(dirs.next(), None);
         assert_eq!(dirs.next(), None);
     }

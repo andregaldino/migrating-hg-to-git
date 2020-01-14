@@ -8,12 +8,15 @@
 //! A multiset of directory names.
 //!
 //! Used to counts the references to directories in a manifest or dirstate.
-use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::{
-    dirstate::EntryState, utils::files, DirstateEntry, DirstateMapError,
-    FastHashMap,
+    dirstate::EntryState,
+    utils::{
+        files,
+        hg_path::{HgPath, HgPathBuf},
+    },
+    DirstateEntry, DirstateMapError, FastHashMap,
 };
-use std::collections::hash_map::{self, Entry};
+use std::collections::{hash_map, hash_map::Entry, HashMap, HashSet};
 
 // could be encapsulated if we care API stability more seriously
 pub type DirsMultisetIter<'a> = hash_map::Keys<'a, HgPathBuf, u32>;
@@ -126,6 +129,68 @@ impl DirsMultiset {
 
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+}
+
+/// This is basically a reimplementation of `DirsMultiset` that stores the
+/// children instead of just a count of them, plus a small optional
+/// optimization to avoid some directories we don't need.
+#[derive(PartialEq, Debug)]
+pub struct DirsChildrenMultiset<'a> {
+    inner: FastHashMap<&'a HgPath, HashSet<&'a HgPath>>,
+    only_include: Option<HashSet<&'a HgPath>>,
+}
+
+impl<'a> DirsChildrenMultiset<'a> {
+    pub fn new(
+        paths: impl Iterator<Item = &'a HgPathBuf>,
+        only_include: Option<&'a HashSet<impl AsRef<HgPath> + 'a>>,
+    ) -> Self {
+        let mut new = Self {
+            inner: HashMap::default(),
+            only_include: only_include
+                .map(|s| s.iter().map(|p| p.as_ref()).collect()),
+        };
+
+        for path in paths {
+            new.add_path(path)
+        }
+
+        new
+    }
+    fn add_path(&mut self, path: &'a (impl AsRef<HgPath> + 'a)) {
+        if path.as_ref().is_empty() {
+            return;
+        }
+        for (directory, basename) in files::find_dirs_with_base(path.as_ref())
+        {
+            if !self.is_dir_included(directory) {
+                continue;
+            }
+            self.inner
+                .entry(directory)
+                .and_modify(|e| {
+                    e.insert(basename);
+                })
+                .or_insert_with(|| {
+                    let mut set = HashSet::new();
+                    set.insert(basename);
+                    set
+                });
+        }
+    }
+    fn is_dir_included(&self, dir: impl AsRef<HgPath>) -> bool {
+        match &self.only_include {
+            None => false,
+            Some(i) => i.contains(dir.as_ref()),
+        }
+    }
+
+    pub fn get(
+        &self,
+        path: impl AsRef<HgPath>,
+    ) -> Option<&HashSet<&'a HgPath>> {
+        self.inner.get(path.as_ref())
     }
 }
 
