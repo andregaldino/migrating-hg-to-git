@@ -225,7 +225,7 @@ class basestore(object):
             data = shallowutil.readfile(filepath)
             if self._validatecache and not self._validatedata(data, filepath):
                 if self._validatecachelog:
-                    with open(self._validatecachelog, b'a+') as f:
+                    with open(self._validatecachelog, b'ab+') as f:
                         f.write(b"corrupt %s during read\n" % filepath)
                 os.rename(filepath, filepath + b".corrupt")
                 raise KeyError(b"corrupt local cache file %s" % filepath)
