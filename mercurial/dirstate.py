@@ -1083,6 +1083,46 @@ class dirstate(object):
                     results[next(iv)] = st
         return results
 
+    def _rust_status(self, matcher, list_clean):
+        # Force Rayon (Rust parallelism library) to respect the number of
+        # workers. This is a temporary workaround until Rust code knows
+        # how to read the config file.
+        numcpus = self._ui.configint(b"worker", b"numcpus")
+        if numcpus is not None:
+            encoding.environ.setdefault(b'RAYON_NUM_THREADS', b'%d' % numcpus)
+
+        workers_enabled = self._ui.configbool(b"worker", b"enabled", True)
+        if not workers_enabled:
+            encoding.environ[b"RAYON_NUM_THREADS"] = b"1"
+
+        (
+            lookup,
+            modified,
+            added,
+            removed,
+            deleted,
+            unknown,
+            clean,
+        ) = rustmod.status(
+            self._map._rustmap,
+            matcher,
+            self._rootdir,
+            bool(list_clean),
+            self._lastnormaltime,
+            self._checkexec,
+        )
+
+        status = scmutil.status(
+            modified=modified,
+            added=added,
+            removed=removed,
+            deleted=deleted,
+            unknown=unknown,
+            ignored=[],
+            clean=clean,
+        )
+        return (lookup, status)
+
     def status(self, match, subrepos, ignored, clean, unknown):
         '''Determine the status of the working copy relative to the
         dirstate and return a pair of (unsure, status), where status is of type
@@ -1127,46 +1167,7 @@ class dirstate(object):
             use_rust = False
 
         if use_rust:
-            # Force Rayon (Rust parallelism library) to respect the number of
-            # workers. This is a temporary workaround until Rust code knows
-            # how to read the config file.
-            numcpus = self._ui.configint(b"worker", b"numcpus")
-            if numcpus is not None:
-                encoding.environ.setdefault(
-                    b'RAYON_NUM_THREADS', b'%d' % numcpus
-                )
-
-            workers_enabled = self._ui.configbool(b"worker", b"enabled", True)
-            if not workers_enabled:
-                encoding.environ[b"RAYON_NUM_THREADS"] = b"1"
-
-            (
-                lookup,
-                modified,
-                added,
-                removed,
-                deleted,
-                unknown,
-                clean,
-            ) = rustmod.status(
-                dmap._rustmap,
-                match,
-                self._rootdir,
-                bool(listclean),
-                self._lastnormaltime,
-                self._checkexec,
-            )
-
-            status = scmutil.status(
-                modified=modified,
-                added=added,
-                removed=removed,
-                deleted=deleted,
-                unknown=unknown,
-                ignored=ignored,
-                clean=clean,
-            )
-            return (lookup, status)
+            return self._rust_status(match, listclean)
 
         def noop(f):
             pass
