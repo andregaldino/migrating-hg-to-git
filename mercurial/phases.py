@@ -253,15 +253,19 @@ class phasecache(object):
 
         # fast path: _phasesets contains the interesting sets,
         # might only need a union and post-filtering.
+        revsneedscopy = False
         if len(phases) == 1:
             [p] = phases
             revs = self._phasesets[p]
+            revsneedscopy = True  # Don't modify _phasesets
         else:
             # revs has the revisions in all *other* phases.
             revs = set.union(*[self._phasesets[p] for p in phases])
 
         def _addwdir(wdirsubset, wdirrevs):
             if wdirrev in wdirsubset and repo[None].phase() in phases:
+                if revsneedscopy:
+                    wdirrevs = wdirrevs.copy()
                 # The working dir would never be in the # cache, but it was in
                 # the subset being filtered for its phase (or filtered out,
                 # depending on publicphase), so add it to the output to be
