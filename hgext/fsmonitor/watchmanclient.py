@@ -105,11 +105,11 @@ class client(object):
                 )
             return self._watchmanclient.query(*watchmanargs)
         except pywatchman.CommandError as ex:
-            if b'unable to resolve root' in ex.msg:
+            if 'unable to resolve root' in ex.msg:
                 raise WatchmanNoRoot(
                     self._root, stringutil.forcebytestr(ex.msg)
                 )
-            raise Unavailable(ex.msg)
+            raise Unavailable(stringutil.forcebytestr(ex.msg))
         except pywatchman.WatchmanError as ex:
             raise Unavailable(stringutil.forcebytestr(ex))
 
