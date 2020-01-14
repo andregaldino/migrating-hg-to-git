@@ -173,10 +173,17 @@ impl HgPath {
     pub fn contains(&self, other: u8) -> bool {
         self.inner.contains(&other)
     }
-    pub fn starts_with(&self, needle: impl AsRef<HgPath>) -> bool {
+    pub fn starts_with(&self, needle: impl AsRef<Self>) -> bool {
         self.inner.starts_with(needle.as_ref().as_bytes())
     }
-    pub fn join<T: ?Sized + AsRef<HgPath>>(&self, other: &T) -> HgPathBuf {
+    pub fn trim_trailing_slash(&self) -> &Self {
+        Self::new(if self.inner.last() == Some(&b'/') {
+            &self.inner[..self.inner.len() - 1]
+        } else {
+            &self.inner[..]
+        })
+    }
+    pub fn join<T: ?Sized + AsRef<Self>>(&self, other: &T) -> HgPathBuf {
         let mut inner = self.inner.to_owned();
         if inner.len() != 0 && inner.last() != Some(&b'/') {
             inner.push(b'/');
@@ -184,17 +191,24 @@ impl HgPath {
         inner.extend(other.as_ref().bytes());
         HgPathBuf::from_bytes(&inner)
     }
+    pub fn parent(&self) -> &Self {
+        let inner = self.as_bytes();
+        HgPath::new(match inner.iter().rposition(|b| *b == b'/') {
+            Some(pos) => &inner[..pos],
+            None => &[],
+        })
+    }
     /// Given a base directory, returns the slice of `self` relative to the
     /// base directory. If `base` is not a directory (does not end with a
     /// `b'/'`), returns `None`.
-    pub fn relative_to(&self, base: impl AsRef<HgPath>) -> Option<&HgPath> {
+    pub fn relative_to(&self, base: impl AsRef<Self>) -> Option<&Self> {
         let base = base.as_ref();
         if base.is_empty() {
             return Some(self);
         }
         let is_dir = base.as_bytes().ends_with(b"/");
         if is_dir && self.starts_with(base) {
-            Some(HgPath::new(&self.inner[base.len()..]))
+            Some(Self::new(&self.inner[base.len()..]))
         } else {
             None
         }
@@ -484,6 +498,7 @@ pub fn path_to_hg_path_buf<P: AsRef<Path>>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_path_states() {
@@ -711,5 +726,20 @@ mod tests {
                 HgPath::new(br"/foo/bar")
             )
         );
+    }
+
+    #[test]
+    fn test_parent() {
+        let path = HgPath::new(b"");
+        assert_eq!(path.parent(), path);
+
+        let path = HgPath::new(b"a");
+        assert_eq!(path.parent(), HgPath::new(b""));
+
+        let path = HgPath::new(b"a/b");
+        assert_eq!(path.parent(), HgPath::new(b"a"));
+
+        let path = HgPath::new(b"a/other/b");
+        assert_eq!(path.parent(), HgPath::new(b"a/other"));
     }
 }
