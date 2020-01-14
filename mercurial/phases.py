@@ -243,49 +243,46 @@ class phasecache(object):
         """return a smartset for the given phases"""
         self.loadphaserevs(repo)  # ensure phase's sets are loaded
         phases = set(phases)
+        publicphase = public in phases
 
-        if public not in phases:
-            # fast path: _phasesets contains the interesting sets,
-            # might only need a union and post-filtering.
-            if len(phases) == 1:
-                [p] = phases
-                revs = self._phasesets[p]
-            else:
-                revs = set.union(*[self._phasesets[p] for p in phases])
+        if publicphase:
+            # In this case, phases keeps all the *other* phases.
+            phases = set(allphases).difference(phases)
+            if not phases:
+                return smartset.fullreposet(repo)
+
+        # fast path: _phasesets contains the interesting sets,
+        # might only need a union and post-filtering.
+        if len(phases) == 1:
+            [p] = phases
+            revs = self._phasesets[p]
+        else:
+            # revs has the revisions in all *other* phases.
+            revs = set.union(*[self._phasesets[p] for p in phases])
+
+        def _addwdir(wdirsubset, wdirrevs):
+            if wdirrev in wdirsubset and repo[None].phase() in phases:
+                # The working dir would never be in the # cache, but it was in
+                # the subset being filtered for its phase (or filtered out,
+                # depending on publicphase), so add it to the output to be
+                # included (or filtered out).
+                wdirrevs.add(wdirrev)
+            return wdirrevs
+
+        if not publicphase:
             if repo.changelog.filteredrevs:
                 revs = revs - repo.changelog.filteredrevs
 
             if subset is None:
                 return smartset.baseset(revs)
             else:
-                if wdirrev in subset and repo[None].phase() in phases:
-                    # The working dir would never be in the cache, but it was
-                    # in the subset being filtered for its phase, so add it to
-                    # the output.
-                    revs.add(wdirrev)
-
+                revs = _addwdir(subset, revs)
                 return subset & smartset.baseset(revs)
         else:
-            # phases keeps all the *other* phases.
-            phases = set(allphases).difference(phases)
-            if not phases:
-                return smartset.fullreposet(repo)
-
-            # revs has the revisions in all *other* phases.
-            if len(phases) == 1:
-                [p] = phases
-                revs = self._phasesets[p]
-            else:
-                revs = set.union(*[self._phasesets[p] for p in phases])
-
             if subset is None:
                 subset = smartset.fullreposet(repo)
 
-            if wdirrev in subset and repo[None].phase() in phases:
-                # The working dir is in the subset being filtered, and its
-                # phase is in the phases *not* being returned, so add it to the
-                # set of revisions to filter out.
-                revs.add(wdirrev)
+            revs = _addwdir(subset, revs)
 
             if not revs:
                 return subset
