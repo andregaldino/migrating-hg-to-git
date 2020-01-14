@@ -588,7 +588,9 @@ class _gitlfsremote(object):
         else:
             oids = transfer(sorted(objects, key=lambda o: o.get(b'oid')))
 
-        with self.ui.makeprogress(topic, total=total) as progress:
+        with self.ui.makeprogress(
+            topic, unit=_(b"bytes"), total=total
+        ) as progress:
             progress.update(0)
             processed = 0
             blobs = 0
