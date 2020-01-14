@@ -9,13 +9,18 @@
 
 //! Functions for fiddling with files.
 
-use crate::utils::hg_path::{HgPath, HgPathBuf};
-
-use crate::utils::replace_slice;
+use crate::utils::{
+    hg_path::{path_to_hg_path_buf, HgPath, HgPathBuf, HgPathError},
+    path_auditor::PathAuditor,
+    replace_slice,
+};
 use lazy_static::lazy_static;
+use same_file::is_same_file;
+use std::borrow::ToOwned;
 use std::fs::Metadata;
 use std::iter::FusedIterator;
-use std::path::Path;
+use std::ops::Deref;
+use std::path::{Path, PathBuf};
 
 pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
     let os_str;
@@ -189,9 +194,66 @@ impl HgMetadata {
     }
 }
 
+/// Returns the canonical path of `name`, given `cwd` and `root`
+pub fn canonical_path(
+    root: impl AsRef<Path>,
+    cwd: impl AsRef<Path>,
+    name: impl AsRef<Path>,
+) -> Result<PathBuf, HgPathError> {
+    // TODO add missing normalization for other platforms
+    let root = root.as_ref();
+    let cwd = cwd.as_ref();
+    let name = name.as_ref();
+
+    let name = if !name.is_absolute() {
+        root.join(&cwd).join(&name)
+    } else {
+        name.to_owned()
+    };
+    let mut auditor = PathAuditor::new(&root);
+    if name != root && name.starts_with(&root) {
+        let name = name.strip_prefix(&root).unwrap();
+        auditor.audit_path(path_to_hg_path_buf(name)?)?;
+        return Ok(name.to_owned());
+    } else if name == root {
+        return Ok("".into());
+    } else {
+        // Determine whether `name' is in the hierarchy at or beneath `root',
+        // by iterating name=name.parent() until it returns `None` (can't
+        // check name == '/', because that doesn't work on windows).
+        let mut name = name.deref();
+        let original_name = name.to_owned();
+        loop {
+            let same = is_same_file(&name, &root).unwrap_or(false);
+            if same {
+                if name == original_name {
+                    // `name` was actually the same as root (maybe a symlink)
+                    return Ok("".into());
+                }
+                // `name` is a symlink to root, so `original_name` is under
+                // root
+                let rel_path = original_name.strip_prefix(&name).unwrap();
+                auditor.audit_path(path_to_hg_path_buf(&rel_path)?)?;
+                return Ok(rel_path.to_owned());
+            }
+            name = match name.parent() {
+                None => break,
+                Some(p) => p,
+            };
+        }
+        // TODO hint to the user about using --cwd
+        // Bubble up the responsibility to Python for now
+        Err(HgPathError::NotUnderRoot {
+            path: original_name.to_owned(),
+            root: root.to_owned(),
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn find_dirs_some() {
@@ -234,5 +296,89 @@ mod tests {
         assert_eq!(dirs.next(), Some((HgPath::new(b""), HgPath::new(b""))));
         assert_eq!(dirs.next(), None);
         assert_eq!(dirs.next(), None);
+    }
+
+    #[test]
+    fn test_canonical_path() {
+        let root = Path::new("/repo");
+        let cwd = Path::new("/dir");
+        let name = Path::new("filename");
+        assert_eq!(
+            canonical_path(root, cwd, name),
+            Err(HgPathError::NotUnderRoot {
+                path: PathBuf::from("/dir/filename"),
+                root: root.to_path_buf()
+            })
+        );
+
+        let root = Path::new("/repo");
+        let cwd = Path::new("/");
+        let name = Path::new("filename");
+        assert_eq!(
+            canonical_path(root, cwd, name),
+            Err(HgPathError::NotUnderRoot {
+                path: PathBuf::from("/filename"),
+                root: root.to_path_buf()
+            })
+        );
+
+        let root = Path::new("/repo");
+        let cwd = Path::new("/");
+        let name = Path::new("repo/filename");
+        assert_eq!(
+            canonical_path(root, cwd, name),
+            Ok(PathBuf::from("filename"))
+        );
+
+        let root = Path::new("/repo");
+        let cwd = Path::new("/repo");
+        let name = Path::new("filename");
+        assert_eq!(
+            canonical_path(root, cwd, name),
+            Ok(PathBuf::from("filename"))
+        );
+
+        let root = Path::new("/repo");
+        let cwd = Path::new("/repo/subdir");
+        let name = Path::new("filename");
+        assert_eq!(
+            canonical_path(root, cwd, name),
+            Ok(PathBuf::from("subdir/filename"))
+        );
+    }
+
+    #[test]
+    fn test_canonical_path_not_rooted() {
+        use std::fs::create_dir;
+        use tempfile::tempdir;
+
+        let base_dir = tempdir().unwrap();
+        let base_dir_path = base_dir.path();
+        let beneath_repo = base_dir_path.join("a");
+        let root = base_dir_path.join("a/b");
+        let out_of_repo = base_dir_path.join("c");
+        let under_repo_symlink = out_of_repo.join("d");
+
+        create_dir(&beneath_repo).unwrap();
+        create_dir(&root).unwrap();
+
+        // TODO make portable
+        std::os::unix::fs::symlink(&root, &out_of_repo).unwrap();
+
+        assert_eq!(
+            canonical_path(&root, Path::new(""), out_of_repo),
+            Ok(PathBuf::from(""))
+        );
+        assert_eq!(
+            canonical_path(&root, Path::new(""), &beneath_repo),
+            Err(HgPathError::NotUnderRoot {
+                path: beneath_repo.to_owned(),
+                root: root.to_owned()
+            })
+        );
+        assert_eq!(
+            canonical_path(&root, Path::new(""), &under_repo_symlink),
+            Ok(PathBuf::from("d"))
+        );
     }
 }
