@@ -1064,11 +1064,7 @@ class hginstallscripts(install_scripts):
             # absolute path instead
             libdir = self.install_lib
         else:
-            common = os.path.commonprefix((self.install_dir, self.install_lib))
-            rest = self.install_dir[len(common) :]
-            uplevel = len([n for n in os.path.split(rest) if n])
-
-            libdir = uplevel * ('..' + os.sep) + self.install_lib[len(common) :]
+            libdir = os.path.relpath(self.install_lib, self.install_dir)
 
         for outfile in self.outfiles:
             with open(outfile, 'rb') as fp:
