@@ -7,6 +7,9 @@
 
 //! Contains useful functions, traits, structs, etc. for use in core.
 
+use crate::utils::hg_path::HgPath;
+use std::{io::Write, ops::Deref};
+
 pub mod files;
 pub mod hg_path;
 pub mod path_auditor;
@@ -110,5 +113,56 @@ impl SliceExt for [u8] {
         } else {
             None
         }
+    }
+}
+
+pub trait Escaped {
+    /// Return bytes escaped for display to the user
+    fn escaped_bytes(&self) -> Vec<u8>;
+}
+
+impl Escaped for u8 {
+    fn escaped_bytes(&self) -> Vec<u8> {
+        let mut acc = vec![];
+        match self {
+            c @ b'\'' | c @ b'\\' => {
+                acc.push(b'\\');
+                acc.push(*c);
+            }
+            b'\t' => {
+                acc.extend(br"\\t");
+            }
+            b'\n' => {
+                acc.extend(br"\\n");
+            }
+            b'\r' => {
+                acc.extend(br"\\r");
+            }
+            c if (*c < b' ' || *c >= 127) => {
+                write!(acc, "\\x{:x}", self).unwrap();
+            }
+            c => {
+                acc.push(*c);
+            }
+        }
+        acc
+    }
+}
+
+impl<'a, T: Escaped> Escaped for &'a [T] {
+    fn escaped_bytes(&self) -> Vec<u8> {
+        self.iter().flat_map(|item| item.escaped_bytes()).collect()
+    }
+}
+
+impl<T: Escaped> Escaped for Vec<T> {
+    fn escaped_bytes(&self) -> Vec<u8> {
+        self.deref().escaped_bytes()
+    }
+}
+
+impl<'a> Escaped for &'a HgPath {
+    fn escaped_bytes(&self) -> Vec<u8> {
+        self.as_bytes().escaped_bytes()
     }
 }
