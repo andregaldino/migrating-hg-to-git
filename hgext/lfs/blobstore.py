@@ -491,22 +491,22 @@ class _gitlfsremote(object):
 
         response = b''
         try:
-            with contextlib.closing(self.urlopener.open(request)) as req:
+            with contextlib.closing(self.urlopener.open(request)) as res:
                 ui = self.ui  # Shorten debug lines
                 if self.ui.debugflag:
-                    ui.debug(b'Status: %d\n' % req.status)
+                    ui.debug(b'Status: %d\n' % res.status)
                     # lfs-test-server and hg serve return headers in different
                     # order
-                    headers = pycompat.bytestr(req.info()).strip()
+                    headers = pycompat.bytestr(res.info()).strip()
                     ui.debug(b'%s\n' % b'\n'.join(sorted(headers.splitlines())))
 
                 if action == b'download':
                     # If downloading blobs, store downloaded data to local
                     # blobstore
-                    localstore.download(oid, req)
+                    localstore.download(oid, res)
                 else:
                     while True:
-                        data = req.read(1048576)
+                        data = res.read(1048576)
                         if not data:
                             break
                         response += data
