@@ -10,12 +10,15 @@
 //! Ideally, we should use an Index entirely implemented in Rust,
 //! but this will take some time to get there.
 
-use cpython::{PyClone, PyObject, PyResult, Python};
+use cpython::{exc::ImportError, PyClone, PyErr, PyObject, PyResult, Python};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::c_int;
 
+const REVLOG_CABI_VERSION: c_int = 1;
+
 #[repr(C)]
 pub struct Revlog_CAPI {
+    abi_version: c_int,
     index_parents: unsafe extern "C" fn(
         index: *mut revlog_capi::RawPyObject,
         rev: c_int,
@@ -66,9 +69,20 @@ pub struct Index {
 
 impl Index {
     pub fn new(py: Python, index: PyObject) -> PyResult<Self> {
+        let capi = unsafe { revlog_capi::retrieve(py)? };
+        if capi.abi_version != REVLOG_CABI_VERSION {
+            return Err(PyErr::new::<ImportError, _>(
+                py,
+                format!(
+                    "ABI version mismatch: the C ABI revlog version {} \
+                     does not match the {} expected by Rust hg-cpython",
+                    capi.abi_version, REVLOG_CABI_VERSION
+                ),
+            ));
+        }
         Ok(Index {
             index: index,
-            capi: unsafe { revlog_capi::retrieve(py)? },
+            capi: capi,
         })
     }
 

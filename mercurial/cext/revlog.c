@@ -38,6 +38,7 @@ typedef struct {
 } nodetreenode;
 
 typedef struct {
+	int abi_version;
 	int (*index_parents)(PyObject *, int, int *);
 } Revlog_CAPI;
 
@@ -3037,6 +3038,9 @@ static PyTypeObject rustlazyancestorsType = {
 #endif /* WITH_RUST */
 
 static Revlog_CAPI CAPI = {
+    /* increment the abi_version field upon each change in the Revlog_CAPI
+       struct or in the ABI of the listed functions */
+    1,
     HgRevlogIndex_GetParents,
 };
 
