@@ -1065,6 +1065,7 @@ def phabsend(ui, repo, *revs, **opts):
     opts = pycompat.byteskwargs(opts)
     revs = list(revs) + opts.get(b'rev', [])
     revs = scmutil.revrange(repo, revs)
+    revs.sort()  # ascending order to preserve topological parent/child in phab
 
     if not revs:
         raise error.Abort(_(b'phabsend requires at least one changeset'))
