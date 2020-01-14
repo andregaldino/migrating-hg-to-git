@@ -33,7 +33,6 @@ pub mod dagops;
 pub mod dirstate;
 pub mod discovery;
 pub mod exceptions;
-pub mod filepatterns;
 pub mod parsers;
 pub mod revlog;
 pub mod utils;
@@ -53,25 +52,10 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     m.add(py, "revlog", revlog::init_module(py, &dotted_name)?)?;
     m.add(
         py,
-        "filepatterns",
-        filepatterns::init_module(py, &dotted_name)?,
-    )?;
-    m.add(
-        py,
         "parsers",
         parsers::init_parsers_module(py, &dotted_name)?,
     )?;
     m.add(py, "GraphError", py.get_type::<exceptions::GraphError>())?;
-    m.add(
-        py,
-        "PatternFileError",
-        py.get_type::<exceptions::PatternFileError>(),
-    )?;
-    m.add(
-        py,
-        "PatternError",
-        py.get_type::<exceptions::PatternError>(),
-    )?;
     Ok(())
 });
 

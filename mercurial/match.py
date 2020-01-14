@@ -24,7 +24,7 @@ from . import (
 )
 from .utils import stringutil
 
-rustmod = policy.importrust('filepatterns')
+rustmod = policy.importrust('dirstate')
 
 allpatternkinds = (
     b're',
@@ -1273,15 +1273,6 @@ def _regex(kind, pat, globsuffix):
     '''Convert a (normalized) pattern of any kind into a
     regular expression.
     globsuffix is appended to the regexp of globs.'''
-
-    if rustmod is not None:
-        try:
-            return rustmod.build_single_regex(kind, pat, globsuffix)
-        except rustmod.PatternError:
-            raise error.ProgrammingError(
-                b'not a regex pattern: %s:%s' % (kind, pat)
-            )
-
     if not pat and kind in (b'glob', b'relpath'):
         return b''
     if kind == b're':
@@ -1553,18 +1544,6 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     (pattern, lineno, originalline).
     This is useful to debug ignore patterns.
     '''
-
-    if rustmod is not None:
-        result, warnings = rustmod.read_pattern_file(
-            filepath, bool(warn), sourceinfo,
-        )
-
-        for warning_params in warnings:
-            # Can't be easily emitted from Rust, because it would require
-            # a mechanism for both gettext and calling the `warn` function.
-            warn(_(b"%s: ignoring invalid syntax '%s'\n") % warning_params)
-
-        return result
 
     syntaxes = {
         b're': b'relre:',

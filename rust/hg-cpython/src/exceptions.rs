@@ -13,7 +13,7 @@
 //!
 //! [`GraphError`]: struct.GraphError.html
 use cpython::{
-    exc::{IOError, RuntimeError, ValueError},
+    exc::{RuntimeError, ValueError},
     py_exception, PyErr, Python,
 };
 use hg;
@@ -39,34 +39,6 @@ impl GraphError {
     }
 }
 
-py_exception!(rustext, PatternError, RuntimeError);
-py_exception!(rustext, PatternFileError, RuntimeError);
 py_exception!(rustext, HgPathPyError, RuntimeError);
-
-impl PatternError {
-    pub fn pynew(py: Python, inner: hg::PatternError) -> PyErr {
-        match inner {
-            hg::PatternError::UnsupportedSyntax(m) => {
-                PatternError::new(py, ("PatternError", m))
-            }
-        }
-    }
-}
-
-impl PatternFileError {
-    pub fn pynew(py: Python, inner: hg::PatternFileError) -> PyErr {
-        match inner {
-            hg::PatternFileError::IO(e) => {
-                let value = (e.raw_os_error().unwrap_or(2), e.to_string());
-                PyErr::new::<IOError, _>(py, value)
-            }
-            hg::PatternFileError::Pattern(e, l) => match e {
-                hg::PatternError::UnsupportedSyntax(m) => {
-                    PatternFileError::new(py, ("PatternFileError", m, l))
-                }
-            },
-        }
-    }
-}
 
 py_exception!(shared_ref, AlreadyBorrowed, RuntimeError);
