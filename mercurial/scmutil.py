@@ -748,7 +748,7 @@ def revrange(repo, specs, localalias=None):
 
     Specifying a single revset is allowed.
 
-    Returns a ``revset.abstractsmartset`` which is a list-like interface over
+    Returns a ``smartset.abstractsmartset`` which is a list-like interface over
     integer revisions.
     """
     allspecs = []

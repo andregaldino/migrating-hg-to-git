@@ -1644,7 +1644,7 @@ class localrepository(object):
         user aliases, consider calling ``scmutil.revrange()`` or
         ``repo.anyrevs([expr], user=True)``.
 
-        Returns a revset.abstractsmartset, which is a list-like interface
+        Returns a smartset.abstractsmartset, which is a list-like interface
         that contains integer revisions.
         '''
         tree = revsetlang.spectree(expr, *args)
