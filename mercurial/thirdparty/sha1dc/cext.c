@@ -95,7 +95,7 @@ static PyObject *pysha1ctx_hexdigest(pysha1ctx *self)
 		hexhash[i * 2] = hexdigit[hash[i] >> 4];
 		hexhash[i * 2 + 1] = hexdigit[hash[i] & 15];
 	}
-	return PyString_FromStringAndSize(hexhash, 40);
+	return PY23(PyString_FromStringAndSize, PyUnicode_FromStringAndSize)(hexhash, 40);
 }
 
 static PyTypeObject sha1ctxType;
