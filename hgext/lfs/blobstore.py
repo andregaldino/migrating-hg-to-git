@@ -503,7 +503,6 @@ class _gitlfsremote(object):
         for k, v in headers:
             request.add_header(pycompat.strurl(k), pycompat.strurl(v))
 
-        response = b''
         try:
             with contextlib.closing(self.urlopener.open(request)) as res:
                 contentlength = res.info().get(b"content-length")
@@ -520,11 +519,14 @@ class _gitlfsremote(object):
                     # blobstore
                     localstore.download(oid, res, contentlength)
                 else:
+                    blocks = []
                     while True:
                         data = res.read(1048576)
                         if not data:
                             break
-                        response += data
+                        blocks.append(data)
+
+                    response = b"".join(blocks)
                     if response:
                         ui.debug(b'lfs %s response: %s' % (action, response))
         except util.urlerr.httperror as ex:
