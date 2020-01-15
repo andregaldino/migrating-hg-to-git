@@ -2597,6 +2597,15 @@ def update(
     return stats
 
 
+def clean_update(ctx, wc=None):
+    """Do a clean update to the given commit.
+
+    This involves updating to the commit and discarding any changes in the
+    working copy.
+    """
+    return update(ctx.repo(), ctx.rev(), branchmerge=False, force=True, wc=wc)
+
+
 def graft(
     repo,
     ctx,

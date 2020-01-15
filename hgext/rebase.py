@@ -800,9 +800,7 @@ class rebaseruntime(object):
 
                 # Update away from the rebase if necessary
                 if shouldupdate:
-                    mergemod.update(
-                        repo, self.originalwd, branchmerge=False, force=True
-                    )
+                    mergemod.clean_update(repo[self.originalwd])
 
                 # Strip from the first rebased revision
                 if rebased:
@@ -1477,7 +1475,7 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
     else:
         if repo[b'.'].rev() != p1:
             repo.ui.debug(b" update to %d:%s\n" % (p1, p1ctx))
-            mergemod.update(repo, p1, branchmerge=False, force=True)
+            mergemod.clean_update(p1ctx)
         else:
             repo.ui.debug(b" already in destination\n")
         # This is, alas, necessary to invalidate workingctx's manifest cache,

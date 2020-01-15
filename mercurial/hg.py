@@ -1173,7 +1173,7 @@ def abortmerge(ui, repo):
         node = repo[b'.'].hex()
 
     repo.ui.status(_(b"aborting the merge, updating back to %s\n") % node[:12])
-    stats = mergemod.update(repo, node, branchmerge=False, force=True)
+    stats = mergemod.clean_update(repo[node])
     assert stats.unresolvedcount == 0
     _showstats(repo, stats)
 

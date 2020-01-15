@@ -745,7 +745,7 @@ def unshelveabort(ui, repo, state):
         try:
             checkparents(repo, state)
 
-            merge.update(repo, state.pendingctx, branchmerge=False, force=True)
+            merge.clean_update(state.pendingctx)
             if state.activebookmark and state.activebookmark in repo._bookmarks:
                 bookmarks.activate(repo, state.activebookmark)
             mergefiles(ui, repo, state.wctx, state.pendingctx)

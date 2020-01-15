@@ -945,7 +945,7 @@ class fold(histeditaction):
 class base(histeditaction):
     def run(self):
         if self.repo[b'.'].node() != self.node:
-            mergemod.update(self.repo, self.node, branchmerge=False, force=True)
+            mergemod.clean_update(self.repo[self.node])
         return self.continueclean()
 
     def continuedirty(self):
