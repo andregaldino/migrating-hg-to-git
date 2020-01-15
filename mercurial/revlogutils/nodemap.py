@@ -100,6 +100,8 @@ def _persist_nodemap(tr, revlog):
             with revlog.opener(datafile, b'r+') as fd:
                 fd.seek(target_docket.data_length)
                 fd.write(data)
+                fd.seek(0)
+                new_data = fd.read(target_docket.data_length + len(data))
             target_docket.data_length += len(data)
             target_docket.data_unused += data_changed_count
 
@@ -113,6 +115,7 @@ def _persist_nodemap(tr, revlog):
             data = persistent_data(revlog.index)
         # EXP-TODO: if this is a cache, this should use a cache vfs, not a
         # store vfs
+        new_data = data
         with revlog.opener(datafile, b'w') as fd:
             fd.write(data)
         target_docket.data_length = len(data)
@@ -122,6 +125,9 @@ def _persist_nodemap(tr, revlog):
     with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
         fp.write(target_docket.serialize())
     revlog._nodemap_docket = target_docket
+    if util.safehasattr(revlog.index, "update_nodemap_data"):
+        revlog.index.update_nodemap_data(target_docket, new_data)
+
     # EXP-TODO: if the transaction abort, we should remove the new data and
     # reinstall the old one.
 
