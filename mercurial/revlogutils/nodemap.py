@@ -221,6 +221,9 @@ class Block(dict):
 
     contains up to 16 entry indexed from 0 to 15"""
 
+    def __iter__(self):
+        return iter(self.get(i) for i in range(16))
+
 
 def _build_trie(index):
     """build a nodemap trie
@@ -295,7 +298,7 @@ def _persist_block(block_node, block_map):
     Children block are assumed to be already persisted and present in
     block_map.
     """
-    data = tuple(_to_value(block_node.get(i), block_map) for i in range(16))
+    data = tuple(_to_value(v, block_map) for v in block_node)
     return S_BLOCK.pack(*data)
 
 
