@@ -155,15 +155,29 @@ class local(object):
 
         return self.vfs(oid, b'rb')
 
-    def download(self, oid, src):
+    def download(self, oid, src, content_length):
         """Read the blob from the remote source in chunks, verify the content,
         and write to this local blobstore."""
         sha256 = hashlib.sha256()
+        size = 0
 
         with self.vfs(oid, b'wb', atomictemp=True) as fp:
             for chunk in util.filechunkiter(src, size=1048576):
                 fp.write(chunk)
                 sha256.update(chunk)
+                size += len(chunk)
+
+            # If the server advertised a length longer than what we actually
+            # received, then we should expect that the server crashed while
+            # producing the response (but the server has no way of telling us
+            # that), and we really don't need to try to write the response to
+            # the localstore, because it's not going to match the expected.
+            if content_length is not None and int(content_length) != size:
+                msg = (
+                    b"Response length (%s) does not match Content-Length "
+                    b"header (%d): likely server-side crash"
+                )
+                raise LfsRemoteError(_(msg) % (size, int(content_length)))
 
             realoid = node.hex(sha256.digest())
             if realoid != oid:
@@ -492,6 +506,7 @@ class _gitlfsremote(object):
         response = b''
         try:
             with contextlib.closing(self.urlopener.open(request)) as res:
+                contentlength = res.info().get(b"content-length")
                 ui = self.ui  # Shorten debug lines
                 if self.ui.debugflag:
                     ui.debug(b'Status: %d\n' % res.status)
@@ -503,7 +518,7 @@ class _gitlfsremote(object):
                 if action == b'download':
                     # If downloading blobs, store downloaded data to local
                     # blobstore
-                    localstore.download(oid, res)
+                    localstore.download(oid, res, contentlength)
                 else:
                     while True:
                         data = res.read(1048576)
@@ -637,7 +652,7 @@ class _dummyremote(object):
     def readbatch(self, pointers, tostore):
         for p in _deduplicate(pointers):
             with self.vfs(p.oid(), b'rb') as fp:
-                tostore.download(p.oid(), fp)
+                tostore.download(p.oid(), fp, None)
 
 
 class _nullremote(object):

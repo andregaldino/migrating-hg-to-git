@@ -210,7 +210,7 @@ though the client doesn't send the blob.
   > 
   >     store = repo.svfs.lfslocalblobstore
   >     class badstore(store.__class__):
-  >         def download(self, oid, src):
+  >         def download(self, oid, src, contentlength):
   >             '''Called in the server to handle reading from the client in a
   >             PUT request.'''
   >             origread = src.read
@@ -218,7 +218,7 @@ though the client doesn't send the blob.
   >                 # Simulate bad data/checksum failure from the client
   >                 return b'0' * len(origread(nbytes))
   >             src.read = _badread
-  >             super(badstore, self).download(oid, src)
+  >             super(badstore, self).download(oid, src, contentlength)
   > 
   >         def _read(self, vfs, oid, verify):
   >             '''Called in the server to read data for a GET request, and then
@@ -351,8 +351,8 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c': (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      localstore.download(oid, req.bodyfh) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      super(badstore, self).download(oid, src) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      localstore.download(oid, req.bodyfh, req.headers[b'Content-Length'])
+  $LOCALIP - - [$ERRDATE$] HG error:      super(badstore, self).download(oid, src, contentlength)
   $LOCALIP - - [$ERRDATE$] HG error:      _(b'corrupt remote lfs object: %s') % oid (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c (no-py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:  hgext.lfs.blobstore.LfsCorruptionError: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c (py3 !)

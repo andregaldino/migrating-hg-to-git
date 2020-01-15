@@ -327,7 +327,7 @@ def _processbasictransfer(repo, req, res, checkperm):
 
         statusmessage = hgwebcommon.statusmessage
         try:
-            localstore.download(oid, req.bodyfh)
+            localstore.download(oid, req.bodyfh, req.headers[b'Content-Length'])
             res.status = statusmessage(HTTP_OK if existed else HTTP_CREATED)
         except blobstore.LfsCorruptionError:
             _logexception(req)
