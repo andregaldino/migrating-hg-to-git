@@ -506,9 +506,12 @@ class transaction(util.transactional):
             self._validator(self)  # will raise exception if needed
             self._validator = None  # Help prevent cycles.
             self._generatefiles(group=gengroupprefinalize)
-            categories = sorted(self._finalizecallback)
-            for cat in categories:
-                self._finalizecallback[cat](self)
+            while self._finalizecallback:
+                callbacks = self._finalizecallback
+                self._finalizecallback = {}
+                categories = sorted(callbacks)
+                for cat in categories:
+                    callbacks[cat](self)
             # Prevent double usage and help clear cycles.
             self._finalizecallback = None
             self._generatefiles(group=gengrouppostfinalize)
