@@ -37,10 +37,12 @@ def persisted_data(revlog):
         return None
     offset += S_VERSION.size
     headers = S_HEADER.unpack(pdata[offset : offset + S_HEADER.size])
-    uid_size, tip_rev = headers
+    uid_size, tip_rev, data_length, data_unused = headers
     offset += S_HEADER.size
     docket = NodeMapDocket(pdata[offset : offset + uid_size])
     docket.tip_rev = tip_rev
+    docket.data_length = data_length
+    docket.data_unused = data_unused
 
     filename = _rawdata_filepath(revlog, docket)
     return docket, revlog.opener.tryread(filename)
@@ -78,12 +80,14 @@ def _persist_nodemap(tr, revlog):
     # first attemp an incremental update of the data
     if can_incremental and ondisk_docket is not None:
         target_docket = revlog._nodemap_docket.copy()
-        data = revlog.index.nodemap_data_incremental()
+        data_changed_count, data = revlog.index.nodemap_data_incremental()
         datafile = _rawdata_filepath(revlog, target_docket)
         # EXP-TODO: if this is a cache, this should use a cache vfs, not a
         # store vfs
         with revlog.opener(datafile, b'a') as fd:
             fd.write(data)
+        target_docket.data_length += len(data)
+        target_docket.data_unused += data_changed_count
     else:
         # otherwise fallback to a full new export
         target_docket = NodeMapDocket()
@@ -96,6 +100,7 @@ def _persist_nodemap(tr, revlog):
         # store vfs
         with revlog.opener(datafile, b'w') as fd:
             fd.write(data)
+        target_docket.data_length = len(data)
     target_docket.tip_rev = revlog.tiprev()
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
@@ -143,9 +148,8 @@ def _persist_nodemap(tr, revlog):
 
 # version 0 is experimental, no BC garantee, do no use outside of tests.
 ONDISK_VERSION = 0
-
 S_VERSION = struct.Struct(">B")
-S_HEADER = struct.Struct(">BQ")
+S_HEADER = struct.Struct(">BQQQ")
 
 ID_SIZE = 8
 
@@ -168,17 +172,26 @@ class NodeMapDocket(object):
             uid = _make_uid()
         self.uid = uid
         self.tip_rev = None
+        self.data_length = None
+        self.data_unused = 0
 
     def copy(self):
         new = NodeMapDocket(uid=self.uid)
         new.tip_rev = self.tip_rev
+        new.data_length = self.data_length
+        new.data_unused = self.data_unused
         return new
 
     def serialize(self):
         """return serialized bytes for a docket using the passed uid"""
         data = []
         data.append(S_VERSION.pack(ONDISK_VERSION))
-        headers = (len(self.uid), self.tip_rev)
+        headers = (
+            len(self.uid),
+            self.tip_rev,
+            self.data_length,
+            self.data_unused,
+        )
         data.append(S_HEADER.pack(*headers))
         data.append(self.uid)
         return b''.join(data)
@@ -236,8 +249,11 @@ def persistent_data(index):
 def update_persistent_data(index, root, max_idx, last_rev):
     """return the incremental update for persistent nodemap from a given index
     """
-    trie = _update_trie(index, root, last_rev)
-    return _persist_trie(trie, existing_idx=max_idx)
+    changed_block, trie = _update_trie(index, root, last_rev)
+    return (
+        changed_block * S_BLOCK.size,
+        _persist_trie(trie, existing_idx=max_idx),
+    )
 
 
 S_BLOCK = struct.Struct(">" + ("l" * 16))
@@ -294,10 +310,11 @@ def _build_trie(index):
 
 def _update_trie(index, root, last_rev):
     """consume"""
+    changed = 0
     for rev in range(last_rev + 1, len(index)):
         hex = nodemod.hex(index[rev][7])
-        _insert_into_block(index, 0, root, rev, hex)
-    return root
+        changed += _insert_into_block(index, 0, root, rev, hex)
+    return changed, root
 
 
 def _insert_into_block(index, level, block, current_rev, current_hex):
@@ -309,6 +326,7 @@ def _insert_into_block(index, level, block, current_rev, current_hex):
     current_rev: the revision number we are adding
     current_hex: the hexadecimal representation of the of that revision
     """
+    changed = 1
     if block.ondisk_id is not None:
         block.ondisk_id = None
     hex_digit = _to_int(current_hex[level : level + 1])
@@ -318,7 +336,9 @@ def _insert_into_block(index, level, block, current_rev, current_hex):
         block[hex_digit] = current_rev
     elif isinstance(entry, dict):
         # need to recurse to an underlying block
-        _insert_into_block(index, level + 1, entry, current_rev, current_hex)
+        changed += _insert_into_block(
+            index, level + 1, entry, current_rev, current_hex
+        )
     else:
         # collision with a previously unique prefix, inserting new
         # vertices to fit both entry.
@@ -328,6 +348,7 @@ def _insert_into_block(index, level, block, current_rev, current_hex):
         block[hex_digit] = new
         _insert_into_block(index, level + 1, new, other_rev, other_hex)
         _insert_into_block(index, level + 1, new, current_rev, current_hex)
+    return changed
 
 
 def _persist_trie(root, existing_idx=None):

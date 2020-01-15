@@ -164,11 +164,11 @@ class PersistentNodeMapIndexObject(IndexObject):
         """
         if self._nm_root is None:
             return None
-        data = nodemaputil.update_persistent_data(
+        changed, data = nodemaputil.update_persistent_data(
             self, self._nm_root, self._nm_max_idx, self._nm_rev
         )
         self._nm_root = self._nm_max_idx = self._nm_rev = None
-        return data
+        return changed, data
 
     def update_nodemap_data(self, docket, nm_data):
         """provide full block of persisted binary data for a nodemap

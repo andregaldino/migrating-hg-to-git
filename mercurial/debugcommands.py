@@ -2138,6 +2138,8 @@ def debugnodemap(ui, repo, **opts):
             docket, data = nm_data
             ui.write((b"uid: %s\n") % docket.uid)
             ui.write((b"tip-rev: %d\n") % docket.tip_rev)
+            ui.write((b"data-length: %d\n") % docket.data_length)
+            ui.write((b"data-unused: %d\n") % docket.data_unused)
 
 
 @command(
