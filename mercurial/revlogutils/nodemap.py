@@ -216,6 +216,12 @@ def _to_int(hex_digit):
     return int(hex_digit, 16)
 
 
+class Block(dict):
+    """represent a block of the Trie
+
+    contains up to 16 entry indexed from 0 to 15"""
+
+
 def _build_trie(index):
     """build a nodemap trie
 
@@ -224,7 +230,7 @@ def _build_trie(index):
     Each block is a dictionary with keys in `[0, 15]`. Values are either
     another block or a revision number.
     """
-    root = {}
+    root = Block()
     for rev in range(len(index)):
         hex = nodemod.hex(index[rev][7])
         _insert_into_block(index, 0, root, rev, hex)
@@ -253,7 +259,7 @@ def _insert_into_block(index, level, block, current_rev, current_hex):
         # vertices to fit both entry.
         other_hex = nodemod.hex(index[entry][7])
         other_rev = entry
-        new = {}
+        new = Block()
         block[hex_digit] = new
         _insert_into_block(index, level + 1, new, other_rev, other_hex)
         _insert_into_block(index, level + 1, new, current_rev, current_hex)
