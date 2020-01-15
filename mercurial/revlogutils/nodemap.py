@@ -356,6 +356,19 @@ def check_data(ui, index, data):
             ret = 1
         else:
             all_revs.remove(r)
+        nm_rev = _find_node(root, nodemod.hex(index[r][7]))
+        if nm_rev is None:
+            msg = b"  revision node does not match any entries: %d\n" % r
+            ui.write_err(msg)
+            ret = 1
+        elif nm_rev != r:
+            msg = (
+                b"  revision node does not match the expected revision: "
+                b"%d != %d\n" % (r, nm_rev)
+            )
+            ui.write_err(msg)
+            ret = 1
+
     if all_revs:
         for r in sorted(all_revs):
             msg = b"  extra revision in  nodemap: %d\n" % r
@@ -371,3 +384,11 @@ def _all_revisions(root):
             if v is None or isinstance(v, Block):
                 continue
             yield v
+
+
+def _find_node(block, node):
+    """find the revision associated with a given node"""
+    entry = block.get(_to_int(node[0:1]))
+    if isinstance(entry, dict):
+        return _find_node(entry, node[1:])
+    return entry
