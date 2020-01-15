@@ -932,6 +932,8 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     if ui.configbool(b'experimental', b'rust.index'):
         options[b'rust.index'] = True
+    if ui.configbool(b'experimental', b'exp-persistent-nodemap'):
+        options[b'exp-persistent-nodemap'] = True
 
     return options
 

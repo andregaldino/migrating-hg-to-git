@@ -407,6 +407,7 @@ class revlog(object):
         mmaplargeindex=False,
         censorable=False,
         upperboundcomp=None,
+        persistentnodemap=False,
     ):
         """
         create a revlog object
@@ -418,6 +419,10 @@ class revlog(object):
         self.upperboundcomp = upperboundcomp
         self.indexfile = indexfile
         self.datafile = datafile or (indexfile[:-2] + b".d")
+        self.nodemap_file = None
+        if persistentnodemap:
+            self.nodemap_file = indexfile[:-2] + b".n"
+
         self.opener = opener
         #  When True, indexfile is opened with checkambig=True at writing, to
         #  avoid file stat ambiguity.
@@ -2286,6 +2291,7 @@ class revlog(object):
             ifh.write(data[0])
             ifh.write(data[1])
             self._enforceinlinesize(transaction, ifh)
+        nodemaputil.setup_persistent_nodemap(transaction, self)
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
         """

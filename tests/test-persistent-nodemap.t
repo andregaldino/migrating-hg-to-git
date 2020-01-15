@@ -5,8 +5,14 @@ Test the persistent on-disk nodemap
 
   $ hg init test-repo
   $ cd test-repo
+  $ cat << EOF >> .hg/hgrc
+  > [experimental]
+  > exp-persistent-nodemap=yes
+  > EOF
   $ hg debugbuilddag .+5000
-  $ hg debugnodemap --dump | f --sha256 --bytes=256 --hexdump --size
+  $ hg debugnodemap --dump | f --sha256 --size
+  size=122880, sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7
+  $ f --sha256 --bytes=256 --hexdump --size < .hg/store/00changelog.n
   size=122880, sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7
   0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   0010: ff ff ff ff ff ff ff ff ff ff fa c2 ff ff ff ff |................|

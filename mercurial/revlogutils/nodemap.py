@@ -22,6 +22,39 @@ class NodeMap(dict):
         raise error.RevlogError(b'unknown node: %s' % x)
 
 
+def setup_persistent_nodemap(tr, revlog):
+    """Install whatever is needed transaction side to persist a nodemap on disk
+
+    (only actually persist the nodemap if this is relevant for this revlog)
+    """
+    if revlog.nodemap_file is None:
+        return  # we do not use persistent_nodemap on this revlog
+    callback_id = b"revlog-persistent-nodemap-%s" % revlog.nodemap_file
+    if tr.hasfinalize(callback_id):
+        return  # no need to register again
+    tr.addfinalize(callback_id, lambda tr: _persist_nodemap(tr, revlog))
+
+
+def _persist_nodemap(tr, revlog):
+    """Write nodemap data on disk for a given revlog
+    """
+    if getattr(revlog, 'filteredrevs', ()):
+        raise error.ProgrammingError(
+            "cannot persist nodemap of a filtered changelog"
+        )
+    if revlog.nodemap_file is None:
+        msg = "calling persist nodemap on a revlog without the feature enableb"
+        raise error.ProgrammingError(msg)
+    data = persistent_data(revlog.index)
+    # EXP-TODO: if this is a cache, this should use a cache vfs, not a
+    # store vfs
+    with revlog.opener(revlog.nodemap_file, b'w') as f:
+        f.write(data)
+    # EXP-TODO: if the transaction abort, we should remove the new data and
+    # reinstall the old one. (This will be simpler when the file format get a
+    # bit more advanced)
+
+
 ### Nodemap Trie
 #
 # This is a simple reference implementation to compute and persist a nodemap
