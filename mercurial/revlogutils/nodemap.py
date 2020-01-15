@@ -8,6 +8,7 @@
 
 from __future__ import absolute_import
 
+import os
 import struct
 
 from .. import (
@@ -26,7 +27,20 @@ def persisted_data(revlog):
     """read the nodemap for a revlog from disk"""
     if revlog.nodemap_file is None:
         return None
-    return revlog.opener.tryread(revlog.nodemap_file)
+    pdata = revlog.opener.tryread(revlog.nodemap_file)
+    if not pdata:
+        return None
+    offset = 0
+    (version,) = S_VERSION.unpack(pdata[offset : offset + S_VERSION.size])
+    if version != ONDISK_VERSION:
+        return None
+    offset += S_VERSION.size
+    (uuid_size,) = S_HEADER.unpack(pdata[offset : offset + S_HEADER.size])
+    offset += S_HEADER.size
+    uid = pdata[offset : offset + uuid_size]
+
+    filename = _rawdata_filepath(revlog, uid)
+    return revlog.opener.tryread(filename)
 
 
 def setup_persistent_nodemap(tr, revlog):
@@ -55,13 +69,71 @@ def _persist_nodemap(tr, revlog):
         msg = "calling persist nodemap on a revlog without the feature enableb"
         raise error.ProgrammingError(msg)
     data = persistent_data(revlog.index)
+    uid = _make_uid()
+    datafile = _rawdata_filepath(revlog, uid)
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
-    with revlog.opener(revlog.nodemap_file, b'w') as f:
-        f.write(data)
+    with revlog.opener(datafile, b'w') as fd:
+        fd.write(data)
+    # EXP-TODO: if this is a cache, this should use a cache vfs, not a
+    # store vfs
+    with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
+        fp.write(_serialize_docket(uid))
     # EXP-TODO: if the transaction abort, we should remove the new data and
-    # reinstall the old one. (This will be simpler when the file format get a
-    # bit more advanced)
+    # reinstall the old one.
+
+
+### Nodemap docket file
+#
+# The nodemap data are stored on disk using 2 files:
+#
+# * a raw data files containing a persistent nodemap
+#   (see `Nodemap Trie` section)
+#
+# * a small "docket" file containing medatadata
+#
+# While the nodemap data can be multiple tens of megabytes, the "docket" is
+# small, it is easy to update it automatically or to duplicated its content
+# during a transaction.
+#
+# Multiple raw data can exist at the same time (The currently valid one and a
+# new one beind used by an in progress transaction). To accomodate this, the
+# filename hosting the raw data has a variable parts. The exact filename is
+# specified inside the "docket" file.
+#
+# The docket file contains information to find, qualify and validate the raw
+# data. Its content is currently very light, but it will expand as the on disk
+# nodemap gains the necessary features to be used in production.
+
+# version 0 is experimental, no BC garantee, do no use outside of tests.
+ONDISK_VERSION = 0
+
+S_VERSION = struct.Struct(">B")
+S_HEADER = struct.Struct(">B")
+
+ID_SIZE = 8
+
+
+def _make_uid():
+    """return a new unique identifier.
+
+    The identifier is random and composed of ascii characters."""
+    return nodemod.hex(os.urandom(ID_SIZE))
+
+
+def _serialize_docket(uid):
+    """return serialized bytes for a docket using the passed uid"""
+    data = []
+    data.append(S_VERSION.pack(ONDISK_VERSION))
+    data.append(S_HEADER.pack(len(uid)))
+    data.append(uid)
+    return b''.join(data)
+
+
+def _rawdata_filepath(revlog, uid):
+    """The (vfs relative) nodemap's rawdata file for a given uid"""
+    prefix = revlog.nodemap_file[:-2]
+    return b"%s-%s.nd" % (prefix, uid)
 
 
 ### Nodemap Trie

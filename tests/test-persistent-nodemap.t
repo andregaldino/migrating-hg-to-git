@@ -10,6 +10,8 @@ Test the persistent on-disk nodemap
   > exp-persistent-nodemap=yes
   > EOF
   $ hg debugbuilddag .+5000
+  $ f --size .hg/store/00changelog.n
+  .hg/store/00changelog.n: size=18
   $ hg debugnodemap --dump-new | f --sha256 --size
   size=122880, sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7
   $ hg debugnodemap --dump-disk | f --sha256 --bytes=256 --hexdump --size
