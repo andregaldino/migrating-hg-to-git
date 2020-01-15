@@ -1767,8 +1767,9 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
                 continue
             # Revisions in the side (not chosen as merge base) branch that
             # might contain "surprising" contents
+            other_bases = set(bases) - {base}
             siderevs = list(
-                repo.revs(b'((%ld-%d) %% (%d+%d))', bases, base, base, dest)
+                repo.revs(b'(%ld %% (%d+%d))', other_bases, base, dest)
             )
 
             # If those revisions are covered by rebaseset, the result is good.
