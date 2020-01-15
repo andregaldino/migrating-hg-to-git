@@ -2086,15 +2086,28 @@ def debugnamecomplete(ui, repo, *args):
 
 @command(
     b'debugnodemap',
-    [(b'', b'dump', False, _(b'write persistent binary nodemap on stdin'))],
+    [
+        (
+            b'',
+            b'dump-new',
+            False,
+            _(b'write a (new) persistent binary nodemap on stdin'),
+        ),
+        (b'', b'dump-disk', False, _(b'dump on-disk data on stdin')),
+    ],
 )
 def debugnodemap(ui, repo, **opts):
     """write and inspect on disk nodemap
     """
-    if opts['dump']:
+    if opts['dump_new']:
         unfi = repo.unfiltered()
         cl = unfi.changelog
         data = nodemap.persistent_data(cl.index)
+        ui.write(data)
+    elif opts['dump_disk']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        data = nodemap.persisted_data(cl)
         ui.write(data)
 
 

@@ -22,6 +22,13 @@ class NodeMap(dict):
         raise error.RevlogError(b'unknown node: %s' % x)
 
 
+def persisted_data(revlog):
+    """read the nodemap for a revlog from disk"""
+    if revlog.nodemap_file is None:
+        return None
+    return revlog.opener.tryread(revlog.nodemap_file)
+
+
 def setup_persistent_nodemap(tr, revlog):
     """Install whatever is needed transaction side to persist a nodemap on disk
 
