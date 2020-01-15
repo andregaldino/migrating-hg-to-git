@@ -156,13 +156,31 @@ class PersistentNodeMapIndexObject(IndexObject):
         index."""
         return nodemaputil.persistent_data(self)
 
+    def nodemap_data_incremental(self):
+        """Return bytes containing a incremental update to persistent nodemap
+
+        This containst the data for an append-only update of the data provided
+        in the last call to `update_nodemap_data`.
+        """
+        if self._nm_root is None:
+            return None
+        data = nodemaputil.update_persistent_data(
+            self, self._nm_root, self._nm_max_idx, self._nm_rev
+        )
+        self._nm_root = self._nm_max_idx = self._nm_rev = None
+        return data
+
     def update_nodemap_data(self, nm_data):
         """provide full blokc of persisted binary data for a nodemap
 
         The data are expected to come from disk. See `nodemap_data_all` for a
         produceur of such data."""
         if nm_data is not None:
-            nodemaputil.parse_data(nm_data)
+            self._nm_root, self._nm_max_idx = nodemaputil.parse_data(nm_data)
+            if self._nm_root:
+                self._nm_rev = len(self) - 1
+            else:
+                self._nm_root = self._nm_max_idx = self._nm_rev = None
 
 
 class InlinedIndexObject(BaseIndexObject):

@@ -69,12 +69,41 @@ def _persist_nodemap(tr, revlog):
     if revlog.nodemap_file is None:
         msg = "calling persist nodemap on a revlog without the feature enableb"
         raise error.ProgrammingError(msg)
-    if util.safehasattr(revlog.index, "nodemap_data_all"):
-        data = revlog.index.nodemap_data_all()
+
+    can_incremental = util.safehasattr(revlog.index, "nodemap_data_incremental")
+    ondisk_docket = revlog._nodemap_docket
+
+    # first attemp an incremental update of the data
+    if can_incremental and ondisk_docket is not None:
+        target_docket = revlog._nodemap_docket.copy()
+        data = revlog.index.nodemap_data_incremental()
+        datafile = _rawdata_filepath(revlog, target_docket)
+        # EXP-TODO: if this is a cache, this should use a cache vfs, not a
+        # store vfs
+        with revlog.opener(datafile, b'a') as fd:
+            fd.write(data)
     else:
-        data = persistent_data(revlog.index)
-    target_docket = NodeMapDocket()
-    datafile = _rawdata_filepath(revlog, target_docket)
+        # otherwise fallback to a full new export
+        target_docket = NodeMapDocket()
+        datafile = _rawdata_filepath(revlog, target_docket)
+        if util.safehasattr(revlog.index, "nodemap_data_all"):
+            data = revlog.index.nodemap_data_all()
+        else:
+            data = persistent_data(revlog.index)
+        # EXP-TODO: if this is a cache, this should use a cache vfs, not a
+        # store vfs
+        with revlog.opener(datafile, b'w') as fd:
+            fd.write(data)
+    # EXP-TODO: if this is a cache, this should use a cache vfs, not a
+    # store vfs
+    with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
+        fp.write(target_docket.serialize())
+    revlog._nodemap_docket = target_docket
+    # EXP-TODO: if the transaction abort, we should remove the new data and
+    # reinstall the old one.
+
+    # search for old index file in all cases, some older process might have
+    # left one behind.
     olds = _other_rawdata_filepath(revlog, target_docket)
     if olds:
         realvfs = getattr(revlog, '_realopener', revlog.opener)
@@ -85,17 +114,6 @@ def _persist_nodemap(tr, revlog):
 
         callback_id = b"revlog-cleanup-nodemap-%s" % revlog.nodemap_file
         tr.addpostclose(callback_id, cleanup)
-    # EXP-TODO: if this is a cache, this should use a cache vfs, not a
-    # store vfs
-    with revlog.opener(datafile, b'w') as fd:
-        fd.write(data)
-    # EXP-TODO: if this is a cache, this should use a cache vfs, not a
-    # store vfs
-    with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
-        fp.write(target_docket.serialize())
-    revlog._nodemap_docket = target_docket
-    # EXP-TODO: if the transaction abort, we should remove the new data and
-    # reinstall the old one.
 
 
 ### Nodemap docket file
@@ -208,6 +226,13 @@ def persistent_data(index):
     return _persist_trie(trie)
 
 
+def update_persistent_data(index, root, max_idx, last_rev):
+    """return the incremental update for persistent nodemap from a given index
+    """
+    trie = _update_trie(index, root, last_rev)
+    return _persist_trie(trie, existing_idx=max_idx)
+
+
 S_BLOCK = struct.Struct(">" + ("l" * 16))
 
 NO_ENTRY = -1
@@ -260,6 +285,14 @@ def _build_trie(index):
     return root
 
 
+def _update_trie(index, root, last_rev):
+    """consume"""
+    for rev in range(last_rev + 1, len(index)):
+        hex = nodemod.hex(index[rev][7])
+        _insert_into_block(index, 0, root, rev, hex)
+    return root
+
+
 def _insert_into_block(index, level, block, current_rev, current_hex):
     """insert a new revision in a block
 
@@ -269,6 +302,8 @@ def _insert_into_block(index, level, block, current_rev, current_hex):
     current_rev: the revision number we are adding
     current_hex: the hexadecimal representation of the of that revision
     """
+    if block.ondisk_id is not None:
+        block.ondisk_id = None
     hex_digit = _to_int(current_hex[level : level + 1])
     entry = block.get(hex_digit)
     if entry is None:
@@ -288,15 +323,22 @@ def _insert_into_block(index, level, block, current_rev, current_hex):
         _insert_into_block(index, level + 1, new, current_rev, current_hex)
 
 
-def _persist_trie(root):
+def _persist_trie(root, existing_idx=None):
     """turn a nodemap trie into persistent binary data
 
     See `_build_trie` for nodemap trie structure"""
     block_map = {}
+    if existing_idx is not None:
+        base_idx = existing_idx + 1
+    else:
+        base_idx = 0
     chunks = []
     for tn in _walk_trie(root):
-        block_map[id(tn)] = len(chunks)
-        chunks.append(_persist_block(tn, block_map))
+        if tn.ondisk_id is not None:
+            block_map[id(tn)] = tn.ondisk_id
+        else:
+            block_map[id(tn)] = len(chunks) + base_idx
+            chunks.append(_persist_block(tn, block_map))
     return b''.join(chunks)
 
 
@@ -338,7 +380,7 @@ def parse_data(data):
         msg = "nodemap data size is not a multiple of block size (%d): %d"
         raise error.Abort(msg % (S_BLOCK.size, len(data)))
     if not data:
-        return Block()
+        return Block(), None
     block_map = {}
     new_blocks = []
     for i in range(0, len(data), S_BLOCK.size):
@@ -356,7 +398,7 @@ def parse_data(data):
                 b[idx] = block_map[v]
             else:
                 b[idx] = _transform_rev(v)
-    return block
+    return block, i // S_BLOCK.size
 
 
 # debug utility
@@ -366,7 +408,7 @@ def check_data(ui, index, data):
     """verify that the provided nodemap data are valid for the given idex"""
     ret = 0
     ui.status((b"revision in index:   %d\n") % len(index))
-    root = parse_data(data)
+    root, __ = parse_data(data)
     all_revs = set(_all_revisions(root))
     ui.status((b"revision in nodemap: %d\n") % len(all_revs))
     for r in range(len(index)):

@@ -49,8 +49,19 @@ add a new commit
   $ hg ci -m 'foo'
   $ f --size .hg/store/00changelog.n
   .hg/store/00changelog.n: size=18
+
+(The pure code use the debug code that perform incremental update, the C code reencode from scratch)
+
+#if pure
+  $ f --sha256 .hg/store/00changelog-*.nd --size
+  .hg/store/00changelog-????????????????.nd: size=123072, sha256=136472751566c8198ff09e306a7d2f9bd18bd32298d614752b73da4d6df23340 (glob)
+
+#else
   $ f --sha256 .hg/store/00changelog-*.nd --size
   .hg/store/00changelog-????????????????.nd: size=122880, sha256=bfafebd751c4f6d116a76a37a1dee2a251747affe7efbcc4f4842ccc746d4db9 (glob)
+
+#endif
+
   $ hg debugnodemap --check
   revision in index:   5002
   revision in nodemap: 5002
