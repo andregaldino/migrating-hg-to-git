@@ -626,6 +626,16 @@ class revlog(object):
             self._io = rustrevlogio()
         try:
             d = self._io.parseindex(indexdata, self._inline)
+            index, _chunkcache = d
+            use_nodemap = (
+                not self._inline
+                and self.nodemap_file is not None
+                and util.safehasattr(index, 'update_nodemap_data')
+            )
+            if use_nodemap:
+                nodemap_data = nodemaputil.persisted_data(self)
+                if nodemap_data is not None:
+                    index.update_nodemap_data(nodemap_data)
         except (ValueError, IndexError):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.indexfile

@@ -156,6 +156,14 @@ class PersistentNodeMapIndexObject(IndexObject):
         index."""
         return nodemaputil.persistent_data(self)
 
+    def update_nodemap_data(self, nm_data):
+        """provide full blokc of persisted binary data for a nodemap
+
+        The data are expected to come from disk. See `nodemap_data_all` for a
+        produceur of such data."""
+        if nm_data is not None:
+            nodemaputil.parse_data(nm_data)
+
 
 class InlinedIndexObject(BaseIndexObject):
     def __init__(self, data, inline=0):
