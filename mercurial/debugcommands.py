@@ -2137,6 +2137,7 @@ def debugnodemap(ui, repo, **opts):
         if nm_data is not None:
             docket, data = nm_data
             ui.write((b"uid: %s\n") % docket.uid)
+            ui.write((b"tip-rev: %d\n") % docket.tip_rev)
 
 
 @command(

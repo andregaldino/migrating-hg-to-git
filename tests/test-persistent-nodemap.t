@@ -14,8 +14,9 @@ Test the persistent on-disk nodemap
   $ hg debugbuilddag .+5000
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
+  tip-rev: 5000
   $ f --size .hg/store/00changelog.n
-  .hg/store/00changelog.n: size=18
+  .hg/store/00changelog.n: size=26
   $ f --sha256 .hg/store/00changelog-*.nd
   .hg/store/00changelog-????????????????.nd: sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7 (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
@@ -51,8 +52,9 @@ add a new commit
   $ hg ci -m 'foo'
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
+  tip-rev: 5001
   $ f --size .hg/store/00changelog.n
-  .hg/store/00changelog.n: size=18
+  .hg/store/00changelog.n: size=26
 
 (The pure code use the debug code that perform incremental update, the C code reencode from scratch)
 

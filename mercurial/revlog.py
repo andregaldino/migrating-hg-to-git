@@ -639,7 +639,7 @@ class revlog(object):
             if use_nodemap:
                 nodemap_data = nodemaputil.persisted_data(self)
                 if nodemap_data is not None:
-                    index.update_nodemap_data(nodemap_data[1])
+                    index.update_nodemap_data(*nodemap_data)
         except (ValueError, IndexError):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.indexfile

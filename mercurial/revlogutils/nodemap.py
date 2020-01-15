@@ -36,9 +36,11 @@ def persisted_data(revlog):
     if version != ONDISK_VERSION:
         return None
     offset += S_VERSION.size
-    (uid_size,) = S_HEADER.unpack(pdata[offset : offset + S_HEADER.size])
+    headers = S_HEADER.unpack(pdata[offset : offset + S_HEADER.size])
+    uid_size, tip_rev = headers
     offset += S_HEADER.size
     docket = NodeMapDocket(pdata[offset : offset + uid_size])
+    docket.tip_rev = tip_rev
 
     filename = _rawdata_filepath(revlog, docket)
     return docket, revlog.opener.tryread(filename)
@@ -94,6 +96,7 @@ def _persist_nodemap(tr, revlog):
         # store vfs
         with revlog.opener(datafile, b'w') as fd:
             fd.write(data)
+    target_docket.tip_rev = revlog.tiprev()
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
     with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
@@ -142,7 +145,7 @@ def _persist_nodemap(tr, revlog):
 ONDISK_VERSION = 0
 
 S_VERSION = struct.Struct(">B")
-S_HEADER = struct.Struct(">B")
+S_HEADER = struct.Struct(">BQ")
 
 ID_SIZE = 8
 
@@ -164,15 +167,19 @@ class NodeMapDocket(object):
         if uid is None:
             uid = _make_uid()
         self.uid = uid
+        self.tip_rev = None
 
     def copy(self):
-        return NodeMapDocket(uid=self.uid)
+        new = NodeMapDocket(uid=self.uid)
+        new.tip_rev = self.tip_rev
+        return new
 
     def serialize(self):
         """return serialized bytes for a docket using the passed uid"""
         data = []
         data.append(S_VERSION.pack(ONDISK_VERSION))
-        data.append(S_HEADER.pack(len(self.uid)))
+        headers = (len(self.uid), self.tip_rev)
+        data.append(S_HEADER.pack(*headers))
         data.append(self.uid)
         return b''.join(data)
 

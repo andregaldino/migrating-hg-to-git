@@ -170,15 +170,15 @@ class PersistentNodeMapIndexObject(IndexObject):
         self._nm_root = self._nm_max_idx = self._nm_rev = None
         return data
 
-    def update_nodemap_data(self, nm_data):
-        """provide full blokc of persisted binary data for a nodemap
+    def update_nodemap_data(self, docket, nm_data):
+        """provide full block of persisted binary data for a nodemap
 
         The data are expected to come from disk. See `nodemap_data_all` for a
         produceur of such data."""
         if nm_data is not None:
             self._nm_root, self._nm_max_idx = nodemaputil.parse_data(nm_data)
             if self._nm_root:
-                self._nm_rev = len(self) - 1
+                self._nm_rev = docket.tip_rev
             else:
                 self._nm_root = self._nm_max_idx = self._nm_rev = None
 
