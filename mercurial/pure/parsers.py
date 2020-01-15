@@ -164,11 +164,13 @@ class PersistentNodeMapIndexObject(IndexObject):
         """
         if self._nm_root is None:
             return None
+        docket = self._nm_docket
         changed, data = nodemaputil.update_persistent_data(
-            self, self._nm_root, self._nm_max_idx, self._nm_rev
+            self, self._nm_root, self._nm_max_idx, self._nm_docket.tip_rev
         )
-        self._nm_root = self._nm_max_idx = self._nm_rev = None
-        return changed, data
+
+        self._nm_root = self._nm_max_idx = self._nm_docket = None
+        return docket, changed, data
 
     def update_nodemap_data(self, docket, nm_data):
         """provide full block of persisted binary data for a nodemap
@@ -178,9 +180,9 @@ class PersistentNodeMapIndexObject(IndexObject):
         if nm_data is not None:
             self._nm_root, self._nm_max_idx = nodemaputil.parse_data(nm_data)
             if self._nm_root:
-                self._nm_rev = docket.tip_rev
+                self._nm_docket = docket
             else:
-                self._nm_root = self._nm_max_idx = self._nm_rev = None
+                self._nm_root = self._nm_max_idx = self._nm_docket = None
 
 
 class InlinedIndexObject(BaseIndexObject):

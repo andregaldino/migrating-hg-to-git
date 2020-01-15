@@ -77,18 +77,27 @@ def _persist_nodemap(tr, revlog):
     can_incremental = util.safehasattr(revlog.index, "nodemap_data_incremental")
     ondisk_docket = revlog._nodemap_docket
 
+    data = None
     # first attemp an incremental update of the data
     if can_incremental and ondisk_docket is not None:
         target_docket = revlog._nodemap_docket.copy()
-        data_changed_count, data = revlog.index.nodemap_data_incremental()
-        datafile = _rawdata_filepath(revlog, target_docket)
-        # EXP-TODO: if this is a cache, this should use a cache vfs, not a
-        # store vfs
-        with revlog.opener(datafile, b'a') as fd:
-            fd.write(data)
-        target_docket.data_length += len(data)
-        target_docket.data_unused += data_changed_count
-    else:
+        (
+            src_docket,
+            data_changed_count,
+            data,
+        ) = revlog.index.nodemap_data_incremental()
+        if src_docket != target_docket:
+            data = None
+        else:
+            datafile = _rawdata_filepath(revlog, target_docket)
+            # EXP-TODO: if this is a cache, this should use a cache vfs, not a
+            # store vfs
+            with revlog.opener(datafile, b'a') as fd:
+                fd.write(data)
+            target_docket.data_length += len(data)
+            target_docket.data_unused += data_changed_count
+
+    if data is None:
         # otherwise fallback to a full new export
         target_docket = NodeMapDocket()
         datafile = _rawdata_filepath(revlog, target_docket)
@@ -181,6 +190,20 @@ class NodeMapDocket(object):
         new.data_length = self.data_length
         new.data_unused = self.data_unused
         return new
+
+    def __cmp__(self, other):
+        if self.uid < other.uid:
+            return -1
+        if self.uid > other.uid:
+            return 1
+        elif self.data_length < other.data_length:
+            return -1
+        elif self.data_length > other.data_length:
+            return 1
+        return 0
+
+    def __eq__(self, other):
+        return self.uid == other.uid and self.data_length == other.data_length
 
     def serialize(self):
         """return serialized bytes for a docket using the passed uid"""
