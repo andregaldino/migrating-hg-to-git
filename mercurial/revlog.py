@@ -1965,6 +1965,7 @@ class revlog(object):
             # manager
 
         tr.replace(self.indexfile, trindex * self._io.size)
+        nodemaputil.setup_persistent_nodemap(tr, self)
         self._chunkclear()
 
     def _nodeduplicatecallback(self, transaction, node):
