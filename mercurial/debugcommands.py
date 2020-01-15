@@ -2113,13 +2113,17 @@ def debugnodemap(ui, repo, **opts):
     elif opts['dump_disk']:
         unfi = repo.unfiltered()
         cl = unfi.changelog
-        data = nodemap.persisted_data(cl)
-        ui.write(data)
+        nm_data = nodemap.persisted_data(cl)
+        if nm_data is not None:
+            docket, data = nm_data
+            ui.write(data)
     elif opts['check']:
         unfi = repo.unfiltered()
         cl = unfi.changelog
-        data = nodemap.persisted_data(cl)
-        return nodemap.check_data(ui, cl.index, data)
+        nm_data = nodemap.persisted_data(cl)
+        if nm_data is not None:
+            docket, data = nm_data
+            return nodemap.check_data(ui, cl.index, data)
 
 
 @command(

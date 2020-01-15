@@ -455,6 +455,7 @@ class revlog(object):
         self._maxchainlen = None
         self._deltabothparents = True
         self.index = None
+        self._nodemap_docket = None
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
         # Mapping of revision integer to full node.
@@ -544,6 +545,9 @@ class revlog(object):
         indexdata = b''
         self._initempty = True
         try:
+            nodemap_data = nodemaputil.persisted_data(self)
+            if nodemap_data is not None:
+                self._nodemap_docket = nodemap_data[0]
             with self._indexfp() as f:
                 if (
                     mmapindexthreshold is not None
@@ -635,7 +639,7 @@ class revlog(object):
             if use_nodemap:
                 nodemap_data = nodemaputil.persisted_data(self)
                 if nodemap_data is not None:
-                    index.update_nodemap_data(nodemap_data)
+                    index.update_nodemap_data(nodemap_data[1])
         except (ValueError, IndexError):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.indexfile

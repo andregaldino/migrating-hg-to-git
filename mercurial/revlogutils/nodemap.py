@@ -41,7 +41,7 @@ def persisted_data(revlog):
     docket = NodeMapDocket(pdata[offset : offset + uid_size])
 
     filename = _rawdata_filepath(revlog, docket)
-    return revlog.opener.tryread(filename)
+    return docket, revlog.opener.tryread(filename)
 
 
 def setup_persistent_nodemap(tr, revlog):
@@ -93,6 +93,7 @@ def _persist_nodemap(tr, revlog):
     # store vfs
     with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
         fp.write(target_docket.serialize())
+    revlog._nodemap_docket = target_docket
     # EXP-TODO: if the transaction abort, we should remove the new data and
     # reinstall the old one.
 
