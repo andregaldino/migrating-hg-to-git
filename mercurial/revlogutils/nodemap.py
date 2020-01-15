@@ -92,7 +92,8 @@ def _persist_nodemap(tr, revlog):
             datafile = _rawdata_filepath(revlog, target_docket)
             # EXP-TODO: if this is a cache, this should use a cache vfs, not a
             # store vfs
-            with revlog.opener(datafile, b'a') as fd:
+            with revlog.opener(datafile, b'r+') as fd:
+                fd.seek(target_docket.data_length)
                 fd.write(data)
             target_docket.data_length += len(data)
             target_docket.data_unused += data_changed_count
