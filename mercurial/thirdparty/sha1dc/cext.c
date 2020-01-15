@@ -25,8 +25,8 @@ typedef struct {
 
 static int pysha1ctx_init(pysha1ctx *self, PyObject *args)
 {
-	const char *data = NULL;
-	Py_ssize_t len;
+	Py_buffer data;
+	data.obj = NULL;
 
 	SHA1DCInit(&(self->ctx));
 	/* We don't want "safe" sha1s, wherein sha1dc can give you a
@@ -34,11 +34,19 @@ static int pysha1ctx_init(pysha1ctx *self, PyObject *args)
 	   collision. We just want to detect collisions.
 	 */
 	SHA1DCSetSafeHash(&(self->ctx), 0);
-	if (!PyArg_ParseTuple(args, PY23("|s#", "|y#"), &data, &len)) {
+	if (!PyArg_ParseTuple(args, PY23("|s*", "|y*"), &data)) {
 		return -1;
 	}
-	if (data) {
-		SHA1DCUpdate(&(self->ctx), data, len);
+	if (data.obj) {
+		if (!PyBuffer_IsContiguous(&data, 'C') || data.ndim > 1) {
+			PyErr_SetString(PyExc_BufferError,
+			                "buffer must be contiguous and single dimension");
+			PyBuffer_Release(&data);
+			return -1;
+		}
+
+		SHA1DCUpdate(&(self->ctx), data.buf, data.len);
+		PyBuffer_Release(&data);
 	}
 	return 0;
 }
@@ -50,12 +58,18 @@ static void pysha1ctx_dealloc(pysha1ctx *self)
 
 static PyObject *pysha1ctx_update(pysha1ctx *self, PyObject *args)
 {
-	const char *data;
-	Py_ssize_t len;
-	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &data, &len)) {
+	Py_buffer data;
+	if (!PyArg_ParseTuple(args, PY23("s*", "y*"), &data)) {
 		return NULL;
 	}
-	SHA1DCUpdate(&(self->ctx), data, len);
+	if (!PyBuffer_IsContiguous(&data, 'C') || data.ndim > 1) {
+		PyErr_SetString(PyExc_BufferError,
+		                "buffer must be contiguous and single dimension");
+		PyBuffer_Release(&data);
+		return NULL;
+	}
+	SHA1DCUpdate(&(self->ctx), data.buf, data.len);
+	PyBuffer_Release(&data);
 	Py_RETURN_NONE;
 }
 

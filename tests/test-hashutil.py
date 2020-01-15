@@ -45,6 +45,26 @@ class hashertestsbase(object):
             h.digest(),
         )
 
+    def test_bytes_like_types(self):
+        h = self.hasher()
+        h.update(bytearray(b'foo'))
+        h.update(memoryview(b'baz'))
+        self.assertEqual(
+            '21eb6533733a5e4763acacd1d45a60c2e0e404e1', h.hexdigest()
+        )
+
+        h = self.hasher(bytearray(b'foo'))
+        h.update(b'baz')
+        self.assertEqual(
+            '21eb6533733a5e4763acacd1d45a60c2e0e404e1', h.hexdigest()
+        )
+
+        h = self.hasher(memoryview(b'foo'))
+        h.update(b'baz')
+        self.assertEqual(
+            '21eb6533733a5e4763acacd1d45a60c2e0e404e1', h.hexdigest()
+        )
+
 
 class hashlibtests(unittest.TestCase, hashertestsbase):
     hasher = hashlib.sha1
