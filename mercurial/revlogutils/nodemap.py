@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import os
+import re
 import struct
 
 from .. import (
@@ -71,6 +72,16 @@ def _persist_nodemap(tr, revlog):
     data = persistent_data(revlog.index)
     uid = _make_uid()
     datafile = _rawdata_filepath(revlog, uid)
+    olds = _other_rawdata_filepath(revlog, uid)
+    if olds:
+        realvfs = getattr(revlog, '_realopener', revlog.opener)
+
+        def cleanup(tr):
+            for oldfile in olds:
+                realvfs.tryunlink(oldfile)
+
+        callback_id = b"revlog-cleanup-nodemap-%s" % revlog.nodemap_file
+        tr.addpostclose(callback_id, cleanup)
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
     with revlog.opener(datafile, b'w') as fd:
@@ -134,6 +145,19 @@ def _rawdata_filepath(revlog, uid):
     """The (vfs relative) nodemap's rawdata file for a given uid"""
     prefix = revlog.nodemap_file[:-2]
     return b"%s-%s.nd" % (prefix, uid)
+
+
+def _other_rawdata_filepath(revlog, uid):
+    prefix = revlog.nodemap_file[:-2]
+    pattern = re.compile(b"(^|/)%s-[0-9a-f]+\.nd$" % prefix)
+    new_file_path = _rawdata_filepath(revlog, uid)
+    new_file_name = revlog.opener.basename(new_file_path)
+    dirpath = revlog.opener.dirname(new_file_path)
+    others = []
+    for f in revlog.opener.listdir(dirpath):
+        if pattern.match(f) and f != new_file_name:
+            others.append(f)
+    return others
 
 
 ### Nodemap Trie

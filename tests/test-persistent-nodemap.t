@@ -12,6 +12,8 @@ Test the persistent on-disk nodemap
   $ hg debugbuilddag .+5000
   $ f --size .hg/store/00changelog.n
   .hg/store/00changelog.n: size=18
+  $ f --sha256 .hg/store/00changelog-*.nd
+  .hg/store/00changelog-????????????????.nd: sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7 (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
   size=122880, sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7
   $ hg debugnodemap --dump-disk | f --sha256 --bytes=256 --hexdump --size
@@ -32,3 +34,15 @@ Test the persistent on-disk nodemap
   00d0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   00e0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   00f0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+
+add a new commit
+
+  $ hg up
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo foo > foo
+  $ hg add foo
+  $ hg ci -m 'foo'
+  $ f --size .hg/store/00changelog.n
+  .hg/store/00changelog.n: size=18
+  $ f --sha256 .hg/store/00changelog-*.nd --size
+  .hg/store/00changelog-????????????????.nd: size=122880, sha256=bfafebd751c4f6d116a76a37a1dee2a251747affe7efbcc4f4842ccc746d4db9 (glob)
