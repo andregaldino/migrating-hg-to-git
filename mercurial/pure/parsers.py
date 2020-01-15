@@ -149,6 +149,13 @@ class PersistentNodeMapIndexObject(IndexObject):
     through the dedicated `devel.persistent-nodemap` config.
     """
 
+    def nodemap_data_all(self):
+        """Return bytes containing a full serialization of a nodemap
+
+        The nodemap should be valid for the full set of revisions in the
+        index."""
+        return nodemaputil.persistent_data(self)
+
 
 class InlinedIndexObject(BaseIndexObject):
     def __init__(self, data, inline=0):

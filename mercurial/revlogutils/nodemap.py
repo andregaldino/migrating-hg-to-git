@@ -15,7 +15,7 @@ import struct
 from .. import (
     error,
     node as nodemod,
-    pycompat,
+    util,
 )
 
 
@@ -69,7 +69,10 @@ def _persist_nodemap(tr, revlog):
     if revlog.nodemap_file is None:
         msg = "calling persist nodemap on a revlog without the feature enableb"
         raise error.ProgrammingError(msg)
-    data = persistent_data(revlog.index)
+    if util.safehasattr(revlog.index, "nodemap_data_all"):
+        data = revlog.index.nodemap_data_all()
+    else:
+        data = persistent_data(revlog.index)
     uid = _make_uid()
     datafile = _rawdata_filepath(revlog, uid)
     olds = _other_rawdata_filepath(revlog, uid)
