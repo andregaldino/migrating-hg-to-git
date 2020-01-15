@@ -310,3 +310,30 @@ def _to_value(item, block_map):
         return block_map[id(item)]
     else:
         return _transform_rev(item)
+
+
+def parse_data(data):
+    """parse parse nodemap data into a nodemap Trie"""
+    if (len(data) % S_BLOCK.size) != 0:
+        msg = "nodemap data size is not a multiple of block size (%d): %d"
+        raise error.Abort(msg % (S_BLOCK.size, len(data)))
+    if not data:
+        return Block()
+    block_map = {}
+    new_blocks = []
+    for i in range(0, len(data), S_BLOCK.size):
+        block = Block()
+        ondisk_id = len(block_map)
+        block_map[ondisk_id] = block
+        block_data = data[i : i + S_BLOCK.size]
+        values = S_BLOCK.unpack(block_data)
+        new_blocks.append((block, values))
+    for b, values in new_blocks:
+        for idx, v in enumerate(values):
+            if v == NO_ENTRY:
+                continue
+            elif v >= 0:
+                b[idx] = block_map[v]
+            else:
+                b[idx] = _transform_rev(v)
+    return block
