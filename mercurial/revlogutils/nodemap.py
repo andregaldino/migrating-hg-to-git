@@ -337,3 +337,37 @@ def parse_data(data):
             else:
                 b[idx] = _transform_rev(v)
     return block
+
+
+# debug utility
+
+
+def check_data(ui, index, data):
+    """verify that the provided nodemap data are valid for the given idex"""
+    ret = 0
+    ui.status((b"revision in index:   %d\n") % len(index))
+    root = parse_data(data)
+    all_revs = set(_all_revisions(root))
+    ui.status((b"revision in nodemap: %d\n") % len(all_revs))
+    for r in range(len(index)):
+        if r not in all_revs:
+            msg = b"  revision missing from nodemap: %d\n" % r
+            ui.write_err(msg)
+            ret = 1
+        else:
+            all_revs.remove(r)
+    if all_revs:
+        for r in sorted(all_revs):
+            msg = b"  extra revision in  nodemap: %d\n" % r
+            ui.write_err(msg)
+        ret = 1
+    return ret
+
+
+def _all_revisions(root):
+    """return all revisions stored in a Trie"""
+    for block in _walk_trie(root):
+        for v in block:
+            if v is None or isinstance(v, Block):
+                continue
+            yield v

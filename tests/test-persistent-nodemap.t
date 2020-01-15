@@ -36,6 +36,9 @@ Test the persistent on-disk nodemap
   00d0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   00e0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   00f0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  $ hg debugnodemap --check
+  revision in index:   5001
+  revision in nodemap: 5001
 
 add a new commit
 
@@ -48,3 +51,6 @@ add a new commit
   .hg/store/00changelog.n: size=18
   $ f --sha256 .hg/store/00changelog-*.nd --size
   .hg/store/00changelog-????????????????.nd: size=122880, sha256=bfafebd751c4f6d116a76a37a1dee2a251747affe7efbcc4f4842ccc746d4db9 (glob)
+  $ hg debugnodemap --check
+  revision in index:   5002
+  revision in nodemap: 5002

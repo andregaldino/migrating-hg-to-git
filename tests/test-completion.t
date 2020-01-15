@@ -291,7 +291,7 @@ Show all commands + options
   debugmanifestfulltextcache: clear, add
   debugmergestate: 
   debugnamecomplete: 
-  debugnodemap: dump-new, dump-disk
+  debugnodemap: dump-new, dump-disk, check
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
   debugp1copies: rev
   debugp2copies: rev

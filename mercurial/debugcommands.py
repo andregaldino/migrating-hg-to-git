@@ -2094,6 +2094,12 @@ def debugnamecomplete(ui, repo, *args):
             _(b'write a (new) persistent binary nodemap on stdin'),
         ),
         (b'', b'dump-disk', False, _(b'dump on-disk data on stdin')),
+        (
+            b'',
+            b'check',
+            False,
+            _(b'check that the data on disk data are correct.'),
+        ),
     ],
 )
 def debugnodemap(ui, repo, **opts):
@@ -2109,6 +2115,11 @@ def debugnodemap(ui, repo, **opts):
         cl = unfi.changelog
         data = nodemap.persisted_data(cl)
         ui.write(data)
+    elif opts['check']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        data = nodemap.persisted_data(cl)
+        return nodemap.check_data(ui, cl.index, data)
 
 
 @command(
