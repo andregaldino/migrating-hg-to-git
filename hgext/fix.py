@@ -735,15 +735,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
 
     wctx = context.overlayworkingctx(repo)
     wctx.setbase(repo[newp1node])
-    merge.update(
-        repo,
-        ctx.rev(),
-        branchmerge=False,
-        force=True,
-        ancestor=p1rev,
-        mergeancestor=False,
-        wc=wctx,
-    )
+    merge.revert_to(ctx, wc=wctx)
     copies.graftcopies(wctx, ctx, ctx.p1())
 
     for path in filedata.keys():

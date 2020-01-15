@@ -584,15 +584,8 @@ def dorecord(
             [os.unlink(repo.wjoin(c)) for c in newlyaddedandmodifiedfiles]
             # 3a. apply filtered patch to clean repo  (clean)
             if backups:
-                # Equivalent to hg.revert
                 m = scmutil.matchfiles(repo, set(backups.keys()) | alsorestore)
-                mergemod.update(
-                    repo,
-                    repo.dirstate.p1(),
-                    branchmerge=False,
-                    force=True,
-                    matcher=m,
-                )
+                mergemod.revert_to(repo[b'.'], matcher=m)
 
             # 3b. (apply)
             if dopatch:

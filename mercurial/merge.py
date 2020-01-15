@@ -2225,6 +2225,7 @@ def update(
     labels=None,
     matcher=None,
     mergeforce=False,
+    updatedirstate=True,
     updatecheck=None,
     wc=None,
 ):
@@ -2523,7 +2524,7 @@ def update(
         # If we're doing a partial update, we need to skip updating
         # the dirstate.
         always = matcher is None or matcher.always()
-        updatedirstate = always and not wc.isinmemory()
+        updatedirstate = updatedirstate and always and not wc.isinmemory()
         if updatedirstate:
             repo.hook(b'preupdate', throw=True, parent1=xp1, parent2=xp2)
             # note that we're in the middle of an update
@@ -2604,6 +2605,24 @@ def clean_update(ctx, wc=None):
     working copy.
     """
     return update(ctx.repo(), ctx.rev(), branchmerge=False, force=True, wc=wc)
+
+
+def revert_to(ctx, matcher=None, wc=None):
+    """Revert the working copy to the given commit.
+
+    The working copy will keep its current parent(s) but its content will
+    be the same as in the given commit.
+    """
+
+    return update(
+        ctx.repo(),
+        ctx.rev(),
+        branchmerge=False,
+        force=True,
+        updatedirstate=False,
+        matcher=matcher,
+        wc=wc,
+    )
 
 
 def graft(
