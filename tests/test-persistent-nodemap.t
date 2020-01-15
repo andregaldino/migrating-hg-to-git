@@ -8,6 +8,8 @@ Test the persistent on-disk nodemap
   $ cat << EOF >> .hg/hgrc
   > [experimental]
   > exp-persistent-nodemap=yes
+  > [devel]
+  > persistent-nodemap=yes
   > EOF
   $ hg debugbuilddag .+5000
   $ f --size .hg/store/00changelog.n

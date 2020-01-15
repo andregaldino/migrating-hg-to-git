@@ -141,6 +141,15 @@ class IndexObject(BaseIndexObject):
             self._extra = self._extra[: i - self._lgt]
 
 
+class PersistentNodeMapIndexObject(IndexObject):
+    """a Debug oriented class to test persistent nodemap
+
+    We need a simple python object to test API and higher level behavior. See
+    the Rust implementation for  more serious usage. This should be used only
+    through the dedicated `devel.persistent-nodemap` config.
+    """
+
+
 class InlinedIndexObject(BaseIndexObject):
     def __init__(self, data, inline=0):
         self._data = data
@@ -186,6 +195,12 @@ def parse_index2(data, inline):
     if not inline:
         return IndexObject(data), None
     return InlinedIndexObject(data, inline), (0, data)
+
+
+def parse_index_devel_nodemap(data, inline):
+    """like parse_index2, but alway return a PersistentNodeMapIndexObject
+    """
+    return PersistentNodeMapIndexObject(data), None
 
 
 def parse_dirstate(dmap, copymap, st):

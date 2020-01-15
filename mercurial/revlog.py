@@ -352,6 +352,21 @@ class revlogio(object):
         return p
 
 
+NodemapRevlogIO = None
+
+if util.safehasattr(parsers, 'parse_index_devel_nodemap'):
+
+    class NodemapRevlogIO(revlogio):
+        """A debug oriented IO class that return a PersistentNodeMapIndexObject
+
+        The PersistentNodeMapIndexObject object is meant to test the persistent nodemap feature.
+        """
+
+        def parseindex(self, data, inline):
+            index, cache = parsers.parse_index_devel_nodemap(data, inline)
+            return index, cache
+
+
 class rustrevlogio(revlogio):
     def parseindex(self, data, inline):
         index, cache = super(rustrevlogio, self).parseindex(data, inline)
@@ -596,9 +611,17 @@ class revlog(object):
 
         self._storedeltachains = True
 
+        devel_nodemap = (
+            self.nodemap_file
+            and opts.get(b'devel-force-nodemap', False)
+            and NodemapRevlogIO is not None
+        )
+
         self._io = revlogio()
         if self.version == REVLOGV0:
             self._io = revlogoldio()
+        elif devel_nodemap:
+            self._io = NodemapRevlogIO()
         elif rustrevlog is not None and self.opener.options.get(b'rust.index'):
             self._io = rustrevlogio()
         try:

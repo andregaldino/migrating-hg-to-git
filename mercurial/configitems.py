@@ -406,6 +406,9 @@ coreconfigitem(
     b'devel', b'legacy.exchange', default=list,
 )
 coreconfigitem(
+    b'devel', b'persistent-nodemap', default=False,
+)
+coreconfigitem(
     b'devel', b'servercafile', default=b'',
 )
 coreconfigitem(
