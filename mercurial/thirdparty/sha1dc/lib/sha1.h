@@ -13,7 +13,14 @@ extern "C" {
 #endif
 
 #ifndef SHA1DC_NO_STANDARD_INCLUDES
+/* PY27 this can be changed to a straight #include once Python 2.7 is
+   dropped, since this is for MSVC 2008 support. */
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#else
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+#endif
 #endif
 
 /* sha-1 compression function that takes an already expanded message, and additionally store intermediate states */
