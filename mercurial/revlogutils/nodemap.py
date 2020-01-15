@@ -221,6 +221,11 @@ class Block(dict):
 
     contains up to 16 entry indexed from 0 to 15"""
 
+    def __init__(self):
+        super(Block, self).__init__()
+        # If this block exist on disk, here is its ID
+        self.ondisk_id = None
+
     def __iter__(self):
         return iter(self.get(i) for i in range(16))
 
@@ -323,8 +328,8 @@ def parse_data(data):
     new_blocks = []
     for i in range(0, len(data), S_BLOCK.size):
         block = Block()
-        ondisk_id = len(block_map)
-        block_map[ondisk_id] = block
+        block.ondisk_id = len(block_map)
+        block_map[block.ondisk_id] = block
         block_data = data[i : i + S_BLOCK.size]
         values = S_BLOCK.unpack(block_data)
         new_blocks.append((block, values))
