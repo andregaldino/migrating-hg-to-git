@@ -2507,7 +2507,8 @@ def update(
         ### apply phase
         if not branchmerge:  # just jump to the new rev
             fp1, fp2, xp1, xp2 = fp2, nullid, xp2, b''
-        if not partial and not wc.isinmemory():
+        updatedirstate = not partial and not wc.isinmemory()
+        if updatedirstate:
             repo.hook(b'preupdate', throw=True, parent1=xp1, parent2=xp2)
             # note that we're in the middle of an update
             repo.vfs.write(b'updatestate', p2.hex())
@@ -2553,7 +2554,6 @@ def update(
                 )
             )
 
-        updatedirstate = not partial and not wc.isinmemory()
         wantfiledata = updatedirstate and not branchmerge
         stats, getfiledata = applyupdates(
             repo, actions, wc, p2, overwrite, wantfiledata, labels=labels
