@@ -45,7 +45,12 @@ def persisted_data(revlog):
     docket.data_unused = data_unused
 
     filename = _rawdata_filepath(revlog, docket)
-    return docket, revlog.opener.tryread(filename)
+    data = revlog.opener.tryread(filename)
+    if len(data) < data_length:
+        return None
+    elif len(data) > data_length:
+        data = data[:data_length]
+    return docket, data
 
 
 def setup_persistent_nodemap(tr, revlog):
