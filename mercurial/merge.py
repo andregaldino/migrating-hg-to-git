@@ -2501,13 +2501,9 @@ def update(
         if not branchmerge:  # just jump to the new rev
             fp1, fp2, xp1, xp2 = fp2, nullid, xp2, b''
         # If we're doing a partial update, we need to skip updating
-        # the dirstate, so make a note of any partial-ness to the
-        # update here.
-        if matcher is None or matcher.always():
-            partial = False
-        else:
-            partial = True
-        updatedirstate = not partial and not wc.isinmemory()
+        # the dirstate.
+        always = matcher is None or matcher.always()
+        updatedirstate = always and not wc.isinmemory()
         if updatedirstate:
             repo.hook(b'preupdate', throw=True, parent1=xp1, parent2=xp2)
             # note that we're in the middle of an update
