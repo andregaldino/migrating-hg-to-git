@@ -1024,6 +1024,7 @@ Test list of internal help commands
                  print merge state
    debugnamecomplete
                  complete "names" - tags, open branch names, bookmark names
+   debugnodemap  write and inspect on disk nodemap
    debugobsolete
                  create arbitrary obsolete marker
    debugoptADV   (no help text available)

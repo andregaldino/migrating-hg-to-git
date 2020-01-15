@@ -107,6 +107,7 @@ Show debug commands if there are no other candidates
   debugmanifestfulltextcache
   debugmergestate
   debugnamecomplete
+  debugnodemap
   debugobsolete
   debugp1copies
   debugp2copies
@@ -290,6 +291,7 @@ Show all commands + options
   debugmanifestfulltextcache: clear, add
   debugmergestate: 
   debugnamecomplete: 
+  debugnodemap: dump
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
   debugp1copies: rev
   debugp2copies: rev

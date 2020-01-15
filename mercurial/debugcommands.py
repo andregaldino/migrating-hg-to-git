@@ -95,7 +95,10 @@ from .utils import (
     stringutil,
 )
 
-from .revlogutils import deltas as deltautil
+from .revlogutils import (
+    deltas as deltautil,
+    nodemap,
+)
 
 release = lockmod.release
 
@@ -2079,6 +2082,20 @@ def debugnamecomplete(ui, repo, *args):
         completions.update(n for n in names if n.startswith(a))
     ui.write(b'\n'.join(sorted(completions)))
     ui.write(b'\n')
+
+
+@command(
+    b'debugnodemap',
+    [(b'', b'dump', False, _(b'write persistent binary nodemap on stdin'))],
+)
+def debugnodemap(ui, repo, **opts):
+    """write and inspect on disk nodemap
+    """
+    if opts['dump']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        data = nodemap.persistent_data(cl.index)
+        ui.write(data)
 
 
 @command(
