@@ -2100,6 +2100,12 @@ def debugnamecomplete(ui, repo, *args):
             False,
             _(b'check that the data on disk data are correct.'),
         ),
+        (
+            b'',
+            b'metadata',
+            False,
+            _(b'display the on disk meta data for the nodemap'),
+        ),
     ],
 )
 def debugnodemap(ui, repo, **opts):
@@ -2124,6 +2130,13 @@ def debugnodemap(ui, repo, **opts):
         if nm_data is not None:
             docket, data = nm_data
             return nodemap.check_data(ui, cl.index, data)
+    elif opts['metadata']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        nm_data = nodemap.persisted_data(cl)
+        if nm_data is not None:
+            docket, data = nm_data
+            ui.write((b"uid: %s\n") % docket.uid)
 
 
 @command(

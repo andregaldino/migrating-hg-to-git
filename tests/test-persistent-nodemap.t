@@ -12,6 +12,8 @@ Test the persistent on-disk nodemap
   > persistent-nodemap=yes
   > EOF
   $ hg debugbuilddag .+5000
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
   $ f --size .hg/store/00changelog.n
   .hg/store/00changelog.n: size=18
   $ f --sha256 .hg/store/00changelog-*.nd
@@ -47,6 +49,8 @@ add a new commit
   $ echo foo > foo
   $ hg add foo
   $ hg ci -m 'foo'
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
   $ f --size .hg/store/00changelog.n
   .hg/store/00changelog.n: size=18
 
