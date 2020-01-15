@@ -84,13 +84,14 @@ static PyObject *pysha1ctx_digest(pysha1ctx *self)
 
 static PyObject *pysha1ctx_hexdigest(pysha1ctx *self)
 {
+	static const char hexdigit[] = "0123456789abcdef";
 	unsigned char hash[20];
+	char hexhash[40];
+	int i;
 	if (!finalize(self->ctx, hash)) {
 		return NULL;
 	}
-	char hexhash[40];
-	static const char hexdigit[] = "0123456789abcdef";
-	for (int i = 0; i < 20; ++i) {
+	for (i = 0; i < 20; ++i) {
 		hexhash[i * 2] = hexdigit[hash[i] >> 4];
 		hexhash[i * 2 + 1] = hexdigit[hash[i] & 15];
 	}
