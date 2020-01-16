@@ -21,6 +21,8 @@ mod filepatterns;
 pub mod matchers;
 pub mod revlog;
 pub use revlog::*;
+#[cfg(feature = "with-re2")]
+pub mod re2;
 pub mod utils;
 
 use crate::utils::hg_path::{HgPathBuf, HgPathError};

@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["python27"]
+with-re2 = ["hg-core/with-re2"]
 
 # Features to build an extension module:
 python27 = ["cpython/python27-sys", "cpython/extension-module-2-7"]
@@ -21,7 +22,7 @@ python27-bin = ["cpython/python27-sys"]
 python3-bin = ["cpython/python3-sys"]
 
 [dependencies]
-hg-core = { path = "../hg-core" }
+hg-core = { path = "../hg-core"}
 libc = '*'
 
 [dependencies.cpython]

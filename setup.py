@@ -1351,10 +1351,19 @@ class RustExtension(Extension):
             env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
 
         cargocmd = ['cargo', 'rustc', '-vv', '--release']
+
+        feature_flags = []
+
         if sys.version_info[0] == 3 and self.py3_features is not None:
-            cargocmd.extend(
-                ('--features', self.py3_features, '--no-default-features')
-            )
+            feature_flags.append(self.py3_features)
+            cargocmd.append('--no-default-features')
+
+        rust_features = env.get("HG_RUST_FEATURES")
+        if rust_features:
+            feature_flags.append(rust_features)
+
+        cargocmd.extend(('--features', " ".join(feature_flags)))
+
         cargocmd.append('--')
         if sys.platform == 'darwin':
             cargocmd.extend(
