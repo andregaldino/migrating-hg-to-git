@@ -1678,22 +1678,6 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
             elif p in state and state[p] > 0:
                 np = state[p]
 
-            # "bases" only record "special" merge bases that cannot be
-            # calculated from changelog DAG (i.e. isancestor(p, np) is False).
-            # For example:
-            #
-            #   B'   # rebase -s B -d D, when B was rebased to B'. dest for C
-            #   | C  # is B', but merge base for C is B, instead of
-            #   D |  # changelog.ancestor(C, B') == A. If changelog DAG and
-            #   | B  # "state" edges are merged (so there will be an edge from
-            #   |/   # B to B'), the merge base is still ancestor(C, B') in
-            #   A    # the merged graph.
-            #
-            # Also see https://bz.mercurial-scm.org/show_bug.cgi?id=1950#c8
-            # which uses "virtual null merge" to explain this situation.
-            if isancestor(p, np):
-                bases[i] = nullrev
-
             # If one parent becomes an ancestor of the other, drop the ancestor
             for j, x in enumerate(newps[:i]):
                 if x == nullrev:
@@ -1754,10 +1738,10 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
     # But our merge base candidates (D and E in above case) could still be
     # better than the default (ancestor(F, Z) == null). Therefore still
     # pick one (so choose p1 above).
-    if sum(1 for b in set(bases) if b != nullrev) > 1:
+    if sum(1 for b in set(bases) if b != nullrev and b not in newps) > 1:
         unwanted = [None, None]  # unwanted[i]: unwanted revs if choose bases[i]
         for i, base in enumerate(bases):
-            if base == nullrev:
+            if base == nullrev or base in newps:
                 continue
             # Revisions in the side (not chosen as merge base) branch that
             # might contain "surprising" contents
@@ -1781,42 +1765,40 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
                     )
                 )
 
-        # Choose a merge base that has a minimal number of unwanted revs.
-        l, i = min(
-            (len(revs), i)
-            for i, revs in enumerate(unwanted)
-            if revs is not None
-        )
+        if any(revs is not None for revs in unwanted):
+            # Choose a merge base that has a minimal number of unwanted revs.
+            l, i = min(
+                (len(revs), i)
+                for i, revs in enumerate(unwanted)
+                if revs is not None
+            )
 
-        # The merge will include unwanted revisions. Abort now. Revisit this if
-        # we have a more advanced merge algorithm that handles multiple bases.
-        if l > 0:
-            unwanteddesc = _(b' or ').join(
-                (
-                    b', '.join(b'%d:%s' % (r, repo[r]) for r in revs)
-                    for revs in unwanted
-                    if revs is not None
+            # The merge will include unwanted revisions. Abort now. Revisit this if
+            # we have a more advanced merge algorithm that handles multiple bases.
+            if l > 0:
+                unwanteddesc = _(b' or ').join(
+                    (
+                        b', '.join(b'%d:%s' % (r, repo[r]) for r in revs)
+                        for revs in unwanted
+                        if revs is not None
+                    )
                 )
-            )
-            raise error.Abort(
-                _(b'rebasing %d:%s will include unwanted changes from %s')
-                % (rev, repo[rev], unwanteddesc)
-            )
+                raise error.Abort(
+                    _(b'rebasing %d:%s will include unwanted changes from %s')
+                    % (rev, repo[rev], unwanteddesc)
+                )
 
-        # newps[0] should match merge base if possible. Currently, if newps[i]
-        # is nullrev, the only case is newps[i] and newps[j] (j < i), one is
-        # the other's ancestor. In that case, it's fine to not swap newps here.
-        # (see CASE-1 and CASE-2 above)
-        if i != 0:
-            if newps[i] != nullrev:
-                newps[0], newps[i] = newps[i], newps[0]
-            bases[0], bases[i] = bases[i], bases[0]
+            # newps[0] should match merge base if possible. Currently, if newps[i]
+            # is nullrev, the only case is newps[i] and newps[j] (j < i), one is
+            # the other's ancestor. In that case, it's fine to not swap newps here.
+            # (see CASE-1 and CASE-2 above)
+            if i != 0:
+                if newps[i] != nullrev:
+                    newps[0], newps[i] = newps[i], newps[0]
+                bases[0], bases[i] = bases[i], bases[0]
 
     # "rebasenode" updates to new p1, use the corresponding merge base.
-    if bases[0] != nullrev:
-        base = bases[0]
-    else:
-        base = None
+    base = bases[0]
 
     repo.ui.debug(b" future parents are %d and %d\n" % tuple(newps))
 

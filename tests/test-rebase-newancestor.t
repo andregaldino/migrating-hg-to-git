@@ -68,11 +68,6 @@ interesting conflict resolutions or additional changes in the merge commit, but
 that is mixed up with the actual merge stuff and there is in general no way to
 separate them.
 
-Note: The dev branch contains _no_ changes to f-default. It might be unclear
-how rebasing of ancestor merges should be handled, but the current behavior
-with spurious prompts for conflicts in files that didn't change seems very
-wrong.
-
   $ hg init ancestor-merge
   $ cd ancestor-merge
 
@@ -133,16 +128,11 @@ Full rebase all the way back from branching point:
   note: not rebasing 1:1d1a643d390e "dev: create branch", its destination already has all its changes
   rebasing 2:ec2c14fb2984 "dev: f-dev stuff"
   rebasing 4:4b019212aaf6 "dev: merge default"
-  file 'f-default' was deleted in local [dest] but was modified in other [source].
-  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
-  What do you want to do? c
+  note: not rebasing 4:4b019212aaf6 "dev: merge default", its destination already has all its changes
   rebasing 6:010ced67e558 "dev: merge default"
+  note: not rebasing 6:010ced67e558 "dev: merge default", its destination already has all its changes
   saved backup bundle to $TESTTMP/ancestor-merge/.hg/strip-backup/1d1a643d390e-4a6f6d17-rebase.hg
   $ hg tglog
-  o  6: de147e4f69cf 'dev: merge default'
-  |
-  o  5: eda7b7f46f5d 'dev: merge default'
-  |
   o  4: 3e075b1c0a40 'dev: f-dev stuff'
   |
   @  3: e08089805d82 'default: f-other stuff'
@@ -163,28 +153,8 @@ Grafty cherry picking rebasing:
   > EOF
   rebasing 2:ec2c14fb2984 "dev: f-dev stuff"
   rebasing 4:4b019212aaf6 "dev: merge default"
-  file 'f-default' was deleted in local [dest] but was modified in other [source].
-  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
-  What do you want to do? c
-  rebasing 6:010ced67e558 "dev: merge default"
-  saved backup bundle to $TESTTMP/ancestor-merge-2/.hg/strip-backup/ec2c14fb2984-827d7a44-rebase.hg
-  $ hg tglog
-  o  7: de147e4f69cf 'dev: merge default'
-  |
-  o  6: eda7b7f46f5d 'dev: merge default'
-  |
-  o  5: 3e075b1c0a40 'dev: f-dev stuff'
-  |
-  o  4: e08089805d82 'default: f-other stuff'
-  |
-  o  3: 462860db70a1 'default: remove f-default'
-  |
-  o  2: f157ecfd2b6b 'default: f-default stuff'
-  |
-  | o  1: 1d1a643d390e 'dev: create branch' dev
-  |/
-  o  0: e90e8eb90b6f 'default: create f-default'
-  
+  abort: rebasing 4:4b019212aaf6 will include unwanted changes from 1:1d1a643d390e
+  [255]
   $ cd ..
 
 
@@ -284,18 +254,7 @@ rebase of merge of ancestors
   rebasing 6:4c5f12f25ebe "merge rebase ancestors" (tip)
   resolving manifests
   removing other
-  note: merging f9daf77ffe76+ and 4c5f12f25ebe using bids from ancestors a60552eb93fb and f59da8fc0fcf
-  
-  calculating bids for ancestor a60552eb93fb
   resolving manifests
-  
-  calculating bids for ancestor f59da8fc0fcf
-  resolving manifests
-  
-  auction for merging merge bids
-   other: consensus for g
-  end of auction
-  
   getting other
   committing files:
   other
