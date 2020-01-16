@@ -1739,12 +1739,6 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
     if any(p != nullrev and isancestor(rev, p) for p in newps):
         raise error.Abort(_(b'source is ancestor of destination'))
 
-    # "rebasenode" updates to new p1, use the corresponding merge base.
-    if bases[0] != nullrev:
-        base = bases[0]
-    else:
-        base = None
-
     # Check if the merge will contain unwanted changes. That may happen if
     # there are multiple special (non-changelog ancestor) merge bases, which
     # cannot be handled well by the 3-way merge algorithm. For example:
@@ -1809,14 +1803,20 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
                 % (rev, repo[rev], unwanteddesc)
             )
 
-        base = bases[i]
-
         # newps[0] should match merge base if possible. Currently, if newps[i]
         # is nullrev, the only case is newps[i] and newps[j] (j < i), one is
         # the other's ancestor. In that case, it's fine to not swap newps here.
         # (see CASE-1 and CASE-2 above)
-        if i != 0 and newps[i] != nullrev:
-            newps[0], newps[i] = newps[i], newps[0]
+        if i != 0:
+            if newps[i] != nullrev:
+                newps[0], newps[i] = newps[i], newps[0]
+            bases[0], bases[i] = bases[i], bases[0]
+
+    # "rebasenode" updates to new p1, use the corresponding merge base.
+    if bases[0] != nullrev:
+        base = bases[0]
+    else:
+        base = None
 
     repo.ui.debug(b" future parents are %d and %d\n" % tuple(newps))
 
