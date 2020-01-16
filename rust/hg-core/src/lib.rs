@@ -25,7 +25,8 @@ pub mod utils;
 
 use crate::utils::hg_path::{HgPathBuf, HgPathError};
 pub use filepatterns::{
-    build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
+    parse_pattern_syntax, read_pattern_file, IgnorePattern,
+    PatternFileWarning, PatternSyntax,
 };
 use std::collections::HashMap;
 use twox_hash::RandomXxHashBuilder64;
@@ -115,18 +116,31 @@ impl From<DirstatePackError> for DirstateError {
 
 #[derive(Debug)]
 pub enum PatternError {
+    Path(HgPathError),
     UnsupportedSyntax(String),
-}
-
-#[derive(Debug)]
-pub enum PatternFileError {
+    UnsupportedSyntaxInFile(String, String, usize),
+    TooLong(usize),
     IO(std::io::Error),
-    Pattern(PatternError, LineNumber),
 }
 
-impl From<std::io::Error> for PatternFileError {
-    fn from(e: std::io::Error) -> Self {
-        PatternFileError::IO(e)
+impl ToString for PatternError {
+    fn to_string(&self) -> String {
+        match self {
+            PatternError::UnsupportedSyntax(syntax) => {
+                format!("Unsupported syntax {}", syntax)
+            }
+            PatternError::UnsupportedSyntaxInFile(syntax, file_path, line) => {
+                format!(
+                    "{}:{}: unsupported syntax {}",
+                    file_path, line, syntax
+                )
+            }
+            PatternError::TooLong(size) => {
+                format!("matcher pattern is too long ({} bytes)", size)
+            }
+            PatternError::IO(e) => e.to_string(),
+            PatternError::Path(e) => e.to_string(),
+        }
     }
 }
 
@@ -139,5 +153,17 @@ impl From<DirstateMapError> for DirstateError {
 impl From<std::io::Error> for DirstateError {
     fn from(e: std::io::Error) -> Self {
         DirstateError::IO(e)
+    }
+}
+
+impl From<std::io::Error> for PatternError {
+    fn from(e: std::io::Error) -> Self {
+        PatternError::IO(e)
+    }
+}
+
+impl From<HgPathError> for PatternError {
+    fn from(e: HgPathError) -> Self {
+        PatternError::Path(e)
     }
 }
