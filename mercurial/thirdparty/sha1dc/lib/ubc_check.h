@@ -28,7 +28,12 @@ extern "C" {
 #endif
 
 #ifndef SHA1DC_NO_STANDARD_INCLUDES
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#else
+/* prior to Visual Studio 2010 */
+typedef unsigned __int32 uint32_t;
+#endif
 #endif
 
 #define DVMASKSIZE 1

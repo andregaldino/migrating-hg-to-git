@@ -25,7 +25,9 @@
 */
 
 #ifndef SHA1DC_NO_STANDARD_INCLUDES
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#endif
 #endif
 #ifdef SHA1DC_CUSTOM_INCLUDE_UBC_CHECK_C
 #include SHA1DC_CUSTOM_INCLUDE_UBC_CHECK_C
