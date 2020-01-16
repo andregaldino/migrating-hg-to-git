@@ -386,7 +386,7 @@ def filterchunks(ui, originalhunks, usecurses, testfile, match, operation=None):
                 ui, originalhunks, recordfn, operation
             )
     except crecordmod.fallbackerror as e:
-        ui.warn(b'%s\n' % e.message)  # pytype: disable=attribute-error
+        ui.warn(b'%s\n' % e)
         ui.warn(_(b'falling back to text mode\n'))
 
     return patch.filterpatch(ui, originalhunks, match, operation)
