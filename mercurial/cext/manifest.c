@@ -42,17 +42,17 @@ typedef struct {
 #define MANIFEST_TOO_SHORT_LINE -5
 
 /* get the length of the path for a line */
-static size_t pathlen(line *l)
+static Py_ssize_t pathlen(line *l)
 {
 	const char *end = memchr(l->start, '\0', l->len);
-	return (end) ? (size_t)(end - l->start) : l->len;
+	return (end) ? (Py_ssize_t)(end - l->start) : l->len;
 }
 
 /* get the node value of a single line */
 static PyObject *nodeof(line *l)
 {
 	char *s = l->start;
-	ssize_t llen = pathlen(l);
+	Py_ssize_t llen = pathlen(l);
 	PyObject *hash;
 	if (llen + 1 + 40 + 1 > l->len) { /* path '\0' hash '\n' */
 		PyErr_SetString(PyExc_ValueError, "manifest line too short");
@@ -76,7 +76,7 @@ static PyObject *nodeof(line *l)
 static PyObject *hashflags(line *l)
 {
 	char *s = l->start;
-	size_t plen = pathlen(l);
+	Py_ssize_t plen = pathlen(l);
 	PyObject *hash = nodeof(l);
 
 	/* 40 for hash, 1 for null byte, 1 for newline */
@@ -270,7 +270,7 @@ static line *lmiter_nextline(lmIter *self)
 
 static PyObject *lmiter_iterentriesnext(PyObject *o)
 {
-	size_t pl;
+	Py_ssize_t pl;
 	line *l;
 	Py_ssize_t consumed;
 	PyObject *ret = NULL, *path = NULL, *hash = NULL, *flags = NULL;
@@ -337,7 +337,7 @@ static PyTypeObject lazymanifestEntriesIterator = {
 
 static PyObject *lmiter_iterkeysnext(PyObject *o)
 {
-	size_t pl;
+	Py_ssize_t pl;
 	line *l = lmiter_nextline((lmIter *)o);
 	if (!l) {
 		return NULL;
