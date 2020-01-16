@@ -121,6 +121,9 @@ pub enum PatternError {
     UnsupportedSyntaxInFile(String, String, usize),
     TooLong(usize),
     IO(std::io::Error),
+    /// Needed a pattern that can be turned into a regex but got one that
+    /// can't. This should only happen through programmer error.
+    NonRegexPattern(IgnorePattern),
 }
 
 impl ToString for PatternError {
@@ -140,6 +143,9 @@ impl ToString for PatternError {
             }
             PatternError::IO(e) => e.to_string(),
             PatternError::Path(e) => e.to_string(),
+            PatternError::NonRegexPattern(pattern) => {
+                format!("'{:?}' cannot be turned into a regex", pattern)
+            }
         }
     }
 }

@@ -7,11 +7,19 @@
 
 //! Handling of Mercurial-specific patterns.
 
-use crate::{utils::SliceExt, FastHashMap, PatternError};
+use crate::{
+    utils::{
+        files::{canonical_path, get_bytes_from_path, get_path_from_bytes},
+        hg_path::{path_to_hg_path_buf, HgPathBuf, HgPathError},
+        SliceExt,
+    },
+    FastHashMap, PatternError,
+};
 use lazy_static::lazy_static;
 use regex::bytes::{NoExpand, Regex};
 use std::fs::File;
 use std::io::Read;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
 
@@ -53,6 +61,10 @@ pub enum PatternSyntax {
     /// A path relative to repository root, which is matched non-recursively
     /// (will not match subdirectories)
     RootFiles,
+    /// A file of patterns to read and include
+    Include,
+    /// A file of patterns to match against files under the same directory
+    SubInclude,
 }
 
 /// Transforms a glob pattern into a regex
@@ -145,6 +157,8 @@ pub fn parse_pattern_syntax(
         b"relre:" => Ok(PatternSyntax::RelRegexp),
         b"glob:" => Ok(PatternSyntax::Glob),
         b"rootglob:" => Ok(PatternSyntax::RootGlob),
+        b"include:" => Ok(PatternSyntax::Include),
+        b"subinclude:" => Ok(PatternSyntax::SubInclude),
         _ => Err(PatternError::UnsupportedSyntax(
             String::from_utf8_lossy(kind).to_string(),
         )),
@@ -198,6 +212,7 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         PatternSyntax::Glob | PatternSyntax::RootGlob => {
             [glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
         }
+        PatternSyntax::Include | PatternSyntax::SubInclude => unreachable!(),
     }
 }
 
@@ -259,6 +274,9 @@ pub fn build_single_regex(
         | PatternSyntax::Path
         | PatternSyntax::RelGlob
         | PatternSyntax::RootFiles => normalize_path_bytes(&pattern),
+        PatternSyntax::Include | PatternSyntax::SubInclude => {
+            return Err(PatternError::NonRegexPattern(entry.clone()))
+        }
         _ => pattern.to_owned(),
     };
     if *syntax == PatternSyntax::RootGlob
@@ -421,6 +439,110 @@ impl IgnorePattern {
 }
 
 pub type PatternResult<T> = Result<T, PatternError>;
+
+/// Wrapper for `read_pattern_file` that also recursively expands `include:`
+/// patterns.
+///
+/// `subinclude:` is not treated as a special pattern here: unraveling them
+/// needs to occur in the "ignore" phase.
+pub fn get_patterns_from_file(
+    pattern_file: impl AsRef<Path>,
+    root_dir: impl AsRef<Path>,
+) -> PatternResult<(Vec<IgnorePattern>, Vec<PatternFileWarning>)> {
+    let (patterns, mut warnings) = read_pattern_file(&pattern_file, true)?;
+    let patterns = patterns
+        .into_iter()
+        .flat_map(|entry| -> PatternResult<_> {
+            let IgnorePattern {
+                syntax,
+                pattern,
+                source: _,
+            } = &entry;
+            Ok(match syntax {
+                PatternSyntax::Include => {
+                    let inner_include =
+                        root_dir.as_ref().join(get_path_from_bytes(&pattern));
+                    let (inner_pats, inner_warnings) = get_patterns_from_file(
+                        &inner_include,
+                        root_dir.as_ref(),
+                    )?;
+                    warnings.extend(inner_warnings);
+                    inner_pats
+                }
+                _ => vec![entry],
+            })
+        })
+        .flatten()
+        .collect();
+
+    Ok((patterns, warnings))
+}
+
+/// Holds all the information needed to handle a `subinclude:` pattern.
+pub struct SubInclude {
+    /// Will be used for repository (hg) paths that start with this prefix.
+    /// It is relative to the current working directory, so comparing against
+    /// repository paths is painless.
+    pub prefix: HgPathBuf,
+    /// The file itself, containing the patterns
+    pub path: PathBuf,
+    /// Folder in the filesystem where this it applies
+    pub root: PathBuf,
+}
+
+impl SubInclude {
+    pub fn new(
+        root_dir: impl AsRef<Path>,
+        pattern: &[u8],
+        source: impl AsRef<Path>,
+    ) -> Result<SubInclude, HgPathError> {
+        let normalized_source =
+            normalize_path_bytes(&get_bytes_from_path(source));
+
+        let source_root = get_path_from_bytes(&normalized_source);
+        let source_root = source_root.parent().unwrap_or(source_root.deref());
+
+        let path = source_root.join(get_path_from_bytes(pattern));
+        let new_root = path.parent().unwrap_or(path.deref());
+
+        let prefix = canonical_path(&root_dir, &root_dir, new_root)?;
+
+        Ok(Self {
+            prefix: path_to_hg_path_buf(prefix).and_then(|mut p| {
+                if !p.is_empty() {
+                    p.push(b'/');
+                }
+                Ok(p)
+            })?,
+            path: path.to_owned(),
+            root: new_root.to_owned(),
+        })
+    }
+}
+
+/// Separate and pre-process subincludes from other patterns for the "ignore"
+/// phase.
+pub fn filter_subincludes(
+    ignore_patterns: &[IgnorePattern],
+    root_dir: impl AsRef<Path>,
+) -> Result<(Vec<SubInclude>, Vec<&IgnorePattern>), HgPathError> {
+    let mut subincludes = vec![];
+    let mut others = vec![];
+
+    for ignore_pattern in ignore_patterns.iter() {
+        let IgnorePattern {
+            syntax,
+            pattern,
+            source,
+        } = ignore_pattern;
+        if *syntax == PatternSyntax::SubInclude {
+            subincludes.push(SubInclude::new(&root_dir, pattern, &source)?);
+        } else {
+            others.push(ignore_pattern)
+        }
+    }
+    Ok((subincludes, others))
+}
 
 #[cfg(test)]
 mod tests {
