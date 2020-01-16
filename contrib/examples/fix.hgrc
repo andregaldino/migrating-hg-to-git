@@ -2,7 +2,7 @@
 clang-format:command = clang-format --style file
 clang-format:pattern = set:(**.c or **.cc or **.h) and not "include:contrib/clang-format-ignorelist"
 
-rustfmt:command = $(rustup which --toolchain nightly rustfmt)
+rustfmt:command = rustfmt +nightly
 rustfmt:pattern = set:**.rs
 
 black:command = black --config=black.toml -
