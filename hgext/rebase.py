@@ -1793,14 +1793,6 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
             for i, revs in enumerate(unwanted)
             if revs is not None
         )
-        base = bases[i]
-
-        # newps[0] should match merge base if possible. Currently, if newps[i]
-        # is nullrev, the only case is newps[i] and newps[j] (j < i), one is
-        # the other's ancestor. In that case, it's fine to not swap newps here.
-        # (see CASE-1 and CASE-2 above)
-        if i != 0 and newps[i] != nullrev:
-            newps[0], newps[i] = newps[i], newps[0]
 
         # The merge will include unwanted revisions. Abort now. Revisit this if
         # we have a more advanced merge algorithm that handles multiple bases.
@@ -1816,6 +1808,15 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
                 _(b'rebasing %d:%s will include unwanted changes from %s')
                 % (rev, repo[rev], unwanteddesc)
             )
+
+        base = bases[i]
+
+        # newps[0] should match merge base if possible. Currently, if newps[i]
+        # is nullrev, the only case is newps[i] and newps[j] (j < i), one is
+        # the other's ancestor. In that case, it's fine to not swap newps here.
+        # (see CASE-1 and CASE-2 above)
+        if i != 0 and newps[i] != nullrev:
+            newps[0], newps[i] = newps[i], newps[0]
 
     repo.ui.debug(b" future parents are %d and %d\n" % tuple(newps))
 
