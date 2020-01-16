@@ -10,7 +10,9 @@
 use crate::{utils::hg_path::HgPath, DirsMultiset, DirstateMapError};
 use std::collections::HashSet;
 use std::iter::FromIterator;
+use std::ops::Deref;
 
+#[derive(Debug, PartialEq)]
 pub enum VisitChildrenSet<'a> {
     /// Don't visit anything
     Empty,
@@ -163,17 +165,157 @@ impl<'a> Matcher for FileMatcher<'a> {
     }
     fn visit_children_set(
         &self,
-        _directory: impl AsRef<HgPath>,
+        directory: impl AsRef<HgPath>,
     ) -> VisitChildrenSet {
-        // TODO implement once we have `status.traverse`
-        // This is useless until unknown files are taken into account
-        // Which will not need to happen before the `IncludeMatcher`.
-        unimplemented!()
+        if self.files.is_empty() || !self.dirs.contains(&directory) {
+            return VisitChildrenSet::Empty;
+        }
+        let dirs_as_set = self.dirs.iter().map(|k| k.deref()).collect();
+
+        let mut candidates: HashSet<&HgPath> =
+            self.files.union(&dirs_as_set).map(|k| *k).collect();
+        candidates.remove(HgPath::new(b""));
+
+        if !directory.as_ref().is_empty() {
+            let directory = [directory.as_ref().as_bytes(), b"/"].concat();
+            candidates = candidates
+                .iter()
+                .filter_map(|c| {
+                    if c.as_bytes().starts_with(&directory) {
+                        Some(HgPath::new(&c.as_bytes()[directory.len()..]))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+        }
+
+        // `self.dirs` includes all of the directories, recursively, so if
+        // we're attempting to match 'foo/bar/baz.txt', it'll have '', 'foo',
+        // 'foo/bar' in it. Thus we can safely ignore a candidate that has a
+        // '/' in it, indicating it's for a subdir-of-a-subdir; the immediate
+        // subdir will be in there without a slash.
+        VisitChildrenSet::Set(
+            candidates
+                .iter()
+                .filter_map(|c| {
+                    if c.bytes().all(|b| *b != b'/') {
+                        Some(*c)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+        )
     }
     fn matches_everything(&self) -> bool {
         false
     }
     fn is_exact(&self) -> bool {
         true
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_filematcher_visit_children_set() {
+        // Visitchildrenset
+        let files = vec![HgPath::new(b"dir/subdir/foo.txt")];
+        let matcher = FileMatcher::new(&files).unwrap();
+
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"dir"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"")),
+            VisitChildrenSet::Set(set)
+        );
+
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"subdir"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"dir")),
+            VisitChildrenSet::Set(set)
+        );
+
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"foo.txt"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"dir/subdir")),
+            VisitChildrenSet::Set(set)
+        );
+
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"dir/subdir/x")),
+            VisitChildrenSet::Empty
+        );
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"dir/subdir/foo.txt")),
+            VisitChildrenSet::Empty
+        );
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"folder")),
+            VisitChildrenSet::Empty
+        );
+    }
+
+    #[test]
+    fn test_filematcher_visit_children_set_files_and_dirs() {
+        let files = vec![
+            HgPath::new(b"rootfile.txt"),
+            HgPath::new(b"a/file1.txt"),
+            HgPath::new(b"a/b/file2.txt"),
+            // No file in a/b/c
+            HgPath::new(b"a/b/c/d/file4.txt"),
+        ];
+        let matcher = FileMatcher::new(&files).unwrap();
+
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"a"));
+        set.insert(HgPath::new(b"rootfile.txt"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"")),
+            VisitChildrenSet::Set(set)
+        );
+
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"b"));
+        set.insert(HgPath::new(b"file1.txt"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"a")),
+            VisitChildrenSet::Set(set)
+        );
+
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"c"));
+        set.insert(HgPath::new(b"file2.txt"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"a/b")),
+            VisitChildrenSet::Set(set)
+        );
+
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"d"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"a/b/c")),
+            VisitChildrenSet::Set(set)
+        );
+        let mut set = HashSet::new();
+        set.insert(HgPath::new(b"file4.txt"));
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"a/b/c/d")),
+            VisitChildrenSet::Set(set)
+        );
+
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"a/b/c/d/e")),
+            VisitChildrenSet::Empty
+        );
+        assert_eq!(
+            matcher.visit_children_set(HgPath::new(b"folder")),
+            VisitChildrenSet::Empty
+        );
     }
 }
