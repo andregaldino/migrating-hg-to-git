@@ -40,3 +40,5 @@ impl GraphError {
 }
 
 py_exception!(rustext, HgPathPyError, RuntimeError);
+py_exception!(rustext, FallbackError, RuntimeError);
+py_exception!(shared_ref, AlreadyBorrowed, RuntimeError);

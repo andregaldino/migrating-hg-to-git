@@ -14,12 +14,15 @@ mod dirs_multiset;
 mod dirstate_map;
 mod non_normal_entries;
 mod status;
-use crate::dirstate::{
-    dirs_multiset::Dirs, dirstate_map::DirstateMap, status::status_wrapper,
+use crate::{
+    dirstate::{
+        dirs_multiset::Dirs, dirstate_map::DirstateMap, status::status_wrapper,
+    },
+    exceptions,
 };
 use cpython::{
-    exc, PyBytes, PyDict, PyErr, PyModule, PyObject, PyResult, PySequence,
-    Python,
+    exc, PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult,
+    PySequence, Python,
 };
 use hg::{
     utils::hg_path::HgPathBuf, DirstateEntry, DirstateParseError, EntryState,
@@ -107,6 +110,11 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     m.add(py, "__package__", package)?;
     m.add(py, "__doc__", "Dirstate - Rust implementation")?;
 
+    m.add(
+        py,
+        "FallbackError",
+        py.get_type::<exceptions::FallbackError>(),
+    )?;
     m.add_class::<Dirs>(py)?;
     m.add_class::<DirstateMap>(py)?;
     m.add(
@@ -118,9 +126,12 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
                 dmap: DirstateMap,
                 root_dir: PyObject,
                 matcher: PyObject,
-                list_clean: bool,
+                ignorefiles: PyList,
+                check_exec: bool,
                 last_normal_time: i64,
-                check_exec: bool
+                list_clean: bool,
+                list_ignored: bool,
+                list_unknown: bool
             )
         ),
     )?;

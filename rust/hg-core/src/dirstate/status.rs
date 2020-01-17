@@ -48,6 +48,20 @@ pub enum BadType {
     Unknown,
 }
 
+impl ToString for BadType {
+    fn to_string(&self) -> String {
+        match self {
+            BadType::CharacterDevice => "character device",
+            BadType::BlockDevice => "block device",
+            BadType::FIFO => "fifo",
+            BadType::Socket => "socket",
+            BadType::Directory => "directory",
+            BadType::Unknown => "unknown",
+        }
+        .to_string()
+    }
+}
+
 /// Was explicitly matched but cannot be found/accessed
 #[derive(Debug)]
 pub enum BadMatch {
