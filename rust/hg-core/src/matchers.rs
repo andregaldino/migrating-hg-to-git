@@ -10,8 +10,10 @@
 #[cfg(feature = "with-re2")]
 use crate::re2::Re2;
 use crate::{
-    filepatterns::PatternResult, utils::hg_path::HgPath, DirsMultiset,
-    DirstateMapError, PatternError,
+    filepatterns::PatternResult,
+    utils::hg_path::{HgPath, HgPathBuf},
+    DirsMultiset, DirstateMapError, IgnorePattern, PatternError,
+    PatternSyntax,
 };
 use std::collections::HashSet;
 use std::iter::FromIterator;
@@ -240,10 +242,156 @@ fn re_matcher(_: &[u8]) -> PatternResult<Box<dyn Fn(&HgPath) -> bool + Sync>> {
     Err(PatternError::Re2NotInstalled)
 }
 
+/// Returns roots and directories corresponding to each pattern.
+///
+/// This calculates the roots and directories exactly matching the patterns and
+/// returns a tuple of (roots, dirs). It does not return other directories
+/// which may also need to be considered, like the parent directories.
+fn roots_and_dirs(
+    ignore_patterns: &[IgnorePattern],
+) -> (Vec<HgPathBuf>, Vec<HgPathBuf>) {
+    let mut roots = Vec::new();
+    let mut dirs = Vec::new();
+
+    for ignore_pattern in ignore_patterns {
+        let IgnorePattern {
+            syntax, pattern, ..
+        } = ignore_pattern;
+        match syntax {
+            PatternSyntax::RootGlob | PatternSyntax::Glob => {
+                let mut root = vec![];
+
+                for p in pattern.split(|c| *c == b'/') {
+                    if p.iter().any(|c| match *c {
+                        b'[' | b'{' | b'*' | b'?' => true,
+                        _ => false,
+                    }) {
+                        break;
+                    }
+                    root.push(HgPathBuf::from_bytes(p));
+                }
+                let buf =
+                    root.iter().fold(HgPathBuf::new(), |acc, r| acc.join(r));
+                roots.push(buf);
+            }
+            PatternSyntax::Path | PatternSyntax::RelPath => {
+                let pat = HgPath::new(if pattern == b"." {
+                    &[] as &[u8]
+                } else {
+                    pattern
+                });
+                roots.push(pat.to_owned());
+            }
+            PatternSyntax::RootFiles => {
+                let pat = if pattern == b"." {
+                    &[] as &[u8]
+                } else {
+                    pattern
+                };
+                dirs.push(HgPathBuf::from_bytes(pat));
+            }
+            _ => {
+                roots.push(HgPathBuf::new());
+            }
+        }
+    }
+    (roots, dirs)
+}
+
+/// Paths extracted from patterns
+#[derive(Debug, PartialEq)]
+struct RootsDirsAndParents {
+    /// Directories to match recursively
+    pub roots: HashSet<HgPathBuf>,
+    /// Directories to match non-recursively
+    pub dirs: HashSet<HgPathBuf>,
+    /// Implicitly required directories to go to items in either roots or dirs
+    pub parents: HashSet<HgPathBuf>,
+}
+
+/// Extract roots, dirs and parents from patterns.
+fn roots_dirs_and_parents(
+    ignore_patterns: &[IgnorePattern],
+) -> PatternResult<RootsDirsAndParents> {
+    let (roots, dirs) = roots_and_dirs(ignore_patterns);
+
+    let mut parents = HashSet::new();
+
+    parents.extend(
+        DirsMultiset::from_manifest(&dirs)
+            .map_err(|e| match e {
+                DirstateMapError::InvalidPath(e) => e,
+                _ => unreachable!(),
+            })?
+            .iter()
+            .map(|k| k.to_owned()),
+    );
+    parents.extend(
+        DirsMultiset::from_manifest(&roots)
+            .map_err(|e| match e {
+                DirstateMapError::InvalidPath(e) => e,
+                _ => unreachable!(),
+            })?
+            .iter()
+            .map(|k| k.to_owned()),
+    );
+
+    Ok(RootsDirsAndParents {
+        roots: HashSet::from_iter(roots),
+        dirs: HashSet::from_iter(dirs),
+        parents,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use std::path::Path;
+
+    #[test]
+    fn test_roots_and_dirs() {
+        let pats = vec![
+            IgnorePattern::new(PatternSyntax::Glob, b"g/h/*", Path::new("")),
+            IgnorePattern::new(PatternSyntax::Glob, b"g/h", Path::new("")),
+            IgnorePattern::new(PatternSyntax::Glob, b"g*", Path::new("")),
+        ];
+        let (roots, dirs) = roots_and_dirs(&pats);
+
+        assert_eq!(
+            roots,
+            vec!(
+                HgPathBuf::from_bytes(b"g/h"),
+                HgPathBuf::from_bytes(b"g/h"),
+                HgPathBuf::new()
+            ),
+        );
+        assert_eq!(dirs, vec!());
+    }
+
+    #[test]
+    fn test_roots_dirs_and_parents() {
+        let pats = vec![
+            IgnorePattern::new(PatternSyntax::Glob, b"g/h/*", Path::new("")),
+            IgnorePattern::new(PatternSyntax::Glob, b"g/h", Path::new("")),
+            IgnorePattern::new(PatternSyntax::Glob, b"g*", Path::new("")),
+        ];
+
+        let mut roots = HashSet::new();
+        roots.insert(HgPathBuf::from_bytes(b"g/h"));
+        roots.insert(HgPathBuf::new());
+
+        let dirs = HashSet::new();
+
+        let mut parents = HashSet::new();
+        parents.insert(HgPathBuf::new());
+        parents.insert(HgPathBuf::from_bytes(b"g"));
+
+        assert_eq!(
+            roots_dirs_and_parents(&pats).unwrap(),
+            RootsDirsAndParents {roots, dirs, parents}
+        );
+    }
 
     #[test]
     fn test_filematcher_visit_children_set() {
