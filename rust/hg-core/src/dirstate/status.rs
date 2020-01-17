@@ -14,12 +14,15 @@ use crate::{
     matchers::Matcher,
     utils::{
         files::HgMetadata,
-        hg_path::{hg_path_to_path_buf, HgPath},
+        hg_path::{
+            hg_path_to_path_buf, os_string_to_hg_path_buf, HgPath, HgPathBuf,
+        },
     },
     CopyMap, DirstateEntry, DirstateMap, EntryState,
 };
 use rayon::prelude::*;
 use std::collections::HashSet;
+use std::fs::{read_dir, DirEntry};
 use std::path::Path;
 
 /// Marker enum used to dispatch new status entries into the right collections.
@@ -46,6 +49,32 @@ type IoResult<T> = std::io::Result<T>;
 /// caller to cast `b` as `i32`.
 fn mod_compare(a: i32, b: i32) -> bool {
     a & i32::max_value() != b & i32::max_value()
+}
+
+/// Return a sorted list containing information about the entries
+/// in the directory.
+///
+/// * `skip_dot_hg` - Return an empty vec if `path` contains a `.hg` directory
+fn list_directory(
+    path: impl AsRef<Path>,
+    skip_dot_hg: bool,
+) -> std::io::Result<Vec<(HgPathBuf, DirEntry)>> {
+    let mut results = vec![];
+    let entries = read_dir(path.as_ref())?;
+
+    for entry in entries {
+        let entry = entry?;
+        let filename = os_string_to_hg_path_buf(entry.file_name())?;
+        let file_type = entry.file_type()?;
+        if skip_dot_hg && filename.as_bytes() == b".hg" && file_type.is_dir() {
+            return Ok(vec![]);
+        } else {
+            results.push((HgPathBuf::from(filename), entry))
+        }
+    }
+
+    results.sort_unstable_by_key(|e| e.0.clone());
+    Ok(results)
 }
 
 /// The file corresponding to the dirstate entry was found on the filesystem.
