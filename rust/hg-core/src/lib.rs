@@ -126,6 +126,9 @@ pub enum PatternError {
     /// Needed a pattern that can be turned into a regex but got one that
     /// can't. This should only happen through programmer error.
     NonRegexPattern(IgnorePattern),
+    /// This is temporary, see `re2/mod.rs`.
+    /// This will cause a fallback to Python.
+    Re2NotInstalled,
 }
 
 impl ToString for PatternError {
@@ -147,6 +150,10 @@ impl ToString for PatternError {
             PatternError::Path(e) => e.to_string(),
             PatternError::NonRegexPattern(pattern) => {
                 format!("'{:?}' cannot be turned into a regex", pattern)
+            }
+            PatternError::Re2NotInstalled => {
+                "Re2 is not installed, cannot use regex functionality."
+                    .to_string()
             }
         }
     }

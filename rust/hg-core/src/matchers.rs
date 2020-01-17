@@ -7,7 +7,12 @@
 
 //! Structs and types for matching files and directories.
 
-use crate::{utils::hg_path::HgPath, DirsMultiset, DirstateMapError};
+#[cfg(feature = "with-re2")]
+use crate::re2::Re2;
+use crate::{
+    filepatterns::PatternResult, utils::hg_path::HgPath, DirsMultiset,
+    DirstateMapError, PatternError,
+};
 use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::ops::Deref;
@@ -215,6 +220,26 @@ impl<'a> Matcher for FileMatcher<'a> {
         true
     }
 }
+
+#[cfg(feature = "with-re2")]
+/// Returns a function that matches an `HgPath` against the given regex
+/// pattern.
+///
+/// This can fail when the pattern is invalid or not supported by the
+/// underlying engine `Re2`, for instance anything with back-references.
+fn re_matcher(
+    pattern: &[u8],
+) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
+    let regex = Re2::new(pattern);
+    let regex = regex.map_err(|e| PatternError::UnsupportedSyntax(e))?;
+    Ok(move |path: &HgPath| regex.is_match(path.as_bytes()))
+}
+
+#[cfg(not(feature = "with-re2"))]
+fn re_matcher(_: &[u8]) -> PatternResult<Box<dyn Fn(&HgPath) -> bool + Sync>> {
+    Err(PatternError::Re2NotInstalled)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
