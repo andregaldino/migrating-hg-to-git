@@ -467,6 +467,25 @@ class ui(object):
                     raise
                 self.warn(_(b'ignored: %s\n') % stringutil.forcebytestr(inst))
 
+        self._applyconfig(cfg, trusted, root)
+
+    def applyconfig(self, configitems, source=b"", root=None):
+        """Add configitems from a non-file source.  Unlike with ``setconfig()``,
+        they can be overridden by subsequent config file reads.  The items are
+        in the same format as ``configoverride()``, namely a dict of the
+        following structures: {(section, name) : value}
+
+        Typically this is used by extensions that inject themselves into the
+        config file load procedure by monkeypatching ``localrepo.loadhgrc()``.
+        """
+        cfg = config.config()
+
+        for (section, name), value in configitems.items():
+            cfg.set(section, name, value, source)
+
+        self._applyconfig(cfg, True, root)
+
+    def _applyconfig(self, cfg, trusted, root):
         if self.plain():
             for k in (
                 b'debug',
