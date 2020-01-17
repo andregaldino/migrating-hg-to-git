@@ -75,6 +75,7 @@ Show debug commands if there are no other candidates
   $ hg debugcomplete debug
   debugancestor
   debugapplystreamclonebundle
+  debugbackupbundle
   debugbuilddag
   debugbundle
   debugcapabilities
@@ -260,6 +261,7 @@ Show all commands + options
   copy: forget, after, at-rev, force, include, exclude, dry-run
   debugancestor: 
   debugapplystreamclonebundle: 
+  debugbackupbundle: recover, patch, git, limit, no-merges, stat, graph, style, template
   debugbuilddag: mergeable-file, overwritten-file, new-file
   debugbundle: all, part-type, spec
   debugcapabilities: 

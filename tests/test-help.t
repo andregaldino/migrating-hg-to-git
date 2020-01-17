@@ -973,6 +973,8 @@ Test list of internal help commands
                  find the ancestor revision of two revisions in a given index
    debugapplystreamclonebundle
                  apply a stream clone bundle file
+   debugbackupbundle
+                 lists the changesets available in backup bundles
    debugbuilddag
                  builds a repo with a given DAG from scratch in the current
                  empty repo

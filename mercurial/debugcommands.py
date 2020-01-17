@@ -11,6 +11,7 @@ import codecs
 import collections
 import difflib
 import errno
+import glob
 import operator
 import os
 import platform
@@ -38,6 +39,7 @@ from .pycompat import (
 )
 from . import (
     bundle2,
+    bundlerepo,
     changegroup,
     cmdutil,
     color,
@@ -3399,6 +3401,143 @@ def debugssl(ui, repo, source=None, **opts):
             ui.status(_(b'full certificate chain is available\n'))
     finally:
         s.close()
+
+
+@command(
+    b"debugbackupbundle",
+    [
+        (
+            b"",
+            b"recover",
+            b"",
+            b"brings the specified changeset back into the repository",
+        )
+    ]
+    + cmdutil.logopts,
+    _(b"hg debugbackupbundle [--recover HASH]"),
+)
+def debugbackupbundle(ui, repo, *pats, **opts):
+    """lists the changesets available in backup bundles
+
+    Without any arguments, this command prints a list of the changesets in each
+    backup bundle.
+
+    --recover takes a changeset hash and unbundles the first bundle that
+    contains that hash, which puts that changeset back in your repository.
+
+    --verbose will print the entire commit message and the bundle path for that
+    backup.
+    """
+    backups = list(
+        filter(
+            os.path.isfile, glob.glob(repo.vfs.join(b"strip-backup") + b"/*.hg")
+        )
+    )
+    backups.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+
+    opts = pycompat.byteskwargs(opts)
+    opts[b"bundle"] = b""
+    opts[b"force"] = None
+    limit = logcmdutil.getlimit(opts)
+
+    def display(other, chlist, displayer):
+        if opts.get(b"newest_first"):
+            chlist.reverse()
+        count = 0
+        for n in chlist:
+            if limit is not None and count >= limit:
+                break
+            parents = [True for p in other.changelog.parents(n) if p != nullid]
+            if opts.get(b"no_merges") and len(parents) == 2:
+                continue
+            count += 1
+            displayer.show(other[n])
+
+    recovernode = opts.get(b"recover")
+    if recovernode:
+        if scmutil.isrevsymbol(repo, recovernode):
+            ui.warn(_(b"%s already exists in the repo\n") % recovernode)
+            return
+    elif backups:
+        msg = _(
+            b"Recover changesets using: hg debugbackupbundle --recover "
+            b"<changeset hash>\n\nAvailable backup changesets:"
+        )
+        ui.status(msg, label=b"status.removed")
+    else:
+        ui.status(_(b"no backup changesets found\n"))
+        return
+
+    for backup in backups:
+        # Much of this is copied from the hg incoming logic
+        source = ui.expandpath(os.path.relpath(backup, encoding.getcwd()))
+        source, branches = hg.parseurl(source, opts.get(b"branch"))
+        try:
+            other = hg.peer(repo, opts, source)
+        except error.LookupError as ex:
+            msg = _(b"\nwarning: unable to open bundle %s") % source
+            hint = _(b"\n(missing parent rev %s)\n") % short(ex.name)
+            ui.warn(msg, hint=hint)
+            continue
+        revs, checkout = hg.addbranchrevs(
+            repo, other, branches, opts.get(b"rev")
+        )
+
+        if revs:
+            revs = [other.lookup(rev) for rev in revs]
+
+        quiet = ui.quiet
+        try:
+            ui.quiet = True
+            other, chlist, cleanupfn = bundlerepo.getremotechanges(
+                ui, repo, other, revs, opts[b"bundle"], opts[b"force"]
+            )
+        except error.LookupError:
+            continue
+        finally:
+            ui.quiet = quiet
+
+        try:
+            if not chlist:
+                continue
+            if recovernode:
+                with repo.lock(), repo.transaction(b"unbundle") as tr:
+                    if scmutil.isrevsymbol(other, recovernode):
+                        ui.status(_(b"Unbundling %s\n") % (recovernode))
+                        f = hg.openpath(ui, source)
+                        gen = exchange.readbundle(ui, f, source)
+                        if isinstance(gen, bundle2.unbundle20):
+                            bundle2.applybundle(
+                                repo,
+                                gen,
+                                tr,
+                                source=b"unbundle",
+                                url=b"bundle:" + source,
+                            )
+                        else:
+                            gen.apply(repo, b"unbundle", b"bundle:" + source)
+                        break
+            else:
+                backupdate = encoding.strtolocal(
+                    time.strftime(
+                        "%a %H:%M, %Y-%m-%d",
+                        time.localtime(os.path.getmtime(source)),
+                    )
+                )
+                ui.status(b"\n%s\n" % (backupdate.ljust(50)))
+                if ui.verbose:
+                    ui.status(b"%s%s\n" % (b"bundle:".ljust(13), source))
+                else:
+                    opts[
+                        b"template"
+                    ] = b"{label('status.modified', node|short)} {desc|firstline}\n"
+                displayer = logcmdutil.changesetdisplayer(
+                    ui, other, opts, False
+                )
+                display(other, chlist, displayer)
+                displayer.close()
+        finally:
+            cleanupfn()
 
 
 @command(
