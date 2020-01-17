@@ -11,22 +11,30 @@
 
 use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
-    matchers::{Matcher, VisitChildrenSet},
+    filepatterns::PatternFileWarning,
+    matchers::{get_ignore_function, Matcher, VisitChildrenSet},
     utils::{
-        files::HgMetadata,
+        files::{find_dirs, HgMetadata},
         hg_path::{
             hg_path_to_path_buf, os_string_to_hg_path_buf, HgPath, HgPathBuf,
+            HgPathError,
         },
+        path_auditor::PathAuditor,
     },
     CopyMap, DirstateEntry, DirstateMap, EntryState, FastHashMap,
+    PatternError,
 };
+use lazy_static::lazy_static;
 use rayon::prelude::*;
-use std::borrow::Cow;
-use std::collections::{HashSet, VecDeque};
-use std::fs::{read_dir, DirEntry};
-use std::io::ErrorKind;
-use std::ops::Deref;
-use std::path::Path;
+use std::collections::VecDeque;
+use std::{
+    borrow::Cow,
+    collections::HashSet,
+    fs::{read_dir, DirEntry},
+    io::ErrorKind,
+    ops::Deref,
+    path::Path,
+};
 
 /// Wrong type of file from a `BadMatch`
 /// Note: a lot of those don't exist on all platforms.
@@ -50,6 +58,7 @@ pub enum BadMatch {
 /// Marker enum used to dispatch new status entries into the right collections.
 /// Is similar to `crate::EntryState`, but represents the transient state of
 /// entries during the lifetime of a command.
+#[derive(Debug)]
 enum Dispatch {
     Unsure,
     Modified,
@@ -155,7 +164,7 @@ fn dispatch_found(
             } else if options.list_clean {
                 Dispatch::Clean
             } else {
-                Dispatch::Unknown
+                Dispatch::None
             }
         }
         EntryState::Merged => Dispatch::Modified,
@@ -179,57 +188,89 @@ fn dispatch_missing(state: EntryState) -> Dispatch {
     }
 }
 
+lazy_static! {
+    static ref DEFAULT_WORK: HashSet<&'static HgPath> = {
+        let mut h = HashSet::new();
+        h.insert(HgPath::new(b""));
+        h
+    };
+}
+
 /// Get stat data about the files explicitly specified by match.
 /// TODO subrepos
 fn walk_explicit<'a>(
-    files: &'a HashSet<&HgPath>,
+    files: Option<&'a HashSet<&HgPath>>,
     dmap: &'a DirstateMap,
-    root_dir: impl AsRef<Path> + Sync + Send,
+    root_dir: impl AsRef<Path> + Sync + Send + 'a,
     options: StatusOptions,
 ) -> impl ParallelIterator<Item = IoResult<(&'a HgPath, Dispatch)>> {
-    files.par_iter().filter_map(move |filename| {
-        // TODO normalization
-        let normalized = filename.as_ref();
+    files
+        .unwrap_or(&DEFAULT_WORK)
+        .par_iter()
+        .map(move |filename| {
+            // TODO normalization
+            let normalized = filename.as_ref();
 
-        let buf = match hg_path_to_path_buf(normalized) {
-            Ok(x) => x,
-            Err(e) => return Some(Err(e.into())),
-        };
-        let target = root_dir.as_ref().join(buf);
-        let st = target.symlink_metadata();
-        match st {
-            Ok(meta) => {
-                let file_type = meta.file_type();
-                if file_type.is_file() || file_type.is_symlink() {
-                    if let Some(entry) = dmap.get(normalized) {
+            let buf = match hg_path_to_path_buf(normalized) {
+                Ok(x) => x,
+                Err(e) => return Some(Err(e.into())),
+            };
+            let target = root_dir.as_ref().join(buf);
+            let st = target.symlink_metadata();
+            let in_dmap = dmap.get(normalized);
+            match st {
+                Ok(meta) => {
+                    let file_type = meta.file_type();
+                    return if file_type.is_file() || file_type.is_symlink() {
+                        if let Some(entry) = in_dmap {
+                            return Some(Ok((
+                                normalized,
+                                dispatch_found(
+                                    &normalized,
+                                    *entry,
+                                    HgMetadata::from_metadata(meta),
+                                    &dmap.copy_map,
+                                    options,
+                                ),
+                            )));
+                        }
+                        Some(Ok((normalized, Dispatch::Unknown)))
+                    } else {
+                        if file_type.is_dir() {
+                            Some(Ok((
+                                normalized,
+                                Dispatch::Directory {
+                                    was_file: in_dmap.is_some(),
+                                },
+                            )))
+                        } else {
+                            Some(Ok((
+                                normalized,
+                                Dispatch::Bad(BadMatch::BadType(
+                                    // TODO do more than unknown
+                                    // Support for all `BadType` variant
+                                    // varies greatly between platforms.
+                                    // So far, no tests check the type and
+                                    // this should be good enough for most
+                                    // users.
+                                    BadType::Unknown,
+                                )),
+                            )))
+                        }
+                    };
+                }
+                Err(_) => {
+                    if let Some(entry) = in_dmap {
                         return Some(Ok((
                             normalized,
-                            dispatch_found(
-                                &normalized,
-                                *entry,
-                                HgMetadata::from_metadata(meta),
-                                &dmap.copy_map,
-                                options,
-                            ),
+                            dispatch_missing(entry.state),
                         )));
                     }
-                } else {
-                    if dmap.contains_key(normalized) {
-                        return Some(Ok((normalized, Dispatch::Removed)));
-                    }
                 }
-            }
-            Err(_) => {
-                if let Some(entry) = dmap.get(normalized) {
-                    return Some(Ok((
-                        normalized,
-                        dispatch_missing(entry.state),
-                    )));
-                }
-            }
-        };
-        None
-    })
+            };
+            None
+        })
+        .flatten()
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -415,8 +456,7 @@ fn traverse<'a>(
     Ok(new_results)
 }
 
-/// Stat all entries in the `DirstateMap` and mark them for dispatch into
-/// the relevant collections.
+/// Stat all entries in the `DirstateMap` and mark them for dispatch.
 fn stat_dmap_entries(
     dmap: &DirstateMap,
     root_dir: impl AsRef<Path> + Sync + Send,
@@ -445,7 +485,7 @@ fn stat_dmap_entries(
                 ),
             )),
             Err(ref e)
-                if e.kind() == std::io::ErrorKind::NotFound
+                if e.kind() == ErrorKind::NotFound
                     || e.raw_os_error() == Some(20) =>
             {
                 // Rust does not yet have an `ErrorKind` for
@@ -460,19 +500,19 @@ fn stat_dmap_entries(
 }
 
 pub struct DirstateStatus<'a> {
-    pub modified: Vec<&'a HgPath>,
-    pub added: Vec<&'a HgPath>,
-    pub removed: Vec<&'a HgPath>,
-    pub deleted: Vec<&'a HgPath>,
-    pub clean: Vec<&'a HgPath>,
-    pub ignored: Vec<&'a HgPath>,
-    pub unknown: Vec<&'a HgPath>,
-    pub bad: Vec<(&'a HgPath, BadMatch)>,
+    pub modified: Vec<Cow<'a, HgPath>>,
+    pub added: Vec<Cow<'a, HgPath>>,
+    pub removed: Vec<Cow<'a, HgPath>>,
+    pub deleted: Vec<Cow<'a, HgPath>>,
+    pub clean: Vec<Cow<'a, HgPath>>,
+    pub ignored: Vec<Cow<'a, HgPath>>,
+    pub unknown: Vec<Cow<'a, HgPath>>,
+    pub bad: Vec<(Cow<'a, HgPath>, BadMatch)>,
 }
 
 fn build_response<'a>(
-    results: impl IntoIterator<Item = IoResult<(&'a HgPath, Dispatch)>>,
-) -> IoResult<(Vec<&'a HgPath>, DirstateStatus<'a>)> {
+    results: impl IntoIterator<Item = (Cow<'a, HgPath>, Dispatch)>,
+) -> (Vec<Cow<'a, HgPath>>, DirstateStatus<'a>) {
     let mut lookup = vec![];
     let mut modified = vec![];
     let mut added = vec![];
@@ -483,8 +523,7 @@ fn build_response<'a>(
     let mut unknown = vec![];
     let mut bad = vec![];
 
-    for res in results.into_iter() {
-        let (filename, dispatch) = res?;
+    for (filename, dispatch) in results.into_iter() {
         match dispatch {
             Dispatch::Unknown => unknown.push(filename),
             Dispatch::Unsure => lookup.push(filename),
@@ -500,7 +539,7 @@ fn build_response<'a>(
         }
     }
 
-    Ok((
+    (
         lookup,
         DirstateStatus {
             modified,
@@ -512,25 +551,206 @@ fn build_response<'a>(
             unknown,
             bad,
         },
-    ))
+    )
 }
 
+pub enum StatusError {
+    IO(std::io::Error),
+    Path(HgPathError),
+    Pattern(PatternError),
+}
+
+pub type StatusResult<T> = Result<T, StatusError>;
+
+impl From<PatternError> for StatusError {
+    fn from(e: PatternError) -> Self {
+        StatusError::Pattern(e)
+    }
+}
+impl From<HgPathError> for StatusError {
+    fn from(e: HgPathError) -> Self {
+        StatusError::Path(e)
+    }
+}
+impl From<std::io::Error> for StatusError {
+    fn from(e: std::io::Error) -> Self {
+        StatusError::IO(e)
+    }
+}
+
+impl ToString for StatusError {
+    fn to_string(&self) -> String {
+        match self {
+            StatusError::IO(e) => e.to_string(),
+            StatusError::Path(e) => e.to_string(),
+            StatusError::Pattern(e) => e.to_string(),
+        }
+    }
+}
+
+/// Get the status of files in the working directory.
+///
+/// This is the current entry-point for `hg-core` and is realistically unusable
+/// outside of a Python context because its arguments need to provide a lot of
+/// information that will not be necessary in the future.
 pub fn status<'a: 'c, 'b: 'c, 'c>(
     dmap: &'a DirstateMap,
-    matcher: &'b impl Matcher,
-    root_dir: impl AsRef<Path> + Sync + Send + Copy,
+    matcher: &'b (impl Matcher + Sync),
+    root_dir: impl AsRef<Path> + Sync + Send + Copy + 'c,
+    ignore_files: &[impl AsRef<Path> + 'c],
     options: StatusOptions,
-) -> IoResult<(Vec<&'c HgPath>, DirstateStatus<'c>)> {
+) -> StatusResult<(
+    (Vec<Cow<'c, HgPath>>, DirstateStatus<'c>),
+    Vec<PatternFileWarning>,
+)> {
+    let (ignore_fn, warnings) = get_ignore_function(&ignore_files, root_dir)?;
+
+    // Is the path or one of its ancestors ignored?
+    let dir_ignore_fn = |dir: &_| {
+        if ignore_fn(dir) {
+            true
+        } else {
+            for p in find_dirs(dir) {
+                if ignore_fn(p) {
+                    return true;
+                }
+            }
+            false
+        }
+    };
+
     let files = matcher.file_set();
-    let mut results = vec![];
-    if let Some(files) = files {
-        results.par_extend(walk_explicit(&files, &dmap, root_dir, options));
+
+    // Step 1: check the files explicitly mentioned by the user
+    let explicit = walk_explicit(files, &dmap, root_dir, options);
+    let (work, mut results): (Vec<_>, FastHashMap<_, _>) = explicit
+        .filter_map(Result::ok)
+        .map(|(filename, dispatch)| (Cow::Borrowed(filename), dispatch))
+        .partition(|(_, dispatch)| match dispatch {
+            Dispatch::Directory { .. } => true,
+            _ => false,
+        });
+
+    // Step 2: recursively check the working directory for changes if needed
+    for (dir, dispatch) in work {
+        match dispatch {
+            Dispatch::Directory { was_file } => {
+                if was_file {
+                    results.insert(dir.to_owned(), Dispatch::Removed);
+                }
+                if options.list_ignored
+                    || options.list_unknown && !dir_ignore_fn(&dir)
+                {
+                    results = traverse(
+                        matcher,
+                        root_dir,
+                        &dmap,
+                        &dir,
+                        results,
+                        &ignore_fn,
+                        &dir_ignore_fn,
+                        options,
+                    )?;
+                }
+            }
+            _ => unreachable!("There can only be directories in `work`"),
+        }
     }
 
     if !matcher.is_exact() {
-        let stat_results = stat_dmap_entries(&dmap, root_dir, options);
-        results.par_extend(stat_results);
+        // Step 3: Check the remaining files from the dmap.
+        // If a dmap file is not in results yet, it was either
+        // a) not matched b) ignored, c) missing, or d) under a
+        // symlink directory.
+
+        if options.list_unknown {
+            let to_visit: Box<dyn Iterator<Item = (&HgPath, &DirstateEntry)>> =
+                if results.is_empty() && matcher.matches_everything() {
+                    Box::new(dmap.iter().map(|(f, e)| (f.deref(), e)))
+                } else {
+                    Box::new(dmap.iter().filter_map(|(f, e)| {
+                        if !results.contains_key(f.deref())
+                            && matcher.matches(f)
+                        {
+                            Some((f.deref(), e))
+                        } else {
+                            None
+                        }
+                    }))
+                };
+            let mut to_visit: Vec<_> = to_visit.collect();
+            to_visit.sort_by(|a, b| a.0.cmp(&b.0));
+
+            // We walked all dirs under the roots that weren't ignored, and
+            // everything that matched was stat'ed and is already in results.
+            // The rest must thus be ignored or under a symlink.
+            let mut path_auditor = PathAuditor::new(root_dir);
+
+            for (ref filename, entry) in to_visit {
+                // Report ignored items in the dmap as long as they are not
+                // under a symlink directory.
+                if path_auditor.check(filename) {
+                    // TODO normalize for case-insensitive filesystems
+                    let buf = hg_path_to_path_buf(filename)?;
+                    results.insert(
+                        Cow::Borrowed(filename),
+                        match root_dir.as_ref().join(&buf).symlink_metadata() {
+                            // File was just ignored, no links, and exists
+                            Ok(meta) => {
+                                let metadata = HgMetadata::from_metadata(meta);
+                                dispatch_found(
+                                    filename,
+                                    *entry,
+                                    metadata,
+                                    &dmap.copy_map,
+                                    options,
+                                )
+                            }
+                            // File doesn't exist
+                            Err(_) => dispatch_missing(entry.state),
+                        },
+                    );
+                } else {
+                    // It's either missing or under a symlink directory which
+                    // we, in this case, report as missing.
+                    results.insert(
+                        Cow::Borrowed(filename),
+                        dispatch_missing(entry.state),
+                    );
+                }
+            }
+        } else {
+            // We may not have walked the full directory tree above, so stat
+            // and check everything we missed.
+            let stat_results = stat_dmap_entries(&dmap, root_dir, options);
+            results.par_extend(stat_results.flatten().map(
+                |(filename, dispatch)| (Cow::Borrowed(filename), dispatch),
+            ));
+        }
     }
 
-    build_response(results)
+    let results = results.into_iter().filter_map(|(filename, dispatch)| {
+        match dispatch {
+            Dispatch::Bad(_) => return Some((filename, dispatch)),
+            _ => {}
+        };
+        // TODO do this in //, not at the end
+        if !dmap.contains_key(filename.deref()) {
+            if (options.list_ignored || matcher.exact_match(&filename))
+                && dir_ignore_fn(&filename)
+            {
+                if options.list_ignored {
+                    return Some((filename.to_owned(), Dispatch::Ignored));
+                }
+            } else {
+                if !ignore_fn(&filename) {
+                    return Some((filename.to_owned(), Dispatch::Unknown));
+                }
+            }
+            return None;
+        }
+        Some((filename, dispatch))
+    });
+
+    Ok((build_response(results), warnings))
 }
