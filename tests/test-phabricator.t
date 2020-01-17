@@ -20,3 +20,195 @@
   > hgphab.phabtoken = cli-hahayouwish
   > EOF
   $ VCR="$TESTDIR/phabricator"
+
+Error is handled reasonably. We override the phabtoken here so that
+when you're developing changes to phabricator.py you can edit the
+above config and have a real token in the test but not have to edit
+this test.
+  $ hg phabread --config auth.hgphab.phabtoken=cli-notavalidtoken \
+  >  --test-vcr "$VCR/phabread-conduit-error.json" D4480 | head
+  abort: Conduit Error (ERR-INVALID-AUTH): API token "cli-notavalidtoken" has the wrong length. API tokens should be 32 characters long.
+
+Basic phabread:
+  $ hg phabread --test-vcr "$VCR/phabread-4480.json" D4480 | head
+  # HG changeset patch
+  # Date 1536771503 0
+  # Parent  a5de21c9e3703f8e8eb064bd7d893ff2f703c66a
+  exchangev2: start to implement pull with wire protocol v2
+  
+  Wire protocol version 2 will take a substantially different
+  approach to exchange than version 1 (at least as far as pulling
+  is concerned).
+  
+  This commit establishes a new exchangev2 module for holding
+
+phabupdate with an accept:
+  $ hg phabupdate --accept D4564 \
+  > -m 'I think I like where this is headed. Will read rest of series later.'\
+  >  --test-vcr "$VCR/accept-4564.json"
+  abort: Conduit Error (ERR-CONDUIT-CORE): Validation errors:
+    - You can not accept this revision because it has already been closed. Only open revisions can be accepted.
+  [255]
+  $ hg phabupdate --accept D7913 -m 'LGTM' --test-vcr "$VCR/accept-7913.json"
+
+Create a differential diff:
+  $ HGENCODING=utf-8; export HGENCODING
+  $ echo alpha > alpha
+  $ hg ci --addremove -m 'create alpha for phabricator test €'
+  adding alpha
+  $ hg phabsend -r . --test-vcr "$VCR/phabsend-create-alpha.json"
+  D7915 - created - d386117f30e6: create alpha for phabricator test \xe2\x82\xac (esc)
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d386117f30e6-24ffe649-phabsend.hg
+  $ echo more >> alpha
+  $ HGEDITOR=true hg ci --amend
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/347bf67801e5-3bf313e4-amend.hg
+  $ echo beta > beta
+  $ hg ci --addremove -m 'create beta for phabricator test'
+  adding beta
+  $ hg phabsend -r ".^::" --test-vcr "$VCR/phabsend-update-alpha-create-beta.json"
+  D7915 - updated - c44b38f24a45: create alpha for phabricator test \xe2\x82\xac (esc)
+  D7916 - created - 9e6901f21d5b: create beta for phabricator test
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/9e6901f21d5b-1fcd4f0e-phabsend.hg
+  $ unset HGENCODING
+
+The amend won't explode after posting a public commit.  The local tag is left
+behind to identify it.
+
+  $ echo 'public change' > beta
+  $ hg ci -m 'create public change for phabricator testing'
+  $ hg phase --public .
+  $ echo 'draft change' > alpha
+  $ hg ci -m 'create draft change for phabricator testing'
+  $ hg phabsend --amend -r '.^::' --test-vcr "$VCR/phabsend-create-public.json"
+  D7917 - created - 7b4185ab5d16: create public change for phabricator testing
+  D7918 - created - 251c1c333fc6: create draft change for phabricator testing
+  warning: not updating public commit 2:7b4185ab5d16
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/251c1c333fc6-41cb7c3b-phabsend.hg
+  $ hg tags -v
+  tip                                3:3244dc4a3334
+  D7917                              2:7b4185ab5d16 local
+
+  $ hg debugcallconduit user.search --test-vcr "$VCR/phab-conduit.json" <<EOF
+  > {
+  >     "constraints": {
+  >         "isBot": true
+  >     }
+  > }
+  > EOF
+  {
+    "cursor": {
+      "after": null,
+      "before": null,
+      "limit": 100,
+      "order": null
+    },
+    "data": [],
+    "maps": {},
+    "query": {
+      "queryKey": null
+    }
+  }
+
+Template keywords
+  $ hg log -T'{rev} {phabreview|json}\n'
+  3 {"id": "D7918", "url": "https://phab.mercurial-scm.org/D7918"}
+  2 {"id": "D7917", "url": "https://phab.mercurial-scm.org/D7917"}
+  1 {"id": "D7916", "url": "https://phab.mercurial-scm.org/D7916"}
+  0 {"id": "D7915", "url": "https://phab.mercurial-scm.org/D7915"}
+
+  $ hg log -T'{rev} {if(phabreview, "{phabreview.url} {phabreview.id}")}\n'
+  3 https://phab.mercurial-scm.org/D7918 D7918
+  2 https://phab.mercurial-scm.org/D7917 D7917
+  1 https://phab.mercurial-scm.org/D7916 D7916
+  0 https://phab.mercurial-scm.org/D7915 D7915
+
+Commenting when phabsending:
+  $ echo comment > comment
+  $ hg ci --addremove -m "create comment for phabricator test"
+  adding comment
+  $ hg phabsend -r . -m "For default branch" --test-vcr "$VCR/phabsend-comment-created.json"
+  D7919 - created - d5dddca9023d: create comment for phabricator test
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d5dddca9023d-adf673ba-phabsend.hg
+  $ echo comment2 >> comment
+  $ hg ci --amend
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/f7db812bbe1d-8fcded77-amend.hg
+  $ hg phabsend -r . -m "Address review comments" --test-vcr "$VCR/phabsend-comment-updated.json"
+  D7919 - updated - 1849d7828727: create comment for phabricator test
+
+Phabsending a skipped commit:
+  $ hg phabsend --no-amend -r . --test-vcr "$VCR/phabsend-skipped.json"
+  D7919 - skipped - 1849d7828727: create comment for phabricator test
+
+Phabreading a DREV with a local:commits time as a string:
+  $ hg phabread --test-vcr "$VCR/phabread-str-time.json" D1285
+  # HG changeset patch
+  # User Pulkit Goyal <7895pulkit@gmail.com>
+  # Date 1509404054 -19800
+  # Node ID 44fc1c1f1774a76423b9c732af6938435099bcc5
+  # Parent  8feef8ef8389a3b544e0a74624f1efc3a8d85d35
+  repoview: add a new attribute _visibilityexceptions and related API
+  
+  Currently we don't have a defined way in core to make some hidden revisions
+  visible in filtered repo. Extensions to achieve the purpose of unhiding some
+  hidden commits, wrap repoview.pinnedrevs() function.
+  
+  To make the above task simple and have well defined API, this patch adds a new
+  attribute '_visibilityexceptions' to repoview class which will contains
+  the hidden revs which should be exception.
+  This will allow to set different exceptions for different repoview objects
+  backed by the same unfiltered repo.
+  
+  This patch also adds API to add revs to the attribute set and get them.
+  
+  Thanks to Jun for suggesting the use of repoview class instead of localrepo.
+  
+  Differential Revision: https://phab.mercurial-scm.org/D1285
+  diff --git a/mercurial/repoview.py b/mercurial/repoview.py
+  --- a/mercurial/repoview.py
+  +++ b/mercurial/repoview.py
+  @@ * @@ (glob)
+       subclasses of `localrepo`. Eg: `bundlerepo` or `statichttprepo`.
+       """
+   
+  +    # hidden revs which should be visible
+  +    _visibilityexceptions = set()
+  +
+       def __init__(self, repo, filtername):
+           object.__setattr__(self, r'_unfilteredrepo', repo)
+           object.__setattr__(self, r'filtername', filtername)
+  @@ -231,6 +234,14 @@
+               return self
+           return self.unfiltered().filtered(name)
+   
+  +    def addvisibilityexceptions(self, revs):
+  +        """adds hidden revs which should be visible to set of exceptions"""
+  +        self._visibilityexceptions.update(revs)
+  +
+  +    def getvisibilityexceptions(self):
+  +        """returns the set of hidden revs which should be visible"""
+  +        return self._visibilityexceptions
+  +
+       # everything access are forwarded to the proxied repo
+       def __getattr__(self, attr):
+           return getattr(self._unfilteredrepo, attr)
+  diff --git a/mercurial/localrepo.py b/mercurial/localrepo.py
+  --- a/mercurial/localrepo.py
+  +++ b/mercurial/localrepo.py
+  @@ -570,6 +570,14 @@
+       def close(self):
+           self._writecaches()
+   
+  +    def addvisibilityexceptions(self, exceptions):
+  +        # should be called on a filtered repository
+  +        pass
+  +
+  +    def getvisibilityexceptions(self):
+  +        # should be called on a filtered repository
+  +        return set()
+  +
+       def _loadextensions(self):
+           extensions.loadall(self.ui)
+   
+  
+
+  $ cd ..

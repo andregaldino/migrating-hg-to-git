@@ -1,0 +1,73 @@
+{
+    "interactions": [
+        {
+            "response": {
+                "headers": {
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "date": [
+                        "Fri, 17 Jan 2020 00:31:53 GMT"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ]
+                }, 
+                "status": {
+                    "code": 200, 
+                    "message": "OK"
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":\"ERR-INVALID-AUTH\",\"error_info\":\"API token \\\"cli-notavalidtoken\\\" has the wrong length. API tokens should be 32 characters long.\"}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.query", 
+                "headers": {
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.2.2+620-6ee2ba170fe6+20200116)"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-length": [
+                        "132"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22ids%22%3A+%5B4480%5D%7D&output=json&__conduit__=1"
+            }
+        }
+    ], 
+    "version": 1
+}

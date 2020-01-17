@@ -1,0 +1,141 @@
+{
+    "interactions": [
+        {
+            "response": {
+                "headers": {
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "date": [
+                        "Fri, 17 Jan 2020 00:31:57 GMT"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ]
+                }, 
+                "status": {
+                    "code": 200, 
+                    "message": "OK"
+                }, 
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"4564\",\"phid\":\"PHID-DREV-6cgnf5fyeeqhntbxgfb7\",\"title\":\"localrepo: move some vfs initialization out of __init__\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D4564\",\"dateCreated\":\"1536856174\",\"dateModified\":\"1537307962\",\"authorPHID\":\"PHID-USER-p54bpwbifxx7sbgpx47d\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"wasAcceptedBeforeClose\":true},\"branch\":null,\"summary\":\"In order to make repository types more dynamic, we'll need to move the\\nlogic for determining repository behavior out of\\nlocalrepository.__init__ so we can influence behavior before the type\\nis instantiated.\\n\\nThis commit starts that process by moving working directory and .hg\\/\\nvfs initialization to our new standalone function for instantiating\\nlocal repositories.\\n\\nAside from API changes, behavior should be fully backwards compatible.\\n\\n.. api::\\n\\n   localrepository.__init__ now does less work and accepts new args\\n\\n   Use ``hg.repository()``, ``localrepo.instance()``, or\\n   ``localrepo.makelocalrepository()`` to obtain a new local repository\\n   instance instead of calling the ``localrepository`` constructor\\n   directly.\",\"testPlan\":\"\",\"lineCount\":\"64\",\"activeDiffPHID\":\"PHID-DIFF-7m4gug2nq4zt7jwxzqg2\",\"diffs\":[\"11162\",\"11002\"],\"commits\":[\"PHID-CMIT-xknk3j65xkoirmrpelni\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-cgcdlc6c3gpxapbmkwa2\":\"PHID-USER-cgcdlc6c3gpxapbmkwa2\"},\"ccs\":[\"PHID-USER-cgcdlc6c3gpxapbmkwa2\",\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-gqp33hnxg65vkl3xioka\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"}],\"error_code\":null,\"error_info\":null}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.query", 
+                "headers": {
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.2.2+620-6ee2ba170fe6+20200116)"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-length": [
+                        "146"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22ids%22%3A+%5B4564%5D%7D&output=json&__conduit__=1"
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "date": [
+                        "Fri, 17 Jan 2020 00:31:57 GMT"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ]
+                }, 
+                "status": {
+                    "code": 200, 
+                    "message": "OK"
+                }, 
+                "body": {
+                    "string": "{\"result\":null,\"error_code\":\"ERR-CONDUIT-CORE\",\"error_info\":\"Validation errors:\\n  - You can not accept this revision because it has already been closed. Only open revisions can be accepted.\"}"
+                }
+            }, 
+            "request": {
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.revision.edit", 
+                "headers": {
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.2.2+620-6ee2ba170fe6+20200116)"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-length": [
+                        "402"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }, 
+                "body": "params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22objectIdentifier%22%3A+%22PHID-DREV-6cgnf5fyeeqhntbxgfb7%22%2C+%22transactions%22%3A+%5B%7B%22type%22%3A+%22accept%22%2C+%22value%22%3A+true%7D%2C+%7B%22type%22%3A+%22comment%22%2C+%22value%22%3A+%22I+think+I+like+where+this+is+headed.+Will+read+rest+of+series+later.%22%7D%5D%7D&output=json&__conduit__=1"
+            }
+        }
+    ], 
+    "version": 1
+}
