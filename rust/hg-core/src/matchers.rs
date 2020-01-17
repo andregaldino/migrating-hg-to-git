@@ -10,7 +10,7 @@
 #[cfg(feature = "with-re2")]
 use crate::re2::Re2;
 use crate::{
-    filepatterns::PatternResult,
+    filepatterns::{build_single_regex, PatternResult},
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirstateMapError, IgnorePattern, PatternError,
     PatternSyntax,
@@ -240,6 +240,24 @@ fn re_matcher(
 #[cfg(not(feature = "with-re2"))]
 fn re_matcher(_: &[u8]) -> PatternResult<Box<dyn Fn(&HgPath) -> bool + Sync>> {
     Err(PatternError::Re2NotInstalled)
+}
+
+/// Returns the regex pattern and a function that matches an `HgPath` against
+/// said regex formed by the given ignore patterns.
+fn build_regex_match<'a>(
+    ignore_patterns: &'a [&'a IgnorePattern],
+) -> PatternResult<(Vec<u8>, Box<dyn Fn(&HgPath) -> bool + Sync>)> {
+    let regexps: Result<Vec<_>, PatternError> = ignore_patterns
+        .into_iter()
+        .map(|k| build_single_regex(*k))
+        .collect();
+    let regexps = regexps?;
+    let full_regex = regexps.join(&b'|');
+
+    let matcher = re_matcher(&full_regex)?;
+    let func = Box::new(move |filename: &HgPath| matcher(filename));
+
+    Ok((full_regex, func))
 }
 
 /// Returns roots and directories corresponding to each pattern.
