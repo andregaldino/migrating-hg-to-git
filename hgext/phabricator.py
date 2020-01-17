@@ -178,11 +178,16 @@ def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements):
     except IOError:
         pass
 
+    cfg = util.sortdict()
+
     if b"repository.callsign" in arcconfig:
-        ui.applyconfig(
-            {(b"phabricator", b"callsign"): arcconfig[b"repository.callsign"]},
-            source=wdirvfs.join(b".arcconfig"),
-        )
+        cfg[(b"phabricator", b"callsign")] = arcconfig[b"repository.callsign"]
+
+    if b"phabricator.uri" in arcconfig:
+        cfg[(b"phabricator", b"url")] = arcconfig[b"phabricator.uri"]
+
+    if cfg:
+        ui.applyconfig(cfg, source=wdirvfs.join(b".arcconfig"))
 
     return orig(ui, wdirvfs, hgvfs, requirements) or result  # Load .hg/hgrc
 

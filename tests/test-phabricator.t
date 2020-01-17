@@ -228,8 +228,8 @@ The .arcconfig content overrides global config
   $ mv .hg/hgrc .hg/hgrc.bak
   $ hg config phabricator --debug
   read config from: */.hgrc (glob)
-  */.hgrc:*: phabricator.url=global (glob)
   $TESTTMP/repo/.arcconfig: phabricator.callsign=HG
+  $TESTTMP/repo/.arcconfig: phabricator.url=https://phab.mercurial-scm.org/
 
 But it doesn't override local config
   $ cat >> .hg/hgrc << EOF
