@@ -210,5 +210,37 @@ Phabreading a DREV with a local:commits time as a string:
            extensions.loadall(self.ui)
    
   
+A bad .arcconfig doesn't error out
+  $ echo 'garbage' > .arcconfig
+  $ hg config phabricator --debug
+  invalid JSON in $TESTTMP/repo/.arcconfig
+  read config from: */.hgrc (glob)
+  $TESTTMP/repo/.hg/hgrc:*: phabricator.url=https://phab.mercurial-scm.org/ (glob)
+  $TESTTMP/repo/.hg/hgrc:*: phabricator.callsign=HG (glob)
+
+The .arcconfig content overrides global config
+  $ cat >> $HGRCPATH << EOF
+  > [phabricator]
+  > url = global
+  > callsign = global
+  > EOF
+  $ cp $TESTDIR/../.arcconfig .
+  $ mv .hg/hgrc .hg/hgrc.bak
+  $ hg config phabricator --debug
+  read config from: */.hgrc (glob)
+  */.hgrc:*: phabricator.url=global (glob)
+  $TESTTMP/repo/.arcconfig: phabricator.callsign=HG
+
+But it doesn't override local config
+  $ cat >> .hg/hgrc << EOF
+  > [phabricator]
+  > url = local
+  > callsign = local
+  > EOF
+  $ hg config phabricator --debug
+  read config from: */.hgrc (glob)
+  $TESTTMP/repo/.hg/hgrc:*: phabricator.url=local (glob)
+  $TESTTMP/repo/.hg/hgrc:*: phabricator.callsign=local (glob)
+  $ mv .hg/hgrc.bak .hg/hgrc
 
   $ cd ..

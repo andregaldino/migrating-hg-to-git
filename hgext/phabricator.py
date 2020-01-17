@@ -66,6 +66,7 @@ from mercurial import (
     exthelper,
     graphmod,
     httpconnection as httpconnectionmod,
+    localrepo,
     logcmdutil,
     match,
     mdiff,
@@ -101,6 +102,7 @@ cmdtable = eh.cmdtable
 command = eh.command
 configtable = eh.configtable
 templatekeyword = eh.templatekeyword
+uisetup = eh.finaluisetup
 
 # developer config: phabricator.batchsize
 eh.configitem(
@@ -150,6 +152,39 @@ _VCR_FLAGS = [
         ),
     ),
 ]
+
+
+@eh.wrapfunction(localrepo, "loadhgrc")
+def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements):
+    """Load ``.arcconfig`` content into a ui instance on repository open.
+    """
+    result = False
+    arcconfig = {}
+
+    try:
+        # json.loads only accepts bytes from 3.6+
+        rawparams = encoding.unifromlocal(wdirvfs.read(b".arcconfig"))
+        # json.loads only returns unicode strings
+        arcconfig = pycompat.rapply(
+            lambda x: encoding.unitolocal(x)
+            if isinstance(x, pycompat.unicode)
+            else x,
+            pycompat.json_loads(rawparams),
+        )
+
+        result = True
+    except ValueError:
+        ui.warn(_(b"invalid JSON in %s\n") % wdirvfs.join(b".arcconfig"))
+    except IOError:
+        pass
+
+    if b"repository.callsign" in arcconfig:
+        ui.applyconfig(
+            {(b"phabricator", b"callsign"): arcconfig[b"repository.callsign"]},
+            source=wdirvfs.join(b".arcconfig"),
+        )
+
+    return orig(ui, wdirvfs, hgvfs, requirements) or result  # Load .hg/hgrc
 
 
 def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
