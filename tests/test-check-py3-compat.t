@@ -41,9 +41,9 @@
   hgext/infinitepush/sqlindexapi.py: error importing: <*Error> No module named 'mysql' (error at sqlindexapi.py:*) (glob) (?)
   mercurial/scmwindows.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
   mercurial/win32.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
-  mercurial/windows.py: error importing: <ModuleNotFoundError> No module named 'msvcrt' (error at windows.py:*) (no-windows !)
-  mercurial/posix.py: error importing: <ModuleNotFoundError> No module named 'fcntl' (error at posix.py:*) (windows !)
-  mercurial/scmposix.py: error importing: <ModuleNotFoundError> No module named 'fcntl' (error at scmposix.py:*) (windows !)
+  mercurial/windows.py: error importing: <*Error> No module named 'msvcrt' (error at windows.py:*) (glob) (no-windows !)
+  mercurial/posix.py: error importing: <*Error> No module named 'fcntl' (error at posix.py:*) (glob) (windows !)
+  mercurial/scmposix.py: error importing: <*Error> No module named 'fcntl' (error at scmposix.py:*) (glob) (windows !)
 #endif
 
 #if py3 pygments
