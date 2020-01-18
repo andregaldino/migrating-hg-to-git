@@ -810,8 +810,11 @@ The extension makes sure that the filelog.renamed() path is taken on a missing
 blob, and the output shows that it isn't fetched.
 
   $ cat > $TESTTMP/lfsrename.py <<EOF
+  > import sys
+  > 
   > from mercurial import (
   >     exthelper,
+  >     pycompat,
   > )
   > 
   > from hgext.lfs import (
@@ -829,7 +832,10 @@ blob, and the output shows that it isn't fetched.
   >         rawtext = self._revlog.rawdata(node)
   >         metadata = pointer.deserialize(rawtext)
   >         print('lfs blob %s renamed %s -> %s'
-  >               % (metadata[b'oid'], ret[0], self._revlog.filename))
+  >               % (pycompat.sysstr(metadata[b'oid']),
+  >                  pycompat.sysstr(ret[0]),
+  >                  pycompat.fsdecode(self._revlog.filename)))
+  >         sys.stdout.flush()
   >     return ret
   > EOF
 
