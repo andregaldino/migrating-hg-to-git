@@ -54,7 +54,7 @@ class verifier(object):
         self.havecl = len(repo.changelog) > 0
         self.havemf = len(repo.manifestlog.getstorage(b'')) > 0
         self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
-        self.lrugetctx = util.lrucachefunc(repo.__getitem__)
+        self.lrugetctx = util.lrucachefunc(repo.unfiltered().__getitem__)
         self.refersmf = False
         self.fncachewarned = False
         # developer config: verify.skipflags
