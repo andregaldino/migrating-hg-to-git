@@ -3218,16 +3218,19 @@ def debugserve(ui, repo, **opts):
         raise error.Abort(_(b'cannot use both --logiofd and --logiofile'))
 
     if opts[b'logiofd']:
-        # Line buffered because output is line based.
+        # Ideally we would be line buffered. But line buffering in binary
+        # mode isn't supported and emits a warning in Python 3.8+. Disabling
+        # buffering could have performance impacts. But since this isn't
+        # performance critical code, it should be fine.
         try:
-            logfh = os.fdopen(int(opts[b'logiofd']), 'ab', 1)
+            logfh = os.fdopen(int(opts[b'logiofd']), 'ab', 0)
         except OSError as e:
             if e.errno != errno.ESPIPE:
                 raise
             # can't seek a pipe, so `ab` mode fails on py3
-            logfh = os.fdopen(int(opts[b'logiofd']), 'wb', 1)
+            logfh = os.fdopen(int(opts[b'logiofd']), 'wb', 0)
     elif opts[b'logiofile']:
-        logfh = open(opts[b'logiofile'], b'ab', 1)
+        logfh = open(opts[b'logiofile'], b'ab', 0)
 
     s = wireprotoserver.sshserver(ui, repo, logfh=logfh)
     s.serve_forever()
