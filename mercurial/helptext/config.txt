@@ -827,18 +827,18 @@ Example for ``~/.hgrc``::
 ----------
 
 Configuration that controls the repository format. Newer format options are more
-powerful but incompatible with some older versions of Mercurial. Format options
+powerful, but incompatible with some older versions of Mercurial. Format options
 are considered at repository initialization only. You need to make a new clone
-for config change to be taken into account.
+for config changes to be taken into account.
 
 For more details about repository format and version compatibility, see
 https://www.mercurial-scm.org/wiki/MissingRequirement
 
 ``usegeneraldelta``
     Enable or disable the "generaldelta" repository format which improves
-    repository compression by allowing "revlog" to store delta against arbitrary
-    revision instead of the previous stored one. This provides significant
-    improvement for repositories with branches.
+    repository compression by allowing "revlog" to store deltas against
+    arbitrary revisions instead of the previously stored one. This provides
+    significant improvement for repositories with branches.
 
     Repositories with this on-disk format require Mercurial version 1.9.
 
@@ -847,7 +847,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 ``dotencode``
     Enable or disable the "dotencode" repository format which enhances
     the "fncache" repository format (which has to be enabled to use
-    dotencode) to avoid issues with filenames starting with ._ on
+    dotencode) to avoid issues with filenames starting with "._" on
     Mac OS X and spaces on Windows.
 
     Repositories with this on-disk format require Mercurial version 1.7.
@@ -885,12 +885,14 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     Enabled by default.
 
 ``revlog-compression``
-    Compression algorithm used by revlog. Supported value are `zlib` and `zstd`.
-    The `zlib` engine is the historical default of Mercurial. `zstd` is a newer
-    format that is usually a net win over `zlib` operating faster at better
-    compression rate. Use `zstd` to reduce CPU usage.
+    Compression algorithm used by revlog. Supported values are `zlib` and
+    `zstd`. The `zlib` engine is the historical default of Mercurial. `zstd` is
+    a newer format that is usually a net win over `zlib`, operating faster at
+    better compression rates. Use `zstd` to reduce CPU usage.
 
-    On some system, Mercurial installation may lack `zstd` supports. Default is `zlib`.
+    On some systems, the Mercurial installation may lack `zstd` support.
+
+    Default is `zlib`.
 
 ``bookmarks-in-store``
     Store bookmarks in .hg/store/. This means that bookmarks are shared when
