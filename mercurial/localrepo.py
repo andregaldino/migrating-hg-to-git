@@ -509,6 +509,11 @@ def makelocalrepository(baseui, path, intents=None):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
+        except ValueError as e:
+            # Can be raised on Python 3.8 when path is invalid.
+            raise error.Abort(
+                _(b'invalid path %s: %s') % (path, pycompat.bytestr(e))
+            )
 
         raise error.RepoError(_(b'repository %s not found') % path)
 
