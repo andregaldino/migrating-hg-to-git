@@ -1382,9 +1382,9 @@ class RustExtension(Extension):
 class RustEnhancedExtension(RustExtension):
     """A C Extension, conditionally enhanced with Rust code.
 
-    If the HGRUSTEXT environment variable is set to something else
-    than 'cpython', the Rust sources get compiled and linked within the
-    C target shared library object.
+    If the HGWITHRUSTEXT environment variable is set to something else
+    than 'cpython', the Rust sources get compiled and linked within
+    the C target shared library object.
     """
 
     def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
