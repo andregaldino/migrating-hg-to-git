@@ -80,7 +80,7 @@ static PyObject *hashflags(line *l)
 	PyObject *hash = nodeof(l);
 
 	/* 40 for hash, 1 for null byte, 1 for newline */
-	size_t hplen = plen + 42;
+	Py_ssize_t hplen = plen + 42;
 	Py_ssize_t flen = l->len - hplen;
 	PyObject *flags;
 	PyObject *tup;
@@ -525,7 +525,7 @@ static int lazymanifest_setitem(
 	PyObject *pyflags;
 	char *flags;
 	Py_ssize_t flen;
-	size_t dlen;
+	Py_ssize_t dlen;
 	char *dest;
 	int i;
 	line new;
