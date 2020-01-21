@@ -110,11 +110,12 @@ class lfsuploadfile(object):
     def read(self, size):
         if self._fp is None:
             return b''
-        data = self._fp.read(size)
-        if not data:
+        return self._fp.read(size)
+
+    def close(self):
+        if self._fp is not None:
             self._fp.close()
             self._fp = None
-        return data
 
 
 class local(object):
@@ -539,6 +540,9 @@ class _gitlfsremote(object):
             raise LfsRemoteError(
                 _(b'LFS error: %s') % _urlerrorreason(ex), hint=hint
             )
+        finally:
+            if request.data:
+                request.data.close()
 
     def _batch(self, pointers, localstore, action):
         if action not in [b'upload', b'download']:
