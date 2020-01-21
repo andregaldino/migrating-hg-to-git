@@ -94,15 +94,12 @@ class nullvfs(lfsvfs):
         pass
 
 
-class filewithprogress(object):
+class lfsuploadfile(object):
     """a file-like object that supports __len__ and read.
-
-    Useful to provide progress information for how many bytes are read.
     """
 
-    def __init__(self, fp, callback):
+    def __init__(self, fp):
         self._fp = fp
-        self._callback = callback  # func(readsize)
         fp.seek(0, os.SEEK_END)
         self._len = fp.tell()
         fp.seek(0)
@@ -114,10 +111,7 @@ class filewithprogress(object):
         if self._fp is None:
             return b''
         data = self._fp.read(size)
-        if data:
-            if self._callback:
-                self._callback(len(data))
-        else:
+        if not data:
             self._fp.close()
             self._fp = None
         return data
@@ -495,7 +489,7 @@ class _gitlfsremote(object):
                     _(b'detected corrupt lfs object: %s') % oid,
                     hint=_(b'run hg verify'),
                 )
-            request.data = filewithprogress(localstore.open(oid), None)
+            request.data = lfsuploadfile(localstore.open(oid))
             request.get_method = lambda: r'PUT'
             request.add_header('Content-Type', 'application/octet-stream')
             request.add_header('Content-Length', len(request.data))
