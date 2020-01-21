@@ -44,7 +44,7 @@ try:
         b'cyan': (False, curses.COLOR_CYAN, b''),
         b'white': (False, curses.COLOR_WHITE, b''),
     }
-except ImportError:
+except (ImportError, AttributeError):
     curses = None
     _baseterminfoparams = {}
 

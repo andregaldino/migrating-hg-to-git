@@ -685,7 +685,7 @@ def has_tic():
 
         curses.COLOR_BLUE
         return matchoutput('test -x "`which tic`"', br'')
-    except ImportError:
+    except (ImportError, AttributeError):
         return False
 
 

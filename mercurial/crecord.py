@@ -63,13 +63,13 @@ try:
     import curses.ascii
 
     curses.error
-except ImportError:
+except (ImportError, AttributeError):
     # I have no idea if wcurses works with crecord...
     try:
         import wcurses as curses
 
         curses.error
-    except ImportError:
+    except (ImportError, AttributeError):
         # wcurses is not shipped on Windows by default, or python is not
         # compiled with curses
         curses = False
