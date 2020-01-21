@@ -17,6 +17,7 @@ tell the client to store files elsewhere.
   $ hg init server
   $ hg --config "lfs.usercache=$TESTTMP/servercache" \
   >    --config experimental.lfs.serve=False -R server serve -d \
+  >    --config experimental.lfs.worker-enable=False \
   >    -p $HGPORT --pid-file=hg.pid -A $TESTTMP/access.log -E $TESTTMP/errors.log
   $ cat hg.pid >> $DAEMON_PIDS
 

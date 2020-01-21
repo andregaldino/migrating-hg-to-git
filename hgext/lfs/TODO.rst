@@ -38,9 +38,6 @@ ruled out) prior to taking off the experimental shrinkwrap.
 
    * `hg diff` is similar, and probably shouldn't see the pointer file
 
-#. `Fix https multiplexing, and re-enable workers
-   <https://www.mercurial-scm.org/pipermail/mercurial-devel/2018-January/109916.html>`_.
-
 #. Show to-be-applied rules with `hg files -r 'wdir()' 'set:lfs()'`
 
    * `debugignore` can show file + line number, so a dedicated command could be

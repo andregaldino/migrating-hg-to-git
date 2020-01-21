@@ -65,6 +65,7 @@ missing processor for flag '0x2000'!" if the extension is only loaded on one sid
   > debugprocessors = $TESTTMP/debugprocessors.py
   > [experimental]
   > lfs.disableusercache = True
+  > lfs.worker-enable = False
   > [lfs]
   > threshold=10
   > [web]

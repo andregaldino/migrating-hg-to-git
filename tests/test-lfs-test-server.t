@@ -40,6 +40,8 @@
 #endif
 
   $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > lfs.worker-enable = False
   > [extensions]
   > lfs=
   > [lfs]
