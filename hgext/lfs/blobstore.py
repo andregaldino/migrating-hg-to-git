@@ -491,7 +491,7 @@ class _gitlfsremote(object):
                     hint=_(b'run hg verify'),
                 )
             request.data = lfsuploadfile(localstore.open(oid))
-            request.get_method = lambda: r'PUT'
+            request.get_method = lambda: 'PUT'
             request.add_header('Content-Type', 'application/octet-stream')
             request.add_header('Content-Length', len(request.data))
 
