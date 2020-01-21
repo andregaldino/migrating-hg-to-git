@@ -726,8 +726,8 @@ def clearfilecache(obj, attrname):
 
 def clearchangelog(repo):
     if repo is not repo.unfiltered():
-        object.__setattr__(repo, r'_clcachekey', None)
-        object.__setattr__(repo, r'_clcache', None)
+        object.__setattr__(repo, '_clcachekey', None)
+        object.__setattr__(repo, '_clcache', None)
     clearfilecache(repo.unfiltered(), 'changelog')
 
 
@@ -760,7 +760,10 @@ def perfannotate(ui, repo, f, **opts):
 
 @command(
     b'perfstatus',
-    [(b'u', b'unknown', False, b'ask status to look for unknown files')]
+    [
+        (b'u', b'unknown', False, b'ask status to look for unknown files'),
+        (b'', b'dirstate', False, b'benchmark the internal dirstate call'),
+    ]
     + formatteropts,
 )
 def perfstatus(ui, repo, **opts):
@@ -776,7 +779,20 @@ def perfstatus(ui, repo, **opts):
     # timer(lambda: sum(map(len, repo.dirstate.status(m, [], False, False,
     #                                                False))))
     timer, fm = gettimer(ui, opts)
-    timer(lambda: sum(map(len, repo.status(unknown=opts[b'unknown']))))
+    if opts[b'dirstate']:
+        dirstate = repo.dirstate
+        m = scmutil.matchall(repo)
+        unknown = opts[b'unknown']
+
+        def status_dirstate():
+            s = dirstate.status(
+                m, subrepos=[], ignored=False, clean=False, unknown=unknown
+            )
+            sum(map(bool, s))
+
+        timer(status_dirstate)
+    else:
+        timer(lambda: sum(map(len, repo.status(unknown=opts[b'unknown']))))
     fm.end()
 
 
@@ -804,6 +820,7 @@ def clearcaches(cl):
     if util.safehasattr(cl, b'clearcaches'):
         cl.clearcaches()
     elif util.safehasattr(cl, b'_nodecache'):
+        # <= hg-5.2
         from mercurial.node import nullid, nullrev
 
         cl._nodecache = {nullid: nullrev}
@@ -1404,13 +1421,15 @@ def perfphasesremote(ui, repo, dest=None, **opts):
     else:
         ui.statusnoi18n(b'publishing: no\n')
 
-    nodemap = repo.changelog.nodemap
+    has_node = getattr(repo.changelog.index, 'has_node', None)
+    if has_node is None:
+        has_node = repo.changelog.nodemap.__contains__
     nonpublishroots = 0
     for nhex, phase in remotephases.iteritems():
         if nhex == b'publishing':  # ignore data related to publish option
             continue
         node = bin(nhex)
-        if node in nodemap and int(phase):
+        if has_node(node) and int(phase):
             nonpublishroots += 1
     ui.statusnoi18n(b'number of roots: %d\n' % len(remotephases))
     ui.statusnoi18n(b'number of known non public roots: %d\n' % nonpublishroots)
@@ -1610,7 +1629,11 @@ def perfnodemap(ui, repo, **opts):
     def setnodeget():
         # probably not necessary, but for good measure
         clearchangelog(unfi)
-        nodeget[0] = makecl(unfi).nodemap.get
+        cl = makecl(unfi)
+        if util.safehasattr(cl.index, 'get_rev'):
+            nodeget[0] = cl.index.get_rev
+        else:
+            nodeget[0] = cl.nodemap.get
 
     def d():
         get = nodeget[0]
@@ -1636,13 +1659,13 @@ def perfstartup(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
 
     def d():
-        if os.name != r'nt':
+        if os.name != 'nt':
             os.system(
                 b"HGRCPATH= %s version -q > /dev/null" % fsencode(sys.argv[0])
             )
         else:
-            os.environ[r'HGRCPATH'] = r' '
-            os.system(r"%s version -q > NUL" % sys.argv[0])
+            os.environ['HGRCPATH'] = r' '
+            os.system("%s version -q > NUL" % sys.argv[0])
 
     timer(d)
     fm.end()
@@ -1828,7 +1851,7 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
     opts = _byteskwargs(opts)
 
     nullui = ui.copy()
-    nullui.fout = open(os.devnull, r'wb')
+    nullui.fout = open(os.devnull, 'wb')
     nullui.disablepager()
     revs = opts.get(b'rev')
     if not revs:
@@ -1855,7 +1878,6 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
 
 
 def _displaystats(ui, opts, entries, data):
-    pass
     # use a second formatter because the data are quite different, not sure
     # how it flies with the templater.
     fm = ui.formatter(b'perf-stats', opts)
@@ -2025,8 +2047,8 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
                 data['p1.time'] = end - begin
                 begin = util.timer()
                 p2renames = copies.pathcopies(b, p2)
-                data['p2.time'] = end - begin
                 end = util.timer()
+                data['p2.time'] = end - begin
                 data['p1.renamedfiles'] = len(p1renames)
                 data['p2.renamedfiles'] = len(p2renames)
 
@@ -2198,9 +2220,6 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
 
     fm.end()
     if dostats:
-        # use a second formatter because the data are quite different, not sure
-        # how it flies with the templater.
-        fm = ui.formatter(b'perf', opts)
         entries = [
             ('nbrevs', 'number of revision covered'),
             ('nbmissingfiles', 'number of missing files at head'),
@@ -2576,25 +2595,38 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
                 index[rev]
 
     def resolvenode(node):
-        nodemap = revlogio.parseindex(data, inline)[1]
-        # This only works for the C code.
-        if nodemap is None:
-            return
+        index = revlogio.parseindex(data, inline)[0]
+        rev = getattr(index, 'rev', None)
+        if rev is None:
+            nodemap = getattr(
+                revlogio.parseindex(data, inline)[0], 'nodemap', None
+            )
+            # This only works for the C code.
+            if nodemap is None:
+                return
+            rev = nodemap.__getitem__
 
         try:
-            nodemap[node]
+            rev(node)
         except error.RevlogError:
             pass
 
     def resolvenodes(nodes, count=1):
-        nodemap = revlogio.parseindex(data, inline)[1]
-        if nodemap is None:
-            return
+        index = revlogio.parseindex(data, inline)[0]
+        rev = getattr(index, 'rev', None)
+        if rev is None:
+            nodemap = getattr(
+                revlogio.parseindex(data, inline)[0], 'nodemap', None
+            )
+            # This only works for the C code.
+            if nodemap is None:
+                return
+            rev = nodemap.__getitem__
 
         for i in range(count):
             for node in nodes:
                 try:
-                    nodemap[node]
+                    rev(node)
                 except error.RevlogError:
                     pass
 

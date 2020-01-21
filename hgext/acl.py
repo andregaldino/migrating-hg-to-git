@@ -369,8 +369,8 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
         return
 
     user = None
-    if source == b'serve' and r'url' in kwargs:
-        url = kwargs[r'url'].split(b':')
+    if source == b'serve' and 'url' in kwargs:
+        url = kwargs['url'].split(b':')
         if url[0] == b'remote' and url[1].startswith(b'http'):
             user = urlreq.unquote(url[3])
 
@@ -386,9 +386,9 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
 
 
 def _pkhook(ui, repo, hooktype, node, source, user, **kwargs):
-    if kwargs[r'namespace'] == b'bookmarks':
-        bookmark = kwargs[r'key']
-        ctx = kwargs[r'new']
+    if kwargs['namespace'] == b'bookmarks':
+        bookmark = kwargs['key']
+        ctx = kwargs['new']
         allowbookmarks = buildmatch(ui, None, user, b'acl.allow.bookmarks')
         denybookmarks = buildmatch(ui, None, user, b'acl.deny.bookmarks')
 

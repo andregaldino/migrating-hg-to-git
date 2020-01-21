@@ -291,7 +291,19 @@ class Merge3Text(object):
             if region[0] != b"conflict":
                 yield region
                 continue
-            issue, z1, z2, a1, a2, b1, b2 = region
+            # pytype thinks this tuple contains only 3 things, but
+            # that's clearly not true because this code successfully
+            # executes. It might be wise to rework merge_regions to be
+            # some kind of attrs type.
+            (
+                issue,
+                z1,
+                z2,
+                a1,
+                a2,
+                b1,
+                b2,
+            ) = region  # pytype: disable=bad-unpacking
             alen = a2 - a1
             blen = b2 - b1
 

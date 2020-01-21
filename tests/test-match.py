@@ -10,6 +10,9 @@ from mercurial import (
 )
 
 
+noop_auditor = lambda name: None
+
+
 class BaseMatcherTests(unittest.TestCase):
     def testVisitdir(self):
         m = matchmod.basematcher()
@@ -63,7 +66,9 @@ class PredicateMatcherTests(unittest.TestCase):
 
 class PatternMatcherTests(unittest.TestCase):
     def testVisitdirPrefix(self):
-        m = matchmod.match(b'x', b'', patterns=[b'path:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'path:dir/subdir']
+        )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertTrue(m.visitdir(b''))
         self.assertTrue(m.visitdir(b'dir'))
@@ -73,7 +78,9 @@ class PatternMatcherTests(unittest.TestCase):
         self.assertFalse(m.visitdir(b'folder'))
 
     def testVisitchildrensetPrefix(self):
-        m = matchmod.match(b'x', b'', patterns=[b'path:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'path:dir/subdir']
+        )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertEqual(m.visitchildrenset(b''), b'this')
         self.assertEqual(m.visitchildrenset(b'dir'), b'this')
@@ -83,7 +90,9 @@ class PatternMatcherTests(unittest.TestCase):
         self.assertEqual(m.visitchildrenset(b'folder'), set())
 
     def testVisitdirRootfilesin(self):
-        m = matchmod.match(b'x', b'', patterns=[b'rootfilesin:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'rootfilesin:dir/subdir'],
+        )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertFalse(m.visitdir(b'dir/subdir/x'))
         self.assertFalse(m.visitdir(b'folder'))
@@ -93,7 +102,9 @@ class PatternMatcherTests(unittest.TestCase):
         self.assertFalse(m.visitdir(b'dir/subdir'))
 
     def testVisitchildrensetRootfilesin(self):
-        m = matchmod.match(b'x', b'', patterns=[b'rootfilesin:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'rootfilesin:dir/subdir'],
+        )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertEqual(m.visitchildrenset(b'dir/subdir/x'), set())
         self.assertEqual(m.visitchildrenset(b'folder'), set())
@@ -104,7 +115,9 @@ class PatternMatcherTests(unittest.TestCase):
         self.assertEqual(m.visitchildrenset(b'dir/subdir'), set())
 
     def testVisitdirGlob(self):
-        m = matchmod.match(b'x', b'', patterns=[b'glob:dir/z*'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'glob:dir/z*']
+        )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertTrue(m.visitdir(b''))
         self.assertTrue(m.visitdir(b'dir'))
@@ -114,7 +127,9 @@ class PatternMatcherTests(unittest.TestCase):
         self.assertTrue(m.visitdir(b'dir/subdir/x'))
 
     def testVisitchildrensetGlob(self):
-        m = matchmod.match(b'x', b'', patterns=[b'glob:dir/z*'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'glob:dir/z*']
+        )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertEqual(m.visitchildrenset(b''), b'this')
         self.assertEqual(m.visitchildrenset(b'folder'), set())
@@ -126,7 +141,9 @@ class PatternMatcherTests(unittest.TestCase):
 
 class IncludeMatcherTests(unittest.TestCase):
     def testVisitdirPrefix(self):
-        m = matchmod.match(b'x', b'', include=[b'path:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         assert isinstance(m, matchmod.includematcher)
         self.assertTrue(m.visitdir(b''))
         self.assertTrue(m.visitdir(b'dir'))
@@ -136,7 +153,9 @@ class IncludeMatcherTests(unittest.TestCase):
         self.assertFalse(m.visitdir(b'folder'))
 
     def testVisitchildrensetPrefix(self):
-        m = matchmod.match(b'x', b'', include=[b'path:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         assert isinstance(m, matchmod.includematcher)
         self.assertEqual(m.visitchildrenset(b''), {b'dir'})
         self.assertEqual(m.visitchildrenset(b'dir'), {b'subdir'})
@@ -146,7 +165,9 @@ class IncludeMatcherTests(unittest.TestCase):
         self.assertEqual(m.visitchildrenset(b'folder'), set())
 
     def testVisitdirRootfilesin(self):
-        m = matchmod.match(b'x', b'', include=[b'rootfilesin:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir/subdir']
+        )
         assert isinstance(m, matchmod.includematcher)
         self.assertTrue(m.visitdir(b''))
         self.assertTrue(m.visitdir(b'dir'))
@@ -155,7 +176,9 @@ class IncludeMatcherTests(unittest.TestCase):
         self.assertFalse(m.visitdir(b'folder'))
 
     def testVisitchildrensetRootfilesin(self):
-        m = matchmod.match(b'x', b'', include=[b'rootfilesin:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir/subdir']
+        )
         assert isinstance(m, matchmod.includematcher)
         self.assertEqual(m.visitchildrenset(b''), {b'dir'})
         self.assertEqual(m.visitchildrenset(b'dir'), {b'subdir'})
@@ -164,7 +187,9 @@ class IncludeMatcherTests(unittest.TestCase):
         self.assertEqual(m.visitchildrenset(b'folder'), set())
 
     def testVisitdirGlob(self):
-        m = matchmod.match(b'x', b'', include=[b'glob:dir/z*'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'glob:dir/z*']
+        )
         assert isinstance(m, matchmod.includematcher)
         self.assertTrue(m.visitdir(b''))
         self.assertTrue(m.visitdir(b'dir'))
@@ -174,7 +199,9 @@ class IncludeMatcherTests(unittest.TestCase):
         self.assertTrue(m.visitdir(b'dir/subdir/x'))
 
     def testVisitchildrensetGlob(self):
-        m = matchmod.match(b'x', b'', include=[b'glob:dir/z*'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'glob:dir/z*']
+        )
         assert isinstance(m, matchmod.includematcher)
         self.assertEqual(m.visitchildrenset(b''), {b'dir'})
         self.assertEqual(m.visitchildrenset(b'folder'), set())
@@ -286,7 +313,9 @@ class DifferenceMatcherTests(unittest.TestCase):
 
     def testVisitdirM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher()
-        m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'path:dir/subdir']
+        )
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitdir(b''), True)
         self.assertEqual(dm.visitdir(b'dir'), True)
@@ -301,7 +330,9 @@ class DifferenceMatcherTests(unittest.TestCase):
 
     def testVisitchildrensetM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher()
-        m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'path:dir/subdir']
+        )
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitchildrenset(b''), b'this')
         self.assertEqual(dm.visitchildrenset(b'dir'), b'this')
@@ -317,8 +348,12 @@ class DifferenceMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir']
+        )
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitdir(b''), True)
         self.assertEqual(dm.visitdir(b'dir'), True)
@@ -332,8 +367,12 @@ class DifferenceMatcherTests(unittest.TestCase):
         self.assertEqual(dm.visitdir(b'dir/subdir/x'), True)
 
     def testVisitchildrensetIncludeInclude(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir']
+        )
         dm = matchmod.differencematcher(m1, m2)
         self.assertEqual(dm.visitchildrenset(b''), {b'dir'})
         self.assertEqual(dm.visitchildrenset(b'dir'), {b'subdir'})
@@ -402,7 +441,9 @@ class IntersectionMatcherTests(unittest.TestCase):
 
     def testVisitdirM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher()
-        m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'path:dir/subdir']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitdir(b''), True)
         self.assertEqual(im.visitdir(b'dir'), True)
@@ -417,7 +458,9 @@ class IntersectionMatcherTests(unittest.TestCase):
 
     def testVisitchildrensetM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher()
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitchildrenset(b''), {b'dir'})
         self.assertEqual(im.visitchildrenset(b'dir'), {b'subdir'})
@@ -431,8 +474,12 @@ class IntersectionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitdir(b''), True)
         self.assertEqual(im.visitdir(b'dir'), True)
@@ -443,8 +490,12 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertFalse(im.visitdir(b'dir/subdir/x'))
 
     def testVisitchildrensetIncludeInclude(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitchildrenset(b''), {b'dir'})
         self.assertEqual(im.visitchildrenset(b'dir'), b'this')
@@ -457,8 +508,12 @@ class IntersectionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude2(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'path:folder'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:folder']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         # FIXME: is True correct here?
         self.assertEqual(im.visitdir(b''), True)
@@ -470,8 +525,12 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertFalse(im.visitdir(b'dir/subdir/x'))
 
     def testVisitchildrensetIncludeInclude2(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'path:folder'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:folder']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         # FIXME: is set() correct here?
         self.assertEqual(im.visitchildrenset(b''), set())
@@ -485,8 +544,12 @@ class IntersectionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude3(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitdir(b''), True)
         self.assertEqual(im.visitdir(b'dir'), True)
@@ -498,8 +561,12 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertEqual(im.visitdir(b'dir/subdir/x'), True)
 
     def testVisitchildrensetIncludeInclude3(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         self.assertEqual(im.visitchildrenset(b''), {b'dir'})
         self.assertEqual(im.visitchildrenset(b'dir'), {b'subdir'})
@@ -513,8 +580,12 @@ class IntersectionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude4(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir/z'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/z']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         # OPT: these next three could probably be False as well.
         self.assertEqual(im.visitdir(b''), True)
@@ -526,8 +597,12 @@ class IntersectionMatcherTests(unittest.TestCase):
         self.assertFalse(im.visitdir(b'dir/subdir/x'))
 
     def testVisitchildrensetIncludeInclude4(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir/z'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/z']
+        )
         im = matchmod.intersectmatchers(m1, m2)
         # OPT: these next two could probably be set() as well.
         self.assertEqual(im.visitchildrenset(b''), {b'dir'})
@@ -620,7 +695,9 @@ class UnionMatcherTests(unittest.TestCase):
 
     def testVisitdirM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher()
-        m2 = matchmod.match(b'', b'', patterns=[b'path:dir/subdir'])
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', patterns=[b'path:dir/subdir']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitdir(b''), b'all')
         self.assertEqual(um.visitdir(b'dir'), b'all')
@@ -632,7 +709,9 @@ class UnionMatcherTests(unittest.TestCase):
 
     def testVisitchildrensetM2SubdirPrefix(self):
         m1 = matchmod.alwaysmatcher()
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitchildrenset(b''), b'all')
         self.assertEqual(um.visitchildrenset(b'dir'), b'all')
@@ -645,8 +724,12 @@ class UnionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitdir(b''), True)
         self.assertEqual(um.visitdir(b'dir'), True)
@@ -658,8 +741,12 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'dir/subdir/x'), True)
 
     def testVisitchildrensetIncludeInclude(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'rootfilesin:dir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'rootfilesin:dir']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitchildrenset(b''), {b'dir'})
         self.assertEqual(um.visitchildrenset(b'dir'), b'this')
@@ -673,8 +760,12 @@ class UnionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude2(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'path:folder'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:folder']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitdir(b''), True)
         self.assertEqual(um.visitdir(b'dir'), True)
@@ -686,8 +777,12 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'dir/subdir/x'), True)
 
     def testVisitchildrensetIncludeInclude2(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
-        m2 = matchmod.match(b'', b'', include=[b'path:folder'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:folder']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitchildrenset(b''), {b'folder', b'dir'})
         self.assertEqual(um.visitchildrenset(b'dir'), {b'subdir'})
@@ -701,8 +796,12 @@ class UnionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude3(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitdir(b''), True)
         self.assertEqual(um.visitdir(b'dir'), True)
@@ -714,8 +813,12 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'dir/subdir/z'), True)
 
     def testVisitchildrensetIncludeInclude3(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitchildrenset(b''), {b'dir'})
         self.assertEqual(um.visitchildrenset(b'dir'), {b'subdir'})
@@ -729,8 +832,12 @@ class UnionMatcherTests(unittest.TestCase):
     # We're using includematcher instead of patterns because it behaves slightly
     # better (giving narrower results) than patternmatcher.
     def testVisitdirIncludeInclude4(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir/z'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/z']
+        )
         um = matchmod.unionmatcher([m1, m2])
         # OPT: these next three could probably be False as well.
         self.assertEqual(um.visitdir(b''), True)
@@ -742,8 +849,12 @@ class UnionMatcherTests(unittest.TestCase):
         self.assertEqual(um.visitdir(b'dir/subdir/x'), b'all')
 
     def testVisitchildrensetIncludeInclude4(self):
-        m1 = matchmod.match(b'', b'', include=[b'path:dir/subdir/x'])
-        m2 = matchmod.match(b'', b'', include=[b'path:dir/subdir/z'])
+        m1 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/x']
+        )
+        m2 = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir/z']
+        )
         um = matchmod.unionmatcher([m1, m2])
         self.assertEqual(um.visitchildrenset(b''), {b'dir'})
         self.assertEqual(um.visitchildrenset(b'dir'), {b'subdir'})
@@ -756,7 +867,9 @@ class UnionMatcherTests(unittest.TestCase):
 
 class SubdirMatcherTests(unittest.TestCase):
     def testVisitdir(self):
-        m = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         sm = matchmod.subdirmatcher(b'dir', m)
 
         self.assertEqual(sm.visitdir(b''), True)
@@ -767,7 +880,9 @@ class SubdirMatcherTests(unittest.TestCase):
         self.assertFalse(sm.visitdir(b'foo'))
 
     def testVisitchildrenset(self):
-        m = matchmod.match(b'', b'', include=[b'path:dir/subdir'])
+        m = matchmod.match(
+            util.localpath(b'/repo'), b'', include=[b'path:dir/subdir']
+        )
         sm = matchmod.subdirmatcher(b'dir', m)
 
         self.assertEqual(sm.visitchildrenset(b''), {b'subdir'})
@@ -781,7 +896,10 @@ class SubdirMatcherTests(unittest.TestCase):
 class PrefixdirMatcherTests(unittest.TestCase):
     def testVisitdir(self):
         m = matchmod.match(
-            util.localpath(b'root/d'), b'e/f', [b'../a.txt', b'b.txt']
+            util.localpath(b'/root/d'),
+            b'e/f',
+            [b'../a.txt', b'b.txt'],
+            auditor=noop_auditor,
         )
         pm = matchmod.prefixdirmatcher(b'd', m)
 
@@ -814,7 +932,10 @@ class PrefixdirMatcherTests(unittest.TestCase):
 
     def testVisitchildrenset(self):
         m = matchmod.match(
-            util.localpath(b'root/d'), b'e/f', [b'../a.txt', b'b.txt']
+            util.localpath(b'/root/d'),
+            b'e/f',
+            [b'../a.txt', b'b.txt'],
+            auditor=noop_auditor,
         )
         pm = matchmod.prefixdirmatcher(b'd', m)
 

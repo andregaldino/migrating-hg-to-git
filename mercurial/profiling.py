@@ -77,7 +77,7 @@ def lsprofile(ui, fp):
 @contextlib.contextmanager
 def flameprofile(ui, fp):
     try:
-        from flamegraph import flamegraph
+        from flamegraph import flamegraph  # pytype: disable=import-error
     except ImportError:
         raise error.Abort(
             _(
@@ -167,9 +167,9 @@ def statprofile(ui, fp):
         elif profformat == b'hotpath':
             # inconsistent config: profiling.showmin
             limit = ui.configwith(fraction, b'profiling', b'showmin', 0.05)
-            kwargs[r'limit'] = limit
+            kwargs['limit'] = limit
             showtime = ui.configbool(b'profiling', b'showtime')
-            kwargs[r'showtime'] = showtime
+            kwargs['showtime'] = showtime
 
         statprof.display(fp, data=data, format=displayformat, **kwargs)
 
@@ -204,7 +204,7 @@ class profile(object):
 
         If the profiler was already started, this has no effect."""
         if not self._entered:
-            raise error.ProgrammingError()
+            raise error.ProgrammingError(b'use a context manager to start')
         if self._started:
             return
         self._started = True

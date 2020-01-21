@@ -673,6 +673,7 @@ def checkstatus(repo, subset, pat, field):
     1: added
     2: removed
     """
+    label = {0: 'modified', 1: 'added', 2: 'removed'}[field]
     hasset = matchmod.patkind(pat) == b'set'
 
     mcache = [None]
@@ -683,25 +684,23 @@ def checkstatus(repo, subset, pat, field):
             mcache[0] = matchmod.match(repo.root, repo.getcwd(), [pat], ctx=c)
         m = mcache[0]
         fname = None
+
+        assert m is not None  # help pytype
         if not m.anypats() and len(m.files()) == 1:
             fname = m.files()[0]
         if fname is not None:
             if fname not in c.files():
                 return False
         else:
-            for f in c.files():
-                if m(f):
-                    break
-            else:
+            if not any(m(f) for f in c.files()):
                 return False
-        files = repo.status(c.p1().node(), c.node())[field]
+        files = getattr(repo.status(c.p1().node(), c.node()), label)
         if fname is not None:
             if fname in files:
                 return True
         else:
-            for f in files:
-                if m(f):
-                    return True
+            if any(m(f) for f in files):
+                return True
 
     return subset.filter(matches, condrepr=(b'<status[%r] %r>', field, pat))
 
@@ -2026,9 +2025,7 @@ def remote(repo, subset, x):
         dest = getstring(l[1], _(b"remote requires a repository path"))
     dest = repo.ui.expandpath(dest or b'default')
     dest, branches = hg.parseurl(dest)
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
-    if revs:
-        revs = [repo.lookup(rev) for rev in revs]
+
     other = hg.peer(repo, {}, dest)
     n = other.lookup(q)
     if n in repo:
@@ -2406,10 +2403,10 @@ def _mapbynodefunc(repo, s, f):
     filtering.
     """
     cl = repo.unfiltered().changelog
-    torev = cl.rev
+    torev = cl.index.get_rev
     tonode = cl.node
-    nodemap = cl.nodemap
-    result = set(torev(n) for n in f(tonode(r) for r in s) if n in nodemap)
+    result = set(torev(n) for n in f(tonode(r) for r in s))
+    result.discard(None)
     return smartset.baseset(result - repo.changelog.filteredrevs)
 
 

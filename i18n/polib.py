@@ -551,18 +551,6 @@ class _BaseFile(list):
         offsets = []
         entries = self.translated_entries()
 
-        # the keys are sorted in the .mo file
-        def cmp(_self, other):
-            # msgfmt compares entries with msgctxt if it exists
-            self_msgid = _self.msgctxt and _self.msgctxt or _self.msgid
-            other_msgid = other.msgctxt and other.msgctxt or other.msgid
-            if self_msgid > other_msgid:
-                return 1
-            elif self_msgid < other_msgid:
-                return -1
-            else:
-                return 0
-
         # add metadata entry
         entries.sort(key=lambda o: o.msgctxt or o.msgid)
         mentry = self.metadata_as_entry()

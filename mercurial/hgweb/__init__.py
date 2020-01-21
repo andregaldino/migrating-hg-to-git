@@ -77,19 +77,19 @@ class httpservice(object):
         else:
             prefix = b''
 
-        port = r':%d' % self.httpd.port
-        if port == r':80':
-            port = r''
+        port = ':%d' % self.httpd.port
+        if port == ':80':
+            port = ''
 
         bindaddr = self.httpd.addr
-        if bindaddr == r'0.0.0.0':
-            bindaddr = r'*'
-        elif r':' in bindaddr:  # IPv6
-            bindaddr = r'[%s]' % bindaddr
+        if bindaddr == '0.0.0.0':
+            bindaddr = '*'
+        elif ':' in bindaddr:  # IPv6
+            bindaddr = '[%s]' % bindaddr
 
         fqaddr = self.httpd.fqaddr
-        if r':' in fqaddr:
-            fqaddr = r'[%s]' % fqaddr
+        if ':' in fqaddr:
+            fqaddr = '[%s]' % fqaddr
 
         url = b'http://%s%s/%s' % (
             pycompat.sysbytes(fqaddr),

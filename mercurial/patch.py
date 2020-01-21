@@ -12,7 +12,6 @@ import collections
 import contextlib
 import copy
 import errno
-import hashlib
 import os
 import re
 import shutil
@@ -41,6 +40,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    hashutil,
     procutil,
     stringutil,
 )
@@ -217,7 +217,7 @@ def extract(ui, fileobj):
     fileobj did not contain a patch. Caller must unlink filename when done.'''
 
     fd, tmpname = pycompat.mkstemp(prefix=b'hg-patch-')
-    tmpfp = os.fdopen(fd, r'wb')
+    tmpfp = os.fdopen(fd, 'wb')
     try:
         yield _extract(ui, fileobj, tmpname, tmpfp)
     finally:
@@ -241,8 +241,8 @@ def _extract(ui, fileobj, tmpname, tmpfp):
 
     msg = mail.parse(fileobj)
 
-    subject = msg[r'Subject'] and mail.headdecode(msg[r'Subject'])
-    data[b'user'] = msg[r'From'] and mail.headdecode(msg[r'From'])
+    subject = msg['Subject'] and mail.headdecode(msg['Subject'])
+    data[b'user'] = msg['From'] and mail.headdecode(msg['From'])
     if not subject and not data[b'user']:
         # Not an email, restore parsed headers if any
         subject = (
@@ -255,7 +255,7 @@ def _extract(ui, fileobj, tmpname, tmpfp):
     # should try to parse msg['Date']
     parents = []
 
-    nodeid = msg[r'X-Mercurial-Node']
+    nodeid = msg['X-Mercurial-Node']
     if nodeid:
         data[b'nodeid'] = nodeid = mail.headdecode(nodeid)
         ui.debug(b'Node ID: %s\n' % nodeid)
@@ -383,7 +383,7 @@ class patchmeta(object):
         return self._ispatchinga(afile) and self._ispatchingb(bfile)
 
     def __repr__(self):
-        return r"<patchmeta %s %r>" % (self.op, self.path)
+        return "<patchmeta %s %r>" % (self.op, self.path)
 
 
 def readgitpatch(lr):
@@ -963,7 +963,9 @@ class header(object):
         return self.files()[-1]
 
     def __repr__(self):
-        return b'<header %s>' % (b' '.join(map(repr, self.files())))
+        return '<header %s>' % (
+            ' '.join(pycompat.rapply(pycompat.fsdecode, self.files()))
+        )
 
     def isnewfile(self):
         return any(self.newfile_re.match(h) for h in self.header)
@@ -1225,7 +1227,7 @@ the hunk is left unchanged.
                 ncpatchfp = None
                 try:
                     # Write the initial patch
-                    f = util.nativeeolwriter(os.fdopen(patchfd, r'wb'))
+                    f = util.nativeeolwriter(os.fdopen(patchfd, 'wb'))
                     chunk.header.write(f)
                     chunk.write(f)
                     f.write(
@@ -1245,7 +1247,7 @@ the hunk is left unchanged.
                         ui.warn(_(b"editor exited with exit code %d\n") % ret)
                         continue
                     # Remove comment lines
-                    patchfp = open(patchfn, r'rb')
+                    patchfp = open(patchfn, 'rb')
                     ncpatchfp = stringio()
                     for line in util.iterfile(patchfp):
                         line = util.fromnativeeol(line)
@@ -1570,7 +1572,7 @@ class hunk(object):
 
 
 class binhunk(object):
-    b'A binary patch file.'
+    """A binary patch file."""
 
     def __init__(self, lr, fname):
         self.text = None
@@ -2605,7 +2607,14 @@ def diffhunks(
 
     if not changes:
         changes = ctx1.status(ctx2, match=match)
-    modified, added, removed = changes[:3]
+    if isinstance(changes, list):
+        modified, added, removed = changes[:3]
+    else:
+        modified, added, removed = (
+            changes.modified,
+            changes.added,
+            changes.removed,
+        )
 
     if not modified and not added and not removed:
         return []
@@ -2788,7 +2797,7 @@ def diffsinglehunkinline(hunklines):
 
 def difflabel(func, *args, **kw):
     '''yields 2-tuples of (output, label) based on the output of func()'''
-    if kw.get(r'opts') and kw[r'opts'].worddiff:
+    if kw.get('opts') and kw['opts'].worddiff:
         dodiffhunk = diffsinglehunkinline
     else:
         dodiffhunk = diffsinglehunk
@@ -2934,7 +2943,7 @@ def trydiff(
         if not text:
             text = b""
         l = len(text)
-        s = hashlib.sha1(b'blob %d\0' % l)
+        s = hashutil.sha1(b'blob %d\0' % l)
         s.update(text)
         return hex(s.digest())
 

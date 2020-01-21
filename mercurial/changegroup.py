@@ -85,7 +85,7 @@ def writechunks(ui, chunks, filename, vfs=None):
                 fh = open(filename, b"wb", 131072)
         else:
             fd, filename = pycompat.mkstemp(prefix=b"hg-bundle-", suffix=b".hg")
-            fh = os.fdopen(fd, r"wb")
+            fh = os.fdopen(fd, "wb")
         cleanup = filename
         for c in chunks:
             fh.write(c)
@@ -287,8 +287,6 @@ class cg1unpacker(object):
         def revmap(x):
             return cl.rev(x)
 
-        changesets = 0
-
         try:
             # The transaction may already carry source information. In this
             # case we use the top level data. We overwrite the argument
@@ -315,15 +313,15 @@ class cg1unpacker(object):
             )
             self.callback = progress.increment
 
-            efiles = set()
+            efilesset = set()
 
             def onchangelog(cl, node):
-                efiles.update(cl.readfiles(node))
+                efilesset.update(cl.readfiles(node))
 
             self.changelogheader()
             deltas = self.deltaiter()
             cgnodes = cl.addgroup(deltas, csmap, trp, addrevisioncb=onchangelog)
-            efiles = len(efiles)
+            efiles = len(efilesset)
 
             if not cgnodes:
                 repo.ui.develwarn(
@@ -436,7 +434,7 @@ class cg1unpacker(object):
 
             if changesets > 0:
 
-                def runhooks():
+                def runhooks(unused_success):
                     # These hooks run when the lock releases, not when the
                     # transaction closes. So it's possible for the changelog
                     # to have changed since we last saw it.
@@ -1150,7 +1148,9 @@ class cgpacker(object):
         def makelookupmflinknode(tree, nodes):
             if fastpathlinkrev:
                 assert not tree
-                return manifests.__getitem__
+                return (
+                    manifests.__getitem__  # pytype: disable=unsupported-operands
+                )
 
             def lookupmflinknode(x):
                 """Callback for looking up the linknode for manifests.

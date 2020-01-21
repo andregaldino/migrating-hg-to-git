@@ -9,11 +9,12 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <string.h>
 
 #include "util.h"
 
 #ifdef IS_PY3K
-#define PYLONG_VALUE(o) ((PyLongObject *)o)->ob_digit[1]
+#define PYLONG_VALUE(o) ((PyLongObject *)o)->ob_digit[0]
 #else
 #define PYLONG_VALUE(o) PyInt_AS_LONG(o)
 #endif
@@ -48,12 +49,19 @@ static inline Py_ssize_t _finddir(const char *path, Py_ssize_t pos)
 	return pos;
 }
 
+/* Mercurial will fail to run on directory hierarchies deeper than
+ * this constant, so we should try and keep this constant as big as
+ * possible.
+ */
+#define MAX_DIRS_DEPTH 2048
+
 static int _addpath(PyObject *dirs, PyObject *path)
 {
 	const char *cpath = PyBytes_AS_STRING(path);
 	Py_ssize_t pos = PyBytes_GET_SIZE(path);
 	PyObject *key = NULL;
 	int ret = -1;
+	size_t num_slashes = 0;
 
 	/* This loop is super critical for performance. That's why we inline
 	 * access to Python structs instead of going through a supported API.
@@ -65,6 +73,20 @@ static int _addpath(PyObject *dirs, PyObject *path)
 	 * unnoticed. */
 	while ((pos = _finddir(cpath, pos - 1)) != -1) {
 		PyObject *val;
+		++num_slashes;
+		if (num_slashes > MAX_DIRS_DEPTH) {
+			PyErr_SetString(PyExc_ValueError,
+			                "Directory hierarchy too deep.");
+			goto bail;
+		}
+
+		/* Sniff for trailing slashes, a marker of an invalid input. */
+		if (pos > 0 && cpath[pos - 1] == '/') {
+			PyErr_SetString(
+			    PyExc_ValueError,
+			    "found invalid consecutive slashes in path");
+			goto bail;
+		}
 
 		key = PyBytes_FromStringAndSize(cpath, pos);
 		if (key == NULL)

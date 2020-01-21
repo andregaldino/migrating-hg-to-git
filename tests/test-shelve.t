@@ -951,6 +951,16 @@ Test shelve --keep
   +++ b/jungle
   @@ -0,0 +1,1 @@
   +babar
+
+Test shelve --delete
+
+  $ hg shelve --list
+  default         (*s ago)    changes to: create conflict (glob)
+  $ hg shelve --delete doesnotexist
+  abort: shelved change 'doesnotexist' not found
+  [255]
+  $ hg shelve --delete default
+
   $ cd ..
 
 Test visibility of in-memory changes inside transaction to external hook

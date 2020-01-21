@@ -23,9 +23,19 @@ from .i18n import _
 
 from . import (
     error,
+    pycompat,
     util,
 )
 from .utils import cborutil
+
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Any,
+        Dict,
+    )
+
+    for t in (Any, Dict):
+        assert t
 
 
 class cmdstate(object):
@@ -50,6 +60,7 @@ class cmdstate(object):
         self.fname = fname
 
     def read(self):
+        # type: () -> Dict[bytes, Any]
         """read the existing state file and return a dict of data stored"""
         return self._read()
 

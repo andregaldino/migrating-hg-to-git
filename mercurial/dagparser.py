@@ -168,7 +168,9 @@ def parsedag(desc):
     if not desc:
         return
 
-    wordchars = pycompat.bytestr(string.ascii_letters + string.digits)
+    wordchars = pycompat.bytestr(
+        string.ascii_letters + string.digits
+    )  # pytype: disable=wrong-arg-types
 
     labels = {}
     p1 = -1
@@ -177,7 +179,9 @@ def parsedag(desc):
     def resolve(ref):
         if not ref:
             return p1
-        elif ref[0] in pycompat.bytestr(string.digits):
+        elif ref[0] in pycompat.bytestr(
+            string.digits
+        ):  # pytype: disable=wrong-arg-types
             return r - int(ref)
         else:
             return labels[ref]
@@ -211,7 +215,9 @@ def parsedag(desc):
 
     c = nextch()
     while c != b'\0':
-        while c in pycompat.bytestr(string.whitespace):
+        while c in pycompat.bytestr(
+            string.whitespace
+        ):  # pytype: disable=wrong-arg-types
             c = nextch()
         if c == b'.':
             yield b'n', (r, [p1])
@@ -219,7 +225,9 @@ def parsedag(desc):
             r += 1
             c = nextch()
         elif c == b'+':
-            c, digs = nextrun(nextch(), pycompat.bytestr(string.digits))
+            c, digs = nextrun(
+                nextch(), pycompat.bytestr(string.digits)
+            )  # pytype: disable=wrong-arg-types
             n = int(digs)
             for i in pycompat.xrange(0, n):
                 yield b'n', (r, [p1])

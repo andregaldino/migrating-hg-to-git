@@ -157,13 +157,12 @@ pub fn pack_dirstate(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::hg_path::HgPathBuf;
-    use std::collections::HashMap;
+    use crate::{utils::hg_path::HgPathBuf, FastHashMap};
 
     #[test]
     fn test_pack_dirstate_empty() {
-        let mut state_map: StateMap = HashMap::new();
-        let copymap = HashMap::new();
+        let mut state_map: StateMap = FastHashMap::default();
+        let copymap = FastHashMap::default();
         let parents = DirstateParents {
             p1: *b"12345678910111213141",
             p2: *b"00000000000000000000",
@@ -194,7 +193,7 @@ mod tests {
         .collect();
         let mut state_map = expected_state_map.clone();
 
-        let copymap = HashMap::new();
+        let copymap = FastHashMap::default();
         let parents = DirstateParents {
             p1: *b"12345678910111213141",
             p2: *b"00000000000000000000",
@@ -230,7 +229,7 @@ mod tests {
         .cloned()
         .collect();
         let mut state_map = expected_state_map.clone();
-        let mut copymap = HashMap::new();
+        let mut copymap = FastHashMap::default();
         copymap.insert(
             HgPathBuf::from_bytes(b"f1"),
             HgPathBuf::from_bytes(b"copyname"),
@@ -270,7 +269,7 @@ mod tests {
         .iter()
         .cloned()
         .collect();
-        let mut copymap = HashMap::new();
+        let mut copymap = FastHashMap::default();
         copymap.insert(
             HgPathBuf::from_bytes(b"f1"),
             HgPathBuf::from_bytes(b"copyname"),
@@ -284,8 +283,8 @@ mod tests {
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
 
-        let mut new_state_map: StateMap = HashMap::new();
-        let mut new_copy_map: CopyMap = HashMap::new();
+        let mut new_state_map: StateMap = FastHashMap::default();
+        let mut new_copy_map: CopyMap = FastHashMap::default();
         let new_parents = parse_dirstate(
             &mut new_state_map,
             &mut new_copy_map,
@@ -341,7 +340,7 @@ mod tests {
         .iter()
         .cloned()
         .collect();
-        let mut copymap = HashMap::new();
+        let mut copymap = FastHashMap::default();
         copymap.insert(
             HgPathBuf::from_bytes(b"f1"),
             HgPathBuf::from_bytes(b"copyname"),
@@ -359,8 +358,8 @@ mod tests {
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
 
-        let mut new_state_map: StateMap = HashMap::new();
-        let mut new_copy_map: CopyMap = HashMap::new();
+        let mut new_state_map: StateMap = FastHashMap::default();
+        let mut new_copy_map: CopyMap = FastHashMap::default();
         let new_parents = parse_dirstate(
             &mut new_state_map,
             &mut new_copy_map,
@@ -388,7 +387,7 @@ mod tests {
         .iter()
         .cloned()
         .collect();
-        let mut copymap = HashMap::new();
+        let mut copymap = FastHashMap::default();
         copymap.insert(
             HgPathBuf::from_bytes(b"f1"),
             HgPathBuf::from_bytes(b"copyname"),
@@ -402,8 +401,8 @@ mod tests {
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
 
-        let mut new_state_map: StateMap = HashMap::new();
-        let mut new_copy_map: CopyMap = HashMap::new();
+        let mut new_state_map: StateMap = FastHashMap::default();
+        let mut new_copy_map: CopyMap = FastHashMap::default();
         let new_parents = parse_dirstate(
             &mut new_state_map,
             &mut new_copy_map,

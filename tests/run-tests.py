@@ -1363,6 +1363,20 @@ class Test(unittest.TestCase):
         if PYTHON3 and os.name == 'nt':
             env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
 
+        # Modified HOME in test environment can confuse Rust tools. So set
+        # CARGO_HOME and RUSTUP_HOME automatically if a Rust toolchain is
+        # present and these variables aren't already defined.
+        cargo_home_path = os.path.expanduser('~/.cargo')
+        rustup_home_path = os.path.expanduser('~/.rustup')
+
+        if os.path.exists(cargo_home_path) and b'CARGO_HOME' not in osenvironb:
+            env['CARGO_HOME'] = cargo_home_path
+        if (
+            os.path.exists(rustup_home_path)
+            and b'RUSTUP_HOME' not in osenvironb
+        ):
+            env['RUSTUP_HOME'] = rustup_home_path
+
         # Reset some environment variables to well-known values so that
         # the tests produce repeatable output.
         env['LANG'] = env['LC_ALL'] = env['LANGUAGE'] = 'C'
@@ -1825,7 +1839,7 @@ class TTest(Test):
                 cmd = rawcmd.split()
                 toggletrace(rawcmd)
                 if len(cmd) == 2 and cmd[0] == b'cd':
-                    l = b'  $ cd %s || exit 1\n' % cmd[1]
+                    rawcmd = b'cd %s || exit 1\n' % cmd[1]
                 script.append(rawcmd)
             elif l.startswith(b'  > '):  # continuations
                 after.setdefault(prepos, []).append(l)
@@ -1973,7 +1987,11 @@ class TTest(Test):
     @staticmethod
     def rematch(el, l):
         try:
-            el = b'(?:' + el + b')'
+            # parse any flags at the beginning of the regex. Only 'i' is
+            # supported right now, but this should be easy to extend.
+            flags, el = re.match(br'^(\(\?i\))?(.*)', el).groups()[0:2]
+            flags = flags or b''
+            el = flags + b'(?:' + el + b')'
             # use \Z to ensure that the regex matches to the end of the string
             if os.name == 'nt':
                 return re.match(el + br'\r?\n\Z', l)
@@ -2246,27 +2264,31 @@ class TestResult(unittest._TextTestResult):
         # os.times module computes the user time and system time spent by
         # child's processes along with real elapsed time taken by a process.
         # This module has one limitation. It can only work for Linux user
-        # and not for Windows.
-        test.started = os.times()
+        # and not for Windows. Hence why we fall back to another function
+        # for wall time calculations.
+        test.started_times = os.times()
+        # TODO use a monotonic clock once support for Python 2.7 is dropped.
+        test.started_time = time.time()
         if self._firststarttime is None:  # thread racy but irrelevant
-            self._firststarttime = test.started[4]
+            self._firststarttime = test.started_time
 
     def stopTest(self, test, interrupted=False):
         super(TestResult, self).stopTest(test)
 
-        test.stopped = os.times()
+        test.stopped_times = os.times()
+        stopped_time = time.time()
 
-        starttime = test.started
-        endtime = test.stopped
+        starttime = test.started_times
+        endtime = test.stopped_times
         origin = self._firststarttime
         self.times.append(
             (
                 test.name,
                 endtime[2] - starttime[2],  # user space CPU time
                 endtime[3] - starttime[3],  # sys  space CPU time
-                endtime[4] - starttime[4],  # real time
-                starttime[4] - origin,  # start date in run context
-                endtime[4] - origin,  # end date in run context
+                stopped_time - test.started_time,  # real time
+                test.started_time - origin,  # start date in run context
+                stopped_time - origin,  # end date in run context
             )
         )
 
@@ -3157,9 +3179,7 @@ class TestRunner(object):
                 expanded_args.append(arg)
         args = expanded_args
 
-        testcasepattern = re.compile(
-            br'([\w-]+\.t|py)(?:#([a-zA-Z0-9_\-\.#]+))'
-        )
+        testcasepattern = re.compile(br'([\w-]+\.t|py)(?:#([a-zA-Z0-9_\-.#]+))')
         tests = []
         for t in args:
             case = []

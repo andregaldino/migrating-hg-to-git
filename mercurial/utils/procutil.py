@@ -11,7 +11,6 @@ from __future__ import absolute_import
 
 import contextlib
 import errno
-import imp
 import io
 import os
 import signal
@@ -32,7 +31,10 @@ from .. import (
     pycompat,
 )
 
-osutil = policy.importmod(r'osutil')
+# Import like this to keep import-checker happy
+from ..utils import resourceutil
+
+osutil = policy.importmod('osutil')
 
 stderr = pycompat.stderr
 stdin = pycompat.stdin
@@ -52,11 +54,11 @@ def isatty(fp):
 if isatty(stdout):
     if pycompat.iswindows:
         # Windows doesn't support line buffering
-        stdout = os.fdopen(stdout.fileno(), r'wb', 0)
+        stdout = os.fdopen(stdout.fileno(), 'wb', 0)
     elif not pycompat.ispy3:
         # on Python 3, stdout (sys.stdout.buffer) is already line buffered and
         # buffering=1 is not handled in binary mode
-        stdout = os.fdopen(stdout.fileno(), r'wb', 1)
+        stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
 if pycompat.iswindows:
     from .. import windows as platform
@@ -211,7 +213,7 @@ def tempfilter(s, cmd):
     inname, outname = None, None
     try:
         infd, inname = pycompat.mkstemp(prefix=b'hg-filter-in-')
-        fp = os.fdopen(infd, r'wb')
+        fp = os.fdopen(infd, 'wb')
         fp.write(s)
         fp.close()
         outfd, outname = pycompat.mkstemp(prefix=b'hg-filter-out-')
@@ -247,24 +249,12 @@ _filtertable = {
 
 
 def filter(s, cmd):
-    b"filter a string through a command that transforms its input to its output"
+    """filter a string through a command that transforms its input to its
+    output"""
     for name, fn in pycompat.iteritems(_filtertable):
         if cmd.startswith(name):
             return fn(s, cmd[len(name) :].lstrip())
     return pipefilter(s, cmd)
-
-
-def mainfrozen():
-    """return True if we are a frozen executable.
-
-    The code supports py2exe (most common, Windows only) and tools/freeze
-    (portable, not much used).
-    """
-    return (
-        pycompat.safehasattr(sys, "frozen")
-        or pycompat.safehasattr(sys, "importers")  # new py2exe
-        or imp.is_frozen(r"__main__")  # old py2exe
-    )  # tools/freeze
 
 
 _hgexecutable = None
@@ -277,21 +267,18 @@ def hgexecutable():
     """
     if _hgexecutable is None:
         hg = encoding.environ.get(b'HG')
-        mainmod = sys.modules[r'__main__']
+        mainmod = sys.modules['__main__']
         if hg:
             _sethgexecutable(hg)
-        elif mainfrozen():
-            if getattr(sys, 'frozen', None) == b'macosx_app':
+        elif resourceutil.mainfrozen():
+            if getattr(sys, 'frozen', None) == 'macosx_app':
                 # Env variable set by py2app
                 _sethgexecutable(encoding.environ[b'EXECUTABLEPATH'])
             else:
                 _sethgexecutable(pycompat.sysexecutable)
         elif (
             not pycompat.iswindows
-            and os.path.basename(
-                pycompat.fsencode(getattr(mainmod, '__file__', b''))
-            )
-            == b'hg'
+            and os.path.basename(getattr(mainmod, '__file__', '')) == 'hg'
         ):
             _sethgexecutable(pycompat.fsencode(mainmod.__file__))
         else:
@@ -340,11 +327,11 @@ def protectstdio(uin, uout):
         nullfd = os.open(os.devnull, os.O_RDONLY)
         os.dup2(nullfd, uin.fileno())
         os.close(nullfd)
-        fin = os.fdopen(newfd, r'rb')
+        fin = os.fdopen(newfd, 'rb')
     if _testfileno(uout, stdout):
         newfd = os.dup(uout.fileno())
         os.dup2(stderr.fileno(), uout.fileno())
-        fout = os.fdopen(newfd, r'wb')
+        fout = os.fdopen(newfd, 'wb')
     return fin, fout
 
 
@@ -361,7 +348,7 @@ def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""
 
     def py2shell(val):
-        b'convert python object into string that is useful to shell'
+        """convert python object into string that is useful to shell"""
         if val is None or val is False:
             return b'0'
         if val is True:
@@ -378,7 +365,9 @@ def shellenviron(environ=None):
 if pycompat.iswindows:
 
     def shelltonative(cmd, env):
-        return platform.shelltocmdexe(cmd, shellenviron(env))
+        return platform.shelltocmdexe(  # pytype: disable=module-attr
+            cmd, shellenviron(env)
+        )
 
     tonativestr = encoding.strfromlocal
 else:
@@ -434,7 +423,10 @@ def system(cmd, environ=None, cwd=None, out=None):
     return rc
 
 
-def gui():
+_is_gui = None
+
+
+def _gui():
     '''Are we running in a GUI?'''
     if pycompat.isdarwin:
         if b'SSH_CONNECTION' in encoding.environ:
@@ -450,6 +442,13 @@ def gui():
         return pycompat.iswindows or encoding.environ.get(b"DISPLAY")
 
 
+def gui():
+    global _is_gui
+    if _is_gui is None:
+        _is_gui = _gui()
+    return _is_gui
+
+
 def hgcmd():
     """Return the command used to execute current hg
 
@@ -457,8 +456,8 @@ def hgcmd():
     to avoid things opening new shell windows like batch files, so we
     get either the python call or current executable.
     """
-    if mainfrozen():
-        if getattr(sys, 'frozen', None) == b'macosx_app':
+    if resourceutil.mainfrozen():
+        if getattr(sys, 'frozen', None) == 'macosx_app':
             # Env variable set by py2app
             return [encoding.environ[b'EXECUTABLEPATH']]
         else:
@@ -545,7 +544,10 @@ if pycompat.iswindows:
     # Following creation flags might create a console GUI window.
     # Using subprocess.CREATE_NEW_CONSOLE might helps.
     # See https://phab.mercurial-scm.org/D1701 for discussion
-    _creationflags = DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    _creationflags = (
+        DETACHED_PROCESS
+        | subprocess.CREATE_NEW_PROCESS_GROUP  # pytype: disable=module-attr
+    )
 
     def runbgcommand(
         script,
@@ -591,6 +593,11 @@ else:
         `Subprocess.wait` function for the spawned process.  This is mostly
         useful for developers that need to make sure the spawned process
         finished before a certain point. (eg: writing test)'''
+        if pycompat.isdarwin:
+            # avoid crash in CoreFoundation in case another thread
+            # calls gui() while we're calling fork().
+            gui()
+
         # double-fork to completely detach from the parent process
         # based on http://code.activestate.com/recipes/278731
         if record_wait is None:

@@ -8,7 +8,6 @@ from __future__ import absolute_import
 
 import collections
 import errno
-import hashlib
 import os
 import stat
 import struct
@@ -24,6 +23,7 @@ from mercurial import (
     util,
 )
 from mercurial.utils import (
+    hashutil,
     storageutil,
     stringutil,
 )
@@ -39,12 +39,12 @@ def isenabled(repo):
 
 
 def getcachekey(reponame, file, id):
-    pathhash = node.hex(hashlib.sha1(file).digest())
+    pathhash = node.hex(hashutil.sha1(file).digest())
     return os.path.join(reponame, pathhash[:2], pathhash[2:], id)
 
 
 def getlocalkey(file, id):
-    pathhash = node.hex(hashlib.sha1(file).digest())
+    pathhash = node.hex(hashutil.sha1(file).digest())
     return os.path.join(pathhash, id)
 
 
@@ -260,9 +260,9 @@ def parsesizeflags(raw):
             # v0, str(int(size)) is the header
             size = int(header)
     except ValueError:
-        raise RuntimeError(r"unexpected remotefilelog header: illegal format")
+        raise RuntimeError("unexpected remotefilelog header: illegal format")
     if size is None:
-        raise RuntimeError(r"unexpected remotefilelog header: no size found")
+        raise RuntimeError("unexpected remotefilelog header: no size found")
     return index + 1, size, flags
 
 

@@ -82,7 +82,7 @@ def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
 
 
 fastannotatecommandargs = {
-    r'options': [
+    'options': [
         (b'r', b'rev', b'.', _(b'annotate the specified revision'), _(b'REV')),
         (b'u', b'user', None, _(b'list the author (long with -v)')),
         (b'f', b'file', None, _(b'list the filename')),
@@ -133,8 +133,8 @@ fastannotatecommandargs = {
     + commands.diffwsopts
     + commands.walkopts
     + commands.formatteropts,
-    r'synopsis': _(b'[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
-    r'inferrepo': True,
+    'synopsis': _(b'[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
+    'inferrepo': True,
 }
 
 
@@ -257,7 +257,7 @@ def fastannotate(ui, repo, *pats, **opts):
 _newopts = set()
 _knownopts = {
     opt[1].replace(b'-', b'_')
-    for opt in (fastannotatecommandargs[r'options'] + commands.globalopts)
+    for opt in (fastannotatecommandargs['options'] + commands.globalopts)
 }
 
 
@@ -269,10 +269,10 @@ def _annotatewrapper(orig, ui, repo, *pats, **opts):
 
     # treat the file as text (skip the isbinary check)
     if ui.configbool(b'fastannotate', b'forcetext'):
-        opts[r'text'] = True
+        opts['text'] = True
 
     # check if we need to do prefetch (client-side)
-    rev = opts.get(r'rev')
+    rev = opts.get('rev')
     if util.safehasattr(repo, 'prefetchfastannotate') and rev is not None:
         paths = list(_matchpaths(repo, rev, pats, pycompat.byteskwargs(opts)))
         repo.prefetchfastannotate(paths)

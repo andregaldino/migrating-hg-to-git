@@ -9,16 +9,15 @@
 //! `hg-core` package.
 //!
 //! From Python, this will be seen as `mercurial.rustext.parsers`
-//!
 use cpython::{
     exc, PyBytes, PyDict, PyErr, PyInt, PyModule, PyResult, PyTuple, Python,
     PythonObject, ToPyObject,
 };
 use hg::{
     pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf,
-    DirstatePackError, DirstateParents, DirstateParseError, PARENT_SIZE,
+    DirstatePackError, DirstateParents, DirstateParseError, FastHashMap,
+    PARENT_SIZE,
 };
-use std::collections::HashMap;
 use std::convert::TryInto;
 
 use crate::dirstate::{extract_dirstate, make_dirstate_tuple};
@@ -30,8 +29,8 @@ fn parse_dirstate_wrapper(
     copymap: PyDict,
     st: PyBytes,
 ) -> PyResult<PyTuple> {
-    let mut dirstate_map = HashMap::new();
-    let mut copies = HashMap::new();
+    let mut dirstate_map = FastHashMap::default();
+    let mut copies = FastHashMap::default();
 
     match parse_dirstate(&mut dirstate_map, &mut copies, st.data(py)) {
         Ok(parents) => {
@@ -86,7 +85,7 @@ fn pack_dirstate_wrapper(
 
     let mut dirstate_map = extract_dirstate(py, &dmap)?;
 
-    let copies: Result<HashMap<HgPathBuf, HgPathBuf>, PyErr> = copymap
+    let copies: Result<FastHashMap<HgPathBuf, HgPathBuf>, PyErr> = copymap
         .items(py)
         .iter()
         .map(|(key, value)| {

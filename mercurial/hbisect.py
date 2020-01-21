@@ -11,6 +11,7 @@
 from __future__ import absolute_import
 
 import collections
+import contextlib
 
 from .i18n import _
 from .node import (
@@ -178,6 +179,15 @@ def checkstate(state):
         raise error.Abort(_(b'cannot bisect (no known good revisions)'))
     else:
         raise error.Abort(_(b'cannot bisect (no known bad revisions)'))
+
+
+@contextlib.contextmanager
+def restore_state(repo, state, node):
+    try:
+        yield
+    finally:
+        state[b'current'] = [node]
+        save_state(repo, state)
 
 
 def get(repo, status):

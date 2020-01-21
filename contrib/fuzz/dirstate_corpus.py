@@ -13,5 +13,5 @@ dirstate = os.path.join(reporoot, '.hg', 'dirstate')
 
 with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     if os.path.exists(dirstate):
-        with open(dirstate) as f:
+        with open(dirstate, 'rb') as f:
             zf.writestr("dirstate", f.read())

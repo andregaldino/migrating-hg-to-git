@@ -63,7 +63,7 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = b'ships-with-hg-core'
 
-_partre = re.compile(br'\{(\d+)\}')
+_partre = re.compile(br'{(\d+)\}')
 
 
 class ShortRepository(object):

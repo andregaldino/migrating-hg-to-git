@@ -679,7 +679,7 @@ def unbundle(repo, proto, heads):
             if not getattr(exc, 'duringunbundle2', False):
                 try:
                     raise
-                except error.Abort:
+                except error.Abort as exc:
                     # The old code we moved used procutil.stderr directly.
                     # We did not change it to minimise code change.
                     # This need to be moved to something proper.

@@ -236,3 +236,36 @@
   $ hg revert -a -r 1 || true
   3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over * (glob)
   abort: z2@109c3a557a73: not found in manifest! (?)
+
+# warning when we have excess remotefilelog fetching
+
+  $ cat > repeated_fetch.py << EOF
+  > import binascii
+  > from mercurial import extensions, registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'repeated-fetch', [], b'', inferrepo=True)
+  > def repeated_fetch(ui, repo, *args, **opts):
+  >     for i in range(20):
+  >         try:
+  >             hexid = (b'%02x' % (i + 1)) * 20
+  >             repo.fileservice.prefetch([(b'somefile.txt', hexid)])
+  >         except Exception:
+  >             pass
+  > EOF
+
+We should only output to the user once. We're ignoring most of the output
+because we're not actually fetching anything real here, all the hashes are
+bogus, so it's just going to be errors and a final summary of all the misses.
+  $ hg --config extensions.repeated_fetch=repeated_fetch.py \
+  >    --config remotefilelog.fetchwarning="fetch warning!" \
+  >    --config extensions.blackbox= \
+  >    repeated-fetch 2>&1 | grep 'fetch warning'
+  fetch warning!
+
+We should output to blackbox three times, with a stack trace on each (though
+that isn't tested here).
+  $ grep 'excess remotefilelog fetching' .hg/blackbox.log
+  .* excess remotefilelog fetching: (re)
+  .* excess remotefilelog fetching: (re)
+  .* excess remotefilelog fetching: (re)

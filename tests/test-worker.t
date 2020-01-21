@@ -2,6 +2,7 @@ Test UI worker interaction
 
   $ cat > t.py <<EOF
   > from __future__ import absolute_import, print_function
+  > import sys
   > import time
   > from mercurial import (
   >     error,
@@ -9,6 +10,7 @@ Test UI worker interaction
   >     ui as uimod,
   >     worker,
   > )
+  > sys.unraisablehook = lambda x: None
   > def abort(ui, args):
   >     if args[0] == 0:
   >         # by first worker for test stability
@@ -101,7 +103,9 @@ Workers should not do cleanups in all cases
   > from __future__ import absolute_import
   > import atexit
   > import os
+  > import sys
   > import time
+  > sys.unraisablehook = lambda x: None
   > oldfork = os.fork
   > count = 0
   > parentpid = os.getpid()

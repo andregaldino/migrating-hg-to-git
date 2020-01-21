@@ -5,9 +5,8 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::{utils::hg_path::HgPathBuf, DirstateParseError};
+use crate::{utils::hg_path::HgPathBuf, DirstateParseError, FastHashMap};
 use std::collections::hash_map;
-use std::collections::HashMap;
 use std::convert::TryFrom;
 
 pub mod dirs_multiset;
@@ -32,9 +31,14 @@ pub struct DirstateEntry {
     pub size: i32,
 }
 
-pub type StateMap = HashMap<HgPathBuf, DirstateEntry>;
+/// A `DirstateEntry` with a size of `-2` means that it was merged from the
+/// other parent. This allows revert to pick the right status back during a
+/// merge.
+pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
+
+pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
 pub type StateMapIter<'a> = hash_map::Iter<'a, HgPathBuf, DirstateEntry>;
-pub type CopyMap = HashMap<HgPathBuf, HgPathBuf>;
+pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
 pub type CopyMapIter<'a> = hash_map::Iter<'a, HgPathBuf, HgPathBuf>;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

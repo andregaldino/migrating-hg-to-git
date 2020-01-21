@@ -78,7 +78,7 @@ class bmstore(object):
         self._nodemap = nodemap = {}  # node: sorted([refspec, ...])
         self._clean = True
         self._aclean = True
-        nm = repo.changelog.nodemap
+        has_node = repo.changelog.index.has_node
         tonode = bin  # force local lookup
         try:
             with _getbkfile(repo) as bkfile:
@@ -89,7 +89,7 @@ class bmstore(object):
                     try:
                         sha, refspec = line.split(b' ', 1)
                         node = tonode(sha)
-                        if node in nm:
+                        if has_node(node):
                             refspec = encoding.tolocal(refspec)
                             refmap[refspec] = node
                             nrefs = nodemap.get(node)
@@ -953,11 +953,18 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     cur = repo[b'.'].node()
     newact = None
     changes = []
-    hiddenrev = None
 
     # unhide revs if any
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
+
+    ctx = scmutil.revsingle(repo, rev, None)
+    # bookmarking wdir means creating a bookmark on p1 and activating it
+    activatenew = not inactive and ctx.rev() is None
+    if ctx.node() is None:
+        ctx = ctx.p1()
+    tgt = ctx.node()
+    assert tgt
 
     for mark in names:
         mark = checkformat(repo, mark)
@@ -965,26 +972,24 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
             newact = mark
         if inactive and mark == repo._activebookmark:
             deactivate(repo)
-            return
-        tgt = cur
-        if rev:
-            ctx = scmutil.revsingle(repo, rev)
-            if ctx.hidden():
-                hiddenrev = ctx.hex()[:12]
-            tgt = ctx.node()
+            continue
         for bm in marks.checkconflict(mark, force, tgt):
             changes.append((bm, None))
         changes.append((mark, tgt))
 
-    if hiddenrev:
-        repo.ui.warn(_(b"bookmarking hidden changeset %s\n") % hiddenrev)
+    # nothing changed but for the one deactivated above
+    if not changes:
+        return
+
+    if ctx.hidden():
+        repo.ui.warn(_(b"bookmarking hidden changeset %s\n") % ctx.hex()[:12])
 
         if ctx.obsolete():
-            msg = obsutil._getfilteredreason(repo, b"%s" % hiddenrev, ctx)
+            msg = obsutil._getfilteredreason(repo, ctx.hex()[:12], ctx)
             repo.ui.warn(b"(%s)\n" % msg)
 
     marks.applychanges(repo, tr, changes)
-    if not inactive and cur == marks[newact] and not rev:
+    if activatenew and cur == marks[newact]:
         activate(repo, newact)
     elif cur != tgt and newact == repo._activebookmark:
         deactivate(repo)

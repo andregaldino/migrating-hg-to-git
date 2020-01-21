@@ -10,29 +10,20 @@
 
 extern "C" {
 
-static PyCodeObject *code;
+static PYCODETYPE *code;
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
 	contrib::initpy(*argv[0]);
-	code = (PyCodeObject *)Py_CompileString(R"py(
-from parsers import (
-    isasciistr,
-    asciilower,
-    asciiupper,
-    encodedir,
-    pathencode,
-    lowerencode,
-)
-
+	code = (PYCODETYPE *)Py_CompileString(R"py(
 try:
     for fn in (
-        isasciistr,
-        asciilower,
-        asciiupper,
-        encodedir,
-        pathencode,
-        lowerencode,
+        parsers.isasciistr,
+        parsers.asciilower,
+        parsers.asciiupper,
+        parsers.encodedir,
+        parsers.pathencode,
+        parsers.lowerencode,
     ):
         try:
             fn(data)
@@ -53,7 +44,7 @@ except Exception as e:
     # to debug failures.
     # print(e)
 )py",
-	                                        "fuzzer", Py_file_input);
+	                                      "fuzzer", Py_file_input);
 	if (!code) {
 		std::cerr << "failed to compile Python code!" << std::endl;
 	}

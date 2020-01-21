@@ -61,7 +61,7 @@ ones.
   - ``<install-root>/etc/mercurial/hgrc.d/*.rc`` (per-installation)
   - ``/etc/mercurial/hgrc`` (per-system)
   - ``/etc/mercurial/hgrc.d/*.rc`` (per-system)
-  - ``<internal>/default.d/*.rc`` (defaults)
+  - ``<internal>/*.rc`` (defaults)
 
 .. container:: verbose.windows
 
@@ -72,19 +72,18 @@ ones.
   - ``%USERPROFILE%\Mercurial.ini`` (per-user)
   - ``%HOME%\.hgrc`` (per-user)
   - ``%HOME%\Mercurial.ini`` (per-user)
-  - ``HKEY_LOCAL_MACHINE\SOFTWARE\Mercurial`` (per-installation)
+  - ``HKEY_LOCAL_MACHINE\SOFTWARE\Mercurial`` (per-system)
   - ``<install-dir>\hgrc.d\*.rc`` (per-installation)
   - ``<install-dir>\Mercurial.ini`` (per-installation)
-  - ``<internal>/default.d/*.rc`` (defaults)
+  - ``%PROGRAMDATA%\Mercurial\hgrc`` (per-system)
+  - ``%PROGRAMDATA%\Mercurial\Mercurial.ini`` (per-system)
+  - ``%PROGRAMDATA%\Mercurial\hgrc.d\*.rc`` (per-system)
+  - ``<internal>/*.rc`` (defaults)
 
   .. note::
 
    The registry key ``HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Mercurial``
    is used when running 32-bit Python on 64-bit Windows.
-
-.. container:: windows
-
-  On Windows 9x, ``%HOME%`` is replaced by ``%APPDATA%``.
 
 .. container:: verbose.plan9
 
@@ -96,7 +95,7 @@ ones.
   - ``<install-root>/lib/mercurial/hgrc.d/*.rc`` (per-installation)
   - ``/lib/mercurial/hgrc`` (per-system)
   - ``/lib/mercurial/hgrc.d/*.rc`` (per-system)
-  - ``<internal>/default.d/*.rc`` (defaults)
+  - ``<internal>/*.rc`` (defaults)
 
 Per-repository configuration options only apply in a
 particular repository. This file is not version-controlled, and
@@ -440,6 +439,12 @@ effect and style see :hg:`help color`.
 
 ``commit.post-status``
     Show status of files in the working directory after successful commit.
+    (default: False)
+
+``merge.require-rev``
+    Require that the revision to merge the current commit with be specified on
+    the command line. If this is enabled and a revision is not specified, the
+    command aborts.
     (default: False)
 
 ``push.require-revs``
@@ -822,18 +827,18 @@ Example for ``~/.hgrc``::
 ----------
 
 Configuration that controls the repository format. Newer format options are more
-powerful but incompatible with some older versions of Mercurial. Format options
+powerful, but incompatible with some older versions of Mercurial. Format options
 are considered at repository initialization only. You need to make a new clone
-for config change to be taken into account.
+for config changes to be taken into account.
 
 For more details about repository format and version compatibility, see
 https://www.mercurial-scm.org/wiki/MissingRequirement
 
 ``usegeneraldelta``
     Enable or disable the "generaldelta" repository format which improves
-    repository compression by allowing "revlog" to store delta against arbitrary
-    revision instead of the previous stored one. This provides significant
-    improvement for repositories with branches.
+    repository compression by allowing "revlog" to store deltas against
+    arbitrary revisions instead of the previously stored one. This provides
+    significant improvement for repositories with branches.
 
     Repositories with this on-disk format require Mercurial version 1.9.
 
@@ -842,7 +847,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 ``dotencode``
     Enable or disable the "dotencode" repository format which enhances
     the "fncache" repository format (which has to be enabled to use
-    dotencode) to avoid issues with filenames starting with ._ on
+    dotencode) to avoid issues with filenames starting with "._" on
     Mac OS X and spaces on Windows.
 
     Repositories with this on-disk format require Mercurial version 1.7.
@@ -880,12 +885,14 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     Enabled by default.
 
 ``revlog-compression``
-    Compression algorithm used by revlog. Supported value are `zlib` and `zstd`.
-    The `zlib` engine is the historical default of Mercurial. `zstd` is a newer
-    format that is usually a net win over `zlib` operating faster at better
-    compression rate. Use `zstd` to reduce CPU usage.
+    Compression algorithm used by revlog. Supported values are `zlib` and
+    `zstd`. The `zlib` engine is the historical default of Mercurial. `zstd` is
+    a newer format that is usually a net win over `zlib`, operating faster at
+    better compression rates. Use `zstd` to reduce CPU usage.
 
-    On some system, Mercurial installation may lack `zstd` supports. Default is `zlib`.
+    On some systems, the Mercurial installation may lack `zstd` support.
+
+    Default is `zlib`.
 
 ``bookmarks-in-store``
     Store bookmarks in .hg/store/. This means that bookmarks are shared when

@@ -42,6 +42,17 @@ from .utils import (
 )
 
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Any,
+        Optional,
+        Tuple,
+    )
+
+    for t in (Any, Optional, Tuple):
+        assert t
+
+
 def getlimit(opts):
     """get the log limit according to option -l/--limit"""
     limit = opts.get(b'limit')
@@ -339,8 +350,11 @@ class changesetprinter(object):
         self._exthook(ctx)
 
         if self.ui.debugflag:
-            files = ctx.p1().status(ctx)[:3]
-            for key, value in zip([b'files', b'files+', b'files-'], files):
+            files = ctx.p1().status(ctx)
+            for key, value in zip(
+                [b'files', b'files+', b'files-'],
+                [files.modified, files.added, files.removed],
+            ):
                 if value:
                     self.ui.write(
                         columns[key] % b" ".join(value),
@@ -470,9 +484,9 @@ class changesetformatter(changesetprinter):
         ):
             files = ctx.p1().status(ctx)
             fm.data(
-                modified=fm.formatlist(files[0], name=b'file'),
-                added=fm.formatlist(files[1], name=b'file'),
-                removed=fm.formatlist(files[2], name=b'file'),
+                modified=fm.formatlist(files.modified, name=b'file'),
+                added=fm.formatlist(files.added, name=b'file'),
+                removed=fm.formatlist(files.removed, name=b'file'),
             )
 
         verbose = not self.ui.debugflag and self.ui.verbose
@@ -584,6 +598,7 @@ class changesettemplater(changesetprinter):
         # write changeset metadata, then patch if requested
         key = self._parts[self._tref]
         self.ui.write(self.t.render(key, props))
+        self._exthook(ctx)
         self._showpatch(ctx, graphwidth)
 
         if self._parts[b'footer']:
@@ -840,6 +855,7 @@ def _initialrevs(repo, opts):
 
 
 def getrevs(repo, pats, opts):
+    # type: (Any, Any, Any) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
     """Return (revs, differ) where revs is a smartset
 
     differ is a changesetdiffer with pre-configured file matcher.
@@ -970,7 +986,7 @@ def getlinerangerevs(repo, userrevs, opts):
     differ = changesetdiffer()
     differ._makefilematcher = filematcher
     differ._makehunksfilter = hunksfilter
-    return revs, differ
+    return smartset.baseset(revs), differ
 
 
 def _graphnodeformatter(ui, displayer):
@@ -999,7 +1015,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
     props = props or {}
     formatnode = _graphnodeformatter(ui, displayer)
     state = graphmod.asciistate()
-    styles = state[b'styles']
+    styles = state.styles
 
     # only set graph styling if HGPLAIN is not set.
     if ui.plain(b'graph'):
@@ -1020,7 +1036,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
                 styles[key] = None
 
         # experimental config: experimental.graphshorten
-        state[b'graphshorten'] = ui.configbool(b'experimental', b'graphshorten')
+        state.graphshorten = ui.configbool(b'experimental', b'graphshorten')
 
     for rev, type, ctx, parents in dag:
         char = formatnode(repo, ctx)

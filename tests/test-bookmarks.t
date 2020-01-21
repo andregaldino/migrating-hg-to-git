@@ -81,10 +81,10 @@ list bookmarks
   abort: bookmark 'A' does not exist
   [255]
   $ hg bookmarks -l -r0
-  abort: --rev is incompatible with --list
+  abort: cannot specify both --list and --rev
   [255]
   $ hg bookmarks -l --inactive
-  abort: --inactive is incompatible with --list
+  abort: cannot specify both --inactive and --list
   [255]
 
   $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
@@ -347,7 +347,7 @@ delete nonexistent bookmark
 delete with --inactive
 
   $ hg bookmark -d --inactive Y
-  abort: --inactive is incompatible with --delete
+  abort: cannot specify both --inactive and --delete
   [255]
 
 bookmark name with spaces should be stripped
@@ -475,15 +475,15 @@ incompatible options
   $ cd repo
 
   $ hg bookmark -m Y -d Z
-  abort: --delete and --rename are incompatible
+  abort: cannot specify both --delete and --rename
   [255]
 
   $ hg bookmark -r 1 -d Z
-  abort: --rev is incompatible with --delete
+  abort: cannot specify both --delete and --rev
   [255]
 
   $ hg bookmark -r 1 -m Z Y
-  abort: --rev is incompatible with --rename
+  abort: cannot specify both --rename and --rev
   [255]
 
 force bookmark with existing name
@@ -607,6 +607,27 @@ activate bookmark on working dir parent without --force
 
   $ hg bookmark --inactive Z
   $ hg bookmark Z
+
+deactivate current 'Z', but also add 'Y'
+
+  $ hg bookmark -d Y
+  $ hg bookmark --inactive Z Y
+  $ hg bookmark -l
+     X2                        1:925d80f479bb
+     Y                         2:db815d6d32e6
+     Z                         2:db815d6d32e6
+     x  y                      2:db815d6d32e6
+  $ hg bookmark Z
+
+bookmark wdir to activate it (issue6218)
+
+  $ hg bookmark -d Z
+  $ hg bookmark -r 'wdir()' Z
+  $ hg bookmark -l
+     X2                        1:925d80f479bb
+     Y                         2:db815d6d32e6
+   * Z                         2:db815d6d32e6
+     x  y                      2:db815d6d32e6
 
 test clone
 

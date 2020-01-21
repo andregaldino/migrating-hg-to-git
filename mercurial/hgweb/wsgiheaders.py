@@ -13,7 +13,7 @@ from __future__ import absolute_import, print_function
 
 import re
 
-tspecials = re.compile(br'[ \(\)<>@,;:\\"/\[\]\?=]')
+tspecials = re.compile(br'[ ()<>@,;:\\"/\[\]?=]')
 
 
 def _formatparam(param, value=None, quote=1):
@@ -129,7 +129,7 @@ class Headers(object):
         return self._headers[:]
 
     def __repr__(self):
-        return r"%s(%r)" % (self.__class__.__name__, self._headers)
+        return "%s(%r)" % (self.__class__.__name__, self._headers)
 
     def __str__(self):
         """str() returns the formatted headers, complete with end line,

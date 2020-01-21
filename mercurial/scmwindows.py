@@ -10,11 +10,12 @@ from . import (
 )
 
 try:
-    import _winreg as winreg
+    import _winreg as winreg  # pytype: disable=import-error
 
     winreg.CloseKey
 except ImportError:
-    import winreg
+    # py2 only
+    import winreg  # pytype: disable=import-error
 
 # MS-DOS 'more' is the only pager available by default on Windows.
 fallbackpager = b'more'
@@ -27,26 +28,41 @@ def systemrcpath():
     # Use mercurial.ini found in directory with hg.exe
     progrc = os.path.join(os.path.dirname(filename), b'mercurial.ini')
     rcpath.append(progrc)
+
+    def _processdir(progrcd):
+        if os.path.isdir(progrcd):
+            for f, kind in util.listdir(progrcd):
+                if f.endswith(b'.rc'):
+                    rcpath.append(os.path.join(progrcd, f))
+
     # Use hgrc.d found in directory with hg.exe
-    progrcd = os.path.join(os.path.dirname(filename), b'hgrc.d')
-    if os.path.isdir(progrcd):
-        for f, kind in util.listdir(progrcd):
-            if f.endswith(b'.rc'):
-                rcpath.append(os.path.join(progrcd, f))
-    # else look for a system rcpath in the registry
+    _processdir(os.path.join(os.path.dirname(filename), b'hgrc.d'))
+
+    # treat a PROGRAMDATA directory as equivalent to /etc/mercurial
+    programdata = encoding.environ.get(b'PROGRAMDATA')
+    if programdata:
+        programdata = os.path.join(programdata, b'Mercurial')
+        _processdir(os.path.join(programdata, b'hgrc.d'))
+
+        ini = os.path.join(programdata, b'mercurial.ini')
+        if os.path.isfile(ini):
+            rcpath.append(ini)
+
+        ini = os.path.join(programdata, b'hgrc')
+        if os.path.isfile(ini):
+            rcpath.append(ini)
+
+    # next look for a system rcpath in the registry
     value = util.lookupreg(
         b'SOFTWARE\\Mercurial', None, winreg.HKEY_LOCAL_MACHINE
     )
-    if not isinstance(value, bytes) or not value:
-        return rcpath
-    value = util.localpath(value)
-    for p in value.split(pycompat.ospathsep):
-        if p.lower().endswith(b'mercurial.ini'):
-            rcpath.append(p)
-        elif os.path.isdir(p):
-            for f, kind in util.listdir(p):
-                if f.endswith(b'.rc'):
-                    rcpath.append(os.path.join(p, f))
+    if value and isinstance(value, bytes):
+        value = util.localpath(value)
+        for p in value.split(pycompat.ospathsep):
+            if p.lower().endswith(b'mercurial.ini'):
+                rcpath.append(p)
+            else:
+                _processdir(p)
     return rcpath
 
 

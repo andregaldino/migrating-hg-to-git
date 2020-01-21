@@ -22,6 +22,7 @@ from mercurial import (
     hg,
     narrowspec,
     node,
+    pathutil,
     pycompat,
     registrar,
     repair,
@@ -136,8 +137,8 @@ def pullnarrowcmd(orig, ui, repo, *args, **opts):
 
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             orig(pullop, kwargs)
-            if opts.get(r'depth'):
-                kwargs[b'depth'] = opts[r'depth']
+            if opts.get('depth'):
+                kwargs[b'depth'] = opts['depth']
 
         wrappedextraprepare = extensions.wrappedfunction(
             exchange, b'_pullbundle2extraprepare', pullbundle2extraprepare_widen
@@ -151,15 +152,15 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps archive command to narrow the default includes."""
     if repository.NARROW_REQUIREMENT in repo.requirements:
         repo_includes, repo_excludes = repo.narrowpats
-        includes = set(opts.get(r'include', []))
-        excludes = set(opts.get(r'exclude', []))
+        includes = set(opts.get('include', []))
+        excludes = set(opts.get('exclude', []))
         includes, excludes, unused_invalid = narrowspec.restrictpatterns(
             includes, excludes, repo_includes, repo_excludes
         )
         if includes:
-            opts[r'include'] = includes
+            opts['include'] = includes
         if excludes:
-            opts[r'exclude'] = excludes
+            opts['exclude'] = excludes
     return orig(ui, repo, *args, **opts)
 
 
@@ -277,7 +278,7 @@ def _narrow(
                     todelete.append(f)
             elif f.startswith(b'meta/'):
                 dir = f[5:-13]
-                dirs = sorted(util.dirs({dir})) + [dir]
+                dirs = sorted(pathutil.dirs({dir})) + [dir]
                 include = True
                 for d in dirs:
                     visit = newmatch.visitdir(d)

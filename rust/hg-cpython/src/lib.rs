@@ -35,6 +35,7 @@ pub mod discovery;
 pub mod exceptions;
 pub mod filepatterns;
 pub mod parsers;
+pub mod revlog;
 pub mod utils;
 
 py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
@@ -49,6 +50,7 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     m.add(py, "dagop", dagops::init_module(py, &dotted_name)?)?;
     m.add(py, "discovery", discovery::init_module(py, &dotted_name)?)?;
     m.add(py, "dirstate", dirstate::init_module(py, &dotted_name)?)?;
+    m.add(py, "revlog", revlog::init_module(py, &dotted_name)?)?;
     m.add(
         py,
         "filepatterns",

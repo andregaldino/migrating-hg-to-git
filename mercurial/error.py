@@ -34,7 +34,7 @@ class Hint(object):
     """
 
     def __init__(self, *args, **kw):
-        self.hint = kw.pop(r'hint', None)
+        self.hint = kw.pop('hint', None)
         super(Hint, self).__init__(*args, **kw)
 
 

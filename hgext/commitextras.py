@@ -58,7 +58,7 @@ def _commit(orig, ui, repo, *pats, **opts):
 
     class repoextra(repo.__class__):
         def commit(self, *innerpats, **inneropts):
-            extras = opts.get(r'extra')
+            extras = opts.get('extra')
             for raw in extras:
                 if b'=' not in raw:
                     msg = _(
@@ -82,7 +82,7 @@ def _commit(orig, ui, repo, *pats, **opts):
                         b"manually"
                     )
                     raise error.Abort(msg % k)
-                inneropts[r'extra'][k] = v
+                inneropts['extra'][k] = v
             return super(repoextra, self).commit(*innerpats, **inneropts)
 
     repo.__class__ = repoextra

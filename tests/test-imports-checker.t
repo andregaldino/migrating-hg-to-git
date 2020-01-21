@@ -47,6 +47,11 @@ Run additional tests for the import checker
   > from .. import os
   > EOF
 
+  $ cat > testpackage/stdlibfrom.py << EOF
+  > from __future__ import absolute_import
+  > from collections import abc
+  > EOF
+
   $ cat > testpackage/symbolimport.py << EOF
   > from __future__ import absolute_import
   > from .unsorted import foo
@@ -150,6 +155,7 @@ Run additional tests for the import checker
   testpackage/requirerelative.py:2: import should be relative: testpackage.unsorted
   testpackage/sortedentries.py:2: imports from testpackage not lexically sorted: bar < foo
   testpackage/stdafterlocal.py:3: stdlib import "os" follows local import: testpackage
+  testpackage/stdlibfrom.py:2: direct symbol import abc from collections
   testpackage/subpackage/levelpriority.py:3: higher-level import should come first: testpackage
   testpackage/subpackage/localimport.py:7: multiple "from .. import" statements
   testpackage/subpackage/localimport.py:8: import should be relative: testpackage.subpackage.levelpriority

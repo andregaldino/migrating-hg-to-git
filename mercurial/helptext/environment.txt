@@ -49,6 +49,9 @@ HGRCPATH
     - if it's a directory, all files ending with .rc are added
     - otherwise, the file itself will be added
 
+HGRCSKIPREPO
+    When set, the .hg/hgrc from repositories are not read.
+
 HGPLAIN
     When set, this disables any configuration settings that might
     change Mercurial's default output. This includes encoding,

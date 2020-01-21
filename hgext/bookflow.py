@@ -101,7 +101,7 @@ def commands_pull(orig, ui, repo, *args, **opts):
 
 
 def commands_branch(orig, ui, repo, label=None, **opts):
-    if label and not opts.get(r'clean') and not opts.get(r'rev'):
+    if label and not opts.get('clean') and not opts.get('rev'):
         raise error.Abort(
             _(
                 b"creating named branches is disabled and you should use bookmarks"

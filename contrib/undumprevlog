@@ -14,16 +14,15 @@ from mercurial import (
     transaction,
     vfs as vfsmod,
 )
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 for fp in (sys.stdin, sys.stdout, sys.stderr):
     procutil.setbinary(fp)
 
 opener = vfsmod.vfs(b'.', False)
-tr = transaction.transaction(sys.stderr.write, opener, {b'store': opener},
-                             b"undump.journal")
+tr = transaction.transaction(
+    sys.stderr.write, opener, {b'store': opener}, b"undump.journal"
+)
 while True:
     l = sys.stdin.readline()
     if not l:
@@ -42,9 +41,9 @@ while True:
         p2 = node.bin(p[1])
     elif l.startswith("length:"):
         length = int(l[8:-1])
-        sys.stdin.readline() # start marker
+        sys.stdin.readline()  # start marker
         d = encoding.strtolocal(sys.stdin.read(length))
-        sys.stdin.readline() # end marker
+        sys.stdin.readline()  # end marker
         r.addrevision(d, tr, lr, p1, p2)
 
 tr.close()

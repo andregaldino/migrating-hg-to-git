@@ -194,8 +194,8 @@ def findglobaltags(ui, repo):
         return alltags
 
     for head in reversed(heads):  # oldest to newest
-        assert (
-            head in repo.changelog.nodemap
+        assert repo.changelog.index.has_node(
+            head
         ), b"tag cache returned bogus head %s" % short(head)
     fnodes = _filterfnodes(tagfnode, reversed(heads))
     alltags = _tagsfromfnodes(ui, repo, fnodes)
@@ -571,7 +571,17 @@ def tag(repo, names, node, message, local, user, date, editor=False):
 
     if not local:
         m = matchmod.exact([b'.hgtags'])
-        if any(repo.status(match=m, unknown=True, ignored=True)):
+        st = repo.status(match=m, unknown=True, ignored=True)
+        if any(
+            (
+                st.modified,
+                st.added,
+                st.removed,
+                st.deleted,
+                st.unknown,
+                st.ignored,
+            )
+        ):
             raise error.Abort(
                 _(b'working copy of .hgtags is changed'),
                 hint=_(b'please commit .hgtags manually'),

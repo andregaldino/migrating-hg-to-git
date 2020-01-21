@@ -299,7 +299,7 @@ def isodatesec(text):
     return dateutil.datestr(text, b'%Y-%m-%d %H:%M:%S %1%2')
 
 
-def indent(text, prefix):
+def indent(text, prefix, firstline=b''):
     '''indent each non-empty line of text after first with prefix.'''
     lines = text.splitlines()
     num_lines = len(lines)
@@ -308,8 +308,8 @@ def indent(text, prefix):
     def indenter():
         for i in pycompat.xrange(num_lines):
             l = lines[i]
-            if i and l.strip():
-                yield prefix
+            if l.strip():
+                yield prefix if i else firstline
             yield l
             if i < num_lines - 1 or endswithnewline:
                 yield b'\n'

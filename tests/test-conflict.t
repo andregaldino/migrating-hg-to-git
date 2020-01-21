@@ -63,12 +63,20 @@
   $ hg status -Tjson
   [
    {
+    "itemtype": "file",
     "path": "a",
-    "status": "M"
+    "status": "M",
+    "unresolved": true
    },
    {
+    "itemtype": "file",
     "path": "a.orig",
     "status": "?"
+   },
+   {
+    "itemtype": "morestatus",
+    "unfinished": "merge",
+    "unfinishedmsg": "To continue:    hg commit\nTo abort:       hg merge --abort"
    }
   ]
 

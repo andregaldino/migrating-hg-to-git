@@ -80,7 +80,10 @@ from . import (
     templateutil,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    resourceutil,
+    stringutil,
+)
 
 # template parsing
 
@@ -611,7 +614,7 @@ def unquotestring(s):
     return s[1:-1]
 
 
-class resourcemapper(object):
+class resourcemapper(object):  # pytype: disable=ignored-metaclass
     """Mapper of internal template resources"""
 
     __metaclass__ = abc.ABCMeta
@@ -1042,7 +1045,10 @@ class templater(object):
 def templatepaths():
     '''return locations used for template files.'''
     pathsrel = [b'templates']
-    paths = [os.path.normpath(os.path.join(util.datapath, f)) for f in pathsrel]
+    paths = [
+        os.path.normpath(os.path.join(resourceutil.datapath, f))
+        for f in pathsrel
+    ]
     return [p for p in paths if os.path.isdir(p)]
 
 

@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import hashlib
 import re
 import struct
 
@@ -24,8 +23,9 @@ from .. import (
     pycompat,
 )
 from ..interfaces import repository
+from ..utils import hashutil
 
-_nullhash = hashlib.sha1(nullid)
+_nullhash = hashutil.sha1(nullid)
 
 
 def hashrevisionsha1(text, p1, p2):
@@ -48,7 +48,7 @@ def hashrevisionsha1(text, p1, p2):
         else:
             a = p2
             b = p1
-        s = hashlib.sha1(a)
+        s = hashutil.sha1(a)
         s.update(b)
     s.update(text)
     return s.digest()

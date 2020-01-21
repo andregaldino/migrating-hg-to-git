@@ -57,18 +57,22 @@ def normalize(s):
 
 
 def poentry(path, lineno, s):
-    return ('#: %s:%d\n' % (path, lineno) +
-            'msgid %s\n' % normalize(s) +
-            'msgstr ""\n')
+    return (
+        '#: %s:%d\n' % (path, lineno)
+        + 'msgid %s\n' % normalize(s)
+        + 'msgstr ""\n'
+    )
+
 
 doctestre = re.compile(r'^ +>>> ', re.MULTILINE)
+
 
 def offset(src, doc, name, lineno, default):
     """Compute offset or issue a warning on stdout."""
     # remove doctest part, in order to avoid backslash mismatching
     m = doctestre.search(doc)
     if m:
-        doc = doc[:m.start()]
+        doc = doc[: m.start()]
 
     # Backslashes in doc appear doubled in src.
     end = src.find(doc.replace('\\', '\\\\'))
@@ -76,9 +80,11 @@ def offset(src, doc, name, lineno, default):
         # This can happen if the docstring contains unnecessary escape
         # sequences such as \" in a triple-quoted string. The problem
         # is that \" is turned into " and so doc wont appear in src.
-        sys.stderr.write("%s:%d:warning:"
-                         " unknown docstr offset, assuming %d lines\n"
-                         % (name, lineno, default))
+        sys.stderr.write(
+            "%s:%d:warning:"
+            " unknown docstr offset, assuming %d lines\n"
+            % (name, lineno, default)
+        )
         return default
     else:
         return src.count('\n', 0, end)
@@ -121,7 +127,7 @@ def docstrings(path):
 
     for func, rstrip in functions:
         if func.__doc__:
-            docobj = func # this might be a proxy to provide formatted doc
+            docobj = func  # this might be a proxy to provide formatted doc
             func = getattr(func, '_origfunc', func)
             funcmod = inspect.getmodule(func)
             extra = ''
@@ -155,7 +161,9 @@ if __name__ == "__main__":
     # accidentally import and extract strings from a Mercurial
     # installation mentioned in PYTHONPATH.
     sys.path.insert(0, os.getcwd())
-    from mercurial import demandimport; demandimport.enable()
+    from mercurial import demandimport
+
+    demandimport.enable()
     for path in sys.argv[1:]:
         if path.endswith('.txt'):
             rawtext(path)

@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
   dh-python \
   less \
   python \
-  python-all-dev \
-  python-docutils \
+  python3-all \
+  python3-all-dev \
+  python3-docutils \
   unzip \
   zip

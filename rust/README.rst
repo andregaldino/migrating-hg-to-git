@@ -3,76 +3,50 @@ Mercurial Rust Code
 ===================
 
 This directory contains various Rust code for the Mercurial project.
+Rust is not required to use (or build) Mercurial, but using it
+improves performance in some areas.
 
-The top-level ``Cargo.toml`` file defines a workspace containing
-all primary Mercurial crates.
+There are currently three independent rust projects:
+- chg. An implementation of chg, in rust instead of C.
+- hgcli. A experiment for starting hg in rust rather than in python,
+  by linking with the python runtime. Probably meant to be replaced by
+  PyOxidizer at some point.
+- hg-core (and hg-cpython/hg-directffi): implementation of some
+  functionality of mercurial in rust, e.g. ancestry computations in
+  revision graphs or pull discovery. The top-level ``Cargo.toml`` file
+  defines a workspace containing these crates.
 
-Building
-========
+Using hg-core
+=============
 
-To build the Rust components::
+Local use (you need to clean previous build artifacts if you have
+built without rust previously)::
 
-   $ cargo build
+  $ HGWITHRUSTEXT=cpython make local # to use ./hg
+  $ HGWITHRUSTEXT=cpython make tests # to run all tests
+  $ (cd tests; HGWITHRUSTEXT=cpython ./run-tests.py) # only the .t
+  $ ./hg debuginstall | grep rust # to validate rust is in use
+  checking module policy (rust+c-allow)
 
-If you prefer a non-debug / release configuration::
+Setting ``HGWITHRUSTEXT`` to other values like ``true`` is deprecated
+and enables only a fraction of the rust code.
+
+Developing hg-core
+==================
+
+Simply run::
 
    $ cargo build --release
 
-Features
---------
+It is possible to build without ``--release``, but it is not
+recommended if performance is of any interest: there can be an order
+of magnitude of degradation when removing ``--release``.
 
-The following Cargo features are available:
+For faster builds, you may want to skip code generation::
 
-localdev (default)
-   Produce files that work with an in-source-tree build.
+  $ cargo check
 
-   In this mode, the build finds and uses a ``python2.7`` binary from
-   ``PATH``. The ``hg`` binary assumes it runs from ``rust/target/<target>hg``
-   and it finds Mercurial files at ``dirname($0)/../../../``.
+You can run only the rust-specific tests (as opposed to tests of
+mercurial as a whole) with::
 
-Build Mechanism
----------------
-
-The produced ``hg`` binary is *bound* to a CPython installation. The
-binary links against and loads a CPython library that is discovered
-at build time (by a ``build.rs`` Cargo build script). The Python
-standard library defined by this CPython installation is also used.
-
-Finding the appropriate CPython installation to use is done by
-the ``python27-sys`` crate's ``build.rs``. Its search order is::
-
-1. ``PYTHON_SYS_EXECUTABLE`` environment variable.
-2. ``python`` executable on ``PATH``
-3. ``python2`` executable on ``PATH``
-4. ``python2.7`` executable on ``PATH``
-
-Additional verification of the found Python will be performed by our
-``build.rs`` to ensure it meets Mercurial's requirements.
-
-Details about the build-time configured Python are built into the
-produced ``hg`` binary. This means that a built ``hg`` binary is only
-suitable for a specific, well-defined role. These roles are controlled
-by Cargo features (see above).
-
-Running
-=======
-
-The ``hgcli`` crate produces an ``hg`` binary. You can run this binary
-via ``cargo run``::
-
-   $ cargo run --manifest-path hgcli/Cargo.toml
-
-Or directly::
-
-   $ target/debug/hg
-   $ target/release/hg
-
-You can also run the test harness with this binary::
-
-   $ ./run-tests.py --with-hg ../rust/target/debug/hg
-
-.. note::
-
-   Integration with the test harness is still preliminary. Remember to
-   ``cargo build`` after changes because the test harness doesn't yet
-   automatically build Rust code.
+  $ cargo test --all

@@ -20,6 +20,7 @@ Data depends on type.
 from __future__ import absolute_import
 
 from .node import nullrev
+from .thirdparty import attr
 from . import (
     dagop,
     pycompat,
@@ -192,7 +193,7 @@ def colored(dag, repo):
 
 def asciiedges(type, char, state, rev, parents):
     """adds edge info to changelog DAG walk suitable for ascii()"""
-    seen = state[b'seen']
+    seen = state.seen
     if rev not in seen:
         seen.append(rev)
     nodeidx = seen.index(rev)
@@ -207,7 +208,7 @@ def asciiedges(type, char, state, rev, parents):
             knownparents.append(parent)
         else:
             newparents.append(parent)
-            state[b'edges'][parent] = state[b'styles'].get(ptype, b'|')
+            state.edges[parent] = state.styles.get(ptype, b'|')
 
     ncols = len(seen)
     width = 1 + ncols * 2
@@ -240,7 +241,7 @@ def asciiedges(type, char, state, rev, parents):
     if nmorecols > 0:
         width += 2
     # remove current node from edge characters, no longer needed
-    state[b'edges'].pop(rev, None)
+    state.edges.pop(rev, None)
     yield (type, char, width, (nodeidx, edges, ncols, nmorecols))
 
 
@@ -322,7 +323,7 @@ def _drawendinglines(lines, extra, edgemap, seen, state):
     while edgechars and edgechars[-1] is None:
         edgechars.pop()
     shift_size = max((edgechars.count(None) * 2) - 1, 0)
-    minlines = 3 if not state[b'graphshorten'] else 2
+    minlines = 3 if not state.graphshorten else 2
     while len(lines) < minlines + shift_size:
         lines.append(extra[:])
 
@@ -344,7 +345,7 @@ def _drawendinglines(lines, extra, edgemap, seen, state):
                 positions[i] = max(pos, targets[i])
                 line[pos] = b'/' if pos > targets[i] else extra[toshift[i]]
 
-    map = {1: b'|', 2: b'~'} if not state[b'graphshorten'] else {1: b'~'}
+    map = {1: b'|', 2: b'~'} if not state.graphshorten else {1: b'~'}
     for i, line in enumerate(lines):
         if None not in line:
             continue
@@ -357,16 +358,16 @@ def _drawendinglines(lines, extra, edgemap, seen, state):
         seen.remove(parent)
 
 
-def asciistate():
-    """returns the initial value for the "state" argument to ascii()"""
-    return {
-        b'seen': [],
-        b'edges': {},
-        b'lastcoldiff': 0,
-        b'lastindex': 0,
-        b'styles': EDGES.copy(),
-        b'graphshorten': False,
-    }
+@attr.s
+class asciistate(object):
+    """State of ascii() graph rendering"""
+
+    seen = attr.ib(init=False, default=attr.Factory(list))
+    edges = attr.ib(init=False, default=attr.Factory(dict))
+    lastcoldiff = attr.ib(init=False, default=0)
+    lastindex = attr.ib(init=False, default=0)
+    styles = attr.ib(init=False, default=attr.Factory(EDGES.copy))
+    graphshorten = attr.ib(init=False, default=False)
 
 
 def outputgraph(ui, graph):
@@ -409,7 +410,7 @@ def ascii(ui, state, type, char, text, coldata):
     idx, edges, ncols, coldiff = coldata
     assert -2 < coldiff < 2
 
-    edgemap, seen = state[b'edges'], state[b'seen']
+    edgemap, seen = state.edges, state.seen
     # Be tolerant of history issues; make sure we have at least ncols + coldiff
     # elements to work with. See test-glog.t for broken history test cases.
     echars = [c for p in seen for c in (edgemap.get(p, b'|'), b' ')]
@@ -452,10 +453,10 @@ def ascii(ui, state, type, char, text, coldata):
         _getnodelineedgestail(
             echars,
             idx,
-            state[b'lastindex'],
+            state.lastindex,
             ncols,
             coldiff,
-            state[b'lastcoldiff'],
+            state.lastcoldiff,
             fix_nodeline_tail,
         )
     )
@@ -485,7 +486,7 @@ def ascii(ui, state, type, char, text, coldata):
 
     # If 'graphshorten' config, only draw shift_interline
     # when there is any non vertical flow in graph.
-    if state[b'graphshorten']:
+    if state.graphshorten:
         if any(c in br'\/' for c in shift_interline if c):
             lines.append(shift_interline)
     # Else, no 'graphshorten' config so draw shift_interline.
@@ -512,5 +513,5 @@ def ascii(ui, state, type, char, text, coldata):
     outputgraph(ui, zip(lines, text))
 
     # ... and start over
-    state[b'lastcoldiff'] = coldiff
-    state[b'lastindex'] = idx
+    state.lastcoldiff = coldiff
+    state.lastindex = idx

@@ -197,7 +197,7 @@ def churn(ui, repo, *pats, **opts):
         return s + b" " * (l - encoding.colwidth(s))
 
     amap = {}
-    aliases = opts.get(r'aliases')
+    aliases = opts.get('aliases')
     if not aliases and os.path.exists(repo.wjoin(b'.hgchurn')):
         aliases = repo.wjoin(b'.hgchurn')
     if aliases:
@@ -215,7 +215,7 @@ def churn(ui, repo, *pats, **opts):
     if not rate:
         return
 
-    if opts.get(r'sort'):
+    if opts.get('sort'):
         rate.sort()
     else:
         rate.sort(key=lambda x: (-sum(x[1]), x))
@@ -228,7 +228,7 @@ def churn(ui, repo, *pats, **opts):
     ui.debug(b"assuming %i character terminal\n" % ttywidth)
     width = ttywidth - maxname - 2 - 2 - 2
 
-    if opts.get(r'diffstat'):
+    if opts.get('diffstat'):
         width -= 15
 
         def format(name, diffstat):

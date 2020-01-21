@@ -153,10 +153,10 @@ def _setuplog(ui):
 
 
 def _clonesparsecmd(orig, ui, repo, *args, **opts):
-    include_pat = opts.get(r'include')
-    exclude_pat = opts.get(r'exclude')
-    enableprofile_pat = opts.get(r'enable_profile')
-    narrow_pat = opts.get(r'narrow')
+    include_pat = opts.get('include')
+    exclude_pat = opts.get('exclude')
+    enableprofile_pat = opts.get('enable_profile')
+    narrow_pat = opts.get('narrow')
     include = exclude = enableprofile = False
     if include_pat:
         pat = include_pat
@@ -209,7 +209,7 @@ def _setupadd(ui):
     )
 
     def _add(orig, ui, repo, *pats, **opts):
-        if opts.get(r'sparse'):
+        if opts.get('sparse'):
             dirs = set()
             for pat in pats:
                 dirname, basename = util.split(pat)

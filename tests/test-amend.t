@@ -129,7 +129,7 @@ Amend with editor
 
   $ echo FOO > $TESTTMP/msg
   $ hg amend -l $TESTTMP/msg -m BAR
-  abort: options --message and --logfile are mutually exclusive
+  abort: cannot specify both --message and --logfile
   [255]
   $ hg amend -l $TESTTMP/msg
   saved backup bundle to $TESTTMP/repo1/.hg/strip-backup/974f07f28537-edb6470a-amend.hg (obsstore-off !)
@@ -447,7 +447,7 @@ rewrite.update-timestamp can be negated by --no-currentdate
 Bad combination of date options:
 
   $ hg amend -D --date '0 0'
-  abort: --date and --currentdate are mutually exclusive
+  abort: cannot specify both --date and --currentdate
   [255]
 
 Close branch
@@ -476,3 +476,33 @@ hg used to include the changes to `a` anyway.
    a |  2 +-
    b |  2 +-
    2 files changed, 2 insertions(+), 2 deletions(-)
+
+Modifying a file while the editor is open can cause dirstate corruption
+(issue6233)
+
+  $ cd $TESTTMP
+  $ hg init modify-during-amend; cd modify-during-amend
+  $ echo r0 > foo; hg commit -qAm "r0"
+  $ echo alpha > foo; hg commit -qm "alpha"
+  $ echo beta >> foo
+  $ cat > $TESTTMP/sleepy_editor.sh <<EOF
+  > echo hi > "\$1"
+  > sleep 3
+  > EOF
+  $ HGEDITOR="sh $TESTTMP/sleepy_editor.sh" hg commit --amend &
+  $ sleep 1
+  $ echo delta >> foo
+  $ sleep 3
+  $ if (hg diff -c . | grep 'delta' >/dev/null) || [ -n "$(hg status)" ]; then
+  >   echo "OK."
+  > else
+  >   echo "Bug detected. 'delta' is not part of the commit OR the wdir"
+  >   echo "Diff and status before rebuild:"
+  >   hg diff
+  >   hg status
+  >   hg debugrebuilddirstate
+  >   echo "Diff and status after rebuild:"
+  >   hg diff
+  >   hg status
+  > fi
+  OK.

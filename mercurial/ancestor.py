@@ -16,7 +16,7 @@ from . import (
     pycompat,
 )
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 
 
 def commonancestorsheads(pfunc, *nodes):
@@ -108,12 +108,12 @@ def ancestors(pfunc, *orignodes):
                 if p == nullrev:
                     continue
                 dp = depth[p]
-                nsp = sp = seen[p]
+                sp = seen[p]
                 if dp <= dv:
                     depth[p] = dv + 1
                     if sp != sv:
                         interesting[sv] += 1
-                        nsp = seen[p] = sv
+                        seen[p] = sv
                         if sp:
                             interesting[sp] -= 1
                             if interesting[sp] == 0:
@@ -331,7 +331,7 @@ class lazyancestors(object):
 
         Result does not include the null revision."""
         self._parentrevs = pfunc
-        self._initrevs = revs = [r for r in revs if r >= stoprev]
+        self._initrevs = [r for r in revs if r >= stoprev]
         self._stoprev = stoprev
         self._inclusive = inclusive
 

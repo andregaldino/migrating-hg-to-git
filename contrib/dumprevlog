@@ -11,22 +11,25 @@ from mercurial import (
     pycompat,
     revlog,
 )
-from mercurial.utils import (
-    procutil,
-)
+from mercurial.utils import procutil
 
 for fp in (sys.stdin, sys.stdout, sys.stderr):
     procutil.setbinary(fp)
+
 
 def binopen(path, mode=b'rb'):
     if b'b' not in mode:
         mode = mode + b'b'
     return open(path, pycompat.sysstr(mode))
+
+
 binopen.options = {}
+
 
 def printb(data, end=b'\n'):
     sys.stdout.flush()
     pycompat.stdout.write(data + end)
+
 
 for f in sys.argv[1:]:
     r = revlog.revlog(binopen, encoding.strtolocal(f))

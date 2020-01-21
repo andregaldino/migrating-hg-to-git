@@ -34,6 +34,7 @@
 //! [`LazyAncestors`]: struct.LazyAncestors.html
 //! [`MissingAncestors`]: struct.MissingAncestors.html
 //! [`AncestorsIterator`]: struct.AncestorsIterator.html
+use crate::revlog::pyindex_to_graph;
 use crate::{
     cindex::Index, conversion::rev_pyiter_collect, exceptions::GraphError,
 };
@@ -73,7 +74,7 @@ py_class!(pub class AncestorsIterator |py| {
                 inclusive: bool) -> PyResult<AncestorsIterator> {
         let initvec: Vec<Revision> = rev_pyiter_collect(py, &initrevs)?;
         let ait = CoreIterator::new(
-            Index::new(py, index)?,
+            pyindex_to_graph(py, index)?,
             initvec,
             stoprev,
             inclusive,
@@ -113,7 +114,8 @@ py_class!(pub class LazyAncestors |py| {
         let initvec: Vec<Revision> = rev_pyiter_collect(py, &initrevs)?;
 
         let lazy =
-            CoreLazy::new(Index::new(py, index)?, initvec, stoprev, inclusive)
+            CoreLazy::new(pyindex_to_graph(py, index)?,
+                          initvec, stoprev, inclusive)
                 .map_err(|e| GraphError::pynew(py, e))?;
 
         Self::create_instance(py, RefCell::new(Box::new(lazy)))
@@ -126,7 +128,7 @@ py_class!(pub class MissingAncestors |py| {
 
     def __new__(_cls, index: PyObject, bases: PyObject) -> PyResult<MissingAncestors> {
         let bases_vec: Vec<Revision> = rev_pyiter_collect(py, &bases)?;
-        let inner = CoreMissing::new(Index::new(py, index)?, bases_vec);
+        let inner = CoreMissing::new(pyindex_to_graph(py, index)?, bases_vec);
         MissingAncestors::create_instance(py, RefCell::new(Box::new(inner)))
     }
 

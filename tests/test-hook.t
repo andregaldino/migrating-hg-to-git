@@ -988,6 +988,7 @@ test python hooks
   ModuleNotFoundError: No module named 'hgext_syntaxerror' (py36 !)
   Traceback (most recent call last): (py3 !)
   HookLoadError: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed (no-py3 !)
+      raise error.HookLoadError( (py38 !)
   mercurial.error.HookLoadError: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed (py3 !)
   abort: preoutgoing.syntaxerror hook is invalid: import of "syntaxerror" failed
 
@@ -1161,6 +1162,7 @@ make sure --traceback works on hook import failure
   ModuleNotFoundError: No module named 'hgext_importfail' (py36 !)
   Traceback (most recent call last):
   HookLoadError: precommit.importfail hook is invalid: import of "importfail" failed (no-py3 !)
+      raise error.HookLoadError( (py38 !)
   mercurial.error.HookLoadError: precommit.importfail hook is invalid: import of "importfail" failed (py3 !)
   abort: precommit.importfail hook is invalid: import of "importfail" failed
 

@@ -15,7 +15,6 @@ import pdb
 import re
 import signal
 import sys
-import time
 import traceback
 
 
@@ -102,7 +101,7 @@ class request(object):
 
 
 def run():
-    b"run the command in sys.argv"
+    """run the command in sys.argv"""
     initstdio()
     with tracing.log('parse args into request'):
         req = request(pycompat.sysargv[1:])
@@ -115,6 +114,8 @@ def run():
 
     # In all cases we try to flush stdio streams.
     if util.safehasattr(req.ui, b'fout'):
+        assert req.ui is not None  # help pytype
+        assert req.ui.fout is not None  # help pytype
         try:
             req.ui.fout.flush()
         except IOError as e:
@@ -122,6 +123,8 @@ def run():
             status = -1
 
     if util.safehasattr(req.ui, b'ferr'):
+        assert req.ui is not None  # help pytype
+        assert req.ui.ferr is not None  # help pytype
         try:
             if err is not None and err.errno != errno.EPIPE:
                 req.ui.ferr.write(
@@ -658,10 +661,10 @@ class cmdalias(object):
 
     def __getattr__(self, name):
         adefaults = {
-            r'norepo': True,
-            r'intents': set(),
-            r'optionalrepo': False,
-            r'inferrepo': False,
+            'norepo': True,
+            'intents': set(),
+            'optionalrepo': False,
+            'inferrepo': False,
         }
         if name not in adefaults:
             raise AttributeError(name)
@@ -1036,8 +1039,8 @@ def _dispatch(req):
             def get_times():
                 t = os.times()
                 if t[4] == 0.0:
-                    # Windows leaves this as zero, so use time.clock()
-                    t = (t[0], t[1], t[2], t[3], time.clock())
+                    # Windows leaves this as zero, so use time.perf_counter()
+                    t = (t[0], t[1], t[2], t[3], util.timer())
                 return t
 
             s = get_times()
@@ -1108,6 +1111,7 @@ def _dispatch(req):
 
         repo = None
         cmdpats = args[:]
+        assert func is not None  # help out pytype
         if not func.norepo:
             # use the repo from the request only if we don't have -R
             if not rpath and not cwd:

@@ -135,7 +135,7 @@ class transaction(util.transactional):
         validator=None,
         releasefn=None,
         checkambigfiles=None,
-        name=r'<unnamed>',
+        name='<unnamed>',
     ):
         """Begin a new transaction
 
@@ -220,8 +220,8 @@ class transaction(util.transactional):
         self._abortcallback = {}
 
     def __repr__(self):
-        name = r'/'.join(self._names)
-        return r'<transaction name=%s, count=%d, usages=%d>' % (
+        name = '/'.join(self._names)
+        return '<transaction name=%s, count=%d, usages=%d>' % (
             name,
             self._count,
             self._usages,
@@ -414,7 +414,7 @@ class transaction(util.transactional):
         self._file.flush()
 
     @active
-    def nest(self, name=r'<unnamed>'):
+    def nest(self, name='<unnamed>'):
         self._count += 1
         self._usages += 1
         self._names.append(name)
@@ -454,6 +454,12 @@ class transaction(util.transactional):
             self._anypending = self._anypending or any
         self._anypending |= self._generatefiles(suffix=b'.pending')
         return self._anypending
+
+    @active
+    def hasfinalize(self, category):
+        """check is a callback already exist for a category
+        """
+        return category in self._finalizecallback
 
     @active
     def addfinalize(self, category, callback):
@@ -500,9 +506,12 @@ class transaction(util.transactional):
             self._validator(self)  # will raise exception if needed
             self._validator = None  # Help prevent cycles.
             self._generatefiles(group=gengroupprefinalize)
-            categories = sorted(self._finalizecallback)
-            for cat in categories:
-                self._finalizecallback[cat](self)
+            while self._finalizecallback:
+                callbacks = self._finalizecallback
+                self._finalizecallback = {}
+                categories = sorted(callbacks)
+                for cat in categories:
+                    callbacks[cat](self)
             # Prevent double usage and help clear cycles.
             self._finalizecallback = None
             self._generatefiles(group=gengrouppostfinalize)

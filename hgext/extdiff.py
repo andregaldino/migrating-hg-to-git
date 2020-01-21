@@ -271,7 +271,7 @@ def _runperfilediff(
         path1a = os.path.join(tmproot, dir1a, commonfile)
         label1a = commonfile + rev1a
         if not os.path.isfile(path1a):
-            path1a = os.devnull
+            path1a = pycompat.osdevnull
 
         path1b = b''
         label1b = b''
@@ -279,7 +279,7 @@ def _runperfilediff(
             path1b = os.path.join(tmproot, dir1b, commonfile)
             label1b = commonfile + rev1b
             if not os.path.isfile(path1b):
-                path1b = os.devnull
+                path1b = pycompat.osdevnull
 
         path2 = os.path.join(dir2root, dir2, commonfile)
         label2 = commonfile + rev2
@@ -401,13 +401,14 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         if node2 is None:
             raise error.Abort(_(b'--patch requires two revisions'))
     else:
-        mod_a, add_a, rem_a = map(
-            set, repo.status(node1a, node2, matcher, listsubrepos=subrepos)[:3]
-        )
+        st = repo.status(node1a, node2, matcher, listsubrepos=subrepos)
+        mod_a, add_a, rem_a = set(st.modified), set(st.added), set(st.removed)
         if do3way:
-            mod_b, add_b, rem_b = map(
-                set,
-                repo.status(node1b, node2, matcher, listsubrepos=subrepos)[:3],
+            stb = repo.status(node1b, node2, matcher, listsubrepos=subrepos)
+            mod_b, add_b, rem_b = (
+                set(stb.modified),
+                set(stb.added),
+                set(stb.removed),
             )
         else:
             mod_b, add_b, rem_b = set(), set(), set()
@@ -467,12 +468,12 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
                 dir1a = os.path.join(tmproot, dir1a, common_file)
                 label1a = common_file + rev1a
                 if not os.path.isfile(dir1a):
-                    dir1a = os.devnull
+                    dir1a = pycompat.osdevnull
                 if do3way:
                     dir1b = os.path.join(tmproot, dir1b, common_file)
                     label1b = common_file + rev1b
                     if not os.path.isfile(dir1b):
-                        dir1b = os.devnull
+                        dir1b = pycompat.osdevnull
                 dir2 = os.path.join(dir2root, dir2, common_file)
                 label2 = common_file + rev2
         else:
@@ -655,7 +656,7 @@ class savedcmd(object):
         # in an unknown encoding anyway), but avoid double separators on
         # Windows
         docpath = stringutil.escapestr(path).replace(b'\\\\', b'\\')
-        self.__doc__ %= {r'path': pycompat.sysstr(stringutil.uirepr(docpath))}
+        self.__doc__ %= {'path': pycompat.sysstr(stringutil.uirepr(docpath))}
         self._cmdline = cmdline
         self._isgui = isgui
 

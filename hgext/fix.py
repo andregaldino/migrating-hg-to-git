@@ -144,9 +144,9 @@ from mercurial import (
     match as matchmod,
     mdiff,
     merge,
-    obsolete,
     pycompat,
     registrar,
+    rewriteutil,
     scmutil,
     util,
     worker,
@@ -249,9 +249,8 @@ def fix(ui, repo, *pats, **opts):
     override this default behavior, though it is not usually desirable to do so.
     """
     opts = pycompat.byteskwargs(opts)
+    cmdutil.check_at_most_one_arg(opts, b'all', b'rev')
     if opts[b'all']:
-        if opts[b'rev']:
-            raise error.Abort(_(b'cannot specify both "--rev" and "--all"'))
         opts[b'rev'] = [b'not public() and not obsolete()']
         opts[b'working_dir'] = True
     with repo.wlock(), repo.lock(), repo.transaction(b'fix'):
@@ -404,7 +403,7 @@ def getrevstofix(ui, repo, opts):
         checkfixablectx(ui, repo, repo[rev])
     if revs:
         cmdutil.checkunfinished(repo)
-        checknodescendants(repo, revs)
+        rewriteutil.precheck(repo, revs, b'fix')
     if opts.get(b'working_dir'):
         revs.add(wdirrev)
         if list(merge.mergestate.read(repo).unresolved()):
@@ -416,22 +415,8 @@ def getrevstofix(ui, repo, opts):
     return revs
 
 
-def checknodescendants(repo, revs):
-    if not obsolete.isenabled(repo, obsolete.allowunstableopt) and repo.revs(
-        b'(%ld::) - (%ld)', revs, revs
-    ):
-        raise error.Abort(
-            _(b'can only fix a changeset together with all its descendants')
-        )
-
-
 def checkfixablectx(ui, repo, ctx):
     """Aborts if the revision shouldn't be replaced with a fixed one."""
-    if not ctx.mutable():
-        raise error.Abort(
-            b'can\'t fix immutable changeset %s'
-            % (scmutil.formatchangeid(ctx),)
-        )
     if ctx.obsolete():
         # It would be better to actually check if the revision has a successor.
         allowdivergence = ui.configbool(
@@ -681,7 +666,7 @@ def showstderr(ui, rev, fixername, stderr):
             if rev is None:
                 ui.warn(_(b'wdir'), label=b'evolve.rev')
             else:
-                ui.warn((str(rev)), label=b'evolve.rev')
+                ui.warn(b'%d' % rev, label=b'evolve.rev')
             ui.warn(b'] %s: %s\n' % (fixername, line))
 
 
@@ -745,36 +730,38 @@ def replacerev(ui, repo, ctx, filedata, replacements):
     ):
         return
 
-    def filectxfn(repo, memctx, path):
-        if path not in ctx:
-            return None
-        fctx = ctx[path]
-        copysource = fctx.copysource()
-        return context.memfilectx(
-            repo,
-            memctx,
-            path=fctx.path(),
-            data=filedata.get(path, fctx.data()),
-            islink=fctx.islink(),
-            isexec=fctx.isexec(),
-            copysource=copysource,
-        )
-
     extra = ctx.extra().copy()
     extra[b'fix_source'] = ctx.hex()
 
-    memctx = context.memctx(
+    wctx = context.overlayworkingctx(repo)
+    wctx.setbase(repo[newp1node])
+    merge.update(
         repo,
-        parents=(newp1node, newp2node),
-        text=ctx.description(),
-        files=set(ctx.files()) | set(filedata.keys()),
-        filectxfn=filectxfn,
-        user=ctx.user(),
-        date=ctx.date(),
-        extra=extra,
-        branch=ctx.branch(),
-        editor=None,
+        ctx.rev(),
+        branchmerge=False,
+        force=True,
+        ancestor=p1rev,
+        mergeancestor=False,
+        wc=wctx,
     )
+    copies.graftcopies(wctx, ctx, ctx.p1())
+
+    for path in filedata.keys():
+        fctx = ctx[path]
+        copysource = fctx.copysource()
+        wctx.write(path, filedata[path], flags=fctx.flags())
+        if copysource:
+            wctx.markcopied(path, copysource)
+
+    memctx = wctx.tomemctx(
+        text=ctx.description(),
+        branch=ctx.branch(),
+        extra=extra,
+        date=ctx.date(),
+        parents=(newp1node, newp2node),
+        user=ctx.user(),
+    )
+
     sucnode = memctx.commit()
     prenode = ctx.node()
     if prenode == sucnode:

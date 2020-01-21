@@ -1,0 +1,141 @@
+{
+    "version": 1, 
+    "interactions": [
+        {
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"7913\",\"phid\":\"PHID-DREV-s4borg2nl7ay2mskktwq\",\"title\":\"cext: fix compiler warning about sign changing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7913\",\"dateCreated\":\"1579207172\",\"dateModified\":\"1579207173\",\"authorPHID\":\"PHID-USER-5iutahkpkhvnxfimqjbk\",\"status\":\"0\",\"statusName\":\"Needs Review\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":6,\"lines.removed\":6},\"branch\":\"default\",\"summary\":\"line.len is a Py_ssize_t, and we're casing to size_t (unsigned). On my compiler,\\nthis causes a warning to be emitted:\\n\\n```\\nmercurial\\/cext\\/manifest.c: In function 'pathlen':\\nmercurial\\/cext\\/manifest.c:48:44: warning: operand of ?: changes signedness from 'Py_ssize_t' {aka 'long int'} to 'long unsigned int' due to unsignedness of other operand [-Wsign-compare]\\n  return (end) ? (size_t)(end - l-\\u003estart) : l-\\u003elen;\\n                                            ^~~~~~\\n```\",\"testPlan\":\"\",\"lineCount\":\"12\",\"activeDiffPHID\":\"PHID-DIFF-vms2yu54d7di7r332dbs\",\"diffs\":[\"19380\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"}],\"error_code\":null,\"error_info\":null}"
+                }, 
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "date": [
+                        "Fri, 17 Jan 2020 01:03:23 GMT"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ]
+                }
+            }, 
+            "request": {
+                "body": "output=json&__conduit__=1&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22ids%22%3A+%5B7913%5D%7D", 
+                "headers": {
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "content-length": [
+                        "146"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.2.2+621-e7ba2449a883)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ]
+                }, 
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.query"
+            }
+        }, 
+        {
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"object\":{\"id\":7913,\"phid\":\"PHID-DREV-s4borg2nl7ay2mskktwq\"},\"transactions\":[{\"phid\":\"PHID-XACT-DREV-7fwthnytbq3bw2p\"},{\"phid\":\"PHID-XACT-DREV-lno5olcencqrgnh\"},{\"phid\":\"PHID-XACT-DREV-uanndmc3t3onueu\"}]},\"error_code\":null,\"error_info\":null}"
+                }, 
+                "headers": {
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "date": [
+                        "Fri, 17 Jan 2020 01:03:23 GMT"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ]
+                }
+            }, 
+            "request": {
+                "body": "output=json&__conduit__=1&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22objectIdentifier%22%3A+%22PHID-DREV-s4borg2nl7ay2mskktwq%22%2C+%22transactions%22%3A+%5B%7B%22type%22%3A+%22accept%22%2C+%22value%22%3A+true%7D%2C+%7B%22type%22%3A+%22comment%22%2C+%22value%22%3A+%22LGTM%22%7D%5D%7D", 
+                "headers": {
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "content-length": [
+                        "338"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.2.2+621-e7ba2449a883)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ]
+                }, 
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.revision.edit"
+            }
+        }
+    ]
+}

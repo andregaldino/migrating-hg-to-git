@@ -71,7 +71,7 @@ Write-Output "updated Mercurial working directory to {revision}"
 BUILD_INNO = r'''
 Set-Location C:\hgdev\src
 $python = "C:\hgdev\python27-{arch}\python.exe"
-C:\hgdev\python37-x64\python.exe contrib\packaging\inno\build.py --python $python
+C:\hgdev\python37-x64\python.exe contrib\packaging\packaging.py inno --python $python
 if ($LASTEXITCODE -ne 0) {{
     throw "process exited non-0: $LASTEXITCODE"
 }}
@@ -88,7 +88,7 @@ if ($LASTEXITCODE -ne 0) {{
 BUILD_WIX = r'''
 Set-Location C:\hgdev\src
 $python = "C:\hgdev\python27-{arch}\python.exe"
-C:\hgdev\python37-x64\python.exe contrib\packaging\wix\build.py --python $python {extra_args}
+C:\hgdev\python37-x64\python.exe contrib\packaging\packaging.py wix --python $python {extra_args}
 if ($LASTEXITCODE -ne 0) {{
     throw "process exited non-0: $LASTEXITCODE"
 }}

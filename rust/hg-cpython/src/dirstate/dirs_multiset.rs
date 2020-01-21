@@ -17,7 +17,7 @@ use cpython::{
 };
 
 use crate::dirstate::extract_dirstate;
-use crate::ref_sharing::{PyLeakedRef, PySharedRefCell};
+use crate::ref_sharing::{PyLeaked, PySharedRefCell};
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirsMultisetIter, DirstateMapError, DirstateParseError,
@@ -47,6 +47,9 @@ py_class!(pub class Dirs |py| {
         let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
             let dirstate = extract_dirstate(py, &map)?;
             DirsMultiset::from_dirstate(&dirstate, skip_state)
+                .map_err(|e| {
+                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
+                })?
         } else {
             let map: Result<Vec<HgPathBuf>, PyErr> = map
                 .iter(py)?
@@ -57,6 +60,9 @@ py_class!(pub class Dirs |py| {
                 })
                 .collect();
             DirsMultiset::from_manifest(&map?)
+                .map_err(|e| {
+                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
+                })?
         };
 
         Self::create_instance(
@@ -68,8 +74,19 @@ py_class!(pub class Dirs |py| {
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {
         self.inner_shared(py).borrow_mut()?.add_path(
             HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
-        );
-        Ok(py.None())
+        ).and(Ok(py.None())).or_else(|e| {
+            match e {
+                DirstateMapError::EmptyPath => {
+                    Ok(py.None())
+                },
+                e => {
+                    Err(PyErr::new::<exc::ValueError, _>(
+                        py,
+                        e.to_string(),
+                    ))
+                }
+            }
+        })
     }
 
     def delpath(&self, path: PyObject) -> PyResult<PyObject> {
@@ -79,20 +96,20 @@ py_class!(pub class Dirs |py| {
             .and(Ok(py.None()))
             .or_else(|e| {
                 match e {
-                    DirstateMapError::PathNotFound(_p) => {
-                        Err(PyErr::new::<exc::ValueError, _>(
-                            py,
-                            "expected a value, found none".to_string(),
-                        ))
-                    }
                     DirstateMapError::EmptyPath => {
                         Ok(py.None())
+                    },
+                    e => {
+                        Err(PyErr::new::<exc::ValueError, _>(
+                            py,
+                            e.to_string(),
+                        ))
                     }
                 }
             })
     }
     def __iter__(&self) -> PyResult<DirsMultisetKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         DirsMultisetKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -123,7 +140,7 @@ impl Dirs {
 
 py_shared_iterator!(
     DirsMultisetKeysIterator,
-    PyLeakedRef<DirsMultisetIter<'static>>,
+    PyLeaked<DirsMultisetIter<'static>>,
     Dirs::translate_key,
     Option<PyBytes>
 );

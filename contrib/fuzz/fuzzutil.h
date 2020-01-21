@@ -34,14 +34,4 @@ using absl::optional;
 	if (level <= DEBUG)                                                    \
 	std::cout
 
-struct two_inputs {
-	std::unique_ptr<char[]> right;
-	size_t right_size;
-	std::unique_ptr<char[]> left;
-	size_t left_size;
-};
-
-/* Split a non-zero-length input into two inputs. */
-contrib::optional<two_inputs> SplitInputs(const uint8_t *Data, size_t Size);
-
 #endif /* CONTRIB_FUZZ_FUZZUTIL_H */

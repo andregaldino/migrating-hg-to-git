@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import itertools
-import os
 import re
 import textwrap
 
@@ -36,7 +35,10 @@ from . import (
     util,
 )
 from .hgweb import webcommands
-from .utils import compression
+from .utils import (
+    compression,
+    resourceutil,
+)
 
 _exclkeywords = {
     b"(ADVANCED)",
@@ -311,11 +313,11 @@ def loaddoc(topic, subdir=None):
     """Return a delayed loader for help/topic.txt."""
 
     def loader(ui):
-        docdir = os.path.join(util.datapath, b'help')
+        package = b'mercurial.helptext'
         if subdir:
-            docdir = os.path.join(docdir, subdir)
-        path = os.path.join(docdir, topic + b".txt")
-        doc = gettext(util.readfile(path))
+            package += b'.' + subdir
+        with resourceutil.open_resource(package, topic + b'.txt') as fp:
+            doc = gettext(fp.read())
         for rewriter in helphooks.get(topic, []):
             doc = rewriter(ui, topic, doc)
         return doc
@@ -805,7 +807,7 @@ def help_(
                     appendcmds(catfns)
 
         ex = opts.get
-        anyopts = ex(r'keyword') or not (ex(r'command') or ex(r'extension'))
+        anyopts = ex('keyword') or not (ex('command') or ex('extension'))
         if not name and anyopts:
             exts = listexts(
                 _(b'enabled extensions:'),

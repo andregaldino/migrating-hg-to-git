@@ -53,15 +53,13 @@ from . import (
 )
 from .utils import (
     compression,
+    hashutil,
     procutil,
     stringutil,
 )
 
-rustdirs = policy.importrust(r'dirstate', r'Dirs')
-
-base85 = policy.importmod(r'base85')
-osutil = policy.importmod(r'osutil')
-parsers = policy.importmod(r'parsers')
+base85 = policy.importmod('base85')
+osutil = policy.importmod('osutil')
 
 b85decode = base85.b85decode
 b85encode = base85.b85encode
@@ -165,23 +163,23 @@ if _dowarn:
     # However, module name set through PYTHONWARNINGS was exactly matched, so
     # we cannot set 'mercurial' and have it match eg: 'mercurial.scmutil'. This
     # makes the whole PYTHONWARNINGS thing useless for our usecase.
-    warnings.filterwarnings(r'default', r'', DeprecationWarning, r'mercurial')
-    warnings.filterwarnings(r'default', r'', DeprecationWarning, r'hgext')
-    warnings.filterwarnings(r'default', r'', DeprecationWarning, r'hgext3rd')
+    warnings.filterwarnings('default', '', DeprecationWarning, 'mercurial')
+    warnings.filterwarnings('default', '', DeprecationWarning, 'hgext')
+    warnings.filterwarnings('default', '', DeprecationWarning, 'hgext3rd')
 if _dowarn and pycompat.ispy3:
     # silence warning emitted by passing user string to re.sub()
     warnings.filterwarnings(
-        r'ignore', r'bad escape', DeprecationWarning, r'mercurial'
+        'ignore', 'bad escape', DeprecationWarning, 'mercurial'
     )
     warnings.filterwarnings(
-        r'ignore', r'invalid escape sequence', DeprecationWarning, r'mercurial'
+        'ignore', 'invalid escape sequence', DeprecationWarning, 'mercurial'
     )
     # TODO: reinvent imp.is_frozen()
     warnings.filterwarnings(
-        r'ignore',
-        r'the imp module is deprecated',
+        'ignore',
+        'the imp module is deprecated',
         DeprecationWarning,
-        r'mercurial',
+        'mercurial',
     )
 
 
@@ -200,7 +198,7 @@ def nouideprecwarn(msg, version, stacklevel=1):
 
 DIGESTS = {
     b'md5': hashlib.md5,
-    b'sha1': hashlib.sha1,
+    b'sha1': hashutil.sha1,
     b'sha512': hashlib.sha512,
 }
 # List of digest types from strongest to weakest
@@ -418,10 +416,16 @@ class bufferedinputpipe(object):
         return data
 
 
-def mmapread(fp):
+def mmapread(fp, size=None):
+    if size == 0:
+        # size of 0 to mmap.mmap() means "all data"
+        # rather than "zero bytes", so special case that.
+        return b''
+    elif size is None:
+        size = 0
     try:
         fd = getattr(fp, 'fileno', lambda: fp)()
-        return mmap.mmap(fd, 0, access=mmap.ACCESS_READ)
+        return mmap.mmap(fd, size, access=mmap.ACCESS_READ)
     except ValueError:
         # Empty files cannot be mmapped, but mmapread should still work.  Check
         # if the file is empty, and if so, return an empty buffer.
@@ -438,42 +442,42 @@ class fileobjectproxy(object):
     """
 
     __slots__ = (
-        r'_orig',
-        r'_observer',
+        '_orig',
+        '_observer',
     )
 
     def __init__(self, fh, observer):
-        object.__setattr__(self, r'_orig', fh)
-        object.__setattr__(self, r'_observer', observer)
+        object.__setattr__(self, '_orig', fh)
+        object.__setattr__(self, '_observer', observer)
 
     def __getattribute__(self, name):
         ours = {
-            r'_observer',
+            '_observer',
             # IOBase
-            r'close',
+            'close',
             # closed if a property
-            r'fileno',
-            r'flush',
-            r'isatty',
-            r'readable',
-            r'readline',
-            r'readlines',
-            r'seek',
-            r'seekable',
-            r'tell',
-            r'truncate',
-            r'writable',
-            r'writelines',
+            'fileno',
+            'flush',
+            'isatty',
+            'readable',
+            'readline',
+            'readlines',
+            'seek',
+            'seekable',
+            'tell',
+            'truncate',
+            'writable',
+            'writelines',
             # RawIOBase
-            r'read',
-            r'readall',
-            r'readinto',
-            r'write',
+            'read',
+            'readall',
+            'readinto',
+            'write',
             # BufferedIOBase
             # raw is a property
-            r'detach',
+            'detach',
             # read defined above
-            r'read1',
+            'read1',
             # readinto defined above
             # write defined above
         }
@@ -482,30 +486,30 @@ class fileobjectproxy(object):
         if name in ours:
             return object.__getattribute__(self, name)
 
-        return getattr(object.__getattribute__(self, r'_orig'), name)
+        return getattr(object.__getattribute__(self, '_orig'), name)
 
     def __nonzero__(self):
-        return bool(object.__getattribute__(self, r'_orig'))
+        return bool(object.__getattribute__(self, '_orig'))
 
     __bool__ = __nonzero__
 
     def __delattr__(self, name):
-        return delattr(object.__getattribute__(self, r'_orig'), name)
+        return delattr(object.__getattribute__(self, '_orig'), name)
 
     def __setattr__(self, name, value):
-        return setattr(object.__getattribute__(self, r'_orig'), name, value)
+        return setattr(object.__getattribute__(self, '_orig'), name, value)
 
     def __iter__(self):
-        return object.__getattribute__(self, r'_orig').__iter__()
+        return object.__getattribute__(self, '_orig').__iter__()
 
     def _observedcall(self, name, *args, **kwargs):
         # Call the original object.
-        orig = object.__getattribute__(self, r'_orig')
+        orig = object.__getattribute__(self, '_orig')
         res = getattr(orig, name)(*args, **kwargs)
 
         # Call a method on the observer of the same name with arguments
         # so it can react, log, etc.
-        observer = object.__getattribute__(self, r'_observer')
+        observer = object.__getattribute__(self, '_observer')
         fn = getattr(observer, name, None)
         if fn:
             fn(res, *args, **kwargs)
@@ -513,98 +517,98 @@ class fileobjectproxy(object):
         return res
 
     def close(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'close', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'close', *args, **kwargs
         )
 
     def fileno(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'fileno', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'fileno', *args, **kwargs
         )
 
     def flush(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'flush', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'flush', *args, **kwargs
         )
 
     def isatty(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'isatty', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'isatty', *args, **kwargs
         )
 
     def readable(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readable', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readable', *args, **kwargs
         )
 
     def readline(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readline', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readline', *args, **kwargs
         )
 
     def readlines(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readlines', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readlines', *args, **kwargs
         )
 
     def seek(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'seek', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'seek', *args, **kwargs
         )
 
     def seekable(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'seekable', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'seekable', *args, **kwargs
         )
 
     def tell(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'tell', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'tell', *args, **kwargs
         )
 
     def truncate(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'truncate', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'truncate', *args, **kwargs
         )
 
     def writable(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'writable', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'writable', *args, **kwargs
         )
 
     def writelines(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'writelines', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'writelines', *args, **kwargs
         )
 
     def read(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'read', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'read', *args, **kwargs
         )
 
     def readall(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readall', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readall', *args, **kwargs
         )
 
     def readinto(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'readinto', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'readinto', *args, **kwargs
         )
 
     def write(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'write', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'write', *args, **kwargs
         )
 
     def detach(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'detach', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'detach', *args, **kwargs
         )
 
     def read1(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'read1', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'read1', *args, **kwargs
         )
 
 
@@ -651,18 +655,18 @@ class observedbufferedinputpipe(bufferedinputpipe):
 
 
 PROXIED_SOCKET_METHODS = {
-    r'makefile',
-    r'recv',
-    r'recvfrom',
-    r'recvfrom_into',
-    r'recv_into',
-    r'send',
-    r'sendall',
-    r'sendto',
-    r'setblocking',
-    r'settimeout',
-    r'gettimeout',
-    r'setsockopt',
+    'makefile',
+    'recv',
+    'recvfrom',
+    'recvfrom_into',
+    'recv_into',
+    'send',
+    'sendall',
+    'sendto',
+    'setblocking',
+    'settimeout',
+    'gettimeout',
+    'setsockopt',
 }
 
 
@@ -676,39 +680,39 @@ class socketproxy(object):
     """
 
     __slots__ = (
-        r'_orig',
-        r'_observer',
+        '_orig',
+        '_observer',
     )
 
     def __init__(self, sock, observer):
-        object.__setattr__(self, r'_orig', sock)
-        object.__setattr__(self, r'_observer', observer)
+        object.__setattr__(self, '_orig', sock)
+        object.__setattr__(self, '_observer', observer)
 
     def __getattribute__(self, name):
         if name in PROXIED_SOCKET_METHODS:
             return object.__getattribute__(self, name)
 
-        return getattr(object.__getattribute__(self, r'_orig'), name)
+        return getattr(object.__getattribute__(self, '_orig'), name)
 
     def __delattr__(self, name):
-        return delattr(object.__getattribute__(self, r'_orig'), name)
+        return delattr(object.__getattribute__(self, '_orig'), name)
 
     def __setattr__(self, name, value):
-        return setattr(object.__getattribute__(self, r'_orig'), name, value)
+        return setattr(object.__getattribute__(self, '_orig'), name, value)
 
     def __nonzero__(self):
-        return bool(object.__getattribute__(self, r'_orig'))
+        return bool(object.__getattribute__(self, '_orig'))
 
     __bool__ = __nonzero__
 
     def _observedcall(self, name, *args, **kwargs):
         # Call the original object.
-        orig = object.__getattribute__(self, r'_orig')
+        orig = object.__getattribute__(self, '_orig')
         res = getattr(orig, name)(*args, **kwargs)
 
         # Call a method on the observer of the same name with arguments
         # so it can react, log, etc.
-        observer = object.__getattribute__(self, r'_observer')
+        observer = object.__getattribute__(self, '_observer')
         fn = getattr(observer, name, None)
         if fn:
             fn(res, *args, **kwargs)
@@ -716,13 +720,13 @@ class socketproxy(object):
         return res
 
     def makefile(self, *args, **kwargs):
-        res = object.__getattribute__(self, r'_observedcall')(
-            r'makefile', *args, **kwargs
+        res = object.__getattribute__(self, '_observedcall')(
+            'makefile', *args, **kwargs
         )
 
         # The file object may be used for I/O. So we turn it into a
         # proxy using our observer.
-        observer = object.__getattribute__(self, r'_observer')
+        observer = object.__getattribute__(self, '_observer')
         return makeloggingfileobject(
             observer.fh,
             res,
@@ -734,62 +738,68 @@ class socketproxy(object):
         )
 
     def recv(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recv', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recv', *args, **kwargs
         )
 
     def recvfrom(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recvfrom', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recvfrom', *args, **kwargs
         )
 
     def recvfrom_into(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recvfrom_into', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recvfrom_into', *args, **kwargs
         )
 
     def recv_into(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'recv_info', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'recv_info', *args, **kwargs
         )
 
     def send(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'send', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'send', *args, **kwargs
         )
 
     def sendall(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'sendall', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'sendall', *args, **kwargs
         )
 
     def sendto(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'sendto', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'sendto', *args, **kwargs
         )
 
     def setblocking(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'setblocking', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'setblocking', *args, **kwargs
         )
 
     def settimeout(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'settimeout', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'settimeout', *args, **kwargs
         )
 
     def gettimeout(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'gettimeout', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'gettimeout', *args, **kwargs
         )
 
     def setsockopt(self, *args, **kwargs):
-        return object.__getattribute__(self, r'_observedcall')(
-            r'setsockopt', *args, **kwargs
+        return object.__getattribute__(self, '_observedcall')(
+            'setsockopt', *args, **kwargs
         )
 
 
 class baseproxyobserver(object):
+    def __init__(self, fh, name, logdata, logdataapis):
+        self.fh = fh
+        self.name = name
+        self.logdata = logdata
+        self.logdataapis = logdataapis
+
     def _writedata(self, data):
         if not self.logdata:
             if self.logdataapis:
@@ -826,10 +836,7 @@ class fileobjectobserver(baseproxyobserver):
     def __init__(
         self, fh, name, reads=True, writes=True, logdata=False, logdataapis=True
     ):
-        self.fh = fh
-        self.name = name
-        self.logdata = logdata
-        self.logdataapis = logdataapis
+        super(fileobjectobserver, self).__init__(fh, name, logdata, logdataapis)
         self.reads = reads
         self.writes = writes
 
@@ -952,13 +959,10 @@ class socketobserver(baseproxyobserver):
         logdata=False,
         logdataapis=True,
     ):
-        self.fh = fh
-        self.name = name
+        super(socketobserver, self).__init__(fh, name, logdata, logdataapis)
         self.reads = reads
         self.writes = writes
         self.states = states
-        self.logdata = logdata
-        self.logdataapis = logdataapis
 
     def makefile(self, res, mode=None, bufsize=None):
         if not self.states:
@@ -1168,13 +1172,15 @@ def versiontuple(v=None, n=4):
     """
     if not v:
         v = version()
-    m = remod.match(br'(\d+(?:\.\d+){,2})[\+-]?(.*)', v)
+    m = remod.match(br'(\d+(?:\.\d+){,2})[+-]?(.*)', v)
     if not m:
         vparts, extra = b'', v
     elif m.group(2):
         vparts, extra = m.groups()
     else:
         vparts, extra = m.group(1), None
+
+    assert vparts is not None  # help pytype
 
     vints = []
     for i in vparts.split(b'.'):
@@ -1198,12 +1204,12 @@ def cachefunc(func):
     '''cache the result of function calls'''
     # XXX doesn't handle keywords args
     if func.__code__.co_argcount == 0:
-        cache = []
+        listcache = []
 
         def f():
-            if len(cache) == 0:
-                cache.append(func())
-            return cache[0]
+            if len(listcache) == 0:
+                listcache.append(func())
+            return listcache[0]
 
         return f
     cache = {}
@@ -1254,6 +1260,9 @@ class sortdict(collections.OrderedDict):
     >>> d2.update([(b'a', 2)])
     >>> list(d2.keys()) # should still be in last-set order
     ['b', 'a']
+    >>> d1.insert(1, b'a.5', 0.5)
+    >>> d1
+    sortdict([('a', 0), ('a.5', 0.5), ('b', 1)])
     '''
 
     def __setitem__(self, key, value):
@@ -1267,6 +1276,14 @@ class sortdict(collections.OrderedDict):
             if isinstance(src, dict):
                 src = pycompat.iteritems(src)
             for k, v in src:
+                self[k] = v
+
+    def insert(self, position, key, value):
+        for (i, (k, v)) in enumerate(list(self.items())):
+            if i == position:
+                self[key] = value
+            if i >= position:
+                del self[k]
                 self[k] = v
 
 
@@ -1304,7 +1321,7 @@ class cowsortdict(cow, sortdict):
     """
 
 
-class transactional(object):
+class transactional(object):  # pytype: disable=ignored-metaclass
     """Base class for making a transactional type into a context manager."""
 
     __metaclass__ = abc.ABCMeta
@@ -1362,7 +1379,7 @@ class _lrucachenode(object):
     pair for the dictionary entry.
     """
 
-    __slots__ = (r'next', r'prev', r'key', r'value', r'cost')
+    __slots__ = ('next', 'prev', 'key', 'value', 'cost')
 
     def __init__(self):
         self.next = None
@@ -1483,6 +1500,8 @@ class lrucachedict(object):
             if default is _notset:
                 raise
             return default
+
+        assert node is not None  # help pytype
         value = node.value
         self.totalcost -= node.cost
         node.markempty()
@@ -1569,6 +1588,8 @@ class lrucachedict(object):
         n = self._head.prev
         while n.key is _notset:
             n = n.prev
+
+        assert n is not None  # help pytype
 
         key, value = n.key, n.value
 
@@ -1825,16 +1846,6 @@ def pathto(root, n1, n2):
     return pycompat.ossep.join(([b'..'] * len(a)) + b) or b'.'
 
 
-# the location of data files matching the source code
-if procutil.mainfrozen() and getattr(sys, 'frozen', None) != b'macosx_app':
-    # executable version (py2exe) doesn't support __file__
-    datapath = os.path.dirname(pycompat.sysexecutable)
-else:
-    datapath = os.path.dirname(pycompat.fsencode(__file__))
-
-i18n.setdatapath(datapath)
-
-
 def checksignature(func):
     '''wrap a function with code to check for calling errors'''
 
@@ -2053,15 +2064,17 @@ def checkwinfilename(path):
             )
 
 
+timer = getattr(time, "perf_counter", None)
+
 if pycompat.iswindows:
     checkosfilename = checkwinfilename
-    timer = time.clock
+    if not timer:
+        timer = time.clock
 else:
-    checkosfilename = platform.checkosfilename
-    timer = time.time
-
-if safehasattr(time, "perf_counter"):
-    timer = time.perf_counter
+    # mercurial.windows doesn't have platform.checkosfilename
+    checkosfilename = platform.checkosfilename  # pytype: disable=module-attr
+    if not timer:
+        timer = time.time
 
 
 def makelock(info, pathname):
@@ -2132,7 +2145,7 @@ def fscasesensitive(path):
 
 
 try:
-    import re2
+    import re2  # pytype: disable=import-error
 
     _re2 = None
 except ImportError:
@@ -3479,6 +3492,7 @@ def debugstacktrace(
     f=procutil.stderr,
     otherf=procutil.stdout,
     depth=0,
+    prefix=b'',
 ):
     '''Writes a message to f (stderr) with a nicely formatted stacktrace.
     Skips the 'skip' entries closest to the call, then show 'depth' entries.
@@ -3488,66 +3502,10 @@ def debugstacktrace(
     '''
     if otherf:
         otherf.flush()
-    f.write(b'%s at:\n' % msg.rstrip())
+    f.write(b'%s%s at:\n' % (prefix, msg.rstrip()))
     for line in getstackframes(skip + 1, depth=depth):
-        f.write(line)
+        f.write(prefix + line)
     f.flush()
-
-
-class dirs(object):
-    '''a multiset of directory names from a dirstate or manifest'''
-
-    def __init__(self, map, skip=None):
-        self._dirs = {}
-        addpath = self.addpath
-        if isinstance(map, dict) and skip is not None:
-            for f, s in pycompat.iteritems(map):
-                if s[0] != skip:
-                    addpath(f)
-        elif skip is not None:
-            raise error.ProgrammingError(
-                b"skip character is only supported with a dict source"
-            )
-        else:
-            for f in map:
-                addpath(f)
-
-    def addpath(self, path):
-        dirs = self._dirs
-        for base in finddirs(path):
-            if base in dirs:
-                dirs[base] += 1
-                return
-            dirs[base] = 1
-
-    def delpath(self, path):
-        dirs = self._dirs
-        for base in finddirs(path):
-            if dirs[base] > 1:
-                dirs[base] -= 1
-                return
-            del dirs[base]
-
-    def __iter__(self):
-        return iter(self._dirs)
-
-    def __contains__(self, d):
-        return d in self._dirs
-
-
-if safehasattr(parsers, 'dirs'):
-    dirs = parsers.dirs
-
-if rustdirs is not None:
-    dirs = rustdirs
-
-
-def finddirs(path):
-    pos = path.rfind(b'/')
-    while pos != -1:
-        yield path[:pos]
-        pos = path.rfind(b'/', 0, pos)
-    yield b''
 
 
 # convenient shortcut

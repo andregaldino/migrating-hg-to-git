@@ -74,6 +74,14 @@ HGRCPATH
     like the username and extensions that may be required to interface
     with a repository.
 
+HGRCSKIPREPO
+    When set, the .hg/hgrc from repositories are not read.
+
+    Note that not reading the repository's configuration can have
+    unintended consequences, as the repository config files can define
+    things like extensions that are required for access to the
+    repository.
+
 Command-line Flags
 ==================
 

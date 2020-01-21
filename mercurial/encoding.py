@@ -20,7 +20,24 @@ from . import (
 
 from .pure import charencode as charencodepure
 
-charencode = policy.importmod(r'charencode')
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Any,
+        Callable,
+        List,
+        Text,
+        Type,
+        TypeVar,
+        Union,
+    )
+
+    # keep pyflakes happy
+    for t in (Any, Callable, List, Text, Type, Union):
+        assert t
+
+    _Tlocalstr = TypeVar('_Tlocalstr', bound='localstr')
+
+charencode = policy.importmod('charencode')
 
 isasciistr = charencode.isasciistr
 asciilower = charencode.asciilower
@@ -45,6 +62,7 @@ assert all(i.startswith((b"\xe2", b"\xef")) for i in _ignore)
 
 
 def hfsignoreclean(s):
+    # type: (bytes) -> bytes
     """Remove codepoints ignored by HFS+ from s.
 
     >>> hfsignoreclean(u'.h\u200cg'.encode('utf-8'))
@@ -69,7 +87,7 @@ else:
     # preferred encoding isn't known yet; use utf-8 to avoid unicode error
     # and recreate it once encoding is settled
     environ = dict(
-        (k.encode(r'utf-8'), v.encode(r'utf-8'))
+        (k.encode('utf-8'), v.encode('utf-8'))
         for k, v in os.environ.items()  # re-exports
     )
 
@@ -103,6 +121,13 @@ class localstr(bytes):
         s._utf8 = u
         return s
 
+    if pycompat.TYPE_CHECKING:
+        # pseudo implementation to help pytype see localstr() constructor
+        def __init__(self, u, l):
+            # type: (bytes, bytes) -> None
+            super(localstr, self).__init__(l)
+            self._utf8 = u
+
     def __hash__(self):
         return hash(self._utf8)  # avoid collisions in local string space
 
@@ -119,6 +144,7 @@ class safelocalstr(bytes):
 
 
 def tolocal(s):
+    # type: (bytes) -> bytes
     """
     Convert a string from internal UTF-8 to local encoding
 
@@ -162,7 +188,7 @@ def tolocal(s):
             if encoding == b'UTF-8':
                 # fast path
                 return s
-            r = u.encode(_sysstr(encoding), r"replace")
+            r = u.encode(_sysstr(encoding), "replace")
             if u == r.decode(_sysstr(encoding)):
                 # r is a safe, non-lossy encoding of s
                 return safelocalstr(r)
@@ -171,7 +197,7 @@ def tolocal(s):
             # we should only get here if we're looking at an ancient changeset
             try:
                 u = s.decode(_sysstr(fallbackencoding))
-                r = u.encode(_sysstr(encoding), r"replace")
+                r = u.encode(_sysstr(encoding), "replace")
                 if u == r.decode(_sysstr(encoding)):
                     # r is a safe, non-lossy encoding of s
                     return safelocalstr(r)
@@ -179,12 +205,13 @@ def tolocal(s):
             except UnicodeDecodeError:
                 u = s.decode("utf-8", "replace")  # last ditch
                 # can't round-trip
-                return u.encode(_sysstr(encoding), r"replace")
+                return u.encode(_sysstr(encoding), "replace")
     except LookupError as k:
         raise error.Abort(k, hint=b"please check your locale settings")
 
 
 def fromlocal(s):
+    # type: (bytes) -> bytes
     """
     Convert a string from the local character encoding to UTF-8
 
@@ -214,16 +241,19 @@ def fromlocal(s):
 
 
 def unitolocal(u):
+    # type: (Text) -> bytes
     """Convert a unicode string to a byte string of local encoding"""
     return tolocal(u.encode('utf-8'))
 
 
 def unifromlocal(s):
+    # type: (bytes) -> Text
     """Convert a byte string of local encoding to a unicode string"""
     return fromlocal(s).decode('utf-8')
 
 
 def unimethod(bytesfunc):
+    # type: (Callable[[Any], bytes]) -> Callable[[Any], Text]
     """Create a proxy method that forwards __unicode__() and __str__() of
     Python 3 to __bytes__()"""
 
@@ -241,15 +271,22 @@ if pycompat.ispy3:
     strfromlocal = unifromlocal
     strmethod = unimethod
 else:
-    strtolocal = pycompat.identity
-    strfromlocal = pycompat.identity
+
+    def strtolocal(s):
+        # type: (str) -> bytes
+        return s  # pytype: disable=bad-return-type
+
+    def strfromlocal(s):
+        # type: (bytes) -> str
+        return s  # pytype: disable=bad-return-type
+
     strmethod = pycompat.identity
 
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
     environ = dict(
-        (tolocal(k.encode(r'utf-8')), tolocal(v.encode(r'utf-8')))
+        (tolocal(k.encode('utf-8')), tolocal(v.encode('utf-8')))
         for k, v in os.environ.items()  # re-exports
     )
 
@@ -274,12 +311,14 @@ _wide = _sysstr(
 
 
 def colwidth(s):
-    b"Find the column width of a string for display in the local encoding"
-    return ucolwidth(s.decode(_sysstr(encoding), r'replace'))
+    # type: (bytes) -> int
+    """Find the column width of a string for display in the local encoding"""
+    return ucolwidth(s.decode(_sysstr(encoding), 'replace'))
 
 
 def ucolwidth(d):
-    b"Find the column width of a Unicode string for display"
+    # type: (Text) -> int
+    """Find the column width of a Unicode string for display"""
     eaw = getattr(unicodedata, 'east_asian_width', None)
     if eaw is not None:
         return sum([eaw(c) in _wide and 2 or 1 for c in d])
@@ -287,15 +326,18 @@ def ucolwidth(d):
 
 
 def getcols(s, start, c):
+    # type: (bytes, int, int) -> bytes
     '''Use colwidth to find a c-column substring of s starting at byte
     index start'''
     for x in pycompat.xrange(start + c, len(s)):
         t = s[start:x]
         if colwidth(t) == c:
             return t
+    raise ValueError('substring not found')
 
 
 def trim(s, width, ellipsis=b'', leftside=False):
+    # type: (bytes, int, bytes, bool) -> bytes
     """Trim string 's' to at most 'width' columns (including 'ellipsis').
 
     If 'leftside' is True, left side of string 's' is trimmed.
@@ -393,7 +435,8 @@ def trim(s, width, ellipsis=b'', leftside=False):
 
 
 def lower(s):
-    b"best-effort encoding-aware case-folding of local string s"
+    # type: (bytes) -> bytes
+    """best-effort encoding-aware case-folding of local string s"""
     try:
         return asciilower(s)
     except UnicodeDecodeError:
@@ -415,7 +458,8 @@ def lower(s):
 
 
 def upper(s):
-    b"best-effort encoding-aware case-folding of local string s"
+    # type: (bytes) -> bytes
+    """best-effort encoding-aware case-folding of local string s"""
     try:
         return asciiupper(s)
     except UnicodeDecodeError:
@@ -423,6 +467,7 @@ def upper(s):
 
 
 def upperfallback(s):
+    # type: (Any) -> Any
     try:
         if isinstance(s, localstr):
             u = s._utf8.decode("utf-8")
@@ -457,6 +502,7 @@ class normcasespecs(object):
 
 
 def jsonescape(s, paranoid=False):
+    # type: (Any, Any) -> Any
     '''returns a string suitable for JSON
 
     JSON is problematic for us because it doesn't support non-Unicode
@@ -520,6 +566,7 @@ _utf8len = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4]
 
 
 def getutf8char(s, pos):
+    # type: (bytes, int) -> bytes
     '''get the next full utf-8 character in the given string, starting at pos
 
     Raises a UnicodeError if the given location does not start a valid
@@ -538,6 +585,7 @@ def getutf8char(s, pos):
 
 
 def toutf8b(s):
+    # type: (bytes) -> bytes
     '''convert a local, possibly-binary string into UTF-8b
 
     This is intended as a generic method to preserve data when working
@@ -606,6 +654,7 @@ def toutf8b(s):
 
 
 def fromutf8b(s):
+    # type: (bytes) -> bytes
     '''Given a UTF-8b string, return a local, possibly-binary string.
 
     return the original binary string. This

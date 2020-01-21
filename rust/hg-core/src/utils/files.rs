@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn find_dirs_empty() {
-        // looks weird, but mercurial.util.finddirs(b"") yields b""
+        // looks weird, but mercurial.pathutil.finddirs(b"") yields b""
         let mut dirs = super::find_dirs(HgPath::new(b""));
         assert_eq!(dirs.next(), Some(HgPath::new(b"")));
         assert_eq!(dirs.next(), None);

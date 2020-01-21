@@ -59,6 +59,7 @@ from . import (
     merge as mergemod,
     obsolete,
     obsutil,
+    pathutil,
     phases,
     policy,
     pvec,
@@ -330,9 +331,9 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
                     )
                 )
 
-        chunkdata = gen.changelogheader()
+        gen.changelogheader()
         showchunks(b"changelog")
-        chunkdata = gen.manifestheader()
+        gen.manifestheader()
         showchunks(b"manifest")
         for chunkdata in iter(gen.filelogheader, {}):
             fname = chunkdata[b'filename']
@@ -340,7 +341,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
     else:
         if isinstance(gen, bundle2.unbundle20):
             raise error.Abort(_(b'use debugbundle2 for this file'))
-        chunkdata = gen.changelogheader()
+        gen.changelogheader()
         for deltadata in gen.deltaiter():
             node, p1, p2, cs, deltabase, delta, flags = deltadata
             ui.write(b"%s%s\n" % (indent_string, hex(node)))
@@ -393,7 +394,7 @@ def _debugbundle2(ui, gen, all=None, **opts):
     if not isinstance(gen, bundle2.unbundle20):
         raise error.Abort(_(b'not a bundle2 file'))
     ui.write((b'Stream params: %s\n' % _quasirepr(gen.params)))
-    parttypes = opts.get(r'part_type', [])
+    parttypes = opts.get('part_type', [])
     for part in gen.iterparts():
         if parttypes and part.type not in parttypes:
             continue
@@ -480,8 +481,8 @@ def debugcheckstate(ui, repo):
             ui.warn(_(b"%s in manifest1, but listed as state %s") % (f, state))
             errors += 1
     if errors:
-        error = _(b".hg/dirstate inconsistent with current parent's manifest")
-        raise error.Abort(error)
+        errstr = _(b".hg/dirstate inconsistent with current parent's manifest")
+        raise error.Abort(errstr)
 
 
 @command(
@@ -492,7 +493,7 @@ def debugcheckstate(ui, repo):
 def debugcolor(ui, repo, **opts):
     """show available color, effects or style"""
     ui.writenoi18n(b'color mode: %s\n' % stringutil.pprint(ui._colormode))
-    if opts.get(r'style'):
+    if opts.get('style'):
         return _debugdisplaystyle(ui)
     else:
         return _debugdisplaycolor(ui)
@@ -573,8 +574,8 @@ def debugdag(ui, repo, file_=None, *revs, **opts):
 
     Otherwise, the changelog DAG of the current repo is emitted.
     """
-    spaces = opts.get(r'spaces')
-    dots = opts.get(r'dots')
+    spaces = opts.get('spaces')
+    dots = opts.get('dots')
     if file_:
         rlog = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False), file_)
         revs = set((int(r) for r in revs))
@@ -587,8 +588,8 @@ def debugdag(ui, repo, file_=None, *revs, **opts):
 
     elif repo:
         cl = repo.changelog
-        tags = opts.get(r'tags')
-        branches = opts.get(r'branches')
+        tags = opts.get('tags')
+        branches = opts.get('branches')
         if tags:
             labels = {}
             for l, n in repo.tags().items():
@@ -651,8 +652,8 @@ def debugdata(ui, repo, file_, rev=None, **opts):
 )
 def debugdate(ui, date, range=None, **opts):
     """parse and display a date"""
-    if opts[r"extended"]:
-        d = dateutil.parsedate(date, util.extendeddateformats)
+    if opts["extended"]:
+        d = dateutil.parsedate(date, dateutil.extendeddateformats)
     else:
         d = dateutil.parsedate(date)
     ui.writenoi18n(b"internal: %d %d\n" % d)
@@ -861,10 +862,10 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 def debugstate(ui, repo, **opts):
     """show the contents of the current dirstate"""
 
-    nodates = not opts[r'dates']
-    if opts.get(r'nodates') is not None:
+    nodates = not opts['dates']
+    if opts.get('nodates') is not None:
         nodates = True
-    datesort = opts.get(r'datesort')
+    datesort = opts.get('datesort')
 
     if datesort:
         keyfunc = lambda x: (x[1][3], x[0])  # sort by mtime, then by filename
@@ -877,7 +878,7 @@ def debugstate(ui, repo, **opts):
             timestr = b'set                 '
         else:
             timestr = time.strftime(
-                r"%Y-%m-%d %H:%M:%S ", time.localtime(ent[3])
+                "%Y-%m-%d %H:%M:%S ", time.localtime(ent[3])
             )
             timestr = encoding.strtolocal(timestr)
         if ent[1] & 0o20000:
@@ -1028,7 +1029,12 @@ def debugextensions(ui, repo, **opts):
     fm = ui.formatter(b'debugextensions', opts)
     for extname, extmod in sorted(exts, key=operator.itemgetter(0)):
         isinternal = extensions.ismoduleinternal(extmod)
-        extsource = pycompat.fsencode(extmod.__file__)
+        extsource = None
+
+        if util.safehasattr(extmod, '__file__'):
+            extsource = pycompat.fsencode(extmod.__file__)
+        elif getattr(sys, 'oxidized', False):
+            extsource = pycompat.sysexecutable
         if isinternal:
             exttestedwith = []  # never expose magic string to users
         else:
@@ -1165,7 +1171,7 @@ def debugfileset(ui, repo, expr, **opts):
         files.update(ctx.files())
         files.update(ctx.substate)
 
-    m = ctx.matchfileset(expr)
+    m = ctx.matchfileset(repo.getcwd(), expr)
     if opts[b'show_matcher'] or (opts[b'show_matcher'] is None and ui.verbose):
         ui.writenoi18n(b'* matcher:\n', stringutil.prettyrepr(m), b'\n')
     for f in sorted(files):
@@ -1298,11 +1304,11 @@ def debuggetbundle(ui, repopath, bundlepath, head=None, common=None, **opts):
         raise error.Abort(b"getbundle() not supported by target repository")
     args = {}
     if common:
-        args[r'common'] = [bin(s) for s in common]
+        args['common'] = [bin(s) for s in common]
     if head:
-        args[r'heads'] = [bin(s) for s in head]
+        args['heads'] = [bin(s) for s in head]
     # TODO: get desired bundlecaps from command line.
-    args[r'bundlecaps'] = None
+    args['bundlecaps'] = None
     bundle = repo.getbundle(b'debug', **args)
 
     bundletype = opts.get(b'type', b'bzip2').lower()
@@ -1343,7 +1349,7 @@ def debugignore(ui, repo, *files, **opts):
                     ignored = nf
                     ignoredata = repo.dirstate._ignorefileandline(nf)
                 else:
-                    for p in util.finddirs(nf):
+                    for p in pathutil.finddirs(nf):
                         if ignore(p):
                             ignored = p
                             ignoredata = repo.dirstate._ignorefileandline(p)
@@ -1469,6 +1475,12 @@ def debuginstall(ui, **opts):
     )
 
     # Python
+    pythonlib = None
+    if util.safehasattr(os, '__file__'):
+        pythonlib = os.path.dirname(pycompat.fsencode(os.__file__))
+    elif getattr(sys, 'oxidized', False):
+        pythonlib = pycompat.sysexecutable
+
     fm.write(
         b'pythonexe',
         _(b"checking Python executable (%s)\n"),
@@ -1482,7 +1494,7 @@ def debuginstall(ui, **opts):
     fm.write(
         b'pythonlib',
         _(b"checking Python lib (%s)...\n"),
-        os.path.dirname(pycompat.fsencode(os.__file__)),
+        pythonlib or _(b"unknown"),
     )
 
     security = set(sslutil.supportedprotocols)
@@ -1526,13 +1538,19 @@ def debuginstall(ui, **opts):
     )
 
     # compiled modules
+    hgmodules = None
+    if util.safehasattr(sys.modules[__name__], '__file__'):
+        hgmodules = os.path.dirname(pycompat.fsencode(__file__))
+    elif getattr(sys, 'oxidized', False):
+        hgmodules = pycompat.sysexecutable
+
     fm.write(
         b'hgmodulepolicy', _(b"checking module policy (%s)\n"), policy.policy
     )
     fm.write(
         b'hgmodules',
         _(b"checking installed modules (%s)...\n"),
-        os.path.dirname(pycompat.fsencode(__file__)),
+        hgmodules or _(b"unknown"),
     )
 
     rustandc = policy.policy in (b'rust+c', b'rust+c-allow')
@@ -1543,7 +1561,7 @@ def debuginstall(ui, **opts):
         err = None
         try:
             if cext:
-                from .cext import (
+                from .cext import (  # pytype: disable=import-error
                     base85,
                     bdiff,
                     mpatch,
@@ -1553,7 +1571,7 @@ def debuginstall(ui, **opts):
                 # quiet pyflakes
                 dir(bdiff), dir(mpatch), dir(base85), dir(osutil)
             if rustext:
-                from .rustext import (
+                from .rustext import (  # pytype: disable=import-error
                     ancestor,
                     dirstate,
                 )
@@ -1775,21 +1793,21 @@ def debuglocks(ui, repo, **opts):
 
     """
 
-    if opts.get(r'force_lock'):
+    if opts.get('force_lock'):
         repo.svfs.unlink(b'lock')
-    if opts.get(r'force_wlock'):
+    if opts.get('force_wlock'):
         repo.vfs.unlink(b'wlock')
-    if opts.get(r'force_lock') or opts.get(r'force_wlock'):
+    if opts.get('force_lock') or opts.get('force_wlock'):
         return 0
 
     locks = []
     try:
-        if opts.get(r'set_wlock'):
+        if opts.get('set_wlock'):
             try:
                 locks.append(repo.wlock(False))
             except error.LockHeld:
                 raise error.Abort(_(b'wlock is already held'))
-        if opts.get(r'set_lock'):
+        if opts.get('set_lock'):
             try:
                 locks.append(repo.lock(False))
             except error.LockHeld:
@@ -1871,7 +1889,7 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
             )
             raise error.Abort(msg)
 
-    if opts.get(r'clear'):
+    if opts.get('clear'):
         with repo.wlock():
             cache = getcache()
             cache.clear(clear_persisted_data=True)
@@ -2265,7 +2283,7 @@ def debugpathcomplete(ui, repo, *specs, **opts):
         if fixpaths:
             spec = spec.replace(pycompat.ossep, b'/')
         speclen = len(spec)
-        fullpaths = opts[r'full']
+        fullpaths = opts['full']
         files, dirs = set(), set()
         adddir, addfile = dirs.add, files.add
         for f, st in pycompat.iteritems(dirstate):
@@ -2283,11 +2301,11 @@ def debugpathcomplete(ui, repo, *specs, **opts):
         return files, dirs
 
     acceptable = b''
-    if opts[r'normal']:
+    if opts['normal']:
         acceptable += b'nm'
-    if opts[r'added']:
+    if opts['added']:
         acceptable += b'a'
-    if opts[r'removed']:
+    if opts['removed']:
         acceptable += b'r'
     cwd = repo.getcwd()
     if not specs:
@@ -2526,7 +2544,7 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
         dirstate = repo.dirstate
         changedfiles = None
         # See command doc for what minimal does.
-        if opts.get(r'minimal'):
+        if opts.get('minimal'):
             manifestfiles = set(ctx.manifest().keys())
             dirstatefiles = set(dirstate)
             manifestonly = manifestfiles - dirstatefiles
@@ -3147,13 +3165,13 @@ def debugrevspec(ui, repo, expr, **opts):
         ui.writenoi18n(b'+++ optimized\n', label=b'diff.file_b')
         sm = difflib.SequenceMatcher(None, arevs, brevs)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag in (r'delete', r'replace'):
+            if tag in ('delete', 'replace'):
                 for c in arevs[alo:ahi]:
                     ui.write(b'-%d\n' % c, label=b'diff.deleted')
-            if tag in (r'insert', r'replace'):
+            if tag in ('insert', 'replace'):
                 for c in brevs[blo:bhi]:
                     ui.write(b'+%d\n' % c, label=b'diff.inserted')
-            if tag == r'equal':
+            if tag == 'equal':
                 for c in arevs[alo:ahi]:
                     ui.write(b' %d\n' % c)
         return 1
@@ -3200,16 +3218,19 @@ def debugserve(ui, repo, **opts):
         raise error.Abort(_(b'cannot use both --logiofd and --logiofile'))
 
     if opts[b'logiofd']:
-        # Line buffered because output is line based.
+        # Ideally we would be line buffered. But line buffering in binary
+        # mode isn't supported and emits a warning in Python 3.8+. Disabling
+        # buffering could have performance impacts. But since this isn't
+        # performance critical code, it should be fine.
         try:
-            logfh = os.fdopen(int(opts[b'logiofd']), r'ab', 1)
+            logfh = os.fdopen(int(opts[b'logiofd']), 'ab', 0)
         except OSError as e:
             if e.errno != errno.ESPIPE:
                 raise
             # can't seek a pipe, so `ab` mode fails on py3
-            logfh = os.fdopen(int(opts[b'logiofd']), r'wb', 1)
+            logfh = os.fdopen(int(opts[b'logiofd']), 'wb', 0)
     elif opts[b'logiofile']:
-        logfh = open(opts[b'logiofile'], b'ab', 1)
+        logfh = open(opts[b'logiofile'], b'ab', 0)
 
     s = wireprotoserver.sshserver(ui, repo, logfh=logfh)
     s.serve_forever()
@@ -3391,7 +3412,7 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
         ctx = repo[rev]
         ui.write(b'%s\n' % ctx2str(ctx))
         for succsset in obsutil.successorssets(
-            repo, ctx.node(), closest=opts[r'closest'], cache=cache
+            repo, ctx.node(), closest=opts['closest'], cache=cache
         ):
             if succsset:
                 ui.write(b'    ')
@@ -3421,15 +3442,15 @@ def debugtemplate(ui, repo, tmpl, **opts):
     Use --verbose to print the parsed tree.
     """
     revs = None
-    if opts[r'rev']:
+    if opts['rev']:
         if repo is None:
             raise error.RepoError(
                 _(b'there is no Mercurial repository here (.hg not found)')
             )
-        revs = scmutil.revrange(repo, opts[r'rev'])
+        revs = scmutil.revrange(repo, opts['rev'])
 
     props = {}
-    for d in opts[r'define']:
+    for d in opts['define']:
         try:
             k, v = (e.strip() for e in d.split(b'=', 1))
             if not k or k == b'ui':
@@ -3985,27 +4006,27 @@ def debugwireproto(ui, repo, path=None, **opts):
 
         url, authinfo = u.authinfo()
         openerargs = {
-            r'useragent': b'Mercurial debugwireproto',
+            'useragent': b'Mercurial debugwireproto',
         }
 
         # Turn pipes/sockets into observers so we can log I/O.
         if ui.verbose:
             openerargs.update(
                 {
-                    r'loggingfh': ui,
-                    r'loggingname': b's',
-                    r'loggingopts': {r'logdata': True, r'logdataapis': False,},
+                    'loggingfh': ui,
+                    'loggingname': b's',
+                    'loggingopts': {'logdata': True, 'logdataapis': False,},
                 }
             )
 
         if ui.debugflag:
-            openerargs[r'loggingopts'][r'logdataapis'] = True
+            openerargs['loggingopts']['logdataapis'] = True
 
         # Don't send default headers when in raw mode. This allows us to
         # bypass most of the behavior of our URL handling code so we can
         # have near complete control over what's sent on the wire.
         if opts[b'peer'] == b'raw':
-            openerargs[r'sendaccept'] = False
+            openerargs['sendaccept'] = False
 
         opener = urlmod.opener(ui, authinfo, **openerargs)
 
@@ -4105,7 +4126,7 @@ def debugwireproto(ui, repo, path=None, **opts):
             ui.status(_(b'sending %s command\n') % command)
 
             if b'PUSHFILE' in args:
-                with open(args[b'PUSHFILE'], r'rb') as fh:
+                with open(args[b'PUSHFILE'], 'rb') as fh:
                     del args[b'PUSHFILE']
                     res, output = peer._callpush(
                         command, fh, **pycompat.strkwargs(args)
@@ -4143,6 +4164,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                 _(b'sending batch with %d sub-commands\n')
                 % len(batchedcommands)
             )
+            assert peer is not None
             for i, chunk in enumerate(peer._submitbatch(batchedcommands)):
                 ui.status(
                     _(b'response #%d: %s\n') % (i, stringutil.escapestr(chunk))
@@ -4213,8 +4235,8 @@ def debugwireproto(ui, repo, path=None, **opts):
                 getattr(e, 'read', lambda: None)()
                 continue
 
-            ct = res.headers.get(r'Content-Type')
-            if ct == r'application/mercurial-cbor':
+            ct = res.headers.get('Content-Type')
+            if ct == 'application/mercurial-cbor':
                 ui.write(
                     _(b'cbor> %s\n')
                     % stringutil.pprint(
@@ -4223,6 +4245,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                 )
 
         elif action == b'close':
+            assert peer is not None
             peer.close()
         elif action == b'readavailable':
             if not stdout or not stderr:

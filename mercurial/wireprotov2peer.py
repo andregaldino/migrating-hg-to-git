@@ -472,7 +472,7 @@ class clienthandler(object):
             )
 
         headers = {
-            r'Accept': redirect.mediatype,
+            'Accept': redirect.mediatype,
         }
 
         req = self._requestbuilder(pycompat.strurl(redirect.url), None, headers)

@@ -20,13 +20,13 @@ use cpython::{
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
-    ref_sharing::{PyLeakedRef, PySharedRefCell},
+    ref_sharing::{PyLeaked, PySharedRefCell},
 };
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
-    DirstateParents, DirstateParseError, EntryState, StateMapIter,
-    PARENT_SIZE,
+    DirstateMapError, DirstateParents, DirstateParseError, EntryState,
+    StateMapIter, PARENT_SIZE,
 };
 
 // TODO
@@ -97,8 +97,9 @@ py_class!(pub class DirstateMap |py| {
                 size: size.extract(py)?,
                 mtime: mtime.extract(py)?,
             },
-        );
-        Ok(py.None())
+        ).and(Ok(py.None())).or_else(|e: DirstateMapError| {
+            Err(PyErr::new::<exc::ValueError, _>(py, e.to_string()))
+        })
     }
 
     def removefile(
@@ -199,6 +200,9 @@ py_class!(pub class DirstateMap |py| {
         let d = d.extract::<PyBytes>(py)?;
         Ok(self.inner_shared(py).borrow_mut()?
             .has_tracked_dir(HgPath::new(d.data(py)))
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?
             .to_py_object(py))
     }
 
@@ -206,6 +210,9 @@ py_class!(pub class DirstateMap |py| {
         let d = d.extract::<PyBytes>(py)?;
         Ok(self.inner_shared(py).borrow_mut()?
             .has_dir(HgPath::new(d.data(py)))
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?
             .to_py_object(py))
     }
 
@@ -304,7 +311,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def keys(&self) -> PyResult<DirstateMapKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         DirstateMapKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -312,7 +319,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def items(&self) -> PyResult<DirstateMapItemsIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         DirstateMapItemsIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -320,7 +327,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def __iter__(&self) -> PyResult<DirstateMapKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         DirstateMapKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -329,24 +336,35 @@ py_class!(pub class DirstateMap |py| {
 
     def getdirs(&self) -> PyResult<Dirs> {
         // TODO don't copy, share the reference
-        self.inner_shared(py).borrow_mut()?.set_dirs();
+        self.inner_shared(py).borrow_mut()?.set_dirs()
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?;
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
                 &self.inner_shared(py).borrow(),
                 Some(EntryState::Removed),
-            ),
+            )
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?,
         )
     }
     def getalldirs(&self) -> PyResult<Dirs> {
         // TODO don't copy, share the reference
-        self.inner_shared(py).borrow_mut()?.set_all_dirs();
+        self.inner_shared(py).borrow_mut()?.set_all_dirs()
+            .map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?;
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
                 &self.inner_shared(py).borrow(),
                 None,
-            ),
+            ).map_err(|e| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?,
         )
     }
 
@@ -437,7 +455,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymapiter(&self) -> PyResult<CopyMapKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         CopyMapKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.copy_map.iter()) },
@@ -445,7 +463,7 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymapitemsiter(&self) -> PyResult<CopyMapItemsIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable()?;
+        let leaked_ref = self.inner_shared(py).leak_immutable();
         CopyMapItemsIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.copy_map.iter()) },
@@ -483,14 +501,14 @@ py_shared_ref!(DirstateMap, RustDirstateMap, inner, inner_shared);
 
 py_shared_iterator!(
     DirstateMapKeysIterator,
-    PyLeakedRef<StateMapIter<'static>>,
+    PyLeaked<StateMapIter<'static>>,
     DirstateMap::translate_key,
     Option<PyBytes>
 );
 
 py_shared_iterator!(
     DirstateMapItemsIterator,
-    PyLeakedRef<StateMapIter<'static>>,
+    PyLeaked<StateMapIter<'static>>,
     DirstateMap::translate_key_value,
     Option<(PyBytes, PyObject)>
 );

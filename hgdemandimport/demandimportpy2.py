@@ -70,9 +70,9 @@ class _demandmod(object):
             head = name
             after = []
         object.__setattr__(
-            self, r"_data", (head, globals, locals, after, level, set())
+            self, "_data", (head, globals, locals, after, level, set())
         )
-        object.__setattr__(self, r"_module", None)
+        object.__setattr__(self, "_module", None)
 
     def _extend(self, name):
         """add to the list of submodules to load"""
@@ -135,15 +135,15 @@ class _demandmod(object):
                 if locals:
                     if locals.get(head) is self:
                         locals[head] = mod
-                    elif locals.get(head + r'mod') is self:
-                        locals[head + r'mod'] = mod
+                    elif locals.get(head + 'mod') is self:
+                        locals[head + 'mod'] = mod
 
                 for modname in modrefs:
                     modref = sys.modules.get(modname, None)
                     if modref and getattr(modref, head, None) is self:
                         setattr(modref, head, mod)
 
-                object.__setattr__(self, r"_module", mod)
+                object.__setattr__(self, "_module", mod)
 
     def __repr__(self):
         if self._module:
@@ -303,18 +303,18 @@ def isenabled():
 
 
 def enable():
-    "enable global demand-loading of modules"
+    """enable global demand-loading of modules"""
     builtins.__import__ = _demandimport
 
 
 def disable():
-    "disable global demand-loading of modules"
+    """disable global demand-loading of modules"""
     builtins.__import__ = _origimport
 
 
 @contextmanager
 def deactivated():
-    "context manager for disabling demandimport in 'with' blocks"
+    """context manager for disabling demandimport in 'with' blocks"""
     demandenabled = isenabled()
     if demandenabled:
         disable()

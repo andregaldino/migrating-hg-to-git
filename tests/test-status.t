@@ -254,35 +254,43 @@ hg status -A:
   $ hg status -A -Tjson
   [
    {
+    "itemtype": "file",
     "path": "added",
     "status": "A"
    },
    {
+    "itemtype": "file",
     "path": "copied",
     "source": "modified",
     "status": "A"
    },
    {
+    "itemtype": "file",
     "path": "removed",
     "status": "R"
    },
    {
+    "itemtype": "file",
     "path": "deleted",
     "status": "!"
    },
    {
+    "itemtype": "file",
     "path": "unknown",
     "status": "?"
    },
    {
+    "itemtype": "file",
     "path": "ignored",
     "status": "I"
    },
    {
+    "itemtype": "file",
     "path": ".hgignore",
     "status": "C"
    },
    {
+    "itemtype": "file",
     "path": "modified",
     "status": "C"
    }
@@ -558,6 +566,7 @@ warning message about such pattern.
   $ hg status --config ui.formatdebug=True --rev 1 1
   status = [
       {
+          'itemtype': 'file',
           'path': '1/2/3/4/5/b.txt',
           'status': 'R'
       },

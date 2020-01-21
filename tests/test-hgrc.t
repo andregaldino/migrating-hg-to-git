@@ -197,9 +197,6 @@ plain hgrc
 with environment variables
 
   $ PAGER=p1 EDITOR=e1 VISUAL=e2 hg showconfig --debug
-  set config by: $EDITOR
-  set config by: $VISUAL
-  set config by: $PAGER
   read config from: $TESTTMP/hgrc
   repo: bundle.mainreporoot=$TESTTMP
   $PAGER: pager.pager=p1
@@ -261,3 +258,16 @@ source of paths is not mangled
   plain: True
   read config from: $TESTTMP/hgrc
   $TESTTMP/hgrc:17: paths.foo=$TESTTMP/bar
+
+Test we can skip the user configuration
+
+  $ cat >> .hg/hgrc <<EOF
+  > [paths]
+  > elephant = babar
+  > EOF
+  $ hg path
+  elephant = $TESTTMP/babar
+  foo = $TESTTMP/bar
+  $ HGRCSKIPREPO=1 hg path
+  foo = $TESTTMP/bar
+

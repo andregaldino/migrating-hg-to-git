@@ -51,7 +51,7 @@
   transaction abort!
   failed to truncate data/b.i
   rollback failed - please run hg recover
-  (failure reason: [Errno 13] Permission denied .hg/store/data/b.i')
+  (failure reason: [Errno *] Permission denied .hg/store/data/b.i') (glob)
   strip failed, backup bundle
   abort: Permission denied .hg/store/data/b.i'
   % after update 0, strip 2
@@ -105,7 +105,7 @@
   transaction abort!
   failed to truncate 00manifest.i
   rollback failed - please run hg recover
-  (failure reason: [Errno 13] Permission denied .hg/store/00manifest.i')
+  (failure reason: [Errno *] Permission denied .hg/store/00manifest.i') (glob)
   strip failed, backup bundle
   abort: Permission denied .hg/store/00manifest.i'
   % after update 0, strip 2

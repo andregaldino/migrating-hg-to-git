@@ -1,7 +1,7 @@
 #require py37
 
   $ byteify_strings () {
-  >   $PYTHON "$TESTDIR/../contrib/byteify-strings.py" "$@"
+  >   "$PYTHON" "$TESTDIR/../contrib/byteify-strings.py" "$@"
   > }
 
 Test version

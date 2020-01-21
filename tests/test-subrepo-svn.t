@@ -87,10 +87,12 @@ debugsub
 
   $ hg debugsub
   path s
-   source   file:/*/$TESTTMP/svn-repo/src (glob)
+   source   file:/*/svn-repo/src (glob) (windows !)
+   source   file:/*/$TESTTMP/svn-repo/src (glob) (no-windows !)
    revision 2
   path subdir/s
-   source   file:/*/$TESTTMP/svn-repo/src (glob)
+   source   file:/*/svn-repo/src (glob) (windows !)
+   source   file:/*/$TESTTMP/svn-repo/src (glob) (no-windows !)
    revision 2
 
 change file in svn and hg, commit
@@ -113,10 +115,12 @@ change file in svn and hg, commit
   At revision 3.
   $ hg debugsub
   path s
-   source   file:/*/$TESTTMP/svn-repo/src (glob)
+   source   file:/*/svn-repo/src (glob) (windows !)
+   source   file:/*/$TESTTMP/svn-repo/src (glob) (no-windows !)
    revision 3
   path subdir/s
-   source   file:/*/$TESTTMP/svn-repo/src (glob)
+   source   file:/*/svn-repo/src (glob) (windows !)
+   source   file:/*/$TESTTMP/svn-repo/src (glob) (no-windows !)
    revision 2
 
 missing svn file, commit should fail
@@ -235,10 +239,12 @@ debugsub in clone
 
   $ hg debugsub
   path s
-   source   file:/*/$TESTTMP/svn-repo/src (glob)
+   source   file:/*/svn-repo/src (glob) (windows !)
+   source   file:/*/$TESTTMP/svn-repo/src (glob) (no-windows !)
    revision 3
   path subdir/s
-   source   file:/*/$TESTTMP/svn-repo/src (glob)
+   source   file:/*/svn-repo/src (glob) (windows !)
+   source   file:/*/$TESTTMP/svn-repo/src (glob) (no-windows !)
    revision 2
 
 verify subrepo is contained within the repo directory
@@ -574,8 +580,8 @@ Test archive
 Test forgetting files, not implemented in svn subrepo, used to
 traceback
 
-  $ hg forget 'notafile*'
-  notafile*: $ENOENT$
+  $ hg forget 'notafile'
+  notafile: $ENOENT$
   [1]
 
 Test a subrepo referencing a just moved svn path. Last commit rev will

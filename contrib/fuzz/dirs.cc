@@ -9,16 +9,15 @@
 
 extern "C" {
 
-static PyCodeObject *code;
+static PYCODETYPE *code;
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
 	contrib::initpy(*argv[0]);
-	code = (PyCodeObject *)Py_CompileString(R"py(
-from parsers import dirs
+	code = (PYCODETYPE *)Py_CompileString(R"py(
 try:
   files = mdata.split('\n')
-  d = dirs(files)
+  d = parsers.dirs(files)
   list(d)
   'a' in d
   if files:
@@ -29,7 +28,7 @@ except Exception as e:
   # to debug failures.
   # print e
 )py",
-	                                        "fuzzer", Py_file_input);
+	                                      "fuzzer", Py_file_input);
 	return 0;
 }
 

@@ -210,7 +210,7 @@ though the client doesn't send the blob.
   > 
   >     store = repo.svfs.lfslocalblobstore
   >     class badstore(store.__class__):
-  >         def download(self, oid, src):
+  >         def download(self, oid, src, contentlength):
   >             '''Called in the server to handle reading from the client in a
   >             PUT request.'''
   >             origread = src.read
@@ -218,7 +218,7 @@ though the client doesn't send the blob.
   >                 # Simulate bad data/checksum failure from the client
   >                 return b'0' * len(origread(nbytes))
   >             src.read = _badread
-  >             super(badstore, self).download(oid, src)
+  >             super(badstore, self).download(oid, src, contentlength)
   > 
   >         def _read(self, vfs, oid, verify):
   >             '''Called in the server to read data for a GET request, and then
@@ -341,19 +341,20 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      verifies = store.verify(oid) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8")) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:  *Error: [Errno 5] f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e: I/O error (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  *Error: [Errno *] f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e: I/O error (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.git/info/lfs/objects/batch': (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      verifies = store.verify(oid) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8")) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:  *Error: [Errno 5] b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c: I/O error (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  *Error: [Errno *] b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c: I/O error (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c': (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      localstore.download(oid, req.bodyfh) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      super(badstore, self).download(oid, src) (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      _(b'corrupt remote lfs object: %s') % oid (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      localstore.download(oid, req.bodyfh, req.headers[b'Content-Length'])
+  $LOCALIP - - [$ERRDATE$] HG error:      super(badstore, self).download(oid, src, contentlength)
+  $LOCALIP - - [$ERRDATE$] HG error:      raise LfsCorruptionError( (glob) (py38 !)
+  $LOCALIP - - [$ERRDATE$] HG error:      _(b'corrupt remote lfs object: %s') % oid (glob) (no-py38 !)
   $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c (no-py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:  hgext.lfs.blobstore.LfsCorruptionError: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c (py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
@@ -363,20 +364,23 @@ Test a checksum failure during the processing of the GET request
       self.do_hgweb()
       for chunk in self.server.application(env, self._start_response):
       for r in self._runwsgi(req, res, repo):
-      rctx, req, res, self.check_perm
+      handled = wireprotoserver.handlewsgirequest( (py38 !)
+      return _processbasictransfer( (py38 !)
+      rctx, req, res, self.check_perm (no-py38 !)
       return func(*(args + a), **kw) (no-py3 !)
-      rctx.repo, req, res, lambda perm: checkperm(rctx, req, perm)
+      rctx.repo, req, res, lambda perm: checkperm(rctx, req, perm) (no-py38 !)
       res.setbodybytes(localstore.read(oid))
       blob = self._read(self.vfs, oid, verify)
       raise IOError(errno.EIO, r'%s: I/O error' % oid.decode("utf-8"))
-  *Error: [Errno 5] 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d: I/O error (glob)
+  *Error: [Errno *] 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d: I/O error (glob)
   
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d': (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      res.setbodybytes(localstore.read(oid)) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      blob = self._read(self.vfs, oid, verify) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      blobstore._verify(oid, b'dummy content') (glob)
-  $LOCALIP - - [$ERRDATE$] HG error:      hint=_(b'run hg verify'), (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      raise LfsCorruptionError( (glob) (py38 !)
+  $LOCALIP - - [$ERRDATE$] HG error:      hint=_(b'run hg verify'), (glob) (no-py38 !)
   $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (no-py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:  hgext.lfs.blobstore.LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)

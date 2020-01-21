@@ -36,7 +36,7 @@ def countcpus():
 
     # posix
     try:
-        n = int(os.sysconf(r'SC_NPROCESSORS_ONLN'))
+        n = int(os.sysconf('SC_NPROCESSORS_ONLN'))
         if n > 0:
             return n
     except (AttributeError, ValueError):
@@ -226,7 +226,7 @@ def _posixworker(ui, func, staticargs, args, hasretval):
     selector = selectors.DefaultSelector()
     for rfd, wfd in pipes:
         os.close(wfd)
-        selector.register(os.fdopen(rfd, r'rb', 0), selectors.EVENT_READ)
+        selector.register(os.fdopen(rfd, 'rb', 0), selectors.EVENT_READ)
 
     def cleanup():
         signal.signal(signal.SIGINT, oldhandler)

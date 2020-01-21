@@ -20,17 +20,13 @@ except ImportError:
 
 # This script is executed during installs and may not have C extensions
 # available. Relax C module requirements.
-os.environ[r'HGMODULEPOLICY'] = r'allow'
+os.environ['HGMODULEPOLICY'] = 'allow'
 # import from the live mercurial repo
-sys.path.insert(0, r"..")
+sys.path.insert(0, "..")
 from mercurial import demandimport
 
 demandimport.enable()
-# Load util so that the locale path is set by i18n.setdatapath() before
-# calling _().
-from mercurial import util
 
-util.datapath
 from mercurial import (
     commands,
     encoding,

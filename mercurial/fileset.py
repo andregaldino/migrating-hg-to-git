@@ -520,29 +520,30 @@ methods = {
 
 
 class matchctx(object):
-    def __init__(self, basectx, ctx, badfn=None):
+    def __init__(self, basectx, ctx, cwd, badfn=None):
         self._basectx = basectx
         self.ctx = ctx
         self._badfn = badfn
         self._match = None
         self._status = None
+        self.cwd = cwd
 
     def narrowed(self, match):
         """Create matchctx for a sub-tree narrowed by the given matcher"""
-        mctx = matchctx(self._basectx, self.ctx, self._badfn)
+        mctx = matchctx(self._basectx, self.ctx, self.cwd, self._badfn)
         mctx._match = match
         # leave wider status which we don't have to care
         mctx._status = self._status
         return mctx
 
     def switch(self, basectx, ctx):
-        mctx = matchctx(basectx, ctx, self._badfn)
+        mctx = matchctx(basectx, ctx, self.cwd, self._badfn)
         mctx._match = self._match
         return mctx
 
     def withstatus(self, keys):
         """Create matchctx which has precomputed status specified by the keys"""
-        mctx = matchctx(self._basectx, self.ctx, self._badfn)
+        mctx = matchctx(self._basectx, self.ctx, self.cwd, self._badfn)
         mctx._match = self._match
         mctx._buildstatus(keys)
         return mctx
@@ -560,7 +561,7 @@ class matchctx(object):
         return self._status
 
     def matcher(self, patterns):
-        return self.ctx.match(patterns, badfn=self._badfn)
+        return self.ctx.match(patterns, badfn=self._badfn, cwd=self.cwd)
 
     def predicate(self, predfn, predrepr=None, cache=False):
         """Create a matcher to select files by predfn(filename)"""
@@ -617,12 +618,12 @@ class matchctx(object):
         return matchmod.never(badfn=self._badfn)
 
 
-def match(ctx, expr, badfn=None):
+def match(ctx, cwd, expr, badfn=None):
     """Create a matcher for a single fileset expression"""
     tree = filesetlang.parse(expr)
     tree = filesetlang.analyze(tree)
     tree = filesetlang.optimize(tree)
-    mctx = matchctx(ctx.p1(), ctx, badfn=badfn)
+    mctx = matchctx(ctx.p1(), ctx, cwd, badfn=badfn)
     return getmatch(mctx, tree)
 
 

@@ -281,10 +281,10 @@ for i in [0, 1]:
     for tp in testpats[i]:
         p = tp[0]
         m = tp[1]
-        if p.startswith(r'^'):
-            p = r"^  [$>] (%s)" % p[1:]
+        if p.startswith('^'):
+            p = "^  [$>] (%s)" % p[1:]
         else:
-            p = r"^  [$>] .*(%s)" % p
+            p = "^  [$>] .*(%s)" % p
         utestpats[i].append((p, m) + tp[2:])
 
 # don't transform the following rules:

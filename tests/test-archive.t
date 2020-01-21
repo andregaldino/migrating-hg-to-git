@@ -574,8 +574,8 @@ test xz support only available in Python 3.4
 
 #if py3
   $ hg archive ../archive.txz
-  $ xz -l ../archive.txz | head -n1
-  Strms  Blocks   Compressed Uncompressed  Ratio  Check   Filename
+  $ which xz >/dev/null && xz -l ../archive.txz | head -n1 || true
+  Strms  Blocks   Compressed Uncompressed  Ratio  Check   Filename (xz !)
   $ rm -f ../archive.txz
 #else
   $ hg archive ../archive.txz

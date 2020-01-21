@@ -21,13 +21,14 @@ New errors are not allowed. Warnings are strongly discouraged.
   Skipping contrib/automation/hgautomation/try_server.py it has no-che?k-code (glob)
   Skipping contrib/automation/hgautomation/windows.py it has no-che?k-code (glob)
   Skipping contrib/automation/hgautomation/winrm.py it has no-che?k-code (glob)
+  Skipping contrib/fuzz/FuzzedDataProvider.h it has no-che?k-code (glob)
+  Skipping contrib/fuzz/standalone_fuzz_target_runner.cc it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/cli.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/downloads.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/inno.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/py2exe.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/util.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/wix.py it has no-che?k-code (glob)
-  Skipping contrib/packaging/inno/build.py it has no-che?k-code (glob)
-  Skipping contrib/packaging/wix/build.py it has no-che?k-code (glob)
   Skipping i18n/polib.py it has no-che?k-code (glob)
   Skipping mercurial/statprof.py it has no-che?k-code (glob)
   Skipping tests/badserverext.py it has no-che?k-code (glob)
@@ -84,3 +85,9 @@ Prevent adding modules which could be shadowed by ancient .so/.dylib.
 Keep python3 tests sorted:
   $ sort < contrib/python3-whitelist > $TESTTMP/py3sorted
   $ cmp contrib/python3-whitelist $TESTTMP/py3sorted || echo 'Please sort passing tests!'
+
+Keep Windows line endings in check
+
+  $ hg files 'set:eol(dos)'
+  contrib/win32/hg.bat
+  contrib/win32/mercurial.ini

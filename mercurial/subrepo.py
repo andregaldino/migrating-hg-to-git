@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import copy
 import errno
-import hashlib
 import os
 import re
 import stat
@@ -19,7 +18,6 @@ import tarfile
 import xml.dom.minidom
 
 from .i18n import _
-from .pycompat import open
 from . import (
     cmdutil,
     encoding,
@@ -38,6 +36,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    hashutil,
     procutil,
     stringutil,
 )
@@ -62,15 +61,15 @@ def _expandedabspath(path):
 
 def _getstorehashcachename(remotepath):
     '''get a unique filename for the store hash cache of a remote repository'''
-    return node.hex(hashlib.sha1(_expandedabspath(remotepath)).digest())[0:12]
+    return node.hex(hashutil.sha1(_expandedabspath(remotepath)).digest())[0:12]
 
 
 class SubrepoAbort(error.Abort):
     """Exception class used to avoid handling a subrepo error more than once"""
 
     def __init__(self, *args, **kw):
-        self.subrepo = kw.pop(r'subrepo', None)
-        self.cause = kw.pop(r'cause', None)
+        self.subrepo = kw.pop('subrepo', None)
+        self.cause = kw.pop('cause', None)
         error.Abort.__init__(self, *args, **kw)
 
 
@@ -356,7 +355,7 @@ class abstractsubrepo(object):
         """return file flags"""
         return b''
 
-    def matchfileset(self, expr, badfn=None):
+    def matchfileset(self, cwd, expr, badfn=None):
         """Resolve the fileset expression for this repo"""
         return matchmod.never(badfn=badfn)
 
@@ -430,10 +429,12 @@ class abstractsubrepo(object):
         convert this repository from shared to normal storage.
         '''
 
-    def verify(self):
-        '''verify the integrity of the repository.  Return 0 on success or
-        warning, 1 on any error.
-        '''
+    def verify(self, onpush=False):
+        """verify the revision of this repository that is held in `_state` is
+        present and not hidden.  Return 0 on success or warning, 1 on any
+        error.  In the case of ``onpush``, warnings or errors will raise an
+        exception if the result of pushing would be a broken remote repository.
+        """
         return 0
 
     @propertycache
@@ -513,7 +514,7 @@ class hgsubrepo(abstractsubrepo):
         yield b'# %s\n' % _expandedabspath(remotepath)
         vfs = self._repo.vfs
         for relname in filelist:
-            filehash = node.hex(hashlib.sha1(vfs.tryread(relname)).digest())
+            filehash = node.hex(hashutil.sha1(vfs.tryread(relname)).digest())
             yield b'%s = %s\n' % (relname, filehash)
 
     @propertycache
@@ -895,20 +896,20 @@ class hgsubrepo(abstractsubrepo):
         return cmdutil.files(ui, ctx, m, uipathfn, fm, fmt, subrepos)
 
     @annotatesubrepoerror
-    def matchfileset(self, expr, badfn=None):
+    def matchfileset(self, cwd, expr, badfn=None):
         if self._ctx.rev() is None:
             ctx = self._repo[None]
         else:
             rev = self._state[1]
             ctx = self._repo[rev]
 
-        matchers = [ctx.matchfileset(expr, badfn=badfn)]
+        matchers = [ctx.matchfileset(cwd, expr, badfn=badfn)]
 
         for subpath in ctx.substate:
             sub = ctx.sub(subpath)
 
             try:
-                sm = sub.matchfileset(expr, badfn=badfn)
+                sm = sub.matchfileset(cwd, expr, badfn=badfn)
                 pm = matchmod.prefixdirmatcher(subpath, sm, badfn=badfn)
                 matchers.append(pm)
             except error.LookupError:
@@ -969,24 +970,24 @@ class hgsubrepo(abstractsubrepo):
         # 2. update the subrepo to the revision specified in
         #    the corresponding substate dictionary
         self.ui.status(_(b'reverting subrepo %s\n') % substate[0])
-        if not opts.get(r'no_backup'):
+        if not opts.get('no_backup'):
             # Revert all files on the subrepo, creating backups
             # Note that this will not recursively revert subrepos
             # We could do it if there was a set:subrepos() predicate
             opts = opts.copy()
-            opts[r'date'] = None
-            opts[r'rev'] = substate[1]
+            opts['date'] = None
+            opts['rev'] = substate[1]
 
             self.filerevert(*pats, **opts)
 
         # Update the repo to the revision specified in the given substate
-        if not opts.get(r'dry_run'):
+        if not opts.get('dry_run'):
             self.get(substate, overwrite=True)
 
     def filerevert(self, *pats, **opts):
-        ctx = self._repo[opts[r'rev']]
+        ctx = self._repo[opts['rev']]
         parents = self._repo.dirstate.parents()
-        if opts.get(r'all'):
+        if opts.get('all'):
             pats = [b'set:modified()']
         else:
             pats = []
@@ -1014,26 +1015,35 @@ class hgsubrepo(abstractsubrepo):
 
         hg.unshare(self.ui, self._repo)
 
-    def verify(self):
+    def verify(self, onpush=False):
         try:
             rev = self._state[1]
             ctx = self._repo.unfiltered()[rev]
             if ctx.hidden():
                 # Since hidden revisions aren't pushed/pulled, it seems worth an
                 # explicit warning.
-                ui = self._repo.ui
-                ui.warn(
-                    _(b"subrepo '%s' is hidden in revision %s\n")
-                    % (self._relpath, node.short(self._ctx.node()))
+                msg = _(b"subrepo '%s' is hidden in revision %s") % (
+                    self._relpath,
+                    node.short(self._ctx.node()),
                 )
+
+                if onpush:
+                    raise error.Abort(msg)
+                else:
+                    self._repo.ui.warn(b'%s\n' % msg)
             return 0
         except error.RepoLookupError:
             # A missing subrepo revision may be a case of needing to pull it, so
-            # don't treat this as an error.
-            self._repo.ui.warn(
-                _(b"subrepo '%s' not found in revision %s\n")
-                % (self._relpath, node.short(self._ctx.node()))
+            # don't treat this as an error for `hg verify`.
+            msg = _(b"subrepo '%s' not found in revision %s") % (
+                self._relpath,
+                node.short(self._ctx.node()),
             )
+
+            if onpush:
+                raise error.Abort(msg)
+            else:
+                self._repo.ui.warn(b'%s\n' % msg)
             return 0
 
     @propertycache
@@ -1066,7 +1076,7 @@ class svnsubrepo(abstractsubrepo):
         if not self.ui.interactive():
             # Making stdin be a pipe should prevent svn from behaving
             # interactively even if we can't pass --non-interactive.
-            extrakw[r'stdin'] = subprocess.PIPE
+            extrakw['stdin'] = subprocess.PIPE
             # Starting in svn 1.5 --non-interactive is a global flag
             # instead of being per-command, but we need to support 1.4 so
             # we have to be intelligent about what commands take
@@ -1125,14 +1135,14 @@ class svnsubrepo(abstractsubrepo):
         # both. We used to store the working directory one.
         output, err = self._svncommand([b'info', b'--xml'])
         doc = xml.dom.minidom.parseString(output)
-        entries = doc.getElementsByTagName(r'entry')
+        entries = doc.getElementsByTagName('entry')
         lastrev, rev = b'0', b'0'
         if entries:
-            rev = pycompat.bytestr(entries[0].getAttribute(r'revision')) or b'0'
-            commits = entries[0].getElementsByTagName(r'commit')
+            rev = pycompat.bytestr(entries[0].getAttribute('revision')) or b'0'
+            commits = entries[0].getElementsByTagName('commit')
             if commits:
                 lastrev = (
-                    pycompat.bytestr(commits[0].getAttribute(r'revision'))
+                    pycompat.bytestr(commits[0].getAttribute('revision'))
                     or b'0'
                 )
         return (lastrev, rev)
@@ -1149,23 +1159,23 @@ class svnsubrepo(abstractsubrepo):
         output, err = self._svncommand([b'status', b'--xml'])
         externals, changes, missing = [], [], []
         doc = xml.dom.minidom.parseString(output)
-        for e in doc.getElementsByTagName(r'entry'):
-            s = e.getElementsByTagName(r'wc-status')
+        for e in doc.getElementsByTagName('entry'):
+            s = e.getElementsByTagName('wc-status')
             if not s:
                 continue
-            item = s[0].getAttribute(r'item')
-            props = s[0].getAttribute(r'props')
-            path = e.getAttribute(r'path').encode('utf8')
-            if item == r'external':
+            item = s[0].getAttribute('item')
+            props = s[0].getAttribute('props')
+            path = e.getAttribute('path').encode('utf8')
+            if item == 'external':
                 externals.append(path)
-            elif item == r'missing':
+            elif item == 'missing':
                 missing.append(path)
             if item not in (
-                r'',
-                r'normal',
-                r'unversioned',
-                r'external',
-            ) or props not in (r'', r'none', r'normal'):
+                '',
+                'normal',
+                'unversioned',
+                'external',
+            ) or props not in ('', 'none', 'normal'):
                 changes.append(path)
         for path in changes:
             for ext in externals:
@@ -1291,13 +1301,13 @@ class svnsubrepo(abstractsubrepo):
         output = self._svncommand([b'list', b'--recursive', b'--xml'])[0]
         doc = xml.dom.minidom.parseString(output)
         paths = []
-        for e in doc.getElementsByTagName(r'entry'):
-            kind = pycompat.bytestr(e.getAttribute(r'kind'))
+        for e in doc.getElementsByTagName('entry'):
+            kind = pycompat.bytestr(e.getAttribute('kind'))
             if kind != b'file':
                 continue
-            name = r''.join(
+            name = ''.join(
                 c.data
-                for c in e.getElementsByTagName(r'name')[0].childNodes
+                for c in e.getElementsByTagName('name')[0].childNodes
                 if c.nodeType == c.TEXT_NODE
             )
             paths.append(name.encode('utf8'))
@@ -1434,7 +1444,7 @@ class gitsubrepo(abstractsubrepo):
         # which is mostly progress and useful info
         errpipe = None
         if self.ui.quiet:
-            errpipe = open(os.devnull, b'w')
+            errpipe = pycompat.open(os.devnull, b'w')
         if self.ui._colormode and len(commands) and commands[0] == b"diff":
             # insert the argument in the front,
             # the end of git diff arguments is used for paths
@@ -1528,7 +1538,7 @@ class gitsubrepo(abstractsubrepo):
         return branch2rev, rev2branch
 
     def _gittracking(self, branches):
-        b'return map of remote branch to local tracking branch'
+        """return map of remote branch to local tracking branch"""
         # assumes no more than one local tracking branch for each remote
         tracking = {}
         for b in branches:
@@ -1808,7 +1818,7 @@ class gitsubrepo(abstractsubrepo):
                 if exact:
                     rejected.append(f)
                 continue
-            if not opts.get(r'dry_run'):
+            if not opts.get('dry_run'):
                 self._gitcommand(command + [f])
 
         for f in rejected:
@@ -1849,7 +1859,7 @@ class gitsubrepo(abstractsubrepo):
         # This should be much faster than manually traversing the trees
         # and objects with many subprocess calls.
         tarstream = self._gitcommand([b'archive', revision], stream=True)
-        tar = tarfile.open(fileobj=tarstream, mode=r'r|')
+        tar = tarfile.open(fileobj=tarstream, mode='r|')
         relpath = subrelpath(self)
         progress = self.ui.makeprogress(
             _(b'archiving (%s)') % relpath, unit=_(b'files')
@@ -1918,9 +1928,9 @@ class gitsubrepo(abstractsubrepo):
         deleted, unknown, ignored, clean = [], [], [], []
 
         command = [b'status', b'--porcelain', b'-z']
-        if opts.get(r'unknown'):
+        if opts.get('unknown'):
             command += [b'--untracked-files=all']
-        if opts.get(r'ignored'):
+        if opts.get('ignored'):
             command += [b'--ignored']
         out = self._gitcommand(command)
 
@@ -1948,7 +1958,7 @@ class gitsubrepo(abstractsubrepo):
             elif st == b'!!':
                 ignored.append(filename1)
 
-        if opts.get(r'clean'):
+        if opts.get('clean'):
             out = self._gitcommand([b'ls-files'])
             for f in out.split(b'\n'):
                 if not f in changedfiles:
@@ -1962,7 +1972,7 @@ class gitsubrepo(abstractsubrepo):
     def diff(self, ui, diffopts, node2, match, prefix, **opts):
         node1 = self._state[1]
         cmd = [b'diff', b'--no-renames']
-        if opts[r'stat']:
+        if opts['stat']:
             cmd.append(b'--stat')
         else:
             # for Git, this also implies '-p'
@@ -1995,8 +2005,12 @@ class gitsubrepo(abstractsubrepo):
         if match.always():
             output += self._gitcommand(cmd) + b'\n'
         else:
-            st = self.status(node2)[:3]
-            files = [f for sublist in st for f in sublist]
+            st = self.status(node2)
+            files = [
+                f
+                for sublist in (st.modified, st.added, st.removed)
+                for f in sublist
+            ]
             for f in files:
                 if match(f):
                     output += self._gitcommand(cmd + [b'--', f]) + b'\n'
@@ -2007,7 +2021,7 @@ class gitsubrepo(abstractsubrepo):
     @annotatesubrepoerror
     def revert(self, substate, *pats, **opts):
         self.ui.status(_(b'reverting subrepo %s\n') % substate[0])
-        if not opts.get(r'no_backup'):
+        if not opts.get('no_backup'):
             status = self.status(None)
             names = status.modified
             for name in names:
@@ -2023,7 +2037,7 @@ class gitsubrepo(abstractsubrepo):
                 )
                 util.rename(self.wvfs.join(name), bakname)
 
-        if not opts.get(r'dry_run'):
+        if not opts.get('dry_run'):
             self.get(substate, overwrite=True)
         return []
 

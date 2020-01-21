@@ -205,7 +205,7 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     return parsedopts, parsedargs
 
 
-class customopt(object):
+class customopt(object):  # pytype: disable=ignored-metaclass
     """Manage defaults and mutations for any type of opt."""
 
     __metaclass__ = abc.ABCMeta

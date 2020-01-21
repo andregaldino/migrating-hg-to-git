@@ -5,26 +5,27 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::{
-    dirstate::{parsers::PARENT_SIZE, EntryState},
+    dirstate::{parsers::PARENT_SIZE, EntryState, SIZE_FROM_OTHER_PARENT},
     pack_dirstate, parse_dirstate,
-    utils::files::normalize_case,
+    utils::{
+        files::normalize_case,
+        hg_path::{HgPath, HgPathBuf},
+    },
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
-    DirstateParents, DirstateParseError, StateMap,
+    DirstateParents, DirstateParseError, FastHashMap, StateMap,
 };
 use core::borrow::Borrow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::ops::Deref;
 use std::time::Duration;
 
-pub type FileFoldMap = HashMap<HgPathBuf, HgPathBuf>;
+pub type FileFoldMap = FastHashMap<HgPathBuf, HgPathBuf>;
 
 const NULL_ID: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
-const SIZE_DIRTY: i32 = -2;
 
 #[derive(Default)]
 pub struct DirstateMap {
@@ -82,16 +83,16 @@ impl DirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
-    ) {
+    ) -> Result<(), DirstateMapError> {
         if old_state == EntryState::Unknown || old_state == EntryState::Removed
         {
             if let Some(ref mut dirs) = self.dirs {
-                dirs.add_path(filename)
+                dirs.add_path(filename)?;
             }
         }
         if old_state == EntryState::Unknown {
             if let Some(ref mut all_dirs) = self.all_dirs {
-                all_dirs.add_path(filename)
+                all_dirs.add_path(filename)?;
             }
         }
         self.state_map.insert(filename.to_owned(), entry.to_owned());
@@ -100,9 +101,10 @@ impl DirstateMap {
             self.non_normal_set.insert(filename.to_owned());
         }
 
-        if entry.size == SIZE_DIRTY {
+        if entry.size == SIZE_FROM_OTHER_PARENT {
             self.other_parent_set.insert(filename.to_owned());
         }
+        Ok(())
     }
 
     /// Mark a file as removed in the dirstate.
@@ -124,7 +126,7 @@ impl DirstateMap {
         }
         if old_state == EntryState::Unknown {
             if let Some(ref mut all_dirs) = self.all_dirs {
-                all_dirs.add_path(filename);
+                all_dirs.add_path(filename)?;
             }
         }
 
@@ -212,7 +214,8 @@ impl DirstateMap {
             if *state != EntryState::Normal || *mtime == MTIME_UNSET {
                 non_normal.insert(filename.to_owned());
             }
-            if *state == EntryState::Normal && *size == SIZE_DIRTY {
+            if *state == EntryState::Normal && *size == SIZE_FROM_OTHER_PARENT
+            {
                 other_parent.insert(filename.to_owned());
             }
         }
@@ -224,30 +227,38 @@ impl DirstateMap {
     /// emulate a Python lazy property, but it is ugly and unidiomatic.
     /// TODO One day, rewriting this struct using the typestate might be a
     /// good idea.
-    pub fn set_all_dirs(&mut self) {
+    pub fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
         if self.all_dirs.is_none() {
             self.all_dirs =
-                Some(DirsMultiset::from_dirstate(&self.state_map, None));
+                Some(DirsMultiset::from_dirstate(&self.state_map, None)?);
         }
+        Ok(())
     }
 
-    pub fn set_dirs(&mut self) {
+    pub fn set_dirs(&mut self) -> Result<(), DirstateMapError> {
         if self.dirs.is_none() {
             self.dirs = Some(DirsMultiset::from_dirstate(
                 &self.state_map,
                 Some(EntryState::Removed),
-            ));
+            )?);
         }
+        Ok(())
     }
 
-    pub fn has_tracked_dir(&mut self, directory: &HgPath) -> bool {
-        self.set_dirs();
-        self.dirs.as_ref().unwrap().contains(directory)
+    pub fn has_tracked_dir(
+        &mut self,
+        directory: &HgPath,
+    ) -> Result<bool, DirstateMapError> {
+        self.set_dirs()?;
+        Ok(self.dirs.as_ref().unwrap().contains(directory))
     }
 
-    pub fn has_dir(&mut self, directory: &HgPath) -> bool {
-        self.set_all_dirs();
-        self.all_dirs.as_ref().unwrap().contains(directory)
+    pub fn has_dir(
+        &mut self,
+        directory: &HgPath,
+    ) -> Result<bool, DirstateMapError> {
+        self.set_all_dirs()?;
+        Ok(self.all_dirs.as_ref().unwrap().contains(directory))
     }
 
     pub fn parents(
@@ -324,7 +335,7 @@ impl DirstateMap {
         if let Some(ref file_fold_map) = self.file_fold_map {
             return file_fold_map;
         }
-        let mut new_file_fold_map = FileFoldMap::new();
+        let mut new_file_fold_map = FileFoldMap::default();
         for (filename, DirstateEntry { state, .. }) in self.state_map.borrow()
         {
             if *state == EntryState::Removed {
@@ -347,11 +358,11 @@ mod tests {
         assert!(map.dirs.is_none());
         assert!(map.all_dirs.is_none());
 
-        assert_eq!(false, map.has_dir(HgPath::new(b"nope")));
+        assert_eq!(map.has_dir(HgPath::new(b"nope")).unwrap(), false);
         assert!(map.all_dirs.is_some());
         assert!(map.dirs.is_none());
 
-        assert_eq!(false, map.has_tracked_dir(HgPath::new(b"nope")));
+        assert_eq!(map.has_tracked_dir(HgPath::new(b"nope")).unwrap(), false);
         assert!(map.dirs.is_some());
     }
 
@@ -370,7 +381,8 @@ mod tests {
                 mtime: 1337,
                 size: 1337,
             },
-        );
+        )
+        .unwrap();
 
         assert_eq!(1, map.len());
         assert_eq!(0, map.non_normal_set.len());

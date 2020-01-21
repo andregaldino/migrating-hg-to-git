@@ -6,9 +6,9 @@
 # GNU General Public License version 2 or any later version.
 '''discover and advertise repositories on the local network
 
-Zeroconf-enabled repositories will be announced in a network without
-the need to configure a server or a service. They can be discovered
-without knowing their actual IP address.
+The zeroconf extension will advertise :hg:`serve` instances over
+DNS-SD so that they can be discovered using the :hg:`paths` command
+without knowing the server's IP address.
 
 To allow other people to discover your repository using run
 :hg:`serve` in your repository::
@@ -55,7 +55,7 @@ def getip():
     # finds external-facing interface without sending any packets (Linux)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect((r'1.0.0.1', 0))
+        s.connect(('1.0.0.1', 0))
         ip = s.getsockname()[0]
         return ip
     except socket.error:
@@ -64,17 +64,17 @@ def getip():
     # Generic method, sometimes gives useless results
     try:
         dumbip = socket.gethostbyaddr(socket.gethostname())[2][0]
-        if r':' in dumbip:
-            dumbip = r'127.0.0.1'
-        if not dumbip.startswith(r'127.'):
+        if ':' in dumbip:
+            dumbip = '127.0.0.1'
+        if not dumbip.startswith('127.'):
             return dumbip
     except (socket.gaierror, socket.herror):
-        dumbip = r'127.0.0.1'
+        dumbip = '127.0.0.1'
 
     # works elsewhere, but actually sends a packet
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect((r'1.0.0.1', 1))
+        s.connect(('1.0.0.1', 1))
         ip = s.getsockname()[0]
         return ip
     except socket.error:
@@ -87,20 +87,20 @@ def publish(name, desc, path, port):
     global server, localip
     if not server:
         ip = getip()
-        if ip.startswith(r'127.'):
+        if ip.startswith('127.'):
             # if we have no internet connection, this can happen.
             return
         localip = socket.inet_aton(ip)
         server = Zeroconf.Zeroconf(ip)
 
-    hostname = socket.gethostname().split(r'.')[0]
-    host = hostname + r".local"
-    name = r"%s-%s" % (hostname, name)
+    hostname = socket.gethostname().split('.')[0]
+    host = hostname + ".local"
+    name = "%s-%s" % (hostname, name)
 
     # advertise to browsers
     svc = Zeroconf.ServiceInfo(
         b'_http._tcp.local.',
-        pycompat.bytestr(name + r'._http._tcp.local.'),
+        pycompat.bytestr(name + '._http._tcp.local.'),
         server=host,
         port=port,
         properties={b'description': desc, b'path': b"/" + path},
@@ -113,7 +113,7 @@ def publish(name, desc, path, port):
     # advertise to Mercurial clients
     svc = Zeroconf.ServiceInfo(
         b'_hg._tcp.local.',
-        pycompat.bytestr(name + r'._hg._tcp.local.'),
+        pycompat.bytestr(name + '._hg._tcp.local.'),
         server=host,
         port=port,
         properties={b'description': desc, b'path': b"/" + path},
@@ -171,7 +171,7 @@ class listener(object):
 
 def getzcpaths():
     ip = getip()
-    if ip.startswith(r'127.'):
+    if ip.startswith('127.'):
         return
     server = Zeroconf.Zeroconf(ip)
     l = listener()
@@ -180,10 +180,10 @@ def getzcpaths():
     server.close()
     for value in l.found.values():
         name = value.name[: value.name.index(b'.')]
-        url = r"http://%s:%s%s" % (
+        url = "http://%s:%s%s" % (
             socket.inet_ntoa(value.address),
             value.port,
-            value.properties.get(r"path", r"/"),
+            value.properties.get("path", "/"),
         )
         yield b"zc-" + name, pycompat.bytestr(url)
 

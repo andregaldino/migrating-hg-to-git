@@ -713,36 +713,40 @@ class buildhgexe(build_ext):
             self.compiler.compiler_so = self.compiler.compiler  # no -mdll
             self.compiler.dll_libraries = []  # no -lmsrvc90
 
-        # Different Python installs can have different Python library
-        # names. e.g. the official CPython distribution uses pythonXY.dll
-        # and MinGW uses libpythonX.Y.dll.
-        _kernel32 = ctypes.windll.kernel32
-        _kernel32.GetModuleFileNameA.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_ulong,
-        ]
-        _kernel32.GetModuleFileNameA.restype = ctypes.c_ulong
-        size = 1000
-        buf = ctypes.create_string_buffer(size + 1)
-        filelen = _kernel32.GetModuleFileNameA(
-            sys.dllhandle, ctypes.byref(buf), size
-        )
+        pythonlib = None
 
-        if filelen > 0 and filelen != size:
-            dllbasename = os.path.basename(buf.value)
-            if not dllbasename.lower().endswith(b'.dll'):
-                raise SystemExit(
-                    'Python DLL does not end with .dll: %s' % dllbasename
-                )
-            pythonlib = dllbasename[:-4]
-        else:
+        if getattr(sys, 'dllhandle', None):
+            # Different Python installs can have different Python library
+            # names. e.g. the official CPython distribution uses pythonXY.dll
+            # and MinGW uses libpythonX.Y.dll.
+            _kernel32 = ctypes.windll.kernel32
+            _kernel32.GetModuleFileNameA.argtypes = [
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_ulong,
+            ]
+            _kernel32.GetModuleFileNameA.restype = ctypes.c_ulong
+            size = 1000
+            buf = ctypes.create_string_buffer(size + 1)
+            filelen = _kernel32.GetModuleFileNameA(
+                sys.dllhandle, ctypes.byref(buf), size
+            )
+
+            if filelen > 0 and filelen != size:
+                dllbasename = os.path.basename(buf.value)
+                if not dllbasename.lower().endswith(b'.dll'):
+                    raise SystemExit(
+                        'Python DLL does not end with .dll: %s' % dllbasename
+                    )
+                pythonlib = dllbasename[:-4]
+
+        if not pythonlib:
             log.warn(
-                'could not determine Python DLL filename; ' 'assuming pythonXY'
+                'could not determine Python DLL filename; assuming pythonXY'
             )
 
             hv = sys.hexversion
-            pythonlib = 'python%d%d' % (hv >> 24, (hv >> 16) & 0xFF)
+            pythonlib = b'python%d%d' % (hv >> 24, (hv >> 16) & 0xFF)
 
         log.info('using %s as Python library name' % pythonlib)
         with open('mercurial/hgpythonlib.h', 'wb') as f:
@@ -931,7 +935,7 @@ class hgbuilddoc(Command):
         # This logic is duplicated in doc/Makefile.
         sources = set(
             f
-            for f in os.listdir('mercurial/help')
+            for f in os.listdir('mercurial/helptext')
             if re.search(r'[0-9]\.txt$', f)
         )
 
@@ -1060,11 +1064,7 @@ class hginstallscripts(install_scripts):
             # absolute path instead
             libdir = self.install_lib
         else:
-            common = os.path.commonprefix((self.install_dir, self.install_lib))
-            rest = self.install_dir[len(common) :]
-            uplevel = len([n for n in os.path.split(rest) if n])
-
-            libdir = uplevel * ('..' + os.sep) + self.install_lib[len(common) :]
+            libdir = os.path.relpath(self.install_lib, self.install_dir)
 
         for outfile in self.outfiles:
             with open(outfile, 'rb') as fp:
@@ -1191,6 +1191,9 @@ packages = [
     'mercurial',
     'mercurial.cext',
     'mercurial.cffi',
+    'mercurial.defaultrc',
+    'mercurial.helptext',
+    'mercurial.helptext.internals',
     'mercurial.hgweb',
     'mercurial.interfaces',
     'mercurial.pure',
@@ -1379,9 +1382,9 @@ class RustExtension(Extension):
 class RustEnhancedExtension(RustExtension):
     """A C Extension, conditionally enhanced with Rust code.
 
-    If the HGRUSTEXT environment variable is set to something else
-    than 'cpython', the Rust sources get compiled and linked within the
-    C target shared library object.
+    If the HGWITHRUSTEXT environment variable is set to something else
+    than 'cpython', the Rust sources get compiled and linked within
+    the C target shared library object.
     """
 
     def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
@@ -1474,6 +1477,14 @@ extmodules = [
         ],
     ),
     Extension(
+        'mercurial.thirdparty.sha1dc',
+        [
+            'mercurial/thirdparty/sha1dc/cext.c',
+            'mercurial/thirdparty/sha1dc/lib/sha1.c',
+            'mercurial/thirdparty/sha1dc/lib/ubc_check.c',
+        ],
+    ),
+    Extension(
         'hgext.fsmonitor.pywatchman.bser', ['hgext/fsmonitor/pywatchman/bser.c']
     ),
     RustStandaloneExtension(
@@ -1535,11 +1546,11 @@ if os.name == 'nt':
 packagedata = {
     'mercurial': [
         'locale/*/LC_MESSAGES/hg.mo',
-        'help/*.txt',
-        'help/internals/*.txt',
-        'default.d/*.rc',
+        'defaultrc/*.rc',
         'dummycert.pem',
-    ]
+    ],
+    'mercurial.helptext': ['*.txt',],
+    'mercurial.helptext.internals': ['*.txt',],
 }
 
 

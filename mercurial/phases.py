@@ -112,6 +112,7 @@ from .node import (
     nullid,
     nullrev,
     short,
+    wdirrev,
 )
 from .pycompat import (
     getattr,
@@ -134,7 +135,7 @@ HIDEABLE_FLAG = 32  # Phases that are hideable
 public, draft, secret = range(3)
 internal = INTERNAL_FLAG | HIDEABLE_FLAG
 archived = HIDEABLE_FLAG
-allphases = range(internal + 1)
+allphases = list(range(internal + 1))
 trackedphases = allphases[1:]
 # record phase names
 cmdphasenames = [b'public', b'draft', b'secret']  # known to `hg phase` command
@@ -242,31 +243,51 @@ class phasecache(object):
         """return a smartset for the given phases"""
         self.loadphaserevs(repo)  # ensure phase's sets are loaded
         phases = set(phases)
-        if public not in phases:
-            # fast path: _phasesets contains the interesting sets,
-            # might only need a union and post-filtering.
-            if len(phases) == 1:
-                [p] = phases
-                revs = self._phasesets[p]
-            else:
-                revs = set.union(*[self._phasesets[p] for p in phases])
-            if repo.changelog.filteredrevs:
-                revs = revs - repo.changelog.filteredrevs
-            if subset is None:
-                return smartset.baseset(revs)
-            else:
-                return subset & smartset.baseset(revs)
-        else:
+        publicphase = public in phases
+
+        if publicphase:
+            # In this case, phases keeps all the *other* phases.
             phases = set(allphases).difference(phases)
             if not phases:
                 return smartset.fullreposet(repo)
-            if len(phases) == 1:
-                [p] = phases
-                revs = self._phasesets[p]
+
+        # fast path: _phasesets contains the interesting sets,
+        # might only need a union and post-filtering.
+        revsneedscopy = False
+        if len(phases) == 1:
+            [p] = phases
+            revs = self._phasesets[p]
+            revsneedscopy = True  # Don't modify _phasesets
+        else:
+            # revs has the revisions in all *other* phases.
+            revs = set.union(*[self._phasesets[p] for p in phases])
+
+        def _addwdir(wdirsubset, wdirrevs):
+            if wdirrev in wdirsubset and repo[None].phase() in phases:
+                if revsneedscopy:
+                    wdirrevs = wdirrevs.copy()
+                # The working dir would never be in the # cache, but it was in
+                # the subset being filtered for its phase (or filtered out,
+                # depending on publicphase), so add it to the output to be
+                # included (or filtered out).
+                wdirrevs.add(wdirrev)
+            return wdirrevs
+
+        if not publicphase:
+            if repo.changelog.filteredrevs:
+                revs = revs - repo.changelog.filteredrevs
+
+            if subset is None:
+                return smartset.baseset(revs)
             else:
-                revs = set.union(*[self._phasesets[p] for p in phases])
+                revs = _addwdir(subset, revs)
+                return subset & smartset.baseset(revs)
+        else:
             if subset is None:
                 subset = smartset.fullreposet(repo)
+
+            revs = _addwdir(subset, revs)
+
             if not revs:
                 return subset
             return subset.filter(lambda r: r not in revs)
@@ -512,9 +533,9 @@ class phasecache(object):
         Nothing is lost as unknown nodes only hold data for their descendants.
         """
         filtered = False
-        nodemap = repo.changelog.nodemap  # to filter unknown nodes
+        has_node = repo.changelog.index.has_node  # to filter unknown nodes
         for phase, nodes in enumerate(self.phaseroots):
-            missing = sorted(node for node in nodes if node not in nodemap)
+            missing = sorted(node for node in nodes if not has_node(node))
             if missing:
                 for mnode in missing:
                     repo.ui.debug(
@@ -672,7 +693,7 @@ def analyzeremotephases(repo, subset, roots):
     repo = repo.unfiltered()
     # build list from dictionary
     draftroots = []
-    nodemap = repo.changelog.nodemap  # to filter unknown nodes
+    has_node = repo.changelog.index.has_node  # to filter unknown nodes
     for nhex, phase in pycompat.iteritems(roots):
         if nhex == b'publishing':  # ignore data related to publish option
             continue
@@ -688,7 +709,7 @@ def analyzeremotephases(repo, subset, roots):
                     % nhex
                 )
         elif phase == draft:
-            if node in nodemap:
+            if has_node(node):
                 draftroots.append(node)
         else:
             repo.ui.warn(
@@ -733,7 +754,7 @@ def newheads(repo, heads, roots):
 
     repo = repo.unfiltered()
     cl = repo.changelog
-    rev = cl.nodemap.get
+    rev = cl.index.get_rev
     if not roots:
         return heads
     if not heads or heads == [nullid]:

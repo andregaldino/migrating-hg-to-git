@@ -11,6 +11,7 @@ look for python scripts that do not use /usr/bin/env
 In tests, enforce $PYTHON and *not* /usr/bin/env python or similar:
   $ testrepohg files 'set:grep(r"#!.*?python") and **/*.t' \
   > -X tests/test-check-execute.t \
+  > -X tests/test-check-format.t \
   > -X tests/test-check-module-imports.t \
   > -X tests/test-check-pyflakes.t \
   > -X tests/test-check-shbang.t

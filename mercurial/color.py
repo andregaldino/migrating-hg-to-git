@@ -145,6 +145,9 @@ _defaultstyles = {
     b'status.unknown': b'magenta bold underline',
     b'tags.normal': b'green',
     b'tags.local': b'black bold',
+    b'upgrade-repo.requirement.preserved': b'cyan',
+    b'upgrade-repo.requirement.added': b'green',
+    b'upgrade-repo.requirement.removed': b'red',
 }
 
 
@@ -184,7 +187,7 @@ def _terminfosetup(ui, mode, formatted):
             # noisy and use ui.debug().
             ui.debug(b"no terminfo entry for %s\n" % e)
             del ui._terminfoparams[key]
-    if not curses.tigetstr(r'setaf') or not curses.tigetstr(r'setab'):
+    if not curses.tigetstr('setaf') or not curses.tigetstr('setab'):
         # Only warn about missing terminfo entries if we explicitly asked for
         # terminfo mode and we're in a formatted terminal.
         if mode == b"terminfo" and formatted:
@@ -330,7 +333,7 @@ def _activeeffects(ui):
 
 
 def valideffect(ui, effect):
-    b'Determine if the effect is valid or not.'
+    """Determine if the effect is valid or not."""
     return (not ui._terminfoparams and effect in _activeeffects(ui)) or (
         effect in ui._terminfoparams or effect[:-11] in ui._terminfoparams
     )
@@ -353,9 +356,9 @@ def _effect_str(ui, effect):
         else:
             return curses.tigetstr(pycompat.sysstr(val))
     elif bg:
-        return curses.tparm(curses.tigetstr(r'setab'), val)
+        return curses.tparm(curses.tigetstr('setab'), val)
     else:
-        return curses.tparm(curses.tigetstr(r'setaf'), val)
+        return curses.tparm(curses.tigetstr('setaf'), val)
 
 
 def _mergeeffects(text, start, stop):
@@ -377,7 +380,7 @@ def _mergeeffects(text, start, stop):
 
 
 def _render_effects(ui, text, effects):
-    b'Wrap text in commands to turn on each effect.'
+    """Wrap text in commands to turn on each effect."""
     if not text:
         return text
     if ui._terminfoparams:
@@ -435,30 +438,30 @@ w32effects = None
 if pycompat.iswindows:
     import ctypes
 
-    _kernel32 = ctypes.windll.kernel32
+    _kernel32 = ctypes.windll.kernel32  # pytype: disable=module-attr
 
     _WORD = ctypes.c_ushort
 
     _INVALID_HANDLE_VALUE = -1
 
     class _COORD(ctypes.Structure):
-        _fields_ = [(r'X', ctypes.c_short), (r'Y', ctypes.c_short)]
+        _fields_ = [('X', ctypes.c_short), ('Y', ctypes.c_short)]
 
     class _SMALL_RECT(ctypes.Structure):
         _fields_ = [
-            (r'Left', ctypes.c_short),
-            (r'Top', ctypes.c_short),
-            (r'Right', ctypes.c_short),
-            (r'Bottom', ctypes.c_short),
+            ('Left', ctypes.c_short),
+            ('Top', ctypes.c_short),
+            ('Right', ctypes.c_short),
+            ('Bottom', ctypes.c_short),
         ]
 
     class _CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
         _fields_ = [
-            (r'dwSize', _COORD),
-            (r'dwCursorPosition', _COORD),
-            (r'wAttributes', _WORD),
-            (r'srWindow', _SMALL_RECT),
-            (r'dwMaximumWindowSize', _COORD),
+            ('dwSize', _COORD),
+            ('dwCursorPosition', _COORD),
+            ('wAttributes', _WORD),
+            ('srWindow', _SMALL_RECT),
+            ('dwMaximumWindowSize', _COORD),
         ]
 
     _STD_OUTPUT_HANDLE = 0xFFFFFFF5  # (DWORD)-11
@@ -529,7 +532,7 @@ if pycompat.iswindows:
             )
 
     def win32print(ui, writefunc, text, **opts):
-        label = opts.get(r'label', b'')
+        label = opts.get('label', b'')
         attr = origattr
 
         def mapcolor(val, attr):

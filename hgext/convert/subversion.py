@@ -643,7 +643,7 @@ class svn_source(converter_source):
         if not re.match(
             r'svn:[0-9a-f]{8,8}-[0-9a-f]{4,4}-'
             r'[0-9a-f]{4,4}-[0-9a-f]{4,4}-[0-9a-f]'
-            r'{12,12}(.*)\@[0-9]+$',
+            r'{12,12}(.*)@[0-9]+$',
             revstr,
         ):
             raise error.Abort(
@@ -1303,7 +1303,7 @@ class svn_sink(converter_sink, commandline):
             self.wc = os.path.realpath(path)
             self.run0(b'update')
         else:
-            if not re.search(br'^(file|http|https|svn|svn\+ssh)\://', path):
+            if not re.search(br'^(file|http|https|svn|svn\+ssh)://', path):
                 path = os.path.realpath(path)
                 if os.path.isdir(os.path.dirname(path)):
                     if not os.path.exists(
@@ -1359,11 +1359,11 @@ class svn_sink(converter_sink, commandline):
         m = set()
         output = self.run0(b'ls', recursive=True, xml=True)
         doc = xml.dom.minidom.parseString(output)
-        for e in doc.getElementsByTagName(r'entry'):
+        for e in doc.getElementsByTagName('entry'):
             for n in e.childNodes:
-                if n.nodeType != n.ELEMENT_NODE or n.tagName != r'name':
+                if n.nodeType != n.ELEMENT_NODE or n.tagName != 'name':
                     continue
-                name = r''.join(
+                name = ''.join(
                     c.data for c in n.childNodes if c.nodeType == c.TEXT_NODE
                 )
                 # Entries are compared with names coming from
@@ -1502,7 +1502,7 @@ class svn_sink(converter_sink, commandline):
             self.setexec = []
 
         fd, messagefile = pycompat.mkstemp(prefix=b'hg-convert-')
-        fp = os.fdopen(fd, r'wb')
+        fp = os.fdopen(fd, 'wb')
         fp.write(util.tonativeeol(commit.desc))
         fp.close()
         try:

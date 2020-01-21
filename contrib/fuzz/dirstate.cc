@@ -9,24 +9,23 @@
 
 extern "C" {
 
-static PyCodeObject *code;
+static PYCODETYPE *code;
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
 	contrib::initpy(*argv[0]);
-	code = (PyCodeObject *)Py_CompileString(R"py(
-from parsers import parse_dirstate
+	code = (PYCODETYPE *)Py_CompileString(R"py(
 try:
     dmap = {}
     copymap = {}
-    p = parse_dirstate(dmap, copymap, data)
+    p = parsers.parse_dirstate(dmap, copymap, data)
 except Exception as e:
     pass
     # uncomment this print if you're editing this Python code
     # to debug failures.
     # print e
 )py",
-	                                        "fuzzer", Py_file_input);
+	                                      "fuzzer", Py_file_input);
 	return 0;
 }
 

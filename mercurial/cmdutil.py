@@ -24,6 +24,7 @@ from .pycompat import (
     open,
     setattr,
 )
+from .thirdparty import attr
 
 from . import (
     bookmarks,
@@ -60,6 +61,15 @@ from .utils import (
     dateutil,
     stringutil,
 )
+
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Any,
+        Dict,
+    )
+
+    for t in (Any, Dict):
+        assert t
 
 stringio = util.stringio
 
@@ -250,16 +260,45 @@ debugrevlogopts = [
 _linebelow = b"^HG: ------------------------ >8 ------------------------$"
 
 
+def check_at_most_one_arg(opts, *args):
+    """abort if more than one of the arguments are in opts
+
+    Returns the unique argument or None if none of them were specified.
+    """
+
+    def to_display(name):
+        return pycompat.sysbytes(name).replace(b'_', b'-')
+
+    previous = None
+    for x in args:
+        if opts.get(x):
+            if previous:
+                raise error.Abort(
+                    _(b'cannot specify both --%s and --%s')
+                    % (to_display(previous), to_display(x))
+                )
+            previous = x
+    return previous
+
+
+def check_incompatible_arguments(opts, first, *others):
+    """abort if the first argument is given along with any of the others
+
+    Unlike check_at_most_one_arg(), `others` are not mutually exclusive
+    among themselves.
+    """
+    for other in others:
+        check_at_most_one_arg(opts, first, other)
+
+
 def resolvecommitoptions(ui, opts):
     """modify commit options dict to handle related options
 
     The return value indicates that ``rewrite.update-timestamp`` is the reason
     the ``date`` option is set.
     """
-    if opts.get(b'date') and opts.get(b'currentdate'):
-        raise error.Abort(_(b'--date and --currentdate are mutually exclusive'))
-    if opts.get(b'user') and opts.get(b'currentuser'):
-        raise error.Abort(_(b'--user and --currentuser are mutually exclusive'))
+    check_at_most_one_arg(opts, b'date', b'currentdate')
+    check_at_most_one_arg(opts, b'user', b'currentuser')
 
     datemaydiffer = False  # date-only change should be ignored?
 
@@ -320,7 +359,7 @@ def parsealiases(cmd):
 def setupwrapcolorwrite(ui):
     # wrap ui.write so diff output can be labeled/colorized
     def wrapwrite(orig, *args, **kw):
-        label = kw.pop(r'label', b'')
+        label = kw.pop('label', b'')
         for chunk, l in patch.difflabel(lambda: args):
             orig(chunk, label=label + l)
 
@@ -347,7 +386,7 @@ def filterchunks(ui, originalhunks, usecurses, testfile, match, operation=None):
                 ui, originalhunks, recordfn, operation
             )
     except crecordmod.fallbackerror as e:
-        ui.warn(b'%s\n' % e.message)
+        ui.warn(b'%s\n' % e)
         ui.warn(_(b'falling back to text mode\n'))
 
     return patch.filterpatch(ui, originalhunks, match, operation)
@@ -418,9 +457,7 @@ def dorecord(
 
         force = opts.get(b'force')
         if not force:
-            vdirs = []
             match = matchmod.badmatch(match, fail)
-            match.explicitdir = vdirs.append
 
         status = repo.status(match=match)
 
@@ -429,13 +466,13 @@ def dorecord(
         with repo.ui.configoverride(overrides, b'record'):
             # subrepoutil.precommit() modifies the status
             tmpstatus = scmutil.status(
-                copymod.copy(status[0]),
-                copymod.copy(status[1]),
-                copymod.copy(status[2]),
-                copymod.copy(status[3]),
-                copymod.copy(status[4]),
-                copymod.copy(status[5]),
-                copymod.copy(status[6]),
+                copymod.copy(status.modified),
+                copymod.copy(status.added),
+                copymod.copy(status.removed),
+                copymod.copy(status.deleted),
+                copymod.copy(status.unknown),
+                copymod.copy(status.ignored),
+                copymod.copy(status.clean),  # pytype: disable=wrong-arg-count
             )
 
             # Force allows -X subrepo to skip the subrepo.
@@ -448,7 +485,7 @@ def dorecord(
                     raise error.Abort(dirtyreason)
 
         if not force:
-            repo.checkcommitpatterns(wctx, vdirs, match, status, fail)
+            repo.checkcommitpatterns(wctx, match, status, fail)
         diffopts = patch.difffeatureopts(
             ui,
             opts=opts,
@@ -761,7 +798,7 @@ def tersedir(statuslist, terseargs):
         tersedict[st].sort()
         tersedlist.append(tersedict[st])
 
-    return tersedlist
+    return scmutil.status(*tersedlist)
 
 
 def _commentlines(raw):
@@ -771,48 +808,101 @@ def _commentlines(raw):
     return b'\n'.join(commentedlines) + b'\n'
 
 
-def _conflictsmsg(repo):
-    mergestate = mergemod.mergestate.read(repo)
-    if not mergestate.active():
-        return
+@attr.s(frozen=True)
+class morestatus(object):
+    reporoot = attr.ib()
+    unfinishedop = attr.ib()
+    unfinishedmsg = attr.ib()
+    activemerge = attr.ib()
+    unresolvedpaths = attr.ib()
+    _formattedpaths = attr.ib(init=False, default=set())
+    _label = b'status.morestatus'
 
-    m = scmutil.match(repo[None])
-    unresolvedlist = [f for f in mergestate.unresolved() if m(f)]
-    if unresolvedlist:
-        mergeliststr = b'\n'.join(
-            [
-                b'    %s' % util.pathto(repo.root, encoding.getcwd(), path)
-                for path in sorted(unresolvedlist)
-            ]
-        )
-        msg = (
-            _(
-                '''Unresolved merge conflicts:
+    def formatfile(self, path, fm):
+        self._formattedpaths.add(path)
+        if self.activemerge and path in self.unresolvedpaths:
+            fm.data(unresolved=True)
+
+    def formatfooter(self, fm):
+        if self.unfinishedop or self.unfinishedmsg:
+            fm.startitem()
+            fm.data(itemtype=b'morestatus')
+
+        if self.unfinishedop:
+            fm.data(unfinished=self.unfinishedop)
+            statemsg = (
+                _(b'The repository is in an unfinished *%s* state.')
+                % self.unfinishedop
+            )
+            fm.plain(b'%s\n' % _commentlines(statemsg), label=self._label)
+        if self.unfinishedmsg:
+            fm.data(unfinishedmsg=self.unfinishedmsg)
+
+        # May also start new data items.
+        self._formatconflicts(fm)
+
+        if self.unfinishedmsg:
+            fm.plain(
+                b'%s\n' % _commentlines(self.unfinishedmsg), label=self._label
+            )
+
+    def _formatconflicts(self, fm):
+        if not self.activemerge:
+            return
+
+        if self.unresolvedpaths:
+            mergeliststr = b'\n'.join(
+                [
+                    b'    %s'
+                    % util.pathto(self.reporoot, encoding.getcwd(), path)
+                    for path in self.unresolvedpaths
+                ]
+            )
+            msg = (
+                _(
+                    '''Unresolved merge conflicts:
 
 %s
 
 To mark files as resolved:  hg resolve --mark FILE'''
+                )
+                % mergeliststr
             )
-            % mergeliststr
-        )
-    else:
-        msg = _(b'No unresolved merge conflicts.')
 
-    return _commentlines(msg)
+            # If any paths with unresolved conflicts were not previously
+            # formatted, output them now.
+            for f in self.unresolvedpaths:
+                if f in self._formattedpaths:
+                    # Already output.
+                    continue
+                fm.startitem()
+                # We can't claim to know the status of the file - it may just
+                # have been in one of the states that were not requested for
+                # display, so it could be anything.
+                fm.data(itemtype=b'file', path=f, unresolved=True)
+
+        else:
+            msg = _(b'No unresolved merge conflicts.')
+
+        fm.plain(b'%s\n' % _commentlines(msg), label=self._label)
 
 
-def morestatus(repo, fm):
+def readmorestatus(repo):
+    """Returns a morestatus object if the repo has unfinished state."""
     statetuple = statemod.getrepostate(repo)
-    label = b'status.morestatus'
+    mergestate = mergemod.mergestate.read(repo)
+    activemerge = mergestate.active()
+    if not statetuple and not activemerge:
+        return None
+
+    unfinishedop = unfinishedmsg = unresolved = None
     if statetuple:
-        state, helpfulmsg = statetuple
-        statemsg = _(b'The repository is in an unfinished *%s* state.') % state
-        fm.plain(b'%s\n' % _commentlines(statemsg), label=label)
-        conmsg = _conflictsmsg(repo)
-        if conmsg:
-            fm.plain(b'%s\n' % conmsg, label=label)
-        if helpfulmsg:
-            fm.plain(b'%s\n' % _commentlines(helpfulmsg), label=label)
+        unfinishedop, unfinishedmsg = statetuple
+    if activemerge:
+        unresolved = sorted(mergestate.unresolved())
+    return morestatus(
+        repo.root, unfinishedop, unfinishedmsg, activemerge, unresolved
+    )
 
 
 def findpossible(cmd, table, strict=False):
@@ -991,8 +1081,8 @@ def bailifchanged(repo, merge=True, hint=None):
 
     if merge and repo.dirstate.p2() != nullid:
         raise error.Abort(_(b'outstanding uncommitted merge'), hint=hint)
-    modified, added, removed, deleted = repo.status()[:4]
-    if modified or added or removed or deleted:
+    st = repo.status()
+    if st.modified or st.added or st.removed or st.deleted:
         raise error.Abort(_(b'uncommitted changes'), hint=hint)
     ctx = repo[None]
     for s in sorted(ctx.substate):
@@ -1001,13 +1091,12 @@ def bailifchanged(repo, merge=True, hint=None):
 
 def logmessage(ui, opts):
     """ get the log message according to -m and -l option """
+
+    check_at_most_one_arg(opts, b'message', b'logfile')
+
     message = opts.get(b'message')
     logfile = opts.get(b'logfile')
 
-    if message and logfile:
-        raise error.Abort(
-            _(b'options --message and --logfile are mutually exclusive')
-        )
     if not message and logfile:
         try:
             if isstdiofilename(logfile):
@@ -1289,7 +1378,7 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
             if isinstance(r, revlog.revlog):
                 pass
             elif util.safehasattr(r, b'_revlog'):
-                r = r._revlog
+                r = r._revlog  # pytype: disable=attribute-error
             elif r is not None:
                 raise error.Abort(_(b'%r does not appear to be a revlog') % r)
 
@@ -1764,6 +1853,8 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
             overrides = {}
             if partial:
                 overrides[(b'ui', b'allowemptycommit')] = True
+            if opts.get(b'secret'):
+                overrides[(b'phases', b'new-commit')] = b'secret'
             with repo.ui.configoverride(overrides, b'import'):
                 n = repo.commit(
                     message, user, date, match=m, editor=editor, extra=extra
@@ -2022,7 +2113,7 @@ def finddate(ui, repo, date):
         rev = ctx.rev()
         if rev in results:
             ui.status(
-                _(b"found revision %s from %s\n")
+                _(b"found revision %d from %s\n")
                 % (rev, dateutil.datestr(results[rev]))
             )
             return b'%d' % rev
@@ -2338,12 +2429,16 @@ def walkchangerevs(repo, match, opts, prepare):
 
                     def fns_generator():
                         if allfiles:
-                            fiter = iter(ctx)
-                        else:
-                            fiter = ctx.files()
-                        for f in fiter:
-                            if match(f):
+
+                            def bad(f, msg):
+                                pass
+
+                            for f in ctx.matches(matchmod.badmatch(match, bad)):
                                 yield f
+                        else:
+                            for f in ctx.files():
+                                if match(f):
+                                    yield f
 
                     fns = fns_generator()
                 prepare(ctx, fns)
@@ -2397,7 +2492,7 @@ def add(ui, repo, match, prefix, uipathfn, explicitonly, **opts):
             submatch = matchmod.subdirmatcher(subpath, match)
             subprefix = repo.wvfs.reljoin(prefix, subpath)
             subuipathfn = scmutil.subdiruipathfn(subpath, uipathfn)
-            if opts.get(r'subrepos'):
+            if opts.get('subrepos'):
                 bad.extend(
                     sub.add(ui, submatch, subprefix, subuipathfn, False, **opts)
                 )
@@ -2410,7 +2505,7 @@ def add(ui, repo, match, prefix, uipathfn, explicitonly, **opts):
                 _(b"skipping missing subrepository: %s\n") % uipathfn(subpath)
             )
 
-    if not opts.get(r'dry_run'):
+    if not opts.get('dry_run'):
         rejected = wctx.add(names, prefix)
         bad.extend(f for f in rejected if f in match.files())
     return bad
@@ -2565,7 +2660,7 @@ def remove(
 ):
     ret = 0
     s = repo.status(match=m, clean=True)
-    modified, added, deleted, clean = s[0], s[1], s[3], s[6]
+    modified, added, deleted, clean = s.modified, s.added, s.deleted, s.clean
 
     wctx = repo[None]
 
@@ -2606,7 +2701,7 @@ def remove(
     progress.complete()
 
     # warn about failure to delete explicit files/dirs
-    deleteddirs = util.dirs(deleted)
+    deleteddirs = pathutil.dirs(deleted)
     files = m.files()
     progress = ui.makeprogress(
         _(b'deleting'), total=len(files), unit=_(b'files')
@@ -2876,7 +2971,8 @@ def amend(ui, repo, old, extra, pats, opts):
         if len(old.parents()) > 1:
             # ctx.files() isn't reliable for merges, so fall back to the
             # slower repo.status() method
-            files = {fn for st in base.status(old)[:3] for fn in st}
+            st = base.status(old)
+            files = set(st.modified) | set(st.added) | set(st.removed)
         else:
             files = set(old.files())
 
@@ -3044,11 +3140,13 @@ def amend(ui, repo, old, extra, pats, opts):
         # selectively update the dirstate only for the amended files.
         dirstate = repo.dirstate
 
-        # Update the state of the files which were added and
-        # and modified in the amend to "normal" in the dirstate.
+        # Update the state of the files which were added and modified in the
+        # amend to "normal" in the dirstate. We need to use "normallookup" since
+        # the files may have changed since the command started; using "normal"
+        # would mark them as clean but with uncommitted contents.
         normalfiles = set(wctx.modified() + wctx.added()) & filestoamend
         for f in normalfiles:
-            dirstate.normal(f)
+            dirstate.normallookup(f)
 
         # Update the state of files which were removed in the amend
         # to "removed" in the dirstate.
@@ -3958,6 +4056,7 @@ def abortgraft(ui, repo, graftstate):
 
 
 def readgraftstate(repo, graftstate):
+    # type: (Any, statemod.cmdstate) -> Dict[bytes, Any]
     """read the graft state file and return a dict of the data stored in it"""
     try:
         return graftstate.read()

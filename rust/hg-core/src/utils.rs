@@ -10,6 +10,26 @@
 pub mod files;
 pub mod hg_path;
 
+/// Useful until rust/issues/56345 is stable
+///
+/// # Examples
+///
+/// ```
+/// use crate::hg::utils::find_slice_in_slice;
+///
+/// let haystack = b"This is the haystack".to_vec();
+/// assert_eq!(find_slice_in_slice(&haystack, b"the"), Some(8));
+/// assert_eq!(find_slice_in_slice(&haystack, b"not here"), None);
+/// ```
+pub fn find_slice_in_slice<T>(slice: &[T], needle: &[T]) -> Option<usize>
+where
+    for<'a> &'a [T]: PartialEq,
+{
+    slice
+        .windows(needle.len())
+        .position(|window| window == needle)
+}
+
 /// Replaces the `from` slice with the `to` slice inside the `buf` slice.
 ///
 /// # Examples

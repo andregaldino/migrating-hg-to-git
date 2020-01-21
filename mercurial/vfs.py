@@ -52,9 +52,15 @@ class abstractvfs(object):
 
     def __init__(self, *args, **kwargs):
         '''Prevent instantiation; don't call this from subclasses.'''
-        raise NotImplementedError(b'attempted instantiating ' + str(type(self)))
+        raise NotImplementedError('attempted instantiating ' + str(type(self)))
+
+    def __call__(self, path, mode=b'rb', **kwargs):
+        raise NotImplementedError
 
     def _auditpath(self, path, mode):
+        raise NotImplementedError
+
+    def join(self, path, *insidef):
         raise NotImplementedError
 
     def tryread(self, path):
@@ -301,7 +307,10 @@ class abstractvfs(object):
         # Sharing backgroundfilecloser between threads is complex and using
         # multiple instances puts us at risk of running out of file descriptors
         # only allow to use backgroundfilecloser when in main thread.
-        if not isinstance(threading.currentThread(), threading._MainThread):
+        if not isinstance(
+            threading.currentThread(),
+            threading._MainThread,  # pytype: disable=module-attr
+        ):
             yield
             return
         vfs = getattr(self, 'vfs', self)
@@ -312,10 +321,14 @@ class abstractvfs(object):
 
         with backgroundfilecloser(ui, expectedcount=expectedcount) as bfc:
             try:
-                vfs._backgroundfilecloser = bfc
+                vfs._backgroundfilecloser = (
+                    bfc  # pytype: disable=attribute-error
+                )
                 yield bfc
             finally:
-                vfs._backgroundfilecloser = None
+                vfs._backgroundfilecloser = (
+                    None  # pytype: disable=attribute-error
+                )
 
 
 class vfs(abstractvfs):
@@ -471,9 +484,12 @@ class vfs(abstractvfs):
             fp = checkambigatclosing(fp)
 
         if backgroundclose and isinstance(
-            threading.currentThread(), threading._MainThread
+            threading.currentThread(),
+            threading._MainThread,  # pytype: disable=module-attr
         ):
-            if not self._backgroundfilecloser:
+            if (
+                not self._backgroundfilecloser  # pytype: disable=attribute-error
+            ):
                 raise error.Abort(
                     _(
                         b'backgroundclose can only be used when a '
@@ -481,7 +497,10 @@ class vfs(abstractvfs):
                     )
                 )
 
-            fp = delayclosedfile(fp, self._backgroundfilecloser)
+            fp = delayclosedfile(
+                fp,
+                self._backgroundfilecloser,  # pytype: disable=attribute-error
+            )
 
         return fp
 
@@ -573,7 +592,7 @@ class closewrapbase(object):
     """
 
     def __init__(self, fh):
-        object.__setattr__(self, r'_origfh', fh)
+        object.__setattr__(self, '_origfh', fh)
 
     def __getattr__(self, attr):
         return getattr(self._origfh, attr)
@@ -589,10 +608,10 @@ class closewrapbase(object):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        raise NotImplementedError(b'attempted instantiating ' + str(type(self)))
+        raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
     def close(self):
-        raise NotImplementedError(b'attempted instantiating ' + str(type(self)))
+        raise NotImplementedError('attempted instantiating ' + str(type(self)))
 
 
 class delayclosedfile(closewrapbase):
@@ -603,7 +622,7 @@ class delayclosedfile(closewrapbase):
 
     def __init__(self, fh, closer):
         super(delayclosedfile, self).__init__(fh)
-        object.__setattr__(self, r'_closer', closer)
+        object.__setattr__(self, '_closer', closer)
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._closer.close(self._origfh)
@@ -649,7 +668,7 @@ class backgroundfilecloser(object):
         self._running = True
 
         for i in range(threadcount):
-            t = threading.Thread(target=self._worker, name=b'backgroundcloser')
+            t = threading.Thread(target=self._worker, name='backgroundcloser')
             self._threads.append(t)
             t.start()
 
@@ -717,7 +736,7 @@ class checkambigatclosing(closewrapbase):
 
     def __init__(self, fh):
         super(checkambigatclosing, self).__init__(fh)
-        object.__setattr__(self, r'_oldstat', util.filestat.frompath(fh.name))
+        object.__setattr__(self, '_oldstat', util.filestat.frompath(fh.name))
 
     def _checkambig(self):
         oldstat = self._oldstat

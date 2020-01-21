@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import shutil
 import stat
 import struct
@@ -32,12 +31,14 @@ from . import (
     filemerge,
     match as matchmod,
     obsutil,
+    pathutil,
     pycompat,
     scmutil,
     subrepoutil,
     util,
     worker,
 )
+from .utils import hashutil
 
 _pack = struct.pack
 _unpack = struct.unpack
@@ -511,7 +512,7 @@ class mergestate(object):
         """hash the path of a local file context for storage in the .hg/merge
         directory."""
 
-        return hex(hashlib.sha1(path).digest())
+        return hex(hashutil.sha1(path).digest())
 
     def add(self, fcl, fco, fca, fd):
         """add a new (potentially?) conflicting file the merge state
@@ -813,7 +814,7 @@ class _unknowndirschecker(object):
             return False
 
         # Check for path prefixes that exist as unknown files.
-        for p in reversed(list(util.finddirs(f))):
+        for p in reversed(list(pathutil.finddirs(f))):
             if p in self._missingdircache:
                 return
             if p in self._unknowndircache:
@@ -947,7 +948,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
             backup = (
                 f in fileconflicts
                 or f in pathconflicts
-                or any(p in pathconflicts for p in util.finddirs(f))
+                or any(p in pathconflicts for p in pathutil.finddirs(f))
             )
             (flags,) = args
             actions[f] = (ACTION_GET, (flags, backup), msg)
@@ -1077,7 +1078,7 @@ def _filesindirs(repo, manifest, dirs):
     in.
     """
     for f in manifest:
-        for p in util.finddirs(f):
+        for p in pathutil.finddirs(f):
             if p in dirs:
                 yield f, p
                 break
@@ -1116,7 +1117,7 @@ def checkpathconflicts(repo, wctx, mctx, actions):
             ACTION_CREATED_MERGE,
         ):
             # This action may create a new local file.
-            createdfiledirs.update(util.finddirs(f))
+            createdfiledirs.update(pathutil.finddirs(f))
             if mf.hasdir(f):
                 # The file aliases a local directory.  This might be ok if all
                 # the files in the local directory are being deleted.  This
@@ -1710,7 +1711,7 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
                 # with a directory this file is in, and if so, back that up.
                 conflicting = f
                 if not repo.wvfs.lexists(f):
-                    for p in util.finddirs(f):
+                    for p in pathutil.finddirs(f):
                         if repo.wvfs.isfileorlink(p):
                             conflicting = p
                             break
@@ -2092,7 +2093,7 @@ def applyupdates(
 
 
 def recordupdates(repo, actions, branchmerge, getfiledata):
-    b"record merge actions to the dirstate"
+    """record merge actions to the dirstate"""
     # remove (must come first)
     for f, args, msg in actions.get(ACTION_REMOVE, []):
         if branchmerge:
@@ -2581,7 +2582,7 @@ def update(
 
 
 def graft(
-    repo, ctx, pctx, labels=None, keepparent=False, keepconflictparent=False
+    repo, ctx, base, labels=None, keepparent=False, keepconflictparent=False
 ):
     """Do a graft-like merge.
 
@@ -2592,7 +2593,7 @@ def graft(
     renames/copies appropriately.
 
     ctx - changeset to rebase
-    pctx - merge base, usually ctx.p1()
+    base - merge base, usually ctx.p1()
     labels - merge labels eg ['local', 'graft']
     keepparent - keep second parent if any
     keepconflictparent - if unresolved, keep parent used for the merge
@@ -2604,14 +2605,16 @@ def graft(
     # to copy commits), and 2) informs update that the incoming changes are
     # newer than the destination so it doesn't prompt about "remote changed foo
     # which local deleted".
-    mergeancestor = repo.changelog.isancestor(repo[b'.'].node(), ctx.node())
+    wctx = repo[None]
+    pctx = wctx.p1()
+    mergeancestor = repo.changelog.isancestor(pctx.node(), ctx.node())
 
     stats = update(
         repo,
         ctx.node(),
         True,
         True,
-        pctx.node(),
+        base.node(),
         mergeancestor=mergeancestor,
         labels=labels,
     )
@@ -2621,15 +2624,18 @@ def graft(
     else:
         pother = nullid
         parents = ctx.parents()
-        if keepparent and len(parents) == 2 and pctx in parents:
-            parents.remove(pctx)
+        if keepparent and len(parents) == 2 and base in parents:
+            parents.remove(base)
             pother = parents[0].node()
+    # Never set both parents equal to each other
+    if pother == pctx.node():
+        pother = nullid
 
     with repo.dirstate.parentchange():
-        repo.setparents(repo[b'.'].node(), pother)
+        repo.setparents(pctx.node(), pother)
         repo.dirstate.write(repo.currenttransaction())
         # fix up dirstate for copies and renames
-        copies.duplicatecopies(repo, repo[None], ctx.rev(), pctx.rev())
+        copies.graftcopies(wctx, ctx, base)
     return stats
 
 
@@ -2675,7 +2681,6 @@ def purge(
 
     # There's no API to copy a matcher. So mutate the passed matcher and
     # restore it when we're done.
-    oldexplicitdir = matcher.explicitdir
     oldtraversedir = matcher.traversedir
 
     res = []
@@ -2683,7 +2688,7 @@ def purge(
     try:
         if removeemptydirs:
             directories = []
-            matcher.explicitdir = matcher.traversedir = directories.append
+            matcher.traversedir = directories.append
 
         status = repo.status(match=matcher, ignored=ignored, unknown=True)
 
@@ -2705,5 +2710,4 @@ def purge(
         return res
 
     finally:
-        matcher.explicitdir = oldexplicitdir
         matcher.traversedir = oldtraversedir

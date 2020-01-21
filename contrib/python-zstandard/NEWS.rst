@@ -43,13 +43,18 @@ Actions Blocking Release
 * Support modifying compression parameters mid operation when supported by
   zstd API.
 * Expose ``ZSTD_CLEVEL_DEFAULT`` constant.
+* Expose ``ZSTD_SRCSIZEHINT_{MIN,MAX}`` constants.
 * Support ``ZSTD_p_forceAttachDict`` compression parameter.
-* Support ``ZSTD_c_literalCompressionMode `` compression parameter.
+* Support ``ZSTD_dictForceLoad`` dictionary compression parameter.
+* Support ``ZSTD_c_targetCBlockSize`` compression parameter.
+* Support ``ZSTD_c_literalCompressionMode`` compression parameter.
+* Support ``ZSTD_c_srcSizeHint`` compression parameter.
 * Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
   compression parameters.
 * Consider exposing ``ZSTDMT_toFlushNow()``.
 * Expose ``ZDICT_trainFromBuffer_fastCover()``,
   ``ZDICT_optimizeTrainFromBuffer_fastCover``.
+* Expose ``ZSTD_Sequence`` struct and related ``ZSTD_getSequences()`` API.
 * Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
 * Consider a ``chunker()`` API for decompression.
 * Consider stats for ``chunker()`` API, including finding the last consumed
@@ -66,6 +71,20 @@ Other Actions Not Blocking Release
 * Support for block compression APIs.
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
+
+0.13.0 (released 2019-12-28)
+============================
+
+Changes
+-------
+
+* ``pytest-xdist`` ``pytest`` extension is now installed so tests can be
+  run in parallel.
+* CI now builds ``manylinux2010`` and ``manylinux2014`` binary wheels
+  instead of a mix of ``manylinux2010`` and ``manylinux1``.
+* Official support for Python 3.8 has been added.
+* Bundled zstandard library upgraded from 1.4.3 to 1.4.4.
+* Python code has been reformatted with black.
 
 0.12.0 (released 2019-09-15)
 ============================

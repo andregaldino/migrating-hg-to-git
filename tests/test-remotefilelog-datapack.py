@@ -237,7 +237,7 @@ class datapacktestsbase(object):
             f.write(raw)
 
         try:
-            pack = self.datapackreader(pack.path)
+            self.datapackreader(pack.path)
             self.assertTrue(False, "bad version number should have thrown")
         except RuntimeError:
             pass

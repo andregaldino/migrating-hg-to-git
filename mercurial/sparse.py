@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import hashlib
 import os
 
 from .i18n import _
@@ -24,6 +23,7 @@ from . import (
     scmutil,
     util,
 )
+from .utils import hashutil
 
 # Whether sparse features are enabled. This variable is intended to be
 # temporary to facilitate porting sparse to core. It should eventually be
@@ -205,12 +205,12 @@ def configsignature(repo, includetemp=True):
         tempsignature = b'0'
 
     if signature is None or (includetemp and tempsignature is None):
-        signature = hex(hashlib.sha1(repo.vfs.tryread(b'sparse')).digest())
+        signature = hex(hashutil.sha1(repo.vfs.tryread(b'sparse')).digest())
         cache[b'signature'] = signature
 
         if includetemp:
             raw = repo.vfs.tryread(b'tempsparse')
-            tempsignature = hex(hashlib.sha1(raw).digest())
+            tempsignature = hex(hashutil.sha1(raw).digest())
             cache[b'tempsignature'] = tempsignature
 
     return b'%s %s' % (signature, tempsignature)

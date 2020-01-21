@@ -31,7 +31,7 @@ class Stats(object):
     def __init__(self, data):
         self.data = data
 
-    def sort(self, crit=r"inlinetime"):
+    def sort(self, crit="inlinetime"):
         """XXX docstring"""
         # profiler_entries isn't defined when running under PyPy.
         if profiler_entry:
@@ -135,9 +135,9 @@ def label(code):
                 mname = _fn2mod[code.co_filename] = k
                 break
         else:
-            mname = _fn2mod[code.co_filename] = r'<%s>' % code.co_filename
+            mname = _fn2mod[code.co_filename] = '<%s>' % code.co_filename
 
-    res = r'%s:%d(%s)' % (mname, code.co_firstlineno, code.co_name)
+    res = '%s:%d(%s)' % (mname, code.co_firstlineno, code.co_name)
 
     if sys.version_info.major >= 3:
         res = res.encode('latin-1')

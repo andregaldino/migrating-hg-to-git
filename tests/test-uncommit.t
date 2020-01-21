@@ -554,10 +554,10 @@ Bad option combinations
 
   $ hg rollback -q --config ui.rollback=True
   $ hg uncommit -U --user 'user'
-  abort: --user and --currentuser are mutually exclusive
+  abort: cannot specify both --user and --currentuser
   [255]
   $ hg uncommit -D --date today
-  abort: --date and --currentdate are mutually exclusive
+  abort: cannot specify both --date and --currentdate
   [255]
 
 `uncommit <dir>` and `cd <dir> && uncommit .` behave the same...

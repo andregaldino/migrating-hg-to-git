@@ -442,6 +442,33 @@ Censored nodes can be bundled up and unbundled in another repo
   checking files
   checked 14 changesets with 15 changes to 2 files
 
+Grepping only warns, doesn't error out
+
+  $ cd ../rpull
+  $ hg grep 'Normal file'
+  bystander:Normal file v2
+  $ hg grep nothing
+  target:Re-sanitized; nothing to see here
+  $ hg grep --diff 'Normal file'
+  cannot search in censored file: target:7
+  cannot search in censored file: target:10
+  cannot search in censored file: target:12
+  bystander:6:-:Normal file v2
+  cannot search in censored file: target:1
+  cannot search in censored file: target:2
+  cannot search in censored file: target:3
+  bystander:2:-:Normal file here
+  bystander:2:+:Normal file v2
+  bystander:0:+:Normal file here
+  $ hg grep --diff nothing
+  cannot search in censored file: target:7
+  cannot search in censored file: target:10
+  cannot search in censored file: target:12
+  target:13:+:Re-sanitized; nothing to see here
+  cannot search in censored file: target:1
+  cannot search in censored file: target:2
+  cannot search in censored file: target:3
+
 Censored nodes can be imported on top of censored nodes, consecutively
 
   $ hg init ../rimport

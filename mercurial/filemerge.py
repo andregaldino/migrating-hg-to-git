@@ -119,7 +119,7 @@ class absentfilectx(object):
         """
         return not (
             fctx.isabsent()
-            and fctx.ctx() == self.ctx()
+            and fctx.changectx() == self.changectx()
             and fctx.path() == self.path()
         )
 
@@ -279,7 +279,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
 
 
 def _eoltype(data):
-    b"Guess the EOL type of a file"
+    """Guess the EOL type of a file"""
     if b'\0' in data:  # binary
         return None
     if b'\r\n' in data:  # Windows
@@ -292,7 +292,7 @@ def _eoltype(data):
 
 
 def _matcheol(file, back):
-    b"Convert EOL markers in a file to match origfile"
+    """Convert EOL markers in a file to match origfile"""
     tostyle = _eoltype(back.data())  # No repo.wread filters?
     if tostyle:
         data = util.readfile(file)
@@ -693,7 +693,7 @@ def _describemerge(ui, repo, mynode, fcl, fcb, fco, env, toolpath, args):
     ui.status(t.renderdefault(props))
 
 
-def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     uipathfn = scmutil.getuipathfn(repo)
     if fcd.isabsent() or fco.isabsent():
@@ -934,10 +934,10 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
             name = os.path.join(tmproot, pre)
             if ext:
                 name += ext
-            f = open(name, r"wb")
+            f = open(name, "wb")
         else:
             fd, name = pycompat.mkstemp(prefix=pre + b'.', suffix=ext)
-            f = os.fdopen(fd, r"wb")
+            f = os.fdopen(fd, "wb")
         return f, name
 
     def tempfromcontext(prefix, ctx):

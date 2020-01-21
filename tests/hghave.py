@@ -431,7 +431,8 @@ def has_p4():
 
 @check("symlink", "symbolic links")
 def has_symlink():
-    if getattr(os, "symlink", None) is None:
+    # mercurial.windows.checklink() is a hard 'no' at the moment
+    if os.name == 'nt' or getattr(os, "symlink", None) is None:
         return False
     name = tempfile.mktemp(dir='.', prefix=tempprefix)
     try:
@@ -576,6 +577,22 @@ def has_pygments():
         return False
 
 
+@check("pygments25", "Pygments version >= 2.5")
+def pygments25():
+    try:
+        import pygments
+
+        v = pygments.__version__
+    except ImportError:
+        return False
+
+    parts = v.split(".")
+    major = int(parts[0])
+    minor = int(parts[1])
+
+    return (major, minor) >= (2, 5)
+
+
 @check("outer-repo", "outer repo")
 def has_outer_repo():
     # failing for other reasons than 'no repo' imply that there is a repo
@@ -670,6 +687,13 @@ def has_tic():
         return matchoutput('test -x "`which tic`"', br'')
     except ImportError:
         return False
+
+
+@check("xz", "xz compression utility")
+def has_xz():
+    # When Windows invokes a subprocess in shell mode, it uses `cmd.exe`, which
+    # only knows `where`, not `which`.  So invoke MSYS shell explicitly.
+    return matchoutput("sh -c 'test -x \"`which xz`\"'", b'')
 
 
 @check("msys", "Windows with MSYS")
@@ -999,3 +1023,19 @@ def has_black():
     version = matchoutput(blackcmd, version_regex)
     sv = distutils.version.StrictVersion
     return version and sv(_strpath(version.group(1))) >= sv('19.10b0')
+
+
+@check('pytype', 'the pytype type checker')
+def has_pytype():
+    pytypecmd = 'pytype --version'
+    version = matchoutput(pytypecmd, b'[0-9a-b.]+')
+    sv = distutils.version.StrictVersion
+    return version and sv(_strpath(version.group(0))) >= sv('2019.10.17')
+
+
+@check("rustfmt", "rustfmt tool")
+def has_rustfmt():
+    # We use Nightly's rustfmt due to current unstable config options.
+    return matchoutput(
+        '`rustup which --toolchain nightly rustfmt` --version', b'rustfmt'
+    )

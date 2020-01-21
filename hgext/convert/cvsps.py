@@ -54,10 +54,8 @@ class logentry(object):
         self.__dict__.update(entries)
 
     def __repr__(self):
-        items = (
-            r"%s=%r" % (k, self.__dict__[k]) for k in sorted(self.__dict__)
-        )
-        return r"%s(%s)" % (type(self).__name__, r", ".join(items))
+        items = ("%s=%r" % (k, self.__dict__[k]) for k in sorted(self.__dict__))
+        return "%s(%s)" % (type(self).__name__, ", ".join(items))
 
 
 class logerror(Exception):
@@ -112,7 +110,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
     _scache = {}
 
     def scache(s):
-        b"return a shared version of a string"
+        """return a shared version of a string"""
         return _scache.setdefault(s, s)
 
     ui.status(_(b'collecting CVS rlog\n'))
@@ -713,7 +711,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     # Sort files in each changeset
 
     def entitycompare(l, r):
-        b'Mimic cvsps sorting order'
+        """Mimic cvsps sorting order"""
         l = l.file.split(b'/')
         r = r.file.split(b'/')
         nl = len(l)

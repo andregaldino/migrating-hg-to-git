@@ -70,7 +70,6 @@ comment associated with each format for details.
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import struct
 
 from .i18n import _
@@ -85,9 +84,12 @@ from . import (
     pycompat,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    hashutil,
+)
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 
 _pack = struct.pack
 _unpack = struct.unpack
@@ -580,7 +582,7 @@ class obsstore(object):
         return len(self._all)
 
     def __nonzero__(self):
-        if not self._cached(r'_all'):
+        if not self._cached('_all'):
             try:
                 return self.svfs.stat(b'obsstore').st_size > 1
             except OSError as inst:
@@ -641,7 +643,7 @@ class obsstore(object):
                 raise ValueError(succ)
         if prec in succs:
             raise ValueError(
-                r'in-marker cycle with %s' % pycompat.sysstr(node.hex(prec))
+                'in-marker cycle with %s' % pycompat.sysstr(node.hex(prec))
             )
 
         metadata = tuple(sorted(pycompat.iteritems(metadata)))
@@ -752,11 +754,11 @@ class obsstore(object):
         markers = list(markers)  # to allow repeated iteration
         self._data = self._data + rawdata
         self._all.extend(markers)
-        if self._cached(r'successors'):
+        if self._cached('successors'):
             _addsuccessors(self.successors, markers)
-        if self._cached(r'predecessors'):
+        if self._cached('predecessors'):
             _addpredecessors(self.predecessors, markers)
-        if self._cached(r'children'):
+        if self._cached('children'):
             _addchildren(self.children, markers)
         _checkinvalidmarkers(markers)
 
@@ -802,7 +804,7 @@ def makestore(ui, repo):
     # rely on obsstore class default when possible.
     kwargs = {}
     if defaultformat is not None:
-        kwargs[r'defaultformat'] = defaultformat
+        kwargs['defaultformat'] = defaultformat
     readonly = not isenabled(repo, createmarkersopt)
     store = obsstore(repo.svfs, readonly=readonly, **kwargs)
     if store and readonly:
@@ -980,7 +982,7 @@ def _computephasedivergentset(repo):
     phase = repo._phasecache.phase  # would be faster to grab the full list
     public = phases.public
     cl = repo.changelog
-    torev = cl.nodemap.get
+    torev = cl.index.get_rev
     tonode = cl.node
     obsstore = repo.obsstore
     for rev in repo.revs(b'(not public()) and (not obsolete())'):
@@ -1028,7 +1030,7 @@ def _computecontentdivergentset(repo):
 
 def makefoldid(relation, user):
 
-    folddigest = hashlib.sha1(user)
+    folddigest = hashutil.sha1(user)
     for p in relation[0] + relation[1]:
         folddigest.update(b'%d' % p.rev())
         folddigest.update(p.node())

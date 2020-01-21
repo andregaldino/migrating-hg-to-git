@@ -32,6 +32,7 @@ from .. import (
     error,
     extensions,
     hg,
+    pathutil,
     profiling,
     pycompat,
     registrar,
@@ -436,7 +437,7 @@ class hgwebdir(object):
             def _virtualdirs():
                 # Check the full virtual path, and each parent
                 yield virtual
-                for p in util.finddirs(virtual):
+                for p in pathutil.finddirs(virtual):
                     yield p
 
             for virtualrepo in _virtualdirs():
@@ -485,7 +486,7 @@ class hgwebdir(object):
             )
             return res.sendresponse()
         finally:
-            tmpl = None
+            del tmpl
 
     def makeindex(self, req, res, tmpl, subdir=b""):
         self.refresh()

@@ -37,6 +37,11 @@ typedef struct {
 	int children[16];
 } nodetreenode;
 
+typedef struct {
+	int abi_version;
+	int (*index_parents)(PyObject *, int, int *);
+} Revlog_CAPI;
+
 /*
  * A base-16 trie for fast node->rev mapping.
  *
@@ -62,10 +67,9 @@ typedef struct {
  * This class has two behaviors.
  *
  * When used in a list-like way (with integer keys), we decode an
- * entry in a RevlogNG index file on demand. Our last entry is a
- * sentinel, always a nullid.  We have limited support for
+ * entry in a RevlogNG index file on demand. We have limited support for
  * integer-keyed insert and delete, only at elements right before the
- * sentinel.
+ * end.
  *
  * With string keys, we lazily perform a reverse mapping from node to
  * rev, using a base-16 trie.
@@ -2065,6 +2069,29 @@ static int index_contains(indexObject *self, PyObject *value)
 	}
 }
 
+static PyObject *index_m_has_node(indexObject *self, PyObject *args)
+{
+	int ret = index_contains(self, args);
+	if (ret < 0)
+		return NULL;
+	return PyBool_FromLong((long)ret);
+}
+
+static PyObject *index_m_rev(indexObject *self, PyObject *val)
+{
+	char *node;
+	int rev;
+
+	if (node_check(val, &node) == -1)
+		return NULL;
+	rev = index_find_node(self, node, 20);
+	if (rev >= -1)
+		return PyInt_FromLong(rev);
+	if (rev == -2)
+		raise_revlog_error();
+	return NULL;
+}
+
 typedef uint64_t bitmask;
 
 /*
@@ -2443,7 +2470,7 @@ static void index_invalidate_added(indexObject *self, Py_ssize_t start)
 
 /*
  * Delete a numeric range of revs, which must be at the end of the
- * range, but exclude the sentinel nullid entry.
+ * range.
  */
 static int index_slice_del(indexObject *self, PyObject *item)
 {
@@ -2489,7 +2516,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 		if (self->ntinitialized) {
 			Py_ssize_t i;
 
-			for (i = start + 1; i < self->length; i++) {
+			for (i = start; i < self->length; i++) {
 				const char *node = index_node_existing(self, i);
 				if (node == NULL)
 					return -1;
@@ -2500,7 +2527,10 @@ static int index_slice_del(indexObject *self, PyObject *item)
 				index_invalidate_added(self, 0);
 			if (self->ntrev > start)
 				self->ntrev = (int)start;
+		} else if (self->added) {
+			Py_CLEAR(self->added);
 		}
+
 		self->length = start;
 		if (start < self->raw_length) {
 			if (self->cache) {
@@ -2723,6 +2753,12 @@ static PyMethodDef index_methods[] = {
     {"clearcaches", (PyCFunction)index_clearcaches, METH_NOARGS,
      "clear the index caches"},
     {"get", (PyCFunction)index_m_get, METH_VARARGS, "get an index entry"},
+    {"get_rev", (PyCFunction)index_m_get, METH_VARARGS,
+     "return `rev` associated with a node or None"},
+    {"has_node", (PyCFunction)index_m_has_node, METH_O,
+     "return True if the node exist in the index"},
+    {"rev", (PyCFunction)index_m_rev, METH_O,
+     "return `rev` associated with a node or raise RevlogError"},
     {"computephasesmapsets", (PyCFunction)compute_phases_map_sets, METH_VARARGS,
      "compute phases"},
     {"reachableroots2", (PyCFunction)reachableroots2, METH_VARARGS,
@@ -3001,6 +3037,13 @@ static PyTypeObject rustlazyancestorsType = {
 };
 #endif /* WITH_RUST */
 
+static Revlog_CAPI CAPI = {
+    /* increment the abi_version field upon each change in the Revlog_CAPI
+       struct or in the ABI of the listed functions */
+    1,
+    HgRevlogIndex_GetParents,
+};
+
 void revlog_module_init(PyObject *mod)
 {
 	PyObject *caps = NULL;
@@ -3024,11 +3067,9 @@ void revlog_module_init(PyObject *mod)
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);
 
-	caps = PyCapsule_New(HgRevlogIndex_GetParents,
-	                     "mercurial.cext.parsers.index_get_parents_CAPI",
-	                     NULL);
+	caps = PyCapsule_New(&CAPI, "mercurial.cext.parsers.revlog_CAPI", NULL);
 	if (caps != NULL)
-		PyModule_AddObject(mod, "index_get_parents_CAPI", caps);
+		PyModule_AddObject(mod, "revlog_CAPI", caps);
 
 #ifdef WITH_RUST
 	rustlazyancestorsType.tp_new = PyType_GenericNew;

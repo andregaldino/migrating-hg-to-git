@@ -164,4 +164,35 @@ amend with .hgsub removed
   R .hgsub
   R .hgsubstate
 
+broken repositories will refuse to push
+
+#if obsstore-off
+  $ hg up -q -C 2
+#else
+  $ hg up -q -C 6
+#endif
+  $ echo c >> t/b
+  $ hg amend -q -R t
+
+  $ hg init ../dest
+  $ hg init ../dest/t
+  $ hg init ../dest/s
+  $ hg push -q ../dest
+  abort: subrepo 't' is hidden in revision 04aa62396ec6 (obsstore-on !)
+  abort: subrepo 't' not found in revision 04aa62396ec6 (obsstore-off !)
+  [255]
+
+... unless forced
+
+  $ hg push --force -q ../dest
+  $ hg verify -R ../dest
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 5 changesets with 12 changes to 4 files
+  checking subrepo links
+  subrepo 't' not found in revision 04aa62396ec6
+  subrepo 't' not found in revision 6bce99600681
+
   $ cd ..

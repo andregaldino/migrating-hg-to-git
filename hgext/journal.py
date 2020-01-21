@@ -149,7 +149,7 @@ def _mergeentriesiter(*iterables, **kwargs):
 
     Note that by default entries go from most recent to oldest.
     """
-    order = kwargs.pop(r'order', max)
+    order = kwargs.pop('order', max)
     iterables = [iter(it) for it in iterables]
     # this tracks still active iterables; iterables are deleted as they are
     # exhausted, which is why this is a dictionary and why each entry also
@@ -214,8 +214,8 @@ def unsharejournal(orig, ui, repo, repopath):
 
 class journalentry(
     collections.namedtuple(
-        r'journalentry',
-        r'timestamp user command namespace name oldhashes newhashes',
+        'journalentry',
+        'timestamp user command namespace name oldhashes newhashes',
     )
 ):
     """Individual journal entry

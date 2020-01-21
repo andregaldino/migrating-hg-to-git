@@ -209,6 +209,8 @@ def parsedate(date, formats=None, bias=None):
     True
     >>> tz == strtz
     True
+    >>> parsedate(b'2000 UTC', formats=extendeddateformats)
+    (946684800, 0)
     """
     if bias is None:
         bias = {}
@@ -223,7 +225,7 @@ def parsedate(date, formats=None, bias=None):
     if date == b'now' or date == _(b'now'):
         return makedate()
     if date == b'today' or date == _(b'today'):
-        date = datetime.date.today().strftime(r'%b %d')
+        date = datetime.date.today().strftime('%b %d')
         date = encoding.strtolocal(date)
     elif date == b'yesterday' or date == _(b'yesterday'):
         date = (datetime.date.today() - datetime.timedelta(days=1)).strftime(
@@ -244,7 +246,8 @@ def parsedate(date, formats=None, bias=None):
                 if part[0:1] in b"HMS":
                     b = b"00"
                 else:
-                    b = b"0"
+                    # year, month, and day start from 1
+                    b = b"1"
 
             # this piece is for matching the generic end to today's date
             n = datestr(now, b"%" + part[0:1])

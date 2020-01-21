@@ -302,25 +302,25 @@ class gnuarch_source(common.converter_source, common.commandline):
 
             # Commit date
             self.changes[rev].date = dateutil.datestr(
-                dateutil.strdate(catlog[r'Standard-date'], b'%Y-%m-%d %H:%M:%S')
+                dateutil.strdate(catlog['Standard-date'], b'%Y-%m-%d %H:%M:%S')
             )
 
             # Commit author
-            self.changes[rev].author = self.recode(catlog[r'Creator'])
+            self.changes[rev].author = self.recode(catlog['Creator'])
 
             # Commit description
             self.changes[rev].summary = b'\n\n'.join(
                 (
-                    self.recode(catlog[r'Summary']),
+                    self.recode(catlog['Summary']),
                     self.recode(catlog.get_payload()),
                 )
             )
             self.changes[rev].summary = self.recode(self.changes[rev].summary)
 
             # Commit revision origin when dealing with a branch or tag
-            if r'Continuation-of' in catlog:
+            if 'Continuation-of' in catlog:
                 self.changes[rev].continuationof = self.recode(
-                    catlog[r'Continuation-of']
+                    catlog['Continuation-of']
                 )
         except Exception:
             raise error.Abort(_(b'could not parse cat-log of %s') % rev)

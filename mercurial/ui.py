@@ -45,6 +45,7 @@ from . import (
 from .utils import (
     dateutil,
     procutil,
+    resourceutil,
     stringutil,
 )
 
@@ -307,6 +308,8 @@ class ui(object):
         for t, f in rcutil.rccomponents():
             if t == b'path':
                 u.readconfig(f, trust=True)
+            elif t == b'resource':
+                u.read_resource_config(f, trust=True)
             elif t == b'items':
                 sections = set()
                 for section, name, value, source in f:
@@ -424,27 +427,65 @@ class ui(object):
             )
         return False
 
-    def readconfig(
-        self, filename, root=None, trust=False, sections=None, remap=None
+    def read_resource_config(
+        self, name, root=None, trust=False, sections=None, remap=None
     ):
         try:
-            fp = open(filename, r'rb')
+            fp = resourceutil.open_resource(name[0], name[1])
         except IOError:
             if not sections:  # ignore unless we were looking for something
                 return
             raise
 
-        cfg = config.config()
-        trusted = sections or trust or self._trusted(fp, filename)
+        self._readconfig(
+            b'resource:%s.%s' % name, fp, root, trust, sections, remap
+        )
 
+    def readconfig(
+        self, filename, root=None, trust=False, sections=None, remap=None
+    ):
         try:
-            cfg.read(filename, fp, sections=sections, remap=remap)
-            fp.close()
-        except error.ConfigError as inst:
-            if trusted:
-                raise
-            self.warn(_(b"ignored: %s\n") % stringutil.forcebytestr(inst))
+            fp = open(filename, 'rb')
+        except IOError:
+            if not sections:  # ignore unless we were looking for something
+                return
+            raise
 
+        self._readconfig(filename, fp, root, trust, sections, remap)
+
+    def _readconfig(
+        self, filename, fp, root=None, trust=False, sections=None, remap=None
+    ):
+        with fp:
+            cfg = config.config()
+            trusted = sections or trust or self._trusted(fp, filename)
+
+            try:
+                cfg.read(filename, fp, sections=sections, remap=remap)
+            except error.ParseError as inst:
+                if trusted:
+                    raise
+                self.warn(_(b'ignored: %s\n') % stringutil.forcebytestr(inst))
+
+        self._applyconfig(cfg, trusted, root)
+
+    def applyconfig(self, configitems, source=b"", root=None):
+        """Add configitems from a non-file source.  Unlike with ``setconfig()``,
+        they can be overridden by subsequent config file reads.  The items are
+        in the same format as ``configoverride()``, namely a dict of the
+        following structures: {(section, name) : value}
+
+        Typically this is used by extensions that inject themselves into the
+        config file load procedure by monkeypatching ``localrepo.loadhgrc()``.
+        """
+        cfg = config.config()
+
+        for (section, name), value in configitems.items():
+            cfg.set(section, name, value, source)
+
+        self._applyconfig(cfg, True, root)
+
+    def _applyconfig(self, cfg, trusted, root):
         if self.plain():
             for k in (
                 b'debug',
@@ -653,7 +694,8 @@ class ui(object):
         return main, sub
 
     def configpath(self, section, name, default=_unset, untrusted=False):
-        b'get a path config item, expanded relative to repo root or config file'
+        """get a path config item, expanded relative to repo root or config
+        file"""
         v = self.config(section, name, default, untrusted)
         if v is None:
             return None
@@ -1087,7 +1129,7 @@ class ui(object):
 
         # inlined _write() for speed
         if self._buffers:
-            label = opts.get(r'label', b'')
+            label = opts.get('label', b'')
             if label and self._bufferapplylabels:
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
@@ -1095,7 +1137,7 @@ class ui(object):
             return
 
         # inlined _writenobuf() for speed
-        if not opts.get(r'keepprogressbar', False):
+        if not opts.get('keepprogressbar', False):
             self._progclear()
         msg = b''.join(args)
 
@@ -1108,7 +1150,7 @@ class ui(object):
                 color.win32print(self, dest.write, msg, **opts)
             else:
                 if self._colormode is not None:
-                    label = opts.get(r'label', b'')
+                    label = opts.get('label', b'')
                     msg = self.label(msg, label)
                 dest.write(msg)
         except IOError as err:
@@ -1124,7 +1166,7 @@ class ui(object):
     def _write(self, dest, *args, **opts):
         # update write() as well if you touch this code
         if self._isbuffered(dest):
-            label = opts.get(r'label', b'')
+            label = opts.get('label', b'')
             if label and self._bufferapplylabels:
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
@@ -1134,7 +1176,7 @@ class ui(object):
 
     def _writenobuf(self, dest, *args, **opts):
         # update write() as well if you touch this code
-        if not opts.get(r'keepprogressbar', False):
+        if not opts.get('keepprogressbar', False):
             self._progclear()
         msg = b''.join(args)
 
@@ -1153,7 +1195,7 @@ class ui(object):
                 color.win32print(self, dest.write, msg, **opts)
             else:
                 if self._colormode is not None:
-                    label = opts.get(r'label', b'')
+                    label = opts.get('label', b'')
                     msg = self.label(msg, label)
                 dest.write(msg)
             # stderr may be buffered under win32 when redirected to files,
@@ -1588,7 +1630,7 @@ class ui(object):
         return self._prompt(msg, default=default)
 
     def _prompt(self, msg, **opts):
-        default = opts[r'default']
+        default = opts['default']
         if not self.interactive():
             self._writemsg(self._fmsgout, msg, b' ', type=b'prompt', **opts)
             self._writemsg(
@@ -1625,7 +1667,7 @@ class ui(object):
         # prompt to start parsing. Sadly, we also can't rely on
         # choices containing spaces, ASCII, or basically anything
         # except an ampersand followed by a character.
-        m = re.match(br'(?s)(.+?)\$\$([^\$]*&[^ \$].*)', prompt)
+        m = re.match(br'(?s)(.+?)\$\$([^$]*&[^ $].*)', prompt)
         msg = m.group(1)
         choices = [p.strip(b' ') for p in m.group(2).split(b'$$')]
 
@@ -1674,7 +1716,7 @@ class ui(object):
                         raise EOFError
                     return l.rstrip(b'\n')
                 else:
-                    return getpass.getpass(r'')
+                    return getpass.getpass('')
         except EOFError:
             raise error.ResponseExpected()
 
@@ -1765,9 +1807,8 @@ class ui(object):
             prefix=b'hg-' + extra[b'prefix'] + b'-', suffix=suffix, dir=rdir
         )
         try:
-            f = os.fdopen(fd, r'wb')
-            f.write(util.tonativeeol(text))
-            f.close()
+            with os.fdopen(fd, 'wb') as f:
+                f.write(util.tonativeeol(text))
 
             environ = {b'HGUSER': user}
             if b'transplant_source' in extra:
@@ -1793,9 +1834,8 @@ class ui(object):
                 blockedtag=b'editor',
             )
 
-            f = open(name, r'rb')
-            t = util.fromnativeeol(f.read())
-            f.close()
+            with open(name, 'rb') as f:
+                t = util.fromnativeeol(f.read())
         finally:
             os.unlink(name)
 
@@ -1858,13 +1898,13 @@ class ui(object):
                 # exclude frame where 'exc' was chained and rethrown from exctb
                 self.write_err(
                     b'Traceback (most recent call last):\n',
-                    b''.join(exctb[:-1]),
-                    b''.join(causetb),
-                    b''.join(exconly),
+                    encoding.strtolocal(''.join(exctb[:-1])),
+                    encoding.strtolocal(''.join(causetb)),
+                    encoding.strtolocal(''.join(exconly)),
                 )
             else:
                 output = traceback.format_exception(exc[0], exc[1], exc[2])
-                self.write_err(encoding.strtolocal(r''.join(output)))
+                self.write_err(encoding.strtolocal(''.join(output)))
         return self.tracebackflag or force
 
     def geteditor(self):
@@ -2033,7 +2073,10 @@ class ui(object):
             self.log(
                 b'develwarn', b'%s at: %s:%d (%s)\n', msg, fname, lineno, fmsg
             )
-            curframe = calframe = None  # avoid cycles
+
+            # avoid cycles
+            del curframe
+            del calframe
 
     def deprecwarn(self, msg, version, stacklevel=2):
         """issue a deprecation warning
@@ -2305,6 +2348,6 @@ def _writemsgwith(write, dest, *args, **opts):
     isn't a structured channel, so that the message will be colorized.
     """
     # TODO: maybe change 'type' to a mandatory option
-    if r'type' in opts and not getattr(dest, 'structured', False):
-        opts[r'label'] = opts.get(r'label', b'') + b' ui.%s' % opts.pop(r'type')
+    if 'type' in opts and not getattr(dest, 'structured', False):
+        opts['label'] = opts.get('label', b'') + b' ui.%s' % opts.pop('type')
     write(dest, *args, **opts)

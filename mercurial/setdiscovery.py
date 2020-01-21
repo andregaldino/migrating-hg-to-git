@@ -278,7 +278,7 @@ class partialdiscovery(object):
 
 
 partialdiscovery = policy.importrust(
-    r'discovery', member=r'PartialDiscovery', default=partialdiscovery
+    'discovery', member='PartialDiscovery', default=partialdiscovery
 )
 
 

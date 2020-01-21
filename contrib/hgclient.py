@@ -39,7 +39,7 @@ def connectpipe(path=None, extraargs=()):
     cmdline.extend(extraargs)
 
     def tonative(cmdline):
-        if os.name != r'nt':
+        if os.name != 'nt':
             return cmdline
         return [arg.decode("utf-8") for arg in cmdline]
 

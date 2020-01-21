@@ -60,30 +60,10 @@
       <Directory Id='$(var.PFolder)' Name='PFiles'>
         <Directory Id='INSTALLDIR' Name='Mercurial'>
           <Component Id='MainExecutable' Guid='$(var.ComponentMainExecutableGUID)' Win64='$(var.IsX64)'>
-            <File Id='hgEXE' Name='hg.exe' Source='dist\hg.exe' KeyPath='yes' />
+            <CreateFolder />
             <Environment Id="Environment" Name="PATH" Part="last" System="yes"
                          Permanent="no" Value="[INSTALLDIR]" Action="set" />
           </Component>
-          <Component Id='ReadMe' Guid='$(var.ReadMe.guid)' Win64='$(var.IsX64)'>
-              <File Id='ReadMe' Name='ReadMe.html' Source='contrib\win32\ReadMe.html'
-                    KeyPath='yes'/>
-          </Component>
-          <Component Id='COPYING' Guid='$(var.COPYING.guid)' Win64='$(var.IsX64)'>
-            <File Id='COPYING' Name='COPYING.rtf' Source='contrib\packaging\wix\COPYING.rtf'
-                  KeyPath='yes'/>
-          </Component>
-
-          <Directory Id='HGRCD' Name='hgrc.d'>
-            <Component Id='mercurial.rc' Guid='$(var.mercurial.rc.guid)' Win64='$(var.IsX64)'>
-              <File Id='mercurial.rc' Name='Mercurial.rc' Source='contrib\win32\mercurial.ini'
-                    ReadOnly='yes' KeyPath='yes'/>
-            </Component>
-            <Component Id='mergetools.rc' Guid='$(var.mergetools.rc.guid)' Win64='$(var.IsX64)'>
-              <File Id='mergetools.rc' Name='MergeTools.rc' Source='mercurial\default.d\mergetools.rc'
-                    ReadOnly='yes' KeyPath='yes'/>
-            </Component>
-          </Directory>
-
         </Directory>
       </Directory>
 
@@ -117,15 +97,12 @@
       <Feature Id='MainProgram' Title='Program' Description='Mercurial command line app'
              Level='1' Absent='disallow' >
         <ComponentRef Id='MainExecutable' />
-        <ComponentRef Id='distOutput' />
-        <ComponentRef Id='libOutput' />
         <ComponentRef Id='ProgramMenuDir' />
-        <ComponentRef Id='ReadMe' />
-        <ComponentRef Id='COPYING' />
-        <ComponentRef Id='mercurial.rc' />
-        <ComponentRef Id='mergetools.rc' />
-        <ComponentGroupRef Id='helpFolder' />
-        <ComponentGroupRef Id='templatesFolder' />
+        <ComponentGroupRef Id="hg.group.ROOT" />
+        <ComponentGroupRef Id="hg.group.hgrc.d" />
+        <ComponentGroupRef Id="hg.group.helptext" />
+        <ComponentGroupRef Id="hg.group.lib" />
+        <ComponentGroupRef Id="hg.group.templates" />
         <MergeRef Id='VCRuntime' />
         <MergeRef Id='VCRuntimePolicy' />
       </Feature>
@@ -135,14 +112,13 @@
         <?endforeach?>
       <?endif?>
       <Feature Id='Locales' Title='Translations' Description='Translations' Level='1'>
-        <ComponentGroupRef Id='localeFolder' />
-        <ComponentRef Id='i18nFolder' />
+        <ComponentGroupRef Id="hg.group.locale" />
       </Feature>
       <Feature Id='Documentation' Title='Documentation' Description='HTML man pages' Level='1'>
-        <ComponentGroupRef Id='docFolder' />
+        <ComponentGroupRef Id="hg.group.doc" />
       </Feature>
       <Feature Id='Misc' Title='Miscellaneous' Description='Contributed scripts' Level='1'>
-        <ComponentGroupRef Id='contribFolder' />
+        <ComponentGroupRef Id="hg.group.contrib" />
       </Feature>
     </Feature>
 

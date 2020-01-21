@@ -60,7 +60,7 @@ def main(argv=()):
     )
     p.add_argument(
         '-j',
-        default=os.sysconf(r'SC_NPROCESSORS_ONLN'),
+        default=os.sysconf('SC_NPROCESSORS_ONLN'),
         type=int,
         help='Number of parallel tests to run.',
     )

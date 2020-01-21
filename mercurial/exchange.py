@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import collections
-import hashlib
 
 from .i18n import _
 from .node import (
@@ -40,7 +39,10 @@ from . import (
     wireprototypes,
 )
 from .interfaces import repository
-from .utils import stringutil
+from .utils import (
+    hashutil,
+    stringutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -524,8 +526,8 @@ class pushoperation(object):
         # We can pick:
         # * missingheads part of common (::commonheads)
         common = self.outgoing.common
-        nm = self.repo.changelog.nodemap
-        cheads = [node for node in self.revs if nm[node] in common]
+        rev = self.repo.changelog.index.rev
+        cheads = [node for node in self.revs if rev(node) in common]
         # and
         # * commonheads parents on missing
         revset = unfi.set(
@@ -646,6 +648,8 @@ def push(
                 pushop.repo.checkpush(pushop)
                 _checkpublish(pushop)
                 _pushdiscovery(pushop)
+                if not pushop.force:
+                    _checksubrepostate(pushop)
                 if not _forcebundle1(pushop):
                     _pushbundle2(pushop)
                 _pushchangeset(pushop)
@@ -692,6 +696,17 @@ def _pushdiscovery(pushop):
     for stepname in pushdiscoveryorder:
         step = pushdiscoverymapping[stepname]
         step(pushop)
+
+
+def _checksubrepostate(pushop):
+    """Ensure all outgoing referenced subrepo revisions are present locally"""
+    for n in pushop.outgoing.missing:
+        ctx = pushop.repo[n]
+
+        if b'.hgsub' in ctx.manifest() and b'.hgsubstate' in ctx.files():
+            for subpath in sorted(ctx.substate):
+                sub = ctx.sub(subpath)
+                sub.verify(onpush=True)
 
 
 @pushdiscovery(b'changeset')
@@ -1851,7 +1866,7 @@ def _pulldiscoverychangegroup(pullop):
         pullop.repo, pullop.remote, heads=pullop.heads, force=pullop.force
     )
     common, fetch, rheads = tmp
-    nm = pullop.repo.unfiltered().changelog.nodemap
+    has_node = pullop.repo.unfiltered().changelog.index.has_node
     if fetch and rheads:
         # If a remote heads is filtered locally, put in back in common.
         #
@@ -1864,7 +1879,7 @@ def _pulldiscoverychangegroup(pullop):
         # but are not including a remote heads, we'll not be able to detect it,
         scommon = set(common)
         for n in rheads:
-            if n in nm:
+            if has_node(n):
                 if n not in scommon:
                     common.append(n)
         if set(rheads).issubset(set(common)):
@@ -2097,7 +2112,7 @@ def _pullapplyphases(pullop, remotephases):
         dheads = []
     unfi = pullop.repo.unfiltered()
     phase = unfi._phasecache.phase
-    rev = unfi.changelog.nodemap.get
+    rev = unfi.changelog.index.get_rev
     public = phases.public
     draft = phases.draft
 
@@ -2181,9 +2196,8 @@ def applynarrowacl(repo, kwargs):
     )
     if not user_includes:
         raise error.Abort(
-            _(b"{} configuration for user {} is empty").format(
-                _NARROWACL_SECTION, username
-            )
+            _(b"%s configuration for user %s is empty")
+            % (_NARROWACL_SECTION, username)
         )
 
     user_includes = [
@@ -2193,8 +2207,8 @@ def applynarrowacl(repo, kwargs):
         b'path:.' if p == b'*' else b'path:' + p for p in user_excludes
     ]
 
-    req_includes = set(kwargs.get(r'includepats', []))
-    req_excludes = set(kwargs.get(r'excludepats', []))
+    req_includes = set(kwargs.get('includepats', []))
+    req_excludes = set(kwargs.get('excludepats', []))
 
     req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
         req_includes, req_excludes, user_includes, user_excludes
@@ -2202,18 +2216,17 @@ def applynarrowacl(repo, kwargs):
 
     if invalid_includes:
         raise error.Abort(
-            _(b"The following includes are not accessible for {}: {}").format(
-                username, invalid_includes
-            )
+            _(b"The following includes are not accessible for %s: %s")
+            % (username, stringutil.pprint(invalid_includes))
         )
 
     new_args = {}
     new_args.update(kwargs)
-    new_args[r'narrow'] = True
-    new_args[r'narrow_acl'] = True
-    new_args[r'includepats'] = req_includes
+    new_args['narrow'] = True
+    new_args['narrow_acl'] = True
+    new_args['includepats'] = req_includes
     if req_excludes:
-        new_args[r'excludepats'] = req_excludes
+        new_args['excludepats'] = req_excludes
 
     return new_args
 
@@ -2476,7 +2489,7 @@ def _getbundlechangegrouppart(
     **kwargs
 ):
     """add a changegroup part to the requested bundle"""
-    if not kwargs.get(r'cg', True):
+    if not kwargs.get('cg', True) or not b2caps:
         return
 
     version = b'01'
@@ -2495,9 +2508,9 @@ def _getbundlechangegrouppart(
     if not outgoing.missing:
         return
 
-    if kwargs.get(r'narrow', False):
-        include = sorted(filter(bool, kwargs.get(r'includepats', [])))
-        exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+    if kwargs.get('narrow', False):
+        include = sorted(filter(bool, kwargs.get('includepats', [])))
+        exclude = sorted(filter(bool, kwargs.get('excludepats', [])))
         matcher = narrowspec.match(repo.root, include=include, exclude=exclude)
     else:
         matcher = None
@@ -2519,8 +2532,8 @@ def _getbundlechangegrouppart(
         part.addparam(b'exp-sidedata', b'1')
 
     if (
-        kwargs.get(r'narrow', False)
-        and kwargs.get(r'narrow_acl', False)
+        kwargs.get('narrow', False)
+        and kwargs.get('narrow_acl', False)
         and (include or exclude)
     ):
         # this is mandatory because otherwise ACL clients won't work
@@ -2536,9 +2549,9 @@ def _getbundlebookmarkpart(
     bundler, repo, source, bundlecaps=None, b2caps=None, **kwargs
 ):
     """add a bookmark part to the requested bundle"""
-    if not kwargs.get(r'bookmarks', False):
+    if not kwargs.get('bookmarks', False):
         return
-    if b'bookmarks' not in b2caps:
+    if not b2caps or b'bookmarks' not in b2caps:
         raise error.Abort(_(b'no common bookmarks exchange method'))
     books = bookmod.listbinbookmarks(repo)
     data = bookmod.binaryencode(books)
@@ -2551,7 +2564,7 @@ def _getbundlelistkeysparts(
     bundler, repo, source, bundlecaps=None, b2caps=None, **kwargs
 ):
     """add parts containing listkeys namespaces to the requested bundle"""
-    listkeys = kwargs.get(r'listkeys', ())
+    listkeys = kwargs.get('listkeys', ())
     for namespace in listkeys:
         part = bundler.newpart(b'listkeys')
         part.addparam(b'namespace', namespace)
@@ -2564,7 +2577,7 @@ def _getbundleobsmarkerpart(
     bundler, repo, source, bundlecaps=None, b2caps=None, heads=None, **kwargs
 ):
     """add an obsolescence markers part to the requested bundle"""
-    if kwargs.get(r'obsmarkers', False):
+    if kwargs.get('obsmarkers', False):
         if heads is None:
             heads = repo.heads()
         subset = [c.node() for c in repo.set(b'::%ln', heads)]
@@ -2578,8 +2591,8 @@ def _getbundlephasespart(
     bundler, repo, source, bundlecaps=None, b2caps=None, heads=None, **kwargs
 ):
     """add phase heads part to the requested bundle"""
-    if kwargs.get(r'phases', False):
-        if not b'heads' in b2caps.get(b'phases'):
+    if kwargs.get('phases', False):
+        if not b2caps or b'heads' not in b2caps.get(b'phases'):
             raise error.Abort(_(b'no common phases exchange method'))
         if heads is None:
             heads = repo.heads()
@@ -2643,7 +2656,7 @@ def _getbundletagsfnodes(
     # Don't send unless:
     # - changeset are being exchanged,
     # - the client supports it.
-    if not (kwargs.get(r'cg', True) and b'hgtagsfnodes' in b2caps):
+    if not b2caps or not (kwargs.get('cg', True) and b'hgtagsfnodes' in b2caps):
         return
 
     outgoing = _computeoutgoing(repo, heads, common)
@@ -2676,9 +2689,10 @@ def _getbundlerevbranchcache(
     # - the client supports it.
     # - narrow bundle isn't in play (not currently compatible).
     if (
-        not kwargs.get(r'cg', True)
+        not kwargs.get('cg', True)
+        or not b2caps
         or b'rev-branch-cache' not in b2caps
-        or kwargs.get(r'narrow', False)
+        or kwargs.get('narrow', False)
         or repo.ui.has_section(_NARROWACL_SECTION)
     ):
         return
@@ -2693,7 +2707,7 @@ def check_heads(repo, their_heads, context):
     Used by peer for unbundling.
     """
     heads = repo.heads()
-    heads_hash = hashlib.sha1(b''.join(sorted(heads))).digest()
+    heads_hash = hashutil.sha1(b''.join(sorted(heads))).digest()
     if not (
         their_heads == [b'force']
         or their_heads == heads

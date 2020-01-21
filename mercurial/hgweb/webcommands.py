@@ -1268,7 +1268,6 @@ def archive(web):
     name = b"%s-%s" % (reponame, arch_version)
 
     ctx = webutil.changectx(web.repo, web.req)
-    pats = []
     match = scmutil.match(ctx, [])
     file = web.req.qsparams.get(b'file')
     if file:

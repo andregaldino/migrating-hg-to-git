@@ -11,13 +11,18 @@ from __future__ import absolute_import
 import copy
 import weakref
 
-from .node import nullrev
+from .i18n import _
+from .node import (
+    hex,
+    nullrev,
+)
 from .pycompat import (
     delattr,
     getattr,
     setattr,
 )
 from . import (
+    error,
     obsolete,
     phases,
     pycompat,
@@ -54,8 +59,9 @@ def pinnedrevs(repo):
     tags = {}
     tagsmod.readlocaltags(repo.ui, repo, tags, {})
     if tags:
-        rev, nodemap = cl.rev, cl.nodemap
-        pinned.update(rev(t[0]) for t in tags.values() if t[0] in nodemap)
+        rev = cl.index.get_rev
+        pinned.update(rev(t[0]) for t in tags.values())
+        pinned.discard(None)
     return pinned
 
 
@@ -171,6 +177,9 @@ filtertable = {
     b'base': computeimpactable,
 }
 
+# set of filter level that will include the working copy parent no matter what.
+filter_has_wc = {b'visible', b'visible-hidden'}
+
 _basefiltername = list(filtertable)
 
 
@@ -211,11 +220,136 @@ def filterrevs(repo, filtername, visibilityexceptions=None):
     hidden-state and must be visible. They are dynamic and hence we should not
     cache it's result"""
     if filtername not in repo.filteredrevcache:
+        if repo.ui.configbool(b'devel', b'debug.repo-filters'):
+            msg = b'computing revision filter for "%s"'
+            msg %= filtername
+            if repo.ui.tracebackflag and repo.ui.debugflag:
+                # XXX use ui.write_err
+                util.debugstacktrace(
+                    msg,
+                    f=repo.ui._fout,
+                    otherf=repo.ui._ferr,
+                    prefix=b'debug.filters: ',
+                )
+            else:
+                repo.ui.debug(b'debug.filters: %s\n' % msg)
         func = filtertable[filtername]
         if visibilityexceptions:
             return func(repo.unfiltered, visibilityexceptions)
         repo.filteredrevcache[filtername] = func(repo.unfiltered())
     return repo.filteredrevcache[filtername]
+
+
+def wrapchangelog(unfichangelog, filteredrevs):
+    cl = copy.copy(unfichangelog)
+    cl.filteredrevs = filteredrevs
+
+    class filteredchangelog(filteredchangelogmixin, cl.__class__):
+        pass
+
+    cl.__class__ = filteredchangelog
+
+    return cl
+
+
+class filteredchangelogmixin(object):
+    def tiprev(self):
+        """filtered version of revlog.tiprev"""
+        for i in pycompat.xrange(len(self) - 1, -2, -1):
+            if i not in self.filteredrevs:
+                return i
+
+    def __contains__(self, rev):
+        """filtered version of revlog.__contains__"""
+        return 0 <= rev < len(self) and rev not in self.filteredrevs
+
+    def __iter__(self):
+        """filtered version of revlog.__iter__"""
+
+        def filterediter():
+            for i in pycompat.xrange(len(self)):
+                if i not in self.filteredrevs:
+                    yield i
+
+        return filterediter()
+
+    def revs(self, start=0, stop=None):
+        """filtered version of revlog.revs"""
+        for i in super(filteredchangelogmixin, self).revs(start, stop):
+            if i not in self.filteredrevs:
+                yield i
+
+    def _checknofilteredinrevs(self, revs):
+        """raise the appropriate error if 'revs' contains a filtered revision
+
+        This returns a version of 'revs' to be used thereafter by the caller.
+        In particular, if revs is an iterator, it is converted into a set.
+        """
+        safehasattr = util.safehasattr
+        if safehasattr(revs, '__next__'):
+            # Note that inspect.isgenerator() is not true for iterators,
+            revs = set(revs)
+
+        filteredrevs = self.filteredrevs
+        if safehasattr(revs, 'first'):  # smartset
+            offenders = revs & filteredrevs
+        else:
+            offenders = filteredrevs.intersection(revs)
+
+        for rev in offenders:
+            raise error.FilteredIndexError(rev)
+        return revs
+
+    def headrevs(self, revs=None):
+        if revs is None:
+            try:
+                return self.index.headrevsfiltered(self.filteredrevs)
+            # AttributeError covers non-c-extension environments and
+            # old c extensions without filter handling.
+            except AttributeError:
+                return self._headrevs()
+
+        revs = self._checknofilteredinrevs(revs)
+        return super(filteredchangelogmixin, self).headrevs(revs)
+
+    def strip(self, *args, **kwargs):
+        # XXX make something better than assert
+        # We can't expect proper strip behavior if we are filtered.
+        assert not self.filteredrevs
+        super(filteredchangelogmixin, self).strip(*args, **kwargs)
+
+    def rev(self, node):
+        """filtered version of revlog.rev"""
+        r = super(filteredchangelogmixin, self).rev(node)
+        if r in self.filteredrevs:
+            raise error.FilteredLookupError(
+                hex(node), self.indexfile, _(b'filtered node')
+            )
+        return r
+
+    def node(self, rev):
+        """filtered version of revlog.node"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).node(rev)
+
+    def linkrev(self, rev):
+        """filtered version of revlog.linkrev"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).linkrev(rev)
+
+    def parentrevs(self, rev):
+        """filtered version of revlog.parentrevs"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).parentrevs(rev)
+
+    def flags(self, rev):
+        """filtered version of revlog.flags"""
+        if rev in self.filteredrevs:
+            raise error.FilteredIndexError(rev)
+        return super(filteredchangelogmixin, self).flags(rev)
 
 
 class repoview(object):
@@ -254,12 +388,12 @@ class repoview(object):
     """
 
     def __init__(self, repo, filtername, visibilityexceptions=None):
-        object.__setattr__(self, r'_unfilteredrepo', repo)
-        object.__setattr__(self, r'filtername', filtername)
-        object.__setattr__(self, r'_clcachekey', None)
-        object.__setattr__(self, r'_clcache', None)
+        object.__setattr__(self, '_unfilteredrepo', repo)
+        object.__setattr__(self, 'filtername', filtername)
+        object.__setattr__(self, '_clcachekey', None)
+        object.__setattr__(self, '_clcache', None)
         # revs which are exceptions and must not be hidden
-        object.__setattr__(self, r'_visibilityexceptions', visibilityexceptions)
+        object.__setattr__(self, '_visibilityexceptions', visibilityexceptions)
 
     # not a propertycache on purpose we shall implement a proper cache later
     @property
@@ -286,10 +420,10 @@ class repoview(object):
             cl = None
         # could have been made None by the previous if
         if cl is None:
-            cl = copy.copy(unfichangelog)
-            cl.filteredrevs = revs
-            object.__setattr__(self, r'_clcache', cl)
-            object.__setattr__(self, r'_clcachekey', newkey)
+            # Only filter if there's something to filter
+            cl = wrapchangelog(unfichangelog, revs) if revs else unfichangelog
+            object.__setattr__(self, '_clcache', cl)
+            object.__setattr__(self, '_clcachekey', newkey)
         return cl
 
     def unfiltered(self):
@@ -303,7 +437,7 @@ class repoview(object):
         return self.unfiltered().filtered(name, visibilityexceptions)
 
     def __repr__(self):
-        return r'<%s:%s %r>' % (
+        return '<%s:%s %r>' % (
             self.__class__.__name__,
             pycompat.sysstr(self.filtername),
             self.unfiltered(),

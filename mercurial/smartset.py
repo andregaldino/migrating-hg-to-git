@@ -256,7 +256,7 @@ class baseset(abstractsmartset):
     @util.propertycache
     def _list(self):
         # _list is only lazily constructed if we have _set
-        assert r'_set' in self.__dict__
+        assert '_set' in self.__dict__
         return list(self._set)
 
     def __iter__(self):
@@ -294,7 +294,7 @@ class baseset(abstractsmartset):
         self._istopo = False
 
     def __len__(self):
-        if r'_list' in self.__dict__:
+        if '_list' in self.__dict__:
             return len(self._list)
         else:
             return len(self._set)
@@ -347,8 +347,8 @@ class baseset(abstractsmartset):
         # try to use native set operations as fast paths
         if (
             type(other) is baseset
-            and r'_set' in other.__dict__
-            and r'_set' in self.__dict__
+            and '_set' in other.__dict__
+            and '_set' in self.__dict__
             and self._ascending is not None
         ):
             s = baseset(

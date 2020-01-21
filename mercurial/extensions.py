@@ -92,7 +92,11 @@ def loadpath(path, module_name):
         # module/__init__.py style
         d, f = os.path.split(path)
         fd, fpath, desc = imp.find_module(f, [d])
-        return imp.load_module(module_name, fd, fpath, desc)
+        # When https://github.com/python/typeshed/issues/3466 is fixed
+        # and in a pytype release we can drop this disable.
+        return imp.load_module(
+            module_name, fd, fpath, desc  # pytype: disable=wrong-arg-types
+        )
     else:
         try:
             return imp.load_source(module_name, path)
@@ -591,9 +595,7 @@ def wrapfilecache(cls, propname, wrapper):
             break
 
     if currcls is object:
-        raise AttributeError(
-            r"type '%s' has no property '%s'" % (cls, propname)
-        )
+        raise AttributeError("type '%s' has no property '%s'" % (cls, propname))
 
 
 class wrappedfunction(object):
@@ -783,7 +785,7 @@ def _disabledhelp(path):
 def disabled():
     '''find disabled extensions from hgext. returns a dict of {name: desc}'''
     try:
-        from hgext import __index__
+        from hgext import __index__  # pytype: disable=import-error
 
         return dict(
             (name, gettext(desc))
@@ -809,7 +811,7 @@ def disabled():
 def disabledext(name):
     '''find a specific disabled extension from hgext. returns desc'''
     try:
-        from hgext import __index__
+        from hgext import __index__  # pytype: disable=import-error
 
         if name in _order:  # enabled
             return
@@ -836,7 +838,7 @@ def _walkcommand(node):
                 continue
             if not isinstance(d.func, ast.Name):
                 continue
-            if d.func.id != r'command':
+            if d.func.id != 'command':
                 continue
             yield d
 

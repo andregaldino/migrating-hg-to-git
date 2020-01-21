@@ -18,9 +18,8 @@ struct PythonConfig {
 fn get_python_config() -> PythonConfig {
     // The python27-sys crate exports a Cargo variable defining the full
     // path to the interpreter being used.
-    let python = env::var("DEP_PYTHON27_PYTHON_INTERPRETER").expect(
-        "Missing DEP_PYTHON27_PYTHON_INTERPRETER; bad python27-sys crate?",
-    );
+    let python = env::var("DEP_PYTHON27_PYTHON_INTERPRETER")
+        .expect("Missing DEP_PYTHON27_PYTHON_INTERPRETER; bad python27-sys crate?");
 
     if !Path::new(&python).exists() {
         panic!(
@@ -33,8 +32,8 @@ fn get_python_config() -> PythonConfig {
     let separator = "SEPARATOR STRING";
 
     let script = "import sysconfig; \
-c = sysconfig.get_config_vars(); \
-print('SEPARATOR STRING'.join('%s=%s' % i for i in c.items()))";
+                  c = sysconfig.get_config_vars(); \
+                  print('SEPARATOR STRING'.join('%s=%s' % i for i in c.items()))";
 
     let mut command = Command::new(&python);
     command.arg("-c").arg(script);

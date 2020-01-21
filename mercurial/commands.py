@@ -180,7 +180,7 @@ def abort(ui, repo, **opts):
 
     use --dry-run/-n to dry run the command.
     """
-    dryrun = opts.get(r'dry_run')
+    dryrun = opts.get('dry_run')
     abortstate = cmdutil.getunfinishedstate(repo)
     if not abortstate:
         raise error.Abort(_(b'no operation in progress'))
@@ -362,7 +362,7 @@ def addremove(ui, repo, *pats, **opts):
             b'',
             b'skip',
             [],
-            _(b'revision to not display (EXPERIMENTAL)'),
+            _(b'revset to not display (EXPERIMENTAL)'),
             _(b'REV'),
         ),
     ]
@@ -559,7 +559,7 @@ def annotate(ui, repo, *pats, **opts):
                 ml = max(sizes)
                 formats.append([sep + b' ' * (ml - w) + b'%s' for w in sizes])
             else:
-                formats.append([b'%s' for x in l])
+                formats.append([b'%s'] * len(l))
             pieces.append(l)
 
         for f, p, n in zip(zip(*formats), zip(*pieces), lines):
@@ -1073,7 +1073,7 @@ def bisect(
                 raise error.Abort(_(b'current bisect revision is a merge'))
         if rev:
             node = repo[scmutil.revsingle(repo, rev, node)].node()
-        try:
+        with hbisect.restore_state(repo, state, node):
             while changesets:
                 # update state
                 state[b'current'] = [node]
@@ -1105,9 +1105,6 @@ def bisect(
                 # update to next check
                 node = nodes[0]
                 mayupdate(repo, node, show_stats=False)
-        finally:
-            state[b'current'] = [node]
-            hbisect.save_state(repo, state)
         hbisect.printresult(ui, repo, state, displayer, nodes, bgood)
         return
 
@@ -1229,13 +1226,9 @@ def bookmark(ui, repo, *names, **opts):
     rev = opts.get(b'rev')
     inactive = opts.get(b'inactive')  # meaning add/rename to inactive bookmark
 
-    selactions = [k for k in [b'delete', b'rename', b'list'] if opts.get(k)]
-    if len(selactions) > 1:
-        raise error.Abort(
-            _(b'--%s and --%s are incompatible') % tuple(selactions[:2])
-        )
-    if selactions:
-        action = selactions[0]
+    action = cmdutil.check_at_most_one_arg(opts, b'delete', b'rename', b'list')
+    if action:
+        cmdutil.check_incompatible_arguments(opts, action, b'rev')
     elif names or rev:
         action = b'add'
     elif inactive:
@@ -1243,10 +1236,7 @@ def bookmark(ui, repo, *names, **opts):
     else:
         action = b'list'
 
-    if rev and action in {b'delete', b'rename', b'list'}:
-        raise error.Abort(_(b"--rev is incompatible with --%s") % action)
-    if inactive and action in {b'delete', b'list'}:
-        raise error.Abort(_(b"--inactive is incompatible with --%s") % action)
+    cmdutil.check_incompatible_arguments(opts, b'inactive', b'delete', b'list')
     if not names and action in {b'add', b'delete'}:
         raise error.Abort(_(b"bookmark name required"))
 
@@ -1892,8 +1882,7 @@ def clone(ui, source, dest=None, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'noupdate') and opts.get(b'updaterev'):
-        raise error.Abort(_(b"cannot specify both --noupdate and --updaterev"))
+    cmdutil.check_at_most_one_arg(opts, b'noupdate', b'updaterev')
 
     # --include/--exclude can come from narrow or sparse.
     includepats, excludepats = None, None
@@ -2019,8 +2008,8 @@ def commit(ui, repo, *pats, **opts):
 
 
 def _docommit(ui, repo, *pats, **opts):
-    if opts.get(r'interactive'):
-        opts.pop(r'interactive')
+    if opts.get('interactive'):
+        opts.pop('interactive')
         ret = cmdutil.dorecord(
             ui, repo, commit, None, False, cmdutil.recordfilter, *pats, **opts
         )
@@ -2116,13 +2105,13 @@ def _docommit(ui, repo, *pats, **opts):
 
         if not node:
             stat = cmdutil.postcommitstatus(repo, pats, opts)
-            if stat[3]:
+            if stat.deleted:
                 ui.status(
                     _(
                         b"nothing changed (%d missing files, see "
                         b"'hg status')\n"
                     )
-                    % len(stat[3])
+                    % len(stat.deleted)
                 )
             else:
                 ui.status(_(b"nothing changed\n"))
@@ -2234,9 +2223,11 @@ def config(ui, repo, *values, **opts):
     for t, f in rcutil.rccomponents():
         if t == b'path':
             ui.debug(b'read config from: %s\n' % f)
+        elif t == b'resource':
+            ui.debug(b'read config from: resource:%s.%s\n' % (f[0], f[1]))
         elif t == b'items':
-            for section, name, value, source in f:
-                ui.debug(b'set config by: %s\n' % source)
+            # Don't print anything for 'items'.
+            pass
         else:
             raise error.ProgrammingError(b'unknown rctype: %s' % t)
     untrusted = bool(opts.get(b'untrusted'))
@@ -2295,7 +2286,7 @@ def continuecmd(ui, repo, **opts):
 
     use --dry-run/-n to dry run the command.
     """
-    dryrun = opts.get(r'dry_run')
+    dryrun = opts.get('dry_run')
     contstate = cmdutil.getunfinishedstate(repo)
     if not contstate:
         raise error.Abort(_(b'no operation in progress'))
@@ -2375,7 +2366,7 @@ def debugcommands(ui, cmd=b'', *args):
 def debugcomplete(ui, cmd=b'', **opts):
     """returns the completion list associated with the given command"""
 
-    if opts.get(r'options'):
+    if opts.get('options'):
         options = []
         otables = [globalopts]
         if cmd:
@@ -2614,8 +2605,7 @@ def export(ui, repo, *changesets, **opts):
     bookmark = opts.get(b'bookmark')
     changesets += tuple(opts.get(b'rev', []))
 
-    if bookmark and changesets:
-        raise error.Abort(_(b"-r and -B are mutually exclusive"))
+    cmdutil.check_at_most_one_arg(opts, b'rev', b'bookmark')
 
     if bookmark:
         if bookmark not in repo._bookmarks:
@@ -2974,14 +2964,7 @@ def _dograft(ui, repo, *revs, **opts):
     # list of new nodes created by ongoing graft
     statedata[b'newnodes'] = []
 
-    if opts.get(b'user') and opts.get(b'currentuser'):
-        raise error.Abort(_(b'--user and --currentuser are mutually exclusive'))
-    if opts.get(b'date') and opts.get(b'currentdate'):
-        raise error.Abort(_(b'--date and --currentdate are mutually exclusive'))
-    if not opts.get(b'user') and opts.get(b'currentuser'):
-        opts[b'user'] = ui.username()
-    if not opts.get(b'date') and opts.get(b'currentdate'):
-        opts[b'date'] = b"%d %d" % dateutil.makedate()
+    cmdutil.resolvecommitoptions(ui, opts)
 
     editor = cmdutil.getcommiteditor(
         editform=b'graft', **pycompat.strkwargs(opts)
@@ -3096,17 +3079,12 @@ def _dograft(ui, repo, *revs, **opts):
     # already, they'd have been in the graftstate.
     if not (cont or opts.get(b'force')) and basectx is None:
         # check for ancestors of dest branch
-        crev = repo[b'.'].rev()
-        ancestors = repo.changelog.ancestors([crev], inclusive=True)
-        # XXX make this lazy in the future
-        # don't mutate while iterating, create a copy
-        for rev in list(revs):
-            if rev in ancestors:
-                ui.warn(
-                    _(b'skipping ancestor revision %d:%s\n') % (rev, repo[rev])
-                )
-                # XXX remove on list is slow
-                revs.remove(rev)
+        ancestors = repo.revs(b'%ld & (::.)', revs)
+        for rev in ancestors:
+            ui.warn(_(b'skipping ancestor revision %d:%s\n') % (rev, repo[rev]))
+
+        revs = [r for r in revs if r not in ancestors]
+
         if not revs:
             return -1
 
@@ -3123,7 +3101,7 @@ def _dograft(ui, repo, *revs, **opts):
 
         # The only changesets we can be sure doesn't contain grafts of any
         # revs, are the ones that are common ancestors of *all* revs:
-        for rev in repo.revs(b'only(%d,ancestor(%ld))', crev, revs):
+        for rev in repo.revs(b'only(%d,ancestor(%ld))', repo[b'.'].rev(), revs):
             ctx = repo[rev]
             n = ctx.extra().get(b'source')
             if n in ids:
@@ -3446,6 +3424,9 @@ def grep(ui, repo, pattern, *pats, **opts):
     def grepbody(fn, rev, body):
         matches[rev].setdefault(fn, [])
         m = matches[rev][fn]
+        if body is None:
+            return
+
         for lnum, cstart, cend, line in matchlines(body):
             s = linestate(line, lnum, cstart, cend)
             m.append(s)
@@ -3453,13 +3434,13 @@ def grep(ui, repo, pattern, *pats, **opts):
     def difflinestates(a, b):
         sm = difflib.SequenceMatcher(None, a, b)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag == r'insert':
+            if tag == 'insert':
                 for i in pycompat.xrange(blo, bhi):
                     yield (b'+', b[i])
-            elif tag == r'delete':
+            elif tag == 'delete':
                 for i in pycompat.xrange(alo, ahi):
                     yield (b'-', a[i])
-            elif tag == r'replace':
+            elif tag == 'replace':
                 for i in pycompat.xrange(alo, ahi):
                     yield (b'-', a[i])
                 for i in pycompat.xrange(blo, bhi):
@@ -3581,6 +3562,19 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     getrenamed = scmutil.getrenamedfn(repo)
 
+    def get_file_content(filename, filelog, filenode, context, revision):
+        try:
+            content = filelog.read(filenode)
+        except error.WdirUnsupported:
+            content = context[filename].data()
+        except error.CensoredNodeError:
+            content = None
+            ui.warn(
+                _(b'cannot search in censored file: %(filename)s:%(revnum)s\n')
+                % {b'filename': filename, b'revnum': pycompat.bytestr(revision)}
+            )
+        return content
+
     def prep(ctx, fns):
         rev = ctx.rev()
         pctx = ctx.p1()
@@ -3607,17 +3601,15 @@ def grep(ui, repo, pattern, *pats, **opts):
             files.append(fn)
 
             if fn not in matches[rev]:
-                try:
-                    content = flog.read(fnode)
-                except error.WdirUnsupported:
-                    content = ctx[fn].data()
+                content = get_file_content(fn, flog, fnode, ctx, rev)
                 grepbody(fn, rev, content)
 
             pfn = copy or fn
             if pfn not in matches[parent]:
                 try:
-                    fnode = pctx.filenode(pfn)
-                    grepbody(pfn, parent, flog.read(fnode))
+                    pfnode = pctx.filenode(pfn)
+                    pcontent = get_file_content(pfn, flog, pfnode, pctx, parent)
+                    grepbody(pfn, parent, pcontent)
                 except error.LookupError:
                     pass
 
@@ -3775,7 +3767,7 @@ def help_(ui, name=None, **opts):
     Returns 0 if successful.
     """
 
-    keep = opts.get(r'system') or []
+    keep = opts.get('system') or []
     if len(keep) == 0:
         if pycompat.sysplatform.startswith(b'win'):
             keep.append(b'windows')
@@ -4022,6 +4014,7 @@ def identify(
             _(b'NUM'),
         ),
         (b'b', b'base', b'', _(b'base path (DEPRECATED)'), _(b'PATH')),
+        (b'', b'secret', None, _(b'use the secret phase for committing')),
         (b'e', b'edit', False, _(b'invoke editor on commit messages')),
         (
             b'f',
@@ -4170,6 +4163,8 @@ def import_(ui, repo, patch1=None, *patches, **opts):
     update = not opts.get(b'bypass')
     if not update and opts.get(b'no_commit'):
         raise error.Abort(_(b'cannot use --no-commit with --bypass'))
+    if opts.get(b'secret') and opts.get(b'no_commit'):
+        raise error.Abort(_(b'cannot use --no-commit with --secret'))
     try:
         sim = float(opts.get(b'similarity') or 0)
     except ValueError:
@@ -4874,6 +4869,13 @@ def merge(ui, repo, node=None, **opts):
         node = scmutil.revsingle(repo, node).node()
 
     if not node and not abort:
+        if ui.configbool(b'commands', b'merge.require-rev'):
+            raise error.Abort(
+                _(
+                    b'configuration requires specifying revision to merge '
+                    b'with'
+                )
+            )
         node = repo[destutil.destmerge(repo)].node()
 
     if opts.get(b'preview'):
@@ -5685,7 +5687,7 @@ def recover(ui, repo, **opts):
     """
     ret = repo.recover()
     if ret:
-        if opts[r'verify']:
+        if opts['verify']:
             return hg.verify(repo)
         else:
             msg = _(
@@ -6330,7 +6332,7 @@ def rollback(ui, repo, **opts):
             _(b'rollback is disabled because it is unsafe'),
             hint=b'see `hg help -v rollback` for information',
         )
-    return repo.rollback(dryrun=opts.get(r'dry_run'), force=opts.get(r'force'))
+    return repo.rollback(dryrun=opts.get('dry_run'), force=opts.get('force'))
 
 
 @command(
@@ -6803,7 +6805,6 @@ def status(ui, repo, *pats, **opts):
         end = b'\0'
     else:
         end = b'\n'
-    copy = {}
     states = b'modified added removed deleted unknown ignored clean'.split()
     show = [k for k in states if opts.get(k)]
     if opts.get(b'all'):
@@ -6840,14 +6841,25 @@ def status(ui, repo, *pats, **opts):
             opts.get(b'subrepos'),
         )
 
-    changestates = zip(states, pycompat.iterbytestr(b'MAR!?IC'), stat)
+    changestates = zip(
+        states,
+        pycompat.iterbytestr(b'MAR!?IC'),
+        [getattr(stat, s.decode('utf8')) for s in states],
+    )
 
+    copy = {}
     if (
         opts.get(b'all')
         or opts.get(b'copies')
         or ui.configbool(b'ui', b'statuscopies')
     ) and not opts.get(b'no_status'):
         copy = copies.pathcopies(ctx1, ctx2, m)
+
+    morestatus = None
+    if (
+        ui.verbose or ui.configbool(b'commands', b'status.verbose')
+    ) and not ui.plain():
+        morestatus = cmdutil.readmorestatus(repo)
 
     ui.pager(b'status')
     fm = ui.formatter(b'status', opts)
@@ -6860,7 +6872,7 @@ def status(ui, repo, *pats, **opts):
             for f in files:
                 fm.startitem()
                 fm.context(ctx=ctx2)
-                fm.data(path=f)
+                fm.data(itemtype=b'file', path=f)
                 fm.condwrite(showchar, b'status', b'%s ', char, label=label)
                 fm.plain(fmt % uipathfn(f), label=label)
                 if f in copy:
@@ -6869,11 +6881,11 @@ def status(ui, repo, *pats, **opts):
                         (b'  %s' + end) % uipathfn(copy[f]),
                         label=b'status.copied',
                     )
+                if morestatus:
+                    morestatus.formatfile(f, fm)
 
-    if (
-        ui.verbose or ui.configbool(b'commands', b'status.verbose')
-    ) and not ui.plain():
-        cmdutil.morestatus(repo, fm)
+    if morestatus:
+        morestatus.formatfooter(fm)
     fm.end()
 
 
@@ -7480,7 +7492,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
                 )
             modheads = bundle2.combinechangegroupresults(op)
 
-    return postincoming(ui, repo, modheads, opts.get(r'update'), None, None)
+    return postincoming(ui, repo, modheads, opts.get('update'), None, None)
 
 
 @command(
@@ -7511,7 +7523,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
             _(b'DATE'),
         ),
     ],
-    _(b'hg unshelve [OPTION]... [FILE]... [-n SHELVED]'),
+    _(b'hg unshelve [OPTION]... [[-n] SHELVED]'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
 )
 def unshelve(ui, repo, *shelved, **opts):
@@ -7535,9 +7547,9 @@ def unshelve(ui, repo, *shelved, **opts):
     that causes a conflict. This reverts the unshelved changes, and
     leaves the bundle in place.)
 
-    If bare shelved change (when no files are specified, without interactive,
-    include and exclude option) was done on newly created branch it would
-    restore branch information to the working directory.
+    If bare shelved change (without interactive, include and exclude
+    option) was done on newly created branch it would restore branch
+    information to the working directory.
 
     After a successful unshelve, the shelved changes are stored in a
     backup directory. Only the N most recent backups are kept. N
@@ -7641,11 +7653,11 @@ def update(ui, repo, node=None, **opts):
 
     Returns 0 on success, 1 if there are unresolved files.
     """
-    rev = opts.get(r'rev')
-    date = opts.get(r'date')
-    clean = opts.get(r'clean')
-    check = opts.get(r'check')
-    merge = opts.get(r'merge')
+    rev = opts.get('rev')
+    date = opts.get('date')
+    clean = opts.get('clean')
+    check = opts.get('check')
+    merge = opts.get('merge')
     if rev and node:
         raise error.Abort(_(b"please specify just one revision"))
 
@@ -7688,7 +7700,7 @@ def update(ui, repo, node=None, **opts):
         ctx = scmutil.revsingle(repo, rev, default=None)
         rev = ctx.rev()
         hidden = ctx.hidden()
-        overrides = {(b'ui', b'forcemerge'): opts.get(r'tool', b'')}
+        overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}
         with ui.configoverride(overrides, b'update'):
             ret = hg.updatetotally(
                 ui, repo, rev, brev, clean=clean, updatecheck=updatecheck

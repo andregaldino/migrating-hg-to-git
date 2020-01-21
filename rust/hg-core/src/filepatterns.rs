@@ -7,10 +7,11 @@
 
 //! Handling of Mercurial-specific patterns.
 
-use crate::{utils::SliceExt, LineNumber, PatternError, PatternFileError};
+use crate::{
+    utils::SliceExt, FastHashMap, LineNumber, PatternError, PatternFileError,
+};
 use lazy_static::lazy_static;
 use regex::bytes::{NoExpand, Regex};
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -214,8 +215,8 @@ pub fn build_single_regex(
 }
 
 lazy_static! {
-    static ref SYNTAXES: HashMap<&'static [u8], &'static [u8]> = {
-        let mut m = HashMap::new();
+    static ref SYNTAXES: FastHashMap<&'static [u8], &'static [u8]> = {
+        let mut m = FastHashMap::default();
 
         m.insert(b"re".as_ref(), b"relre:".as_ref());
         m.insert(b"regexp".as_ref(), b"relre:".as_ref());

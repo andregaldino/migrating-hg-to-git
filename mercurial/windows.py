@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import errno
+import getpass
 import msvcrt
 import os
 import re
@@ -26,13 +27,14 @@ from . import (
 )
 
 try:
-    import _winreg as winreg
+    import _winreg as winreg  # pytype: disable=import-error
 
     winreg.CloseKey
 except ImportError:
-    import winreg
+    # py2 only
+    import winreg  # pytype: disable=import-error
 
-osutil = policy.importmod(r'osutil')
+osutil = policy.importmod('osutil')
 
 getfsmountpoint = win32.getvolumename
 getfstype = win32.getfstype
@@ -70,8 +72,8 @@ class mixedfilemodewrapper(object):
     OPWRITE = 2
 
     def __init__(self, fp):
-        object.__setattr__(self, r'_fp', fp)
-        object.__setattr__(self, r'_lastop', 0)
+        object.__setattr__(self, '_fp', fp)
+        object.__setattr__(self, '_lastop', 0)
 
     def __enter__(self):
         self._fp.__enter__()
@@ -90,42 +92,42 @@ class mixedfilemodewrapper(object):
         self._fp.seek(0, os.SEEK_CUR)
 
     def seek(self, *args, **kwargs):
-        object.__setattr__(self, r'_lastop', self.OPNONE)
+        object.__setattr__(self, '_lastop', self.OPNONE)
         return self._fp.seek(*args, **kwargs)
 
     def write(self, d):
         if self._lastop == self.OPREAD:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPWRITE)
+        object.__setattr__(self, '_lastop', self.OPWRITE)
         return self._fp.write(d)
 
     def writelines(self, *args, **kwargs):
         if self._lastop == self.OPREAD:
             self._noopeseek()
 
-        object.__setattr__(self, r'_lastop', self.OPWRITE)
+        object.__setattr__(self, '_lastop', self.OPWRITE)
         return self._fp.writelines(*args, **kwargs)
 
     def read(self, *args, **kwargs):
         if self._lastop == self.OPWRITE:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPREAD)
+        object.__setattr__(self, '_lastop', self.OPREAD)
         return self._fp.read(*args, **kwargs)
 
     def readline(self, *args, **kwargs):
         if self._lastop == self.OPWRITE:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPREAD)
+        object.__setattr__(self, '_lastop', self.OPREAD)
         return self._fp.readline(*args, **kwargs)
 
     def readlines(self, *args, **kwargs):
         if self._lastop == self.OPWRITE:
             self._noopseek()
 
-        object.__setattr__(self, r'_lastop', self.OPREAD)
+        object.__setattr__(self, '_lastop', self.OPREAD)
         return self._fp.readlines(*args, **kwargs)
 
 
@@ -176,7 +178,7 @@ def posixfile(name, mode=b'r', buffering=-1):
     except WindowsError as err:
         # convert to a friendlier exception
         raise IOError(
-            err.errno, r'%s: %s' % (encoding.strfromlocal(name), err.strerror)
+            err.errno, '%s: %s' % (encoding.strfromlocal(name), err.strerror)
         )
 
 
@@ -215,7 +217,7 @@ class winstdout(object):
             if inst.errno != 0 and not win32.lasterrorwaspipeerror(inst):
                 raise
             self.close()
-            raise IOError(errno.EPIPE, r'Broken pipe')
+            raise IOError(errno.EPIPE, 'Broken pipe')
 
     def flush(self):
         try:
@@ -223,19 +225,11 @@ class winstdout(object):
         except IOError as inst:
             if not win32.lasterrorwaspipeerror(inst):
                 raise
-            raise IOError(errno.EPIPE, r'Broken pipe')
-
-
-def _is_win_9x():
-    '''return true if run on windows 95, 98 or me.'''
-    try:
-        return sys.getwindowsversion()[3] == 1
-    except AttributeError:
-        return b'command' in encoding.environ.get(b'comspec', b'')
+            raise IOError(errno.EPIPE, 'Broken pipe')
 
 
 def openhardlinks():
-    return not _is_win_9x()
+    return True
 
 
 def parsepatchoutput(output_line):
@@ -282,7 +276,7 @@ def setbinary(fd):
     # fileno(), usually set to -1.
     fno = getattr(fd, 'fileno', None)
     if fno is not None and fno() >= 0:
-        msvcrt.setmode(fno(), os.O_BINARY)
+        msvcrt.setmode(fno(), os.O_BINARY)  # pytype: disable=module-attr
 
 
 def pconvert(path):
@@ -506,7 +500,7 @@ def findexe(command):
         pathexts = [b'']
 
     def findexisting(pathcommand):
-        b'Will append extension (if needed) and return existing file'
+        """Will append extension (if needed) and return existing file"""
         for ext in pathexts:
             executable = pathcommand + ext
             if os.path.exists(executable):
@@ -562,6 +556,8 @@ def username(uid=None):
     """Return the name of the user with the given uid.
 
     If uid is None, return the name of the current user."""
+    if not uid:
+        return pycompat.fsencode(getpass.getuser())
     return None
 
 
@@ -686,4 +682,4 @@ def readpipe(pipe):
 
 
 def bindunixsocket(sock, path):
-    raise NotImplementedError(r'unsupported platform')
+    raise NotImplementedError('unsupported platform')

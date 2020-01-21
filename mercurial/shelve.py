@@ -557,8 +557,6 @@ def _docreatecmd(ui, repo, pats, opts):
         match = scmutil.matchfiles(repo, repo[node].files())
         _shelvecreatedcommit(repo, node, name, match)
 
-        if ui.formatted():
-            desc = stringutil.ellipsis(desc, ui.termwidth())
         ui.status(_(b'shelved as %s\n') % name)
         if opts[b'keep']:
             with repo.dirstate.parentchange():

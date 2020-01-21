@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import os
 import random
 import sys
@@ -74,6 +73,7 @@ from .interfaces import (
 )
 
 from .utils import (
+    hashutil,
     procutil,
     stringutil,
 )
@@ -676,6 +676,8 @@ def loadhgrc(ui, wdirvfs, hgvfs, requirements):
     configs are loaded. For example, an extension may wish to pull in
     configs from alternate files or sources.
     """
+    if b'HGRCSKIPREPO' in encoding.environ:
+        return False
     try:
         ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
         return True
@@ -926,6 +928,9 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     if repository.NARROW_REQUIREMENT in requirements:
         options[b'enableellipsis'] = True
+
+    if ui.configbool(b'experimental', b'rust.index'):
+        options[b'rust.index'] = True
 
     return options
 
@@ -1514,11 +1519,71 @@ class localrepository(object):
         narrowspec.save(self, newincludes, newexcludes)
         self.invalidate(clearfilecache=True)
 
+    @unfilteredpropertycache
+    def _quick_access_changeid_null(self):
+        return {
+            b'null': (nullrev, nullid),
+            nullrev: (nullrev, nullid),
+            nullid: (nullrev, nullid),
+        }
+
+    @unfilteredpropertycache
+    def _quick_access_changeid_wc(self):
+        # also fast path access to the working copy parents
+        # however, only do it for filter that ensure wc is visible.
+        quick = {}
+        cl = self.unfiltered().changelog
+        for node in self.dirstate.parents():
+            if node == nullid:
+                continue
+            rev = cl.index.get_rev(node)
+            if rev is None:
+                # unknown working copy parent case:
+                #
+                #   skip the fast path and let higher code deal with it
+                continue
+            pair = (rev, node)
+            quick[rev] = pair
+            quick[node] = pair
+            # also add the parents of the parents
+            for r in cl.parentrevs(rev):
+                if r == nullrev:
+                    continue
+                n = cl.node(r)
+                pair = (r, n)
+                quick[r] = pair
+                quick[n] = pair
+        p1node = self.dirstate.p1()
+        if p1node != nullid:
+            quick[b'.'] = quick[p1node]
+        return quick
+
+    @unfilteredmethod
+    def _quick_access_changeid_invalidate(self):
+        if '_quick_access_changeid_wc' in vars(self):
+            del self.__dict__['_quick_access_changeid_wc']
+
+    @property
+    def _quick_access_changeid(self):
+        """an helper dictionnary for __getitem__ calls
+
+        This contains a list of symbol we can recognise right away without
+        further processing.
+        """
+        mapping = self._quick_access_changeid_null
+        if self.filtername in repoview.filter_has_wc:
+            mapping = mapping.copy()
+            mapping.update(self._quick_access_changeid_wc)
+        return mapping
+
     def __getitem__(self, changeid):
+        # dealing with special cases
         if changeid is None:
             return context.workingctx(self)
         if isinstance(changeid, context.basectx):
             return changeid
+
+        # dealing with multiple revisions
         if isinstance(changeid, slice):
             # wdirrev isn't contiguous so the slice shouldn't include it
             return [
@@ -1526,16 +1591,22 @@ class localrepository(object):
                 for i in pycompat.xrange(*changeid.indices(len(self)))
                 if i not in self.changelog.filteredrevs
             ]
+
+        # dealing with some special values
+        quick_access = self._quick_access_changeid.get(changeid)
+        if quick_access is not None:
+            rev, node = quick_access
+            return context.changectx(self, rev, node, maybe_filtered=False)
+        if changeid == b'tip':
+            node = self.changelog.tip()
+            rev = self.changelog.rev(node)
+            return context.changectx(self, rev, node)
+
+        # dealing with arbitrary values
         try:
             if isinstance(changeid, int):
                 node = self.changelog.node(changeid)
                 rev = changeid
-            elif changeid == b'null':
-                node = nullid
-                rev = nullrev
-            elif changeid == b'tip':
-                node = self.changelog.tip()
-                rev = self.changelog.rev(node)
             elif changeid == b'.':
                 # this is a hack to delay/avoid loading obsmarkers
                 # when we know that '.' won't be hidden
@@ -1619,7 +1690,7 @@ class localrepository(object):
         user aliases, consider calling ``scmutil.revrange()`` or
         ``repo.anyrevs([expr], user=True)``.
 
-        Returns a revset.abstractsmartset, which is a list-like interface
+        Returns a smartset.abstractsmartset, which is a list-like interface
         that contains integer revisions.
         '''
         tree = revsetlang.spectree(expr, *args)
@@ -1645,6 +1716,12 @@ class localrepository(object):
         definitions overriding user aliases, set ``localalias`` to
         ``{name: definitionstring}``.
         '''
+        if specs == [b'null']:
+            return revset.baseset([nullrev])
+        if specs == [b'.']:
+            quick_data = self._quick_access_changeid.get(b'.')
+            if quick_data is not None:
+                return revset.baseset([quick_data[0]])
         if user:
             m = revset.matchany(
                 self.ui,
@@ -1823,11 +1900,11 @@ class localrepository(object):
 
     def known(self, nodes):
         cl = self.changelog
-        nm = cl.nodemap
+        get_rev = cl.index.get_rev
         filtered = cl.filteredrevs
         result = []
         for n in nodes:
-            r = nm.get(n)
+            r = get_rev(n)
             resp = not (r is None or r in filtered)
             result.append(resp)
         return result
@@ -1859,20 +1936,8 @@ class localrepository(object):
         return self.vfs.reljoin(self.root, f, *insidef)
 
     def setparents(self, p1, p2=nullid):
-        with self.dirstate.parentchange():
-            copies = self.dirstate.setparents(p1, p2)
-            pctx = self[p1]
-            if copies:
-                # Adjust copy records, the dirstate cannot do it, it
-                # requires access to parents manifests. Preserve them
-                # only for entries added to first parent.
-                for f in copies:
-                    if f not in pctx and copies[f] in pctx:
-                        self.dirstate.copy(copies[f], f)
-            if p2 == nullid:
-                for f, s in sorted(self.dirstate.copies().items()):
-                    if f not in pctx and s not in pctx:
-                        self.dirstate.copy(None, f)
+        self[None].setparents(p1, p2)
+        self._quick_access_changeid_invalidate()
 
     def filectx(self, path, changeid=None, fileid=None, changectx=None):
         """changeid must be a changeset revision, if specified.
@@ -1993,7 +2058,7 @@ class localrepository(object):
             )
 
         idbase = b"%.40f#%f" % (random.random(), time.time())
-        ha = hex(hashlib.sha1(idbase).digest())
+        ha = hex(hashutil.sha1(idbase).digest())
         txnid = b'TXN:' + ha
         self.hook(b'pretxnopen', throw=True, txnname=desc, txnid=txnid)
 
@@ -2179,7 +2244,7 @@ class localrepository(object):
             # fixes the function accumulation.
             hookargs = tr2.hookargs
 
-            def hookfunc():
+            def hookfunc(unused_success):
                 repo = reporef()
                 if hook.hashook(repo.ui, b'txnclose-bookmark'):
                     bmchanges = sorted(tr.changes[b'bookmarks'].items())
@@ -2350,7 +2415,8 @@ class localrepository(object):
             self.svfs.rename(b'undo.phaseroots', b'phaseroots', checkambig=True)
         self.invalidate()
 
-        parentgone = any(p not in self.changelog.nodemap for p in parents)
+        has_node = self.changelog.index.has_node
+        parentgone = any(not has_node(p) for p in parents)
         if parentgone:
             # prevent dirstateguard from overwriting already restored one
             dsguard.close()
@@ -2458,9 +2524,9 @@ class localrepository(object):
 
     def invalidatecaches(self):
 
-        if r'_tagscache' in vars(self):
+        if '_tagscache' in vars(self):
             # can't use delattr on proxy
-            del self.__dict__[r'_tagscache']
+            del self.__dict__['_tagscache']
 
         self._branchcaches.clear()
         self.invalidatevolatilesets()
@@ -2469,6 +2535,7 @@ class localrepository(object):
     def invalidatevolatilesets(self):
         self.filteredrevcache.clear()
         obsolete.clearobscaches(self)
+        self._quick_access_changeid_invalidate()
 
     def invalidatedirstate(self):
         '''Invalidates the dirstate, causing the next call to dirstate
@@ -2479,13 +2546,13 @@ class localrepository(object):
         rereads the dirstate. Use dirstate.invalidate() if you want to
         explicitly read the dirstate again (i.e. restoring it to a previous
         known good state).'''
-        if hasunfilteredcache(self, r'dirstate'):
+        if hasunfilteredcache(self, 'dirstate'):
             for k in self.dirstate._filecache:
                 try:
                     delattr(self.dirstate, k)
                 except AttributeError:
                     pass
-            delattr(self.unfiltered(), r'dirstate')
+            delattr(self.unfiltered(), 'dirstate')
 
     def invalidate(self, clearfilecache=False):
         '''Invalidates both store and non-store parts other than dirstate
@@ -2535,7 +2602,7 @@ class localrepository(object):
         """Reload stats of cached files so that they are flagged as valid"""
         for k, ce in self._filecache.items():
             k = pycompat.sysstr(k)
-            if k == r'dirstate' or k not in self.__dict__:
+            if k == 'dirstate' or k not in self.__dict__:
                 continue
             ce.refresh()
 
@@ -2590,7 +2657,7 @@ class localrepository(object):
                 l.postrelease.append(callback)
                 break
         else:  # no lock have been found.
-            callback()
+            callback(True)
 
     def lock(self, wait=True):
         '''Lock the repository store (.hg/store) and return a weak reference
@@ -2787,7 +2854,7 @@ class localrepository(object):
 
         return fparent1
 
-    def checkcommitpatterns(self, wctx, vdirs, match, status, fail):
+    def checkcommitpatterns(self, wctx, match, status, fail):
         """check for commit arguments that aren't committable"""
         if match.isexact() or match.prefix():
             matched = set(status.modified + status.added + status.removed)
@@ -2798,7 +2865,8 @@ class localrepository(object):
                     continue
                 if f in status.deleted:
                     fail(f, _(b'file not found!'))
-                if f in vdirs:  # visited directory
+                # Is it a directory that exists or used to exist?
+                if self.wvfs.isdir(f) or wctx.p1().hasdir(f):
                     d = f + b'/'
                     for mf in matched:
                         if mf.startswith(d):
@@ -2816,7 +2884,7 @@ class localrepository(object):
         date=None,
         match=None,
         force=False,
-        editor=False,
+        editor=None,
         extra=None,
     ):
         """Add a new revision to current repository.
@@ -2835,8 +2903,6 @@ class localrepository(object):
             match = matchmod.always()
 
         if not force:
-            vdirs = []
-            match.explicitdir = vdirs.append
             match.bad = fail
 
         # lock() for recent changelog (see issue4368)
@@ -2865,7 +2931,7 @@ class localrepository(object):
 
             # make sure all explicit patterns are matched
             if not force:
-                self.checkcommitpatterns(wctx, vdirs, match, status, fail)
+                self.checkcommitpatterns(wctx, match, status, fail)
 
             cctx = context.workingcommitctx(
                 self, status, text, user, date, extra
@@ -2929,7 +2995,7 @@ class localrepository(object):
                     )
                 raise
 
-        def commithook():
+        def commithook(unused_success):
             # hack for command that use a temporary commit (eg: histedit)
             # temporary commit got stripped before hook release
             if self.changelog.hasnode(ret):
@@ -3362,10 +3428,10 @@ class localrepository(object):
             if tr is not None:
                 hookargs.update(tr.hookargs)
             hookargs = pycompat.strkwargs(hookargs)
-            hookargs[r'namespace'] = namespace
-            hookargs[r'key'] = key
-            hookargs[r'old'] = old
-            hookargs[r'new'] = new
+            hookargs['namespace'] = namespace
+            hookargs['key'] = key
+            hookargs['old'] = old
+            hookargs['new'] = new
             self.hook(b'prepushkey', throw=True, **hookargs)
         except error.HookAbort as exc:
             self.ui.write_err(_(b"pushkey-abort: %s\n") % exc)
@@ -3375,7 +3441,7 @@ class localrepository(object):
         self.ui.debug(b'pushing key for "%s:%s"\n' % (namespace, key))
         ret = pushkey.push(self, namespace, key, old, new)
 
-        def runhook():
+        def runhook(unused_success):
             self.hook(
                 b'pushkey',
                 namespace=namespace,
@@ -3705,7 +3771,7 @@ def poisonrepository(repo):
     # of repos call close() on repo references.
     class poisonedrepository(object):
         def __getattribute__(self, item):
-            if item == r'close':
+            if item == 'close':
                 return object.__getattribute__(self, item)
 
             raise error.ProgrammingError(
@@ -3717,4 +3783,4 @@ def poisonrepository(repo):
 
     # We may have a repoview, which intercepts __setattr__. So be sure
     # we operate at the lowest level possible.
-    object.__setattr__(repo, r'__class__', poisonedrepository)
+    object.__setattr__(repo, '__class__', poisonedrepository)

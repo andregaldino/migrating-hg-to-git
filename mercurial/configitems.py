@@ -228,6 +228,9 @@ coreconfigitem(
     b'commands', b'grep.all-files', default=False, experimental=True,
 )
 coreconfigitem(
+    b'commands', b'merge.require-rev', default=False,
+)
+coreconfigitem(
     b'commands', b'push.require-revs', default=False,
 )
 coreconfigitem(
@@ -431,6 +434,9 @@ coreconfigitem(
 )
 coreconfigitem(
     b'devel', b'debug.extensions', default=False,
+)
+coreconfigitem(
+    b'devel', b'debug.repo-filters', default=False,
 )
 coreconfigitem(
     b'devel', b'debug.peer-request', default=False,
@@ -651,6 +657,9 @@ coreconfigitem(
     b'experimental', b'revisions.disambiguatewithin', default=None,
 )
 coreconfigitem(
+    b'experimental', b'rust.index', default=False,
+)
+coreconfigitem(
     b'experimental', b'server.filesdata.recommended-batch-size', default=50000,
 )
 coreconfigitem(
@@ -701,6 +710,9 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental', b'worker.wdir-get-thread-safe', default=False,
+)
+coreconfigitem(
+    b'experimental', b'worker.repository-upgrade', default=False,
 )
 coreconfigitem(
     b'experimental', b'xdiff', default=False,

@@ -9,15 +9,14 @@
 
 extern "C" {
 
-static PyCodeObject *code;
+static PYCODETYPE *code;
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
 	contrib::initpy(*argv[0]);
-	code = (PyCodeObject *)Py_CompileString(R"py(
-from parsers import lazymanifest
+	code = (PYCODETYPE *)Py_CompileString(R"py(
 try:
-  lm = lazymanifest(mdata)
+  lm = parsers.lazymanifest(mdata)
   # iterate the whole thing, which causes the code to fully parse
   # every line in the manifest
   for e, _, _ in lm.iterentries():
@@ -41,7 +40,7 @@ except Exception as e:
   # to debug failures.
   # print e
 )py",
-	                                        "fuzzer", Py_file_input);
+	                                      "fuzzer", Py_file_input);
 	return 0;
 }
 

@@ -31,7 +31,7 @@ class TemplateNotFound(error.Abort):
     pass
 
 
-class wrapped(object):
+class wrapped(object):  # pytype: disable=ignored-metaclass
     """Object requiring extra conversion prior to displaying or processing
     as value
 
@@ -108,8 +108,10 @@ class wrapped(object):
         """
 
 
-class mappable(object):
+class mappable(object):  # pytype: disable=ignored-metaclass
     """Object which can be converted to a single template mapping"""
+
+    __metaclass__ = abc.ABCMeta
 
     def itermaps(self, context):
         yield self.tomap(context)

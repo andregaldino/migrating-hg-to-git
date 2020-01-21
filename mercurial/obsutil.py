@@ -254,7 +254,7 @@ def exclusivemarkers(repo, nodes):
     unfi = repo.unfiltered()
 
     # shortcut to various useful item
-    nm = unfi.changelog.nodemap
+    has_node = unfi.changelog.index.has_node
     precursorsmarkers = unfi.obsstore.predecessors
     successormarkers = unfi.obsstore.successors
     childrenmarkers = unfi.obsstore.children
@@ -302,7 +302,7 @@ def exclusivemarkers(repo, nodes):
                 continue
 
             # is this a locally known node ?
-            known = prec in nm
+            known = has_node(prec)
             # if locally-known and not in the <nodes> set the traversal
             # stop here.
             if known and prec not in nodes:
@@ -333,7 +333,7 @@ def foreground(repo, nodes):
     if repo.obsstore:
         # We only need this complicated logic if there is obsolescence
         # XXX will probably deserve an optimised revset.
-        nm = repo.changelog.nodemap
+        has_node = repo.changelog.index.has_node
         plen = -1
         # compute the whole set of successors or descendants
         while len(foreground) != plen:
@@ -341,7 +341,7 @@ def foreground(repo, nodes):
             succs = set(c.node() for c in foreground)
             mutable = [c.node() for c in foreground if c.mutable()]
             succs.update(allsuccessors(repo.obsstore, mutable))
-            known = (n for n in succs if n in nm)
+            known = (n for n in succs if has_node(n))
             foreground = set(repo.set(b'%ln::', known))
     return set(c.node() for c in foreground)
 
@@ -483,7 +483,7 @@ def geteffectflag(source, successors):
 
 def getobsoleted(repo, tr):
     """return the set of pre-existing revisions obsoleted by a transaction"""
-    torev = repo.unfiltered().changelog.nodemap.get
+    torev = repo.unfiltered().changelog.index.get_rev
     phase = repo._phasecache.phase
     succsmarkers = repo.obsstore.successors.get
     public = phases.public

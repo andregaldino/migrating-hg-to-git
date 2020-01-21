@@ -69,11 +69,11 @@ class gpg(object):
         try:
             # create temporary files
             fd, sigfile = pycompat.mkstemp(prefix=b"hg-gpg-", suffix=b".sig")
-            fp = os.fdopen(fd, r'wb')
+            fp = os.fdopen(fd, 'wb')
             fp.write(sig)
             fp.close()
             fd, datafile = pycompat.mkstemp(prefix=b"hg-gpg-", suffix=b".txt")
-            fp = os.fdopen(fd, r'wb')
+            fp = os.fdopen(fd, 'wb')
             fp.write(data)
             fp.close()
             gpgcmd = (
@@ -121,7 +121,7 @@ class gpg(object):
 def newgpg(ui, **opts):
     """create a new gpg instance"""
     gpgpath = ui.config(b"gpg", b"cmd")
-    gpgkey = opts.get(r'key')
+    gpgkey = opts.get('key')
     if not gpgkey:
         gpgkey = ui.config(b"gpg", b"key")
     return gpg(gpgpath, gpgkey)

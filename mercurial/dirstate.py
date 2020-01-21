@@ -36,8 +36,8 @@ from .interfaces import (
     util as interfaceutil,
 )
 
-parsers = policy.importmod(r'parsers')
-rustmod = policy.importrust(r'dirstate')
+parsers = policy.importmod('parsers')
+rustmod = policy.importrust('dirstate')
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
@@ -368,7 +368,7 @@ class dirstate(object):
         rereads the dirstate. Use localrepo.invalidatedirstate() if you want to
         check whether the dirstate has changed before rereading it.'''
 
-        for a in (r"_map", r"_branch", r"_ignore"):
+        for a in ("_map", "_branch", "_ignore"):
             if a in self.__dict__:
                 delattr(self, a)
         self._lastnormaltime = 0
@@ -404,7 +404,7 @@ class dirstate(object):
                     _(b'directory %r already in dirstate') % pycompat.bytestr(f)
                 )
             # shadows
-            for d in util.finddirs(f):
+            for d in pathutil.finddirs(f):
                 if self._map.hastrackeddir(d):
                     break
                 entry = self._map.get(d)
@@ -603,19 +603,34 @@ class dirstate(object):
     def rebuild(self, parent, allfiles, changedfiles=None):
         if changedfiles is None:
             # Rebuild entire dirstate
-            changedfiles = allfiles
+            to_lookup = allfiles
+            to_drop = []
             lastnormaltime = self._lastnormaltime
             self.clear()
             self._lastnormaltime = lastnormaltime
+        elif len(changedfiles) < 10:
+            # Avoid turning allfiles into a set, which can be expensive if it's
+            # large.
+            to_lookup = []
+            to_drop = []
+            for f in changedfiles:
+                if f in allfiles:
+                    to_lookup.append(f)
+                else:
+                    to_drop.append(f)
+        else:
+            changedfilesset = set(changedfiles)
+            to_lookup = changedfilesset & set(allfiles)
+            to_drop = changedfilesset - to_lookup
 
         if self._origpl is None:
             self._origpl = self._pl
         self._map.setparents(parent, nullid)
-        for f in changedfiles:
-            if f in allfiles:
-                self.normallookup(f)
-            else:
-                self.drop(f)
+
+        for f in to_lookup:
+            self.normallookup(f)
+        for f in to_drop:
+            self.drop(f)
 
         self._dirty = True
 
@@ -687,8 +702,7 @@ class dirstate(object):
         delaywrite = self._ui.configint(b'debug', b'dirstate.delaywrite')
         if delaywrite > 0:
             # do we have any files to delay for?
-            items = pycompat.iteritems(self._map)
-            for f, e in items:
+            for f, e in pycompat.iteritems(self._map):
                 if e[0] == b'n' and e[3] == now:
                     import time  # to avoid useless import
 
@@ -700,12 +714,6 @@ class dirstate(object):
                     time.sleep(end - clock)
                     now = end  # trust our estimate that the end is near now
                     break
-            # since the iterator is potentially not deleted,
-            # delete the iterator to release the reference for the Rust
-            # implementation.
-            # TODO make the Rust implementation behave like Python
-            # since this would not work with a non ref-counting GC.
-            del items
 
         self._map.write(st, now)
         self._lastnormaltime = 0
@@ -714,7 +722,7 @@ class dirstate(object):
     def _dirignore(self, f):
         if self._ignore(f):
             return True
-        for p in util.finddirs(f):
+        for p in pathutil.finddirs(f):
             if self._ignore(p):
                 return True
         return False
@@ -776,7 +784,6 @@ class dirstate(object):
                 kind = _(b'directory')
             return _(b'unsupported file type (type is %s)') % kind
 
-        matchedir = match.explicitdir
         badfn = match.bad
         dmap = self._map
         lstat = os.lstat
@@ -830,8 +837,6 @@ class dirstate(object):
                     if nf in dmap:
                         # file replaced by dir on disk but still in dirstate
                         results[nf] = None
-                    if matchedir:
-                        matchedir(nf)
                     foundadd((nf, ff))
                 elif kind == regkind or kind == lnkkind:
                     results[nf] = st
@@ -844,8 +849,6 @@ class dirstate(object):
                     results[nf] = None
                 else:  # does it match a missing directory?
                     if self._map.hasdir(nf):
-                        if matchedir:
-                            matchedir(nf)
                         notfoundadd(nf)
                     else:
                         badfn(ff, encoding.strtolocal(inst.strerror))
@@ -946,6 +949,11 @@ class dirstate(object):
 
         # step 1: find all explicit files
         results, work, dirsnotfound = self._walkexplicit(match, subrepos)
+        if matchtdir:
+            for d in work:
+                matchtdir(d[0])
+            for d in dirsnotfound:
+                matchtdir(d)
 
         skipstep3 = skipstep3 and not (work or dirsnotfound)
         work = [d for d in work if not dirignore(d[0])]
@@ -1075,6 +1083,46 @@ class dirstate(object):
                     results[next(iv)] = st
         return results
 
+    def _rust_status(self, matcher, list_clean):
+        # Force Rayon (Rust parallelism library) to respect the number of
+        # workers. This is a temporary workaround until Rust code knows
+        # how to read the config file.
+        numcpus = self._ui.configint(b"worker", b"numcpus")
+        if numcpus is not None:
+            encoding.environ.setdefault(b'RAYON_NUM_THREADS', b'%d' % numcpus)
+
+        workers_enabled = self._ui.configbool(b"worker", b"enabled", True)
+        if not workers_enabled:
+            encoding.environ[b"RAYON_NUM_THREADS"] = b"1"
+
+        (
+            lookup,
+            modified,
+            added,
+            removed,
+            deleted,
+            unknown,
+            clean,
+        ) = rustmod.status(
+            self._map._rustmap,
+            matcher,
+            self._rootdir,
+            bool(list_clean),
+            self._lastnormaltime,
+            self._checkexec,
+        )
+
+        status = scmutil.status(
+            modified=modified,
+            added=added,
+            removed=removed,
+            deleted=deleted,
+            unknown=unknown,
+            ignored=[],
+            clean=clean,
+        )
+        return (lookup, status)
+
     def status(self, match, subrepos, ignored, clean, unknown):
         '''Determine the status of the working copy relative to the
         dirstate and return a pair of (unsure, status), where status is of type
@@ -1099,11 +1147,14 @@ class dirstate(object):
         dmap.preload()
 
         use_rust = True
+
+        allowed_matchers = (matchmod.alwaysmatcher, matchmod.exactmatcher)
+
         if rustmod is None:
             use_rust = False
         elif subrepos:
             use_rust = False
-        if bool(listunknown):
+        elif bool(listunknown):
             # Pathauditor does not exist yet in Rust, unknown files
             # can't be trusted.
             use_rust = False
@@ -1111,60 +1162,26 @@ class dirstate(object):
             # Rust has no ignore mechanism yet, so don't use Rust for
             # commands that need ignore.
             use_rust = False
-        elif not match.always():
+        elif not isinstance(match, allowed_matchers):
             # Matchers have yet to be implemented
             use_rust = False
 
         if use_rust:
-            # Force Rayon (Rust parallelism library) to respect the number of
-            # workers. This is a temporary workaround until Rust code knows
-            # how to read the config file.
-            numcpus = self._ui.configint(b"worker", b"numcpus")
-            if numcpus is not None:
-                encoding.environ.setdefault(b'RAYON_NUM_THREADS', b'%d' % numcpus)
+            return self._rust_status(match, listclean)
 
-            workers_enabled = self._ui.configbool(b"worker", b"enabled", True)
-            if not workers_enabled:
-                encoding.environ[b"RAYON_NUM_THREADS"] = b"1"
-
-            (
-                lookup,
-                modified,
-                added,
-                removed,
-                deleted,
-                unknown,
-                clean,
-            ) = rustmod.status(
-                dmap._rustmap,
-                self._rootdir,
-                match.files(),
-                bool(listclean),
-                self._lastnormaltime,
-                self._checkexec,
-            )
-
-            status = scmutil.status(
-                modified=modified,
-                added=added,
-                removed=removed,
-                deleted=deleted,
-                unknown=unknown,
-                ignored=ignored,
-                clean=clean,
-            )
-            return (lookup, status)
+        def noop(f):
+            pass
 
         dcontains = dmap.__contains__
         dget = dmap.__getitem__
         ladd = lookup.append  # aka "unsure"
         madd = modified.append
         aadd = added.append
-        uadd = unknown.append
-        iadd = ignored.append
+        uadd = unknown.append if listunknown else noop
+        iadd = ignored.append if listignored else noop
         radd = removed.append
         dadd = deleted.append
-        cadd = clean.append
+        cadd = clean.append if listclean else noop
         mexact = match.exact
         dirignore = self._dirignore
         checkexec = self._checkexec
@@ -1418,9 +1435,9 @@ class dirstatemap(object):
 
     def addfile(self, f, oldstate, state, mode, size, mtime):
         """Add a tracked file to the dirstate."""
-        if oldstate in b"?r" and r"_dirs" in self.__dict__:
+        if oldstate in b"?r" and "_dirs" in self.__dict__:
             self._dirs.addpath(f)
-        if oldstate == b"?" and r"_alldirs" in self.__dict__:
+        if oldstate == b"?" and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
         self._map[f] = dirstatetuple(state, mode, size, mtime)
         if state != b'n' or mtime == -1:
@@ -1436,11 +1453,11 @@ class dirstatemap(object):
         the file's previous state.  In the future, we should refactor this
         to be more explicit about what that state is.
         """
-        if oldstate not in b"?r" and r"_dirs" in self.__dict__:
+        if oldstate not in b"?r" and "_dirs" in self.__dict__:
             self._dirs.delpath(f)
-        if oldstate == b"?" and r"_alldirs" in self.__dict__:
+        if oldstate == b"?" and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
-        if r"filefoldmap" in self.__dict__:
+        if "filefoldmap" in self.__dict__:
             normed = util.normcase(f)
             self.filefoldmap.pop(normed, None)
         self._map[f] = dirstatetuple(b'r', 0, size, 0)
@@ -1453,11 +1470,11 @@ class dirstatemap(object):
         """
         exists = self._map.pop(f, None) is not None
         if exists:
-            if oldstate != b"r" and r"_dirs" in self.__dict__:
+            if oldstate != b"r" and "_dirs" in self.__dict__:
                 self._dirs.delpath(f)
-            if r"_alldirs" in self.__dict__:
+            if "_alldirs" in self.__dict__:
                 self._alldirs.delpath(f)
-        if r"filefoldmap" in self.__dict__:
+        if "filefoldmap" in self.__dict__:
             normed = util.normcase(f)
             self.filefoldmap.pop(normed, None)
         self.nonnormalset.discard(f)
@@ -1522,11 +1539,11 @@ class dirstatemap(object):
 
     @propertycache
     def _dirs(self):
-        return util.dirs(self._map, b'r')
+        return pathutil.dirs(self._map, b'r')
 
     @propertycache
     def _alldirs(self):
-        return util.dirs(self._map)
+        return pathutil.dirs(self._map)
 
     def _opendirstatefile(self):
         fp, mode = txnutil.trypending(self._root, self._opener, self._filename)

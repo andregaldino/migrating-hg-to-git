@@ -144,9 +144,7 @@ class convert_cvs(converter_source):
 
         if root.startswith(b":pserver:"):
             root = root[9:]
-            m = re.match(
-                r'(?:(.*?)(?::(.*?))?@)?([^:\/]*)(?::(\d*))?(.*)', root
-            )
+            m = re.match(r'(?:(.*?)(?::(.*?))?@)?([^:/]*)(?::(\d*))?(.*)', root)
             if m:
                 conntype = b"pserver"
                 user, passw, serv, port, root = m.groups()

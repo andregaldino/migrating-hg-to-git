@@ -5,6 +5,7 @@ import getopt
 import sys
 
 import hgdemandimport
+
 hgdemandimport.enable()
 
 from mercurial.i18n import _
@@ -16,30 +17,32 @@ from mercurial import (
     simplemerge,
     ui as uimod,
 )
-from mercurial.utils import (
-    procutil,
-    stringutil
-)
+from mercurial.utils import procutil, stringutil
 
-options = [(b'L', b'label', [], _(b'labels to use on conflict markers')),
-           (b'a', b'text', None, _(b'treat all files as text')),
-           (b'p', b'print', None,
-            _(b'print results instead of overwriting LOCAL')),
-           (b'', b'no-minimal', None, _(b'no effect (DEPRECATED)')),
-           (b'h', b'help', None, _(b'display help and exit')),
-           (b'q', b'quiet', None, _(b'suppress output'))]
+options = [
+    (b'L', b'label', [], _(b'labels to use on conflict markers')),
+    (b'a', b'text', None, _(b'treat all files as text')),
+    (b'p', b'print', None, _(b'print results instead of overwriting LOCAL')),
+    (b'', b'no-minimal', None, _(b'no effect (DEPRECATED)')),
+    (b'h', b'help', None, _(b'display help and exit')),
+    (b'q', b'quiet', None, _(b'suppress output')),
+]
 
-usage = _(b'''simplemerge [OPTS] LOCAL BASE OTHER
+usage = _(
+    b'''simplemerge [OPTS] LOCAL BASE OTHER
 
     Simple three-way file merge utility with a minimal feature set.
 
     Apply to LOCAL the changes necessary to go from BASE to OTHER.
 
     By default, LOCAL is overwritten with the results of this operation.
-''')
+'''
+)
+
 
 class ParseError(Exception):
     """Exception raised on errors in parsing the command line."""
+
 
 def showhelp():
     pycompat.stdout.write(usage)
@@ -47,12 +50,20 @@ def showhelp():
 
     out_opts = []
     for shortopt, longopt, default, desc in options:
-        out_opts.append((b'%2s%s' % (shortopt and b'-%s' % shortopt,
-                                     longopt and b' --%s' % longopt),
-                         b'%s' % desc))
+        out_opts.append(
+            (
+                b'%2s%s'
+                % (
+                    shortopt and b'-%s' % shortopt,
+                    longopt and b' --%s' % longopt,
+                ),
+                b'%s' % desc,
+            )
+        )
     opts_len = max([len(opt[0]) for opt in out_opts])
     for first, second in out_opts:
         pycompat.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
+
 
 try:
     for fp in (sys.stdin, pycompat.stdout, sys.stderr):
@@ -68,13 +79,17 @@ try:
         showhelp()
         sys.exit(0)
     if len(args) != 3:
-            raise ParseError(_(b'wrong number of arguments').decode('utf8'))
+        raise ParseError(_(b'wrong number of arguments').decode('utf8'))
     local, base, other = args
-    sys.exit(simplemerge.simplemerge(uimod.ui.load(),
-                                     context.arbitraryfilectx(local),
-                                     context.arbitraryfilectx(base),
-                                     context.arbitraryfilectx(other),
-                                     **pycompat.strkwargs(opts)))
+    sys.exit(
+        simplemerge.simplemerge(
+            uimod.ui.load(),
+            context.arbitraryfilectx(local),
+            context.arbitraryfilectx(base),
+            context.arbitraryfilectx(other),
+            **pycompat.strkwargs(opts)
+        )
+    )
 except ParseError as e:
     e = stringutil.forcebytestr(e)
     pycompat.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))

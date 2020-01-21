@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 import os
 import shutil
 import stat
@@ -15,6 +14,7 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import hashutil
 from . import (
     constants,
     shallowutil,
@@ -166,7 +166,7 @@ class basestore(object):
 
         # Start with a full manifest, since it'll cover the majority of files
         for filename in self.repo[b'tip'].manifest():
-            sha = hashlib.sha1(filename).digest()
+            sha = hashutil.sha1(filename).digest()
             if sha in missingfilename:
                 filenames[filename] = sha
                 missingfilename.discard(sha)
@@ -178,7 +178,7 @@ class basestore(object):
                 break
             files = cl.readfiles(cl.node(rev))
             for filename in files:
-                sha = hashlib.sha1(filename).digest()
+                sha = hashutil.sha1(filename).digest()
                 if sha in missingfilename:
                     filenames[filename] = sha
                     missingfilename.discard(sha)
@@ -225,7 +225,7 @@ class basestore(object):
             data = shallowutil.readfile(filepath)
             if self._validatecache and not self._validatedata(data, filepath):
                 if self._validatecachelog:
-                    with open(self._validatecachelog, b'a+') as f:
+                    with open(self._validatecachelog, b'ab+') as f:
                         f.write(b"corrupt %s during read\n" % filepath)
                 os.rename(filepath, filepath + b".corrupt")
                 raise KeyError(b"corrupt local cache file %s" % filepath)
@@ -420,10 +420,10 @@ class baseunionstore(object):
         # throw a KeyError, try this many times with a full refresh between
         # attempts. A repack operation may have moved data from one store to
         # another while we were running.
-        self.numattempts = kwargs.get(r'numretries', 0) + 1
+        self.numattempts = kwargs.get('numretries', 0) + 1
         # If not-None, call this function on every retry and if the attempts are
         # exhausted.
-        self.retrylog = kwargs.get(r'retrylog', None)
+        self.retrylog = kwargs.get('retrylog', None)
 
     def markforrefresh(self):
         for store in self.stores:

@@ -11,6 +11,10 @@ changesets to Phabricator, and a ``phabread`` command which prints a stack of
 revisions in a format suitable for :hg:`import`, and a ``phabupdate`` command
 to update statuses in batch.
 
+A "phabstatus" view for :hg:`show` is also provided; it displays status
+information of Phabricator differentials associated with unfinished
+changesets.
+
 By default, Phabricator requires ``Test Plan`` which might prevent some
 changeset from being sent. The requirement could be disabled by changing
 ``differential.require-test-plan-field`` config server side.
@@ -60,7 +64,10 @@ from mercurial import (
     encoding,
     error,
     exthelper,
+    graphmod,
     httpconnection as httpconnectionmod,
+    localrepo,
+    logcmdutil,
     match,
     mdiff,
     obsutil,
@@ -80,6 +87,8 @@ from mercurial.utils import (
     procutil,
     stringutil,
 )
+from . import show
+
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -93,6 +102,7 @@ cmdtable = eh.cmdtable
 command = eh.command
 configtable = eh.configtable
 templatekeyword = eh.templatekeyword
+uisetup = eh.finaluisetup
 
 # developer config: phabricator.batchsize
 eh.configitem(
@@ -122,6 +132,12 @@ colortable = {
     b'phabricator.desc': b'',
     b'phabricator.drev': b'bold',
     b'phabricator.node': b'',
+    b'phabricator.status.abandoned': b'magenta dim',
+    b'phabricator.status.accepted': b'green bold',
+    b'phabricator.status.closed': b'green',
+    b'phabricator.status.needsreview': b'yellow',
+    b'phabricator.status.needsrevision': b'red',
+    b'phabricator.status.changesplanned': b'red',
 }
 
 _VCR_FLAGS = [
@@ -136,6 +152,44 @@ _VCR_FLAGS = [
         ),
     ),
 ]
+
+
+@eh.wrapfunction(localrepo, "loadhgrc")
+def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements):
+    """Load ``.arcconfig`` content into a ui instance on repository open.
+    """
+    result = False
+    arcconfig = {}
+
+    try:
+        # json.loads only accepts bytes from 3.6+
+        rawparams = encoding.unifromlocal(wdirvfs.read(b".arcconfig"))
+        # json.loads only returns unicode strings
+        arcconfig = pycompat.rapply(
+            lambda x: encoding.unitolocal(x)
+            if isinstance(x, pycompat.unicode)
+            else x,
+            pycompat.json_loads(rawparams),
+        )
+
+        result = True
+    except ValueError:
+        ui.warn(_(b"invalid JSON in %s\n") % wdirvfs.join(b".arcconfig"))
+    except IOError:
+        pass
+
+    cfg = util.sortdict()
+
+    if b"repository.callsign" in arcconfig:
+        cfg[(b"phabricator", b"callsign")] = arcconfig[b"repository.callsign"]
+
+    if b"phabricator.uri" in arcconfig:
+        cfg[(b"phabricator", b"url")] = arcconfig[b"phabricator.uri"]
+
+    if cfg:
+        ui.applyconfig(cfg, source=wdirvfs.join(b".arcconfig"))
+
+    return orig(ui, wdirvfs, hgvfs, requirements) or result  # Load .hg/hgrc
 
 
 def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
@@ -167,13 +221,13 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
         return request
 
     def sanitiseresponse(response):
-        if r'set-cookie' in response[r'headers']:
-            del response[r'headers'][r'set-cookie']
+        if 'set-cookie' in response['headers']:
+            del response['headers']['set-cookie']
         return response
 
     def decorate(fn):
         def inner(*args, **kwargs):
-            cassette = pycompat.fsdecode(kwargs.pop(r'test_vcr', None))
+            cassette = pycompat.fsdecode(kwargs.pop('test_vcr', None))
             if cassette:
                 import hgdemandimport
 
@@ -182,24 +236,24 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
                     import vcr.stubs as stubs
 
                     vcr = vcrmod.VCR(
-                        serializer=r'json',
+                        serializer='json',
                         before_record_request=sanitiserequest,
                         before_record_response=sanitiseresponse,
                         custom_patches=[
                             (
                                 urlmod,
-                                r'httpconnection',
+                                'httpconnection',
                                 stubs.VCRHTTPConnection,
                             ),
                             (
                                 urlmod,
-                                r'httpsconnection',
+                                'httpsconnection',
                                 stubs.VCRHTTPSConnection,
                             ),
                         ],
                     )
-                    vcr.register_matcher(r'hgmatcher', hgmatcher)
-                    with vcr.use_cassette(cassette, match_on=[r'hgmatcher']):
+                    vcr.register_matcher('hgmatcher', hgmatcher)
+                    with vcr.use_cassette(cassette, match_on=['hgmatcher']):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
 
@@ -389,7 +443,7 @@ def getoldnodedrevmap(repo, nodelist):
     corresponding Differential Revision, and exist in the repo.
     """
     unfi = repo.unfiltered()
-    nodemap = unfi.changelog.nodemap
+    has_node = unfi.changelog.index.has_node
 
     result = {}  # {node: (oldnode?, lastdiff?, drev)}
     toconfirm = {}  # {node: (force, {precnode}, drev)}
@@ -398,17 +452,20 @@ def getoldnodedrevmap(repo, nodelist):
         # For tags like "D123", put them into "toconfirm" to verify later
         precnodes = list(obsutil.allpredecessors(unfi.obsstore, [node]))
         for n in precnodes:
-            if n in nodemap:
+            if has_node(n):
                 for tag in unfi.nodetags(n):
                     m = _differentialrevisiontagre.match(tag)
                     if m:
                         toconfirm[node] = (0, set(precnodes), int(m.group(1)))
-                        continue
-
-        # Check commit message
-        m = _differentialrevisiondescre.search(ctx.description())
-        if m:
-            toconfirm[node] = (1, set(precnodes), int(m.group(r'id')))
+                        break
+                else:
+                    continue  # move to next predecessor
+                break  # found a tag, stop
+        else:
+            # Check commit message
+            m = _differentialrevisiondescre.search(ctx.description())
+            if m:
+                toconfirm[node] = (1, set(precnodes), int(m.group('id')))
 
     # Double check if tags are genuine by collecting all old nodes from
     # Phabricator, and expect precursors overlap with it.
@@ -454,10 +511,33 @@ def getoldnodedrevmap(repo, nodelist):
             if diffs:
                 lastdiff = max(diffs, key=lambda d: int(d[b'id']))
                 oldnode = getnode(lastdiff)
-                if oldnode and oldnode not in nodemap:
+                if oldnode and not has_node(oldnode):
                     oldnode = None
 
             result[newnode] = (oldnode, lastdiff, drev)
+
+    return result
+
+
+def getdrevmap(repo, revs):
+    """Return a dict mapping each rev in `revs` to their Differential Revision
+    ID or None.
+    """
+    result = {}
+    for rev in revs:
+        result[rev] = None
+        ctx = repo[rev]
+        # Check commit message
+        m = _differentialrevisiondescre.search(ctx.description())
+        if m:
+            result[rev] = int(m.group('id'))
+            continue
+        # Check tags
+        for tag in repo.nodetags(ctx.node()):
+            m = _differentialrevisiontagre.match(tag)
+            if m:
+                result[rev] = int(m.group(1))
+                break
 
     return result
 
@@ -609,26 +689,25 @@ def uploadchunks(fctx, fphid):
     """
     ui = fctx.repo().ui
     chunks = callconduit(ui, b'file.querychunks', {b'filePHID': fphid})
-    progress = ui.makeprogress(
+    with ui.makeprogress(
         _(b'uploading file chunks'), unit=_(b'chunks'), total=len(chunks)
-    )
-    for chunk in chunks:
-        progress.increment()
-        if chunk[b'complete']:
-            continue
-        bstart = int(chunk[b'byteStart'])
-        bend = int(chunk[b'byteEnd'])
-        callconduit(
-            ui,
-            b'file.uploadchunk',
-            {
-                b'filePHID': fphid,
-                b'byteStart': bstart,
-                b'data': base64.b64encode(fctx.data()[bstart:bend]),
-                b'dataEncoding': b'base64',
-            },
-        )
-    progress.complete()
+    ) as progress:
+        for chunk in chunks:
+            progress.increment()
+            if chunk[b'complete']:
+                continue
+            bstart = int(chunk[b'byteStart'])
+            bend = int(chunk[b'byteEnd'])
+            callconduit(
+                ui,
+                b'file.uploadchunk',
+                {
+                    b'filePHID': fphid,
+                    b'byteStart': bstart,
+                    b'data': base64.b64encode(fctx.data()[bstart:bend]),
+                    b'dataEncoding': b'base64',
+                },
+            )
 
 
 def uploadfile(fctx):
@@ -1026,6 +1105,7 @@ def phabsend(ui, repo, *revs, **opts):
     opts = pycompat.byteskwargs(opts)
     revs = list(revs) + opts.get(b'rev', [])
     revs = scmutil.revrange(repo, revs)
+    revs.sort()  # ascending order to preserve topological parent/child in phab
 
     if not revs:
         raise error.Abort(_(b'phabsend requires at least one changeset'))
@@ -1089,7 +1169,7 @@ def phabsend(ui, repo, *revs, **opts):
             # Create a local tag to note the association, if commit message
             # does not have it already
             m = _differentialrevisiondescre.search(ctx.description())
-            if not m or int(m.group(r'id')) != newrevid:
+            if not m or int(m.group('id')) != newrevid:
                 tagname = b'D%d' % newrevid
                 tags.tag(
                     repo,
@@ -1235,6 +1315,7 @@ _knownstatusnames = {
     b'needsrevision',
     b'closed',
     b'abandoned',
+    b'changesplanned',
 }
 
 
@@ -1636,7 +1717,7 @@ def template_review(context, mapping):
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
         return templateutil.hybriddict(
-            {b'url': m.group(r'url'), b'id': b"D%s" % m.group(r'id'),}
+            {b'url': m.group('url'), b'id': b"D%s" % m.group('id'),}
         )
     else:
         tags = ctx.repo().nodetags(ctx.node())
@@ -1649,3 +1730,68 @@ def template_review(context, mapping):
 
                 return templateutil.hybriddict({b'url': url, b'id': t,})
     return None
+
+
+@eh.templatekeyword(b'phabstatus', requires={b'ctx', b'repo', b'ui'})
+def template_status(context, mapping):
+    """:phabstatus: String. Status of Phabricator differential.
+    """
+    ctx = context.resource(mapping, b'ctx')
+    repo = context.resource(mapping, b'repo')
+    ui = context.resource(mapping, b'ui')
+
+    rev = ctx.rev()
+    try:
+        drevid = getdrevmap(repo, [rev])[rev]
+    except KeyError:
+        return None
+    drevs = callconduit(ui, b'differential.query', {b'ids': [drevid]})
+    for drev in drevs:
+        if int(drev[b'id']) == drevid:
+            return templateutil.hybriddict(
+                {b'url': drev[b'uri'], b'status': drev[b'statusName'],}
+            )
+    return None
+
+
+@show.showview(b'phabstatus', csettopic=b'work')
+def phabstatusshowview(ui, repo, displayer):
+    """Phabricator differiential status"""
+    revs = repo.revs('sort(_underway(), topo)')
+    drevmap = getdrevmap(repo, revs)
+    unknownrevs, drevids, revsbydrevid = [], set([]), {}
+    for rev, drevid in pycompat.iteritems(drevmap):
+        if drevid is not None:
+            drevids.add(drevid)
+            revsbydrevid.setdefault(drevid, set([])).add(rev)
+        else:
+            unknownrevs.append(rev)
+
+    drevs = callconduit(ui, b'differential.query', {b'ids': list(drevids)})
+    drevsbyrev = {}
+    for drev in drevs:
+        for rev in revsbydrevid[int(drev[b'id'])]:
+            drevsbyrev[rev] = drev
+
+    def phabstatus(ctx):
+        drev = drevsbyrev[ctx.rev()]
+        status = ui.label(
+            b'%(statusName)s' % drev,
+            b'phabricator.status.%s' % _getstatusname(drev),
+        )
+        ui.write(b"\n%s %s\n" % (drev[b'uri'], status))
+
+    revs -= smartset.baseset(unknownrevs)
+    revdag = graphmod.dagwalker(repo, revs)
+
+    ui.setconfig(b'experimental', b'graphshorten', True)
+    displayer._exthook = phabstatus
+    nodelen = show.longestshortest(repo, revs)
+    logcmdutil.displaygraph(
+        ui,
+        repo,
+        revdag,
+        displayer,
+        graphmod.asciiedges,
+        props={b'nodelen': nodelen},
+    )

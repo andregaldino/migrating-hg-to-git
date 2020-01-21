@@ -71,7 +71,7 @@ class basectx(object):
     __str__ = encoding.strmethod(__bytes__)
 
     def __repr__(self):
-        return r"<%s %s>" % (type(self).__name__, str(self))
+        return "<%s %s>" % (type(self).__name__, str(self))
 
     def __eq__(self, other):
         try:
@@ -200,8 +200,8 @@ class basectx(object):
     def mutable(self):
         return self.phase() > phases.public
 
-    def matchfileset(self, expr, badfn=None):
-        return fileset.match(self, expr, badfn=badfn)
+    def matchfileset(self, cwd, expr, badfn=None):
+        return fileset.match(self, cwd, expr, badfn=badfn)
 
     def obsolete(self):
         """True if the changeset is obsolete"""
@@ -265,14 +265,14 @@ class basectx(object):
         return self._repo[nullrev]
 
     def _fileinfo(self, path):
-        if r'_manifest' in self.__dict__:
+        if '_manifest' in self.__dict__:
             try:
                 return self._manifest[path], self._manifest.flags(path)
             except KeyError:
                 raise error.ManifestLookupError(
                     self._node, path, _(b'not found in manifest')
                 )
-        if r'_manifestdelta' in self.__dict__ or path in self.files():
+        if '_manifestdelta' in self.__dict__ or path in self.files():
             if path in self._manifestdelta:
                 return (
                     self._manifestdelta[path],
@@ -328,11 +328,14 @@ class basectx(object):
         default=b'glob',
         listsubrepos=False,
         badfn=None,
+        cwd=None,
     ):
         r = self._repo
+        if not cwd:
+            cwd = r.getcwd()
         return matchmod.match(
             r.root,
-            r.getcwd(),
+            cwd,
             pats,
             include,
             exclude,
@@ -449,11 +452,25 @@ class basectx(object):
                     unknown=listunknown,
                     listsubrepos=True,
                 )
-                for rfiles, sfiles in zip(r, s):
+                for k in (
+                    'modified',
+                    'added',
+                    'removed',
+                    'deleted',
+                    'unknown',
+                    'ignored',
+                    'clean',
+                ):
+                    rfiles, sfiles = getattr(r, k), getattr(s, k)
                     rfiles.extend(b"%s/%s" % (subpath, f) for f in sfiles)
 
-        for l in r:
-            l.sort()
+        r.modified.sort()
+        r.added.sort()
+        r.removed.sort()
+        r.deleted.sort()
+        r.unknown.sort()
+        r.ignored.sort()
+        r.clean.sort()
 
         return r
 
@@ -463,10 +480,17 @@ class changectx(basectx):
     changeset convenient. It represents a read-only context already present in
     the repo."""
 
-    def __init__(self, repo, rev, node):
+    def __init__(self, repo, rev, node, maybe_filtered=True):
         super(changectx, self).__init__(repo)
         self._rev = rev
         self._node = node
+        # When maybe_filtered is True, the revision might be affected by
+        # changelog filtering and operation through the filtered changelog must be used.
+        #
+        # When maybe_filtered is False, the revision has already been checked
+        # against filtering and is not filtered. Operation through the
+        # unfiltered changelog might be used in some case.
+        self._maybe_filtered = maybe_filtered
 
     def __hash__(self):
         try:
@@ -481,7 +505,11 @@ class changectx(basectx):
 
     @propertycache
     def _changeset(self):
-        return self._repo.changelog.changelogrevision(self.rev())
+        if self._maybe_filtered:
+            repo = self._repo
+        else:
+            repo = self._repo.unfiltered()
+        return repo.changelog.changelogrevision(self.rev())
 
     @propertycache
     def _manifest(self):
@@ -498,10 +526,18 @@ class changectx(basectx):
     @propertycache
     def _parents(self):
         repo = self._repo
-        p1, p2 = repo.changelog.parentrevs(self._rev)
+        if self._maybe_filtered:
+            cl = repo.changelog
+        else:
+            cl = repo.unfiltered().changelog
+
+        p1, p2 = cl.parentrevs(self._rev)
         if p2 == nullrev:
-            return [repo[p1]]
-        return [repo[p1], repo[p2]]
+            return [changectx(repo, p1, cl.node(p1), maybe_filtered=False)]
+        return [
+            changectx(repo, p1, cl.node(p1), maybe_filtered=False),
+            changectx(repo, p2, cl.node(p2), maybe_filtered=False),
+        ]
 
     def changeset(self):
         c = self._changeset
@@ -746,9 +782,9 @@ class basefilectx(object):
 
     @propertycache
     def _changeid(self):
-        if r'_changectx' in self.__dict__:
+        if '_changectx' in self.__dict__:
             return self._changectx.rev()
-        elif r'_descendantrev' in self.__dict__:
+        elif '_descendantrev' in self.__dict__:
             # this file context was created from a revision with a known
             # descendant, we can (lazily) correct for linkrev aliases
             return self._adjustlinkrev(self._descendantrev)
@@ -757,7 +793,7 @@ class basefilectx(object):
 
     @propertycache
     def _filenode(self):
-        if r'_fileid' in self.__dict__:
+        if '_fileid' in self.__dict__:
             return self._filelog.lookup(self._fileid)
         else:
             return self._changectx.filenode(self._path)
@@ -789,7 +825,7 @@ class basefilectx(object):
     __str__ = encoding.strmethod(__bytes__)
 
     def __repr__(self):
-        return r"<%s %s>" % (type(self).__name__, str(self))
+        return "<%s %s>" % (type(self).__name__, str(self))
 
     def __hash__(self):
         try:
@@ -1024,16 +1060,16 @@ class basefilectx(object):
         """
         toprev = None
         attrs = vars(self)
-        if r'_changeid' in attrs:
+        if '_changeid' in attrs:
             # We have a cached value already
             toprev = self._changeid
-        elif r'_changectx' in attrs:
+        elif '_changectx' in attrs:
             # We know which changelog entry we are coming from
             toprev = self._changectx.rev()
 
         if toprev is not None:
             return self._adjustlinkrev(toprev, inclusive=True, stoprev=stoprev)
-        elif r'_descendantrev' in attrs:
+        elif '_descendantrev' in attrs:
             introrev = self._adjustlinkrev(self._descendantrev, stoprev=stoprev)
             # be nice and cache the result of the computation
             if introrev is not None:
@@ -1053,14 +1089,14 @@ class basefilectx(object):
     def _parentfilectx(self, path, fileid, filelog):
         """create parent filectx keeping ancestry info for _adjustlinkrev()"""
         fctx = filectx(self._repo, path, fileid=fileid, filelog=filelog)
-        if r'_changeid' in vars(self) or r'_changectx' in vars(self):
+        if '_changeid' in vars(self) or '_changectx' in vars(self):
             # If self is associated with a changeset (probably explicitly
             # fed), ensure the created filectx is associated with a
             # changeset that is an ancestor of self.changectx.
             # This lets us later use _adjustlinkrev to get a correct link.
             fctx._descendantrev = self.rev()
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)
-        elif r'_descendantrev' in vars(self):
+        elif '_descendantrev' in vars(self):
             # Otherwise propagate _descendantrev if we have one associated.
             fctx._descendantrev = self._descendantrev
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)
@@ -1120,7 +1156,7 @@ class basefilectx(object):
             # renamed filectx won't have a filelog yet, so set it
             # from the cache to save time
             for p in pl:
-                if not r'_filelog' in p.__dict__:
+                if not '_filelog' in p.__dict__:
                     p._filelog = getlog(p.path())
 
             return pl
@@ -1128,7 +1164,9 @@ class basefilectx(object):
         # use linkrev to find the first changeset where self appeared
         base = self.introfilectx()
         if getattr(base, '_ancestrycontext', None) is None:
-            cl = self._repo.changelog
+            # it is safe to use an unfiltered repository here because we are
+            # walking ancestors only.
+            cl = self._repo.unfiltered().changelog
             if base.rev() is None:
                 # wctx is not inclusive, but works because _ancestrycontext
                 # is used to test filelog revisions
@@ -1409,7 +1447,7 @@ class committablectx(basectx):
         return b
 
     def phase(self):
-        phase = phases.draft  # default phase to draft
+        phase = phases.newcommitphase(self._repo.ui)
         for p in self.parents():
             phase = max(phase, p.phase())
         return phase
@@ -1488,7 +1526,29 @@ class workingctx(committablectx):
             p = p[:-1]
         # use unfiltered repo to delay/avoid loading obsmarkers
         unfi = self._repo.unfiltered()
-        return [changectx(self._repo, unfi.changelog.rev(n), n) for n in p]
+        return [
+            changectx(
+                self._repo, unfi.changelog.rev(n), n, maybe_filtered=False
+            )
+            for n in p
+        ]
+
+    def setparents(self, p1node, p2node=nullid):
+        dirstate = self._repo.dirstate
+        with dirstate.parentchange():
+            copies = dirstate.setparents(p1node, p2node)
+            pctx = self._repo[p1node]
+            if copies:
+                # Adjust copy records, the dirstate cannot do it, it
+                # requires access to parents manifests. Preserve them
+                # only for entries added to first parent.
+                for f in copies:
+                    if f not in pctx and copies[f] in pctx:
+                        dirstate.copy(copies[f], f)
+            if p2node == nullid:
+                for f, s in sorted(dirstate.copies().items()):
+                    if f not in pctx and s not in pctx:
+                        dirstate.copy(None, f)
 
     def _fileinfo(self, path):
         # populate __dict__['_manifest'] as workingctx has no _manifestdelta
@@ -1534,7 +1594,7 @@ class workingctx(committablectx):
         return self._repo.dirstate.flagfunc(self._buildflagfunc)
 
     def flags(self, path):
-        if r'_manifest' in self.__dict__:
+        if '_manifest' in self.__dict__:
             try:
                 return self._manifest.flags(path)
             except KeyError:
@@ -1552,7 +1612,7 @@ class workingctx(committablectx):
         )
 
     def dirty(self, missing=False, merge=True, branch=True):
-        b"check whether a working directory is modified"
+        """check whether a working directory is modified"""
         # check subrepos first
         for s in sorted(self.substate):
             if self.sub(s).dirty(missing=missing):
@@ -1659,15 +1719,18 @@ class workingctx(committablectx):
         default=b'glob',
         listsubrepos=False,
         badfn=None,
+        cwd=None,
     ):
         r = self._repo
+        if not cwd:
+            cwd = r.getcwd()
 
         # Only a case insensitive filesystem needs magic to translate user input
         # to actual case in the filesystem.
         icasefs = not util.fscasesensitive(r.root)
         return matchmod.match(
             r.root,
-            r.getcwd(),
+            cwd,
             pats,
             include,
             exclude,
@@ -1931,6 +1994,7 @@ class workingctx(committablectx):
             for f in self.removed():
                 self._repo.dirstate.drop(f)
             self._repo.dirstate.setparents(node)
+            self._repo._quick_access_changeid_invalidate()
 
         # write changes out explicitly, because nesting wlock at
         # runtime may prevent 'wlock.release()' in 'repo.commit()'
@@ -2080,7 +2144,7 @@ class workingfilectx(committablefilectx):
             # warned and backed up
             if wvfs.isdir(f) and not wvfs.islink(f):
                 wvfs.rmtree(f, forcibly=True)
-            for p in reversed(list(util.finddirs(f))):
+            for p in reversed(list(pathutil.finddirs(f))):
                 if wvfs.isfileorlink(p):
                     wvfs.unlink(p)
                     break
@@ -2119,6 +2183,10 @@ class overlayworkingctx(committablectx):
         # This is necessary when, e.g., rebasing several nodes with one
         # ``overlayworkingctx`` (e.g. with --collapse).
         util.clearcachedproperty(self, b'_manifest')
+
+    def setparents(self, p1node, p2node=nullid):
+        assert p1node == self._wrappedctx.node()
+        self._parents = [self._wrappedctx, self._repo.unfiltered()[p2node]]
 
     def data(self, path):
         if self.isdirty(path):
@@ -2183,7 +2251,7 @@ class overlayworkingctx(committablectx):
         ]
 
     def p1copies(self):
-        copies = self._repo._wrappedctx.p1copies().copy()
+        copies = {}
         narrowmatch = self._repo.narrowmatch()
         for f in self._cache.keys():
             if not narrowmatch(f):
@@ -2195,7 +2263,7 @@ class overlayworkingctx(committablectx):
         return copies
 
     def p2copies(self):
-        copies = self._repo._wrappedctx.p2copies().copy()
+        copies = {}
         narrowmatch = self._repo.narrowmatch()
         for f in self._cache.keys():
             if not narrowmatch(f):
@@ -2374,9 +2442,9 @@ class overlayworkingctx(committablectx):
         ``text`` is the commit message.
         ``parents`` (optional) are rev numbers.
         """
-        # Default parents to the wrapped contexts' if not passed.
+        # Default parents to the wrapped context if not passed.
         if parents is None:
-            parents = self._wrappedctx.parents()
+            parents = self.parents()
             if len(parents) == 1:
                 parents = (parents[0], None)
 
@@ -2403,6 +2471,9 @@ class overlayworkingctx(committablectx):
                 # Returning None, but including the path in `files`, is
                 # necessary for memctx to register a deletion.
                 return None
+
+        if branch is None:
+            branch = self._wrappedctx.branch()
 
         return memctx(
             self._repo,
@@ -2697,7 +2768,7 @@ class memctx(committablectx):
         date=None,
         extra=None,
         branch=None,
-        editor=False,
+        editor=None,
     ):
         super(memctx, self).__init__(
             repo, text, user, date, extra, branch=branch
@@ -2858,7 +2929,7 @@ class metadataonlyctx(committablectx):
         user=None,
         date=None,
         extra=None,
-        editor=False,
+        editor=None,
     ):
         if text is None:
             text = originalctx.description()

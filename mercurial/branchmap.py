@@ -27,6 +27,23 @@ from .utils import (
     stringutil,
 )
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Any,
+        Callable,
+        Dict,
+        Iterable,
+        List,
+        Optional,
+        Set,
+        Tuple,
+        Union,
+    )
+
+    assert any(
+        (Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union,)
+    )
+
 subsettable = repoviewutil.subsettable
 
 calcsize = struct.calcsize
@@ -90,14 +107,14 @@ class BranchMapCache(object):
         clrev = cl.rev
         clbranchinfo = cl.branchinfo
         rbheads = []
-        closed = []
+        closed = set()
         for bheads in pycompat.itervalues(remotebranchmap):
             rbheads += bheads
             for h in bheads:
                 r = clrev(h)
                 b, c = clbranchinfo(r)
                 if c:
-                    closed.append(h)
+                    closed.add(h)
 
         if rbheads:
             rtiprev = max((int(clrev(node)) for node in rbheads))
@@ -124,7 +141,7 @@ class BranchMapCache(object):
 def _unknownnode(node):
     """ raises ValueError when branchcache found a node which does not exists
     """
-    raise ValueError(r'node %s does not exist' % pycompat.sysstr(hex(node)))
+    raise ValueError('node %s does not exist' % pycompat.sysstr(hex(node)))
 
 
 def _branchcachedesc(repo):
@@ -165,6 +182,7 @@ class branchcache(object):
         closednodes=None,
         hasnode=None,
     ):
+        # type: (Union[Dict[bytes, List[bytes]], Iterable[Tuple[bytes, List[bytes]]]], bytes,  int, Optional[bytes], Optional[Set[bytes]], Optional[Callable[[bytes], bool]]) -> None
         """ hasnode is a function which can be used to verify whether changelog
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog """
@@ -260,7 +278,7 @@ class branchcache(object):
             )
             if not bcache.validfor(repo):
                 # invalidate the cache
-                raise ValueError(r'tip differs')
+                raise ValueError('tip differs')
             bcache.load(repo, lineiter)
         except (IOError, OSError):
             return None
@@ -269,7 +287,13 @@ class branchcache(object):
             if repo.ui.debugflag:
                 msg = b'invalid %s: %s\n'
                 repo.ui.debug(
-                    msg % (_branchcachedesc(repo), pycompat.bytestr(inst))
+                    msg
+                    % (
+                        _branchcachedesc(repo),
+                        pycompat.bytestr(
+                            inst  # pytype: disable=wrong-arg-types
+                        ),
+                    )
                 )
             bcache = None
 
@@ -288,7 +312,7 @@ class branchcache(object):
                 continue
             node, state, label = line.split(b" ", 2)
             if state not in b'oc':
-                raise ValueError(r'invalid branch state')
+                raise ValueError('invalid branch state')
             label = encoding.tolocal(label.strip())
             node = bin(node)
             self._entries.setdefault(label, []).append(node)
@@ -640,7 +664,7 @@ class revbranchcache(object):
         #   self.branchinfo = self._branchinfo
         #
         # Since we now have data in the cache, we need to drop this bypassing.
-        if r'branchinfo' in vars(self):
+        if 'branchinfo' in vars(self):
             del self.branchinfo
 
     def _setcachedata(self, rev, node, branchidx):

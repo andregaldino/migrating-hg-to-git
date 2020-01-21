@@ -482,16 +482,16 @@ def demo(ui, repo, *args, **opts):
     ui.setconfig(b'keywordset', b'svn', svn, b'keyword')
 
     uikwmaps = ui.configitems(b'keywordmaps')
-    if args or opts.get(r'rcfile'):
+    if args or opts.get('rcfile'):
         ui.status(_(b'\n\tconfiguration using custom keyword template maps\n'))
         if uikwmaps:
             ui.status(_(b'\textending current template maps\n'))
-        if opts.get(r'default') or not uikwmaps:
+        if opts.get('default') or not uikwmaps:
             if svn:
                 ui.status(_(b'\toverriding default svn keywordset\n'))
             else:
                 ui.status(_(b'\toverriding default cvs keywordset\n'))
-        if opts.get(r'rcfile'):
+        if opts.get('rcfile'):
             ui.readconfig(opts.get(b'rcfile'))
         if args:
             # simulate hgrc parsing
@@ -499,7 +499,7 @@ def demo(ui, repo, *args, **opts):
             repo.vfs.write(b'hgrc', rcmaps)
             ui.readconfig(repo.vfs.join(b'hgrc'))
         kwmaps = dict(ui.configitems(b'keywordmaps'))
-    elif opts.get(r'default'):
+    elif opts.get('default'):
         if svn:
             ui.status(_(b'\n\tconfiguration using default svn keywordset\n'))
         else:

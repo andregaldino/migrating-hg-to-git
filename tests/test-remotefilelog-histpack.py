@@ -252,7 +252,7 @@ class histpacktests(unittest.TestCase):
             f.write(raw)
 
         try:
-            pack = historypack.historypack(pack.path)
+            historypack.historypack(pack.path)
             self.assertTrue(False, "bad version number should have thrown")
         except RuntimeError:
             pass

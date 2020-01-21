@@ -52,7 +52,7 @@ def pygmentize(web, field, fctx, tmpl):
     filenameonly = web.configbool(b'web', b'highlightonlymatchfilename', False)
 
     ctx = fctx.changectx()
-    m = ctx.matchfileset(expr)
+    m = ctx.matchfileset(fctx.repo().root, expr)
     if m(fctx.path()):
         highlight.pygmentize(
             field, fctx, style, tmpl, guessfilenameonly=filenameonly

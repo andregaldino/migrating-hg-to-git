@@ -75,6 +75,7 @@ from .interfaces import (
 from .revlogutils import (
     deltas as deltautil,
     flagutil,
+    nodemap as nodemaputil,
     sidedata as sidedatautil,
 )
 from .utils import (
@@ -102,9 +103,10 @@ REVIDX_DEFAULT_FLAGS
 REVIDX_FLAGS_ORDER
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
-parsers = policy.importmod(r'parsers')
-rustancestor = policy.importrust(r'ancestor')
-rustdagop = policy.importrust(r'dagop')
+parsers = policy.importmod('parsers')
+rustancestor = policy.importrust('ancestor')
+rustdagop = policy.importrust('dagop')
+rustrevlog = policy.importrust('revlog')
 
 # Aliased for performance.
 _zlibdecompress = zlib.decompress
@@ -145,6 +147,16 @@ def offset_type(offset, type):
     if (type & ~flagutil.REVIDX_KNOWN_FLAGS) != 0:
         raise ValueError(b'unknown revlog index flags')
     return int(int(offset) << 16 | type)
+
+
+def _verify_revision(rl, skipflags, state, node):
+    """Verify the integrity of the given revlog ``node`` while providing a hook
+    point for extensions to influence the operation."""
+    if skipflags:
+        state[b'skipread'].add(node)
+    else:
+        # Side-effect: read content and verify hash.
+        rl.revision(node)
 
 
 @attr.s(slots=True, frozen=True)
@@ -204,6 +216,50 @@ indexformatv0_unpack = indexformatv0.unpack
 
 
 class revlogoldindex(list):
+    @property
+    def nodemap(self):
+        msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
+        return self._nodemap
+
+    @util.propertycache
+    def _nodemap(self):
+        nodemap = nodemaputil.NodeMap({nullid: nullrev})
+        for r in range(0, len(self)):
+            n = self[r][7]
+            nodemap[n] = r
+        return nodemap
+
+    def has_node(self, node):
+        """return True if the node exist in the index"""
+        return node in self._nodemap
+
+    def rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, raise a RevlogError"""
+        return self._nodemap[node]
+
+    def get_rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, return None"""
+        return self._nodemap.get(node)
+
+    def append(self, tup):
+        self._nodemap[tup[7]] = len(self)
+        super(revlogoldindex, self).append(tup)
+
+    def __delitem__(self, i):
+        if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
+            raise ValueError(b"deleting slices only supports a:-1 with step 1")
+        for r in pycompat.xrange(i.start, len(self)):
+            del self._nodemap[self[r][7]]
+        super(revlogoldindex, self).__delitem__(i)
+
+    def clearcaches(self):
+        self.__dict__.pop('_nodemap', None)
+
     def __getitem__(self, i):
         if i == -1:
             return (0, 0, 0, -1, -1, -1, -1, nullid)
@@ -217,7 +273,7 @@ class revlogoldio(object):
     def parseindex(self, data, inline):
         s = self.size
         index = []
-        nodemap = {nullid: nullrev}
+        nodemap = nodemaputil.NodeMap({nullid: nullrev})
         n = off = 0
         l = len(data)
         while off + s <= l:
@@ -239,7 +295,8 @@ class revlogoldio(object):
             nodemap[e[6]] = n
             n += 1
 
-        return revlogoldindex(index), nodemap, None
+        index = revlogoldindex(index)
+        return index, None
 
     def packentry(self, entry, node, version, rev):
         if gettype(entry[0]):
@@ -286,13 +343,19 @@ class revlogio(object):
     def parseindex(self, data, inline):
         # call the C implementation to parse the index data
         index, cache = parsers.parse_index2(data, inline)
-        return index, getattr(index, 'nodemap', None), cache
+        return index, cache
 
     def packentry(self, entry, node, version, rev):
         p = indexformatng_pack(*entry)
         if rev == 0:
             p = versionformat_pack(version) + p[4:]
         return p
+
+
+class rustrevlogio(revlogio):
+    def parseindex(self, data, inline):
+        index, cache = super(rustrevlogio, self).parseindex(data, inline)
+        return rustrevlog.MixedIndex(index), cache
 
 
 class revlog(object):
@@ -371,12 +434,10 @@ class revlog(object):
         self._chunkcachesize = 65536
         self._maxchainlen = None
         self._deltabothparents = True
-        self.index = []
+        self.index = None
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
         # Mapping of revision integer to full node.
-        self._nodecache = {nullid: nullrev}
-        self._nodepos = None
         self._compengine = b'zlib'
         self._compengineopts = {}
         self._maxdeltachainspan = -1
@@ -533,15 +594,15 @@ class revlog(object):
         self._io = revlogio()
         if self.version == REVLOGV0:
             self._io = revlogoldio()
+        elif rustrevlog is not None and self.opener.options.get(b'rust.index'):
+            self._io = rustrevlogio()
         try:
             d = self._io.parseindex(indexdata, self._inline)
         except (ValueError, IndexError):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.indexfile
             )
-        self.index, nodemap, self._chunkcache = d
-        if nodemap is not None:
-            self.nodemap = self._nodecache = nodemap
+        self.index, self._chunkcache = d
         if not self._chunkcache:
             self._chunkclear()
         # revnum -> (chain-length, sum-delta-length)
@@ -556,11 +617,11 @@ class revlog(object):
 
     def _indexfp(self, mode=b'r'):
         """file object for the revlog's index file"""
-        args = {r'mode': mode}
+        args = {'mode': mode}
         if mode != b'r':
-            args[r'checkambig'] = self._checkambig
+            args['checkambig'] = self._checkambig
         if mode == b'w':
-            args[r'atomictemp'] = True
+            args['atomictemp'] = True
         return self.opener(self.indexfile, **args)
 
     def _datafp(self, mode=b'r'):
@@ -593,8 +654,11 @@ class revlog(object):
             with func() as fp:
                 yield fp
 
+    def tiprev(self):
+        return len(self.index) - 1
+
     def tip(self):
-        return self.node(len(self.index) - 1)
+        return self.node(self.tiprev())
 
     def __contains__(self, rev):
         return 0 <= rev < len(self)
@@ -609,13 +673,20 @@ class revlog(object):
         """iterate over all rev in this revlog (from start to stop)"""
         return storageutil.iterrevs(len(self), start=start, stop=stop)
 
-    @util.propertycache
+    @property
     def nodemap(self):
-        if self.index:
-            # populate mapping down to the initial node
-            node0 = self.index[0][7]  # get around changelog filtering
-            self.rev(node0)
-        return self._nodecache
+        msg = (
+            b"revlog.nodemap is deprecated, "
+            b"use revlog.index.[has_node|rev|get_rev]"
+        )
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
+        return self.index.nodemap
+
+    @property
+    def _nodecache(self):
+        msg = b"revlog._nodecache is deprecated, use revlog.index.nodemap"
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
+        return self.index.nodemap
 
     def hasnode(self, node):
         try:
@@ -642,41 +713,15 @@ class revlog(object):
         self._chainbasecache.clear()
         self._chunkcache = (0, b'')
         self._pcache = {}
-
-        try:
-            # If we are using the native C version, you are in a fun case
-            # where self.index, self.nodemap and self._nodecaches is the same
-            # object.
-            self._nodecache.clearcaches()
-        except AttributeError:
-            self._nodecache = {nullid: nullrev}
-            self._nodepos = None
+        self.index.clearcaches()
 
     def rev(self, node):
         try:
-            return self._nodecache[node]
+            return self.index.rev(node)
         except TypeError:
             raise
         except error.RevlogError:
             # parsers.c radix tree lookup failed
-            if node == wdirid or node in wdirfilenodeids:
-                raise error.WdirUnsupported
-            raise error.LookupError(node, self.indexfile, _(b'no node'))
-        except KeyError:
-            # pure python cache lookup failed
-            n = self._nodecache
-            i = self.index
-            p = self._nodepos
-            if p is None:
-                p = len(i) - 1
-            else:
-                assert p < len(i)
-            for r in pycompat.xrange(p, -1, -1):
-                v = i[r][7]
-                n[v] = r
-                if v == node:
-                    self._nodepos = r - 1
-                    return r
             if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
             raise error.LookupError(node, self.indexfile, _(b'no node'))
@@ -1253,7 +1298,7 @@ class revlog(object):
         return bool(self.reachableroots(a, [b], [a], includepath=False))
 
     def reachableroots(self, minroot, heads, roots, includepath=False):
-        """return (heads(::<roots> and <roots>::<heads>))
+        """return (heads(::(<roots> and <roots>::<heads>)))
 
         If includepath is True, return (<roots>::<heads>)."""
         try:
@@ -1736,10 +1781,8 @@ class revlog(object):
         if node == nullid:
             return b"", {}
 
-        # The text as stored inside the revlog. Might be the revision or might
-        # need to be processed to retrieve the revision.
-        rawtext = None
-
+        # ``rawtext`` is the text as stored inside the revlog. Might be the
+        # revision or might need to be processed to retrieve the revision.
         rev, rawtext, validated = self._rawtext(node, rev, _df=_df)
 
         if raw and validated:
@@ -1986,7 +2029,7 @@ class revlog(object):
             )
 
         node = node or self.hash(rawtext, p1, p2)
-        if node in self.nodemap:
+        if self.index.has_node(node):
             return node
 
         if validatehash:
@@ -2195,12 +2238,6 @@ class revlog(object):
             node,
         )
         self.index.append(e)
-        self.nodemap[node] = curr
-
-        # Reset the pure node cache start lookup offset to account for new
-        # revision.
-        if self._nodepos is not None:
-            self._nodepos = curr
 
         entry = self._io.packentry(e, self.node, self.version, curr)
         self._writeentry(
@@ -2298,18 +2335,18 @@ class revlog(object):
 
                 nodes.append(node)
 
-                if node in self.nodemap:
+                if self.index.has_node(node):
                     self._nodeduplicatecallback(transaction, node)
                     # this can happen if two branches make the same change
                     continue
 
                 for p in (p1, p2):
-                    if p not in self.nodemap:
+                    if not self.index.has_node(p):
                         raise error.LookupError(
                             p, self.indexfile, _(b'unknown parent')
                         )
 
-                if deltabase not in self.nodemap:
+                if not self.index.has_node(deltabase):
                     raise error.LookupError(
                         deltabase, self.indexfile, _(b'unknown delta base')
                     )
@@ -2434,11 +2471,8 @@ class revlog(object):
         self._revisioncache = None
         self._chaininfocache = {}
         self._chunkclear()
-        for x in pycompat.xrange(rev, len(self)):
-            del self.nodemap[self.node(x)]
 
         del self.index[rev:-1]
-        self._nodepos = None
 
     def checksize(self):
         """Check size of index and data files
@@ -2840,6 +2874,7 @@ class revlog(object):
             )
 
         state[b'skipread'] = set()
+        state[b'safe_renamed'] = set()
 
         for rev in self:
             node = self.node(rev)
@@ -2897,11 +2932,7 @@ class revlog(object):
                 if skipflags:
                     skipflags &= self.flags(rev)
 
-                if skipflags:
-                    state[b'skipread'].add(node)
-                else:
-                    # Side-effect: read content and verify hash.
-                    self.revision(node)
+                _verify_revision(self, skipflags, state, node)
 
                 l1 = self.rawsize(rev)
                 l2 = len(self.rawdata(node))

@@ -54,7 +54,7 @@ class verifier(object):
         self.havecl = len(repo.changelog) > 0
         self.havemf = len(repo.manifestlog.getstorage(b'')) > 0
         self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
-        self.lrugetctx = util.lrucachefunc(repo.__getitem__)
+        self.lrugetctx = util.lrucachefunc(repo.unfiltered().__getitem__)
         self.refersmf = False
         self.fncachewarned = False
         # developer config: verify.skipflags
@@ -529,6 +529,8 @@ class verifier(object):
             else:
                 # Guard against implementations not setting this.
                 state[b'skipread'] = set()
+                state[b'safe_renamed'] = set()
+
                 for problem in fl.verifyintegrity(state):
                     if problem.node is not None:
                         linkrev = fl.linkrev(fl.rev(problem.node))
@@ -560,13 +562,14 @@ class verifier(object):
                     else:
                         del filenodes[f][n]
 
-                if n in state[b'skipread']:
+                if n in state[b'skipread'] and n not in state[b'safe_renamed']:
                     continue
 
                 # check renames
                 try:
-                    # This requires resolving fulltext (at least on revlogs). We
-                    # may want ``verifyintegrity()`` to pass a set of nodes with
+                    # This requires resolving fulltext (at least on revlogs,
+                    # though not with LFS revisions). We may want
+                    # ``verifyintegrity()`` to pass a set of nodes with
                     # rename metadata as an optimization.
                     rp = fl.renamed(n)
                     if rp:

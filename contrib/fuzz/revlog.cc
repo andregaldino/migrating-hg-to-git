@@ -9,16 +9,15 @@
 
 extern "C" {
 
-static PyCodeObject *code;
+static PYCODETYPE *code;
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
 	contrib::initpy(*argv[0]);
-	code = (PyCodeObject *)Py_CompileString(R"py(
-from parsers import parse_index2
+	code = (PYCODETYPE *)Py_CompileString(R"py(
 for inline in (True, False):
     try:
-        index, cache = parse_index2(data, inline)
+        index, cache = parsers.parse_index2(data, inline)
         index.slicechunktodensity(list(range(len(index))), 0.5, 262144)
         index.stats()
         index.findsnapshots({}, 0)
@@ -35,7 +34,7 @@ for inline in (True, False):
         # to debug failures.
         # print e
 )py",
-	                                        "fuzzer", Py_file_input);
+	                                      "fuzzer", Py_file_input);
 	return 0;
 }
 

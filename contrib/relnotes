@@ -98,6 +98,7 @@ groupings = [
     (r"shelve|unshelve", "extensions"),
 ]
 
+
 def wikify(desc):
     desc = desc.replace("(issue", "(Bts:issue")
     desc = re.sub(r"\b([0-9a-f]{12})\b", r"Cset:\1", desc)
@@ -106,6 +107,7 @@ def wikify(desc):
     # prevent wiki markup of magic methods
     desc = re.sub(r"\b(\S*__\S*)\b", r"`\1`", desc)
     return desc
+
 
 def main():
     desc = "example: %(prog)s 4.7.2 --stoprev 4.8rc0"
@@ -199,6 +201,7 @@ def main():
 
     for d in sorted(apis):
         print(" * %s" % d)
+
 
 if __name__ == "__main__":
     main()

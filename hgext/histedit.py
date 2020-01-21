@@ -230,6 +230,7 @@ from mercurial import (
     pycompat,
     registrar,
     repair,
+    rewriteutil,
     scmutil,
     state as statemod,
     util,
@@ -307,7 +308,7 @@ Commands:
         if len(a.verbs):
             v = b', '.join(sorted(a.verbs, key=lambda v: len(v)))
         actions.append(b" %s = %s" % (v, lines[0]))
-        actions.extend([b'  %s' for l in lines[1:]])
+        actions.extend([b'  %s'] * (len(lines) - 1))
 
     for v in (
         sorted(primaryactions)
@@ -624,9 +625,9 @@ def commitfuncfor(repo, src):
     def commitfunc(**kwargs):
         overrides = {(b'phases', b'new-commit'): phasemin}
         with repo.ui.configoverride(overrides, b'histedit'):
-            extra = kwargs.get(r'extra', {}).copy()
+            extra = kwargs.get('extra', {}).copy()
             extra[b'histedit_source'] = src.hex()
-            kwargs[r'extra'] = extra
+            kwargs['extra'] = extra
             return repo.commit(**kwargs)
 
     return commitfunc
@@ -1056,6 +1057,7 @@ ACTION_LABELS = {
 
 COLOR_HELP, COLOR_SELECTED, COLOR_OK, COLOR_WARN, COLOR_CURRENT = 1, 2, 3, 4, 5
 COLOR_DIFF_ADD_LINE, COLOR_DIFF_DEL_LINE, COLOR_DIFF_OFFSET = 6, 7, 8
+COLOR_ROLL, COLOR_ROLL_CURRENT, COLOR_ROLL_SELECTED = 9, 10, 11
 
 E_QUIT, E_HISTEDIT = 1, 2
 E_PAGEDOWN, E_PAGEUP, E_LINEUP, E_LINEDOWN, E_RESIZE = 3, 4, 5, 6, 7
@@ -1119,32 +1121,42 @@ class histeditrule(object):
         self.conflicts = []
 
     def __bytes__(self):
-        # Some actions ('fold' and 'roll') combine a patch with a previous one.
-        # Add a marker showing which patch they apply to, and also omit the
-        # description for 'roll' (since it will get discarded). Example display:
+        # Example display of several histeditrules:
         #
         #  #10 pick   316392:06a16c25c053   add option to skip tests
-        #  #11 ^roll  316393:71313c964cc5
+        #  #11 ^roll  316393:71313c964cc5   <RED>oops a fixup commit</RED>
         #  #12 pick   316394:ab31f3973b0d   include mfbt for mozilla-config.h
         #  #13 ^fold  316395:14ce5803f4c3   fix warnings
         #
         # The carets point to the changeset being folded into ("roll this
         # changeset into the changeset above").
+        return b'%s%s' % (self.prefix, self.desc)
+
+    __str__ = encoding.strmethod(__bytes__)
+
+    @property
+    def prefix(self):
+        # Some actions ('fold' and 'roll') combine a patch with a
+        # previous one. Add a marker showing which patch they apply
+        # to.
         action = ACTION_LABELS.get(self.action, self.action)
+
         h = self.ctx.hex()[0:12]
         r = self.ctx.rev()
-        desc = self.ctx.description().splitlines()[0].strip()
-        if self.action == b'roll':
-            desc = b''
-        return b"#%s %s %d:%s   %s" % (
+
+        return b"#%s %s %d:%s   " % (
             (b'%d' % self.origpos).ljust(2),
             action.ljust(6),
             r,
             h,
-            desc,
         )
 
-    __str__ = encoding.strmethod(__bytes__)
+    @property
+    def desc(self):
+        # This is split off from the prefix property so that we can
+        # separately make the description for 'roll' red (since it
+        # will get discarded).
+        return self.ctx.description().splitlines()[0].strip()
 
     def checkconflicts(self, other):
         if other.pos > self.pos and other.origpos <= self.origpos:
@@ -1382,6 +1394,11 @@ def _chisteditmain(repo, rules, stdscr):
     curses.init_pair(COLOR_DIFF_ADD_LINE, curses.COLOR_GREEN, -1)
     curses.init_pair(COLOR_DIFF_DEL_LINE, curses.COLOR_RED, -1)
     curses.init_pair(COLOR_DIFF_OFFSET, curses.COLOR_MAGENTA, -1)
+    curses.init_pair(COLOR_ROLL, curses.COLOR_RED, -1)
+    curses.init_pair(
+        COLOR_ROLL_CURRENT, curses.COLOR_BLACK, curses.COLOR_MAGENTA
+    )
+    curses.init_pair(COLOR_ROLL_SELECTED, curses.COLOR_RED, curses.COLOR_WHITE)
 
     # don't display the cursor
     try:
@@ -1483,9 +1500,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                 rulesscr.addstr(y, 0, b" ", curses.color_pair(COLOR_WARN))
             else:
                 rulesscr.addstr(y, 0, b" ", curses.COLOR_BLACK)
+
             if y + start == selected:
+                rollcolor = COLOR_ROLL_SELECTED
                 addln(rulesscr, y, 2, rule, curses.color_pair(COLOR_SELECTED))
             elif y + start == pos:
+                rollcolor = COLOR_ROLL_CURRENT
                 addln(
                     rulesscr,
                     y,
@@ -1494,7 +1514,17 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                     curses.color_pair(COLOR_CURRENT) | curses.A_BOLD,
                 )
             else:
+                rollcolor = COLOR_ROLL
                 addln(rulesscr, y, 2, rule)
+
+            if rule.action == b'roll':
+                rulesscr.addstr(
+                    y,
+                    2 + len(rule.prefix),
+                    rule.desc,
+                    curses.color_pair(rollcolor),
+                )
+
         rulesscr.noutrefresh()
 
     def renderstring(win, state, output, diffcolors=False):
@@ -1674,7 +1704,7 @@ def _chistedit(ui, repo, *freeargs, **opts):
         # Curses requires setting the locale or it will default to the C
         # locale. This sets the locale to the user's default system
         # locale.
-        locale.setlocale(locale.LC_ALL, r'')
+        locale.setlocale(locale.LC_ALL, '')
         rc = curses.wrapper(functools.partial(_chisteditmain, repo, ctxs))
         curses.echo()
         curses.endwin()
@@ -2046,11 +2076,11 @@ def _finishhistedit(ui, repo, state, fm):
             mapping[n] = ()
 
     # remove entries about unknown nodes
-    nodemap = repo.unfiltered().changelog.nodemap
+    has_node = repo.unfiltered().changelog.index.has_node
     mapping = {
         k: v
         for k, v in mapping.items()
-        if k in nodemap and all(n in nodemap for n in v)
+        if has_node(k) and all(has_node(n) for n in v)
     }
     scmutil.cleanupnodes(repo, mapping, b'histedit')
     hf = fm.hexfunc
@@ -2277,23 +2307,9 @@ def between(repo, old, new, keep):
     When keep is false, the specified set can't have children."""
     revs = repo.revs(b'%n::%n', old, new)
     if revs and not keep:
-        if not obsolete.isenabled(
-            repo, obsolete.allowunstableopt
-        ) and repo.revs(b'(%ld::) - (%ld)', revs, revs):
-            raise error.Abort(
-                _(
-                    b'can only histedit a changeset together '
-                    b'with all its descendants'
-                )
-            )
+        rewriteutil.precheck(repo, revs, b'edit')
         if repo.revs(b'(%ld) and merge()', revs):
             raise error.Abort(_(b'cannot edit history that contains merges'))
-        root = repo[revs.first()]  # list is already sorted by repo.revs()
-        if not root.mutable():
-            raise error.Abort(
-                _(b'cannot edit public changeset: %s') % root,
-                hint=_(b"see 'hg help phases' for details"),
-            )
     return pycompat.maplist(repo.changelog.node, revs)
 
 
@@ -2447,7 +2463,7 @@ def adjustreplacementsfrommarkers(repo, oldreplacements):
         return oldreplacements
 
     unfi = repo.unfiltered()
-    nm = unfi.changelog.nodemap
+    get_rev = unfi.changelog.index.get_rev
     obsstore = repo.obsstore
     newreplacements = list(oldreplacements)
     oldsuccs = [r[1] for r in oldreplacements]
@@ -2458,7 +2474,7 @@ def adjustreplacementsfrommarkers(repo, oldreplacements):
     succstocheck = list(seensuccs)
     while succstocheck:
         n = succstocheck.pop()
-        missing = nm.get(n) is None
+        missing = get_rev(n) is None
         markers = obsstore.successors.get(n, ())
         if missing and not markers:
             # dead end, mark it as such
@@ -2517,9 +2533,9 @@ def processreplacement(state):
         del final[n]
     # we expect all changes involved in final to exist in the repo
     # turn `final` into list (topologically sorted)
-    nm = state.repo.changelog.nodemap
+    get_rev = state.repo.changelog.index.get_rev
     for prec, succs in final.items():
-        final[prec] = sorted(succs, key=nm.get)
+        final[prec] = sorted(succs, key=get_rev)
 
     # computed topmost element (necessary for bookmark)
     if new:
@@ -2565,8 +2581,8 @@ def cleanupnode(ui, repo, nodes, nobackup=False):
         repo = repo.unfiltered()
         # Find all nodes that need to be stripped
         # (we use %lr instead of %ln to silently ignore unknown items)
-        nm = repo.changelog.nodemap
-        nodes = sorted(n for n in nodes if n in nm)
+        has_node = repo.changelog.index.has_node
+        nodes = sorted(n for n in nodes if has_node(n))
         roots = [c.node() for c in repo.set(b"roots(%ln)", nodes)]
         if roots:
             backup = not nobackup

@@ -30,8 +30,8 @@ configitem(
     b'fakedirstatewritetime', b'fakenow', default=None,
 )
 
-parsers = policy.importmod(r'parsers')
-rustmod = policy.importrust(r'parsers')
+parsers = policy.importmod('parsers')
+rustmod = policy.importrust('parsers')
 
 
 def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):

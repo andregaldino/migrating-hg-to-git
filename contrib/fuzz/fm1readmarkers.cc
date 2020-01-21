@@ -9,13 +9,12 @@
 
 extern "C" {
 
-static PyCodeObject *code;
+static PYCODETYPE *code;
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
 	contrib::initpy(*argv[0]);
-	code = (PyCodeObject *)Py_CompileString(R"py(
-from parsers import fm1readmarkers
+	code = (PYCODETYPE *)Py_CompileString(R"py(
 def maybeint(s, default):
     try:
         return int(s)
@@ -31,14 +30,14 @@ try:
     else:
         offset = stop = 0
     offset, stop = maybeint(offset, 0), maybeint(stop, len(data))
-    fm1readmarkers(data, offset, stop)
+    parsers.fm1readmarkers(data, offset, stop)
 except Exception as e:
     pass
     # uncomment this print if you're editing this Python code
     # to debug failures.
     # print e
 )py",
-	                                        "fuzzer", Py_file_input);
+	                                      "fuzzer", Py_file_input);
 	return 0;
 }
 

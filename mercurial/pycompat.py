@@ -19,7 +19,13 @@ import sys
 import tempfile
 
 ispy3 = sys.version_info[0] >= 3
-ispypy = r'__pypy__' in sys.builtin_module_names
+ispypy = '__pypy__' in sys.builtin_module_names
+TYPE_CHECKING = False
+
+if not globals():  # hide this from non-pytype users
+    import typing
+
+    TYPE_CHECKING = typing.TYPE_CHECKING
 
 if not ispy3:
     import cookielib
@@ -94,6 +100,13 @@ if ispy3:
     import io
     import struct
 
+    if os.name == r'nt' and sys.version_info >= (3, 6):
+        # MBCS (or ANSI) filesystem encoding must be used as before.
+        # Otherwise non-ASCII filenames in existing repositories would be
+        # corrupted.
+        # This must be set once prior to any fsencode/fsdecode calls.
+        sys._enablelegacywindowsfsencoding()  # pytype: disable=module-attr
+
     fsencode = os.fsencode
     fsdecode = os.fsdecode
     oscurdir = os.curdir.encode('ascii')
@@ -105,6 +118,7 @@ if ispy3:
     osaltsep = os.altsep
     if osaltsep:
         osaltsep = osaltsep.encode('ascii')
+    osdevnull = os.devnull.encode('ascii')
 
     sysplatform = sys.platform.encode('ascii')
     sysexecutable = sys.executable
@@ -139,12 +153,12 @@ if ispy3:
     #
     # https://hg.python.org/cpython/file/v3.5.1/Programs/python.c#l55
     #
-    # TODO: On Windows, the native argv is wchar_t, so we'll need a different
-    # workaround to simulate the Python 2 (i.e. ANSI Win32 API) behavior.
+    # On Windows, the native argv is unicode and is converted to MBCS bytes
+    # since we do enable the legacy filesystem encoding.
     if getattr(sys, 'argv', None) is not None:
         sysargv = list(map(os.fsencode, sys.argv))
 
-    bytechr = struct.Struct(r'>B').pack
+    bytechr = struct.Struct('>B').pack
     byterepr = b'%r'.__mod__
 
     class bytestr(bytes):
@@ -239,6 +253,8 @@ if ispy3:
         This never raises UnicodeEncodeError, but only ASCII characters
         can be round-trip by sysstr(sysbytes(s)).
         """
+        if isinstance(s, bytes):
+            return s
         return s.encode('utf-8')
 
     def sysstr(s):
@@ -416,7 +432,7 @@ else:
         if isinstance(filename, str):
             return filename
         else:
-            raise TypeError(r"expect str, not %s" % type(filename).__name__)
+            raise TypeError("expect str, not %s" % type(filename).__name__)
 
     # In Python 2, fsdecode() has a very chance to receive bytes. So it's
     # better not to touch Python 2 part as it's already working fine.
@@ -443,6 +459,7 @@ else:
     ospardir = os.pardir
     ossep = os.sep
     osaltsep = os.altsep
+    osdevnull = os.devnull
     long = long
     stdin = sys.stdin
     stdout = sys.stdout
@@ -493,7 +510,7 @@ def namedtempfile(
     mode=b'w+b', bufsize=-1, suffix=b'', prefix=b'tmp', dir=None, delete=True
 ):
     mode = sysstr(mode)
-    assert r'b' in mode
+    assert 'b' in mode
     return tempfile.NamedTemporaryFile(
         mode, bufsize, suffix=suffix, prefix=prefix, dir=dir, delete=delete
     )

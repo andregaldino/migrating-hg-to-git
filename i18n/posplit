@@ -11,6 +11,7 @@ import polib
 import re
 import sys
 
+
 def addentry(po, entry, cache):
     e = cache.get(entry.msgid)
     if e:
@@ -27,6 +28,7 @@ def addentry(po, entry, cache):
         po.append(entry)
         cache[entry.msgid] = entry
 
+
 def mkentry(orig, delta, msgid, msgstr):
     entry = polib.POEntry()
     entry.merge(orig)
@@ -35,13 +37,14 @@ def mkentry(orig, delta, msgid, msgstr):
     entry.occurrences = [(p, int(l) + delta) for (p, l) in orig.occurrences]
     return entry
 
+
 if __name__ == "__main__":
     po = polib.pofile(sys.argv[1])
 
     cache = {}
     entries = po[:]
     po[:] = []
-    findd = re.compile(r' *\.\. (\w+)::') # for finding directives
+    findd = re.compile(r' *\.\. (\w+)::')  # for finding directives
     for entry in entries:
         msgids = entry.msgid.split(u'\n\n')
         if entry.msgstr:
@@ -65,7 +68,7 @@ if __name__ == "__main__":
                 newentry = mkentry(entry, delta, msgid, msgstr)
                 mdirective = findd.match(msgid)
                 if mdirective:
-                    if not msgid[mdirective.end():].rstrip():
+                    if not msgid[mdirective.end() :].rstrip():
                         # only directive, nothing to translate here
                         delta += 2
                         continue
@@ -77,8 +80,10 @@ if __name__ == "__main__":
                             continue
                         else:
                             # lines following directly, unexpected
-                            print('Warning: text follows line with directive'
-                                  ' %s' % directive)
+                            print(
+                                'Warning: text follows line with directive'
+                                ' %s' % directive
+                            )
                     comment = 'do not translate: .. %s::' % directive
                     if not newentry.comment:
                         newentry.comment = comment

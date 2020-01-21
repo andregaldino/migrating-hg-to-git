@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import hashlib
 import sys
 import weakref
 
@@ -31,6 +30,7 @@ from .interfaces import (
     repository,
     util as interfaceutil,
 )
+from .utils import hashutil
 
 urlreq = util.urlreq
 
@@ -489,7 +489,7 @@ class wirepeer(repository.peer):
 
         if heads != [b'force'] and self.capable(b'unbundlehash'):
             heads = wireprototypes.encodelist(
-                [b'hashed', hashlib.sha1(b''.join(sorted(heads))).digest()]
+                [b'hashed', hashutil.sha1(b''.join(sorted(heads))).digest()]
             )
         else:
             heads = wireprototypes.encodelist(heads)
@@ -599,9 +599,9 @@ class wirepeer(repository.peer):
         # don't pass optional arguments left at their default value
         opts = {}
         if three is not None:
-            opts[r'three'] = three
+            opts['three'] = three
         if four is not None:
-            opts[r'four'] = four
+            opts['four'] = four
         return self._call(b'debugwireargs', one=one, two=two, **opts)
 
     def _call(self, cmd, **args):

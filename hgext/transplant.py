@@ -235,7 +235,7 @@ class transplanter(object):
                     patchfile = None
                 else:
                     fd, patchfile = pycompat.mkstemp(prefix=b'hg-transplant-')
-                    fp = os.fdopen(fd, r'wb')
+                    fp = os.fdopen(fd, 'wb')
                     gen = patch.diff(source, parent, node, opts=diffopts)
                     for chunk in gen:
                         fp.write(chunk)
@@ -290,7 +290,7 @@ class transplanter(object):
         self.ui.status(_(b'filtering %s\n') % patchfile)
         user, date, msg = (changelog[1], changelog[2], changelog[4])
         fd, headerfile = pycompat.mkstemp(prefix=b'hg-transplant-')
-        fp = os.fdopen(fd, r'wb')
+        fp = os.fdopen(fd, 'wb')
         fp.write(b"# HG changeset patch\n")
         fp.write(b"# User %s\n" % user)
         fp.write(b"# Date %d %d\n" % date)
@@ -443,7 +443,13 @@ class transplanter(object):
                 )
             if merge:
                 repo.setparents(p1, parents[1])
-            modified, added, removed, deleted = repo.status()[:4]
+            st = repo.status()
+            modified, added, removed, deleted = (
+                st.modified,
+                st.added,
+                st.removed,
+                st.deleted,
+            )
             if merge or modified or added or removed or deleted:
                 n = repo.commit(
                     message,
@@ -754,22 +760,14 @@ def _dotransplant(ui, repo, *revs, **opts):
 
     def checkopts(opts, revs):
         if opts.get(b'continue'):
-            if opts.get(b'branch') or opts.get(b'all') or opts.get(b'merge'):
-                raise error.Abort(
-                    _(
-                        b'--continue is incompatible with '
-                        b'--branch, --all and --merge'
-                    )
-                )
+            cmdutil.check_incompatible_arguments(
+                opts, b'continue', b'branch', b'all', b'merge'
+            )
             return
         if opts.get(b'stop'):
-            if opts.get(b'branch') or opts.get(b'all') or opts.get(b'merge'):
-                raise error.Abort(
-                    _(
-                        b'--stop is incompatible with '
-                        b'--branch, --all and --merge'
-                    )
-                )
+            cmdutil.check_incompatible_arguments(
+                opts, b'stop', b'branch', b'all', b'merge'
+            )
             return
         if not (
             opts.get(b'source')

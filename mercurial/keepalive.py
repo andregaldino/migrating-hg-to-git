@@ -331,9 +331,9 @@ class KeepAliveHandler(object):
         headers.update(sorted(req.unredirected_hdrs.items()))
         headers = util.sortdict((n.lower(), v) for n, v in headers.items())
         skipheaders = {}
-        for n in (r'host', r'accept-encoding'):
+        for n in ('host', 'accept-encoding'):
             if n in headers:
-                skipheaders[r'skip_' + n.replace(r'-', r'_')] = 1
+                skipheaders['skip_' + n.replace('-', '_')] = 1
         try:
             if urllibcompat.hasdata(req):
                 data = urllibcompat.getdata(req)
@@ -342,12 +342,12 @@ class KeepAliveHandler(object):
                     urllibcompat.getselector(req),
                     **skipheaders
                 )
-                if r'content-type' not in headers:
+                if 'content-type' not in headers:
                     h.putheader(
-                        r'Content-type', r'application/x-www-form-urlencoded'
+                        'Content-type', 'application/x-www-form-urlencoded'
                     )
-                if r'content-length' not in headers:
-                    h.putheader(r'Content-length', r'%d' % len(data))
+                if 'content-length' not in headers:
+                    h.putheader('Content-length', '%d' % len(data))
             else:
                 h.putrequest(
                     req.get_method(),
@@ -401,8 +401,8 @@ class HTTPResponse(httplib.HTTPResponse):
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
         extrakw = {}
         if not pycompat.ispy3:
-            extrakw[r'strict'] = True
-            extrakw[r'buffering'] = True
+            extrakw['strict'] = True
+            extrakw['buffering'] = True
         httplib.HTTPResponse.__init__(
             self, sock, debuglevel=debuglevel, method=method, **extrakw
         )

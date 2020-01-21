@@ -325,14 +325,15 @@ Check rebasing public changeset
 
   $ hg pull --config phases.publish=True -q -r 6 . # update phase of 6
   $ hg rebase -d 0 -b 6
-  nothing to rebase
-  [1]
+  abort: cannot rebase public changesets
+  (see 'hg help phases' for details)
+  [255]
   $ hg rebase -d 5 -b 6
-  abort: can't rebase public changeset e1c4361dd923
+  abort: cannot rebase public changesets
   (see 'hg help phases' for details)
   [255]
   $ hg rebase -d 5 -r '1 + (6::)'
-  abort: can't rebase public changeset e1c4361dd923
+  abort: cannot rebase public changesets
   (see 'hg help phases' for details)
   [255]
 
@@ -452,7 +453,7 @@ Source on have two descendant heads but ask for one
   $ hg clone -q -u . ah ah1
   $ cd ah1
   $ hg rebase -r '2::8' -d 1
-  abort: can't remove original changesets with unrebased descendants
+  abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
   [255]
   $ hg rebase -r '2::8' -d 1 -k
@@ -498,7 +499,7 @@ Base on have one descendant heads we ask for but common ancestor have two
   $ hg clone -q -u . ah ah2
   $ cd ah2
   $ hg rebase -r '3::8' -d 1
-  abort: can't remove original changesets with unrebased descendants
+  abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
   [255]
   $ hg rebase -r '3::8' -d 1 --keep
@@ -541,7 +542,7 @@ rebase subset
   $ hg clone -q -u . ah ah3
   $ cd ah3
   $ hg rebase -r '3::7' -d 1
-  abort: can't remove original changesets with unrebased descendants
+  abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
   [255]
   $ hg rebase -r '3::7' -d 1 --keep
@@ -581,7 +582,7 @@ rebase subset with multiple head
   $ hg clone -q -u . ah ah4
   $ cd ah4
   $ hg rebase -r '3::(7+5)' -d 1
-  abort: can't remove original changesets with unrebased descendants
+  abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
   [255]
   $ hg rebase -r '3::(7+5)' -d 1 --keep

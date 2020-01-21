@@ -10,9 +10,14 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include "fuzzutil.h"
+#include "FuzzedDataProvider.h"
 
 extern "C" {
+
+int LLVMFuzzerInitialize(int *argc, char ***argv)
+{
+	return 0;
+}
 
 int hunk_consumer(long a1, long a2, long b1, long b2, void *priv)
 {
@@ -27,17 +32,15 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	if (Size > 100000) {
 		return 0;
 	}
-	auto maybe_inputs = SplitInputs(Data, Size);
-	if (!maybe_inputs) {
-		return 0;
-	}
-	auto inputs = std::move(maybe_inputs.value());
+	FuzzedDataProvider provider(Data, Size);
+	std::string left = provider.ConsumeRandomLengthString(Size);
+	std::string right = provider.ConsumeRemainingBytesAsString();
 	mmfile_t a, b;
 
-	a.ptr = inputs.left.get();
-	a.size = inputs.left_size;
-	b.ptr = inputs.right.get();
-	b.size = inputs.right_size;
+	a.ptr = (char *)left.c_str();
+	a.size = left.size();
+	b.ptr = (char *)right.c_str();
+	b.size = right.size();
 	xpparam_t xpp = {
 	    XDF_INDENT_HEURISTIC, /* flags */
 	};
@@ -51,13 +54,5 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	xdl_diff(&a, &b, &xpp, &xecfg, &ecb);
 	return 0; // Non-zero return values are reserved for future use.
 }
-
-#ifdef HG_FUZZER_INCLUDE_MAIN
-int main(int argc, char **argv)
-{
-	const char data[] = "asdf";
-	return LLVMFuzzerTestOneInput((const uint8_t *)data, 4);
-}
-#endif
 
 } // extern "C"

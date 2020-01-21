@@ -64,18 +64,18 @@ class bundlerevlog(revlog.revlog):
             start = cgunpacker.tell() - size
 
             link = linkmapper(cs)
-            if node in self.nodemap:
+            if self.index.has_node(node):
                 # this can happen if two branches make the same change
-                self.bundlerevs.add(self.nodemap[node])
+                self.bundlerevs.add(self.index.rev(node))
                 continue
 
             for p in (p1, p2):
-                if p not in self.nodemap:
+                if not self.index.has_node(p):
                     raise error.LookupError(
                         p, self.indexfile, _(b"unknown parent")
                     )
 
-            if deltabase not in self.nodemap:
+            if not self.index.has_node(deltabase):
                 raise LookupError(
                     deltabase, self.indexfile, _(b'unknown delta base')
                 )
@@ -93,7 +93,6 @@ class bundlerevlog(revlog.revlog):
                 node,
             )
             self.index.append(e)
-            self.nodemap[node] = n
             self.bundlerevs.add(n)
             n += 1
 
@@ -331,7 +330,7 @@ class bundlerepository(object):
         fdtemp, temp = self.vfs.mkstemp(prefix=b"hg-bundle-", suffix=suffix)
         self.tempfile = temp
 
-        with os.fdopen(fdtemp, r'wb') as fptemp:
+        with os.fdopen(fdtemp, 'wb') as fptemp:
             fptemp.write(header)
             while True:
                 chunk = readfn(2 ** 18)
@@ -393,7 +392,7 @@ class bundlerepository(object):
         # manifestlog implementation did not consume the manifests from the
         # changegroup (ex: it might be consuming trees from a separate bundle2
         # part instead). So we need to manually consume it.
-        if r'filestart' not in self.__dict__:
+        if 'filestart' not in self.__dict__:
             self._consumemanifest()
 
         return self.filestart

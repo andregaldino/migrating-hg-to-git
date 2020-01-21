@@ -85,6 +85,6 @@ def jsonescapeu8fallback(u8chars, paranoid):
         jm = _jsonmap
     # non-BMP char is represented as UTF-16 surrogate pair
     u16b = u8chars.decode('utf-8', _utf8strict).encode('utf-16', _utf8strict)
-    u16codes = array.array(r'H', u16b)
+    u16codes = array.array('H', u16b)
     u16codes.pop(0)  # drop BOM
     return b''.join(jm[x] if x < 128 else b'\\u%04x' % x for x in u16codes)

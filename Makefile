@@ -11,7 +11,7 @@ HGPYTHONS ?= $(HGROOT)/build/pythons
 PURE=
 PYFILESCMD=find mercurial hgext doc -name '*.py'
 PYFILES:=$(shell $(PYFILESCMD))
-DOCFILES=mercurial/help/*.txt
+DOCFILES=mercurial/helptext/*.txt
 export LANGUAGE=C
 export LC_ALL=C
 TESTFLAGS ?= $(shell echo $$HGTESTFLAGS)
@@ -189,7 +189,8 @@ packaging_targets := \
   docker-centos6 \
   docker-centos7 \
   docker-centos8 \
-  docker-debian-jessie \
+  docker-debian-bullseye \
+  docker-debian-buster \
   docker-debian-stretch \
   docker-fedora \
   docker-ubuntu-trusty \

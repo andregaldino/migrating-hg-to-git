@@ -6,7 +6,6 @@
 from __future__ import absolute_import
 
 import abc
-import hashlib
 import os
 import subprocess
 import tempfile
@@ -16,7 +15,10 @@ from mercurial import (
     node,
     pycompat,
 )
-from mercurial.utils import procutil
+from mercurial.utils import (
+    hashutil,
+    procutil,
+)
 
 NamedTemporaryFile = tempfile.NamedTemporaryFile
 
@@ -29,7 +31,7 @@ class BundleReadException(Exception):
     pass
 
 
-class abstractbundlestore(object):
+class abstractbundlestore(object):  # pytype: disable=ignored-metaclass
     """Defines the interface for bundle stores.
 
     A bundle store is an entity that stores raw bundle data. It is a simple
@@ -87,7 +89,7 @@ class filebundlestore(object):
         return os.path.join(self._dirpath(filename), filename)
 
     def write(self, data):
-        filename = node.hex(hashlib.sha1(data).digest())
+        filename = node.hex(hashutil.sha1(data).digest())
         dirpath = self._dirpath(filename)
 
         if not os.path.exists(dirpath):

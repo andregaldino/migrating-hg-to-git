@@ -90,11 +90,11 @@ def parseoptions(ui, cmdoptions, args):
             args = fancyopts.fancyopts(list(args), cmdoptions, opts, True)
             break
         except getopt.GetoptError as ex:
-            if r"requires argument" in ex.msg:
+            if "requires argument" in ex.msg:
                 raise
-            if (r'--' + ex.opt) in ex.msg:
+            if ('--' + ex.opt) in ex.msg:
                 flag = b'--' + pycompat.bytestr(ex.opt)
-            elif (r'-' + ex.opt) in ex.msg:
+            elif ('-' + ex.opt) in ex.msg:
                 flag = b'-' + pycompat.bytestr(ex.opt)
             else:
                 raise error.Abort(
@@ -209,7 +209,7 @@ def add(ui, repo, *args, **kwargs):
 
 def am(ui, repo, *args, **kwargs):
     cmdoptions = []
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
     cmd = Command(b'import')
     ui.status(bytes(cmd), b"\n")
 
@@ -1139,7 +1139,7 @@ def svn(ui, repo, *args, **kwargs):
 
 def svndcommit(ui, repo, *args, **kwargs):
     cmdoptions = []
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
 
     cmd = Command(b'push')
 
@@ -1148,7 +1148,7 @@ def svndcommit(ui, repo, *args, **kwargs):
 
 def svnfetch(ui, repo, *args, **kwargs):
     cmdoptions = []
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
 
     cmd = Command(b'pull')
     cmd.append(b'default-push')
@@ -1173,7 +1173,7 @@ def svnrebase(ui, repo, *args, **kwargs):
     cmdoptions = [
         (b'l', b'local', None, b''),
     ]
-    args, opts = parseoptions(ui, cmdoptions, args)
+    parseoptions(ui, cmdoptions, args)
 
     pullcmd = Command(b'pull')
     pullcmd.append(b'default-push')

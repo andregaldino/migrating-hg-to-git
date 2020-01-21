@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import errno
 import glob
-import hashlib
 import os
 import posixpath
 import re
@@ -27,7 +26,7 @@ from .node import (
     wdirrev,
 )
 from .pycompat import getattr
-
+from .thirdparty import attr
 from . import (
     copies as copiesmod,
     encoding,
@@ -48,6 +47,7 @@ from . import (
 )
 
 from .utils import (
+    hashutil,
     procutil,
     stringutil,
 )
@@ -57,63 +57,38 @@ if pycompat.iswindows:
 else:
     from . import scmposix as scmplatform
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
+rustrevlog = policy.importrust('revlog')
 
 termsize = scmplatform.termsize
 
 
-class status(tuple):
-    '''Named tuple with a list of files per status. The 'deleted', 'unknown'
-       and 'ignored' properties are only relevant to the working copy.
+@attr.s(slots=True, repr=False)
+class status(object):
+    '''Struct with a list of files per status.
+
+    The 'deleted', 'unknown' and 'ignored' properties are only
+    relevant to the working copy.
     '''
 
-    __slots__ = ()
+    modified = attr.ib(default=attr.Factory(list))
+    added = attr.ib(default=attr.Factory(list))
+    removed = attr.ib(default=attr.Factory(list))
+    deleted = attr.ib(default=attr.Factory(list))
+    unknown = attr.ib(default=attr.Factory(list))
+    ignored = attr.ib(default=attr.Factory(list))
+    clean = attr.ib(default=attr.Factory(list))
 
-    def __new__(
-        cls, modified, added, removed, deleted, unknown, ignored, clean
-    ):
-        return tuple.__new__(
-            cls, (modified, added, removed, deleted, unknown, ignored, clean)
-        )
+    def __iter__(self):
+        yield self.modified
+        yield self.added
+        yield self.removed
+        yield self.deleted
+        yield self.unknown
+        yield self.ignored
+        yield self.clean
 
-    @property
-    def modified(self):
-        '''files that have been modified'''
-        return self[0]
-
-    @property
-    def added(self):
-        '''files that have been added'''
-        return self[1]
-
-    @property
-    def removed(self):
-        '''files that have been removed'''
-        return self[2]
-
-    @property
-    def deleted(self):
-        '''files that are in the dirstate, but have been deleted from the
-           working copy (aka "missing")
-        '''
-        return self[3]
-
-    @property
-    def unknown(self):
-        '''files not in the dirstate that are not ignored'''
-        return self[4]
-
-    @property
-    def ignored(self):
-        '''files not in the dirstate that are ignored (by _dirignore())'''
-        return self[5]
-
-    @property
-    def clean(self):
-        '''files that have not been modified'''
-        return self[6]
-
-    def __repr__(self, *args, **kwargs):
+    def __repr__(self):
         return (
             r'<status modified=%s, added=%s, removed=%s, deleted=%s, '
             r'unknown=%s, ignored=%s, clean=%s>'
@@ -391,7 +366,7 @@ def filteredhash(repo, maxrev):
     key = None
     revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
     if revs:
-        s = hashlib.sha1()
+        s = hashutil.sha1()
         for rev in revs:
             s.update(b'%d;' % rev)
         key = s.digest()
@@ -571,12 +546,14 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
             if cache is not None:
                 nodetree = cache.get(b'disambiguationnodetree')
             if not nodetree:
-                try:
-                    nodetree = parsers.nodetree(cl.index, len(revs))
-                except AttributeError:
-                    # no native nodetree
-                    pass
-                else:
+                if util.safehasattr(parsers, 'nodetree'):
+                    # The CExt is the only implementation to provide a nodetree
+                    # class so far.
+                    index = cl.index
+                    if util.safehasattr(index, 'get_cindex'):
+                        # the rust wrapped need to give access to its internal index
+                        index = index.get_cindex()
+                    nodetree = parsers.nodetree(index, len(revs))
                     for r in revs:
                         nodetree.insert(r)
                     if cache is not None:
@@ -771,7 +748,7 @@ def revrange(repo, specs, localalias=None):
 
     Specifying a single revset is allowed.
 
-    Returns a ``revset.abstractsmartset`` which is a list-like interface over
+    Returns a ``smartset.abstractsmartset`` which is a list-like interface over
     integer revisions.
     """
     allspecs = []
@@ -964,7 +941,7 @@ def backuppath(ui, repo, filepath):
         ui.note(_(b'creating directory: %s\n') % origvfs.join(origbackupdir))
 
         # Remove any files that conflict with the backup file's path
-        for f in reversed(list(util.finddirs(filepath))):
+        for f in reversed(list(pathutil.finddirs(filepath))):
             if origvfs.isfileorlink(f):
                 ui.note(_(b'removing conflicting file: %s\n') % origvfs.join(f))
                 origvfs.unlink(f)
@@ -1454,8 +1431,8 @@ def movedirstate(repo, newctx, match=None):
     """
     oldctx = repo[b'.']
     ds = repo.dirstate
-    ds.setparents(newctx.node(), nullid)
     copies = dict(ds.copies())
+    ds.setparents(newctx.node(), nullid)
     s = newctx.status(oldctx, match=match)
     for f in s.modified:
         if ds[f] == b'r':
@@ -1489,6 +1466,7 @@ def movedirstate(repo, newctx, match=None):
         if src not in newctx or dst in newctx or ds[dst] != b'a':
             src = None
         ds.copy(src, dst)
+    repo._quick_access_changeid_invalidate()
 
 
 def writerequires(opener, requirements):
@@ -1783,6 +1761,7 @@ class progress(object):
         self._updatebar(self.topic, self.pos, b"", self.unit, self.total)
 
     def _printdebug(self, item):
+        unit = b''
         if self.unit:
             unit = b' ' + self.unit
         if item:
@@ -1943,6 +1922,7 @@ def registersummarycallback(repo, otr, txnname=b''):
         def wrapped(tr):
             repo = reporef()
             if filtername:
+                assert repo is not None  # help pytype
                 repo = repo.filtered(filtername)
             func(repo, tr)
 
@@ -1962,6 +1942,7 @@ def registersummarycallback(repo, otr, txnname=b''):
             if cgheads:
                 htext = _(b" (%+d heads)") % cgheads
             msg = _(b"added %d changesets with %d changes to %d files%s\n")
+            assert repo is not None  # help pytype
             repo.ui.status(msg % (cgchangesets, cgrevisions, cgfiles, htext))
 
     if txmatch(_reportobsoletedsource):

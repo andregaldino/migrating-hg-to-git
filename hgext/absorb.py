@@ -511,7 +511,7 @@ class filefixupstate(object):
         if not editedtext:
             raise error.Abort(_(b'empty editor text'))
         # parse edited result
-        contents = [b'' for i in self.fctxs]
+        contents = [b''] * len(self.fctxs)
         leftpadpos = 4
         colonpos = leftpadpos + len(visiblefctxs) + 1
         for l in mdiff.splitnewlines(editedtext):

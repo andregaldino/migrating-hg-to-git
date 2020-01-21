@@ -241,12 +241,12 @@ def _reposetup(ui, repo):
             if b'lfs' in repo.requirements:
                 return 0
 
-            last = kwargs.get(r'node_last')
+            last = kwargs.get('node_last')
             _bin = node.bin
             if last:
-                s = repo.set(b'%n:%n', _bin(kwargs[r'node']), _bin(last))
+                s = repo.set(b'%n:%n', _bin(kwargs['node']), _bin(last))
             else:
-                s = repo.set(b'%n', _bin(kwargs[r'node']))
+                s = repo.set(b'%n', _bin(kwargs['node']))
             match = repo._storenarrowmatch
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
@@ -399,6 +399,28 @@ def lfsfiles(context, mapping):
 )
 def debuglfsupload(ui, repo, **opts):
     """upload lfs blobs added by the working copy parent or given revisions"""
-    revs = opts.get(r'rev', [])
+    revs = opts.get('rev', [])
     pointers = wrapper.extractpointers(repo, scmutil.revrange(repo, revs))
     wrapper.uploadblobs(repo, pointers)
+
+
+@eh.wrapcommand(
+    b'verify',
+    opts=[(b'', b'no-lfs', None, _(b'skip missing lfs blob content'))],
+)
+def verify(orig, ui, repo, **opts):
+    skipflags = repo.ui.configint(b'verify', b'skipflags')
+    no_lfs = opts.pop('no_lfs')
+
+    if skipflags:
+        # --lfs overrides the config bit, if set.
+        if no_lfs is False:
+            skipflags &= ~repository.REVISION_FLAG_EXTSTORED
+    else:
+        skipflags = 0
+
+    if no_lfs is True:
+        skipflags |= repository.REVISION_FLAG_EXTSTORED
+
+    with ui.configoverride({(b'verify', b'skipflags'): skipflags}):
+        return orig(ui, repo, **opts)

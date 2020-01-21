@@ -21,7 +21,6 @@ from . import (
     error,
     pycompat,
     revlog,
-    util,
 )
 from .utils import (
     dateutil,
@@ -168,10 +167,10 @@ class appender(object):
 def _divertopener(opener, target):
     """build an opener that writes in 'target.a' instead of 'target'"""
 
-    def _divert(name, mode=b'r', checkambig=False):
+    def _divert(name, mode=b'r', checkambig=False, **kwargs):
         if name != target:
-            return opener(name, mode)
-        return opener(name + b".a", mode)
+            return opener(name, mode, **kwargs)
+        return opener(name + b".a", mode, **kwargs)
 
     return _divert
 
@@ -179,9 +178,10 @@ def _divertopener(opener, target):
 def _delayopener(opener, target, buf):
     """build an opener that stores chunks in 'buf' instead of 'target'"""
 
-    def _delay(name, mode=b'r', checkambig=False):
+    def _delay(name, mode=b'r', checkambig=False, **kwargs):
         if name != target:
-            return opener(name, mode)
+            return opener(name, mode, **kwargs)
+        assert not kwargs
         return appender(opener, name, mode, buf)
 
     return _delay
@@ -212,10 +212,10 @@ class changelogrevision(object):
     """
 
     __slots__ = (
-        r'_offsets',
-        r'_text',
-        r'_sidedata',
-        r'_cpsd',
+        '_offsets',
+        '_text',
+        '_sidedata',
+        '_cpsd',
     )
 
     def __new__(cls, text, sidedata, cpsd):
@@ -405,112 +405,8 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
         self._copiesstorage = opener.options.get(b'copies-storage')
 
-    def tiprev(self):
-        for i in pycompat.xrange(len(self) - 1, -2, -1):
-            if i not in self.filteredrevs:
-                return i
-
-    def tip(self):
-        """filtered version of revlog.tip"""
-        return self.node(self.tiprev())
-
-    def __contains__(self, rev):
-        """filtered version of revlog.__contains__"""
-        return 0 <= rev < len(self) and rev not in self.filteredrevs
-
-    def __iter__(self):
-        """filtered version of revlog.__iter__"""
-        if len(self.filteredrevs) == 0:
-            return revlog.revlog.__iter__(self)
-
-        def filterediter():
-            for i in pycompat.xrange(len(self)):
-                if i not in self.filteredrevs:
-                    yield i
-
-        return filterediter()
-
-    def revs(self, start=0, stop=None):
-        """filtered version of revlog.revs"""
-        for i in super(changelog, self).revs(start, stop):
-            if i not in self.filteredrevs:
-                yield i
-
-    def _checknofilteredinrevs(self, revs):
-        """raise the appropriate error if 'revs' contains a filtered revision
-
-        This returns a version of 'revs' to be used thereafter by the caller.
-        In particular, if revs is an iterator, it is converted into a set.
-        """
-        safehasattr = util.safehasattr
-        if safehasattr(revs, '__next__'):
-            # Note that inspect.isgenerator() is not true for iterators,
-            revs = set(revs)
-
-        filteredrevs = self.filteredrevs
-        if safehasattr(revs, 'first'):  # smartset
-            offenders = revs & filteredrevs
-        else:
-            offenders = filteredrevs.intersection(revs)
-
-        for rev in offenders:
-            raise error.FilteredIndexError(rev)
-        return revs
-
-    def headrevs(self, revs=None):
-        if revs is None and self.filteredrevs:
-            try:
-                return self.index.headrevsfiltered(self.filteredrevs)
-            # AttributeError covers non-c-extension environments and
-            # old c extensions without filter handling.
-            except AttributeError:
-                return self._headrevs()
-
-        if self.filteredrevs:
-            revs = self._checknofilteredinrevs(revs)
-        return super(changelog, self).headrevs(revs)
-
-    def strip(self, *args, **kwargs):
-        # XXX make something better than assert
-        # We can't expect proper strip behavior if we are filtered.
-        assert not self.filteredrevs
-        super(changelog, self).strip(*args, **kwargs)
-
-    def rev(self, node):
-        """filtered version of revlog.rev"""
-        r = super(changelog, self).rev(node)
-        if r in self.filteredrevs:
-            raise error.FilteredLookupError(
-                hex(node), self.indexfile, _(b'filtered node')
-            )
-        return r
-
-    def node(self, rev):
-        """filtered version of revlog.node"""
-        if rev in self.filteredrevs:
-            raise error.FilteredIndexError(rev)
-        return super(changelog, self).node(rev)
-
-    def linkrev(self, rev):
-        """filtered version of revlog.linkrev"""
-        if rev in self.filteredrevs:
-            raise error.FilteredIndexError(rev)
-        return super(changelog, self).linkrev(rev)
-
-    def parentrevs(self, rev):
-        """filtered version of revlog.parentrevs"""
-        if rev in self.filteredrevs:
-            raise error.FilteredIndexError(rev)
-        return super(changelog, self).parentrevs(rev)
-
-    def flags(self, rev):
-        """filtered version of revlog.flags"""
-        if rev in self.filteredrevs:
-            raise error.FilteredIndexError(rev)
-        return super(changelog, self).flags(rev)
-
     def delayupdate(self, tr):
-        b"delay visibility of index updates to other readers"
+        """delay visibility of index updates to other readers"""
 
         if not self._delayed:
             if len(self) == 0:
@@ -528,7 +424,7 @@ class changelog(revlog.revlog):
         tr.addfinalize(b'cl-%i' % id(self), self._finalize)
 
     def _finalize(self, tr):
-        b"finalize index updates"
+        """finalize index updates"""
         self._delayed = False
         self.opener = self._realopener
         # move redirected index data back into place
@@ -548,7 +444,8 @@ class changelog(revlog.revlog):
         self._enforceinlinesize(tr)
 
     def _writepending(self, tr):
-        b"create a file containing the unfinalized state for pretxnchangegroup"
+        """create a file containing the unfinalized state for
+        pretxnchangegroup"""
         if self._delaybuf:
             # make a temporary copy of the index
             fp1 = self._realopener(self.indexfile)

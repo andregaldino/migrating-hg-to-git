@@ -68,6 +68,7 @@ import errno
 import os
 import re
 import shutil
+import sys
 from mercurial.i18n import _
 from mercurial.node import (
     bin,
@@ -490,7 +491,7 @@ class queue(object):
     def __init__(self, ui, baseui, path, patchdir=None):
         self.basepath = path
         try:
-            with open(os.path.join(path, b'patches.queue'), r'rb') as fh:
+            with open(os.path.join(path, b'patches.queue'), 'rb') as fh:
                 cur = fh.read().rstrip()
 
             if not cur:
@@ -1251,16 +1252,19 @@ class queue(object):
         return None, None
 
     def putsubstate2changes(self, substatestate, changes):
-        for files in changes[:3]:
-            if b'.hgsubstate' in files:
-                return  # already listed up
+        if isinstance(changes, list):
+            mar = changes[:3]
+        else:
+            mar = (changes.modified, changes.added, changes.removed)
+        if any((b'.hgsubstate' in files for files in mar)):
+            return  # already listed up
         # not yet listed up
         if substatestate in b'a?':
-            changes[1].append(b'.hgsubstate')
+            mar[1].append(b'.hgsubstate')
         elif substatestate in b'r':
-            changes[2].append(b'.hgsubstate')
+            mar[2].append(b'.hgsubstate')
         else:  # modified
-            changes[0].append(b'.hgsubstate')
+            mar[0].append(b'.hgsubstate')
 
     def checklocalchanges(self, repo, force=False, refresh=True):
         excsuffix = b''
@@ -1377,8 +1381,9 @@ class queue(object):
         else:
             changes = self.checklocalchanges(repo, force=True)
         commitfiles = list(inclsubs)
-        for files in changes[:3]:
-            commitfiles.extend(files)
+        commitfiles.extend(changes.modified)
+        commitfiles.extend(changes.added)
+        commitfiles.extend(changes.removed)
         match = scmutil.matchfiles(repo, commitfiles)
         if len(repo[None].parents()) > 1:
             raise error.Abort(_(b'cannot manage merge changesets'))
@@ -1818,7 +1823,8 @@ class queue(object):
             if update:
                 qp = self.qparents(repo, rev)
                 ctx = repo[qp]
-                m, a, r, d = repo.status(qp, b'.')[:4]
+                st = repo.status(qp, b'.')
+                m, a, r, d = st.modified, st.added, st.removed, st.deleted
                 if d:
                     raise error.Abort(_(b"deletions found between repo revs"))
 
@@ -1910,10 +1916,11 @@ class queue(object):
             # and then commit.
             #
             # this should really read:
-            #   mm, dd, aa = repo.status(top, patchparent)[:3]
+            #   st = repo.status(top, patchparent)
             # but we do it backwards to take advantage of manifest/changelog
             # caching against the next repo.status call
-            mm, aa, dd = repo.status(patchparent, top)[:3]
+            st = repo.status(patchparent, top)
+            mm, aa, dd = st.modified, st.added, st.removed
             ctx = repo[top]
             aaa = aa[:]
             match1 = scmutil.match(repo[None], pats, opts)
@@ -1927,7 +1934,8 @@ class queue(object):
                 match1 = scmutil.match(repo[None], opts=opts)
             else:
                 match = scmutil.matchall(repo)
-            m, a, r, d = repo.status(match=match)[:4]
+            stb = repo.status(match=match)
+            m, a, r, d = stb.modified, stb.added, stb.removed, stb.deleted
             mm = set(mm)
             aa = set(aa)
             dd = set(dd)
@@ -1966,7 +1974,8 @@ class queue(object):
 
             # create 'match' that includes the files to be recommitted.
             # apply match1 via repo.status to ensure correct case handling.
-            cm, ca, cr, cd = repo.status(patchparent, match=match1)[:4]
+            st = repo.status(patchparent, match=match1)
+            cm, ca, cr, cd = st.modified, st.added, st.removed, st.deleted
             allmatches = set(cm + ca + cr + cd)
             refreshchanges = [x.intersection(allmatches) for x in (mm, aa, dd)]
 
@@ -2248,7 +2257,6 @@ class queue(object):
     def restore(self, repo, rev, delete=None, qupdate=None):
         desc = repo[rev].description().strip()
         lines = desc.splitlines()
-        i = 0
         datastart = None
         series = []
         applied = []
@@ -2777,7 +2785,7 @@ def init(ui, repo, **opts):
 
     This command is deprecated. Without -c, it's implied by other relevant
     commands. With -c, use :hg:`init --mq` instead."""
-    return qinit(ui, repo, create=opts.get(r'create_repo'))
+    return qinit(ui, repo, create=opts.get('create_repo'))
 
 
 @command(
@@ -2933,7 +2941,7 @@ def series(ui, repo, **opts):
 
     Returns 0 on success."""
     repo.mq.qseries(
-        repo, missing=opts.get(r'missing'), summary=opts.get(r'summary')
+        repo, missing=opts.get('missing'), summary=opts.get('summary')
     )
     return 0
 
@@ -2960,7 +2968,7 @@ def top(ui, repo, **opts):
             start=t - 1,
             length=1,
             status=b'A',
-            summary=opts.get(r'summary'),
+            summary=opts.get('summary'),
         )
     else:
         ui.write(_(b"no patches applied\n"))
@@ -2982,7 +2990,7 @@ def next(ui, repo, **opts):
     if end == len(q.series):
         ui.write(_(b"all patches applied\n"))
         return 1
-    q.qseries(repo, start=end, length=1, summary=opts.get(r'summary'))
+    q.qseries(repo, start=end, length=1, summary=opts.get('summary'))
 
 
 @command(
@@ -3005,7 +3013,7 @@ def prev(ui, repo, **opts):
         return 1
     idx = q.series.index(q.applied[-2].name)
     q.qseries(
-        repo, start=idx, length=1, status=b'A', summary=opts.get(r'summary')
+        repo, start=idx, length=1, status=b'A', summary=opts.get('summary')
     )
 
 
@@ -3356,8 +3364,8 @@ def guard(ui, repo, *args, **opts):
     applied = set(p.name for p in q.applied)
     patch = None
     args = list(args)
-    if opts.get(r'list'):
-        if args or opts.get(r'none'):
+    if opts.get('list'):
+        if args or opts.get('none'):
             raise error.Abort(
                 _(b'cannot mix -l/--list with options or arguments')
             )
@@ -3372,7 +3380,7 @@ def guard(ui, repo, *args, **opts):
         patch = args.pop(0)
     if patch is None:
         raise error.Abort(_(b'no patch to work with'))
-    if args or opts.get(r'none'):
+    if args or opts.get('none'):
         idx = q.findseries(patch)
         if idx is None:
             raise error.Abort(_(b'no patch named %s') % patch)
@@ -3634,9 +3642,7 @@ def restore(ui, repo, rev, **opts):
     This command is deprecated, use :hg:`rebase` instead."""
     rev = repo.lookup(rev)
     q = repo.mq
-    q.restore(
-        repo, rev, delete=opts.get(r'delete'), qupdate=opts.get(r'update')
-    )
+    q.restore(repo, rev, delete=opts.get('delete'), qupdate=opts.get('update'))
     q.savedirty()
     return 0
 
@@ -3841,9 +3847,9 @@ def finish(ui, repo, *revrange, **opts):
 
     Returns 0 on success.
     """
-    if not opts.get(r'applied') and not revrange:
+    if not opts.get('applied') and not revrange:
         raise error.Abort(_(b'no revisions specified'))
-    elif opts.get(r'applied'):
+    elif opts.get('applied'):
         revrange = (b'qbase::qtip',) + revrange
 
     q = repo.mq
@@ -4072,9 +4078,9 @@ def reposetup(ui, repo):
 
         def invalidateall(self):
             super(mqrepo, self).invalidateall()
-            if localrepo.hasunfilteredcache(self, r'mq'):
+            if localrepo.hasunfilteredcache(self, 'mq'):
                 # recreate mq in case queue path was changed
-                delattr(self.unfiltered(), r'mq')
+                delattr(self.unfiltered(), 'mq')
 
         def abortifwdirpatched(self, errmsg, force=False):
             if self.mq.applied and self.mq.checkapplied and not force:
@@ -4172,16 +4178,16 @@ def reposetup(ui, repo):
 
 def mqimport(orig, ui, repo, *args, **kwargs):
     if util.safehasattr(repo, b'abortifwdirpatched') and not kwargs.get(
-        r'no_commit', False
+        'no_commit', False
     ):
         repo.abortifwdirpatched(
-            _(b'cannot import over an applied patch'), kwargs.get(r'force')
+            _(b'cannot import over an applied patch'), kwargs.get('force')
         )
     return orig(ui, repo, *args, **kwargs)
 
 
 def mqinit(orig, ui, *args, **kwargs):
-    mq = kwargs.pop(r'mq', None)
+    mq = kwargs.pop('mq', None)
 
     if not mq:
         return orig(ui, *args, **kwargs)
@@ -4206,7 +4212,7 @@ def mqcommand(orig, ui, repo, *args, **kwargs):
     """Add --mq option to operate on patch repository instead of main"""
 
     # some commands do not like getting unknown options
-    mq = kwargs.pop(r'mq', None)
+    mq = kwargs.pop('mq', None)
 
     if not mq:
         return orig(ui, repo, *args, **kwargs)
@@ -4272,8 +4278,9 @@ def extsetup(ui):
 
     dotable(commands.table)
 
+    thismodule = sys.modules["hgext.mq"]
     for extname, extmodule in extensions.extensions():
-        if extmodule.__file__ != __file__:
+        if extmodule != thismodule:
             dotable(getattr(extmodule, 'cmdtable', {}))
 
 

@@ -155,15 +155,29 @@ class local(object):
 
         return self.vfs(oid, b'rb')
 
-    def download(self, oid, src):
+    def download(self, oid, src, content_length):
         """Read the blob from the remote source in chunks, verify the content,
         and write to this local blobstore."""
         sha256 = hashlib.sha256()
+        size = 0
 
         with self.vfs(oid, b'wb', atomictemp=True) as fp:
             for chunk in util.filechunkiter(src, size=1048576):
                 fp.write(chunk)
                 sha256.update(chunk)
+                size += len(chunk)
+
+            # If the server advertised a length longer than what we actually
+            # received, then we should expect that the server crashed while
+            # producing the response (but the server has no way of telling us
+            # that), and we really don't need to try to write the response to
+            # the localstore, because it's not going to match the expected.
+            if content_length is not None and int(content_length) != size:
+                msg = (
+                    b"Response length (%s) does not match Content-Length "
+                    b"header (%d): likely server-side crash"
+                )
+                raise LfsRemoteError(_(msg) % (size, int(content_length)))
 
             realoid = node.hex(sha256.digest())
             if realoid != oid:
@@ -280,11 +294,11 @@ class lfsauthhandler(util.urlreq.basehandler):
         """Enforces that any authentication performed is HTTP Basic
         Authentication.  No authentication is also acceptable.
         """
-        authreq = headers.get(r'www-authenticate', None)
+        authreq = headers.get('www-authenticate', None)
         if authreq:
             scheme = authreq.split()[0]
 
-            if scheme.lower() != r'basic':
+            if scheme.lower() != 'basic':
                 msg = _(b'the server must support Basic Authentication')
                 raise util.urlerr.httperror(
                     req.get_full_url(),
@@ -324,18 +338,18 @@ class _gitlfsremote(object):
         See https://github.com/git-lfs/git-lfs/blob/master/docs/api/batch.md
         """
         objects = [
-            {r'oid': pycompat.strurl(p.oid()), r'size': p.size()}
+            {'oid': pycompat.strurl(p.oid()), 'size': p.size()}
             for p in pointers
         ]
         requestdata = pycompat.bytesurl(
             json.dumps(
-                {r'objects': objects, r'operation': pycompat.strurl(action),}
+                {'objects': objects, 'operation': pycompat.strurl(action),}
             )
         )
         url = b'%s/objects/batch' % self.baseurl
         batchreq = util.urlreq.request(pycompat.strurl(url), data=requestdata)
-        batchreq.add_header(r'Accept', r'application/vnd.git-lfs+json')
-        batchreq.add_header(r'Content-Type', r'application/vnd.git-lfs+json')
+        batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
+        batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
         try:
             with contextlib.closing(self.urlopener.open(batchreq)) as rsp:
                 rawjson = rsp.read()
@@ -376,9 +390,9 @@ class _gitlfsremote(object):
             headers = pycompat.bytestr(rsp.info()).strip()
             self.ui.debug(b'%s\n' % b'\n'.join(sorted(headers.splitlines())))
 
-            if r'objects' in response:
-                response[r'objects'] = sorted(
-                    response[r'objects'], key=lambda p: p[r'oid']
+            if 'objects' in response:
+                response['objects'] = sorted(
+                    response['objects'], key=lambda p: p['oid']
                 )
             self.ui.debug(
                 b'%s\n'
@@ -386,7 +400,7 @@ class _gitlfsremote(object):
                     json.dumps(
                         response,
                         indent=2,
-                        separators=(r'', r': '),
+                        separators=('', ': '),
                         sort_keys=True,
                     )
                 )
@@ -483,33 +497,36 @@ class _gitlfsremote(object):
                 )
             request.data = filewithprogress(localstore.open(oid), None)
             request.get_method = lambda: r'PUT'
-            request.add_header(r'Content-Type', r'application/octet-stream')
-            request.add_header(r'Content-Length', len(request.data))
+            request.add_header('Content-Type', 'application/octet-stream')
+            request.add_header('Content-Length', len(request.data))
 
         for k, v in headers:
             request.add_header(pycompat.strurl(k), pycompat.strurl(v))
 
-        response = b''
         try:
-            with contextlib.closing(self.urlopener.open(request)) as req:
+            with contextlib.closing(self.urlopener.open(request)) as res:
+                contentlength = res.info().get(b"content-length")
                 ui = self.ui  # Shorten debug lines
                 if self.ui.debugflag:
-                    ui.debug(b'Status: %d\n' % req.status)
+                    ui.debug(b'Status: %d\n' % res.status)
                     # lfs-test-server and hg serve return headers in different
                     # order
-                    headers = pycompat.bytestr(req.info()).strip()
+                    headers = pycompat.bytestr(res.info()).strip()
                     ui.debug(b'%s\n' % b'\n'.join(sorted(headers.splitlines())))
 
                 if action == b'download':
                     # If downloading blobs, store downloaded data to local
                     # blobstore
-                    localstore.download(oid, req)
+                    localstore.download(oid, res, contentlength)
                 else:
+                    blocks = []
                     while True:
-                        data = req.read(1048576)
+                        data = res.read(1048576)
                         if not data:
                             break
-                        response += data
+                        blocks.append(data)
+
+                    response = b"".join(blocks)
                     if response:
                         ui.debug(b'lfs %s response: %s' % (action, response))
         except util.urlerr.httperror as ex:
@@ -588,7 +605,9 @@ class _gitlfsremote(object):
         else:
             oids = transfer(sorted(objects, key=lambda o: o.get(b'oid')))
 
-        with self.ui.makeprogress(topic, total=total) as progress:
+        with self.ui.makeprogress(
+            topic, unit=_(b"bytes"), total=total
+        ) as progress:
             progress.update(0)
             processed = 0
             blobs = 0
@@ -635,7 +654,7 @@ class _dummyremote(object):
     def readbatch(self, pointers, tostore):
         for p in _deduplicate(pointers):
             with self.vfs(p.oid(), b'rb') as fp:
-                tostore.download(p.oid(), fp)
+                tostore.download(p.oid(), fp, None)
 
 
 class _nullremote(object):

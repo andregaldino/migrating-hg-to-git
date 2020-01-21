@@ -29,8 +29,6 @@
 # no unicode literals
 from __future__ import absolute_import, division, print_function
 
-import re
-
 
 def parse_version(vstr):
     res = 0
@@ -64,7 +62,7 @@ def synthesize(vers, opts):
     vers["capabilities"] = {}
     for name in opts["optional"]:
         vers["capabilities"][name] = check(parsed_version, name)
-    failed = False  # noqa: F841 T25377293 Grandfathered in
+
     for name in opts["required"]:
         have = check(parsed_version, name)
         vers["capabilities"][name] = have

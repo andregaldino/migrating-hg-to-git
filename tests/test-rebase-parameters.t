@@ -61,7 +61,7 @@ These fail:
   [1]
 
   $ hg rebase --continue --abort
-  abort: cannot use --abort with --continue
+  abort: cannot specify both --abort and --continue
   [255]
 
   $ hg rebase --continue --collapse
@@ -69,18 +69,18 @@ These fail:
   [255]
 
   $ hg rebase --continue --dest 4
-  abort: abort and continue do not allow specifying revisions
+  abort: cannot specify both --continue and --dest
   [255]
 
   $ hg rebase --base 5 --source 4
-  abort: cannot specify both a source and a base
+  abort: cannot specify both --source and --base
   [255]
 
   $ hg rebase --rev 5 --source 4
-  abort: cannot specify both a revision and a source
+  abort: cannot specify both --rev and --source
   [255]
   $ hg rebase --base 5 --rev 4
-  abort: cannot specify both a revision and a base
+  abort: cannot specify both --rev and --base
   [255]
 
   $ hg rebase --base 6

@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import hashlib
 import io
 import os
 import threading
@@ -25,7 +24,10 @@ from mercurial import (
     util,
     wireprotov1peer,
 )
-from mercurial.utils import procutil
+from mercurial.utils import (
+    hashutil,
+    procutil,
+)
 
 from . import (
     constants,
@@ -45,12 +47,12 @@ _lfsmod = None
 
 
 def getcachekey(reponame, file, id):
-    pathhash = node.hex(hashlib.sha1(file).digest())
+    pathhash = node.hex(hashutil.sha1(file).digest())
     return os.path.join(reponame, pathhash[:2], pathhash[2:], id)
 
 
 def getlocalkey(file, id):
-    pathhash = node.hex(hashlib.sha1(file).digest())
+    pathhash = node.hex(hashutil.sha1(file).digest())
     return os.path.join(pathhash, id)
 
 
@@ -663,5 +665,5 @@ class fileserverclient(object):
         self.ui.log(
             b'remotefilelog',
             b'excess remotefilelog fetching:\n%s\n',
-            b''.join(traceback.format_stack()),
+            b''.join(pycompat.sysbytes(s) for s in traceback.format_stack()),
         )

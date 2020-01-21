@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import errno
-import hashlib
 
 from .i18n import _
 from .node import (
@@ -24,11 +23,15 @@ from . import (
     exchange,
     obsolete,
     obsutil,
+    pathutil,
     phases,
     pycompat,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    hashutil,
+    stringutil,
+)
 
 
 def backupbundle(
@@ -44,7 +47,7 @@ def backupbundle(
     # Include a hash of all the nodes in the filename for uniqueness
     allcommits = repo.set(b'%ln::%ln', bases, heads)
     allhashes = sorted(c.hex() for c in allcommits)
-    totalhash = hashlib.sha1(b''.join(allhashes)).digest()
+    totalhash = hashutil.sha1(b''.join(allhashes)).digest()
     name = b"%s/%s-%s-%s.hg" % (
         backupdir,
         short(node),
@@ -476,7 +479,7 @@ def rebuildfncache(ui, repo):
         if b'treemanifest' in repo.requirements:
             # This logic is safe if treemanifest isn't enabled, but also
             # pointless, so we skip it if treemanifest isn't enabled.
-            for dir in util.dirs(seenfiles):
+            for dir in pathutil.dirs(seenfiles):
                 i = b'meta/%s/00manifest.i' % dir
                 d = b'meta/%s/00manifest.d' % dir
 

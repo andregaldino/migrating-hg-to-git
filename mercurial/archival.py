@@ -138,8 +138,8 @@ class tarit(object):
     class GzipFileWithTime(gzip.GzipFile):
         def __init__(self, *args, **kw):
             timestamp = None
-            if r'timestamp' in kw:
-                timestamp = kw.pop(r'timestamp')
+            if 'timestamp' in kw:
+                timestamp = kw.pop('timestamp')
             if timestamp is None:
                 self.timestamp = time.time()
             else:
@@ -154,9 +154,11 @@ class tarit(object):
                 fname = fname[:-3]
             flags = 0
             if fname:
-                flags = gzip.FNAME
+                flags = gzip.FNAME  # pytype: disable=module-attr
             self.fileobj.write(pycompat.bytechr(flags))
-            gzip.write32u(self.fileobj, int(self.timestamp))
+            gzip.write32u(  # pytype: disable=module-attr
+                self.fileobj, int(self.timestamp)
+            )
             self.fileobj.write(b'\002')
             self.fileobj.write(b'\377')
             if fname:
@@ -179,7 +181,7 @@ class tarit(object):
                     timestamp=mtime,
                 )
                 self.fileobj = gzfileobj
-                return tarfile.TarFile.taropen(
+                return tarfile.TarFile.taropen(  # pytype: disable=attribute-error
                     name, pycompat.sysstr(mode), gzfileobj
                 )
             else:
@@ -220,7 +222,7 @@ class zipit(object):
         if isinstance(dest, bytes):
             dest = pycompat.fsdecode(dest)
         self.z = zipfile.ZipFile(
-            dest, r'w', compress and zipfile.ZIP_DEFLATED or zipfile.ZIP_STORED
+            dest, 'w', compress and zipfile.ZIP_DEFLATED or zipfile.ZIP_STORED
         )
 
         # Python's zipfile module emits deprecation warnings if we try
@@ -234,7 +236,7 @@ class zipit(object):
 
     def addfile(self, name, mode, islink, data):
         i = zipfile.ZipInfo(pycompat.fsdecode(name), self.date_time)
-        i.compress_type = self.z.compression
+        i.compress_type = self.z.compression  # pytype: disable=attribute-error
         # unzip will not honor unix file modes unless file creator is
         # set to unix (id 3).
         i.create_system = 3

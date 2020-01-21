@@ -6,6 +6,7 @@ import os
 
 from mercurial import (
     encoding,
+    extensions,
     rcutil,
     ui as uimod,
     util,
@@ -35,9 +36,10 @@ def userrcpath():
     return [join(b'userrc')]
 
 
+extensions.wrapfunction(rcutil, 'default_rc_resources', lambda orig: [])
+
 rcutil.systemrcpath = systemrcpath
 rcutil.userrcpath = userrcpath
-os.path.isdir = lambda x: False  # hack: do not load default.d/*.rc
 
 # utility to print configs
 def printconfigs(env):

@@ -9,8 +9,8 @@
 '''largefiles utility code: must not import other modules in this package.'''
 from __future__ import absolute_import
 
+import contextlib
 import copy
-import hashlib
 import os
 import stat
 
@@ -31,12 +31,23 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
+from mercurial.utils import hashutil
 
 shortname = b'.hglf'
 shortnameslash = shortname + b'/'
 longname = b'largefiles'
 
 # -- Private worker functions ------------------------------------------
+
+
+@contextlib.contextmanager
+def lfstatus(repo, value=True):
+    oldvalue = getattr(repo, 'lfstatus', False)
+    repo.lfstatus = value
+    try:
+        yield
+    finally:
+        repo.lfstatus = oldvalue
 
 
 def getminsize(ui, assumelfiles, opt, default=10):
@@ -421,7 +432,7 @@ def writestandin(repo, standin, hash, executable):
 def copyandhash(instream, outfile):
     '''Read bytes from instream (iterable) and write them to outfile,
     computing the SHA-1 hash of the data along the way. Return the hash.'''
-    hasher = hashlib.sha1(b'')
+    hasher = hashutil.sha1(b'')
     for data in instream:
         hasher.update(data)
         outfile.write(data)
@@ -461,7 +472,7 @@ def urljoin(first, second, *arg):
 def hexsha1(fileobj):
     """hexsha1 returns the hex-encoded sha1 sum of the data in the file-like
     object data"""
-    h = hashlib.sha1()
+    h = hashutil.sha1()
     for chunk in util.filechunkiter(fileobj):
         h.update(chunk)
     return hex(h.digest())
@@ -580,12 +591,8 @@ def getlfilestoupload(repo, missing, addfunc):
             progress.update(i)
             parents = [p for p in repo[n].parents() if p != node.nullid]
 
-            oldlfstatus = repo.lfstatus
-            repo.lfstatus = False
-            try:
+            with lfstatus(repo, value=False):
                 ctx = repo[n]
-            finally:
-                repo.lfstatus = oldlfstatus
 
             files = set(ctx.files())
             if len(parents) == 2:

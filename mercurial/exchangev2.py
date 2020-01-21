@@ -291,9 +291,9 @@ def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
     # See the comment in exchange._pulldiscoverychangegroup() for more.
 
     if fetch and remoteheads:
-        nodemap = repo.unfiltered().changelog.nodemap
+        has_node = repo.unfiltered().changelog.index.has_node
 
-        common |= {head for head in remoteheads if head in nodemap}
+        common |= {head for head in remoteheads if has_node(head)}
 
         if set(remoteheads).issubset(common):
             fetch = []

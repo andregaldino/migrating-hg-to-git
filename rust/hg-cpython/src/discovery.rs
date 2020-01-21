@@ -25,6 +25,8 @@ use std::collections::HashSet;
 
 use std::cell::RefCell;
 
+use crate::revlog::pyindex_to_graph;
+
 py_class!(pub class PartialDiscovery |py| {
     data inner: RefCell<Box<CorePartialDiscovery<Index>>>;
 
@@ -42,7 +44,7 @@ py_class!(pub class PartialDiscovery |py| {
         Self::create_instance(
             py,
             RefCell::new(Box::new(CorePartialDiscovery::new(
-                Index::new(py, index)?,
+                pyindex_to_graph(py, index)?,
                 rev_pyiter_collect(py, &targetheads)?,
                 respectsize,
                 randomize,

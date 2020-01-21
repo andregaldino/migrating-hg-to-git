@@ -229,11 +229,13 @@ check that server events are recorded:
   server.log.1
 
 print only the last 10 lines, since we aren't sure how many records are
-preserved:
+preserved (since setprocname isn't available on py3, the 10th-most-recent line
+is different when using py3):
 
   $ cat log/server.log.1 log/server.log | tail -10 | filterlog
+  YYYY/MM/DD HH:MM:SS (PID)> confighash = ... mtimehash = ... (py3 !)
   YYYY/MM/DD HH:MM:SS (PID)> forked worker process (pid=...)
-  YYYY/MM/DD HH:MM:SS (PID)> setprocname: ...
+  YYYY/MM/DD HH:MM:SS (PID)> setprocname: ... (no-py3 !)
   YYYY/MM/DD HH:MM:SS (PID)> received fds: ...
   YYYY/MM/DD HH:MM:SS (PID)> chdir to '$TESTTMP/extreload'
   YYYY/MM/DD HH:MM:SS (PID)> setumask 18
@@ -329,3 +331,25 @@ check server log:
   YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached2 (in  ...s)
   YYYY/MM/DD HH:MM:SS (PID)> log -R cached
   YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)
+
+Test that chg works even when python "coerces" the locale (py3.7+, which is done
+by default if none of LC_ALL, LC_CTYPE, or LANG are set in the environment)
+
+  $ cat > $TESTTMP/debugenv.py <<EOF
+  > from mercurial import encoding
+  > from mercurial import registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'debugenv', [], b'', norepo=True)
+  > def debugenv(ui):
+  >     for k in [b'LC_ALL', b'LC_CTYPE', b'LANG']:
+  >         v = encoding.environ.get(k)
+  >         if v is not None:
+  >             ui.write(b'%s=%s\n' % (k, encoding.environ[k]))
+  > EOF
+  $ LANG= LC_ALL= LC_CTYPE= chg \
+  >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv
+  LC_ALL=
+  LC_CTYPE=C.UTF-8 (py37 !)
+  LC_CTYPE= (no-py37 !)
+  LANG=

@@ -29,11 +29,11 @@ from mercurial import (
     error,
     node,
     obsutil,
+    pathutil,
     pycompat,
     registrar,
     rewriteutil,
     scmutil,
-    util,
 )
 
 cmdtable = {}
@@ -157,7 +157,8 @@ def uncommit(ui, repo, *pats, **opts):
 
     with repo.wlock(), repo.lock():
 
-        m, a, r, d = repo.status()[:4]
+        st = repo.status()
+        m, a, r, d = st.modified, st.added, st.removed, st.deleted
         isdirtypath = any(set(m + a + r + d) & set(pats))
         allowdirtywcopy = opts[
             b'allow_dirty_working_copy'
@@ -185,7 +186,7 @@ def uncommit(ui, repo, *pats, **opts):
             # if not everything tracked in that directory can be
             # uncommitted.
             if badfiles:
-                badfiles -= {f for f in util.dirs(eligible)}
+                badfiles -= {f for f in pathutil.dirs(eligible)}
 
             for f in sorted(badfiles):
                 if f in s.clean:

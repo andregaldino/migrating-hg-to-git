@@ -18,12 +18,12 @@ dependencies must be installed:
 * Python 2.7 (download from https://www.python.org/downloads/)
 * Microsoft Visual C++ Compiler for Python 2.7
   (https://www.microsoft.com/en-us/download/details.aspx?id=44266)
-* Python 3.5+ (to run the ``build.py`` script)
+* Python 3.5+ (to run the ``packaging.py`` script)
 
 Building
 ========
 
-The ``build.py`` script automates the process of producing an MSI
+The ``packaging.py`` script automates the process of producing an MSI
 installer. It manages fetching and configuring non-system dependencies
 (such as py2exe, gettext, and various Python packages).
 
@@ -37,11 +37,11 @@ launch either ``Visual C++ 2008 32-bit Command Prompt`` or
 From the prompt, change to the Mercurial source directory. e.g.
 ``cd c:\src\hg``.
 
-Next, invoke ``build.py`` to produce an MSI installer. You will need
+Next, invoke ``packaging.py`` to produce an MSI installer. You will need
 to supply the path to the Python interpreter to use.::
 
-   $ python3 contrib\packaging\wix\build.py \
-      --python c:\python27\python.exe
+   $ python3 contrib\packaging\packaging.py \
+      wix --python c:\python27\python.exe
 
 .. note::
 
@@ -54,8 +54,8 @@ configured into the ``build`` sub-directory, Mercurial will be built,
 and an installer placed in the ``dist`` sub-directory. The final line
 of output should print the name of the generated installer.
 
-Additional options may be configured. Run ``build.py --help`` to see
-a list of program flags.
+Additional options may be configured. Run ``packaging.py wix --help`` to
+see a list of program flags.
 
 Relationship to TortoiseHG
 ==========================

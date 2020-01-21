@@ -33,10 +33,10 @@ the concept.
 
 from __future__ import absolute_import
 
-import hashlib
 import struct
 
 from .. import error
+from ..utils import hashutil
 
 ## sidedata type constant
 # reserve a block for testing purposes.
@@ -55,8 +55,8 @@ SD_FILESADDED = 10
 SD_FILESREMOVED = 11
 
 # internal format constant
-SIDEDATA_HEADER = struct.Struct(r'>H')
-SIDEDATA_ENTRY = struct.Struct(r'>HL20s')
+SIDEDATA_HEADER = struct.Struct('>H')
+SIDEDATA_ENTRY = struct.Struct('>HL20s')
 
 
 def sidedatawriteprocessor(rl, text, sidedata):
@@ -64,7 +64,7 @@ def sidedatawriteprocessor(rl, text, sidedata):
     sidedata.sort()
     rawtext = [SIDEDATA_HEADER.pack(len(sidedata))]
     for key, value in sidedata:
-        digest = hashlib.sha1(value).digest()
+        digest = hashutil.sha1(value).digest()
         rawtext.append(SIDEDATA_ENTRY.pack(key, len(value), digest))
     for key, value in sidedata:
         rawtext.append(value)
@@ -85,7 +85,7 @@ def sidedatareadprocessor(rl, text):
         # read the data associated with that entry
         nextdataoffset = dataoffset + size
         entrytext = text[dataoffset:nextdataoffset]
-        readdigest = hashlib.sha1(entrytext).digest()
+        readdigest = hashutil.sha1(entrytext).digest()
         if storeddigest != readdigest:
             raise error.SidedataHashError(key, storeddigest, readdigest)
         sidedata[key] = entrytext

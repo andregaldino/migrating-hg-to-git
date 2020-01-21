@@ -22,6 +22,10 @@ if subprocess.call(
 if sys.flags.optimize:
     sys.exit(80)
 
+# The demand importer doesn't work on Python 3.5.
+if sys.version_info[0:2] == (3, 5):
+    sys.exit(80)
+
 if ispy3:
     from importlib.util import _LazyModule
 
@@ -133,7 +137,7 @@ assert 'mercurial.hgweb' not in sys.modules
 from mercurial import hgweb
 
 if ispy3:
-    assert not isinstance(hgweb, _LazyModule)
+    assert isinstance(hgweb, _LazyModule)
     assert f(hgweb) == "<module 'mercurial.hgweb' from '?'>", f(hgweb)
     assert isinstance(hgweb.hgweb_mod, _LazyModule)
     assert (
@@ -206,7 +210,7 @@ assert 'telnetlib' not in sys.modules
 import telnetlib
 
 if ispy3:
-    assert not isinstance(telnetlib, _LazyModule)
+    assert isinstance(telnetlib, _LazyModule)
     assert f(telnetlib) == "<module 'telnetlib' from '?'>"
 else:
     assert f(telnetlib) == "<unloaded module 'telnetlib'>", f(telnetlib)

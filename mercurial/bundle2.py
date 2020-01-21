@@ -653,7 +653,9 @@ class bundle20(object):
         """add a stream level parameter"""
         if not name:
             raise error.ProgrammingError(b'empty parameter name')
-        if name[0:1] not in pycompat.bytestr(string.ascii_letters):
+        if name[0:1] not in pycompat.bytestr(
+            string.ascii_letters  # pytype: disable=wrong-arg-types
+        ):
             raise error.ProgrammingError(
                 b'non letter first character: %s' % name
             )
@@ -835,9 +837,11 @@ class unbundle20(unpackermixin):
               ignored or failing.
         """
         if not name:
-            raise ValueError(r'empty parameter name')
-        if name[0:1] not in pycompat.bytestr(string.ascii_letters):
-            raise ValueError(r'non letter first character: %s' % name)
+            raise ValueError('empty parameter name')
+        if name[0:1] not in pycompat.bytestr(
+            string.ascii_letters  # pytype: disable=wrong-arg-types
+        ):
+            raise ValueError('non letter first character: %s' % name)
         try:
             handler = b2streamparamsmap[name.lower()]
         except KeyError:
@@ -1141,8 +1145,8 @@ class bundlepart(object):
             headerchunk = b''.join(header)
         except TypeError:
             raise TypeError(
-                r'Found a non-bytes trying to '
-                r'build bundle part header: %r' % header
+                'Found a non-bytes trying to '
+                'build bundle part header: %r' % header
             )
         outdebug(ui, b'header chunk size: %i' % len(headerchunk))
         yield _pack(_fpartheadersize, len(headerchunk))
@@ -1793,7 +1797,7 @@ def _formatrequirementsparams(requirements):
 
 
 def addpartbundlestream2(bundler, repo, **kwargs):
-    if not kwargs.get(r'stream', False):
+    if not kwargs.get('stream', False):
         return
 
     if not streamclone.allowservergeneration(repo):
@@ -1815,8 +1819,8 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     bundler.prefercompressed = False
 
     # get the includes and excludes
-    includepats = kwargs.get(r'includepats')
-    excludepats = kwargs.get(r'excludepats')
+    includepats = kwargs.get('includepats')
+    excludepats = kwargs.get('excludepats')
 
     narrowstream = repo.ui.configbool(
         b'experimental', b'server.stream-narrow-clones'
@@ -1985,7 +1989,7 @@ def handlechangegroup(op, inpart):
     extrakwargs = {}
     targetphase = inpart.params.get(b'targetphase')
     if targetphase is not None:
-        extrakwargs[r'targetphase'] = int(targetphase)
+        extrakwargs['targetphase'] = int(targetphase)
     ret = _processchangegroup(
         op,
         cg,
@@ -2368,7 +2372,7 @@ def handlebookmark(op, inpart):
 
         if pushkeycompat:
 
-            def runhook():
+            def runhook(unused_success):
                 for hookargs in allhooks:
                     op.repo.hook(b'pushkey', **pycompat.strkwargs(hookargs))
 

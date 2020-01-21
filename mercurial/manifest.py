@@ -23,6 +23,7 @@ from .pycompat import getattr
 from . import (
     error,
     mdiff,
+    pathutil,
     policy,
     pycompat,
     revlog,
@@ -33,7 +34,7 @@ from .interfaces import (
     util as interfaceutil,
 )
 
-parsers = policy.importmod(r'parsers')
+parsers = policy.importmod('parsers')
 propertycache = util.propertycache
 
 # Allow tests to more easily test the alternate path in manifestdict.fastdelta()
@@ -494,7 +495,7 @@ class manifestdict(object):
 
     @propertycache
     def _dirs(self):
-        return util.dirs(self)
+        return pathutil.dirs(self)
 
     def dirs(self):
         return self._dirs
@@ -1104,7 +1105,7 @@ class treemanifest(object):
 
     @propertycache
     def _alldirs(self):
-        return util.dirs(self)
+        return pathutil.dirs(self)
 
     def dirs(self):
         return self._alldirs
@@ -1571,7 +1572,11 @@ class manifestrevlog(object):
         reporef = weakref.ref(repo)
         manifestrevlogref = weakref.ref(self)
 
-        def persistmanifestcache():
+        def persistmanifestcache(success):
+            # Repo is in an unknown state, do not persist.
+            if not success:
+                return
+
             repo = reporef()
             self = manifestrevlogref()
             if repo is None or self is None:

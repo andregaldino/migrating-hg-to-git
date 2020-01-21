@@ -10,8 +10,13 @@ from __future__ import absolute_import
 import struct
 import zlib
 
-from ..node import nullid
-from .. import pycompat
+from ..node import nullid, nullrev
+from .. import (
+    pycompat,
+    util,
+)
+
+from ..revlogutils import nodemap as nodemaputil
 
 stringio = pycompat.bytesio
 
@@ -43,10 +48,51 @@ def offset_type(offset, type):
 
 
 class BaseIndexObject(object):
+    @property
+    def nodemap(self):
+        msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
+        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
+        return self._nodemap
+
+    @util.propertycache
+    def _nodemap(self):
+        nodemap = nodemaputil.NodeMap({nullid: nullrev})
+        for r in range(0, len(self)):
+            n = self[r][7]
+            nodemap[n] = r
+        return nodemap
+
+    def has_node(self, node):
+        """return True if the node exist in the index"""
+        return node in self._nodemap
+
+    def rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, raise a RevlogError"""
+        return self._nodemap[node]
+
+    def get_rev(self, node):
+        """return a revision for a node
+
+        If the node is unknown, return None"""
+        return self._nodemap.get(node)
+
+    def _stripnodes(self, start):
+        if '_nodemap' in vars(self):
+            for r in range(start, len(self)):
+                n = self[r][7]
+                del self._nodemap[n]
+
+    def clearcaches(self):
+        self.__dict__.pop('_nodemap', None)
+
     def __len__(self):
         return self._lgt + len(self._extra)
 
     def append(self, tup):
+        if '_nodemap' in vars(self):
+            self._nodemap[tup[7]] = len(self)
         self._extra.append(tup)
 
     def _check_index(self, i):
@@ -86,6 +132,7 @@ class IndexObject(BaseIndexObject):
             raise ValueError(b"deleting slices only supports a:-1 with step 1")
         i = i.start
         self._check_index(i)
+        self._stripnodes(i)
         if i < self._lgt:
             self._data = self._data[: i * indexsize]
             self._lgt = i
@@ -123,6 +170,7 @@ class InlinedIndexObject(BaseIndexObject):
             raise ValueError(b"deleting slices only supports a:-1 with step 1")
         i = i.start
         self._check_index(i)
+        self._stripnodes(i)
         if i < self._lgt:
             self._offsets = self._offsets[:i]
             self._lgt = i

@@ -288,7 +288,7 @@ def uisetup(ui):
 
     # Prevent 'hg manifest --all'
     def _manifest(orig, ui, repo, *args, **opts):
-        if isenabled(repo) and opts.get(r'all'):
+        if isenabled(repo) and opts.get('all'):
             raise error.Abort(_(b"--all is not supported in a shallow repo"))
 
         return orig(ui, repo, *args, **opts)
@@ -344,7 +344,7 @@ def uisetup(ui):
 
 
 def cloneshallow(orig, ui, repo, *args, **opts):
-    if opts.get(r'shallow'):
+    if opts.get('shallow'):
         repos = []
 
         def pull_shallow(orig, self, *args, **kwargs):
@@ -381,13 +381,9 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 if constants.NETWORK_CAP_LEGACY_SSH_GETFILES in caps:
                     opts = {}
                     if repo.includepattern:
-                        opts[r'includepattern'] = b'\0'.join(
-                            repo.includepattern
-                        )
+                        opts['includepattern'] = b'\0'.join(repo.includepattern)
                     if repo.excludepattern:
-                        opts[r'excludepattern'] = b'\0'.join(
-                            repo.excludepattern
-                        )
+                        opts['excludepattern'] = b'\0'.join(repo.excludepattern)
                     return remote._callstream(b'stream_out_shallow', **opts)
                 else:
                     return orig()
@@ -424,7 +420,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
     try:
         orig(ui, repo, *args, **opts)
     finally:
-        if opts.get(r'shallow'):
+        if opts.get('shallow'):
             for r in repos:
                 if util.safehasattr(r, b'fileservice'):
                     r.fileservice.close()
@@ -723,9 +719,9 @@ def onetimeclientsetup(ui):
         remotefilelog.remotefilelog, b'addrawrevision', addrawrevision
     )
 
-    def changelogadd(orig, self, *args):
+    def changelogadd(orig, self, *args, **kwargs):
         oldlen = len(self)
-        node = orig(self, *args)
+        node = orig(self, *args, **kwargs)
         newlen = len(self)
         if oldlen != newlen:
             for oldargs in pendingfilecommits:
@@ -991,14 +987,14 @@ def log(orig, ui, repo, *pats, **opts):
     if not isenabled(repo):
         return orig(ui, repo, *pats, **opts)
 
-    follow = opts.get(r'follow')
-    revs = opts.get(r'rev')
+    follow = opts.get('follow')
+    revs = opts.get('rev')
     if pats:
         # Force slowpath for non-follow patterns and follows that start from
         # non-working-copy-parent revs.
         if not follow or revs:
             # This forces the slowpath
-            opts[r'removed'] = True
+            opts['removed'] = True
 
         # If this is a non-follow log without any revs specified, recommend that
         # the user add -f to speed it up.
@@ -1067,7 +1063,7 @@ def wcpprefetch(ui, repo, **kwargs):
     # update a revset with a date limit
     bgprefetchrevs = revdatelimit(ui, bgprefetchrevs)
 
-    def anon():
+    def anon(unused_success):
         if util.safehasattr(repo, b'ranprefetch') and repo.ranprefetch:
             return
         repo.ranprefetch = True
@@ -1268,18 +1264,18 @@ def prefetch(ui, repo, *pats, **opts):
     _(b'hg repack [OPTIONS]'),
 )
 def repack_(ui, repo, *pats, **opts):
-    if opts.get(r'background'):
+    if opts.get('background'):
         repackmod.backgroundrepack(
             repo,
-            incremental=opts.get(r'incremental'),
-            packsonly=opts.get(r'packsonly', False),
+            incremental=opts.get('incremental'),
+            packsonly=opts.get('packsonly', False),
         )
         return
 
-    options = {b'packsonly': opts.get(r'packsonly')}
+    options = {b'packsonly': opts.get('packsonly')}
 
     try:
-        if opts.get(r'incremental'):
+        if opts.get('incremental'):
             repackmod.incrementalrepack(repo, options=options)
         else:
             repackmod.fullrepack(repo, options=options)

@@ -9,9 +9,9 @@ extern crate log;
 extern crate tokio;
 extern crate tokio_hglib;
 
-use chg::{ChgClientExt, ChgUiHandler};
 use chg::locator;
 use chg::procutil;
+use chg::{ChgClientExt, ChgUiHandler};
 use futures::sync::oneshot;
 use std::env;
 use std::io;
@@ -42,13 +42,19 @@ impl log::Log for DebugLogger {
             // just make the output looks similar to chg of C
             let l = format!("{}", record.level()).to_lowercase();
             let t = self.start.elapsed();
-            writeln!(io::stderr(), "chg: {}: {}.{:06} {}",
-                     l, t.as_secs(), t.subsec_micros(), record.args()).unwrap_or(());
+            writeln!(
+                io::stderr(),
+                "chg: {}: {}.{:06} {}",
+                l,
+                t.as_secs(),
+                t.subsec_micros(),
+                record.args()
+            )
+            .unwrap_or(());
         }
     }
 
-    fn flush(&self) {
-    }
+    fn flush(&self) {}
 }
 
 fn main() {
@@ -71,28 +77,24 @@ fn run() -> io::Result<i32> {
     let handler = ChgUiHandler::new();
     let (result_tx, result_rx) = oneshot::channel();
     let fut = UnixClient::connect(sock_path)
-        .and_then(|client| {
-            client.set_current_dir(current_dir)
-        })
-        .and_then(|client| {
-            client.attach_io(io::stdin(), io::stdout(), io::stderr())
-        })
+        .and_then(|client| client.set_current_dir(current_dir))
+        .and_then(|client| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
         .and_then(|client| {
             let pid = client.server_spec().process_id.unwrap();
             let pgid = client.server_spec().process_group_id;
             procutil::setup_signal_handler_once(pid, pgid)?;
             Ok(client)
         })
-        .and_then(|client| {
-            client.run_command_chg(handler, env::args_os().skip(1))
-        })
+        .and_then(|client| client.run_command_chg(handler, env::args_os().skip(1)))
         .map(|(_client, _handler, code)| {
             procutil::restore_signal_handler_once()?;
             Ok(code)
         })
-        .or_else(|err| Ok(Err(err)))  // pass back error to caller
+        .or_else(|err| Ok(Err(err))) // pass back error to caller
         .map(|res| result_tx.send(res).unwrap());
     tokio::run(fut);
-    result_rx.wait().unwrap_or(Err(io::Error::new(io::ErrorKind::Other,
-                                                  "no exit code set")))
+    result_rx.wait().unwrap_or(Err(io::Error::new(
+        io::ErrorKind::Other,
+        "no exit code set",
+    )))
 }
