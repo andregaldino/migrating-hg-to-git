@@ -486,61 +486,6 @@ Interactions between collapse and keepbranches
   abort: cannot collapse multiple named branches
   [255]
 
-  $ repeatchange() {
-  >   hg checkout $1
-  >   hg cp d z
-  >   echo blah >> z
-  >   hg commit -Am "$2" --user "$3"
-  > }
-  $ repeatchange 3 "E" "user1"
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ repeatchange 3 "E" "user2"
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  created new head
-  $ hg tglog
-  @  5: fbfb97b1089a 'E'
-  |
-  | o  4: f338eb3c2c7c 'E'
-  |/
-  o  3: 41acb9dca9eb 'D'
-  |
-  | o  2: 8ac4a08debf1 'C' two
-  | |
-  | o  1: 1ba175478953 'B' one
-  |/
-  o  0: 1994f17a630e 'A'
-  
-  $ hg rebase -s 5 -d 4
-  rebasing 5:fbfb97b1089a "E" (tip)
-  note: not rebasing 5:fbfb97b1089a "E" (tip), its destination already has all its changes
-  saved backup bundle to $TESTTMP/e/.hg/strip-backup/fbfb97b1089a-553e1d85-rebase.hg
-  $ hg tglog
-  @  4: f338eb3c2c7c 'E'
-  |
-  o  3: 41acb9dca9eb 'D'
-  |
-  | o  2: 8ac4a08debf1 'C' two
-  | |
-  | o  1: 1ba175478953 'B' one
-  |/
-  o  0: 1994f17a630e 'A'
-  
-  $ hg export tip
-  # HG changeset patch
-  # User user1
-  # Date 0 0
-  #      Thu Jan 01 00:00:00 1970 +0000
-  # Node ID f338eb3c2c7cc5b5915676a2376ba7ac558c5213
-  # Parent  41acb9dca9eb976e84cd21fcb756b4afa5a35c09
-  E
-  
-  diff -r 41acb9dca9eb -r f338eb3c2c7c z
-  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-  +++ b/z	Thu Jan 01 00:00:00 1970 +0000
-  @@ -0,0 +1,2 @@
-  +d
-  +blah
-
   $ cd ..
 
 Rebase, collapse and copies

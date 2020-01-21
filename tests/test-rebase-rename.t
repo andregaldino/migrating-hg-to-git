@@ -108,6 +108,62 @@ Rebased revision does not contain information about b (issue3739)
   
   
 
+  $ repeatchange() {
+  >   hg checkout $1
+  >   hg cp a z
+  >   echo blah >> z
+  >   hg commit -Am "$2" --user "$3"
+  > }
+  $ repeatchange 1 "E" "user1"
+  2 files updated, 0 files merged, 3 files removed, 0 files unresolved
+  created new head
+  $ repeatchange 1 "E" "user2"
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  created new head
+  $ hg tglog
+  @  5: af8ad1f97097 'E'
+  |
+  | o  4: 60f545c27784 'E'
+  |/
+  | o  3: 032a9b75e83b 'rename A'
+  | |
+  | o  2: 220d0626d185 'rename B'
+  |/
+  o  1: 3ab5da9a5c01 'B'
+  |
+  o  0: 1994f17a630e 'A'
+  
+  $ hg rebase -s 5 -d 4
+  rebasing 5:af8ad1f97097 "E" (tip)
+  note: not rebasing 5:af8ad1f97097 "E" (tip), its destination already has all its changes
+  saved backup bundle to $TESTTMP/a/.hg/strip-backup/af8ad1f97097-c3e90708-rebase.hg
+  $ hg tglog
+  @  4: 60f545c27784 'E'
+  |
+  | o  3: 032a9b75e83b 'rename A'
+  | |
+  | o  2: 220d0626d185 'rename B'
+  |/
+  o  1: 3ab5da9a5c01 'B'
+  |
+  o  0: 1994f17a630e 'A'
+  
+  $ hg export tip
+  # HG changeset patch
+  # User user1
+  # Date 0 0
+  #      Thu Jan 01 00:00:00 1970 +0000
+  # Node ID 60f545c277846e6bad309919bae3ae106f59cb39
+  # Parent  3ab5da9a5c01faa02c20f2ec4870a4f689c92da6
+  E
+  
+  diff -r 3ab5da9a5c01 -r 60f545c27784 z
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/z	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,2 @@
+  +a
+  +blah
+
   $ cd ..
 
 
