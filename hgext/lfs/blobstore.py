@@ -490,15 +490,17 @@ class _gitlfsremote(object):
                     _(b'detected corrupt lfs object: %s') % oid,
                     hint=_(b'run hg verify'),
                 )
-            request.data = lfsuploadfile(localstore.open(oid))
-            request.get_method = lambda: 'PUT'
-            request.add_header('Content-Type', 'application/octet-stream')
-            request.add_header('Content-Length', len(request.data))
 
         for k, v in headers:
             request.add_header(pycompat.strurl(k), pycompat.strurl(v))
 
         try:
+            if action == b'upload':
+                request.data = lfsuploadfile(localstore.open(oid))
+                request.get_method = lambda: 'PUT'
+                request.add_header('Content-Type', 'application/octet-stream')
+                request.add_header('Content-Length', len(request.data))
+
             with contextlib.closing(self.urlopener.open(request)) as res:
                 contentlength = res.info().get(b"content-length")
                 ui = self.ui  # Shorten debug lines
