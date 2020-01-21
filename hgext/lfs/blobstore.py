@@ -139,6 +139,17 @@ class local(object):
     def open(self, oid):
         """Open a read-only file descriptor to the named blob, in either the
         usercache or the local store."""
+        return open(self.path(oid), b'rb')
+
+    def path(self, oid):
+        """Build the path for the given blob ``oid``.
+
+        If the blob exists locally, the path may point to either the usercache
+        or the local store.  If it doesn't, it will point to the local store.
+        This is meant for situations where existing code that isn't LFS aware
+        needs to open a blob.  Generally, prefer the ``open`` method on this
+        class.
+        """
         # The usercache is the most likely place to hold the file.  Commit will
         # write to both it and the local store, as will anything that downloads
         # the blobs.  However, things like clone without an update won't
@@ -146,9 +157,9 @@ class local(object):
         # the usercache is the only place it _could_ be.  If not present, the
         # missing file msg here will indicate the local repo, not the usercache.
         if self.cachevfs.exists(oid):
-            return self.cachevfs(oid, b'rb')
+            return self.cachevfs.join(oid)
 
-        return self.vfs(oid, b'rb')
+        return self.vfs.join(oid)
 
     def download(self, oid, src, content_length):
         """Read the blob from the remote source in chunks, verify the content,
