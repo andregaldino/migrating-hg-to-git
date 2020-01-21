@@ -21,6 +21,7 @@ from mercurial.pycompat import getattr
 from mercurial import (
     encoding,
     error,
+    httpconnection as httpconnectionmod,
     node,
     pathutil,
     pycompat,
@@ -94,28 +95,16 @@ class nullvfs(lfsvfs):
         pass
 
 
-class lfsuploadfile(object):
-    """a file-like object that supports __len__ and read.
+class lfsuploadfile(httpconnectionmod.httpsendfile):
+    """a file-like object that supports keepalive.
     """
 
-    def __init__(self, fp):
-        self._fp = fp
-        fp.seek(0, os.SEEK_END)
-        self._len = fp.tell()
-        fp.seek(0)
+    def __init__(self, ui, filename):
+        super(lfsuploadfile, self).__init__(ui, filename, b'rb')
+        self.read = self._data.read
 
-    def __len__(self):
-        return self._len
-
-    def read(self, size):
-        if self._fp is None:
-            return b''
-        return self._fp.read(size)
-
-    def close(self):
-        if self._fp is not None:
-            self._fp.close()
-            self._fp = None
+    def _makeprogress(self):
+        return None  # progress is handled by the worker client
 
 
 class local(object):
@@ -507,10 +496,10 @@ class _gitlfsremote(object):
 
         try:
             if action == b'upload':
-                request.data = lfsuploadfile(localstore.open(oid))
+                request.data = lfsuploadfile(self.ui, localstore.path(oid))
                 request.get_method = lambda: 'PUT'
                 request.add_header('Content-Type', 'application/octet-stream')
-                request.add_header('Content-Length', len(request.data))
+                request.add_header('Content-Length', request.data.length)
 
             with contextlib.closing(self.urlopener.open(request)) as res:
                 contentlength = res.info().get(b"content-length")
