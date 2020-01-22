@@ -3068,7 +3068,15 @@ def sortclonebundleentries(ui, entries):
     if not prefers:
         return list(entries)
 
-    prefers = [p.split(b'=', 1) for p in prefers]
+    def _split(p):
+        if b'=' not in p:
+            hint = _(b"each comma separated item should be key=value pairs")
+            raise error.Abort(
+                _(b"invalid ui.clonebundleprefers item: %s") % p, hint=hint
+            )
+        return p.split(b'=', 1)
+
+    prefers = [_split(p) for p in prefers]
 
     items = sorted(clonebundleentry(v, prefers) for v in entries)
     return [i.value for i in items]

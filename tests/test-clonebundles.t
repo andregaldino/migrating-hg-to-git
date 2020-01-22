@@ -455,6 +455,19 @@ Test where attribute is missing from some entries
   no changes found
   2 local changesets published
 
+Test a bad attribute list
+
+  $ hg --config ui.clonebundleprefers=bad clone -U http://localhost:$HGPORT bad-input
+  abort: invalid ui.clonebundleprefers item: bad
+  (each comma separated item should be key=value pairs)
+  [255]
+  $ hg --config ui.clonebundleprefers=key=val,bad,key2=val2 clone \
+  >    -U http://localhost:$HGPORT bad-input
+  abort: invalid ui.clonebundleprefers item: bad
+  (each comma separated item should be key=value pairs)
+  [255]
+
+
 Test interaction between clone bundles and --stream
 
 A manifest with just a gzip bundle
