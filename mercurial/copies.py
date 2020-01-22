@@ -657,6 +657,12 @@ def _fullcopytracing(repo, c1, c2, base):
 
     repo.ui.debug(b"  checking for directory renames\n")
 
+    dirmove, movewithdir = _dir_renames(repo, c1, c2, copy, fullcopy, u1, u2)
+
+    return copy, movewithdir, diverge, renamedelete, dirmove
+
+
+def _dir_renames(repo, c1, c2, copy, fullcopy, u1, u2):
     # generate a directory move map
     d1, d2 = c1.dirs(), c2.dirs()
     invalid = set()
@@ -688,7 +694,7 @@ def _fullcopytracing(repo, c1, c2, base):
     del d1, d2, invalid
 
     if not dirmove:
-        return copy, {}, diverge, renamedelete, {}
+        return {}, {}
 
     dirmove = {k + b"/": v + b"/" for k, v in pycompat.iteritems(dirmove)}
 
@@ -713,7 +719,7 @@ def _fullcopytracing(repo, c1, c2, base):
                         )
                     break
 
-    return copy, movewithdir, diverge, renamedelete, dirmove
+    return dirmove, movewithdir
 
 
 def _heuristicscopytracing(repo, c1, c2, base):
