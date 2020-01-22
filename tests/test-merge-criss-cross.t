@@ -410,11 +410,6 @@ Verify that the old context ancestor works with / despite preferancestor:
   note: merging c0ef19750a22+ and 6ca01f7342b9 using bids from ancestors 11b5b303e36c and 154e6000f54e
   
   calculating bids for ancestor 11b5b303e36c
-    unmatched files in local:
-     d1/a
-     d1/b
-    unmatched files in other:
-     d2/b
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 11b5b303e36c, local: c0ef19750a22+, remote: 6ca01f7342b9

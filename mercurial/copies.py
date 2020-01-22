@@ -563,6 +563,9 @@ def _fullcopytracing(repo, c1, c2, base):
     copies1 = pathcopies(base, c1)
     copies2 = pathcopies(base, c2)
 
+    if not (copies1 or copies2):
+        return {}, {}, {}, {}, {}
+
     inversecopies1 = {}
     inversecopies2 = {}
     for dst, src in copies1.items():
@@ -632,8 +635,6 @@ def _fullcopytracing(repo, c1, c2, base):
 
     fullcopy = copies1.copy()
     fullcopy.update(copies2)
-    if not fullcopy:
-        return copy, {}, diverge, renamedelete, {}
 
     if repo.ui.debugflag:
         repo.ui.debug(
