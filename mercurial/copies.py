@@ -614,13 +614,6 @@ def _fullcopytracing(repo, c1, c2, base):
                 src, dsts2, m2, m1, mb, c1, base, copy, renamedelete
             )
 
-    renamedeleteset = set()
-    divergeset = set()
-    for dsts in diverge.values():
-        divergeset.update(dsts)
-    for dsts in renamedelete.values():
-        renamedeleteset.update(dsts)
-
     # find interesting file sets from manifests
     addedinm1 = m1.filesnotin(mb, repo.narrowmatch())
     addedinm2 = m2.filesnotin(mb, repo.narrowmatch())
@@ -637,6 +630,13 @@ def _fullcopytracing(repo, c1, c2, base):
     fullcopy.update(copies2)
 
     if repo.ui.debugflag:
+        renamedeleteset = set()
+        divergeset = set()
+        for dsts in diverge.values():
+            divergeset.update(dsts)
+        for dsts in renamedelete.values():
+            renamedeleteset.update(dsts)
+
         repo.ui.debug(
             b"  all copies found (* = to merge, ! = divergent, "
             b"% = renamed and deleted):\n"
@@ -652,7 +652,8 @@ def _fullcopytracing(repo, c1, c2, base):
             repo.ui.debug(
                 b"   src: '%s' -> dst: '%s' %s\n" % (fullcopy[f], f, note)
             )
-    del divergeset
+        del renamedeleteset
+        del divergeset
 
     repo.ui.debug(b"  checking for directory renames\n")
 
