@@ -452,44 +452,30 @@ def mergecopies(repo, c1, c2, base):
 
     ```other changed <file> which local deleted```
 
-    Returns five dicts: "copy", "movewithdir", "diverge", "renamedelete" and
-    "dirmove".
+    Returns a tuple where:
 
-    "copy" is a mapping from destination name -> source name,
-    where source is in c1 and destination is in c2 or vice-versa.
-
-    "movewithdir" is a mapping from source name -> destination name,
-    where the file at source present in one context but not the other
-    needs to be moved to destination by the merge process, because the
-    other context moved the directory it is in.
+    "branch_copies" an instance of branch_copies.
 
     "diverge" is a mapping of source name -> list of destination names
     for divergent renames.
-
-    "renamedelete" is a mapping of source name -> list of destination
-    names for files deleted in c1 that were renamed in c2 or vice-versa.
-
-    "dirmove" is a mapping of detected source dir -> destination dir renames.
-    This is needed for handling changes to new files previously grafted into
-    renamed directories.
 
     This function calls different copytracing algorithms based on config.
     """
     # avoid silly behavior for update from empty dir
     if not c1 or not c2 or c1 == c2:
-        return {}, {}, {}, {}, {}
+        return branch_copies(), {}
 
     narrowmatch = c1.repo().narrowmatch()
 
     # avoid silly behavior for parent -> working dir
     if c2.node() is None and c1.node() == repo.dirstate.p1():
-        return _dirstatecopies(repo, narrowmatch), {}, {}, {}, {}
+        return branch_copies(_dirstatecopies(repo, narrowmatch)), {}
 
     copytracing = repo.ui.config(b'experimental', b'copytrace')
     if stringutil.parsebool(copytracing) is False:
         # stringutil.parsebool() returns None when it is unable to parse the
         # value, so we should rely on making sure copytracing is on such cases
-        return {}, {}, {}, {}, {}
+        return branch_copies(), {}
 
     if usechangesetcentricalgo(repo):
         # The heuristics don't make sense when we need changeset-centric algos
@@ -548,6 +534,34 @@ def _checksinglesidecopies(
                 copy[dst] = src
 
 
+class branch_copies(object):
+    """Information about copies made on one side of a merge/graft.
+
+    "copy" is a mapping from destination name -> source name,
+    where source is in c1 and destination is in c2 or vice-versa.
+
+    "movewithdir" is a mapping from source name -> destination name,
+    where the file at source present in one context but not the other
+    needs to be moved to destination by the merge process, because the
+    other context moved the directory it is in.
+
+    "renamedelete" is a mapping of source name -> list of destination
+    names for files deleted in c1 that were renamed in c2 or vice-versa.
+
+    "dirmove" is a mapping of detected source dir -> destination dir renames.
+    This is needed for handling changes to new files previously grafted into
+    renamed directories.
+    """
+
+    def __init__(
+        self, copy=None, renamedelete=None, dirmove=None, movewithdir=None
+    ):
+        self.copy = {} if copy is None else copy
+        self.renamedelete = {} if renamedelete is None else renamedelete
+        self.dirmove = {} if dirmove is None else dirmove
+        self.movewithdir = {} if movewithdir is None else movewithdir
+
+
 def _fullcopytracing(repo, c1, c2, base):
     """ The full copytracing algorithm which finds all the new files that were
     added from merge base up to the top commit and for each file it checks if
@@ -564,7 +578,7 @@ def _fullcopytracing(repo, c1, c2, base):
     copies2 = pathcopies(base, c2)
 
     if not (copies1 or copies2):
-        return {}, {}, {}, {}, {}
+        return branch_copies(), {}
 
     inversecopies1 = {}
     inversecopies2 = {}
@@ -672,7 +686,7 @@ def _fullcopytracing(repo, c1, c2, base):
     movewithdir1.update(movewithdir2)
     dirmove1.update(dirmove2)
 
-    return copy1, movewithdir1, diverge, renamedelete1, dirmove1
+    return branch_copies(copy1, renamedelete1, dirmove1, movewithdir1), diverge
 
 
 def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
@@ -846,7 +860,7 @@ def _heuristicscopytracing(repo, c1, c2, base):
                     # of upstream copytracing
                     copies[candidate] = f
 
-    return copies, {}, {}, {}, {}
+    return branch_copies(copies), {}
 
 
 def _related(f1, f2):

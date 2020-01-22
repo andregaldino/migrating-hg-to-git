@@ -1264,8 +1264,11 @@ def manifestmerge(
 
     copy, movewithdir, diverge, renamedelete, dirmove = {}, {}, {}, {}, {}
     if followcopies:
-        ret = copies.mergecopies(repo, wctx, p2, pa)
-        copy, movewithdir, diverge, renamedelete, dirmove = ret
+        branch_copies, diverge = copies.mergecopies(repo, wctx, p2, pa)
+        copy = branch_copies.copy
+        renamedelete = branch_copies.renamedelete
+        dirmove = branch_copies.dirmove
+        movewithdir = branch_copies.movewithdir
 
     boolbm = pycompat.bytestr(bool(branchmerge))
     boolf = pycompat.bytestr(bool(force))
