@@ -537,10 +537,7 @@ def _checksinglesidecopies(
             return
         # modified on side 2
         for dst in dsts1:
-            if dst not in m2:
-                # dst not added on side 2 (handle as regular
-                # "both created" case in manifestmerge otherwise)
-                copy[dst] = src
+            copy[dst] = src
 
 
 class branch_copies(object):

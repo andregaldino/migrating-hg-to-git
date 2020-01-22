@@ -206,57 +206,31 @@ modify x and rename y to z on the other side.
 # Depending on which side they pick, we should take that rename and get
 # the changes to the source from the other side. The unchanged file should
 # remain.
-# we should not get the prompts about modify/delete conflicts
   $ hg merge --debug 1 -t :merge3
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
      on local side:
-      src: 'y' -> dst: 'z' 
+      src: 'y' -> dst: 'z' *
      on remote side:
-      src: 'x' -> dst: 'z' 
+      src: 'x' -> dst: 'z' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 5151c134577e, local: 07fcbc9a74ed+, remote: f21419739508
-   preserving x for resolve of x
    preserving z for resolve of z
   starting 4 threads for background file closing (?)
-   x: prompt changed/deleted -> m (premerge)
-  picked tool ':prompt' for x (binary False symlink False changedelete True)
-  file 'x' was deleted in other [merge rev] but was modified in local [working copy].
-  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
-  What do you want to do? u
-   y: prompt deleted/changed -> m (premerge)
-  picked tool ':prompt' for y (binary False symlink False changedelete True)
-  file 'y' was deleted in local [working copy] but was modified in other [merge rev].
-  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
-  What do you want to do? u
-   z: both created -> m (premerge)
+   z: both renamed from y -> m (premerge)
   picked tool ':merge3' for z (binary False symlink False changedelete False)
   merging z
-  my z@07fcbc9a74ed+ other z@f21419739508 ancestor z@000000000000
-   z: both created -> m (merge)
-  picked tool ':merge3' for z (binary False symlink False changedelete False)
-  my z@07fcbc9a74ed+ other z@f21419739508 ancestor z@000000000000
-  warning: conflicts while merging z! (edit, then use 'hg resolve --mark')
-  0 files updated, 0 files merged, 0 files removed, 3 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
-  [1]
+  my z@07fcbc9a74ed+ other z@f21419739508 ancestor y@5151c134577e
+   premerge successful
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
   $ ls
   x
-  y
   z
-  z.orig
   $ cat x
   x
   foo
-  $ cat y
-  y
-  foo
 # 'z' should have had the added 'foo' line
   $ cat z
-  <<<<<<< working copy: 07fcbc9a74ed - test: modify x, rename y to z
-  y
-  ||||||| base
-  =======
   x
-  >>>>>>> merge rev:    f21419739508 - test: modify y, rename x to z
