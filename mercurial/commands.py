@@ -5671,7 +5671,7 @@ def push(ui, repo, dest=None, **opts):
 
 @command(
     b'recover',
-    [(b'', b'verify', True, b"run `hg verify` after succesful recover"),],
+    [(b'', b'verify', True, b"run `hg verify` after successful recover"),],
     helpcategory=command.CATEGORY_MAINTENANCE,
 )
 def recover(ui, repo, **opts):
@@ -5691,7 +5691,7 @@ def recover(ui, repo, **opts):
             return hg.verify(repo)
         else:
             msg = _(
-                b"(verify step skipped, run  `hg verify` to check your "
+                b"(verify step skipped, run `hg verify` to check your "
                 b"repository content)\n"
             )
             ui.warn(msg)
