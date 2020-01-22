@@ -5669,7 +5669,7 @@ def push(ui, repo, dest=None, **opts):
 
 @command(
     b'recover',
-    [(b'', b'verify', True, b"run `hg verify` after successful recover"),],
+    [(b'', b'verify', False, b"run `hg verify` after successful recover"),],
     helpcategory=command.CATEGORY_MAINTENANCE,
 )
 def recover(ui, repo, **opts):

@@ -25,7 +25,9 @@
   >   else
   >       echo "(no journal)"
   >   fi
-  >   ls .hg/store/journal >/dev/null 2>&1 && hg recover
+  >   if ls .hg/store/journal >/dev/null 2>&1; then
+  >     hg recover --verify
+  >   fi
   >   ls .hg/strip-backup/* >/dev/null 2>&1 && hg unbundle -q .hg/strip-backup/*
   >   rm -rf .hg/strip-backup
   > }

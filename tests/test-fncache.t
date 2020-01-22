@@ -356,7 +356,7 @@ Clean cached versions
   $ cat .hg/store/fncache | sort
   data/y.i
   data/z.i
-  $ hg recover
+  $ hg recover --verify
   rolling back interrupted transaction
   checking changesets
   checking manifests
