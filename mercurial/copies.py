@@ -573,9 +573,11 @@ def _fullcopytracing(repo, c1, c2, base):
     for dst, src in copies2.items():
         inversecopies2.setdefault(src, []).append(dst)
 
-    copy = {}
+    copy1 = {}
+    copy2 = {}
     diverge = {}
-    renamedelete = {}
+    renamedelete1 = {}
+    renamedelete2 = {}
     allsources = set(inversecopies1) | set(inversecopies2)
     for src in allsources:
         dsts1 = inversecopies1.get(src)
@@ -592,7 +594,8 @@ def _fullcopytracing(repo, c1, c2, base):
                 # and 'd' and deletes 'a'.
                 if dsts1 & dsts2:
                     for dst in dsts1 & dsts2:
-                        copy[dst] = src
+                        copy1[dst] = src
+                        copy2[dst] = src
                 else:
                     diverge[src] = sorted(dsts1 | dsts2)
             elif src in m1 and src in m2:
@@ -600,18 +603,19 @@ def _fullcopytracing(repo, c1, c2, base):
                 dsts1 = set(dsts1)
                 dsts2 = set(dsts2)
                 for dst in dsts1 & dsts2:
-                    copy[dst] = src
+                    copy1[dst] = src
+                    copy2[dst] = src
             # TODO: Handle cases where it was renamed on one side and copied
             # on the other side
         elif dsts1:
             # copied/renamed only on side 1
             _checksinglesidecopies(
-                src, dsts1, m1, m2, mb, c2, base, copy, renamedelete
+                src, dsts1, m1, m2, mb, c2, base, copy1, renamedelete1
             )
         elif dsts2:
             # copied/renamed only on side 2
             _checksinglesidecopies(
-                src, dsts2, m2, m1, mb, c1, base, copy, renamedelete
+                src, dsts2, m2, m1, mb, c1, base, copy2, renamedelete2
             )
 
     # find interesting file sets from manifests
@@ -634,7 +638,9 @@ def _fullcopytracing(repo, c1, c2, base):
         divergeset = set()
         for dsts in diverge.values():
             divergeset.update(dsts)
-        for dsts in renamedelete.values():
+        for dsts in renamedelete1.values():
+            renamedeleteset.update(dsts)
+        for dsts in renamedelete2.values():
             renamedeleteset.update(dsts)
 
         repo.ui.debug(
@@ -643,7 +649,7 @@ def _fullcopytracing(repo, c1, c2, base):
         )
         for f in sorted(fullcopy):
             note = b""
-            if f in copy:
+            if f in copy1 or f in copy2:
                 note += b"*"
             if f in divergeset:
                 note += b"!"
@@ -657,14 +663,28 @@ def _fullcopytracing(repo, c1, c2, base):
 
     repo.ui.debug(b"  checking for directory renames\n")
 
-    dirmove, movewithdir = _dir_renames(repo, c1, c2, copy, fullcopy, u1, u2)
+    dirmove1, movewithdir2 = _dir_renames(repo, c1, copy1, copies1, u2)
+    dirmove2, movewithdir1 = _dir_renames(repo, c2, copy2, copies2, u1)
 
-    return copy, movewithdir, diverge, renamedelete, dirmove
+    copy1.update(copy2)
+    renamedelete1.update(renamedelete2)
+    movewithdir1.update(movewithdir2)
+    dirmove1.update(dirmove2)
+
+    return copy1, movewithdir1, diverge, renamedelete1, dirmove1
 
 
-def _dir_renames(repo, c1, c2, copy, fullcopy, u1, u2):
+def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
+    """Finds moved directories and files that should move with them.
+
+    ctx: the context for one of the sides
+    copy: files copied on the same side (as ctx)
+    fullcopy: files copied on the same side (as ctx), including those that
+              merge.manifestmerge() won't care about
+    addedfiles: added files on the other side (compared to ctx)
+    """
     # generate a directory move map
-    d1, d2 = c1.dirs(), c2.dirs()
+    d = ctx.dirs()
     invalid = set()
     dirmove = {}
 
@@ -675,11 +695,8 @@ def _dir_renames(repo, c1, c2, copy, fullcopy, u1, u2):
         if dsrc in invalid:
             # already seen to be uninteresting
             continue
-        elif dsrc in d1 and ddst in d1:
+        elif dsrc in d and ddst in d:
             # directory wasn't entirely moved locally
-            invalid.add(dsrc)
-        elif dsrc in d2 and ddst in d2:
-            # directory wasn't entirely moved remotely
             invalid.add(dsrc)
         elif dsrc in dirmove and dirmove[dsrc] != ddst:
             # files from the same directory moved to two different places
@@ -691,7 +708,7 @@ def _dir_renames(repo, c1, c2, copy, fullcopy, u1, u2):
     for i in invalid:
         if i in dirmove:
             del dirmove[i]
-    del d1, d2, invalid
+    del d, invalid
 
     if not dirmove:
         return {}, {}
@@ -705,7 +722,7 @@ def _dir_renames(repo, c1, c2, copy, fullcopy, u1, u2):
 
     movewithdir = {}
     # check unaccounted nonoverlapping files against directory moves
-    for f in u1 + u2:
+    for f in addedfiles:
         if f not in fullcopy:
             for d in dirmove:
                 if f.startswith(d):
