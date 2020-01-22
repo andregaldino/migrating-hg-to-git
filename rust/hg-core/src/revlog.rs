@@ -5,6 +5,8 @@
 // GNU General Public License version 2 or any later version.
 //! Mercurial concepts for handling revision history
 
+pub mod nodemap;
+
 /// Mercurial revision numbers
 ///
 /// As noted in revlog.c, revision numbers are actually encoded in
