@@ -40,3 +40,17 @@ pub enum GraphError {
     ParentOutOfRange(Revision),
     WorkingDirectoryUnsupported,
 }
+
+/// The Mercurial Revlog Index
+///
+/// This is currently limited to the minimal interface that is needed for
+/// the [`nodemap`](nodemap/index.html) module
+pub trait RevlogIndex {
+    /// Total number of Revisions referenced in this index
+    fn len(&self) -> usize;
+
+    /// Return a reference to the Node or `None` if rev is out of bounds
+    ///
+    /// `NULL_REVISION` is not considered to be out of bounds.
+    fn node(&self, rev: Revision) -> Option<&Node>;
+}
