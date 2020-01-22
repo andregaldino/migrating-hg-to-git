@@ -5,7 +5,9 @@
 // GNU General Public License version 2 or any later version.
 //! Mercurial concepts for handling revision history
 
+pub mod node;
 pub mod nodemap;
+pub use node::{Node, NodeError};
 
 /// Mercurial revision numbers
 ///
