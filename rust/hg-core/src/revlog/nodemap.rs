@@ -12,8 +12,88 @@
 //! Following existing implicit conventions, the "nodemap" terminology
 //! is used in a more abstract context.
 
-use super::Revision;
+use super::{
+    Node, NodeError, NodePrefix, NodePrefixRef, Revision, RevlogIndex,
+};
 use std::fmt;
+use std::ops::Deref;
+
+#[derive(Debug, PartialEq)]
+pub enum NodeMapError {
+    MultipleResults,
+    InvalidNodePrefix(NodeError),
+    /// A `Revision` stored in the nodemap could not be found in the index
+    RevisionNotInIndex(Revision),
+}
+
+impl From<NodeError> for NodeMapError {
+    fn from(err: NodeError) -> Self {
+        NodeMapError::InvalidNodePrefix(err)
+    }
+}
+
+/// Mapping system from Mercurial nodes to revision numbers.
+///
+/// ## `RevlogIndex` and `NodeMap`
+///
+/// One way to think about their relationship is that
+/// the `NodeMap` is a prefix-oriented reverse index of the `Node` information
+/// carried by a [`RevlogIndex`].
+///
+/// Many of the methods in this trait take a `RevlogIndex` argument
+/// which is used for validation of their results. This index must naturally
+/// be the one the `NodeMap` is about, and it must be consistent.
+///
+/// Notably, the `NodeMap` must not store
+/// information about more `Revision` values than there are in the index.
+/// In these methods, an encountered `Revision` is not in the index, a
+/// [`RevisionNotInIndex`] error is returned.
+///
+/// In insert operations, the rule is thus that the `NodeMap` must always
+/// be updated after the `RevlogIndex`
+/// be updated first, and the `NodeMap` second.
+///
+/// [`RevisionNotInIndex`]: enum.NodeMapError.html#variant.RevisionNotInIndex
+/// [`RevlogIndex`]: ../trait.RevlogIndex.html
+pub trait NodeMap {
+    /// Find the unique `Revision` having the given `Node`
+    ///
+    /// If no Revision matches the given `Node`, `Ok(None)` is returned.
+    fn find_node(
+        &self,
+        index: &impl RevlogIndex,
+        node: &Node,
+    ) -> Result<Option<Revision>, NodeMapError> {
+        self.find_bin(index, node.into())
+    }
+
+    /// Find the unique Revision whose `Node` starts with a given binary prefix
+    ///
+    /// If no Revision matches the given prefix, `Ok(None)` is returned.
+    ///
+    /// If several Revisions match the given prefix, a [`MultipleResults`]
+    /// error is returned.
+    fn find_bin<'a>(
+        &self,
+        idx: &impl RevlogIndex,
+        prefix: NodePrefixRef<'a>,
+    ) -> Result<Option<Revision>, NodeMapError>;
+
+    /// Find the unique Revision whose `Node` hexadecimal string representation
+    /// starts with a given prefix
+    ///
+    /// If no Revision matches the given prefix, `Ok(None)` is returned.
+    ///
+    /// If several Revisions match the given prefix, a [`MultipleResults`]
+    /// error is returned.
+    fn find_hex(
+        &self,
+        idx: &impl RevlogIndex,
+        prefix: &str,
+    ) -> Result<Option<Revision>, NodeMapError> {
+        self.find_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
+    }
+}
 
 /// Low level NodeTree [`Blocks`] elements
 ///
@@ -110,9 +190,86 @@ impl fmt::Debug for Block {
     }
 }
 
+/// A 16-radix tree with the root block at the end
+pub struct NodeTree {
+    readonly: Box<dyn Deref<Target = [Block]> + Send>,
+}
+
+/// Return `None` unless the `Node` for `rev` has given prefix in `index`.
+fn has_prefix_or_none<'p>(
+    idx: &impl RevlogIndex,
+    prefix: NodePrefixRef<'p>,
+    rev: Revision,
+) -> Result<Option<Revision>, NodeMapError> {
+    idx.node(rev)
+        .ok_or_else(|| NodeMapError::RevisionNotInIndex(rev))
+        .map(|node| {
+            if prefix.is_prefix_of(node) {
+                Some(rev)
+            } else {
+                None
+            }
+        })
+}
+
+impl NodeTree {
+    /// Main working method for `NodeTree` searches
+    ///
+    /// This partial implementation lacks special cases for NULL_REVISION
+    fn lookup<'p>(
+        &self,
+        prefix: NodePrefixRef<'p>,
+    ) -> Result<Option<Revision>, NodeMapError> {
+        let blocks: &[Block] = &*self.readonly;
+        if blocks.is_empty() {
+            return Ok(None);
+        }
+        let mut visit = blocks.len() - 1;
+        for i in 0..prefix.len() {
+            let nybble = prefix.get_nybble(i);
+            match blocks[visit].get(nybble) {
+                Element::None => return Ok(None),
+                Element::Rev(r) => return Ok(Some(r)),
+                Element::Block(idx) => visit = idx,
+            }
+        }
+        Err(NodeMapError::MultipleResults)
+    }
+}
+
+impl From<Vec<Block>> for NodeTree {
+    fn from(vec: Vec<Block>) -> Self {
+        NodeTree {
+            readonly: Box::new(vec),
+        }
+    }
+}
+
+impl fmt::Debug for NodeTree {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let blocks: &[Block] = &*self.readonly;
+        write!(f, "readonly: {:?}", blocks)
+    }
+}
+
+impl NodeMap for NodeTree {
+    fn find_bin<'a>(
+        &self,
+        idx: &impl RevlogIndex,
+        prefix: NodePrefixRef<'a>,
+    ) -> Result<Option<Revision>, NodeMapError> {
+        self.lookup(prefix.clone()).and_then(|opt| {
+            opt.map_or(Ok(None), |rev| has_prefix_or_none(idx, prefix, rev))
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::NodeMapError::*;
     use super::*;
+    use crate::revlog::node::{hex_pad_right, Node};
+    use std::collections::HashMap;
 
     /// Creates a `Block` using a syntax close to the `Debug` output
     macro_rules! block {
@@ -156,5 +313,76 @@ mod tests {
         assert_eq!(block.get(3), Element::None);
         assert_eq!(block.get(2), Element::Rev(0));
         assert_eq!(block.get(4), Element::Rev(1));
+    }
+
+    type TestIndex = HashMap<Revision, Node>;
+
+    impl RevlogIndex for TestIndex {
+        fn node(&self, rev: Revision) -> Option<&Node> {
+            self.get(&rev)
+        }
+
+        fn len(&self) -> usize {
+            self.len()
+        }
+    }
+
+    /// Pad hexadecimal Node prefix with zeros on the right, then insert
+    ///
+    /// This avoids having to repeatedly write very long hexadecimal
+    /// strings for test data, and brings actual hash size independency.
+    fn pad_insert(idx: &mut TestIndex, rev: Revision, hex: &str) {
+        idx.insert(rev, Node::from_hex(&hex_pad_right(hex)).unwrap());
+    }
+
+    fn sample_nodetree() -> NodeTree {
+        NodeTree::from(vec![
+            block![0: Rev(9)],
+            block![0: Rev(0), 1: Rev(9)],
+            block![0: Block(1), 1:Rev(1)],
+        ])
+    }
+
+    #[test]
+    fn test_nt_debug() {
+        let nt = sample_nodetree();
+        assert_eq!(
+            format!("{:?}", nt),
+            "readonly: \
+             [{0: Rev(9)}, {0: Rev(0), 1: Rev(9)}, {0: Block(1), 1: Rev(1)}]"
+        );
+    }
+
+    #[test]
+    fn test_immutable_find_simplest() -> Result<(), NodeMapError> {
+        let mut idx: TestIndex = HashMap::new();
+        pad_insert(&mut idx, 1, "1234deadcafe");
+
+        let nt = NodeTree::from(vec![block![1: Rev(1)]]);
+        assert_eq!(nt.find_hex(&idx, "1")?, Some(1));
+        assert_eq!(nt.find_hex(&idx, "12")?, Some(1));
+        assert_eq!(nt.find_hex(&idx, "1234de")?, Some(1));
+        assert_eq!(nt.find_hex(&idx, "1a")?, None);
+        assert_eq!(nt.find_hex(&idx, "ab")?, None);
+
+        // and with full binary Nodes
+        assert_eq!(nt.find_node(&idx, idx.get(&1).unwrap())?, Some(1));
+        let unknown = Node::from_hex(&hex_pad_right("3d")).unwrap();
+        assert_eq!(nt.find_node(&idx, &unknown)?, None);
+        Ok(())
+    }
+
+    #[test]
+    fn test_immutable_find_one_jump() {
+        let mut idx = TestIndex::new();
+        pad_insert(&mut idx, 9, "012");
+        pad_insert(&mut idx, 0, "00a");
+
+        let nt = sample_nodetree();
+
+        assert_eq!(nt.find_hex(&idx, "0"), Err(MultipleResults));
+        assert_eq!(nt.find_hex(&idx, "01"), Ok(Some(9)));
+        assert_eq!(nt.find_hex(&idx, "00"), Ok(Some(0)));
+        assert_eq!(nt.find_hex(&idx, "00a"), Ok(Some(0)));
     }
 }

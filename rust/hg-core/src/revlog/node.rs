@@ -253,7 +253,7 @@ mod tests {
     /// Pad an hexadecimal string to reach `NODE_NYBBLES_LENGTH`
     ///
     /// The padding is made with zeros
-    fn hex_pad_right(hex: &str) -> String {
+    pub fn hex_pad_right(hex: &str) -> String {
         let mut res = hex.to_string();
         while res.len() < NODE_NYBBLES_LENGTH {
             res.push('0');
@@ -362,3 +362,6 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+pub use tests::hex_pad_right;
