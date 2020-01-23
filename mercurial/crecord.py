@@ -24,6 +24,7 @@ from . import (
     encoding,
     error,
     patch as patchmod,
+    pycompat,
     scmutil,
     util,
 )
@@ -1113,7 +1114,7 @@ class curseschunkselector(object):
         # strip \n, and convert control characters to ^[char] representation
         text = re.sub(
             br'[\x00-\x08\x0a-\x1f]',
-            lambda m: b'^' + chr(ord(m.group()) + 64),
+            lambda m: b'^' + pycompat.sysbytes(chr(ord(m.group()) + 64)),
             text.strip(b'\n'),
         )
 

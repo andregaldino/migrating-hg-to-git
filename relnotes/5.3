@@ -1,0 +1,35 @@
+== New Features ==
+
+ * Windows will process hgrc files in %PROGRAMDATA%\Mercurial\hgrc.d.
+
+
+== New Experimental Features ==
+
+
+== Bug Fixes  ==
+
+ * The `indent()` template function was documented to not indent empty lines,
+   but it still indented the first line even if it was empty. It no longer does
+   that.
+
+== Backwards Compatibility Changes ==
+
+
+== Internal API Changes ==
+
+ * Matcher instances no longer have a `explicitdir` property. Consider
+   rewriting your code to use `repo.wvfs.isdir()` and/or
+   `ctx.hasdir()` instead. Also, the `traversedir` property is now
+   also called when only `explicitdir` used to be called. That may
+   mean that you can simply remove the use of `explicitdir` if you
+   were already using `traversedir`.
+
+ * The `revlog.nodemap` object have been merged into the `revlog.index` object.
+   * `n in revlog.nodemap` becomes `revlog.index.has_node(n)`,
+   * `revlog.nodemap[n]` becomes `revlog.index.rev(n)`,
+   * `revlog.nodemap.get(n)` becomes `revlog.index.get_rev(n)`.
+
+ * `copies.duplicatecopies()` was renamed to
+   `copies.graftcopies()`. Its arguments changed from revision numbers
+   to context objects. It also lost its `repo` and `skip` arguments
+   (they should no longer be needed).

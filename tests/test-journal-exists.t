@@ -21,7 +21,7 @@
   checking files
   checked 1 changesets with 1 changes to 1 files
 
-recover, explicite verify
+recover, explicit verify
 
   $ touch .hg/store/journal
   $ hg ci -Am0
@@ -45,7 +45,7 @@ recover, no verify
   [255]
   $ hg recover --no-verify
   rolling back interrupted transaction
-  (verify step skipped, run  `hg verify` to check your repository content)
+  (verify step skipped, run `hg verify` to check your repository content)
 
 
 Check that zero-size journals are correctly aborted:

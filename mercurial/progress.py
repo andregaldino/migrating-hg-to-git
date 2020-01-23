@@ -193,6 +193,7 @@ class progbar(object):
         if not self.printed or not self.lastprint or not shouldprint(self.ui):
             return
         self._writeerr(b'\r%s\r' % (b' ' * self.width()))
+        self._flusherr()
         if self.printed:
             # force immediate re-paint of progress bar
             self.lastprint = 0

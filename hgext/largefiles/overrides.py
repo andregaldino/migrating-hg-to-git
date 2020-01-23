@@ -1199,7 +1199,16 @@ def overridearchive(
             sub = ctx.workingsub(subpath)
             submatch = matchmod.subdirmatcher(subpath, match)
             subprefix = prefix + subpath + b'/'
-            with lfstatus(sub._repo):
+
+            # TODO: Only hgsubrepo instances have `_repo`, so figure out how to
+            # infer and possibly set lfstatus in hgsubrepoarchive.  That would
+            # allow only hgsubrepos to set this, instead of the current scheme
+            # where the parent sets this for the child.
+            with (
+                util.safehasattr(sub, '_repo')
+                and lfstatus(sub._repo)
+                or util.nullcontextmanager()
+            ):
                 sub.archive(archiver, subprefix, submatch)
 
     archiver.done()
@@ -1257,7 +1266,15 @@ def hgsubrepoarchive(orig, repo, archiver, prefix, match=None, decode=True):
         sub = ctx.workingsub(subpath)
         submatch = matchmod.subdirmatcher(subpath, match)
         subprefix = prefix + subpath + b'/'
-        with lfstatus(sub._repo):
+        # TODO: Only hgsubrepo instances have `_repo`, so figure out how to
+        # infer and possibly set lfstatus at the top of this function.  That
+        # would allow only hgsubrepos to set this, instead of the current scheme
+        # where the parent sets this for the child.
+        with (
+            util.safehasattr(sub, '_repo')
+            and lfstatus(sub._repo)
+            or util.nullcontextmanager()
+        ):
             sub.archive(archiver, subprefix, submatch, decode)
 
 
