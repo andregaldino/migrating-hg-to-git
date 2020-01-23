@@ -1262,13 +1262,13 @@ def manifestmerge(
         for x in sorted(wctx.parents() + [p2, pa], key=scmutil.intrev)
     ]
 
-    copy, movewithdir, diverge, renamedelete, dirmove = {}, {}, {}, {}, {}
+    branch_copies1 = copies.branch_copies()
+    branch_copies2 = copies.branch_copies()
+    diverge = {}
     if followcopies:
-        branch_copies, diverge = copies.mergecopies(repo, wctx, p2, pa)
-        copy = branch_copies.copy
-        renamedelete = branch_copies.renamedelete
-        dirmove = branch_copies.dirmove
-        movewithdir = branch_copies.movewithdir
+        branch_copies1, branch_copies2, diverge = copies.mergecopies(
+            repo, wctx, p2, pa
+        )
 
     boolbm = pycompat.bytestr(bool(branchmerge))
     boolf = pycompat.bytestr(bool(force))
@@ -1280,8 +1280,10 @@ def manifestmerge(
     repo.ui.debug(b" ancestor: %s, local: %s, remote: %s\n" % (pa, wctx, p2))
 
     m1, m2, ma = wctx.manifest(), p2.manifest(), pa.manifest()
-    copied = set(copy.values())
-    copied.update(movewithdir.values())
+    copied1 = set(branch_copies1.copy.values())
+    copied1.update(branch_copies1.movewithdir.values())
+    copied2 = set(branch_copies2.copy.values())
+    copied2.update(branch_copies2.movewithdir.values())
 
     if b'.hgsubstate' in m1 and wctx.rev() is None:
         # Check whether sub state is modified, and overwrite the manifest
@@ -1301,10 +1303,10 @@ def manifestmerge(
         relevantfiles = set(ma.diff(m2).keys())
 
         # For copied and moved files, we need to add the source file too.
-        for copykey, copyvalue in pycompat.iteritems(copy):
+        for copykey, copyvalue in pycompat.iteritems(branch_copies1.copy):
             if copyvalue in relevantfiles:
                 relevantfiles.add(copykey)
-        for movedirkey in movewithdir:
+        for movedirkey in branch_copies1.movewithdir:
             relevantfiles.add(movedirkey)
         filesmatcher = scmutil.matchfiles(repo, relevantfiles)
         matcher = matchmod.intersectmatchers(matcher, filesmatcher)
@@ -1315,7 +1317,10 @@ def manifestmerge(
     for f, ((n1, fl1), (n2, fl2)) in pycompat.iteritems(diff):
         if n1 and n2:  # file exists on both local and remote side
             if f not in ma:
-                fa = copy.get(f, None)
+                # TODO: what if they're renamed from different sources?
+                fa = branch_copies1.copy.get(
+                    f, None
+                ) or branch_copies2.copy.get(f, None)
                 if fa is not None:
                     actions[f] = (
                         ACTION_MERGE,
@@ -1358,10 +1363,12 @@ def manifestmerge(
                         b'versions differ',
                     )
         elif n1:  # file exists only on local side
-            if f in copied:
+            if f in copied2:
                 pass  # we'll deal with it on m2 side
-            elif f in movewithdir:  # directory rename, move local
-                f2 = movewithdir[f]
+            elif (
+                f in branch_copies1.movewithdir
+            ):  # directory rename, move local
+                f2 = branch_copies1.movewithdir[f]
                 if f2 in m2:
                     actions[f2] = (
                         ACTION_MERGE,
@@ -1374,8 +1381,8 @@ def manifestmerge(
                         (f, fl1),
                         b'remote directory rename - move from %s' % f,
                     )
-            elif f in copy:
-                f2 = copy[f]
+            elif f in branch_copies1.copy:
+                f2 = branch_copies1.copy[f]
                 actions[f] = (
                     ACTION_MERGE,
                     (f, f2, f2, False, pa.node()),
@@ -1399,10 +1406,10 @@ def manifestmerge(
                 else:
                     actions[f] = (ACTION_REMOVE, None, b'other deleted')
         elif n2:  # file exists only on remote side
-            if f in copied:
+            if f in copied1:
                 pass  # we'll deal with it on m1 side
-            elif f in movewithdir:
-                f2 = movewithdir[f]
+            elif f in branch_copies2.movewithdir:
+                f2 = branch_copies2.movewithdir[f]
                 if f2 in m1:
                     actions[f2] = (
                         ACTION_MERGE,
@@ -1415,8 +1422,8 @@ def manifestmerge(
                         (f, fl2),
                         b'local directory rename - get from %s' % f,
                     )
-            elif f in copy:
-                f2 = copy[f]
+            elif f in branch_copies2.copy:
+                f2 = branch_copies2.copy[f]
                 if f2 in m2:
                     actions[f] = (
                         ACTION_MERGE,
@@ -1453,10 +1460,10 @@ def manifestmerge(
                     )
             elif n2 != ma[f]:
                 df = None
-                for d in dirmove:
+                for d in branch_copies1.dirmove:
                     if f.startswith(d):
                         # new file added in a directory that was moved
-                        df = dirmove[d] + f[len(d) :]
+                        df = branch_copies1.dirmove[d] + f[len(d) :]
                         break
                 if df is not None and df in m1:
                     actions[df] = (
@@ -1482,6 +1489,9 @@ def manifestmerge(
     if not narrowmatch.always():
         # Updates "actions" in place
         _filternarrowactions(narrowmatch, branchmerge, actions)
+
+    renamedelete = branch_copies1.renamedelete
+    renamedelete.update(branch_copies2.renamedelete)
 
     return actions, diverge, renamedelete
 

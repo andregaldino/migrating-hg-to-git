@@ -463,19 +463,23 @@ def mergecopies(repo, c1, c2, base):
     """
     # avoid silly behavior for update from empty dir
     if not c1 or not c2 or c1 == c2:
-        return branch_copies(), {}
+        return branch_copies(), branch_copies(), {}
 
     narrowmatch = c1.repo().narrowmatch()
 
     # avoid silly behavior for parent -> working dir
     if c2.node() is None and c1.node() == repo.dirstate.p1():
-        return branch_copies(_dirstatecopies(repo, narrowmatch)), {}
+        return (
+            branch_copies(_dirstatecopies(repo, narrowmatch)),
+            branch_copies(),
+            {},
+        )
 
     copytracing = repo.ui.config(b'experimental', b'copytrace')
     if stringutil.parsebool(copytracing) is False:
         # stringutil.parsebool() returns None when it is unable to parse the
         # value, so we should rely on making sure copytracing is on such cases
-        return branch_copies(), {}
+        return branch_copies(), branch_copies(), {}
 
     if usechangesetcentricalgo(repo):
         # The heuristics don't make sense when we need changeset-centric algos
@@ -578,7 +582,7 @@ def _fullcopytracing(repo, c1, c2, base):
     copies2 = pathcopies(base, c2)
 
     if not (copies1 or copies2):
-        return branch_copies(), {}
+        return branch_copies(), branch_copies(), {}
 
     inversecopies1 = {}
     inversecopies2 = {}
@@ -681,12 +685,10 @@ def _fullcopytracing(repo, c1, c2, base):
     dirmove1, movewithdir2 = _dir_renames(repo, c1, copy1, copies1, u2)
     dirmove2, movewithdir1 = _dir_renames(repo, c2, copy2, copies2, u1)
 
-    copy1.update(copy2)
-    renamedelete1.update(renamedelete2)
-    movewithdir1.update(movewithdir2)
-    dirmove1.update(dirmove2)
+    branch_copies1 = branch_copies(copy1, renamedelete1, dirmove1, movewithdir1)
+    branch_copies2 = branch_copies(copy2, renamedelete2, dirmove2, movewithdir2)
 
-    return branch_copies(copy1, renamedelete1, dirmove1, movewithdir1), diverge
+    return branch_copies1, branch_copies2, diverge
 
 
 def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
@@ -784,8 +786,6 @@ def _heuristicscopytracing(repo, c1, c2, base):
     if c2.rev() is None:
         c2 = c2.p1()
 
-    copies = {}
-
     changedfiles = set()
     m1 = c1.manifest()
     if not repo.revs(b'%d::%d', base.rev(), c2.rev()):
@@ -805,10 +805,11 @@ def _heuristicscopytracing(repo, c1, c2, base):
         changedfiles.update(ctx.files())
         ctx = ctx.p1()
 
+    copies2 = {}
     cp = _forwardcopies(base, c2)
     for dst, src in pycompat.iteritems(cp):
         if src in m1:
-            copies[dst] = src
+            copies2[dst] = src
 
     # file is missing if it isn't present in the destination, but is present in
     # the base and present in the source.
@@ -817,6 +818,7 @@ def _heuristicscopytracing(repo, c1, c2, base):
     filt = lambda f: f not in m1 and f in base and f in c2
     missingfiles = [f for f in changedfiles if filt(f)]
 
+    copies1 = {}
     if missingfiles:
         basenametofilename = collections.defaultdict(list)
         dirnametofilename = collections.defaultdict(list)
@@ -858,9 +860,9 @@ def _heuristicscopytracing(repo, c1, c2, base):
                     # if there are a few related copies then we'll merge
                     # changes into all of them. This matches the behaviour
                     # of upstream copytracing
-                    copies[candidate] = f
+                    copies1[candidate] = f
 
-    return branch_copies(copies), {}
+    return branch_copies(copies1), branch_copies(copies2), {}
 
 
 def _related(f1, f2):
