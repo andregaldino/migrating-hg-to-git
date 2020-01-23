@@ -1256,14 +1256,13 @@ def manifestmerge(
     if matcher is not None and matcher.always():
         matcher = None
 
-    copy, movewithdir, diverge, renamedelete, dirmove = {}, {}, {}, {}, {}
-
     # manifests fetched in order are going to be faster, so prime the caches
     [
         x.manifest()
         for x in sorted(wctx.parents() + [p2, pa], key=scmutil.intrev)
     ]
 
+    copy, movewithdir, diverge, renamedelete, dirmove = {}, {}, {}, {}, {}
     if followcopies:
         ret = copies.mergecopies(repo, wctx, p2, pa)
         copy, movewithdir, diverge, renamedelete, dirmove = ret
