@@ -23,7 +23,7 @@ pub mod revlog;
 pub use revlog::*;
 pub mod utils;
 
-use crate::utils::hg_path::HgPathBuf;
+use crate::utils::hg_path::{HgPathBuf, HgPathError};
 pub use filepatterns::{
     build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
 };
@@ -79,18 +79,17 @@ impl From<std::io::Error> for DirstatePackError {
 pub enum DirstateMapError {
     PathNotFound(HgPathBuf),
     EmptyPath,
-    ConsecutiveSlashes,
+    InvalidPath(HgPathError),
 }
 
 impl ToString for DirstateMapError {
     fn to_string(&self) -> String {
-        use crate::DirstateMapError::*;
         match self {
-            PathNotFound(_) => "expected a value, found none".to_string(),
-            EmptyPath => "Overflow in dirstate.".to_string(),
-            ConsecutiveSlashes => {
-                "found invalid consecutive slashes in path".to_string()
+            DirstateMapError::PathNotFound(_) => {
+                "expected a value, found none".to_string()
             }
+            DirstateMapError::EmptyPath => "Overflow in dirstate.".to_string(),
+            DirstateMapError::InvalidPath(e) => e.to_string(),
         }
     }
 }

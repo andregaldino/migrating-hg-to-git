@@ -12,7 +12,7 @@ use crate::{
     dirstate::EntryState,
     utils::{
         files,
-        hg_path::{HgPath, HgPathBuf},
+        hg_path::{HgPath, HgPathBuf, HgPathError},
     },
     DirstateEntry, DirstateMapError, FastHashMap,
 };
@@ -78,7 +78,14 @@ impl DirsMultiset {
             if subpath.as_bytes().last() == Some(&b'/') {
                 // TODO Remove this once PathAuditor is certified
                 // as the only entrypoint for path data
-                return Err(DirstateMapError::ConsecutiveSlashes);
+                let second_slash_index = subpath.len() - 1;
+
+                return Err(DirstateMapError::InvalidPath(
+                    HgPathError::ConsecutiveSlashes {
+                        bytes: path.as_ref().as_bytes().to_owned(),
+                        second_slash_index,
+                    },
+                ));
             }
             if let Some(val) = self.inner.get_mut(subpath) {
                 *val += 1;
