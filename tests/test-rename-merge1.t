@@ -184,3 +184,72 @@ Check for issue3074
   $ hg status
   M newfile
   $ cd ..
+
+Create x and y, then modify y and rename x to z on one side of merge, and
+modify x and rename y to z on the other side.
+  $ hg init conflicting-target
+  $ cd conflicting-target
+  $ echo x > x
+  $ echo y > y
+  $ hg ci -Aqm 'add x and y'
+  $ hg mv x z
+  $ echo foo >> y
+  $ hg ci -qm 'modify y, rename x to z'
+  $ hg co -q 0
+  $ hg mv y z
+  $ echo foo >> x
+  $ hg ci -qm 'modify x, rename y to z'
+# We should probably tell the user about the conflicting rename sources.
+# Depending on which side they pick, we should take that rename and get
+# the changes to the source from the other side. The unchanged file should
+# remain.
+# we should not get the prompts about modify/delete conflicts
+  $ hg merge --debug 1 -t :merge3
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     src: 'x' -> dst: 'z' 
+    checking for directory renames
+  resolving manifests
+   branchmerge: True, force: False, partial: False
+   ancestor: 5151c134577e, local: 07fcbc9a74ed+, remote: f21419739508
+   preserving x for resolve of x
+   preserving z for resolve of z
+   x: prompt changed/deleted -> m (premerge)
+  picked tool ':prompt' for x (binary False symlink False changedelete True)
+  file 'x' was deleted in other [merge rev] but was modified in local [working copy].
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
+   y: prompt deleted/changed -> m (premerge)
+  picked tool ':prompt' for y (binary False symlink False changedelete True)
+  file 'y' was deleted in local [working copy] but was modified in other [merge rev].
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
+   z: both created -> m (premerge)
+  picked tool ':merge3' for z (binary False symlink False changedelete False)
+  merging z
+  my z@07fcbc9a74ed+ other z@f21419739508 ancestor z@000000000000
+   z: both created -> m (merge)
+  picked tool ':merge3' for z (binary False symlink False changedelete False)
+  my z@07fcbc9a74ed+ other z@f21419739508 ancestor z@000000000000
+  warning: conflicts while merging z! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 3 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ ls
+  x
+  y
+  z
+  z.orig
+  $ cat x
+  x
+  foo
+  $ cat y
+  y
+  foo
+# 'z' should have had the added 'foo' line
+  $ cat z
+  <<<<<<< working copy: 07fcbc9a74ed - test: modify x, rename y to z
+  y
+  ||||||| base
+  =======
+  x
+  >>>>>>> merge rev:    f21419739508 - test: modify y, rename x to z
