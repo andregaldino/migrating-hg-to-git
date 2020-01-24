@@ -37,7 +37,7 @@ EXTRA_PACKAGES = {
 
 EXTRA_INSTALL_RULES = [
     ('contrib/packaging/wix/COPYING.rtf', 'COPYING.rtf'),
-    ('contrib/win32/mercurial.ini', 'hgrc.d/mercurial.rc'),
+    ('contrib/win32/mercurial.ini', 'defaultrc/mercurial.rc'),
 ]
 
 STAGING_REMOVE_FILES = [

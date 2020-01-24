@@ -33,6 +33,7 @@ def mainfrozen():
 if mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     # executable version (py2exe) doesn't support __file__
     datapath = os.path.dirname(pycompat.sysexecutable)
+    _rootpath = os.path.dirname(datapath)
 else:
     datapath = os.path.dirname(os.path.dirname(pycompat.fsencode(__file__)))
     _rootpath = os.path.dirname(datapath)

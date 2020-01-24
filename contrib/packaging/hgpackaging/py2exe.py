@@ -45,7 +45,7 @@ STAGING_RULES = [
     ('doc/*.html', 'doc/'),
     ('doc/style.css', 'doc/'),
     ('mercurial/helptext/**/*.txt', 'helptext/'),
-    ('mercurial/defaultrc/*.rc', 'hgrc.d/'),
+    ('mercurial/defaultrc/*.rc', 'defaultrc/'),
     ('mercurial/locale/**/*', 'locale/'),
     ('mercurial/templates/**/*', 'Templates/'),
     ('COPYING', 'Copying.txt'),
@@ -232,7 +232,7 @@ def stage_install(
 
     # Write out a default editor.rc file to configure notepad as the
     # default editor.
-    with (staging_dir / 'hgrc.d' / 'editor.rc').open(
+    with (staging_dir / 'defaultrc' / 'editor.rc').open(
         'w', encoding='utf-8'
     ) as fh:
         fh.write('[ui]\neditor = notepad\n')

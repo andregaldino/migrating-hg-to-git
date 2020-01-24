@@ -99,7 +99,7 @@
         <ComponentRef Id='MainExecutable' />
         <ComponentRef Id='ProgramMenuDir' />
         <ComponentGroupRef Id="hg.group.ROOT" />
-        <ComponentGroupRef Id="hg.group.hgrc.d" />
+        <ComponentGroupRef Id="hg.group.defaultrc" />
         <ComponentGroupRef Id="hg.group.helptext" />
         <ComponentGroupRef Id="hg.group.lib" />
         <ComponentGroupRef Id="hg.group.templates" />

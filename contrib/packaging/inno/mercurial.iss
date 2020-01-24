@@ -51,7 +51,7 @@ Filename: {app}\Mercurial.url; Section: InternetShortcut; Key: URL; String: http
 
 [UninstallDelete]
 Type: files; Name: {app}\Mercurial.url
-Type: filesandordirs; Name: {app}\hgrc.d
+Type: filesandordirs; Name: {app}\defaultrc
 
 [Icons]
 Name: {group}\Uninstall Mercurial; Filename: {uninstallexe}
