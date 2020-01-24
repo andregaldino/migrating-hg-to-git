@@ -27,6 +27,7 @@ from . import (
     policy,
     pycompat,
     scmutil,
+    sparse,
     txnutil,
     util,
 )
@@ -1083,7 +1084,7 @@ class dirstate(object):
                     results[next(iv)] = st
         return results
 
-    def _rust_status(self, matcher, list_clean):
+    def _rust_status(self, matcher, list_clean, list_ignored, list_unknown):
         # Force Rayon (Rust parallelism library) to respect the number of
         # workers. This is a temporary workaround until Rust code knows
         # how to read the config file.
@@ -1101,16 +1102,45 @@ class dirstate(object):
             added,
             removed,
             deleted,
-            unknown,
             clean,
+            ignored,
+            unknown,
+            warnings,
+            bad,
         ) = rustmod.status(
             self._map._rustmap,
             matcher,
             self._rootdir,
-            bool(list_clean),
-            self._lastnormaltime,
+            self._ignorefiles(),
             self._checkexec,
+            self._lastnormaltime,
+            bool(list_clean),
+            bool(list_ignored),
+            bool(list_unknown),
         )
+        if self._ui.warn:
+            for item in warnings:
+                if isinstance(item, tuple):
+                    file_path, syntax = item
+                    msg = _(b"%s: ignoring invalid syntax '%s'\n") % (
+                        file_path,
+                        syntax,
+                    )
+                    self._ui.warn(msg)
+                else:
+                    msg = _(b"skipping unreadable pattern file '%s': %s\n")
+                    self._ui.warn(
+                        msg
+                        % (
+                            pathutil.canonpath(
+                                self._rootdir, self._rootdir, item
+                            ),
+                            b"No such file or directory",
+                        )
+                    )
+
+        for (fn, message) in bad:
+            matcher.bad(fn, encoding.strtolocal(message))
 
         status = scmutil.status(
             modified=modified,
@@ -1118,7 +1148,7 @@ class dirstate(object):
             removed=removed,
             deleted=deleted,
             unknown=unknown,
-            ignored=[],
+            ignored=ignored,
             clean=clean,
         )
         return (lookup, status)
@@ -1148,26 +1178,34 @@ class dirstate(object):
 
         use_rust = True
 
-        allowed_matchers = (matchmod.alwaysmatcher, matchmod.exactmatcher)
+        allowed_matchers = (
+            matchmod.alwaysmatcher,
+            matchmod.exactmatcher,
+            matchmod.includematcher,
+        )
 
         if rustmod is None:
             use_rust = False
+        elif self._checkcase:
+            # Case-insensitive filesystems are not handled yet
+            use_rust = False
         elif subrepos:
             use_rust = False
-        elif bool(listunknown):
-            # Pathauditor does not exist yet in Rust, unknown files
-            # can't be trusted.
+        elif sparse.enabled:
             use_rust = False
-        elif self._ignorefiles() and listignored:
-            # Rust has no ignore mechanism yet, so don't use Rust for
-            # commands that need ignore.
+        elif match.traversedir is not None:
             use_rust = False
         elif not isinstance(match, allowed_matchers):
             # Matchers have yet to be implemented
             use_rust = False
 
         if use_rust:
-            return self._rust_status(match, listclean)
+            try:
+                return self._rust_status(
+                    match, listclean, listignored, listunknown
+                )
+            except rustmod.FallbackError:
+                pass
 
         def noop(f):
             pass
@@ -1249,13 +1287,10 @@ class dirstate(object):
                 aadd(fn)
             elif state == b'r':
                 radd(fn)
-
-        return (
-            lookup,
-            scmutil.status(
-                modified, added, removed, deleted, unknown, ignored, clean
-            ),
+        status = scmutil.status(
+            modified, added, removed, deleted, unknown, ignored, clean
         )
+        return (lookup, status)
 
     def matches(self, match):
         '''

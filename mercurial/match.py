@@ -666,7 +666,10 @@ class _dirchildren(object):
 class includematcher(basematcher):
     def __init__(self, root, kindpats, badfn=None):
         super(includematcher, self).__init__(badfn)
-
+        if rustmod is not None:
+            # We need to pass the patterns to Rust because they can contain
+            # patterns from the user interface
+            self._kindpats = kindpats
         self._pats, self.matchfn = _buildmatch(kindpats, b'(?:/|$)', root)
         self._prefix = _prefix(kindpats)
         roots, dirs, parents = _rootsdirsandparents(kindpats)
