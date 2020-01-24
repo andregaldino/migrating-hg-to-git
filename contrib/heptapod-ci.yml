@@ -10,4 +10,4 @@ before_script:
 checks-py2:
     script:
         - cd tests/
-        - python run-tests.py --time test-check-*.*
+        - python run-tests.py --color=always --time test-check-*.*
