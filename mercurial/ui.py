@@ -1939,30 +1939,6 @@ class ui(object):
         if self._progbar is not None and self._progbar.printed:
             self._progbar.clear()
 
-    def progress(self, topic, pos, item=b"", unit=b"", total=None):
-        '''show a progress message
-
-        By default a textual progress bar will be displayed if an operation
-        takes too long. 'topic' is the current operation, 'item' is a
-        non-numeric marker of the current position (i.e. the currently
-        in-process file), 'pos' is the current numeric position (i.e.
-        revision, bytes, etc.), unit is a corresponding unit label,
-        and total is the highest expected pos.
-
-        Multiple nested topics may be active at a time.
-
-        All topics should be marked closed by setting pos to None at
-        termination.
-        '''
-        self.deprecwarn(
-            b"use ui.makeprogress() instead of ui.progress()", b"5.1"
-        )
-        progress = self.makeprogress(topic, unit, total)
-        if pos is not None:
-            progress.update(pos, item=item)
-        else:
-            progress.complete()
-
     def makeprogress(self, topic, unit=b"", total=None):
         """Create a progress helper for the specified topic"""
         if getattr(self._fmsgerr, 'structured', False):

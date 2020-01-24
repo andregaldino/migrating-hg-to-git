@@ -12,3 +12,5 @@
 
 == Internal API Changes ==
 
+ * The deprecated `ui.progress()` has now been deleted. Please use
+   `ui.makeprogress()` instead.
