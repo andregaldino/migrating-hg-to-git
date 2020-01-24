@@ -4847,6 +4847,7 @@ def merge(ui, repo, node=None, **opts):
     abort = opts.get(b'abort')
     if abort and repo.dirstate.p2() == nullid:
         cmdutil.wrongtooltocontinue(repo, _(b'merge'))
+    cmdutil.check_incompatible_arguments(opts, b'abort', b'rev', b'preview')
     if abort:
         state = cmdutil.getunfinishedstate(repo)
         if state and state._opname != b'merge':
@@ -4856,10 +4857,6 @@ def merge(ui, repo, node=None, **opts):
             )
         if node:
             raise error.Abort(_(b"cannot specify a node with --abort"))
-        if opts.get(b'rev'):
-            raise error.Abort(_(b"cannot specify both --rev and --abort"))
-        if opts.get(b'preview'):
-            raise error.Abort(_(b"cannot specify --preview with --abort"))
     if opts.get(b'rev') and node:
         raise error.Abort(_(b"please specify just one revision"))
     if not node:
