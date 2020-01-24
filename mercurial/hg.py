@@ -1137,11 +1137,12 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
 
 
 def merge(
-    repo, node, force=False, remind=True, labels=None,
+    ctx, force=False, remind=True, labels=None,
 ):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
-    stats = mergemod.merge(repo[node], force=force, labels=labels)
+    repo = ctx.repo()
+    stats = mergemod.merge(ctx, force=force, labels=labels)
     _showstats(repo, stats)
     if stats.unresolvedcount:
         repo.ui.status(

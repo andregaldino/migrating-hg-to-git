@@ -876,7 +876,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         )
         overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
         with ui.configoverride(overrides, b'backout'):
-            return hg.merge(repo, hex(repo.changelog.tip()))
+            return hg.merge(repo[b'tip'])
     return 0
 
 
@@ -4878,7 +4878,7 @@ def merge(ui, repo, node=None, **opts):
         node = opts.get(b'rev')
 
     if node:
-        node = scmutil.revsingle(repo, node).node()
+        ctx = scmutil.revsingle(repo, node)
     else:
         if ui.configbool(b'commands', b'merge.require-rev'):
             raise error.Abort(
@@ -4887,15 +4887,15 @@ def merge(ui, repo, node=None, **opts):
                     b'with'
                 )
             )
-        node = repo[destutil.destmerge(repo)].node()
+        ctx = repo[destutil.destmerge(repo)]
 
-    if node is None:
+    if ctx.node() is None:
         raise error.Abort(_(b'merging with the working copy has no effect'))
 
     if opts.get(b'preview'):
         # find nodes that are ancestors of p2 but not of p1
         p1 = repo[b'.'].node()
-        p2 = node
+        p2 = ctx.node()
         nodes = repo.changelog.findmissing(common=[p1], heads=[p2])
 
         displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
@@ -4909,7 +4909,7 @@ def merge(ui, repo, node=None, **opts):
     with ui.configoverride(overrides, b'merge'):
         force = opts.get(b'force')
         labels = [b'working copy', b'merge rev']
-        return hg.merge(repo, node, force=force, labels=labels)
+        return hg.merge(ctx, force=force, labels=labels)
 
 
 statemod.addunfinished(

@@ -806,7 +806,7 @@ class hgsubrepo(abstractsubrepo):
                 self.ui.debug(
                     b'merging subrepository "%s"\n' % subrelpath(self)
                 )
-                hg.merge(self._repo, state[1], remind=False)
+                hg.merge(dst, remind=False)
 
         wctx = self._repo[None]
         if self.dirty():
