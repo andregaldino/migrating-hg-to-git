@@ -24,6 +24,7 @@ outputs, which should be fixed later.
   > -X contrib/packaging/hg-docker \
   > -X contrib/packaging/hgpackaging/ \
   > -X contrib/packaging/inno/ \
+  > -X contrib/phab-clean.py \
   > -X contrib/python-zstandard/ \
   > -X contrib/win32/hgwebdir_wsgi.py \
   > -X contrib/perf-utils/perf-revlog-write-plot.py \
