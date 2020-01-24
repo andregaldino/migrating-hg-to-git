@@ -1040,10 +1040,10 @@ _update = update
 def clean(repo, node, show_stats=True, quietempty=False):
     """forcibly switch the working directory to node, clobbering changes"""
     stats = updaterepo(repo, node, True)
+    assert stats.unresolvedcount == 0
     repo.vfs.unlinkpath(b'graftstate', ignoremissing=True)
     if show_stats:
         _showstats(repo, stats, quietempty)
-    return stats.unresolvedcount > 0
 
 
 # naming conflict in updatetotally()
