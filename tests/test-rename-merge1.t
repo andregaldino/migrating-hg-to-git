@@ -28,9 +28,11 @@
      b
      b2
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
-     src: 'a2' -> dst: 'b2' !
-     src: 'a2' -> dst: 'c2' !
+     on local side:
+      src: 'a2' -> dst: 'c2' !
+     on remote side:
+      src: 'a' -> dst: 'b' *
+      src: 'a2' -> dst: 'b2' !
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -170,7 +172,8 @@ Check for issue3074
     unmatched files in other:
      newfile
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'file' -> dst: 'newfile' %
+     on remote side:
+      src: 'file' -> dst: 'newfile' %
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -206,7 +209,10 @@ modify x and rename y to z on the other side.
 # we should not get the prompts about modify/delete conflicts
   $ hg merge --debug 1 -t :merge3
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'x' -> dst: 'z' 
+     on local side:
+      src: 'y' -> dst: 'z' 
+     on remote side:
+      src: 'x' -> dst: 'z' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False

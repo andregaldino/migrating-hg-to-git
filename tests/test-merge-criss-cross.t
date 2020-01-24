@@ -419,7 +419,8 @@ Verify that the old context ancestor works with / despite preferancestor:
     unmatched files in other:
      d2/b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'd1/b' -> dst: 'd2/b' 
+     on remote side:
+      src: 'd1/b' -> dst: 'd2/b' 
     checking for directory renames
      discovered dir src: 'd1/' -> dst: 'd2/'
   resolving manifests

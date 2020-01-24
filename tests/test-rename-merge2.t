@@ -79,7 +79,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -117,7 +118,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -156,7 +158,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -194,7 +197,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -231,7 +235,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -263,7 +268,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -294,7 +300,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -327,7 +334,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -355,7 +363,10 @@ $4 = expected result
   test L:um a b R:um a b W:       - 9  do merge with ancestor in a
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -400,8 +411,10 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
     unmatched files in other:
      c
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' !
-     src: 'a' -> dst: 'c' !
+     on local side:
+      src: 'a' -> dst: 'b' !
+     on remote side:
+      src: 'a' -> dst: 'c' !
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -434,7 +447,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nc a b R:up b   W:       - 12 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -473,7 +487,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up b   R:nm a b W:       - 13 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -513,7 +528,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nc a b R:up a b W:       - 14 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -553,7 +569,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up b   R:nm a b W:       - 15 merge b no ancestor, remove a
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -593,7 +610,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nc a b R:up a b W:       - 16 get a, merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -633,7 +651,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up a b R:nc a b W:       - 17 keep a, merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -672,7 +691,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nm a b R:up a b W:       - 18 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -717,7 +737,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up a b R:nm a b W:       - 19 merge b no ancestor, prompt remove a
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -765,7 +786,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -807,7 +829,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -853,7 +876,8 @@ m "nm a b" "um x a" "      " "22 get a, keep b"
     unmatched files in other:
      c
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -936,11 +960,14 @@ Expected result:
      4/g
      7/f
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: '1/f' -> dst: '1/g' *
-     src: '3/f' -> dst: '3/g' *
-     src: '4/f' -> dst: '4/g' *
-     src: '5/f' -> dst: '5/g' *
-     src: '6/f' -> dst: '6/g' *
+     on local side:
+      src: '1/f' -> dst: '1/g' *
+      src: '5/f' -> dst: '5/g' *
+      src: '6/f' -> dst: '6/g' *
+     on remote side:
+      src: '1/f' -> dst: '1/g' *
+      src: '3/f' -> dst: '3/g' *
+      src: '4/f' -> dst: '4/g' *
     checking for directory renames
   $ hg mani
   0/f

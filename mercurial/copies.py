@@ -630,9 +630,6 @@ def _fullcopytracing(repo, c1, c2, base):
     if u2:
         repo.ui.debug(b"%s:\n   %s\n" % (header % b'other', b"\n   ".join(u2)))
 
-    fullcopy = copies1.copy()
-    fullcopy.update(copies2)
-
     if repo.ui.debugflag:
         renamedeleteset = set()
         divergeset = set()
@@ -647,17 +644,21 @@ def _fullcopytracing(repo, c1, c2, base):
             b"  all copies found (* = to merge, ! = divergent, "
             b"% = renamed and deleted):\n"
         )
-        for f in sorted(fullcopy):
-            note = b""
-            if f in copy1 or f in copy2:
-                note += b"*"
-            if f in divergeset:
-                note += b"!"
-            if f in renamedeleteset:
-                note += b"%"
-            repo.ui.debug(
-                b"   src: '%s' -> dst: '%s' %s\n" % (fullcopy[f], f, note)
-            )
+        for side, copies in ((b"local", copies1), (b"remote", copies2)):
+            if not copies:
+                continue
+            repo.ui.debug(b"   on %s side:\n" % side)
+            for f in sorted(copies):
+                note = b""
+                if f in copy1 or f in copy2:
+                    note += b"*"
+                if f in divergeset:
+                    note += b"!"
+                if f in renamedeleteset:
+                    note += b"%"
+                repo.ui.debug(
+                    b"    src: '%s' -> dst: '%s' %s\n" % (copies[f], f, note)
+                )
         del renamedeleteset
         del divergeset
 

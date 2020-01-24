@@ -27,8 +27,9 @@ Test for the full copytracing algorithm
      b
      c
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
-     src: 'a' -> dst: 'c' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
+      src: 'a' -> dst: 'c' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False

@@ -204,7 +204,8 @@ Graft out of order, skipping a merge and a duplicate
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
@@ -223,7 +224,8 @@ Graft out of order, skipping a merge and a duplicate
   updating the branch cache
   grafting 5:97f8bfe72746 "5"
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'c' -> dst: 'b' 
+     on local side:
+      src: 'c' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
@@ -239,7 +241,8 @@ Graft out of order, skipping a merge and a duplicate
   scanning for duplicate grafts
   grafting 4:9c233e8e184d "4"
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'c' -> dst: 'b' 
+     on local side:
+      src: 'c' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
@@ -746,7 +749,10 @@ Transplants of grafts can find a destination...
   scanning for duplicate grafts
   grafting 13:7a4785234d87 "2"
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
