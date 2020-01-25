@@ -4857,6 +4857,8 @@ def merge(ui, repo, node=None, **opts):
             )
         if node:
             raise error.Abort(_(b"cannot specify a node with --abort"))
+        return hg.abortmerge(repo.ui, repo)
+
     if opts.get(b'rev') and node:
         raise error.Abort(_(b"please specify just one revision"))
     if not node:
@@ -4865,7 +4867,7 @@ def merge(ui, repo, node=None, **opts):
     if node:
         node = scmutil.revsingle(repo, node).node()
 
-    if not node and not abort:
+    if not node:
         if ui.configbool(b'commands', b'merge.require-rev'):
             raise error.Abort(
                 _(
@@ -4898,7 +4900,6 @@ def merge(ui, repo, node=None, **opts):
             force=force,
             mergeforce=force,
             labels=labels,
-            abort=abort,
         )
 
 
