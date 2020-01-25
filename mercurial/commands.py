@@ -4866,8 +4866,7 @@ def merge(ui, repo, node=None, **opts):
 
     if node:
         node = scmutil.revsingle(repo, node).node()
-
-    if not node:
+    else:
         if ui.configbool(b'commands', b'merge.require-rev'):
             raise error.Abort(
                 _(
@@ -4876,6 +4875,9 @@ def merge(ui, repo, node=None, **opts):
                 )
             )
         node = repo[destutil.destmerge(repo)].node()
+
+    if node is None:
+        raise error.Abort(_(b'merging with the working copy has no effect'))
 
     if opts.get(b'preview'):
         # find nodes that are ancestors of p2 but not of p1
