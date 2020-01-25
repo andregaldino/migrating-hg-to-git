@@ -6,7 +6,7 @@
 #endif
 
 [Setup]
-AppCopyright=Copyright 2005-2019 Matt Mackall and others
+AppCopyright=Copyright 2005-2020 Matt Mackall and others
 AppName=Mercurial
 AppVersion={#VERSION}
 #if ARCH == "x64"
@@ -30,7 +30,7 @@ AppContact=mercurial@mercurial-scm.org
 DefaultDirName={pf}\Mercurial
 SourceDir=stage
 VersionInfoDescription=Mercurial distributed SCM (version {#VERSION})
-VersionInfoCopyright=Copyright 2005-2019 Matt Mackall and others
+VersionInfoCopyright=Copyright 2005-2020 Matt Mackall and others
 VersionInfoCompany=Matt Mackall and others
 InternalCompressLevel=max
 SolidCompression=true
