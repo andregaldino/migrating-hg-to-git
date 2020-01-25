@@ -14,3 +14,6 @@
 
  * The deprecated `ui.progress()` has now been deleted. Please use
    `ui.makeprogress()` instead.
+
+ * `hg.merge()` has lost its `abort` argument. Please call
+   `hg.abortmerge()` directly instead.

@@ -1138,19 +1138,10 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
 
 
 def merge(
-    repo,
-    node,
-    force=None,
-    remind=True,
-    mergeforce=False,
-    labels=None,
-    abort=False,
+    repo, node, force=None, remind=True, mergeforce=False, labels=None,
 ):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
-    if abort:
-        return abortmerge(repo.ui, repo)
-
     stats = mergemod.update(
         repo,
         node,

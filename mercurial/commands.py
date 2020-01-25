@@ -4897,11 +4897,7 @@ def merge(ui, repo, node=None, **opts):
         force = opts.get(b'force')
         labels = [b'working copy', b'merge rev']
         return hg.merge(
-            repo,
-            node,
-            force=force,
-            mergeforce=force,
-            labels=labels,
+            repo, node, force=force, mergeforce=force, labels=labels
         )
 
 
