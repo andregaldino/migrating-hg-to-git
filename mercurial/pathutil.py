@@ -84,7 +84,7 @@ class pathauditor(object):
                         _(b"path contains illegal component: %s") % path
                     )
         if b'.hg' in _lowerclean(path):
-            lparts = [_lowerclean(p.lower()) for p in parts]
+            lparts = [_lowerclean(p) for p in parts]
             for p in b'.hg', b'.hg.':
                 if p in lparts[1:]:
                     pos = lparts.index(p)
