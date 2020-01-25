@@ -411,8 +411,11 @@ def build_installer(
         extra_packages_script=extra_packages_script,
     )
 
-    version = version or normalize_version(find_version(source_dir))
+    orig_version = version or find_version(source_dir)
+    version = normalize_version(orig_version)
     print('using version string: %s' % version)
+    if version != orig_version:
+        print('(normalized from: %s)' % orig_version)
 
     if post_build_fn:
         post_build_fn(source_dir, hg_build_dir, dist_dir, version)
