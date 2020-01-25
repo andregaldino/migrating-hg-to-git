@@ -475,7 +475,7 @@ def build_installer(
     run_candle(wix_path, build_dir, source, source_build_rel, defines=defines)
 
     msi_path = (
-        source_dir / 'dist' / ('%s-%s-%s.msi' % (msi_name, version, arch))
+        source_dir / 'dist' / ('%s-%s-%s.msi' % (msi_name, orig_version, arch))
     )
 
     args = [
