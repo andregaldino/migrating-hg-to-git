@@ -99,7 +99,6 @@ class pathauditor(object):
 
         parts.pop()
         normparts.pop()
-        prefixes = []
         # It's important that we check the path parts starting from the root.
         # This means we won't accidentally traverse a symlink into some other
         # filesystem (which is potentially expensive to access).
@@ -110,13 +109,11 @@ class pathauditor(object):
                 continue
             if self._realfs:
                 self._checkfs(prefix, path)
-            prefixes.append(normprefix)
+            if self._cached:
+                self.auditeddir.add(normprefix)
 
         if self._cached:
             self.audited.add(normpath)
-            # only add prefixes to the cache after checking everything: we don't
-            # want to add "foo/bar/baz" before checking if there's a "foo/.hg"
-            self.auditeddir.update(prefixes)
 
     def _checkfs(self, prefix, path):
         """raise exception if a file system backed check fails"""
