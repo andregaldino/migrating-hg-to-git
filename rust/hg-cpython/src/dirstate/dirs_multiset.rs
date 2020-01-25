@@ -25,7 +25,7 @@ use hg::{
 };
 
 py_class!(pub class Dirs |py| {
-    data inner: PySharedRefCell<DirsMultiset>;
+    data inner_: PySharedRefCell<DirsMultiset>;
 
     // `map` is either a `dict` or a flat iterator (usually a `set`, sometimes
     // a `list`)
@@ -72,7 +72,7 @@ py_class!(pub class Dirs |py| {
     }
 
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.inner_shared(py).borrow_mut().add_path(
+        self.inner(py).borrow_mut().add_path(
             HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
         ).and(Ok(py.None())).or_else(|e| {
             match e {
@@ -90,7 +90,7 @@ py_class!(pub class Dirs |py| {
     }
 
     def delpath(&self, path: PyObject) -> PyResult<PyObject> {
-        self.inner_shared(py).borrow_mut().delete_path(
+        self.inner(py).borrow_mut().delete_path(
             HgPath::new(path.extract::<PyBytes>(py)?.data(py)),
         )
             .and(Ok(py.None()))
@@ -109,7 +109,7 @@ py_class!(pub class Dirs |py| {
             })
     }
     def __iter__(&self) -> PyResult<DirsMultisetKeysIterator> {
-        let leaked_ref = self.inner_shared(py).leak_immutable();
+        let leaked_ref = self.inner(py).leak_immutable();
         DirsMultisetKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
@@ -117,13 +117,13 @@ py_class!(pub class Dirs |py| {
     }
 
     def __contains__(&self, item: PyObject) -> PyResult<bool> {
-        Ok(self.inner_shared(py).borrow().contains(HgPath::new(
+        Ok(self.inner(py).borrow().contains(HgPath::new(
             item.extract::<PyBytes>(py)?.data(py).as_ref(),
         )))
     }
 });
 
-py_shared_ref!(Dirs, DirsMultiset, inner, inner_shared);
+py_shared_ref!(Dirs, DirsMultiset, inner_, inner);
 
 impl Dirs {
     pub fn from_inner(py: Python, d: DirsMultiset) -> PyResult<Self> {
