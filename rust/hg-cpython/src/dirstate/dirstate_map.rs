@@ -14,13 +14,12 @@ use std::time::Duration;
 
 use cpython::{
     exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyObject,
-    PyResult, PyTuple, Python, PythonObject, ToPyObject,
+    PyResult, PyTuple, Python, PythonObject, ToPyObject, UnsafePyLeaked,
 };
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
-    ref_sharing::{PyLeaked, PySharedRefCell},
 };
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
@@ -42,14 +41,11 @@ use hg::{
 //     All attributes also have to have a separate refcount data attribute for
 //     leaks, with all methods that go along for reference sharing.
 py_class!(pub class DirstateMap |py| {
-    data inner_: PySharedRefCell<RustDirstateMap>;
+    @shared data inner: RustDirstateMap;
 
     def __new__(_cls, _root: PyObject) -> PyResult<Self> {
         let inner = RustDirstateMap::default();
-        Self::create_instance(
-            py,
-            PySharedRefCell::new(inner),
-        )
+        Self::create_instance(py, inner)
     }
 
     def clear(&self) -> PyResult<PyObject> {
@@ -497,18 +493,16 @@ impl DirstateMap {
     }
 }
 
-py_shared_ref!(DirstateMap, RustDirstateMap, inner_, inner);
-
 py_shared_iterator!(
     DirstateMapKeysIterator,
-    PyLeaked<StateMapIter<'static>>,
+    UnsafePyLeaked<StateMapIter<'static>>,
     DirstateMap::translate_key,
     Option<PyBytes>
 );
 
 py_shared_iterator!(
     DirstateMapItemsIterator,
-    PyLeaked<StateMapIter<'static>>,
+    UnsafePyLeaked<StateMapIter<'static>>,
     DirstateMap::translate_key_value,
     Option<(PyBytes, PyObject)>
 );

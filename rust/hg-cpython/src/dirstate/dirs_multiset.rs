@@ -13,11 +13,10 @@ use std::convert::TryInto;
 
 use cpython::{
     exc, ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyObject, PyResult,
-    Python,
+    Python, UnsafePyLeaked,
 };
 
 use crate::dirstate::extract_dirstate;
-use crate::ref_sharing::{PyLeaked, PySharedRefCell};
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirsMultisetIter, DirstateMapError, DirstateParseError,
@@ -25,7 +24,7 @@ use hg::{
 };
 
 py_class!(pub class Dirs |py| {
-    data inner_: PySharedRefCell<DirsMultiset>;
+    @shared data inner: DirsMultiset;
 
     // `map` is either a `dict` or a flat iterator (usually a `set`, sometimes
     // a `list`)
@@ -65,10 +64,7 @@ py_class!(pub class Dirs |py| {
                 })?
         };
 
-        Self::create_instance(
-            py,
-            PySharedRefCell::new(inner),
-        )
+        Self::create_instance(py, inner)
     }
 
     def addpath(&self, path: PyObject) -> PyResult<PyObject> {
@@ -123,11 +119,9 @@ py_class!(pub class Dirs |py| {
     }
 });
 
-py_shared_ref!(Dirs, DirsMultiset, inner_, inner);
-
 impl Dirs {
     pub fn from_inner(py: Python, d: DirsMultiset) -> PyResult<Self> {
-        Self::create_instance(py, PySharedRefCell::new(d))
+        Self::create_instance(py, d)
     }
 
     fn translate_key(
@@ -140,7 +134,7 @@ impl Dirs {
 
 py_shared_iterator!(
     DirsMultisetKeysIterator,
-    PyLeaked<DirsMultisetIter<'static>>,
+    UnsafePyLeaked<DirsMultisetIter<'static>>,
     Dirs::translate_key,
     Option<PyBytes>
 );
