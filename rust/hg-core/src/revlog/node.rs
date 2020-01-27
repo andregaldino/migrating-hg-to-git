@@ -223,6 +223,7 @@ impl<'a> NodePrefixRef<'a> {
     /// This is also the `i`th hexadecimal digit in numeric form,
     /// also called a [nybble](https://en.wikipedia.org/wiki/Nibble).
     pub fn get_nybble(&self, i: usize) -> u8 {
+        assert!(i < self.len());
         get_nybble(self.buf, i)
     }
 }
