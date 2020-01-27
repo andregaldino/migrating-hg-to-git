@@ -272,7 +272,7 @@ fn build_response<'a>(
 
 pub fn status<'a: 'c, 'b: 'c, 'c>(
     dmap: &'a DirstateMap,
-    matcher: &'b (impl Matcher),
+    matcher: &'b impl Matcher,
     root_dir: impl AsRef<Path> + Sync + Send + Copy,
     list_clean: bool,
     last_normal_time: i64,
