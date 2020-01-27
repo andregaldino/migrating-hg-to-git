@@ -654,7 +654,7 @@ def releasenotes(ui, repo, file_=None, **opts):
     opts = pycompat.byteskwargs(opts)
     sections = releasenotessections(ui, repo)
 
-    cmdutil.check_incompatible_arguments(opts, b'list', b'rev', b'check')
+    cmdutil.check_incompatible_arguments(opts, b'list', [b'rev', b'check'])
 
     if opts.get(b'list'):
         return _getadmonitionlist(ui, sections)

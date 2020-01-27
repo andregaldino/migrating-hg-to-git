@@ -1228,7 +1228,7 @@ def bookmark(ui, repo, *names, **opts):
 
     action = cmdutil.check_at_most_one_arg(opts, b'delete', b'rename', b'list')
     if action:
-        cmdutil.check_incompatible_arguments(opts, action, b'rev')
+        cmdutil.check_incompatible_arguments(opts, action, [b'rev'])
     elif names or rev:
         action = b'add'
     elif inactive:
@@ -1236,7 +1236,9 @@ def bookmark(ui, repo, *names, **opts):
     else:
         action = b'list'
 
-    cmdutil.check_incompatible_arguments(opts, b'inactive', b'delete', b'list')
+    cmdutil.check_incompatible_arguments(
+        opts, b'inactive', [b'delete', b'list']
+    )
     if not names and action in {b'add', b'delete'}:
         raise error.Abort(_(b"bookmark name required"))
 
@@ -4847,7 +4849,7 @@ def merge(ui, repo, node=None, **opts):
     abort = opts.get(b'abort')
     if abort and repo.dirstate.p2() == nullid:
         cmdutil.wrongtooltocontinue(repo, _(b'merge'))
-    cmdutil.check_incompatible_arguments(opts, b'abort', b'rev', b'preview')
+    cmdutil.check_incompatible_arguments(opts, b'abort', [b'rev', b'preview'])
     if abort:
         state = cmdutil.getunfinishedstate(repo)
         if state and state._opname != b'merge':

@@ -281,11 +281,11 @@ def check_at_most_one_arg(opts, *args):
     return previous
 
 
-def check_incompatible_arguments(opts, first, *others):
+def check_incompatible_arguments(opts, first, others):
     """abort if the first argument is given along with any of the others
 
     Unlike check_at_most_one_arg(), `others` are not mutually exclusive
-    among themselves.
+    among themselves, and they're passed as a single collection.
     """
     for other in others:
         check_at_most_one_arg(opts, first, other)

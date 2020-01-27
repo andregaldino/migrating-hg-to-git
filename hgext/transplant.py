@@ -761,12 +761,12 @@ def _dotransplant(ui, repo, *revs, **opts):
     def checkopts(opts, revs):
         if opts.get(b'continue'):
             cmdutil.check_incompatible_arguments(
-                opts, b'continue', b'branch', b'all', b'merge'
+                opts, b'continue', [b'branch', b'all', b'merge']
             )
             return
         if opts.get(b'stop'):
             cmdutil.check_incompatible_arguments(
-                opts, b'stop', b'branch', b'all', b'merge'
+                opts, b'stop', [b'branch', b'all', b'merge']
             )
             return
         if not (

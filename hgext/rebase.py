@@ -1011,10 +1011,10 @@ def rebase(ui, repo, **opts):
     action = cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
     if action:
         cmdutil.check_incompatible_arguments(
-            opts, action, b'confirm', b'dry_run'
+            opts, action, [b'confirm', b'dry_run']
         )
         cmdutil.check_incompatible_arguments(
-            opts, action, b'rev', b'source', b'base', b'dest'
+            opts, action, [b'rev', b'source', b'base', b'dest']
         )
     cmdutil.check_at_most_one_arg(opts, b'confirm', b'dry_run')
     cmdutil.check_at_most_one_arg(opts, b'rev', b'source', b'base')
@@ -1028,7 +1028,7 @@ def rebase(ui, repo, **opts):
     if opts.get(b'auto_orphans'):
         disallowed_opts = set(opts) - {b'auto_orphans'}
         cmdutil.check_incompatible_arguments(
-            opts, b'auto_orphans', *disallowed_opts
+            opts, b'auto_orphans', disallowed_opts
         )
 
         userrevs = list(repo.revs(opts.get(b'auto_orphans')))
