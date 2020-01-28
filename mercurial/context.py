@@ -2487,6 +2487,17 @@ class overlayworkingctx(committablectx):
             editor=editor,
         )
 
+    def tomemctx_for_amend(self, precursor):
+        extra = precursor.extra().copy()
+        extra[b'amend_source'] = precursor.hex()
+        return self.tomemctx(
+            text=precursor.description(),
+            branch=precursor.branch(),
+            extra=extra,
+            date=precursor.date(),
+            user=precursor.user(),
+        )
+
     def isdirty(self, path):
         return path in self._cache
 

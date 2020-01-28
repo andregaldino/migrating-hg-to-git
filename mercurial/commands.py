@@ -2312,6 +2312,13 @@ def continuecmd(ui, repo, **opts):
         (b'', b'forget', None, _(b'unmark a file as copied')),
         (b'A', b'after', None, _(b'record a copy that has already occurred')),
         (
+            b'',
+            b'at-rev',
+            b'',
+            _(b'unmark copies in the given revision (EXPERIMENTAL)'),
+            _(b'REV'),
+        ),
+        (
             b'f',
             b'force',
             None,

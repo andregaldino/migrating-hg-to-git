@@ -17,6 +17,9 @@
 
 == New Experimental Features ==
 
+ * Use `hg copy --forget --at-rev REV` to unmark already committed
+   copies.
+
 
 == Bug Fixes  ==
 

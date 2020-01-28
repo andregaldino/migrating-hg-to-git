@@ -1427,14 +1427,33 @@ def copy(ui, repo, pats, opts, rename=False):
     uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
 
     if forget:
-        match = scmutil.match(wctx, pats, opts)
+        rev = opts[b'at_rev']
+        if rev:
+            ctx = scmutil.revsingle(repo, rev)
+        else:
+            ctx = repo[None]
+        if ctx.rev() is None:
+            new_ctx = ctx
+        else:
+            if len(ctx.parents()) > 1:
+                raise error.Abort(_(b'cannot unmark copy in merge commit'))
+            # avoid cycle context -> subrepo -> cmdutil
+            from . import context
 
-        current_copies = wctx.p1copies()
-        current_copies.update(wctx.p2copies())
+            rewriteutil.precheck(repo, [ctx.rev()], b'uncopy')
+            new_ctx = context.overlayworkingctx(repo)
+            new_ctx.setbase(ctx.p1())
+            mergemod.graft(repo, ctx, wctx=new_ctx)
 
-        for f in wctx.walk(match):
+        match = scmutil.match(ctx, pats, opts)
+
+        current_copies = ctx.p1copies()
+        current_copies.update(ctx.p2copies())
+
+        uipathfn = scmutil.getuipathfn(repo)
+        for f in ctx.walk(match):
             if f in current_copies:
-                wctx[f].markcopied(None)
+                new_ctx[f].markcopied(None)
             elif match.exact(f):
                 ui.warn(
                     _(
@@ -1442,7 +1461,24 @@ def copy(ui, repo, pats, opts, rename=False):
                     )
                     % uipathfn(f)
                 )
+
+        if ctx.rev() is not None:
+            with repo.lock():
+                mem_ctx = new_ctx.tomemctx_for_amend(ctx)
+                new_node = mem_ctx.commit()
+
+                if repo.dirstate.p1() == ctx.node():
+                    with repo.dirstate.parentchange():
+                        scmutil.movedirstate(repo, repo[new_node])
+                replacements = {ctx.node(): [new_node]}
+                scmutil.cleanupnodes(
+                    repo, replacements, b'uncopy', fixphase=True
+                )
+
         return
+
+    if opts.get(b'at_rev'):
+        raise error.Abort(_("--at-rev is only supported with --forget"))
 
     def walkpat(pat):
         srcs = []

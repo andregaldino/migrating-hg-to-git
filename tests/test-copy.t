@@ -319,5 +319,56 @@ Test unmarking copy of a directory
   A dir2/bar
   A dir2/foo
   ? dir2/untracked
+# Clean up for next test
+  $ hg forget dir2
+  removing dir2/bar
+  removing dir2/foo
+  $ rm -r dir2
+
+Test uncopy on committed copies
+
+# Commit some copies
+  $ hg cp bar baz
+  $ hg cp bar qux
+  $ hg ci -m copies
+  $ hg st -C --change .
+  A baz
+    bar
+  A qux
+    bar
+  $ base=$(hg log -r '.^' -T '{rev}')
+  $ hg log -G -T '{rev}:{node|short} {desc}\n' -r $base:
+  @  5:a612dc2edfda copies
+  |
+  o  4:4800b1f1f38e add dir/
+  |
+  ~
+# Add a dirty change on top to show that it's unaffected
+  $ echo dirty >> baz
+  $ hg st
+  M baz
+  $ cat baz
+  bleah
+  dirty
+  $ hg copy --forget --at-rev . baz
+  saved backup bundle to $TESTTMP/part2/.hg/strip-backup/a612dc2edfda-e36b4448-uncopy.hg
+# The unwanted copy is no longer recorded, but the unrelated one is
+  $ hg st -C --change .
+  A baz
+  A qux
+    bar
+# The old commit is gone and we have updated to the new commit
+  $ hg log -G -T '{rev}:{node|short} {desc}\n' -r $base:
+  @  5:c45090e5effe copies
+  |
+  o  4:4800b1f1f38e add dir/
+  |
+  ~
+# Working copy still has the uncommitted change
+  $ hg st
+  M baz
+  $ cat baz
+  bleah
+  dirty
 
   $ cd ..

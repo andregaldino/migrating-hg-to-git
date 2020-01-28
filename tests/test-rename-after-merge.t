@@ -120,4 +120,10 @@ Commit issue 1476 with a rename on the other side:
   $ hg log -r tip -C -v | grep copies
   copies:      b2 (b1)
 
+Test unmarking copies in merge commit
+
+  $ hg copy --forget --at-rev . b2
+  abort: cannot unmark copy in merge commit
+  [255]
+
   $ cd ..
