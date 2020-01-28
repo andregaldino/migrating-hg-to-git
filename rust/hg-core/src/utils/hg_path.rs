@@ -142,22 +142,24 @@ impl HgPath {
     #[cfg(windows)]
     /// Copied from the Python stdlib's `os.path.splitdrive` implementation.
     ///
-    /// Split a pathname into drive/UNC sharepoint and relative path specifiers.
-    /// Returns a 2-tuple (drive_or_unc, path); either part may be empty.
+    /// Split a pathname into drive/UNC sharepoint and relative path
+    /// specifiers. Returns a 2-tuple (drive_or_unc, path); either part may
+    /// be empty.
     ///
     /// If you assign
     ///  result = split_drive(p)
     /// It is always true that:
     ///  result[0] + result[1] == p
     ///
-    /// If the path contained a drive letter, drive_or_unc will contain everything
-    /// up to and including the colon.
+    /// If the path contained a drive letter, drive_or_unc will contain
+    /// everything up to and including the colon.
     /// e.g. split_drive("c:/dir") returns ("c:", "/dir")
     ///
-    /// If the path contained a UNC path, the drive_or_unc will contain the host
-    /// name and share up to but not including the fourth directory separator
-    /// character.
-    /// e.g. split_drive("//host/computer/dir") returns ("//host/computer", "/dir")
+    /// If the path contained a UNC path, the drive_or_unc will contain the
+    /// host name and share up to but not including the fourth directory
+    /// separator character.
+    /// e.g. split_drive("//host/computer/dir") returns ("//host/computer",
+    /// "/dir")
     ///
     /// Paths cannot contain both a drive letter and a UNC path.
     pub fn split_drive<'a>(&self) -> (&HgPath, &HgPath) {
