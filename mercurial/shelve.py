@@ -996,7 +996,6 @@ def _rebaserestoredcommit(
         stats = merge.graft(
             repo,
             shelvectx,
-            shelvectx.p1(),
             labels=[b'shelve', b'working-copy'],
             keepconflictparent=True,
         )

@@ -2592,7 +2592,7 @@ def update(
 def graft(
     repo,
     ctx,
-    base,
+    base=None,
     labels=None,
     keepparent=False,
     keepconflictparent=False,
@@ -2607,7 +2607,7 @@ def graft(
     renames/copies appropriately.
 
     ctx - changeset to rebase
-    base - merge base, usually ctx.p1()
+    base - merge base, or ctx.p1() if not specified
     labels - merge labels eg ['local', 'graft']
     keepparent - keep second parent if any
     keepconflictparent - if unresolved, keep parent used for the merge
@@ -2621,6 +2621,7 @@ def graft(
     # which local deleted".
     wctx = wctx or repo[None]
     pctx = wctx.p1()
+    base = base or ctx.p1()
     mergeancestor = repo.changelog.isancestor(pctx.node(), ctx.node())
 
     stats = update(
