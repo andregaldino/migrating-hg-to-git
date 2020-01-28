@@ -186,6 +186,7 @@ class profile(object):
         self._output = None
         self._fp = None
         self._fpdoclose = True
+        self._flushfp = None
         self._profiler = None
         self._enabled = enabled
         self._entered = False
@@ -246,6 +247,8 @@ class profile(object):
             else:
                 self._fpdoclose = False
                 self._fp = self._ui.ferr
+                # Ensure we've flushed fout before writing to ferr.
+                self._flushfp = self._ui.fout
 
             if proffn is not None:
                 pass
@@ -265,6 +268,7 @@ class profile(object):
     def __exit__(self, exception_type, exception_value, traceback):
         propagate = None
         if self._profiler is not None:
+            self._uiflush()
             propagate = self._profiler.__exit__(
                 exception_type, exception_value, traceback
             )
@@ -280,3 +284,7 @@ class profile(object):
     def _closefp(self):
         if self._fpdoclose and self._fp is not None:
             self._fp.close()
+
+    def _uiflush(self):
+        if self._flushfp:
+            self._flushfp.flush()
