@@ -213,6 +213,7 @@ modify x and rename y to z on the other side.
    ancestor: 5151c134577e, local: 07fcbc9a74ed+, remote: f21419739508
    preserving x for resolve of x
    preserving z for resolve of z
+  starting 4 threads for background file closing (?)
    x: prompt changed/deleted -> m (premerge)
   picked tool ':prompt' for x (binary False symlink False changedelete True)
   file 'x' was deleted in other [merge rev] but was modified in local [working copy].
