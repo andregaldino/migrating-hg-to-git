@@ -1849,7 +1849,7 @@ if rustmod is not None:
             nonnorm, otherparents = self._rustmap.nonnormalentries()
             return nonnorm
 
-        @property
+        @propertycache
         def otherparentset(self):
             nonnorm, otherparents = self._rustmap.nonnormalentries()
             return otherparents
