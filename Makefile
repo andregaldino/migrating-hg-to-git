@@ -64,6 +64,7 @@ doc:
 	$(MAKE) -C doc
 
 cleanbutpackages:
+	rm -f hg.exe
 	-$(PYTHON) setup.py clean --all # ignore errors from this command
 	find contrib doc hgext hgext3rd i18n mercurial tests hgdemandimport \
 		\( -name '*.py[cdo]' -o -name '*.so' \) -exec rm -f '{}' ';'
