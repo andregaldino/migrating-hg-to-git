@@ -386,18 +386,26 @@ class mergestate(object):
         return configmergedriver
 
     @util.propertycache
-    def localctx(self):
+    def local(self):
         if self._local is None:
-            msg = b"localctx accessed but self._local isn't set"
+            msg = b"local accessed but self._local isn't set"
             raise error.ProgrammingError(msg)
-        return self._repo[self._local]
+        return self._local
+
+    @util.propertycache
+    def localctx(self):
+        return self._repo[self.local]
+
+    @util.propertycache
+    def other(self):
+        if self._other is None:
+            msg = b"other accessed but self._other isn't set"
+            raise error.ProgrammingError(msg)
+        return self._other
 
     @util.propertycache
     def otherctx(self):
-        if self._other is None:
-            msg = b"otherctx accessed but self._other isn't set"
-            raise error.ProgrammingError(msg)
-        return self._repo[self._other]
+        return self._repo[self.other]
 
     def active(self):
         """Whether mergestate is active.
