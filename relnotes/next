@@ -3,6 +3,11 @@
  * `hg purge`/`hg clean` can now delete ignored files instead of
    untracked files, with the new -i flag.
 
+ * New `conflictlocal()` and `conflictother()` revsets returns the
+   commits that are being merged, when there are conflicts. Also works
+   for conflicts caused by e.g. `hg graft`.
+
+
 == New Experimental Features ==
 
 

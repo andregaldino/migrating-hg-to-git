@@ -769,6 +769,38 @@ def commonancestors(repo, subset, x):
     return subset
 
 
+@predicate(b'conflictlocal()', safe=True)
+def conflictlocal(repo, subset, x):
+    """The local side of the merge, if currently in an unresolved merge.
+
+    "merge" here includes merge conflicts from e.g. 'hg rebase' or 'hg graft'.
+    """
+    getargs(x, 0, 0, _(b"conflictlocal takes no arguments"))
+    from . import merge
+
+    mergestate = merge.mergestate.read(repo)
+    if mergestate.active() and repo.changelog.hasnode(mergestate.local):
+        return subset & {repo.changelog.rev(mergestate.local)}
+
+    return baseset()
+
+
+@predicate(b'conflictother()', safe=True)
+def conflictother(repo, subset, x):
+    """The other side of the merge, if currently in an unresolved merge.
+
+    "merge" here includes merge conflicts from e.g. 'hg rebase' or 'hg graft'.
+    """
+    getargs(x, 0, 0, _(b"conflictother takes no arguments"))
+    from . import merge
+
+    mergestate = merge.mergestate.read(repo)
+    if mergestate.active() and repo.changelog.hasnode(mergestate.other):
+        return subset & {repo.changelog.rev(mergestate.other)}
+
+    return baseset()
+
+
 @predicate(b'contains(pattern)', weight=100)
 def contains(repo, subset, x):
     """The revision's manifest contains a file matching pattern (but might not
