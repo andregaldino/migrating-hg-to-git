@@ -249,6 +249,19 @@ Cases are run as shown in that table, row by row.
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges
   [1]
+  $ hg log -G --template '{rev}:{node|short} {parents} {branches}\n'
+  o  5:ff252e8273df  b1
+  |
+  @  4:d047485b3896 0:60829823a42a  b1
+  |
+  | o  3:6efa171f091b 1:0786582aa4b1
+  | |
+  | | o  2:bd10386d478c
+  | |/
+  | o  1:0786582aa4b1
+  |/
+  o  0:60829823a42a
+  
   $ hg st
   M a
   ? a.orig

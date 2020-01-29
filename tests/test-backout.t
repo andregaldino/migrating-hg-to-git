@@ -86,6 +86,33 @@ commit option
   commit: 1 unresolved (clean)
   update: (current)
   phases: 5 draft
+  $ hg log -G
+  @  changeset:   4:ed99997b793d
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:05 1970 +0000
+  |  summary:     ypples
+  |
+  o  changeset:   3:1c2161e97c0a
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:04 1970 +0000
+  |  summary:     Backed out changeset 22cb4f70d813
+  |
+  o  changeset:   2:a8c6e511cfee
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:02 1970 +0000
+  |  summary:     grapes
+  |
+  o  changeset:   1:22cb4f70d813
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:01 1970 +0000
+  |  summary:     chair
+  |
+  o  changeset:   0:a5cb2dde5805
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     tomatoes
+  
 
 file that was removed is recreated
 (this also tests that editor is not invoked if the commit message is
@@ -709,6 +736,23 @@ Test usage of `hg resolve` in case of conflict
   commit: 1 unresolved (clean)
   update: (current)
   phases: 3 draft
+  $ hg log -G
+  @  changeset:   2:b71750c4b0fd
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     capital ten
+  |
+  o  changeset:   1:913609522437
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     capital three
+  |
+  o  changeset:   0:a30dd8addae3
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     initial
+  
   $ hg resolve --all --debug
   picked tool ':merge' for foo (binary False symlink False changedelete False)
   merging foo

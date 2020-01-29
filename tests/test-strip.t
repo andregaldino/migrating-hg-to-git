@@ -591,6 +591,18 @@ Verify strip protects against stripping wc parent when there are uncommitted mod
   phases: 2 draft
   mq:     3 unapplied
 
+  $ hg log --graph
+  @  changeset:   1:76dcf9fab855
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     b
+  |
+  o  changeset:   0:9ab35a2d17cb
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     a
+  
   $ echo c > b
   $ hg strip tip
   abort: uncommitted changes
