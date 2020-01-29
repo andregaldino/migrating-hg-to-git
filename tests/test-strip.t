@@ -598,7 +598,7 @@ Verify strip protects against stripping wc parent when there are uncommitted mod
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     b
   |
-  o  changeset:   0:9ab35a2d17cb
+  %  changeset:   0:9ab35a2d17cb
      user:        test
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     a

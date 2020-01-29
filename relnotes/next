@@ -3,7 +3,12 @@
  * `hg purge`/`hg clean` can now delete ignored files instead of
    untracked files, with the new -i flag.
 
- * New `conflictlocal()` and `conflictother()` revsets returns the
+ * `hg log` now defaults to using an '%' symbol for commits involved
+    in unresolved merge conflicts. That includes unresolved conflicts
+    caused by e.g. `hg update --merge` and `hg graft`. '@' still takes
+    precedence, so what used to be marked '@' still is.
+
+ * New `conflictlocal()` and `conflictother()` revsets return the
    commits that are being merged, when there are conflicts. Also works
    for conflicts caused by e.g. `hg graft`.
 

@@ -431,7 +431,7 @@ when some of the changesets became public
   $ hg log -GT "{rev}:{node|short} {desc}"
   @  6:6ec71c037d94 added x
   |
-  | o  5:36b793615f78 added foo to c
+  | %  5:36b793615f78 added foo to c
   | |
   | | o  4:863a25e1a9ea added x
   | |/
@@ -622,7 +622,7 @@ Resolve conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | o  3:09e253b87e17 A in file a
+  | %  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |
@@ -669,7 +669,7 @@ Resolve conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | o  3:09e253b87e17 A in file a
+  | %  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |
@@ -712,7 +712,7 @@ When there is conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | o  3:09e253b87e17 A in file a
+  | %  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |

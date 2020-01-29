@@ -396,26 +396,38 @@ def showfiles(context, mapping):
     return templateutil.compatfileslist(context, mapping, b'file', ctx.files())
 
 
-@templatekeyword(b'graphnode', requires={b'repo', b'ctx'})
+@templatekeyword(b'graphnode', requires={b'repo', b'ctx', b'cache'})
 def showgraphnode(context, mapping):
     """String. The character representing the changeset node in an ASCII
     revision graph."""
     repo = context.resource(mapping, b'repo')
     ctx = context.resource(mapping, b'ctx')
-    return getgraphnode(repo, ctx)
+    cache = context.resource(mapping, b'cache')
+    return getgraphnode(repo, ctx, cache)
 
 
-def getgraphnode(repo, ctx):
-    return getgraphnodecurrent(repo, ctx) or getgraphnodesymbol(ctx)
+def getgraphnode(repo, ctx, cache):
+    return getgraphnodecurrent(repo, ctx, cache) or getgraphnodesymbol(ctx)
 
 
-def getgraphnodecurrent(repo, ctx):
+def getgraphnodecurrent(repo, ctx, cache):
     wpnodes = repo.dirstate.parents()
     if wpnodes[1] == nullid:
         wpnodes = wpnodes[:1]
     if ctx.node() in wpnodes:
         return b'@'
     else:
+        merge_nodes = cache.get(b'merge_nodes', ())
+        if not merge_nodes:
+            from . import merge
+
+            mergestate = merge.mergestate.read(repo)
+            if mergestate.active():
+                merge_nodes = (mergestate.local, mergestate.other)
+            cache[b'merge_nodes'] = merge_nodes
+
+        if ctx.node() in merge_nodes:
+            return b'%'
         return b''
 
 

@@ -1004,7 +1004,7 @@ def _graphnodeformatter(ui, displayer):
         ui, spec, defaults=templatekw.keywords, resources=tres
     )
 
-    def formatnode(repo, ctx):
+    def formatnode(repo, ctx, cache):
         props = {b'ctx': ctx, b'repo': repo}
         return templ.renderdefault(props)
 
@@ -1038,8 +1038,9 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getcopies=None, props=None):
         # experimental config: experimental.graphshorten
         state.graphshorten = ui.configbool(b'experimental', b'graphshorten')
 
+    formatnode_cache = {}
     for rev, type, ctx, parents in dag:
-        char = formatnode(repo, ctx)
+        char = formatnode(repo, ctx, formatnode_cache)
         copies = getcopies(ctx) if getcopies else None
         edges = edgefn(type, char, state, rev, parents)
         firstedge = next(edges)

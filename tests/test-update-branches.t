@@ -254,7 +254,7 @@ Cases are run as shown in that table, row by row.
   |
   @  4:d047485b3896 0:60829823a42a  b1
   |
-  | o  3:6efa171f091b 1:0786582aa4b1
+  | %  3:6efa171f091b 1:0786582aa4b1
   | |
   | | o  2:bd10386d478c
   | |/

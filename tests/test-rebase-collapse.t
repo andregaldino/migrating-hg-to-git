@@ -762,7 +762,7 @@ Test aborted editor on final message
   abort: edit failed: false exited with status 1
   [255]
   $ hg tglog
-  o  3: 63668d570d21 'C'
+  %  3: 63668d570d21 'C'
   |
   | @  2: 82b8abf9c185 'D'
   | |

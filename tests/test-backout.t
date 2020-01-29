@@ -103,7 +103,7 @@ commit option
   |  date:        Thu Jan 01 00:00:02 1970 +0000
   |  summary:     grapes
   |
-  o  changeset:   1:22cb4f70d813
+  %  changeset:   1:22cb4f70d813
   |  user:        test
   |  date:        Thu Jan 01 00:00:01 1970 +0000
   |  summary:     chair
@@ -748,7 +748,7 @@ Test usage of `hg resolve` in case of conflict
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     capital three
   |
-  o  changeset:   0:a30dd8addae3
+  %  changeset:   0:a30dd8addae3
      user:        test
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     initial
