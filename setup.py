@@ -323,7 +323,7 @@ def findhg():
     # gives precedence to hg.exe in the current directory, so fall back to the
     # python invocation of local hg, where pythonXY.dll can always be found.
     check_cmd = ['log', '-r.', '-Ttest']
-    if os.name != 'nt':
+    if os.name != 'nt' or not os.path.exists("hg.exe"):
         try:
             retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
         except EnvironmentError:
