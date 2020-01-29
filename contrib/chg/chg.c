@@ -226,6 +226,16 @@ static void execcmdserver(const struct cmdserveropts *opts)
 	}
 	argv[argsize - 1] = NULL;
 
+	const char *lc_ctype_env = getenv("LC_CTYPE");
+	if (lc_ctype_env == NULL) {
+		if (putenv("CHG_CLEAR_LC_CTYPE=") != 0)
+			abortmsgerrno("failed to putenv CHG_CLEAR_LC_CTYPE");
+	} else {
+		if (setenv("CHGORIG_LC_CTYPE", lc_ctype_env, 1) != 0) {
+			abortmsgerrno("failed to setenv CHGORIG_LC_CTYYPE");
+		}
+	}
+
 	if (putenv("CHGINTERNALMARK=") != 0)
 		abortmsgerrno("failed to putenv");
 	if (execvp(hgcmd, (char **)argv) < 0)

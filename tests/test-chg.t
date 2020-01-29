@@ -332,8 +332,8 @@ check server log:
   YYYY/MM/DD HH:MM:SS (PID)> log -R cached
   YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)
 
-Test that chg works even when python "coerces" the locale (py3.7+, which is done
-by default if none of LC_ALL, LC_CTYPE, or LANG are set in the environment)
+Test that chg works (sets to the user's actual LC_CTYPE) even when python
+"coerces" the locale (py3.7+)
 
   $ cat > $TESTTMP/debugenv.py <<EOF
   > from mercurial import encoding
@@ -347,9 +347,22 @@ by default if none of LC_ALL, LC_CTYPE, or LANG are set in the environment)
   >         if v is not None:
   >             ui.write(b'%s=%s\n' % (k, encoding.environ[k]))
   > EOF
+(hg keeps python's modified LC_CTYPE, chg doesn't)
+  $ (unset LC_ALL; unset LANG; LC_CTYPE= "$CHGHG" \
+  >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
+  LC_CTYPE=C.UTF-8 (py37 !)
+  LC_CTYPE= (no-py37 !)
+  $ (unset LC_ALL; unset LANG; LC_CTYPE= chg \
+  >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
+  LC_CTYPE=
+  $ (unset LC_ALL; unset LANG; LC_CTYPE=unsupported_value chg \
+  >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
+  LC_CTYPE=unsupported_value
+  $ (unset LC_ALL; unset LANG; LC_CTYPE= chg \
+  >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
+  LC_CTYPE=
   $ LANG= LC_ALL= LC_CTYPE= chg \
   >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv
   LC_ALL=
-  LC_CTYPE=C.UTF-8 (py37 !)
-  LC_CTYPE= (no-py37 !)
+  LC_CTYPE=
   LANG=
