@@ -34,8 +34,8 @@ pub struct DirstateMap {
     file_fold_map: Option<FileFoldMap>,
     pub dirs: Option<DirsMultiset>,
     pub all_dirs: Option<DirsMultiset>,
-    non_normal_set: HashSet<HgPathBuf>,
-    other_parent_set: HashSet<HgPathBuf>,
+    non_normal_set: Option<HashSet<HgPathBuf>>,
+    other_parent_set: Option<HashSet<HgPathBuf>>,
     parents: Option<DirstateParents>,
     dirty_parents: bool,
 }
@@ -69,8 +69,8 @@ impl DirstateMap {
         self.state_map.clear();
         self.copy_map.clear();
         self.file_fold_map = None;
-        self.non_normal_set.clear();
-        self.other_parent_set.clear();
+        self.non_normal_set = None;
+        self.other_parent_set = None;
         self.set_parents(&DirstateParents {
             p1: NULL_ID,
             p2: NULL_ID,
@@ -98,11 +98,19 @@ impl DirstateMap {
         self.state_map.insert(filename.to_owned(), entry.to_owned());
 
         if entry.state != EntryState::Normal || entry.mtime == MTIME_UNSET {
-            self.non_normal_set.insert(filename.to_owned());
+            self.get_non_normal_other_parent_entries()
+                .0
+                .as_mut()
+                .unwrap()
+                .insert(filename.to_owned());
         }
 
         if entry.size == SIZE_FROM_OTHER_PARENT {
-            self.other_parent_set.insert(filename.to_owned());
+            self.get_non_normal_other_parent_entries()
+                .1
+                .as_mut()
+                .unwrap()
+                .insert(filename.to_owned());
         }
         Ok(())
     }
@@ -142,7 +150,11 @@ impl DirstateMap {
                 mtime: 0,
             },
         );
-        self.non_normal_set.insert(filename.to_owned());
+        self.get_non_normal_other_parent_entries()
+            .0
+            .as_mut()
+            .unwrap()
+            .insert(filename.to_owned());
         Ok(())
     }
 
@@ -168,7 +180,11 @@ impl DirstateMap {
         if let Some(ref mut file_fold_map) = self.file_fold_map {
             file_fold_map.remove(&normalize_case(filename));
         }
-        self.non_normal_set.remove(filename);
+        self.get_non_normal_other_parent_entries()
+            .0
+            .as_mut()
+            .unwrap()
+            .remove(filename);
 
         Ok(exists)
     }
@@ -193,14 +209,55 @@ impl DirstateMap {
                     }
                 });
             if changed {
-                self.non_normal_set.insert(filename.to_owned());
+                self.get_non_normal_other_parent_entries()
+                    .0
+                    .as_mut()
+                    .unwrap()
+                    .insert(filename.to_owned());
             }
         }
     }
 
-    pub fn non_normal_other_parent_entries(
-        &self,
-    ) -> (HashSet<HgPathBuf>, HashSet<HgPathBuf>) {
+    pub fn non_normal_entries_remove(
+        &mut self,
+        key: impl AsRef<HgPath>,
+    ) -> bool {
+        self.get_non_normal_other_parent_entries()
+            .0
+            .as_mut()
+            .unwrap()
+            .remove(key.as_ref())
+    }
+    pub fn non_normal_entries_union(
+        &mut self,
+        other: HashSet<HgPathBuf>,
+    ) -> Vec<HgPathBuf> {
+        self.get_non_normal_other_parent_entries()
+            .0
+            .as_mut()
+            .unwrap()
+            .union(&other)
+            .map(|e| e.to_owned())
+            .collect()
+    }
+
+    pub fn get_non_normal_other_parent_entries(
+        &mut self,
+    ) -> (
+        &mut Option<HashSet<HgPathBuf>>,
+        &mut Option<HashSet<HgPathBuf>>,
+    ) {
+        self.set_non_normal_other_parent_entries(false);
+        (&mut self.non_normal_set, &mut self.other_parent_set)
+    }
+
+    pub fn set_non_normal_other_parent_entries(&mut self, force: bool) {
+        if !force
+            && self.non_normal_set.is_some()
+            && self.other_parent_set.is_some()
+        {
+            return;
+        }
         let mut non_normal = HashSet::new();
         let mut other_parent = HashSet::new();
 
@@ -219,8 +276,8 @@ impl DirstateMap {
                 other_parent.insert(filename.to_owned());
             }
         }
-
-        (non_normal, other_parent)
+        self.non_normal_set = Some(non_normal);
+        self.other_parent_set = Some(other_parent);
     }
 
     /// Both of these setters and their uses appear to be the simplest way to
@@ -325,9 +382,7 @@ impl DirstateMap {
 
         self.dirty_parents = false;
 
-        let result = self.non_normal_other_parent_entries();
-        self.non_normal_set = result.0;
-        self.other_parent_set = result.1;
+        self.set_non_normal_other_parent_entries(true);
         Ok(packed)
     }
 
@@ -385,13 +440,27 @@ mod tests {
         .unwrap();
 
         assert_eq!(1, map.len());
-        assert_eq!(0, map.non_normal_set.len());
-        assert_eq!(0, map.other_parent_set.len());
+        assert_eq!(
+            0,
+            map.get_non_normal_other_parent_entries()
+                .0
+                .as_ref()
+                .unwrap()
+                .len()
+        );
+        assert_eq!(
+            0,
+            map.get_non_normal_other_parent_entries()
+                .1
+                .as_ref()
+                .unwrap()
+                .len()
+        );
     }
 
     #[test]
     fn test_non_normal_other_parent_entries() {
-        let map: DirstateMap = [
+        let mut map: DirstateMap = [
             (b"f1", (EntryState::Removed, 1337, 1337, 1337)),
             (b"f2", (EntryState::Normal, 1337, 1337, -1)),
             (b"f3", (EntryState::Normal, 1337, 1337, 1337)),
@@ -427,10 +496,11 @@ mod tests {
 
         let mut other_parent = HashSet::new();
         other_parent.insert(HgPathBuf::from_bytes(b"f4"));
+        let entries = map.get_non_normal_other_parent_entries();
 
         assert_eq!(
-            (non_normal, other_parent),
-            map.non_normal_other_parent_entries()
+            (Some(non_normal), Some(other_parent)),
+            (entries.0.to_owned(), entries.1.to_owned())
         );
     }
 }
