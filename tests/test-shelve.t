@@ -186,14 +186,9 @@ set up some more complex changes to shelve
 
 the common case - no options or filenames
 
-  $ hg shelve 2>&1 | grep KeyError
-  KeyError: 'No such manifest entry.' (no-pure !)
-      raise KeyError (pure !)
-  KeyError (pure !)
-# Get out of the broken state so later tests work
-  $ hg forget b.rename/b c.copy ghost
-  $ hg revert a/a b/b d
-  $ rm a/a.orig b.rename/b c.copy
+  $ hg shelve
+  shelved as default-01
+  3 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg status -C
 
 ensure that our shelved changes exist
@@ -396,10 +391,10 @@ ensure that we have a merge with unresolved conflicts
 #if phasebased
   $ hg heads -q --template '{rev}\n'
   8
-  6
+  5
   $ hg parents -q --template '{rev}\n'
   8
-  6
+  5
 #endif
 
 #if stripbased

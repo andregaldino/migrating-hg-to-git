@@ -527,6 +527,11 @@ def _checksinglesidecopies(
         if src not in m1:
             # renamed on side 1, deleted on side 2
             renamedelete[src] = dsts1
+    elif src not in mb:
+        # Work around the "short-circuit to avoid issues with merge states"
+        # thing in pathcopies(): pathcopies(x, y) can return a copy where the
+        # destination doesn't exist in y.
+        pass
     elif m2[src] != mb[src]:
         if not _related(c2[src], base[src]):
             return
