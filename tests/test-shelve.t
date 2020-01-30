@@ -171,6 +171,8 @@ set up some more complex changes to shelve
   $ hg mv b b.rename
   moving b/b to b.rename/b
   $ hg cp c c.copy
+  $ hg mv d ghost
+  $ rm ghost
   $ hg status -C
   M a/a
   A b.rename/b
@@ -178,12 +180,20 @@ set up some more complex changes to shelve
   A c.copy
     c
   R b/b
+  R d
+  ! ghost
+    d
 
 the common case - no options or filenames
 
-  $ hg shelve
-  shelved as default-01
-  2 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg shelve 2>&1 | grep KeyError
+  KeyError: 'No such manifest entry.' (no-pure !)
+      raise KeyError (pure !)
+  KeyError (pure !)
+# Get out of the broken state so later tests work
+  $ hg forget b.rename/b c.copy ghost
+  $ hg revert a/a b/b d
+  $ rm a/a.orig b.rename/b c.copy
   $ hg status -C
 
 ensure that our shelved changes exist
@@ -254,6 +264,7 @@ removed, even though there are more than 'maxbackups' backups)
   A c.copy
     c
   R b/b
+  R d
   $ hg shelve -l
 
 (both of default.hg and default-1.hg should be still kept, because it
@@ -287,6 +298,7 @@ named shelves, specific filenames, and "commit messages" should all work
   A c.copy
     c
   R b/b
+  R d
   $ HGEDITOR=cat hg shelve -q -n wibble -m wat -e a
   wat
   
@@ -306,6 +318,7 @@ expect "a" to no longer be present, but status otherwise unchanged
   A c.copy
     c
   R b/b
+  R d
   $ hg shelve -l --stat
   wibble          (*)    wat (glob)
    a/a |  1 +
@@ -323,6 +336,7 @@ and now "a/a" should reappear
   A c.copy
     c
   R b/b
+  R d
 
 ensure old shelve backups are being deleted automatically
 
@@ -363,6 +377,7 @@ force a conflicted merge to occur
   M b.rename/b
   M c.copy
   R b/b
+  R d
   ? a/a.orig
   # The repository is in an unfinished *unshelve* state.
   
@@ -381,10 +396,10 @@ ensure that we have a merge with unresolved conflicts
 #if phasebased
   $ hg heads -q --template '{rev}\n'
   8
-  5
+  6
   $ hg parents -q --template '{rev}\n'
   8
-  5
+  6
 #endif
 
 #if stripbased
@@ -401,6 +416,7 @@ ensure that we have a merge with unresolved conflicts
   M b.rename/b
   M c.copy
   R b/b
+  R d
   ? a/a.orig
   $ hg diff
   diff --git a/a/a b/a/a
@@ -412,13 +428,19 @@ ensure that we have a merge with unresolved conflicts
    c
   +=======
   +a
-  +>>>>>>> working-copy: a68ec3400638 - shelve: changes to: [mq]: second.patch
+  +>>>>>>> working-copy: 203c9f771d2b - shelve: changes to: [mq]: second.patch
   diff --git a/b/b b/b.rename/b
   rename from b/b
   rename to b.rename/b
   diff --git a/c b/c.copy
   copy from c
   copy to c.copy
+  diff --git a/d b/d
+  deleted file mode 100644
+  --- a/d
+  +++ /dev/null
+  @@ -1,1 +0,0 @@
+  -d
   $ hg resolve -l
   U a/a
 
@@ -434,6 +456,7 @@ abort the unshelve and be happy
   M b.rename/b
   M c.copy
   R b/b
+  R d
   ? a/a.orig
   $ hg unshelve -a
   unshelve of 'default' aborted
@@ -512,6 +535,7 @@ ensure the repo is as we hope
     c
   A foo/foo
   R b/b
+  R d
   ? a/a.orig
 
 there should be no shelves left
