@@ -33,7 +33,7 @@ fn collect_pybytes_list<P: AsRef<HgPath>>(
     let list = PyList::new(py, &[]);
 
     for (i, path) in collection.iter().enumerate() {
-        list.insert_item(
+        list.insert(
             py,
             i,
             PyBytes::new(py, path.as_ref().as_bytes()).into_object(),
