@@ -93,11 +93,12 @@ These fail:
   [1]
 
   $ hg rebase --rev 'wdir()' --dest 6
-  abort: working directory revision cannot be specified
+  abort: cannot rebase the working copy
   [255]
 
-  $ hg rebase --source 'wdir()' --dest 6 2>&1 | grep assert
-      assert rebaseset
+  $ hg rebase --source 'wdir()' --dest 6
+  abort: cannot rebase the working copy
+  [255]
 
   $ hg rebase --source '1 & !1' --dest 8
   empty "source" revision set - nothing to rebase

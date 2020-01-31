@@ -37,6 +37,7 @@ from mercurial import (
     hg,
     merge as mergemod,
     mergeutil,
+    node as nodemod,
     obsolete,
     obsutil,
     patch,
@@ -1265,8 +1266,7 @@ def _definedestmap(
         if not src:
             ui.status(_(b'empty "source" revision set - nothing to rebase\n'))
             return None
-        rebaseset = repo.revs(b'(%ld)::', src)
-        assert rebaseset
+        rebaseset = repo.revs(b'(%ld)::', src) or src
     else:
         base = scmutil.revrange(repo, [basef or b'.'])
         if not base:
@@ -1341,6 +1341,8 @@ def _definedestmap(
                 )
             return None
 
+    if nodemod.wdirrev in rebaseset:
+        raise error.Abort(_(b'cannot rebase the working copy'))
     rebasingwcp = repo[b'.'].rev() in rebaseset
     ui.log(
         b"rebase",
