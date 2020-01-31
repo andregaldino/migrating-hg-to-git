@@ -1077,7 +1077,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
             b'i',
             b'interactive',
             None,
-            _(b'interactively select which chunks to apply (EXPERIMENTAL)'),
+            _(b'interactively select which chunks to apply'),
         ),
         (
             b'e',
