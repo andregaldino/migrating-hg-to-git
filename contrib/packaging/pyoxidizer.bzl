@@ -23,6 +23,7 @@ def make_exe():
         run_eval = code,
         # We need this to make resourceutil happy, since it looks for sys.frozen.
         sys_frozen = True,
+        legacy_windows_stdio = True,
     )
 
     exe = dist.to_python_executable(
