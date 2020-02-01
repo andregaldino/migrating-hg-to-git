@@ -31,8 +31,11 @@ from .util import (
 
 
 EXTRA_PACKAGES = {
+    'dulwich',
     'distutils',
+    'keyring',
     'pygments',
+    'win32ctypes',
 }
 
 
