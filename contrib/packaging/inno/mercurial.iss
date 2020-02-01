@@ -32,6 +32,7 @@ SourceDir=stage
 VersionInfoDescription=Mercurial distributed SCM (version {#VERSION})
 VersionInfoCopyright=Copyright 2005-2020 Matt Mackall and others
 VersionInfoCompany=Matt Mackall and others
+VersionInfoVersion={#QUAD_VERSION}
 InternalCompressLevel=max
 SolidCompression=true
 SetupIconFile=../mercurial.ico

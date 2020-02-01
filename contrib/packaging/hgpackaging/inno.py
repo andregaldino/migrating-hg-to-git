@@ -20,6 +20,7 @@ from .py2exe import (
 )
 from .util import (
     find_vc_runtime_files,
+    normalize_windows_version,
     read_version_py,
 )
 
@@ -156,6 +157,7 @@ def build(
         version = read_version_py(source_dir)
 
     args.append('/dVERSION=%s' % version)
+    args.append('/dQUAD_VERSION=%s' % normalize_windows_version(version))
 
     args.append('/Odist')
     args.append(str(inno_build_dir / 'mercurial.iss'))
