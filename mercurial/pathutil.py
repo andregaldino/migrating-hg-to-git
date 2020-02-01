@@ -100,8 +100,10 @@ class pathauditor(object):
         parts.pop()
         normparts.pop()
         # It's important that we check the path parts starting from the root.
-        # This means we won't accidentally traverse a symlink into some other
-        # filesystem (which is potentially expensive to access).
+        # We don't want to add "foo/bar/baz" to auditeddir before checking if
+        # there's a "foo/.hg" directory. This also means we won't accidentally
+        # traverse a symlink into some other filesystem (which is potentially
+        # expensive to access).
         for i in range(len(parts)):
             prefix = pycompat.ossep.join(parts[: i + 1])
             normprefix = pycompat.ossep.join(normparts[: i + 1])
