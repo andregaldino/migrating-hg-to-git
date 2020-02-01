@@ -24,6 +24,7 @@ from .py2exe import (
 )
 from .util import (
     extract_zip_to_directory,
+    normalize_windows_version,
     process_install_rules,
     sign_with_signtool,
 )
@@ -69,66 +70,6 @@ def find_version(source_dir: pathlib.Path):
 
     m = re.search('version = b"(.*)"', source)
     return m.group(1)
-
-
-def normalize_version(version):
-    """Normalize Mercurial version string so WiX accepts it.
-
-    Version strings have to be numeric ``A.B.C[.D]`` to conform with MSI's
-    requirements.
-
-    We normalize RC version or the commit count to a 4th version component.
-    We store this in the 4th component because ``A.B.C`` releases do occur
-    and we want an e.g. ``5.3rc0`` version to be semantically less than a
-    ``5.3.1rc2`` version. This requires always reserving the 3rd version
-    component for the point release and the ``X.YrcN`` release is always
-    point release 0.
-
-    In the case of an RC and presence of ``+`` suffix data, we can't use both
-    because the version format is limited to 4 components. We choose to use
-    RC and throw away the commit count in the suffix. This means we could
-    produce multiple installers with the same normalized version string.
-
-    >>> normalize_version("5.3")
-    '5.3.0'
-
-    >>> normalize_version("5.3rc0")
-    '5.3.0.0'
-
-    >>> normalize_version("5.3rc1")
-    '5.3.0.1'
-
-    >>> normalize_version("5.3rc1+2-abcdef")
-    '5.3.0.1'
-
-    >>> normalize_version("5.3+2-abcdef")
-    '5.3.0.2'
-    """
-    if '+' in version:
-        version, extra = version.split('+', 1)
-    else:
-        extra = None
-
-    # 4.9rc0
-    if version[:-1].endswith('rc'):
-        rc = int(version[-1:])
-        version = version[:-3]
-    else:
-        rc = None
-
-    # Ensure we have at least X.Y version components.
-    versions = [int(v) for v in version.split('.')]
-    while len(versions) < 3:
-        versions.append(0)
-
-    if len(versions) < 4:
-        if rc is not None:
-            versions.append(rc)
-        elif extra:
-            # <commit count>-<hash>+<date>
-            versions.append(int(extra.split('-')[0]))
-
-    return '.'.join('%d' % x for x in versions[0:4])
 
 
 def ensure_vc90_merge_modules(build_dir):
@@ -412,7 +353,7 @@ def build_installer(
     )
 
     orig_version = version or find_version(source_dir)
-    version = normalize_version(orig_version)
+    version = normalize_windows_version(orig_version)
     print('using version string: %s' % version)
     if version != orig_version:
         print('(normalized from: %s)' % orig_version)
