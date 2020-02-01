@@ -485,14 +485,14 @@ Modifying a file while the editor is open can cause dirstate corruption
   $ echo r0 > foo; hg commit -qAm "r0"
   $ echo alpha > foo; hg commit -qm "alpha"
   $ echo beta >> foo
-  $ cat > $TESTTMP/sleepy_editor.sh <<EOF
+  $ cat > $TESTTMP/touchy_editor.sh <<EOF
+  > sleep 1
+  > echo delta >> $TESTTMP/modify-during-amend/foo
+  > sleep 1
   > echo hi > "\$1"
-  > sleep 3
+  > sleep 1
   > EOF
-  $ HGEDITOR="sh $TESTTMP/sleepy_editor.sh" hg commit --amend &
-  $ sleep 1
-  $ echo delta >> foo
-  $ sleep 3
+  $ HGEDITOR="sh $TESTTMP/touchy_editor.sh" hg commit --amend
   $ if (hg diff -c . | grep 'delta' >/dev/null) || [ -n "$(hg status)" ]; then
   >   echo "OK."
   > else
