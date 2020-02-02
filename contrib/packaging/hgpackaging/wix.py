@@ -343,7 +343,7 @@ def build_installer(
     dist_dir = source_dir / 'dist'
     wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
 
-    requirements_txt = wix_dir / 'requirements.txt'
+    requirements_txt = 'requirements_win32.txt'
 
     build_py2exe(
         source_dir,

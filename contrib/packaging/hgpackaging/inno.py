@@ -66,7 +66,7 @@ def build(
     staging_dir = inno_build_dir / 'stage'
 
     requirements_txt = (
-        source_dir / 'contrib' / 'packaging' / 'inno' / 'requirements.txt'
+        source_dir / 'contrib' / 'packaging' / 'requirements_win32.txt'
     )
 
     inno_build_dir.mkdir(parents=True, exist_ok=True)
