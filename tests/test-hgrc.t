@@ -271,3 +271,13 @@ Test we can skip the user configuration
   $ HGRCSKIPREPO=1 hg path
   foo = $TESTTMP/bar
 
+  $ cat >> .hg/hgrc <<EOF
+  > [broken
+  > EOF
+
+  $ hg path
+  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  [255]
+  $ HGRCSKIPREPO=1 hg path
+  foo = $TESTTMP/bar
+
