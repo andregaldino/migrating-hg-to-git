@@ -30,7 +30,7 @@ def mainfrozen():
 
 
 # the location of data files matching the source code
-if mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
+if mainfrozen() and getattr(sys, "frozen", None) != "macosx_app":
     # executable version (py2exe) doesn't support __file__
     datapath = os.path.dirname(pycompat.sysexecutable)
     _rootpath = datapath
@@ -41,16 +41,18 @@ if mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     # pseudo resources are found in their directory next to the
     # executable.
     def _package_path(package):
-        dirs = package.split(b'.')
-        assert dirs[0] == b'mercurial'
+        dirs = package.split(b".")
+        assert dirs[0] == b"mercurial"
         return os.path.join(_rootpath, *dirs[1:])
+
 
 else:
     datapath = os.path.dirname(os.path.dirname(pycompat.fsencode(__file__)))
     _rootpath = os.path.dirname(datapath)
 
     def _package_path(package):
-        return os.path.join(_rootpath, *package.split(b'.'))
+        return os.path.join(_rootpath, *package.split(b"."))
+
 
 try:
     from importlib import resources
@@ -79,7 +81,7 @@ except (ImportError, AttributeError):
 
     def open_resource(package, name):
         path = os.path.join(_package_path(package), name)
-        return open(path, 'rb')
+        return open(path, "rb")
 
     def is_resource(package, name):
         path = os.path.join(_package_path(package), name)
