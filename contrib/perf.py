@@ -1536,6 +1536,7 @@ def perfindex(ui, repo, **opts):
     matters.
 
     Example of useful set to test:
+
     * tip
     * 0
     * -10:
