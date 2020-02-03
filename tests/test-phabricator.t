@@ -139,6 +139,23 @@ Phabsending a skipped commit:
   $ hg phabsend --no-amend -r . --test-vcr "$VCR/phabsend-skipped.json"
   D7919 - skipped - 1849d7828727: create comment for phabricator test
 
+Phabesending a new binary, a modified binary, and a removed binary
+
+  >>> open('bin', 'wb').write(b'\0a') and None
+  $ hg ci -Am 'add binary'
+  adding bin
+  >>> open('bin', 'wb').write(b'\0b') and None
+  $ hg ci -m 'modify binary'
+  $ hg rm bin
+  $ hg ci -m 'remove binary'
+  $ hg phabsend -r .~2:: --test-vcr "$VCR/phabsend-binary.json"
+  uploading bin@aa24a81f55de
+  D8007 - created - aa24a81f55de: add binary
+  uploading bin@d8d62a881b54
+  D8008 - created - d8d62a881b54: modify binary
+  D8009 - created - af55645b2e29: remove binary
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/aa24a81f55de-a3a0cf24-phabsend.hg
+
 Phabreading a DREV with a local:commits time as a string:
   $ hg phabread --test-vcr "$VCR/phabread-str-time.json" D1285
   # HG changeset patch

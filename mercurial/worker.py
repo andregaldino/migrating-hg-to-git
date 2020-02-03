@@ -226,7 +226,7 @@ def _posixworker(ui, func, staticargs, args, hasretval):
     selector = selectors.DefaultSelector()
     for rfd, wfd in pipes:
         os.close(wfd)
-        selector.register(os.fdopen(rfd, 'rb', 0), selectors.EVENT_READ)
+        selector.register(os.fdopen(rfd, 'rb'), selectors.EVENT_READ)
 
     def cleanup():
         signal.signal(signal.SIGINT, oldhandler)

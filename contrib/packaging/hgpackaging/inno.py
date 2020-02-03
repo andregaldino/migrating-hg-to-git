@@ -20,6 +20,8 @@ from .py2exe import (
 )
 from .util import (
     find_vc_runtime_files,
+    normalize_windows_version,
+    process_install_rules,
     read_version_py,
 )
 
@@ -29,6 +31,10 @@ EXTRA_PACKAGES = {
     'pygments',
     'win32ctypes',
 }
+
+EXTRA_INSTALL_RULES = [
+    ('contrib/win32/mercurial.ini', 'defaultrc/mercurial.rc'),
+]
 
 PACKAGE_FILES_METADATA = {
     'ReadMe.html': 'Flags: isreadme',
@@ -60,7 +66,7 @@ def build(
     staging_dir = inno_build_dir / 'stage'
 
     requirements_txt = (
-        source_dir / 'contrib' / 'packaging' / 'inno' / 'requirements.txt'
+        source_dir / 'contrib' / 'packaging' / 'requirements_win32.txt'
     )
 
     inno_build_dir.mkdir(parents=True, exist_ok=True)
@@ -82,6 +88,9 @@ def build(
 
     # Now assemble all the packaged files into the staging directory.
     stage_install(source_dir, staging_dir)
+
+    # We also install some extra files.
+    process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
 
     # hg.exe depends on VC9 runtime DLLs. Copy those into place.
     for f in find_vc_runtime_files(vc_x64):
@@ -156,6 +165,7 @@ def build(
         version = read_version_py(source_dir)
 
     args.append('/dVERSION=%s' % version)
+    args.append('/dQUAD_VERSION=%s' % normalize_windows_version(version))
 
     args.append('/Odist')
     args.append(str(inno_build_dir / 'mercurial.iss'))

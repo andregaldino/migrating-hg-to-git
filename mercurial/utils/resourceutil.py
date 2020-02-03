@@ -33,10 +33,24 @@ def mainfrozen():
 if mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     # executable version (py2exe) doesn't support __file__
     datapath = os.path.dirname(pycompat.sysexecutable)
-    _rootpath = os.path.dirname(datapath)
+    _rootpath = datapath
+
+    # The installers store the files outside of library.zip, like
+    # C:\Program Files\Mercurial\defaultrc\*.rc.  This strips the
+    # leading "mercurial." off of the package name, so that these
+    # pseudo resources are found in their directory next to the
+    # executable.
+    def _package_path(package):
+        dirs = package.split(b'.')
+        assert dirs[0] == b'mercurial'
+        return os.path.join(_rootpath, *dirs[1:])
+
 else:
     datapath = os.path.dirname(os.path.dirname(pycompat.fsencode(__file__)))
     _rootpath = os.path.dirname(datapath)
+
+    def _package_path(package):
+        return os.path.join(_rootpath, *package.split(b'.'))
 
 try:
     from importlib import resources
@@ -62,9 +76,6 @@ try:
 
 
 except (ImportError, AttributeError):
-
-    def _package_path(package):
-        return os.path.join(_rootpath, *package.split(b'.'))
 
     def open_resource(package, name):
         path = os.path.join(_package_path(package), name)

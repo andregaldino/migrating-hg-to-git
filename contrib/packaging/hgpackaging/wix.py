@@ -24,14 +24,18 @@ from .py2exe import (
 )
 from .util import (
     extract_zip_to_directory,
+    normalize_windows_version,
     process_install_rules,
     sign_with_signtool,
 )
 
 
 EXTRA_PACKAGES = {
+    'dulwich',
     'distutils',
+    'keyring',
     'pygments',
+    'win32ctypes',
 }
 
 
@@ -69,34 +73,6 @@ def find_version(source_dir: pathlib.Path):
 
     m = re.search('version = b"(.*)"', source)
     return m.group(1)
-
-
-def normalize_version(version):
-    """Normalize Mercurial version string so WiX accepts it.
-
-    Version strings have to be numeric X.Y.Z.
-    """
-
-    if '+' in version:
-        version, extra = version.split('+', 1)
-    else:
-        extra = None
-
-    # 4.9rc0
-    if version[:-1].endswith('rc'):
-        version = version[:-3]
-
-    versions = [int(v) for v in version.split('.')]
-    while len(versions) < 3:
-        versions.append(0)
-
-    major, minor, build = versions[:3]
-
-    if extra:
-        # <commit count>-<hash>+<date>
-        build = int(extra.split('-')[0])
-
-    return '.'.join('%d' % x for x in (major, minor, build))
 
 
 def ensure_vc90_merge_modules(build_dir):
@@ -367,7 +343,7 @@ def build_installer(
     dist_dir = source_dir / 'dist'
     wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
 
-    requirements_txt = wix_dir / 'requirements.txt'
+    requirements_txt = 'requirements_win32.txt'
 
     build_py2exe(
         source_dir,
@@ -379,8 +355,11 @@ def build_installer(
         extra_packages_script=extra_packages_script,
     )
 
-    version = version or normalize_version(find_version(source_dir))
+    orig_version = version or find_version(source_dir)
+    version = normalize_windows_version(orig_version)
     print('using version string: %s' % version)
+    if version != orig_version:
+        print('(normalized from: %s)' % orig_version)
 
     if post_build_fn:
         post_build_fn(source_dir, hg_build_dir, dist_dir, version)
@@ -440,7 +419,7 @@ def build_installer(
     run_candle(wix_path, build_dir, source, source_build_rel, defines=defines)
 
     msi_path = (
-        source_dir / 'dist' / ('%s-%s-%s.msi' % (msi_name, version, arch))
+        source_dir / 'dist' / ('%s-%s-%s.msi' % (msi_name, orig_version, arch))
     )
 
     args = [
