@@ -403,13 +403,15 @@ def pathcopies(x, y, match=None):
         )
     if x == y or not x or not y:
         return {}
+    if y.rev() is None and x == y.p1():
+        if debug:
+            repo.ui.debug(b'debug.copies: search mode: dirstate\n')
+        # short-circuit to avoid issues with merge states
+        return _dirstatecopies(repo, match)
     a = y.ancestor(x)
     if a == x:
         if debug:
             repo.ui.debug(b'debug.copies: search mode: forward\n')
-        if y.rev() is None and x == y.p1():
-            # short-circuit to avoid issues with merge states
-            return _dirstatecopies(repo, match)
         copies = _forwardcopies(x, y, match=match)
     elif a == y:
         if debug:

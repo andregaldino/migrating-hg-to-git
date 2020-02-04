@@ -68,7 +68,6 @@ Getting status of working copy
   ! b
 
   $ hg status --copies
-  debug.filters: computing revision filter for "visible"
   M c
   A d
   R a
