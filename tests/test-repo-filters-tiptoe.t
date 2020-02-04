@@ -67,6 +67,13 @@ Getting status of working copy
   R a
   ! b
 
+  $ hg status --copies
+  debug.filters: computing revision filter for "visible"
+  M c
+  A d
+  R a
+  ! b
+
 Getting data about the working copy parent
 
   $ hg log -r '.' -T "{node}\n{date}\n"
