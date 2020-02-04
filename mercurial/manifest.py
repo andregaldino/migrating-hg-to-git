@@ -760,6 +760,7 @@ def _splittopdir(f):
 _noop = lambda s: None
 
 
+@interfaceutil.implementer(repository.imanifestdict)
 class treemanifest(object):
     def __init__(self, dir=b'', text=b''):
         self._dir = dir
