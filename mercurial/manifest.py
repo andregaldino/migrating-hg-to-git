@@ -460,7 +460,7 @@ class manifestdict(object):
     __bool__ = __nonzero__
 
     def __setitem__(self, key, node):
-        self._lm[key] = node, self.flags(key, b'')
+        self._lm[key] = node, self.flags(key)
 
     def __contains__(self, key):
         if key is None:
@@ -595,11 +595,11 @@ class manifestdict(object):
         except KeyError:
             return default
 
-    def flags(self, key, default=b''):
+    def flags(self, key):
         try:
             return self._lm[key][1]
         except KeyError:
-            return default
+            return b''
 
     def copy(self):
         c = manifestdict()

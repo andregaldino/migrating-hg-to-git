@@ -1027,8 +1027,8 @@ class imanifestdict(interfaceutil.Interface):
     def get(path, default=None):
         """Obtain the node value for a path or a default value if missing."""
 
-    def flags(path, default=b''):
-        """Return the flags value for a path or a default value if missing."""
+    def flags(path):
+        """Return the flags value for a path (default: empty bytestring)."""
 
     def copy():
         """Return a copy of this manifest."""
