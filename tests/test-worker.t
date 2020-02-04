@@ -131,4 +131,35 @@ Workers should not do cleanups in all cases
   abort: known exception
   [255]
 
+Do not crash on partially read result
+
+  $ cat > $TESTTMP/detecttruncated.py <<EOF
+  > from __future__ import absolute_import
+  > import os
+  > import sys
+  > import time
+  > sys.unraisablehook = lambda x: None
+  > oldwrite = os.write
+  > def splitwrite(fd, string):
+  >     ret = oldwrite(fd, string[:9])
+  >     if ret == 9:
+  >         time.sleep(0.1)
+  >         ret += oldwrite(fd, string[9:])
+  >     return ret
+  > os.write = splitwrite
+  > EOF
+
+  $ hg --config "extensions.t=$abspath" --config worker.numcpus=8 --config \
+  > "extensions.d=$TESTTMP/detecttruncated.py" test 100000.0
+  start
+  run
+  run
+  run
+  run
+  run
+  run
+  run
+  run
+  done
+
 #endif
