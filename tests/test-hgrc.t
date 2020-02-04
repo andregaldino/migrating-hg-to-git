@@ -299,3 +299,11 @@ Check that hgweb respect HGRCSKIPREPO=1
   $ killdaemons.py
   $ cat access.log
   $ cat errors.log
+
+Check that zeroconf respect HGRCSKIPREPO=1
+
+  $ hg paths --config extensions.zeroconf=
+  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  [255]
+  $ HGRCSKIPREPO=1 hg paths --config extensions.zeroconf=
+  foo = $TESTTMP/bar
