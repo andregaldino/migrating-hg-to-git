@@ -1071,14 +1071,6 @@ class imanifestrevisionbase(interfaceutil.Interface):
     as part of a larger interface.
     """
 
-    def new():
-        """Obtain a new manifest instance.
-
-        Returns an object conforming to the ``imanifestrevisionwritable``
-        interface. The instance will be associated with the same
-        ``imanifestlog`` collection as this instance.
-        """
-
     def copy():
         """Obtain a copy of this manifest instance.
 

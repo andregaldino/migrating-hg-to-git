@@ -1921,9 +1921,6 @@ class memmanifestctx(object):
     def _storage(self):
         return self._manifestlog.getstorage(b'')
 
-    def new(self):
-        return memmanifestctx(self._manifestlog)
-
     def copy(self):
         memmf = memmanifestctx(self._manifestlog)
         memmf._manifestdict = self.read().copy()
@@ -1969,9 +1966,6 @@ class manifestctx(object):
 
     def node(self):
         return self._node
-
-    def new(self):
-        return memmanifestctx(self._manifestlog)
 
     def copy(self):
         memmf = memmanifestctx(self._manifestlog)
@@ -2036,9 +2030,6 @@ class memtreemanifestctx(object):
 
     def _storage(self):
         return self._manifestlog.getstorage(b'')
-
-    def new(self, dir=b''):
-        return memtreemanifestctx(self._manifestlog, dir=dir)
 
     def copy(self):
         memmf = memtreemanifestctx(self._manifestlog, dir=self._dir)
@@ -2121,9 +2112,6 @@ class treemanifestctx(object):
 
     def node(self):
         return self._node
-
-    def new(self, dir=b''):
-        return memtreemanifestctx(self._manifestlog, dir=dir)
 
     def copy(self):
         memmf = memtreemanifestctx(self._manifestlog, dir=self._dir)

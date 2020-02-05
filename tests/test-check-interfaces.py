@@ -252,7 +252,6 @@ def main():
     checkzobject(mctx)
 
     # Conforms to imanifestrevisionwritable.
-    checkzobject(mctx.new())
     checkzobject(mctx.copy())
 
     # Conforms to imanifestdict.
