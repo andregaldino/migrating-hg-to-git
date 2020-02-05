@@ -2357,8 +2357,7 @@ class overlayworkingctx(committablectx):
         # Test the other direction -- that this path from p2 isn't a directory
         # in p1 (test that p1 doesn't have any paths matching `path/*`).
         match = self.match([path], default=b'path')
-        matches = self.p1().manifest().matches(match)
-        mfiles = matches.keys()
+        mfiles = list(self.p1().manifest().walk(match))
         if len(mfiles) > 0:
             if len(mfiles) == 1 and mfiles[0] == path:
                 return
