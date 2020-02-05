@@ -985,17 +985,8 @@ class imanifestdict(interfaceutil.Interface):
     def hasdir(dir):
         """Returns a bool indicating if a directory is in this manifest."""
 
-    def matches(match):
-        """Generate a new manifest filtered through a matcher.
-
-        Returns an object conforming to the ``imanifestdict`` interface.
-        """
-
     def walk(match):
         """Generator of paths in manifest satisfying a matcher.
-
-        This is equivalent to ``self.matches(match).iterkeys()`` except a new
-        manifest object is not created.
 
         If the matcher has explicit files listed and they don't exist in
         the manifest, ``match.bad()`` is called for each missing file.

@@ -545,7 +545,7 @@ class manifestdict(object):
             if not self.hasdir(fn):
                 match.bad(fn, None)
 
-    def matches(self, match):
+    def _matches(self, match):
         '''generate a new manifest filtered by the match argument'''
         if match.always():
             return self.copy()
@@ -578,8 +578,8 @@ class manifestdict(object):
         string.
         '''
         if match:
-            m1 = self.matches(match)
-            m2 = m2.matches(match)
+            m1 = self._matches(match)
+            m2 = m2._matches(match)
             return m1.diff(m2, clean=clean)
         return self._lm.diff(m2._lm, clean)
 
@@ -1075,8 +1075,8 @@ class treemanifest(object):
     def filesnotin(self, m2, match=None):
         '''Set of files in this manifest that are not in the other'''
         if match and not match.always():
-            m1 = self.matches(match)
-            m2 = m2.matches(match)
+            m1 = self._matches(match)
+            m2 = m2._matches(match)
             return m1.filesnotin(m2)
 
         files = set()
@@ -1122,9 +1122,6 @@ class treemanifest(object):
     def walk(self, match):
         '''Generates matching file names.
 
-        Equivalent to manifest.matches(match).iterkeys(), but without creating
-        an entirely new manifest.
-
         It also reports nonexistent files by marking them bad with match.bad().
         '''
         if match.always():
@@ -1167,16 +1164,16 @@ class treemanifest(object):
                     for f in self._dirs[p]._walk(match):
                         yield f
 
-    def matches(self, match):
-        '''generate a new manifest filtered by the match argument'''
-        if match.always():
-            return self.copy()
-
-        return self._matches(match)
-
     def _matches(self, match):
         '''recursively generate a new manifest filtered by the match argument.
         '''
+        if match.always():
+            return self.copy()
+        return self._matches_inner(match)
+
+    def _matches_inner(self, match):
+        if match.always():
+            return self.copy()
 
         visit = match.visitchildrenset(self._dir[:-1])
         if visit == b'all':
@@ -1207,7 +1204,7 @@ class treemanifest(object):
         for dir, subm in pycompat.iteritems(self._dirs):
             if visit and dir[:-1] not in visit:
                 continue
-            m = subm._matches(match)
+            m = subm._matches_inner(match)
             if not m._isempty():
                 ret._dirs[dir] = m
 
@@ -1231,8 +1228,8 @@ class treemanifest(object):
         string.
         '''
         if match and not match.always():
-            m1 = self.matches(match)
-            m2 = m2.matches(match)
+            m1 = self._matches(match)
+            m2 = m2._matches(match)
             return m1.diff(m2, clean=clean)
         result = {}
         emptytree = treemanifest()
