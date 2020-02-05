@@ -15,12 +15,35 @@ use std::path::{Path, PathBuf};
 pub enum HgPathError {
     /// Bytes from the invalid `HgPath`
     LeadingSlash(Vec<u8>),
-    /// Bytes and index of the second slash
-    ConsecutiveSlashes(Vec<u8>, usize),
-    /// Bytes and index of the null byte
-    ContainsNullByte(Vec<u8>, usize),
+    ConsecutiveSlashes {
+        bytes: Vec<u8>,
+        second_slash_index: usize,
+    },
+    ContainsNullByte {
+        bytes: Vec<u8>,
+        null_byte_index: usize,
+    },
     /// Bytes
     DecodeError(Vec<u8>),
+    /// The rest come from audit errors
+    EndsWithSlash(HgPathBuf),
+    ContainsIllegalComponent(HgPathBuf),
+    /// Path is inside the `.hg` folder
+    InsideDotHg(HgPathBuf),
+    IsInsideNestedRepo {
+        path: HgPathBuf,
+        nested_repo: HgPathBuf,
+    },
+    TraversesSymbolicLink {
+        path: HgPathBuf,
+        symlink: HgPathBuf,
+    },
+    NotFsCompliant(HgPathBuf),
+    /// `path` is the smallest invalid path
+    NotUnderRoot {
+        path: PathBuf,
+        root: PathBuf,
+    },
 }
 
 impl ToString for HgPathError {
@@ -29,17 +52,55 @@ impl ToString for HgPathError {
             HgPathError::LeadingSlash(bytes) => {
                 format!("Invalid HgPath '{:?}': has a leading slash.", bytes)
             }
-            HgPathError::ConsecutiveSlashes(bytes, pos) => format!(
-                "Invalid HgPath '{:?}': consecutive slahes at pos {}.",
+            HgPathError::ConsecutiveSlashes {
+                bytes,
+                second_slash_index: pos,
+            } => format!(
+                "Invalid HgPath '{:?}': consecutive slashes at pos {}.",
                 bytes, pos
             ),
-            HgPathError::ContainsNullByte(bytes, pos) => format!(
+            HgPathError::ContainsNullByte {
+                bytes,
+                null_byte_index: pos,
+            } => format!(
                 "Invalid HgPath '{:?}': contains null byte at pos {}.",
                 bytes, pos
             ),
             HgPathError::DecodeError(bytes) => {
                 format!("Invalid HgPath '{:?}': could not be decoded.", bytes)
             }
+            HgPathError::EndsWithSlash(path) => {
+                format!("Audit failed for '{}': ends with a slash.", path)
+            }
+            HgPathError::ContainsIllegalComponent(path) => format!(
+                "Audit failed for '{}': contains an illegal component.",
+                path
+            ),
+            HgPathError::InsideDotHg(path) => format!(
+                "Audit failed for '{}': is inside the '.hg' folder.",
+                path
+            ),
+            HgPathError::IsInsideNestedRepo {
+                path,
+                nested_repo: nested,
+            } => format!(
+                "Audit failed for '{}': is inside a nested repository '{}'.",
+                path, nested
+            ),
+            HgPathError::TraversesSymbolicLink { path, symlink } => format!(
+                "Audit failed for '{}': traverses symbolic link '{}'.",
+                path, symlink
+            ),
+            HgPathError::NotFsCompliant(path) => format!(
+                "Audit failed for '{}': cannot be turned into a \
+                 filesystem path.",
+                path
+            ),
+            HgPathError::NotUnderRoot { path, root } => format!(
+                "Audit failed for '{}': not under root {}.",
+                path.display(),
+                root.display()
+            ),
         }
     }
 }
@@ -229,17 +290,17 @@ impl HgPath {
         for (index, byte) in bytes.iter().enumerate() {
             match byte {
                 0 => {
-                    return Err(HgPathError::ContainsNullByte(
-                        bytes.to_vec(),
-                        index,
-                    ))
+                    return Err(HgPathError::ContainsNullByte {
+                        bytes: bytes.to_vec(),
+                        null_byte_index: index,
+                    })
                 }
                 b'/' => {
                     if previous_byte.is_some() && previous_byte == Some(b'/') {
-                        return Err(HgPathError::ConsecutiveSlashes(
-                            bytes.to_vec(),
-                            index,
-                        ));
+                        return Err(HgPathError::ConsecutiveSlashes {
+                            bytes: bytes.to_vec(),
+                            second_slash_index: index,
+                        });
                     }
                 }
                 _ => (),
@@ -431,11 +492,17 @@ mod tests {
             HgPath::new(b"/").check_state()
         );
         assert_eq!(
-            Err(HgPathError::ConsecutiveSlashes(b"a/b//c".to_vec(), 4)),
+            Err(HgPathError::ConsecutiveSlashes {
+                bytes: b"a/b//c".to_vec(),
+                second_slash_index: 4
+            }),
             HgPath::new(b"a/b//c").check_state()
         );
         assert_eq!(
-            Err(HgPathError::ContainsNullByte(b"a/b/\0c".to_vec(), 4)),
+            Err(HgPathError::ContainsNullByte {
+                bytes: b"a/b/\0c".to_vec(),
+                null_byte_index: 4
+            }),
             HgPath::new(b"a/b/\0c").check_state()
         );
         // TODO test HgPathError::DecodeError for the Windows implementation.

@@ -12,6 +12,8 @@
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use std::iter::FusedIterator;
 
+use crate::utils::replace_slice;
+use lazy_static::lazy_static;
 use std::fs::Metadata;
 use std::path::Path;
 
@@ -83,6 +85,41 @@ pub fn normalize_case(path: &HgPath) -> HgPathBuf {
     return path.to_ascii_uppercase();
     #[cfg(unix)]
     path.to_ascii_lowercase()
+}
+
+lazy_static! {
+    static ref IGNORED_CHARS: Vec<Vec<u8>> = {
+        [
+            0x200c, 0x200d, 0x200e, 0x200f, 0x202a, 0x202b, 0x202c, 0x202d,
+            0x202e, 0x206a, 0x206b, 0x206c, 0x206d, 0x206e, 0x206f, 0xfeff,
+        ]
+        .iter()
+        .map(|code| {
+            std::char::from_u32(*code)
+                .unwrap()
+                .encode_utf8(&mut [0; 3])
+                .bytes()
+                .collect()
+        })
+        .collect()
+    };
+}
+
+fn hfs_ignore_clean(bytes: &[u8]) -> Vec<u8> {
+    let mut buf = bytes.to_owned();
+    let needs_escaping = bytes.iter().any(|b| *b == b'\xe2' || *b == b'\xef');
+    if needs_escaping {
+        for forbidden in IGNORED_CHARS.iter() {
+            replace_slice(&mut buf, forbidden, &[])
+        }
+        buf
+    } else {
+        buf
+    }
+}
+
+pub fn lower_clean(bytes: &[u8]) -> Vec<u8> {
+    hfs_ignore_clean(&bytes.to_ascii_lowercase())
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]

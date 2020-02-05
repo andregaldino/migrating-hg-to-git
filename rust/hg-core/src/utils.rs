@@ -9,6 +9,7 @@
 
 pub mod files;
 pub mod hg_path;
+pub mod path_auditor;
 
 /// Useful until rust/issues/56345 is stable
 ///
