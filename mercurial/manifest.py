@@ -23,6 +23,7 @@ from .pycompat import getattr
 from . import (
     encoding,
     error,
+    match as matchmod,
     mdiff,
     pathutil,
     policy,
@@ -482,17 +483,11 @@ class manifestdict(object):
 
     def filesnotin(self, m2, match=None):
         '''Set of files in this manifest that are not in the other'''
-        if match:
-            m1 = self.matches(match)
-            m2 = m2.matches(match)
-            return m1.filesnotin(m2)
-        diff = self.diff(m2)
-        files = set(
-            filepath
-            for filepath, hashflags in pycompat.iteritems(diff)
-            if hashflags[1][0] is None
-        )
-        return files
+        if match is not None:
+            match = matchmod.badmatch(match, lambda path, msg: None)
+            sm2 = set(m2.walk(match))
+            return {f for f in self.walk(match) if f not in sm2}
+        return {f for f in self if f not in m2}
 
     @propertycache
     def _dirs(self):
