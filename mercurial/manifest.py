@@ -530,7 +530,8 @@ class manifestdict(object):
         # avoid the entire walk if we're only looking for specific files
         if self._filesfastpath(match):
             for fn in sorted(fset):
-                yield fn
+                if fn in self:
+                    yield fn
             return
 
         for fn in self:
