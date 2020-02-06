@@ -83,9 +83,7 @@ fn dispatch_found(
     entry: DirstateEntry,
     metadata: HgMetadata,
     copy_map: &CopyMap,
-    check_exec: bool,
-    list_clean: bool,
-    last_normal_time: i64,
+    options: StatusOptions,
 ) -> Dispatch {
     let DirstateEntry {
         state,
@@ -105,7 +103,7 @@ fn dispatch_found(
         EntryState::Normal => {
             let size_changed = mod_compare(size, st_size as i32);
             let mode_changed =
-                (mode ^ st_mode as i32) & 0o100 != 0o000 && check_exec;
+                (mode ^ st_mode as i32) & 0o100 != 0o000 && options.check_exec;
             let metadata_changed = size >= 0 && (size_changed || mode_changed);
             let other_parent = size == SIZE_FROM_OTHER_PARENT;
             if metadata_changed
@@ -115,14 +113,14 @@ fn dispatch_found(
                 Dispatch::Modified
             } else if mod_compare(mtime, st_mtime as i32) {
                 Dispatch::Unsure
-            } else if st_mtime == last_normal_time {
+            } else if st_mtime == options.last_normal_time {
                 // the file may have just been marked as normal and
                 // it may have changed in the same second without
                 // changing its size. This can happen if we quickly
                 // do multiple commits. Force lookup, so we don't
                 // miss such a racy file change.
                 Dispatch::Unsure
-            } else if list_clean {
+            } else if options.list_clean {
                 Dispatch::Clean
             } else {
                 Dispatch::Unknown
@@ -155,9 +153,7 @@ fn walk_explicit<'a>(
     files: &'a HashSet<&HgPath>,
     dmap: &'a DirstateMap,
     root_dir: impl AsRef<Path> + Sync + Send,
-    check_exec: bool,
-    list_clean: bool,
-    last_normal_time: i64,
+    options: StatusOptions,
 ) -> impl ParallelIterator<Item = IoResult<(&'a HgPath, Dispatch)>> {
     files.par_iter().filter_map(move |filename| {
         // TODO normalization
@@ -181,9 +177,7 @@ fn walk_explicit<'a>(
                                 *entry,
                                 HgMetadata::from_metadata(meta),
                                 &dmap.copy_map,
-                                check_exec,
-                                list_clean,
-                                last_normal_time,
+                                options,
                             ),
                         )));
                     }
@@ -206,14 +200,23 @@ fn walk_explicit<'a>(
     })
 }
 
+#[derive(Debug, Copy, Clone)]
+pub struct StatusOptions {
+    /// Remember the most recent modification timeslot for status, to make
+    /// sure we won't miss future size-preserving file content modifications
+    /// that happen within the same timeslot.
+    pub last_normal_time: i64,
+    /// Whether we are on a filesystem with UNIX-like exec flags
+    pub check_exec: bool,
+    pub list_clean: bool,
+}
+
 /// Stat all entries in the `DirstateMap` and mark them for dispatch into
 /// the relevant collections.
 fn stat_dmap_entries(
     dmap: &DirstateMap,
     root_dir: impl AsRef<Path> + Sync + Send,
-    check_exec: bool,
-    list_clean: bool,
-    last_normal_time: i64,
+    options: StatusOptions,
 ) -> impl ParallelIterator<Item = IoResult<(&HgPath, Dispatch)>> {
     dmap.par_iter().map(move |(filename, entry)| {
         let filename: &HgPath = filename;
@@ -234,9 +237,7 @@ fn stat_dmap_entries(
                     *entry,
                     HgMetadata::from_metadata(m),
                     &dmap.copy_map,
-                    check_exec,
-                    list_clean,
-                    last_normal_time,
+                    options,
                 ),
             )),
             Err(ref e)
@@ -303,31 +304,16 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
     dmap: &'a DirstateMap,
     matcher: &'b impl Matcher,
     root_dir: impl AsRef<Path> + Sync + Send + Copy,
-    list_clean: bool,
-    last_normal_time: i64,
-    check_exec: bool,
+    options: StatusOptions,
 ) -> IoResult<(Vec<&'c HgPath>, StatusResult<'c>)> {
     let files = matcher.file_set();
     let mut results = vec![];
     if let Some(files) = files {
-        results.par_extend(walk_explicit(
-            &files,
-            &dmap,
-            root_dir,
-            check_exec,
-            list_clean,
-            last_normal_time,
-        ));
+        results.par_extend(walk_explicit(&files, &dmap, root_dir, options));
     }
 
     if !matcher.is_exact() {
-        let stat_results = stat_dmap_entries(
-            &dmap,
-            root_dir,
-            check_exec,
-            list_clean,
-            last_normal_time,
-        );
+        let stat_results = stat_dmap_entries(&dmap, root_dir, options);
         results.par_extend(stat_results);
     }
 

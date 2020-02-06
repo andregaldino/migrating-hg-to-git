@@ -668,7 +668,11 @@ mod tests {
 
         assert_eq!(
             roots_dirs_and_parents(&pats).unwrap(),
-            RootsDirsAndParents {roots, dirs, parents}
+            RootsDirsAndParents {
+                roots,
+                dirs,
+                parents
+            }
         );
     }
 
