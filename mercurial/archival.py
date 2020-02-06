@@ -355,7 +355,7 @@ def archive(
         if match(name):
             write(name, 0o644, False, lambda: buildmetadata(ctx))
 
-    files = [f for f in ctx.manifest().matches(match)]
+    files = list(ctx.manifest().walk(match))
     total = len(files)
     if total:
         files.sort()
