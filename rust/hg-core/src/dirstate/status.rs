@@ -25,6 +25,25 @@ use std::collections::HashSet;
 use std::fs::{read_dir, DirEntry};
 use std::path::Path;
 
+/// Wrong type of file from a `BadMatch`
+/// Note: a lot of those don't exist on all platforms.
+#[derive(Debug)]
+pub enum BadType {
+    CharacterDevice,
+    BlockDevice,
+    FIFO,
+    Socket,
+    Directory,
+    Unknown,
+}
+
+/// Was explicitly matched but cannot be found/accessed
+#[derive(Debug)]
+pub enum BadMatch {
+    OsError(i32),
+    BadType(BadType),
+}
+
 /// Marker enum used to dispatch new status entries into the right collections.
 /// Is similar to `crate::EntryState`, but represents the transient state of
 /// entries during the lifetime of a command.
@@ -36,6 +55,16 @@ enum Dispatch {
     Deleted,
     Clean,
     Unknown,
+    Ignored,
+    /// Empty dispatch, the file is not worth listing
+    None,
+    /// Was explicitly matched but cannot be found/accessed
+    Bad(BadMatch),
+    Directory {
+        /// True if the directory used to be a file in the dmap so we can say
+        /// that it's been removed.
+        was_file: bool,
+    },
 }
 
 type IoResult<T> = std::io::Result<T>;
@@ -261,8 +290,9 @@ pub struct DirstateStatus<'a> {
     pub removed: Vec<&'a HgPath>,
     pub deleted: Vec<&'a HgPath>,
     pub clean: Vec<&'a HgPath>,
-    /* TODO ignored
-     * TODO unknown */
+    pub ignored: Vec<&'a HgPath>,
+    pub unknown: Vec<&'a HgPath>,
+    pub bad: Vec<(&'a HgPath, BadMatch)>,
 }
 
 fn build_response<'a>(
@@ -274,17 +304,24 @@ fn build_response<'a>(
     let mut removed = vec![];
     let mut deleted = vec![];
     let mut clean = vec![];
+    let mut ignored = vec![];
+    let mut unknown = vec![];
+    let mut bad = vec![];
 
     for res in results.into_iter() {
         let (filename, dispatch) = res?;
         match dispatch {
-            Dispatch::Unknown => {}
+            Dispatch::Unknown => unknown.push(filename),
             Dispatch::Unsure => lookup.push(filename),
             Dispatch::Modified => modified.push(filename),
             Dispatch::Added => added.push(filename),
             Dispatch::Removed => removed.push(filename),
             Dispatch::Deleted => deleted.push(filename),
             Dispatch::Clean => clean.push(filename),
+            Dispatch::Ignored => ignored.push(filename),
+            Dispatch::None => {}
+            Dispatch::Bad(reason) => bad.push((filename, reason)),
+            Dispatch::Directory { .. } => {}
         }
     }
 
@@ -296,6 +333,9 @@ fn build_response<'a>(
             removed,
             deleted,
             clean,
+            ignored,
+            unknown,
+            bad,
         },
     ))
 }
