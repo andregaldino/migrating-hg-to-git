@@ -11,18 +11,21 @@
 
 use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
-    matchers::Matcher,
+    matchers::{Matcher, VisitChildrenSet},
     utils::{
         files::HgMetadata,
         hg_path::{
             hg_path_to_path_buf, os_string_to_hg_path_buf, HgPath, HgPathBuf,
         },
     },
-    CopyMap, DirstateEntry, DirstateMap, EntryState,
+    CopyMap, DirstateEntry, DirstateMap, EntryState, FastHashMap,
 };
 use rayon::prelude::*;
-use std::collections::HashSet;
+use std::borrow::Cow;
+use std::collections::{HashSet, VecDeque};
 use std::fs::{read_dir, DirEntry};
+use std::io::ErrorKind;
+use std::ops::Deref;
 use std::path::Path;
 
 /// Wrong type of file from a `BadMatch`
@@ -238,6 +241,178 @@ pub struct StatusOptions {
     /// Whether we are on a filesystem with UNIX-like exec flags
     pub check_exec: bool,
     pub list_clean: bool,
+    pub list_unknown: bool,
+    pub list_ignored: bool,
+}
+
+/// Dispatch a single file found during `traverse`.
+/// If `file` is a folder that needs to be traversed, it will be pushed into
+/// `work`.
+fn traverse_worker<'a>(
+    work: &mut VecDeque<HgPathBuf>,
+    matcher: &impl Matcher,
+    dmap: &DirstateMap,
+    filename: impl AsRef<HgPath>,
+    dir_entry: &DirEntry,
+    ignore_fn: &impl for<'r> Fn(&'r HgPath) -> bool,
+    dir_ignore_fn: &impl for<'r> Fn(&'r HgPath) -> bool,
+    options: StatusOptions,
+) -> Option<IoResult<(Cow<'a, HgPath>, Dispatch)>> {
+    let file_type = match dir_entry.file_type() {
+        Ok(x) => x,
+        Err(e) => return Some(Err(e.into())),
+    };
+    let filename = filename.as_ref();
+    let entry_option = dmap.get(filename);
+
+    if file_type.is_dir() {
+        // Do we need to traverse it?
+        if !ignore_fn(&filename) || options.list_ignored {
+            work.push_front(filename.to_owned());
+        }
+        // Nested `if` until `rust-lang/rust#53668` is stable
+        if let Some(entry) = entry_option {
+            // Used to be a file, is now a folder
+            if matcher.matches_everything() || matcher.matches(&filename) {
+                return Some(Ok((
+                    Cow::Owned(filename.to_owned()),
+                    dispatch_missing(entry.state),
+                )));
+            }
+        }
+    } else if file_type.is_file() || file_type.is_symlink() {
+        if let Some(entry) = entry_option {
+            if matcher.matches_everything() || matcher.matches(&filename) {
+                let metadata = match dir_entry.metadata() {
+                    Ok(x) => x,
+                    Err(e) => return Some(Err(e.into())),
+                };
+                return Some(Ok((
+                    Cow::Owned(filename.to_owned()),
+                    dispatch_found(
+                        &filename,
+                        *entry,
+                        HgMetadata::from_metadata(metadata),
+                        &dmap.copy_map,
+                        options,
+                    ),
+                )));
+            }
+        } else if (matcher.matches_everything() || matcher.matches(&filename))
+            && !ignore_fn(&filename)
+        {
+            if (options.list_ignored || matcher.exact_match(&filename))
+                && dir_ignore_fn(&filename)
+            {
+                if options.list_ignored {
+                    return Some(Ok((
+                        Cow::Owned(filename.to_owned()),
+                        Dispatch::Ignored,
+                    )));
+                }
+            } else {
+                return Some(Ok((
+                    Cow::Owned(filename.to_owned()),
+                    Dispatch::Unknown,
+                )));
+            }
+        }
+    } else if let Some(entry) = entry_option {
+        // Used to be a file or a folder, now something else.
+        if matcher.matches_everything() || matcher.matches(&filename) {
+            return Some(Ok((
+                Cow::Owned(filename.to_owned()),
+                dispatch_missing(entry.state),
+            )));
+        }
+    }
+    None
+}
+
+/// Walk the working directory recursively to look for changes compared to the
+/// current `DirstateMap`.
+fn traverse<'a>(
+    matcher: &(impl Matcher + Sync),
+    root_dir: impl AsRef<Path>,
+    dmap: &DirstateMap,
+    path: impl AsRef<HgPath>,
+    old_results: FastHashMap<Cow<'a, HgPath>, Dispatch>,
+    ignore_fn: &(impl for<'r> Fn(&'r HgPath) -> bool + Sync),
+    dir_ignore_fn: &(impl for<'r> Fn(&'r HgPath) -> bool + Sync),
+    options: StatusOptions,
+) -> IoResult<FastHashMap<Cow<'a, HgPath>, Dispatch>> {
+    let root_dir = root_dir.as_ref();
+    let mut new_results = FastHashMap::default();
+
+    let mut work = VecDeque::new();
+    work.push_front(path.as_ref().to_owned());
+
+    while let Some(ref directory) = work.pop_front() {
+        if directory.as_bytes() == b".hg" {
+            continue;
+        }
+        let visit_entries = match matcher.visit_children_set(directory) {
+            VisitChildrenSet::Empty => continue,
+            VisitChildrenSet::This | VisitChildrenSet::Recursive => None,
+            VisitChildrenSet::Set(set) => Some(set),
+        };
+        let buf = hg_path_to_path_buf(directory)?;
+        let dir_path = root_dir.join(buf);
+
+        let skip_dot_hg = !directory.as_bytes().is_empty();
+        let entries = match list_directory(dir_path, skip_dot_hg) {
+            Err(e) => match e.kind() {
+                ErrorKind::NotFound | ErrorKind::PermissionDenied => {
+                    new_results.insert(
+                        Cow::Owned(directory.to_owned()),
+                        Dispatch::Bad(BadMatch::OsError(
+                            // Unwrapping here is OK because the error always
+                            // is a real os error
+                            e.raw_os_error().unwrap(),
+                        )),
+                    );
+                    continue;
+                }
+                _ => return Err(e),
+            },
+            Ok(entries) => entries,
+        };
+
+        for (filename, dir_entry) in entries {
+            if let Some(ref set) = visit_entries {
+                if !set.contains(filename.deref()) {
+                    continue;
+                }
+            }
+            // TODO normalize
+            let filename = if directory.is_empty() {
+                filename.to_owned()
+            } else {
+                directory.join(&filename)
+            };
+
+            if !old_results.contains_key(filename.deref()) {
+                if let Some((res, dispatch)) = traverse_worker(
+                    &mut work,
+                    matcher,
+                    &dmap,
+                    &filename,
+                    &dir_entry,
+                    &ignore_fn,
+                    &dir_ignore_fn,
+                    options,
+                )
+                .transpose()?
+                {
+                    new_results.insert(res, dispatch);
+                }
+            }
+        }
+    }
+
+    new_results.extend(old_results.into_iter());
+
+    Ok(new_results)
 }
 
 /// Stat all entries in the `DirstateMap` and mark them for dispatch into
