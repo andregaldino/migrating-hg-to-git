@@ -255,7 +255,7 @@ fn stat_dmap_entries(
     })
 }
 
-pub struct StatusResult<'a> {
+pub struct DirstateStatus<'a> {
     pub modified: Vec<&'a HgPath>,
     pub added: Vec<&'a HgPath>,
     pub removed: Vec<&'a HgPath>,
@@ -267,7 +267,7 @@ pub struct StatusResult<'a> {
 
 fn build_response<'a>(
     results: impl IntoIterator<Item = IoResult<(&'a HgPath, Dispatch)>>,
-) -> IoResult<(Vec<&'a HgPath>, StatusResult<'a>)> {
+) -> IoResult<(Vec<&'a HgPath>, DirstateStatus<'a>)> {
     let mut lookup = vec![];
     let mut modified = vec![];
     let mut added = vec![];
@@ -290,7 +290,7 @@ fn build_response<'a>(
 
     Ok((
         lookup,
-        StatusResult {
+        DirstateStatus {
             modified,
             added,
             removed,
@@ -305,7 +305,7 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
     matcher: &'b impl Matcher,
     root_dir: impl AsRef<Path> + Sync + Send + Copy,
     options: StatusOptions,
-) -> IoResult<(Vec<&'c HgPath>, StatusResult<'c>)> {
+) -> IoResult<(Vec<&'c HgPath>, DirstateStatus<'c>)> {
     let files = matcher.file_set();
     let mut results = vec![];
     if let Some(files) = files {

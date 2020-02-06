@@ -20,7 +20,7 @@ use hg::{
     matchers::{AlwaysMatcher, FileMatcher},
     status,
     utils::{files::get_path_from_bytes, hg_path::HgPath},
-    StatusResult,
+    DirstateStatus,
 };
 use std::borrow::Borrow;
 
@@ -114,7 +114,7 @@ pub fn status_wrapper(
 
 fn build_response(
     lookup: Vec<&HgPath>,
-    status_res: StatusResult,
+    status_res: DirstateStatus,
     py: Python,
 ) -> PyResult<(PyList, PyList, PyList, PyList, PyList, PyList, PyList)> {
     let modified = collect_pybytes_list(py, status_res.modified.as_ref());
