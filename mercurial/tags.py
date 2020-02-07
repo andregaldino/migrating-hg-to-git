@@ -720,15 +720,18 @@ class hgtagsfnodescache(object):
 
         self._dirtyoffset = None
 
-        if rawlen < wantedlen:
-            self._dirtyoffset = rawlen
-            self._raw.extend(b'\xff' * (wantedlen - rawlen))
-        elif rawlen > wantedlen:
+        rawlentokeep = min(wantedlen, (rawlen / _fnodesrecsize) * _fnodesrecsize)
+        if rawlen > rawlentokeep:
             # There's no easy way to truncate array instances. This seems
             # slightly less evil than copying a potentially large array slice.
-            for i in range(rawlen - wantedlen):
+            for i in range(rawlen - rawlentokeep):
                 self._raw.pop()
-            self._dirtyoffset = len(self._raw)
+            rawlen = len(self._raw)
+            self._dirtyoffset = rawlen
+        if rawlen < wantedlen:
+            if self._dirtyoffset is None:
+                self._dirtyoffset = rawlen
+            self._raw.extend(b'\xff' * (wantedlen - rawlen))
 
     def getfnode(self, node, computemissing=True):
         """Obtain the filenode of the .hgtags file at a specified revision.
