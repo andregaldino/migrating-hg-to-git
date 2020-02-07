@@ -307,11 +307,21 @@ def has_lsprof():
         return False
 
 
-def gethgversion():
+def _gethgversion():
     m = matchoutput('hg --version --quiet 2>&1', br'(\d+)\.(\d+)')
     if not m:
         return (0, 0)
     return (int(m.group(1)), int(m.group(2)))
+
+
+_hgversion = None
+
+
+def gethgversion():
+    global _hgversion
+    if _hgversion is None:
+        _hgversion = _gethgversion()
+    return _hgversion
 
 
 @checkvers(
