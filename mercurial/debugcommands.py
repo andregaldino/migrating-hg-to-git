@@ -76,6 +76,7 @@ from . import (
     sshpeer,
     sslutil,
     streamclone,
+    tags as tagsmod,
     templater,
     treediscovery,
     upgrade,
@@ -3428,6 +3429,15 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
                     ui.write(node2str(node))
             ui.write(b'\n')
 
+@command(b'debugtagscache', [])
+def debugtagscache(ui, repo):
+    """display the contents of .hg/cache/hgtagsfnodes1"""
+    cache = tagsmod.hgtagsfnodescache(repo.unfiltered())
+    for r in repo:
+        node = repo[r].node()
+        tagsnode = cache.getfnode(node, computemissing=False)
+        tagsnodedisplay = hex(tagsnode) if tagsnode else 'missing/invalid'
+        ui.write(b'%s %s %s\n' % (r, hex(node), tagsnodedisplay))
 
 @command(
     b'debugtemplate',

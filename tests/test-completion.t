@@ -128,6 +128,7 @@ Show debug commands if there are no other candidates
   debugssl
   debugsub
   debugsuccessorssets
+  debugtagscache
   debugtemplate
   debuguigetpass
   debuguiprompt
@@ -310,6 +311,7 @@ Show all commands + options
   debugssl: 
   debugsub: rev
   debugsuccessorssets: closest
+  debugtagscache: 
   debugtemplate: rev, define
   debuguigetpass: prompt
   debuguiprompt: prompt

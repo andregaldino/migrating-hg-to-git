@@ -1055,6 +1055,8 @@ Test list of internal help commands
    debugsub      (no help text available)
    debugsuccessorssets
                  show set of successors for revision
+   debugtagscache
+                 display the contents of .hg/cache/hgtagsfnodes1
    debugtemplate
                  parse and apply a template
    debuguigetpass

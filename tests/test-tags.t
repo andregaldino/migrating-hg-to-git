@@ -103,6 +103,9 @@ The cache should have an empty entry for rev 0 and a valid entry for rev 1.
   0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   0010: ff ff ff ff ff ff ff ff b9 15 46 36 26 b7 b4 a7 |..........F6&...|
   0020: 73 e0 9e e3 c5 2f 51 0e 19 e0 5e 1f f9 66 d8 59 |s..../Q...^..f.Y|
+  $ hg debugtagscache
+  0 acb14030fe0a21b60322c440ad2d20cf7685a376 missing/invalid
+  1 b9154636be938d3d431e75a7c906504a079bfe07 26b7b4a773e09ee3c52f510e19e05e1ff966d859
 
 Repeat with cold tag cache:
 
