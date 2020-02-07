@@ -35,6 +35,7 @@ from mercurial import (
     extensions,
     hg,
     pycompat,
+    rcutil,
     ui as uimod,
 )
 from mercurial.hgweb import server as servermod
@@ -144,7 +145,8 @@ def zc_create_server(create_server, ui, app):
         prefix = app.ui.config(b"web", b"prefix", b"").strip(b'/') + b'/'
         for repo, path in repos:
             u = app.ui.copy()
-            u.readconfig(os.path.join(path, b'.hg', b'hgrc'))
+            if rcutil.use_repo_hgrc():
+                u.readconfig(os.path.join(path, b'.hg', b'hgrc'))
             name = os.path.basename(repo)
             path = (prefix + repo).strip(b'/')
             desc = u.config(b'web', b'description')

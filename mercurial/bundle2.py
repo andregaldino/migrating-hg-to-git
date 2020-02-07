@@ -1014,8 +1014,8 @@ class bundlepart(object):
         self.mandatory = mandatory
 
     def __repr__(self):
-        cls = b"%s.%s" % (self.__class__.__module__, self.__class__.__name__)
-        return b'<%s object at %x; id: %s; type: %s; mandatory: %s>' % (
+        cls = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
+        return '<%s object at %x; id: %s; type: %s; mandatory: %s>' % (
             cls,
             id(self),
             self.id,

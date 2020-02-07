@@ -112,3 +112,8 @@ def defaultpagerenv():
     intended to be set before starting a pager.
     '''
     return {b'LESS': b'FRX', b'LV': b'-c'}
+
+
+def use_repo_hgrc():
+    """True if repositories `.hg/hgrc` config should be read"""
+    return b'HGRCSKIPREPO' not in encoding.environ

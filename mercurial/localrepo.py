@@ -53,6 +53,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    rcutil,
     repoview,
     revset,
     revsetlang,
@@ -676,7 +677,7 @@ def loadhgrc(ui, wdirvfs, hgvfs, requirements):
     configs are loaded. For example, an extension may wish to pull in
     configs from alternate files or sources.
     """
-    if b'HGRCSKIPREPO' in encoding.environ:
+    if not rcutil.use_repo_hgrc():
         return False
     try:
         ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)

@@ -35,6 +35,7 @@ from .. import (
     pathutil,
     profiling,
     pycompat,
+    rcutil,
     registrar,
     scmutil,
     templater,
@@ -192,11 +193,12 @@ def rawindexentries(ui, repos, req, subdir=b''):
             continue
 
         u = ui.copy()
-        try:
-            u.readconfig(os.path.join(path, b'.hg', b'hgrc'))
-        except Exception as e:
-            u.warn(_(b'error reading %s/.hg/hgrc: %s\n') % (path, e))
-            continue
+        if rcutil.use_repo_hgrc():
+            try:
+                u.readconfig(os.path.join(path, b'.hg', b'hgrc'))
+            except Exception as e:
+                u.warn(_(b'error reading %s/.hg/hgrc: %s\n') % (path, e))
+                continue
 
         def get(section, name, default=uimod._unset):
             return u.config(section, name, default, untrusted=True)

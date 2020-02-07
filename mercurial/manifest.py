@@ -21,6 +21,7 @@ from .node import (
 )
 from .pycompat import getattr
 from . import (
+    encoding,
     error,
     mdiff,
     pathutil,
@@ -868,9 +869,10 @@ class treemanifest(object):
         self._loadalllazy()
         return not self._dirs or all(m._isempty() for m in self._dirs.values())
 
+    @encoding.strmethod
     def __repr__(self):
         return (
-            b'<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>'
+            b'<treemanifest dir=%s, node=%s, loaded=%r, dirty=%r at 0x%x>'
             % (
                 self._dir,
                 hex(self._node),

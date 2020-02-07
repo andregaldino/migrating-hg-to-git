@@ -1,0 +1,75 @@
+image: octobus/ci-mercurial-core
+
+# The runner made a clone as root.
+# We make a new clone owned by user used to run the step.
+before_script:
+    - hg clone . /tmp/mercurial-ci/ --noupdate
+    - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
+    - cd /tmp/mercurial-ci/
+    - (cd tests; ls -1 test-check-*.*) > /tmp/check-tests.txt
+
+variables:
+    PYTHON: python
+
+.runtests_template: &runtests
+    script:
+        - cd tests/
+        - echo "python used, $PYTHON"
+        - echo "$RUNTEST_ARGS"
+        - $PYTHON run-tests.py --color=always $RUNTEST_ARGS
+
+checks-py2:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--time --test-list /tmp/check-tests.txt"
+
+checks-py3:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--time --test-list /tmp/check-tests.txt"
+        PYTHON: python3
+
+rust-cargo-test-py2: &rust_cargo_test
+    script:
+        - echo "python used, $PYTHON"
+        - make rust-tests
+
+rust-cargo-test-py3:
+    <<: *rust_cargo_test
+    variables:
+        PYTHON: python3
+
+test-py2:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+
+test-py3:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        PYTHON: python3
+
+test-py2-pure:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
+
+test-py3-pure:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
+        PYTHON: python3
+
+test-py2-rust:
+    <<: *runtests
+    variables:
+        HGWITHRUSTEXT: cpython
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+
+test-py3-rust:
+    <<: *runtests
+    variables:
+        HGWITHRUSTEXT: cpython
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        PYTHON: python3

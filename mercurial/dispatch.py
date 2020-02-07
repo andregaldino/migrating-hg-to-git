@@ -37,6 +37,7 @@ from . import (
     hook,
     profiling,
     pycompat,
+    rcutil,
     registrar,
     scmutil,
     ui as uimod,
@@ -902,17 +903,20 @@ def _getlocal(ui, rpath, wd=None):
                 _(b"error getting current working directory: %s")
                 % encoding.strtolocal(e.strerror)
             )
+
     path = cmdutil.findrepo(wd) or b""
     if not path:
         lui = ui
     else:
         lui = ui.copy()
-        lui.readconfig(os.path.join(path, b".hg", b"hgrc"), path)
+        if rcutil.use_repo_hgrc():
+            lui.readconfig(os.path.join(path, b".hg", b"hgrc"), path)
 
     if rpath:
         path = lui.expandpath(rpath)
         lui = ui.copy()
-        lui.readconfig(os.path.join(path, b".hg", b"hgrc"), path)
+        if rcutil.use_repo_hgrc():
+            lui.readconfig(os.path.join(path, b".hg", b"hgrc"), path)
 
     return path, lui
 

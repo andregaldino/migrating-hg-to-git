@@ -271,3 +271,39 @@ Test we can skip the user configuration
   $ HGRCSKIPREPO=1 hg path
   foo = $TESTTMP/bar
 
+  $ cat >> .hg/hgrc <<EOF
+  > [broken
+  > EOF
+
+  $ hg path
+  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  [255]
+  $ HGRCSKIPREPO=1 hg path
+  foo = $TESTTMP/bar
+
+Check that hgweb respect HGRCSKIPREPO=1
+
+  $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
+  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  [255]
+  $ test -f hg.pid && (cat hg.pid >> $DAEMON_PIDS)
+  [1]
+  $ killdaemons.py
+  $ test -f access.log && cat access.log
+  [1]
+  $ test -f errors.log && cat errors.log
+  [1]
+
+  $ HGRCSKIPREPO=1 hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+  $ killdaemons.py
+  $ cat access.log
+  $ cat errors.log
+
+Check that zeroconf respect HGRCSKIPREPO=1
+
+  $ hg paths --config extensions.zeroconf=
+  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  [255]
+  $ HGRCSKIPREPO=1 hg paths --config extensions.zeroconf=
+  foo = $TESTTMP/bar

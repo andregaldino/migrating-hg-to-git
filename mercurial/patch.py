@@ -1090,6 +1090,7 @@ class recordhunk(object):
     def filename(self):
         return self.header.filename()
 
+    @encoding.strmethod
     def __repr__(self):
         return b'<hunk %r@%d>' % (self.filename(), self.fromline)
 
