@@ -371,6 +371,26 @@ Extra junk data at the end should get overwritten on next cache update
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> blackbox -l 6
 
+Junk data + missing cache entries results in hg further corrupting the
+cache, then failing.
+
+  $ rm -f .hg/cache/tags2-visible
+  $ truncate .hg/cache/hgtagsfnodes1 -s -10
+  $ hg debugtagscache | tail -2
+  4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8af31de17fab7ffffffffffffffffffff
+  $ hg tags
+  abort: data/.hgtags.i@0c04f2a8af31: no match found!
+  [255]
+  $ hg debugtagscache | tail -2
+  4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8af31de17fab7ffffffffffffffffffff
+# fix up the cache
+  $ rm .hg/cache/hgtagsfnodes1
+  $ hg tags -q
+  tip
+  bar
+
 #if unix-permissions no-root
 Errors writing to .hgtags fnodes cache are silently ignored
 
