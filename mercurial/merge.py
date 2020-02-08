@@ -2698,6 +2698,7 @@ def graft(
 def purge(
     repo,
     matcher,
+    unknown=True,
     ignored=False,
     removeemptydirs=True,
     removefiles=True,
@@ -2709,7 +2710,9 @@ def purge(
     ``matcher`` is a matcher configured to scan the working directory -
     potentially a subset.
 
-    ``ignored`` controls whether ignored files should also be purged.
+    ``unknown`` controls whether unknown files should be purged.
+
+    ``ignored`` controls whether ignored files should be purged.
 
     ``removeemptydirs`` controls whether empty directories should be removed.
 
@@ -2746,7 +2749,7 @@ def purge(
             directories = []
             matcher.traversedir = directories.append
 
-        status = repo.status(match=matcher, ignored=ignored, unknown=True)
+        status = repo.status(match=matcher, ignored=ignored, unknown=unknown)
 
         if removefiles:
             for f in sorted(status.unknown + status.ignored):

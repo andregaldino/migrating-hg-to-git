@@ -120,19 +120,32 @@ delete only part of the tree
   directory/untracked_file
   $ rm directory/untracked_file
 
-skip ignored files if --all not specified
+skip ignored files if -i or --all not specified
 
   $ touch ignored
   $ hg purge -p
   $ hg purge -v
+  $ touch untracked_file
   $ ls
   directory
   ignored
   r1
+  untracked_file
+  $ hg purge -p -i
+  ignored
+  $ hg purge -v -i
+  removing file ignored
+  $ ls
+  directory
+  r1
+  untracked_file
+  $ touch ignored
   $ hg purge -p --all
   ignored
+  untracked_file
   $ hg purge -v --all
   removing file ignored
+  removing file untracked_file
   $ ls
   directory
   r1

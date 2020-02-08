@@ -1,5 +1,7 @@
 == New Features ==
 
+ * `hg purge`/`hg clean` can now delete ignored files instead of
+   untracked files, with the new -i flag.
 
 == New Experimental Features ==
 

@@ -48,6 +48,7 @@ testedwith = b'ships-with-hg-core'
     [
         (b'a', b'abort-on-err', None, _(b'abort if an error occurs')),
         (b'', b'all', None, _(b'purge ignored files too')),
+        (b'i', b'ignored', None, _(b'purge only ignored files')),
         (b'', b'dirs', None, _(b'purge empty directories')),
         (b'', b'files', None, _(b'purge files')),
         (b'p', b'print', None, _(b'print filenames instead of deleting them')),
@@ -80,7 +81,7 @@ def purge(ui, repo, *dirs, **opts):
     But it will leave untouched:
 
     - Modified and unmodified tracked files
-    - Ignored files (unless --all is specified)
+    - Ignored files (unless -i or --all is specified)
     - New files added to the repository (with :hg:`add`)
 
     The --files and --dirs options can be used to direct purge to delete
@@ -96,12 +97,19 @@ def purge(ui, repo, *dirs, **opts):
     option.
     '''
     opts = pycompat.byteskwargs(opts)
+    cmdutil.check_at_most_one_arg(opts, b'all', b'ignored')
 
     act = not opts.get(b'print')
     eol = b'\n'
     if opts.get(b'print0'):
         eol = b'\0'
         act = False  # --print0 implies --print
+    if opts.get(b'all', False):
+        ignored = True
+        unknown = True
+    else:
+        ignored = opts.get(b'ignored', False)
+        unknown = not ignored
 
     removefiles = opts.get(b'files')
     removedirs = opts.get(b'dirs')
@@ -115,7 +123,8 @@ def purge(ui, repo, *dirs, **opts):
     paths = mergemod.purge(
         repo,
         match,
-        ignored=opts.get(b'all', False),
+        unknown=unknown,
+        ignored=ignored,
         removeemptydirs=removedirs,
         removefiles=removefiles,
         abortonerror=opts.get(b'abort_on_err'),
