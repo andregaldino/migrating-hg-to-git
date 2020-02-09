@@ -152,8 +152,17 @@ def extshelp(ui):
     doc = b''.join(rst)
     return doc
 
+def parsedefaultmarker(text):
+    """given a text 'abc (DEFAULT: def.ghi)',
+    returns (b'abc', (b'def', b'ghi')). Otherwise return None"""
+    if text[-1:] == b')':
+        marker = b' (DEFAULT: '
+        pos = text.find(marker)
+        if pos >= 0:
+            item = text[pos + len(marker):-1]
+            return text[:pos], item.split(b'.', 2)
 
-def optrst(header, options, verbose):
+def optrst(header, options, verbose, ui):
     data = []
     multioccur = False
     for option in options:
@@ -165,7 +174,14 @@ def optrst(header, options, verbose):
 
         if not verbose and any(w in desc for w in _exclkeywords):
             continue
-
+        defaultstrsuffix = b''
+        if default is None:
+            parseresult = parsedefaultmarker(desc)
+            if parseresult is not None:
+                (desc, (section, name)) = parseresult
+                if ui.configbool(section, name):
+                    default = True
+                    defaultstrsuffix = _(b' from config')
         so = b''
         if shortopt:
             so = b'-' + shortopt
@@ -183,7 +199,7 @@ def optrst(header, options, verbose):
             defaultstr = pycompat.bytestr(default)
             if default is True:
                 defaultstr = _(b"on")
-            desc += _(b" (default: %s)") % defaultstr
+            desc += _(b" (default: %s)") % (defaultstr + defaultstrsuffix)
 
         if isinstance(default, list):
             lo += b" %s [+]" % optlabel
@@ -714,11 +730,11 @@ def help_(
 
         # options
         if not ui.quiet and entry[1]:
-            rst.append(optrst(_(b"options"), entry[1], ui.verbose))
+            rst.append(optrst(_(b"options"), entry[1], ui.verbose, ui))
 
         if ui.verbose:
             rst.append(
-                optrst(_(b"global options"), commands.globalopts, ui.verbose)
+                optrst(_(b"global options"), commands.globalopts, ui.verbose, ui)
             )
 
         if not ui.verbose:
@@ -858,7 +874,7 @@ def help_(
         elif ui.verbose:
             rst.append(
                 b'\n%s\n'
-                % optrst(_(b"global options"), commands.globalopts, ui.verbose)
+                % optrst(_(b"global options"), commands.globalopts, ui.verbose, ui)
             )
             if name == b'shortlist':
                 rst.append(

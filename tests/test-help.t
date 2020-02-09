@@ -788,6 +788,12 @@ Disabled extension gets suggested
   (use 'hg help extensions' for information on enabling extensions)
   [255]
 
+Checking that help adapts based on the config:
+
+  $ hg help diff --config ui.tweakdefaults=true | egrep -e '^ *(-g|config)'
+   -g --[no-]git            use git extended diff format (default: on from
+                            config)
+
 Make sure that we don't run afoul of the help system thinking that
 this is a section and erroring out weirdly.
 
