@@ -6646,7 +6646,7 @@ _NOTTERSE = b'nothing'
         (b'i', b'ignored', None, _(b'show only ignored files')),
         (b'n', b'no-status', None, _(b'hide status prefix')),
         (b't', b'terse', _NOTTERSE, _(b'show the terse output (EXPERIMENTAL)')),
-        (b'C', b'copies', None, _(b'show source of copied files')),
+        (b'C', b'copies', None, _(b'show source of copied files (DEFAULT: ui.statuscopies)')),
         (
             b'0',
             b'print0',

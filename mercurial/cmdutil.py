@@ -209,7 +209,7 @@ diffopts2 = (
             b'p',
             b'show-function',
             None,
-            _(b'show which function each change is in'),
+            _(b'show which function each change is in (DEFAULT: diff.showfunc)'),
         ),
         (b'', b'reverse', None, _(b'produce a diff that undoes the changes')),
     ]
