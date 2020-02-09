@@ -128,7 +128,7 @@ class local(object):
     def open(self, oid):
         """Open a read-only file descriptor to the named blob, in either the
         usercache or the local store."""
-        return open(self.path(oid), b'rb')
+        return open(self.path(oid), 'rb')
 
     def path(self, oid):
         """Build the path for the given blob ``oid``.
