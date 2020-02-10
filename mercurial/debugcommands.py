@@ -3429,6 +3429,7 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
                     ui.write(node2str(node))
             ui.write(b'\n')
 
+
 @command(b'debugtagscache', [])
 def debugtagscache(ui, repo):
     """display the contents of .hg/cache/hgtagsfnodes1"""
@@ -3438,6 +3439,7 @@ def debugtagscache(ui, repo):
         tagsnode = cache.getfnode(node, computemissing=False)
         tagsnodedisplay = hex(tagsnode) if tagsnode else 'missing/invalid'
         ui.write(b'%s %s %s\n' % (r, hex(node), tagsnodedisplay))
+
 
 @command(
     b'debugtemplate',

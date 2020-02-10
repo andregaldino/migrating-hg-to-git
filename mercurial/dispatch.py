@@ -624,7 +624,7 @@ class cmdalias(object):
         except error.AmbiguousCommand:
             self.badalias = _(
                 b"alias '%s' resolves to ambiguous command '%s'"
-            ) % (self.name, cmd)
+            ) % (self.name, cmd,)
 
     def _populatehelp(self, ui, name, cmd, fn, defaulthelp=None):
         # confine strings to be passed to i18n.gettext()

@@ -448,7 +448,7 @@ def checkheads(pushop):
                 if branch not in (b'default', None):
                     errormsg = _(
                         b"push creates new remote head %s on branch '%s'!"
-                    ) % (short(dhs[0]), branch)
+                    ) % (short(dhs[0]), branch,)
                 elif repo[dhs[0]].bookmarks():
                     errormsg = _(
                         b"push creates new remote head %s "

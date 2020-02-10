@@ -152,6 +152,7 @@ def extshelp(ui):
     doc = b''.join(rst)
     return doc
 
+
 def parsedefaultmarker(text):
     """given a text 'abc (DEFAULT: def.ghi)',
     returns (b'abc', (b'def', b'ghi')). Otherwise return None"""
@@ -159,8 +160,9 @@ def parsedefaultmarker(text):
         marker = b' (DEFAULT: '
         pos = text.find(marker)
         if pos >= 0:
-            item = text[pos + len(marker):-1]
+            item = text[pos + len(marker) : -1]
             return text[:pos], item.split(b'.', 2)
+
 
 def optrst(header, options, verbose, ui):
     data = []
@@ -734,7 +736,9 @@ def help_(
 
         if ui.verbose:
             rst.append(
-                optrst(_(b"global options"), commands.globalopts, ui.verbose, ui)
+                optrst(
+                    _(b"global options"), commands.globalopts, ui.verbose, ui
+                )
             )
 
         if not ui.verbose:
@@ -874,7 +878,9 @@ def help_(
         elif ui.verbose:
             rst.append(
                 b'\n%s\n'
-                % optrst(_(b"global options"), commands.globalopts, ui.verbose, ui)
+                % optrst(
+                    _(b"global options"), commands.globalopts, ui.verbose, ui
+                )
             )
             if name == b'shortlist':
                 rst.append(

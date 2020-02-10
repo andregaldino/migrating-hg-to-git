@@ -170,7 +170,12 @@ logopts = [
 
 diffopts = [
     (b'a', b'text', None, _(b'treat all files as text')),
-    (b'g', b'git', None, _(b'use git extended diff format (DEFAULT: diff.git)')),
+    (
+        b'g',
+        b'git',
+        None,
+        _(b'use git extended diff format (DEFAULT: diff.git)'),
+    ),
     (b'', b'binary', None, _(b'generate binary diffs in git mode (default)')),
     (b'', b'nodates', None, _(b'omit dates from diff headers')),
 ]
@@ -209,7 +214,9 @@ diffopts2 = (
             b'p',
             b'show-function',
             None,
-            _(b'show which function each change is in (DEFAULT: diff.showfunc)'),
+            _(
+                b'show which function each change is in (DEFAULT: diff.showfunc)'
+            ),
         ),
         (b'', b'reverse', None, _(b'produce a diff that undoes the changes')),
     ]
