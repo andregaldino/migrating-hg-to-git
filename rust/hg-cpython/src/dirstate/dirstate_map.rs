@@ -13,12 +13,14 @@ use std::convert::TryInto;
 use std::time::Duration;
 
 use cpython::{
-    exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyObject,
-    PyResult, PyTuple, Python, PythonObject, ToPyObject, UnsafePyLeaked,
+    exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList,
+    PyObject, PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
+    UnsafePyLeaked,
 };
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
+    dirstate::non_normal_entries::NonNormalEntries,
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
 };
 use hg::{
@@ -164,32 +166,86 @@ py_class!(pub class DirstateMap |py| {
         Ok(py.None())
     }
 
-    // TODO share the reference
-    def nonnormalentries(&self) -> PyResult<PyObject> {
-        let (non_normal, other_parent) =
-            self.inner(py).borrow().non_normal_other_parent_entries();
+    def other_parent_entries(&self) -> PyResult<PyObject> {
+        let mut inner_shared = self.inner(py).borrow_mut();
+        let (_, other_parent) =
+            inner_shared.get_non_normal_other_parent_entries();
 
         let locals = PyDict::new(py);
         locals.set_item(
             py,
-            "non_normal",
-            non_normal
-                .iter()
-                .map(|v| PyBytes::new(py, v.as_ref()))
-                .collect::<Vec<PyBytes>>()
-                .to_py_object(py),
-        )?;
-        locals.set_item(
-            py,
             "other_parent",
-            other_parent
+            other_parent.as_ref()
+                .unwrap()
                 .iter()
                 .map(|v| PyBytes::new(py, v.as_ref()))
                 .collect::<Vec<PyBytes>>()
                 .to_py_object(py),
         )?;
 
-        py.eval("set(non_normal), set(other_parent)", None, Some(&locals))
+        py.eval("set(other_parent)", None, Some(&locals))
+    }
+
+    def non_normal_entries(&self) -> PyResult<NonNormalEntries> {
+        NonNormalEntries::from_inner(py, self.clone_ref(py))
+    }
+
+    def non_normal_entries_contains(&self, key: PyObject) -> PyResult<bool> {
+        let key = key.extract::<PyBytes>(py)?;
+        Ok(self
+            .inner(py)
+            .borrow_mut()
+            .get_non_normal_other_parent_entries().0
+            .as_ref()
+            .unwrap()
+            .contains(HgPath::new(key.data(py))))
+    }
+
+    def non_normal_entries_display(&self) -> PyResult<PyString> {
+        Ok(
+            PyString::new(
+                py,
+                &format!(
+                    "NonNormalEntries: {:?}",
+                    self
+                        .inner(py)
+                        .borrow_mut()
+                        .get_non_normal_other_parent_entries().0
+                        .as_ref()
+                        .unwrap().iter().map(|o| o))
+                )
+            )
+    }
+
+    def non_normal_entries_remove(&self, key: PyObject) -> PyResult<PyObject> {
+        let key = key.extract::<PyBytes>(py)?;
+        self
+            .inner(py)
+            .borrow_mut()
+            .non_normal_entries_remove(HgPath::new(key.data(py)));
+        Ok(py.None())
+    }
+
+    def non_normal_entries_union(&self, other: PyObject) -> PyResult<PyList> {
+        let other: PyResult<_> = other.iter(py)?
+                    .map(|f| {
+                        Ok(HgPathBuf::from_bytes(
+                            f?.extract::<PyBytes>(py)?.data(py),
+                        ))
+                    })
+                    .collect();
+
+        let res = self
+            .inner(py)
+            .borrow_mut()
+            .non_normal_entries_union(other?);
+
+        let ret = PyList::new(py, &[]);
+        for filename in res.iter() {
+            let as_pystring = PyBytes::new(py, filename.as_bytes());
+            ret.append(py, as_pystring.into_object());
+        }
+        Ok(ret)
     }
 
     def hastrackeddir(&self, d: PyObject) -> PyResult<PyBool> {
