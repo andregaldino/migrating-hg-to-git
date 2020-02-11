@@ -721,7 +721,7 @@ class hgtagsfnodescache(object):
         self._dirtyoffset = None
 
         rawlentokeep = min(
-            wantedlen, (rawlen / _fnodesrecsize) * _fnodesrecsize
+            wantedlen, (rawlen // _fnodesrecsize) * _fnodesrecsize
         )
         if rawlen > rawlentokeep:
             # There's no easy way to truncate array instances. This seems
