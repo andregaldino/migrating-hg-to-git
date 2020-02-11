@@ -1,16 +1,16 @@
 // revlog.rs
 //
-// Copyright 2019 Georges Racinet <georges.racinet@octobus.net>
+// Copyright 2019-2020 Georges Racinet <georges.racinet@octobus.net>
 //
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
 use crate::cindex;
 use cpython::{
-    ObjectProtocol, PyClone, PyDict, PyModule, PyObject, PyResult, PyTuple,
-    Python, PythonObject, ToPyObject,
+    exc::ValueError, ObjectProtocol, PyClone, PyDict, PyErr, PyModule,
+    PyObject, PyResult, PyTuple, Python, PythonObject, ToPyObject,
 };
-use hg::Revision;
+use hg::{nodemap::NodeMapError, NodeError, Revision};
 use std::cell::RefCell;
 
 /// Return a Struct implementing the Graph trait
@@ -222,6 +222,43 @@ impl MixedIndex {
     pub fn clone_cindex(&self, py: Python) -> cindex::Index {
         self.cindex(py).borrow().clone_ref(py)
     }
+}
+
+fn revlog_error(py: Python) -> PyErr {
+    match py
+        .import("mercurial.error")
+        .and_then(|m| m.get(py, "RevlogError"))
+    {
+        Err(e) => e,
+        Ok(cls) => PyErr::from_instance(py, cls),
+    }
+}
+
+fn rev_not_in_index(py: Python, rev: Revision) -> PyErr {
+    PyErr::new::<ValueError, _>(
+        py,
+        format!(
+            "Inconsistency: Revision {} found in nodemap \
+             is not in revlog index",
+            rev
+        ),
+    )
+}
+
+/// Standard treatment of NodeMapError
+fn nodemap_error(py: Python, err: NodeMapError) -> PyErr {
+    match err {
+        NodeMapError::MultipleResults => revlog_error(py),
+        NodeMapError::RevisionNotInIndex(r) => rev_not_in_index(py, r),
+        NodeMapError::InvalidNodePrefix(s) => invalid_node_prefix(py, &s),
+    }
+}
+
+fn invalid_node_prefix(py: Python, ne: &NodeError) -> PyErr {
+    PyErr::new::<ValueError, _>(
+        py,
+        format!("Invalid node or prefix: {:?}", ne),
+    )
 }
 
 /// Create the module, with __package__ given from parent
