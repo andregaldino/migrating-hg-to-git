@@ -10,7 +10,10 @@
 //! Ideally, we should use an Index entirely implemented in Rust,
 //! but this will take some time to get there.
 
-use cpython::{exc::ImportError, PyClone, PyErr, PyObject, PyResult, Python};
+use cpython::{
+    exc::ImportError, ObjectProtocol, PyClone, PyErr, PyObject, PyResult,
+    PyTuple, Python, PythonObject,
+};
 use hg::revlog::{Node, RevlogIndex};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::c_int;
@@ -96,6 +99,15 @@ impl Index {
     /// return a reference to the CPython Index object in this Struct
     pub fn inner(&self) -> &PyObject {
         &self.index
+    }
+
+    pub fn append(&mut self, py: Python, tup: PyTuple) -> PyResult<PyObject> {
+        self.index.call_method(
+            py,
+            "append",
+            PyTuple::new(py, &[tup.into_object()]),
+            None,
+        )
     }
 }
 
