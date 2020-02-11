@@ -1214,6 +1214,7 @@ packages = [
     'hgext.fsmonitor',
     'hgext.fastannotate',
     'hgext.fsmonitor.pywatchman',
+    'hgext.git',
     'hgext.highlight',
     'hgext.hooklib',
     'hgext.infinitepush',
