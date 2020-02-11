@@ -3498,8 +3498,8 @@ def debugtagscache(ui, repo):
     for r in repo:
         node = repo[r].node()
         tagsnode = cache.getfnode(node, computemissing=False)
-        tagsnodedisplay = hex(tagsnode) if tagsnode else 'missing/invalid'
-        ui.write(b'%s %s %s\n' % (r, hex(node), tagsnodedisplay))
+        tagsnodedisplay = hex(tagsnode) if tagsnode else b'missing/invalid'
+        ui.write(b'%d %s %s\n' % (r, hex(node), tagsnodedisplay))
 
 
 @command(
