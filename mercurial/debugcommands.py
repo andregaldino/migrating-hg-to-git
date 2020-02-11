@@ -2122,7 +2122,7 @@ def debugnodemap(ui, repo, **opts):
         nm_data = nodemap.persisted_data(cl)
         if nm_data is not None:
             docket, data = nm_data
-            ui.write(data)
+            ui.write(data[:])
     elif opts['check']:
         unfi = repo.unfiltered()
         cl = unfi.changelog

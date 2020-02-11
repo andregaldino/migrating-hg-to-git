@@ -8,6 +8,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import os
 import re
 import struct
@@ -45,11 +46,18 @@ def persisted_data(revlog):
     docket.data_unused = data_unused
 
     filename = _rawdata_filepath(revlog, docket)
-    data = revlog.opener.tryread(filename)
+    use_mmap = revlog.opener.options.get("exp-persistent-nodemap.mmap")
+    try:
+        with revlog.opener(filename) as fd:
+            if use_mmap:
+                data = util.buffer(util.mmapread(fd, data_length))
+            else:
+                data = fd.read(data_length)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
     if len(data) < data_length:
         return None
-    elif len(data) > data_length:
-        data = data[:data_length]
     return docket, data
 
 
@@ -81,6 +89,8 @@ def _persist_nodemap(tr, revlog):
 
     can_incremental = util.safehasattr(revlog.index, "nodemap_data_incremental")
     ondisk_docket = revlog._nodemap_docket
+    feed_data = util.safehasattr(revlog.index, "update_nodemap_data")
+    use_mmap = revlog.opener.options.get("exp-persistent-nodemap.mmap")
 
     data = None
     # first attemp an incremental update of the data
@@ -97,12 +107,18 @@ def _persist_nodemap(tr, revlog):
             datafile = _rawdata_filepath(revlog, target_docket)
             # EXP-TODO: if this is a cache, this should use a cache vfs, not a
             # store vfs
+            new_length = target_docket.data_length + len(data)
             with revlog.opener(datafile, b'r+') as fd:
                 fd.seek(target_docket.data_length)
                 fd.write(data)
-                fd.seek(0)
-                new_data = fd.read(target_docket.data_length + len(data))
-            target_docket.data_length += len(data)
+                if feed_data:
+                    if use_mmap:
+                        fd.seek(0)
+                        new_data = fd.read(new_length)
+                    else:
+                        fd.flush()
+                        new_data = util.buffer(util.mmapread(fd, new_length))
+            target_docket.data_length = new_length
             target_docket.data_unused += data_changed_count
 
     if data is None:
@@ -115,9 +131,14 @@ def _persist_nodemap(tr, revlog):
             data = persistent_data(revlog.index)
         # EXP-TODO: if this is a cache, this should use a cache vfs, not a
         # store vfs
-        new_data = data
-        with revlog.opener(datafile, b'w') as fd:
+        with revlog.opener(datafile, b'w+') as fd:
             fd.write(data)
+            if feed_data:
+                if use_mmap:
+                    new_data = data
+                else:
+                    fd.flush()
+                    new_data = util.buffer(util.mmapread(fd, len(data)))
         target_docket.data_length = len(data)
     target_docket.tip_rev = revlog.tiprev()
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
@@ -125,7 +146,7 @@ def _persist_nodemap(tr, revlog):
     with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
         fp.write(target_docket.serialize())
     revlog._nodemap_docket = target_docket
-    if util.safehasattr(revlog.index, "update_nodemap_data"):
+    if feed_data:
         revlog.index.update_nodemap_data(target_docket, new_data)
 
     # EXP-TODO: if the transaction abort, we should remove the new data and

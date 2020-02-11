@@ -545,9 +545,6 @@ class revlog(object):
         indexdata = b''
         self._initempty = True
         try:
-            nodemap_data = nodemaputil.persisted_data(self)
-            if nodemap_data is not None:
-                self._nodemap_docket = nodemap_data[0]
             with self._indexfp() as f:
                 if (
                     mmapindexthreshold is not None
@@ -639,6 +636,7 @@ class revlog(object):
             if use_nodemap:
                 nodemap_data = nodemaputil.persisted_data(self)
                 if nodemap_data is not None:
+                    self._nodemap_docket = nodemap_data[0]
                     index.update_nodemap_data(*nodemap_data)
         except (ValueError, IndexError):
             raise error.RevlogError(
