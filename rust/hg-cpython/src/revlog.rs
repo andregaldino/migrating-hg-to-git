@@ -15,7 +15,7 @@ use cpython::{
     PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
 };
 use hg::{
-    nodemap::{NodeMapError, NodeTree},
+    nodemap::{Block, NodeMapError, NodeTree},
     revlog::{nodemap::NodeMap, RevlogIndex},
     NodeError, Revision,
 };
@@ -35,6 +35,7 @@ pub(crate) fn pyindex_to_graph(
 py_class!(pub class MixedIndex |py| {
     data cindex: RefCell<cindex::Index>;
     data nt: RefCell<Option<NodeTree>>;
+    data docket: RefCell<Option<PyObject>>;
 
     def __new__(_cls, cindex: PyObject) -> PyResult<MixedIndex> {
         Self::new(py, cindex)
@@ -264,6 +265,9 @@ py_class!(pub class MixedIndex |py| {
         self.inner_nodemap_data_all(py)
     }
 
+    def nodemap_data_incremental(&self) -> PyResult<PyObject> {
+        self.inner_nodemap_data_incremental(py)
+    }
 
 });
 
@@ -272,6 +276,7 @@ impl MixedIndex {
         Self::create_instance(
             py,
             RefCell::new(cindex::Index::new(py, cindex)?),
+            RefCell::new(None),
             RefCell::new(None),
         )
     }
@@ -346,6 +351,28 @@ impl MixedIndex {
 
         let bytes = PyBytes::new(py, &bytes);
         Ok(bytes)
+    }
+
+    /// Returns the last saved docket along with the size of any changed data
+    /// (in number of blocks), and said data as bytes.
+    fn inner_nodemap_data_incremental(
+        &self,
+        py: Python,
+    ) -> PyResult<PyObject> {
+        let docket = self.docket(py).borrow();
+        let docket = match docket.as_ref() {
+            Some(d) => d,
+            None => return Ok(py.None()),
+        };
+
+        let node_tree = self.get_nodetree(py)?.borrow_mut().take().unwrap();
+        let masked_blocks = node_tree.masked_readonly_blocks();
+        let (_, data) = node_tree.into_readonly_and_added_bytes();
+        let changed = masked_blocks * std::mem::size_of::<Block>();
+
+        Ok((docket, changed, PyBytes::new(py, &data))
+            .to_py_object(py)
+            .into_object())
     }
 }
 
