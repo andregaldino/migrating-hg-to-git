@@ -5,12 +5,20 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::cindex;
-use cpython::{
-    exc::ValueError, ObjectProtocol, PyClone, PyDict, PyErr, PyModule,
-    PyObject, PyResult, PyTuple, Python, PythonObject, ToPyObject,
+use crate::{
+    cindex,
+    utils::{node_from_py_bytes, node_from_py_object},
 };
-use hg::{nodemap::NodeMapError, NodeError, Revision};
+use cpython::{
+    exc::{IndexError, ValueError},
+    ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyModule, PyObject,
+    PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
+};
+use hg::{
+    nodemap::{NodeMapError, NodeTree},
+    revlog::{nodemap::NodeMap, RevlogIndex},
+    NodeError, Revision,
+};
 use std::cell::RefCell;
 
 /// Return a Struct implementing the Graph trait
@@ -26,6 +34,7 @@ pub(crate) fn pyindex_to_graph(
 
 py_class!(pub class MixedIndex |py| {
     data cindex: RefCell<cindex::Index>;
+    data nt: RefCell<Option<NodeTree>>;
 
     def __new__(_cls, cindex: PyObject) -> PyResult<MixedIndex> {
         Self::new(py, cindex)
@@ -42,8 +51,99 @@ py_class!(pub class MixedIndex |py| {
         Ok(self.cindex(py).borrow().inner().clone_ref(py))
     }
 
+    // Index API involving nodemap, as defined in mercurial/pure/parsers.py
 
+    /// Return Revision if found, raises a bare `error.RevlogError`
+    /// in case of ambiguity, same as C version does
+    def get_rev(&self, node: PyBytes) -> PyResult<Option<Revision>> {
+        let opt = self.get_nodetree(py)?.borrow();
+        let nt = opt.as_ref().unwrap();
+        let idx = &*self.cindex(py).borrow();
+        let node = node_from_py_bytes(py, &node)?;
+        nt.find_bin(idx, (&node).into()).map_err(|e| nodemap_error(py, e))
+    }
+
+    /// same as `get_rev()` but raises a bare `error.RevlogError` if node
+    /// is not found.
+    ///
+    /// No need to repeat `node` in the exception, `mercurial/revlog.py`
+    /// will catch and rewrap with it
+    def rev(&self, node: PyBytes) -> PyResult<Revision> {
+        self.get_rev(py, node)?.ok_or_else(|| revlog_error(py))
+    }
+
+    /// return True if the node exist in the index
+    def has_node(&self, node: PyBytes) -> PyResult<bool> {
+        self.get_rev(py, node).map(|opt| opt.is_some())
+    }
+
+    /// find length of shortest hex nodeid of a binary ID
+    def shortest(&self, node: PyBytes) -> PyResult<usize> {
+        let opt = self.get_nodetree(py)?.borrow();
+        let nt = opt.as_ref().unwrap();
+        let idx = &*self.cindex(py).borrow();
+        match nt.unique_prefix_len_node(idx, &node_from_py_bytes(py, &node)?)
+        {
+            Ok(Some(l)) => Ok(l),
+            Ok(None) => Err(revlog_error(py)),
+            Err(e) => Err(nodemap_error(py, e)),
+        }
+    }
+
+    def partialmatch(&self, node: PyObject) -> PyResult<Option<PyBytes>> {
+        let opt = self.get_nodetree(py)?.borrow();
+        let nt = opt.as_ref().unwrap();
+        let idx = &*self.cindex(py).borrow();
+
+        let node_as_string = if cfg!(feature = "python3-sys") {
+            node.cast_as::<PyString>(py)?.to_string(py)?.to_string()
+        }
+        else {
+            let node = node.extract::<PyBytes>(py)?;
+            String::from_utf8_lossy(node.data(py)).to_string()
+        };
+
+        nt.find_hex(idx, &node_as_string)
+            // TODO make an inner API returning the node directly
+            .map(|opt| opt.map(
+                |rev| PyBytes::new(py, idx.node(rev).unwrap().as_bytes())))
+            .map_err(|e| nodemap_error(py, e))
+
+    }
+
+    /// append an index entry
+    def append(&self, tup: PyTuple) -> PyResult<PyObject> {
+        if tup.len(py) < 8 {
+            // this is better than the panic promised by tup.get_item()
+            return Err(
+                PyErr::new::<IndexError, _>(py, "tuple index out of range"))
+        }
+        let node_bytes = tup.get_item(py, 7).extract(py)?;
+        let node = node_from_py_object(py, &node_bytes)?;
+
+        let mut idx = self.cindex(py).borrow_mut();
+        let rev = idx.len() as Revision;
+
+        idx.append(py, tup)?;
+        self.get_nodetree(py)?.borrow_mut().as_mut().unwrap()
+            .insert(&*idx, &node, rev)
+            .map_err(|e| nodemap_error(py, e))?;
+        Ok(py.None())
+    }
+
+    def __delitem__(&self, key: PyObject) -> PyResult<()> {
+        // __delitem__ is both for `del idx[r]` and `del idx[r1:r2]`
+        self.cindex(py).borrow().inner().del_item(py, key)?;
+        let mut opt = self.get_nodetree(py)?.borrow_mut();
+        let mut nt = opt.as_mut().unwrap();
+        nt.invalidate_all();
+        self.fill_nodemap(py, &mut nt)?;
+        Ok(())
+    }
+
+    //
     // Reforwarded C index API
+    //
 
     // index_methods (tp_methods). Same ordering as in revlog.c
 
@@ -65,21 +165,6 @@ py_class!(pub class MixedIndex |py| {
     /// get an index entry
     def get(&self, *args, **kw) -> PyResult<PyObject> {
         self.call_cindex(py, "get", args, kw)
-    }
-
-    /// return `rev` associated with a node or None
-    def get_rev(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "get_rev", args, kw)
-    }
-
-    /// return True if the node exist in the index
-    def has_node(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "has_node", args, kw)
-    }
-
-    /// return `rev` associated with a node or raise RevlogError
-    def rev(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "rev", args, kw)
     }
 
     /// compute phases
@@ -122,21 +207,6 @@ py_class!(pub class MixedIndex |py| {
         self.call_cindex(py, "slicechunktodensity", args, kw)
     }
 
-    /// append an index entry
-    def append(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "append", args, kw)
-    }
-
-    /// match a potentially ambiguous node ID
-    def partialmatch(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "partialmatch", args, kw)
-    }
-
-    /// find length of shortest hex nodeid of a binary ID
-    def shortest(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "shortest", args, kw)
-    }
-
     /// stats for the index
     def stats(&self, *args, **kw) -> PyResult<PyObject> {
         self.call_cindex(py, "stats", args, kw)
@@ -170,10 +240,6 @@ py_class!(pub class MixedIndex |py| {
         self.cindex(py).borrow().inner().set_item(py, key, value)
     }
 
-    def __delitem__(&self, key: PyObject) -> PyResult<()> {
-        self.cindex(py).borrow().inner().del_item(py, key)
-    }
-
     def __contains__(&self, item: PyObject) -> PyResult<bool> {
         // ObjectProtocol does not seem to provide contains(), so
         // this is an equivalent implementation of the index_contains()
@@ -202,7 +268,39 @@ impl MixedIndex {
         Self::create_instance(
             py,
             RefCell::new(cindex::Index::new(py, cindex)?),
+            RefCell::new(None),
         )
+    }
+
+    /// This is scaffolding at this point, but it could also become
+    /// a way to start a persistent nodemap or perform a
+    /// vacuum / repack operation
+    fn fill_nodemap(
+        &self,
+        py: Python,
+        nt: &mut NodeTree,
+    ) -> PyResult<PyObject> {
+        let index = self.cindex(py).borrow();
+        for r in 0..index.len() {
+            let rev = r as Revision;
+            // in this case node() won't ever return None
+            nt.insert(&*index, index.node(rev).unwrap(), rev)
+                .map_err(|e| nodemap_error(py, e))?
+        }
+        Ok(py.None())
+    }
+
+    fn get_nodetree<'a>(
+        &'a self,
+        py: Python<'a>,
+    ) -> PyResult<&'a RefCell<Option<NodeTree>>> {
+        if self.nt(py).borrow().is_none() {
+            let readonly = Box::new(Vec::new());
+            let mut nt = NodeTree::load_bytes(readonly, 0);
+            self.fill_nodemap(py, &mut nt)?;
+            self.nt(py).borrow_mut().replace(nt);
+        }
+        Ok(self.nt(py))
     }
 
     /// forward a method call to the underlying C index
