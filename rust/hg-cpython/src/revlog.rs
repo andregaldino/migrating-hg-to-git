@@ -161,8 +161,12 @@ py_class!(pub class MixedIndex |py| {
         self.call_cindex(py, "commonancestorsheads", args, kw)
     }
 
-    /// clear the index caches
+    /// Clear the index caches and inner py_class data.
+    /// It is Python's responsibility to call `update_nodemap_data` again.
     def clearcaches(&self, *args, **kw) -> PyResult<PyObject> {
+        self.nt(py).borrow_mut().take();
+        self.docket(py).borrow_mut().take();
+        self.mmap(py).borrow_mut().take();
         self.call_cindex(py, "clearcaches", args, kw)
     }
 
@@ -231,7 +235,7 @@ py_class!(pub class MixedIndex |py| {
         // `index_getitem` does not handle conversion from PyLong,
         // which expressions such as [e for e in index] internally use.
         // Note that we don't seem to have a direct way to call
-        // PySequence_GetItem (does the job), which would be better for
+        // PySequence_GetItem (does the job), which would possibly be better
         // for performance
         let key = match key.extract::<Revision>(py) {
             Ok(rev) => rev.to_py_object(py).into_object(),
