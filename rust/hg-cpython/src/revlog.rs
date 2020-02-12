@@ -10,6 +10,7 @@ use crate::{
     utils::{node_from_py_bytes, node_from_py_object},
 };
 use cpython::{
+    buffer::{Element, PyBuffer},
     exc::{IndexError, ValueError},
     ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyModule, PyObject,
     PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
@@ -36,6 +37,8 @@ py_class!(pub class MixedIndex |py| {
     data cindex: RefCell<cindex::Index>;
     data nt: RefCell<Option<NodeTree>>;
     data docket: RefCell<Option<PyObject>>;
+    // Holds a reference to the mmap'ed persistent nodemap data
+    data mmap: RefCell<Option<PyBuffer>>;
 
     def __new__(_cls, cindex: PyObject) -> PyResult<MixedIndex> {
         Self::new(py, cindex)
@@ -268,6 +271,14 @@ py_class!(pub class MixedIndex |py| {
     def nodemap_data_incremental(&self) -> PyResult<PyObject> {
         self.inner_nodemap_data_incremental(py)
     }
+    def update_nodemap_data(
+        &self,
+        docket: PyObject,
+        nm_data: PyObject
+    ) -> PyResult<PyObject> {
+        self.inner_update_nodemap_data(py, docket, nm_data)
+    }
+
 
 });
 
@@ -276,6 +287,7 @@ impl MixedIndex {
         Self::create_instance(
             py,
             RefCell::new(cindex::Index::new(py, cindex)?),
+            RefCell::new(None),
             RefCell::new(None),
             RefCell::new(None),
         )
@@ -373,6 +385,56 @@ impl MixedIndex {
         Ok((docket, changed, PyBytes::new(py, &data))
             .to_py_object(py)
             .into_object())
+    }
+
+    /// Update the nodemap from the new (mmaped) data.
+    /// The docket is kept as a reference for later incremental calls.
+    fn inner_update_nodemap_data(
+        &self,
+        py: Python,
+        docket: PyObject,
+        nm_data: PyObject,
+    ) -> PyResult<PyObject> {
+        let buf = PyBuffer::get(py, &nm_data)?;
+        let len = buf.item_count();
+
+        // Build a slice from the mmap'ed buffer data
+        let cbuf = buf.buf_ptr();
+        let bytes = if std::mem::size_of::<u8>() == buf.item_size()
+            && buf.is_c_contiguous()
+            && u8::is_compatible_format(buf.format())
+        {
+            unsafe { std::slice::from_raw_parts(cbuf as *const u8, len) }
+        } else {
+            return Err(PyErr::new::<ValueError, _>(
+                py,
+                "Nodemap data buffer has an invalid memory representation"
+                    .to_string(),
+            ));
+        };
+
+        // Keep a reference to the mmap'ed buffer, otherwise we get a dangling
+        // pointer.
+        self.mmap(py).borrow_mut().replace(buf);
+
+        let mut nt = NodeTree::load_bytes(Box::new(bytes), len);
+
+        let data_tip =
+            docket.getattr(py, "tip_rev")?.extract::<Revision>(py)?;
+        self.docket(py).borrow_mut().replace(docket.clone_ref(py));
+        let idx = self.cindex(py).borrow();
+        let current_tip = idx.len();
+
+        for r in (data_tip + 1)..current_tip as Revision {
+            let rev = r as Revision;
+            // in this case node() won't ever return None
+            nt.insert(&*idx, idx.node(rev).unwrap(), rev)
+                .map_err(|e| nodemap_error(py, e))?
+        }
+
+        *self.nt(py).borrow_mut() = Some(nt);
+
+        Ok(py.None())
     }
 }
 
