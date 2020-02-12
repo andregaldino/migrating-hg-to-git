@@ -1846,12 +1846,12 @@ if rustmod is not None:
 
         @property
         def nonnormalset(self):
-            nonnorm, otherparents = self._rustmap.nonnormalentries()
+            nonnorm = self._rustmap.non_normal_entries()
             return nonnorm
 
         @propertycache
         def otherparentset(self):
-            nonnorm, otherparents = self._rustmap.nonnormalentries()
+            otherparents = self._rustmap.other_parent_entries()
             return otherparents
 
         @propertycache
