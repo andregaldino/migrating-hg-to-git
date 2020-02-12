@@ -260,6 +260,10 @@ py_class!(pub class MixedIndex |py| {
         }
     }
 
+    def nodemap_data_all(&self) -> PyResult<PyBytes> {
+        self.inner_nodemap_data_all(py)
+    }
+
 
 });
 
@@ -319,6 +323,29 @@ impl MixedIndex {
 
     pub fn clone_cindex(&self, py: Python) -> cindex::Index {
         self.cindex(py).borrow().clone_ref(py)
+    }
+
+    /// Returns the full nodemap bytes to be written as-is to disk
+    fn inner_nodemap_data_all(&self, py: Python) -> PyResult<PyBytes> {
+        let nodemap = self.get_nodetree(py)?.borrow_mut().take().unwrap();
+        let (readonly, bytes) = nodemap.into_readonly_and_added_bytes();
+
+        // If there's anything readonly, we need to build the data again from
+        // scratch
+        let bytes = if readonly.len() > 0 {
+            let mut nt = NodeTree::load_bytes(Box::new(vec![]), 0);
+            self.fill_nodemap(py, &mut nt)?;
+
+            let (readonly, bytes) = nt.into_readonly_and_added_bytes();
+            assert_eq!(readonly.len(), 0);
+
+            bytes
+        } else {
+            bytes
+        };
+
+        let bytes = PyBytes::new(py, &bytes);
+        Ok(bytes)
     }
 }
 
