@@ -245,6 +245,54 @@ is different when using py3):
   YYYY/MM/DD HH:MM:SS (PID)> worker process exited (pid=...)
   YYYY/MM/DD HH:MM:SS (PID)> $TESTTMP/extreload/chgsock/server-... is not owned, exiting.
 
+global data mutated by schems
+-----------------------------
+
+  $ hg init schemes
+  $ cd schemes
+
+initial state
+
+  $ cat > .hg/hgrc <<'EOF'
+  > [extensions]
+  > schemes =
+  > [schemes]
+  > foo = https://foo.example.org/
+  > EOF
+  $ hg debugexpandscheme foo://expanded
+  https://foo.example.org/expanded
+  $ hg debugexpandscheme bar://unexpanded
+  bar://unexpanded
+
+add bar
+
+  $ cat > .hg/hgrc <<'EOF'
+  > [extensions]
+  > schemes =
+  > [schemes]
+  > foo = https://foo.example.org/
+  > bar = https://bar.example.org/
+  > EOF
+  $ hg debugexpandscheme foo://expanded
+  https://foo.example.org/expanded
+  $ hg debugexpandscheme bar://expanded
+  https://bar.example.org/expanded
+
+remove foo
+
+  $ cat > .hg/hgrc <<'EOF'
+  > [extensions]
+  > schemes =
+  > [schemes]
+  > bar = https://bar.example.org/
+  > EOF
+  $ hg debugexpandscheme foo://unexpanded
+  foo://unexpanded
+  $ hg debugexpandscheme bar://expanded
+  https://bar.example.org/expanded
+
+  $ cd ..
+
 repository cache
 ----------------
 
@@ -317,6 +365,8 @@ shut down servers and restore environment:
 check server log:
 
   $ cat log/server.log | filterlog
+  YYYY/MM/DD HH:MM:SS (PID)> worker process exited (pid=...)
+  YYYY/MM/DD HH:MM:SS (PID)> worker process exited (pid=...)
   YYYY/MM/DD HH:MM:SS (PID)> init cached
   YYYY/MM/DD HH:MM:SS (PID)> id -R cached
   YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)

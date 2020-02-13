@@ -83,6 +83,7 @@ _configsections = [
     b'eol',  # uses setconfig('eol', ...)
     b'extdiff',  # uisetup will register new commands
     b'extensions',
+    b'schemes',  # extsetup will update global hg.schemes
 ]
 
 _configsectionitems = [

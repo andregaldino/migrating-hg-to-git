@@ -2,6 +2,9 @@
 
   $ . "$TESTDIR/bzr-definitions"
 
+Work around https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=944379
+  $ mkdir -p "${HOME}/.config/breezy"
+
 empty directory
 
   $ mkdir test-empty
