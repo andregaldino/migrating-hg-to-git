@@ -21,6 +21,8 @@ def make_exe():
     config = PythonInterpreterConfig(
         raw_allocator = "system",
         run_eval = code,
+        # We want to let the user load extensions from the file system
+        filesystem_importer = True,
         # We need this to make resourceutil happy, since it looks for sys.frozen.
         sys_frozen = True,
         legacy_windows_stdio = True,
