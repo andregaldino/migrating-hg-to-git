@@ -175,8 +175,7 @@ py_class!(pub class DirstateMap |py| {
         locals.set_item(
             py,
             "other_parent",
-            other_parent.as_ref()
-                .unwrap()
+            other_parent
                 .iter()
                 .map(|v| PyBytes::new(py, v.as_ref()))
                 .collect::<Vec<PyBytes>>()
@@ -196,8 +195,6 @@ py_class!(pub class DirstateMap |py| {
             .inner(py)
             .borrow_mut()
             .get_non_normal_other_parent_entries().0
-            .as_ref()
-            .unwrap()
             .contains(HgPath::new(key.data(py))))
     }
 
@@ -211,8 +208,7 @@ py_class!(pub class DirstateMap |py| {
                         .inner(py)
                         .borrow_mut()
                         .get_non_normal_other_parent_entries().0
-                        .as_ref()
-                        .unwrap().iter().map(|o| o))
+                        .iter().map(|o| o))
                 )
             )
     }
