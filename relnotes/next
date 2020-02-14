@@ -23,6 +23,10 @@
    Will use `zstd` compression for new repositories is available, and will
    simply fall back to `zlib` if not.
 
+ * `hg debugmergestate` output is now templated, which may be useful
+   e.g. for IDEs that want to help the user resolve merge conflicts.
+
+
 == New Experimental Features ==
 
  * `hg copy` now supports a `--at-rev` argument to mark files as
@@ -48,6 +52,10 @@
 
  * `hg recover` does not verify the validity of the whole repository
    anymore. You can pass `--verify` or call `hg verify` if necessary.
+
+ * `hg debugmergestate` output format changed. Let us know if that is
+   causing you problems and we'll roll it back.
+
 
 == Internal API Changes ==
 

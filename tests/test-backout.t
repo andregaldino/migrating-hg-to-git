@@ -709,23 +709,24 @@ Test usage of `hg resolve` in case of conflict
   use 'hg resolve' to retry unresolved file merges
   [1]
   $ hg status
-  $ hg debugmergestate
-  * version 2 records
+  $ hg debugmergestate -v
+  v1 and v2 states match: using v2
   local: b71750c4b0fdf719734971e3ef90dbeab5919a2d
   other: a30dd8addae3ce71b8667868478542bc417439e6
-  file extras: foo (ancestorlinknode = 91360952243723bd5b1138d5f26bd8c8564cb553)
-  file: foo (record type "F", state "u", hash 0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33)
-    local path: foo (flags "")
+  file: foo (state "u")
+    local path: foo (hash 0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33, flags "")
     ancestor path: foo (node f89532f44c247a0e993d63e3a734dd781ab04708)
     other path: foo (node f50039b486d6fa1a90ae51778388cad161f425ee)
+    extra: ancestorlinknode = 91360952243723bd5b1138d5f26bd8c8564cb553
   $ mv .hg/merge/state2 .hg/merge/state2-moved
-  $ hg debugmergestate
-  * version 1 records
+  $ hg debugmergestate -v
+  no version 2 merge state
   local: b71750c4b0fdf719734971e3ef90dbeab5919a2d
-  file: foo (record type "F", state "u", hash 0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33)
-    local path: foo (flags "")
+  other: b71750c4b0fdf719734971e3ef90dbeab5919a2d
+  file: foo (state "u")
+    local path: foo (hash 0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33, flags "")
     ancestor path: foo (node f89532f44c247a0e993d63e3a734dd781ab04708)
-    other path: foo (node not stored in v1 format)
+    other path:  (node foo)
   $ mv .hg/merge/state2-moved .hg/merge/state2
   $ hg resolve -l  # still unresolved
   U foo

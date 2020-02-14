@@ -28,7 +28,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullhex,
     nullid,
     nullrev,
     short,
@@ -1944,120 +1943,100 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
         )
 
 
-@command(b'debugmergestate', [], b'')
-def debugmergestate(ui, repo, *args):
+@command(b'debugmergestate', [] + cmdutil.templateopts, b'')
+def debugmergestate(ui, repo, *args, **opts):
     """print merge state
 
     Use --verbose to print out information about whether v1 or v2 merge state
     was chosen."""
 
-    def _hashornull(h):
-        if h == nullhex:
-            return b'null'
+    if ui.verbose:
+        ms = mergemod.mergestate(repo)
+
+        # sort so that reasonable information is on top
+        v1records = ms._readrecordsv1()
+        v2records = ms._readrecordsv2()
+
+        if not v1records and not v2records:
+            pass
+        elif not v2records:
+            ui.writenoi18n(b'no version 2 merge state\n')
+        elif ms._v1v2match(v1records, v2records):
+            ui.writenoi18n(b'v1 and v2 states match: using v2\n')
         else:
-            return h
+            ui.writenoi18n(b'v1 and v2 states mismatch: using v1\n')
 
-    def printrecords(version):
-        ui.writenoi18n(b'* version %d records\n' % version)
-        if version == 1:
-            records = v1records
-        else:
-            records = v2records
+    opts = pycompat.byteskwargs(opts)
+    if not opts[b'template']:
+        opts[b'template'] = (
+            b'{if(commits, "", "no merge state found\n")}'
+            b'{commits % "{name}{if(label, " ({label})")}: {node}\n"}'
+            b'{files % "file: {path} (state \\"{state}\\")\n'
+            b'{if(local_path, "'
+            b'  local path: {local_path} (hash {local_key}, flags \\"{local_flags}\\")\n'
+            b'  ancestor path: {ancestor_path} (node {ancestor_node})\n'
+            b'  other path: {other_path} (node {other_node})\n'
+            b'")}'
+            b'{if(rename_side, "'
+            b'  rename side: {rename_side}\n'
+            b'  renamed path: {renamed_path}\n'
+            b'")}'
+            b'{extras % "  extra: {key} = {value}\n"}'
+            b'"}'
+        )
 
-        for rtype, record in records:
-            # pretty print some record types
-            if rtype == b'L':
-                ui.writenoi18n(b'local: %s\n' % record)
-            elif rtype == b'O':
-                ui.writenoi18n(b'other: %s\n' % record)
-            elif rtype == b'm':
-                driver, mdstate = record.split(b'\0', 1)
-                ui.writenoi18n(
-                    b'merge driver: %s (state "%s")\n' % (driver, mdstate)
-                )
-            elif rtype in b'FDC':
-                r = record.split(b'\0')
-                f, state, hash, lfile, afile, anode, ofile = r[0:7]
-                if version == 1:
-                    onode = b'not stored in v1 format'
-                    flags = r[7]
-                else:
-                    onode, flags = r[7:9]
-                ui.writenoi18n(
-                    b'file: %s (record type "%s", state "%s", hash %s)\n'
-                    % (f, rtype, state, _hashornull(hash))
-                )
-                ui.writenoi18n(
-                    b'  local path: %s (flags "%s")\n' % (lfile, flags)
-                )
-                ui.writenoi18n(
-                    b'  ancestor path: %s (node %s)\n'
-                    % (afile, _hashornull(anode))
-                )
-                ui.writenoi18n(
-                    b'  other path: %s (node %s)\n'
-                    % (ofile, _hashornull(onode))
-                )
-            elif rtype == b'f':
-                filename, rawextras = record.split(b'\0', 1)
-                extras = rawextras.split(b'\0')
-                i = 0
-                extrastrings = []
-                while i < len(extras):
-                    extrastrings.append(b'%s = %s' % (extras[i], extras[i + 1]))
-                    i += 2
+    ms = mergemod.mergestate.read(repo)
 
-                ui.writenoi18n(
-                    b'file extras: %s (%s)\n'
-                    % (filename, b', '.join(extrastrings))
-                )
-            elif rtype == b'l':
-                labels = record.split(b'\0', 2)
-                labels = [l for l in labels if len(l) > 0]
-                ui.writenoi18n(b'labels:\n')
-                ui.write((b'  local: %s\n' % labels[0]))
-                ui.write((b'  other: %s\n' % labels[1]))
-                if len(labels) > 2:
-                    ui.write((b'  base:  %s\n' % labels[2]))
-            else:
-                ui.writenoi18n(
-                    b'unrecognized entry: %s\t%s\n'
-                    % (rtype, record.replace(b'\0', b'\t'))
-                )
+    fm = ui.formatter(b'debugmergestate', opts)
+    fm.startitem()
 
-    # Avoid mergestate.read() since it may raise an exception for unsupported
-    # merge state records. We shouldn't be doing this, but this is OK since this
-    # command is pretty low-level.
-    ms = mergemod.mergestate(repo)
+    fm_commits = fm.nested(b'commits')
+    if ms.active():
+        for name, node, label_index in (
+            (b'local', ms.local, 0),
+            (b'other', ms.other, 1),
+        ):
+            fm_commits.startitem()
+            fm_commits.data(name=name)
+            fm_commits.data(node=hex(node))
+            if ms._labels and len(ms._labels) > label_index:
+                fm_commits.data(label=ms._labels[label_index])
+    fm_commits.end()
 
-    # sort so that reasonable information is on top
-    v1records = ms._readrecordsv1()
-    v2records = ms._readrecordsv2()
-    order = b'LOml'
+    fm_files = fm.nested(b'files')
+    if ms.active():
+        for f in ms:
+            fm_files.startitem()
+            fm_files.data(path=f)
+            state = ms._state[f]
+            fm_files.data(state=state[0])
+            if state[0] in (
+                mergemod.MERGE_RECORD_UNRESOLVED,
+                mergemod.MERGE_RECORD_RESOLVED,
+            ):
+                fm_files.data(local_key=state[1])
+                fm_files.data(local_path=state[2])
+                fm_files.data(ancestor_path=state[3])
+                fm_files.data(ancestor_node=state[4])
+                fm_files.data(other_path=state[5])
+                fm_files.data(other_node=state[6])
+                fm_files.data(local_flags=state[7])
+            elif state[0] in (
+                mergemod.MERGE_RECORD_UNRESOLVED_PATH,
+                mergemod.MERGE_RECORD_RESOLVED_PATH,
+            ):
+                fm_files.data(renamed_path=state[1])
+                fm_files.data(rename_side=state[2])
+            fm_extras = fm_files.nested(b'extras')
+            for k, v in ms.extras(f).items():
+                fm_extras.startitem()
+                fm_extras.data(key=k)
+                fm_extras.data(value=v)
+            fm_extras.end()
 
-    def key(r):
-        idx = order.find(r[0])
-        if idx == -1:
-            return (1, r[1])
-        else:
-            return (0, idx)
+    fm_files.end()
 
-    v1records.sort(key=key)
-    v2records.sort(key=key)
-
-    if not v1records and not v2records:
-        ui.writenoi18n(b'no merge state found\n')
-    elif not v2records:
-        ui.notenoi18n(b'no version 2 merge state\n')
-        printrecords(1)
-    elif ms._v1v2match(v1records, v2records):
-        ui.notenoi18n(b'v1 and v2 states match: using v2\n')
-        printrecords(2)
-    else:
-        ui.notenoi18n(b'v1 and v2 states mismatch: using v1\n')
-        printrecords(1)
-        if ui.verbose:
-            printrecords(2)
+    fm.end()
 
 
 @command(b'debugnamecomplete', [], _(b'NAME...'))

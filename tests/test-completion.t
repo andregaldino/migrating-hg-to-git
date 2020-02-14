@@ -289,7 +289,7 @@ Show all commands + options
   debuglabelcomplete: 
   debuglocks: force-lock, force-wlock, set-lock, set-wlock
   debugmanifestfulltextcache: clear, add
-  debugmergestate: 
+  debugmergestate: style, template
   debugnamecomplete: 
   debugnodemap: dump-new, dump-disk, check, metadata
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template

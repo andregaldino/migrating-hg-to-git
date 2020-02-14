@@ -76,13 +76,11 @@ Merge - local file conflicts with remote directory
   A a/b~0ed027b96f31
   R a/b
   $ hg debugmergestate
-  * version 2 records
-  local: 0ed027b96f31a2560c8abe689ba59876409a2b8e
-  other: 9049d9534d5c5d16264aab02b4b9e20d03faabef
-  labels:
-    local: working copy
-    other: merge rev
-  unrecognized entry: P	a/b	pu	a/b~0ed027b96f31	l
+  local (working copy): 0ed027b96f31a2560c8abe689ba59876409a2b8e
+  other (merge rev): 9049d9534d5c5d16264aab02b4b9e20d03faabef
+  file: a/b (state "pu")
+    rename side: l
+    renamed path: a/b~0ed027b96f31
   $ hg resolve --all
   a/b: path conflict must be resolved manually
   $ hg forget a/b~0ed027b96f31 && rm a/b~0ed027b96f31
@@ -115,13 +113,11 @@ Merge - local symlink conflicts with remote directory
   $ hg resolve --mark a/b
   (no more unresolved files)
   $ hg debugmergestate
-  * version 2 records
-  local: 2ea68033e3be03a560471c1fc9e5704fbedb9b4b
-  other: 9049d9534d5c5d16264aab02b4b9e20d03faabef
-  labels:
-    local: working copy
-    other: merge rev
-  unrecognized entry: P	a/b	pr	a/b~2ea68033e3be	l
+  local (working copy): 2ea68033e3be03a560471c1fc9e5704fbedb9b4b
+  other (merge rev): 9049d9534d5c5d16264aab02b4b9e20d03faabef
+  file: a/b (state "pr")
+    rename side: l
+    renamed path: a/b~2ea68033e3be
   $ hg resolve --list
   R a/b
   $ hg commit -m "merge link and dir (renamed link)"

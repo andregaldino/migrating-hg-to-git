@@ -88,18 +88,13 @@ Insert unsupported advisory merge record:
 
   $ hg --config extensions.fakemergerecord=$TESTDIR/fakemergerecord.py fakemergerecord -x
   $ hg debugmergestate
-  * version 2 records
-  local: 3e046f2ecedb793b97ed32108086edd1a162f8bc
-  other: 46f0b057b5c061d276b91491c22151f78698abd2
-  labels:
-    local: dest
-    other: source
-  unrecognized entry: x	advisory record
-  file extras: common (ancestorlinknode = 3163e20567cc93074fbb7a53c8b93312e59dbf2c)
-  file: common (record type "F", state "u", hash 94c8c21d08740f5da9eaa38d1f175c592692f0d1)
-    local path: common (flags "")
+  local (dest): 3e046f2ecedb793b97ed32108086edd1a162f8bc
+  other (source): 46f0b057b5c061d276b91491c22151f78698abd2
+  file: common (state "u")
+    local path: common (hash 94c8c21d08740f5da9eaa38d1f175c592692f0d1, flags "")
     ancestor path: common (node de0a666fdd9c1a0b0698b90d85064d8bd34f74b6)
     other path: common (node 2f6411de53677f6f1048fef5bf888d67a342e0a5)
+    extra: ancestorlinknode = 3163e20567cc93074fbb7a53c8b93312e59dbf2c
   $ hg resolve -l
   U common
 
@@ -107,18 +102,9 @@ Insert unsupported mandatory merge record:
 
   $ hg --config extensions.fakemergerecord=$TESTDIR/fakemergerecord.py fakemergerecord -X
   $ hg debugmergestate
-  * version 2 records
-  local: 3e046f2ecedb793b97ed32108086edd1a162f8bc
-  other: 46f0b057b5c061d276b91491c22151f78698abd2
-  labels:
-    local: dest
-    other: source
-  file extras: common (ancestorlinknode = 3163e20567cc93074fbb7a53c8b93312e59dbf2c)
-  file: common (record type "F", state "u", hash 94c8c21d08740f5da9eaa38d1f175c592692f0d1)
-    local path: common (flags "")
-    ancestor path: common (node de0a666fdd9c1a0b0698b90d85064d8bd34f74b6)
-    other path: common (node 2f6411de53677f6f1048fef5bf888d67a342e0a5)
-  unrecognized entry: X	mandatory record
+  abort: unsupported merge state records: X
+  (see https://mercurial-scm.org/wiki/MergeStateRecords for more information)
+  [255]
   $ hg resolve -l
   abort: unsupported merge state records: X
   (see https://mercurial-scm.org/wiki/MergeStateRecords for more information)
