@@ -2368,6 +2368,11 @@ def handlebookmark(op, inpart):
                     b'prepushkey', throw=True, **pycompat.strkwargs(hookargs)
                 )
 
+        for book, node in changes:
+            if bookmarks.isdivergent(book):
+                msg = _(b'cannot accept divergent bookmark %s!') % book
+                raise error.Abort(msg)
+
         bookstore.applychanges(op.repo, op.gettransaction(), changes)
 
         if pushkeycompat:

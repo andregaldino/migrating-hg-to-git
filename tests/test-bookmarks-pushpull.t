@@ -328,6 +328,17 @@ delete a remote bookmark
 
 #endif
 
+Divergent bookmark cannot be exported
+
+  $ hg book W@default
+  $ hg push -B W@default ../a
+  pushing to ../a
+  searching for changes
+  cannot push divergent bookmark W@default!
+  no changes found
+  [2]
+  $ hg book -d W@default
+
 export the active bookmark
 
   $ hg bookmark V

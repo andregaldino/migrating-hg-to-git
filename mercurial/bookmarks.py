@@ -487,6 +487,8 @@ def listbookmarks(repo):
 
 
 def pushbookmark(repo, key, old, new):
+    if isdivergent(key):
+        return False
     if bookmarksinstore(repo):
         wlock = util.nullcontextmanager()
     else:
