@@ -413,14 +413,7 @@ class mergestate(object):
         Returns True if there appears to be mergestate. This is a rough proxy
         for "is a merge in progress."
         """
-        # Check local variables before looking at filesystem for performance
-        # reasons.
-        return (
-            bool(self._local)
-            or bool(self._state)
-            or self._repo.vfs.exists(self.statepathv1)
-            or self._repo.vfs.exists(self.statepathv2)
-        )
+        return bool(self._local) or bool(self._state)
 
     def commit(self):
         """Write current state on disk (if necessary)"""
