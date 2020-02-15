@@ -27,6 +27,7 @@
 
 == Bug Fixes  ==
 
+ * Fix server exception when concurrent pushes delete the same bookmark
 
 == Backwards Compatibility Changes ==
 

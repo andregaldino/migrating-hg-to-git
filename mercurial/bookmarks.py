@@ -173,6 +173,8 @@ class bmstore(object):
             nrefs.sort()
 
     def _del(self, mark):
+        if mark not in self._refmap:
+            return
         self._clean = False
         node = self._refmap.pop(mark)
         nrefs = self._nodemap[node]
