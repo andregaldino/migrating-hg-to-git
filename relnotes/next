@@ -35,6 +35,8 @@
    can use the new `conflictparents()` revset for finding the other
    parent during a conflict.
 
+ * `hg recover` does not verify the validity of the whole repository
+   anymore. You can pass `--verify` or call `hg verify` if necessary.
 
 == Internal API Changes ==
 
