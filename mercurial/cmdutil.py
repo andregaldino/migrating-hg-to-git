@@ -1898,7 +1898,12 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
                 branch=branch,
                 editor=editor,
             )
-            n = memctx.commit()
+
+            overrides = {}
+            if opts.get(b'secret'):
+                overrides[(b'phases', b'new-commit')] = b'secret'
+            with repo.ui.configoverride(overrides, b'import'):
+                n = memctx.commit()
         finally:
             store.close()
     if opts.get(b'exact') and nocommit:
