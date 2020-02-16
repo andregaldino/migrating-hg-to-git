@@ -124,6 +124,9 @@ eh.configitem(
 eh.configitem(
     b'phabsend', b'confirm', default=False,
 )
+eh.configitem(
+    b'phabimport', b'secret', default=False,
+)
 
 colortable = {
     b'phabricator.action.created': b'green',
@@ -1728,6 +1731,9 @@ def phabimport(ui, repo, spec, **opts):
     opts[b'prefix'] = b''
     # Evolve 9.3.0 assumes this key is present in cmdutil.tryimportone()
     opts[b'obsolete'] = False
+
+    if ui.configbool(b'phabimport', b'secret'):
+        opts[b'secret'] = True
 
     def _write(patches):
         parents = repo[None].parents()

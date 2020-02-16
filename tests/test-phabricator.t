@@ -345,5 +345,39 @@ Phabimport works with a stack
   o  0   c44b38f24a45   1970-01-01 00:00 +0000   test
        create alpha for phabricator test \x80 (esc)
   
+Phabimport can create secret commits
+
+  $ hg rollback --config ui.rollback=True
+  repository tip rolled back to revision 1 (undo phabimport)
+  $ hg phabimport --stack 'D7918' --test-vcr "$VCR/phabimport-stack.json" \
+  >    --config phabimport.secret=True
+  applying patch from D7917
+  applying patch from D7918
+  $ hg log -T phases
+  changeset:   3:aaef04066140
+  tag:         tip
+  phase:       secret
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     create draft change for phabricator testing
+  
+  changeset:   2:8de3712202d1
+  phase:       secret
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     create public change for phabricator testing
+  
+  changeset:   1:a692622e6937
+  phase:       public
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     create beta for phabricator test
+  
+  changeset:   0:c44b38f24a45
+  phase:       public
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     create alpha for phabricator test \x80 (esc)
+  
 
   $ cd ..
