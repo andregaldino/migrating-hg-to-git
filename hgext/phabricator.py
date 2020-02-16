@@ -127,6 +127,9 @@ eh.configitem(
 eh.configitem(
     b'phabimport', b'secret', default=False,
 )
+eh.configitem(
+    b'phabimport', b'obsolete', default=False,
+)
 
 colortable = {
     b'phabricator.action.created': b'green',
@@ -1734,6 +1737,8 @@ def phabimport(ui, repo, spec, **opts):
 
     if ui.configbool(b'phabimport', b'secret'):
         opts[b'secret'] = True
+    if ui.configbool(b'phabimport', b'obsolete'):
+        opts[b'obsolete'] = True  # Handled by evolve wrapping tryimportone()
 
     def _write(patches):
         parents = repo[None].parents()
