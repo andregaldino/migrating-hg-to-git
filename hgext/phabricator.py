@@ -1703,6 +1703,65 @@ def phabread(ui, repo, spec, **opts):
 
 
 @vcrcommand(
+    b'phabimport',
+    [(b'', b'stack', False, _(b'import dependencies as well'))],
+    _(b'DREVSPEC [OPTIONS]'),
+    helpcategory=command.CATEGORY_IMPORT_EXPORT,
+)
+def phabimport(ui, repo, spec, **opts):
+    """import patches from Phabricator for the specified Differential Revisions
+
+    The patches are read and applied starting at the parent of the working
+    directory.
+
+    See ``hg help phabread`` for how to specify DREVSPEC.
+    """
+    opts = pycompat.byteskwargs(opts)
+
+    # --bypass avoids losing exec and symlink bits when importing on Windows,
+    # and allows importing with a dirty wdir.  It also aborts instead of leaving
+    # rejects.
+    opts[b'bypass'] = True
+
+    # Mandatory default values, synced with commands.import
+    opts[b'strip'] = 1
+    opts[b'prefix'] = b''
+    # Evolve 9.3.0 assumes this key is present in cmdutil.tryimportone()
+    opts[b'obsolete'] = False
+
+    def _write(patches):
+        parents = repo[None].parents()
+
+        with repo.wlock(), repo.lock(), repo.transaction(b'phabimport'):
+            for drev, contents in patches:
+                ui.status(_(b'applying patch from D%s\n') % drev)
+
+                with patch.extract(ui, pycompat.bytesio(contents)) as patchdata:
+                    msg, node, rej = cmdutil.tryimportone(
+                        ui,
+                        repo,
+                        patchdata,
+                        parents,
+                        opts,
+                        [],
+                        None,  # Never update wdir to another revision
+                    )
+
+                    if not node:
+                        raise error.Abort(_(b'D%s: no diffs found') % drev)
+
+                    ui.note(msg + b'\n')
+                    parents = [repo[node]]
+
+    opts = pycompat.byteskwargs(opts)
+    if opts.get(b'stack'):
+        spec = b':(%s)' % spec
+    drevs = querydrev(repo.ui, spec)
+
+    readpatch(repo.ui, drevs, _write)
+
+
+@vcrcommand(
     b'phabupdate',
     [
         (b'', b'accept', False, _(b'accept revisions')),
