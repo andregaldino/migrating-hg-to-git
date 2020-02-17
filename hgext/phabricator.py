@@ -1686,6 +1686,7 @@ def phabread(ui, repo, spec, **opts):
     ],
     _(b'DREVSPEC [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
+    optionalrepo=True,
 )
 def phabupdate(ui, repo, spec, **opts):
     """update Differential Revision in batch
@@ -1701,7 +1702,7 @@ def phabupdate(ui, repo, spec, **opts):
     for f in flags:
         actions.append({b'type': f, b'value': True})
 
-    drevs = querydrev(repo.ui, spec)
+    drevs = querydrev(ui, spec)
     for i, drev in enumerate(drevs):
         if i + 1 == len(drevs) and opts.get(b'comment'):
             actions.append({b'type': b'comment', b'value': opts[b'comment']})
