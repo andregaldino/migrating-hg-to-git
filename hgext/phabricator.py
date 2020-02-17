@@ -1609,7 +1609,7 @@ def getdiffmeta(diff):
     return meta
 
 
-def readpatch(repo, drevs, write):
+def readpatch(ui, drevs, write):
     """generate plain-text patch readable by 'hg import'
 
     write is usually ui.write. drevs is what "querydrev" returns, results of
@@ -1617,16 +1617,14 @@ def readpatch(repo, drevs, write):
     """
     # Prefetch hg:meta property for all diffs
     diffids = sorted(set(max(int(v) for v in drev[b'diffs']) for drev in drevs))
-    diffs = callconduit(repo.ui, b'differential.querydiffs', {b'ids': diffids})
+    diffs = callconduit(ui, b'differential.querydiffs', {b'ids': diffids})
 
     # Generate patch for each drev
     for drev in drevs:
-        repo.ui.note(_(b'reading D%s\n') % drev[b'id'])
+        ui.note(_(b'reading D%s\n') % drev[b'id'])
 
         diffid = max(int(v) for v in drev[b'diffs'])
-        body = callconduit(
-            repo.ui, b'differential.getrawdiff', {b'diffID': diffid}
-        )
+        body = callconduit(ui, b'differential.getrawdiff', {b'diffID': diffid})
         desc = getdescfromdrev(drev)
         header = b'# HG changeset patch\n'
 
@@ -1671,7 +1669,7 @@ def phabread(ui, repo, spec, **opts):
     if opts.get(b'stack'):
         spec = b':(%s)' % spec
     drevs = querydrev(repo, spec)
-    readpatch(repo, drevs, ui.write)
+    readpatch(repo.ui, drevs, ui.write)
 
 
 @vcrcommand(
