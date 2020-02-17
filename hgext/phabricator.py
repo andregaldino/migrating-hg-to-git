@@ -1040,11 +1040,11 @@ def createdifferentialrevision(
     return revision, diff
 
 
-def userphids(repo, names):
+def userphids(ui, names):
     """convert user names to PHIDs"""
     names = [name.lower() for name in names]
     query = {b'constraints': {b'usernames': names}}
-    result = callconduit(repo.ui, b'user.search', query)
+    result = callconduit(ui, b'user.search', query)
     # username not found is not an error of the API. So check if we have missed
     # some names here.
     data = result[b'data']
@@ -1127,10 +1127,13 @@ def phabsend(ui, repo, *revs, **opts):
     blockers = opts.get(b'blocker', [])
     phids = []
     if reviewers:
-        phids.extend(userphids(repo, reviewers))
+        phids.extend(userphids(repo.ui, reviewers))
     if blockers:
         phids.extend(
-            map(lambda phid: b'blocking(%s)' % phid, userphids(repo, blockers))
+            map(
+                lambda phid: b'blocking(%s)' % phid,
+                userphids(repo.ui, blockers),
+            )
         )
     if phids:
         actions.append({b'type': b'reviewers.add', b'value': phids})
