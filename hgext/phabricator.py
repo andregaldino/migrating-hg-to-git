@@ -1183,7 +1183,7 @@ def phabsend(ui, repo, *revs, **opts):
         else:
             # Nothing changed. But still set "newrevphid" so the next revision
             # could depend on this one and "newrevid" for the summary line.
-            newrevphid = querydrev(repo, b'%d' % revid)[0][b'phid']
+            newrevphid = querydrev(repo.ui, b'%d' % revid)[0][b'phid']
             newrevid = revid
             action = b'skipped'
 
@@ -1398,7 +1398,7 @@ def _prefetchdrevs(tree):
     return drevs, ancestordrevs
 
 
-def querydrev(repo, spec):
+def querydrev(ui, spec):
     """return a list of "Differential Revision" dicts
 
     spec is a string using a simple query language, see docstring in phabread
@@ -1449,7 +1449,7 @@ def querydrev(repo, spec):
         key = (params.get(b'ids') or params.get(b'phids') or [None])[0]
         if key in prefetched:
             return prefetched[key]
-        drevs = callconduit(repo.ui, b'differential.query', params)
+        drevs = callconduit(ui, b'differential.query', params)
         # Fill prefetched with the result
         for drev in drevs:
             prefetched[drev[b'phid']] = drev
@@ -1486,7 +1486,7 @@ def querydrev(repo, spec):
     drevs, ancestordrevs = _prefetchdrevs(tree)
 
     # developer config: phabricator.batchsize
-    batchsize = repo.ui.configint(b'phabricator', b'batchsize')
+    batchsize = ui.configint(b'phabricator', b'batchsize')
 
     # Prefetch Differential Revisions in batch
     tofetch = set(drevs)
@@ -1668,7 +1668,7 @@ def phabread(ui, repo, spec, **opts):
     opts = pycompat.byteskwargs(opts)
     if opts.get(b'stack'):
         spec = b':(%s)' % spec
-    drevs = querydrev(repo, spec)
+    drevs = querydrev(repo.ui, spec)
     readpatch(repo.ui, drevs, ui.write)
 
 
@@ -1698,7 +1698,7 @@ def phabupdate(ui, repo, spec, **opts):
     for f in flags:
         actions.append({b'type': f, b'value': True})
 
-    drevs = querydrev(repo, spec)
+    drevs = querydrev(repo.ui, spec)
     for i, drev in enumerate(drevs):
         if i + 1 == len(drevs) and opts.get(b'comment'):
             actions.append({b'type': b'comment', b'value': opts[b'comment']})
