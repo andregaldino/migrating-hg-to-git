@@ -2504,6 +2504,9 @@ class localrepository(object):
 
         if full:
             unfi = self.unfiltered()
+
+            self.changelog.update_caches(transaction=tr)
+
             rbc = unfi.revbranchcache()
             for r in unfi.changelog:
                 rbc.branchinfo(r)

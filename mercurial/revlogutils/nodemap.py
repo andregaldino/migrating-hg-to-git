@@ -73,10 +73,24 @@ def setup_persistent_nodemap(tr, revlog):
     callback_id = b"revlog-persistent-nodemap-%s" % revlog.nodemap_file
     if tr.hasfinalize(callback_id):
         return  # no need to register again
-    tr.addfinalize(callback_id, lambda tr: _persist_nodemap(tr, revlog))
+    tr.addfinalize(
+        callback_id, lambda tr: _persist_nodemap(tr.addpostclose, revlog)
+    )
 
 
-def _persist_nodemap(tr, revlog):
+def update_persistent_nodemap(revlog):
+    """update the persistent nodemap right now
+
+    To be used for updating the nodemap on disk outside of a normal transaction
+    setup (eg, `debugupdatecache`).
+    """
+    cleanups = []
+    _persist_nodemap((lambda x, y: cleanups.append(y)), revlog)
+    for c in cleanups:
+        c(None)
+
+
+def _persist_nodemap(cleaner, revlog):
     """Write nodemap data on disk for a given revlog
     """
     if getattr(revlog, 'filteredrevs', ()):
@@ -163,7 +177,7 @@ def _persist_nodemap(tr, revlog):
                 realvfs.tryunlink(oldfile)
 
         callback_id = b"revlog-cleanup-nodemap-%s" % revlog.nodemap_file
-        tr.addpostclose(callback_id, cleanup)
+        cleaner(callback_id, cleanup)
 
 
 ### Nodemap docket file

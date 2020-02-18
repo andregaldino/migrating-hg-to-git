@@ -118,3 +118,22 @@ Test code path without mmap
   $ f --sha256 .hg/store/00changelog-*.nd --size
   .hg/store/00changelog-????????????????.nd: size=122944, sha256=755976b22b64ab680401b45395953504e64e7fa8c31ac570f58dee21e15f9bc0 (glob)
 #endif
+
+Test force warming the cache
+
+  $ rm .hg/store/00changelog.n
+  $ hg debugnodemap --metadata
+  $ hg debugupdatecache
+#if pure
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5002
+  data-length: 122944
+  data-unused: 0
+#else
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5002
+  data-length: 122944
+  data-unused: 0
+#endif
