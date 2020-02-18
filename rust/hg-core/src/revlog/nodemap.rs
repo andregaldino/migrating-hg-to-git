@@ -17,8 +17,10 @@ use super::{
 };
 
 use std::fmt;
+use std::mem;
 use std::ops::Deref;
 use std::ops::Index;
+use std::slice;
 
 #[derive(Debug, PartialEq)]
 pub enum NodeMapError {
@@ -172,20 +174,42 @@ impl From<Element> for RawElement {
 /// represented at all, because we want an immutable empty nodetree
 /// to be valid.
 
-#[derive(Clone, PartialEq)]
-pub struct Block([RawElement; 16]);
+#[derive(Copy, Clone)]
+pub struct Block([u8; BLOCK_SIZE]);
+
+/// Not derivable for arrays of length >32 until const generics are stable
+impl PartialEq for Block {
+    fn eq(&self, other: &Self) -> bool {
+        &self.0[..] == &other.0[..]
+    }
+}
+
+pub const BLOCK_SIZE: usize = 64;
 
 impl Block {
     fn new() -> Self {
-        Block([-1; 16])
+        // -1 in 2's complement to create an absent node
+        let byte: u8 = 255;
+        Block([byte; BLOCK_SIZE])
     }
 
     fn get(&self, nybble: u8) -> Element {
-        Element::from(RawElement::from_be(self.0[nybble as usize]))
+        let index = nybble as usize * mem::size_of::<RawElement>();
+        Element::from(RawElement::from_be_bytes([
+            self.0[index],
+            self.0[index + 1],
+            self.0[index + 2],
+            self.0[index + 3],
+        ]))
     }
 
     fn set(&mut self, nybble: u8, element: Element) {
-        self.0[nybble as usize] = RawElement::to_be(element.into())
+        let values = RawElement::to_be_bytes(element.into());
+        let index = nybble as usize * mem::size_of::<RawElement>();
+        self.0[index] = values[0];
+        self.0[index + 1] = values[1];
+        self.0[index + 2] = values[2];
+        self.0[index + 3] = values[3];
     }
 }
 
@@ -230,9 +254,9 @@ impl Index<usize> for NodeTree {
 }
 
 /// Return `None` unless the `Node` for `rev` has given prefix in `index`.
-fn has_prefix_or_none<'p>(
+fn has_prefix_or_none(
     idx: &impl RevlogIndex,
-    prefix: NodePrefixRef<'p>,
+    prefix: NodePrefixRef,
     rev: Revision,
 ) -> Result<Option<Revision>, NodeMapError> {
     idx.node(rev)
@@ -260,6 +284,67 @@ impl NodeTree {
             growable: Vec::new(),
             root: root,
         }
+    }
+
+    /// Create from an opaque bunch of bytes
+    ///
+    /// The created `NodeTreeBytes` from `buffer`,
+    /// of which exactly `amount` bytes are used.
+    ///
+    /// - `buffer` could be derived from `PyBuffer` and `Mmap` objects.
+    /// - `offset` allows for the final file format to include fixed data
+    ///   (generation number, behavioural flags)
+    /// - `amount` is expressed in bytes, and is not automatically derived from
+    ///   `bytes`, so that a caller that manages them atomically can perform
+    ///   temporary disk serializations and still rollback easily if needed.
+    ///   First use-case for this would be to support Mercurial shell hooks.
+    ///
+    /// panics if `buffer` is smaller than `amount`
+    pub fn load_bytes(
+        bytes: Box<dyn Deref<Target = [u8]> + Send>,
+        amount: usize,
+    ) -> Self {
+        NodeTree::new(Box::new(NodeTreeBytes::new(bytes, amount)))
+    }
+
+    /// Retrieve added `Block` and the original immutable data
+    pub fn into_readonly_and_added(
+        self,
+    ) -> (Box<dyn Deref<Target = [Block]> + Send>, Vec<Block>) {
+        let mut vec = self.growable;
+        let readonly = self.readonly;
+        if readonly.last() != Some(&self.root) {
+            vec.push(self.root);
+        }
+        (readonly, vec)
+    }
+
+    /// Retrieve added `Blocks` as bytes, ready to be written to persistent
+    /// storage
+    pub fn into_readonly_and_added_bytes(
+        self,
+    ) -> (Box<dyn Deref<Target = [Block]> + Send>, Vec<u8>) {
+        let (readonly, vec) = self.into_readonly_and_added();
+        // Prevent running `v`'s destructor so we are in complete control
+        // of the allocation.
+        let vec = mem::ManuallyDrop::new(vec);
+
+        // Transmute the `Vec<Block>` to a `Vec<u8>`. Blocks are contiguous
+        // bytes, so this is perfectly safe.
+        let bytes = unsafe {
+            // Assert that `Block` hasn't been changed and has no padding
+            let _: [u8; 4 * BLOCK_SIZE] =
+                std::mem::transmute([Block::new(); 4]);
+
+            // /!\ Any use of `vec` after this is use-after-free.
+            // TODO: use `into_raw_parts` once stabilized
+            Vec::from_raw_parts(
+                vec.as_ptr() as *mut u8,
+                vec.len() * BLOCK_SIZE,
+                vec.capacity() * BLOCK_SIZE,
+            )
+        };
+        (readonly, bytes)
     }
 
     /// Total number of blocks
@@ -410,6 +495,38 @@ impl NodeTree {
     }
 }
 
+pub struct NodeTreeBytes {
+    buffer: Box<dyn Deref<Target = [u8]> + Send>,
+    len_in_blocks: usize,
+}
+
+impl NodeTreeBytes {
+    fn new(
+        buffer: Box<dyn Deref<Target = [u8]> + Send>,
+        amount: usize,
+    ) -> Self {
+        assert!(buffer.len() >= amount);
+        let len_in_blocks = amount / BLOCK_SIZE;
+        NodeTreeBytes {
+            buffer,
+            len_in_blocks,
+        }
+    }
+}
+
+impl Deref for NodeTreeBytes {
+    type Target = [Block];
+
+    fn deref(&self) -> &[Block] {
+        unsafe {
+            slice::from_raw_parts(
+                (&self.buffer).as_ptr() as *const Block,
+                self.len_in_blocks,
+            )
+        }
+    }
+}
+
 struct NodeTreeVisitor<'n, 'p> {
     nt: &'n NodeTree,
     prefix: NodePrefixRef<'p>,
@@ -539,12 +656,15 @@ mod tests {
 
     #[test]
     fn test_raw_block() {
-        let mut raw = [-1; 16];
-        raw[0] = 0;
-        raw[1] = RawElement::to_be(15);
-        raw[2] = RawElement::to_be(-2);
-        raw[3] = RawElement::to_be(-1);
-        raw[4] = RawElement::to_be(-3);
+        let mut raw = [255u8; 64];
+
+        let mut counter = 0;
+        for val in [0, 15, -2, -1, -3].iter() {
+            for byte in RawElement::to_be_bytes(*val).iter() {
+                raw[counter] = *byte;
+                counter += 1;
+            }
+        }
         let block = Block(raw);
         assert_eq!(block.get(0), Element::Block(0));
         assert_eq!(block.get(1), Element::Block(15));
@@ -785,6 +905,32 @@ mod tests {
         assert_eq!(idx.find_hex("c1")?, None);
         assert_eq!(idx.find_hex("1234")?, Some(0));
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_into_added_empty() {
+        assert!(sample_nodetree().into_readonly_and_added().1.is_empty());
+        assert!(sample_nodetree()
+            .into_readonly_and_added_bytes()
+            .1
+            .is_empty());
+    }
+
+    #[test]
+    fn test_into_added_bytes() -> Result<(), NodeMapError> {
+        let mut idx = TestNtIndex::new();
+        idx.insert(0, "1234")?;
+        let mut idx = idx.commit();
+        idx.insert(4, "cafe")?;
+        let (_, bytes) = idx.nt.into_readonly_and_added_bytes();
+
+        // only the root block has been changed
+        assert_eq!(bytes.len(), BLOCK_SIZE);
+        // big endian for -2
+        assert_eq!(&bytes[4..2 * 4], [255, 255, 255, 254]);
+        // big endian for -6
+        assert_eq!(&bytes[12 * 4..13 * 4], [255, 255, 255, 250]);
         Ok(())
     }
 }
