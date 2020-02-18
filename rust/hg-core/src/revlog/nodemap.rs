@@ -575,11 +575,25 @@ impl NodeTree {
         Ok(())
     }
 
+    /// Make the whole `NodeTree` logically empty, without touching the
+    /// immutable part.
+    pub fn invalidate_all(&mut self) {
+        self.root = Block::new();
+        self.growable = Vec::new();
+        self.masked_inner_blocks = self.readonly.len();
+    }
+
     /// Return the number of blocks in the readonly part that are currently
     /// masked in the mutable part.
     ///
     /// The `NodeTree` structure has no efficient way to know how many blocks
     /// are already unreachable in the readonly part.
+    ///
+    /// After a call to `invalidate_all()`, the returned number can be actually
+    /// bigger than the whole readonly part, a conventional way to mean that
+    /// all the readonly blocks have been masked. This is what is really
+    /// useful to the caller and does not require to know how many were
+    /// actually unreachable to begin with.
     pub fn masked_readonly_blocks(&self) -> usize {
         if let Some(readonly_root) = self.readonly.last() {
             if readonly_root == &self.root {
@@ -1056,6 +1070,27 @@ mod tests {
         // it doesn't mask anything
         assert_eq!(idx.nt.masked_readonly_blocks(), 4);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalidate_all() -> Result<(), NodeMapError> {
+        let mut idx = TestNtIndex::new();
+        idx.insert(0, "1234")?;
+        idx.insert(1, "1235")?;
+        idx.insert(2, "131")?;
+        idx.insert(3, "cafe")?;
+        let mut idx = idx.commit();
+
+        idx.nt.invalidate_all();
+
+        assert_eq!(idx.find_hex("1234")?, None);
+        assert_eq!(idx.find_hex("1235")?, None);
+        assert_eq!(idx.find_hex("131")?, None);
+        assert_eq!(idx.find_hex("cafe")?, None);
+        // all the readonly blocks have been masked, this is the
+        // conventional expected response
+        assert_eq!(idx.nt.masked_readonly_blocks(), idx.nt.readonly.len() + 1);
         Ok(())
     }
 
