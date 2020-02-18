@@ -618,12 +618,19 @@ class revlog(object):
             and NodemapRevlogIO is not None
         )
 
+        use_rust_index = False
+        if rustrevlog is not None:
+            if self.nodemap_file is not None:
+                use_rust_index = True
+            else:
+                use_rust_index = self.opener.options.get(b'rust.index')
+
         self._io = revlogio()
         if self.version == REVLOGV0:
             self._io = revlogoldio()
         elif devel_nodemap:
             self._io = NodemapRevlogIO()
-        elif rustrevlog is not None and self.opener.options.get(b'rust.index'):
+        elif use_rust_index:
             self._io = rustrevlogio()
         try:
             d = self._io.parseindex(indexdata, self._inline)
