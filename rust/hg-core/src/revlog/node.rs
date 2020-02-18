@@ -226,6 +226,36 @@ impl<'a> NodePrefixRef<'a> {
         assert!(i < self.len());
         get_nybble(self.buf, i)
     }
+
+    /// Return the index first nybble that's different from `node`
+    ///
+    /// If the return value is `None` that means that `self` is
+    /// a prefix of `node`, but the current method is a bit slower
+    /// than `is_prefix_of`.
+    ///
+    /// Returned index is as in `get_nybble`, i.e., starting at 0.
+    pub fn first_different_nybble(&self, node: &Node) -> Option<usize> {
+        let buf = self.buf;
+        let until = if self.is_odd {
+            buf.len() - 1
+        } else {
+            buf.len()
+        };
+        for i in 0..until {
+            if buf[i] != node.data[i] {
+                if buf[i] & 0xf0 == node.data[i] & 0xf0 {
+                    return Some(2 * i + 1);
+                } else {
+                    return Some(2 * i);
+                }
+            }
+        }
+        if self.is_odd && buf[until] & 0xf0 != node.data[until] & 0xf0 {
+            Some(until * 2)
+        } else {
+            None
+        }
+    }
 }
 
 /// A shortcut for full `Node` references
@@ -361,6 +391,36 @@ mod tests {
         assert_eq!(prefix.borrow().get_nybble(0), 13);
         assert_eq!(prefix.borrow().get_nybble(7), 9);
         Ok(())
+    }
+
+    #[test]
+    fn test_first_different_nybble_even_prefix() {
+        let prefix = NodePrefix::from_hex("12ca").unwrap();
+        let prefref = prefix.borrow();
+        let mut node = Node::from([0; NODE_BYTES_LENGTH]);
+        assert_eq!(prefref.first_different_nybble(&node), Some(0));
+        node.data[0] = 0x13;
+        assert_eq!(prefref.first_different_nybble(&node), Some(1));
+        node.data[0] = 0x12;
+        assert_eq!(prefref.first_different_nybble(&node), Some(2));
+        node.data[1] = 0xca;
+        // now it is a prefix
+        assert_eq!(prefref.first_different_nybble(&node), None);
+    }
+
+    #[test]
+    fn test_first_different_nybble_odd_prefix() {
+        let prefix = NodePrefix::from_hex("12c").unwrap();
+        let prefref = prefix.borrow();
+        let mut node = Node::from([0; NODE_BYTES_LENGTH]);
+        assert_eq!(prefref.first_different_nybble(&node), Some(0));
+        node.data[0] = 0x13;
+        assert_eq!(prefref.first_different_nybble(&node), Some(1));
+        node.data[0] = 0x12;
+        assert_eq!(prefref.first_different_nybble(&node), Some(2));
+        node.data[1] = 0xca;
+        // now it is a prefix
+        assert_eq!(prefref.first_different_nybble(&node), None);
     }
 }
 

@@ -17,6 +17,7 @@ use super::{
     RevlogIndex, NULL_REVISION,
 };
 
+use std::cmp::max;
 use std::fmt;
 use std::mem;
 use std::ops::Deref;
@@ -97,6 +98,42 @@ pub trait NodeMap {
         prefix: &str,
     ) -> Result<Option<Revision>, NodeMapError> {
         self.find_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
+    }
+
+    /// Give the size of the shortest node prefix that determines
+    /// the revision uniquely.
+    ///
+    /// From a binary node prefix, if it is matched in the node map, this
+    /// returns the number of hexadecimal digits that would had sufficed
+    /// to find the revision uniquely.
+    ///
+    /// Returns `None` if no `Revision` could be found for the prefix.
+    ///
+    /// If several Revisions match the given prefix, a [`MultipleResults`]
+    /// error is returned.
+    fn unique_prefix_len_bin<'a>(
+        &self,
+        idx: &impl RevlogIndex,
+        node_prefix: NodePrefixRef<'a>,
+    ) -> Result<Option<usize>, NodeMapError>;
+
+    /// Same as `unique_prefix_len_bin`, with the hexadecimal representation
+    /// of the prefix as input.
+    fn unique_prefix_len_hex(
+        &self,
+        idx: &impl RevlogIndex,
+        prefix: &str,
+    ) -> Result<Option<usize>, NodeMapError> {
+        self.unique_prefix_len_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
+    }
+
+    /// Same as `unique_prefix_len_bin`, with a full `Node` as input
+    fn unique_prefix_len_node(
+        &self,
+        idx: &impl RevlogIndex,
+        node: &Node,
+    ) -> Result<Option<usize>, NodeMapError> {
+        self.unique_prefix_len_bin(idx, node.into())
     }
 }
 
@@ -279,20 +316,24 @@ fn has_prefix_or_none(
 fn validate_candidate(
     idx: &impl RevlogIndex,
     prefix: NodePrefixRef,
-    rev: Option<Revision>,
-) -> Result<Option<Revision>, NodeMapError> {
-    if prefix.is_prefix_of(&NULL_NODE) {
-        // NULL_REVISION always matches a prefix made only of zeros
+    candidate: (Option<Revision>, usize),
+) -> Result<(Option<Revision>, usize), NodeMapError> {
+    let (rev, steps) = candidate;
+    if let Some(nz_nybble) = prefix.first_different_nybble(&NULL_NODE) {
+        rev.map_or(Ok((None, steps)), |r| {
+            has_prefix_or_none(idx, prefix, r)
+                .map(|opt| (opt, max(steps, nz_nybble + 1)))
+        })
+    } else {
+        // the prefix is only made of zeros; NULL_REVISION always matches it
         // and any other *valid* result is an ambiguity
         match rev {
-            None => Ok(Some(NULL_REVISION)),
+            None => Ok((Some(NULL_REVISION), steps + 1)),
             Some(r) => match has_prefix_or_none(idx, prefix, r)? {
-                None => Ok(Some(NULL_REVISION)),
+                None => Ok((Some(NULL_REVISION), steps + 1)),
                 _ => Err(NodeMapError::MultipleResults),
             },
         }
-    } else {
-        rev.map_or(Ok(None), |r| has_prefix_or_none(idx, prefix, r))
     }
 }
 
@@ -387,13 +428,26 @@ impl NodeTree {
     }
 
     /// Main working method for `NodeTree` searches
-    fn lookup<'p>(
+    ///
+    /// The first returned value is the result of analysing `NodeTree` data
+    /// *alone*: whereas `None` guarantees that the given prefix is absent
+    /// from the `NodeTree` data (but still could match `NULL_NODE`), with
+    /// `Some(rev)`, it is to be understood that `rev` is the unique `Revision`
+    /// that could match the prefix. Actually, all that can be inferred from
+    /// the `NodeTree` data is that `rev` is the revision with the longest
+    /// common node prefix with the given prefix.
+    ///
+    /// The second returned value is the size of the smallest subprefix
+    /// of `prefix` that would give the same result, i.e. not the
+    /// `MultipleResults` error variant (again, using only the data of the
+    /// `NodeTree`).
+    fn lookup(
         &self,
-        prefix: NodePrefixRef<'p>,
-    ) -> Result<Option<Revision>, NodeMapError> {
-        for visit_item in self.visit(prefix) {
+        prefix: NodePrefixRef,
+    ) -> Result<(Option<Revision>, usize), NodeMapError> {
+        for (i, visit_item) in self.visit(prefix).enumerate() {
             if let Some(opt) = visit_item.final_revision() {
-                return Ok(opt);
+                return Ok((opt, i + 1));
             }
         }
         Err(NodeMapError::MultipleResults)
@@ -638,6 +692,16 @@ impl NodeMap for NodeTree {
         prefix: NodePrefixRef<'a>,
     ) -> Result<Option<Revision>, NodeMapError> {
         validate_candidate(idx, prefix.clone(), self.lookup(prefix)?)
+            .map(|(opt, _shortest)| opt)
+    }
+
+    fn unique_prefix_len_bin<'a>(
+        &self,
+        idx: &impl RevlogIndex,
+        prefix: NodePrefixRef<'a>,
+    ) -> Result<Option<usize>, NodeMapError> {
+        validate_candidate(idx, prefix.clone(), self.lookup(prefix)?)
+            .map(|(opt, shortest)| opt.map(|_rev| shortest))
     }
 }
 
@@ -772,6 +836,7 @@ mod tests {
         assert_eq!(nt.find_hex(&idx, "01"), Ok(Some(9)));
         assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
         assert_eq!(nt.find_hex(&idx, "00a"), Ok(Some(0)));
+        assert_eq!(nt.unique_prefix_len_hex(&idx, "00a"), Ok(Some(3)));
         assert_eq!(nt.find_hex(&idx, "000"), Ok(Some(NULL_REVISION)));
     }
 
@@ -791,8 +856,10 @@ mod tests {
         };
         assert_eq!(nt.find_hex(&idx, "10")?, Some(1));
         assert_eq!(nt.find_hex(&idx, "c")?, Some(2));
+        assert_eq!(nt.unique_prefix_len_hex(&idx, "c")?, Some(1));
         assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
         assert_eq!(nt.find_hex(&idx, "000")?, Some(NULL_REVISION));
+        assert_eq!(nt.unique_prefix_len_hex(&idx, "000")?, Some(3));
         assert_eq!(nt.find_hex(&idx, "01")?, Some(9));
         Ok(())
     }
@@ -826,6 +893,13 @@ mod tests {
             prefix: &str,
         ) -> Result<Option<Revision>, NodeMapError> {
             self.nt.find_hex(&self.index, prefix)
+        }
+
+        fn unique_prefix_len_hex(
+            &self,
+            prefix: &str,
+        ) -> Result<Option<usize>, NodeMapError> {
+            self.nt.unique_prefix_len_hex(&self.index, prefix)
         }
 
         /// Drain `added` and restart a new one
@@ -877,6 +951,28 @@ mod tests {
         assert_eq!(idx.find_hex("1a341")?, None);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_unique_prefix_len_zero_prefix() {
+        let mut idx = TestNtIndex::new();
+        idx.insert(0, "00000abcd").unwrap();
+
+        assert_eq!(idx.find_hex("000"), Err(NodeMapError::MultipleResults));
+        // in the nodetree proper, this will be found at the first nybble
+        // yet the correct answer for unique_prefix_len is not 1, nor 1+1,
+        // but the first difference with `NULL_NODE`
+        assert_eq!(idx.unique_prefix_len_hex("00000a"), Ok(Some(6)));
+        assert_eq!(idx.unique_prefix_len_hex("00000ab"), Ok(Some(6)));
+
+        // same with odd result
+        idx.insert(1, "00123").unwrap();
+        assert_eq!(idx.unique_prefix_len_hex("001"), Ok(Some(3)));
+        assert_eq!(idx.unique_prefix_len_hex("0012"), Ok(Some(3)));
+
+        // these are unchanged of course
+        assert_eq!(idx.unique_prefix_len_hex("00000a"), Ok(Some(6)));
+        assert_eq!(idx.unique_prefix_len_hex("00000ab"), Ok(Some(6)));
     }
 
     #[test]
