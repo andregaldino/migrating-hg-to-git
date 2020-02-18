@@ -332,6 +332,17 @@ def has_hg_range(v):
     return gethgversion() >= (int(major), int(minor))
 
 
+@check("rust", "Using the Rust extensions")
+def has_rust():
+    """Check is the mercurial currently running is using some rust code"""
+    cmd = b'hg debuginstall --quiet 2>&1'
+    match = br'checking module policy \(([^)]+)\)'
+    policy = matchoutput(cmd, match)
+    if not policy:
+        return False
+    return b'rust' in policy.group(1)
+
+
 @check("hg08", "Mercurial >= 0.8")
 def has_hg08():
     if checks["hg09"][0]():
