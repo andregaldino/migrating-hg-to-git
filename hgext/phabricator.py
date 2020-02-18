@@ -819,8 +819,8 @@ def addremoved(pdiff, ctx, removed):
         pchange = phabchange(
             currentPath=fname, oldPath=fname, type=DiffChangeType.DELETE
         )
-        pchange.addoldmode(gitmode[ctx.p1()[fname].flags()])
         oldfctx = ctx.p1()[fname]
+        pchange.addoldmode(gitmode[oldfctx.flags()])
         if not (oldfctx.isbinary() or notutf8(oldfctx)):
             maketext(pchange, ctx, fname)
 
@@ -831,10 +831,10 @@ def addmodified(pdiff, ctx, modified):
     """add modified files to the phabdiff"""
     for fname in modified:
         fctx = ctx[fname]
-        oldfctx = fctx.p1()
+        oldfctx = ctx.p1()[fname]
         pchange = phabchange(currentPath=fname, oldPath=fname)
-        filemode = gitmode[ctx[fname].flags()]
-        originalmode = gitmode[ctx.p1()[fname].flags()]
+        filemode = gitmode[fctx.flags()]
+        originalmode = gitmode[oldfctx.flags()]
         if filemode != originalmode:
             pchange.addoldmode(originalmode)
             pchange.addnewmode(filemode)
@@ -846,7 +846,7 @@ def addmodified(pdiff, ctx, modified):
             or notutf8(oldfctx)
         ):
             makebinary(pchange, fctx)
-            addoldbinary(pchange, fctx.p1(), fctx)
+            addoldbinary(pchange, oldfctx, fctx)
         else:
             maketext(pchange, ctx, fname)
 
@@ -864,7 +864,7 @@ def addadded(pdiff, ctx, added, removed):
         oldfctx = None
         pchange = phabchange(currentPath=fname)
 
-        filemode = gitmode[ctx[fname].flags()]
+        filemode = gitmode[fctx.flags()]
         renamed = fctx.renamed()
 
         if renamed:
