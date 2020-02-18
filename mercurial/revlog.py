@@ -760,7 +760,20 @@ class revlog(object):
         self._chainbasecache.clear()
         self._chunkcache = (0, b'')
         self._pcache = {}
+        self._nodemap_docket = None
         self.index.clearcaches()
+        # The python code is the one responsible for validating the docket, we
+        # end up having to refresh it here.
+        use_nodemap = (
+            not self._inline
+            and self.nodemap_file is not None
+            and util.safehasattr(self.index, 'update_nodemap_data')
+        )
+        if use_nodemap:
+            nodemap_data = nodemaputil.persisted_data(self)
+            if nodemap_data is not None:
+                self._nodemap_docket = nodemap_data[0]
+                self.index.update_nodemap_data(*nodemap_data)
 
     def rev(self, node):
         try:
