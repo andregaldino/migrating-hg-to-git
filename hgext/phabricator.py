@@ -892,7 +892,7 @@ def addadded(pdiff, ctx, added, removed):
         if fctx.isbinary() or notutf8(fctx):
             makebinary(pchange, fctx)
             if renamed:
-                addoldbinary(pchange, fctx, originalfname)
+                addoldbinary(pchange, fctx)
         else:
             maketext(pchange, ctx, fname)
 

@@ -156,6 +156,54 @@ Phabesending a new binary, a modified binary, and a removed binary
   D8009 - created - af55645b2e29: remove binary
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/aa24a81f55de-a3a0cf24-phabsend.hg
 
+Phabsend a renamed binary and a copied binary, with and without content changes
+to src and dest
+
+  >>> open('bin2', 'wb').write(b'\0c') and None
+  $ hg ci -Am 'add another binary'
+  adding bin2
+
+TODO: "bin2" can't be viewed in this commit (left or right side), and the URL
+looks much different than when viewing "bin2_moved".  No idea if this is a phab
+bug, or phabsend bug.  The patch (as printed by phabread) look reasonable
+though.
+
+  $ hg mv bin2 bin2_moved
+  $ hg ci -m "moved binary"
+
+Note: "bin2_moved" is also not viewable in phabricator with this review
+
+  $ hg cp bin2_moved bin2_copied
+  $ hg ci -m "copied binary"
+
+Note: "bin2_moved_again" is marked binary in phabricator, and both sides of it
+are viewable in their proper state.  "bin2_copied" is not viewable, and not
+listed as binary in phabricator.
+
+  >>> open('bin2_copied', 'wb').write(b'\0move+mod') and None
+  $ hg mv bin2_copied bin2_moved_again
+  $ hg ci -m "move+mod copied binary"
+
+Note: "bin2_moved" and "bin2_moved_copy" are both marked binary, and both
+viewable on each side.
+
+  >>> open('bin2_moved', 'wb').write(b'\0precopy mod') and None
+  $ hg cp bin2_moved bin2_moved_copied
+  >>> open('bin2_moved', 'wb').write(b'\0copy src+mod') and None
+  $ hg ci -m "copy+mod moved binary"
+
+  $ hg phabsend -r .~4:: --test-vcr "$VCR/phabsend-binary-renames.json"
+  uploading bin2@f42f9195e00c
+  D8128 - created - f42f9195e00c: add another binary
+  D8129 - created - 834ab31d80ae: moved binary
+  D8130 - created - 494b750e5194: copied binary
+  uploading bin2_moved_again@25f766b50cc2
+  D8131 - created - 25f766b50cc2: move+mod copied binary
+  uploading bin2_moved_copied@1b87b363a5e4
+  uploading bin2_moved@1b87b363a5e4
+  D8132 - created - 1b87b363a5e4: copy+mod moved binary
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/f42f9195e00c-e82a0769-phabsend.hg
+
 Phabreading a DREV with a local:commits time as a string:
   $ hg phabread --test-vcr "$VCR/phabread-str-time.json" D1285
   # HG changeset patch
