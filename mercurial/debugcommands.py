@@ -2109,7 +2109,10 @@ def debugnodemap(ui, repo, **opts):
     if opts['dump_new']:
         unfi = repo.unfiltered()
         cl = unfi.changelog
-        data = nodemap.persistent_data(cl.index)
+        if util.safehasattr(cl.index, "nodemap_data_all"):
+            data = cl.index.nodemap_data_all()
+        else:
+            data = nodemap.persistent_data(cl.index)
         ui.write(data)
     elif opts['dump_disk']:
         unfi = repo.unfiltered()
