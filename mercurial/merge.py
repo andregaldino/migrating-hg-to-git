@@ -2654,10 +2654,15 @@ def graft(
     # to copy commits), and 2) informs update that the incoming changes are
     # newer than the destination so it doesn't prompt about "remote changed foo
     # which local deleted".
+    # We also pass mergeancestor=True when base is the same revision as p1. 2)
+    # doesn't matter as there can't possibly be conflicts, but 1) is necessary.
     wctx = wctx or repo[None]
     pctx = wctx.p1()
     base = base or ctx.p1()
-    mergeancestor = repo.changelog.isancestor(pctx.node(), ctx.node())
+    mergeancestor = (
+        repo.changelog.isancestor(pctx.node(), ctx.node())
+        or pctx.rev() == base.rev()
+    )
 
     stats = update(
         repo,

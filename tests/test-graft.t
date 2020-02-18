@@ -813,13 +813,14 @@ graft with --force (still doesn't graft merges)
   note: graft of 19:9627f653b421 created no changes to commit
   grafting 0:68795b066622 "0"
 
-graft --force after backout
+graft --force after backout. Do the backout with graft too, to make
+sure we support issue6248.
 
   $ echo abc > a
   $ hg ci -m 24
-  $ hg backout 24
-  reverting a
-  changeset 25:71c4e63d4f98 backs out changeset 24:2e7ea477be26
+  $ hg graft --base . -r ".^" --no-commit
+  grafting 23:b1cac6de36a9 "0"
+  $ hg commit -m 'Backed out changeset 2e7ea477be26'
   $ hg graft 24
   skipping ancestor revision 24:2e7ea477be26
   [255]
