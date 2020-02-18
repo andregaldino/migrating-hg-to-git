@@ -13,7 +13,8 @@
 //! is used in a more abstract context.
 
 use super::{
-    Node, NodeError, NodePrefix, NodePrefixRef, Revision, RevlogIndex,
+    node::NULL_NODE, Node, NodeError, NodePrefix, NodePrefixRef, Revision,
+    RevlogIndex, NULL_REVISION,
 };
 
 use std::fmt;
@@ -270,6 +271,31 @@ fn has_prefix_or_none(
         })
 }
 
+/// validate that the candidate's node starts indeed with given prefix,
+/// and treat ambiguities related to `NULL_REVISION`.
+///
+/// From the data in the NodeTree, one can only conclude that some
+/// revision is the only one for a *subprefix* of the one being looked up.
+fn validate_candidate(
+    idx: &impl RevlogIndex,
+    prefix: NodePrefixRef,
+    rev: Option<Revision>,
+) -> Result<Option<Revision>, NodeMapError> {
+    if prefix.is_prefix_of(&NULL_NODE) {
+        // NULL_REVISION always matches a prefix made only of zeros
+        // and any other *valid* result is an ambiguity
+        match rev {
+            None => Ok(Some(NULL_REVISION)),
+            Some(r) => match has_prefix_or_none(idx, prefix, r)? {
+                None => Ok(Some(NULL_REVISION)),
+                _ => Err(NodeMapError::MultipleResults),
+            },
+        }
+    } else {
+        rev.map_or(Ok(None), |r| has_prefix_or_none(idx, prefix, r))
+    }
+}
+
 impl NodeTree {
     /// Initiate a NodeTree from an immutable slice-like of `Block`
     ///
@@ -361,8 +387,6 @@ impl NodeTree {
     }
 
     /// Main working method for `NodeTree` searches
-    ///
-    /// This partial implementation lacks special cases for NULL_REVISION
     fn lookup<'p>(
         &self,
         prefix: NodePrefixRef<'p>,
@@ -613,9 +637,7 @@ impl NodeMap for NodeTree {
         idx: &impl RevlogIndex,
         prefix: NodePrefixRef<'a>,
     ) -> Result<Option<Revision>, NodeMapError> {
-        self.lookup(prefix.clone()).and_then(|opt| {
-            opt.map_or(Ok(None), |rev| has_prefix_or_none(idx, prefix, rev))
-        })
+        validate_candidate(idx, prefix.clone(), self.lookup(prefix)?)
     }
 }
 
@@ -748,8 +770,9 @@ mod tests {
 
         assert_eq!(nt.find_hex(&idx, "0"), Err(MultipleResults));
         assert_eq!(nt.find_hex(&idx, "01"), Ok(Some(9)));
-        assert_eq!(nt.find_hex(&idx, "00"), Ok(Some(0)));
+        assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
         assert_eq!(nt.find_hex(&idx, "00a"), Ok(Some(0)));
+        assert_eq!(nt.find_hex(&idx, "000"), Ok(Some(NULL_REVISION)));
     }
 
     #[test]
@@ -768,7 +791,8 @@ mod tests {
         };
         assert_eq!(nt.find_hex(&idx, "10")?, Some(1));
         assert_eq!(nt.find_hex(&idx, "c")?, Some(2));
-        assert_eq!(nt.find_hex(&idx, "00")?, Some(0));
+        assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
+        assert_eq!(nt.find_hex(&idx, "000")?, Some(NULL_REVISION));
         assert_eq!(nt.find_hex(&idx, "01")?, Some(9));
         Ok(())
     }
