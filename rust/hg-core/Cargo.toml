@@ -23,8 +23,10 @@ twox-hash = "1.5.0"
 same-file = "1.0.6"
 
 [dev-dependencies]
-tempfile = "3.1.0"
+clap = "*"
+memmap = "0.7.0"
 pretty_assertions = "0.6.1"
+tempfile = "3.1.0"
 
 [build-dependencies]
 cc = { version = "1.0.48", optional = true }
