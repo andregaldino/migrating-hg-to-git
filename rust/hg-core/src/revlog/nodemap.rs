@@ -274,6 +274,7 @@ pub struct NodeTree {
     readonly: Box<dyn Deref<Target = [Block]> + Send>,
     growable: Vec<Block>,
     root: Block,
+    masked_inner_blocks: usize,
 }
 
 impl Index<usize> for NodeTree {
@@ -350,6 +351,7 @@ impl NodeTree {
             readonly: readonly,
             growable: Vec::new(),
             root: root,
+            masked_inner_blocks: 0,
         }
     }
 
@@ -483,6 +485,7 @@ impl NodeTree {
         let ro_len = ro_blocks.len();
         let glen = self.growable.len();
         if idx < ro_len {
+            self.masked_inner_blocks += 1;
             // TODO OPTIM I think this makes two copies
             self.growable.push(ro_blocks[idx].clone());
             (glen + ro_len, &mut self.growable[glen], glen + 1)
@@ -570,6 +573,22 @@ impl NodeTree {
             block_idx = new_idx;
         }
         Ok(())
+    }
+
+    /// Return the number of blocks in the readonly part that are currently
+    /// masked in the mutable part.
+    ///
+    /// The `NodeTree` structure has no efficient way to know how many blocks
+    /// are already unreachable in the readonly part.
+    pub fn masked_readonly_blocks(&self) -> usize {
+        if let Some(readonly_root) = self.readonly.last() {
+            if readonly_root == &self.root {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+        self.masked_inner_blocks + 1
     }
 }
 
@@ -853,6 +872,7 @@ mod tests {
             readonly: sample_nodetree().readonly,
             growable: vec![block![0: Rev(1), 5: Rev(3)]],
             root: block![0: Block(1), 1:Block(3), 12: Rev(2)],
+            masked_inner_blocks: 1,
         };
         assert_eq!(nt.find_hex(&idx, "10")?, Some(1));
         assert_eq!(nt.find_hex(&idx, "c")?, Some(2));
@@ -861,6 +881,7 @@ mod tests {
         assert_eq!(nt.find_hex(&idx, "000")?, Some(NULL_REVISION));
         assert_eq!(nt.unique_prefix_len_hex(&idx, "000")?, Some(3));
         assert_eq!(nt.find_hex(&idx, "01")?, Some(9));
+        assert_eq!(nt.masked_readonly_blocks(), 2);
         Ok(())
     }
 
@@ -950,6 +971,8 @@ mod tests {
         assert_eq!(idx.find_hex("1a345")?, Some(3));
         assert_eq!(idx.find_hex("1a341")?, None);
 
+        // there's no readonly block to mask
+        assert_eq!(idx.nt.masked_readonly_blocks(), 0);
         Ok(())
     }
 
@@ -1011,6 +1034,8 @@ mod tests {
         assert_eq!(idx.find_hex("1235")?, Some(1));
         assert_eq!(idx.find_hex("131")?, Some(2));
         assert_eq!(idx.find_hex("cafe")?, Some(3));
+        // we did not add anything since init from readonly
+        assert_eq!(idx.nt.masked_readonly_blocks(), 0);
 
         idx.insert(4, "123A")?;
         assert_eq!(idx.find_hex("1234")?, Some(0));
@@ -1018,12 +1043,18 @@ mod tests {
         assert_eq!(idx.find_hex("131")?, Some(2));
         assert_eq!(idx.find_hex("cafe")?, Some(3));
         assert_eq!(idx.find_hex("123A")?, Some(4));
+        // we masked blocks for all prefixes of "123", including the root
+        assert_eq!(idx.nt.masked_readonly_blocks(), 4);
 
+        eprintln!("{:?}", idx.nt);
         idx.insert(5, "c0")?;
         assert_eq!(idx.find_hex("cafe")?, Some(3));
         assert_eq!(idx.find_hex("c0")?, Some(5));
         assert_eq!(idx.find_hex("c1")?, None);
         assert_eq!(idx.find_hex("1234")?, Some(0));
+        // inserting "c0" is just splitting the 'c' slot of the mutable root,
+        // it doesn't mask anything
+        assert_eq!(idx.nt.masked_readonly_blocks(), 4);
 
         Ok(())
     }
