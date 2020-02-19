@@ -54,12 +54,12 @@ def shallowgroup(cls, self, nodelist, rlog, lookup, units=None, reorder=None):
 
 
 class shallowcg1packer(changegroup.cgpacker):
-    def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
+    def generate(self, commonrevs, clnodes, fastpathlinkrev, source, **kwargs):
         if shallowutil.isenabled(self._repo):
             fastpathlinkrev = False
 
         return super(shallowcg1packer, self).generate(
-            commonrevs, clnodes, fastpathlinkrev, source
+            commonrevs, clnodes, fastpathlinkrev, source, **kwargs
         )
 
     def group(self, nodelist, rlog, lookup, units=None, reorder=None):
