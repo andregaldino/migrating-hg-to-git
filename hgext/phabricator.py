@@ -747,12 +747,14 @@ def uploadfile(fctx):
     return fphid
 
 
-def addoldbinary(pchange, fctx):
+def addoldbinary(pchange, oldfctx, fctx):
     """add the metadata for the previous version of a binary file to the
     phabchange for the new version
+
+    ``oldfctx`` is the previous version of the file; ``fctx`` is the new
+    version of the file, or None if the file is being removed.
     """
-    oldfctx = fctx.p1()
-    if fctx.cmp(oldfctx):
+    if not fctx or fctx.cmp(oldfctx):
         # Files differ, add the old one
         pchange.metadata[b'old:file:size'] = oldfctx.size()
         mimeguess, _enc = mimetypes.guess_type(
@@ -832,7 +834,7 @@ def addmodified(pdiff, ctx, modified):
 
         if fctx.isbinary() or notutf8(fctx):
             makebinary(pchange, fctx)
-            addoldbinary(pchange, fctx)
+            addoldbinary(pchange, fctx.p1(), fctx)
         else:
             maketext(pchange, ctx, fname)
 
@@ -892,7 +894,7 @@ def addadded(pdiff, ctx, added, removed):
         if fctx.isbinary() or notutf8(fctx):
             makebinary(pchange, fctx)
             if renamed:
-                addoldbinary(pchange, fctx)
+                addoldbinary(pchange, fctx.p1(), fctx)
         else:
             maketext(pchange, ctx, fname)
 
