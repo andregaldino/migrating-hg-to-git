@@ -3578,14 +3578,17 @@ def newreporequirements(ui, createopts):
             if ui.configbool(b'format', b'dotencode'):
                 requirements.add(b'dotencode')
 
-    compengine = ui.config(b'format', b'revlog-compression')
-    if compengine not in util.compengines:
+    compengines = ui.configlist(b'format', b'revlog-compression')
+    for compengine in compengines:
+        if compengine in util.compengines:
+            break
+    else:
         raise error.Abort(
             _(
-                b'compression engine %s defined by '
+                b'compression engines %s defined by '
                 b'format.revlog-compression not available'
             )
-            % compengine,
+            % b', '.join(b'"%s"' % e for e in compengines),
             hint=_(
                 b'run "hg debuginstall" to list available '
                 b'compression engines'
@@ -3593,7 +3596,7 @@ def newreporequirements(ui, createopts):
         )
 
     # zlib is the historical default and doesn't need an explicit requirement.
-    elif compengine == b'zstd':
+    if compengine == b'zstd':
         requirements.add(b'revlog-compression-zstd')
     elif compengine != b'zlib':
         requirements.add(b'exp-compression-%s' % compengine)

@@ -449,7 +449,14 @@ class compressionengine(formatvariant):
 
     @classmethod
     def fromconfig(cls, repo):
-        return repo.ui.config(b'format', b'revlog-compression')
+        compengines = repo.ui.configlist(b'format', b'revlog-compression')
+        # return the first valid value as the selection code would do
+        for comp in compengines:
+            if comp in util.compengines:
+                return comp
+
+        # no valide compression found lets display it all for clarity
+        return b','.join(compengines)
 
 
 @registerformatvariant

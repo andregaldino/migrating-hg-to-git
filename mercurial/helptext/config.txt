@@ -888,7 +888,8 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     Compression algorithm used by revlog. Supported values are `zlib` and
     `zstd`. The `zlib` engine is the historical default of Mercurial. `zstd` is
     a newer format that is usually a net win over `zlib`, operating faster at
-    better compression rates. Use `zstd` to reduce CPU usage.
+    better compression rates. Use `zstd` to reduce CPU usage. Multiple values
+    can be specified, the first available one will be used.
 
     On some systems, the Mercurial installation may lack `zstd` support.
 
