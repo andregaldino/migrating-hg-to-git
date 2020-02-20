@@ -796,8 +796,6 @@ def notutf8(fctx):
     """
     try:
         fctx.data().decode('utf-8')
-        if fctx.parents():
-            fctx.p1().data().decode('utf-8')
         return False
     except UnicodeDecodeError:
         fctx.repo().ui.write(
@@ -825,6 +823,7 @@ def addmodified(pdiff, ctx, modified):
     """add modified files to the phabdiff"""
     for fname in modified:
         fctx = ctx[fname]
+        oldfctx = fctx.p1()
         pchange = phabchange(currentPath=fname, oldPath=fname)
         filemode = gitmode[ctx[fname].flags()]
         originalmode = gitmode[ctx.p1()[fname].flags()]
@@ -832,7 +831,7 @@ def addmodified(pdiff, ctx, modified):
             pchange.addoldmode(originalmode)
             pchange.addnewmode(filemode)
 
-        if fctx.isbinary() or notutf8(fctx):
+        if fctx.isbinary() or notutf8(fctx) or notutf8(oldfctx):
             makebinary(pchange, fctx)
             addoldbinary(pchange, fctx.p1(), fctx)
         else:
@@ -849,6 +848,7 @@ def addadded(pdiff, ctx, added, removed):
     movedchanges = {}
     for fname in added:
         fctx = ctx[fname]
+        oldfctx = None
         pchange = phabchange(currentPath=fname)
 
         filemode = gitmode[ctx[fname].flags()]
@@ -856,7 +856,8 @@ def addadded(pdiff, ctx, added, removed):
 
         if renamed:
             originalfname = renamed[0]
-            originalmode = gitmode[ctx.p1()[originalfname].flags()]
+            oldfctx = ctx.p1()[originalfname]
+            originalmode = gitmode[oldfctx.flags()]
             pchange.oldPath = originalfname
 
             if originalfname in removed:
@@ -891,10 +892,10 @@ def addadded(pdiff, ctx, added, removed):
             pchange.addnewmode(gitmode[fctx.flags()])
             pchange.type = DiffChangeType.ADD
 
-        if fctx.isbinary() or notutf8(fctx):
+        if fctx.isbinary() or notutf8(fctx) or (oldfctx and notutf8(oldfctx)):
             makebinary(pchange, fctx)
             if renamed:
-                addoldbinary(pchange, fctx.p1(), fctx)
+                addoldbinary(pchange, oldfctx, fctx)
         else:
             maketext(pchange, ctx, fname)
 
