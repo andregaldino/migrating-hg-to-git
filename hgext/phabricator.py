@@ -831,7 +831,12 @@ def addmodified(pdiff, ctx, modified):
             pchange.addoldmode(originalmode)
             pchange.addnewmode(filemode)
 
-        if fctx.isbinary() or notutf8(fctx) or notutf8(oldfctx):
+        if (
+            fctx.isbinary()
+            or notutf8(fctx)
+            or oldfctx.isbinary()
+            or notutf8(oldfctx)
+        ):
             makebinary(pchange, fctx)
             addoldbinary(pchange, fctx.p1(), fctx)
         else:
@@ -892,7 +897,11 @@ def addadded(pdiff, ctx, added, removed):
             pchange.addnewmode(gitmode[fctx.flags()])
             pchange.type = DiffChangeType.ADD
 
-        if fctx.isbinary() or notutf8(fctx) or (oldfctx and notutf8(oldfctx)):
+        if (
+            fctx.isbinary()
+            or notutf8(fctx)
+            or (oldfctx and (oldfctx.isbinary() or notutf8(oldfctx)))
+        ):
             makebinary(pchange, fctx)
             if renamed:
                 addoldbinary(pchange, oldfctx, fctx)
