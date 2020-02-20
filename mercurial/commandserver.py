@@ -545,6 +545,10 @@ class unixforkingservice(object):
         if maxlen < 0:
             raise error.Abort(_(b'negative max-repo-cache size not allowed'))
         self._repoloader = repocache.repoloader(ui, maxlen)
+        # attempt to avoid crash in CoreFoundation when using chg after fix in
+        # a89381e04c58
+        if pycompat.isdarwin:
+            procutil.gui()
 
     def init(self):
         self._sock = socket.socket(socket.AF_UNIX)
