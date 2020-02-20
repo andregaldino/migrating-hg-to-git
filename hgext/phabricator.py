@@ -814,8 +814,8 @@ def addremoved(pdiff, ctx, removed):
             currentPath=fname, oldPath=fname, type=DiffChangeType.DELETE
         )
         pchange.addoldmode(gitmode[ctx.p1()[fname].flags()])
-        fctx = ctx.p1()[fname]
-        if not (fctx.isbinary() or notutf8(fctx)):
+        oldfctx = ctx.p1()[fname]
+        if not (oldfctx.isbinary() or notutf8(oldfctx)):
             maketext(pchange, ctx, fname)
 
         pdiff.addchange(pchange)
