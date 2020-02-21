@@ -997,7 +997,7 @@ def _rebaserestoredcommit(
             repo,
             shelvectx,
             shelvectx.p1(),
-            labels=[b'shelve', b'working-copy'],
+            labels=[b'working-copy', b'shelve'],
             keepconflictparent=True,
         )
         if stats.unresolvedcount:
