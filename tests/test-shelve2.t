@@ -921,3 +921,25 @@ Block merge abort when unshelve in progress(issue6160)
   @  initial commit  test  1970-01-01 00:00 +0000
   
   $ cd ..
+
+Demonstrate that the labels are correct in the merge conflict
+-------------------------------------------------------------
+  $ hg init labels
+  $ cd labels
+  $ echo r0 > foo
+  $ hg ci -qAm r0
+  $ echo "this will be shelved" >> foo
+  $ hg shelve -q
+  $ echo "this is in wdir, conflicts with shelve" >> foo
+  $ hg unshelve -q
+  warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+  $ cat foo
+  r0
+  <<<<<<< shelve:       0b2fcf2a90e9 - shelve: pending changes temporary commit
+  this is in wdir, conflicts with shelve
+  =======
+  this will be shelved
+  >>>>>>> working-copy: 9c072a2163db - shelve: changes to: r0
+  $ cd ..
