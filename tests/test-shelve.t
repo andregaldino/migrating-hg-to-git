@@ -419,11 +419,11 @@ ensure that we have a merge with unresolved conflicts
   +++ b/a/a
   @@ -1,2 +1,6 @@
    a
-  +<<<<<<< shelve:       2377350b6337 - shelve: pending changes temporary commit
+  +<<<<<<< working-copy: 2377350b6337 - shelve: pending changes temporary commit
    c
   +=======
   +a
-  +>>>>>>> working-copy: 203c9f771d2b - shelve: changes to: [mq]: second.patch
+  +>>>>>>> shelve:       203c9f771d2b - shelve: changes to: [mq]: second.patch
   diff --git a/b/b b/b.rename/b
   rename from b/b
   rename to b.rename/b

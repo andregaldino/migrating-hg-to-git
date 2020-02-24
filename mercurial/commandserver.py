@@ -160,7 +160,7 @@ class channeledinput(object):
             buf = s
             # keep asking for more until there's either no more or
             # we got a full line
-            while s and s[-1] != b'\n':
+            while s and not s.endswith(b'\n'):
                 s = self._read(size, b'L')
                 buf += s
 

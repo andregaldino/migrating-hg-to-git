@@ -478,6 +478,12 @@ hg import --secret
   +line 2
   $ hg --cwd b phase
   1: secret
+  $ hg --cwd b --config extensions.strip= strip 1 --no-backup --quiet
+  $ hg --cwd b import --bypass --secret ../exported-tip.patch
+  applying ../exported-tip.patch
+  $ hg --cwd b phase -r tip
+  1: secret
+  $ hg --cwd b --config extensions.strip= strip 1 --no-backup --quiet
   $ rm -r b
 
 

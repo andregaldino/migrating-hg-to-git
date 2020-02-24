@@ -996,7 +996,7 @@ def _rebaserestoredcommit(
         stats = merge.graft(
             repo,
             shelvectx,
-            labels=[b'shelve', b'working-copy'],
+            labels=[b'working-copy', b'shelve'],
             keepconflictparent=True,
         )
         if stats.unresolvedcount:
