@@ -550,11 +550,11 @@ def getdrevmap(repo, revs):
     return result
 
 
-def getdiff(ctx, diffopts):
+def getdiff(basectx, ctx, diffopts):
     """plain-text diff without header (user, commit message, etc)"""
     output = util.stringio()
     for chunk, _label in patch.diffui(
-        ctx.repo(), ctx.p1().node(), ctx.node(), None, opts=diffopts
+        ctx.repo(), basectx.p1().node(), ctx.node(), None, opts=diffopts
     ):
         output.write(chunk)
     return output.getvalue()
@@ -661,13 +661,13 @@ class phabdiff(object):
         )
 
 
-def maketext(pchange, ctx, fname):
+def maketext(pchange, basectx, ctx, fname):
     """populate the phabchange for a text file"""
     repo = ctx.repo()
     fmatcher = match.exact([fname])
     diffopts = mdiff.diffopts(git=True, context=32767)
     _pfctx, _fctx, header, fhunks = next(
-        patch.diffhunks(repo, ctx.p1(), ctx, fmatcher, opts=diffopts)
+        patch.diffhunks(repo, basectx.p1(), ctx, fmatcher, opts=diffopts)
     )
 
     for fhunk in fhunks:
@@ -813,25 +813,25 @@ def notutf8(fctx):
         return True
 
 
-def addremoved(pdiff, ctx, removed):
+def addremoved(pdiff, basectx, ctx, removed):
     """add removed files to the phabdiff. Shouldn't include moves"""
     for fname in removed:
         pchange = phabchange(
             currentPath=fname, oldPath=fname, type=DiffChangeType.DELETE
         )
-        oldfctx = ctx.p1()[fname]
+        oldfctx = basectx.p1()[fname]
         pchange.addoldmode(gitmode[oldfctx.flags()])
         if not (oldfctx.isbinary() or notutf8(oldfctx)):
-            maketext(pchange, ctx, fname)
+            maketext(pchange, basectx, ctx, fname)
 
         pdiff.addchange(pchange)
 
 
-def addmodified(pdiff, ctx, modified):
+def addmodified(pdiff, basectx, ctx, modified):
     """add modified files to the phabdiff"""
     for fname in modified:
         fctx = ctx[fname]
-        oldfctx = ctx.p1()[fname]
+        oldfctx = basectx.p1()[fname]
         pchange = phabchange(currentPath=fname, oldPath=fname)
         filemode = gitmode[fctx.flags()]
         originalmode = gitmode[oldfctx.flags()]
@@ -848,12 +848,12 @@ def addmodified(pdiff, ctx, modified):
             makebinary(pchange, fctx)
             addoldbinary(pchange, oldfctx, fctx)
         else:
-            maketext(pchange, ctx, fname)
+            maketext(pchange, basectx, ctx, fname)
 
         pdiff.addchange(pchange)
 
 
-def addadded(pdiff, ctx, added, removed):
+def addadded(pdiff, basectx, ctx, added, removed):
     """add file adds to the phabdiff, both new files and copies/moves"""
     # Keep track of files that've been recorded as moved/copied, so if there are
     # additional copies we can mark them (moves get removed from removed)
@@ -869,7 +869,7 @@ def addadded(pdiff, ctx, added, removed):
 
         if renamed:
             originalfname = renamed[0]
-            oldfctx = ctx.p1()[originalfname]
+            oldfctx = basectx.p1()[originalfname]
             originalmode = gitmode[oldfctx.flags()]
             pchange.oldPath = originalfname
 
@@ -914,7 +914,7 @@ def addadded(pdiff, ctx, added, removed):
             if renamed:
                 addoldbinary(pchange, oldfctx, fctx)
         else:
-            maketext(pchange, ctx, fname)
+            maketext(pchange, basectx, ctx, fname)
 
         pdiff.addchange(pchange)
 
@@ -924,21 +924,21 @@ def addadded(pdiff, ctx, added, removed):
         pdiff.addchange(movedchange)
 
 
-def creatediff(ctx):
+def creatediff(basectx, ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
     repophid = getrepophid(repo)
     # Create a "Differential Diff" via "differential.creatediff" API
     pdiff = phabdiff(
-        sourceControlBaseRevision=b'%s' % ctx.p1().hex(),
+        sourceControlBaseRevision=b'%s' % basectx.p1().hex(),
         branch=b'%s' % ctx.branch(),
     )
-    modified, added, removed, _d, _u, _i, _c = ctx.p1().status(ctx)
+    modified, added, removed, _d, _u, _i, _c = basectx.p1().status(ctx)
     # addadded will remove moved files from removed, so addremoved won't get
     # them
-    addadded(pdiff, ctx, added, removed)
-    addmodified(pdiff, ctx, modified)
-    addremoved(pdiff, ctx, removed)
+    addadded(pdiff, basectx, ctx, added, removed)
+    addmodified(pdiff, basectx, ctx, modified)
+    addremoved(pdiff, basectx, ctx, removed)
     if repophid:
         pdiff.repositoryPHID = repophid
     diff = callconduit(
@@ -947,7 +947,11 @@ def creatediff(ctx):
         pycompat.byteskwargs(attr.asdict(pdiff)),
     )
     if not diff:
-        raise error.Abort(_(b'cannot create diff for %s') % ctx)
+        if basectx != ctx:
+            msg = _(b'cannot create diff for %s::%s') % (basectx, ctx)
+        else:
+            msg = _(b'cannot create diff for %s') % ctx
+        raise error.Abort(msg)
     return diff
 
 
@@ -1008,17 +1012,21 @@ def createdifferentialrevision(
 
     If actions is not None, they will be appended to the transaction.
     """
+    basectx = ctx
     repo = ctx.repo()
     if oldnode:
         diffopts = mdiff.diffopts(git=True, context=32767)
         oldctx = repo.unfiltered()[oldnode]
-        neednewdiff = getdiff(ctx, diffopts) != getdiff(oldctx, diffopts)
+        oldbasectx = oldctx
+        neednewdiff = getdiff(basectx, ctx, diffopts) != getdiff(
+            oldbasectx, oldctx, diffopts
+        )
     else:
         neednewdiff = True
 
     transactions = []
     if neednewdiff:
-        diff = creatediff(ctx)
+        diff = creatediff(basectx, ctx)
         transactions.append({b'type': b'update', b'value': diff[b'phid']})
         if comment:
             transactions.append({b'type': b'comment', b'value': comment})
