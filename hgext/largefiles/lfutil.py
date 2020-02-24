@@ -92,16 +92,30 @@ def _usercachedir(ui, name=longname):
     path = ui.configpath(name, b'usercache')
     if path:
         return path
+
+    hint = None
+
     if pycompat.iswindows:
         appdata = encoding.environ.get(
             b'LOCALAPPDATA', encoding.environ.get(b'APPDATA')
         )
         if appdata:
             return os.path.join(appdata, name)
+
+        hint = _(b"define %s or %s in the environment, or set %s.usercache") % (
+            b"LOCALAPPDATA",
+            b"APPDATA",
+            name,
+        )
     elif pycompat.isdarwin:
         home = encoding.environ.get(b'HOME')
         if home:
             return os.path.join(home, b'Library', b'Caches', name)
+
+        hint = _(b"define %s in the environment, or set %s.usercache") % (
+            b"HOME",
+            name,
+        )
     elif pycompat.isposix:
         path = encoding.environ.get(b'XDG_CACHE_HOME')
         if path:
@@ -109,11 +123,18 @@ def _usercachedir(ui, name=longname):
         home = encoding.environ.get(b'HOME')
         if home:
             return os.path.join(home, b'.cache', name)
+
+        hint = _(b"define %s or %s in the environment, or set %s.usercache") % (
+            b"XDG_CACHE_HOME",
+            b"HOME",
+            name,
+        )
     else:
         raise error.Abort(
             _(b'unknown operating system: %s\n') % pycompat.osname
         )
-    raise error.Abort(_(b'unknown %s usercache location') % name)
+
+    raise error.Abort(_(b'unknown %s usercache location') % name, hint=hint)
 
 
 def inusercache(ui, hash):
