@@ -20,7 +20,9 @@ use cpython::{
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
-    dirstate::non_normal_entries::NonNormalEntries,
+    dirstate::non_normal_entries::{
+        NonNormalEntries, NonNormalEntriesIterator,
+    },
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
 };
 use hg::{
@@ -242,6 +244,22 @@ py_class!(pub class DirstateMap |py| {
             ret.append(py, as_pystring.into_object());
         }
         Ok(ret)
+    }
+
+    def non_normal_entries_iter(&self) -> PyResult<NonNormalEntriesIterator> {
+        // Make sure the sets are defined before we no longer have a mutable
+        // reference to the dmap.
+        self.inner(py)
+            .borrow_mut()
+            .set_non_normal_other_parent_entries(false);
+
+        let leaked_ref = self.inner(py).leak_immutable();
+
+        NonNormalEntriesIterator::from_inner(py, unsafe {
+            leaked_ref.map(py, |o| {
+                o.get_non_normal_other_parent_entries_panic().0.iter()
+            })
+        })
     }
 
     def hastrackeddir(&self, d: PyObject) -> PyResult<PyBool> {

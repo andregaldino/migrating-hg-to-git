@@ -237,6 +237,25 @@ impl DirstateMap {
         )
     }
 
+    /// Useful to get immutable references to those sets in contexts where
+    /// you only have an immutable reference to the `DirstateMap`, like when
+    /// sharing references with Python.
+    ///
+    /// TODO, get rid of this along with the other "setter/getter" stuff when
+    /// a nice typestate plan is defined.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if either set is `None`.
+    pub fn get_non_normal_other_parent_entries_panic(
+        &self,
+    ) -> (&HashSet<HgPathBuf>, &HashSet<HgPathBuf>) {
+        (
+            self.non_normal_set.as_ref().unwrap(),
+            self.other_parent_set.as_ref().unwrap(),
+        )
+    }
+
     pub fn set_non_normal_other_parent_entries(&mut self, force: bool) {
         if !force
             && self.non_normal_set.is_some()
