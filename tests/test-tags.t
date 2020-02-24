@@ -374,7 +374,11 @@ Extra junk data at the end should get overwritten on next cache update
 On junk data + missing cache entries, hg also overwrites the junk.
 
   $ rm -f .hg/cache/tags2-visible
-  $ truncate .hg/cache/hgtagsfnodes1 -s -10
+  >>> import os
+  >>> with open(".hg/cache/hgtagsfnodes1", "ab+") as fp:
+  ...     fp.seek(-10, os.SEEK_END) and None
+  ...     fp.truncate() and None
+
   $ hg debugtagscache | tail -2
   4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
   5 8dbfe60eff306a54259cfe007db9e330e7ecf866 missing/invalid
