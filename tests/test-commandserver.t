@@ -654,6 +654,9 @@ changelog and manifest would have invalid node:
   ...     runcommand(server, [b'debugprompt', b'--config',
   ...                         b'ui.interactive=True'],
   ...                input=stringio(b'5678\n'))
+  ...     runcommand(server, [b'debugprompt', b'--config',
+  ...                         b'ui.interactive=True'],
+  ...                input=stringio(b'\nremainder\nshould\nnot\nbe\nread\n'))
   ...     runcommand(server, [b'debugreadstdin'])
   ...     runcommand(server, [b'debugwritestdout'])
   *** runcommand debuggetpass --config ui.interactive=True
@@ -665,6 +668,8 @@ changelog and manifest would have invalid node:
    [255]
   *** runcommand debugprompt --config ui.interactive=True
   prompt: 5678
+  *** runcommand debugprompt --config ui.interactive=True
+  prompt: y
   *** runcommand debugreadstdin
   read: ''
   *** runcommand debugwritestdout
