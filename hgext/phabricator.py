@@ -61,6 +61,7 @@ from mercurial.thirdparty import attr
 from mercurial import (
     cmdutil,
     context,
+    copies,
     encoding,
     error,
     exthelper,
@@ -859,16 +860,28 @@ def addadded(pdiff, basectx, ctx, added, removed):
     # additional copies we can mark them (moves get removed from removed)
     copiedchanges = {}
     movedchanges = {}
+
+    copy = {}
+    if basectx != ctx:
+        copy = copies.pathcopies(basectx.p1(), ctx)
+
     for fname in added:
         fctx = ctx[fname]
         oldfctx = None
         pchange = phabchange(currentPath=fname)
 
         filemode = gitmode[fctx.flags()]
-        renamed = fctx.renamed()
+
+        if copy:
+            originalfname = copy.get(fname, fname)
+        else:
+            originalfname = fname
+            if fctx.renamed():
+                originalfname = fctx.renamed()[0]
+
+        renamed = fname != originalfname
 
         if renamed:
-            originalfname = renamed[0]
             oldfctx = basectx.p1()[originalfname]
             originalmode = gitmode[oldfctx.flags()]
             pchange.oldPath = originalfname
