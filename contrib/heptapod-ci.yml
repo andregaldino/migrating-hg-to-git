@@ -79,3 +79,9 @@ test-py3-rust:
         RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "rust+c"
+
+test-py2-chg:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
+        TEST_HGMODULEPOLICY: "c"
