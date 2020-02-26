@@ -25,11 +25,11 @@ def addcommit(name, time):
 
 
 def update(rev):
-    merge.update(repo, rev, branchmerge=False, force=True)
+    merge.clean_update(repo[rev])
 
 
 def merge_(rev):
-    merge.update(repo, rev, branchmerge=True, force=False)
+    merge.merge(repo[rev])
 
 
 if __name__ == '__main__':
