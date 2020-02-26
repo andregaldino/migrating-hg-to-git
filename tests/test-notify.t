@@ -6,8 +6,15 @@
   > EOF
 
   $ cat <<EOF >> $HGRCPATH
+  > [experimental]
+  > evolution = true
+  > 
   > [extensions]
   > notify=
+  > strip=
+  > 
+  > [phases]
+  > publish=False
   > 
   > [hooks]
   > incoming.notify = python:hgext.notify.hook
@@ -15,6 +22,8 @@
   > [notify]
   > sources = pull
   > diffstat = False
+  > reply-to-predecessor = True
+  > messageidseed = notifyseed
   > 
   > [usersubs]
   > foo@bar = *
@@ -151,6 +160,15 @@
     "From" field of the notification mail. If not set, take the user from the
     pushing repo.  Default: False.
   
+  notify.reply-to-predecessor (EXPERIMENTAL)
+    If set and the changeset has a predecessor in the repository, try to thread
+    the notification mail with the predecessor. This adds the "In-Reply-To"
+    header to the notification mail with a reference to the predecessor with the
+    smallest revision number. Mail threads can still be torn, especially when
+    changesets are folded.
+  
+    This option must  be used in combination with "notify.messageidseed".
+  
   If set, the following entries will also be used to customize the
   notifications:
   
@@ -205,7 +223,7 @@ pull (minimal config)
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files
-  new changesets 00a13f371396
+  new changesets 00a13f371396 (1 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -266,7 +284,7 @@ pull
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files
-  new changesets 00a13f371396
+  new changesets 00a13f371396 (1 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -316,7 +334,7 @@ pull
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files
-  new changesets 00a13f371396
+  new changesets 00a13f371396 (1 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -369,7 +387,7 @@ test merge
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 0 files
-  new changesets 3332653e1f3c:fccf66cd0c35
+  new changesets 3332653e1f3c:fccf66cd0c35 (2 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -436,7 +454,7 @@ non-ascii content and truncation of multi-byte subject
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 0f25f9c22b4c
+  new changesets 0f25f9c22b4c (1 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 8bit
@@ -480,7 +498,7 @@ long lines
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets a846b5f6ebb7
+  new changesets a846b5f6ebb7 (1 drafts)
   notify: sending 2 subscribers 1 changes
   (run 'hg update' to get a working copy)
   $ cat b/mbox | "$PYTHON" $TESTDIR/unwrap-message-id.py | "$PYTHON" $TESTTMP/filter.py
@@ -493,7 +511,7 @@ long lines
   Subject: long line
   From: test@test.com
   X-Hg-Notification: changeset a846b5f6ebb7
-  Message-Id: <hg.a846b5f6ebb7.*.*@*> (glob)
+  Message-Id: <hg.e7dc7658565793ff33c797e72b7d1f3799347b042af3c40df6d17c8d5c3e560a@test.com>
   To: baz@test.com, foo@bar
   
   changeset a846b5f6ebb7 in b
@@ -543,6 +561,8 @@ long lines
   (branches are permanent and global, did you want a bookmark?)
   $ echo a >> a/a
   $ hg --cwd a ci -m test -d '1 0'
+  $ echo a >> a/a
+  $ hg --cwd a ci -m test -d '1 0'
   $ hg --traceback --cwd b pull ../a | \
   >  "$PYTHON" $TESTDIR/unwrap-message-id.py | \
   >  "$PYTHON" $TESTTMP/filter.py
@@ -551,8 +571,8 @@ long lines
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets f7e5aaed4080
+  added 2 changesets with 2 changes to 1 files
+  new changesets f7e5aaed4080:485bf79b9464 (2 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -561,10 +581,23 @@ long lines
   Subject: test
   From: test@test.com
   X-Hg-Notification: changeset f7e5aaed4080
-  Message-Id: <hg.f7e5aaed4080.*.*@*> (glob)
+  Message-Id: <hg.12e9ae631e2529e9cfbe7a93be0dd8a401280700640f802a60f20d7be659251d@test.com>
   To: baz@test.com, foo@bar, notify@example.com
   
   changeset f7e5aaed4080 in b
+  description: test
+  MIME-Version: 1.0
+  Content-Type: text/plain; charset="us-ascii"
+  Content-Transfer-Encoding: 7bit
+  X-Test: foo
+  Date: * (glob)
+  Subject: test
+  From: test@test.com
+  X-Hg-Notification: changeset 485bf79b9464
+  Message-Id: <hg.15281d60c27d9d5fb70435d33ebc24cb5aa580f2535988dcb9923c26e8bc5c47@test.com>
+  To: baz@test.com, foo@bar, notify@example.com
+  
+  changeset 485bf79b9464 in b
   description: test
   (run 'hg update' to get a working copy)
 
@@ -584,7 +617,7 @@ from different branch
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 0 files (+1 heads)
-  new changesets 645eb6690ecf
+  new changesets 645eb6690ecf (1 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -593,7 +626,7 @@ from different branch
   Subject: test
   From: test@test.com
   X-Hg-Notification: changeset 645eb6690ecf
-  Message-Id: <hg.645eb6690ecf.*.*@*> (glob)
+  Message-Id: <hg.ba26b2c63e7deb44e86c934aeea147edde12a11b6ac94bda103dcab5028dc928@test.com>
   To: baz@test.com, foo@bar
   
   changeset 645eb6690ecf in b
@@ -616,7 +649,7 @@ default template:
   Subject: changeset in b: default template
   From: test@test.com
   X-Hg-Notification: changeset 5cd4346eed47
-  Message-Id: <hg.5cd4346eed47.*.*@*> (glob)
+  Message-Id: <hg.8caa7941b24fc673d10910cb072e2d167362a3c5111cafefa47190d9b831f0a3@test.com>
   To: baz@test.com, foo@bar
   
   changeset 5cd4346eed47 in $TESTTMP/b
@@ -647,7 +680,7 @@ with style:
   Subject: with style
   From: test@test.com
   X-Hg-Notification: changeset ec8d9d852f56
-  Message-Id: <hg.ec8d9d852f56.*.*@*> (glob)
+  Message-Id: <hg.ccd5049818a6a277251189ce1d6d0cca10723d58214199e7178894adb99ed918@test.com>
   To: baz@test.com, foo@bar
   
   changeset ec8d9d852f56
@@ -672,7 +705,7 @@ with template (overrides style):
   Subject: 14721b538ae3: with template
   From: test@test.com
   X-Hg-Notification: changeset 14721b538ae3
-  Message-Id: <hg.14721b538ae3.*.*@*> (glob)
+  Message-Id: <hg.7edb9765307a5a24528f3964672e794e2d21f2479e96c099bf52e02abd17b3a2@test.com>
   To: baz@test.com, foo@bar
   
   with template
@@ -695,6 +728,8 @@ showfunc diff
   > EOF
   $ hg commit -Am addfunction
   adding f1
+  $ hg debugobsolete eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee b86bc16ff894f057d023b306936f290954857187
+  1 new obsolescence markers
   $ hg --cwd ../b pull ../a | \
   >  "$PYTHON" $TESTDIR/unwrap-message-id.py
   pulling from ../a
@@ -703,7 +738,8 @@ showfunc diff
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets b86bc16ff894
+  1 new obsolescence markers
+  new changesets b86bc16ff894 (1 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -711,7 +747,7 @@ showfunc diff
   Subject: addfunction
   From: test@test.com
   X-Hg-Notification: changeset b86bc16ff894
-  Message-Id: <hg.b86bc16ff894.*.*@*> (glob)
+  Message-Id: <hg.4c7cacfbbd6ba170656be0c8fc0d7599bd925c0d545b836816be9983e6d08448@test.com>
   To: baz@test.com, foo@bar
   
   changeset b86bc16ff894
@@ -739,6 +775,9 @@ showfunc diff
   > }
   > EOF
   $ hg commit -m changefunction
+  $ hg debugobsolete 485bf79b9464197b2ed2debd0b16252ad64ed458 e81040e9838c704d8bf17658cb11758f24e40b6b
+  1 new obsolescence markers
+  obsoleted 1 changesets
   $ hg --cwd ../b --config notify.showfunc=True pull ../a | \
   >  "$PYTHON" $TESTDIR/unwrap-message-id.py
   pulling from ../a
@@ -747,7 +786,9 @@ showfunc diff
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets e81040e9838c
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  new changesets e81040e9838c (1 drafts)
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -755,7 +796,55 @@ showfunc diff
   Subject: changefunction
   From: test@test.com
   X-Hg-Notification: changeset e81040e9838c
-  Message-Id: <hg.e81040e9838c.*.*@*> (glob)
+  Message-Id: <hg.99b80bf1c5d0bf8f8a7e60107c1aa1da367a5943b2a70a8b36517d701557edff@test.com>
+  In-Reply-To: <hg.15281d60c27d9d5fb70435d33ebc24cb5aa580f2535988dcb9923c26e8bc5c47@test.com>
+  To: baz@test.com, foo@bar
+  
+  changeset e81040e9838c
+  diffs (12 lines):
+  
+  diff -r b86bc16ff894 -r e81040e9838c f1
+  --- a/f1	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/f1	Thu Jan 01 00:00:00 1970 +0000
+  @@ -2,6 +2,6 @@ int main() {
+       int a = 0;
+       int b = 1;
+       int c = 2;
+  -    int d = 3;
+  -    return a + b + c + d;
+  +    int e = 3;
+  +    return a + b + c + e;
+   }
+  (run 'hg update' to get a working copy)
+
+Retry the In-Reply-To, but make sure the oldest known change is older.
+This can happen when folding commits that have been rebased by another user.
+
+  $ hg --cwd ../b strip tip
+  saved backup bundle to $TESTTMP/b/.hg/strip-backup/e81040e9838c-10aad4de-backup.hg
+  $ hg debugobsolete f7e5aaed408029cfe9890318245e87ef44739fdd e81040e9838c704d8bf17658cb11758f24e40b6b
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg --cwd ../b --config notify.showfunc=True pull ../a | \
+  >  "$PYTHON" $TESTDIR/unwrap-message-id.py
+  pulling from ../a
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  2 new obsolescence markers
+  obsoleted 2 changesets
+  new changesets e81040e9838c (1 drafts)
+  MIME-Version: 1.0
+  Content-Type: text/plain; charset="us-ascii"
+  Content-Transfer-Encoding: 7bit
+  Date: * (glob)
+  Subject: changefunction
+  From: test@test.com
+  X-Hg-Notification: changeset e81040e9838c
+  Message-Id: <hg.99b80bf1c5d0bf8f8a7e60107c1aa1da367a5943b2a70a8b36517d701557edff@test.com>
+  In-Reply-To: <hg.12e9ae631e2529e9cfbe7a93be0dd8a401280700640f802a60f20d7be659251d@test.com>
   To: baz@test.com, foo@bar
   
   changeset e81040e9838c
