@@ -2590,6 +2590,23 @@ def update(
     return stats
 
 
+def merge(ctx, labels=None, force=False, wc=None):
+    """Merge another topological branch into the working copy.
+
+    force = whether the merge was run with 'merge --force' (deprecated)
+    """
+
+    return update(
+        ctx.repo(),
+        ctx.rev(),
+        labels=labels,
+        branchmerge=True,
+        force=force,
+        mergeforce=force,
+        wc=wc,
+    )
+
+
 def clean_update(ctx, wc=None):
     """Do a clean update to the given commit.
 

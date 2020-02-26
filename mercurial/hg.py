@@ -1141,14 +1141,7 @@ def merge(
 ):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
-    stats = mergemod.update(
-        repo,
-        node,
-        branchmerge=True,
-        force=force,
-        mergeforce=force,
-        labels=labels,
-    )
+    stats = mergemod.merge(repo[node], force=force, labels=labels)
     _showstats(repo, stats)
     if stats.unresolvedcount:
         repo.ui.status(
