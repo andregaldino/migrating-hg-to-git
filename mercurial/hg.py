@@ -1137,7 +1137,7 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
 
 
 def merge(
-    repo, node, force=False, remind=True, mergeforce=False, labels=None,
+    repo, node, force=False, remind=True, labels=None,
 ):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
@@ -1146,7 +1146,7 @@ def merge(
         node,
         branchmerge=True,
         force=force,
-        mergeforce=mergeforce,
+        mergeforce=force,
         labels=labels,
     )
     _showstats(repo, stats)

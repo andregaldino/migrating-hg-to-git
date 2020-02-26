@@ -4909,9 +4909,7 @@ def merge(ui, repo, node=None, **opts):
     with ui.configoverride(overrides, b'merge'):
         force = opts.get(b'force')
         labels = [b'working copy', b'merge rev']
-        return hg.merge(
-            repo, node, force=force, mergeforce=force, labels=labels
-        )
+        return hg.merge(repo, node, force=force, labels=labels)
 
 
 statemod.addunfinished(

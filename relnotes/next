@@ -65,5 +65,8 @@
  * `hg.merge()` has lost its `abort` argument. Please call
    `hg.abortmerge()` directly instead.
 
+ * `hg.merge()` has lost its `mergeforce` argument. It should have
+   only ever been called with the same value as the `force` argument.
+
  * The `*others` argument of `cmdutil.check_incompatible_arguments()`
    changed from being varargs argument to being a single collection.
