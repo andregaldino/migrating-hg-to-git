@@ -33,11 +33,11 @@
  * Use `hg copy --forget --at-rev REV` to unmark already committed
    copies.
 
- * prevent pushes of divergent bookmarks (foo@remote)
-
 == Bug Fixes  ==
 
  * Fix server exception when concurrent pushes delete the same bookmark
+
+ * Prevent pushes of divergent bookmarks (foo@remote)
 
 == Backwards Compatibility Changes ==
 
