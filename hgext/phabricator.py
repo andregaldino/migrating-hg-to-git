@@ -968,42 +968,49 @@ def creatediff(basectx, ctx):
     return diff
 
 
-def writediffproperties(ctx, diff):
-    """write metadata to diff so patches could be applied losslessly"""
+def writediffproperties(ctxs, diff):
+    """write metadata to diff so patches could be applied losslessly
+
+    ``ctxs`` is the list of commits that created the diff, in ascending order.
+    The list is generally a single commit, but may be several when using
+    ``phabsend --fold``.
+    """
     # creatediff returns with a diffid but query returns with an id
     diffid = diff.get(b'diffid', diff.get(b'id'))
+    basectx = ctxs[0]
+    tipctx = ctxs[-1]
+
     params = {
         b'diff_id': diffid,
         b'name': b'hg:meta',
         b'data': templatefilters.json(
             {
-                b'user': ctx.user(),
-                b'date': b'%d %d' % ctx.date(),
-                b'branch': ctx.branch(),
-                b'node': ctx.hex(),
-                b'parent': ctx.p1().hex(),
+                b'user': tipctx.user(),
+                b'date': b'%d %d' % tipctx.date(),
+                b'branch': tipctx.branch(),
+                b'node': tipctx.hex(),
+                b'parent': basectx.p1().hex(),
             }
         ),
     }
-    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
+    callconduit(basectx.repo().ui, b'differential.setdiffproperty', params)
 
+    commits = {}
+    for ctx in ctxs:
+        commits[ctx.hex()] = {
+            b'author': stringutil.person(ctx.user()),
+            b'authorEmail': stringutil.email(ctx.user()),
+            b'time': int(ctx.date()[0]),
+            b'commit': ctx.hex(),
+            b'parents': [ctx.p1().hex()],
+            b'branch': ctx.branch(),
+        }
     params = {
         b'diff_id': diffid,
         b'name': b'local:commits',
-        b'data': templatefilters.json(
-            {
-                ctx.hex(): {
-                    b'author': stringutil.person(ctx.user()),
-                    b'authorEmail': stringutil.email(ctx.user()),
-                    b'time': int(ctx.date()[0]),
-                    b'commit': ctx.hex(),
-                    b'parents': [ctx.p1().hex()],
-                    b'branch': ctx.branch(),
-                },
-            }
-        ),
+        b'data': templatefilters.json(commits),
     }
-    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
+    callconduit(basectx.repo().ui, b'differential.setdiffproperty', params)
 
 
 def createdifferentialrevision(
@@ -1049,7 +1056,7 @@ def createdifferentialrevision(
         # pushers could know the correct node metadata.
         assert olddiff
         diff = olddiff
-    writediffproperties(ctx, diff)
+    writediffproperties([ctx], diff)
 
     # Set the parent Revision every time, so commit re-ordering is picked-up
     if parentrevphid:
@@ -1289,7 +1296,9 @@ def phabsend(ui, repo, *revs, **opts):
                     # If it fails just warn and keep going, otherwise the DREV
                     # associations will be lost
                     try:
-                        writediffproperties(unfi[newnode], diffmap[old.node()])
+                        writediffproperties(
+                            [unfi[newnode]], diffmap[old.node()]
+                        )
                     except util.urlerr.urlerror:
                         ui.warnnoi18n(
                             b'Failed to update metadata for D%d\n' % drevid
