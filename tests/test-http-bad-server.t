@@ -15,6 +15,8 @@ version so behavior is deterministic.
   > sparse-revlog = no
   > [devel]
   > legacy.exchange = phases
+  > [server]
+  > concurrent-push-mode = strict
   > EOF
 
   $ hg init server0

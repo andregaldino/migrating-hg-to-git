@@ -296,7 +296,7 @@ actions property completely.
   bundle2-output-bundle: "HG20", 5 parts total
   bundle2-output-part: "replycaps" * bytes payload (glob)
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
@@ -304,7 +304,7 @@ actions property completely.
   bundle2-input-part: total payload size * (glob)
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets

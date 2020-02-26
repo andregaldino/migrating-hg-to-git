@@ -43,6 +43,11 @@
 
  * Prevent pushes of divergent bookmarks (foo@remote)
 
+ * The push error "remote repository changed while pushing - please
+   try again" now only happens when a concurrent push changed related
+   heads (instead of when a concurrent pushed any revision).
+
+
 == Backwards Compatibility Changes ==
 
  * When `hg rebase` pauses for merge conflict resolution, the working

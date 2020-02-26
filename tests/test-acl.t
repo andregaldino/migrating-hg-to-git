@@ -109,17 +109,17 @@ Extension disabled for lack of a hook
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
@@ -167,6 +167,7 @@ Extension disabled for lack of acl.sources
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -174,18 +175,19 @@ Extension disabled for lack of acl.sources
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -234,6 +236,7 @@ No [acl.allow]/[acl.deny]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -241,18 +244,19 @@ No [acl.allow]/[acl.deny]
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -311,6 +315,7 @@ Empty [acl.allow]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -318,18 +323,19 @@ Empty [acl.allow]
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -379,6 +385,7 @@ fred is allowed inside foo/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -386,18 +393,19 @@ fred is allowed inside foo/
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -452,6 +460,7 @@ Empty [acl.deny]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -459,18 +468,19 @@ Empty [acl.deny]
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -522,6 +532,7 @@ fred is allowed inside foo/, but not foo/bar/ (case matters)
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -529,18 +540,19 @@ fred is allowed inside foo/, but not foo/bar/ (case matters)
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -597,6 +609,7 @@ fred is allowed inside foo/, but not foo/Bar/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -604,18 +617,19 @@ fred is allowed inside foo/, but not foo/Bar/
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -669,6 +683,7 @@ fred is allowed inside foo/, but not foo/Bar/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -676,18 +691,19 @@ fred is allowed inside foo/, but not foo/Bar/
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -742,27 +758,29 @@ fred is not blocked from moving bookmarks
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   1 changesets found
   list of changesets:
   ef1ea85a6374b77d6da9dcda9541f498f2d17df7
   bundle2-output-bundle: "HG20", 7 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:bookmarks" 37 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-output-part: "bookmarks" 37 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:bookmarks" supported
   bundle2-input-part: total payload size 37
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -828,27 +846,29 @@ fred is not allowed to move bookmarks
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   1 changesets found
   list of changesets:
   ef1ea85a6374b77d6da9dcda9541f498f2d17df7
   bundle2-output-bundle: "HG20", 7 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:bookmarks" 37 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-output-part: "bookmarks" 37 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:bookmarks" supported
   bundle2-input-part: total payload size 37
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -914,6 +934,7 @@ barney is allowed everywhere
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -921,18 +942,19 @@ barney is allowed everywhere
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -998,6 +1020,7 @@ wilma can change files with a .txt extension
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1005,18 +1028,19 @@ wilma can change files with a .txt extension
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1079,6 +1103,7 @@ file specified by acl.config does not exist
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1086,18 +1111,19 @@ file specified by acl.config does not exist
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1155,6 +1181,7 @@ betty is allowed inside foo/ by a acl.config file
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1162,18 +1189,19 @@ betty is allowed inside foo/ by a acl.config file
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1242,6 +1270,7 @@ acl.config can set only [acl.allow]/[acl.deny]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1249,18 +1278,19 @@ acl.config can set only [acl.allow]/[acl.deny]
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1330,6 +1360,7 @@ fred is always allowed
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1337,18 +1368,19 @@ fred is always allowed
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1414,6 +1446,7 @@ no one is allowed inside foo/Bar/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1421,18 +1454,19 @@ no one is allowed inside foo/Bar/
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1494,6 +1528,7 @@ OS-level groups
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1501,18 +1536,19 @@ OS-level groups
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1579,6 +1615,7 @@ OS-level groups
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
+  invalid branch cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1586,18 +1623,19 @@ OS-level groups
   f9cafe1212c8c6fa1120d14a556e18cc44ff8bdd
   911600dab2ae7a9baff75958b84fe606851ce955
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: "check:updated-heads" supported
   bundle2-input-part: total payload size 20
+  invalid branch cache (served): tip differs
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1707,18 +1745,18 @@ No branch acls specified
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1793,18 +1831,18 @@ Branch acl deny test
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1871,18 +1909,18 @@ Branch acl empty allow test
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -1945,18 +1983,18 @@ Branch acl allow other
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -2013,18 +2051,18 @@ Branch acl allow other
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -2104,18 +2142,18 @@ push foobar into the remote
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -2194,18 +2232,18 @@ Branch acl conflicting deny
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -2267,18 +2305,18 @@ User 'astro' must not be denied
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374
@@ -2351,18 +2389,18 @@ Non-astro users must be denied
   911600dab2ae7a9baff75958b84fe606851ce955
   e8fc755d4d8217ee5b0c2bb41558c40d43b92c01
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 224 bytes payload
   bundle2-output-part: "check:phases" 48 bytes payload
-  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 48 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 224
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 48
-  bundle2-input-part: "check:heads" supported
-  bundle2-input-part: total payload size 20
+  bundle2-input-part: "check:updated-heads" supported
+  bundle2-input-part: total payload size 40
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
   adding changesets
   add changeset ef1ea85a6374

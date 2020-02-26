@@ -1116,7 +1116,7 @@ coreconfigitem(
     b'server', b'compressionengines', default=list,
 )
 coreconfigitem(
-    b'server', b'concurrent-push-mode', default=b'strict',
+    b'server', b'concurrent-push-mode', default=b'check-related',
 )
 coreconfigitem(
     b'server', b'disablefullbundle', default=False,

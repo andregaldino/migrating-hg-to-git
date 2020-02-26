@@ -119,11 +119,11 @@ We tests multiple cases:
 
 #testcases strict unrelated
 
-#if unrelated
+#if strict
 
   $ cat >> $HGRCPATH << EOF
   > [server]
-  > concurrent-push-mode = check-related
+  > concurrent-push-mode = strict
   > EOF
 
 #endif

@@ -50,7 +50,7 @@ Pushing a new commit from the client to the server
       6cb0989601f1  added a
 
   $ scratchnodes
-  6cb0989601f1fb5805238edfb16f3606713d9a0b a4c202c147a9c4bb91bbadb56321fc5f3950f7f2
+  6cb0989601f1fb5805238edfb16f3606713d9a0b 3b414252ff8acab801318445d88ff48faf4a28c3
 
 Understanding how data is stored on the bundlestore in server
 -------------------------------------------------------------
@@ -61,8 +61,8 @@ There are two things, filebundlestore and index
   index
 
 filebundlestore stores the bundles
-  $ ls ../repo/.hg/scratchbranches/filebundlestore/a4/c2/
-  a4c202c147a9c4bb91bbadb56321fc5f3950f7f2
+  $ ls ../repo/.hg/scratchbranches/filebundlestore/3b/41/
+  3b414252ff8acab801318445d88ff48faf4a28c3
 
 index/nodemap stores a map of node id and file in which bundle is stored in filebundlestore
   $ ls ../repo/.hg/scratchbranches/index/
@@ -82,7 +82,7 @@ Checking that the commit was not applied to revlog on the server
 Applying the changeset from the bundlestore
 --------------------------------------------
 
-  $ hg unbundle .hg/scratchbranches/filebundlestore/a4/c2/a4c202c147a9c4bb91bbadb56321fc5f3950f7f2
+  $ hg unbundle .hg/scratchbranches/filebundlestore/3b/41/3b414252ff8acab801318445d88ff48faf4a28c3
   adding changesets
   adding manifests
   adding file changes
@@ -133,9 +133,9 @@ Checking that changesets are not applied on the server
 
 Both of the new changesets are stored in a single bundle-file
   $ scratchnodes
-  6cb0989601f1fb5805238edfb16f3606713d9a0b a4c202c147a9c4bb91bbadb56321fc5f3950f7f2
-  bf8a6e3011b345146bbbedbcb1ebd4837571492a ee41a41cefb7817cbfb235b4f6e9f27dbad6ca1f
-  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 ee41a41cefb7817cbfb235b4f6e9f27dbad6ca1f
+  6cb0989601f1fb5805238edfb16f3606713d9a0b 3b414252ff8acab801318445d88ff48faf4a28c3
+  bf8a6e3011b345146bbbedbcb1ebd4837571492a 239585f5e61f0c09ce7106bdc1097bff731738f4
+  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 239585f5e61f0c09ce7106bdc1097bff731738f4
 
 Pushing more changesets to the server
 -------------------------------------
@@ -158,11 +158,11 @@ XXX: we should have pushed only the parts which are not in bundlestore
 
 Sneak peek into the bundlestore at the server
   $ scratchnodes
-  1bb96358eda285b536c6d1c66846a7cdb2336cea 57e00c0d4f26e2a2a72b751b63d9abc4f3eb28e7
-  6cb0989601f1fb5805238edfb16f3606713d9a0b a4c202c147a9c4bb91bbadb56321fc5f3950f7f2
-  b4e4bce660512ad3e71189e14588a70ac8e31fef 57e00c0d4f26e2a2a72b751b63d9abc4f3eb28e7
-  bf8a6e3011b345146bbbedbcb1ebd4837571492a 57e00c0d4f26e2a2a72b751b63d9abc4f3eb28e7
-  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 57e00c0d4f26e2a2a72b751b63d9abc4f3eb28e7
+  1bb96358eda285b536c6d1c66846a7cdb2336cea 98fbae0016662521b0007da1b7bc349cd3caacd1
+  6cb0989601f1fb5805238edfb16f3606713d9a0b 3b414252ff8acab801318445d88ff48faf4a28c3
+  b4e4bce660512ad3e71189e14588a70ac8e31fef 98fbae0016662521b0007da1b7bc349cd3caacd1
+  bf8a6e3011b345146bbbedbcb1ebd4837571492a 98fbae0016662521b0007da1b7bc349cd3caacd1
+  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 98fbae0016662521b0007da1b7bc349cd3caacd1
 
 Checking if `hg pull` pulls something or `hg incoming` shows something
 -----------------------------------------------------------------------
@@ -309,14 +309,14 @@ applying the bundle on the server to check preservation of phase-information
 
   $ cd ../repo
   $ scratchnodes
-  1bb96358eda285b536c6d1c66846a7cdb2336cea 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  6cb0989601f1fb5805238edfb16f3606713d9a0b a4c202c147a9c4bb91bbadb56321fc5f3950f7f2
-  9b42578d44473575994109161430d65dd147d16d 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  b4e4bce660512ad3e71189e14588a70ac8e31fef 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  bf8a6e3011b345146bbbedbcb1ebd4837571492a 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 0a6e70ecd5b98d22382f69b93909f557ac6a9927
+  1bb96358eda285b536c6d1c66846a7cdb2336cea 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  6cb0989601f1fb5805238edfb16f3606713d9a0b 3b414252ff8acab801318445d88ff48faf4a28c3
+  9b42578d44473575994109161430d65dd147d16d 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  b4e4bce660512ad3e71189e14588a70ac8e31fef 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  bf8a6e3011b345146bbbedbcb1ebd4837571492a 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 280a46a259a268f0e740c81c5a7751bdbfaec85f
 
-  $ hg unbundle .hg/scratchbranches/filebundlestore/0a/6e/0a6e70ecd5b98d22382f69b93909f557ac6a9927
+  $ hg unbundle .hg/scratchbranches/filebundlestore/28/0a/280a46a259a268f0e740c81c5a7751bdbfaec85f
   adding changesets
   adding manifests
   adding file changes
@@ -392,13 +392,13 @@ Unbundling on server to see obsmarkers being applied
   $ cd ../repo
 
   $ scratchnodes
-  1bb96358eda285b536c6d1c66846a7cdb2336cea 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  6cb0989601f1fb5805238edfb16f3606713d9a0b a4c202c147a9c4bb91bbadb56321fc5f3950f7f2
+  1bb96358eda285b536c6d1c66846a7cdb2336cea 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  6cb0989601f1fb5805238edfb16f3606713d9a0b 3b414252ff8acab801318445d88ff48faf4a28c3
   99949238d9ac7f2424a33a46dface6f866afd059 090a24fe63f31d3b4bee714447f835c8c362ff57
-  9b42578d44473575994109161430d65dd147d16d 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  b4e4bce660512ad3e71189e14588a70ac8e31fef 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  bf8a6e3011b345146bbbedbcb1ebd4837571492a 0a6e70ecd5b98d22382f69b93909f557ac6a9927
-  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 0a6e70ecd5b98d22382f69b93909f557ac6a9927
+  9b42578d44473575994109161430d65dd147d16d 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  b4e4bce660512ad3e71189e14588a70ac8e31fef 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  bf8a6e3011b345146bbbedbcb1ebd4837571492a 280a46a259a268f0e740c81c5a7751bdbfaec85f
+  eaba929e866c59bc9a6aada5a9dd2f6990db83c0 280a46a259a268f0e740c81c5a7751bdbfaec85f
 
   $ hg glog
   o  6:9b42578d4447 added f
