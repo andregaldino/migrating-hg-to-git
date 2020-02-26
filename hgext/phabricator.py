@@ -1407,39 +1407,42 @@ def querydrev(repo, spec):
     A "Differential Revision dict" looks like:
 
         {
-            "id": "2",
-            "phid": "PHID-DREV-672qvysjcczopag46qty",
-            "title": "example",
-            "uri": "https://phab.example.com/D2",
+            "activeDiffPHID": "PHID-DIFF-xoqnjkobbm6k4dk6hi72",
+            "authorPHID": "PHID-USER-tv3ohwc4v4jeu34otlye",
+            "auxiliary": {
+              "phabricator:depends-on": [
+                "PHID-DREV-gbapp366kutjebt7agcd"
+              ]
+              "phabricator:projects": [],
+            },
+            "branch": "default",
+            "ccs": [],
+            "commits": [],
             "dateCreated": "1499181406",
             "dateModified": "1499182103",
-            "authorPHID": "PHID-USER-tv3ohwc4v4jeu34otlye",
-            "status": "0",
-            "statusName": "Needs Review",
-            "properties": [],
-            "branch": null,
-            "summary": "",
-            "testPlan": "",
-            "lineCount": "2",
-            "activeDiffPHID": "PHID-DIFF-xoqnjkobbm6k4dk6hi72",
             "diffs": [
               "3",
               "4",
             ],
-            "commits": [],
-            "reviewers": [],
-            "ccs": [],
             "hashes": [],
-            "auxiliary": {
-              "phabricator:projects": [],
-              "phabricator:depends-on": [
-                "PHID-DREV-gbapp366kutjebt7agcd"
-              ]
-            },
+            "id": "2",
+            "lineCount": "2",
+            "phid": "PHID-DREV-672qvysjcczopag46qty",
+            "properties": {},
             "repositoryPHID": "PHID-REPO-hub2hx62ieuqeheznasv",
+            "reviewers": [],
             "sourcePath": null
+            "status": "0",
+            "statusName": "Needs Review",
+            "summary": "",
+            "testPlan": "",
+            "title": "example",
+            "uri": "https://phab.example.com/D2",
         }
     """
+    # TODO: replace differential.query and differential.querydiffs with
+    # differential.diff.search because the former (and their output) are
+    # frozen, and planned to be deprecated and removed.
 
     def fetch(params):
         """params -> single drev or None"""
@@ -1544,6 +1547,7 @@ def getdiffmeta(diff):
 
         "properties": {
           "hg:meta": {
+            "branch": "default",
             "date": "1499571514 25200",
             "node": "98c08acae292b2faf60a279b4189beb6cff1414d",
             "user": "Foo Bar <foo@example.com>",
@@ -1557,16 +1561,16 @@ def getdiffmeta(diff):
           "local:commits": {
             "98c08acae292b2faf60a279b4189beb6cff1414d": {
               "author": "Foo Bar",
-              "time": 1499546314,
-              "branch": "default",
-              "tag": "",
-              "commit": "98c08acae292b2faf60a279b4189beb6cff1414d",
-              "rev": "98c08acae292b2faf60a279b4189beb6cff1414d",
-              "local": "1000",
-              "parents": ["6d0abad76b30e4724a37ab8721d630394070fe16"],
-              "summary": "...",
-              "message": "...",
               "authorEmail": "foo@example.com"
+              "branch": "default",
+              "commit": "98c08acae292b2faf60a279b4189beb6cff1414d",
+              "local": "1000",
+              "message": "...",
+              "parents": ["6d0abad76b30e4724a37ab8721d630394070fe16"],
+              "rev": "98c08acae292b2faf60a279b4189beb6cff1414d",
+              "summary": "...",
+              "tag": "",
+              "time": 1499546314,
             }
           }
         }
