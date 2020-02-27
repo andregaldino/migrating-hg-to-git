@@ -405,6 +405,23 @@ coreconfigitem(
 coreconfigitem(
     b'devel', b'legacy.exchange', default=list,
 )
+# TODO before getting `persistent-nodemap` out of experimental
+#
+# * code/tests around aborted transaction
+# * code/tests around pending data for hooks
+# * code/tests around detection of invalid cache
+#   (eg: after strip from an incompatible client)
+# * regenerate a new nodemap when the unused/total ration is to high
+# * decide for a "status" of the persistent nodemap and associated location
+#   - part of the store next the revlog itself (new requirements)
+#   - part of the cache directory
+#   - part of an `index` directory
+#     (https://www.mercurial-scm.org/wiki/ComputedIndexPlan)
+# * do we want to use this for more than just changelog? if so we need:
+#   - simpler "pending" logic for them
+#   - double check the memory story (we dont want to keep all revlog in memory)
+#   - think about the naming scheme if we are in "cache"
+# * increment the version format to "1" and freeze it.
 coreconfigitem(
     b'devel', b'persistent-nodemap', default=False,
 )
