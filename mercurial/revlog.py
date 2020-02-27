@@ -643,8 +643,11 @@ class revlog(object):
             if use_nodemap:
                 nodemap_data = nodemaputil.persisted_data(self)
                 if nodemap_data is not None:
-                    self._nodemap_docket = nodemap_data[0]
-                    index.update_nodemap_data(*nodemap_data)
+                    docket = nodemap_data[0]
+                    if d[0][docket.tip_rev][7] == docket.tip_node:
+                        # no changelog tampering
+                        self._nodemap_docket = docket
+                        index.update_nodemap_data(*nodemap_data)
         except (ValueError, IndexError):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.indexfile

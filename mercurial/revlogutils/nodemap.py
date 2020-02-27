@@ -38,10 +38,12 @@ def persisted_data(revlog):
         return None
     offset += S_VERSION.size
     headers = S_HEADER.unpack(pdata[offset : offset + S_HEADER.size])
-    uid_size, tip_rev, data_length, data_unused = headers
+    uid_size, tip_rev, data_length, data_unused, tip_node_size = headers
     offset += S_HEADER.size
     docket = NodeMapDocket(pdata[offset : offset + uid_size])
+    offset += uid_size
     docket.tip_rev = tip_rev
+    docket.tip_node = pdata[offset : offset + tip_node_size]
     docket.data_length = data_length
     docket.data_unused = data_unused
 
@@ -164,6 +166,7 @@ def _persist_nodemap(tr, revlog):
                     new_data = util.buffer(util.mmapread(fd, len(data)))
         target_docket.data_length = len(data)
     target_docket.tip_rev = revlog.tiprev()
+    target_docket.tip_node = revlog.node(target_docket.tip_rev)
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
     with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
@@ -214,7 +217,7 @@ def _persist_nodemap(tr, revlog):
 # version 0 is experimental, no BC garantee, do no use outside of tests.
 ONDISK_VERSION = 0
 S_VERSION = struct.Struct(">B")
-S_HEADER = struct.Struct(">BQQQ")
+S_HEADER = struct.Struct(">BQQQQ")
 
 ID_SIZE = 8
 
@@ -242,6 +245,15 @@ class NodeMapDocket(object):
         # the tipmost revision stored in the data file. This revision and all
         # revision before it are expected to be encoded in the data file.
         self.tip_rev = None
+        # the node of that tipmost revision, if it mismatch the current index
+        # data the docket is not valid for the current index and should be
+        # discarded.
+        #
+        # note: this method is not perfect as some destructive operation could
+        # preserve the same tip_rev + tip_node while altering lower revision.
+        # However this multiple other caches have the same vulnerability (eg:
+        # brancmap cache).
+        self.tip_node = None
         # the size (in bytes) of the persisted data to encode the nodemap valid
         # for `tip_rev`.
         #   - data file shorter than this are corrupted,
@@ -254,6 +266,7 @@ class NodeMapDocket(object):
     def copy(self):
         new = NodeMapDocket(uid=self.uid)
         new.tip_rev = self.tip_rev
+        new.tip_node = self.tip_node
         new.data_length = self.data_length
         new.data_unused = self.data_unused
         return new
@@ -281,9 +294,11 @@ class NodeMapDocket(object):
             self.tip_rev,
             self.data_length,
             self.data_unused,
+            len(self.tip_node),
         )
         data.append(S_HEADER.pack(*headers))
         data.append(self.uid)
+        data.append(self.tip_node)
         return b''.join(data)
 
 

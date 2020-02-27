@@ -14,10 +14,11 @@ Test the persistent on-disk nodemap
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5000
+  tip-node: 06ddac466af534d365326c13c3879f97caca3cb1
   data-length: 122880
   data-unused: 0
   $ f --size .hg/store/00changelog.n
-  .hg/store/00changelog.n: size=42
+  .hg/store/00changelog.n: size=70
 
 Simple lookup works
 
@@ -95,18 +96,20 @@ add a new commit
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5001
+  tip-node: 2dd9b5258caa46469ff07d4a3da1eb3529a51f49
   data-length: 122880
   data-unused: 0
 #else
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5001
+  tip-node: 2dd9b5258caa46469ff07d4a3da1eb3529a51f49
   data-length: 123072
   data-unused: 192
 #endif
 
   $ f --size .hg/store/00changelog.n
-  .hg/store/00changelog.n: size=42
+  .hg/store/00changelog.n: size=70
 
 (The pure code use the debug code that perform incremental update, the C code reencode from scratch)
 
@@ -148,6 +151,7 @@ Test code path without mmap
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
+  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 123328
   data-unused: 384
   $ f --sha256 .hg/store/00changelog-*.nd --size
@@ -157,6 +161,7 @@ Test code path without mmap
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
+  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 123328
   data-unused: 384
   $ f --sha256 .hg/store/00changelog-*.nd --size
@@ -166,6 +171,7 @@ Test code path without mmap
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
+  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
   $ f --sha256 .hg/store/00changelog-*.nd --size
@@ -181,12 +187,14 @@ Test force warming the cache
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
+  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
 #else
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
+  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
 #endif
@@ -215,6 +223,7 @@ If the nodemap is lagging behind, it can catch up fine
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5003
+  tip-node: 5c049e9c4a4af159bdcd65dce1b6bf303a0da6cf
   data-length: 123200 (pure !)
   data-length: 123200 (rust !)
   data-length: 122944 (no-rust no-pure !)
@@ -225,7 +234,50 @@ If the nodemap is lagging behind, it can catch up fine
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
+  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
   $ hg log -r "$NODE" -T '{rev}\n'
   5003
+
+changelog altered
+-----------------
+
+If the nodemap is not gated behind a requirements, an unaware client can alter
+the repository so the revlog used to generate the nodemap is not longer
+compatible with the persistent nodemap. We need to detect that.
+
+  $ hg up "$NODE~5"
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo bar > babar
+  $ hg add babar
+  $ hg ci -m 'babar'
+  created new head
+  $ OTHERNODE=`hg log -r tip -T '{node}\n'`
+  $ hg log -r "$OTHERNODE" -T '{rev}\n'
+  5004
+
+  $ hg --config extensions.strip= strip --rev "$NODE~1" --no-backup
+
+the nodemap should detect the changelog have been tampered with and recover.
+
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5002
+  tip-node: 42bf3068c7ddfdfded53c4eb11d02266faeebfee
+  data-length: 123456 (pure !)
+  data-length: 246464 (rust !)
+  data-length: 123008 (no-pure no-rust !)
+  data-unused: 448 (pure !)
+  data-unused: 123904 (rust !)
+  data-unused: 0 (no-pure no-rust !)
+
+  $ cp -f ../tmp-copies/* .hg/store/
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5002
+  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
+  data-length: 122944
+  data-unused: 0
+  $ hg log -r "$OTHERNODE" -T '{rev}\n'
+  5002
