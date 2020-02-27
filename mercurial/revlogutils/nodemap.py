@@ -75,6 +75,9 @@ def setup_persistent_nodemap(tr, revlog):
     callback_id = b"revlog-persistent-nodemap-%s" % revlog.nodemap_file
     if tr.hasfinalize(callback_id):
         return  # no need to register again
+    tr.addpending(
+        callback_id, lambda tr: _persist_nodemap(tr, revlog, pending=True)
+    )
     tr.addfinalize(callback_id, lambda tr: _persist_nodemap(tr, revlog))
 
 
@@ -101,7 +104,7 @@ def update_persistent_nodemap(revlog):
         notr._postclose[k](None)
 
 
-def _persist_nodemap(tr, revlog):
+def _persist_nodemap(tr, revlog, pending=False):
     """Write nodemap data on disk for a given revlog
     """
     if getattr(revlog, 'filteredrevs', ()):
@@ -169,7 +172,10 @@ def _persist_nodemap(tr, revlog):
     target_docket.tip_node = revlog.node(target_docket.tip_rev)
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
-    with revlog.opener(revlog.nodemap_file, b'w', atomictemp=True) as fp:
+    file_path = revlog.nodemap_file
+    if pending:
+        file_path += b'.a'
+    with revlog.opener(file_path, b'w', atomictemp=True) as fp:
         fp.write(target_docket.serialize())
     revlog._nodemap_docket = target_docket
     if feed_data:
@@ -304,7 +310,10 @@ class NodeMapDocket(object):
 
 def _rawdata_filepath(revlog, docket):
     """The (vfs relative) nodemap's rawdata file for a given uid"""
-    prefix = revlog.nodemap_file[:-2]
+    if revlog.nodemap_file.endswith(b'.n.a'):
+        prefix = revlog.nodemap_file[:-4]
+    else:
+        prefix = revlog.nodemap_file[:-2]
     return b"%s-%s.nd" % (prefix, docket.uid)
 
 

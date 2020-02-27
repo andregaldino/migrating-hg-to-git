@@ -436,7 +436,14 @@ class revlog(object):
         self.datafile = datafile or (indexfile[:-2] + b".d")
         self.nodemap_file = None
         if persistentnodemap:
-            self.nodemap_file = indexfile[:-2] + b".n"
+            if indexfile.endswith(b'.a'):
+                pending_path = indexfile[:-4] + b".n.a"
+                if opener.exists(pending_path):
+                    self.nodemap_file = pending_path
+                else:
+                    self.nodemap_file = indexfile[:-4] + b".n"
+            else:
+                self.nodemap_file = indexfile[:-2] + b".n"
 
         self.opener = opener
         #  When True, indexfile is opened with checkambig=True at writing, to

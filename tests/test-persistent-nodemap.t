@@ -281,3 +281,39 @@ the nodemap should detect the changelog have been tampered with and recover.
   data-unused: 0
   $ hg log -r "$OTHERNODE" -T '{rev}\n'
   5002
+
+Check transaction related property
+==================================
+
+An up to date nodemap should be available to shell hooks,
+
+  $ echo dsljfl > a
+  $ hg add a
+  $ hg ci -m a
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5003
+  tip-node: c91af76d172f1053cca41b83f7c2e4e514fe2bcf
+  data-length: 123008
+  data-unused: 0
+  $ echo babar2 > babar
+  $ hg ci -m 'babar2' --config "hooks.pretxnclose.nodemap-test=hg debugnodemap --metadata"
+  uid: ???????????????? (glob)
+  tip-rev: 5004
+  tip-node: ba87cd9559559e4b91b28cb140d003985315e031
+  data-length: 123328 (pure !)
+  data-length: 123328 (rust !)
+  data-length: 123136 (no-pure no-rust !)
+  data-unused: 192 (pure !)
+  data-unused: 192 (rust !)
+  data-unused: 0 (no-pure no-rust !)
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5004
+  tip-node: ba87cd9559559e4b91b28cb140d003985315e031
+  data-length: 123328 (pure !)
+  data-length: 123328 (rust !)
+  data-length: 123136 (no-pure no-rust !)
+  data-unused: 192 (pure !)
+  data-unused: 192 (rust !)
+  data-unused: 0 (no-pure no-rust !)

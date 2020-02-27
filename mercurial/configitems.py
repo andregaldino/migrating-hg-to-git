@@ -408,7 +408,6 @@ coreconfigitem(
 # TODO before getting `persistent-nodemap` out of experimental
 #
 # * code/tests around aborted transaction
-# * code/tests around pending data for hooks
 # * regenerate a new nodemap when the unused/total ration is to high
 # * decide for a "status" of the persistent nodemap and associated location
 #   - part of the store next the revlog itself (new requirements)
