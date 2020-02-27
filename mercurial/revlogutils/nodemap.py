@@ -226,9 +226,20 @@ class NodeMapDocket(object):
     def __init__(self, uid=None):
         if uid is None:
             uid = _make_uid()
+        # a unique identifier for the data file:
+        #   - When new data are appended, it is preserved.
+        #   - When a new data file is created, a new identifier is generated.
         self.uid = uid
+        # the tipmost revision stored in the data file. This revision and all
+        # revision before it are expected to be encoded in the data file.
         self.tip_rev = None
+        # the size (in bytes) of the persisted data to encode the nodemap valid
+        # for `tip_rev`.
+        #   - data file shorter than this are corrupted,
+        #   - any extra data should be ignored.
         self.data_length = None
+        # the amount (in bytes) of "dead" data, still in the data file but no
+        # longer used for the nodemap.
         self.data_unused = 0
 
     def copy(self):
