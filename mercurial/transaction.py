@@ -355,16 +355,22 @@ class transaction(util.transactional):
     def _generatefiles(self, suffix=b'', group=GEN_GROUP_ALL):
         # write files registered for generation
         any = False
+
+        if group == GEN_GROUP_ALL:
+            skip_post = skip_pre = False
+        else:
+            skip_pre = group == GEN_GROUP_POST_FINALIZE
+            skip_post = group == GEN_GROUP_PRE_FINALIZE
+
         for id, entry in sorted(pycompat.iteritems(self._filegenerators)):
             any = True
             order, filenames, genfunc, location = entry
 
             # for generation at closing, check if it's before or after finalize
-            postfinalize = group == GEN_GROUP_POST_FINALIZE
-            if (
-                group != GEN_GROUP_ALL
-                and (id in postfinalizegenerators) != postfinalize
-            ):
+            is_post = id in postfinalizegenerators
+            if skip_post and is_post:
+                continue
+            elif skip_pre and not is_post:
                 continue
 
             vfs = self._vfsmap[location]
