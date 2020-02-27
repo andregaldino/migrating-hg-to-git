@@ -73,9 +73,18 @@ def setup_persistent_nodemap(tr, revlog):
     callback_id = b"revlog-persistent-nodemap-%s" % revlog.nodemap_file
     if tr.hasfinalize(callback_id):
         return  # no need to register again
-    tr.addfinalize(
-        callback_id, lambda tr: _persist_nodemap(tr.addpostclose, revlog)
-    )
+    tr.addfinalize(callback_id, lambda tr: _persist_nodemap(tr, revlog))
+
+
+class _NoTransaction(object):
+    """transaction like object to update the nodemap outside a transaction
+    """
+
+    def __init__(self):
+        self._postclose = {}
+
+    def addpostclose(self, callback_id, callback_func):
+        self._postclose[callback_id] = callback_func
 
 
 def update_persistent_nodemap(revlog):
@@ -84,13 +93,13 @@ def update_persistent_nodemap(revlog):
     To be used for updating the nodemap on disk outside of a normal transaction
     setup (eg, `debugupdatecache`).
     """
-    cleanups = []
-    _persist_nodemap((lambda x, y: cleanups.append(y)), revlog)
-    for c in cleanups:
-        c(None)
+    notr = _NoTransaction()
+    _persist_nodemap(notr, revlog)
+    for k in sorted(notr._postclose):
+        notr._postclose[k](None)
 
 
-def _persist_nodemap(cleaner, revlog):
+def _persist_nodemap(tr, revlog):
     """Write nodemap data on disk for a given revlog
     """
     if getattr(revlog, 'filteredrevs', ()):
@@ -177,7 +186,7 @@ def _persist_nodemap(cleaner, revlog):
                 realvfs.tryunlink(oldfile)
 
         callback_id = b"revlog-cleanup-nodemap-%s" % revlog.nodemap_file
-        cleaner(callback_id, cleanup)
+        tr.addpostclose(callback_id, cleanup)
 
 
 ### Nodemap docket file
