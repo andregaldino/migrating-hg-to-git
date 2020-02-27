@@ -72,7 +72,9 @@ def setup_persistent_nodemap(tr, revlog):
         return  # inlined revlog are too small for this to be relevant
     if revlog.nodemap_file is None:
         return  # we do not use persistent_nodemap on this revlog
-    callback_id = b"revlog-persistent-nodemap-%s" % revlog.nodemap_file
+
+    # we need to happen after the changelog finalization, in that use "cl-"
+    callback_id = b"nm-revlog-persistent-nodemap-%s" % revlog.nodemap_file
     if tr.hasfinalize(callback_id):
         return  # no need to register again
     tr.addpending(
