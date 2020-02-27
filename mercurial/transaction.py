@@ -30,9 +30,9 @@ version = 2
 # the changelog having been written).
 postfinalizegenerators = {b'bookmarks', b'dirstate'}
 
-gengroupall = b'all'
-gengroupprefinalize = b'prefinalize'
-gengrouppostfinalize = b'postfinalize'
+GEN_GROUP_ALL = b'all'
+GEN_GROUP_PRE_FINALIZE = b'prefinalize'
+GEN_GROUP_POST_FINALIZE = b'postfinalize'
 
 
 def active(func):
@@ -352,7 +352,7 @@ class transaction(util.transactional):
         if genid in self._filegenerators:
             del self._filegenerators[genid]
 
-    def _generatefiles(self, suffix=b'', group=gengroupall):
+    def _generatefiles(self, suffix=b'', group=GEN_GROUP_ALL):
         # write files registered for generation
         any = False
         for id, entry in sorted(pycompat.iteritems(self._filegenerators)):
@@ -360,9 +360,9 @@ class transaction(util.transactional):
             order, filenames, genfunc, location = entry
 
             # for generation at closing, check if it's before or after finalize
-            postfinalize = group == gengrouppostfinalize
+            postfinalize = group == GEN_GROUP_POST_FINALIZE
             if (
-                group != gengroupall
+                group != GEN_GROUP_ALL
                 and (id in postfinalizegenerators) != postfinalize
             ):
                 continue
@@ -505,7 +505,7 @@ class transaction(util.transactional):
         if self._count == 1:
             self._validator(self)  # will raise exception if needed
             self._validator = None  # Help prevent cycles.
-            self._generatefiles(group=gengroupprefinalize)
+            self._generatefiles(group=GEN_GROUP_PRE_FINALIZE)
             while self._finalizecallback:
                 callbacks = self._finalizecallback
                 self._finalizecallback = {}
@@ -514,7 +514,7 @@ class transaction(util.transactional):
                     callbacks[cat](self)
             # Prevent double usage and help clear cycles.
             self._finalizecallback = None
-            self._generatefiles(group=gengrouppostfinalize)
+            self._generatefiles(group=GEN_GROUP_POST_FINALIZE)
 
         self._count -= 1
         if self._count != 0:
