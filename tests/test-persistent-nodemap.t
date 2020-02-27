@@ -144,3 +144,42 @@ Test force warming the cache
   data-length: 122944
   data-unused: 0
 #endif
+
+Check out of sync nodemap
+=========================
+
+First copy old data on the side.
+
+  $ mkdir ../tmp-copies
+  $ cp .hg/store/00changelog-????????????????.nd .hg/store/00changelog.n ../tmp-copies
+
+Nodemap lagging behind
+----------------------
+
+make a new commit
+
+  $ echo bar2 > bar
+  $ hg ci -m 'bar2'
+  $ NODE=`hg log -r tip -T '{node}\n'`
+  $ hg log -r "$NODE" -T '{rev}\n'
+  5003
+
+If the nodemap is lagging behind, it can catch up fine
+
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5003
+  data-length: 123200 (pure !)
+  data-length: 123200 (rust !)
+  data-length: 122944 (no-rust no-pure !)
+  data-unused: 256 (pure !)
+  data-unused: 256 (rust !)
+  data-unused: 0 (no-rust no-pure !)
+  $ cp -f ../tmp-copies/* .hg/store/
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5002
+  data-length: 122944
+  data-unused: 0
+  $ hg log -r "$NODE" -T '{rev}\n'
+  5003
