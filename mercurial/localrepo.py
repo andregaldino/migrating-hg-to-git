@@ -2956,6 +2956,7 @@ class localrepository(object):
                 or self.ui.configbool(b'ui', b'allowemptycommit')
             )
             if not allowemptycommit:
+                ms.reset()
                 return None
 
             if merge and cctx.deleted():

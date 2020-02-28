@@ -357,7 +357,6 @@ Try to make empty commit while there are conflicts
   nothing changed
   [1]
   $ hg resolve -l
-  R a
 
 Change/delete conflict is not allowed
   $ hg up -qC 3

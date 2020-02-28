@@ -61,6 +61,9 @@
  * `hg debugmergestate` output format changed. Let us know if that is
    causing you problems and we'll roll it back.
 
+ * Resolved merge conflicts are now cleared by `hg commit` even if the
+   working copy has no changes.
+
 
 == Internal API Changes ==
 
