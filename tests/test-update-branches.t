@@ -343,6 +343,22 @@ File conflict is not allowed
   $ hg resolve -l
   U a
 
+Try to make empty commit while there are conflicts
+  $ hg revert -r . a
+  $ rm a.orig
+  $ hg ci -m empty
+  nothing changed
+  [1]
+  $ hg resolve -m a
+  (no more unresolved files)
+  $ hg resolve -l
+  R a
+  $ hg ci -m empty
+  nothing changed
+  [1]
+  $ hg resolve -l
+  R a
+
 Change/delete conflict is not allowed
   $ hg up -qC 3
   $ hg rm foo
