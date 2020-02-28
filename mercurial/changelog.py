@@ -164,15 +164,18 @@ class appender(object):
         return self.fp.__exit__(*args)
 
 
-def _divertopener(opener, target):
-    """build an opener that writes in 'target.a' instead of 'target'"""
+class _divertopener(object):
+    def __init__(self, opener, target):
+        self._opener = opener
+        self._target = target
 
-    def _divert(name, mode=b'r', checkambig=False, **kwargs):
-        if name != target:
-            return opener(name, mode, **kwargs)
-        return opener(name + b".a", mode, **kwargs)
+    def __call__(self, name, mode=b'r', checkambig=False, **kwargs):
+        if name != self._target:
+            return self._opener(name, mode, **kwargs)
+        return self._opener(name + b".a", mode, **kwargs)
 
-    return _divert
+    def __getattr__(self, attr):
+        return getattr(self._opener, attr)
 
 
 def _delayopener(opener, target, buf):
