@@ -93,6 +93,15 @@ class _NoTransaction(object):
     def addpostclose(self, callback_id, callback_func):
         self._postclose[callback_id] = callback_func
 
+    def registertmp(self, *args, **kwargs):
+        pass
+
+    def addbackup(self, *args, **kwargs):
+        pass
+
+    def add(self, *args, **kwargs):
+        pass
+
 
 def update_persistent_nodemap(revlog):
     """update the persistent nodemap right now
@@ -138,6 +147,7 @@ def _persist_nodemap(tr, revlog, pending=False):
             # EXP-TODO: if this is a cache, this should use a cache vfs, not a
             # store vfs
             new_length = target_docket.data_length + len(data)
+            tr.add(datafile, target_docket.data_length)
             with revlog.opener(datafile, b'r+') as fd:
                 fd.seek(target_docket.data_length)
                 fd.write(data)
@@ -161,6 +171,7 @@ def _persist_nodemap(tr, revlog, pending=False):
             data = persistent_data(revlog.index)
         # EXP-TODO: if this is a cache, this should use a cache vfs, not a
         # store vfs
+        tr.add(datafile, 0)
         with revlog.opener(datafile, b'w+') as fd:
             fd.write(data)
             if feed_data:
@@ -177,6 +188,10 @@ def _persist_nodemap(tr, revlog, pending=False):
     file_path = revlog.nodemap_file
     if pending:
         file_path += b'.a'
+        tr.registertmp(file_path)
+    else:
+        tr.addbackup(file_path)
+
     with revlog.opener(file_path, b'w', atomictemp=True) as fp:
         fp.write(target_docket.serialize())
     revlog._nodemap_docket = target_docket

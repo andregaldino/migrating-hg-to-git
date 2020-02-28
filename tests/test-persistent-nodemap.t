@@ -353,3 +353,25 @@ Another process does not see the pending nodemap content during run.
 
   $ cat output.txt
 
+Check that a failing transaction will properly revert the data
+
+  $ echo plakfe > a
+  $ f --size --sha256 .hg/store/00changelog-*.nd
+  .hg/store/00changelog-????????????????.nd: size=123584, sha256=8c6cef6fd3d3fac291968793ee19a4be6d0b8375e9508bd5c7d4a8879e8df180 (glob) (pure !)
+  .hg/store/00changelog-????????????????.nd: size=123584, sha256=eb9e9a4bcafdb5e1344bc8a0cbb3288b2106413b8efae6265fb8a7973d7e97f9 (glob) (rust !)
+  .hg/store/00changelog-????????????????.nd: size=123136, sha256=4f504f5a834db3811ced50ab3e9e80bcae3581bb0f9b13a7a9f94b7fc34bcebe (glob) (no-pure no-rust !)
+  $ hg ci -m a3 --config "extensions.abort=$RUNTESTDIR/testlib/crash_transaction_late.py"
+  transaction abort!
+  rollback completed
+  abort: This is a late abort
+  [255]
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5005
+  tip-node: bae4d45c759e30f1cb1a40e1382cf0e0414154db
+  data-length: 123584
+  data-unused: 448
+  $ f --size --sha256 .hg/store/00changelog-*.nd
+  .hg/store/00changelog-????????????????.nd: size=123584, sha256=8c6cef6fd3d3fac291968793ee19a4be6d0b8375e9508bd5c7d4a8879e8df180 (glob) (pure !)
+  .hg/store/00changelog-????????????????.nd: size=123584, sha256=eb9e9a4bcafdb5e1344bc8a0cbb3288b2106413b8efae6265fb8a7973d7e97f9 (glob) (rust !)
+  .hg/store/00changelog-????????????????.nd: size=123136, sha256=4f504f5a834db3811ced50ab3e9e80bcae3581bb0f9b13a7a9f94b7fc34bcebe (glob) (no-pure no-rust !)
