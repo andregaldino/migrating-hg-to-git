@@ -233,9 +233,18 @@
   z2: not copying - file is not managed
   abort: no files to copy
   [255]
+  $ find $CACHEDIR -type f | sort
+.. The following output line about files fetches is globed because it is
+.. flaky, the core the test is checked when checking the cache dir, so
+.. hopefully this flakyness is not hiding any actual bug.
   $ hg revert -a -r 1 || true
-  3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over * (glob)
+  ? files fetched over 1 fetches - (? misses, 0.00% hit ratio) over * (glob)
   abort: z2@109c3a557a73: not found in manifest! (?)
+  $ find $CACHEDIR -type f | sort
+  $TESTTMP/hgcache/master/11/f6ad8ec52a2984abaafd7c3b516503785c2072/ef95c5376f34698742fe34f315fd82136f8f68c0
+  $TESTTMP/hgcache/master/39/5df8f7c51f007019cb30201c49e884b46b92fa/69a1b67522704ec122181c0890bd16e9d3e7516a
+  $TESTTMP/hgcache/master/95/cb0bfd2977c761298d9624e4b4d4c72a39974a/076f5e2225b3ff0400b98c92aa6cdf403ee24cca
+  $TESTTMP/hgcache/repos
 
 # warning when we have excess remotefilelog fetching
 
