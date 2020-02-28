@@ -548,11 +548,6 @@ class rebaseruntime(object):
                     date=date,
                 )
 
-            if newnode is None:
-                # If it ended up being a no-op commit, then the normal
-                # merge state clean-up path doesn't happen, so do it
-                # here. Fix issue5494
-                mergemod.mergestate.clean(repo)
             return newnode
 
     def _rebasenode(self, tr, rev, allowdivergence, progressfn):

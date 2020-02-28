@@ -827,10 +827,6 @@ def unshelvecontinue(ui, repo, state, opts):
                 )
 
         if newnode is None:
-            # If it ended up being a no-op commit, then the normal
-            # merge state clean-up path doesn't happen, so do it
-            # here. Fix issue5494
-            merge.mergestate.clean(repo)
             shelvectx = state.pendingctx
             msg = _(
                 b'note: unshelved changes already existed '
@@ -1031,10 +1027,6 @@ def _rebaserestoredcommit(
             )
 
         if newnode is None:
-            # If it ended up being a no-op commit, then the normal
-            # merge state clean-up path doesn't happen, so do it
-            # here. Fix issue5494
-            merge.mergestate.clean(repo)
             shelvectx = tmpwctx
             msg = _(
                 b'note: unshelved changes already existed '
