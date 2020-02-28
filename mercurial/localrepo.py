@@ -2944,6 +2944,9 @@ class localrepository(object):
                 self, status, text, user, date, extra
             )
 
+            ms = mergemod.mergestate.read(self)
+            mergeutil.checkunresolved(ms)
+
             # internal config: ui.allowemptycommit
             allowemptycommit = (
                 wctx.branch() != wctx.p1().branch()
@@ -2957,9 +2960,6 @@ class localrepository(object):
 
             if merge and cctx.deleted():
                 raise error.Abort(_(b"cannot commit merge with missing files"))
-
-            ms = mergemod.mergestate.read(self)
-            mergeutil.checkunresolved(ms)
 
             if editor:
                 cctx._text = editor(self, cctx, subs)
