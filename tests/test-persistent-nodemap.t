@@ -19,6 +19,13 @@ Test the persistent on-disk nodemap
   data-unused: 0
   $ f --size .hg/store/00changelog.n
   .hg/store/00changelog.n: size=42
+
+Simple lookup works
+
+  $ ANYNODE=`hg log --template '{node|short}\n' --rev tip`
+  $ hg log -r "$ANYNODE" --template '{rev}\n'
+  5000
+
   $ f --sha256 .hg/store/00changelog-*.nd
   .hg/store/00changelog-????????????????.nd: sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7 (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
