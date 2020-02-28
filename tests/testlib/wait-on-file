@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+# wait up to TIMEOUT seconds until a WAIT_ON_FILE is created.
+#
+# In addition, this script can create CREATE_FILE once it is ready to wait.
+
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+    echo $#
+    echo "USAGE: $0 TIMEOUT WAIT_ON_FILE [CREATE_FILE]"
+fi
+
+timer="$1"
+wait_on="$2"
+create=""
+if [ $# -eq 3 ]; then
+    create="$3"
+fi
+
+if [ -n "$create" ];
+then
+    touch "$create"
+    create=""
+fi
+while [ "$timer" -gt 0 ] && [ ! -f "$wait_on" ];
+do
+    timer=$(( timer - 1))
+    sleep 0.01
+done
+if [ "$timer" -le 0 ]; then
+    echo "file not created after $1 seconds: $wait_on" >&2
+    exit 1
+fi
