@@ -317,3 +317,39 @@ An up to date nodemap should be available to shell hooks,
   data-unused: 192 (pure !)
   data-unused: 192 (rust !)
   data-unused: 0 (no-pure no-rust !)
+
+Another process does not see the pending nodemap content during run.
+
+  $ PATH=$RUNTESTDIR/testlib/:$PATH
+  $ echo qpoasp > a
+  $ hg ci -m a2 \
+  > --config "hooks.pretxnclose=wait-on-file 20 sync-repo-read sync-txn-pending" \
+  > --config "hooks.txnclose=touch sync-txn-close" > output.txt 2>&1 &
+
+(read the repository while the commit transaction is pending)
+
+  $ wait-on-file 20 sync-txn-pending && \
+  > hg debugnodemap --metadata && \
+  > wait-on-file 20 sync-txn-close sync-repo-read
+  uid: ???????????????? (glob)
+  tip-rev: 5004
+  tip-node: ba87cd9559559e4b91b28cb140d003985315e031
+  data-length: 123328 (pure !)
+  data-length: 123328 (rust !)
+  data-length: 123136 (no-pure no-rust !)
+  data-unused: 192 (pure !)
+  data-unused: 192 (rust !)
+  data-unused: 0 (no-pure no-rust !)
+  $ hg debugnodemap --metadata
+  uid: ???????????????? (glob)
+  tip-rev: 5005
+  tip-node: bae4d45c759e30f1cb1a40e1382cf0e0414154db
+  data-length: 123584 (pure !)
+  data-length: 123584 (rust !)
+  data-length: 123136 (no-pure no-rust !)
+  data-unused: 448 (pure !)
+  data-unused: 448 (rust !)
+  data-unused: 0 (no-pure no-rust !)
+
+  $ cat output.txt
+
