@@ -17,6 +17,7 @@ Test the persistent on-disk nodemap
   tip-node: 06ddac466af534d365326c13c3879f97caca3cb1
   data-length: 122880
   data-unused: 0
+  data-unused: 0.000%
   $ f --size .hg/store/00changelog.n
   .hg/store/00changelog.n: size=70
 
@@ -99,6 +100,7 @@ add a new commit
   tip-node: 2dd9b5258caa46469ff07d4a3da1eb3529a51f49
   data-length: 122880
   data-unused: 0
+  data-unused: 0.000%
 #else
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
@@ -106,6 +108,7 @@ add a new commit
   tip-node: 2dd9b5258caa46469ff07d4a3da1eb3529a51f49
   data-length: 123072
   data-unused: 192
+  data-unused: 0.156%
 #endif
 
   $ f --size .hg/store/00changelog.n
@@ -154,6 +157,7 @@ Test code path without mmap
   tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 123328
   data-unused: 384
+  data-unused: 0.311%
   $ f --sha256 .hg/store/00changelog-*.nd --size
   .hg/store/00changelog-????????????????.nd: size=123328, sha256=10d26e9776b6596af0f89143a54eba8cc581e929c38242a02a7b0760698c6c70 (glob)
 #endif
@@ -164,6 +168,7 @@ Test code path without mmap
   tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 123328
   data-unused: 384
+  data-unused: 0.311%
   $ f --sha256 .hg/store/00changelog-*.nd --size
   .hg/store/00changelog-????????????????.nd: size=123328, sha256=081eec9eb6708f2bf085d939b4c97bc0b6762bc8336bc4b93838f7fffa1516bf (glob)
 #endif
@@ -174,6 +179,7 @@ Test code path without mmap
   tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
+  data-unused: 0.000%
   $ f --sha256 .hg/store/00changelog-*.nd --size
   .hg/store/00changelog-????????????????.nd: size=122944, sha256=755976b22b64ab680401b45395953504e64e7fa8c31ac570f58dee21e15f9bc0 (glob)
 #endif
@@ -190,6 +196,7 @@ Test force warming the cache
   tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
+  data-unused: 0.000%
 #else
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
@@ -197,6 +204,7 @@ Test force warming the cache
   tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
+  data-unused: 0.000%
 #endif
 
 Check out of sync nodemap
@@ -230,6 +238,9 @@ If the nodemap is lagging behind, it can catch up fine
   data-unused: 256 (pure !)
   data-unused: 256 (rust !)
   data-unused: 0 (no-rust no-pure !)
+  data-unused: 0.208% (pure !)
+  data-unused: 0.208% (rust !)
+  data-unused: 0.000% (no-rust no-pure !)
   $ cp -f ../tmp-copies/* .hg/store/
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
@@ -237,6 +248,7 @@ If the nodemap is lagging behind, it can catch up fine
   tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
+  data-unused: 0.000%
   $ hg log -r "$NODE" -T '{rev}\n'
   5003
 
@@ -271,6 +283,9 @@ the nodemap should detect the changelog have been tampered with and recover.
   data-unused: 448 (pure !)
   data-unused: 123904 (rust !)
   data-unused: 0 (no-pure no-rust !)
+  data-unused: 50.273% (rust !)
+  data-unused: 0.363% (pure !)
+  data-unused: 0.000% (no-pure no-rust !)
 
   $ cp -f ../tmp-copies/* .hg/store/
   $ hg debugnodemap --metadata
@@ -279,6 +294,7 @@ the nodemap should detect the changelog have been tampered with and recover.
   tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
   data-length: 122944
   data-unused: 0
+  data-unused: 0.000%
   $ hg log -r "$OTHERNODE" -T '{rev}\n'
   5002
 
@@ -296,6 +312,7 @@ An up to date nodemap should be available to shell hooks,
   tip-node: c91af76d172f1053cca41b83f7c2e4e514fe2bcf
   data-length: 123008
   data-unused: 0
+  data-unused: 0.000%
   $ echo babar2 > babar
   $ hg ci -m 'babar2' --config "hooks.pretxnclose.nodemap-test=hg debugnodemap --metadata"
   uid: ???????????????? (glob)
@@ -307,6 +324,9 @@ An up to date nodemap should be available to shell hooks,
   data-unused: 192 (pure !)
   data-unused: 192 (rust !)
   data-unused: 0 (no-pure no-rust !)
+  data-unused: 0.156% (pure !)
+  data-unused: 0.156% (rust !)
+  data-unused: 0.000% (no-pure no-rust !)
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5004
@@ -317,6 +337,9 @@ An up to date nodemap should be available to shell hooks,
   data-unused: 192 (pure !)
   data-unused: 192 (rust !)
   data-unused: 0 (no-pure no-rust !)
+  data-unused: 0.156% (pure !)
+  data-unused: 0.156% (rust !)
+  data-unused: 0.000% (no-pure no-rust !)
 
 Another process does not see the pending nodemap content during run.
 
@@ -340,6 +363,9 @@ Another process does not see the pending nodemap content during run.
   data-unused: 192 (pure !)
   data-unused: 192 (rust !)
   data-unused: 0 (no-pure no-rust !)
+  data-unused: 0.156% (pure !)
+  data-unused: 0.156% (rust !)
+  data-unused: 0.000% (no-pure no-rust !)
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5005
@@ -350,6 +376,9 @@ Another process does not see the pending nodemap content during run.
   data-unused: 448 (pure !)
   data-unused: 448 (rust !)
   data-unused: 0 (no-pure no-rust !)
+  data-unused: 0.363% (pure !)
+  data-unused: 0.363% (rust !)
+  data-unused: 0.000% (no-pure no-rust !)
 
   $ cat output.txt
 
@@ -369,8 +398,15 @@ Check that a failing transaction will properly revert the data
   uid: ???????????????? (glob)
   tip-rev: 5005
   tip-node: bae4d45c759e30f1cb1a40e1382cf0e0414154db
-  data-length: 123584
-  data-unused: 448
+  data-length: 123584 (pure !)
+  data-length: 123584 (rust !)
+  data-length: 123136 (no-pure no-rust !)
+  data-unused: 448 (pure !)
+  data-unused: 448 (rust !)
+  data-unused: 0 (no-pure no-rust !)
+  data-unused: 0.363% (pure !)
+  data-unused: 0.363% (rust !)
+  data-unused: 0.000% (no-pure no-rust !)
   $ f --size --sha256 .hg/store/00changelog-*.nd
   .hg/store/00changelog-????????????????.nd: size=123584, sha256=8c6cef6fd3d3fac291968793ee19a4be6d0b8375e9508bd5c7d4a8879e8df180 (glob) (pure !)
   .hg/store/00changelog-????????????????.nd: size=123584, sha256=eb9e9a4bcafdb5e1344bc8a0cbb3288b2106413b8efae6265fb8a7973d7e97f9 (glob) (rust !)

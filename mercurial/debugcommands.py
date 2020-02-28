@@ -2146,6 +2146,8 @@ def debugnodemap(ui, repo, **opts):
             ui.write((b"tip-node: %s\n") % hex(docket.tip_node))
             ui.write((b"data-length: %d\n") % docket.data_length)
             ui.write((b"data-unused: %d\n") % docket.data_unused)
+            unused_perc = docket.data_unused * 100.0 / docket.data_length
+            ui.write((b"data-unused: %2.3f%%\n") % unused_perc)
 
 
 @command(

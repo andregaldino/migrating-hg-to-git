@@ -102,6 +102,9 @@ class _NoTransaction(object):
     def add(self, *args, **kwargs):
         pass
 
+    def addabort(self, *args, **kwargs):
+        pass
+
 
 def update_persistent_nodemap(revlog):
     """update the persistent nodemap right now
@@ -171,7 +174,17 @@ def _persist_nodemap(tr, revlog, pending=False):
             data = persistent_data(revlog.index)
         # EXP-TODO: if this is a cache, this should use a cache vfs, not a
         # store vfs
-        tr.add(datafile, 0)
+
+        tryunlink = revlog.opener.tryunlink
+
+        def abortck(tr):
+            tryunlink(datafile)
+
+        callback_id = b"delete-%s" % datafile
+
+        # some flavor of the transaction abort does not cleanup new file, it
+        # simply empty them.
+        tr.addabort(callback_id, abortck)
         with revlog.opener(datafile, b'w+') as fd:
             fd.write(data)
             if feed_data:
@@ -197,9 +210,6 @@ def _persist_nodemap(tr, revlog, pending=False):
     revlog._nodemap_docket = target_docket
     if feed_data:
         revlog.index.update_nodemap_data(target_docket, new_data)
-
-    # EXP-TODO: if the transaction abort, we should remove the new data and
-    # reinstall the old one.
 
     # search for old index file in all cases, some older process might have
     # left one behind.
