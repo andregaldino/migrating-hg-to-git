@@ -1067,6 +1067,9 @@ coreconfigitem(
     b'progress', b'width', default=dynamicdefault,
 )
 coreconfigitem(
+    b'pull', b'confirm', default=False,
+)
+coreconfigitem(
     b'push', b'pushvars.server', default=False,
 )
 coreconfigitem(

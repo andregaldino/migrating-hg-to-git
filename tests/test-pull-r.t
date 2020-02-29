@@ -1,3 +1,9 @@
+  $ cat <<EOF >> $HGRCPATH
+  > [ui]
+  > interactive = true
+  > EOF
+
+
   $ hg init repo
   $ cd repo
   $ echo foo > foo
@@ -42,12 +48,47 @@ don't show "(+1 heads)" message when pulling closed head
   $ hg heads -q --closed
   2:effea6de0384
   1:ed1b79f46b9a
-  $ hg pull
+  $ hg pull --confirm << EOF
+  > n
+  > EOF
   pulling from $TESTTMP/repo2
   searching for changes
   adding changesets
   adding manifests
   adding file changes
+  adding 2 changesets with 1 changes to 1 files
+  new changesets 8c900227dd5d:00cfe9073916
+  accept incoming changes (yn)? n
+  transaction abort!
+  rollback completed
+  abort: user aborted
+  [255]
+  $ hg pull --config pull.confirm=true << EOF
+  > n
+  > EOF
+  pulling from $TESTTMP/repo2
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding 2 changesets with 1 changes to 1 files
+  new changesets 8c900227dd5d:00cfe9073916
+  accept incoming changes (yn)? n
+  transaction abort!
+  rollback completed
+  abort: user aborted
+  [255]
+  $ hg pull --confirm << EOF
+  > y
+  > EOF
+  pulling from $TESTTMP/repo2
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding 2 changesets with 1 changes to 1 files
+  new changesets 8c900227dd5d:00cfe9073916
+  accept incoming changes (yn)? y
   added 2 changesets with 1 changes to 1 files
   new changesets 8c900227dd5d:00cfe9073916
   (run 'hg update' to get a working copy)
@@ -55,6 +96,12 @@ don't show "(+1 heads)" message when pulling closed head
   4:00cfe9073916
   2:effea6de0384
   1:ed1b79f46b9a
+
+pull--confirm config option should be ignored if HGPLAIN is set
+  $ HGPLAIN=1 hg pull --config pull.confirm=True
+  pulling from $TESTTMP/repo2
+  searching for changes
+  no changes found
 
   $ cd ..
 

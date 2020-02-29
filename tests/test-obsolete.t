@@ -377,15 +377,53 @@ Simple incoming test
   2:245bde4270cd (public) [ ] add original_c
   6:6f9641995072 (draft) [tip ] add n3w_3_c
 
-Try to pull markers
+Try to pull markers while testing pull --confirm
 (extinct changeset are excluded but marker are pushed)
 
-  $ hg pull ../tmpb
+  $ hg pull ../tmpb --confirm --config ui.interactive=true <<EOF
+  > n
+  > EOF
   pulling from ../tmpb
   requesting all changes
   adding changesets
   adding manifests
   adding file changes
+  adding 4 changesets with 4 changes to 4 files (+1 heads)
+  5 new obsolescence markers
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
+  accept incoming changes (yn)? n
+  transaction abort!
+  rollback completed
+  abort: user aborted
+  [255]
+  $ HGPLAIN=1 hg pull ../tmpb --confirm --config ui.interactive=true <<EOF
+  > n
+  > EOF
+  pulling from ../tmpb
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding 4 changesets with 4 changes to 4 files (+1 heads)
+  5 new obsolescence markers
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
+  accept incoming changes (yn)? n
+  transaction abort!
+  rollback completed
+  abort: user aborted
+  [255]
+  $ hg pull ../tmpb --confirm --config ui.interactive=true <<EOF
+  > y
+  > EOF
+  pulling from ../tmpb
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding 4 changesets with 4 changes to 4 files (+1 heads)
+  5 new obsolescence markers
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
+  accept incoming changes (yn)? y
   added 4 changesets with 4 changes to 4 files (+1 heads)
   5 new obsolescence markers
   new changesets 1f0dee641bb7:6f9641995072 (1 drafts)

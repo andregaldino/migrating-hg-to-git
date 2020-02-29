@@ -3,6 +3,9 @@
  * `hg purge`/`hg clean` can now delete ignored files instead of
    untracked files, with the new -i flag.
 
+ * `hg pull` now has a `--confirm` flag to prompt before applying changes.
+   Config option `pull.confirm` is also added for that.
+
  * `hg log` now defaults to using an '%' symbol for commits involved
     in unresolved merge conflicts. That includes unresolved conflicts
     caused by e.g. `hg update --merge` and `hg graft`. '@' still takes

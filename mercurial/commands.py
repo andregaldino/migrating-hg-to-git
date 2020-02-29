@@ -5344,6 +5344,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
             None,
             _(b'run even when remote repository is unrelated'),
         ),
+        (b'', b'confirm', None, _(b'confirm pull before applying changes'),),
         (
             b'r',
             b'rev',
@@ -5460,6 +5461,7 @@ def pull(ui, repo, source=b"default", **opts):
                 force=opts.get(b'force'),
                 bookmarks=opts.get(b'bookmark', ()),
                 opargs=pullopargs,
+                confirm=opts.get(b'confirm'),
             ).cgresult
 
             # brev is a name, which might be a bookmark to be activated at

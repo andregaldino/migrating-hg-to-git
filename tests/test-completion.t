@@ -345,7 +345,7 @@ Show all commands + options
   parents: rev, style, template
   paths: template
   phase: public, draft, secret, force, rev
-  pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
+  pull: update, force, confirm, rev, bookmark, branch, ssh, remotecmd, insecure
   push: force, rev, bookmark, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
   recover: verify
   remove: after, force, subrepos, include, exclude, dry-run
