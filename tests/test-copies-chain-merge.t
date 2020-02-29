@@ -23,10 +23,11 @@ use git diff to see rename
 
 Add some linear rename initialy
 
-  $ touch a b
-  $ hg ci -Am 'i-0 initial commit: a b'
+  $ touch a b h
+  $ hg ci -Am 'i-0 initial commit: a b h'
   adding a
   adding b
+  adding h
   $ hg mv a c
   $ hg ci -Am 'i-1: a -move-> c'
   $ hg mv c d
@@ -36,7 +37,7 @@ Add some linear rename initialy
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 And having another branch with renames on the other side
@@ -54,7 +55,7 @@ And having another branch with renames on the other side
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Have a branching with nothing on one side
@@ -71,7 +72,7 @@ Have a branching with nothing on one side
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 
@@ -107,7 +108,7 @@ Merge the two branches we just defined (in both directions)
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Create a branch that delete a file previous renamed
@@ -124,7 +125,7 @@ Create a branch that delete a file previous renamed
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Merge:
@@ -168,7 +169,7 @@ and recreate an unrelated file after the merge
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Create a branch that delete a file previous renamed and recreate it
@@ -190,7 +191,7 @@ Create a branch that delete a file previous renamed and recreate it
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Merge:
@@ -232,7 +233,7 @@ Note:
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Having another branch renaming a different file to the same filename as another
@@ -253,7 +254,7 @@ Having another branch renaming a different file to the same filename as another
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Merge:
@@ -290,7 +291,7 @@ Merge:
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 Note:
@@ -459,7 +460,7 @@ not a merge.
   |
   o  1 i-1: a -move-> c]
   |
-  o  0 i-0 initial commit: a b]
+  o  0 i-0 initial commit: a b h]
   
 
 This `hg log` output is correct
