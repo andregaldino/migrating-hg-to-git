@@ -299,8 +299,9 @@ Note:
 
 final summary
 
+  $ hg update null --quiet
   $ hg log -G
-  @    20 mEAm-0 simple merge - the other way]
+  o    20 mEAm-0 simple merge - the other way]
   |\
   +---o  19 mAEm-0 simple merge - one way]
   | |/
