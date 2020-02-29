@@ -165,12 +165,6 @@ class transaction(util.transactional):
         self._journal = journalname
         self._undoname = undoname
         self._queue = []
-        # A callback to validate transaction content before closing it.
-        # should raise exception is anything is wrong.
-        # target user is repository hooks.
-        if validator is None:
-            validator = lambda tr: None
-        self._validator = validator
         # A callback to do something just after releasing transaction.
         if releasefn is None:
             releasefn = lambda tr, success: None
@@ -214,6 +208,11 @@ class transaction(util.transactional):
         self._anypending = False
         # holds callback to call when writing the transaction
         self._finalizecallback = {}
+        # holds callback to call when validating the transaction
+        # should raise exception if anything is wrong
+        self._validatecallback = {}
+        if validator is not None:
+            self._validatecallback[b'001-userhooks'] = validator
         # hold callback for post transaction close
         self._postclosecallback = {}
         # holds callbacks to call during abort
@@ -506,11 +505,21 @@ class transaction(util.transactional):
         self._abortcallback[category] = callback
 
     @active
+    def addvalidator(self, category, callback):
+        """ adds a callback to be called when validating the transaction.
+
+        The transaction will be given as the first argument to the callback.
+
+        callback should raise exception if to abort transaction """
+        self._validatecallback[category] = callback
+
+    @active
     def close(self):
         '''commit the transaction'''
         if self._count == 1:
-            self._validator(self)  # will raise exception if needed
-            self._validator = None  # Help prevent cycles.
+            for category in sorted(self._validatecallback):
+                self._validatecallback[category](self)
+            self._validatecallback = None  # Help prevent cycles.
             self._generatefiles(group=GEN_GROUP_PRE_FINALIZE)
             while self._finalizecallback:
                 callbacks = self._finalizecallback
