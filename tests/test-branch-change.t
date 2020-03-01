@@ -355,6 +355,13 @@ Changing branch of a merge commit
   abort: a branch of the same name already exists
   [255]
 
+  $ hg branch -r . stable --force
+  changed branch on 1 changesets
+  $ hg branches
+  stable                        34:d1c2addda4a2
+  jkl                           29:6bc1c6c2c9da (inactive)
+  ghi                           28:2f1019bd29d2 (inactive)
+
 Changing branch on public changeset
 
   $ hg phase -r . -p
