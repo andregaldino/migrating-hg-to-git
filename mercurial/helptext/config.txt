@@ -2010,8 +2010,8 @@ Controls generic server settings.
     - 'check-related': push is only aborted if it affects head that got also
       affected while the push was preparing.
 
-    This requires compatible client (version 4.3 and later). Old client will
-    use 'strict'.
+    'check-related' only takes effect for compatible clients (version
+    4.3 and later). Older clients will use 'strict'.
 
 ``validate``
     Whether to validate the completeness of pushed changesets by
