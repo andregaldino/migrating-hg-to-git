@@ -7665,6 +7665,7 @@ def update(ui, repo, node=None, **opts):
 
     Returns 0 on success, 1 if there are unresolved files.
     """
+    cmdutil.check_at_most_one_arg(opts, b'clean', b'check', b'merge')
     rev = opts.get('rev')
     date = opts.get('date')
     clean = opts.get('clean')
@@ -7685,14 +7686,6 @@ def update(ui, repo, node=None, **opts):
 
     if date and rev is not None:
         raise error.Abort(_(b"you can't specify a revision and a date"))
-
-    if len([x for x in (clean, check, merge) if x]) > 1:
-        raise error.Abort(
-            _(
-                b"can only specify one of -C/--clean, -c/--check, "
-                b"or -m/--merge"
-            )
-        )
 
     updatecheck = None
     if check:
