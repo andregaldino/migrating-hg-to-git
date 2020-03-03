@@ -347,6 +347,48 @@ Merge:
   o  0 i-0 initial commit: a b h]
   
 
+Merge:
+- one with change to a file
+- one deleting and recreating the file
+
+  $ hg up 'desc("i-2")'
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo "some update" >> d
+  $ hg commit -m "g-1: update d"
+  created new head
+  $ hg up 'desc("d-2")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("g-1")' --tool :union
+  merging d
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m 'mDGm-0 simple merge - one way'
+  $ hg up 'desc("g-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("d-2")' --tool :union
+  merging d
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m 'mGDm-0 simple merge - the other way'
+  created new head
+  $ hg log -G --rev '::(desc("mDGm")+desc("mGDm"))'
+  @    27 mGDm-0 simple merge - the other way]
+  |\
+  +---o  26 mDGm-0 simple merge - one way]
+  | |/
+  | o  25 g-1: update d]
+  | |
+  o |  14 d-2 re-add d]
+  | |
+  o |  13 d-1 delete d]
+  |/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
+  o  0 i-0 initial commit: a b h]
+  
+
 
 Check results
 =============
@@ -499,6 +541,9 @@ not a merge.
        2      15 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
        3      22 c72365ee036f 000000000000 000000000000
        4      23 863d9bc49190 01c2f5eabdc4 c72365ee036f
+       5      25 7bded9d9da1f 01c2f5eabdc4 000000000000
+       6      26 f04cac32d703 b004912a8510 7bded9d9da1f
+       7      27 d7a5eafb9322 7bded9d9da1f b004912a8510
 
 (This `hg log` output if wrong, since no merge actually happened).
 
@@ -653,5 +698,58 @@ The following output is correct.
   |
   o  21 f-1: rename h -> i]
   :
+  o  0 i-0 initial commit: a b h]
+  
+
+Merge:
+- one with change to a file
+- one deleting and recreating the file
+
+Unlike in the 'BD/DB' cases, an actuall merge happened here. So we should
+consider history and rename on both branch of the merge.
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mDGm-0")'
+  A d
+    a
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGDm-0")'
+  A d
+    a
+  R a
+  $ hg status --copies --rev 'desc("d-2")' --rev 'desc("mDGm-0")'
+  M d
+  $ hg status --copies --rev 'desc("d-2")' --rev 'desc("mGDm-0")'
+  M d
+  $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mDGm-0")'
+  M d
+  $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mGDm-0")'
+  M d
+
+  $ hg log -Gfr 'desc("mDGm-0")' d
+  o    26 mDGm-0 simple merge - one way]
+  |\
+  | o  25 g-1: update d]
+  | |
+  o |  14 d-2 re-add d]
+  |/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
+  o  0 i-0 initial commit: a b h]
+  
+
+
+  $ hg log -Gfr 'desc("mDGm-0")' d
+  o    26 mDGm-0 simple merge - one way]
+  |\
+  | o  25 g-1: update d]
+  | |
+  o |  14 d-2 re-add d]
+  |/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
   o  0 i-0 initial commit: a b h]
   
