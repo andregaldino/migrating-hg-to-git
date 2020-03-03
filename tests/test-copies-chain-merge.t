@@ -581,39 +581,3 @@ Comparing with a merge re-adding the file afterward
     a
   R a
   R b
-
-  $ hg log -Gfr 'desc("mAEm-0")' f
-  o    19 mAEm-0 simple merge - one way]
-  |\
-  | o  18 e-2 g -move-> f]
-  | |
-  | o  17 e-1 b -move-> g]
-  | |
-  o |  4 a-2: e -move-> f]
-  | |
-  o |  3 a-1: d -move-> e]
-  |/
-  o  2 i-2: c -move-> d]
-  |
-  o  1 i-1: a -move-> c]
-  |
-  o  0 i-0 initial commit: a b]
-  
-
-  $ hg log -Gfr 'desc("mEAm-0")' f
-  @    20 mEAm-0 simple merge - the other way]
-  |\
-  | o  18 e-2 g -move-> f]
-  | |
-  | o  17 e-1 b -move-> g]
-  | |
-  o |  4 a-2: e -move-> f]
-  | |
-  o |  3 a-1: d -move-> e]
-  |/
-  o  2 i-2: c -move-> d]
-  |
-  o  1 i-1: a -move-> c]
-  |
-  o  0 i-0 initial commit: a b]
-  
