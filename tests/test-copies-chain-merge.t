@@ -299,6 +299,55 @@ Note:
 | This lead to bad copy tracing information to be dug up.
 
 
+Merge:
+- one with change to an unrelated file (b)
+- one overwriting a file (d) with a rename (from h to i to d)
+
+  $ hg up 'desc("i-2")'
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg mv h i
+  $ hg commit -m "f-1: rename h -> i"
+  created new head
+  $ hg mv --force i d
+  $ hg commit -m "f-2: rename i -> d"
+  $ hg debugindex d
+     rev linkrev nodeid       p1           p2
+       0       2 01c2f5eabdc4 000000000000 000000000000
+       1      10 b004912a8510 000000000000 000000000000
+       2      15 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
+       3      22 c72365ee036f 000000000000 000000000000
+  $ hg up 'desc("b-1")'
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("f-2")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m 'mBFm-0 simple merge - one way'
+  $ hg up 'desc("f-2")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("b-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m 'mFBm-0 simple merge - the other way'
+  created new head
+  $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
+  @    24 mFBm-0 simple merge - the other way]
+  |\
+  +---o  23 mBFm-0 simple merge - one way]
+  | |/
+  | o  22 f-2: rename i -> d]
+  | |
+  | o  21 f-1: rename h -> i]
+  | |
+  o |  5 b-1: b update]
+  |/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
+  o  0 i-0 initial commit: a b h]
+  
+
+
 Check results
 =============
 
@@ -448,6 +497,8 @@ not a merge.
        0       2 01c2f5eabdc4 000000000000 000000000000
        1      10 b004912a8510 000000000000 000000000000
        2      15 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
+       3      22 c72365ee036f 000000000000 000000000000
+       4      23 863d9bc49190 01c2f5eabdc4 c72365ee036f
 
 (This `hg log` output if wrong, since no merge actually happened).
 
@@ -539,3 +590,68 @@ Comparing with a merge with colliding rename
     a
   R a
   R b
+
+Merge:
+- one with change to an unrelated file (b)
+- one overwriting a file (d) with a rename (from h to i to d)
+
+The overwriting should take over. However, the behavior is currently buggy
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBFm-0")'
+  M b
+  A d
+    a (true !)
+    h (false !)
+  R a
+  R h
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFBm-0")'
+  M b
+  A d
+    h
+  R a
+  R h
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBFm-0")'
+  M d
+  R h
+  $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mBFm-0")'
+  M b
+  M d
+  $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mBFm-0")'
+  M b
+  M d
+  R i
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mFBm-0")'
+  M d
+  R h
+  $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mFBm-0")'
+  M b
+  $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mFBm-0")'
+  M b
+  M d
+  R i
+
+The following graphlog is wrong, the "a -> c -> d" chain was overwritten and should not appear.
+
+  $ hg log -Gfr 'desc("mBFm-0")' d
+  o    23 mBFm-0 simple merge - one way]
+  |\
+  o :  22 f-2: rename i -> d]
+  | :
+  o :  21 f-1: rename h -> i]
+  :/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
+  o  0 i-0 initial commit: a b h]
+  
+
+The following output is correct.
+
+  $ hg log -Gfr 'desc("mFBm-0")' d
+  o  22 f-2: rename i -> d]
+  |
+  o  21 f-1: rename h -> i]
+  :
+  o  0 i-0 initial commit: a b h]
+  
