@@ -390,6 +390,45 @@ Merge:
   
 
 
+Merge:
+- one with change to a file (d)
+- one overwriting that file with a rename (from h to i, to d)
+
+  $ hg up 'desc("f-2")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("g-1")' --tool :union
+  merging d
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m 'mFGm-0 simple merge - one way'
+  created new head
+  $ hg up 'desc("g-1")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("f-2")' --tool :union
+  merging d
+  0 files updated, 1 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m 'mGFm-0 simple merge - the other way'
+  created new head
+  $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
+  @    29 mGFm-0 simple merge - the other way]
+  |\
+  +---o  28 mFGm-0 simple merge - one way]
+  | |/
+  | o  25 g-1: update d]
+  | |
+  o |  22 f-2: rename i -> d]
+  | |
+  o |  21 f-1: rename h -> i]
+  |/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
+  o  0 i-0 initial commit: a b h]
+  
+
+
 Check results
 =============
 
@@ -544,6 +583,7 @@ not a merge.
        5      25 7bded9d9da1f 01c2f5eabdc4 000000000000
        6      26 f04cac32d703 b004912a8510 7bded9d9da1f
        7      27 d7a5eafb9322 7bded9d9da1f b004912a8510
+       8      28 2ed7a51aed47 c72365ee036f 7bded9d9da1f
 
 (This `hg log` output if wrong, since no merge actually happened).
 
@@ -746,6 +786,80 @@ consider history and rename on both branch of the merge.
   | o  25 g-1: update d]
   | |
   o |  14 d-2 re-add d]
+  |/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
+  o  0 i-0 initial commit: a b h]
+  
+
+
+Merge:
+- one with change to a file (d)
+- one overwriting that file with a rename (from h to i, to d)
+
+This case is similar to BF/FB, but an actual merge happens, so both side of the
+history are relevant.
+
+Note:
+| In this case, the merge get conflicting information since on one side we have
+| "a -> c -> d". and one the other one we have "h -> i -> d".
+|
+| The current code arbitrarily pick one side
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFGm-0")'
+  A d
+    a
+  R a
+  R h
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGFm-0")'
+  A d
+    a
+  R a
+  R h
+  $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mFGm-0")'
+  M d
+  $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mGFm-0")'
+  M d
+  $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mFGm-0")'
+  M d
+  R i
+  $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mGFm-0")'
+  M d
+  R i
+  $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mFGm-0")'
+  M d
+  R h
+  $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mGFm-0")'
+  M d
+  R h
+
+  $ hg log -Gfr 'desc("mFGm-0")' d
+  o    28 mFGm-0 simple merge - one way]
+  |\
+  | o  25 g-1: update d]
+  | |
+  o |  22 f-2: rename i -> d]
+  | |
+  o |  21 f-1: rename h -> i]
+  |/
+  o  2 i-2: c -move-> d]
+  |
+  o  1 i-1: a -move-> c]
+  |
+  o  0 i-0 initial commit: a b h]
+  
+
+
+  $ hg log -Gfr 'desc("mGFm-0")' d
+  @    29 mGFm-0 simple merge - the other way]
+  |\
+  | o  25 g-1: update d]
+  | |
+  o |  22 f-2: rename i -> d]
+  | |
+  o |  21 f-1: rename h -> i]
   |/
   o  2 i-2: c -move-> d]
   |
