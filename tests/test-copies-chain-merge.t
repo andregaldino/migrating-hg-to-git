@@ -195,7 +195,7 @@ Create a branch that delete a file previous renamed and recreate it
 
 Merge:
 - one with change to an unrelated file
-- one deleting and recreating the change
+- one deleting and recreating the file
 
 Note:
 | In this case, the merge get conflicting information since on one side we have
@@ -294,8 +294,8 @@ Merge:
   
 
 Note:
-| In this case, the merge get conflicting information since each side have a
-| different way to reach 'f'.
+| In this case, one of the merge wrongly record a merge while there is none.
+| This lead to bad copy tracing information to be dug up.
 
 final summary
 
@@ -453,11 +453,8 @@ Merge:
 - one deleting and recreating the change
 
 Note:
-| In this case, the merge get conflicting information since on one side we have
-| a "brand new" d. and one the other one we have "d renamed from c (itself
-| renamed from c)".
-|
-| The current code arbitrarily pick one side
+| In this case, one of the merge wrongly record a merge while there is none.
+| This lead to bad copy tracing information to be dug up.
 
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBDm-0")'
   M d
@@ -475,14 +472,18 @@ Note:
   M b
   M d
 
-The recorded copy is different depending of where we started the merge from since
+The bugs makes recorded copy is different depending of where we started the merge from since
 
   $ hg manifest --debug --rev 'desc("mBDm-0")' | grep '644   d'
   0bb5445dc4d02f4e0d86cf16f9f3a411d0f17744 644   d
   $ hg manifest --debug --rev 'desc("mDBm-0")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
 
-This second b004912a8510032a0350a74daa2803dadfb00e12 seems wrong. We should record the merge
+The 0bb5445dc4d02f4e0d86cf16f9f3a411d0f17744 entry is wrong, since the file was
+deleted on one side (then recreate) and untouched on the other side, no "merge"
+has happened. The resulting `d` file is the untouched version from branch `D`,
+not a merge.
+
   $ hg manifest --debug --rev 'desc("d-2")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
   $ hg manifest --debug --rev 'desc("b-1")' | grep '644   d'
@@ -492,6 +493,8 @@ This second b004912a8510032a0350a74daa2803dadfb00e12 seems wrong. We should reco
        0       2 01c2f5eabdc4 000000000000 000000000000
        1      10 b004912a8510 000000000000 000000000000
        2      15 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
+
+(This `hg log` output if wrong, since no merge actually happened).
 
   $ hg log -Gfr 'desc("mBDm-0")' d
   o    15 mBDm-0 simple merge - one way]
@@ -505,8 +508,7 @@ This second b004912a8510032a0350a74daa2803dadfb00e12 seems wrong. We should reco
   o  0 i-0 initial commit: a b]
   
 
-(That output seems wrong, if we had opportunity to record the merge, we should
-probably have recorded the merge).
+This `hg log` output is correct
 
   $ hg log -Gfr 'desc("mDBm-0")' d
   o  14 d-2 re-add d]
