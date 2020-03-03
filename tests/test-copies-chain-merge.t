@@ -257,8 +257,8 @@ Having another branch renaming a different file to the same filename as another
   
 
 Merge:
-- one with change to an unrelated file
-- one deleting and recreating the change
+- the "e-" branch renaming b to f (through 'g')
+- the "a-" branch renaming d to f (through e)
 
   $ hg up 'desc("a-2")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -525,11 +525,11 @@ This `hg log` output is correct
   A d
   R a
 
-Comparing with a merge re-adding the file afterward
----------------------------------------------------
+Comparing with a merge with colliding rename
+--------------------------------------------
 
-- one with change to an unrelated file
-- one deleting and recreating the change
+- the "e-" branch renaming b to f (through 'g')
+- the "a-" branch renaming d to f (through e)
 
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
   eb806e34ef6be4c264effd5933d31004ad15a793 644   f
