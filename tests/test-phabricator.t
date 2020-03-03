@@ -181,6 +181,56 @@ Phabsending a skipped commit:
   1849d7828727 mapped to old nodes ['1849d7828727']
   D7919 - skipped - 1849d7828727: create comment for phabricator test
 
+Phabsend doesn't create an instability when rebasing existing revisions on top
+of new revisions.
+
+  $ hg init reorder
+  $ cd reorder
+  $ cat >> .hg/hgrc <<EOF
+  > [phabricator]
+  > url = https://phab.mercurial-scm.org/
+  > callsign = HG
+  > [experimental]
+  > evolution = all
+  > EOF
+
+  $ echo "add" > file1.txt
+  $ hg ci -Aqm 'added'
+  $ echo "mod1" > file1.txt
+  $ hg ci -m 'modified 1'
+  $ echo "mod2" > file1.txt
+  $ hg ci -m 'modified 2'
+  $ hg phabsend -r . --test-vcr "$VCR/phabsend-add-parent-setup.json"
+  D8433 - created - 5d3959e20d1d: modified 2
+  new commits: ['2b4aa8a88d61']
+  $ hg log -G -T compact
+  @  3[tip]:1   2b4aa8a88d61   1970-01-01 00:00 +0000   test
+  |    modified 2
+  |
+  o  1   d549263bcb2d   1970-01-01 00:00 +0000   test
+  |    modified 1
+  |
+  o  0   5cbade24e0fa   1970-01-01 00:00 +0000   test
+       added
+  
+  $ hg phabsend -r ".^ + ." --test-vcr "$VCR/phabsend-add-parent.json"
+  2b4aa8a88d61 mapped to old nodes ['2b4aa8a88d61']
+  D8434 - created - d549263bcb2d: modified 1
+  D8433 - updated - 2b4aa8a88d61: modified 2
+  new commits: ['876a60d024de']
+  new commits: ['0c6523cb1d0f']
+  $ hg log -G -T compact
+  @  5[tip]   1dff6b051abf   1970-01-01 00:00 +0000   test
+  |    modified 2
+  |
+  o  4:0   eb3752621d45   1970-01-01 00:00 +0000   test
+  |    modified 1
+  |
+  o  0   5cbade24e0fa   1970-01-01 00:00 +0000   test
+       added
+  
+  $ cd ..
+
 Phabesending a new binary, a modified binary, and a removed binary
 
   >>> open('bin', 'wb').write(b'\0a') and None

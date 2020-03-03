@@ -1468,7 +1468,11 @@ def phabsend(ui, repo, *revs, **opts):
 
                 newdesc = get_amended_desc(drev, old, fold)
                 # Make sure commit message contain "Differential Revision"
-                if old.description() != newdesc:
+                if (
+                    old.description() != newdesc
+                    or old.p1().node() in mapping
+                    or old.p2().node() in mapping
+                ):
                     if old.phase() == phases.public:
                         ui.warn(
                             _(b"warning: not updating public commit %s\n")
