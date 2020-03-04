@@ -1655,6 +1655,7 @@ def readpatch(ui, drevs, write):
     [(b'', b'stack', False, _(b'read dependencies'))],
     _(b'DREVSPEC [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
+    optionalrepo=True,
 )
 def phabread(ui, repo, spec, **opts):
     """print patches from Phabricator suitable for importing
@@ -1678,13 +1679,13 @@ def phabread(ui, repo, spec, **opts):
     opts = pycompat.byteskwargs(opts)
     if opts.get(b'stack'):
         spec = b':(%s)' % spec
-    drevs = querydrev(repo.ui, spec)
+    drevs = querydrev(ui, spec)
 
     def _write(patches):
         for drev, content in patches:
             ui.write(content)
 
-    readpatch(repo.ui, drevs, _write)
+    readpatch(ui, drevs, _write)
 
 
 @vcrcommand(
