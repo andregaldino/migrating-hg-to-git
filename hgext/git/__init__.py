@@ -230,7 +230,7 @@ def init(orig, ui, dest=b'.', **opts):
 
 
 def reposetup(ui, repo):
-    if isinstance(repo.store, gitstore):
+    if repo.local() and isinstance(repo.store, gitstore):
         orig = repo.__class__
         repo.store._progress_factory = repo.ui.makeprogress
 
