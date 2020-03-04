@@ -698,7 +698,7 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
             // We walked all dirs under the roots that weren't ignored, and
             // everything that matched was stat'ed and is already in results.
             // The rest must thus be ignored or under a symlink.
-            let mut path_auditor = PathAuditor::new(root_dir);
+            let path_auditor = PathAuditor::new(root_dir);
 
             for (ref filename, entry) in to_visit {
                 // Report ignored items in the dmap as long as they are not

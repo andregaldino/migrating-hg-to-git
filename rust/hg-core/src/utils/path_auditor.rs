@@ -13,13 +13,14 @@ use crate::utils::{
 };
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, RwLock};
 
 /// Ensures that a path is valid for use in the repository i.e. does not use
 /// any banned components, does not traverse a symlink, etc.
 #[derive(Debug, Default)]
 pub struct PathAuditor {
-    audited: HashSet<HgPathBuf>,
-    audited_dirs: HashSet<HgPathBuf>,
+    audited: Mutex<HashSet<HgPathBuf>>,
+    audited_dirs: RwLock<HashSet<HgPathBuf>>,
     root: PathBuf,
 }
 
@@ -31,7 +32,7 @@ impl PathAuditor {
         }
     }
     pub fn audit_path(
-        &mut self,
+        &self,
         path: impl AsRef<HgPath>,
     ) -> Result<(), HgPathError> {
         // TODO windows "localpath" normalization
@@ -40,7 +41,7 @@ impl PathAuditor {
             return Ok(());
         }
         // TODO case normalization
-        if self.audited.contains(path) {
+        if self.audited.lock().unwrap().contains(path) {
             return Ok(());
         }
         // AIX ignores "/" at end of path, others raise EISDIR.
@@ -113,14 +114,14 @@ impl PathAuditor {
         for index in 0..parts.len() {
             let prefix = &parts[..index + 1].join(&b'/');
             let prefix = HgPath::new(prefix);
-            if self.audited_dirs.contains(prefix) {
+            if self.audited_dirs.read().unwrap().contains(prefix) {
                 continue;
             }
             self.check_filesystem(&prefix, &path)?;
-            self.audited_dirs.insert(prefix.to_owned());
+            self.audited_dirs.write().unwrap().insert(prefix.to_owned());
         }
 
-        self.audited.insert(path.to_owned());
+        self.audited.lock().unwrap().insert(path.to_owned());
 
         Ok(())
     }
@@ -171,7 +172,7 @@ impl PathAuditor {
         Ok(())
     }
 
-    pub fn check(&mut self, path: impl AsRef<HgPath>) -> bool {
+    pub fn check(&self, path: impl AsRef<HgPath>) -> bool {
         self.audit_path(path).is_ok()
     }
 }
@@ -184,7 +185,7 @@ mod tests {
 
     #[test]
     fn test_path_auditor() {
-        let mut auditor = PathAuditor::new(get_path_from_bytes(b"/tmp"));
+        let auditor = PathAuditor::new(get_path_from_bytes(b"/tmp"));
 
         let path = HgPath::new(b".hg/00changelog.i");
         assert_eq!(

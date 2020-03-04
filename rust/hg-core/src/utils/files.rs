@@ -210,7 +210,7 @@ pub fn canonical_path(
     } else {
         name.to_owned()
     };
-    let mut auditor = PathAuditor::new(&root);
+    let auditor = PathAuditor::new(&root);
     if name != root && name.starts_with(&root) {
         let name = name.strip_prefix(&root).unwrap();
         auditor.audit_path(path_to_hg_path_buf(name)?)?;
