@@ -7665,7 +7665,7 @@ def update(ui, repo, node=None, **opts):
 
     Returns 0 on success, 1 if there are unresolved files.
     """
-    cmdutil.check_at_most_one_arg(opts, b'clean', b'check', b'merge')
+    cmdutil.check_at_most_one_arg(opts, 'clean', 'check', 'merge')
     rev = opts.get('rev')
     date = opts.get('date')
     clean = opts.get('clean')
