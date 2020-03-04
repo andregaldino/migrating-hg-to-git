@@ -29,6 +29,21 @@ this test.
   >  --test-vcr "$VCR/phabread-conduit-error.json" D4480 | head
   abort: Conduit Error (ERR-INVALID-AUTH): API token "cli-notavalidtoken" has the wrong length. API tokens should be 32 characters long.
 
+Missing arguments print the command help
+
+  $ hg phabread
+  hg phabread: invalid arguments
+  hg phabread DREVSPEC [OPTIONS]
+  
+  print patches from Phabricator suitable for importing
+  
+  options:
+  
+    --stack read dependencies
+  
+  (use 'hg phabread -h' to show more help)
+  [255]
+
 Basic phabread:
   $ hg phabread --test-vcr "$VCR/phabread-4480.json" D4480 | head
   # HG changeset patch

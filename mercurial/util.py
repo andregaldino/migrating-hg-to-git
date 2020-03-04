@@ -1846,14 +1846,14 @@ def pathto(root, n1, n2):
     return pycompat.ossep.join(([b'..'] * len(a)) + b) or b'.'
 
 
-def checksignature(func):
+def checksignature(func, depth=1):
     '''wrap a function with code to check for calling errors'''
 
     def check(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except TypeError:
-            if len(traceback.extract_tb(sys.exc_info()[2])) == 1:
+            if len(traceback.extract_tb(sys.exc_info()[2])) == depth:
                 raise error.SignatureError
             raise
 

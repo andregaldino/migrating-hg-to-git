@@ -257,15 +257,17 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
 
-        inner.__name__ = fn.__name__
-        inner.__doc__ = fn.__doc__
+        cmd = util.checksignature(inner, depth=2)
+        cmd.__name__ = fn.__name__
+        cmd.__doc__ = fn.__doc__
+
         return command(
             name,
             fullflags,
             spec,
             helpcategory=helpcategory,
             optionalrepo=optionalrepo,
-        )(inner)
+        )(cmd)
 
     return decorate
 
