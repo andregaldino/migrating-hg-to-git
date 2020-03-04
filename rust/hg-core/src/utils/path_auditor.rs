@@ -67,7 +67,7 @@ impl PathAuditor {
         // Windows shortname aliases
         for part in parts.iter() {
             if part.contains(&b'~') {
-                let mut split = part.splitn(1, |b| *b == b'~');
+                let mut split = part.splitn(2, |b| *b == b'~');
                 let first =
                     split.next().unwrap().to_owned().to_ascii_uppercase();
                 let last = split.next().unwrap();
