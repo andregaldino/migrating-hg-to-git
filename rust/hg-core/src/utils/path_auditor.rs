@@ -117,6 +117,7 @@ impl PathAuditor {
                 continue;
             }
             self.check_filesystem(&prefix, &path)?;
+            self.audited_dirs.insert(prefix.to_owned());
         }
 
         self.audited.insert(path.to_owned());
