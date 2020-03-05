@@ -665,7 +665,9 @@ class buildhgextindex(Command):
         # here no extension enabled, disabled() lists up everything
         code = (
             'import pprint; from mercurial import extensions; '
-            'pprint.pprint(extensions.disabled())'
+            'ext = extensions.disabled();'
+            'ext.pop("__index__", None);'
+            'pprint.pprint(ext)'
         )
         returncode, out, err = runcmd(
             [sys.executable, '-c', code], localhgenv()

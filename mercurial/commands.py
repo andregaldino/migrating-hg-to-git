@@ -1340,7 +1340,7 @@ def branch(ui, repo, label=None, **opts):
 
             scmutil.checknewlabel(repo, label, b'branch')
             if revs:
-                return cmdutil.changebranch(ui, repo, revs, label)
+                return cmdutil.changebranch(ui, repo, revs, label, opts)
 
             if not opts.get(b'force') and label in repo.branchmap():
                 if label not in [p.branch() for p in repo[None].parents()]:

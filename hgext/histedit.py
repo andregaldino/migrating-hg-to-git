@@ -1645,7 +1645,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             pass
 
 
-def _chistedit(ui, repo, *freeargs, **opts):
+def _chistedit(ui, repo, freeargs, opts):
     """interactively edit changeset history via a curses interface
 
     Provides a ncurses interface to histedit. Press ? in chistedit mode
@@ -1717,8 +1717,8 @@ def _chistedit(ui, repo, *freeargs, **opts):
             with repo.vfs(b'chistedit', b'w+') as fp:
                 for r in rules:
                     fp.write(r)
-                opts['commands'] = fp.name
-            return _texthistedit(ui, repo, *freeargs, **opts)
+                opts[b'commands'] = fp.name
+            return _texthistedit(ui, repo, freeargs, opts)
     except KeyboardInterrupt:
         pass
     return -1
@@ -1855,23 +1855,25 @@ def histedit(ui, repo, *freeargs, **opts):
     for intentional "edit" command, but also for resolving unexpected
     conflicts).
     """
+    opts = pycompat.byteskwargs(opts)
+
     # kludge: _chistedit only works for starting an edit, not aborting
     # or continuing, so fall back to regular _texthistedit for those
     # operations.
     if (
         ui.interface(b'histedit') == b'curses'
-        and _getgoal(pycompat.byteskwargs(opts)) == goalnew
+        and _getgoal(opts) == goalnew
     ):
-        return _chistedit(ui, repo, *freeargs, **opts)
-    return _texthistedit(ui, repo, *freeargs, **opts)
+        return _chistedit(ui, repo, freeargs, opts)
+    return _texthistedit(ui, repo, freeargs, opts)
 
 
-def _texthistedit(ui, repo, *freeargs, **opts):
+def _texthistedit(ui, repo, freeargs, opts):
     state = histeditstate(repo)
     with repo.wlock() as wlock, repo.lock() as lock:
         state.wlock = wlock
         state.lock = lock
-        _histedit(ui, repo, state, *freeargs, **opts)
+        _histedit(ui, repo, state, freeargs, opts)
 
 
 goalcontinue = b'continue'
@@ -1952,8 +1954,7 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
                 )
 
 
-def _histedit(ui, repo, state, *freeargs, **opts):
-    opts = pycompat.byteskwargs(opts)
+def _histedit(ui, repo, state, freeargs, opts):
     fm = ui.formatter(b'histedit', opts)
     fm.startitem()
     goal = _getgoal(opts)

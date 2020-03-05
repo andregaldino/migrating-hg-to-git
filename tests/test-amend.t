@@ -487,7 +487,7 @@ Modifying a file while the editor is open can cause dirstate corruption
   $ echo beta >> foo
   $ cat > $TESTTMP/touchy_editor.sh <<EOF
   > sleep 1
-  > echo delta >> $TESTTMP/modify-during-amend/foo
+  > echo delta >> "$TESTTMP/modify-during-amend/foo"
   > sleep 1
   > echo hi > "\$1"
   > sleep 1
