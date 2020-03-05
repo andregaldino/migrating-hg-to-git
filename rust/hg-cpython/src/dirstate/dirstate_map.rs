@@ -348,7 +348,9 @@ py_class!(pub class DirstateMap |py| {
 
     def __contains__(&self, key: PyObject) -> PyResult<bool> {
         let key = key.extract::<PyBytes>(py)?;
-        Ok(self.inner_shared(py).borrow().contains_key(HgPath::new(key.data(py))))
+        Ok(self.inner_shared(py)
+               .borrow()
+               .contains_key(HgPath::new(key.data(py))))
     }
 
     def __getitem__(&self, key: PyObject) -> PyResult<PyObject> {
@@ -438,7 +440,10 @@ py_class!(pub class DirstateMap |py| {
 
     def copymapgetitem(&self, key: PyObject) -> PyResult<PyBytes> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner_shared(py).borrow().copy_map.get(HgPath::new(key.data(py))) {
+        match self.inner_shared(py)
+                  .borrow()
+                  .copy_map
+                  .get(HgPath::new(key.data(py))) {
             Some(copy) => Ok(PyBytes::new(py, copy.as_ref())),
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
