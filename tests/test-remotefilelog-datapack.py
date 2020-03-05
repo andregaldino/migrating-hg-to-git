@@ -17,6 +17,14 @@ import silenttestrunner
 # Load the local remotefilelog, not the system one
 sys.path[0:0] = [os.path.join(os.path.dirname(__file__), '..')]
 from mercurial.node import nullid
+from mercurial import policy
+
+if not policy._packageprefs.get(policy.policy, (False, False))[1]:
+    if __name__ == '__main__':
+        msg = "skipped: pure module not available with module policy:"
+        print(msg, policy.policy, file=sys.stderr)
+        sys.exit(80)
+
 from mercurial import (
     pycompat,
     ui as uimod,
