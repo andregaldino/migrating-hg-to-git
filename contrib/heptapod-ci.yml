@@ -10,13 +10,14 @@ before_script:
 
 variables:
     PYTHON: python
+    TEST_HGMODULEPOLICY: "allow"
 
 .runtests_template: &runtests
     script:
         - cd tests/
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
-        - $PYTHON run-tests.py --color=always $RUNTEST_ARGS
+        - HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" run-tests.py --color=always $RUNTEST_ARGS
 
 checks-py2:
     <<: *runtests
@@ -43,29 +44,34 @@ test-py2:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        TEST_HGMODULEPOLICY: "c"
 
 test-py3:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
         PYTHON: python3
+        TEST_HGMODULEPOLICY: "c"
 
 test-py2-pure:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
+        TEST_HGMODULEPOLICY: "py"
 
 test-py3-pure:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
         PYTHON: python3
+        TEST_HGMODULEPOLICY: "py"
 
 test-py2-rust:
     <<: *runtests
     variables:
         HGWITHRUSTEXT: cpython
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        TEST_HGMODULEPOLICY: "rust+c"
 
 test-py3-rust:
     <<: *runtests
@@ -73,3 +79,4 @@ test-py3-rust:
         HGWITHRUSTEXT: cpython
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
         PYTHON: python3
+        TEST_HGMODULEPOLICY: "rust+c"
