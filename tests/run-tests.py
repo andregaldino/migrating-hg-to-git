@@ -3008,7 +3008,7 @@ class TestRunner(object):
             os.makedirs(self._tmpbindir)
 
             normbin = os.path.normpath(os.path.abspath(whg))
-            normbin = normbin.replace(os.sep.encode('ascii'), b'/')
+            normbin = normbin.replace(_bytespath(os.sep), b'/')
 
             # Other Python scripts in the test harness need to
             # `import mercurial`. If `hg` is a Python script, we assume
