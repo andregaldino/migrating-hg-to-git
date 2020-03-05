@@ -183,9 +183,26 @@ def _revinfogetter(repo):
     * p1copies: mapping of copies from p1
     * p2copies: mapping of copies from p2
     * removed: a list of removed files
+    * ismerged: a callback to know if file was merged in that revision
     """
     cl = repo.changelog
     parents = cl.parentrevs
+
+    def get_ismerged(rev):
+        ctx = repo[rev]
+
+        def ismerged(path):
+            if path not in ctx.files():
+                return False
+            fctx = ctx[path]
+            parents = fctx._filelog.parents(fctx._filenode)
+            nb_parents = 0
+            for n in parents:
+                if n != node.nullid:
+                    nb_parents += 1
+            return nb_parents >= 2
+
+        return ismerged
 
     if repo.filecopiesmode == b'changeset-sidedata':
         changelogrevision = cl.changelogrevision
@@ -218,6 +235,7 @@ def _revinfogetter(repo):
 
         def revinfo(rev):
             p1, p2 = parents(rev)
+            value = None
             if flags(rev) & REVIDX_SIDEDATA:
                 e = merge_caches.pop(rev, None)
                 if e is not None:
@@ -228,12 +246,22 @@ def _revinfogetter(repo):
                 removed = c.filesremoved
                 if p1 != node.nullrev and p2 != node.nullrev:
                     # XXX some case we over cache, IGNORE
-                    merge_caches[rev] = (p1, p2, p1copies, p2copies, removed)
+                    value = merge_caches[rev] = (
+                        p1,
+                        p2,
+                        p1copies,
+                        p2copies,
+                        removed,
+                        get_ismerged(rev),
+                    )
             else:
                 p1copies = {}
                 p2copies = {}
                 removed = []
-            return p1, p2, p1copies, p2copies, removed
+
+            if value is None:
+                value = (p1, p2, p1copies, p2copies, removed, get_ismerged(rev))
+            return value
 
     else:
 
@@ -242,7 +270,7 @@ def _revinfogetter(repo):
             ctx = repo[rev]
             p1copies, p2copies = ctx._copies
             removed = ctx.filesremoved()
-            return p1, p2, p1copies, p2copies, removed
+            return p1, p2, p1copies, p2copies, removed, get_ismerged(rev)
 
     return revinfo
 
@@ -256,6 +284,7 @@ def _changesetforwardcopies(a, b, match):
     revinfo = _revinfogetter(repo)
 
     cl = repo.changelog
+    isancestor = cl.isancestorrev  # XXX we should had chaching to this.
     missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     mrset = set(missingrevs)
     roots = set()
@@ -283,10 +312,14 @@ def _changesetforwardcopies(a, b, match):
     iterrevs.update(roots)
     iterrevs.remove(b.rev())
     revs = sorted(iterrevs)
-    return _combinechangesetcopies(revs, children, b.rev(), revinfo, match)
+    return _combinechangesetcopies(
+        revs, children, b.rev(), revinfo, match, isancestor
+    )
 
 
-def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
+def _combinechangesetcopies(
+    revs, children, targetrev, revinfo, match, isancestor
+):
     """combine the copies information for each item of iterrevs
 
     revs: sorted iterable of revision to visit
@@ -305,7 +338,7 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
             # this is a root
             copies = {}
         for i, c in enumerate(children[r]):
-            p1, p2, p1copies, p2copies, removed = revinfo(c)
+            p1, p2, p1copies, p2copies, removed, ismerged = revinfo(c)
             if r == p1:
                 parent = 1
                 childcopies = p1copies
@@ -319,9 +352,12 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
                 }
             newcopies = copies
             if childcopies:
-                newcopies = _chain(newcopies, childcopies)
-                # _chain makes a copies, we can avoid doing so in some
-                # simple/linear cases.
+                newcopies = copies.copy()
+                for dest, source in pycompat.iteritems(childcopies):
+                    prev = copies.get(source)
+                    if prev is not None and prev[1] is not None:
+                        source = prev[1]
+                    newcopies[dest] = (c, source)
                 assert newcopies is not copies
             for f in removed:
                 if f in newcopies:
@@ -330,7 +366,7 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
                         # branches.  when there are no other branches, this
                         # could be avoided.
                         newcopies = copies.copy()
-                    del newcopies[f]
+                    newcopies[f] = (c, None)
             othercopies = all_copies.get(c)
             if othercopies is None:
                 all_copies[c] = newcopies
@@ -338,21 +374,55 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
                 # we are the second parent to work on c, we need to merge our
                 # work with the other.
                 #
-                # Unlike when copies are stored in the filelog, we consider
-                # it a copy even if the destination already existed on the
-                # other branch. It's simply too expensive to check if the
-                # file existed in the manifest.
-                #
                 # In case of conflict, parent 1 take precedence over parent 2.
                 # This is an arbitrary choice made anew when implementing
                 # changeset based copies. It was made without regards with
                 # potential filelog related behavior.
                 if parent == 1:
-                    othercopies.update(newcopies)
+                    _merge_copies_dict(
+                        othercopies, newcopies, isancestor, ismerged
+                    )
                 else:
-                    newcopies.update(othercopies)
+                    _merge_copies_dict(
+                        newcopies, othercopies, isancestor, ismerged
+                    )
                     all_copies[c] = newcopies
-    return all_copies[targetrev]
+
+    final_copies = {}
+    for dest, (tt, source) in all_copies[targetrev].items():
+        if source is not None:
+            final_copies[dest] = source
+    return final_copies
+
+
+def _merge_copies_dict(minor, major, isancestor, ismerged):
+    """merge two copies-mapping together, minor and major
+
+    In case of conflict, value from "major" will be picked.
+
+    - `isancestors(low_rev, high_rev)`: callable return True if `low_rev` is an
+                                        ancestors of `high_rev`,
+
+    - `ismerged(path)`: callable return True if `path` have been merged in the
+                        current revision,
+    """
+    for dest, value in major.items():
+        other = minor.get(dest)
+        if other is None:
+            minor[dest] = value
+        else:
+            new_tt = value[0]
+            other_tt = other[0]
+            if value[1] == other[1]:
+                continue
+            # content from "major" wins, unless it is older
+            # than the branch point or there is a merge
+            if (
+                new_tt == other_tt
+                or not isancestor(new_tt, other_tt)
+                or ismerged(dest)
+            ):
+                minor[dest] = value
 
 
 def _forwardcopies(a, b, base=None, match=None):

@@ -1,3 +1,5 @@
+#testcases filelog compatibility sidedata
+
 =====================================================
 Test Copy tracing for chain of copies involving merge
 =====================================================
@@ -5,6 +7,7 @@ Test Copy tracing for chain of copies involving merge
 This test files covers copies/rename case for a chains of commit where merges
 are involved. It cheks we do not have unwanted update of behavior and that the
 different options to retrieve copies behave correctly.
+
 
 Setup
 =====
@@ -17,6 +20,22 @@ use git diff to see rename
   > [ui]
   > logtemplate={rev} {desc}\n
   > EOF
+
+#if compatibility
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > copies.read-from = compatibility
+  > EOF
+#endif
+
+#if sidedata
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = yes
+  > exp-use-copies-side-data-changeset = yes
+  > EOF
+#endif
+
 
   $ hg init repo-chain
   $ cd repo-chain
@@ -453,17 +472,26 @@ Comparing with a merge with colliding rename
        0       4 0dd616bc7ab1 000000000000 000000000000
        1      10 6da5a2eecb9c 000000000000 000000000000
        2      19 eb806e34ef6b 0dd616bc7ab1 6da5a2eecb9c
+
+# Here the filelog based implementation is not looking at the rename
+# information (because the file exist on both side). However the changelog
+# based on works fine. We have different output.
+
   $ hg status --copies --rev 'desc("a-2")' --rev 'desc("mAEm-0")'
   M f
+    b (no-filelog !)
   R b
   $ hg status --copies --rev 'desc("a-2")' --rev 'desc("mEAm-0")'
   M f
+    b (no-filelog !)
   R b
   $ hg status --copies --rev 'desc("e-2")' --rev 'desc("mAEm-0")'
   M f
+    d (no-filelog !)
   R d
   $ hg status --copies --rev 'desc("e-2")' --rev 'desc("mEAm-0")'
   M f
+    d (no-filelog !)
   R d
   $ hg status --copies --rev 'desc("i-2")' --rev 'desc("a-2")'
   A f
@@ -473,6 +501,18 @@ Comparing with a merge with colliding rename
   A f
     b
   R b
+
+# From here, we run status against revision where both source file exists.
+#
+# The filelog based implementation picks an arbitrary side based on revision
+# numbers. So the same side "wins" whatever the parents order is. This is
+# sub-optimal because depending on revision numbers means the result can be
+# different from one repository to the next.
+#
+# The changeset based algorithm use the parent order to break tie on conflicting
+# information and will have a different order depending on who is p1 and p2.
+# That order is stable accross repositories. (data from p1 prevails)
+
   $ hg status --copies --rev 'desc("i-2")' --rev 'desc("mAEm-0")'
   A f
     d
@@ -480,7 +520,8 @@ Comparing with a merge with colliding rename
   R d
   $ hg status --copies --rev 'desc("i-2")' --rev 'desc("mEAm-0")'
   A f
-    d
+    d (filelog !)
+    b (no-filelog !)
   R b
   R d
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAEm-0")'
@@ -490,7 +531,8 @@ Comparing with a merge with colliding rename
   R b
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEAm-0")'
   A f
-    a
+    a (filelog !)
+    b (no-filelog !)
   R a
   R b
 
@@ -563,21 +605,25 @@ The overwriting should take over. However, the behavior is currently buggy
   R h
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBFm-0")'
   M d
+    h (no-filelog !)
   R h
   $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mBFm-0")'
   M b
   $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mBFm-0")'
   M b
   M d
+    i (no-filelog !)
   R i
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mFBm-0")'
   M d
+    h (no-filelog !)
   R h
   $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mFBm-0")'
   M b
   $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mFBm-0")'
   M b
   M d
+    i (no-filelog !)
   R i
 
 The following graphlog is wrong, the "a -> c -> d" chain was overwritten and should not appear.
@@ -645,9 +691,15 @@ consider history and rename on both branch of the merge.
   |
   o  0 i-0 initial commit: a b h
   
+One side of the merge have a long history with rename. The other side of the
+merge point to a new file with a smaller history. Each side is "valid".
+
+(and again the filelog based algorithm only explore one, with a pick based on
+revision numbers)
+
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mDGm-0")'
   A d
-    a
+    a (filelog !)
   R a
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGDm-0")'
   A d
@@ -740,7 +792,8 @@ Note:
   
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFGm-0")'
   A d
-    a
+    h (no-filelog !)
+    a (filelog !)
   R a
   R h
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGFm-0")'
@@ -754,15 +807,19 @@ Note:
   M d
   $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mFGm-0")'
   M d
+    i (no-filelog !)
   R i
   $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mGFm-0")'
   M d
+    i (no-filelog !)
   R i
   $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mFGm-0")'
   M d
+    h (no-filelog !)
   R h
   $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mGFm-0")'
   M d
+    h (no-filelog !)
   R h
 
   $ hg log -Gfr 'desc("mFGm-0")' d
