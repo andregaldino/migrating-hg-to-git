@@ -1650,6 +1650,13 @@ def debuginstall(ui, **opts):
     fm.plain(_(b'checking "re2" regexp engine (%s)\n') % re2)
     fm.data(re2=bool(util._re2))
 
+    rust_debug_mod = policy.importrust("debug")
+    if rust_debug_mod is not None:
+        re2_rust = b'installed' if rust_debug_mod.re2_installed else b'missing'
+
+        msg = b'checking "re2" regexp engine Rust bindings (%s)\n'
+        fm.plain(_(msg % re2_rust))
+
     # templates
     p = templater.templatepaths()
     fm.write(b'templatedirs', b'checking templates (%s)...\n', b' '.join(p))
