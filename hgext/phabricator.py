@@ -1632,6 +1632,27 @@ def getdiffmeta(diff):
     return meta
 
 
+def _getdrevs(ui, stack, *specs):
+    """convert user supplied DREVSPECs into "Differential Revision" dicts
+
+    See ``hg help phabread`` for how to specify each DREVSPEC.
+    """
+    if len(*specs) > 0:
+
+        def _formatspec(s):
+            if stack:
+                s = b':(%s)' % s
+            return b'(%s)' % s
+
+        spec = b'+'.join(pycompat.maplist(_formatspec, *specs))
+
+        drevs = querydrev(ui, spec)
+        if drevs:
+            return drevs
+
+    raise error.Abort(_(b"empty DREVSPEC set"))
+
+
 def readpatch(ui, drevs, write):
     """generate plain-text patch readable by 'hg import'
 
