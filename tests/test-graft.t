@@ -758,6 +758,7 @@ Transplants of grafts can find a destination...
    branchmerge: True, force: True, partial: False
    ancestor: b592ea63bb0c, local: 7e61b508e709+, remote: 7a4785234d87
   starting 4 threads for background file closing (?)
+  nothing to commit, clearing merge state
   note: graft of 13:7a4785234d87 created no changes to commit
   $ hg log -r 'destination(13)'
 All copies of a cset

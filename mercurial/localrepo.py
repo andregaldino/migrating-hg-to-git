@@ -2956,6 +2956,7 @@ class localrepository(object):
                 or self.ui.configbool(b'ui', b'allowemptycommit')
             )
             if not allowemptycommit:
+                self.ui.debug(b'nothing to commit, clearing merge state\n')
                 ms.reset()
                 return None
 
