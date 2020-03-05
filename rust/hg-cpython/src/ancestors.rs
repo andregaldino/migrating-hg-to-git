@@ -126,7 +126,12 @@ py_class!(pub class LazyAncestors |py| {
 py_class!(pub class MissingAncestors |py| {
     data inner: RefCell<Box<CoreMissing<Index>>>;
 
-    def __new__(_cls, index: PyObject, bases: PyObject) -> PyResult<MissingAncestors> {
+    def __new__(
+        _cls,
+        index: PyObject,
+        bases: PyObject
+    )
+    -> PyResult<MissingAncestors> {
         let bases_vec: Vec<Revision> = rev_pyiter_collect(py, &bases)?;
         let inner = CoreMissing::new(pyindex_to_graph(py, index)?, bases_vec);
         MissingAncestors::create_instance(py, RefCell::new(Box::new(inner)))
