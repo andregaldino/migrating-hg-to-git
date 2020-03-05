@@ -1694,17 +1694,19 @@ def readpatch(ui, drevs, write):
 @vcrcommand(
     b'phabread',
     [(b'', b'stack', False, _(b'read dependencies'))],
-    _(b'DREVSPEC [OPTIONS]'),
+    _(b'DREVSPEC... [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
     optionalrepo=True,
 )
-def phabread(ui, repo, spec, **opts):
+def phabread(ui, repo, *specs, **opts):
     """print patches from Phabricator suitable for importing
 
     DREVSPEC could be a Differential Revision identity, like ``D123``, or just
     the number ``123``. It could also have common operators like ``+``, ``-``,
     ``&``, ``(``, ``)`` for complex queries. Prefix ``:`` could be used to
-    select a stack.
+    select a stack.  If multiple DREVSPEC values are given, the result is the
+    union of each individually evaluated value.  No attempt is currently made
+    to reorder the values to run from parent to child.
 
     ``abandoned``, ``accepted``, ``closed``, ``needsreview``, ``needsrevision``
     could be used to filter patches by status. For performance reason, they
@@ -1718,9 +1720,7 @@ def phabread(ui, repo, spec, **opts):
     It is equivalent to the ``:`` operator.
     """
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'stack'):
-        spec = b':(%s)' % spec
-    drevs = querydrev(ui, spec)
+    drevs = _getdrevs(ui, opts.get(b'stack'), specs)
 
     def _write(patches):
         for drev, content in patches:
@@ -1732,10 +1732,10 @@ def phabread(ui, repo, spec, **opts):
 @vcrcommand(
     b'phabimport',
     [(b'', b'stack', False, _(b'import dependencies as well'))],
-    _(b'DREVSPEC [OPTIONS]'),
+    _(b'DREVSPEC... [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
 )
-def phabimport(ui, repo, spec, **opts):
+def phabimport(ui, repo, *specs, **opts):
     """import patches from Phabricator for the specified Differential Revisions
 
     The patches are read and applied starting at the parent of the working
@@ -1785,9 +1785,7 @@ def phabimport(ui, repo, spec, **opts):
                     ui.note(msg + b'\n')
                     parents = [repo[node]]
 
-    if opts.get(b'stack'):
-        spec = b':(%s)' % spec
-    drevs = querydrev(repo.ui, spec)
+    drevs = _getdrevs(ui, opts.get(b'stack'), specs)
 
     readpatch(repo.ui, drevs, _write)
 
@@ -1801,11 +1799,11 @@ def phabimport(ui, repo, spec, **opts):
         (b'', b'reclaim', False, _(b'reclaim revisions')),
         (b'm', b'comment', b'', _(b'comment on the last revision')),
     ],
-    _(b'DREVSPEC [OPTIONS]'),
+    _(b'DREVSPEC... [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
     optionalrepo=True,
 )
-def phabupdate(ui, repo, spec, **opts):
+def phabupdate(ui, repo, *specs, **opts):
     """update Differential Revision in batch
 
     DREVSPEC selects revisions. See :hg:`help phabread` for its usage.
@@ -1819,7 +1817,7 @@ def phabupdate(ui, repo, spec, **opts):
     for f in flags:
         actions.append({b'type': f, b'value': True})
 
-    drevs = querydrev(ui, spec)
+    drevs = _getdrevs(ui, opts.get(b'stack'), specs)
     for i, drev in enumerate(drevs):
         if i + 1 == len(drevs) and opts.get(b'comment'):
             actions.append({b'type': b'comment', b'value': opts[b'comment']})

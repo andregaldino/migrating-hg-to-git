@@ -29,19 +29,20 @@ this test.
   >  --test-vcr "$VCR/phabread-conduit-error.json" D4480 | head
   abort: Conduit Error (ERR-INVALID-AUTH): API token "cli-notavalidtoken" has the wrong length. API tokens should be 32 characters long.
 
-Missing arguments print the command help
+Missing arguments don't crash, and may print the command help
 
-  $ hg phabread
-  hg phabread: invalid arguments
-  hg phabread DREVSPEC [OPTIONS]
+  $ hg debugcallconduit
+  hg debugcallconduit: invalid arguments
+  hg debugcallconduit METHOD
   
-  print patches from Phabricator suitable for importing
+  call Conduit API
   
   options:
   
-    --stack read dependencies
-  
-  (use 'hg phabread -h' to show more help)
+  (use 'hg debugcallconduit -h' to show more help)
+  [255]
+  $ hg phabread
+  abort: empty DREVSPEC set
   [255]
 
 Basic phabread:
@@ -56,6 +57,22 @@ Basic phabread:
   is concerned).
   
   This commit establishes a new exchangev2 module for holding
+
+Phabread with multiple DREVSPEC
+
+TODO: attempt to order related revisions like --stack?
+  $ hg phabread --test-vcr "$VCR/phabread-multi-drev.json" D8205 8206 D8207 \
+  >             | grep '^Differential Revision'
+  Differential Revision: https://phab.mercurial-scm.org/D8205
+  Differential Revision: https://phab.mercurial-scm.org/D8206
+  Differential Revision: https://phab.mercurial-scm.org/D8207
+
+Empty DREVSPECs don't crash
+
+  $ hg phabread --test-vcr "$VCR/phabread-empty-drev.json" D7917-D7917
+  abort: empty DREVSPEC set
+  [255]
+
 
 phabupdate with an accept:
   $ hg phabupdate --accept D4564 \
@@ -370,5 +387,12 @@ Phabimport can create secret commits
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     create beta for phabricator test
   
+Phabimport accepts multiple DREVSPECs
+
+  $ hg rollback --config ui.rollback=True
+  repository tip rolled back to revision 1 (undo phabimport)
+  $ hg phabimport --no-stack D7917 D7918 --test-vcr "$VCR/phabimport-multi-drev.json"
+  applying patch from D7917
+  applying patch from D7918
 
   $ cd ..

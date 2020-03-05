@@ -1,0 +1,73 @@
+{
+    "version": 1, 
+    "interactions": [
+        {
+            "request": {
+                "uri": "https://phab.mercurial-scm.org//api/differential.query", 
+                "method": "POST", 
+                "headers": {
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "content-length": [
+                        "146"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.3+33-bb58931d0c4f)"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ]
+                }, 
+                "body": "__conduit__=1&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22ids%22%3A+%5B7917%5D%7D&output=json"
+            }, 
+            "response": {
+                "status": {
+                    "code": 200, 
+                    "message": "OK"
+                }, 
+                "headers": {
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "date": [
+                        "Thu, 05 Mar 2020 16:19:23 GMT"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"7917\",\"phid\":\"PHID-DREV-yhl3yvijs4jploa5iqm4\",\"title\":\"create public change for phabricator testing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7917\",\"dateCreated\":\"1579221160\",\"dateModified\":\"1579222286\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"4\",\"statusName\":\"Abandoned\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":1,\"lines.removed\":1},\"branch\":\"default\",\"summary\":\"\",\"testPlan\":\"\",\"lineCount\":\"2\",\"activeDiffPHID\":\"PHID-DIFF-e64weyerxtutv2jvj2dt\",\"diffs\":[\"19393\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":\"\\/\"}],\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }
+    ]
+}
