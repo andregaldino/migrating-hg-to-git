@@ -1860,10 +1860,7 @@ def histedit(ui, repo, *freeargs, **opts):
     # kludge: _chistedit only works for starting an edit, not aborting
     # or continuing, so fall back to regular _texthistedit for those
     # operations.
-    if (
-        ui.interface(b'histedit') == b'curses'
-        and _getgoal(opts) == goalnew
-    ):
+    if ui.interface(b'histedit') == b'curses' and _getgoal(opts) == goalnew:
         return _chistedit(ui, repo, freeargs, opts)
     return _texthistedit(ui, repo, freeargs, opts)
 
