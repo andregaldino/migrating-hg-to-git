@@ -1331,7 +1331,7 @@ class Test(unittest.TestCase):
 
         extraextensions = []
         for opt in self._extraconfigopts:
-            section, key = opt.encode('utf-8').split(b'.', 1)
+            section, key = _sys2bytes(opt).split(b'.', 1)
             if section != 'extensions':
                 continue
             name = key.split(b'=', 1)[0]
@@ -1432,7 +1432,7 @@ class Test(unittest.TestCase):
             hgrc.write(b'server-header = testing stub value\n')
 
             for opt in self._extraconfigopts:
-                section, key = opt.encode('utf-8').split(b'.', 1)
+                section, key = _sys2bytes(opt).split(b'.', 1)
                 assert b'=' in key, (
                     'extra config opt %s must ' 'have an = for assignment' % opt
                 )
