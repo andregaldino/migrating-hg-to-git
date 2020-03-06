@@ -180,10 +180,6 @@ hg log FILE
      summary:     Add beta
   
 
-node|shortest works correctly
-  $ hg log -r tip --template "{node|shortest}\n"
-  6626
-
 hg annotate
 
   $ hg annotate alpha
@@ -220,4 +216,16 @@ hg and git status both clean
   On branch master
   nothing to commit, working tree clean
   $ hg status
+
+
+node|shortest works correctly
+  $ hg log -T '{node}\n' | sort
+  3d9be8deba43482be2c81a4cb4be1f10d85fa8bc
+  6626247b7dc8f231b183b8a4761c89139baca2ad
+  a1983dd7fb19cbd83ad5a1c2fc8bf3d775dea12f
+  ae1ab744f95bfd5b07cf573baef98a778058537b
+  c5864c9d16fb3431fe2c175ff84dc6accdbb2c18
+  d8ee22687733a1991813560b15128cd9734f4b48
+  $ hg log -r ae1ab744f95bfd5b07cf573baef98a778058537b --template "{shortest(node,1)}\n"
+  ae
 

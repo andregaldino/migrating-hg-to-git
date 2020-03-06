@@ -170,7 +170,7 @@ class changelog(baselog):
             matches = int(
                 self._db.execute(
                     'SELECT COUNT(*) FROM changelog WHERE node LIKE ?',
-                    (pycompat.sysstr(nodehex + b'%'),),
+                    (pycompat.sysstr(candidate + b'%'),),
                 ).fetchone()[0]
             )
             if matches == 1:
