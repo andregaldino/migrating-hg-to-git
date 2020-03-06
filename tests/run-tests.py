@@ -53,6 +53,7 @@ import errno
 import json
 import multiprocessing
 import os
+import platform
 import random
 import re
 import shutil
@@ -555,6 +556,16 @@ def getparser():
         help="use pure Python code instead of C extensions",
     )
     hgconf.add_argument(
+        "--rust",
+        action="store_true",
+        help="use Rust code alongside C extensions",
+    )
+    hgconf.add_argument(
+        "--no-rust",
+        action="store_true",
+        help="do not use Rust code even if compiled",
+    )
+    hgconf.add_argument(
         "--with-chg",
         metavar="CHG",
         help="use specified chg wrapper in place of hg",
@@ -636,6 +647,15 @@ def parseargs(args, parser):
     # jython is always pure
     if 'java' in sys.platform or '__pypy__' in sys.modules:
         options.pure = True
+
+    if platform.python_implementation() != 'CPython' and options.rust:
+        parser.error('Rust extensions are only available with CPython')
+
+    if options.pure and options.rust:
+        parser.error('--rust cannot be used with --pure')
+
+    if options.rust and options.no_rust:
+        parser.error('--rust cannot be used with --no-rust')
 
     if options.local:
         if options.with_hg or options.with_chg:
@@ -3093,6 +3113,13 @@ class TestRunner(object):
         if self.options.pure:
             os.environ["HGTEST_RUN_TESTS_PURE"] = "--pure"
             os.environ["HGMODULEPOLICY"] = "py"
+        if self.options.rust:
+            os.environ["HGMODULEPOLICY"] = "rust+c"
+        if self.options.no_rust:
+            current_policy = os.environ.get("HGMODULEPOLICY", "")
+            if current_policy.startswith("rust+"):
+                os.environ["HGMODULEPOLICY"] = current_policy[len("rust+") :]
+            os.environ.pop("HGWITHRUSTEXT", None)
 
         if self.options.allow_slow_tests:
             os.environ["HGTEST_SLOW"] = "slow"
@@ -3426,6 +3453,10 @@ class TestRunner(object):
         setup_opts = b""
         if self.options.pure:
             setup_opts = b"--pure"
+        elif self.options.rust:
+            setup_opts = b"--rust"
+        elif self.options.no_rust:
+            setup_opts = b"--no-rust"
 
         # Run installer in hg root
         script = os.path.realpath(sys.argv[0])
