@@ -508,6 +508,21 @@ fn stat_dmap_entries(
     })
 }
 
+/// This takes a mutable reference to the results to account for the `extend`
+/// in timings
+fn extend_from_dmap<'a>(
+    dmap: &'a DirstateMap,
+    root_dir: impl AsRef<Path> + Sync + Send,
+    options: StatusOptions,
+    results: &mut Vec<(Cow<'a, HgPath>, Dispatch)>,
+) {
+    results.par_extend(
+        stat_dmap_entries(dmap, root_dir, options)
+            .flatten()
+            .map(|(filename, dispatch)| (Cow::Borrowed(filename), dispatch)),
+    );
+}
+
 pub struct DirstateStatus<'a> {
     pub modified: Vec<Cow<'a, HgPath>>,
     pub added: Vec<Cow<'a, HgPath>>,
@@ -766,10 +781,7 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
         } else {
             // We may not have walked the full directory tree above, so stat
             // and check everything we missed.
-            let stat_results = stat_dmap_entries(&dmap, root_dir, options);
-            results.par_extend(stat_results.flatten().map(
-                |(filename, dispatch)| (Cow::Borrowed(filename), dispatch),
-            ));
+            extend_from_dmap(&dmap, root_dir, options, &mut results);
         }
     }
 
