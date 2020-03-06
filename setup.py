@@ -3,6 +3,7 @@
 #
 # 'python setup.py install', or
 # 'python setup.py --help' for more options
+from __future__ import print_function
 
 import os
 
@@ -141,7 +142,9 @@ hgrustext = os.environ.get('HGWITHRUSTEXT')
 # TODO record it for proper rebuild upon changes
 # (see mercurial/__modulepolicy__.py)
 if hgrustext != 'cpython' and hgrustext is not None:
-    hgrustext = 'direct-ffi'
+    if hgrustext:
+        print('unkown HGWITHRUSTEXT value: %s' % hgrustext, file=sys.stderr)
+    hgrustext = None
 
 import ctypes
 import errno
@@ -543,7 +546,7 @@ class hgbuildext(build_ext):
         # Build Rust standalon extensions if it'll be used
         # and its build is not explictely disabled (for external build
         # as Linux distributions would do)
-        if self.distribution.rust and self.rust and hgrustext != 'direct-ffi':
+        if self.distribution.rust and self.rust:
             for rustext in ruststandalones:
                 rustext.build('' if self.inplace else self.build_lib)
 
@@ -1391,29 +1394,6 @@ class RustExtension(Extension):
             )
 
 
-class RustEnhancedExtension(RustExtension):
-    """A C Extension, conditionally enhanced with Rust code.
-
-    If the HGWITHRUSTEXT environment variable is set to something else
-    than 'cpython', the Rust sources get compiled and linked within
-    the C target shared library object.
-    """
-
-    def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
-        RustExtension.__init__(
-            self, mpath, sources, rustlibname, subcrate, **kw
-        )
-        if hgrustext != 'direct-ffi':
-            return
-        self.extra_compile_args.append('-DWITH_RUST')
-        self.libraries.append(rustlibname)
-        self.library_dirs.append(self.rusttargetdir)
-
-    def rustbuild(self):
-        if hgrustext == 'direct-ffi':
-            RustExtension.rustbuild(self)
-
-
 class RustStandaloneExtension(RustExtension):
     def __init__(self, pydottedname, rustcrate, dylibname, **kw):
         RustExtension.__init__(
@@ -1453,7 +1433,7 @@ extmodules = [
         include_dirs=common_include_dirs,
         depends=common_depends,
     ),
-    RustEnhancedExtension(
+    Extension(
         'mercurial.cext.parsers',
         [
             'mercurial/cext/charencode.c',
@@ -1463,16 +1443,9 @@ extmodules = [
             'mercurial/cext/pathencode.c',
             'mercurial/cext/revlog.c',
         ],
-        'hgdirectffi',
-        'hg-direct-ffi',
         include_dirs=common_include_dirs,
         depends=common_depends
-        + [
-            'mercurial/cext/charencode.h',
-            'mercurial/cext/revlog.h',
-            'rust/hg-core/src/ancestors.rs',
-            'rust/hg-core/src/lib.rs',
-        ],
+        + ['mercurial/cext/charencode.h', 'mercurial/cext/revlog.h',],
     ),
     Extension(
         'mercurial.cext.osutil',
