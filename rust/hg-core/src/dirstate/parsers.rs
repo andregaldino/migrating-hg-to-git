@@ -9,6 +9,7 @@ use crate::{
     DirstateEntry, DirstatePackError, DirstateParents, DirstateParseError,
 };
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use micro_timer::timed;
 use std::convert::{TryFrom, TryInto};
 use std::io::Cursor;
 use std::time::Duration;
@@ -20,6 +21,7 @@ const MIN_ENTRY_SIZE: usize = 17;
 
 // TODO parse/pack: is mutate-on-loop better for performance?
 
+#[timed]
 pub fn parse_dirstate(
     state_map: &mut StateMap,
     copy_map: &mut CopyMap,

@@ -35,6 +35,10 @@ pub use filepatterns::{
 use std::collections::HashMap;
 use twox_hash::RandomXxHashBuilder64;
 
+/// This is a contract between the `micro-timer` crate and us, to expose
+/// the `log` crate as `crate::log`.
+use log;
+
 pub type LineNumber = usize;
 
 /// Rust's default hasher is too slow because it tries to prevent collision

@@ -24,6 +24,7 @@ use crate::{
     PatternSyntax,
 };
 
+use micro_timer::timed;
 use std::collections::HashSet;
 use std::fmt::{Display, Error, Formatter};
 use std::iter::FromIterator;
@@ -548,6 +549,7 @@ fn build_match<'a, 'b>(
 /// Parses all "ignore" files with their recursive includes and returns a
 /// function that checks whether a given file (in the general sense) should be
 /// ignored.
+#[timed]
 pub fn get_ignore_function<'a>(
     all_pattern_files: &[impl AsRef<Path>],
     root_dir: impl AsRef<Path>,

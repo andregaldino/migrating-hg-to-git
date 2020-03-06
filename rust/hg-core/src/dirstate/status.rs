@@ -25,6 +25,7 @@ use crate::{
     PatternError,
 };
 use lazy_static::lazy_static;
+use micro_timer::timed;
 use rayon::prelude::*;
 use std::{
     borrow::Cow,
@@ -211,6 +212,7 @@ lazy_static! {
 
 /// Get stat data about the files explicitly specified by match.
 /// TODO subrepos
+#[timed]
 fn walk_explicit<'a>(
     files: Option<&'a HashSet<&HgPath>>,
     dmap: &'a DirstateMap,
@@ -513,6 +515,7 @@ fn traverse_dir<'a>(
 ///
 /// This takes a mutable reference to the results to account for the `extend`
 /// in timings
+#[timed]
 fn traverse<'a>(
     matcher: &'a (impl Matcher + Sync),
     root_dir: impl AsRef<Path> + Sync + Send + Copy,
@@ -606,6 +609,7 @@ fn stat_dmap_entries(
 
 /// This takes a mutable reference to the results to account for the `extend`
 /// in timings
+#[timed]
 fn extend_from_dmap<'a>(
     dmap: &'a DirstateMap,
     root_dir: impl AsRef<Path> + Sync + Send,
@@ -630,6 +634,7 @@ pub struct DirstateStatus<'a> {
     pub bad: Vec<(Cow<'a, HgPath>, BadMatch)>,
 }
 
+#[timed]
 fn build_response<'a>(
     results: impl IntoIterator<Item = (Cow<'a, HgPath>, Dispatch)>,
 ) -> (Vec<Cow<'a, HgPath>>, DirstateStatus<'a>) {
@@ -710,6 +715,7 @@ impl ToString for StatusError {
 
 /// This takes a mutable reference to the results to account for the `extend`
 /// in timings
+#[timed]
 fn handle_unknowns<'a>(
     dmap: &'a DirstateMap,
     matcher: &(impl Matcher + Sync),
@@ -792,6 +798,7 @@ fn handle_unknowns<'a>(
 /// This is the current entry-point for `hg-core` and is realistically unusable
 /// outside of a Python context because its arguments need to provide a lot of
 /// information that will not be necessary in the future.
+#[timed]
 pub fn status<'a: 'c, 'b: 'c, 'c>(
     dmap: &'a DirstateMap,
     matcher: &'b (impl Matcher + Sync),
