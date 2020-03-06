@@ -597,6 +597,85 @@ impl ToString for StatusError {
     }
 }
 
+/// This takes a mutable reference to the results to account for the `extend`
+/// in timings
+fn handle_unknowns<'a>(
+    dmap: &'a DirstateMap,
+    matcher: &(impl Matcher + Sync),
+    root_dir: impl AsRef<Path> + Sync + Send + Copy,
+    options: StatusOptions,
+    results: &mut Vec<(Cow<'a, HgPath>, Dispatch)>,
+) -> IoResult<()> {
+    let to_visit: Vec<(&HgPath, &DirstateEntry)> = if results.is_empty()
+        && matcher.matches_everything()
+    {
+        dmap.iter().map(|(f, e)| (f.deref(), e)).collect()
+    } else {
+        // Only convert to a hashmap if needed.
+        let old_results: FastHashMap<_, _> = results.iter().cloned().collect();
+        dmap.iter()
+            .filter_map(move |(f, e)| {
+                if !old_results.contains_key(f.deref()) && matcher.matches(f) {
+                    Some((f.deref(), e))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    };
+
+    // We walked all dirs under the roots that weren't ignored, and
+    // everything that matched was stat'ed and is already in results.
+    // The rest must thus be ignored or under a symlink.
+    let path_auditor = PathAuditor::new(root_dir);
+
+    // TODO don't collect. Find a way of replicating the behavior of
+    // `itertools::process_results`, but for `rayon::ParallelIterator`
+    let new_results: IoResult<Vec<_>> = to_visit
+        .into_par_iter()
+        .filter_map(|(filename, entry)| -> Option<IoResult<_>> {
+            // Report ignored items in the dmap as long as they are not
+            // under a symlink directory.
+            if path_auditor.check(filename) {
+                // TODO normalize for case-insensitive filesystems
+                let buf = match hg_path_to_path_buf(filename) {
+                    Ok(x) => x,
+                    Err(e) => return Some(Err(e.into())),
+                };
+                Some(Ok((
+                    Cow::Borrowed(filename),
+                    match root_dir.as_ref().join(&buf).symlink_metadata() {
+                        // File was just ignored, no links, and exists
+                        Ok(meta) => {
+                            let metadata = HgMetadata::from_metadata(meta);
+                            dispatch_found(
+                                filename,
+                                *entry,
+                                metadata,
+                                &dmap.copy_map,
+                                options,
+                            )
+                        }
+                        // File doesn't exist
+                        Err(_) => dispatch_missing(entry.state),
+                    },
+                )))
+            } else {
+                // It's either missing or under a symlink directory which
+                // we, in this case, report as missing.
+                Some(Ok((
+                    Cow::Borrowed(filename),
+                    dispatch_missing(entry.state),
+                )))
+            }
+        })
+        .collect();
+
+    results.par_extend(new_results?);
+
+    Ok(())
+}
+
 /// Get the status of files in the working directory.
 ///
 /// This is the current entry-point for `hg-core` and is realistically unusable
@@ -683,64 +762,7 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
         // symlink directory.
 
         if options.list_unknown {
-            let to_visit: Box<dyn Iterator<Item = (&HgPath, &DirstateEntry)>> =
-                if results.is_empty() && matcher.matches_everything() {
-                    Box::new(dmap.iter().map(|(f, e)| (f.deref(), e)))
-                } else {
-                    // Only convert to a hashmap if needed.
-                    let old_results: FastHashMap<_, _> =
-                        results.iter().cloned().collect();
-                    Box::new(dmap.iter().filter_map(move |(f, e)| {
-                        if !old_results.contains_key(f.deref())
-                            && matcher.matches(f)
-                        {
-                            Some((f.deref(), e))
-                        } else {
-                            None
-                        }
-                    }))
-                };
-            let mut to_visit: Vec<_> = to_visit.collect();
-            to_visit.sort_by(|a, b| a.0.cmp(&b.0));
-
-            // We walked all dirs under the roots that weren't ignored, and
-            // everything that matched was stat'ed and is already in results.
-            // The rest must thus be ignored or under a symlink.
-            let path_auditor = PathAuditor::new(root_dir);
-
-            for (ref filename, entry) in to_visit {
-                // Report ignored items in the dmap as long as they are not
-                // under a symlink directory.
-                if path_auditor.check(filename) {
-                    // TODO normalize for case-insensitive filesystems
-                    let buf = hg_path_to_path_buf(filename)?;
-                    results.push((
-                        Cow::Borrowed(filename),
-                        match root_dir.as_ref().join(&buf).symlink_metadata() {
-                            // File was just ignored, no links, and exists
-                            Ok(meta) => {
-                                let metadata = HgMetadata::from_metadata(meta);
-                                dispatch_found(
-                                    filename,
-                                    *entry,
-                                    metadata,
-                                    &dmap.copy_map,
-                                    options,
-                                )
-                            }
-                            // File doesn't exist
-                            Err(_) => dispatch_missing(entry.state),
-                        },
-                    ));
-                } else {
-                    // It's either missing or under a symlink directory which
-                    // we, in this case, report as missing.
-                    results.push((
-                        Cow::Borrowed(filename),
-                        dispatch_missing(entry.state),
-                    ));
-                }
-            }
+            handle_unknowns(dmap, matcher, root_dir, options, &mut results)?;
         } else {
             // We may not have walked the full directory tree above, so stat
             // and check everything we missed.
