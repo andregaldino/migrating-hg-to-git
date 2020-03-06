@@ -15,7 +15,7 @@ use git diff to see rename
   > [diff]
   > git=yes
   > [ui]
-  > logtemplate={rev} {desc}]\n
+  > logtemplate={rev} {desc}\n
   > EOF
 
   $ hg init repo-chain
@@ -33,11 +33,11 @@ Add some linear rename initialy
   $ hg mv c d
   $ hg ci -Am 'i-2: c -move-> d'
   $ hg log -G
-  @  2 i-2: c -move-> d]
+  @  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 And having another branch with renames on the other side
@@ -47,15 +47,15 @@ And having another branch with renames on the other side
   $ hg mv e f
   $ hg ci -Am 'a-2: e -move-> f'
   $ hg log -G --rev '::.'
-  @  4 a-2: e -move-> f]
+  @  4 a-2: e -move-> f
   |
-  o  3 a-1: d -move-> e]
+  o  3 a-1: d -move-> e
   |
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Have a branching with nothing on one side
@@ -66,13 +66,13 @@ Have a branching with nothing on one side
   $ hg ci -m 'b-1: b update'
   created new head
   $ hg log -G --rev '::.'
-  @  5 b-1: b update]
+  @  5 b-1: b update
   |
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 
@@ -94,21 +94,21 @@ Merge the two branches we just defined (in both directions)
   $ hg ci -m 'mABm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mABm")+desc("mBAm"))'
-  @    7 mABm-0 simple merge - the other way]
+  @    7 mABm-0 simple merge - the other way
   |\
-  +---o  6 mBAm-0 simple merge - one way]
+  +---o  6 mBAm-0 simple merge - one way
   | |/
-  | o  5 b-1: b update]
+  | o  5 b-1: b update
   | |
-  o |  4 a-2: e -move-> f]
+  o |  4 a-2: e -move-> f
   | |
-  o |  3 a-1: d -move-> e]
+  o |  3 a-1: d -move-> e
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Create a branch that delete a file previous renamed
@@ -119,13 +119,13 @@ Create a branch that delete a file previous renamed
   $ hg ci -m 'c-1 delete d'
   created new head
   $ hg log -G --rev '::.'
-  @  8 c-1 delete d]
+  @  8 c-1 delete d
   |
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Merge:
@@ -153,23 +153,23 @@ and recreate an unrelated file after the merge
   $ hg add d
   $ hg ci -m 'mCBm-1 re-add d'
   $ hg log -G --rev '::(desc("mCBm")+desc("mBCm"))'
-  @  12 mCBm-1 re-add d]
+  @  12 mCBm-1 re-add d
   |
-  o    11 mCBm-0 simple merge - the other way]
+  o    11 mCBm-0 simple merge - the other way
   |\
-  | | o  10 mBCm-1 re-add d]
+  | | o  10 mBCm-1 re-add d
   | | |
-  +---o  9 mBCm-0 simple merge - one way]
+  +---o  9 mBCm-0 simple merge - one way
   | |/
-  | o  8 c-1 delete d]
+  | o  8 c-1 delete d
   | |
-  o |  5 b-1: b update]
+  o |  5 b-1: b update
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Create a branch that delete a file previous renamed and recreate it
@@ -183,15 +183,15 @@ Create a branch that delete a file previous renamed and recreate it
   $ hg add d
   $ hg ci -m 'd-2 re-add d'
   $ hg log -G --rev '::.'
-  @  14 d-2 re-add d]
+  @  14 d-2 re-add d
   |
-  o  13 d-1 delete d]
+  o  13 d-1 delete d
   |
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Merge:
@@ -219,21 +219,21 @@ Note:
   $ hg ci -m 'mDBm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mDBm")+desc("mBDm"))'
-  @    16 mDBm-0 simple merge - the other way]
+  @    16 mDBm-0 simple merge - the other way
   |\
-  +---o  15 mBDm-0 simple merge - one way]
+  +---o  15 mBDm-0 simple merge - one way
   | |/
-  | o  14 d-2 re-add d]
+  | o  14 d-2 re-add d
   | |
-  | o  13 d-1 delete d]
+  | o  13 d-1 delete d
   | |
-  o |  5 b-1: b update]
+  o |  5 b-1: b update
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Having another branch renaming a different file to the same filename as another
@@ -246,15 +246,15 @@ Having another branch renaming a different file to the same filename as another
   $ hg mv g f
   $ hg ci -m 'e-2 g -move-> f'
   $ hg log -G --rev '::.'
-  @  18 e-2 g -move-> f]
+  @  18 e-2 g -move-> f
   |
-  o  17 e-1 b -move-> g]
+  o  17 e-1 b -move-> g
   |
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Merge:
@@ -275,23 +275,23 @@ Merge:
   $ hg ci -m 'mEAm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mAEm")+desc("mEAm"))'
-  @    20 mEAm-0 simple merge - the other way]
+  @    20 mEAm-0 simple merge - the other way
   |\
-  +---o  19 mAEm-0 simple merge - one way]
+  +---o  19 mAEm-0 simple merge - one way
   | |/
-  | o  18 e-2 g -move-> f]
+  | o  18 e-2 g -move-> f
   | |
-  | o  17 e-1 b -move-> g]
+  | o  17 e-1 b -move-> g
   | |
-  o |  4 a-2: e -move-> f]
+  o |  4 a-2: e -move-> f
   | |
-  o |  3 a-1: d -move-> e]
+  o |  3 a-1: d -move-> e
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Note:
@@ -330,21 +330,21 @@ Merge:
   $ hg ci -m 'mFBm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
-  @    24 mFBm-0 simple merge - the other way]
+  @    24 mFBm-0 simple merge - the other way
   |\
-  +---o  23 mBFm-0 simple merge - one way]
+  +---o  23 mBFm-0 simple merge - one way
   | |/
-  | o  22 f-2: rename i -> d]
+  | o  22 f-2: rename i -> d
   | |
-  | o  21 f-1: rename h -> i]
+  | o  21 f-1: rename h -> i
   | |
-  o |  5 b-1: b update]
+  o |  5 b-1: b update
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Merge:
@@ -372,21 +372,21 @@ Merge:
   $ hg ci -m 'mGDm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mDGm")+desc("mGDm"))'
-  @    27 mGDm-0 simple merge - the other way]
+  @    27 mGDm-0 simple merge - the other way
   |\
-  +---o  26 mDGm-0 simple merge - one way]
+  +---o  26 mDGm-0 simple merge - one way
   | |/
-  | o  25 g-1: update d]
+  | o  25 g-1: update d
   | |
-  o |  14 d-2 re-add d]
+  o |  14 d-2 re-add d
   | |
-  o |  13 d-1 delete d]
+  o |  13 d-1 delete d
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 
@@ -411,21 +411,21 @@ Merge:
   $ hg ci -m 'mGFm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
-  @    29 mGFm-0 simple merge - the other way]
+  @    29 mGFm-0 simple merge - the other way
   |\
-  +---o  28 mFGm-0 simple merge - one way]
+  +---o  28 mFGm-0 simple merge - one way
   | |/
-  | o  25 g-1: update d]
+  | o  25 g-1: update d
   | |
-  o |  22 f-2: rename i -> d]
+  o |  22 f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i]
+  o |  21 f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 
@@ -588,21 +588,21 @@ not a merge.
 (This `hg log` output if wrong, since no merge actually happened).
 
   $ hg log -Gfr 'desc("mBDm-0")' d
-  o    15 mBDm-0 simple merge - one way]
+  o    15 mBDm-0 simple merge - one way
   |\
-  o :  14 d-2 re-add d]
+  o :  14 d-2 re-add d
   :/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 This `hg log` output is correct
 
   $ hg log -Gfr 'desc("mDBm-0")' d
-  o  14 d-2 re-add d]
+  o  14 d-2 re-add d
   |
   ~
 
@@ -718,27 +718,27 @@ The overwriting should take over. However, the behavior is currently buggy
 The following graphlog is wrong, the "a -> c -> d" chain was overwritten and should not appear.
 
   $ hg log -Gfr 'desc("mBFm-0")' d
-  o    23 mBFm-0 simple merge - one way]
+  o    23 mBFm-0 simple merge - one way
   |\
-  o :  22 f-2: rename i -> d]
+  o :  22 f-2: rename i -> d
   | :
-  o :  21 f-1: rename h -> i]
+  o :  21 f-1: rename h -> i
   :/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 The following output is correct.
 
   $ hg log -Gfr 'desc("mFBm-0")' d
-  o  22 f-2: rename i -> d]
+  o  22 f-2: rename i -> d
   |
-  o  21 f-1: rename h -> i]
+  o  21 f-1: rename h -> i
   :
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 Merge:
@@ -766,32 +766,32 @@ consider history and rename on both branch of the merge.
   M d
 
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 simple merge - one way]
+  o    26 mDGm-0 simple merge - one way
   |\
-  | o  25 g-1: update d]
+  | o  25 g-1: update d
   | |
-  o |  14 d-2 re-add d]
+  o |  14 d-2 re-add d
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 simple merge - one way]
+  o    26 mDGm-0 simple merge - one way
   |\
-  | o  25 g-1: update d]
+  | o  25 g-1: update d
   | |
-  o |  14 d-2 re-add d]
+  o |  14 d-2 re-add d
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 
@@ -836,34 +836,34 @@ Note:
   R h
 
   $ hg log -Gfr 'desc("mFGm-0")' d
-  o    28 mFGm-0 simple merge - one way]
+  o    28 mFGm-0 simple merge - one way
   |\
-  | o  25 g-1: update d]
+  | o  25 g-1: update d
   | |
-  o |  22 f-2: rename i -> d]
+  o |  22 f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i]
+  o |  21 f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
 
 
   $ hg log -Gfr 'desc("mGFm-0")' d
-  @    29 mGFm-0 simple merge - the other way]
+  @    29 mGFm-0 simple merge - the other way
   |\
-  | o  25 g-1: update d]
+  | o  25 g-1: update d
   | |
-  o |  22 f-2: rename i -> d]
+  o |  22 f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i]
+  o |  21 f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d]
+  o  2 i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c]
+  o  1 i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h]
+  o  0 i-0 initial commit: a b h
   
