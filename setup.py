@@ -136,14 +136,6 @@ else:
 
 ispypy = "PyPy" in sys.version
 
-hgrustext = os.environ.get('HGWITHRUSTEXT')
-# TODO record it for proper rebuild upon changes
-# (see mercurial/__modulepolicy__.py)
-if hgrustext != 'cpython' and hgrustext is not None:
-    if hgrustext:
-        printf('unkown HGWITHRUSTEXT value: %s' % hgrustext, file=sys.stderr)
-    hgrustext = None
-
 import ctypes
 import errno
 import stat, subprocess, time
@@ -478,13 +470,44 @@ class hgbuildmo(build):
 
 class hgdist(Distribution):
     pure = False
-    rust = hgrustext is not None
+    rust = False
+    no_rust = False
     cffi = ispypy
 
     global_options = Distribution.global_options + [
         ('pure', None, "use pure (slow) Python code instead of C extensions"),
         ('rust', None, "use Rust extensions additionally to C extensions"),
+        (
+            'no-rust',
+            None,
+            "do not use Rust extensions additionally to C extensions",
+        ),
     ]
+
+    negative_opt = Distribution.negative_opt.copy()
+    boolean_options = ['pure', 'rust', 'no-rust']
+    negative_opt['no-rust'] = 'rust'
+
+    def _set_command_options(self, command_obj, option_dict=None):
+        command_obj.boolean_options += self.boolean_options
+        return Distribution._set_command_options(
+            self, command_obj, option_dict=option_dict
+        )
+
+    def parse_command_line(self):
+        ret = Distribution.parse_command_line(self)
+        if not (self.rust or self.no_rust):
+            hgrustext = os.environ.get('HGWITHRUSTEXT')
+            # TODO record it for proper rebuild upon changes
+            # (see mercurial/__modulepolicy__.py)
+            if hgrustext != 'cpython' and hgrustext is not None:
+                if hgrustext:
+                    msg = 'unkown HGWITHRUSTEXT value: %s' % hgrustext
+                    printf(msg, file=sys.stderr)
+                hgrustext = None
+            self.rust = hgrustext is not None
+            self.no_rust = not self.rust
+        return ret
 
     def has_ext_modules(self):
         # self.ext_modules is emptied in hgbuildpy.finalize_options which is
