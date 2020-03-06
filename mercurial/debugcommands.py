@@ -1508,6 +1508,13 @@ def debuginstall(ui, **opts):
         pythonlib or _(b"unknown"),
     )
 
+    try:
+        from . import rustext
+
+        rustext.__doc__  # trigger lazy import
+    except ImportError:
+        rustext = None
+
     security = set(sslutil.supportedprotocols)
     if sslutil.hassni:
         security.add(b'sni')
@@ -1534,6 +1541,13 @@ def debuginstall(ui, **opts):
                 b'connectivity issues with some servers\n'
             )
         )
+
+    fm.plain(
+        _(
+            b"checking Rust extensions (%s)\n"
+            % (b'missing' if rustext is None else b'installed')
+        ),
+    )
 
     # TODO print CA cert info
 
