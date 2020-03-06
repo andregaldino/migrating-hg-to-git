@@ -1165,10 +1165,7 @@ class Test(unittest.TestCase):
         if self._keeptmpdir:
             log(
                 '\nKeeping testtmp dir: %s\nKeeping threadtmp dir: %s'
-                % (
-                    self._testtmp.decode('utf-8'),
-                    self._threadtmp.decode('utf-8'),
-                )
+                % (_bytes2sys(self._testtmp), _bytes2sys(self._threadtmp),)
             )
         else:
             try:
