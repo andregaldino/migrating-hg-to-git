@@ -23,6 +23,14 @@ pub mod revlog;
 pub use revlog::*;
 pub mod utils;
 
+// Remove this to see (potential) non-artificial compile failures. MacOS
+// *should* compile, but fail to compile tests for example as of 2020-03-06
+#[cfg(not(target_os = "linux"))]
+compile_error!(
+    "`hg-core` has only been tested on Linux and will most \
+     likely not behave correctly on other platforms."
+);
+
 use crate::utils::hg_path::HgPathBuf;
 pub use filepatterns::{
     build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
