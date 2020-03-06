@@ -553,7 +553,7 @@ def has_root():
 @check("pyflakes", "Pyflakes python linter")
 def has_pyflakes():
     return matchoutput(
-        "sh -c \"echo 'import re' 2>&1 | pyflakes\"",
+        "sh -c \"echo 'import re' 2>&1 | $PYTHON -m pyflakes\"",
         br"<stdin>:1: 're' imported but unused",
         True,
     )
