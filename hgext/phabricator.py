@@ -1067,14 +1067,42 @@ def createdifferentialrevision(
     if actions:
         transactions += actions
 
-    # Parse commit message and update related fields.
-    desc = ctx.description()
-    info = callconduit(
-        repo.ui, b'differential.parsecommitmessage', {b'corpus': desc}
-    )
-    for k, v in info[b'fields'].items():
-        if k in [b'title', b'summary', b'testPlan']:
-            transactions.append({b'type': k, b'value': v})
+    # When folding multiple local commits into a single review, arcanist will
+    # take the summary line of the first commit as the title, and then
+    # concatenate the rest of the remaining messages (including each of their
+    # first lines) to the rest of the first commit message (each separated by
+    # an empty line), and use that as the summary field.  Do the same here.
+    # For commits with only a one line message, there is no summary field, as
+    # this gets assigned to the title.
+    fields = util.sortdict()  # sorted for stable wire protocol in tests
+
+    for i, _ctx in enumerate([ctx]):
+        # Parse commit message and update related fields.
+        desc = _ctx.description()
+        info = callconduit(
+            repo.ui, b'differential.parsecommitmessage', {b'corpus': desc}
+        )
+
+        for k in [b'title', b'summary', b'testPlan']:
+            v = info[b'fields'].get(k)
+            if not v:
+                continue
+
+            if i == 0:
+                # Title, summary and test plan (if present) are taken verbatim
+                # for the first commit.
+                fields[k] = v.rstrip()
+                continue
+            elif k == b'title':
+                # Add subsequent titles (i.e. the first line of the commit
+                # message) back to the summary.
+                k = b'summary'
+
+            # Append any current field to the existing composite field
+            fields[k] = b'\n\n'.join(filter(None, [fields.get(k), v.rstrip()]))
+
+    for k, v in fields.items():
+        transactions.append({b'type': k, b'value': v})
 
     params = {b'transactions': transactions}
     if revid is not None:
@@ -1266,7 +1294,7 @@ def phabsend(ui, repo, *revs, **opts):
                 old = unfi[rev]
                 drevid = drevids[i]
                 drev = [d for d in drevs if int(d[b'id']) == drevid][0]
-                newdesc = getdescfromdrev(drev)
+                newdesc = get_amended_desc(drev, old, False)
                 # Make sure commit message contain "Differential Revision"
                 if old.description() != newdesc:
                     if old.phase() == phases.public:
@@ -1591,6 +1619,33 @@ def getdescfromdrev(drev):
         testplan = b'Test Plan:\n%s' % testplan
     uri = b'Differential Revision: %s' % drev[b'uri']
     return b'\n\n'.join(filter(None, [title, summary, testplan, uri]))
+
+
+def get_amended_desc(drev, ctx, folded):
+    """similar to ``getdescfromdrev``, but supports a folded series of commits
+
+    This is used when determining if an individual commit needs to have its
+    message amended after posting it for review.  The determination is made for
+    each individual commit, even when they were folded into one review.
+    """
+    if not folded:
+        return getdescfromdrev(drev)
+
+    uri = b'Differential Revision: %s' % drev[b'uri']
+
+    # Since the commit messages were combined when posting multiple commits
+    # with --fold, the fields can't be read from Phabricator here, or *all*
+    # affected local revisions will end up with the same commit message after
+    # the URI is amended in.  Append in the DREV line, or update it if it
+    # exists.  At worst, this means commit message or test plan updates on
+    # Phabricator aren't propagated back to the repository, but that seems
+    # reasonable for the case where local commits are effectively combined
+    # in Phabricator.
+    m = _differentialrevisiondescre.search(ctx.description())
+    if not m:
+        return b'\n\n'.join([ctx.description(), uri])
+
+    return _differentialrevisiondescre.sub(uri, ctx.description())
 
 
 def getdiffmeta(diff):
