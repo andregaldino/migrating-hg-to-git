@@ -43,13 +43,13 @@ rust-cargo-test-py3:
 test-py2:
     <<: *runtests
     variables:
-        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        RUNTEST_ARGS: " --no-rust --blacklist /tmp/check-tests.txt"
         TEST_HGMODULEPOLICY: "c"
 
 test-py3:
     <<: *runtests
     variables:
-        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        RUNTEST_ARGS: " --no-rust --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "c"
 
@@ -70,13 +70,13 @@ test-py2-rust:
     <<: *runtests
     variables:
         HGWITHRUSTEXT: cpython
-        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
         TEST_HGMODULEPOLICY: "rust+c"
 
 test-py3-rust:
     <<: *runtests
     variables:
         HGWITHRUSTEXT: cpython
-        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "rust+c"
