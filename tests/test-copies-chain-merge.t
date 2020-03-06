@@ -39,7 +39,7 @@ Add some linear rename initialy
   o  0 i-0 initial commit: a b]
   
 
-Have a branching with nothing on one side
+And having another branch with renames on the other side
 
   $ hg mv d e
   $ hg ci -Am 'a-1: d -move-> e'
@@ -57,7 +57,7 @@ Have a branching with nothing on one side
   o  0 i-0 initial commit: a b]
   
 
-And Having another branch with renames on the other side
+Have a branching with nothing on one side
 
   $ hg up 'desc("i-2")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
