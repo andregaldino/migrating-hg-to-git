@@ -677,13 +677,9 @@ class mercurial_source(common.converter_source):
             for t in self.repo.tagslist()
             if self.repo.tagtype(t[0]) == b'global'
         ]
-        return dict(
-            [
-                (name, nodemod.hex(node))
-                for name, node in tags
-                if self.keep(node)
-            ]
-        )
+        return {
+            name: nodemod.hex(node) for name, node in tags if self.keep(node)
+        }
 
     def getchangedfiles(self, rev, i):
         ctx = self._changectx(rev)

@@ -1809,7 +1809,7 @@ class localrepository(object):
         # map tag name to (node, hist)
         alltags = tagsmod.findglobaltags(self.ui, self)
         # map tag name to tag type
-        tagtypes = dict((tag, b'global') for tag in alltags)
+        tagtypes = {tag: b'global' for tag in alltags}
 
         tagsmod.readlocaltags(self.ui, self, alltags, tagtypes)
 
@@ -1822,12 +1822,10 @@ class localrepository(object):
             if node != nullid:
                 tags[encoding.tolocal(name)] = node
         tags[b'tip'] = self.changelog.tip()
-        tagtypes = dict(
-            [
-                (encoding.tolocal(name), value)
-                for (name, value) in pycompat.iteritems(tagtypes)
-            ]
-        )
+        tagtypes = {
+            encoding.tolocal(name): value
+            for (name, value) in pycompat.iteritems(tagtypes)
+        }
         return (tags, tagtypes)
 
     def tagtype(self, tagname):

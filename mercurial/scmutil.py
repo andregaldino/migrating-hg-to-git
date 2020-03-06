@@ -1457,10 +1457,10 @@ def movedirstate(repo, newctx, match=None):
     # Merge old parent and old working dir copies
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
     oldcopies.update(copies)
-    copies = dict(
-        (dst, oldcopies.get(src, src))
+    copies = {
+        dst: oldcopies.get(src, src)
         for dst, src in pycompat.iteritems(oldcopies)
-    )
+    }
     # Adjust the dirstate copies
     for dst, src in pycompat.iteritems(copies):
         if src not in newctx or dst in newctx or ds[dst] != b'a':

@@ -737,7 +737,7 @@ def onetimeclientsetup(ui):
             # "link" is actually wrong here (it is set to len(changelog))
             # if changelog remains unchanged, skip writing file revisions
             # but still do a sanity check about pending multiple revisions
-            if len(set(x[3] for x in pendingfilecommits)) > 1:
+            if len({x[3] for x in pendingfilecommits}) > 1:
                 raise error.ProgrammingError(
                     b'pending multiple integer revisions are not supported'
                 )

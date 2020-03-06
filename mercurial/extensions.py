@@ -787,11 +787,11 @@ def disabled():
     try:
         from hgext import __index__  # pytype: disable=import-error
 
-        return dict(
-            (name, gettext(desc))
+        return {
+            name: gettext(desc)
             for name, desc in pycompat.iteritems(__index__.docs)
             if name not in _order
-        )
+        }
     except (ImportError, AttributeError):
         pass
 

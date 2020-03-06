@@ -514,7 +514,7 @@ def aliasinterpolate(name, args, cmd):
     '''
     # util.interpolate can't deal with "$@" (with quotes) because it's only
     # built to match prefix + patterns.
-    replacemap = dict((b'$%d' % (i + 1), arg) for i, arg in enumerate(args))
+    replacemap = {b'$%d' % (i + 1): arg for i, arg in enumerate(args)}
     replacemap[b'$0'] = name
     replacemap[b'$$'] = b'$'
     replacemap[b'$@'] = b' '.join(args)

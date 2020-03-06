@@ -271,9 +271,9 @@ class datapack(basepack.basepack):
     def cleanup(self, ledger):
         entries = ledger.sources.get(self, [])
         allkeys = set(self)
-        repackedkeys = set(
+        repackedkeys = {
             (e.filename, e.node) for e in entries if e.datarepacked or e.gced
-        )
+        }
 
         if len(allkeys - repackedkeys) == 0:
             if self.path not in ledger.created:

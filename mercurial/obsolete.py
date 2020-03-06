@@ -939,7 +939,7 @@ def _computeobsoleteset(repo):
     getnode = repo.changelog.node
     notpublic = _mutablerevs(repo)
     isobs = repo.obsstore.successors.__contains__
-    obs = set(r for r in notpublic if isobs(getnode(r)))
+    obs = {r for r in notpublic if isobs(getnode(r))}
     return obs
 
 
@@ -965,7 +965,7 @@ def _computeorphanset(repo):
 def _computesuspendedset(repo):
     """the set of obsolete parents with non obsolete descendants"""
     suspended = repo.changelog.ancestors(getrevs(repo, b'orphan'))
-    return set(r for r in getrevs(repo, b'obsolete') if r in suspended)
+    return {r for r in getrevs(repo, b'obsolete') if r in suspended}
 
 
 @cachefor(b'extinct')

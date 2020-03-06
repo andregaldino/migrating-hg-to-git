@@ -935,11 +935,11 @@ class hgbuilddoc(Command):
             normalizecrlf('doc/%s.html' % root)
 
         # This logic is duplicated in doc/Makefile.
-        sources = set(
+        sources = {
             f
             for f in os.listdir('mercurial/helptext')
             if re.search(r'[0-9]\.txt$', f)
-        )
+        }
 
         # common.txt is a one-off.
         gentxt('common')
@@ -979,7 +979,7 @@ class hginstall(install):
         # Screen out egg related commands to prevent egg generation.  But allow
         # mercurial.egg-info generation, since that is part of modern
         # packaging.
-        excl = set(['bdist_egg'])
+        excl = {'bdist_egg'}
         return filter(lambda x: x not in excl, install.get_sub_commands(self))
 
 

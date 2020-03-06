@@ -2213,7 +2213,7 @@ def fspath(name, root):
     '''
 
     def _makefspathcacheentry(dir):
-        return dict((normcase(n), n) for n in os.listdir(dir))
+        return {normcase(n): n for n in os.listdir(dir)}
 
     seps = pycompat.ossep
     if pycompat.osaltsep:

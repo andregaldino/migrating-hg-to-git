@@ -228,7 +228,7 @@ def stripcmd(ui, repo, *revs, **opts):
             for p in repo.dirstate.parents()
         )
 
-        rootnodes = set(cl.node(r) for r in roots)
+        rootnodes = {cl.node(r) for r in roots}
 
         q = getattr(repo, 'mq', None)
         if q is not None and q.applied:

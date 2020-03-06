@@ -364,7 +364,7 @@ def emitrevisions(
     if nodesorder == b'nodes':
         revs = [frev(n) for n in nodes]
     elif nodesorder == b'linear':
-        revs = set(frev(n) for n in nodes)
+        revs = {frev(n) for n in nodes}
         revs = dagop.linearize(revs, store.parentrevs)
     else:  # storage and default
         revs = sorted(frev(n) for n in nodes)

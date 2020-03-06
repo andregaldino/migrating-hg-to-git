@@ -584,7 +584,7 @@ def debugdag(ui, repo, file_=None, *revs, **opts):
     dots = opts.get('dots')
     if file_:
         rlog = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False), file_)
-        revs = set((int(r) for r in revs))
+        revs = {int(r) for r in revs}
 
         def events():
             for r in rlog:
@@ -1134,7 +1134,7 @@ def debugfileset(ui, repo, expr, **opts):
         (b'analyzed', filesetlang.analyze),
         (b'optimized', filesetlang.optimize),
     ]
-    stagenames = set(n for n, f in stages)
+    stagenames = {n for n, f in stages}
 
     showalways = set()
     if ui.verbose and not opts[b'show_stage']:
@@ -2598,7 +2598,7 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
             dirstatefiles = set(dirstate)
             manifestonly = manifestfiles - dirstatefiles
             dsonly = dirstatefiles - manifestfiles
-            dsnotadded = set(f for f in dsonly if dirstate[f] != b'a')
+            dsnotadded = {f for f in dsonly if dirstate[f] != b'a'}
             changedfiles = manifestonly | dsnotadded
 
         dirstate.rebuild(ctx.node(), ctx.manifest(), changedfiles)
@@ -3165,7 +3165,7 @@ def debugrevspec(ui, repo, expr, **opts):
         raise error.Abort(
             _(b'cannot use --verify-optimized with --no-optimized')
         )
-    stagenames = set(n for n, f in stages)
+    stagenames = {n for n, f in stages}
 
     showalways = set()
     showchanged = set()

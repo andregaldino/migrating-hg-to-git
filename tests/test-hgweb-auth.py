@@ -52,7 +52,7 @@ def test(auth, urls=None):
         for name in (b'.username', b'.password'):
             if (p + name) not in auth:
                 auth[p + name] = p
-    auth = dict((k, v) for k, v in auth.items() if v is not None)
+    auth = {k: v for k, v in auth.items() if v is not None}
 
     ui = writeauth(auth)
 

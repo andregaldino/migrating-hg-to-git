@@ -48,12 +48,12 @@ class remotestore(basestore.basestore):
         )
 
     def exists(self, hashes):
-        return dict(
-            (h, s == 0)
+        return {
+            h: s == 0
             for (h, s) in pycompat.iteritems(
                 self._stat(hashes)
             )  # dict-from-generator
-        )
+        }
 
     def sendfile(self, filename, hash):
         self.ui.debug(b'remotestore: sendfile(%s, %s)\n' % (filename, hash))

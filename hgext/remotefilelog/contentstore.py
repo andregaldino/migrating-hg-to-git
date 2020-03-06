@@ -300,7 +300,7 @@ class manifestrevlogstore(object):
 
         rl = self._revlog(name)
         ancestors = {}
-        missing = set((node,))
+        missing = {node}
         for ancrev in rl.ancestors([rl.rev(node)], inclusive=True):
             ancnode = rl.node(ancrev)
             missing.discard(ancnode)

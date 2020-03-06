@@ -3125,7 +3125,7 @@ def amend(ui, repo, old, extra, pats, opts):
         ms = mergemod.mergestate.read(repo)
         mergeutil.checkunresolved(ms)
 
-        filestoamend = set(f for f in wctx.files() if matcher(f))
+        filestoamend = {f for f in wctx.files() if matcher(f)}
 
         changes = len(filestoamend) > 0
         if changes:
@@ -3917,7 +3917,7 @@ def _performrevert(
         # Apply changes
         fp = stringio()
         # chunks are serialized per file, but files aren't sorted
-        for f in sorted(set(c.header.filename() for c in chunks if ishunk(c))):
+        for f in sorted({c.header.filename() for c in chunks if ishunk(c)}):
             prntstatusmsg(b'revert', f)
         files = set()
         for c in chunks:

@@ -397,7 +397,7 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     # for file paths which require normalization and we encounter a case
     # collision, we store our own foldmap
     if normalize:
-        foldmap = dict((normcase(k), k) for k in results)
+        foldmap = {normcase(k): k for k in results}
 
     switch_slashes = pycompat.ossep == b'\\'
     # The order of the results is, strictly speaking, undefined.
@@ -459,22 +459,16 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     if normalize:
         # any notable files that have changed case will already be handled
         # above, so just check membership in the foldmap
-        notefiles = set(
-            (
-                normalize(f, True, True)
-                for f in notefiles
-                if normcase(f) not in foldmap
-            )
-        )
-    visit = set(
-        (
-            f
+        notefiles = {
+            normalize(f, True, True)
             for f in notefiles
-            if (
-                f not in results and matchfn(f) and (f in dmap or not ignore(f))
-            )
-        )
-    )
+            if normcase(f) not in foldmap
+        }
+    visit = {
+        f
+        for f in notefiles
+        if (f not in results and matchfn(f) and (f in dmap or not ignore(f)))
+    }
 
     if not fresh_instance:
         if matchalways:

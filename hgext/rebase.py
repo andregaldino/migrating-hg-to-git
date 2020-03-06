@@ -1936,7 +1936,7 @@ def buildstate(repo, destmap, collapse):
     # applied patch. But it prevents messing up the working directory when
     # a partially completed rebase is blocked by mq.
     if b'qtip' in repo.tags():
-        mqapplied = set(repo[s.node].rev() for s in repo.mq.applied)
+        mqapplied = {repo[s.node].rev() for s in repo.mq.applied}
         if set(destmap.values()) & mqapplied:
             raise error.Abort(_(b'cannot rebase onto an applied mq patch'))
 
@@ -2121,7 +2121,7 @@ def pullrebase(orig, ui, repo, *args, **opts):
 
 def _filterobsoleterevs(repo, revs):
     """returns a set of the obsolete revisions in revs"""
-    return set(r for r in revs if repo[r].obsolete())
+    return {r for r in revs if repo[r].obsolete()}
 
 
 def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):

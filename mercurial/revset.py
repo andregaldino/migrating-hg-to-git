@@ -1875,7 +1875,7 @@ def parents(repo, subset, x):
     The set of all parents for all changesets in set, or the working directory.
     """
     if x is None:
-        ps = set(p.rev() for p in repo[x].parents())
+        ps = {p.rev() for p in repo[x].parents()}
     else:
         ps = set()
         cl = repo.changelog
@@ -2437,7 +2437,7 @@ def _mapbynodefunc(repo, s, f):
     cl = repo.unfiltered().changelog
     torev = cl.index.get_rev
     tonode = cl.node
-    result = set(torev(n) for n in f(tonode(r) for r in s))
+    result = {torev(n) for n in f(tonode(r) for r in s)}
     result.discard(None)
     return smartset.baseset(result - repo.changelog.filteredrevs)
 

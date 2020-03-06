@@ -710,11 +710,11 @@ class svn_source(converter_source):
                 # Here/tags/tag.1 discarded as well as its children.
                 # It happens with tools like cvs2svn. Such tags cannot
                 # be represented in mercurial.
-                addeds = dict(
-                    (p, e.copyfrom_path)
+                addeds = {
+                    p: e.copyfrom_path
                     for p, e in pycompat.iteritems(origpaths)
                     if e.action == b'A' and e.copyfrom_path
-                )
+                }
                 badroots = set()
                 for destroot in addeds:
                     for source, sourcerev, dest in pendings:

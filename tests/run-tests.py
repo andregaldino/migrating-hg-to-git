@@ -1553,7 +1553,7 @@ class TTest(Test):
     NEEDESCAPE = re.compile(br'[\x00-\x08\x0b-\x1f\x7f-\xff]').search
 
     ESCAPESUB = re.compile(br'[\x00-\x08\x0b-\x1f\\\x7f-\xff]').sub
-    ESCAPEMAP = dict((bchr(i), br'\x%02x' % i) for i in range(256))
+    ESCAPEMAP = {bchr(i): br'\x%02x' % i for i in range(256)}
     ESCAPEMAP.update({b'\\': b'\\\\', b'\r': br'\r'})
 
     def __init__(self, path, *args, **kwds):
@@ -2524,7 +2524,7 @@ def loadtimes(outputdir):
 def savetimes(outputdir, result):
     saved = dict(loadtimes(outputdir))
     maxruns = 5
-    skipped = set([str(t[0]) for t in result.skipped])
+    skipped = {str(t[0]) for t in result.skipped}
     for tdata in result.times:
         test, real = tdata[0], tdata[3]
         if test not in skipped:
@@ -2737,7 +2737,7 @@ class TextTestRunner(unittest.TextTestRunner):
     @staticmethod
     def _writexunit(result, outf):
         # See http://llg.cubic.org/docs/junit/ for a reference.
-        timesd = dict((t[0], t[3]) for t in result.times)
+        timesd = {t[0]: t[3] for t in result.times}
         doc = minidom.Document()
         s = doc.createElement('testsuite')
         s.setAttribute('errors', "0")  # TODO
@@ -3343,7 +3343,7 @@ class TestRunner(object):
         tmpdir = os.path.join(self._hgtmp, b'child%d' % count)
 
         # extra keyword parameters. 'case' is used by .t tests
-        kwds = dict((k, testdesc[k]) for k in ['case'] if k in testdesc)
+        kwds = {k: testdesc[k] for k in ['case'] if k in testdesc}
 
         t = testcls(
             refpath,

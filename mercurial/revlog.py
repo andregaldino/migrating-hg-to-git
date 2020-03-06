@@ -1286,7 +1286,7 @@ class revlog(object):
         else:
             start = self.rev(start)
 
-        stoprevs = set(self.rev(n) for n in stop or [])
+        stoprevs = {self.rev(n) for n in stop or []}
 
         revs = dagop.headrevssubset(
             self.revs, self.parentrevs, startrev=start, stoprevs=stoprevs

@@ -233,7 +233,7 @@ def fastannotate(ui, repo, *pats, **opts):
                         showlines=(showlines and not showdeleted),
                     )
                     if showdeleted:
-                        existinglines = set((l[0], l[1]) for l in result)
+                        existinglines = {(l[0], l[1]) for l in result}
                         result = a.annotatealllines(
                             rev, showpath=showpath, showlines=showlines
                         )

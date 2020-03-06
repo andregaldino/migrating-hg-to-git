@@ -224,13 +224,11 @@ def _generic_start_transaction(handler, h, req):
 
 
 def _generic_proxytunnel(self):
-    proxyheaders = dict(
-        [
-            (x, self.headers[x])
-            for x in self.headers
-            if x.lower().startswith('proxy-')
-        ]
-    )
+    proxyheaders = {
+        x: self.headers[x]
+        for x in self.headers
+        if x.lower().startswith('proxy-')
+    }
     self.send(b'CONNECT %s HTTP/1.0\r\n' % self.realhostport)
     for header in pycompat.iteritems(proxyheaders):
         self.send(b'%s: %s\r\n' % header)

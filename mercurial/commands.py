@@ -3721,9 +3721,9 @@ def heads(ui, repo, *branchrevs, **opts):
         heads = [repo[h] for h in heads]
 
     if branchrevs:
-        branches = set(
+        branches = {
             repo[r].branch() for r in scmutil.revrange(repo, branchrevs)
-        )
+        }
         heads = [h for h in heads if h.branch() in branches]
 
     if opts.get(b'active') and branchrevs:
@@ -3731,7 +3731,7 @@ def heads(ui, repo, *branchrevs, **opts):
         heads = [h for h in heads if h.node() in dagheads]
 
     if branchrevs:
-        haveheads = set(h.branch() for h in heads)
+        haveheads = {h.branch() for h in heads}
         if branches - haveheads:
             headless = b', '.join(b for b in branches - haveheads)
             msg = _(b'no open branch heads found on branches %s')

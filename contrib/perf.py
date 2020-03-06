@@ -2523,7 +2523,7 @@ def perfdiffwd(ui, repo, **opts):
     }
 
     for diffopt in ('', 'w', 'b', 'B', 'wB'):
-        opts = dict((options[c], b'1') for c in diffopt)
+        opts = {options[c]: b'1' for c in diffopt}
 
         def d():
             ui.pushbuffer()
@@ -3048,7 +3048,7 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
 
     # Verify engines argument.
     if engines:
-        engines = set(e.strip() for e in engines.split(b','))
+        engines = {e.strip() for e in engines.split(b',')}
         for engine in engines:
             try:
                 util.compressionengines[engine]

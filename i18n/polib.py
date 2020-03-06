@@ -722,8 +722,8 @@ class POFile(_BaseFile):
             object POFile, the reference catalog.
         """
         # Store entries in dict/set for faster access
-        self_entries = dict((entry.msgid, entry) for entry in self)
-        refpot_msgids = set(entry.msgid for entry in refpot)
+        self_entries = {entry.msgid: entry for entry in self}
+        refpot_msgids = {entry.msgid for entry in refpot}
         # Merge entries that are in the refpot
         for entry in refpot:
             e = self_entries.get(entry.msgid)
@@ -1808,9 +1808,9 @@ class _MOFileParser(object):
                 entry = self._build_entry(
                     msgid=msgid_tokens[0],
                     msgid_plural=msgid_tokens[1],
-                    msgstr_plural=dict(
-                        (k, v) for k, v in enumerate(msgstr.split(b('\0')))
-                    ),
+                    msgstr_plural={
+                        k: v for k, v in enumerate(msgstr.split(b('\0')))
+                    },
                 )
             else:
                 entry = self._build_entry(msgid=msgid, msgstr=msgstr)

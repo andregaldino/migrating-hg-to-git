@@ -1796,8 +1796,8 @@ class updateresult(object):
 
 def emptyactions():
     """create an actions dict, to be populated and passed to applyupdates()"""
-    return dict(
-        (m, [])
+    return {
+        m: []
         for m in (
             ACTION_ADD,
             ACTION_ADD_MODIFIED,
@@ -1814,7 +1814,7 @@ def emptyactions():
             ACTION_PATH_CONFLICT,
             ACTION_PATH_CONFLICT_RESOLVE,
         )
-    )
+    }
 
 
 def applyupdates(
@@ -2070,7 +2070,7 @@ def applyupdates(
 
     extraactions = ms.actions()
     if extraactions:
-        mfiles = set(a[0] for a in actions[ACTION_MERGE])
+        mfiles = {a[0] for a in actions[ACTION_MERGE]}
         for k, acts in pycompat.iteritems(extraactions):
             actions[k].extend(acts)
             if k == ACTION_GET and wantfiledata:

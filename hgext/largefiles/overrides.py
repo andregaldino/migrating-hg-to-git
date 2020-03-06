@@ -1564,11 +1564,11 @@ def overridepurge(orig, ui, repo, *dirs, **opts):
 def overriderollback(orig, ui, repo, **opts):
     with repo.wlock():
         before = repo.dirstate.parents()
-        orphans = set(
+        orphans = {
             f
             for f in repo.dirstate
             if lfutil.isstandin(f) and repo.dirstate[f] != b'r'
-        )
+        }
         result = orig(ui, repo, **opts)
         after = repo.dirstate.parents()
         if before == after:

@@ -835,10 +835,10 @@ class fold(histeditaction):
             return ctx, [(self.node, (parentctxnode,))]
 
         parentctx = repo[parentctxnode]
-        newcommits = set(
+        newcommits = {
             c.node()
             for c in repo.set(b'(%d::. - %d)', parentctx.rev(), parentctx.rev())
-        )
+        }
         if not newcommits:
             repo.ui.warn(
                 _(
@@ -2412,7 +2412,7 @@ def verifyactions(actions, state, ctxs):
     Will abort if there are to many or too few rules, a malformed rule,
     or a rule on a changeset outside of the user-given range.
     """
-    expected = set(c.node() for c in ctxs)
+    expected = {c.node() for c in ctxs}
     seen = set()
     prev = None
 

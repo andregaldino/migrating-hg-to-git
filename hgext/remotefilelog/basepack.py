@@ -101,7 +101,7 @@ class _cachebackedpacks(object):
             self._lastpack = pack
             yield pack
 
-        cachedpacks = set(pack for pack in self._lrucache)
+        cachedpacks = {pack for pack in self._lrucache}
         # Yield for paths not in the cache.
         for pack in self._packs - cachedpacks:
             self._lastpack = pack
@@ -259,7 +259,7 @@ class basepackstore(object):
         newpacks = []
         if now > self.lastrefresh + REFRESHRATE:
             self.lastrefresh = now
-            previous = set(p.path for p in self.packs)
+            previous = {p.path for p in self.packs}
             for filepath, __, __ in self._getavailablepackfilessorted():
                 if filepath not in previous:
                     newpack = self.getpack(filepath)

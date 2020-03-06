@@ -138,7 +138,7 @@ def ancestors(pfunc, *orignodes):
         k = 0
         for i in interesting:
             k |= i
-        return set(n for (i, n) in mapping if k & i)
+        return {n for (i, n) in mapping if k & i}
 
     gca = commonancestorsheads(pfunc, *orignodes)
 

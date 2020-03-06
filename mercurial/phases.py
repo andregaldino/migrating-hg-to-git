@@ -445,10 +445,10 @@ class phasecache(object):
                     phasetracking, r, self.phase(repo, r), targetphase
                 )
 
-            roots = set(
+            roots = {
                 ctx.node()
                 for ctx in repo.set(b'roots((%ln::) - %ld)', olds, affected)
-            )
+            }
             if olds != roots:
                 self._updateroots(phase, roots, tr)
                 # some roots may need to be declared for lower phases
@@ -518,9 +518,7 @@ class phasecache(object):
             ]
             updatedroots = repo.set(b'roots(%ln::)', aboveroots)
 
-            finalroots = set(
-                n for n in currentroots if repo[n].rev() < minnewroot
-            )
+            finalroots = {n for n in currentroots if repo[n].rev() < minnewroot}
             finalroots.update(ctx.node() for ctx in updatedroots)
         if finalroots != oldroots:
             self._updateroots(targetphase, finalroots, tr)
@@ -760,7 +758,7 @@ def newheads(repo, heads, roots):
     if not heads or heads == [nullid]:
         return []
     # The logic operated on revisions, convert arguments early for convenience
-    new_heads = set(rev(n) for n in heads if n != nullid)
+    new_heads = {rev(n) for n in heads if n != nullid}
     roots = [rev(n) for n in roots]
     # compute the area we need to remove
     affected_zone = repo.revs(b"(%ld::%ld)", roots, new_heads)

@@ -1162,7 +1162,7 @@ class queue(object):
 
         if unknown:
             if numrevs:
-                rev = dict((entry.name, entry.node) for entry in qfinished)
+                rev = {entry.name: entry.node for entry in qfinished}
                 for p in unknown:
                     msg = _(b'revision %s refers to unknown patches: %s\n')
                     self.ui.warn(msg % (short(rev[p]), p))
@@ -3361,7 +3361,7 @@ def guard(ui, repo, *args, **opts):
         ui.write(b'\n')
 
     q = repo.mq
-    applied = set(p.name for p in q.applied)
+    applied = {p.name for p in q.applied}
     patch = None
     args = list(args)
     if opts.get('list'):

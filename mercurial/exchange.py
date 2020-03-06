@@ -1679,12 +1679,12 @@ def _fullpullbundle2(repo, pullop):
     def headsofdiff(h1, h2):
         """Returns heads(h1 % h2)"""
         res = unfi.set(b'heads(%ln %% %ln)', h1, h2)
-        return set(ctx.node() for ctx in res)
+        return {ctx.node() for ctx in res}
 
     def headsofunion(h1, h2):
         """Returns heads((h1 + h2) - null)"""
         res = unfi.set(b'heads((%ln + %ln - null))', h1, h2)
-        return set(ctx.node() for ctx in res)
+        return {ctx.node() for ctx in res}
 
     while True:
         old_heads = unficl.heads()

@@ -483,7 +483,7 @@ def getoldnodedrevmap(repo, nodelist):
             ]
 
             # "precursors" as known by Phabricator
-            phprecset = set(getnode(d) for d in diffs)
+            phprecset = {getnode(d) for d in diffs}
 
             # Ignore if precursors (Phabricator and local repo) do not overlap,
             # and force is not set (when commit message says nothing)
@@ -1062,7 +1062,7 @@ def userphids(ui, names):
     # username not found is not an error of the API. So check if we have missed
     # some names here.
     data = result[b'data']
-    resolved = set(entry[b'fields'][b'username'].lower() for entry in data)
+    resolved = {entry[b'fields'][b'username'].lower() for entry in data}
     unresolved = set(names) - resolved
     if unresolved:
         raise error.Abort(
@@ -1635,7 +1635,7 @@ def readpatch(ui, drevs, write):
     "differential.query".
     """
     # Prefetch hg:meta property for all diffs
-    diffids = sorted(set(max(int(v) for v in drev[b'diffs']) for drev in drevs))
+    diffids = sorted({max(int(v) for v in drev[b'diffs']) for drev in drevs})
     diffs = callconduit(ui, b'differential.querydiffs', {b'ids': diffids})
 
     patches = []
@@ -1792,11 +1792,11 @@ def phabstatusshowview(ui, repo, displayer):
     """Phabricator differiential status"""
     revs = repo.revs('sort(_underway(), topo)')
     drevmap = getdrevmap(repo, revs)
-    unknownrevs, drevids, revsbydrevid = [], set([]), {}
+    unknownrevs, drevids, revsbydrevid = [], set(), {}
     for rev, drevid in pycompat.iteritems(drevmap):
         if drevid is not None:
             drevids.add(drevid)
-            revsbydrevid.setdefault(drevid, set([])).add(rev)
+            revsbydrevid.setdefault(drevid, set()).add(rev)
         else:
             unknownrevs.append(rev)
 

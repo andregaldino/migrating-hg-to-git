@@ -446,7 +446,7 @@ class branchcache(object):
         # 1 (branch a) -> 2 (branch b) -> 3 (branch a)
         for branch, newheadrevs in pycompat.iteritems(newbranches):
             bheads = self._entries.setdefault(branch, [])
-            bheadset = set(cl.rev(node) for node in bheads)
+            bheadset = {cl.rev(node) for node in bheads}
 
             # This have been tested True on all internal usage of this function.
             # run it again in case of doubt
@@ -582,7 +582,7 @@ class revbranchcache(object):
 
     @util.propertycache
     def _namesreverse(self):
-        return dict((b, r) for r, b in enumerate(self._names))
+        return {b: r for r, b in enumerate(self._names)}
 
     def branchinfo(self, rev):
         """Return branch name and close flag for rev, using and updating

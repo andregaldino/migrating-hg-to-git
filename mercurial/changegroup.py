@@ -993,7 +993,7 @@ class cgpacker(object):
             ]
 
         manifests.clear()
-        clrevs = set(cl.rev(x) for x in clnodes)
+        clrevs = {cl.rev(x) for x in clnodes}
 
         it = self.generatefiles(
             changedfiles,
@@ -1282,9 +1282,7 @@ class cgpacker(object):
                 flinkrev = store.linkrev
                 fnode = store.node
                 revs = ((r, flinkrev(r)) for r in store)
-                return dict(
-                    (fnode(r), cln(lr)) for r, lr in revs if lr in clrevs
-                )
+                return {fnode(r): cln(lr) for r, lr in revs if lr in clrevs}
 
         clrevtolocalrev = {}
 

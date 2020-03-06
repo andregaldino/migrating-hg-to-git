@@ -137,7 +137,7 @@ def extendrange(repo, state, nodes, good):
             side = state[b'bad']
         else:
             side = state[b'good']
-        num = len(set(i.node() for i in parents) & set(side))
+        num = len({i.node() for i in parents} & set(side))
         if num == 1:
             return parents[0].ancestor(parents[1])
     return None

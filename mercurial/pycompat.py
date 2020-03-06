@@ -334,7 +334,7 @@ if ispy3:
         they can be passed as keyword arguments as dictonaries with bytes keys
         can't be passed as keyword arguments to functions on Python 3.
         """
-        dic = dict((k.decode('latin-1'), v) for k, v in dic.items())
+        dic = {k.decode('latin-1'): v for k, v in dic.items()}
         return dic
 
     def byteskwargs(dic):
@@ -342,7 +342,7 @@ if ispy3:
         Converts keys of python dictonaries to bytes as they were converted to
         str to pass that dictonary as a keyword argument on Python 3.
         """
-        dic = dict((k.encode('latin-1'), v) for k, v in dic.items())
+        dic = {k.encode('latin-1'): v for k, v in dic.items()}
         return dic
 
     # TODO: handle shlex.shlex().

@@ -1129,7 +1129,7 @@ def upgraderepo(
     """Upgrade a repository in place."""
     if optimize is None:
         optimize = []
-    optimize = set(legacy_opts_map.get(o, o) for o in optimize)
+    optimize = {legacy_opts_map.get(o, o) for o in optimize}
     repo = repo.unfiltered()
 
     revlogs = set(UPGRADE_ALL_REVLOGS)

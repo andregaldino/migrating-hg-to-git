@@ -772,7 +772,7 @@ class exactmatcher(basematcher):
         candidates = self._fileset | self._dirs - {b''}
         if dir != b'':
             d = dir + b'/'
-            candidates = set(c[len(d) :] for c in candidates if c.startswith(d))
+            candidates = {c[len(d) :] for c in candidates if c.startswith(d)}
         # self._dirs includes all of the directories, recursively, so if
         # we're attempting to match foo/bar/baz.txt, it'll have '', 'foo',
         # 'foo/bar' in it. Thus we can safely ignore a candidate that has a

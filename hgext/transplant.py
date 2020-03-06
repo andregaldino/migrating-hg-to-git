@@ -840,10 +840,10 @@ def _dotransplant(ui, repo, *revs, **opts):
 
         tf = tp.transplantfilter(repo, source, p1)
         if opts.get(b'prune'):
-            prune = set(
+            prune = {
                 source[r].node()
                 for r in scmutil.revrange(source, opts.get(b'prune'))
-            )
+            }
             matchfn = lambda x: tf(x) and x not in prune
         else:
             matchfn = tf
