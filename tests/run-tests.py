@@ -143,12 +143,12 @@ if sys.version_info > (3, 5, 0):
     PYTHON3 = True
     xrange = range  # we use xrange in one place, and we'd rather not use range
 
-    def _bytespath(p):
+    def _sys2bytes(p):
         if p is None:
             return p
         return p.encode('utf-8')
 
-    def _strpath(p):
+    def _bytes2sys(p):
         if p is None:
             return p
         return p.decode('utf-8')
@@ -165,34 +165,34 @@ if sys.version_info > (3, 5, 0):
                 self._strenv = strenv
 
             def __getitem__(self, k):
-                v = self._strenv.__getitem__(_strpath(k))
-                return _bytespath(v)
+                v = self._strenv.__getitem__(_bytes2sys(k))
+                return _sys2bytes(v)
 
             def __setitem__(self, k, v):
-                self._strenv.__setitem__(_strpath(k), _strpath(v))
+                self._strenv.__setitem__(_bytes2sys(k), _bytes2sys(v))
 
             def __delitem__(self, k):
-                self._strenv.__delitem__(_strpath(k))
+                self._strenv.__delitem__(_bytes2sys(k))
 
             def __contains__(self, k):
-                return self._strenv.__contains__(_strpath(k))
+                return self._strenv.__contains__(_bytes2sys(k))
 
             def __iter__(self):
-                return iter([_bytespath(k) for k in iter(self._strenv)])
+                return iter([_sys2bytes(k) for k in iter(self._strenv)])
 
             def get(self, k, default=None):
-                v = self._strenv.get(_strpath(k), _strpath(default))
-                return _bytespath(v)
+                v = self._strenv.get(_bytes2sys(k), _bytes2sys(default))
+                return _sys2bytes(v)
 
             def pop(self, k, default=None):
-                v = self._strenv.pop(_strpath(k), _strpath(default))
-                return _bytespath(v)
+                v = self._strenv.pop(_bytes2sys(k), _bytes2sys(default))
+                return _sys2bytes(v)
 
         osenvironb = environbytes(os.environ)
 
     getcwdb = getattr(os, 'getcwdb')
     if not getcwdb or os.name == 'nt':
-        getcwdb = lambda: _bytespath(os.getcwd())
+        getcwdb = lambda: _sys2bytes(os.getcwd())
 
 elif sys.version_info >= (3, 0, 0):
     print(
@@ -207,10 +207,10 @@ else:
     # bytestrings by default, so we don't have to do any extra
     # fiddling there. We define the wrapper functions anyway just to
     # help keep code consistent between platforms.
-    def _bytespath(p):
+    def _sys2bytes(p):
         return p
 
-    _strpath = _bytespath
+    _bytes2sys = _sys2bytes
     osenvironb = os.environ
     getcwdb = os.getcwd
 
@@ -274,10 +274,10 @@ closefds = os.name == 'posix'
 def Popen4(cmd, wd, timeout, env=None):
     processlock.acquire()
     p = subprocess.Popen(
-        _strpath(cmd),
+        _bytes2sys(cmd),
         shell=True,
         bufsize=-1,
-        cwd=_strpath(wd),
+        cwd=_bytes2sys(wd),
         env=env,
         close_fds=closefds,
         stdin=subprocess.PIPE,
@@ -315,7 +315,7 @@ elif os.environ.get('PYTHON'):
 else:
     raise AssertionError('Could not find Python interpreter')
 
-PYTHON = _bytespath(sysexecutable.replace('\\', '/'))
+PYTHON = _sys2bytes(sysexecutable.replace('\\', '/'))
 IMPL_PATH = b'PYTHONPATH'
 if 'java' in sys.platform:
     IMPL_PATH = b'JYTHONPATH'
@@ -640,7 +640,7 @@ def parseargs(args, parser):
     if options.local:
         if options.with_hg or options.with_chg:
             parser.error('--local cannot be used with --with-hg or --with-chg')
-        testdir = os.path.dirname(_bytespath(canonpath(sys.argv[0])))
+        testdir = os.path.dirname(_sys2bytes(canonpath(sys.argv[0])))
         reporootdir = os.path.dirname(testdir)
         pathandattrs = [(b'hg', 'with_hg')]
         if options.chg:
@@ -652,10 +652,10 @@ def parseargs(args, parser):
                     '--local specified, but %r not found or '
                     'not executable' % binpath
                 )
-            setattr(options, attr, _strpath(binpath))
+            setattr(options, attr, _bytes2sys(binpath))
 
     if options.with_hg:
-        options.with_hg = canonpath(_bytespath(options.with_hg))
+        options.with_hg = canonpath(_sys2bytes(options.with_hg))
         if not (
             os.path.isfile(options.with_hg)
             and os.access(options.with_hg, os.X_OK)
@@ -669,7 +669,7 @@ def parseargs(args, parser):
         parser.error('chg does not work on %s' % os.name)
     if options.with_chg:
         options.chg = False  # no installation to temporary location
-        options.with_chg = canonpath(_bytespath(options.with_chg))
+        options.with_chg = canonpath(_sys2bytes(options.with_chg))
         if not (
             os.path.isfile(options.with_chg)
             and os.access(options.with_chg, os.X_OK)
@@ -942,7 +942,7 @@ class Test(unittest.TestCase):
             slowtimeout = defaults['slowtimeout']
         self.path = path
         self.bname = os.path.basename(path)
-        self.name = _strpath(self.bname)
+        self.name = _bytes2sys(self.bname)
         self._testdir = os.path.dirname(path)
         self._outputdir = outputdir
         self._tmpname = os.path.basename(path)
@@ -956,7 +956,7 @@ class Test(unittest.TestCase):
         self._slowtimeout = slowtimeout
         self._startport = startport
         self._extraconfigopts = extraconfigopts or []
-        self._shell = _bytespath(shell)
+        self._shell = _sys2bytes(shell)
         self._hgcommand = hgcommand or b'hg'
         self._usechg = usechg
         self._useipv6 = useipv6
@@ -1268,7 +1268,7 @@ class Test(unittest.TestCase):
         environment."""
         # Put the restoreenv script inside self._threadtmp
         scriptpath = os.path.join(self._threadtmp, b'restoreenv.sh')
-        testenv['HGTEST_RESTOREENV'] = _strpath(scriptpath)
+        testenv['HGTEST_RESTOREENV'] = _bytes2sys(scriptpath)
 
         # Only restore environment variable names that the shell allows
         # us to export.
@@ -1302,15 +1302,15 @@ class Test(unittest.TestCase):
         env = os.environ.copy()
         env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
-        env['TESTTMP'] = _strpath(self._testtmp)
+        env['TESTTMP'] = _bytes2sys(self._testtmp)
         env['TESTNAME'] = self.name
-        env['HOME'] = _strpath(self._testtmp)
+        env['HOME'] = _bytes2sys(self._testtmp)
         # This number should match portneeded in _getport
         for port in xrange(3):
             # This list should be parallel to _portmap in _getreplacements
             defineport(port)
-        env["HGRCPATH"] = _strpath(os.path.join(self._threadtmp, b'.hgrc'))
-        env["DAEMON_PIDS"] = _strpath(
+        env["HGRCPATH"] = _bytes2sys(os.path.join(self._threadtmp, b'.hgrc'))
+        env["DAEMON_PIDS"] = _bytes2sys(
             os.path.join(self._threadtmp, b'daemon.pids')
         )
         env["HGEDITOR"] = (
@@ -1342,7 +1342,7 @@ class Test(unittest.TestCase):
 
         # LOCALIP could be ::1 or 127.0.0.1. Useful for tests that require raw
         # IP addresses.
-        env['LOCALIP'] = _strpath(self._localip())
+        env['LOCALIP'] = _bytes2sys(self._localip())
 
         # This has the same effect as Py_LegacyWindowsStdioFlag in exewrapper.c,
         # but this is needed for testing python instances like dummyssh,
@@ -1451,7 +1451,10 @@ class Test(unittest.TestCase):
         """
         if self._debug:
             proc = subprocess.Popen(
-                _strpath(cmd), shell=True, cwd=_strpath(self._testtmp), env=env
+                _bytes2sys(cmd),
+                shell=True,
+                cwd=_bytes2sys(self._testtmp),
+                env=env,
             )
             ret = proc.wait()
             return (ret, None)
@@ -1561,7 +1564,7 @@ class TTest(Test):
         super(TTest, self).__init__(path, *args, **kwds)
         if case:
             casepath = b'#'.join(case)
-            self.name = '%s#%s' % (self.name, _strpath(casepath))
+            self.name = '%s#%s' % (self.name, _bytes2sys(casepath))
             self.errpath = b'%s#%s.err' % (self.errpath[:-4], casepath)
             self._tmpname += b'-%s' % casepath
         self._have = {}
@@ -1612,7 +1615,7 @@ class TTest(Test):
             return self._have.get(allreqs)
 
         # TODO do something smarter when all other uses of hghave are gone.
-        runtestdir = os.path.abspath(os.path.dirname(_bytespath(__file__)))
+        runtestdir = os.path.abspath(os.path.dirname(_sys2bytes(__file__)))
         tdir = runtestdir.replace(b'\\', b'/')
         proc = Popen4(
             b'%s -c "%s/hghave %s"' % (self._shell, tdir, allreqs),
@@ -2199,7 +2202,7 @@ class TestResult(unittest._TextTestResult):
                 v = self._options.view
                 subprocess.call(
                     r'"%s" "%s" "%s"'
-                    % (v, _strpath(test.refpath), _strpath(test.errpath)),
+                    % (v, _bytes2sys(test.refpath), _bytes2sys(test.errpath)),
                     shell=True,
                 )
             else:
@@ -2688,7 +2691,7 @@ class TextTestRunner(unittest.TextTestRunner):
             opts = ''
             withhg = self._runner.options.with_hg
             if withhg:
-                opts += ' --with-hg=%s ' % shellquote(_strpath(withhg))
+                opts += ' --with-hg=%s ' % shellquote(_bytes2sys(withhg))
             rtc = '%s %s %s %s' % (sysexecutable, sys.argv[0], opts, test)
             data = pread(bisectcmd + ['--command', rtc])
             m = re.search(
@@ -2930,7 +2933,7 @@ class TestRunner(object):
         try:
             parser = parser or getparser()
             options = parseargs(args, parser)
-            tests = [_bytespath(a) for a in options.tests]
+            tests = [_sys2bytes(a) for a in options.tests]
             if options.test_list is not None:
                 for listfile in options.test_list:
                     with open(listfile, 'rb') as f:
@@ -2962,7 +2965,7 @@ class TestRunner(object):
                 testdir = os.path.join(testdir, pathname)
         self._testdir = osenvironb[b'TESTDIR'] = testdir
         if self.options.outputdir:
-            self._outputdir = canonpath(_bytespath(self.options.outputdir))
+            self._outputdir = canonpath(_sys2bytes(self.options.outputdir))
         else:
             self._outputdir = getcwdb()
             if testdescs and pathname:
@@ -2979,7 +2982,7 @@ class TestRunner(object):
 
         if self.options.tmpdir:
             self.options.keep_tmpdir = True
-            tmpdir = _bytespath(self.options.tmpdir)
+            tmpdir = _sys2bytes(self.options.tmpdir)
             if os.path.exists(tmpdir):
                 # Meaning of tmpdir has changed since 1.3: we used to create
                 # HGTMP inside tmpdir; now HGTMP is tmpdir.  So fail if
@@ -3008,7 +3011,7 @@ class TestRunner(object):
             os.makedirs(self._tmpbindir)
 
             normbin = os.path.normpath(os.path.abspath(whg))
-            normbin = normbin.replace(_bytespath(os.sep), b'/')
+            normbin = normbin.replace(_sys2bytes(os.sep), b'/')
 
             # Other Python scripts in the test harness need to
             # `import mercurial`. If `hg` is a Python script, we assume
@@ -3057,11 +3060,11 @@ class TestRunner(object):
         osenvironb[b"BINDIR"] = self._bindir
         osenvironb[b"PYTHON"] = PYTHON
 
-        fileb = _bytespath(__file__)
+        fileb = _sys2bytes(__file__)
         runtestdir = os.path.abspath(os.path.dirname(fileb))
         osenvironb[b'RUNTESTDIR'] = runtestdir
         if PYTHON3:
-            sepb = _bytespath(os.pathsep)
+            sepb = _sys2bytes(os.pathsep)
         else:
             sepb = os.pathsep
         path = [self._bindir, runtestdir] + osenvironb[b"PATH"].split(sepb)
@@ -3121,14 +3124,14 @@ class TestRunner(object):
                 'extensions.logexceptions=%s' % logexceptions.decode('utf-8')
             )
 
-        vlog("# Using TESTDIR", _strpath(self._testdir))
-        vlog("# Using RUNTESTDIR", _strpath(osenvironb[b'RUNTESTDIR']))
-        vlog("# Using HGTMP", _strpath(self._hgtmp))
+        vlog("# Using TESTDIR", _bytes2sys(self._testdir))
+        vlog("# Using RUNTESTDIR", _bytes2sys(osenvironb[b'RUNTESTDIR']))
+        vlog("# Using HGTMP", _bytes2sys(self._hgtmp))
         vlog("# Using PATH", os.environ["PATH"])
         vlog(
-            "# Using", _strpath(IMPL_PATH), _strpath(osenvironb[IMPL_PATH]),
+            "# Using", _bytes2sys(IMPL_PATH), _bytes2sys(osenvironb[IMPL_PATH]),
         )
-        vlog("# Writing to directory", _strpath(self._outputdir))
+        vlog("# Writing to directory", _bytes2sys(self._outputdir))
 
         try:
             return self._runtests(testdescs) or 0
@@ -3146,7 +3149,7 @@ class TestRunner(object):
             if self.options.changed:
                 proc = Popen4(
                     b'hg st --rev "%s" -man0 .'
-                    % _bytespath(self.options.changed),
+                    % _sys2bytes(self.options.changed),
                     None,
                     0,
                 )
@@ -3366,7 +3369,7 @@ class TestRunner(object):
         if self.options.keep_tmpdir:
             return
 
-        vlog("# Cleaning up HGTMP", _strpath(self._hgtmp))
+        vlog("# Cleaning up HGTMP", _bytes2sys(self._hgtmp))
         shutil.rmtree(self._hgtmp, True)
         for f in self._createdfiles:
             try:
@@ -3434,9 +3437,9 @@ class TestRunner(object):
         script = os.path.realpath(sys.argv[0])
         exe = sysexecutable
         if PYTHON3:
-            compiler = _bytespath(compiler)
-            script = _bytespath(script)
-            exe = _bytespath(exe)
+            compiler = _sys2bytes(compiler)
+            script = _sys2bytes(script)
+            exe = _sys2bytes(exe)
         hgroot = os.path.dirname(os.path.dirname(script))
         self._hgroot = hgroot
         os.chdir(hgroot)
@@ -3478,7 +3481,7 @@ class TestRunner(object):
         makedirs(self._bindir)
 
         vlog("# Running", cmd.decode("utf-8"))
-        if subprocess.call(_strpath(cmd), shell=True) == 0:
+        if subprocess.call(_bytes2sys(cmd), shell=True) == 0:
             if not self.options.verbose:
                 try:
                     os.remove(installerrs)
@@ -3558,7 +3561,7 @@ class TestRunner(object):
         cmd = b'"%s" -c "import mercurial; print (mercurial.__path__[0])"'
         cmd = cmd % PYTHON
         if PYTHON3:
-            cmd = _strpath(cmd)
+            cmd = _bytes2sys(cmd)
 
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         out, err = p.communicate()
@@ -3604,33 +3607,33 @@ class TestRunner(object):
         # chdir is the easiest way to get short, relative paths in the
         # output.
         os.chdir(self._hgroot)
-        covdir = os.path.join(_strpath(self._installdir), '..', 'coverage')
+        covdir = os.path.join(_bytes2sys(self._installdir), '..', 'coverage')
         cov = coverage(data_file=os.path.join(covdir, 'cov'))
 
         # Map install directory paths back to source directory.
-        cov.config.paths['srcdir'] = ['.', _strpath(self._pythondir)]
+        cov.config.paths['srcdir'] = ['.', _bytes2sys(self._pythondir)]
 
         cov.combine()
 
         omit = [
-            _strpath(os.path.join(x, b'*'))
+            _bytes2sys(os.path.join(x, b'*'))
             for x in [self._bindir, self._testdir]
         ]
         cov.report(ignore_errors=True, omit=omit)
 
         if self.options.htmlcov:
-            htmldir = os.path.join(_strpath(self._outputdir), 'htmlcov')
+            htmldir = os.path.join(_bytes2sys(self._outputdir), 'htmlcov')
             cov.html_report(directory=htmldir, omit=omit)
         if self.options.annotate:
-            adir = os.path.join(_strpath(self._outputdir), 'annotated')
+            adir = os.path.join(_bytes2sys(self._outputdir), 'annotated')
             if not os.path.isdir(adir):
                 os.mkdir(adir)
             cov.annotate(directory=adir, omit=omit)
 
     def _findprogram(self, program):
         """Search PATH for a executable program"""
-        dpb = _bytespath(os.defpath)
-        sepb = _bytespath(os.pathsep)
+        dpb = _sys2bytes(os.defpath)
+        sepb = _sys2bytes(os.pathsep)
         for p in osenvironb.get(b'PATH', dpb).split(sepb):
             name = os.path.join(p, program)
             if os.name == 'nt' or os.access(name, os.X_OK):
@@ -3645,7 +3648,7 @@ class TestRunner(object):
             found = self._findprogram(p)
             p = p.decode("utf-8")
             if found:
-                vlog("# Found prerequisite", p, "at", _strpath(found))
+                vlog("# Found prerequisite", p, "at", _bytes2sys(found))
             else:
                 print("WARNING: Did not find prerequisite tool: %s " % p)
 

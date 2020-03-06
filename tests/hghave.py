@@ -29,12 +29,12 @@ stderr = getattr(sys.stderr, 'buffer', sys.stderr)
 
 if sys.version_info[0] >= 3:
 
-    def _bytespath(p):
+    def _sys2bytes(p):
         if p is None:
             return p
         return p.encode('utf-8')
 
-    def _strpath(p):
+    def _bytes2sys(p):
         if p is None:
             return p
         return p.decode('utf-8')
@@ -42,10 +42,10 @@ if sys.version_info[0] >= 3:
 
 else:
 
-    def _bytespath(p):
+    def _sys2bytes(p):
         return p
 
-    _strpath = _bytespath
+    _bytes2sys = _sys2bytes
 
 
 def check(name, desc):
@@ -461,7 +461,7 @@ def has_hardlink():
     os.close(fh)
     name = tempfile.mktemp(dir='.', prefix=tempprefix)
     try:
-        util.oslink(_bytespath(fn), _bytespath(name))
+        util.oslink(_sys2bytes(fn), _sys2bytes(name))
         os.unlink(name)
         return True
     except OSError:
@@ -1032,7 +1032,7 @@ def has_black():
     version_regex = b'black, version ([0-9a-b.]+)'
     version = matchoutput(blackcmd, version_regex)
     sv = distutils.version.StrictVersion
-    return version and sv(_strpath(version.group(1))) >= sv('19.10b0')
+    return version and sv(_bytes2sys(version.group(1))) >= sv('19.10b0')
 
 
 @check('pytype', 'the pytype type checker')
@@ -1040,7 +1040,7 @@ def has_pytype():
     pytypecmd = 'pytype --version'
     version = matchoutput(pytypecmd, b'[0-9a-b.]+')
     sv = distutils.version.StrictVersion
-    return version and sv(_strpath(version.group(0))) >= sv('2019.10.17')
+    return version and sv(_bytes2sys(version.group(0))) >= sv('2019.10.17')
 
 
 @check("rustfmt", "rustfmt tool")
