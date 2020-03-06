@@ -275,7 +275,7 @@ def _rawdata_filepath(revlog, docket):
 
 def _other_rawdata_filepath(revlog, docket):
     prefix = revlog.nodemap_file[:-2]
-    pattern = re.compile(b"(^|/)%s-[0-9a-f]+\.nd$" % prefix)
+    pattern = re.compile(br"(^|/)%s-[0-9a-f]+\.nd$" % prefix)
     new_file_path = _rawdata_filepath(revlog, docket)
     new_file_name = revlog.opener.basename(new_file_path)
     dirpath = revlog.opener.dirname(new_file_path)
