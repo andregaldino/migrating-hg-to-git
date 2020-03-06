@@ -3423,10 +3423,9 @@ class TestRunner(object):
         compiler = ''
         if self.options.compiler:
             compiler = '--compiler ' + self.options.compiler
+        setup_opts = b""
         if self.options.pure:
-            pure = b"--pure"
-        else:
-            pure = b""
+            setup_opts = b"--pure"
 
         # Run installer in hg root
         script = os.path.realpath(sys.argv[0])
@@ -3446,14 +3445,14 @@ class TestRunner(object):
             # when they happen.
             nohome = b''
         cmd = (
-            b'"%(exe)s" setup.py %(pure)s clean --all'
+            b'"%(exe)s" setup.py %(setup_opts)s clean --all'
             b' build %(compiler)s --build-base="%(base)s"'
             b' install --force --prefix="%(prefix)s"'
             b' --install-lib="%(libdir)s"'
             b' --install-scripts="%(bindir)s" %(nohome)s >%(logfile)s 2>&1'
             % {
                 b'exe': exe,
-                b'pure': pure,
+                b'setup_opts': setup_opts,
                 b'compiler': compiler,
                 b'base': os.path.join(self._hgtmp, b"build"),
                 b'prefix': self._installdir,
