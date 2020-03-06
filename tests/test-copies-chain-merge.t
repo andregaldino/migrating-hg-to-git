@@ -297,52 +297,6 @@ Note:
 | In this case, one of the merge wrongly record a merge while there is none.
 | This lead to bad copy tracing information to be dug up.
 
-final summary
-
-  $ hg update null --quiet
-  $ hg log -G
-  o    20 mEAm-0 simple merge - the other way]
-  |\
-  +---o  19 mAEm-0 simple merge - one way]
-  | |/
-  | o  18 e-2 g -move-> f]
-  | |
-  | o  17 e-1 b -move-> g]
-  | |
-  | | o    16 mDBm-0 simple merge - the other way]
-  | | |\
-  | | +---o  15 mBDm-0 simple merge - one way]
-  | | | |/
-  | | | o  14 d-2 re-add d]
-  | | | |
-  | +---o  13 d-1 delete d]
-  | | |
-  | | | o  12 mCBm-1 re-add d]
-  | | | |
-  | | | o  11 mCBm-0 simple merge - the other way]
-  | | |/|
-  | | | | o  10 mBCm-1 re-add d]
-  | | | | |
-  | | +---o  9 mBCm-0 simple merge - one way]
-  | | | |/
-  | +---o  8 c-1 delete d]
-  | | |
-  +-----o  7 mABm-0 simple merge - the other way]
-  | | |/
-  +-----o  6 mBAm-0 simple merge - one way]
-  | | |/
-  | | o  5 b-1: b update]
-  | |/
-  o |  4 a-2: e -move-> f]
-  | |
-  o |  3 a-1: d -move-> e]
-  |/
-  o  2 i-2: c -move-> d]
-  |
-  o  1 i-1: a -move-> c]
-  |
-  o  0 i-0 initial commit: a b]
-  
 
 Check results
 =============
