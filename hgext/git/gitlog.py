@@ -103,6 +103,9 @@ class changelog(baselog):
         except error.LookupError:
             return False
 
+    def __iter__(self):
+        return iter(pycompat.xrange(len(self)))
+
     @property
     def filteredrevs(self):
         # TODO: we should probably add a refs/hg/ namespace for hidden
