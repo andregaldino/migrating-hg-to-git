@@ -274,7 +274,7 @@ class changelog(baselog):
             if len(c.parents) > 2:
                 raise error.Abort(b'TODO octopus merge handling')
             if len(c.parents) == 2:
-                p2 = self.rev(c.parents[0].id.raw)
+                p2 = self.rev(c.parents[1].id.raw)
         return p1, p2
 
     # Private method is used at least by the tags code.
