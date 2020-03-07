@@ -195,6 +195,9 @@ class gittreemanifestctx(object):
     def read(self):
         return gittreemanifest(self._repo, self._tree, None)
 
+    def readfast(self, shallow=False):
+        return self.read()
+
     def copy(self):
         # NB: it's important that we return a memgittreemanifestctx
         # because the caller expects a mutable manifest.
