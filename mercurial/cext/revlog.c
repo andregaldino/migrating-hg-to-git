@@ -208,7 +208,7 @@ static inline int index_get_parents(indexObject *self, Py_ssize_t rev, int *ps,
  *
  * Returns 0 on success or -1 on failure.
  */
-int HgRevlogIndex_GetParents(PyObject *op, int rev, int *ps)
+static int HgRevlogIndex_GetParents(PyObject *op, int rev, int *ps)
 {
 	int tiprev;
 	if (!op || !HgRevlogIndex_Check(op) || !ps) {
