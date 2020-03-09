@@ -1014,9 +1014,10 @@ def writediffproperties(ctxs, diff):
 
 
 def createdifferentialrevision(
-    ctx,
+    ctxs,
     revid=None,
     parentrevphid=None,
+    oldbasenode=None,
     oldnode=None,
     olddiff=None,
     actions=None,
@@ -1027,17 +1028,29 @@ def createdifferentialrevision(
     If revid is None, create a new Differential Revision, otherwise update
     revid. If parentrevphid is not None, set it as a dependency.
 
+    If there is a single commit for the new Differential Revision, ``ctxs`` will
+    be a list of that single context.  Otherwise, it is a list that covers the
+    range of changes for the differential, where ``ctxs[0]`` is the first change
+    to include and ``ctxs[-1]`` is the last.
+
     If oldnode is not None, check if the patch content (without commit message
-    and metadata) has changed before creating another diff.
+    and metadata) has changed before creating another diff.  For a Revision with
+    a single commit, ``oldbasenode`` and ``oldnode`` have the same value.  For a
+    Revision covering multiple commits, ``oldbasenode`` corresponds to
+    ``ctxs[0]`` the previous time this Revision was posted, and ``oldnode``
+    corresponds to ``ctxs[-1]``.
 
     If actions is not None, they will be appended to the transaction.
     """
-    basectx = ctx
+    ctx = ctxs[-1]
+    basectx = ctxs[0]
+
     repo = ctx.repo()
     if oldnode:
         diffopts = mdiff.diffopts(git=True, context=32767)
-        oldctx = repo.unfiltered()[oldnode]
-        oldbasectx = oldctx
+        unfi = repo.unfiltered()
+        oldctx = unfi[oldnode]
+        oldbasectx = unfi[oldbasenode]
         neednewdiff = getdiff(basectx, ctx, diffopts) != getdiff(
             oldbasectx, oldctx, diffopts
         )
@@ -1056,7 +1069,7 @@ def createdifferentialrevision(
         # pushers could know the correct node metadata.
         assert olddiff
         diff = olddiff
-    writediffproperties([ctx], diff)
+    writediffproperties(ctxs, diff)
 
     # Set the parent Revision every time, so commit re-ordering is picked-up
     if parentrevphid:
@@ -1076,7 +1089,7 @@ def createdifferentialrevision(
     # this gets assigned to the title.
     fields = util.sortdict()  # sorted for stable wire protocol in tests
 
-    for i, _ctx in enumerate([ctx]):
+    for i, _ctx in enumerate(ctxs):
         # Parse commit message and update related fields.
         desc = _ctx.description()
         info = callconduit(
@@ -1111,7 +1124,11 @@ def createdifferentialrevision(
 
     revision = callconduit(repo.ui, b'differential.revision.edit', params)
     if not revision:
-        raise error.Abort(_(b'cannot create revision for %s') % ctx)
+        if len(ctxs) == 1:
+            msg = _(b'cannot create revision for %s') % ctx
+        else:
+            msg = _(b'cannot create revision for %s::%s') % (basectx, ctx)
+        raise error.Abort(msg)
 
     return revision, diff
 
@@ -1226,12 +1243,14 @@ def phabsend(ui, repo, *revs, **opts):
 
         # Get Differential Revision ID
         oldnode, olddiff, revid = oldmap.get(ctx.node(), (None, None, None))
+        oldbasenode = oldnode
         if oldnode != ctx.node() or opts.get(b'amend'):
             # Create or update Differential Revision
             revision, diff = createdifferentialrevision(
-                ctx,
+                [ctx],
                 revid,
                 lastrevphid,
+                oldbasenode,
                 oldnode,
                 olddiff,
                 actions,
