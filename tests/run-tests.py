@@ -2067,12 +2067,10 @@ class TTest(Test):
         for line in lines:
             if line.startswith(TTest.SKIPPED_PREFIX):
                 line = line.splitlines()[0]
-                missing.append(
-                    line[len(TTest.SKIPPED_PREFIX) :].decode('utf-8')
-                )
+                missing.append(_bytes2sys(line[len(TTest.SKIPPED_PREFIX) :]))
             elif line.startswith(TTest.FAILED_PREFIX):
                 line = line.splitlines()[0]
-                failed.append(line[len(TTest.FAILED_PREFIX) :].decode('utf-8'))
+                failed.append(_bytes2sys(line[len(TTest.FAILED_PREFIX) :]))
 
         return missing, failed
 
