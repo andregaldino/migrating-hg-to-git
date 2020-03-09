@@ -381,6 +381,17 @@ def getgitversion():
     return (int(m.group(1)), int(m.group(2)))
 
 
+@check("pygit2", "pygit2 Python library")
+def has_git():
+    try:
+        import pygit2
+
+        pygit2.Oid  # silence unused import
+        return True
+    except ImportError:
+        return False
+
+
 # https://github.com/git-lfs/lfs-test-server
 @check("lfs-test-server", "git-lfs test server")
 def has_lfsserver():

@@ -1,5 +1,4 @@
-This test requires pygit2:
-  > $PYTHON -c 'import pygit2' || exit 80
+#require pygit2
 
 Setup:
   > GIT_AUTHOR_NAME='test'; export GIT_AUTHOR_NAME
