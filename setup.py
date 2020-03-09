@@ -3,8 +3,6 @@
 #
 # 'python setup.py install', or
 # 'python setup.py --help' for more options
-from __future__ import print_function
-
 import os
 
 # Mercurial will never work on Python 3 before 3.5 due to a lack
@@ -143,7 +141,7 @@ hgrustext = os.environ.get('HGWITHRUSTEXT')
 # (see mercurial/__modulepolicy__.py)
 if hgrustext != 'cpython' and hgrustext is not None:
     if hgrustext:
-        print('unkown HGWITHRUSTEXT value: %s' % hgrustext, file=sys.stderr)
+        printf('unkown HGWITHRUSTEXT value: %s' % hgrustext, file=sys.stderr)
     hgrustext = None
 
 import ctypes
