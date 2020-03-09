@@ -8,8 +8,6 @@ from __future__ import absolute_import
 
 import os
 
-import pygit2
-
 from mercurial.i18n import _
 
 from mercurial import (
@@ -29,7 +27,6 @@ from . import (
     index,
 )
 
-
 # TODO: extract an interface for this in core
 class gitstore(object):  # store.basicstore):
     def __init__(self, path, vfstype):
@@ -39,7 +36,7 @@ class gitstore(object):  # store.basicstore):
         # above lines should go away in favor of:
         # super(gitstore, self).__init__(path, vfstype)
 
-        self.git = pygit2.Repository(
+        self.git = gitutil.get_pygit2().Repository(
             os.path.normpath(os.path.join(path, b'..', b'.git'))
         )
         self._progress_factory = lambda *args, **kwargs: None
@@ -89,6 +86,16 @@ class gitstore(object):  # store.basicstore):
 
 
 def _makestore(orig, requirements, storebasepath, vfstype):
+    # Check for presence of pygit2 only here. The assumption is that we'll
+    # run this code iff we'll later need pygit2.
+    if gitutil.get_pygit2() is None:
+        raise error.Abort(
+            _(
+                b'the git extension requires the Python '
+                b'pygit2 library to be installed'
+            )
+        )
+
     if os.path.exists(
         os.path.join(storebasepath, b'this-is-git')
     ) and os.path.exists(os.path.join(storebasepath, b'..', b'.git')):
@@ -156,7 +163,7 @@ class gitbmstore(object):
             if k in self:
                 return self[k]
             return default
-        except pygit2.InvalidSpecError:
+        except gitutil.get_pygit2().InvalidSpecError:
             return default
 
     @property

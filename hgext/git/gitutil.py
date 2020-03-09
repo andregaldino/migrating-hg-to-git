@@ -5,6 +5,20 @@ from mercurial.node import bin, hex, nullid
 
 from mercurial import pycompat
 
+pygit2_module = None
+
+
+def get_pygit2():
+    global pygit2_module
+    if pygit2_module is None:
+        try:
+            import pygit2 as pygit2_module
+
+            pygit2_module.InvalidSpecError
+        except (ImportError, AttributeError):
+            pass
+    return pygit2_module
+
 
 def togitnode(n):
     """Wrapper to convert a Mercurial binary node to a unicode hexlified node.

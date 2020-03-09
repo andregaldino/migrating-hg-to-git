@@ -4,8 +4,6 @@ import contextlib
 import errno
 import os
 
-import pygit2
-
 from mercurial import (
     error,
     extensions,
@@ -21,6 +19,8 @@ from mercurial.interfaces import (
 )
 
 from . import gitutil
+
+pygit2 = gitutil.get_pygit2()
 
 
 def readpatternfile(orig, filepath, warn, sourceinfo=False):
@@ -46,23 +46,25 @@ def readpatternfile(orig, filepath, warn, sourceinfo=False):
 extensions.wrapfunction(matchmod, b'readpatternfile', readpatternfile)
 
 
-_STATUS_MAP = {
-    pygit2.GIT_STATUS_CONFLICTED: b'm',
-    pygit2.GIT_STATUS_CURRENT: b'n',
-    pygit2.GIT_STATUS_IGNORED: b'?',
-    pygit2.GIT_STATUS_INDEX_DELETED: b'r',
-    pygit2.GIT_STATUS_INDEX_MODIFIED: b'n',
-    pygit2.GIT_STATUS_INDEX_NEW: b'a',
-    pygit2.GIT_STATUS_INDEX_RENAMED: b'a',
-    pygit2.GIT_STATUS_INDEX_TYPECHANGE: b'n',
-    pygit2.GIT_STATUS_WT_DELETED: b'r',
-    pygit2.GIT_STATUS_WT_MODIFIED: b'n',
-    pygit2.GIT_STATUS_WT_NEW: b'?',
-    pygit2.GIT_STATUS_WT_RENAMED: b'a',
-    pygit2.GIT_STATUS_WT_TYPECHANGE: b'n',
-    pygit2.GIT_STATUS_WT_UNREADABLE: b'?',
-    pygit2.GIT_STATUS_INDEX_MODIFIED | pygit2.GIT_STATUS_WT_MODIFIED: 'm',
-}
+_STATUS_MAP = {}
+if pygit2:
+    _STATUS_MAP = {
+        pygit2.GIT_STATUS_CONFLICTED: b'm',
+        pygit2.GIT_STATUS_CURRENT: b'n',
+        pygit2.GIT_STATUS_IGNORED: b'?',
+        pygit2.GIT_STATUS_INDEX_DELETED: b'r',
+        pygit2.GIT_STATUS_INDEX_MODIFIED: b'n',
+        pygit2.GIT_STATUS_INDEX_NEW: b'a',
+        pygit2.GIT_STATUS_INDEX_RENAMED: b'a',
+        pygit2.GIT_STATUS_INDEX_TYPECHANGE: b'n',
+        pygit2.GIT_STATUS_WT_DELETED: b'r',
+        pygit2.GIT_STATUS_WT_MODIFIED: b'n',
+        pygit2.GIT_STATUS_WT_NEW: b'?',
+        pygit2.GIT_STATUS_WT_RENAMED: b'a',
+        pygit2.GIT_STATUS_WT_TYPECHANGE: b'n',
+        pygit2.GIT_STATUS_WT_UNREADABLE: b'?',
+        pygit2.GIT_STATUS_INDEX_MODIFIED | pygit2.GIT_STATUS_WT_MODIFIED: 'm',
+    }
 
 
 @interfaceutil.implementer(intdirstate.idirstate)

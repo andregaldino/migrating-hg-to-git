@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import pygit2
-
 from mercurial import (
     match as matchmod,
     pathutil,
@@ -13,6 +11,9 @@ from mercurial.interfaces import (
     util as interfaceutil,
 )
 from . import gitutil
+
+
+pygit2 = gitutil.get_pygit2()
 
 
 @interfaceutil.implementer(repository.imanifestdict)

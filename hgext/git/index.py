@@ -4,8 +4,6 @@ import collections
 import os
 import sqlite3
 
-import pygit2
-
 from mercurial.i18n import _
 
 from mercurial import (
@@ -17,6 +15,8 @@ from mercurial import (
 
 from . import gitutil
 
+
+pygit2 = gitutil.get_pygit2()
 
 _CURRENT_SCHEMA_VERSION = 1
 _SCHEMA = (
@@ -101,9 +101,13 @@ def _createdb(path):
     return db
 
 
-_OUR_ORDER = (
-    pygit2.GIT_SORT_TOPOLOGICAL | pygit2.GIT_SORT_TIME | pygit2.GIT_SORT_REVERSE
-)
+_OUR_ORDER = ()
+if pygit2:
+    _OUR_ORDER = (
+        pygit2.GIT_SORT_TOPOLOGICAL
+        | pygit2.GIT_SORT_TIME
+        | pygit2.GIT_SORT_REVERSE
+    )
 
 _DIFF_FLAGS = 1 << 21  # GIT_DIFF_FORCE_BINARY, which isn't exposed by pygit2
 
