@@ -498,7 +498,6 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     # define various utilities and containers
     repo = pushop.repo
     unfi = repo.unfiltered()
-    tonode = unfi.changelog.node
     torev = unfi.changelog.index.get_rev
     public = phases.public
     getphase = unfi._phasecache.phase
@@ -530,6 +529,7 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     # actually process branch replacement
     while localcandidate:
         nh = localcandidate.pop()
+        current_branch = unfi[nh].branch()
         # run this check early to skip the evaluation of the whole branch
         if torev(nh) in futurecommon or ispublic(torev(nh)):
             newhs.add(nh)
@@ -540,7 +540,12 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
         branchrevs = unfi.revs(
             b'only(%n, (%ln+%ln))', nh, localcandidate, newhs
         )
-        branchnodes = [tonode(r) for r in branchrevs]
+
+        branchnodes = []
+        for r in branchrevs:
+            c = unfi[r]
+            if c.branch() == current_branch:
+                branchnodes.append(c.node())
 
         # The branch won't be hidden on the remote if
         # * any part of it is public,

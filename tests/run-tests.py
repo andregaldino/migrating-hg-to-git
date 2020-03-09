@@ -1756,7 +1756,7 @@ class TTest(Test):
 
         if self._case:
             casestr = b'#'.join(self._case)
-            if isinstance(self._case, str):
+            if isinstance(casestr, str):
                 quoted = shellquote(casestr)
             else:
                 quoted = shellquote(casestr.decode('utf8')).encode('utf8')
