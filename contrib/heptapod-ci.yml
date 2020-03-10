@@ -14,10 +14,9 @@ variables:
 
 .runtests_template: &runtests
     script:
-        - cd tests/
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
-        - HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" run-tests.py --color=always $RUNTEST_ARGS
+        - HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" tests/run-tests.py --color=always $RUNTEST_ARGS
 
 checks-py2:
     <<: *runtests
