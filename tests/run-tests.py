@@ -2995,6 +2995,12 @@ class TestRunner(object):
             # we do the randomness ourself to know what seed is used
             os.environ['PYTHONHASHSEED'] = str(random.getrandbits(32))
 
+        # Rayon (Rust crate for multi-threading) will use all logical CPU cores
+        # by default, causing thrashing on high-cpu-count systems.
+        # Setting its limit to 3 during tests should still let us uncover
+        # multi-threading bugs while keeping the thrashing reasonable.
+        os.environ.setdefault("RAYON_NUM_THREADS", "3")
+
         if self.options.tmpdir:
             self.options.keep_tmpdir = True
             tmpdir = _sys2bytes(self.options.tmpdir)
