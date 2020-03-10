@@ -76,7 +76,12 @@ class gitdirstate(object):
         self._plchangecallbacks = {}
 
     def p1(self):
-        return self.git.head.peel().id.raw
+        try:
+            return self.git.head.peel().id.raw
+        except pygit2.GitError:
+            # Typically happens when peeling HEAD fails, as in an
+            # empty repository.
+            return nodemod.nullid
 
     def p2(self):
         # TODO: MERGE_HEAD? something like that, right?
