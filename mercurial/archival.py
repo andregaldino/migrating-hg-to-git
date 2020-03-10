@@ -138,8 +138,8 @@ class tarit(object):
     class GzipFileWithTime(gzip.GzipFile):
         def __init__(self, *args, **kw):
             timestamp = None
-            if 'timestamp' in kw:
-                timestamp = kw.pop('timestamp')
+            if 'mtime' in kw:
+                timestamp = kw.pop('mtime')
             if timestamp is None:
                 self.timestamp = time.time()
             else:
@@ -178,7 +178,7 @@ class tarit(object):
                     pycompat.sysstr(mode + b'b'),
                     zlib.Z_BEST_COMPRESSION,
                     fileobj,
-                    timestamp=mtime,
+                    mtime=mtime,
                 )
                 self.fileobj = gzfileobj
                 return tarfile.TarFile.taropen(  # pytype: disable=attribute-error
