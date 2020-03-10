@@ -1,13 +1,12 @@
 #require pygit2
 
 Setup:
-  > GIT_AUTHOR_NAME='test'; export GIT_AUTHOR_NAME
+  $ GIT_AUTHOR_NAME='test'; export GIT_AUTHOR_NAME
   > GIT_AUTHOR_EMAIL='test@example.org'; export GIT_AUTHOR_EMAIL
   > GIT_AUTHOR_DATE="2007-01-01 00:00:00 +0000"; export GIT_AUTHOR_DATE
   > GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"; export GIT_COMMITTER_NAME
   > GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"; export GIT_COMMITTER_EMAIL
   > GIT_COMMITTER_DATE="$GIT_AUTHOR_DATE"; export GIT_COMMITTER_DATE
-
   > count=10
   > gitcommit() {
   >    GIT_AUTHOR_DATE="2007-01-01 00:00:$count +0000";
@@ -16,7 +15,28 @@ Setup:
   >    count=`expr $count + 1`
   >  }
 
-  > echo "[extensions]" >> $HGRCPATH
+
+Test auto-loading extension works:
+  $ mkdir nogit
+  $ cd nogit
+  $ mkdir .hg
+  $ echo git >> .hg/requires
+  $ hg status
+  abort: repository specified git format in .hg/requires but has no .git directory
+  [255]
+  $ git init
+  Initialized empty Git repository in $TESTTMP/nogit/.git/
+This status invocation shows some hg gunk because we didn't use
+`hg init --git`, which fixes up .git/info/exclude for us.
+  $ hg status
+  ? .hg/cache/git-commits.sqlite
+  ? .hg/cache/git-commits.sqlite-shm
+  ? .hg/cache/git-commits.sqlite-wal
+  ? .hg/requires
+  $ cd ..
+
+Now globally enable extension for the rest of the test:
+  $ echo "[extensions]" >> $HGRCPATH
   > echo "git=" >> $HGRCPATH
 
 Make a new repo with git:

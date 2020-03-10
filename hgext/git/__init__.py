@@ -86,19 +86,24 @@ class gitstore(object):  # store.basicstore):
 
 
 def _makestore(orig, requirements, storebasepath, vfstype):
-    # Check for presence of pygit2 only here. The assumption is that we'll
-    # run this code iff we'll later need pygit2.
-    if gitutil.get_pygit2() is None:
-        raise error.Abort(
-            _(
-                b'the git extension requires the Python '
-                b'pygit2 library to be installed'
+    if b'git' in requirements:
+        if not os.path.exists(os.path.join(storebasepath, b'..', b'.git')):
+            raise error.Abort(
+                _(
+                    b'repository specified git format in '
+                    b'.hg/requires but has no .git directory'
+                )
             )
-        )
+        # Check for presence of pygit2 only here. The assumption is that we'll
+        # run this code iff we'll later need pygit2.
+        if gitutil.get_pygit2() is None:
+            raise error.Abort(
+                _(
+                    b'the git extension requires the Python '
+                    b'pygit2 library to be installed'
+                )
+            )
 
-    if os.path.exists(
-        os.path.join(storebasepath, b'this-is-git')
-    ) and os.path.exists(os.path.join(storebasepath, b'..', b'.git')):
         return gitstore(storebasepath, vfstype)
     return orig(requirements, storebasepath, vfstype)
 
@@ -128,9 +133,7 @@ def _setupdothg(ui, path):
             os.path.join(path, b'.git', b'info', b'exclude'), 'ab'
         ) as exclude:
             exclude.write(b'\n.hg\n')
-    with open(os.path.join(dothg, b'this-is-git'), 'wb') as f:
-        pass
-    with open(os.path.join(dothg, b'requirements'), 'wb') as f:
+    with open(os.path.join(dothg, b'requires'), 'wb') as f:
         f.write(b'git\n')
 
 
@@ -256,6 +259,11 @@ def reposetup(ui, repo):
     return repo
 
 
+def _featuresetup(ui, supported):
+    # don't die on seeing a repo with the git requirement
+    supported |= {b'git'}
+
+
 def extsetup(ui):
     extensions.wrapfunction(localrepo, b'makestore', _makestore)
     extensions.wrapfunction(localrepo, b'makefilestorage', _makefilestorage)
@@ -264,3 +272,4 @@ def extsetup(ui):
     entry[1].extend(
         [(b'', b'git', None, b'setup up a git repository instead of hg')]
     )
+    localrepo.featuresetupfuncs.add(_featuresetup)
