@@ -135,7 +135,9 @@ class tarit(object):
     '''write archive to tar file or stream.  can write uncompressed,
     or compress with gzip or bzip2.'''
 
-    if True:
+    if pycompat.ispy3:
+        GzipFileWithTime = gzip.GzipFile  # camelcase-required
+    else:
 
         class GzipFileWithTime(gzip.GzipFile):
             def __init__(self, *args, **kw):
