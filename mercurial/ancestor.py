@@ -393,39 +393,3 @@ class lazyancestors(object):
             # free up memory.
             self._containsiter = None
             return False
-
-
-class rustlazyancestors(object):
-    def __init__(self, index, revs, stoprev=0, inclusive=False):
-        self._index = index
-        self._stoprev = stoprev
-        self._inclusive = inclusive
-        # no need to prefilter out init revs that are smaller than stoprev,
-        # it's done by rustlazyancestors constructor.
-        # we need to convert to a list, because our ruslazyancestors
-        # constructor (from C code) doesn't understand anything else yet
-        self._initrevs = initrevs = list(revs)
-
-        self._containsiter = parsers.rustlazyancestors(
-            index, initrevs, stoprev, inclusive
-        )
-
-    def __nonzero__(self):
-        """False if the set is empty, True otherwise.
-
-        It's better to duplicate this essentially trivial method than
-        to subclass lazyancestors
-        """
-        try:
-            next(iter(self))
-            return True
-        except StopIteration:
-            return False
-
-    def __iter__(self):
-        return parsers.rustlazyancestors(
-            self._index, self._initrevs, self._stoprev, self._inclusive
-        )
-
-    def __contains__(self, target):
-        return target in self._containsiter

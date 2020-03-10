@@ -945,9 +945,6 @@ class revlog(object):
         if rustancestor is not None:
             lazyancestors = rustancestor.LazyAncestors
             arg = self.index
-        elif util.safehasattr(parsers, b'rustlazyancestors'):
-            lazyancestors = ancestor.rustlazyancestors
-            arg = self.index
         else:
             lazyancestors = ancestor.lazyancestors
             arg = self._uncheckedparentrevs
