@@ -22,7 +22,7 @@ Test backups list and recover
   $ mkcommit b
   $ hg strip .
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d2ae7f538514-2953539b-backup.hg (glob)
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d2ae7f538514-2953539b-backup.hg
   $ hg debugbackupbundle
   Recover changesets using: hg debugbackupbundle --recover <changeset hash>
   
