@@ -574,11 +574,14 @@ def has_root():
 
 @check("pyflakes", "Pyflakes python linter")
 def has_pyflakes():
-    return matchoutput(
-        "sh -c \"echo 'import re' 2>&1 | $PYTHON -m pyflakes\"",
-        br"<stdin>:1: 're' imported but unused",
-        True,
-    )
+    try:
+        import pyflakes
+
+        pyflakes.__version__
+    except ImportError:
+        return False
+    else:
+        return True
 
 
 @check("pylint", "Pylint python linter")
