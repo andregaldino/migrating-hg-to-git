@@ -128,12 +128,8 @@ The computation of changed lines is orthogonal and tested separately.
 
 Fix all but the root revision and its four children.
 
-#if obsstore-on
   $ hg fix -r '2|4|7|8|9' --working-dir
-#else
-  $ hg fix -r '2|4|7|8|9' --working-dir
-  saved backup bundle to * (glob)
-#endif
+  saved backup bundle to * (glob) (obsstore-off !)
 
 The five revisions remain, but the other revisions were fixed and replaced. All
 parent pointers have been accurately set to reproduce the previous topology
