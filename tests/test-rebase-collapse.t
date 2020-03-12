@@ -184,33 +184,33 @@ Rebase and collapse - more than one external (fail):
 
 Rebase and collapse - E onto H:
 
-  $ hg rebase -s E --dest I --collapse # root (E) is not a merge
-  abort: unknown revision 'I'!
-  [255]
+  $ hg rebase -s E --dest H --collapse # root (E) is not a merge
+  rebasing 5:49cb92066bfd "E" (E)
+  rebasing 6:11abe3fb10b8 "F" (F)
+  rebasing 7:64e264db77f0 "G" (G tip)
+  saved backup bundle to $TESTTMP/multiple-external-parents/.hg/strip-backup/49cb92066bfd-ee8a8a79-rebase.hg
 
   $ hg tglog
-  o    7: 64e264db77f0 'G'
-  |\
-  | o  6: 11abe3fb10b8 'F'
-  | |
-  | o  5: 49cb92066bfd 'E'
-  | |
-  o |  4: 4e4f9194f9f1 'D'
-  |\|
-  | | o  3: 575c4b5ec114 'H'
+  o    5: 8b2315790719 'Collapsed revision
+  |\   * E
+  | |  * F
+  | |  * G'
+  | o    4: 4e4f9194f9f1 'D'
+  | |\
+  o | |  3: 575c4b5ec114 'H'
   | | |
-  o---+  2: dc0947a82db8 'C'
-   / /
-  o /  1: 112478962961 'B'
+  +---o  2: dc0947a82db8 'C'
+  | |
+  | o  1: 112478962961 'B'
   |/
   o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
-  B
   C
   E
   F
+  H
 
   $ cd ..
 
