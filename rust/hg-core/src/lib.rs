@@ -103,6 +103,7 @@ impl ToString for DirstateMapError {
     }
 }
 
+#[derive(Debug)]
 pub enum DirstateError {
     Parse(DirstateParseError),
     Pack(DirstatePackError),

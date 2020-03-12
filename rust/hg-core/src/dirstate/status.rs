@@ -623,6 +623,7 @@ fn extend_from_dmap<'a>(
     );
 }
 
+#[derive(Debug)]
 pub struct DirstateStatus<'a> {
     pub modified: Vec<Cow<'a, HgPath>>,
     pub added: Vec<Cow<'a, HgPath>>,
@@ -679,6 +680,7 @@ fn build_response<'a>(
     )
 }
 
+#[derive(Debug)]
 pub enum StatusError {
     IO(std::io::Error),
     Path(HgPathError),
