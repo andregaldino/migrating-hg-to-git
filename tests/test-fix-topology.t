@@ -21,6 +21,7 @@ relationships. We indicate fixed file content by uppercasing it.
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > fix =
+  > strip =
   > [fix]
   > uppercase-whole-file:command="$PYTHON" $UPPERCASEPY
   > uppercase-whole-file:pattern=set:**
@@ -261,6 +262,111 @@ also being fixed.
 Change A was never a baserev because none of its children were to be fixed.
 
   $ cd ..
+
+
+Test the --source option. We only do this with obsstore on to avoid duplicating
+test code. We rely on the other tests to prove that obsolescence is not an
+important factor here.
+
+#if obsstore-on
+  $ hg init source-arg
+  $ cd source-arg
+  $ printf "aaaa\n" > a
+  $ hg commit -Am "change A"
+  adding a
+  $ printf "bbbb\n" > b
+  $ hg commit -Am "change B"
+  adding b
+  $ printf "cccc\n" > c
+  $ hg commit -Am "change C"
+  adding c
+  $ hg checkout 0
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ printf "dddd\n" > d
+  $ hg commit -Am "change D"
+  adding d
+  created new head
+  $ hg log --graph --template '{rev} {desc}\n'
+  @  3 change D
+  |
+  | o  2 change C
+  | |
+  | o  1 change B
+  |/
+  o  0 change A
+  
+
+Test passing 'wdir()' to --source
+  $ printf "xxxx\n" > x
+  $ hg add x
+  $ hg fix -s 'wdir()'
+  $ cat *
+  aaaa
+  dddd
+  XXXX
+
+Test passing '.' to --source
+  $ printf "xxxx\n" > x
+  $ hg fix -s .
+  $ hg log --graph --template '{rev} {desc}\n'
+  @  4 change D
+  |
+  | o  2 change C
+  | |
+  | o  1 change B
+  |/
+  o  0 change A
+  
+  $ cat *
+  aaaa
+  DDDD
+  XXXX
+  $ hg strip -qf 4
+  $ hg co -q 3
+
+Test passing other branch to --source
+  $ printf "xxxx\n" > x
+  $ hg add x
+  $ hg fix -s 2
+  $ hg log --graph --template '{rev} {desc}\n'
+  o  4 change C
+  |
+  | @  3 change D
+  | |
+  o |  1 change B
+  |/
+  o  0 change A
+  
+  $ hg cat -r 4 b c
+  bbbb
+  CCCC
+  $ cat *
+  aaaa
+  dddd
+  xxxx
+  $ hg strip -qf 4
+
+Test passing multiple revisions to --source
+  $ hg fix -s '2 + .'
+  $ hg log --graph --template '{rev} {desc}\n'
+  @  5 change D
+  |
+  | o  4 change C
+  | |
+  | o  1 change B
+  |/
+  o  0 change A
+  
+  $ hg cat -r 4 b c
+  bbbb
+  CCCC
+  $ cat *
+  aaaa
+  DDDD
+  XXXX
+
+  $ cd ..
+#endif
 
 The --all flag should fix anything that wouldn't cause a problem if you fixed
 it, including the working copy. Obsolete revisions are not fixed because that

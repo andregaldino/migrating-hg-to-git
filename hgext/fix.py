@@ -214,6 +214,13 @@ baseopt = (
     _(b'REV'),
 )
 revopt = (b'r', b'rev', [], _(b'revisions to fix'), _(b'REV'))
+sourceopt = (
+    b's',
+    b'source',
+    [],
+    _(b'fix the specified revisions and their descendants'),
+    _(b'REV'),
+)
 wdiropt = (b'w', b'working-dir', False, _(b'fix the working directory'))
 wholeopt = (b'', b'whole', False, _(b'always fix every line of a file'))
 usage = _(b'[OPTION]... [FILE]...')
@@ -221,7 +228,7 @@ usage = _(b'[OPTION]... [FILE]...')
 
 @command(
     b'fix',
-    [allopt, baseopt, revopt, wdiropt, wholeopt],
+    [allopt, baseopt, revopt, sourceopt, wdiropt, wholeopt],
     usage,
     helpcategory=command.CATEGORY_FILE_CONTENTS,
 )
@@ -249,8 +256,10 @@ def fix(ui, repo, *pats, **opts):
     override this default behavior, though it is not usually desirable to do so.
     """
     opts = pycompat.byteskwargs(opts)
-    cmdutil.check_at_most_one_arg(opts, b'all', b'rev')
-    cmdutil.check_incompatible_arguments(opts, b'working_dir', [b'all'])
+    cmdutil.check_at_most_one_arg(opts, b'all', b'source', b'rev')
+    cmdutil.check_incompatible_arguments(
+        opts, b'working_dir', [b'all', b'source']
+    )
 
     with repo.wlock(), repo.lock(), repo.transaction(b'fix'):
         revstofix = getrevstofix(ui, repo, opts)
@@ -399,6 +408,14 @@ def getrevstofix(ui, repo, opts):
     """Returns the set of revision numbers that should be fixed"""
     if opts[b'all']:
         revs = repo.revs(b'(not public() and not obsolete()) or wdir()')
+    elif opts[b'source']:
+        source_revs = scmutil.revrange(repo, opts[b'source'])
+        revs = set(repo.revs(b'%ld::', source_revs))
+        if wdirrev in source_revs:
+            # `wdir()::` is currently empty, so manually add wdir
+            revs.add(wdirrev)
+        if repo[b'.'].rev() in revs:
+            revs.add(wdirrev)
     else:
         revs = set(scmutil.revrange(repo, opts[b'rev']))
         if opts.get(b'working_dir'):
