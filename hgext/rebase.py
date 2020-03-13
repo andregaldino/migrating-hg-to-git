@@ -1217,16 +1217,7 @@ def _origrebase(
                     rbsrt._finishrebase()
 
 
-def _definedestmap(
-    ui,
-    repo,
-    inmemory,
-    destf=None,
-    srcf=None,
-    basef=None,
-    revf=None,
-    destspace=None,
-):
+def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
     """use revisions argument to define destmap {srcrev: destrev}"""
     if revf is None:
         revf = []
