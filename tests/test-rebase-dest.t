@@ -156,7 +156,7 @@ Multiple destinations and --collapse are not compatible:
 
 Multiple destinations cannot be used with --base:
 
-  $ rebasewithdag -b B+E -d 'SRC^^' --collapse <<'EOS'
+  $ rebasewithdag -b B -b E -d 'SRC^^' --collapse <<'EOS'
   > B E
   > | |
   > A D

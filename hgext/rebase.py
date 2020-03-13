@@ -822,7 +822,7 @@ class rebaseruntime(object):
         (
             b'b',
             b'base',
-            b'',
+            [],
             _(b'rebase everything from branching point of specified changeset'),
             _(b'REV'),
         ),
@@ -871,7 +871,7 @@ class rebaseruntime(object):
     + cmdutil.dryrunopts
     + cmdutil.formatteropts
     + cmdutil.confirmopts,
-    _(b'[[-s REV]... | -b REV | [-r REV]...] [-d REV] [OPTION]...'),
+    _(b'[[-s REV]... | [-b REV]... | [-r REV]...] [-d REV] [OPTION]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
 )
 def rebase(ui, repo, **opts):
@@ -1187,7 +1187,7 @@ def _origrebase(
                 inmemory,
                 opts.get(b'dest', None),
                 opts.get(b'source', []),
-                opts.get(b'base', None),
+                opts.get(b'base', []),
                 opts.get(b'rev', []),
                 destspace=destspace,
             )
@@ -1250,7 +1250,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
         # `+  (%ld)` to work around `wdir()::` being empty
         rebaseset = repo.revs(b'(%ld):: + (%ld)', src, src)
     else:
-        base = scmutil.revrange(repo, [basef or b'.'])
+        base = scmutil.revrange(repo, basef or [b'.'])
         if not base:
             ui.status(
                 _(b'empty "base" revision set - ' b"can't compute rebase set\n")
