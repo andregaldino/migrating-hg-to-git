@@ -233,21 +233,6 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     :param repo_includes: repo includes
     :param repo_excludes: repo excludes
     :return: include patterns, exclude patterns, and invalid include patterns.
-
-    >>> restrictpatterns({'f1','f2'}, {}, ['f1'], [])
-    (set(['f1']), {}, [])
-    >>> restrictpatterns({'f1'}, {}, ['f1','f2'], [])
-    (set(['f1']), {}, [])
-    >>> restrictpatterns({'f1/fc1', 'f3/fc3'}, {}, ['f1','f2'], [])
-    (set(['f1/fc1']), {}, [])
-    >>> restrictpatterns({'f1_fc1'}, {}, ['f1','f2'], [])
-    ([], set(['path:.']), [])
-    >>> restrictpatterns({'f1/../f2/fc2'}, {}, ['f1','f2'], [])
-    (set(['f2/fc2']), {}, [])
-    >>> restrictpatterns({'f1/../f3/fc3'}, {}, ['f1','f2'], [])
-    ([], set(['path:.']), [])
-    >>> restrictpatterns({'f1/$non_exitent_var'}, {}, ['f1','f2'], [])
-    (set(['f1/$non_exitent_var']), {}, [])
     """
     res_excludes = set(req_excludes)
     res_excludes.update(repo_excludes)
