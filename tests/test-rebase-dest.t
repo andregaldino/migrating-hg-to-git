@@ -272,7 +272,7 @@ Different destinations for merge changesets with a same root:
   
 Move to a previous parent:
 
-  $ rebasewithdag -s E+F+G -d 'SRC^^' <<'EOS'
+  $ rebasewithdag -s E -s F -s G -d 'SRC^^' <<'EOS'
   >     H
   >     |
   >   D G

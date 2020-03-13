@@ -58,6 +58,13 @@
    can use the new `conflictparents()` revset for finding the other
    parent during a conflict.
 
+ * `hg rebase` now accepts repeated `--source` arguments. For example,
+   `hg rebase --source 'A + B'` is equivalent to `hg rebase --source A
+   --source B`. This is a backwards-incompatible change because it
+   will break overriding an alias `myrebase = rebase --source A` by
+   `hg myrebase --source B` (it will now rebase `(A + B)::` instead of
+   `B::`).
+
  * `hg recover` does not verify the validity of the whole repository
    anymore. You can pass `--verify` or call `hg verify` if necessary.
 

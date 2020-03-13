@@ -100,6 +100,10 @@ These fail:
   abort: cannot rebase the working copy
   [255]
 
+  $ hg rebase --source 1 --source 'wdir()' --dest 6
+  abort: cannot rebase the working copy
+  [255]
+
   $ hg rebase --source '1 & !1' --dest 8
   empty "source" revision set - nothing to rebase
   [1]
