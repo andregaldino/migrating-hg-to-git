@@ -213,7 +213,7 @@ baseopt = (
     ),
     _(b'REV'),
 )
-revopt = (b'r', b'rev', [], _(b'revisions to fix'), _(b'REV'))
+revopt = (b'r', b'rev', [], _(b'revisions to fix (ADVANCED)'), _(b'REV'))
 sourceopt = (
     b's',
     b'source',
