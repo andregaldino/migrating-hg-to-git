@@ -871,7 +871,7 @@ class rebaseruntime(object):
     + cmdutil.dryrunopts
     + cmdutil.formatteropts
     + cmdutil.confirmopts,
-    _(b'[-s REV | -b REV] [-d REV] [OPTION]'),
+    _(b'[-s REV | -b REV | [-r REV]...] [-d REV] [OPTION]...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
 )
 def rebase(ui, repo, **opts):
