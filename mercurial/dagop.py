@@ -274,6 +274,238 @@ def descendantrevs(revs, revsfn, parentrevsfn):
                 break
 
 
+class subsetparentswalker(object):
+    r"""Scan adjacent ancestors in the graph given by the subset
+
+    This computes parent-child relations in the sub graph filtered by
+    a revset. Primary use case is to draw a revisions graph.
+
+    In the following example, we consider that the node 'f' has edges to all
+    ancestor nodes, but redundant paths are eliminated. The edge 'f'->'b'
+    is eliminated because there is a path 'f'->'c'->'b' for example.
+
+          - d - e -
+         /         \
+        a - b - c - f
+
+    If the node 'c' is filtered out, the edge 'f'->'b' is activated.
+
+          - d - e -
+         /         \
+        a - b -(c)- f
+
+    Likewise, if 'd' and 'e' are filtered out, this edge is fully eliminated
+    since there is a path 'f'->'c'->'b'->'a' for 'f'->'a'.
+
+           (d) (e)
+
+        a - b - c - f
+
+    Implementation-wise, 'f' is passed down to 'a' as unresolved through the
+    'f'->'e'->'d'->'a' path, whereas we do also remember that 'f' has already
+    been resolved while walking down the 'f'->'c'->'b'->'a' path. When
+    processing the node 'a', the unresolved 'f'->'a' path is eliminated as
+    the 'f' end is marked as resolved.
+
+    Ancestors are searched from the tipmost revision in the subset so the
+    results can be cached. You should specify startrev to narrow the search
+    space to ':startrev'.
+    """
+
+    def __init__(self, repo, subset, startrev=None):
+        if startrev is not None:
+            subset = repo.revs(b'%d:null', startrev) & subset
+
+        # equivalent to 'subset = subset.sorted(reverse=True)', but there's
+        # no such function.
+        fastdesc = subset.fastdesc
+        if fastdesc:
+            desciter = fastdesc()
+        else:
+            if not subset.isdescending() and not subset.istopo():
+                subset = smartset.baseset(subset)
+                subset.sort(reverse=True)
+            desciter = iter(subset)
+
+        self._repo = repo
+        self._changelog = repo.changelog
+        self._subset = subset
+
+        # scanning state (see _scanparents):
+        self._tovisit = []
+        self._pendingcnt = {}
+        self._pointers = {}
+        self._parents = {}
+        self._inputhead = nullrev  # reassigned by self._advanceinput()
+        self._inputtail = desciter
+        self._bottomrev = nullrev
+        self._advanceinput()
+
+    def parentsset(self, rev):
+        """Look up parents of the given revision in the subset, and returns
+        as a smartset"""
+        return smartset.baseset(self.parents(rev))
+
+    def parents(self, rev):
+        """Look up parents of the given revision in the subset
+
+        The returned revisions are sorted by parent index (p1/p2).
+        """
+        self._scanparents(rev)
+        return [r for _c, r in sorted(self._parents.get(rev, []))]
+
+    def _parentrevs(self, rev):
+        try:
+            revs = self._changelog.parentrevs(rev)
+            if revs[-1] == nullrev:
+                return revs[:-1]
+            return revs
+        except error.WdirUnsupported:
+            return tuple(pctx.rev() for pctx in self._repo[None].parents())
+
+    def _advanceinput(self):
+        """Advance the input iterator and set the next revision to _inputhead"""
+        if self._inputhead < nullrev:
+            return
+        try:
+            self._inputhead = next(self._inputtail)
+        except StopIteration:
+            self._bottomrev = self._inputhead
+            self._inputhead = nullrev - 1
+
+    def _scanparents(self, stoprev):
+        """Scan ancestors until the parents of the specified stoprev are
+        resolved"""
+
+        # 'tovisit' is the queue of the input revisions and their ancestors.
+        # It will be populated incrementally to minimize the initial cost
+        # of computing the given subset.
+        #
+        # For to-visit revisions, we keep track of
+        # - the number of the unresolved paths: pendingcnt[rev],
+        # - dict of the unresolved descendants and chains: pointers[rev][0],
+        # - set of the already resolved descendants: pointers[rev][1].
+        #
+        # When a revision is visited, 'pointers[rev]' should be popped and
+        # propagated to its parents accordingly.
+        #
+        # Once all pending paths have been resolved, 'pendingcnt[rev]' becomes
+        # 0 and 'parents[rev]' contains the unsorted list of parent revisions
+        # and p1/p2 chains (excluding linear paths.)
+
+        subset = self._subset
+        tovisit = self._tovisit  # heap queue of [-rev]
+        pendingcnt = self._pendingcnt  # {rev: count} for visited revisions
+        pointers = self._pointers  # {rev: [{unresolved_rev: chain}, resolved]}
+        parents = self._parents  # {rev: [(chain, rev)]}
+
+        while tovisit or self._inputhead >= nullrev:
+            if pendingcnt.get(stoprev) == 0:
+                return
+
+            # feed greater revisions from input set to queue
+            if not tovisit:
+                heapq.heappush(tovisit, -self._inputhead)
+                self._advanceinput()
+            while self._inputhead >= -tovisit[0]:
+                heapq.heappush(tovisit, -self._inputhead)
+                self._advanceinput()
+
+            rev = -heapq.heappop(tovisit)
+            if rev < self._bottomrev:
+                return
+            if rev in pendingcnt and rev not in pointers:
+                continue  # already visited
+
+            curactive = rev in subset
+            pendingcnt.setdefault(rev, 0)  # mark as visited
+            if curactive:
+                assert rev not in parents
+                parents[rev] = []
+            unresolved, resolved = pointers.pop(rev, ({}, set()))
+
+            if curactive:
+                # reached to active rev, resolve pending descendants' parents
+                for r, c in unresolved.items():
+                    pendingcnt[r] -= 1
+                    assert pendingcnt[r] >= 0
+                    if r in resolved:
+                        continue  # eliminate redundant path
+                    parents[r].append((c, rev))
+                    # mark the descendant 'r' as resolved through this path if
+                    # there are still pending pointers. the 'resolved' set may
+                    # be concatenated later at a fork revision.
+                    if pendingcnt[r] > 0:
+                        resolved.add(r)
+                unresolved.clear()
+                # occasionally clean resolved markers. otherwise the set
+                # would grow indefinitely.
+                resolved = {r for r in resolved if pendingcnt[r] > 0}
+
+            parentrevs = self._parentrevs(rev)
+            bothparentsactive = all(p in subset for p in parentrevs)
+
+            # set up or propagate tracking pointers if
+            # - one of the parents is not active,
+            # - or descendants' parents are unresolved.
+            if not bothparentsactive or unresolved or resolved:
+                if len(parentrevs) > 1:
+                    # 'rev' is a merge revision. increment the pending count
+                    # as the 'unresolved' dict will be duplicated.
+                    for r in unresolved:
+                        pendingcnt[r] += 1
+                reusable = True  # can we avoid copying the tracking pointer?
+                for i, p in enumerate(parentrevs):
+                    assert p < rev
+                    heapq.heappush(tovisit, -p)
+                    if p in pointers:
+                        # 'p' is a fork revision. concatenate tracking pointers
+                        # and decrement the pending count accordingly.
+                        knownunresolved, knownresolved = pointers[p]
+                        for r, c in unresolved.items():
+                            c += [b'1', b'2'][i]
+                            if r in knownunresolved:
+                                # unresolved at both paths
+                                pendingcnt[r] -= 1
+                                assert pendingcnt[r] > 0
+                                # take shorter chain
+                                knownunresolved[r] = min(c, knownunresolved[r])
+                            else:
+                                knownunresolved[r] = c
+                        # simply propagate the 'resolved' set as deduplicating
+                        # 'unresolved' here would be slightly complicated.
+                        knownresolved.update(resolved)
+                    elif reusable:
+                        pointers[p] = (unresolved, resolved)
+                        reusable = False
+                    else:
+                        pointers[p] = (unresolved.copy(), resolved.copy())
+
+            # then, populate the active parents directly and add the current
+            # 'rev' to the tracking pointers of the inactive parents.
+            # 'pointers[p]' may be optimized out if both parents are active.
+            if curactive and bothparentsactive:
+                for i, p in enumerate(parentrevs):
+                    c = [b'1', b'2'][i]
+                    parents[rev].append((c, p))
+                    # no need to mark 'rev' as resolved since the 'rev' should
+                    # be fully resolved (i.e. pendingcnt[rev] == 0)
+                assert pendingcnt[rev] == 0
+            elif curactive:
+                for i, p in enumerate(parentrevs):
+                    unresolved, resolved = pointers[p]
+                    assert rev not in unresolved
+                    c = [b'1', b'2'][i]
+                    if p in subset:
+                        parents[rev].append((c, p))
+                        # mark 'rev' as resolved through this path
+                        resolved.add(rev)
+                    else:
+                        pendingcnt[rev] += 1
+                        unresolved[rev] = c
+                assert 0 < pendingcnt[rev] <= 2
+
+
 def _reachablerootspure(pfunc, minroot, roots, heads, includepath):
     """See revlog.reachableroots"""
     if not roots:
