@@ -15,6 +15,7 @@ from .pycompat import getattr
 from . import (
     error,
     pycompat,
+    smartset,
     util,
 )
 from .utils import (
@@ -406,6 +407,74 @@ class hybriditem(mappable, wrapped):
 
     def tovalue(self, context, mapping):
         return _unthunk(context, mapping, self._value)
+
+
+class revslist(wrapped):
+    """Wrapper for a smartset (a list/set of revision numbers)
+
+    If name specified, the revs will be rendered with the old-style list
+    template of the given name by default.
+    """
+
+    def __init__(self, repo, revs, name=None):
+        assert isinstance(revs, smartset.abstractsmartset)
+        self._repo = repo
+        self._revs = revs
+        self._name = name
+
+    def contains(self, context, mapping, item):
+        rev = unwrapinteger(context, mapping, item)
+        return rev in self._revs
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_(b'not a dictionary'))
+
+    def getmin(self, context, mapping):
+        makehybriditem = self._makehybriditemfunc()
+        return makehybriditem(self._revs.min())
+
+    def getmax(self, context, mapping):
+        makehybriditem = self._makehybriditemfunc()
+        return makehybriditem(self._revs.max())
+
+    def filter(self, context, mapping, select):
+        makehybriditem = self._makehybriditemfunc()
+        frevs = self._revs.filter(lambda r: select(makehybriditem(r)))
+        # once filtered, no need to support old-style list template
+        return revslist(self._repo, frevs, name=None)
+
+    def itermaps(self, context):
+        makemap = self._makemapfunc()
+        for r in self._revs:
+            yield makemap(r)
+
+    def _makehybriditemfunc(self):
+        makemap = self._makemapfunc()
+        return lambda r: hybriditem(None, r, r, makemap)
+
+    def _makemapfunc(self):
+        repo = self._repo
+        name = self._name
+        if name:
+            return lambda r: {name: r, b'ctx': repo[r]}
+        else:
+            return lambda r: {b'ctx': repo[r]}
+
+    def join(self, context, mapping, sep):
+        return joinitems(self._revs, sep)
+
+    def show(self, context, mapping):
+        if self._name:
+            srevs = [b'%d' % r for r in self._revs]
+            return _showcompatlist(context, mapping, self._name, srevs)
+        else:
+            return self.join(context, mapping, b' ')
+
+    def tobool(self, context, mapping):
+        return bool(self._revs)
+
+    def tovalue(self, context, mapping):
+        return list(self._revs)
 
 
 class _mappingsequence(wrapped):

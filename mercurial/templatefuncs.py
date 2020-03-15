@@ -668,7 +668,7 @@ def revset(context, mapping, args):
         else:
             revs = query(raw)
             revsetcache[raw] = revs
-    return templatekw.showrevslist(context, mapping, b"revision", revs)
+    return templateutil.revslist(repo, revs, name=b'revision')
 
 
 @templatefunc(b'rstdoc(text, style)')

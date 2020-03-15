@@ -820,6 +820,8 @@ Test json filter applied to wrapped object:
   {"branch": "default"}
   $ hg log -r0 -T '{date|json}\n'
   [0, 0]
+  $ hg log -r0 -T '{revset(":")|json}\n'
+  [0, 1]
 
 Test json filter applied to map result:
 
@@ -1263,6 +1265,28 @@ default. join() should agree with the default formatting:
   5:13207e5a10d9fd28ec424934298e176197f2c67f,
   4:bbe44766e73d5f11ed2177f1838de10c53ef3e74
 
+for historical reasons, revset() supports old-style list template
+
+  $ hg log -T '{revset(":")}\n' -l1 \
+  >        --config templates.start_revisions='"["' \
+  >        --config templates.end_revisions='"]"' \
+  >        --config templates.revision='"{revision}, "' \
+  >        --config templates.last_revision='"{revision}"'
+  [0, 1, 2]
+  $ hg log -T '{revset(":") % " {revision}"}\n' -l1
+   0 1 2
+
+but a filtered one doesn't
+
+  $ hg log -T '{filter(revset(":"), ifeq(rev, 1, "", "y"))}\n' -l1 \
+  >        --config templates.start_revisions='"["' \
+  >        --config templates.end_revisions='"]"' \
+  >        --config templates.revision='"{revision}, "' \
+  >        --config templates.last_revision='"{revision}"'
+  0 2
+  $ hg log -T '{filter(revset(":"), ifeq(rev, 1, "", "y")) % "x{revision}"}\n' -l1
+  xx
+
 %d parameter handling:
 
   $ hg log -T '{revset("%d", rev)}\n' -r'wdir()'
@@ -1316,6 +1340,13 @@ Invalid arguments passed to revset()
   [255]
   $ hg log -T '{revset("%r", 0)}\n'
   hg: parse error: invalid argument for revspec
+  [255]
+
+Invalid operation on revset()
+
+  $ hg log -T '{get(revset(":"), "foo")}\n'
+  hg: parse error: not a dictionary
+  (get() expects a dict as first argument)
   [255]
 
 Test files function
@@ -1566,6 +1597,23 @@ Test cbor filter:
    {
     'branch': 'default'
    }
+  ]
+
+  $ hg log -T "{revset(':')|cbor}" -R a -l1 | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ]
   ]
 
 json filter should escape HTML tags so that the output can be embedded in hgweb:

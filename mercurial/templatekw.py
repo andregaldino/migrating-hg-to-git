@@ -873,24 +873,6 @@ def showrev(context, mapping):
     return scmutil.intrev(ctx)
 
 
-def showrevslist(context, mapping, name, revs):
-    """helper to generate a list of revisions in which a mapped template will
-    be evaluated"""
-    repo = context.resource(mapping, b'repo')
-    # revs may be a smartset; don't compute it until f() has to be evaluated
-    def f():
-        srevs = [b'%d' % r for r in revs]
-        return _showcompatlist(context, mapping, name, srevs)
-
-    return _hybrid(
-        f,
-        revs,
-        lambda x: {name: x, b'ctx': repo[x]},
-        pycompat.identity,
-        keytype=int,
-    )
-
-
 @templatekeyword(b'subrepos', requires={b'ctx'})
 def showsubrepos(context, mapping):
     """List of strings. Updated subrepositories in the changeset."""
