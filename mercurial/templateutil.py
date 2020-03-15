@@ -474,7 +474,7 @@ class revslist(wrapped):
         return bool(self._revs)
 
     def tovalue(self, context, mapping):
-        return list(self._revs)
+        return self._revs
 
 
 class _mappingsequence(wrapped):

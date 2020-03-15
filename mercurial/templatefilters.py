@@ -18,6 +18,7 @@ from . import (
     node,
     pycompat,
     registrar,
+    smartset,
     templateutil,
     url,
     util,
@@ -108,6 +109,9 @@ def basename(path):
 @templatefilter(b'cbor')
 def cbor(obj):
     """Any object. Serializes the object to CBOR bytes."""
+    if isinstance(obj, smartset.abstractsmartset):
+        # cborutil is stricter about type than json() filter
+        obj = list(obj)
     return b''.join(cborutil.streamencode(obj))
 
 
