@@ -414,13 +414,18 @@ class revslist(wrapped):
 
     If name specified, the revs will be rendered with the old-style list
     template of the given name by default.
+
+    The cachekey provides a hint to cache further computation on this
+    smartset. If the underlying smartset is dynamically created, the cachekey
+    should be None.
     """
 
-    def __init__(self, repo, revs, name=None):
+    def __init__(self, repo, revs, name=None, cachekey=None):
         assert isinstance(revs, smartset.abstractsmartset)
         self._repo = repo
         self._revs = revs
         self._name = name
+        self.cachekey = cachekey
 
     def contains(self, context, mapping, item):
         rev = unwrapinteger(context, mapping, item)

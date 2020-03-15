@@ -658,17 +658,19 @@ def revset(context, mapping, args):
         return m(repo)
 
     if len(args) > 1:
+        key = None  # dynamically-created revs shouldn't be cached
         formatargs = [evalfuncarg(context, mapping, a) for a in args[1:]]
         revs = query(revsetlang.formatspec(raw, *formatargs))
     else:
         cache = context.resource(mapping, b'cache')
         revsetcache = cache.setdefault(b"revsetcache", {})
-        if raw in revsetcache:
-            revs = revsetcache[raw]
+        key = raw
+        if key in revsetcache:
+            revs = revsetcache[key]
         else:
             revs = query(raw)
-            revsetcache[raw] = revs
-    return templateutil.revslist(repo, revs, name=b'revision')
+            revsetcache[key] = revs
+    return templateutil.revslist(repo, revs, name=b'revision', cachekey=key)
 
 
 @templatefunc(b'rstdoc(text, style)')
