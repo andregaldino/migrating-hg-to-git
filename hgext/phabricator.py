@@ -483,18 +483,23 @@ def getoldnodedrevmap(repo, nodelist):
         alldiffs = callconduit(
             unfi.ui, b'differential.querydiffs', {b'revisionIDs': drevs}
         )
-        getnode = lambda d: bin(getdiffmeta(d).get(b'node', b'')) or None
+
+        def getnodes(d, precset):
+            # Ignore other nodes that were combined into the Differential
+            # that aren't predecessors of the current local node.
+            return [n for n in getlocalcommits(d) if n in precset]
+
         for newnode, (force, precset, drev) in toconfirm.items():
             diffs = [
                 d for d in alldiffs.values() if int(d[b'revisionID']) == drev
             ]
 
-            # "precursors" as known by Phabricator
-            phprecset = {getnode(d) for d in diffs}
+            # local predecessors known by Phabricator
+            phprecset = {n for d in diffs for n in getnodes(d, precset)}
 
             # Ignore if precursors (Phabricator and local repo) do not overlap,
             # and force is not set (when commit message says nothing)
-            if not force and not bool(phprecset & precset):
+            if not force and not phprecset:
                 tagname = b'D%d' % drev
                 tags.tag(
                     repo,
@@ -519,7 +524,20 @@ def getoldnodedrevmap(repo, nodelist):
             oldnode = lastdiff = None
             if diffs:
                 lastdiff = max(diffs, key=lambda d: int(d[b'id']))
-                oldnode = getnode(lastdiff)
+                oldnodes = getnodes(lastdiff, precset)
+
+                # If this commit was the result of `hg fold` after submission,
+                # and now resubmitted with --fold, the easiest thing to do is
+                # to leave the node clear.  This only results in creating a new
+                # diff for the _same_ Differential Revision if this commit is
+                # the first or last in the selected range.
+                # If this commit is the result of `hg split` in the same
+                # scenario, there is a single oldnode here (and multiple
+                # newnodes mapped to it).  That makes it the same as the normal
+                # case, as the edges of the newnode range cleanly maps to one
+                # oldnode each.
+                if len(oldnodes) == 1:
+                    oldnode = oldnodes[0]
                 if oldnode and not has_node(oldnode):
                     oldnode = None
 
@@ -1665,6 +1683,21 @@ def get_amended_desc(drev, ctx, folded):
         return b'\n\n'.join([ctx.description(), uri])
 
     return _differentialrevisiondescre.sub(uri, ctx.description())
+
+
+def getlocalcommits(diff):
+    """get the set of local commits from a diff object
+
+    See ``getdiffmeta()`` for an example diff object.
+    """
+    props = diff.get(b'properties') or {}
+    commits = props.get(b'local:commits') or {}
+    if len(commits) > 1:
+        return {bin(c) for c in commits.keys()}
+
+    # Storing the diff metadata predates storing `local:commits`, so continue
+    # to use that in the --no-fold case.
+    return {bin(getdiffmeta(diff).get(b'node', b'')) or None}
 
 
 def getdiffmeta(diff):
