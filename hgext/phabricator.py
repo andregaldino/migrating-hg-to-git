@@ -1168,6 +1168,20 @@ def userphids(ui, names):
     return [entry[b'phid'] for entry in data]
 
 
+def _amend_diff_properties(unfi, drevid, newnodes, diff):
+    """update the local commit list for the ``diff`` associated with ``drevid``
+
+    This is a utility function for the amend phase of ``phabsend``, which
+    converts failures to warning messages.
+    """
+    try:
+        writediffproperties([unfi[newnode] for newnode in newnodes], diff)
+    except util.urlerr.urlerror:
+        # If it fails just warn and keep going, otherwise the DREV
+        # associations will be lost
+        unfi.ui.warnnoi18n(b'Failed to update metadata for D%d\n' % drevid)
+
+
 @vcrcommand(
     b'phabsend',
     [
@@ -1357,17 +1371,10 @@ def phabsend(ui, repo, *revs, **opts):
                     newnode = new.commit()
 
                     mapping[old.node()] = [newnode]
-                    # Update diff property
-                    # If it fails just warn and keep going, otherwise the DREV
-                    # associations will be lost
-                    try:
-                        writediffproperties(
-                            [unfi[newnode]], diffmap[old.node()]
-                        )
-                    except util.urlerr.urlerror:
-                        ui.warnnoi18n(
-                            b'Failed to update metadata for D%d\n' % drevid
-                        )
+
+                    _amend_diff_properties(
+                        unfi, drevid, [newnode], diffmap[old.node()]
+                    )
                 # Remove local tags since it's no longer necessary
                 tagname = b'D%d' % drevid
                 if tagname in repo.tags():
