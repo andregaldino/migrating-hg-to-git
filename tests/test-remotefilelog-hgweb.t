@@ -24,9 +24,15 @@
   $ cd wdir
   $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
-  $ (get-with-headers.py localhost:$HGPORT 'file/tip/x')
-  500 Internal Server Error
+  $ get-with-headers.py localhost:$HGPORT 'file/tip/x' | head -n 10
+  200 Script output follows
   
-  Internal Server Error (no-eol)
-  [1]
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
+  <head>
+  <link rel="icon" href="/static/hgicon.png" type="image/png" />
+  <meta name="robots" content="index, nofollow" />
+  <link rel="stylesheet" href="/static/style-paper.css" type="text/css" />
+  <script type="text/javascript" src="/static/mercurial.js"></script>
+  
 

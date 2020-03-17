@@ -259,6 +259,10 @@ class remotefilelog(object):
 
         raise RuntimeError(b"len not supported")
 
+    def heads(self):
+        # Fake heads of the filelog to satisfy hgweb.
+        return []
+
     def empty(self):
         return False
 
