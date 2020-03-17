@@ -1113,7 +1113,8 @@ def screen_size():
 
 
 class histeditrule(object):
-    def __init__(self, ctx, pos, action=b'pick'):
+    def __init__(self, ui, ctx, pos, action=b'pick'):
+        self.ui = ui
         self.ctx = ctx
         self.action = action
         self.origpos = pos
@@ -1153,6 +1154,14 @@ class histeditrule(object):
 
     @property
     def desc(self):
+        summary = (
+            cmdutil.rendertemplate(
+                self.ctx, self.ui.config(b'histedit', b'summary-template')
+            )
+            or b''
+        )
+        if summary:
+            return summary
         # This is split off from the prefix property so that we can
         # separately make the description for 'roll' red (since it
         # will get discarded).
@@ -1700,7 +1709,7 @@ def _chistedit(ui, repo, freeargs, opts):
 
         ctxs = []
         for i, r in enumerate(revs):
-            ctxs.append(histeditrule(repo[r], i))
+            ctxs.append(histeditrule(ui, repo[r], i))
         # Curses requires setting the locale or it will default to the C
         # locale. This sets the locale to the user's default system
         # locale.
