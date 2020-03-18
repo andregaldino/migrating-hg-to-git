@@ -328,6 +328,7 @@ def main():
         'allow-attr-methods': args.allow_attr_methods,
     }
     for fname in args.files:
+        fname = os.path.realpath(fname)
         if args.inplace:
             with editinplace(fname) as fout:
                 with open(fname, 'rb') as fin:
