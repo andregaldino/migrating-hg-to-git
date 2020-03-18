@@ -1168,6 +1168,26 @@ def userphids(ui, names):
     return [entry[b'phid'] for entry in data]
 
 
+def _print_phabsend_action(ui, ctx, newrevid, action):
+    """print the ``action`` that occurred when posting ``ctx`` for review
+
+    This is a utility function for the sending phase of ``phabsend``, which
+    makes it easier to show a status for all local commits with `--fold``.
+    """
+    actiondesc = ui.label(
+        {
+            b'created': _(b'created'),
+            b'skipped': _(b'skipped'),
+            b'updated': _(b'updated'),
+        }[action],
+        b'phabricator.action.%s' % action,
+    )
+    drevdesc = ui.label(b'D%d' % newrevid, b'phabricator.drev')
+    nodedesc = ui.label(bytes(ctx), b'phabricator.node')
+    desc = ui.label(ctx.description().split(b'\n')[0], b'phabricator.desc')
+    ui.write(_(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc, desc))
+
+
 def _amend_diff_properties(unfi, drevid, newnodes, diff):
     """update the local commit list for the ``diff`` associated with ``drevid``
 
@@ -1317,22 +1337,10 @@ def phabsend(ui, repo, *revs, **opts):
             newrevid = revid
             action = b'skipped'
 
-        actiondesc = ui.label(
-            {
-                b'created': _(b'created'),
-                b'skipped': _(b'skipped'),
-                b'updated': _(b'updated'),
-            }[action],
-            b'phabricator.action.%s' % action,
-        )
-        drevdesc = ui.label(b'D%d' % newrevid, b'phabricator.drev')
-        nodedesc = ui.label(bytes(ctx), b'phabricator.node')
-        desc = ui.label(ctx.description().split(b'\n')[0], b'phabricator.desc')
-        ui.write(
-            _(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc, desc)
-        )
         drevids.append(newrevid)
         lastrevphid = newrevphid
+
+        _print_phabsend_action(ui, ctx, newrevid, action)
 
     # Update commit messages and remove tags
     if opts.get(b'amend'):
