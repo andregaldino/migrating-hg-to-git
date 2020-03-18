@@ -24,6 +24,7 @@ python3-bin = ["cpython/python3-sys"]
 [dependencies]
 hg-core = { path = "../hg-core"}
 libc = '*'
+log = "0.4.8"
 simple_logger = "1.6.0"
 
 [dependencies.cpython]

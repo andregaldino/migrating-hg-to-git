@@ -84,7 +84,10 @@ fn collect_bad_matches(
 fn handle_fallback(py: Python, err: StatusError) -> PyErr {
     match err {
         StatusError::Pattern(e) => {
-            PyErr::new::<FallbackError, _>(py, e.to_string())
+            let as_string = e.to_string();
+            log::trace!("Rust status fallback: `{}`", &as_string);
+
+            PyErr::new::<FallbackError, _>(py, &as_string)
         }
         e => PyErr::new::<ValueError, _>(py, e.to_string()),
     }
