@@ -1764,7 +1764,6 @@ def phabimport(ui, repo, spec, **opts):
                     ui.note(msg + b'\n')
                     parents = [repo[node]]
 
-    opts = pycompat.byteskwargs(opts)
     if opts.get(b'stack'):
         spec = b':(%s)' % spec
     drevs = querydrev(repo.ui, spec)
