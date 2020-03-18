@@ -60,12 +60,19 @@ def _local(path):
     path = util.expandpath(util.urllocalpath(path))
 
     try:
-        isfile = os.path.isfile(path)
+        # we use os.stat() directly here instead of os.path.isfile()
+        # because the latter started returning `False` on invalid path
+        # exceptions starting in 3.8 and we care about handling
+        # invalid paths specially here.
+        st = os.stat(path)
+        isfile = stat.S_ISREG(st.st_mode)
     # Python 2 raises TypeError, Python 3 ValueError.
     except (TypeError, ValueError) as e:
         raise error.Abort(
             _(b'invalid path %s: %s') % (path, pycompat.bytestr(e))
         )
+    except OSError:
+        isfile = False
 
     return isfile and bundlerepo or localrepo
 
