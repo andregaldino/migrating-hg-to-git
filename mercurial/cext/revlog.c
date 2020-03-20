@@ -159,7 +159,10 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 			                             sizeof(*self->offsets));
 			if (self->offsets == NULL)
 				return (const char *)PyErr_NoMemory();
-			inline_scan(self, self->offsets);
+			Py_ssize_t ret = inline_scan(self, self->offsets);
+			if (ret == -1) {
+				return NULL;
+			};
 		}
 		return self->offsets[pos];
 	}

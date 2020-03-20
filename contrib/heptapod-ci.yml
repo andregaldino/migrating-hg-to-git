@@ -6,7 +6,7 @@ before_script:
     - hg clone . /tmp/mercurial-ci/ --noupdate
     - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
     - cd /tmp/mercurial-ci/
-    - (cd tests; ls -1 test-check-*.*) > /tmp/check-tests.txt
+    - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
 
 variables:
     PYTHON: python
@@ -14,10 +14,9 @@ variables:
 
 .runtests_template: &runtests
     script:
-        - cd tests/
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
-        - HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" run-tests.py --color=always $RUNTEST_ARGS
+        - HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" tests/run-tests.py --color=always $RUNTEST_ARGS
 
 checks-py2:
     <<: *runtests

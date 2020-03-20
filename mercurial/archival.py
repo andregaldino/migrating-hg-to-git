@@ -135,34 +135,38 @@ class tarit(object):
     '''write archive to tar file or stream.  can write uncompressed,
     or compress with gzip or bzip2.'''
 
-    class GzipFileWithTime(gzip.GzipFile):
-        def __init__(self, *args, **kw):
-            timestamp = None
-            if 'timestamp' in kw:
-                timestamp = kw.pop('timestamp')
-            if timestamp is None:
-                self.timestamp = time.time()
-            else:
-                self.timestamp = timestamp
-            gzip.GzipFile.__init__(self, *args, **kw)
+    if pycompat.ispy3:
+        GzipFileWithTime = gzip.GzipFile  # camelcase-required
+    else:
 
-        def _write_gzip_header(self):
-            self.fileobj.write(b'\037\213')  # magic header
-            self.fileobj.write(b'\010')  # compression method
-            fname = self.name
-            if fname and fname.endswith(b'.gz'):
-                fname = fname[:-3]
-            flags = 0
-            if fname:
-                flags = gzip.FNAME  # pytype: disable=module-attr
-            self.fileobj.write(pycompat.bytechr(flags))
-            gzip.write32u(  # pytype: disable=module-attr
-                self.fileobj, int(self.timestamp)
-            )
-            self.fileobj.write(b'\002')
-            self.fileobj.write(b'\377')
-            if fname:
-                self.fileobj.write(fname + b'\000')
+        class GzipFileWithTime(gzip.GzipFile):
+            def __init__(self, *args, **kw):
+                timestamp = None
+                if 'mtime' in kw:
+                    timestamp = kw.pop('mtime')
+                if timestamp is None:
+                    self.timestamp = time.time()
+                else:
+                    self.timestamp = timestamp
+                gzip.GzipFile.__init__(self, *args, **kw)
+
+            def _write_gzip_header(self):
+                self.fileobj.write(b'\037\213')  # magic header
+                self.fileobj.write(b'\010')  # compression method
+                fname = self.name
+                if fname and fname.endswith(b'.gz'):
+                    fname = fname[:-3]
+                flags = 0
+                if fname:
+                    flags = gzip.FNAME  # pytype: disable=module-attr
+                self.fileobj.write(pycompat.bytechr(flags))
+                gzip.write32u(  # pytype: disable=module-attr
+                    self.fileobj, int(self.timestamp)
+                )
+                self.fileobj.write(b'\002')
+                self.fileobj.write(b'\377')
+                if fname:
+                    self.fileobj.write(fname + b'\000')
 
     def __init__(self, dest, mtime, kind=b''):
         self.mtime = mtime
@@ -178,7 +182,7 @@ class tarit(object):
                     pycompat.sysstr(mode + b'b'),
                     zlib.Z_BEST_COMPRESSION,
                     fileobj,
-                    timestamp=mtime,
+                    mtime=mtime,
                 )
                 self.fileobj = gzfileobj
                 return tarfile.TarFile.taropen(  # pytype: disable=attribute-error

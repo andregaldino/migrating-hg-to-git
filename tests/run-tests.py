@@ -1632,7 +1632,7 @@ class TTest(Test):
             return self._have.get(allreqs)
 
         # TODO do something smarter when all other uses of hghave are gone.
-        runtestdir = os.path.abspath(os.path.dirname(_sys2bytes(__file__)))
+        runtestdir = osenvironb[b'RUNTESTDIR']
         tdir = runtestdir.replace(b'\\', b'/')
         proc = Popen4(
             b'%s -c "%s/hghave %s"' % (self._shell, tdir, allreqs),
