@@ -10,6 +10,12 @@ if [ $# -lt 2 ] || [ $# -gt 3 ]; then
 fi
 
 timer="$1"
+
+# if the test timeout have been extended, explicitly extend the provided timer
+if [ "$HGTEST_TIMEOUT_DEFAULT" -lt "$HGTEST_TIMEOUT" ]; then
+    timer=$(( ("$timer" * "$HGTEST_TIMEOUT") / $HGTEST_TIMEOUT_DEFAULT ))
+fi
+
 wait_on="$2"
 create=""
 if [ $# -eq 3 ]; then

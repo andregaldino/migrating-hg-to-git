@@ -321,13 +321,15 @@ IMPL_PATH = b'PYTHONPATH'
 if 'java' in sys.platform:
     IMPL_PATH = b'JYTHONPATH'
 
-defaults = {
+default_defaults = {
     'jobs': ('HGTEST_JOBS', multiprocessing.cpu_count()),
     'timeout': ('HGTEST_TIMEOUT', 180),
     'slowtimeout': ('HGTEST_SLOWTIMEOUT', 1500),
     'port': ('HGTEST_PORT', 20059),
     'shell': ('HGTEST_SHELL', 'sh'),
 }
+
+defaults = default_defaults.copy()
 
 
 def canonpath(path):
@@ -1327,6 +1329,9 @@ class Test(unittest.TestCase):
         env['TESTTMP'] = _bytes2sys(self._testtmp)
         env['TESTNAME'] = self.name
         env['HOME'] = _bytes2sys(self._testtmp)
+        formated_timeout = _bytes2sys(b"%d" % default_defaults['timeout'][1])
+        env['HGTEST_TIMEOUT_DEFAULT'] = formated_timeout
+        env['HGTEST_TIMEOUT'] = _bytes2sys(b"%d" % self._timeout)
         # This number should match portneeded in _getport
         for port in xrange(3):
             # This list should be parallel to _portmap in _getreplacements
