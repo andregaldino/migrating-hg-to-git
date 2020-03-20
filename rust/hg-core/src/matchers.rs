@@ -24,12 +24,12 @@ use crate::{
     PatternSyntax,
 };
 
-use micro_timer::timed;
+use std::borrow::ToOwned;
 use std::collections::HashSet;
 use std::fmt::{Display, Error, Formatter};
 use std::iter::FromIterator;
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, PartialEq)]
 pub enum VisitChildrenSet<'a> {
@@ -507,7 +507,8 @@ fn build_match<'a, 'b>(
         let mut prefixes = vec![];
 
         for SubInclude { prefix, root, path } in subincludes.into_iter() {
-            let (match_fn, warnings) = get_ignore_function(&[path], root)?;
+            let (match_fn, warnings) =
+                get_ignore_function(vec![path.to_path_buf()], root)?;
             all_warnings.extend(warnings);
             prefixes.push(prefix.to_owned());
             submatchers.insert(prefix.to_owned(), match_fn);
@@ -578,12 +579,11 @@ fn build_match<'a, 'b>(
 /// Parses all "ignore" files with their recursive includes and returns a
 /// function that checks whether a given file (in the general sense) should be
 /// ignored.
-#[timed]
 pub fn get_ignore_function<'a>(
-    all_pattern_files: &[impl AsRef<Path>],
+    all_pattern_files: Vec<PathBuf>,
     root_dir: impl AsRef<Path>,
 ) -> PatternResult<(
-    impl for<'r> Fn(&'r HgPath) -> bool + Sync,
+    Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>,
     Vec<PatternFileWarning>,
 )> {
     let mut all_patterns = vec![];
@@ -593,12 +593,15 @@ pub fn get_ignore_function<'a>(
         let (patterns, warnings) =
             get_patterns_from_file(pattern_file, &root_dir)?;
 
-        all_patterns.extend(patterns);
+        all_patterns.extend(patterns.to_owned());
         all_warnings.extend(warnings);
     }
     let (matcher, warnings) = IncludeMatcher::new(all_patterns, root_dir)?;
     all_warnings.extend(warnings);
-    Ok((move |path: &HgPath| matcher.matches(path), all_warnings))
+    Ok((
+        Box::new(move |path: &HgPath| matcher.matches(path)),
+        all_warnings,
+    ))
 }
 
 impl<'a> IncludeMatcher<'a> {

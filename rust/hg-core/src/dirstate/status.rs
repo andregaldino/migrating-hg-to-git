@@ -33,7 +33,7 @@ use std::{
     fs::{read_dir, DirEntry},
     io::ErrorKind,
     ops::Deref,
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 /// Wrong type of file from a `BadMatch`
@@ -94,6 +94,9 @@ enum Dispatch {
 }
 
 type IoResult<T> = std::io::Result<T>;
+/// `Box<dyn Trait>` is syntactic sugar for `Box<dyn Trait, 'static>`, so add
+/// an explicit lifetime here to not fight `'static` bounds "out of nowhere".
+type IgnoreFnType<'a> = Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
 
 /// Dates and times that are outside the 31-bit signed range are compared
 /// modulo 2^31. This should prevent hg from behaving badly with very large
@@ -312,8 +315,8 @@ fn handle_traversed_entry<'a>(
     root_dir: impl AsRef<Path> + Sync + Send + Copy + 'a,
     dmap: &'a DirstateMap,
     old_results: &'a FastHashMap<Cow<HgPath>, Dispatch>,
-    ignore_fn: &'a (impl for<'r> Fn(&'r HgPath) -> bool + Sync),
-    dir_ignore_fn: &'a (impl for<'r> Fn(&'r HgPath) -> bool + Sync),
+    ignore_fn: &'a IgnoreFnType,
+    dir_ignore_fn: &'a IgnoreFnType,
     options: StatusOptions,
     filename: HgPathBuf,
     dir_entry: DirEntry,
@@ -393,8 +396,8 @@ fn handle_traversed_dir<'a>(
     root_dir: impl AsRef<Path> + Sync + Send + Copy + 'a,
     dmap: &'a DirstateMap,
     old_results: &'a FastHashMap<Cow<HgPath>, Dispatch>,
-    ignore_fn: &'a (impl for<'r> Fn(&'r HgPath) -> bool + Sync),
-    dir_ignore_fn: &'a (impl for<'r> Fn(&'r HgPath) -> bool + Sync),
+    ignore_fn: &'a IgnoreFnType,
+    dir_ignore_fn: &'a IgnoreFnType,
     options: StatusOptions,
     entry_option: Option<&'a DirstateEntry>,
     directory: HgPathBuf,
@@ -439,8 +442,8 @@ fn traverse_dir<'a>(
     dmap: &'a DirstateMap,
     directory: impl AsRef<HgPath>,
     old_results: &FastHashMap<Cow<'a, HgPath>, Dispatch>,
-    ignore_fn: &(impl for<'r> Fn(&'r HgPath) -> bool + Sync),
-    dir_ignore_fn: &(impl for<'r> Fn(&'r HgPath) -> bool + Sync),
+    ignore_fn: &IgnoreFnType,
+    dir_ignore_fn: &IgnoreFnType,
     options: StatusOptions,
 ) -> IoResult<()> {
     let directory = directory.as_ref();
@@ -522,8 +525,8 @@ fn traverse<'a>(
     dmap: &'a DirstateMap,
     path: impl AsRef<HgPath>,
     old_results: &FastHashMap<Cow<'a, HgPath>, Dispatch>,
-    ignore_fn: &(impl for<'r> Fn(&'r HgPath) -> bool + Sync),
-    dir_ignore_fn: &(impl for<'r> Fn(&'r HgPath) -> bool + Sync),
+    ignore_fn: &IgnoreFnType,
+    dir_ignore_fn: &IgnoreFnType,
     options: StatusOptions,
     results: &mut Vec<(Cow<'a, HgPath>, Dispatch)>,
 ) -> IoResult<()> {
@@ -805,26 +808,39 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
     dmap: &'a DirstateMap,
     matcher: &'b (impl Matcher + Sync),
     root_dir: impl AsRef<Path> + Sync + Send + Copy + 'c,
-    ignore_files: &[impl AsRef<Path> + 'c],
+    ignore_files: Vec<PathBuf>,
     options: StatusOptions,
 ) -> StatusResult<(
     (Vec<Cow<'c, HgPath>>, DirstateStatus<'c>),
     Vec<PatternFileWarning>,
 )> {
-    let (ignore_fn, warnings) = get_ignore_function(&ignore_files, root_dir)?;
+    // Needs to outlive `dir_ignore_fn` since it's captured.
+    let mut ignore_fn: IgnoreFnType;
 
-    // Is the path or one of its ancestors ignored?
-    let dir_ignore_fn = |dir: &_| {
-        if ignore_fn(dir) {
-            true
-        } else {
-            for p in find_dirs(dir) {
-                if ignore_fn(p) {
-                    return true;
+    // Only involve real ignore mechanism if we're listing unknowns or ignored.
+    let (dir_ignore_fn, warnings): (IgnoreFnType, _) = if options.list_ignored
+        || options.list_unknown
+    {
+        let (ignore, warnings) = get_ignore_function(ignore_files, root_dir)?;
+
+        ignore_fn = ignore;
+        let dir_ignore_fn = Box::new(|dir: &_| {
+            // Is the path or one of its ancestors ignored?
+            if ignore_fn(dir) {
+                true
+            } else {
+                for p in find_dirs(dir) {
+                    if ignore_fn(p) {
+                        return true;
+                    }
                 }
+                false
             }
-            false
-        }
+        });
+        (dir_ignore_fn, warnings)
+    } else {
+        ignore_fn = Box::new(|&_| true);
+        (Box::new(|&_| true), vec![])
     };
 
     let files = matcher.file_set();

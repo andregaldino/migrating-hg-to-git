@@ -127,7 +127,7 @@ pub fn status_wrapper(
                 &dmap,
                 &matcher,
                 &root_dir,
-                &ignore_files,
+                ignore_files,
                 StatusOptions {
                     check_exec,
                     last_normal_time,
@@ -163,7 +163,7 @@ pub fn status_wrapper(
                 &dmap,
                 &matcher,
                 &root_dir,
-                &ignore_files,
+                ignore_files,
                 StatusOptions {
                     check_exec,
                     last_normal_time,
@@ -217,7 +217,7 @@ pub fn status_wrapper(
                 &dmap,
                 &matcher,
                 &root_dir,
-                &ignore_files,
+                ignore_files,
                 StatusOptions {
                     check_exec,
                     last_normal_time,
