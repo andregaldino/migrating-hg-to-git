@@ -1268,6 +1268,12 @@ common_depends = [
 ]
 common_include_dirs = ['mercurial']
 
+common_cflags = []
+
+# MSVC 2008 still needs declarations at the top of the scope.
+if os.name != 'nt':
+    common_cflags = ['-Werror=declaration-after-statement']
+
 osutil_cflags = []
 osutil_ldflags = []
 
@@ -1441,18 +1447,21 @@ extmodules = [
         'mercurial.cext.base85',
         ['mercurial/cext/base85.c'],
         include_dirs=common_include_dirs,
+        extra_compile_args=common_cflags,
         depends=common_depends,
     ),
     Extension(
         'mercurial.cext.bdiff',
         ['mercurial/bdiff.c', 'mercurial/cext/bdiff.c'] + xdiff_srcs,
         include_dirs=common_include_dirs,
+        extra_compile_args=common_cflags,
         depends=common_depends + ['mercurial/bdiff.h'] + xdiff_headers,
     ),
     Extension(
         'mercurial.cext.mpatch',
         ['mercurial/mpatch.c', 'mercurial/cext/mpatch.c'],
         include_dirs=common_include_dirs,
+        extra_compile_args=common_cflags,
         depends=common_depends,
     ),
     Extension(
@@ -1466,6 +1475,7 @@ extmodules = [
             'mercurial/cext/revlog.c',
         ],
         include_dirs=common_include_dirs,
+        extra_compile_args=common_cflags,
         depends=common_depends
         + ['mercurial/cext/charencode.h', 'mercurial/cext/revlog.h',],
     ),
@@ -1473,7 +1483,7 @@ extmodules = [
         'mercurial.cext.osutil',
         ['mercurial/cext/osutil.c'],
         include_dirs=common_include_dirs,
-        extra_compile_args=osutil_cflags,
+        extra_compile_args=common_cflags + osutil_cflags,
         extra_link_args=osutil_ldflags,
         depends=common_depends,
     ),
@@ -1482,6 +1492,7 @@ extmodules = [
         [
             'mercurial/thirdparty/zope/interface/_zope_interface_coptimizations.c',
         ],
+        extra_compile_args=common_cflags,
     ),
     Extension(
         'mercurial.thirdparty.sha1dc',
@@ -1490,9 +1501,12 @@ extmodules = [
             'mercurial/thirdparty/sha1dc/lib/sha1.c',
             'mercurial/thirdparty/sha1dc/lib/ubc_check.c',
         ],
+        extra_compile_args=common_cflags,
     ),
     Extension(
-        'hgext.fsmonitor.pywatchman.bser', ['hgext/fsmonitor/pywatchman/bser.c']
+        'hgext.fsmonitor.pywatchman.bser',
+        ['hgext/fsmonitor/pywatchman/bser.c'],
+        extra_compile_args=common_cflags,
     ),
     RustStandaloneExtension(
         'mercurial.rustext', 'hg-cpython', 'librusthg', py3_features='python3'
@@ -1503,11 +1517,11 @@ extmodules = [
 sys.path.insert(0, 'contrib/python-zstandard')
 import setup_zstd
 
-extmodules.append(
-    setup_zstd.get_c_extension(
-        name='mercurial.zstd', root=os.path.abspath(os.path.dirname(__file__))
-    )
+zstd = setup_zstd.get_c_extension(
+    name='mercurial.zstd', root=os.path.abspath(os.path.dirname(__file__))
 )
+zstd.extra_compile_args += common_cflags
+extmodules.append(zstd)
 
 try:
     from distutils import cygwinccompiler
