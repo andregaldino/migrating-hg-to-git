@@ -2082,19 +2082,11 @@ def removes(repo, subset, x):
 
 @predicate(b'rev(number)', safe=True)
 def rev(repo, subset, x):
-    """Revision with the given numeric identifier.
-    """
-    # i18n: "rev" is a keyword
-    l = getargs(x, 1, 1, _(b"rev requires one argument"))
+    """Revision with the given numeric identifier."""
     try:
-        # i18n: "rev" is a keyword
-        l = int(getstring(l[0], _(b"rev requires a number")))
-    except (TypeError, ValueError):
-        # i18n: "rev" is a keyword
-        raise error.ParseError(_(b"rev expects a number"))
-    if l not in repo.changelog and l not in _virtualrevs:
+        return _rev(repo, subset, x)
+    except error.RepoLookupError:
         return baseset()
-    return subset & baseset([l])
 
 
 @predicate(b'_rev(number)', safe=True)
