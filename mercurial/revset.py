@@ -2109,7 +2109,10 @@ def _rev(repo, subset, x):
         # i18n: "rev" is a keyword
         raise error.ParseError(_(b"rev expects a number"))
     if l not in _virtualrevs:
-        repo.changelog.node(l)  # check that the rev exists
+        try:
+            repo.changelog.node(l)  # check that the rev exists
+        except IndexError:
+            raise error.RepoLookupError(_(b"unknown revision '%d'") % l)
     return subset & baseset([l])
 
 
