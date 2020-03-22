@@ -810,9 +810,10 @@ static PyObject *setprocname(PyObject *self, PyObject *args)
 			/* Check the memory we can use. Typically, argv[i] and
 			 * argv[i + 1] are continuous. */
 			for (i = 0; i < argc; ++i) {
+				size_t len;
 				if (argv[i] > argvend || argv[i] < argvstart)
 					break; /* not continuous */
-				size_t len = strlen(argv[i]);
+				len = strlen(argv[i]);
 				argvend = argv[i] + len + 1 /* '\0' */;
 			}
 			if (argvend > argvstart) /* sanity check */
@@ -1169,10 +1170,10 @@ static PyObject *getfsmountpoint(PyObject *self, PyObject *args)
 static PyObject *unblocksignal(PyObject *self, PyObject *args)
 {
 	int sig = 0;
+	sigset_t set;
 	int r;
 	if (!PyArg_ParseTuple(args, "i", &sig))
 		return NULL;
-	sigset_t set;
 	r = sigemptyset(&set);
 	if (r != 0)
 		return PyErr_SetFromErrno(PyExc_OSError);
