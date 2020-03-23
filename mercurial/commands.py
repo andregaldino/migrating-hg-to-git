@@ -7585,7 +7585,7 @@ def unshelve(ui, repo, *shelved, **opts):
        unshelved.
     """
     with repo.wlock():
-        return shelvemod.dounshelve(ui, repo, *shelved, **opts)
+        return shelvemod.unshelvecmd(ui, repo, *shelved, **opts)
 
 
 statemod.addunfinished(

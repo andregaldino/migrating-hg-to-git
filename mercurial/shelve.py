@@ -1074,7 +1074,7 @@ def _checkunshelveuntrackedproblems(ui, repo, shelvectx):
         raise error.Abort(m, hint=hint)
 
 
-def dounshelve(ui, repo, *shelved, **opts):
+def unshelvecmd(ui, repo, *shelved, **opts):
     opts = pycompat.byteskwargs(opts)
     abortf = opts.get(b'abort')
     continuef = opts.get(b'continue')
@@ -1121,6 +1121,10 @@ def dounshelve(ui, repo, *shelved, **opts):
     if not shelvedfile(repo, basename, patchextension).exists():
         raise error.Abort(_(b"shelved change '%s' not found") % basename)
 
+    return _dounshelve(ui, repo, basename, opts)
+
+
+def _dounshelve(ui, repo, basename, opts):
     repo = repo.unfiltered()
     lock = tr = None
     try:
