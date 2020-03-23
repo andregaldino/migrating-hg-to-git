@@ -1914,6 +1914,12 @@ class ui(object):
             # instead default to E to plumb commit messages to
             # avoid confusion.
             editor = b'E'
+        elif pycompat.isdarwin:
+            # vi on darwin is POSIX compatible to a fault, and that includes
+            # exiting non-zero if you make any mistake when running an ex
+            # command. Proof: `vi -c ':unknown' -c ':qa'; echo $?` produces 1,
+            # while s/vi/vim/ doesn't.
+            editor = b'vim'
         else:
             editor = b'vi'
         return encoding.environ.get(b"HGEDITOR") or self.config(
