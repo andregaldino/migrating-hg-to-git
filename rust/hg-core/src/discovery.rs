@@ -597,12 +597,12 @@ mod tests {
 
     #[test]
     fn test_limit_sample_less_than_half() {
-        assert_eq!(full_disco().limit_sample((1..6).collect(), 2), vec![4, 2]);
+        assert_eq!(full_disco().limit_sample((1..6).collect(), 2), vec![2, 5]);
     }
 
     #[test]
     fn test_limit_sample_more_than_half() {
-        assert_eq!(full_disco().limit_sample((1..4).collect(), 2), vec![3, 2]);
+        assert_eq!(full_disco().limit_sample((1..4).collect(), 2), vec![1, 2]);
     }
 
     #[test]

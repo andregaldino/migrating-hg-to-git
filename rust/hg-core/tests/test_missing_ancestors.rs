@@ -1,8 +1,9 @@
 use hg::testing::VecGraph;
 use hg::Revision;
 use hg::*;
-use rand::distributions::{Distribution, LogNormal, Uniform};
+use rand::distributions::{Distribution, Uniform};
 use rand::{thread_rng, Rng, RngCore, SeedableRng};
+use rand_distr::LogNormal;
 use std::cmp::min;
 use std::collections::HashSet;
 use std::env;
@@ -191,7 +192,7 @@ fn sample_revs<R: RngCore>(
     let mu = mu_opt.unwrap_or(1.1);
     let sigma = sigma_opt.unwrap_or(0.8);
 
-    let log_normal = LogNormal::new(mu, sigma);
+    let log_normal = LogNormal::new(mu, sigma).unwrap();
     let nb = min(maxrev as usize, log_normal.sample(rng).floor() as usize);
 
     let dist = Uniform::from(NULL_REVISION..maxrev);
