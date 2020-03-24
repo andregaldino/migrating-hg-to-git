@@ -155,11 +155,12 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 {
 	if (self->inlined && pos > 0) {
 		if (self->offsets == NULL) {
+			Py_ssize_t ret;
 			self->offsets = PyMem_Malloc(self->raw_length *
 			                             sizeof(*self->offsets));
 			if (self->offsets == NULL)
 				return (const char *)PyErr_NoMemory();
-			Py_ssize_t ret = inline_scan(self, self->offsets);
+			ret = inline_scan(self, self->offsets);
 			if (ret == -1) {
 				return NULL;
 			};
