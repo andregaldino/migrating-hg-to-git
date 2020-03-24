@@ -327,9 +327,9 @@ try again with remote chg, which should succeed as well
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   remote: KABOOM
   remote: KABOOM IN PROCESS
+  remote: added 1 changesets with 1 changes to 1 files
 
 #endif
 
