@@ -176,9 +176,14 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         return vec![];
     }
     match syntax {
-        PatternSyntax::Regexp => pattern.to_owned(),
+        // The `regex` crate adds `.*` to the start and end of expressions
+        // if there are no anchors, so add them.
+        PatternSyntax::Regexp => [b"^", &pattern[..], b"$"].concat(),
         PatternSyntax::RelRegexp => {
-            if pattern[0] == b'^' {
+            // The `regex` crate accepts `**` while `re2` and Python's `re`
+            // do not. Checking for `*` correctly triggers the same error all
+            // engines.
+            if pattern[0] == b'^' || pattern[0] == b'*' {
                 return pattern.to_owned();
             }
             [&b".*"[..], pattern].concat()
@@ -191,14 +196,15 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         }
         PatternSyntax::RootFiles => {
             let mut res = if pattern == b"." {
-                vec![]
+                vec![b'^']
             } else {
                 // Pattern is a directory name.
-                [escape_pattern(pattern).as_slice(), b"/"].concat()
+                [b"^", escape_pattern(pattern).as_slice(), b"/"].concat()
             };
 
             // Anything after the pattern must be a non-directory.
             res.extend(b"[^/]+$");
+            res.push(b'$');
             res
         }
         PatternSyntax::RelGlob => {
@@ -206,11 +212,11 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
             if let Some(rest) = glob_re.drop_prefix(b"[^/]*") {
                 [b".*", rest, GLOB_SUFFIX].concat()
             } else {
-                [b"(?:|.*/)", glob_re.as_slice(), GLOB_SUFFIX].concat()
+                [b"(?:.*/)?", glob_re.as_slice(), GLOB_SUFFIX].concat()
             }
         }
         PatternSyntax::Glob | PatternSyntax::RootGlob => {
-            [glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
+            [b"^", glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
         }
         PatternSyntax::Include | PatternSyntax::SubInclude => unreachable!(),
     }
@@ -282,7 +288,10 @@ pub fn build_single_regex(
     if *syntax == PatternSyntax::RootGlob
         && !pattern.iter().any(|b| GLOB_SPECIAL_CHARACTERS.contains(b))
     {
-        let mut escaped = escape_pattern(&pattern);
+        // The `regex` crate adds `.*` to the start and end of expressions
+        // if there are no anchors, so add the start anchor.
+        let mut escaped = vec![b'^'];
+        escaped.extend(escape_pattern(&pattern));
         escaped.extend(GLOB_SUFFIX);
         Ok(escaped)
     } else {
@@ -619,7 +628,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"(?:|.*/)rust/target(?:/|$)".to_vec(),
+            br"(?:.*/)?rust/target(?:/|$)".to_vec(),
         );
     }
 
@@ -632,7 +641,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"\.(?:/|$)".to_vec(),
+            br"^\.(?:/|$)".to_vec(),
         );
         assert_eq!(
             build_single_regex(&IgnorePattern::new(
@@ -641,7 +650,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"whatever(?:/|$)".to_vec(),
+            br"^whatever(?:/|$)".to_vec(),
         );
         assert_eq!(
             build_single_regex(&IgnorePattern::new(
@@ -650,7 +659,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"[^/]*\.o(?:/|$)".to_vec(),
+            br"^[^/]*\.o(?:/|$)".to_vec(),
         );
     }
 }

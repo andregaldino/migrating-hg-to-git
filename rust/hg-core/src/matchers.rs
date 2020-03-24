@@ -331,8 +331,37 @@ fn re_matcher(
 }
 
 #[cfg(not(feature = "with-re2"))]
-fn re_matcher(_: &[u8]) -> PatternResult<Box<dyn Fn(&HgPath) -> bool + Sync>> {
-    Err(PatternError::Re2NotInstalled)
+/// Returns a function that matches an `HgPath` against the given regex
+/// pattern.
+///
+/// This can fail when the pattern is invalid or not supported by the
+/// underlying engine (the `regex` crate), for instance anything with
+/// back-references.
+fn re_matcher(
+    pattern: &[u8],
+) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
+    use std::io::Write;
+
+    let mut escaped_bytes = vec![];
+    for byte in pattern {
+        if *byte > 127 {
+            write!(escaped_bytes, "\\x{:x}", *byte).unwrap();
+        } else {
+            escaped_bytes.push(*byte);
+        }
+    }
+
+    // Avoid the cost of UTF8 checking
+    //
+    // # Safety
+    // This is safe because we escaped all non-ASCII bytes.
+    let pattern_string = unsafe { String::from_utf8_unchecked(escaped_bytes) };
+    let re = regex::bytes::RegexBuilder::new(&pattern_string)
+        .unicode(false)
+        .build()
+        .map_err(|e| PatternError::UnsupportedSyntax(e.to_string()))?;
+
+    Ok(move |path: &HgPath| re.is_match(path.as_bytes()))
 }
 
 /// Returns the regex pattern and a function that matches an `HgPath` against
