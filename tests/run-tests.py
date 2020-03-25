@@ -531,6 +531,9 @@ def getparser():
         action="store_true",
         help="install and use chg wrapper in place of hg",
     )
+    hgconf.add_argument(
+        "--chg-debug", action="store_true", help="show chg debug logs",
+    )
     hgconf.add_argument("--compiler", help="compiler to build with")
     hgconf.add_argument(
         '--extra-config-opt',
@@ -924,6 +927,7 @@ class Test(unittest.TestCase):
         hgcommand=None,
         slowtimeout=None,
         usechg=False,
+        chgdebug=False,
         useipv6=False,
     ):
         """Create a test from parameters.
@@ -979,6 +983,7 @@ class Test(unittest.TestCase):
         self._shell = _sys2bytes(shell)
         self._hgcommand = hgcommand or b'hg'
         self._usechg = usechg
+        self._chgdebug = chgdebug
         self._useipv6 = useipv6
 
         self._aborted = False
@@ -1417,6 +1422,8 @@ class Test(unittest.TestCase):
 
         if self._usechg:
             env['CHGSOCKNAME'] = os.path.join(self._chgsockdir, b'server')
+        if self._chgdebug:
+            env['CHGDEBUG'] = 'true'
 
         return env
 
@@ -3386,6 +3393,7 @@ class TestRunner(object):
             shell=self.options.shell,
             hgcommand=self._hgcommand,
             usechg=bool(self.options.with_chg or self.options.chg),
+            chgdebug=self.options.chg_debug,
             useipv6=useipv6,
             **kwds
         )
