@@ -36,15 +36,25 @@ extension will be used by default unless ``--no-rust``.
 One day we may use this environment variable to switch to new experimental
 binding crates like a hypothetical ``HGWITHRUSTEXT=hpy``.
 
-Using the full ``hg status`` extension
---------------------------------------
+Using the fastest ``hg status``
+-------------------------------
 
 The code for ``hg status`` needs to conform to ``.hgignore`` rules, which are
-all translated into regex. For compatibility and ease of development reasons
-the Re2 regex engine is in use until we figure out if the ``regex`` crate has
-similar enough behavior. This implies that you need to install ``Re2``
-following Google's guidelines: https://github.com/google/re2/wiki/Install
+all translated into regex. 
 
+In the first version, for compatibility and ease of development reasons, the 
+Re2 regex engine was chosen until we figured out if the ``regex`` crate had
+similar enough behavior.
+
+Now that that work has been done, the default behavior is to use the ``regex``
+crate, that provides a significant performance boost compared to the standard 
+Python + C path in many commands such as ``status``, ``diff`` and ``commit``,
+
+However, the ``Re2`` path remains slightly faster for our use cases and remains
+a better option for getting the most speed out of your Mercurial. 
+
+If you want to use ``Re2``, you need to install ``Re2`` following Google's 
+guidelines: https://github.com/google/re2/wiki/Install
 Then, use ``HG_RUST_FEATURES=with-re2`` when building ``hg`` to use the full
 status code.
 
