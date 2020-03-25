@@ -1270,8 +1270,9 @@ common_include_dirs = ['mercurial']
 
 common_cflags = []
 
-# MSVC 2008 still needs declarations at the top of the scope.
-if os.name != 'nt':
+# MSVC 2008 still needs declarations at the top of the scope, but Python 3.9
+# makes declarations not at the top of a scope in the headers.
+if os.name != 'nt' and sys.version_info[1] < 9:
     common_cflags = ['-Werror=declaration-after-statement']
 
 osutil_cflags = []
