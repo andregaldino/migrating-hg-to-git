@@ -1616,6 +1616,15 @@ Test cbor filter:
    ]
   ]
 
+  $ hg log -T "{dict(foo=revset('.'))|cbor}" -R a -l1 | "$PYTHON" "$TESTTMP/decodecbor.py"
+  [
+   {
+    'foo': [
+     10
+    ]
+   }
+  ]
+
 json filter should escape HTML tags so that the output can be embedded in hgweb:
 
   $ hg log -T "{'<foo@example.org>'|json}\n" -R a -l1

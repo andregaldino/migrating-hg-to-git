@@ -106,12 +106,17 @@ def basename(path):
     return os.path.basename(path)
 
 
+def _tocborencodable(obj):
+    if isinstance(obj, smartset.abstractsmartset):
+        return list(obj)
+    return obj
+
+
 @templatefilter(b'cbor')
 def cbor(obj):
     """Any object. Serializes the object to CBOR bytes."""
-    if isinstance(obj, smartset.abstractsmartset):
-        # cborutil is stricter about type than json() filter
-        obj = list(obj)
+    # cborutil is stricter about type than json() filter
+    obj = pycompat.rapply(_tocborencodable, obj)
     return b''.join(cborutil.streamencode(obj))
 
 
