@@ -588,15 +588,15 @@ Test internal debugstacktrace command
   > EOF
   $ "$PYTHON" debugstacktrace.py
   stacktrace at:
-   debugstacktrace.py:14 in * (glob)
-   debugstacktrace.py:7  in f
+   *debugstacktrace.py:14 in * (glob)
+   *debugstacktrace.py:7  in f (glob)
   hello from g at:
-   debugstacktrace.py:14 in * (glob)
-   debugstacktrace.py:8  in f
+   *debugstacktrace.py:14 in * (glob)
+   *debugstacktrace.py:8  in f (glob)
   hi ...
   from h hidden in g at:
-   debugstacktrace.py:8  in f
-   debugstacktrace.py:11 in g
+   *debugstacktrace.py:8  in f (glob)
+   *debugstacktrace.py:11 in g (glob)
 
 Test debugcapabilities command:
 
