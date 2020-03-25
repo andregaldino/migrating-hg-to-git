@@ -1267,7 +1267,7 @@ def changeview(state, delta, unit):
     num_lines = len(mode_state[b'patchcontents'])
     page_height = state[b'page_height']
     unit = page_height if unit == b'page' else 1
-    num_pages = 1 + (num_lines - 1) / page_height
+    num_pages = 1 + (num_lines - 1) // page_height
     max_offset = (num_pages - 1) * page_height
     newline = mode_state[b'line_offset'] + delta * unit
     mode_state[b'line_offset'] = max(0, min(max_offset, newline))
