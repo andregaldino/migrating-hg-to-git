@@ -144,6 +144,8 @@ _BMS_PREFIX = 'refs/heads/'
 class gitbmstore(object):
     def __init__(self, gitrepo):
         self.gitrepo = gitrepo
+        self._aclean = True
+        self._active = gitrepo.references['HEAD']  # git head, not mark
 
     def __contains__(self, name):
         return (
@@ -181,7 +183,18 @@ class gitbmstore(object):
 
     @active.setter
     def active(self, mark):
-        raise NotImplementedError
+        githead = mark is not None and (_BMS_PREFIX + mark) or None
+        if githead is not None and githead not in self.gitrepo.references:
+            raise AssertionError(b'bookmark %s does not exist!' % mark)
+
+        self._active = githead
+        self._aclean = False
+
+    def _writeactive(self):
+        if self._aclean:
+            return
+        self.gitrepo.references.create('HEAD', self._active, True)
+        self._aclean = True
 
     def names(self, node):
         r = []
