@@ -28,12 +28,3 @@ We should spend some time thinking hard about locking, especially on
 repository, but may not have enough locking correctness in places
 where hg does locking that git isn't aware of (notably the working
 copy, which I believe Git does not lock.)
-
-Clean up requirements
-=====================
-
-Right now (for historical reasons, mainly) hgext.git uses a
-.hg/this-is-git file to detect repositories that should be treated as
-git. We should look in the .hg/requires for the "git" requirement
-instead (we already set this requirement, so it's mostly keying off
-that instead of using an empty file.)
