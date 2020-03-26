@@ -143,13 +143,16 @@ def _persist_nodemap(tr, revlog, pending=False):
             data_changed_count,
             data,
         ) = revlog.index.nodemap_data_incremental()
+        new_length = target_docket.data_length + len(data)
+        new_unused = target_docket.data_unused + data_changed_count
         if src_docket != target_docket:
+            data = None
+        elif new_length <= (new_unused * 10):  # under 10% of unused data
             data = None
         else:
             datafile = _rawdata_filepath(revlog, target_docket)
             # EXP-TODO: if this is a cache, this should use a cache vfs, not a
             # store vfs
-            new_length = target_docket.data_length + len(data)
             tr.add(datafile, target_docket.data_length)
             with revlog.opener(datafile, b'r+') as fd:
                 fd.seek(target_docket.data_length)
@@ -162,7 +165,7 @@ def _persist_nodemap(tr, revlog, pending=False):
                         fd.flush()
                         new_data = util.buffer(util.mmapread(fd, new_length))
             target_docket.data_length = new_length
-            target_docket.data_unused += data_changed_count
+            target_docket.data_unused = new_unused
 
     if data is None:
         # otherwise fallback to a full new export

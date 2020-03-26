@@ -278,12 +278,12 @@ the nodemap should detect the changelog have been tampered with and recover.
   tip-rev: 5002
   tip-node: 42bf3068c7ddfdfded53c4eb11d02266faeebfee
   data-length: 123456 (pure !)
-  data-length: 246464 (rust !)
+  data-length: 123008 (rust !)
   data-length: 123008 (no-pure no-rust !)
   data-unused: 448 (pure !)
-  data-unused: 123904 (rust !)
+  data-unused: 0 (rust !)
   data-unused: 0 (no-pure no-rust !)
-  data-unused: 50.273% (rust !)
+  data-unused: 0.000% (rust !)
   data-unused: 0.363% (pure !)
   data-unused: 0.000% (no-pure no-rust !)
 
