@@ -449,12 +449,18 @@ class subsetparentswalker(object):
             # - one of the parents is not active,
             # - or descendants' parents are unresolved.
             if not bothparentsactive or unresolved or resolved:
-                if len(parentrevs) > 1:
+                if len(parentrevs) <= 1:
+                    # can avoid copying the tracking pointer
+                    parentpointers = [(unresolved, resolved)]
+                else:
+                    parentpointers = [
+                        (unresolved, resolved),
+                        (unresolved.copy(), resolved.copy()),
+                    ]
                     # 'rev' is a merge revision. increment the pending count
                     # as the 'unresolved' dict will be duplicated.
                     for r in unresolved:
                         pendingcnt[r] += 1
-                reusable = True  # can we avoid copying the tracking pointer?
                 for i, p in enumerate(parentrevs):
                     assert p < rev
                     heapq.heappush(tovisit, -p)
@@ -462,6 +468,7 @@ class subsetparentswalker(object):
                         # 'p' is a fork revision. concatenate tracking pointers
                         # and decrement the pending count accordingly.
                         knownunresolved, knownresolved = pointers[p]
+                        unresolved, resolved = parentpointers[i]
                         for r, c in unresolved.items():
                             c += [b'1', b'2'][i]
                             if r in knownunresolved:
@@ -475,11 +482,8 @@ class subsetparentswalker(object):
                         # simply propagate the 'resolved' set as deduplicating
                         # 'unresolved' here would be slightly complicated.
                         knownresolved.update(resolved)
-                    elif reusable:
-                        pointers[p] = (unresolved, resolved)
-                        reusable = False
                     else:
-                        pointers[p] = (unresolved.copy(), resolved.copy())
+                        pointers[p] = parentpointers[i]
 
             # then, populate the active parents directly and add the current
             # 'rev' to the tracking pointers of the inactive parents.
