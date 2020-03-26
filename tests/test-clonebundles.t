@@ -53,7 +53,7 @@ Manifest file with invalid URL aborts
   $ echo 'http://does.not.exist/bundle.hg' > server/.hg/clonebundles.manifest
   $ hg clone http://localhost:$HGPORT 404-url
   applying clone bundle from http://does.not.exist/bundle.hg
-  error fetching bundle: (.* not known|(\[Errno -?\d+] )?([Nn]o address associated with (host)?name|Temporary failure in name resolution)) (re) (no-windows !)
+  error fetching bundle: (.* not known|(\[Errno -?\d+] )?([Nn]o address associated with (host)?name|Temporary failure in name resolution|Name does not resolve)) (re) (no-windows !)
   error fetching bundle: [Errno 1100*] getaddrinfo failed (glob) (windows !)
   abort: error applying bundle
   (if this error persists, consider contacting the server operator or disable clone bundles via "--config ui.clonebundles=false")
