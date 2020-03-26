@@ -1,4 +1,4 @@
-#require execbit unix-permissions
+#require execbit unix-permissions no-chg
 
 Checking that experimental.atomic-file works.
 
