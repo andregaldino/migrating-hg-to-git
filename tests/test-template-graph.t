@@ -63,6 +63,61 @@ Test graph-related template functions
 
   $ cd ..
 
+Create repository containing merges of p1 > p2:
+
+  $ hg init named-branch-order
+  $ cd named-branch-order
+
+  $ hg branch -q b0
+  $ hg ci -m 0
+  $ hg up -q null
+  $ hg branch -q b1
+  $ hg ci -m 1
+  $ hg up -q null
+  $ hg branch -q b2
+  $ hg ci -m 2
+  $ hg merge -q 1
+  $ hg ci -m 3
+  $ hg ci -m 4 --config ui.allowemptycommit=true
+  $ hg merge -q 0
+  $ hg ci -m 5
+  $ hg ci -m 6 --config ui.allowemptycommit=true
+  $ hg up -q 1
+  $ hg branch -q b7
+  $ hg ci -m 7
+  $ hg ci -m 8 --config ui.allowemptycommit=true
+  $ hg up -q 6
+  $ hg ci -m 9 --config ui.allowemptycommit=true
+  $ hg up -q 8
+  $ hg merge -q 9
+  $ hg ci -m 10
+
+  $ hg log -Gq -T'{rev} {branch} -> {p1.rev} {p2.rev}\n'
+  @    10 b7 -> 8 9
+  |\
+  | o  9 b2 -> 6 -1
+  | |
+  o |  8 b7 -> 7 -1
+  | |
+  o |  7 b7 -> 1 -1
+  | |
+  | o  6 b2 -> 5 -1
+  | |
+  | o    5 b2 -> 4 0
+  | |\
+  | | o  4 b2 -> 3 -1
+  | | |
+  +---o  3 b2 -> 2 1
+  | | |
+  | | o  2 b2 -> -1 -1
+  | |
+  o |  1 b1 -> -1 -1
+   /
+  o  0 b0 -> -1 -1
+  
+
+  $ cd ..
+
 subsetparents
 -------------
 
@@ -333,5 +388,53 @@ Invalid arguments:
   $ hg log -T '{subsetparents(rev, extras)}\n'
   hg: parse error: subsetparents expects a queried revset
   [255]
+
+  $ cd ..
+
+subsetparents: p1/p2 order
+-------------------------
+
+  $ cd named-branch-order
+
+Parents should be sorted in p1/p2 order since p1 is likely to belong to
+the same named branch:
+
+  $ hg log -Gq -T '{rev} {tags}: {subsetparents(rev, revset("0+1+2+6"))}\n' -r '0+1+2+6'
+  o    6 : 2 1 0
+  :\
+  : \
+  : :\
+  : : o  2 :
+  : :
+  : o  1 :
+  :
+  o  0 :
+  
+
+  $ hg log -Gq -T '{rev} {tags}: {subsetparents(rev, revset("0+1+2+6+10"))}\n' -r '0+1+2+6+10'
+  @    10 tip: 6
+  :\
+  : o    6 : 2 1 0
+  :/:\
+  : : o  2 :
+  : :
+  o :  1 :
+   /
+  o  0 :
+  
+
+And p1 path should be selected if both p1/p2 paths exist:
+
+  $ hg log -Gq -T '{rev} {tags}: {subsetparents(rev, revset("0+1+2+10"))}\n' -r '0+1+2+10'
+  @    10 tip: 1 2 0
+  :\
+  : \
+  : :\
+  : : o  2 :
+  : :
+  o :  1 :
+   /
+  o  0 :
+  
 
   $ cd ..

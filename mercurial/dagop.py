@@ -391,7 +391,9 @@ class subsetparentswalker(object):
         #
         # Once all pending paths have been resolved, 'pendingcnt[rev]' becomes
         # 0 and 'parents[rev]' contains the unsorted list of parent revisions
-        # and p1/p2 chains (excluding linear paths.)
+        # and p1/p2 chains (excluding linear paths.) The p1/p2 chains will be
+        # used as a sort key preferring p1. 'len(chain)' should be the number
+        # of merges between two revisions.
 
         subset = self._subset
         tovisit = self._tovisit  # heap queue of [-rev]
@@ -458,9 +460,12 @@ class subsetparentswalker(object):
                         (unresolved.copy(), resolved.copy()),
                     ]
                     # 'rev' is a merge revision. increment the pending count
-                    # as the 'unresolved' dict will be duplicated.
+                    # as the 'unresolved' dict will be duplicated, and append
+                    # p1/p2 code to the existing chains.
                     for r in unresolved:
                         pendingcnt[r] += 1
+                        parentpointers[0][0][r] += b'1'
+                        parentpointers[1][0][r] += b'2'
                 for i, p in enumerate(parentrevs):
                     assert p < rev
                     heapq.heappush(tovisit, -p)
@@ -470,7 +475,6 @@ class subsetparentswalker(object):
                         knownunresolved, knownresolved = pointers[p]
                         unresolved, resolved = parentpointers[i]
                         for r, c in unresolved.items():
-                            c += [b'1', b'2'][i]
                             if r in knownunresolved:
                                 # unresolved at both paths
                                 pendingcnt[r] -= 1
@@ -488,9 +492,10 @@ class subsetparentswalker(object):
             # then, populate the active parents directly and add the current
             # 'rev' to the tracking pointers of the inactive parents.
             # 'pointers[p]' may be optimized out if both parents are active.
+            chaincodes = [b''] if len(parentrevs) <= 1 else [b'1', b'2']
             if curactive and bothparentsactive:
                 for i, p in enumerate(parentrevs):
-                    c = [b'1', b'2'][i]
+                    c = chaincodes[i]
                     parents[rev].append((c, p))
                     # no need to mark 'rev' as resolved since the 'rev' should
                     # be fully resolved (i.e. pendingcnt[rev] == 0)
@@ -499,7 +504,7 @@ class subsetparentswalker(object):
                 for i, p in enumerate(parentrevs):
                     unresolved, resolved = pointers[p]
                     assert rev not in unresolved
-                    c = [b'1', b'2'][i]
+                    c = chaincodes[i]
                     if p in subset:
                         parents[rev].append((c, p))
                         # mark 'rev' as resolved through this path
