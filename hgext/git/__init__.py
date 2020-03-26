@@ -16,6 +16,7 @@ from mercurial import (
     extensions,
     localrepo,
     pycompat,
+    scmutil,
     store,
     util,
 )
@@ -218,6 +219,35 @@ class gitbmstore(object):
                     gitutil.togitnode(node),
                     force=True,
                 )
+
+    def checkconflict(self, mark, force=False, target=None):
+        githead = _BMS_PREFIX + mark
+        cur = self.gitrepo.references['HEAD']
+        if githead in self.gitrepo.references and not force:
+            if target:
+                if self.gitrepo.references[githead] == target and target == cur:
+                    # re-activating a bookmark
+                    return []
+                # moving a bookmark - forward?
+                raise NotImplementedError
+            raise error.Abort(
+                _(b"bookmark '%s' already exists (use -f to force)") % mark
+            )
+        if len(mark) > 3 and not force:
+            try:
+                shadowhash = scmutil.isrevsymbol(self._repo, mark)
+            except error.LookupError:  # ambiguous identifier
+                shadowhash = False
+            if shadowhash:
+                self._repo.ui.warn(
+                    _(
+                        b"bookmark %s matches a changeset hash\n"
+                        b"(did you leave a -r out of an 'hg bookmark' "
+                        b"command?)\n"
+                    )
+                    % mark
+                )
+        return []
 
 
 def init(orig, ui, dest=b'.', **opts):
