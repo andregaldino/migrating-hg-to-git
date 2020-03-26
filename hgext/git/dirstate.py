@@ -300,3 +300,8 @@ class gitdirstate(object):
     def clearbackup(self, tr, backupname):
         # TODO
         pass
+
+    def setbranch(self, branch):
+        raise error.Abort(
+            b'git repos do not support branches. try using bookmarks'
+        )
