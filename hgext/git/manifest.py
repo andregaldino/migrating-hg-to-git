@@ -232,7 +232,7 @@ class memgittreemanifestctx(object):
         # just narrow?
         assert not match or isinstance(match, matchmod.alwaysmatcher)
 
-        touched_dirs = pathutil.dirs(self._pending_changes)
+        touched_dirs = pathutil.dirs(list(self._pending_changes))
         trees = {
             b'': self._tree,
         }
