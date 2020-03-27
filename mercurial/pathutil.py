@@ -286,6 +286,9 @@ class dirs(object):
     '''a multiset of directory names from a set of file paths'''
 
     def __init__(self, map, skip=None):
+        '''
+        a dict map indicates a dirstate while a list indicates a manifest
+        '''
         self._dirs = {}
         addpath = self.addpath
         if isinstance(map, dict) and skip is not None:
