@@ -98,6 +98,7 @@ if ispy3:
     import codecs
     import functools
     import io
+    import locale
     import struct
 
     if os.name == r'nt' and sys.version_info >= (3, 6):
@@ -148,15 +149,36 @@ if ispy3:
     stdout = sys.stdout.buffer
     stderr = sys.stderr.buffer
 
-    # Since Python 3 converts argv to wchar_t type by Py_DecodeLocale() on Unix,
-    # we can use os.fsencode() to get back bytes argv.
-    #
-    # https://hg.python.org/cpython/file/v3.5.1/Programs/python.c#l55
-    #
-    # On Windows, the native argv is unicode and is converted to MBCS bytes
-    # since we do enable the legacy filesystem encoding.
     if getattr(sys, 'argv', None) is not None:
-        sysargv = list(map(os.fsencode, sys.argv))
+        # On POSIX, the char** argv array is converted to Python str using
+        # Py_DecodeLocale(). The inverse of this is Py_EncodeLocale(), which isn't
+        # directly callable from Python code. So, we need to emulate it.
+        # Py_DecodeLocale() calls mbstowcs() and falls back to mbrtowc() with
+        # surrogateescape error handling on failure. These functions take the
+        # current system locale into account. So, the inverse operation is to
+        # .encode() using the system locale's encoding and using the
+        # surrogateescape error handler. The only tricky part here is getting
+        # the system encoding correct, since `locale.getlocale()` can return
+        # None. We fall back to the filesystem encoding if lookups via `locale`
+        # fail, as this seems like a reasonable thing to do.
+        #
+        # On Windows, the wchar_t **argv is passed into the interpreter as-is.
+        # Like POSIX, we need to emulate what Py_EncodeLocale() would do. But
+        # there's an additional wrinkle. What we really want to access is the
+        # ANSI codepage representation of the arguments, as this is what
+        # `int main()` would receive if Python 3 didn't define `int wmain()`
+        # (this is how Python 2 worked). To get that, we encode with the mbcs
+        # encoding, which will pass CP_ACP to the underlying Windows API to
+        # produce bytes.
+        if os.name == r'nt':
+            sysargv = [a.encode("mbcs", "ignore") for a in sys.argv]
+        else:
+            encoding = (
+                locale.getlocale()[1]
+                or locale.getdefaultlocale()[1]
+                or sys.getfilesystemencoding()
+            )
+            sysargv = [a.encode(encoding, "surrogateescape") for a in sys.argv]
 
     bytechr = struct.Struct('>B').pack
     byterepr = b'%r'.__mod__
