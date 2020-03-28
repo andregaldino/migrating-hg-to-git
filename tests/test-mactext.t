@@ -7,10 +7,6 @@
   >     data = data.replace(b'\n', b'\r')
   >     open(path, 'wb').write(data)
   > EOF
-  $ cat > print.py <<EOF
-  > import sys
-  > print(sys.stdin.read().replace('\n', '<LF>').replace('\r', '<CR>').replace('\0', '<NUL>'))
-  > EOF
   $ hg init
   $ echo '[hooks]' >> .hg/hgrc
   $ echo 'pretxncommit.cr = python:hgext.win32text.forbidcr' >> .hg/hgrc
@@ -32,7 +28,9 @@
   rollback completed
   abort: pretxncommit.cr hook failed
   [255]
-  $ hg cat f | "$PYTHON" print.py
-  hello<LF>
-  $ cat f | "$PYTHON" print.py
-  hello<CR>
+  $ hg cat f | f --hexdump
+  
+  0000: 68 65 6c 6c 6f 0a                               |hello.|
+  $ f --hexdump f
+  f:
+  0000: 68 65 6c 6c 6f 0d                               |hello.|
