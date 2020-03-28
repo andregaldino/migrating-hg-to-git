@@ -674,7 +674,9 @@ def open(ui, url_, data=None, sendaccept=True):
         url_, authinfo = u.authinfo()
     else:
         path = util.normpath(os.path.abspath(url_))
-        url_ = b'file://' + pycompat.bytesurl(urlreq.pathname2url(path))
+        url_ = b'file://' + pycompat.bytesurl(
+            urlreq.pathname2url(pycompat.fsdecode(path))
+        )
         authinfo = None
     return opener(ui, authinfo, sendaccept=sendaccept).open(
         pycompat.strurl(url_), data
