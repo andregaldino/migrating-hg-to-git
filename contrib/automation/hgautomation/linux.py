@@ -26,11 +26,11 @@ DISTROS = {
 
 INSTALL_PYTHONS = r'''
 PYENV2_VERSIONS="2.7.17 pypy2.7-7.2.0"
-PYENV3_VERSIONS="3.5.7 3.6.9 3.7.5 3.8.0 pypy3.5-7.0.0 pypy3.6-7.2.0"
+PYENV3_VERSIONS="3.5.9 3.6.10 3.7.7 3.8.2 pypy3.5-7.0.0 pypy3.6-7.3.0"
 
 git clone https://github.com/pyenv/pyenv.git /hgdev/pyenv
 pushd /hgdev/pyenv
-git checkout 0e7cfc3b3d4eca46ad83d632e1505f5932cd179b
+git checkout 3005c4664372ae13fbe376be699313eb428c8bdd
 popd
 
 export PYENV_ROOT="/hgdev/pyenv"
