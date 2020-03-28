@@ -3721,7 +3721,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
 def debuguigetpass(ui, prompt=b''):
     """show prompt to type password"""
     r = ui.getpass(prompt)
-    ui.writenoi18n(b'respose: %s\n' % r)
+    ui.writenoi18n(b'response: %s\n' % r)
 
 
 @command(
