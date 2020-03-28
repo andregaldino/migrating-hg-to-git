@@ -335,7 +335,7 @@ def has_hg_range(v):
 @check("rust", "Using the Rust extensions")
 def has_rust():
     """Check is the mercurial currently running is using some rust code"""
-    cmd = b'hg debuginstall --quiet 2>&1'
+    cmd = 'hg debuginstall --quiet 2>&1'
     match = br'checking module policy \(([^)]+)\)'
     policy = matchoutput(cmd, match)
     if not policy:
