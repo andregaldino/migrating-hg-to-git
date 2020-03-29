@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import contextlib
 import os
 import sys
 
@@ -259,26 +260,45 @@ def hook(ui, repo, htype, throw=False, **args):
     return r
 
 
+@contextlib.contextmanager
+def redirect_stdio():
+    """Redirects stdout to stderr, if possible."""
+
+    oldstdout = -1
+    try:
+        if _redirect:
+            try:
+                stdoutno = procutil.stdout.fileno()
+                stderrno = procutil.stderr.fileno()
+                # temporarily redirect stdout to stderr, if possible
+                if stdoutno >= 0 and stderrno >= 0:
+                    procutil.stdout.flush()
+                    oldstdout = os.dup(stdoutno)
+                    os.dup2(stderrno, stdoutno)
+            except (OSError, AttributeError):
+                # files seem to be bogus, give up on redirecting (WSGI, etc)
+                pass
+
+        yield
+
+    finally:
+        # The stderr is fully buffered on Windows when connected to a pipe.
+        # A forcible flush is required to make small stderr data in the
+        # remote side available to the client immediately.
+        procutil.stderr.flush()
+
+        if _redirect and oldstdout >= 0:
+            procutil.stdout.flush()  # write hook output to stderr fd
+            os.dup2(oldstdout, stdoutno)
+            os.close(oldstdout)
+
+
 def runhooks(ui, repo, htype, hooks, throw=False, **args):
     args = pycompat.byteskwargs(args)
     res = {}
-    oldstdout = -1
 
-    try:
+    with redirect_stdio():
         for hname, cmd in hooks:
-            if oldstdout == -1 and _redirect:
-                try:
-                    stdoutno = procutil.stdout.fileno()
-                    stderrno = procutil.stderr.fileno()
-                    # temporarily redirect stdout to stderr, if possible
-                    if stdoutno >= 0 and stderrno >= 0:
-                        procutil.stdout.flush()
-                        oldstdout = os.dup(stdoutno)
-                        os.dup2(stderrno, stdoutno)
-                except (OSError, AttributeError):
-                    # files seem to be bogus, give up on redirecting (WSGI, etc)
-                    pass
-
             if cmd is _fromuntrusted:
                 if throw:
                     raise error.HookAbort(
@@ -312,15 +332,5 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
                 raised = False
 
             res[hname] = r, raised
-    finally:
-        # The stderr is fully buffered on Windows when connected to a pipe.
-        # A forcible flush is required to make small stderr data in the
-        # remote side available to the client immediately.
-        procutil.stderr.flush()
-
-        if _redirect and oldstdout >= 0:
-            procutil.stdout.flush()  # write hook output to stderr fd
-            os.dup2(oldstdout, stdoutno)
-            os.close(oldstdout)
 
     return res
