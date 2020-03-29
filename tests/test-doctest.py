@@ -68,19 +68,25 @@ testmod_arg_overrides = {
     'tests.test-url': [{'optionflags': doctest.NORMALIZE_WHITESPACE}],
 }
 
-doctest_indicator = '\n\\s*>>> '
-fileset = 'set:(**.py and grep("%s"))' % doctest_indicator
+fileset = 'set:(**.py)'
+
+cwd = os.path.dirname(os.environ["TESTDIR"])
 
 files = subprocess.check_output(
-    "hg files --print0 '%s'" % fileset,
-    shell=True,
-    cwd=os.path.dirname(os.environ['TESTDIR']),
+    "hg files --print0 \"%s\"" % fileset, shell=True, cwd=cwd,
 ).split(b'\0')
+
+if sys.version_info[0] >= 3:
+    cwd = os.fsencode(cwd)
 
 mods_tested = set()
 for f in files:
     if not f:
         continue
+
+    with open(os.path.join(cwd, f), "rb") as fh:
+        if not re.search(br'\n\s*>>>', fh.read()):
+            continue
 
     if ispy3:
         f = f.decode()
