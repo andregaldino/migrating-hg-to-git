@@ -1,7 +1,16 @@
   $ cat > $TESTTMP/filter.py <<EOF
   > from __future__ import absolute_import, print_function
+  > import io
   > import re
   > import sys
+  > if sys.version_info[0] >= 3:
+  >     sys.stdout = io.TextIOWrapper(
+  >         sys.stdout.buffer,
+  >         sys.stdout.encoding,
+  >         sys.stdout.errors,
+  >         newline="\n",
+  >         line_buffering=sys.stdout.line_buffering,
+  >     )
   > print(re.sub("\n[ \t]", " ", sys.stdin.read()), end="")
   > EOF
 
