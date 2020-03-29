@@ -966,7 +966,7 @@ def help_(
             doc = gettext(pycompat.getdoc(mod)) or _(b'no help text available')
         except KeyError:
             mod = None
-            doc = extensions.disabledext(name)
+            doc = extensions.disabled_help(name)
             if not doc:
                 raise error.UnknownCommand(name)
 

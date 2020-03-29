@@ -808,18 +808,8 @@ def disabled():
     return exts
 
 
-def disabledext(name):
-    '''find a specific disabled extension from hgext. returns desc'''
-    try:
-        from hgext import __index__  # pytype: disable=import-error
-
-        if name in _order:  # enabled
-            return
-        else:
-            return gettext(__index__.docs.get(name))
-    except (ImportError, AttributeError):
-        pass
-
+def disabled_help(name):
+    """Obtain the full help text for a disabled extension, or None."""
     paths = _disabledpaths()
     if name in paths:
         return _disabledhelp(paths[name])
