@@ -152,7 +152,7 @@ where
 
 fn new_parse_error<E>(error: E) -> io::Error
 where
-    E: Into<Box<error::Error + Send + Sync>>,
+    E: Into<Box<dyn error::Error + Send + Sync>>,
 {
     io::Error::new(io::ErrorKind::InvalidData, error)
 }

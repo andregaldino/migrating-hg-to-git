@@ -37,7 +37,7 @@ where
     Finished,
 }
 
-type CommandPoll<C, H> = io::Result<(AsyncS<(Client<C>, H, i32), CommandState<C, H>>)>;
+type CommandPoll<C, H> = io::Result<AsyncS<(Client<C>, H, i32), CommandState<C, H>>>;
 
 /// Future resolves to `(exit_code, client)`.
 #[must_use = "futures do nothing unless polled"]
