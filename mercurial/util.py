@@ -130,6 +130,16 @@ umask = platform.umask
 unlink = platform.unlink
 username = platform.username
 
+
+def setumask(val):
+    ''' updates the umask. used by chg server '''
+    if pycompat.iswindows:
+        return
+    os.umask(val)
+    global umask
+    platform.umask = umask = val & 0o777
+
+
 # small compat layer
 compengines = compression.compengines
 SERVERROLE = compression.SERVERROLE

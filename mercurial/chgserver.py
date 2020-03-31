@@ -528,7 +528,7 @@ class chgcmdserver(commandserver.server):
     def _setumask(self, data):
         mask = struct.unpack(b'>I', data)[0]
         self.ui.log(b'chgserver', b'setumask %r\n', mask)
-        os.umask(mask)
+        util.setumask(mask)
 
     def runcommand(self):
         # pager may be attached within the runcommand session, which should
