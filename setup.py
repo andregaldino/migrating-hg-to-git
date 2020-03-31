@@ -489,7 +489,11 @@ class hgdist(Distribution):
     negative_opt['no-rust'] = 'rust'
 
     def _set_command_options(self, command_obj, option_dict=None):
-        command_obj.boolean_options += self.boolean_options
+        # Not all distutils versions in the wild have boolean_options.
+        # This should be cleaned up when we're Python 3 only.
+        command_obj.boolean_options = (
+            getattr(command_obj, 'boolean_options', []) + self.boolean_options
+        )
         return Distribution._set_command_options(
             self, command_obj, option_dict=option_dict
         )
