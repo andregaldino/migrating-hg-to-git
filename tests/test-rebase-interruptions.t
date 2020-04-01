@@ -281,6 +281,71 @@ Test rebase interrupted by hooks
 
   $ cd ..
 
+Continue rebase after upgrading from an hg version before 9c9cfecd4600:
+
+  $ hg clone -q -u . a a4
+  $ cd a4
+
+  $ hg tglog
+  @  4: ae36e8e3dfd7 'E'
+  |
+  o  3: 46b37eabc604 'D'
+  |
+  | o  2: 965c486023db 'C'
+  | |
+  | o  1: 27547f69f254 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+  $ hg rebase -s 1 -d 4
+  rebasing 1:27547f69f254 "B"
+  rebasing 2:965c486023db "C"
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg tglog
+  @  5: 45396c49d53b 'B'
+  |
+  o  4: ae36e8e3dfd7 'E'
+  |
+  o  3: 46b37eabc604 'D'
+  |
+  | %  2: 965c486023db 'C'
+  | |
+  | o  1: 27547f69f254 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+Simulate having run the above with an older hg version by manually setting
+two dirstate parents. We should not get a merge commit when we continue.
+  $ hg debugsetparents 5 2
+  $ echo 'conflict solved' > A
+  $ hg resolve -m A
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue
+  already rebased 1:27547f69f254 "B" as 45396c49d53b
+  rebasing 2:965c486023db "C"
+  warning: orphaned descendants detected, not stripping 27547f69f254, 965c486023db
+BROKEN: we should not have a merge commit here
+  $ hg tglog
+  o    6: 567335b578a0 'C'
+  |\
+  | o  5: 45396c49d53b 'B'
+  | |
+  | @  4: ae36e8e3dfd7 'E'
+  | |
+  | o  3: 46b37eabc604 'D'
+  | |
+  o |  2: 965c486023db 'C'
+  | |
+  o |  1: 27547f69f254 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+  $ cd ..
+
 (precommit version)
 
   $ cp -R a3 hook-precommit
