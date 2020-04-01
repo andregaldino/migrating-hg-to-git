@@ -327,21 +327,16 @@ two dirstate parents. We should not get a merge commit when we continue.
   $ hg rebase --continue
   already rebased 1:27547f69f254 "B" as 45396c49d53b
   rebasing 2:965c486023db "C"
-  warning: orphaned descendants detected, not stripping 27547f69f254, 965c486023db
-BROKEN: we should not have a merge commit here
+  saved backup bundle to $TESTTMP/a4/.hg/strip-backup/27547f69f254-359abdd7-rebase.hg
   $ hg tglog
-  o    6: 567335b578a0 'C'
-  |\
-  | o  5: 45396c49d53b 'B'
-  | |
-  | @  4: ae36e8e3dfd7 'E'
-  | |
-  | o  3: 46b37eabc604 'D'
-  | |
-  o |  2: 965c486023db 'C'
-  | |
-  o |  1: 27547f69f254 'B'
-  |/
+  o  4: d2d25e26288e 'C'
+  |
+  o  3: 45396c49d53b 'B'
+  |
+  @  2: ae36e8e3dfd7 'E'
+  |
+  o  1: 46b37eabc604 'D'
+  |
   o  0: 4a2df7238c3b 'A'
   
   $ cd ..

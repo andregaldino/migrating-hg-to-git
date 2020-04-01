@@ -631,6 +631,12 @@ class rebaseruntime(object):
                 editor = cmdutil.getcommiteditor(
                     editform=editform, **pycompat.strkwargs(opts)
                 )
+                # We need to set parents again here just in case we're continuing
+                # a rebase started with an old hg version (before 9c9cfecd4600),
+                # because those old versions would have left us with two dirstate
+                # parents, and we don't want to create a merge commit here (unless
+                # we're rebasing a merge commit).
+                self.wctx.setparents(repo[p1].node(), repo[p2].node())
                 newnode = self._concludenode(rev, p1, editor)
             else:
                 # Skip commit if we are collapsing
