@@ -1,0 +1,20 @@
+[package]
+name = "hgcli"
+version = "0.1.0"
+build = "build.rs"
+authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+jemallocator-global = { version = "0.3", optional = true }
+pyembed = { git = "https://github.com/indygreg/PyOxidizer.git", rev = "c772a1379c3026314eda1c8ea244b86c0658951d", default-features=false }
+
+[features]
+default = ["build-mode-pyoxidizer-exe"]
+jemalloc = ["jemallocator-global", "pyembed/jemalloc"]
+build-mode-pyoxidizer-exe = ["pyembed/build-mode-pyoxidizer-exe"]
+build-mode-prebuilt-artifacts = ["pyembed/build-mode-prebuilt-artifacts"]
+cpython-link-unresolved-static = ["pyembed/cpython-link-unresolved-static"]
+cpython-link-default = ["pyembed/cpython-link-default"]
