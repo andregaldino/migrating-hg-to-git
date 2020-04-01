@@ -4,8 +4,12 @@ version = "0.1.0"
 build = "build.rs"
 authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
 edition = "2018"
+license = "GPL-2.0"
+readme = "README.md"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "hg"
+path = "src/main.rs"
 
 [dependencies]
 jemallocator-global = { version = "0.3", optional = true }
