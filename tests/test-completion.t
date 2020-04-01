@@ -74,6 +74,7 @@ Do not show debug commands if there are other candidates
 Show debug commands if there are no other candidates
   $ hg debugcomplete debug
   debugancestor
+  debugantivirusrunning
   debugapplystreamclonebundle
   debugbackupbundle
   debugbuilddag
@@ -261,6 +262,7 @@ Show all commands + options
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
   debugancestor: 
+  debugantivirusrunning: 
   debugapplystreamclonebundle: 
   debugbackupbundle: recover, patch, git, limit, no-merges, stat, graph, style, template
   debugbuilddag: mergeable-file, overwritten-file, new-file

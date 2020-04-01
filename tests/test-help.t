@@ -971,6 +971,8 @@ Test list of internal help commands
   
    debugancestor
                  find the ancestor revision of two revisions in a given index
+   debugantivirusrunning
+                 attempt to trigger an antivirus scanner to see if one is active
    debugapplystreamclonebundle
                  apply a stream clone bundle file
    debugbackupbundle

@@ -127,6 +127,23 @@ def debugancestor(ui, repo, *args):
     ui.write(b'%d:%s\n' % (r.rev(a), hex(a)))
 
 
+@command(b'debugantivirusrunning', [])
+def debugantivirusrunning(ui, repo):
+    """attempt to trigger an antivirus scanner to see if one is active"""
+    with repo.cachevfs.open('eicar-test-file.com', b'wb') as f:
+        f.write(
+            util.b85decode(
+                # This is a base85-armored version of the EICAR test file. See
+                # https://en.wikipedia.org/wiki/EICAR_test_file for details.
+                b'ST#=}P$fV?P+K%yP+C|uG$>GBDK|qyDK~v2MM*<JQY}+dK~6+LQba95P'
+                b'E<)&Nm5l)EmTEQR4qnHOhq9iNGnJx'
+            )
+        )
+    # Give an AV engine time to scan the file.
+    time.sleep(2)
+    util.unlink(repo.cachevfs.join('eicar-test-file.com'))
+
+
 @command(b'debugapplystreamclonebundle', [], b'FILE')
 def debugapplystreamclonebundle(ui, repo, fname):
     """apply a stream clone bundle file"""
