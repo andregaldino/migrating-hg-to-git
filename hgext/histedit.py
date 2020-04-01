@@ -291,7 +291,7 @@ def geteditcomment(ui, first, last):
     Commands are only included once.
     """
     intro = _(
-        """Edit history between %s and %s
+        b"""Edit history between %s and %s
 
 Commits are listed from least to most recent
 
