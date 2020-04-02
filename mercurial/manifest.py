@@ -57,7 +57,12 @@ def _parse(data):
             raise ValueError(b'Manifest lines not in sorted order.')
         prev = l
         f, n = l.split(b'\0')
-        if len(n) > 40:
+        nl = len(n)
+        if 64 < nl:
+            # modern hash, full width
+            yield f, bin(n[:64]), n[64:]
+        elif 40 < nl < 45:
+            # legacy hash, always sha1
             yield f, bin(n[:40]), n[40:]
         else:
             yield f, bin(n), b''
@@ -265,9 +270,15 @@ class _lazymanifest(object):
         if pos == -1:
             return (data[1], data[2])
         zeropos = data.find(b'\x00', pos)
+        nlpos = data.find(b'\n', zeropos)
         assert 0 <= needle <= len(self.positions)
         assert len(self.extrainfo) == len(self.positions)
-        hashval = unhexlify(data, self.extrainfo[needle], zeropos + 1, 40)
+        hlen = nlpos - zeropos - 1
+        # Hashes sometimes have an extra byte tucked on the end, so
+        # detect that.
+        if hlen % 2:
+            hlen -= 1
+        hashval = unhexlify(data, self.extrainfo[needle], zeropos + 1, hlen)
         flags = self._getflags(data, needle, zeropos)
         return (hashval, flags)
 
