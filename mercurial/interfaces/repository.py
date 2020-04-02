@@ -1052,6 +1052,9 @@ class imanifestdict(interfaceutil.Interface):
 
         Returns a 2-tuple containing ``bytearray(self.text())`` and the
         delta between ``base`` and this manifest.
+
+        If this manifest implementation can't support ``fastdelta()``,
+        raise ``mercurial.manifest.FastdeltaUnavailable``.
         """
 
 

@@ -1212,6 +1212,9 @@ class treemanifest(object):
             ret._dirty = True
         return ret
 
+    def fastdelta(self, base, changes):
+        raise FastdeltaUnavailable()
+
     def diff(self, m2, match=None, clean=False):
         '''Finds changes between the current manifest and m2.
 
@@ -1488,6 +1491,10 @@ class manifestfulltextcache(util.lrucachedict):
 MAXCOMPRESSION = 3
 
 
+class FastdeltaUnavailable(Exception):
+    """Exception raised when fastdelta isn't usable on a manifest."""
+
+
 @interfaceutil.implementer(repository.imanifeststorage)
 class manifestrevlog(object):
     '''A revlog that stores manifest texts. This is responsible for caching the
@@ -1614,7 +1621,9 @@ class manifestrevlog(object):
         readtree=None,
         match=None,
     ):
-        if p1 in self.fulltextcache and util.safehasattr(m, b'fastdelta'):
+        try:
+            if p1 not in self.fulltextcache:
+                raise FastdeltaUnavailable()
             # If our first parent is in the manifest cache, we can
             # compute a delta here using properties we know about the
             # manifest up-front, which may save time later for the
@@ -1633,11 +1642,12 @@ class manifestrevlog(object):
             n = self._revlog.addrevision(
                 text, transaction, link, p1, p2, cachedelta
             )
-        else:
-            # The first parent manifest isn't already loaded, so we'll
-            # just encode a fulltext of the manifest and pass that
-            # through to the revlog layer, and let it handle the delta
-            # process.
+        except FastdeltaUnavailable:
+            # The first parent manifest isn't already loaded or the
+            # manifest implementation doesn't support fastdelta, so
+            # we'll just encode a fulltext of the manifest and pass
+            # that through to the revlog layer, and let it handle the
+            # delta process.
             if self._treeondisk:
                 assert readtree, b"readtree must be set for treemanifest writes"
                 assert match, b"match must be specified for treemanifest writes"
