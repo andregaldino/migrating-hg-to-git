@@ -267,7 +267,7 @@ class hgcommand(object):
         if err or returncode != 0:
             printf("stderr from '%s':" % (' '.join(cmd)), file=sys.stderr)
             printf(err, file=sys.stderr)
-            return ''
+            return b''
         return out
 
 
