@@ -75,13 +75,72 @@ Have a branching with nothing on one side
   o  0 i-0 initial commit: a b h
   
 
+Create a branch that delete a file previous renamed
+
+  $ hg up 'desc("i-2")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg rm d
+  $ hg ci -m 'c-1 delete d'
+  created new head
+  $ hg log -G --rev '::.'
+  @  6 c-1 delete d
+  |
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
+
+Create a branch that delete a file previous renamed and recreate it
+
+  $ hg up 'desc("i-2")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg rm d
+  $ hg ci -m 'd-1 delete d'
+  created new head
+  $ echo bar > d
+  $ hg add d
+  $ hg ci -m 'd-2 re-add d'
+  $ hg log -G --rev '::.'
+  @  8 d-2 re-add d
+  |
+  o  7 d-1 delete d
+  |
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
+
+Having another branch renaming a different file to the same filename as another
+
+  $ hg up 'desc("i-2")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg mv b g
+  $ hg ci -m 'e-1 b -move-> g'
+  created new head
+  $ hg mv g f
+  $ hg ci -m 'e-2 g -move-> f'
+  $ hg log -G --rev '::.'
+  @  10 e-2 g -move-> f
+  |
+  o  9 e-1 b -move-> g
+  |
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
 
 Merge the two branches we just defined (in both directions)
 - one with change to an unrelated file
 - one with renames in them
 
   $ hg up 'desc("b-1")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("a-2")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -94,9 +153,9 @@ Merge the two branches we just defined (in both directions)
   $ hg ci -m 'mABm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mABm")+desc("mBAm"))'
-  @    7 mABm-0 simple merge - the other way
+  @    12 mABm-0 simple merge - the other way
   |\
-  +---o  6 mBAm-0 simple merge - one way
+  +---o  11 mBAm-0 simple merge - one way
   | |/
   | o  5 b-1: b update
   | |
@@ -111,30 +170,13 @@ Merge the two branches we just defined (in both directions)
   o  0 i-0 initial commit: a b h
   
 
-Create a branch that delete a file previous renamed
-
-  $ hg up 'desc("i-2")'
-  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg rm d
-  $ hg ci -m 'c-1 delete d'
-  created new head
-  $ hg log -G --rev '::.'
-  @  8 c-1 delete d
-  |
-  o  2 i-2: c -move-> d
-  |
-  o  1 i-1: a -move-> c
-  |
-  o  0 i-0 initial commit: a b h
-  
-
 Merge:
 - one with change to an unrelated file
 - one deleting the change
 and recreate an unrelated file after the merge
 
   $ hg up 'desc("b-1")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("c-1")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -153,40 +195,18 @@ and recreate an unrelated file after the merge
   $ hg add d
   $ hg ci -m 'mCBm-1 re-add d'
   $ hg log -G --rev '::(desc("mCBm")+desc("mBCm"))'
-  @  12 mCBm-1 re-add d
+  @  16 mCBm-1 re-add d
   |
-  o    11 mCBm-0 simple merge - the other way
+  o    15 mCBm-0 simple merge - the other way
   |\
-  | | o  10 mBCm-1 re-add d
+  | | o  14 mBCm-1 re-add d
   | | |
-  +---o  9 mBCm-0 simple merge - one way
+  +---o  13 mBCm-0 simple merge - one way
   | |/
-  | o  8 c-1 delete d
+  | o  6 c-1 delete d
   | |
   o |  5 b-1: b update
   |/
-  o  2 i-2: c -move-> d
-  |
-  o  1 i-1: a -move-> c
-  |
-  o  0 i-0 initial commit: a b h
-  
-
-Create a branch that delete a file previous renamed and recreate it
-
-  $ hg up 'desc("i-2")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg rm d
-  $ hg ci -m 'd-1 delete d'
-  created new head
-  $ echo bar > d
-  $ hg add d
-  $ hg ci -m 'd-2 re-add d'
-  $ hg log -G --rev '::.'
-  @  14 d-2 re-add d
-  |
-  o  13 d-1 delete d
-  |
   o  2 i-2: c -move-> d
   |
   o  1 i-1: a -move-> c
@@ -206,7 +226,7 @@ Note:
 | The current code arbitrarily pick one side
 
   $ hg up 'desc("b-1")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("d-2")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -219,37 +239,16 @@ Note:
   $ hg ci -m 'mDBm-0 simple merge - the other way'
   created new head
   $ hg log -G --rev '::(desc("mDBm")+desc("mBDm"))'
-  @    16 mDBm-0 simple merge - the other way
+  @    18 mDBm-0 simple merge - the other way
   |\
-  +---o  15 mBDm-0 simple merge - one way
+  +---o  17 mBDm-0 simple merge - one way
   | |/
-  | o  14 d-2 re-add d
+  | o  8 d-2 re-add d
   | |
-  | o  13 d-1 delete d
+  | o  7 d-1 delete d
   | |
   o |  5 b-1: b update
   |/
-  o  2 i-2: c -move-> d
-  |
-  o  1 i-1: a -move-> c
-  |
-  o  0 i-0 initial commit: a b h
-  
-
-Having another branch renaming a different file to the same filename as another
-
-  $ hg up 'desc("i-2")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg mv b g
-  $ hg ci -m 'e-1 b -move-> g'
-  created new head
-  $ hg mv g f
-  $ hg ci -m 'e-2 g -move-> f'
-  $ hg log -G --rev '::.'
-  @  18 e-2 g -move-> f
-  |
-  o  17 e-1 b -move-> g
-  |
   o  2 i-2: c -move-> d
   |
   o  1 i-1: a -move-> c
@@ -279,9 +278,9 @@ Merge:
   |\
   +---o  19 mAEm-0 simple merge - one way
   | |/
-  | o  18 e-2 g -move-> f
+  | o  10 e-2 g -move-> f
   | |
-  | o  17 e-1 b -move-> g
+  | o  9 e-1 b -move-> g
   | |
   o |  4 a-2: e -move-> f
   | |
@@ -313,8 +312,8 @@ Merge:
   $ hg debugindex d
      rev linkrev nodeid       p1           p2
        0       2 01c2f5eabdc4 000000000000 000000000000
-       1      10 b004912a8510 000000000000 000000000000
-       2      15 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
+       1       8 b004912a8510 000000000000 000000000000
+       2      17 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
        3      22 c72365ee036f 000000000000 000000000000
   $ hg up 'desc("b-1")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -378,9 +377,9 @@ Merge:
   | |/
   | o  25 g-1: update d
   | |
-  o |  14 d-2 re-add d
+  o |  8 d-2 re-add d
   | |
-  o |  13 d-1 delete d
+  o |  7 d-1 delete d
   |/
   o  2 i-2: c -move-> d
   |
@@ -576,8 +575,8 @@ not a merge.
   $ hg debugindex d
      rev linkrev nodeid       p1           p2
        0       2 01c2f5eabdc4 000000000000 000000000000
-       1      10 b004912a8510 000000000000 000000000000
-       2      15 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
+       1       8 b004912a8510 000000000000 000000000000
+       2      17 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
        3      22 c72365ee036f 000000000000 000000000000
        4      23 863d9bc49190 01c2f5eabdc4 c72365ee036f
        5      25 7bded9d9da1f 01c2f5eabdc4 000000000000
@@ -588,9 +587,9 @@ not a merge.
 (This `hg log` output if wrong, since no merge actually happened).
 
   $ hg log -Gfr 'desc("mBDm-0")' d
-  o    15 mBDm-0 simple merge - one way
+  o    17 mBDm-0 simple merge - one way
   |\
-  o :  14 d-2 re-add d
+  o :  8 d-2 re-add d
   :/
   o  2 i-2: c -move-> d
   |
@@ -602,7 +601,7 @@ not a merge.
 This `hg log` output is correct
 
   $ hg log -Gfr 'desc("mDBm-0")' d
-  o  14 d-2 re-add d
+  o  8 d-2 re-add d
   |
   ~
 
@@ -633,7 +632,7 @@ Comparing with a merge with colliding rename
   $ hg debugindex f
      rev linkrev nodeid       p1           p2
        0       4 0dd616bc7ab1 000000000000 000000000000
-       1      18 6da5a2eecb9c 000000000000 000000000000
+       1      10 6da5a2eecb9c 000000000000 000000000000
        2      19 eb806e34ef6b 0dd616bc7ab1 6da5a2eecb9c
   $ hg status --copies --rev 'desc("a-2")' --rev 'desc("mAEm-0")'
   M f
@@ -770,7 +769,7 @@ consider history and rename on both branch of the merge.
   |\
   | o  25 g-1: update d
   | |
-  o |  14 d-2 re-add d
+  o |  8 d-2 re-add d
   |/
   o  2 i-2: c -move-> d
   |
@@ -785,7 +784,7 @@ consider history and rename on both branch of the merge.
   |\
   | o  25 g-1: update d
   | |
-  o |  14 d-2 re-add d
+  o |  8 d-2 re-add d
   |/
   o  2 i-2: c -move-> d
   |
