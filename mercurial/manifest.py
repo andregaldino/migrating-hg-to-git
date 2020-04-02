@@ -1027,7 +1027,12 @@ class treemanifest(object):
                 self._dirs[dir] = treemanifest(self._subpath(dir))
             self._dirs[dir].__setitem__(subpath, n)
         else:
-            self._files[f] = n[:21]  # to match manifestdict's behavior
+            # manifest nodes are either 20 bytes or 32 bytes,
+            # depending on the hash in use. An extra byte is
+            # occasionally used by hg, but won't ever be
+            # persisted. Trim to 21 or 33 bytes as appropriate.
+            trim = 21 if len(n) < 25 else 33
+            self._files[f] = n[:trim]  # to match manifestdict's behavior
         self._dirty = True
 
     def _load(self):
