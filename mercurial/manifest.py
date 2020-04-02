@@ -1432,6 +1432,7 @@ class manifestfulltextcache(util.lrucachedict):
                 set = super(manifestfulltextcache, self).__setitem__
                 # ignore trailing data, this is a cache, corruption is skipped
                 while True:
+                    # TODO do we need to do work here for sha1 portability?
                     node = fp.read(20)
                     if len(node) < 20:
                         break
