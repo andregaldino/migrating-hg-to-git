@@ -292,8 +292,13 @@ class _lazymanifest(object):
                 b"Manifest values must be a tuple of (node, flags)."
             )
         hashval = value[0]
-        if not isinstance(hashval, bytes) or not 20 <= len(hashval) <= 22:
-            raise TypeError(b"node must be a 20-byte byte string")
+        # hashes are either 20 or 32 bytes (sha1 or its replacement),
+        # and allow one extra byte taht won't be persisted to disk but
+        # is sometimes used in memory.
+        if not isinstance(hashval, bytes) or not (
+            20 <= len(hashval) <= 22 or 32 <= len(hashval) <= 34
+        ):
+            raise TypeError(b"node must be a 20-byte or 32-byte byte string")
         flags = value[1]
         if len(hashval) == 22:
             hashval = hashval[:-1]
