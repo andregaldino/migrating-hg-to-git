@@ -377,8 +377,13 @@ class _lazymanifest(object):
                     t = self.extradata[-cur - 1]
                     l.append(self._pack(t))
                     self.positions[i] = offset
-                    if len(t[1]) > 20:
-                        self.extrainfo[i] = ord(t[1][21])
+                    # Hashes are either 20 bytes (old sha1s) or 32
+                    # bytes (new non-sha1).
+                    hlen = 20
+                    if len(t[1]) > 25:
+                        hlen = 32
+                    if len(t[1]) > hlen:
+                        self.extrainfo[i] = ord(t[1][hlen + 1])
                     offset += len(l[-1])
                     i += 1
         self.data = b''.join(l)
