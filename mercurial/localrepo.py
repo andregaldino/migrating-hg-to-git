@@ -2509,6 +2509,7 @@ class localrepository(object):
             unfi = self.unfiltered()
 
             self.changelog.update_caches(transaction=tr)
+            self.manifestlog.update_caches(transaction=tr)
 
             rbc = unfi.revbranchcache()
             for r in unfi.changelog:

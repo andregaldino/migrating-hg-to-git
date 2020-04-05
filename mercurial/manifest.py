@@ -1951,6 +1951,9 @@ class manifestlog(object):
     def rev(self, node):
         return self._rootstore.rev(node)
 
+    def update_caches(self, transaction):
+        return self._rootstore._revlog.update_caches(transaction=transaction)
+
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memmanifestctx(object):
