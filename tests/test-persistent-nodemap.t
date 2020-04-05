@@ -10,12 +10,12 @@ Test the persistent on-disk nodemap
   > [devel]
   > persistent-nodemap=yes
   > EOF
-  $ hg debugbuilddag .+5000
+  $ hg debugbuilddag .+5000 --new-file
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5000
-  tip-node: 06ddac466af534d365326c13c3879f97caca3cb1
-  data-length: 122880
+  tip-node: 6b02b8c7b96654c25e86ba69eda198d7e6ad8b3c
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
   $ f --size .hg/store/00changelog.n
@@ -31,53 +31,53 @@ Simple lookup works
 #if rust
 
   $ f --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: sha256=1e38e9ffaa45cad13f15c1a9880ad606f4241e8beea2f61b4d5365abadfb55f6 (glob)
+  .hg/store/00changelog-????????????????.nd: sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
-  size=122880, sha256=1e38e9ffaa45cad13f15c1a9880ad606f4241e8beea2f61b4d5365abadfb55f6
+  size=121088, sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd
   $ hg debugnodemap --dump-disk | f --sha256 --bytes=256 --hexdump --size
-  size=122880, sha256=1e38e9ffaa45cad13f15c1a9880ad606f4241e8beea2f61b4d5365abadfb55f6
-  0000: 00 00 00 76 00 00 01 65 00 00 00 95 00 00 01 34 |...v...e.......4|
-  0010: 00 00 00 19 00 00 01 69 00 00 00 ab 00 00 00 4b |.......i.......K|
-  0020: 00 00 00 07 00 00 01 4c 00 00 00 f8 00 00 00 8f |.......L........|
-  0030: 00 00 00 c0 00 00 00 a7 00 00 00 89 00 00 01 46 |...............F|
-  0040: 00 00 00 92 00 00 01 bc 00 00 00 71 00 00 00 ac |...........q....|
-  0050: 00 00 00 af 00 00 00 b4 00 00 00 34 00 00 01 ca |...........4....|
-  0060: 00 00 00 23 00 00 01 45 00 00 00 2d 00 00 00 b2 |...#...E...-....|
-  0070: 00 00 00 56 00 00 01 0f 00 00 00 4e 00 00 02 4c |...V.......N...L|
-  0080: 00 00 00 e7 00 00 00 cd 00 00 01 5b 00 00 00 78 |...........[...x|
-  0090: 00 00 00 e3 00 00 01 8e 00 00 00 4f 00 00 00 b1 |...........O....|
-  00a0: 00 00 00 30 00 00 00 11 00 00 00 25 00 00 00 d2 |...0.......%....|
-  00b0: 00 00 00 ec 00 00 00 69 00 00 01 2b 00 00 01 2e |.......i...+....|
-  00c0: 00 00 00 aa 00 00 00 15 00 00 00 3a 00 00 01 4e |...........:...N|
-  00d0: 00 00 00 4d 00 00 00 9d 00 00 00 8e 00 00 00 a4 |...M............|
-  00e0: 00 00 00 c3 00 00 00 eb 00 00 00 29 00 00 00 ad |...........)....|
-  00f0: 00 00 01 3a 00 00 01 32 00 00 00 04 00 00 00 53 |...:...2.......S|
+  size=121088, sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd
+  0000: 00 00 00 91 00 00 00 20 00 00 00 bb 00 00 00 e7 |....... ........|
+  0010: 00 00 00 66 00 00 00 a1 00 00 01 13 00 00 01 22 |...f..........."|
+  0020: 00 00 00 23 00 00 00 fc 00 00 00 ba 00 00 00 5e |...#...........^|
+  0030: 00 00 00 df 00 00 01 4e 00 00 01 65 00 00 00 ab |.......N...e....|
+  0040: 00 00 00 a9 00 00 00 95 00 00 00 73 00 00 00 38 |...........s...8|
+  0050: 00 00 00 cc 00 00 00 92 00 00 00 90 00 00 00 69 |...............i|
+  0060: 00 00 00 ec 00 00 00 8d 00 00 01 4f 00 00 00 12 |...........O....|
+  0070: 00 00 02 0c 00 00 00 77 00 00 00 9c 00 00 00 8f |.......w........|
+  0080: 00 00 00 d5 00 00 00 6b 00 00 00 48 00 00 00 b3 |.......k...H....|
+  0090: 00 00 00 e5 00 00 00 b5 00 00 00 8e 00 00 00 ad |................|
+  00a0: 00 00 00 7b 00 00 00 7c 00 00 00 0b 00 00 00 2b |...{...|.......+|
+  00b0: 00 00 00 c6 00 00 00 1e 00 00 01 08 00 00 00 11 |................|
+  00c0: 00 00 01 30 00 00 00 26 00 00 01 9c 00 00 00 35 |...0...&.......5|
+  00d0: 00 00 00 b8 00 00 01 31 00 00 00 2c 00 00 00 55 |.......1...,...U|
+  00e0: 00 00 00 8a 00 00 00 9a 00 00 00 0c 00 00 01 1e |................|
+  00f0: 00 00 00 a4 00 00 00 83 00 00 00 c9 00 00 00 8c |................|
 
 
 #else
 
   $ f --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7 (glob)
+  .hg/store/00changelog-????????????????.nd: sha256=f544f5462ff46097432caf6d764091f6d8c46d6121be315ead8576d548c9dd79 (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
-  size=122880, sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7
+  size=121088, sha256=f544f5462ff46097432caf6d764091f6d8c46d6121be315ead8576d548c9dd79
   $ hg debugnodemap --dump-disk | f --sha256 --bytes=256 --hexdump --size
-  size=122880, sha256=b961925120e1c9bc345c199b2cc442abc477029fdece37ef9d99cbe59c0558b7
+  size=121088, sha256=f544f5462ff46097432caf6d764091f6d8c46d6121be315ead8576d548c9dd79
   0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0010: ff ff ff ff ff ff ff ff ff ff fa c2 ff ff ff ff |................|
-  0020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0030: ff ff ff ff ff ff ed b3 ff ff ff ff ff ff ff ff |................|
-  0040: ff ff ff ff ff ff ee 34 00 00 00 00 ff ff ff ff |.......4........|
-  0050: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0060: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0020: ff ff ff ff ff ff f5 06 ff ff ff ff ff ff f3 e7 |................|
+  0030: ff ff ef ca ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0040: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0050: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ed 08 |................|
+  0060: ff ff ed 66 ff ff ff ff ff ff ff ff ff ff ff ff |...f............|
   0070: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0080: ff ff ff ff ff ff f8 50 ff ff ff ff ff ff ff ff |.......P........|
-  0090: ff ff ff ff ff ff ff ff ff ff ec c7 ff ff ff ff |................|
-  00a0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00b0: ff ff ff ff ff ff fa be ff ff f2 fc ff ff ff ff |................|
-  00c0: ff ff ff ff ff ff ef ea ff ff ff ff ff ff f9 17 |................|
+  0080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0090: ff ff ff ff ff ff ff ff ff ff ff ff ff ff f6 ed |................|
+  00a0: ff ff ff ff ff ff fe 61 ff ff ff ff ff ff ff ff |.......a........|
+  00b0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  00c0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   00d0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00e0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00f0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  00e0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff f1 02 |................|
+  00f0: ff ff ff ff ff ff ed 1b ff ff ff ff ff ff ff ff |................|
 
 #endif
 
@@ -88,7 +88,7 @@ Simple lookup works
 add a new commit
 
   $ hg up
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  5001 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo foo > foo
   $ hg add foo
   $ hg ci -m 'foo'
@@ -97,18 +97,18 @@ add a new commit
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5001
-  tip-node: 2dd9b5258caa46469ff07d4a3da1eb3529a51f49
-  data-length: 122880
+  tip-node: 16395c3cf7e231394735e6b1717823ada303fb0c
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
 #else
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5001
-  tip-node: 2dd9b5258caa46469ff07d4a3da1eb3529a51f49
-  data-length: 123072
-  data-unused: 192
-  data-unused: 0.156%
+  tip-node: 16395c3cf7e231394735e6b1717823ada303fb0c
+  data-length: 121344
+  data-unused: 256
+  data-unused: 0.211%
 #endif
 
   $ f --size .hg/store/00changelog.n
@@ -118,17 +118,17 @@ add a new commit
 
 #if pure
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=123072, sha256=136472751566c8198ff09e306a7d2f9bd18bd32298d614752b73da4d6df23340 (glob)
+  .hg/store/00changelog-????????????????.nd: size=121344, sha256=cce54c5da5bde3ad72a4938673ed4064c86231b9c64376b082b163fdb20f8f66 (glob)
 #endif
 
 #if rust
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=123072, sha256=ccc8a43310ace13812fcc648683e259346754ef934c12dd238cf9b7fadfe9a4b (glob)
+  .hg/store/00changelog-????????????????.nd: size=121344, sha256=952b042fcf614ceb37b542b1b723e04f18f83efe99bee4e0f5ccd232ef470e58 (glob)
 #endif
 
 #if no-pure no-rust
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=122880, sha256=bfafebd751c4f6d116a76a37a1dee2a251747affe7efbcc4f4842ccc746d4db9 (glob)
+  .hg/store/00changelog-????????????????.nd: size=121088, sha256=df7c06a035b96cb28c7287d349d603baef43240be7736fe34eea419a49702e17 (glob)
 #endif
 
   $ hg debugnodemap --check
@@ -154,34 +154,34 @@ Test code path without mmap
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
-  data-length: 123328
-  data-unused: 384
-  data-unused: 0.311%
+  tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
+  data-length: 121600
+  data-unused: 512
+  data-unused: 0.421%
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=123328, sha256=10d26e9776b6596af0f89143a54eba8cc581e929c38242a02a7b0760698c6c70 (glob)
+  .hg/store/00changelog-????????????????.nd: size=121600, sha256=def52503d049ccb823974af313a98a935319ba61f40f3aa06a8be4d35c215054 (glob)
 #endif
 #if rust
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
-  data-length: 123328
-  data-unused: 384
-  data-unused: 0.311%
+  tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
+  data-length: 121600
+  data-unused: 512
+  data-unused: 0.421%
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=123328, sha256=081eec9eb6708f2bf085d939b4c97bc0b6762bc8336bc4b93838f7fffa1516bf (glob)
+  .hg/store/00changelog-????????????????.nd: size=121600, sha256=dacf5b5f1d4585fee7527d0e67cad5b1ba0930e6a0928f650f779aefb04ce3fb (glob)
 #endif
 #if no-pure no-rust
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
-  data-length: 122944
+  tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=122944, sha256=755976b22b64ab680401b45395953504e64e7fa8c31ac570f58dee21e15f9bc0 (glob)
+  .hg/store/00changelog-????????????????.nd: size=121088, sha256=59fcede3e3cc587755916ceed29e3c33748cd1aa7d2f91828ac83e7979d935e8 (glob)
 #endif
 
 Test force warming the cache
@@ -193,16 +193,16 @@ Test force warming the cache
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
-  data-length: 122944
+  tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
 #else
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
-  data-length: 122944
+  tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
 #endif
@@ -231,22 +231,22 @@ If the nodemap is lagging behind, it can catch up fine
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5003
-  tip-node: 5c049e9c4a4af159bdcd65dce1b6bf303a0da6cf
-  data-length: 123200 (pure !)
-  data-length: 123200 (rust !)
-  data-length: 122944 (no-rust no-pure !)
-  data-unused: 256 (pure !)
-  data-unused: 256 (rust !)
+  tip-node: c9329770f979ade2d16912267c38ba5f82fd37b3
+  data-length: 121344 (pure !)
+  data-length: 121344 (rust !)
+  data-length: 121152 (no-rust no-pure !)
+  data-unused: 192 (pure !)
+  data-unused: 192 (rust !)
   data-unused: 0 (no-rust no-pure !)
-  data-unused: 0.208% (pure !)
-  data-unused: 0.208% (rust !)
+  data-unused: 0.158% (pure !)
+  data-unused: 0.158% (rust !)
   data-unused: 0.000% (no-rust no-pure !)
   $ cp -f ../tmp-copies/* .hg/store/
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
-  data-length: 122944
+  tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
   $ hg log -r "$NODE" -T '{rev}\n'
@@ -260,7 +260,7 @@ the repository so the revlog used to generate the nodemap is not longer
 compatible with the persistent nodemap. We need to detect that.
 
   $ hg up "$NODE~5"
-  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 4 files removed, 0 files unresolved
   $ echo bar > babar
   $ hg add babar
   $ hg ci -m 'babar'
@@ -276,23 +276,23 @@ the nodemap should detect the changelog have been tampered with and recover.
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 42bf3068c7ddfdfded53c4eb11d02266faeebfee
-  data-length: 123456 (pure !)
-  data-length: 123008 (rust !)
-  data-length: 123008 (no-pure no-rust !)
+  tip-node: b355ef8adce0949b8bdf6afc72ca853740d65944
+  data-length: 121536 (pure !)
+  data-length: 121088 (rust !)
+  data-length: 121088 (no-pure no-rust !)
   data-unused: 448 (pure !)
   data-unused: 0 (rust !)
   data-unused: 0 (no-pure no-rust !)
   data-unused: 0.000% (rust !)
-  data-unused: 0.363% (pure !)
+  data-unused: 0.369% (pure !)
   data-unused: 0.000% (no-pure no-rust !)
 
   $ cp -f ../tmp-copies/* .hg/store/
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5002
-  tip-node: 6ce944fafcee85af91f29ea5b51654cc6101ad7e
-  data-length: 122944
+  tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
   $ hg log -r "$OTHERNODE" -T '{rev}\n'
@@ -309,36 +309,36 @@ An up to date nodemap should be available to shell hooks,
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5003
-  tip-node: c91af76d172f1053cca41b83f7c2e4e514fe2bcf
-  data-length: 123008
+  tip-node: a52c5079765b5865d97b993b303a18740113bbb2
+  data-length: 121088
   data-unused: 0
   data-unused: 0.000%
   $ echo babar2 > babar
   $ hg ci -m 'babar2' --config "hooks.pretxnclose.nodemap-test=hg debugnodemap --metadata"
   uid: ???????????????? (glob)
   tip-rev: 5004
-  tip-node: ba87cd9559559e4b91b28cb140d003985315e031
-  data-length: 123328 (pure !)
-  data-length: 123328 (rust !)
-  data-length: 123136 (no-pure no-rust !)
+  tip-node: 2f5fb1c06a16834c5679d672e90da7c5f3b1a984
+  data-length: 121280 (pure !)
+  data-length: 121280 (rust !)
+  data-length: 121088 (no-pure no-rust !)
   data-unused: 192 (pure !)
   data-unused: 192 (rust !)
   data-unused: 0 (no-pure no-rust !)
-  data-unused: 0.156% (pure !)
-  data-unused: 0.156% (rust !)
+  data-unused: 0.158% (pure !)
+  data-unused: 0.158% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5004
-  tip-node: ba87cd9559559e4b91b28cb140d003985315e031
-  data-length: 123328 (pure !)
-  data-length: 123328 (rust !)
-  data-length: 123136 (no-pure no-rust !)
+  tip-node: 2f5fb1c06a16834c5679d672e90da7c5f3b1a984
+  data-length: 121280 (pure !)
+  data-length: 121280 (rust !)
+  data-length: 121088 (no-pure no-rust !)
   data-unused: 192 (pure !)
   data-unused: 192 (rust !)
   data-unused: 0 (no-pure no-rust !)
-  data-unused: 0.156% (pure !)
-  data-unused: 0.156% (rust !)
+  data-unused: 0.158% (pure !)
+  data-unused: 0.158% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
 
 Another process does not see the pending nodemap content during run.
@@ -356,28 +356,28 @@ Another process does not see the pending nodemap content during run.
   > wait-on-file 20 sync-txn-close sync-repo-read
   uid: ???????????????? (glob)
   tip-rev: 5004
-  tip-node: ba87cd9559559e4b91b28cb140d003985315e031
-  data-length: 123328 (pure !)
-  data-length: 123328 (rust !)
-  data-length: 123136 (no-pure no-rust !)
+  tip-node: 2f5fb1c06a16834c5679d672e90da7c5f3b1a984
+  data-length: 121280 (pure !)
+  data-length: 121280 (rust !)
+  data-length: 121088 (no-pure no-rust !)
   data-unused: 192 (pure !)
   data-unused: 192 (rust !)
   data-unused: 0 (no-pure no-rust !)
-  data-unused: 0.156% (pure !)
-  data-unused: 0.156% (rust !)
+  data-unused: 0.158% (pure !)
+  data-unused: 0.158% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5005
-  tip-node: bae4d45c759e30f1cb1a40e1382cf0e0414154db
-  data-length: 123584 (pure !)
-  data-length: 123584 (rust !)
-  data-length: 123136 (no-pure no-rust !)
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121536 (pure !)
+  data-length: 121536 (rust !)
+  data-length: 121088 (no-pure no-rust !)
   data-unused: 448 (pure !)
   data-unused: 448 (rust !)
   data-unused: 0 (no-pure no-rust !)
-  data-unused: 0.363% (pure !)
-  data-unused: 0.363% (rust !)
+  data-unused: 0.369% (pure !)
+  data-unused: 0.369% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
 
   $ cat output.txt
@@ -386,9 +386,9 @@ Check that a failing transaction will properly revert the data
 
   $ echo plakfe > a
   $ f --size --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: size=123584, sha256=8c6cef6fd3d3fac291968793ee19a4be6d0b8375e9508bd5c7d4a8879e8df180 (glob) (pure !)
-  .hg/store/00changelog-????????????????.nd: size=123584, sha256=eb9e9a4bcafdb5e1344bc8a0cbb3288b2106413b8efae6265fb8a7973d7e97f9 (glob) (rust !)
-  .hg/store/00changelog-????????????????.nd: size=123136, sha256=4f504f5a834db3811ced50ab3e9e80bcae3581bb0f9b13a7a9f94b7fc34bcebe (glob) (no-pure no-rust !)
+  .hg/store/00changelog-????????????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
+  .hg/store/00changelog-????????????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
+  .hg/store/00changelog-????????????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
   $ hg ci -m a3 --config "extensions.abort=$RUNTESTDIR/testlib/crash_transaction_late.py"
   transaction abort!
   rollback completed
@@ -397,17 +397,17 @@ Check that a failing transaction will properly revert the data
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5005
-  tip-node: bae4d45c759e30f1cb1a40e1382cf0e0414154db
-  data-length: 123584 (pure !)
-  data-length: 123584 (rust !)
-  data-length: 123136 (no-pure no-rust !)
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121536 (pure !)
+  data-length: 121536 (rust !)
+  data-length: 121088 (no-pure no-rust !)
   data-unused: 448 (pure !)
   data-unused: 448 (rust !)
   data-unused: 0 (no-pure no-rust !)
-  data-unused: 0.363% (pure !)
-  data-unused: 0.363% (rust !)
+  data-unused: 0.369% (pure !)
+  data-unused: 0.369% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
   $ f --size --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: size=123584, sha256=8c6cef6fd3d3fac291968793ee19a4be6d0b8375e9508bd5c7d4a8879e8df180 (glob) (pure !)
-  .hg/store/00changelog-????????????????.nd: size=123584, sha256=eb9e9a4bcafdb5e1344bc8a0cbb3288b2106413b8efae6265fb8a7973d7e97f9 (glob) (rust !)
-  .hg/store/00changelog-????????????????.nd: size=123136, sha256=4f504f5a834db3811ced50ab3e9e80bcae3581bb0f9b13a7a9f94b7fc34bcebe (glob) (no-pure no-rust !)
+  .hg/store/00changelog-????????????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
+  .hg/store/00changelog-????????????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
+  .hg/store/00changelog-????????????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
