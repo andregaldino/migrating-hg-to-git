@@ -67,6 +67,10 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
         ancestorsof=ancestorsof,
     )
     common, anyinc, srvheads = res
+    if heads and not anyinc:
+        # server could be lying on the advertised heads
+        has_node = repo.changelog.hasnode
+        anyinc = any(not has_node(n) for n in heads)
     return (list(common), anyinc, heads or list(srvheads))
 
 
