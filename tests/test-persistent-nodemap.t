@@ -32,6 +32,9 @@ Simple lookup works
 
   $ f --sha256 .hg/store/00changelog-*.nd
   .hg/store/00changelog-????????????????.nd: sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd (glob)
+
+  $ f --sha256 .hg/store/00manifest-*.nd
+  .hg/store/00manifest-????????????????.nd: sha256=97117b1c064ea2f86664a124589e47db0e254e8d34739b5c5cc5bf31c9da2b51 (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
   size=121088, sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd
   $ hg debugnodemap --dump-disk | f --sha256 --bytes=256 --hexdump --size

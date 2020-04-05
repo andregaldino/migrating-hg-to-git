@@ -1588,6 +1588,9 @@ class manifestrevlog(object):
             checkambig=not bool(tree),
             mmaplargeindex=True,
             upperboundcomp=MAXCOMPRESSION,
+            persistentnodemap=opener.options.get(
+                b'exp-persistent-nodemap', False
+            ),
         )
 
         self.index = self._revlog.index
