@@ -358,7 +358,7 @@ def revtree(ui, args, repo, full=b"tree", maxnr=0, parents=False):
 )
 def revlist(ui, repo, *revs, **opts):
     """print revisions"""
-    if opts[b'header']:
+    if opts['header']:
         full = b"commit"
     else:
         full = None
