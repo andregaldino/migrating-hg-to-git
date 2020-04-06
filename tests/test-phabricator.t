@@ -2,6 +2,9 @@
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > phabricator = 
+  > 
+  > [phabricator]
+  > debug = True
   > EOF
   $ hg init repo
   $ cd repo
@@ -90,6 +93,7 @@ Create a differential diff:
   adding alpha
   $ hg phabsend -r . --test-vcr "$VCR/phabsend-create-alpha.json"
   D7915 - created - d386117f30e6: create alpha for phabricator test \xe2\x82\xac (esc)
+  new commits: ['347bf67801e5']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d386117f30e6-24ffe649-phabsend.hg
   $ echo more >> alpha
   $ HGEDITOR=true hg ci --amend
@@ -98,8 +102,10 @@ Create a differential diff:
   $ hg ci --addremove -m 'create beta for phabricator test'
   adding beta
   $ hg phabsend -r ".^::" --test-vcr "$VCR/phabsend-update-alpha-create-beta.json"
+  c44b38f24a45 mapped to old nodes []
   D7915 - updated - c44b38f24a45: create alpha for phabricator test \xe2\x82\xac (esc)
   D7916 - created - 9e6901f21d5b: create beta for phabricator test
+  new commits: ['a692622e6937']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/9e6901f21d5b-1fcd4f0e-phabsend.hg
   $ unset HGENCODING
 
@@ -115,6 +121,7 @@ behind to identify it.
   D7917 - created - 7b4185ab5d16: create public change for phabricator testing
   D7918 - created - 251c1c333fc6: create draft change for phabricator testing
   warning: not updating public commit 2:7b4185ab5d16
+  new commits: ['3244dc4a3334']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/251c1c333fc6-41cb7c3b-phabsend.hg
   $ hg tags -v
   tip                                3:3244dc4a3334
@@ -160,15 +167,18 @@ Commenting when phabsending:
   adding comment
   $ hg phabsend -r . -m "For default branch" --test-vcr "$VCR/phabsend-comment-created.json"
   D7919 - created - d5dddca9023d: create comment for phabricator test
+  new commits: ['f7db812bbe1d']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d5dddca9023d-adf673ba-phabsend.hg
   $ echo comment2 >> comment
   $ hg ci --amend
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/f7db812bbe1d-8fcded77-amend.hg
   $ hg phabsend -r . -m "Address review comments" --test-vcr "$VCR/phabsend-comment-updated.json"
+  1849d7828727 mapped to old nodes []
   D7919 - updated - 1849d7828727: create comment for phabricator test
 
 Phabsending a skipped commit:
   $ hg phabsend --no-amend -r . --test-vcr "$VCR/phabsend-skipped.json"
+  1849d7828727 mapped to old nodes ['1849d7828727']
   D7919 - skipped - 1849d7828727: create comment for phabricator test
 
 Phabesending a new binary, a modified binary, and a removed binary
@@ -186,6 +196,9 @@ Phabesending a new binary, a modified binary, and a removed binary
   uploading bin@d8d62a881b54
   D8008 - created - d8d62a881b54: modify binary
   D8009 - created - af55645b2e29: remove binary
+  new commits: ['b8139fbb4a57']
+  new commits: ['c88ce4c2d2ad']
+  new commits: ['75dbbc901145']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/aa24a81f55de-a3a0cf24-phabsend.hg
 
 Phabsend a renamed binary and a copied binary, with and without content changes
@@ -234,6 +247,11 @@ viewable on each side.
   uploading bin2_moved_copied@1b87b363a5e4
   uploading bin2_moved@1b87b363a5e4
   D8132 - created - 1b87b363a5e4: copy+mod moved binary
+  new commits: ['90437c20312a']
+  new commits: ['f391f4da4c61']
+  new commits: ['da86a9f3268c']
+  new commits: ['003ffc16ba66']
+  new commits: ['13bd750c36fa']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/f42f9195e00c-e82a0769-phabsend.hg
 
 Phabreading a DREV with a local:commits time as a string:
@@ -312,6 +330,7 @@ A bad .arcconfig doesn't error out
   $ hg config phabricator --debug
   invalid JSON in $TESTTMP/repo/.arcconfig
   read config from: */.hgrc (glob)
+  */.hgrc:*: phabricator.debug=True (glob)
   $TESTTMP/repo/.hg/hgrc:*: phabricator.url=https://phab.mercurial-scm.org/ (glob)
   $TESTTMP/repo/.hg/hgrc:*: phabricator.callsign=HG (glob)
 
@@ -325,6 +344,7 @@ The .arcconfig content overrides global config
   $ mv .hg/hgrc .hg/hgrc.bak
   $ hg config phabricator --debug
   read config from: */.hgrc (glob)
+  */.hgrc:*: phabricator.debug=True (glob)
   $TESTTMP/repo/.arcconfig: phabricator.callsign=HG
   $TESTTMP/repo/.arcconfig: phabricator.url=https://phab.mercurial-scm.org/
 
@@ -336,6 +356,7 @@ But it doesn't override local config
   > EOF
   $ hg config phabricator --debug
   read config from: */.hgrc (glob)
+  */.hgrc:*: phabricator.debug=True (glob)
   $TESTTMP/repo/.hg/hgrc:*: phabricator.url=local (glob)
   $TESTTMP/repo/.hg/hgrc:*: phabricator.callsign=local (glob)
   $ mv .hg/hgrc.bak .hg/hgrc

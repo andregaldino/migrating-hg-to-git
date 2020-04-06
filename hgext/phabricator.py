@@ -54,7 +54,7 @@ import mimetypes
 import operator
 import re
 
-from mercurial.node import bin, nullid
+from mercurial.node import bin, nullid, short
 from mercurial.i18n import _
 from mercurial.pycompat import getattr
 from mercurial.thirdparty import attr
@@ -114,6 +114,10 @@ eh.configitem(
 )
 eh.configitem(
     b'phabricator', b'curlcmd', default=None,
+)
+# developer config: phabricator.debug
+eh.configitem(
+    b'phabricator', b'debug', default=False,
 )
 # developer config: phabricator.repophid
 eh.configitem(
@@ -277,6 +281,21 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
         )(cmd)
 
     return decorate
+
+
+def _debug(ui, *msg, **opts):
+    """write debug output for Phabricator if ``phabricator.debug`` is set
+
+    Specifically, this avoids dumping Conduit and HTTP auth chatter that is
+    printed with the --debug argument.
+    """
+    if ui.configbool(b"phabricator", b"debug"):
+        flag = ui.debugflag
+        try:
+            ui.debugflag = True
+            ui.write(*msg, **opts)
+        finally:
+            ui.debugflag = flag
 
 
 def urlencodenested(params):
@@ -455,7 +474,8 @@ def getoldnodedrevmap(repo, nodelist):
     has_node = unfi.changelog.index.has_node
 
     result = {}  # {node: (oldnode?, lastdiff?, drev)}
-    toconfirm = {}  # {node: (force, {precnode}, drev)}
+    # ordered for test stability when printing new -> old mapping below
+    toconfirm = util.sortdict()  # {node: (force, {precnode}, drev)}
     for node in nodelist:
         ctx = unfi[node]
         # For tags like "D123", put them into "toconfirm" to verify later
@@ -525,6 +545,15 @@ def getoldnodedrevmap(repo, nodelist):
             if diffs:
                 lastdiff = max(diffs, key=lambda d: int(d[b'id']))
                 oldnodes = getnodes(lastdiff, precset)
+
+                _debug(
+                    unfi.ui,
+                    b"%s mapped to old nodes %s\n"
+                    % (
+                        short(newnode),
+                        stringutil.pprint([short(n) for n in sorted(oldnodes)]),
+                    ),
+                )
 
                 # If this commit was the result of `hg fold` after submission,
                 # and now resubmitted with --fold, the easiest thing to do is
@@ -1194,6 +1223,11 @@ def _amend_diff_properties(unfi, drevid, newnodes, diff):
     This is a utility function for the amend phase of ``phabsend``, which
     converts failures to warning messages.
     """
+    _debug(
+        unfi.ui,
+        b"new commits: %s\n" % stringutil.pprint([short(n) for n in newnodes]),
+    )
+
     try:
         writediffproperties([unfi[newnode] for newnode in newnodes], diff)
     except util.urlerr.urlerror:
