@@ -416,4 +416,373 @@ Phabimport accepts multiple DREVSPECs
   applying patch from D7917
   applying patch from D7918
 
+Validate arguments with --fold
+
+  $ hg phabsend --fold -r 1
+  abort: cannot fold a single revision
+  [255]
+  $ hg phabsend --fold --no-amend -r 1::
+  abort: cannot fold with --no-amend
+  [255]
+  $ hg phabsend --fold -r 0+3
+  abort: cannot fold non-linear revisions
+  [255]
+  $ hg phabsend --fold -r 1::
+  abort: cannot fold revisions with different DREV values
+  [255]
+
+Setup a series of commits to be folded, and include the Test Plan field multiple
+times to test the concatenation logic.  No Test Plan field in the last one to
+ensure missing fields are skipped.
+
+  $ hg init ../folded
+  $ cd ../folded
+  $ cat >> .hg/hgrc <<EOF
+  > [phabricator]
+  > url = https://phab.mercurial-scm.org/
+  > callsign = HG
+  > EOF
+
+  $ echo 'added' > file.txt
+  $ hg ci -Aqm 'added file'
+
+  $ cat > log.txt <<EOF
+  > one: first commit to review
+  > 
+  > This file was modified with 'mod1' as its contents.
+  > 
+  > Test Plan:
+  > LOL!  What testing?!
+  > EOF
+  $ echo mod1 > file.txt
+  $ hg ci -l log.txt
+
+  $ cat > log.txt <<EOF
+  > two: second commit to review
+  > 
+  > This file was modified with 'mod2' as its contents.
+  > 
+  > Test Plan:
+  > Haha! yeah, right.
+  > 
+  > EOF
+  $ echo mod2 > file.txt
+  $ hg ci -l log.txt
+
+  $ echo mod3 > file.txt
+  $ hg ci -m '3: a commit with no detailed message'
+
+The folding of immutable commits works...
+
+  $ hg phase -r tip --public
+  $ hg phabsend --fold -r 1:: --test-vcr "$VCR/phabsend-fold-immutable.json"
+  D8386 - created - a959a3f69d8d: one: first commit to review
+  D8386 - created - 24a4438154ba: two: second commit to review
+  D8386 - created - d235829e802c: 3: a commit with no detailed message
+  warning: not updating public commit 1:a959a3f69d8d
+  warning: not updating public commit 2:24a4438154ba
+  warning: not updating public commit 3:d235829e802c
+  no newnodes to update
+
+  $ hg phase -r 0 --draft --force
+
+... as does the initial mutable fold...
+
+  $ echo y | hg phabsend --fold --confirm -r 1:: \
+  >          --test-vcr "$VCR/phabsend-fold-initial.json"
+  NEW - a959a3f69d8d: one: first commit to review
+  NEW - 24a4438154ba: two: second commit to review
+  NEW - d235829e802c: 3: a commit with no detailed message
+  Send the above changes to https://phab.mercurial-scm.org/ (yn)? y
+  D8387 - created - a959a3f69d8d: one: first commit to review
+  D8387 - created - 24a4438154ba: two: second commit to review
+  D8387 - created - d235829e802c: 3: a commit with no detailed message
+  updating local commit list for D8387
+  new commits: ['602c4e738243', '832553266fe8', '921f8265efbd']
+  saved backup bundle to $TESTTMP/folded/.hg/strip-backup/a959a3f69d8d-a4a24136-phabsend.hg
+
+... and doesn't mangle the local commits.
+
+  $ hg log -T '{rev}:{node|short}\n{indent(desc, "  ")}\n'
+  3:921f8265efbd
+    3: a commit with no detailed message
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8387
+  2:832553266fe8
+    two: second commit to review
+  
+    This file was modified with 'mod2' as its contents.
+  
+    Test Plan:
+    Haha! yeah, right.
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8387
+  1:602c4e738243
+    one: first commit to review
+  
+    This file was modified with 'mod1' as its contents.
+  
+    Test Plan:
+    LOL!  What testing?!
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8387
+  0:98d480e0d494
+    added file
+
+Setup some obsmarkers by adding a file to the middle commit.  This stress tests
+getoldnodedrevmap() in later phabsends.
+
+  $ hg up '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo 'modified' > file2.txt
+  $ hg add file2.txt
+  $ hg amend --config experimental.evolution=all --config extensions.amend=
+  1 new orphan changesets
+  $ hg up 3
+  obsolete feature not enabled but 1 markers found!
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg rebase --config experimental.evolution=all --config extensions.rebase=
+  note: not rebasing 2:832553266fe8 "two: second commit to review", already in destination as 4:0124e5474c88 "two: second commit to review" (tip)
+  rebasing 3:921f8265efbd "3: a commit with no detailed message"
+
+When commits have changed locally, the local commit list on Phabricator is
+updated.
+
+  $ echo y | hg phabsend --fold --confirm -r 1:: \
+  >          --test-vcr "$VCR/phabsend-fold-updated.json"
+  obsolete feature not enabled but 2 markers found!
+  602c4e738243 mapped to old nodes ['602c4e738243']
+  0124e5474c88 mapped to old nodes ['832553266fe8']
+  e4edb1fe3565 mapped to old nodes ['921f8265efbd']
+  D8387 - 602c4e738243: one: first commit to review
+  D8387 - 0124e5474c88: two: second commit to review
+  D8387 - e4edb1fe3565: 3: a commit with no detailed message
+  Send the above changes to https://phab.mercurial-scm.org/ (yn)? y
+  D8387 - updated - 602c4e738243: one: first commit to review
+  D8387 - updated - 0124e5474c88: two: second commit to review
+  D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message
+  obsolete feature not enabled but 2 markers found! (?)
+  updating local commit list for D8387
+  new commits: ['602c4e738243', '0124e5474c88', 'e4edb1fe3565']
+  $ hg log -Tcompact
+  obsolete feature not enabled but 2 markers found!
+  5[tip]   e4edb1fe3565   1970-01-01 00:00 +0000   test
+    3: a commit with no detailed message
+  
+  4:1   0124e5474c88   1970-01-01 00:00 +0000   test
+    two: second commit to review
+  
+  1   602c4e738243   1970-01-01 00:00 +0000   test
+    one: first commit to review
+  
+  0   98d480e0d494   1970-01-01 00:00 +0000   test
+    added file
+  
+When nothing has changed locally since the last phabsend, the commit list isn't
+updated, and nothing is changed locally afterward.
+
+  $ hg phabsend --fold -r 1:: --test-vcr "$VCR/phabsend-fold-no-changes.json"
+  obsolete feature not enabled but 2 markers found!
+  602c4e738243 mapped to old nodes ['602c4e738243']
+  0124e5474c88 mapped to old nodes ['0124e5474c88']
+  e4edb1fe3565 mapped to old nodes ['e4edb1fe3565']
+  D8387 - updated - 602c4e738243: one: first commit to review
+  D8387 - updated - 0124e5474c88: two: second commit to review
+  D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message
+  obsolete feature not enabled but 2 markers found! (?)
+  local commit list for D8387 is already up-to-date
+  $ hg log -Tcompact
+  obsolete feature not enabled but 2 markers found!
+  5[tip]   e4edb1fe3565   1970-01-01 00:00 +0000   test
+    3: a commit with no detailed message
+  
+  4:1   0124e5474c88   1970-01-01 00:00 +0000   test
+    two: second commit to review
+  
+  1   602c4e738243   1970-01-01 00:00 +0000   test
+    one: first commit to review
+  
+  0   98d480e0d494   1970-01-01 00:00 +0000   test
+    added file
+  
+Fold will accept new revisions at the end...
+
+  $ echo 'another mod' > file2.txt
+  $ hg ci -m 'four: extend the fold range'
+  obsolete feature not enabled but 2 markers found!
+  $ hg phabsend --fold -r 1:: --test-vcr "$VCR/phabsend-fold-extend-end.json" \
+  >             --config experimental.evolution=all
+  602c4e738243 mapped to old nodes ['602c4e738243']
+  0124e5474c88 mapped to old nodes ['0124e5474c88']
+  e4edb1fe3565 mapped to old nodes ['e4edb1fe3565']
+  D8387 - updated - 602c4e738243: one: first commit to review
+  D8387 - updated - 0124e5474c88: two: second commit to review
+  D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message
+  D8387 - created - 94aaae213b23: four: extend the fold range
+  updating local commit list for D8387
+  new commits: ['602c4e738243', '0124e5474c88', 'e4edb1fe3565', '51a04fea8707']
+  $ hg log -r . -T '{desc}\n'
+  four: extend the fold range
+  
+  Differential Revision: https://phab.mercurial-scm.org/D8387
+  $ hg log -T'{rev} {if(phabreview, "{phabreview.url} {phabreview.id}")}\n' -r 1::
+  obsolete feature not enabled but 3 markers found!
+  1 https://phab.mercurial-scm.org/D8387 D8387
+  4 https://phab.mercurial-scm.org/D8387 D8387
+  5 https://phab.mercurial-scm.org/D8387 D8387
+  7 https://phab.mercurial-scm.org/D8387 D8387
+
+... and also accepts new revisions at the beginning of the range
+
+It's a bit unfortunate that not having a Differential URL on the first commit
+causes a new Differential Revision to be created, though it isn't *entirely*
+unreasonable.  At least this updates the subsequent commits.
+
+TODO: See if it can reuse the existing Differential.
+
+  $ hg phabsend --fold -r 0:: --test-vcr "$VCR/phabsend-fold-extend-front.json" \
+  >             --config experimental.evolution=all
+  602c4e738243 mapped to old nodes ['602c4e738243']
+  0124e5474c88 mapped to old nodes ['0124e5474c88']
+  e4edb1fe3565 mapped to old nodes ['e4edb1fe3565']
+  51a04fea8707 mapped to old nodes ['51a04fea8707']
+  D8388 - created - 98d480e0d494: added file
+  D8388 - updated - 602c4e738243: one: first commit to review
+  D8388 - updated - 0124e5474c88: two: second commit to review
+  D8388 - updated - e4edb1fe3565: 3: a commit with no detailed message
+  D8388 - updated - 51a04fea8707: four: extend the fold range
+  updating local commit list for D8388
+  new commits: ['15e9b14b4b4c', '6320b7d714cf', '3ee132d41dbc', '30682b960804', 'ac7db67f0991']
+
+  $ hg log -T '{rev}:{node|short}\n{indent(desc, "  ")}\n'
+  obsolete feature not enabled but 8 markers found!
+  12:ac7db67f0991
+    four: extend the fold range
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8388
+  11:30682b960804
+    3: a commit with no detailed message
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8388
+  10:3ee132d41dbc
+    two: second commit to review
+  
+    This file was modified with 'mod2' as its contents.
+  
+    Test Plan:
+    Haha! yeah, right.
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8388
+  9:6320b7d714cf
+    one: first commit to review
+  
+    This file was modified with 'mod1' as its contents.
+  
+    Test Plan:
+    LOL!  What testing?!
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8388
+  8:15e9b14b4b4c
+    added file
+  
+    Differential Revision: https://phab.mercurial-scm.org/D8388
+
+Test phabsend --fold with an `hg split` at the end of the range
+
+  $ echo foo > file3.txt
+  $ hg add file3.txt
+
+  $ hg log -r . -T '{desc}' > log.txt
+  $ echo 'amended mod' > file2.txt
+  $ hg ci --amend -l log.txt --config experimental.evolution=all
+
+  $ cat <<EOF | hg --config extensions.split= --config ui.interactive=True \
+  >                --config experimental.evolution=all split -r .
+  > n
+  > y
+  > y
+  > y
+  > y
+  > EOF
+  diff --git a/file2.txt b/file2.txt
+  1 hunks, 1 lines changed
+  examine changes to 'file2.txt'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+  diff --git a/file3.txt b/file3.txt
+  new file mode 100644
+  examine changes to 'file3.txt'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +foo
+  record change 2/2 to 'file3.txt'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  created new head
+  diff --git a/file2.txt b/file2.txt
+  1 hunks, 1 lines changed
+  examine changes to 'file2.txt'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,1 +1,1 @@
+  -modified
+  +amended mod
+  record this change to 'file2.txt'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  $ hg phabsend --fold -r 8:: --test-vcr "$VCR/phabsend-fold-split-end.json" \
+  >             --config experimental.evolution=all
+  15e9b14b4b4c mapped to old nodes ['15e9b14b4b4c']
+  6320b7d714cf mapped to old nodes ['6320b7d714cf']
+  3ee132d41dbc mapped to old nodes ['3ee132d41dbc']
+  30682b960804 mapped to old nodes ['30682b960804']
+  6bc15dc99efd mapped to old nodes ['ac7db67f0991']
+  b50946d5e490 mapped to old nodes ['ac7db67f0991']
+  D8388 - updated - 15e9b14b4b4c: added file
+  D8388 - updated - 6320b7d714cf: one: first commit to review
+  D8388 - updated - 3ee132d41dbc: two: second commit to review
+  D8388 - updated - 30682b960804: 3: a commit with no detailed message
+  D8388 - updated - 6bc15dc99efd: four: extend the fold range
+  D8388 - updated - b50946d5e490: four: extend the fold range
+  updating local commit list for D8388
+  new commits: ['15e9b14b4b4c', '6320b7d714cf', '3ee132d41dbc', '30682b960804', '6bc15dc99efd', 'b50946d5e490']
+
+Test phabsend --fold with an `hg fold` at the end of the range
+
+  $ hg --config experimental.evolution=all --config extensions.rebase= \
+  >    rebase -r '.^' -r . -d '.^^' --collapse -l log.txt
+  rebasing 14:6bc15dc99efd "four: extend the fold range"
+  rebasing 15:b50946d5e490 "four: extend the fold range" (tip)
+
+  $ hg phabsend --fold -r 8:: --test-vcr "$VCR/phabsend-fold-fold-end.json" \
+  >             --config experimental.evolution=all
+  15e9b14b4b4c mapped to old nodes ['15e9b14b4b4c']
+  6320b7d714cf mapped to old nodes ['6320b7d714cf']
+  3ee132d41dbc mapped to old nodes ['3ee132d41dbc']
+  30682b960804 mapped to old nodes ['30682b960804']
+  e919cdf3d4fe mapped to old nodes ['6bc15dc99efd', 'b50946d5e490']
+  D8388 - updated - 15e9b14b4b4c: added file
+  D8388 - updated - 6320b7d714cf: one: first commit to review
+  D8388 - updated - 3ee132d41dbc: two: second commit to review
+  D8388 - updated - 30682b960804: 3: a commit with no detailed message
+  D8388 - updated - e919cdf3d4fe: four: extend the fold range
+  updating local commit list for D8388
+  new commits: ['15e9b14b4b4c', '6320b7d714cf', '3ee132d41dbc', '30682b960804', 'e919cdf3d4fe']
+
+  $ hg log -r tip -v
+  obsolete feature not enabled but 12 markers found!
+  changeset:   16:e919cdf3d4fe
+  tag:         tip
+  parent:      11:30682b960804
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  files:       file2.txt file3.txt
+  description:
+  four: extend the fold range
+  
+  Differential Revision: https://phab.mercurial-scm.org/D8388
+  
+  
+
   $ cd ..

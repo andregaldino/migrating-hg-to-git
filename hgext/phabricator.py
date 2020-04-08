@@ -559,7 +559,11 @@ def getoldnodedrevmap(repo, nodelist):
                 # and now resubmitted with --fold, the easiest thing to do is
                 # to leave the node clear.  This only results in creating a new
                 # diff for the _same_ Differential Revision if this commit is
-                # the first or last in the selected range.
+                # the first or last in the selected range.  If we picked a node
+                # from the list instead, it would have to be the lowest if at
+                # the beginning of the --fold range, or the highest at the end.
+                # Otherwise, one or more of the nodes wouldn't be considered in
+                # the diff, and the Differential wouldn't be properly updated.
                 # If this commit is the result of `hg split` in the same
                 # scenario, there is a single oldnode here (and multiple
                 # newnodes mapped to it).  That makes it the same as the normal
@@ -1250,6 +1254,7 @@ def _amend_diff_properties(unfi, drevid, newnodes, diff):
             _(b'add a comment to Revisions with new/updated Diffs'),
         ),
         (b'', b'confirm', None, _(b'ask for confirmation before sending')),
+        (b'', b'fold', False, _(b'combine the revisions into one review')),
     ],
     _(b'REV [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
@@ -1278,6 +1283,12 @@ def phabsend(ui, repo, *revs, **opts):
         [phabsend]
         confirm = true
 
+    By default, a separate review will be created for each commit that is
+    selected, and will have the same parent/child relationship in Phabricator.
+    If ``--fold`` is set, multiple commits are rolled up into a single review
+    as if diffed from the parent of the first revision to the last.  The commit
+    messages are concatenated in the summary field on Phabricator.
+
     phabsend will check obsstore and the above association to decide whether to
     update an existing Differential Revision, or create a new one.
     """
@@ -1290,6 +1301,44 @@ def phabsend(ui, repo, *revs, **opts):
         raise error.Abort(_(b'phabsend requires at least one changeset'))
     if opts.get(b'amend'):
         cmdutil.checkunfinished(repo)
+
+    ctxs = [repo[rev] for rev in revs]
+
+    fold = opts.get(b'fold')
+    if fold:
+        if len(revs) == 1:
+            # TODO: just switch to --no-fold instead?
+            raise error.Abort(_(b"cannot fold a single revision"))
+
+        # There's no clear way to manage multiple commits with a Dxxx tag, so
+        # require the amend option.  (We could append "_nnn", but then it
+        # becomes jumbled if earlier commits are added to an update.)  It should
+        # lock the repo and ensure that the range is editable, but that would
+        # make the code pretty convoluted.  The default behavior of `arc` is to
+        # create a new review anyway.
+        if not opts.get(b"amend"):
+            raise error.Abort(_(b"cannot fold with --no-amend"))
+
+        # Ensure the local commits are an unbroken range
+        revrange = repo.revs(b'(first(%ld)::last(%ld))', revs, revs)
+        if any(r for r in revs if r not in revrange) or any(
+            r for r in revrange if r not in revs
+        ):
+            raise error.Abort(_(b"cannot fold non-linear revisions"))
+
+        # It might be possible to bucketize the revisions by the DREV value, and
+        # iterate over those groups when posting, and then again when amending.
+        # But for simplicity, require all selected revisions to be for the same
+        # DREV (if present).  Adding local revisions to an existing DREV is
+        # acceptable.
+        drevmatchers = [
+            _differentialrevisiondescre.search(ctx.description())
+            for ctx in ctxs
+        ]
+        if len({m.group('url') for m in drevmatchers if m}) > 1:
+            raise error.Abort(
+                _(b"cannot fold revisions with different DREV values")
+            )
 
     # {newnode: (oldnode, olddiff, olddrev}
     oldmap = getoldnodedrevmap(repo, [repo[r].node() for r in revs])
@@ -1323,17 +1372,25 @@ def phabsend(ui, repo, *revs, **opts):
     # Send patches one by one so we know their Differential Revision PHIDs and
     # can provide dependency relationship
     lastrevphid = None
-    for rev in revs:
-        ui.debug(b'sending rev %d\n' % rev)
-        ctx = repo[rev]
+    for ctx in ctxs:
+        if fold:
+            ui.debug(b'sending rev %d::%d\n' % (ctx.rev(), ctxs[-1].rev()))
+        else:
+            ui.debug(b'sending rev %d\n' % ctx.rev())
 
         # Get Differential Revision ID
         oldnode, olddiff, revid = oldmap.get(ctx.node(), (None, None, None))
-        oldbasenode = oldnode
+        oldbasenode, oldbasediff, oldbaserevid = oldnode, olddiff, revid
+
+        if fold:
+            oldbasenode, oldbasediff, oldbaserevid = oldmap.get(
+                ctxs[-1].node(), (None, None, None)
+            )
+
         if oldnode != ctx.node() or opts.get(b'amend'):
             # Create or update Differential Revision
             revision, diff = createdifferentialrevision(
-                [ctx],
+                ctxs if fold else [ctx],
                 revid,
                 lastrevphid,
                 oldbasenode,
@@ -1342,7 +1399,13 @@ def phabsend(ui, repo, *revs, **opts):
                 actions,
                 opts.get(b'comment'),
             )
-            diffmap[ctx.node()] = diff
+
+            if fold:
+                for ctx in ctxs:
+                    diffmap[ctx.node()] = diff
+            else:
+                diffmap[ctx.node()] = diff
+
             newrevid = int(revision[b'object'][b'id'])
             newrevphid = revision[b'object'][b'phid']
             if revid:
@@ -1352,18 +1415,19 @@ def phabsend(ui, repo, *revs, **opts):
 
             # Create a local tag to note the association, if commit message
             # does not have it already
-            m = _differentialrevisiondescre.search(ctx.description())
-            if not m or int(m.group('id')) != newrevid:
-                tagname = b'D%d' % newrevid
-                tags.tag(
-                    repo,
-                    tagname,
-                    ctx.node(),
-                    message=None,
-                    user=None,
-                    date=None,
-                    local=True,
-                )
+            if not fold:
+                m = _differentialrevisiondescre.search(ctx.description())
+                if not m or int(m.group('id')) != newrevid:
+                    tagname = b'D%d' % newrevid
+                    tags.tag(
+                        repo,
+                        tagname,
+                        ctx.node(),
+                        message=None,
+                        user=None,
+                        date=None,
+                        local=True,
+                    )
         else:
             # Nothing changed. But still set "newrevphid" so the next revision
             # could depend on this one and "newrevid" for the summary line.
@@ -1374,6 +1438,15 @@ def phabsend(ui, repo, *revs, **opts):
         drevids.append(newrevid)
         lastrevphid = newrevphid
 
+        if fold:
+            for c in ctxs:
+                if oldmap.get(c.node(), (None, None, None))[2]:
+                    action = b'updated'
+                else:
+                    action = b'created'
+                _print_phabsend_action(ui, c, newrevid, action)
+            break
+
         _print_phabsend_action(ui, ctx, newrevid, action)
 
     # Update commit messages and remove tags
@@ -1383,11 +1456,17 @@ def phabsend(ui, repo, *revs, **opts):
         with repo.wlock(), repo.lock(), repo.transaction(b'phabsend'):
             wnode = unfi[b'.'].node()
             mapping = {}  # {oldnode: [newnode]}
+            newnodes = []
+
+            drevid = drevids[0]
+
             for i, rev in enumerate(revs):
                 old = unfi[rev]
-                drevid = drevids[i]
+                if not fold:
+                    drevid = drevids[i]
                 drev = [d for d in drevs if int(d[b'id']) == drevid][0]
-                newdesc = get_amended_desc(drev, old, False)
+
+                newdesc = get_amended_desc(drev, old, fold)
                 # Make sure commit message contain "Differential Revision"
                 if old.description() != newdesc:
                     if old.phase() == phases.public:
@@ -1414,21 +1493,57 @@ def phabsend(ui, repo, *revs, **opts):
 
                     mapping[old.node()] = [newnode]
 
+                    if fold:
+                        # Defer updating the (single) Diff until all nodes are
+                        # collected.  No tags were created, so none need to be
+                        # removed.
+                        newnodes.append(newnode)
+                        continue
+
                     _amend_diff_properties(
                         unfi, drevid, [newnode], diffmap[old.node()]
                     )
-                # Remove local tags since it's no longer necessary
-                tagname = b'D%d' % drevid
-                if tagname in repo.tags():
-                    tags.tag(
-                        repo,
-                        tagname,
-                        nullid,
-                        message=None,
-                        user=None,
-                        date=None,
-                        local=True,
+
+                    # Remove local tags since it's no longer necessary
+                    tagname = b'D%d' % drevid
+                    if tagname in repo.tags():
+                        tags.tag(
+                            repo,
+                            tagname,
+                            nullid,
+                            message=None,
+                            user=None,
+                            date=None,
+                            local=True,
+                        )
+                elif fold:
+                    # When folding multiple commits into one review with
+                    # --fold, track even the commits that weren't amended, so
+                    # that their association isn't lost if the properties are
+                    # rewritten below.
+                    newnodes.append(old.node())
+
+            # If the submitted commits are public, no amend takes place so
+            # there are no newnodes and therefore no diff update to do.
+            if fold and newnodes:
+                diff = diffmap[old.node()]
+
+                # The diff object in diffmap doesn't have the local commits
+                # because that could be returned from differential.creatediff,
+                # not differential.querydiffs.  So use the queried diff (if
+                # present), or force the amend (a new revision is being posted.)
+                if not olddiff or set(newnodes) != getlocalcommits(olddiff):
+                    _debug(ui, b"updating local commit list for D%d\n" % drevid)
+                    _amend_diff_properties(unfi, drevid, newnodes, diff)
+                else:
+                    _debug(
+                        ui,
+                        b"local commit list for D%d is already up-to-date\n"
+                        % drevid,
                     )
+            elif fold:
+                _debug(ui, b"no newnodes to update\n")
+
             scmutil.cleanupnodes(repo, mapping, b'phabsend', fixphase=True)
             if wnode in mapping:
                 unfi.setparents(mapping[wnode][0])
