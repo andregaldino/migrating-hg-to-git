@@ -300,4 +300,7 @@ post message fix
      summary:     Initial commit
   
 
+An invalid editor shouldn't leave the user in a broken state:
+  $ EDITOR=totally-not-a-thing-unsensible-editor-value hg histedit 4
+
   $ cd ..
