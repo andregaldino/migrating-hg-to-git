@@ -62,9 +62,9 @@ Make and delete some tags
   6 make bar and baz copies of foo
   5 merge local copy
   4 merge remote copy
-  3 Added tag that for changeset 88586c4e9f02
+  3 Added tag that for changeset 8601262d7472
   2 Removed tag that
-  1 Added tag this for changeset c56a7f387039
+  1 Added tag this for changeset 706614b458c1
   0 mark baz executable
   updating bookmarks
   $ cd new
@@ -76,7 +76,7 @@ Make and delete some tags
 #if execbit
   $ hg bookmarks
      premerge1                 3:973ef48a98a4
-     premerge2                 8:91d107c423ba
+     premerge2                 8:c4968fdf2e5d
 #else
 Different hash because no x bit
   $ hg bookmarks
@@ -96,19 +96,19 @@ Test that redoing a convert results in an identical graph
   6 make bar and baz copies of foo
   5 merge local copy
   4 merge remote copy
-  3 Added tag that for changeset 88586c4e9f02
+  3 Added tag that for changeset 8601262d7472
   2 Removed tag that
-  1 Added tag this for changeset c56a7f387039
+  1 Added tag this for changeset 706614b458c1
   0 mark baz executable
   updating bookmarks
   $ hg -R new log -G -T '{rev} {desc}'
   o  8 mark baz executable
   |
-  o  7 Added tag this for changeset c56a7f387039
+  o  7 Added tag this for changeset 706614b458c1
   |
   o  6 Removed tag that
   |
-  o  5 Added tag that for changeset 88586c4e9f02
+  o  5 Added tag that for changeset 8601262d7472
   |
   o    4 merge remote copy
   |\

@@ -64,6 +64,7 @@ RECORD_LABELS = b'l'
 RECORD_OVERRIDE = b't'
 RECORD_UNSUPPORTED_MANDATORY = b'X'
 RECORD_UNSUPPORTED_ADVISORY = b'x'
+RECORD_RESOLVED_OTHER = b'R'
 
 MERGE_DRIVER_STATE_UNMARKED = b'u'
 MERGE_DRIVER_STATE_MARKED = b'm'
@@ -74,6 +75,9 @@ MERGE_RECORD_RESOLVED = b'r'
 MERGE_RECORD_UNRESOLVED_PATH = b'pu'
 MERGE_RECORD_RESOLVED_PATH = b'pr'
 MERGE_RECORD_DRIVER_RESOLVED = b'd'
+# represents that the file was automatically merged in favor
+# of other version. This info is used on commit.
+MERGE_RECORD_MERGED_OTHER = b'o'
 
 ACTION_FORGET = b'f'
 ACTION_REMOVE = b'r'
@@ -91,6 +95,8 @@ ACTION_DIR_RENAME_MOVE_LOCAL = b'dm'
 ACTION_KEEP = b'k'
 ACTION_EXEC = b'e'
 ACTION_CREATED_MERGE = b'cm'
+# GET the other/remote side and store this info in mergestate
+ACTION_GET_OTHER_AND_STORE = b'gs'
 
 
 class mergestate(object):
@@ -227,6 +233,7 @@ class mergestate(object):
                 RECORD_CHANGEDELETE_CONFLICT,
                 RECORD_PATH_CONFLICT,
                 RECORD_MERGE_DRIVER_MERGE,
+                RECORD_RESOLVED_OTHER,
             ):
                 bits = record.split(b'\0')
                 self._state[bits[0]] = bits[1:]
@@ -453,6 +460,10 @@ class mergestate(object):
                 records.append(
                     (RECORD_PATH_CONFLICT, b'\0'.join([filename] + v))
                 )
+            elif v[0] == MERGE_RECORD_MERGED_OTHER:
+                records.append(
+                    (RECORD_RESOLVED_OTHER, b'\0'.join([filename] + v))
+                )
             elif v[1] == nullhex or v[6] == nullhex:
                 # Change/Delete or Delete/Change conflicts. These are stored in
                 # 'C' records. v[1] is the local file, and is nullhex when the
@@ -551,6 +562,10 @@ class mergestate(object):
         self._state[path] = [MERGE_RECORD_UNRESOLVED_PATH, frename, forigin]
         self._dirty = True
 
+    def addmergedother(self, path):
+        self._state[path] = [MERGE_RECORD_MERGED_OTHER, nullhex, nullhex]
+        self._dirty = True
+
     def __contains__(self, dfile):
         return dfile in self._state
 
@@ -593,6 +608,8 @@ class mergestate(object):
     def _resolve(self, preresolve, dfile, wctx):
         """rerun merge process for file path `dfile`"""
         if self[dfile] in (MERGE_RECORD_RESOLVED, MERGE_RECORD_DRIVER_RESOLVED):
+            return True, 0
+        if self._state[dfile][0] == MERGE_RECORD_MERGED_OTHER:
             return True, 0
         stateentry = self._state[dfile]
         state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
@@ -1209,7 +1226,7 @@ def _filternarrowactions(narrowmatch, branchmerge, actions):
     narrowed.
     """
     nooptypes = {b'k'}  # TODO: handle with nonconflicttypes
-    nonconflicttypes = set(b'a am c cm f g r e'.split())
+    nonconflicttypes = set(b'a am c cm f g gs r e'.split())
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.
     for f, action in list(actions.items()):
@@ -1348,14 +1365,22 @@ def manifestmerge(
                         )
                     else:
                         actions[f] = (
-                            ACTION_GET,
+                            ACTION_GET_OTHER_AND_STORE
+                            if branchmerge
+                            else ACTION_GET,
                             (fl2, False),
                             b'remote is newer',
                         )
                 elif nol and n2 == a:  # remote only changed 'x'
                     actions[f] = (ACTION_EXEC, (fl2,), b'update permissions')
                 elif nol and n1 == a:  # local only changed 'x'
-                    actions[f] = (ACTION_GET, (fl1, False), b'remote is newer')
+                    actions[f] = (
+                        ACTION_GET_OTHER_AND_STORE
+                        if branchmerge
+                        else ACTION_GET,
+                        (fl1, False),
+                        b'remote is newer',
+                    )
                 else:  # both changed something
                     actions[f] = (
                         ACTION_MERGE,
@@ -1588,6 +1613,8 @@ def calculateupdates(
 
             for f, a in sorted(pycompat.iteritems(actions)):
                 m, args, msg = a
+                if m == ACTION_GET_OTHER_AND_STORE:
+                    m = ACTION_GET
                 repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m))
                 if f in fbids:
                     d = fbids[f]
@@ -1813,6 +1840,7 @@ def emptyactions():
             ACTION_KEEP,
             ACTION_PATH_CONFLICT,
             ACTION_PATH_CONFLICT_RESOLVE,
+            ACTION_GET_OTHER_AND_STORE,
         )
     }
 
@@ -1835,6 +1863,11 @@ def applyupdates(
 
     updated, merged, removed = 0, 0, 0
     ms = mergestate.clean(repo, wctx.p1().node(), mctx.node(), labels)
+
+    # add ACTION_GET_OTHER_AND_STORE to mergestate
+    for e in actions[ACTION_GET_OTHER_AND_STORE]:
+        ms.addmergedother(e[0])
+
     moves = []
     for m, l in actions.items():
         l.sort()
@@ -2415,6 +2448,7 @@ def update(
                     ACTION_EXEC,
                     ACTION_REMOVE,
                     ACTION_PATH_CONFLICT_RESOLVE,
+                    ACTION_GET_OTHER_AND_STORE,
                 ):
                     msg = _(b"conflicting changes")
                     hint = _(b"commit or update --clean to discard changes")
@@ -2476,6 +2510,10 @@ def update(
             if m not in actions:
                 actions[m] = []
             actions[m].append((f, args, msg))
+
+        # ACTION_GET_OTHER_AND_STORE is a ACTION_GET + store in mergestate
+        for e in actions[ACTION_GET_OTHER_AND_STORE]:
+            actions[ACTION_GET].append(e)
 
         if not util.fscasesensitive(repo.path):
             # check collision between files only in p2 for clean update

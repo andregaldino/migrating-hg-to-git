@@ -319,7 +319,7 @@ Note:
   (branch merge, don't forget to commit)
   $ hg ci -m 'mBDm-0 simple merge - one way'
   $ hg up 'desc("d-2")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -348,7 +348,6 @@ Note:
   M d
   $ hg status --copies --rev 'desc("d-2")' --rev 'desc("mBDm-0")'
   M b
-  M d
   $ hg status --copies --rev 'desc("d-2")' --rev 'desc("mDBm-0")'
   M b
   $ hg status --copies --rev 'desc("i-2")' --rev 'desc("mBDm-0")'
@@ -361,7 +360,7 @@ Note:
 The bugs makes recorded copy is different depending of where we started the merge from since
 
   $ hg manifest --debug --rev 'desc("mBDm-0")' | grep '644   d'
-  0bb5445dc4d02f4e0d86cf16f9f3a411d0f17744 644   d
+  b004912a8510032a0350a74daa2803dadfb00e12 644   d
   $ hg manifest --debug --rev 'desc("mDBm-0")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
 
@@ -378,21 +377,13 @@ not a merge.
      rev linkrev nodeid       p1           p2
        0       2 01c2f5eabdc4 000000000000 000000000000
        1       8 b004912a8510 000000000000 000000000000
-       2      17 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
 
 (This `hg log` output if wrong, since no merge actually happened).
 
   $ hg log -Gfr 'desc("mBDm-0")' d
-  o    17 mBDm-0 simple merge - one way
-  |\
-  o :  8 d-2 re-add d
-  :/
-  o  2 i-2: c -move-> d
+  o  8 d-2 re-add d
   |
-  o  1 i-1: a -move-> c
-  |
-  o  0 i-0 initial commit: a b h
-  
+  ~
 
 This `hg log` output is correct
 
@@ -404,7 +395,6 @@ This `hg log` output is correct
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBDm-0")'
   M b
   A d
-    a
   R a
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mDBm-0")'
   M b
@@ -525,8 +515,7 @@ Merge:
      rev linkrev nodeid       p1           p2
        0       2 01c2f5eabdc4 000000000000 000000000000
        1       8 b004912a8510 000000000000 000000000000
-       2      17 0bb5445dc4d0 01c2f5eabdc4 b004912a8510
-       3      22 c72365ee036f 000000000000 000000000000
+       2      22 c72365ee036f 000000000000 000000000000
   $ hg up 'desc("b-1")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("f-2")'
@@ -534,7 +523,7 @@ Merge:
   (branch merge, don't forget to commit)
   $ hg ci -m 'mBFm-0 simple merge - one way'
   $ hg up 'desc("f-2")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -562,7 +551,7 @@ The overwriting should take over. However, the behavior is currently buggy
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBFm-0")'
   M b
   A d
-    a (true !)
+    h
     h (false !)
   R a
   R h
@@ -577,7 +566,6 @@ The overwriting should take over. However, the behavior is currently buggy
   R h
   $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mBFm-0")'
   M b
-  M d
   $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mBFm-0")'
   M b
   M d
@@ -595,16 +583,10 @@ The overwriting should take over. However, the behavior is currently buggy
 The following graphlog is wrong, the "a -> c -> d" chain was overwritten and should not appear.
 
   $ hg log -Gfr 'desc("mBFm-0")' d
-  o    23 mBFm-0 simple merge - one way
-  |\
-  o :  22 f-2: rename i -> d
-  | :
-  o :  21 f-1: rename h -> i
-  :/
-  o  2 i-2: c -move-> d
+  o  22 f-2: rename i -> d
   |
-  o  1 i-1: a -move-> c
-  |
+  o  21 f-1: rename h -> i
+  :
   o  0 i-0 initial commit: a b h
   
 

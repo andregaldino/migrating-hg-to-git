@@ -2855,6 +2855,14 @@ class localrepository(object):
                 fparent1, fparent2 = fparent2, nullid
             elif fparent2 in fparentancestors:
                 fparent2 = nullid
+            elif not fparentancestors:
+                # TODO: this whole if-else might be simplified much more
+                ms = mergemod.mergestate.read(self)
+                if (
+                    fname in ms
+                    and ms[fname] == mergemod.MERGE_RECORD_MERGED_OTHER
+                ):
+                    fparent1, fparent2 = fparent2, nullid
 
         # is the file changed?
         text = fctx.data()
