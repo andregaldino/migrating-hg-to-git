@@ -14,12 +14,12 @@ use std::io;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::os::unix::fs::{DirBuilderExt, MetadataExt};
 use std::path::{Path, PathBuf};
-use std::process::{self, Command};
+use std::process;
 use std::time::Duration;
 use tokio::prelude::*;
+use tokio::process::{Child, Command};
+use tokio::time;
 use tokio_hglib::UnixClient;
-use tokio_process::{Child, CommandExt};
-use tokio_timer;
 
 use crate::clientext::ChgClientExt;
 use crate::message::{Instruction, ServerSpec};
@@ -236,7 +236,7 @@ impl Locator {
             .env_clear()
             .envs(self.env_vars.iter().cloned())
             .env("CHGINTERNALMARK", "")
-            .spawn_async()
+            .spawn()
             .into_future()
             .and_then(|server| self.connect_spawned(server, sock_path))
             .and_then(|(loc, client, sock_path)| {
@@ -264,7 +264,7 @@ impl Locator {
                     Ok(client) => Either::A(future::ok(Loop::Break((client, sock_path)))),
                     Err(_) => {
                         // try again with slight delay
-                        let fut = tokio_timer::sleep(Duration::from_millis(10))
+                        let fut = time::delay_for(Duration::from_millis(10))
                             .map(|()| Loop::Continue(sock_path))
                             .map_err(|err| io::Error::new(io::ErrorKind::Other, err));
                         Either::B(fut)

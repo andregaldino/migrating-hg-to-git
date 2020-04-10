@@ -8,9 +8,9 @@ use futures::Future;
 use std::io;
 use std::os::unix::io::AsRawFd;
 use std::os::unix::process::ExitStatusExt;
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use tokio;
-use tokio_process::{ChildStdin, CommandExt};
+use tokio::process::{ChildStdin, Command};
 
 use crate::message::CommandSpec;
 use crate::procutil;
@@ -47,10 +47,8 @@ impl SystemHandler for ChgUiHandler {
     type RunSystemResult = Box<dyn Future<Item = (Self, i32), Error = io::Error> + Send>;
 
     fn spawn_pager(self, spec: CommandSpec) -> Self::SpawnPagerResult {
-        let mut pager = new_shell_command(&spec)
-            .stdin(Stdio::piped())
-            .spawn_async()?;
-        let pin = pager.stdin().take().unwrap();
+        let mut pager = new_shell_command(&spec).stdin(Stdio::piped()).spawn()?;
+        let pin = pager.stdin.take().unwrap();
         procutil::set_blocking_fd(pin.as_raw_fd())?;
         // TODO: if pager exits, notify the server with SIGPIPE immediately.
         // otherwise the server won't get SIGPIPE if it does not write
@@ -62,7 +60,7 @@ impl SystemHandler for ChgUiHandler {
 
     fn run_system(self, spec: CommandSpec) -> Self::RunSystemResult {
         let fut = new_shell_command(&spec)
-            .spawn_async()
+            .spawn()
             .into_future()
             .flatten()
             .map(|status| {

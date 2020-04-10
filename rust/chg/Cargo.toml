@@ -10,14 +10,16 @@ edition = "2018"
 autobins = false
 
 [dependencies]
-bytes = "0.4"
-futures = "0.1"
+async-trait = "0.1"
+bytes = "0.5"
+futures = "0.3"
 libc = "0.2"
 log = { version = "0.4", features = ["std"] }
-tokio = "0.1"
-tokio-hglib = "0.2"
-tokio-process = "0.2.3"
-tokio-timer = "0.2"
+tokio-hglib = "0.3"
+
+[dependencies.tokio]
+version = "0.2"
+features = ["rt-core", "io-util", "time", "process", "macros"]
 
 [build-dependencies]
 cc = "1.0"

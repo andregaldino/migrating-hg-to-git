@@ -99,7 +99,7 @@ where
 
     fn set_umask(self, mask: u32) -> OneShotRequest<C> {
         let mut args = BytesMut::with_capacity(mem::size_of_val(&mask));
-        args.put_u32_be(mask);
+        args.put_u32(mask);
         OneShotRequest::start_with_args(self, b"setumask2", args)
     }
 
