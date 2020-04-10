@@ -247,7 +247,15 @@ def notset(repo, subset, x, order):
 
 
 def relationset(repo, subset, x, y, order):
-    raise error.ParseError(_(b"can't use a relation in this context"))
+    # this is pretty basic implementation of 'x#y' operator, still
+    # experimental so undocumented. see the wiki for further ideas.
+    # https://www.mercurial-scm.org/wiki/RevsetOperatorPlan
+    rel = getsymbol(y)
+    if rel in relations:
+        return relations[rel](repo, subset, x, rel, order)
+
+    relnames = [r for r in relations.keys() if len(r) > 1]
+    raise error.UnknownIdentifier(rel, relnames)
 
 
 def _splitrange(a, b):
@@ -279,6 +287,11 @@ def _splitrange(a, b):
     if b > 0:
         descdepths = (max(a, 0), b + 1)
     return ancdepths, descdepths
+
+
+def generationsrel(repo, subset, x, rel, order):
+    z = (b'rangeall', None)
+    return generationssubrel(repo, subset, x, rel, z, order)
 
 
 def generationssubrel(repo, subset, x, rel, z, order):
@@ -2647,6 +2660,11 @@ methods = {
     b"parent": parentspec,
     b"parentpost": parentpost,
     b"smartset": rawsmartset,
+}
+
+relations = {
+    b"g": generationsrel,
+    b"generations": generationsrel,
 }
 
 subscriptrelations = {
