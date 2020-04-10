@@ -3,12 +3,6 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-extern crate chg;
-extern crate futures;
-extern crate log;
-extern crate tokio;
-extern crate tokio_hglib;
-
 use chg::locator::{self, Locator};
 use chg::procutil;
 use chg::{ChgClientExt, ChgUiHandler};

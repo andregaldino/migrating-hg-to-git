@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Yuya Nishihara <yuya@tcha.org>"]
 description = "Client for Mercurial command server with cHg extension"
 license = "GPL-2.0+"
+edition = "2018"
 
 [dependencies]
 bytes = "0.4"

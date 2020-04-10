@@ -6,6 +6,7 @@
 //! Utility for locating command-server process.
 
 use futures::future::{self, Either, Loop};
+use log::debug;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fs::{self, DirBuilder};
