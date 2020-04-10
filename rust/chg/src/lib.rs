@@ -5,7 +5,7 @@
 
 mod attachio;
 mod clientext;
-//pub mod locator;
+pub mod locator;
 pub mod message;
 pub mod procutil;
 mod runcommand;
