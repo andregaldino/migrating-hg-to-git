@@ -5,17 +5,15 @@
 
 //! Functions to send client-side fds over the command server channel.
 
-use futures::{try_ready, Async, Future, Poll};
 use std::io;
 use std::os::unix::io::AsRawFd;
 use tokio_hglib::codec::ChannelMessage;
-use tokio_hglib::protocol::MessageLoop;
-use tokio_hglib::{Client, Connection};
+use tokio_hglib::{Connection, Protocol};
 
 use crate::message;
 use crate::procutil;
 
-/// Future to send client-side fds over the command server channel.
+/// Sends client-side fds over the command server channel.
 ///
 /// This works as follows:
 /// 1. Client sends "attachio" request.
@@ -26,58 +24,21 @@ use crate::procutil;
 /// If the stderr is omitted, it will be redirected to the stdout. This
 /// allows us to attach the pager stdin to both stdout and stderr, and
 /// dispose of the client-side handle once attached.
-#[must_use = "futures do nothing unless polled"]
-pub struct AttachIo<C, I, O, E>
-where
-    C: Connection,
-{
-    msg_loop: MessageLoop<C>,
-    stdin: I,
-    stdout: O,
-    stderr: Option<E>,
-}
-
-impl<C, I, O, E> AttachIo<C, I, O, E>
-where
-    C: Connection + AsRawFd,
-    I: AsRawFd,
-    O: AsRawFd,
-    E: AsRawFd,
-{
-    pub fn with_client(
-        client: Client<C>,
-        stdin: I,
-        stdout: O,
-        stderr: Option<E>,
-    ) -> AttachIo<C, I, O, E> {
-        let msg_loop = MessageLoop::start(client, b"attachio");
-        AttachIo {
-            msg_loop,
-            stdin,
-            stdout,
-            stderr,
-        }
-    }
-}
-
-impl<C, I, O, E> Future for AttachIo<C, I, O, E>
-where
-    C: Connection + AsRawFd,
-    I: AsRawFd,
-    O: AsRawFd,
-    E: AsRawFd,
-{
-    type Item = Client<C>;
-    type Error = io::Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+pub async fn attach_io(
+    proto: &mut Protocol<impl Connection + AsRawFd>,
+    stdin: impl AsRawFd,
+    stdout: impl AsRawFd,
+    stderr: Option<impl AsRawFd>,
+) -> io::Result<()> {
+    // TODO: unindent
+    {
+        proto.send_command("attachio").await?;
         loop {
-            let (client, msg) = try_ready!(self.msg_loop.poll());
-            match msg {
+            match proto.fetch_response().await? {
                 ChannelMessage::Data(b'r', data) => {
                     let fd_cnt = message::parse_result_code(data)?;
                     if fd_cnt == 3 {
-                        return Ok(Async::Ready(client));
+                        return Ok(());
                     } else {
                         return Err(io::Error::new(
                             io::ErrorKind::InvalidData,
@@ -87,18 +48,16 @@ where
                 }
                 ChannelMessage::Data(..) => {
                     // just ignore data sent to uninteresting (optional) channel
-                    self.msg_loop = MessageLoop::resume(client);
                 }
                 ChannelMessage::InputRequest(1) => {
                     // this may fail with EWOULDBLOCK in theory, but the
                     // payload is quite small, and the send buffer should
                     // be empty so the operation will complete immediately
-                    let sock_fd = client.as_raw_fd();
-                    let ifd = self.stdin.as_raw_fd();
-                    let ofd = self.stdout.as_raw_fd();
-                    let efd = self.stderr.as_ref().map_or(ofd, |f| f.as_raw_fd());
+                    let sock_fd = proto.as_raw_fd();
+                    let ifd = stdin.as_raw_fd();
+                    let ofd = stdout.as_raw_fd();
+                    let efd = stderr.as_ref().map_or(ofd, |f| f.as_raw_fd());
                     procutil::send_raw_fds(sock_fd, &[ifd, ofd, efd])?;
-                    self.msg_loop = MessageLoop::resume(client);
                 }
                 ChannelMessage::InputRequest(..)
                 | ChannelMessage::LineRequest(..)
