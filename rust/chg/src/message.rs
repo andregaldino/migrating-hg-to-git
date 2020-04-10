@@ -113,11 +113,9 @@ const INITIAL_PACKED_ENV_VARS_CAPACITY: usize = 4096;
 ///
 /// Panics if key or value contains `\0` character, or key contains '='
 /// character.
-pub fn pack_env_vars_os<I, P>(vars: I) -> Bytes
-where
-    I: IntoIterator<Item = (P, P)>,
-    P: AsRef<OsStr>,
-{
+pub fn pack_env_vars_os(
+    vars: impl IntoIterator<Item = (impl AsRef<OsStr>, impl AsRef<OsStr>)>,
+) -> Bytes {
     let mut vars_iter = vars.into_iter();
     if let Some((k, v)) = vars_iter.next() {
         let mut dst = BytesMut::with_capacity(INITIAL_PACKED_ENV_VARS_CAPACITY);
@@ -143,17 +141,11 @@ fn pack_env_into(dst: &mut BytesMut, k: &OsStr, v: &OsStr) {
     dst.put_slice(v.as_bytes());
 }
 
-fn decode_latin1<S>(s: S) -> String
-where
-    S: AsRef<[u8]>,
-{
+fn decode_latin1(s: impl AsRef<[u8]>) -> String {
     s.as_ref().iter().map(|&c| c as char).collect()
 }
 
-fn new_parse_error<E>(error: E) -> io::Error
-where
-    E: Into<Box<dyn error::Error + Send + Sync>>,
-{
+fn new_parse_error(error: impl Into<Box<dyn error::Error + Send + Sync>>) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error)
 }
 

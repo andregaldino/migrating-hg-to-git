@@ -32,29 +32,27 @@ where
         E: AsRawFd;
 
     /// Changes the working directory of the server.
-    fn set_current_dir<P>(self, dir: P) -> OneShotRequest<C>
-    where
-        P: AsRef<Path>;
+    fn set_current_dir(self, dir: impl AsRef<Path>) -> OneShotRequest<C>;
 
     /// Updates the environment variables of the server.
-    fn set_env_vars_os<I, P>(self, vars: I) -> OneShotRequest<C>
-    where
-        I: IntoIterator<Item = (P, P)>,
-        P: AsRef<OsStr>;
+    fn set_env_vars_os(
+        self,
+        vars: impl IntoIterator<Item = (impl AsRef<OsStr>, impl AsRef<OsStr>)>,
+    ) -> OneShotRequest<C>;
 
     /// Changes the process title of the server.
-    fn set_process_name<P>(self, name: P) -> OneShotRequest<C>
-    where
-        P: AsRef<OsStr>;
+    fn set_process_name(self, name: impl AsRef<OsStr>) -> OneShotRequest<C>;
 
     /// Changes the umask of the server process.
     fn set_umask(self, mask: u32) -> OneShotRequest<C>;
 
     /// Runs the specified Mercurial command with cHg extension.
-    fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>
+    fn run_command_chg<H>(
+        self,
+        handler: H,
+        args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+    ) -> ChgRunCommand<C, H>
     where
-        I: IntoIterator<Item = P>,
-        P: AsRef<OsStr>,
         H: SystemHandler;
 
     /// Validates if the server can run Mercurial commands with the expected
@@ -65,10 +63,10 @@ where
     ///
     /// Client-side environment must be sent prior to this request, by
     /// `set_current_dir()` and `set_env_vars_os()`.
-    fn validate<I, P>(self, args: I) -> OneShotQuery<C, fn(Bytes) -> io::Result<Vec<Instruction>>>
-    where
-        I: IntoIterator<Item = P>,
-        P: AsRef<OsStr>;
+    fn validate(
+        self,
+        args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+    ) -> OneShotQuery<C, fn(Bytes) -> io::Result<Vec<Instruction>>>;
 }
 
 impl<C> ChgClientExt<C> for Client<C>
@@ -84,25 +82,18 @@ where
         AttachIo::with_client(self, stdin, stdout, Some(stderr))
     }
 
-    fn set_current_dir<P>(self, dir: P) -> OneShotRequest<C>
-    where
-        P: AsRef<Path>,
-    {
+    fn set_current_dir(self, dir: impl AsRef<Path>) -> OneShotRequest<C> {
         OneShotRequest::start_with_args(self, b"chdir", dir.as_ref().as_os_str().as_bytes())
     }
 
-    fn set_env_vars_os<I, P>(self, vars: I) -> OneShotRequest<C>
-    where
-        I: IntoIterator<Item = (P, P)>,
-        P: AsRef<OsStr>,
-    {
+    fn set_env_vars_os(
+        self,
+        vars: impl IntoIterator<Item = (impl AsRef<OsStr>, impl AsRef<OsStr>)>,
+    ) -> OneShotRequest<C> {
         OneShotRequest::start_with_args(self, b"setenv", message::pack_env_vars_os(vars))
     }
 
-    fn set_process_name<P>(self, name: P) -> OneShotRequest<C>
-    where
-        P: AsRef<OsStr>,
-    {
+    fn set_process_name(self, name: impl AsRef<OsStr>) -> OneShotRequest<C> {
         OneShotRequest::start_with_args(self, b"setprocname", name.as_ref().as_bytes())
     }
 
@@ -112,20 +103,21 @@ where
         OneShotRequest::start_with_args(self, b"setumask2", args)
     }
 
-    fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>
+    fn run_command_chg<H>(
+        self,
+        handler: H,
+        args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+    ) -> ChgRunCommand<C, H>
     where
-        I: IntoIterator<Item = P>,
-        P: AsRef<OsStr>,
         H: SystemHandler,
     {
         ChgRunCommand::with_client(self, handler, message::pack_args_os(args))
     }
 
-    fn validate<I, P>(self, args: I) -> OneShotQuery<C, fn(Bytes) -> io::Result<Vec<Instruction>>>
-    where
-        I: IntoIterator<Item = P>,
-        P: AsRef<OsStr>,
-    {
+    fn validate(
+        self,
+        args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+    ) -> OneShotQuery<C, fn(Bytes) -> io::Result<Vec<Instruction>>> {
         OneShotQuery::start_with_args(
             self,
             b"validate",

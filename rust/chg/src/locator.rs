@@ -75,11 +75,7 @@ impl Locator {
     }
 
     /// Specifies the arguments to be passed to the server at start.
-    pub fn set_early_args<I, P>(&mut self, args: I)
-    where
-        I: IntoIterator<Item = P>,
-        P: AsRef<OsStr>,
-    {
+    pub fn set_early_args(&mut self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) {
         self.hg_early_args = args.into_iter().map(|a| a.as_ref().to_owned()).collect();
     }
 
@@ -358,10 +354,7 @@ fn default_timeout() -> Duration {
 /// Creates a directory which the other users cannot access to.
 ///
 /// If the directory already exists, tests its permission.
-fn create_secure_dir<P>(path: P) -> io::Result<()>
-where
-    P: AsRef<Path>,
-{
+fn create_secure_dir(path: impl AsRef<Path>) -> io::Result<()> {
     DirBuilder::new()
         .mode(0o700)
         .create(path.as_ref())
@@ -404,11 +397,7 @@ fn check_server_capabilities(spec: &ServerSpec) -> io::Result<()> {
 }
 
 /// Collects arguments which need to be passed to the server at start.
-pub fn collect_early_args<I, P>(args: I) -> Vec<OsString>
-where
-    I: IntoIterator<Item = P>,
-    P: AsRef<OsStr>,
-{
+pub fn collect_early_args(args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Vec<OsString> {
     let mut args_iter = args.into_iter();
     let mut early_args = Vec::new();
     while let Some(arg) = args_iter.next() {
