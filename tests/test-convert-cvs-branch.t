@@ -1,4 +1,4 @@
-#require cvs
+#require cvs no-root
 
 This is https://bz.mercurial-scm.org/1148
 and https://bz.mercurial-scm.org/1447
