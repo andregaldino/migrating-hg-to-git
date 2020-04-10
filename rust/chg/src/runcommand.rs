@@ -140,30 +140,31 @@ where
     C: Connection,
     H: SystemHandler,
 {
-    match msg {
-        ChannelMessage::Data(b'r', data) => {
-            let code = message::parse_result_code(data)?;
-            Ok(AsyncS::Ready((client, handler, code)))
-        }
-        ChannelMessage::Data(..) => {
-            // just ignores data sent to optional channel
-            let msg_loop = MessageLoop::resume(client);
-            Ok(AsyncS::PollAgain(CommandState::Running(msg_loop, handler)))
-        }
-        ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) => Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "unsupported request",
-        )),
-        ChannelMessage::SystemRequest(data) => {
-            let (cmd_type, cmd_spec) = message::parse_command_spec(data)?;
-            match cmd_type {
-                CommandType::Pager => {
-                    let fut = handler.spawn_pager(cmd_spec).into_future();
-                    Ok(AsyncS::PollAgain(CommandState::SpawningPager(client, fut)))
-                }
-                CommandType::System => {
-                    let fut = handler.run_system(cmd_spec).into_future();
-                    Ok(AsyncS::PollAgain(CommandState::WaitingSystem(client, fut)))
+    {
+        match msg {
+            ChannelMessage::Data(b'r', data) => {
+                let code = message::parse_result_code(data)?;
+                Ok(AsyncS::Ready((client, handler, code)))
+            }
+            ChannelMessage::Data(..) => {
+                // just ignores data sent to optional channel
+                let msg_loop = MessageLoop::resume(client);
+                Ok(AsyncS::PollAgain(CommandState::Running(msg_loop, handler)))
+            }
+            ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) => Err(
+                io::Error::new(io::ErrorKind::InvalidData, "unsupported request"),
+            ),
+            ChannelMessage::SystemRequest(data) => {
+                let (cmd_type, cmd_spec) = message::parse_command_spec(data)?;
+                match cmd_type {
+                    CommandType::Pager => {
+                        let fut = handler.spawn_pager(cmd_spec).into_future();
+                        Ok(AsyncS::PollAgain(CommandState::SpawningPager(client, fut)))
+                    }
+                    CommandType::System => {
+                        let fut = handler.run_system(cmd_spec).into_future();
+                        Ok(AsyncS::PollAgain(CommandState::WaitingSystem(client, fut)))
+                    }
                 }
             }
         }
