@@ -3,8 +3,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use futures::future::IntoFuture;
-use futures::Future;
+use async_trait::async_trait;
 use std::io;
 use std::os::unix::io::AsRawFd;
 use std::os::unix::process::ExitStatusExt;
@@ -16,20 +15,19 @@ use crate::message::CommandSpec;
 use crate::procutil;
 
 /// Callback to process shell command requests received from server.
-pub trait SystemHandler: Sized {
+#[async_trait]
+pub trait SystemHandler {
     type PagerStdin: AsRawFd;
-    type SpawnPagerResult: IntoFuture<Item = (Self, Self::PagerStdin), Error = io::Error>;
-    type RunSystemResult: IntoFuture<Item = (Self, i32), Error = io::Error>;
 
     /// Handles pager command request.
     ///
     /// Returns the pipe to be attached to the server if the pager is spawned.
-    fn spawn_pager(self, spec: CommandSpec) -> Self::SpawnPagerResult;
+    async fn spawn_pager(&mut self, spec: &CommandSpec) -> io::Result<Self::PagerStdin>;
 
     /// Handles system command request.
     ///
     /// Returns command exit code (positive) or signal number (negative).
-    fn run_system(self, spec: CommandSpec) -> Self::RunSystemResult;
+    async fn run_system(&mut self, spec: &CommandSpec) -> io::Result<i32>;
 }
 
 /// Default cHg implementation to process requests received from server.
@@ -41,12 +39,11 @@ impl ChgUiHandler {
     }
 }
 
+#[async_trait]
 impl SystemHandler for ChgUiHandler {
     type PagerStdin = ChildStdin;
-    type SpawnPagerResult = io::Result<(Self, Self::PagerStdin)>;
-    type RunSystemResult = Box<dyn Future<Item = (Self, i32), Error = io::Error> + Send>;
 
-    fn spawn_pager(self, spec: CommandSpec) -> Self::SpawnPagerResult {
+    async fn spawn_pager(&mut self, spec: &CommandSpec) -> io::Result<Self::PagerStdin> {
         let mut pager = new_shell_command(&spec).stdin(Stdio::piped()).spawn()?;
         let pin = pager.stdin.take().unwrap();
         procutil::set_blocking_fd(pin.as_raw_fd())?;
@@ -54,23 +51,22 @@ impl SystemHandler for ChgUiHandler {
         // otherwise the server won't get SIGPIPE if it does not write
         // anything. (issue5278)
         // kill(peerpid, SIGPIPE);
-        tokio::spawn(pager.map(|_| ()).map_err(|_| ())); // just ignore errors
-        Ok((self, pin))
+        tokio::spawn(async { pager.await }); // just ignore errors
+        Ok(pin)
     }
 
-    fn run_system(self, spec: CommandSpec) -> Self::RunSystemResult {
-        let fut = new_shell_command(&spec)
-            .spawn()
-            .into_future()
-            .flatten()
-            .map(|status| {
+    async fn run_system(&mut self, spec: &CommandSpec) -> io::Result<i32> {
+        let status = new_shell_command(&spec).spawn()?.await?;
+        // TODO: unindent
+        {
+            {
                 let code = status
                     .code()
                     .or_else(|| status.signal().map(|n| -n))
                     .expect("either exit code or signal should be set");
-                (self, code)
-            });
-        Box::new(fut)
+                Ok(code)
+            }
+        }
     }
 }
 

@@ -9,7 +9,7 @@ mod attachio;
 pub mod message;
 pub mod procutil;
 //mod runcommand;
-//mod uihandler;
+mod uihandler;
 
 //pub use clientext::ChgClientExt;
-//pub use uihandler::{ChgUiHandler, SystemHandler};
+pub use uihandler::{ChgUiHandler, SystemHandler};
