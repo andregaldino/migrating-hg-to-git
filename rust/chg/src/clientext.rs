@@ -15,10 +15,10 @@ use std::path::Path;
 use tokio_hglib::protocol::{OneShotQuery, OneShotRequest};
 use tokio_hglib::{Client, Connection};
 
-use super::attachio::AttachIo;
-use super::message::{self, Instruction};
-use super::runcommand::ChgRunCommand;
-use super::uihandler::SystemHandler;
+use crate::attachio::AttachIo;
+use crate::message::{self, Instruction};
+use crate::runcommand::ChgRunCommand;
+use crate::uihandler::SystemHandler;
 
 pub trait ChgClientExt<C>
 where

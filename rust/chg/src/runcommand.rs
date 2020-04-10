@@ -15,9 +15,9 @@ use tokio_hglib::codec::ChannelMessage;
 use tokio_hglib::protocol::MessageLoop;
 use tokio_hglib::{Client, Connection};
 
-use super::attachio::AttachIo;
-use super::message::{self, CommandType};
-use super::uihandler::SystemHandler;
+use crate::attachio::AttachIo;
+use crate::message::{self, CommandType};
+use crate::uihandler::SystemHandler;
 
 enum AsyncS<R, S> {
     Ready(R),

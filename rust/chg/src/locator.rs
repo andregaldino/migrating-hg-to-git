@@ -21,9 +21,9 @@ use tokio_hglib::UnixClient;
 use tokio_process::{Child, CommandExt};
 use tokio_timer;
 
-use super::clientext::ChgClientExt;
-use super::message::{Instruction, ServerSpec};
-use super::procutil;
+use crate::clientext::ChgClientExt;
+use crate::message::{Instruction, ServerSpec};
+use crate::procutil;
 
 const REQUIRED_SERVER_CAPABILITIES: &[&str] = &[
     "attachio",

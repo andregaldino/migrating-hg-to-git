@@ -12,8 +12,8 @@ use tokio_hglib::codec::ChannelMessage;
 use tokio_hglib::protocol::MessageLoop;
 use tokio_hglib::{Client, Connection};
 
-use super::message;
-use super::procutil;
+use crate::message;
+use crate::procutil;
 
 /// Future to send client-side fds over the command server channel.
 ///
