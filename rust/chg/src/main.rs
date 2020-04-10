@@ -83,5 +83,6 @@ async fn run(umask: u32) -> io::Result<i32> {
         .run_command_chg(&mut handler, env::args_os().skip(1))
         .await?;
     procutil::restore_signal_handler_once()?;
+    handler.wait_pager().await?;
     Ok(code)
 }

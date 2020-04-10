@@ -9,7 +9,7 @@ use std::os::unix::io::AsRawFd;
 use std::os::unix::process::ExitStatusExt;
 use std::process::Stdio;
 use tokio;
-use tokio::process::{ChildStdin, Command};
+use tokio::process::{Child, ChildStdin, Command};
 
 use crate::message::CommandSpec;
 use crate::procutil;
@@ -31,11 +31,21 @@ pub trait SystemHandler {
 }
 
 /// Default cHg implementation to process requests received from server.
-pub struct ChgUiHandler {}
+pub struct ChgUiHandler {
+    pager: Option<Child>,
+}
 
 impl ChgUiHandler {
     pub fn new() -> ChgUiHandler {
-        ChgUiHandler {}
+        ChgUiHandler { pager: None }
+    }
+
+    /// Waits until the pager process exits.
+    pub async fn wait_pager(&mut self) -> io::Result<()> {
+        if let Some(p) = self.pager.take() {
+            p.await?;
+        }
+        Ok(())
     }
 }
 
@@ -51,7 +61,7 @@ impl SystemHandler for ChgUiHandler {
         // otherwise the server won't get SIGPIPE if it does not write
         // anything. (issue5278)
         // kill(peerpid, SIGPIPE);
-        tokio::spawn(async { pager.await }); // just ignore errors
+        self.pager = Some(pager);
         Ok(pin)
     }
 
