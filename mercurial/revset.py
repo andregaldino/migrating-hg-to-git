@@ -281,7 +281,7 @@ def _splitrange(a, b):
     return ancdepths, descdepths
 
 
-def generationsrel(repo, subset, x, rel, z, order):
+def generationssubrel(repo, subset, x, rel, z, order):
     # TODO: rewrite tests, and drop startdepth argument from ancestors() and
     # descendants() predicates
     a, b = getintrange(
@@ -2650,8 +2650,8 @@ methods = {
 }
 
 subscriptrelations = {
-    b"g": generationsrel,
-    b"generations": generationsrel,
+    b"g": generationssubrel,
+    b"generations": generationssubrel,
 }
 
 
