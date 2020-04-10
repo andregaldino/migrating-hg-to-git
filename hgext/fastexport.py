@@ -42,7 +42,8 @@ def convert_to_git_user(authormap, user, rev):
         user_person
     ):
         raise error.Abort(
-            _(b"Unable to parse user into person and email for revision " + rev)
+            _(b"Unable to parse user into person and email for revision %s")
+            % rev
         )
     if user_person:
         return b'"' + user_person + b'" <' + user_email + b'>'

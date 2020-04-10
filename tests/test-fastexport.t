@@ -853,3 +853,13 @@
   M 644 :5 nf1
   M 644 :6 of
   
+  $ echo foo > of
+  $ hg commit --user '<badname> <bad email>' --date 'Fri Jan 02 00:00:00 1970 +0000' -m 'Testcommit'
+  $ hg fastexport --import-marks fastexport.marks -r tip
+  blob
+  mark :50
+  data 4
+  foo
+  
+  abort: Unable to parse user into person and email for revision 4f71ca786403919cd16669d94ff7cd1c09437a44
+  [255]
