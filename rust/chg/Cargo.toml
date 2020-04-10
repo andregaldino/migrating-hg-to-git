@@ -6,6 +6,9 @@ description = "Client for Mercurial command server with cHg extension"
 license = "GPL-2.0+"
 edition = "2018"
 
+# TODO: enable auto discovery
+autobins = false
+
 [dependencies]
 bytes = "0.4"
 futures = "0.1"
