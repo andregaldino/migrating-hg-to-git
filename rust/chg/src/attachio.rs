@@ -21,14 +21,12 @@ use crate::procutil;
 /// 3. Client sends fds with 1-byte dummy payload in response.
 /// 4. Server returns the number of the fds received.
 ///
-/// If the stderr is omitted, it will be redirected to the stdout. This
-/// allows us to attach the pager stdin to both stdout and stderr, and
-/// dispose of the client-side handle once attached.
+/// The client-side fds may be dropped once duplicated to the server.
 pub async fn attach_io(
     proto: &mut Protocol<impl Connection + AsRawFd>,
-    stdin: impl AsRawFd,
-    stdout: impl AsRawFd,
-    stderr: Option<impl AsRawFd>,
+    stdin: &impl AsRawFd,
+    stdout: &impl AsRawFd,
+    stderr: &impl AsRawFd,
 ) -> io::Result<()> {
     // TODO: unindent
     {
@@ -56,7 +54,7 @@ pub async fn attach_io(
                     let sock_fd = proto.as_raw_fd();
                     let ifd = stdin.as_raw_fd();
                     let ofd = stdout.as_raw_fd();
-                    let efd = stderr.as_ref().map_or(ofd, |f| f.as_raw_fd());
+                    let efd = stderr.as_raw_fd();
                     procutil::send_raw_fds(sock_fd, &[ifd, ofd, efd])?;
                 }
                 ChannelMessage::InputRequest(..)
