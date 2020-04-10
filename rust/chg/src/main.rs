@@ -5,13 +5,12 @@
 
 use chg::locator::{self, Locator};
 use chg::procutil;
-use chg::{ChgClientExt, ChgUiHandler};
-use futures::sync::oneshot;
+use chg::ChgUiHandler;
 use std::env;
 use std::io;
+use std::io::Write;
 use std::process;
 use std::time::Instant;
-use tokio::prelude::*;
 
 struct DebugLogger {
     start: Instant,
@@ -67,31 +66,22 @@ fn main() {
     process::exit(code);
 }
 
-fn run(umask: u32) -> io::Result<i32> {
+#[tokio::main]
+async fn run(umask: u32) -> io::Result<i32> {
     let mut loc = Locator::prepare_from_env()?;
     loc.set_early_args(locator::collect_early_args(env::args_os().skip(1)));
-    let handler = ChgUiHandler::new();
-    let (result_tx, result_rx) = oneshot::channel();
-    let fut = loc
-        .connect()
-        .and_then(|(_, client)| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
-        .and_then(move |client| client.set_umask(umask))
-        .and_then(|client| {
-            let pid = client.server_spec().process_id.unwrap();
-            let pgid = client.server_spec().process_group_id;
-            procutil::setup_signal_handler_once(pid, pgid)?;
-            Ok(client)
-        })
-        .and_then(|client| client.run_command_chg(handler, env::args_os().skip(1)))
-        .map(|(_client, _handler, code)| {
-            procutil::restore_signal_handler_once()?;
-            Ok(code)
-        })
-        .or_else(|err| Ok(Err(err))) // pass back error to caller
-        .map(|res| result_tx.send(res).unwrap());
-    tokio::run(fut);
-    result_rx.wait().unwrap_or(Err(io::Error::new(
-        io::ErrorKind::Other,
-        "no exit code set",
-    )))
+    let mut handler = ChgUiHandler::new();
+    let mut client = loc.connect().await?;
+    client
+        .attach_io(&io::stdin(), &io::stdout(), &io::stderr())
+        .await?;
+    client.set_umask(umask).await?;
+    let pid = client.server_spec().process_id.unwrap();
+    let pgid = client.server_spec().process_group_id;
+    procutil::setup_signal_handler_once(pid, pgid)?;
+    let code = client
+        .run_command_chg(&mut handler, env::args_os().skip(1))
+        .await?;
+    procutil::restore_signal_handler_once()?;
+    Ok(code)
 }
