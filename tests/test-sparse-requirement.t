@@ -26,7 +26,8 @@ Enable sparse profile
   testonly-simplestore (reposimplestore !)
 
   $ hg debugsparse --config extensions.sparse= --enable-profile frontend.sparse
-  $ ls
+  $ ls -A
+  .hg
   a.html
   b.html
 

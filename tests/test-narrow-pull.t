@@ -26,7 +26,8 @@ narrow clone a couple files, f2 and f8
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd narrow
-  $ ls
+  $ ls -A
+  .hg
   f2
   f8
   $ cat f2 f8

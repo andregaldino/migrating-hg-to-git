@@ -25,7 +25,9 @@ delete an empty directory
   empty_dir
   $ hg purge -v
   removing directory empty_dir
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
 
@@ -41,7 +43,9 @@ delete an untracked directory
   removing file untracked_dir/untracked_file1
   removing file untracked_dir/untracked_file2
   removing directory untracked_dir
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
 
@@ -61,7 +65,9 @@ delete an untracked file
   $ hg purge -v
   removing file untracked_file
   removing file untracked_file_readonly
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
 
@@ -72,7 +78,9 @@ delete an untracked file in a tracked directory
   directory/untracked_file
   $ hg purge -v
   removing file directory/untracked_file
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
 
@@ -84,7 +92,9 @@ delete nested directories
   $ hg purge -v
   removing directory untracked_directory/nested_directory
   removing directory untracked_directory
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
 
@@ -98,7 +108,9 @@ delete nested directories from a subdir
   removing directory untracked_directory/nested_directory
   removing directory untracked_directory
   $ cd ..
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
 
@@ -113,7 +125,9 @@ delete only part of the tree
   removing directory untracked_directory/nested_directory
   removing directory untracked_directory
   $ cd ..
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
   $ ls directory/untracked_file
@@ -135,7 +149,9 @@ skip ignored files if -i or --all not specified
   ignored
   $ hg purge -v -i
   removing file ignored
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   r1
   untracked_file
@@ -189,7 +205,9 @@ skip excluded files
   $ touch excluded_file
   $ hg purge -p -X excluded_file
   $ hg purge -v -X excluded_file
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   excluded_file
   r1
@@ -201,7 +219,9 @@ skip files in excluded dirs
   $ touch excluded_dir/file
   $ hg purge -p -X excluded_dir
   $ hg purge -v -X excluded_dir
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   excluded_dir
   r1
@@ -214,7 +234,9 @@ skip excluded empty dirs
   $ mkdir excluded_dir
   $ hg purge -p -X excluded_dir
   $ hg purge -v -X excluded_dir
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   directory
   excluded_dir
   r1
@@ -241,7 +263,9 @@ only remove files
   $ hg purge -v --files
   removing file dir/untracked_file
   removing file untracked_file
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   dir
   empty_dir
   $ ls dir
@@ -254,7 +278,9 @@ only remove dirs
   empty_dir
   $ hg purge -v --dirs
   removing directory empty_dir
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   dir
   untracked_file
   $ ls dir
@@ -273,6 +299,8 @@ remove both files and dirs
   removing file untracked_file
   removing directory empty_dir
   removing directory dir
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
 
   $ cd ..

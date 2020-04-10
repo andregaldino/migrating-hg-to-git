@@ -73,7 +73,8 @@ revert deletion (! status) of a added file
   $ hg status b
   b: * (glob)
 
-  $ ls
+  $ ls -A
+  .hg
   a
   c
   e

@@ -60,7 +60,8 @@ Create some commits
   $ touch files
   $ hg add files
   $ for i in a ab abc abcd abcde; do echo $i > files; echo $i > file-$i; hg add file-$i; hg commit -m "added file-$i"; done
-  $ ls
+  $ ls -A
+  .hg
   file-a
   file-ab
   file-abc

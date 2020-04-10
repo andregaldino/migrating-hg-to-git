@@ -22,7 +22,8 @@ Verify basic --include
 
   $ hg up -q 0
   $ hg debugsparse --include 'hide'
-  $ ls
+  $ ls -A
+  .hg
   hide
 
 Absolute paths outside the repo should just be rejected
@@ -77,7 +78,8 @@ Verify commiting while sparse includes other files
 
   $ echo z > hide
   $ hg ci -Aqm 'edit hide'
-  $ ls
+  $ ls -A
+  .hg
   hide
   $ hg manifest
   hide
@@ -86,7 +88,8 @@ Verify commiting while sparse includes other files
 Verify --reset brings files back
 
   $ hg debugsparse --reset
-  $ ls
+  $ ls -A
+  .hg
   hide
   show
   $ cat hide
@@ -106,11 +109,13 @@ Verify 'hg debugsparse' default output
 Verify update only writes included files
 
   $ hg up -q 0
-  $ ls
+  $ ls -A
+  .hg
   show
 
   $ hg up -q 1
-  $ ls
+  $ ls -A
+  .hg
   show
   show2
 
@@ -144,7 +149,8 @@ Verify deleting sparseness with --force brings back files
 
   $ hg debugsparse --delete -f 'show*'
   pending changes to 'hide'
-  $ ls
+  $ ls -A
+  .hg
   hide
   hide2
   hide3
@@ -166,7 +172,8 @@ Verify adding sparseness hides files
 
   $ hg debugsparse --exclude -f 'hide*'
   pending changes to 'hide'
-  $ ls
+  $ ls -A
+  .hg
   hide
   hide3
   show
@@ -177,7 +184,8 @@ Verify adding sparseness hides files
   $ hg up -qC .
 TODO: add an option to purge to also purge files outside the sparse config?
   $ hg purge --all --config extensions.purge=
-  $ ls
+  $ ls -A
+  .hg
   hide
   hide3
   show
@@ -216,7 +224,8 @@ Verify aborting a rebase cleans up temporary files
   rebase aborted
   $ rm hide.orig
 
-  $ ls
+  $ ls -A
+  .hg
   show
   show2
 

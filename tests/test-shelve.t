@@ -1249,7 +1249,8 @@ Abort unshelve while merging (issue5123)
   record change 2/2 to 'd'?
   (enter ? for help) [Ynesfdaq?] n
   
-  $ ls
+  $ ls -A
+  .hg
   b
   c
   e
@@ -1284,7 +1285,8 @@ Abort unshelve while merging (issue5123)
   $ hg status -v
   A c
   A d
-  $ ls
+  $ ls -A
+  .hg
   b
   c
   d

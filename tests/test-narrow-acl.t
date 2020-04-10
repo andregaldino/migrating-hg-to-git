@@ -28,7 +28,8 @@ Make a narrow clone then archive it
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 The clone directory should only contain f1 and f2
-  $ ls -1 narrowclone1 | sort
+  $ ls -A -1 narrowclone1 | sort
+  .hg
   f1
   f2
 

@@ -1097,7 +1097,8 @@ Request to clone a single branch is respected in sharing mode
   no changes found
   adding remote bookmark bookA
 
-  $ ls share-1anowc
+  $ ls -A share-1anowc
+  .hg
 
 Test that auto sharing doesn't cause failure of "hg clone local remote"
 
