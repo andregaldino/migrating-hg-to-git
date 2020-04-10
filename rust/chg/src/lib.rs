@@ -8,7 +8,7 @@ mod attachio;
 //pub mod locator;
 pub mod message;
 pub mod procutil;
-//mod runcommand;
+mod runcommand;
 mod uihandler;
 
 //pub use clientext::ChgClientExt;
