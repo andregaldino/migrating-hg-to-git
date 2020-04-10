@@ -4,12 +4,12 @@
 // GNU General Public License version 2 or any later version.
 
 mod attachio;
-//mod clientext;
+mod clientext;
 //pub mod locator;
 pub mod message;
 pub mod procutil;
 mod runcommand;
 mod uihandler;
 
-//pub use clientext::ChgClientExt;
+pub use clientext::ChgClient;
 pub use uihandler::{ChgUiHandler, SystemHandler};
