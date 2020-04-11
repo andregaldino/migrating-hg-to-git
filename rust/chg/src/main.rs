@@ -59,15 +59,15 @@ fn main() {
 
     // TODO: add loop detection by $CHGINTERNALMARK
 
-    let code = run().unwrap_or_else(|err| {
+    let umask = unsafe { procutil::get_umask() }; // not thread safe
+    let code = run(umask).unwrap_or_else(|err| {
         writeln!(io::stderr(), "chg: abort: {}", err).unwrap_or(());
         255
     });
     process::exit(code);
 }
 
-fn run() -> io::Result<i32> {
-    let umask = unsafe { procutil::get_umask() }; // not thread safe
+fn run(umask: u32) -> io::Result<i32> {
     let mut loc = Locator::prepare_from_env()?;
     loc.set_early_args(locator::collect_early_args(env::args_os().skip(1)));
     let handler = ChgUiHandler::new();
