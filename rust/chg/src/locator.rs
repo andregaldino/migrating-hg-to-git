@@ -88,22 +88,17 @@ impl Locator {
             }
         }
 
-        // TODO: unindent
-        {
-            {
-                let msg = format!(
-                    concat!(
-                        "too many redirections.\n",
-                        "Please make sure {:?} is not a wrapper which ",
-                        "changes sensitive environment variables ",
-                        "before executing hg. If you have to use a ",
-                        "wrapper, wrap chg instead of hg.",
-                    ),
-                    self.hg_command
-                );
-                Err(io::Error::new(io::ErrorKind::Other, msg))
-            }
-        }
+        let msg = format!(
+            concat!(
+                "too many redirections.\n",
+                "Please make sure {:?} is not a wrapper which ",
+                "changes sensitive environment variables ",
+                "before executing hg. If you have to use a ",
+                "wrapper, wrap chg instead of hg.",
+            ),
+            self.hg_command
+        );
+        Err(io::Error::new(io::ErrorKind::Other, msg))
     }
 
     /// Runs instructions received from the server.
@@ -157,38 +152,33 @@ impl Locator {
             .unwrap_or(&self.base_sock_path)
             .clone();
         debug!("try connect to {}", sock_path.display());
-        // TODO: unindent
-        {
-            {
-                let mut client = match ChgClient::connect(sock_path).await {
-                    Ok(client) => client,
-                    Err(_) => {
-                        // Prevent us from being re-connected to the outdated
-                        // master server: We were told by the server to redirect
-                        // to redirect_sock_path, which didn't work. We do not
-                        // want to connect to the same master server again
-                        // because it would probably tell us the same thing.
-                        if self.redirect_sock_path.is_some() {
-                            fs::remove_file(&self.base_sock_path).unwrap_or(());
-                            // may race
-                        }
-                        self.spawn_connect().await?
-                    }
-                };
-                check_server_capabilities(client.server_spec())?;
-                // It's purely optional, and the server might not support this command.
-                if client.server_spec().capabilities.contains("setprocname") {
-                    client
-                        .set_process_name(format!("chg[worker/{}]", self.process_id))
-                        .await?;
+        let mut client = match ChgClient::connect(sock_path).await {
+            Ok(client) => client,
+            Err(_) => {
+                // Prevent us from being re-connected to the outdated
+                // master server: We were told by the server to redirect
+                // to redirect_sock_path, which didn't work. We do not
+                // want to connect to the same master server again
+                // because it would probably tell us the same thing.
+                if self.redirect_sock_path.is_some() {
+                    fs::remove_file(&self.base_sock_path).unwrap_or(());
+                    // may race
                 }
-                client.set_current_dir(&self.current_dir).await?;
-                client
-                    .set_env_vars_os(self.env_vars.iter().cloned())
-                    .await?;
-                Ok(client)
+                self.spawn_connect().await?
             }
+        };
+        check_server_capabilities(client.server_spec())?;
+        // It's purely optional, and the server might not support this command.
+        if client.server_spec().capabilities.contains("setprocname") {
+            client
+                .set_process_name(format!("chg[worker/{}]", self.process_id))
+                .await?;
         }
+        client.set_current_dir(&self.current_dir).await?;
+        client
+            .set_env_vars_os(self.env_vars.iter().cloned())
+            .await?;
+        Ok(client)
     }
 
     /// Spawns new server process and connects to it.
@@ -214,18 +204,13 @@ impl Locator {
             .env("CHGINTERNALMARK", "")
             .spawn()?;
         let client = self.connect_spawned(server, &sock_path).await?;
-        // TODO: unindent
-        {
-            {
-                debug!(
-                    "rename {} to {}",
-                    sock_path.display(),
-                    self.base_sock_path.display()
-                );
-                fs::rename(&sock_path, &self.base_sock_path)?;
-                Ok(client)
-            }
-        }
+        debug!(
+            "rename {} to {}",
+            sock_path.display(),
+            self.base_sock_path.display()
+        );
+        fs::rename(&sock_path, &self.base_sock_path)?;
+        Ok(client)
     }
 
     /// Tries to connect to the just spawned server repeatedly until timeout

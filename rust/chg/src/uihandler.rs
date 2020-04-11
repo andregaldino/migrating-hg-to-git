@@ -67,16 +67,11 @@ impl SystemHandler for ChgUiHandler {
 
     async fn run_system(&mut self, spec: &CommandSpec) -> io::Result<i32> {
         let status = new_shell_command(&spec).spawn()?.await?;
-        // TODO: unindent
-        {
-            {
-                let code = status
-                    .code()
-                    .or_else(|| status.signal().map(|n| -n))
-                    .expect("either exit code or signal should be set");
-                Ok(code)
-            }
-        }
+        let code = status
+            .code()
+            .or_else(|| status.signal().map(|n| -n))
+            .expect("either exit code or signal should be set");
+        Ok(code)
     }
 }
 
