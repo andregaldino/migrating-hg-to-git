@@ -229,6 +229,58 @@ of new revisions.
   o  0   5cbade24e0fa   1970-01-01 00:00 +0000   test
        added
   
+Posting obsolete commits is disallowed
+
+  $ echo "mod3" > file1.txt
+  $ hg ci -m 'modified A'
+  $ echo "mod4" > file1.txt
+  $ hg ci -m 'modified B'
+
+  $ hg up '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo 'obsolete' > file1.txt
+  $ hg amend --config extensions.amend=
+  1 new orphan changesets
+  $ hg log -G
+  @  changeset:   8:8d83edb3cbac
+  |  tag:         tip
+  |  parent:      5:1dff6b051abf
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     modified A
+  |
+  | *  changeset:   7:d4ea1b2e3511
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  instability: orphan
+  | |  summary:     modified B
+  | |
+  | x  changeset:   6:4635d7f0d1ff
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    obsolete:    rewritten using amend as 8:8d83edb3cbac
+  |    summary:     modified A
+  |
+  o  changeset:   5:1dff6b051abf
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     modified 2
+  |
+  o  changeset:   4:eb3752621d45
+  |  parent:      0:5cbade24e0fa
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     modified 1
+  |
+  o  changeset:   0:5cbade24e0fa
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     added
+  
+  $ hg phabsend -r 5::
+  abort: obsolete commits cannot be posted for review
+  [255]
+
   $ cd ..
 
 Phabesending a new binary, a modified binary, and a removed binary

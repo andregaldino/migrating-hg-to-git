@@ -1304,6 +1304,9 @@ def phabsend(ui, repo, *revs, **opts):
 
     ctxs = [repo[rev] for rev in revs]
 
+    if any(c for c in ctxs if c.obsolete()):
+        raise error.Abort(_(b"obsolete commits cannot be posted for review"))
+
     fold = opts.get(b'fold')
     if fold:
         if len(revs) == 1:
