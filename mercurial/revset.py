@@ -2440,7 +2440,8 @@ def _mapbynodefunc(repo, s, f):
 
 @predicate(b'successors(set)', safe=True)
 def successors(repo, subset, x):
-    """All successors for set, including the given set themselves"""
+    """All successors for set, including the given set themselves.
+    (EXPERIMENTAL)"""
     s = getset(repo, fullreposet(repo), x)
     f = lambda nodes: obsutil.allsuccessors(repo.obsstore, nodes)
     d = _mapbynodefunc(repo, s, f)
