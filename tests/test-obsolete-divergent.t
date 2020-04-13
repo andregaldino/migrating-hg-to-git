@@ -91,6 +91,9 @@ A_1 have two direct and divergent successors A_1 and A_1
   $ hg log -r 'contentdivergent()'
   2:82623d38b9ba A_1
   3:392fd25390da A_2
+  $ hg log -r 'unstable()'
+  2:82623d38b9ba A_1
+  3:392fd25390da A_2
   $ hg debugsuccessorssets 'all()' --closest
   d20a80d4def3
       d20a80d4def3

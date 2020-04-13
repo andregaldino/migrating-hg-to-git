@@ -224,6 +224,9 @@ Check that public changeset are not accounted as obsolete:
   |
   o  0:1f0dee641bb7 (public) [ ] add a
   
+  $ hg log -r 'unstable()'
+  5:5601fb93a350 (draft phase-divergent) [tip ] add new_3_c
+
 
 And that bumped changeset are detected
 --------------------------------------
@@ -582,6 +585,8 @@ detect outgoing obsolete and unstable
   1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
+  $ hg log -r 'unstable()'
+  5:cda648ca50f5 (draft orphan) [tip ] add original_e
   $ hg debugobsolete | grep `getid original_d`
   94b33453f93bdb8d457ef9b770851a618bf413e1 0 {6f96419950729f3671185b847352890f074f7557} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   $ hg log -r 'obsolete()'

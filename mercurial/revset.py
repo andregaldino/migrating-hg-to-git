@@ -2507,6 +2507,21 @@ def orphan(repo, subset, x):
     return subset & orphan
 
 
+@predicate(b'unstable()', safe=True)
+def unstable(repo, subset, x):
+    """Changesets with instabilities. (EXPERIMENTAL)
+    """
+    # i18n: "unstable" is a keyword
+    getargs(x, 0, 0, b'unstable takes no arguments')
+    _unstable = set()
+    _unstable.update(obsmod.getrevs(repo, b'orphan'))
+    _unstable.update(obsmod.getrevs(repo, b'phasedivergent'))
+    _unstable.update(obsmod.getrevs(repo, b'contentdivergent'))
+    _unstable = baseset(_unstable)
+    _unstable.sort()  # set is non-ordered, enforce order
+    return subset & _unstable
+
+
 @predicate(b'user(string)', safe=True, weight=10)
 def user(repo, subset, x):
     """User name contains string. The match is case-insensitive.
