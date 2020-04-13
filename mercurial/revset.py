@@ -1702,7 +1702,7 @@ def none(repo, subset, x):
 
 @predicate(b'obsolete()', safe=True)
 def obsolete(repo, subset, x):
-    """Mutable changeset with a newer version."""
+    """Mutable changeset with a newer version. (EXPERIMENTAL)"""
     # i18n: "obsolete" is a keyword
     getargs(x, 0, 0, _(b"obsolete takes no arguments"))
     obsoletes = obsmod.getrevs(repo, b'obsolete')
