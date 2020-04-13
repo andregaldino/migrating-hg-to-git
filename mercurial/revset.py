@@ -1054,7 +1054,7 @@ def extdata(repo, subset, x):
 
 @predicate(b'extinct()', safe=True)
 def extinct(repo, subset, x):
-    """Obsolete changesets with obsolete descendants only.
+    """Obsolete changesets with obsolete descendants only. (EXPERIMENTAL)
     """
     # i18n: "extinct" is a keyword
     getargs(x, 0, 0, _(b"extinct takes no arguments"))
