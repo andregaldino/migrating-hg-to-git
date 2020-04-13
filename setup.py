@@ -1276,6 +1276,9 @@ for plat, macro, code in [
 if sys.platform == 'darwin':
     osutil_ldflags += ['-framework', 'ApplicationServices']
 
+if sys.platform == 'sunos5':
+    osutil_ldflags += ['-lsocket']
+
 xdiff_srcs = [
     'mercurial/thirdparty/xdiff/xdiffi.c',
     'mercurial/thirdparty/xdiff/xprepare.c',
