@@ -121,6 +121,7 @@ Show debug commands if there are no other candidates
   debugrebuilddirstate
   debugrebuildfncache
   debugrename
+  debugrequires
   debugrevlog
   debugrevlogindex
   debugrevspec
@@ -306,6 +307,7 @@ Show all commands + options
   debugrebuilddirstate: rev, minimal
   debugrebuildfncache: 
   debugrename: rev
+  debugrequires: 
   debugrevlog: changelog, manifest, dir, dump
   debugrevlogindex: changelog, manifest, dir, format
   debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized

@@ -1051,6 +1051,8 @@ Test list of internal help commands
    debugrebuildfncache
                  rebuild the fncache file
    debugrename   dump rename information
+   debugrequires
+                 print the current repo requirements
    debugrevlog   show data and statistics about a revlog
    debugrevlogindex
                  dump the contents of a revlog index

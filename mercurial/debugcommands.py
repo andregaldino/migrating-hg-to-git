@@ -2651,6 +2651,13 @@ def debugrename(ui, repo, *pats, **opts):
             ui.write(_(b"%s not renamed\n") % rel)
 
 
+@command(b'debugrequires|debugrequirements', [], b'')
+def debugrequirements(ui, repo):
+    """ print the current repo requirements """
+    for r in sorted(repo.requirements):
+        ui.write(b"%s\n" % r)
+
+
 @command(
     b'debugrevlog',
     cmdutil.debugrevlogopts + [(b'd', b'dump', False, _(b'dump index data'))],
