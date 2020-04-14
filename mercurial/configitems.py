@@ -663,9 +663,6 @@ coreconfigitem(
     b'experimental', b'rust.index', default=False,
 )
 coreconfigitem(
-    b'experimental', b'exp-persistent-nodemap.mmap', default=True,
-)
-coreconfigitem(
     b'experimental', b'exp-persistent-nodemap.mode', default=b'compat',
 )
 coreconfigitem(
@@ -1081,6 +1078,10 @@ coreconfigitem(
     b'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[(b'format', b'aggressivemergedeltas')],
+)
+# experimental as long as rust is experimental (or a C version is implemented)
+coreconfigitem(
+    b'storage', b'revlog.nodemap.mmap', default=True, experimental=True
 )
 coreconfigitem(
     b'storage', b'revlog.reuse-external-delta', default=True,

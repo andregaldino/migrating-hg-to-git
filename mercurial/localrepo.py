@@ -938,7 +938,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         options[b'rust.index'] = True
     if NODEMAP_REQUIREMENT in requirements:
         options[b'persistent-nodemap'] = True
-    if ui.configbool(b'experimental', b'exp-persistent-nodemap.mmap'):
+    if ui.configbool(b'storage', b'revlog.nodemap.mmap'):
         options[b'persistent-nodemap.mmap'] = True
     epnm = ui.config(b'experimental', b'exp-persistent-nodemap.mode')
     options[b'persistent-nodemap.mode'] = epnm
