@@ -267,8 +267,7 @@ def _persist_nodemap(tr, revlog, pending=False):
 # data. Its content is currently very light, but it will expand as the on disk
 # nodemap gains the necessary features to be used in production.
 
-# version 0 is experimental, no BC garantee, do no use outside of tests.
-ONDISK_VERSION = 0
+ONDISK_VERSION = 1
 S_VERSION = struct.Struct(">B")
 S_HEADER = struct.Struct(">BQQQQ")
 
