@@ -260,7 +260,7 @@ Graft out of order, skipping a merge and a duplicate
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Summary should mention graft:
 
@@ -317,7 +317,7 @@ Graft again:
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Continue without resolve should fail:
 
@@ -511,7 +511,7 @@ Resolve conflicted graft
   grafting 1:5d205f8b35b6 "1"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
   $ hg resolve --all
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
@@ -551,7 +551,7 @@ Resolve conflicted graft with rename
   grafting 2:5c095ad7e90f "2"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
   $ hg resolve --all
   merging a and b to b
   (no more unresolved files)
@@ -839,7 +839,7 @@ graft --continue after --force
   grafting 24:2e7ea477be26 "24"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
   $ hg resolve --all
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')

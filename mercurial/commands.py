@@ -2951,7 +2951,7 @@ def graft(ui, repo, *revs, **opts):
 
     See :hg:`help revisions` for more about specifying revisions.
 
-    Returns 0 on successful completion.
+    Returns 0 on successful completion, 1 if there are unresolved files.
     '''
     with repo.wlock():
         return _dograft(ui, repo, *revs, **opts)
@@ -3212,10 +3212,9 @@ def _dograft(ui, repo, *revs, **opts):
                 statedata[b'nodes'] = nodes
                 stateversion = 1
                 graftstate.save(stateversion, statedata)
-                hint = _(b"use 'hg resolve' and 'hg graft --continue'")
-                raise error.Abort(
-                    _(b"unresolved conflicts, can't continue"), hint=hint
-                )
+                ui.error(_(b"abort: unresolved conflicts, can't continue\n"))
+                ui.error(_(b"(use 'hg resolve' and 'hg graft --continue')\n"))
+                return 1
         else:
             cont = False
 

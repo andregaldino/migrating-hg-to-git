@@ -74,7 +74,7 @@ https://bz.mercurial-scm.org/show_bug.cgi?id=4476
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
   $ echo a > b
   $ echo b3 >> b
   $ hg resolve --mark b
