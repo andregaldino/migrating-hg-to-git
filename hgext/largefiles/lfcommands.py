@@ -163,7 +163,7 @@ def lfconvert(ui, src, dest, *pats, **opts):
             # to the destination repository's requirements.
             if lfiles:
                 rdst.requirements.add(b'largefiles')
-                rdst._writerequirements()
+                scmutil.writereporequirements(rdst)
         else:
 
             class lfsource(filemap.filemap_source):

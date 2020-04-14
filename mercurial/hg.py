@@ -356,7 +356,7 @@ def unshare(ui, repo):
 
             repo.requirements.discard(b'shared')
             repo.requirements.discard(b'relshared')
-            repo._writerequirements()
+            scmutil.writereporequirements(repo)
 
     # Removing share changes some fundamental properties of the repo instance.
     # So we instantiate a new repo object and operate on it rather than

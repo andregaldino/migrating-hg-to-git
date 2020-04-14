@@ -361,7 +361,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                         self.unfiltered().__class__,
                     )
                 self.requirements.add(constants.SHALLOWREPO_REQUIREMENT)
-                self._writerequirements()
+                scmutil.writereporequirements(self)
 
                 # Since setupclient hadn't been called, exchange.pull was not
                 # wrapped. So we need to manually invoke our version of it.

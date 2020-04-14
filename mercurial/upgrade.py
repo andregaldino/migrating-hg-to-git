@@ -1091,8 +1091,8 @@ def _upgraderepo(
             b'unable to read from repository\n'
         )
     )
-    scmutil.writerequires(
-        srcrepo.vfs, srcrepo.requirements | {b'upgradeinprogress'}
+    scmutil.writereporequirements(
+        srcrepo, srcrepo.requirements | {b'upgradeinprogress'}
     )
 
     ui.status(_(b'starting in-place swap of repository data\n'))
@@ -1122,7 +1122,7 @@ def _upgraderepo(
             b'again\n'
         )
     )
-    scmutil.writerequires(srcrepo.vfs, requirements)
+    scmutil.writereporequirements(srcrepo, requirements)
 
     # The lock file from the old store won't be removed because nothing has a
     # reference to its new location. So clean it up manually. Alternatively, we

@@ -1470,6 +1470,13 @@ def movedirstate(repo, newctx, match=None):
     repo._quick_access_changeid_invalidate()
 
 
+def writereporequirements(repo, requirements=None):
+    """ writes requirements for the repo to .hg/requires """
+    if requirements:
+        repo.requirements = requirements
+    writerequires(repo.vfs, repo.requirements)
+
+
 def writerequires(opener, requirements):
     with opener(b'requires', b'w', atomictemp=True) as fp:
         for r in sorted(requirements):

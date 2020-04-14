@@ -166,6 +166,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    scmutil,
     streamclone,
     tags,
     url,
@@ -1977,7 +1978,7 @@ def handlechangegroup(op, inpart):
         op.repo.svfs.options = localrepo.resolvestorevfsoptions(
             op.repo.ui, op.repo.requirements, op.repo.features
         )
-        op.repo._writerequirements()
+        scmutil.writereporequirements(op.repo)
 
     bundlesidedata = bool(b'exp-sidedata' in inpart.params)
     reposidedata = bool(b'exp-sidedata-flag' in op.repo.requirements)

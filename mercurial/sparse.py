@@ -601,10 +601,10 @@ def _updateconfigandrefreshwdir(
 
     if b'exp-sparse' in oldrequires and removing:
         repo.requirements.discard(b'exp-sparse')
-        scmutil.writerequires(repo.vfs, repo.requirements)
+        scmutil.writereporequirements(repo)
     elif b'exp-sparse' not in oldrequires:
         repo.requirements.add(b'exp-sparse')
-        scmutil.writerequires(repo.vfs, repo.requirements)
+        scmutil.writereporequirements(repo)
 
     try:
         writeconfig(repo, includes, excludes, profiles)
@@ -613,7 +613,7 @@ def _updateconfigandrefreshwdir(
         if repo.requirements != oldrequires:
             repo.requirements.clear()
             repo.requirements |= oldrequires
-            scmutil.writerequires(repo.vfs, repo.requirements)
+            scmutil.writereporequirements(repo)
         writeconfig(repo, oldincludes, oldexcludes, oldprofiles)
         raise
 

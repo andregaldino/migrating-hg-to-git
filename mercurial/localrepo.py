@@ -1298,9 +1298,6 @@ class localrepository(object):
             caps.add(b'bundle2=' + urlreq.quote(capsblob))
         return caps
 
-    def _writerequirements(self):
-        scmutil.writerequires(self.vfs, self.requirements)
-
     # Don't cache auditor/nofsauditor, or you'll end up with reference cycle:
     # self -> auditor -> self._checknested -> self
 

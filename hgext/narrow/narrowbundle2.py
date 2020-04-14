@@ -20,6 +20,7 @@ from mercurial import (
     localrepo,
     narrowspec,
     repair,
+    scmutil,
     util,
     wireprototypes,
 )
@@ -179,7 +180,7 @@ def _handlechangespec_2(op, inpart):
 
     if not repository.NARROW_REQUIREMENT in op.repo.requirements:
         op.repo.requirements.add(repository.NARROW_REQUIREMENT)
-        op.repo._writerequirements()
+        scmutil.writereporequirements(op.repo)
     op.repo.setnarrowpats(includepats, excludepats)
     narrowspec.copytoworkingcopy(op.repo)
 
@@ -195,7 +196,7 @@ def _handlenarrowspecs(op, inpart):
 
     if repository.NARROW_REQUIREMENT not in op.repo.requirements:
         op.repo.requirements.add(repository.NARROW_REQUIREMENT)
-        op.repo._writerequirements()
+        scmutil.writereporequirements(op.repo)
     op.repo.setnarrowpats(includepats, excludepats)
     narrowspec.copytoworkingcopy(op.repo)
 

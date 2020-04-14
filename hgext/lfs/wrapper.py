@@ -312,7 +312,7 @@ def convertsink(orig, sink):
                     # membership before assuming it is in the context.
                     if any(f in ctx and ctx[f].islfs() for f, n in files):
                         self.repo.requirements.add(b'lfs')
-                        self.repo._writerequirements()
+                        scmutil.writereporequirements(self.repo)
 
                 return node
 
