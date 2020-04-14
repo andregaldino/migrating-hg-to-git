@@ -663,9 +663,6 @@ coreconfigitem(
     b'experimental', b'rust.index', default=False,
 )
 coreconfigitem(
-    b'experimental', b'exp-persistent-nodemap.mode', default=b'compat',
-)
-coreconfigitem(
     b'experimental', b'server.filesdata.recommended-batch-size', default=50000,
 )
 coreconfigitem(
@@ -1082,6 +1079,10 @@ coreconfigitem(
 # experimental as long as rust is experimental (or a C version is implemented)
 coreconfigitem(
     b'storage', b'revlog.nodemap.mmap', default=True, experimental=True
+)
+# experimental as long as format.use-persistent-nodemap is.
+coreconfigitem(
+    b'storage', b'revlog.nodemap.mode', default=b'compat', experimental=True
 )
 coreconfigitem(
     b'storage', b'revlog.reuse-external-delta', default=True,

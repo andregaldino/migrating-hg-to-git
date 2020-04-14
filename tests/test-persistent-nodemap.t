@@ -10,7 +10,7 @@ Test the persistent on-disk nodemap
   > EOF
   $ hg init test-repo
   $ cd test-repo
-  $ hg debugbuilddag .+5000 --new-file --config "experimental.exp-persistent-nodemap.mode=warn"
+  $ hg debugbuilddag .+5000 --new-file --config "storage.revlog.nodemap.mode=warn"
   persistent nodemap in strict mode without efficient method (no-rust no-pure !)
   persistent nodemap in strict mode without efficient method (no-rust no-pure !)
   $ hg debugnodemap --metadata
@@ -99,7 +99,7 @@ add a new commit
 
 #if no-pure no-rust
 
-  $ hg ci -m 'foo' --config "experimental.exp-persistent-nodemap.mode=strict"
+  $ hg ci -m 'foo' --config "storage.revlog.nodemap.mode=strict"
   transaction abort!
   rollback completed
   abort: persistent nodemap in strict mode without efficient method
