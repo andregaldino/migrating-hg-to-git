@@ -405,18 +405,6 @@ coreconfigitem(
 coreconfigitem(
     b'devel', b'legacy.exchange', default=list,
 )
-# TODO before getting `persistent-nodemap` out of experimental
-#
-# * decide for a "status" of the persistent nodemap and associated location
-#   - part of the store next the revlog itself (new requirements)
-#   - part of the cache directory
-#   - part of an `index` directory
-#     (https://www.mercurial-scm.org/wiki/ComputedIndexPlan)
-# * do we want to use this for more than just changelog? if so we need:
-#   - simpler "pending" logic for them
-#   - double check the memory story (we dont want to keep all revlog in memory)
-#   - think about the naming scheme if we are in "cache"
-# * increment the version format to "1" and freeze it.
 coreconfigitem(
     b'devel', b'persistent-nodemap', default=False,
 )
@@ -783,6 +771,9 @@ coreconfigitem(
 coreconfigitem(
     b'format', b'usestore', default=True,
 )
+# Right now, the only efficient implement of the nodemap logic is in Rust, so
+# the persistent nodemap feature needs to stay experimental as long as the Rust
+# extensions are an experimental feature.
 coreconfigitem(
     b'format', b'use-persistent-nodemap', default=False, experimental=True
 )
