@@ -10,6 +10,18 @@ Test the persistent on-disk nodemap
   > EOF
   $ hg init test-repo
   $ cd test-repo
+  $ hg debugformat
+  format-variant     repo
+  fncache:            yes
+  dotencode:          yes
+  generaldelta:       yes
+  sparserevlog:       yes
+  sidedata:            no
+  persistent-nodemap: yes
+  copies-sdc:          no
+  plain-cl-delta:     yes
+  compression:        zlib
+  compression-level:  default
   $ hg debugbuilddag .+5000 --new-file --config "storage.revlog.nodemap.mode=warn"
   persistent nodemap in strict mode without efficient method (no-rust no-pure !)
   persistent nodemap in strict mode without efficient method (no-rust no-pure !)

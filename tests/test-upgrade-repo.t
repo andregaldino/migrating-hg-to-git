@@ -52,49 +52,53 @@ An upgrade of a repository created with recommended settings only suggests optim
   $ hg init empty
   $ cd empty
   $ hg debugformat
-  format-variant    repo
-  fncache:           yes
-  dotencode:         yes
-  generaldelta:      yes
-  sparserevlog:      yes
-  sidedata:           no
-  copies-sdc:         no
-  plain-cl-delta:    yes
-  compression:       zlib
-  compression-level: default
+  format-variant     repo
+  fncache:            yes
+  dotencode:          yes
+  generaldelta:       yes
+  sparserevlog:       yes
+  sidedata:            no
+  persistent-nodemap:  no
+  copies-sdc:          no
+  plain-cl-delta:     yes
+  compression:        zlib
+  compression-level:  default
   $ hg debugformat --verbose
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugformat --verbose --config format.usefncache=no
-  format-variant    repo config default
-  fncache:           yes     no     yes
-  dotencode:         yes     no     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes     no     yes
+  dotencode:          yes     no     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugformat --verbose --config format.usefncache=no --color=debug
-  format-variant    repo config default
-  [formatvariant.name.mismatchconfig|fncache:          ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.mismatchconfig|dotencode:        ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|generaldelta:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sparserevlog:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sidedata:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
-  [formatvariant.name.uptodate|copies-sdc:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
-  [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
-  [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
+  format-variant     repo config default
+  [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|generaldelta:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sparserevlog:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  [formatvariant.name.uptodate|compression-level: ][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
   $ hg debugformat -Tjson
   [
    {
@@ -125,6 +129,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "config": false,
     "default": false,
     "name": "sidedata",
+    "repo": false
+   },
+   {
+    "config": false,
+    "default": false,
+    "name": "persistent-nodemap",
     "repo": false
    },
    {
@@ -252,49 +262,53 @@ Various sub-optimal detections work
   > EOF
 
   $ hg debugformat
-  format-variant    repo
-  fncache:            no
-  dotencode:          no
-  generaldelta:       no
-  sparserevlog:       no
-  sidedata:           no
-  copies-sdc:         no
-  plain-cl-delta:    yes
-  compression:       zlib
-  compression-level: default
+  format-variant     repo
+  fncache:             no
+  dotencode:           no
+  generaldelta:        no
+  sparserevlog:        no
+  sidedata:            no
+  persistent-nodemap:  no
+  copies-sdc:          no
+  plain-cl-delta:     yes
+  compression:        zlib
+  compression-level:  default
   $ hg debugformat --verbose
-  format-variant    repo config default
-  fncache:            no    yes     yes
-  dotencode:          no    yes     yes
-  generaldelta:       no    yes     yes
-  sparserevlog:       no    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:             no    yes     yes
+  dotencode:           no    yes     yes
+  generaldelta:        no    yes     yes
+  sparserevlog:        no    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugformat --verbose --config format.usegeneraldelta=no
-  format-variant    repo config default
-  fncache:            no    yes     yes
-  dotencode:          no    yes     yes
-  generaldelta:       no     no     yes
-  sparserevlog:       no     no     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:             no    yes     yes
+  dotencode:           no    yes     yes
+  generaldelta:        no     no     yes
+  sparserevlog:        no     no     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugformat --verbose --config format.usegeneraldelta=no --color=debug
-  format-variant    repo config default
-  [formatvariant.name.mismatchconfig|fncache:          ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.mismatchconfig|dotencode:        ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.mismatchdefault|generaldelta:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.mismatchdefault|sparserevlog:     ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sidedata:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
-  [formatvariant.name.uptodate|copies-sdc:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
-  [formatvariant.name.uptodate|plain-cl-delta:   ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|compression:      ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
-  [formatvariant.name.uptodate|compression-level:][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
+  format-variant     repo config default
+  [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.mismatchdefault|generaldelta:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.mismatchdefault|sparserevlog:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  [formatvariant.name.uptodate|compression-level: ][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
   $ hg debugupgraderepo
   repository lacks features recommended by current config options:
   
@@ -1271,16 +1285,17 @@ upgrade
      added: revlog-compression-zstd, sparserevlog
   
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zstd   zlib    zlib
+  compression-level:  default default default
   $ cat .hg/requires
   dotencode
   fncache
@@ -1300,16 +1315,17 @@ downgrade
      removed: revlog-compression-zstd
   
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ cat .hg/requires
   dotencode
   fncache
@@ -1332,16 +1348,17 @@ upgrade from hgrc
      added: revlog-compression-zstd
   
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zstd    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zstd   zstd    zlib
+  compression-level:  default default default
   $ cat .hg/requires
   dotencode
   fncache
@@ -1368,17 +1385,18 @@ upgrade
      added: exp-sidedata-flag, sparserevlog (no-zstd !)
   
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zstd    zlib (zstd !)
-  compression:       zlib   zlib    zlib (no-zstd !)
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zlib (zstd !)
+  compression-level:  default default default
   $ cat .hg/requires
   dotencode
   exp-sidedata-flag
@@ -1404,17 +1422,18 @@ downgrade
      removed: exp-sidedata-flag
   
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zstd    zlib (zstd !)
-  compression:       zlib   zlib    zlib (no-zstd !)
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zlib (zstd !)
+  compression-level:  default default default
   $ cat .hg/requires
   dotencode
   fncache
@@ -1440,17 +1459,18 @@ upgrade from hgrc
      added: exp-sidedata-flag
   
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes    yes      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zstd   zstd    zlib (zstd !)
-  compression:       zlib   zlib    zlib (no-zstd !)
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zlib (zstd !)
+  compression-level:  default default default
   $ cat .hg/requires
   dotencode
   exp-sidedata-flag

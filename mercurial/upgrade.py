@@ -374,6 +374,21 @@ class sidedata(requirementformatvariant):
 
 
 @registerformatvariant
+class persistentnodemap(requirementformatvariant):
+    name = b'persistent-nodemap'
+
+    _requirement = localrepo.NODEMAP_REQUIREMENT
+
+    default = False
+
+    description = _(
+        b'persist the node -> rev mapping on disk to speedup lookup'
+    )
+
+    upgrademessage = _(b'Speedup revision lookup by node id.')
+
+
+@registerformatvariant
 class copiessdc(requirementformatvariant):
     name = b'copies-sdc'
 
