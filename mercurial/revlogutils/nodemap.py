@@ -519,7 +519,7 @@ def _walk_trie(block):
 
     Children blocks are always yield before their parent block.
     """
-    for (_, item) in sorted(block.items()):
+    for (__, item) in sorted(block.items()):
         if isinstance(item, dict):
             for sub_block in _walk_trie(item):
                 yield sub_block
