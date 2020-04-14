@@ -2,14 +2,14 @@
 Test the persistent on-disk nodemap
 ===================================
 
-  $ hg init test-repo
-  $ cd test-repo
-  $ cat << EOF >> .hg/hgrc
+  $ cat << EOF >> $HGRCPATH
   > [experimental]
   > exp-persistent-nodemap=yes
   > [devel]
   > persistent-nodemap=yes
   > EOF
+  $ hg init test-repo
+  $ cd test-repo
   $ hg debugbuilddag .+5000 --new-file --config "experimental.exp-persistent-nodemap.mode=warn"
   persistent nodemap in strict mode without efficient method (no-rust no-pure !)
   persistent nodemap in strict mode without efficient method (no-rust no-pure !)

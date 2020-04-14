@@ -445,6 +445,9 @@ SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
 # copies related information in changeset's sidedata.
 COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
 
+# The repository use persistent nodemap for the changelog and the manifest.
+NODEMAP_REQUIREMENT = b'persistent-nodemap'
+
 # Functions receiving (ui, features) that extensions can register to impact
 # the ability to load repositories with custom requirements. Only
 # functions defined in loaded extensions are called.
@@ -933,7 +936,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     if ui.configbool(b'experimental', b'rust.index'):
         options[b'rust.index'] = True
-    if ui.configbool(b'experimental', b'exp-persistent-nodemap'):
+    if NODEMAP_REQUIREMENT in requirements:
         options[b'exp-persistent-nodemap'] = True
     if ui.configbool(b'experimental', b'exp-persistent-nodemap.mmap'):
         options[b'exp-persistent-nodemap.mmap'] = True
@@ -1023,6 +1026,7 @@ class localrepository(object):
         REVLOGV2_REQUIREMENT,
         SIDEDATA_REQUIREMENT,
         SPARSEREVLOG_REQUIREMENT,
+        NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
@@ -3659,6 +3663,9 @@ def newreporequirements(ui, createopts):
 
     if ui.configbool(b'format', b'bookmarks-in-store'):
         requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
+
+    if ui.configbool(b'experimental', b'exp-persistent-nodemap'):
+        requirements.add(NODEMAP_REQUIREMENT)
 
     return requirements
 
