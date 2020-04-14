@@ -50,7 +50,7 @@ def persisted_data(revlog):
     docket.data_unused = data_unused
 
     filename = _rawdata_filepath(revlog, docket)
-    use_mmap = revlog.opener.options.get(b"exp-persistent-nodemap.mmap")
+    use_mmap = revlog.opener.options.get(b"persistent-nodemap.mmap")
     try:
         with revlog.opener(filename) as fd:
             if use_mmap:
@@ -142,8 +142,8 @@ def _persist_nodemap(tr, revlog, pending=False):
     can_incremental = util.safehasattr(revlog.index, "nodemap_data_incremental")
     ondisk_docket = revlog._nodemap_docket
     feed_data = util.safehasattr(revlog.index, "update_nodemap_data")
-    use_mmap = revlog.opener.options.get(b"exp-persistent-nodemap.mmap")
-    mode = revlog.opener.options.get(b"exp-persistent-nodemap.mode")
+    use_mmap = revlog.opener.options.get(b"persistent-nodemap.mmap")
+    mode = revlog.opener.options.get(b"persistent-nodemap.mode")
     if not can_incremental:
         msg = _(b"persistent nodemap in strict mode without efficient method")
         if mode == b'warn':

@@ -385,9 +385,7 @@ class changelog(revlog.revlog):
             datafile=datafile,
             checkambig=True,
             mmaplargeindex=True,
-            persistentnodemap=opener.options.get(
-                b'exp-persistent-nodemap', False
-            ),
+            persistentnodemap=opener.options.get(b'persistent-nodemap', False),
         )
 
         if self._initempty and (self.version & 0xFFFF == revlog.REVLOGV1):
