@@ -213,17 +213,28 @@ of new revisions.
   o  0   5cbade24e0fa   1970-01-01 00:00 +0000   test
        added
   
+Also check that it doesn't create more orphans outside of the stack
+
+  $ hg up -q 1
+  $ echo "mod3" > file1.txt
+  $ hg ci -m 'modified 3'
+  created new head
+  $ hg up -q 3
   $ hg phabsend -r ".^ + ." --test-vcr "$VCR/phabsend-add-parent.json"
   2b4aa8a88d61 mapped to old nodes ['2b4aa8a88d61']
   D8434 - created - d549263bcb2d: modified 1
   D8433 - updated - 2b4aa8a88d61: modified 2
   new commits: ['876a60d024de']
   new commits: ['0c6523cb1d0f']
+  restabilizing 1eda4bf55021 as d2c78c3a3e01
   $ hg log -G -T compact
-  @  5[tip]   1dff6b051abf   1970-01-01 00:00 +0000   test
-  |    modified 2
+  o  7[tip]:5   d2c78c3a3e01   1970-01-01 00:00 +0000   test
+  |    modified 3
   |
-  o  4:0   eb3752621d45   1970-01-01 00:00 +0000   test
+  | @  6   0c6523cb1d0f   1970-01-01 00:00 +0000   test
+  |/     modified 2
+  |
+  o  5:0   876a60d024de   1970-01-01 00:00 +0000   test
   |    modified 1
   |
   o  0   5cbade24e0fa   1970-01-01 00:00 +0000   test
@@ -242,31 +253,38 @@ Posting obsolete commits is disallowed
   $ hg amend --config extensions.amend=
   1 new orphan changesets
   $ hg log -G
-  @  changeset:   8:8d83edb3cbac
+  @  changeset:   10:082be6c94150
   |  tag:         tip
-  |  parent:      5:1dff6b051abf
+  |  parent:      6:0c6523cb1d0f
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     modified A
   |
-  | *  changeset:   7:d4ea1b2e3511
+  | *  changeset:   9:a67643f48146
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  instability: orphan
   | |  summary:     modified B
   | |
-  | x  changeset:   6:4635d7f0d1ff
-  |/   user:        test
+  | x  changeset:   8:db79727cb2f7
+  |/   parent:      6:0c6523cb1d0f
+  |    user:        test
   |    date:        Thu Jan 01 00:00:00 1970 +0000
-  |    obsolete:    rewritten using amend as 8:8d83edb3cbac
+  |    obsolete:    rewritten using amend as 10:082be6c94150
   |    summary:     modified A
   |
-  o  changeset:   5:1dff6b051abf
-  |  user:        test
-  |  date:        Thu Jan 01 00:00:00 1970 +0000
-  |  summary:     modified 2
+  | o  changeset:   7:d2c78c3a3e01
+  | |  parent:      5:876a60d024de
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     modified 3
+  | |
+  o |  changeset:   6:0c6523cb1d0f
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     modified 2
   |
-  o  changeset:   4:eb3752621d45
+  o  changeset:   5:876a60d024de
   |  parent:      0:5cbade24e0fa
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
@@ -281,6 +299,59 @@ Posting obsolete commits is disallowed
   abort: obsolete commits cannot be posted for review
   [255]
 
+Don't restack existing orphans
+
+  $ hg phabsend -r 5::tip --test-vcr "$VCR/phabsend-no-restack-orphan.json"
+  876a60d024de mapped to old nodes ['876a60d024de']
+  0c6523cb1d0f mapped to old nodes ['0c6523cb1d0f']
+  D8434 - updated - 876a60d024de: modified 1
+  D8433 - updated - 0c6523cb1d0f: modified 2
+  D8435 - created - 082be6c94150: modified A
+  new commits: ['b5913193c805']
+  not restabilizing unchanged d2c78c3a3e01
+  $ hg log -G
+  @  changeset:   11:b5913193c805
+  |  tag:         tip
+  |  parent:      6:0c6523cb1d0f
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     modified A
+  |
+  | *  changeset:   9:a67643f48146
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  instability: orphan
+  | |  summary:     modified B
+  | |
+  | x  changeset:   8:db79727cb2f7
+  |/   parent:      6:0c6523cb1d0f
+  |    user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    obsolete:    rewritten using amend, phabsend as 11:b5913193c805
+  |    summary:     modified A
+  |
+  | o  changeset:   7:d2c78c3a3e01
+  | |  parent:      5:876a60d024de
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     modified 3
+  | |
+  o |  changeset:   6:0c6523cb1d0f
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     modified 2
+  |
+  o  changeset:   5:876a60d024de
+  |  parent:      0:5cbade24e0fa
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     modified 1
+  |
+  o  changeset:   0:5cbade24e0fa
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     added
+  
   $ cd ..
 
 Phabesending a new binary, a modified binary, and a removed binary

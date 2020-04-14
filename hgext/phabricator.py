@@ -1457,6 +1457,17 @@ def phabsend(ui, repo, *revs, **opts):
         unfi = repo.unfiltered()
         drevs = callconduit(ui, b'differential.query', {b'ids': drevids})
         with repo.wlock(), repo.lock(), repo.transaction(b'phabsend'):
+            # Eagerly evaluate commits to restabilize before creating new
+            # commits.  The selected revisions are excluded because they are
+            # automatically restacked as part of the submission process.
+            restack = [
+                c
+                for c in repo.set(
+                    b"(%ld::) - (%ld) - unstable() - obsolete() - public()",
+                    revs,
+                    revs,
+                )
+            ]
             wnode = unfi[b'.'].node()
             mapping = {}  # {oldnode: [newnode]}
             newnodes = []
@@ -1550,6 +1561,41 @@ def phabsend(ui, repo, *revs, **opts):
                     )
             elif fold:
                 _debug(ui, b"no newnodes to update\n")
+
+            # Restack any children of first-time submissions that were orphaned
+            # in the process.  The ctx won't report that it is an orphan until
+            # the cleanup takes place below.
+            for old in restack:
+                parents = [
+                    mapping.get(old.p1().node(), (old.p1(),))[0],
+                    mapping.get(old.p2().node(), (old.p2(),))[0],
+                ]
+                new = context.metadataonlyctx(
+                    repo,
+                    old,
+                    parents=parents,
+                    text=old.description(),
+                    user=old.user(),
+                    date=old.date(),
+                    extra=old.extra(),
+                )
+
+                newnode = new.commit()
+
+                # Don't obsolete unselected descendants of nodes that have not
+                # been changed in this transaction- that results in an error.
+                if newnode != old.node():
+                    mapping[old.node()] = [newnode]
+                    _debug(
+                        ui,
+                        b"restabilizing %s as %s\n"
+                        % (short(old.node()), short(newnode)),
+                    )
+                else:
+                    _debug(
+                        ui,
+                        b"not restabilizing unchanged %s\n" % short(old.node()),
+                    )
 
             scmutil.cleanupnodes(repo, mapping, b'phabsend', fixphase=True)
             if wnode in mapping:
