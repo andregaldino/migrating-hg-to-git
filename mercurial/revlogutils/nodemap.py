@@ -148,6 +148,8 @@ def _persist_nodemap(tr, revlog, pending=False):
         msg = _(b"persistent nodemap in strict mode without efficient method")
         if mode == b'warn':
             tr._report(b"%s\n" % msg)
+        elif mode == b'strict':
+            raise error.Abort(msg)
 
     data = None
     # first attemp an incremental update of the data

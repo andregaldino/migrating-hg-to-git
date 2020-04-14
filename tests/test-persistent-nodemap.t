@@ -96,6 +96,17 @@ add a new commit
   5001 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo foo > foo
   $ hg add foo
+
+#if no-pure no-rust
+
+  $ hg ci -m 'foo' --config "experimental.exp-persistent-nodemap.mode=strict"
+  transaction abort!
+  rollback completed
+  abort: persistent nodemap in strict mode without efficient method
+  [255]
+
+#endif
+
   $ hg ci -m 'foo'
 
 #if no-pure no-rust
