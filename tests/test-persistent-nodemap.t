@@ -439,3 +439,99 @@ Check that a failing transaction will properly revert the data
   .hg/store/00changelog-????????????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
   .hg/store/00changelog-????????????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
   .hg/store/00changelog-????????????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
+
+Test upgrade / downgrade
+========================
+
+downgrading
+
+  $ cat << EOF >> .hg/hgrc
+  > [format]
+  > use-persistent-nodemap=no
+  > EOF
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap: yes     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
+  $ hg debugupgraderepo --run --no-backup --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     removed: persistent-nodemap
+  
+  $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
+  [1]
+  $ hg debugnodemap --metadata
+
+
+upgrading
+
+  $ cat << EOF >> .hg/hgrc
+  > [format]
+  > use-persistent-nodemap=yes
+  > EOF
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no    yes      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
+  $ hg debugupgraderepo --run --no-backup --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     added: persistent-nodemap
+  
+  $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
+  00changelog-*.nd (glob)
+  00changelog.n
+  00manifest-*.nd (glob)
+  00manifest.n
+
+  $ hg debugnodemap --metadata
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+
+Running unrelated upgrade
+
+  $ hg debugupgraderepo --run --no-backup --quiet --optimize re-delta-all
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store
+  
+  optimisations: re-delta-all
+  
+  $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
+  00changelog-*.nd (glob)
+  00changelog.n
+  00manifest-*.nd (glob)
+  00manifest.n
+
+  $ hg debugnodemap --metadata
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%

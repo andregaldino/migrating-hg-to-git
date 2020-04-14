@@ -78,6 +78,7 @@ def supportremovedrequirements(repo):
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
         localrepo.COPIESSDC_REQUIREMENT,
+        localrepo.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -105,6 +106,7 @@ def supporteddestrequirements(repo):
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
         localrepo.COPIESSDC_REQUIREMENT,
+        localrepo.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -132,6 +134,7 @@ def allowednewrequirements(repo):
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
         localrepo.COPIESSDC_REQUIREMENT,
+        localrepo.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -990,7 +993,7 @@ def _filterstorefile(srcrepo, dstrepo, requirements, path, mode, st):
     Function should return ``True`` if the file is to be copied.
     """
     # Skip revlogs.
-    if path.endswith((b'.i', b'.d')):
+    if path.endswith((b'.i', b'.d', b'.n', b'.nd')):
         return False
     # Skip transaction related files.
     if path.startswith(b'undo'):
