@@ -10,7 +10,9 @@ Test the persistent on-disk nodemap
   > [devel]
   > persistent-nodemap=yes
   > EOF
-  $ hg debugbuilddag .+5000 --new-file
+  $ hg debugbuilddag .+5000 --new-file --config "experimental.exp-persistent-nodemap.mode=warn"
+  persistent nodemap in strict mode without efficient method (no-rust no-pure !)
+  persistent nodemap in strict mode without efficient method (no-rust no-pure !)
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5000

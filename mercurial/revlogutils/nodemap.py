@@ -13,6 +13,8 @@ import os
 import re
 import struct
 
+from ..i18n import _
+
 from .. import (
     error,
     node as nodemod,
@@ -105,6 +107,9 @@ class _NoTransaction(object):
     def addabort(self, *args, **kwargs):
         pass
 
+    def _report(self, *args):
+        pass
+
 
 def update_persistent_nodemap(revlog):
     """update the persistent nodemap right now
@@ -138,6 +143,11 @@ def _persist_nodemap(tr, revlog, pending=False):
     ondisk_docket = revlog._nodemap_docket
     feed_data = util.safehasattr(revlog.index, "update_nodemap_data")
     use_mmap = revlog.opener.options.get(b"exp-persistent-nodemap.mmap")
+    mode = revlog.opener.options.get(b"exp-persistent-nodemap.mode")
+    if not can_incremental:
+        msg = _(b"persistent nodemap in strict mode without efficient method")
+        if mode == b'warn':
+            tr._report(b"%s\n" % msg)
 
     data = None
     # first attemp an incremental update of the data

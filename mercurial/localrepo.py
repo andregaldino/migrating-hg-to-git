@@ -937,6 +937,8 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         options[b'exp-persistent-nodemap'] = True
     if ui.configbool(b'experimental', b'exp-persistent-nodemap.mmap'):
         options[b'exp-persistent-nodemap.mmap'] = True
+    epnm = ui.config(b'experimental', b'exp-persistent-nodemap.mode')
+    options[b'exp-persistent-nodemap.mode'] = epnm
     if ui.configbool(b'devel', b'persistent-nodemap'):
         options[b'devel-force-nodemap'] = True
 
