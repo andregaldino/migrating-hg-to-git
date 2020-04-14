@@ -384,6 +384,7 @@ _data = [
     b'00changelog.i',
     b'phaseroots',
     b'obsstore',
+    b'requires',
 ]
 
 
@@ -455,7 +456,7 @@ class basicstore(object):
             yield x
 
     def copylist(self):
-        return [b'requires'] + _data
+        return _data
 
     def write(self, tr):
         pass
@@ -704,6 +705,7 @@ class fncachestore(basicstore):
             b'00manifest.i',
             b'00changelog.d',
             b'00changelog.i',
+            b'requires',
         )
         return [b'requires', b'00changelog.i'] + [b'store/' + f for f in d]
 

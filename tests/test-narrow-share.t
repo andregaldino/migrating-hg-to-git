@@ -1,4 +1,10 @@
 #testcases flat tree
+#testcases safe normal
+
+#if safe
+  $ echo "[format]"         >> $HGRCPATH
+  $ echo "exp-share-safe = True" >> $HGRCPATH
+#endif
 
   $ . "$TESTDIR/narrow-library.sh"
 

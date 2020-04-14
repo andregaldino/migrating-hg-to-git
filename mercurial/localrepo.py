@@ -545,6 +545,26 @@ def makelocalrepository(baseui, path, intents=None):
         raise error.RepoError(_(b'repository %s not found') % path)
 
     requirements = _readrequires(hgvfs, True)
+    shared = (
+        requirementsmod.SHARED_REQUIREMENT in requirements
+        or requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements
+    )
+    if shared:
+        sharedvfs = _getsharedvfs(hgvfs, requirements)
+
+    # if .hg/requires contains the sharesafe requirement, it means
+    # there exists a `.hg/store/requires` too and we should read it
+    # NOTE: presence of SHARESAFE_REQUIREMENT imply that store requirement
+    # is present. We never write SHARESAFE_REQUIREMENT for a repo if store
+    # is not present, refer checkrequirementscompat() for that
+    if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
+        if shared:
+            # This is a shared repo
+            storevfs = vfsmod.vfs(sharedvfs.join(b'store'))
+        else:
+            storevfs = vfsmod.vfs(hgvfs.join(b'store'))
+
+        requirements |= _readrequires(storevfs, False)
 
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
@@ -587,12 +607,7 @@ def makelocalrepository(baseui, path, intents=None):
     # accessed is determined by various requirements. If `shared` or
     # `relshared` requirements are present, this indicates current repository
     # is a share and store exists in path mentioned in `.hg/sharedpath`
-    shared = (
-        requirementsmod.SHARED_REQUIREMENT in requirements
-        or requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements
-    )
     if shared:
-        sharedvfs = _getsharedvfs(hgvfs, requirements)
         storebasepath = sharedvfs.base
         cachepath = sharedvfs.join(b'cache')
         features.add(repository.REPO_FEATURE_SHARED_STORAGE)
@@ -1048,6 +1063,7 @@ class localrepository(object):
         requirementsmod.SPARSEREVLOG_REQUIREMENT,
         requirementsmod.NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
+        requirementsmod.SHARESAFE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
         b'store',
@@ -3329,6 +3345,11 @@ def newreporequirements(ui, createopts):
     if ui.configbool(b'format', b'use-persistent-nodemap'):
         requirements.add(requirementsmod.NODEMAP_REQUIREMENT)
 
+    # if share-safe is enabled, let's create the new repository with the new
+    # requirement
+    if ui.configbool(b'format', b'exp-share-safe'):
+        requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
+
     return requirements
 
 
@@ -3361,6 +3382,16 @@ def checkrequirementscompat(ui, requirements):
                     b" with 'format.usestore' config disabled"
                 )
             )
+
+        if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
+            ui.warn(
+                _(
+                    b"ignoring enabled 'format.exp-share-safe' config because "
+                    b"it is incompatible with disabled 'format.usestore'"
+                    b" config\n"
+                )
+            )
+            dropped.add(requirementsmod.SHARESAFE_REQUIREMENT)
 
     return dropped
 
@@ -3486,7 +3517,18 @@ def createrepository(ui, path, createopts=None):
             b'layout',
         )
 
-    scmutil.writerequires(hgvfs, requirements)
+    # Filter the requirements into working copy and store ones
+    wcreq, storereq = scmutil.filterrequirements(requirements)
+    # write working copy ones
+    scmutil.writerequires(hgvfs, wcreq)
+    # If there are store requirements and the current repository
+    # is not a shared one, write stored requirements
+    # For new shared repository, we don't need to write the store
+    # requirements as they are already present in store requires
+    if storereq and b'sharedrepo' not in createopts:
+        scmutil.writerequires(hgvfs, wcreq)
+        storevfs = vfsmod.vfs(hgvfs.join(b'store'), cacheaudited=True)
+        scmutil.writerequires(storevfs, storereq)
 
     # Write out file telling readers where to find the shared store.
     if b'sharedrepo' in createopts:

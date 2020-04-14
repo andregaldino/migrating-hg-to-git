@@ -1,5 +1,12 @@
 #require no-windows
 
+#testcases safe normal
+
+#if safe
+  $ echo "[format]"         >> $HGRCPATH
+  $ echo "exp-share-safe = True" >> $HGRCPATH
+#endif
+
   $ . "$TESTDIR/remotefilelog-library.sh"
 
   $ cat >> $HGRCPATH <<EOF

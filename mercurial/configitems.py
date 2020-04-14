@@ -784,6 +784,9 @@ coreconfigitem(
     b'format', b'exp-use-side-data', default=False, experimental=True,
 )
 coreconfigitem(
+    b'format', b'exp-share-safe', default=False, experimental=True,
+)
+coreconfigitem(
     b'format', b'internal-phase', default=False, experimental=True,
 )
 coreconfigitem(

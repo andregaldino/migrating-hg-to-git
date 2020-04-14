@@ -1,3 +1,10 @@
+#testcases safe normal
+
+#if safe
+  $ echo "[format]"         >> $HGRCPATH
+  $ echo "exp-share-safe = True" >> $HGRCPATH
+#endif
+
 Journal extension test: tests the share extension support
 
   $ cat >> testmocks.py << EOF

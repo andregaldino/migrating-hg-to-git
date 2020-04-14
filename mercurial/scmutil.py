@@ -1479,7 +1479,7 @@ def filterrequirements(requirements):
 
     Returns (wcreq, storereq)
     """
-    if False:
+    if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
         wc, store = set(), set()
         for r in requirements:
             if r in requirementsmod.WORKING_DIR_REQUIREMENTS:

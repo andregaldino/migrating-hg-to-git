@@ -52,6 +52,11 @@ SHARED_REQUIREMENT = b'shared'
 # relative to the current repository root path
 RELATIVE_SHARED_REQUIREMENT = b'relshared'
 
+# A repository with share implemented safely. The repository has different
+# store and working copy requirements i.e. both `.hg/requires` and
+# `.hg/store/requires` are present.
+SHARESAFE_REQUIREMENT = b'exp-sharesafe'
+
 # List of requirements which are working directory specific
 # These requirements cannot be shared between repositories if they
 # share the same store
@@ -60,8 +65,11 @@ RELATIVE_SHARED_REQUIREMENT = b'relshared'
 # * SHARED_REQUIREMENT and RELATIVE_SHARED_REQUIREMENT are requirements which
 #   represents that the current working copy/repository shares store of another
 #   repo. Hence both of them should be stored in working copy
+# * SHARESAFE_REQUIREMENT needs to be stored in working dir to mark that rest of
+#   the requirements are stored in store's requires
 WORKING_DIR_REQUIREMENTS = {
     SPARSE_REQUIREMENT,
     SHARED_REQUIREMENT,
     RELATIVE_SHARED_REQUIREMENT,
+    SHARESAFE_REQUIREMENT,
 }
