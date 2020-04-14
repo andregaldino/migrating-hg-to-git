@@ -3664,7 +3664,7 @@ def newreporequirements(ui, createopts):
     if ui.configbool(b'format', b'bookmarks-in-store'):
         requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
 
-    if ui.configbool(b'experimental', b'exp-persistent-nodemap'):
+    if ui.configbool(b'format', b'use-persistent-nodemap'):
         requirements.add(NODEMAP_REQUIREMENT)
 
     return requirements

@@ -675,9 +675,6 @@ coreconfigitem(
     b'experimental', b'rust.index', default=False,
 )
 coreconfigitem(
-    b'experimental', b'exp-persistent-nodemap', default=False,
-)
-coreconfigitem(
     b'experimental', b'exp-persistent-nodemap.mmap', default=True,
 )
 coreconfigitem(
@@ -785,6 +782,9 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format', b'usestore', default=True,
+)
+coreconfigitem(
+    b'format', b'use-persistent-nodemap', default=False, experimental=True
 )
 coreconfigitem(
     b'format',

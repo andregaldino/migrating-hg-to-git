@@ -3,8 +3,8 @@ Test the persistent on-disk nodemap
 ===================================
 
   $ cat << EOF >> $HGRCPATH
-  > [experimental]
-  > exp-persistent-nodemap=yes
+  > [format]
+  > use-persistent-nodemap=yes
   > [devel]
   > persistent-nodemap=yes
   > EOF
