@@ -133,30 +133,6 @@ non-lfs content, and the extension enabled.
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  beginning upgrade...
-  repository locked and read-only
-  creating temporary repository to stage migrated data: * (glob)
-  (it is safe to interrupt this process any time before data migration completes)
-  migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
-  migrating 324 bytes in store; 129 bytes tracked data
-  migrating 1 filelogs containing 1 revisions (73 bytes in store; 8 bytes tracked data)
-  finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 1 revisions (117 bytes in store; 52 bytes tracked data)
-  finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 1 revisions (134 bytes in store; 69 bytes tracked data)
-  finished migrating 1 changelog revisions; change in size: 0 bytes
-  finished migrating 3 total revisions; total change in store size: 0 bytes
-  copying phaseroots
-  data fully migrated to temporary repository
-  marking source repository as being upgraded; clients will be unable to read from repository
-  starting in-place swap of repository data
-  replaced files will be backed up at * (glob)
-  replacing store...
-  store replacement complete; repository was inconsistent for *s (glob)
-  finalizing requirements file and making repository readable again
-  removing temporary repository * (glob)
-  copy of old repository backed up at * (glob)
-  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
 
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   [1]

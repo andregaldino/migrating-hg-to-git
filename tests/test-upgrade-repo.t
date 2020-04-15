@@ -174,6 +174,11 @@ An upgrade of a repository created with recommended settings only suggests optim
      every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
   
 
+  $ hg debugupgraderepo --quiet
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+
 --optimize can be used to add optimizations
 
   $ hg debugupgrade --optimize redeltaparent
@@ -224,6 +229,12 @@ modern form of the option
   
   re-delta-fulladd
      every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
+  
+  $ hg debugupgrade --optimize re-delta-parent --quiet
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  optimisations: re-delta-parent
   
 
 unknown optimization:
@@ -331,6 +342,11 @@ Various sub-optimal detections work
   
   re-delta-fulladd
      every revision will be re-added as if it was new content. It will go through the full storage mechanism giving extensions a chance to process it (eg. lfs). This is similar to "re-delta-all" but even slower since more logic is involved.
+  
+  $ hg debugupgraderepo --quiet
+  requirements
+     preserved: revlogv1, store
+     added: dotencode, fncache, generaldelta, sparserevlog
   
 
   $ hg --config format.dotencode=false debugupgraderepo
@@ -1210,9 +1226,13 @@ Check upgrading a sparse-revlog repository
   store
 
 Check that we can add the sparse-revlog format requirement
-  $ hg --config format.sparse-revlog=yes debugupgraderepo --run >/dev/null
-  copy of old repository backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
-  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
+  $ hg --config format.sparse-revlog=yes debugupgraderepo --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     added: sparserevlog
+  
   $ cat .hg/requires
   dotencode
   fncache
@@ -1222,9 +1242,13 @@ Check that we can add the sparse-revlog format requirement
   store
 
 Check that we can remove the sparse-revlog format requirement
-  $ hg --config format.sparse-revlog=no debugupgraderepo --run >/dev/null
-  copy of old repository backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
-  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
+  $ hg --config format.sparse-revlog=no debugupgraderepo --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     removed: sparserevlog
+  
   $ cat .hg/requires
   dotencode
   fncache
@@ -1239,7 +1263,13 @@ Check upgrading to a zstd revlog
 
 upgrade
 
-  $ hg --config format.revlog-compression=zstd debugupgraderepo --run  --no-backup >/dev/null
+  $ hg --config format.revlog-compression=zstd debugupgraderepo --run  --no-backup --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     added: revlog-compression-zstd, sparserevlog
+  
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
@@ -1262,7 +1292,13 @@ upgrade
 
 downgrade
 
-  $ hg debugupgraderepo --run --no-backup > /dev/null
+  $ hg debugupgraderepo --run --no-backup --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     removed: revlog-compression-zstd
+  
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
@@ -1288,7 +1324,13 @@ upgrade from hgrc
   > [format]
   > revlog-compression=zstd
   > EOF
-  $ hg debugupgraderepo --run --no-backup > /dev/null
+  $ hg debugupgraderepo --run --no-backup --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     added: revlog-compression-zstd
+  
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
@@ -1316,7 +1358,15 @@ Check upgrading to a side-data revlog
 
 upgrade
 
-  $ hg --config format.exp-use-side-data=yes debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" >/dev/null
+  $ hg --config format.exp-use-side-data=yes debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     added: exp-sidedata-flag (zstd !)
+     added: exp-sidedata-flag, sparserevlog (no-zstd !)
+  
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
@@ -1345,7 +1395,14 @@ upgrade
 
 downgrade
 
-  $ hg debugupgraderepo --config format.exp-use-side-data=no --run --no-backup > /dev/null
+  $ hg debugupgraderepo --config format.exp-use-side-data=no --run --no-backup --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     removed: exp-sidedata-flag
+  
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
@@ -1374,7 +1431,14 @@ upgrade from hgrc
   > [format]
   > exp-use-side-data=yes
   > EOF
-  $ hg debugupgraderepo --run --no-backup > /dev/null
+  $ hg debugupgraderepo --run --no-backup --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     added: exp-sidedata-flag
+  
   $ hg debugformat -v
   format-variant    repo config default
   fncache:           yes    yes     yes
