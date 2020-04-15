@@ -2531,9 +2531,7 @@ def unstable(repo, subset, x):
     _unstable.update(obsmod.getrevs(repo, b'orphan'))
     _unstable.update(obsmod.getrevs(repo, b'phasedivergent'))
     _unstable.update(obsmod.getrevs(repo, b'contentdivergent'))
-    _unstable = baseset(_unstable)
-    _unstable.sort()  # set is non-ordered, enforce order
-    return subset & _unstable
+    return subset & baseset(_unstable)
 
 
 @predicate(b'user(string)', safe=True, weight=10)
