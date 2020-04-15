@@ -183,6 +183,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  optimisations: re-delta-parent
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -206,6 +208,8 @@ modern form of the option
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  optimisations: re-delta-parent
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -569,6 +573,8 @@ We can restrict optimization to some revlog:
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  optimisations: re-delta-parent
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -643,6 +649,8 @@ Check we can select negatively
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  optimisations: re-delta-parent
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -689,6 +697,8 @@ Check that we can select changelog only
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  optimisations: re-delta-parent
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -734,6 +744,8 @@ Check that we can select filelog only
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  optimisations: re-delta-parent
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -786,6 +798,8 @@ Check you can't skip revlog clone during important format downgrade
      preserved: dotencode, fncache, generaldelta, revlogv1, store
      removed: sparserevlog
   
+  optimisations: re-delta-parent
+  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -834,6 +848,8 @@ Check you can't skip revlog clone during important format upgrade
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
      added: sparserevlog
+  
+  optimisations: re-delta-parent
   
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
@@ -922,6 +938,8 @@ store files with special filenames aren't encoded during copy
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  optimisations: re-delta-fulladd
   
   re-delta-fulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
@@ -1134,6 +1152,8 @@ repository config is taken in account
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  optimisations: re-delta-all
   
   re-delta-all
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time

@@ -1274,6 +1274,17 @@ def upgraderepo(
             ui.write((b'\n'))
         ui.write(b'\n')
 
+    def printoptimisations():
+        optimisations = [a for a in actions if a.type == optimisation]
+        optimisations.sort(key=lambda a: a.name)
+        if optimisations:
+            ui.write(_(b'optimisations: '))
+            write_labeled(
+                [a.name for a in optimisations],
+                "upgrade-repo.optimisation.performed",
+            )
+            ui.write(b'\n\n')
+
     def printupgradeactions():
         for a in actions:
             ui.write(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
@@ -1327,6 +1338,7 @@ def upgraderepo(
         )
 
         printrequirements()
+        printoptimisations()
         printupgradeactions()
 
         unusedoptimize = [i for i in alloptimizations if i not in actions]
@@ -1345,6 +1357,7 @@ def upgraderepo(
     # Else we're in the run=true case.
     ui.write(_(b'upgrade will perform the following actions:\n\n'))
     printrequirements()
+    printoptimisations()
     printupgradeactions()
 
     upgradeactions = [a.name for a in actions]
