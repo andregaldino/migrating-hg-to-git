@@ -180,7 +180,7 @@ class dirstate(object):
 
     @propertycache
     def _checkexec(self):
-        return util.checkexec(self._root)
+        return bool(util.checkexec(self._root))
 
     @propertycache
     def _checkcase(self):
