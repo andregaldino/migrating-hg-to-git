@@ -417,13 +417,15 @@ def getgraphnodecurrent(repo, ctx, cache):
     if ctx.node() in wpnodes:
         return b'@'
     else:
-        merge_nodes = cache.get(b'merge_nodes', ())
-        if not merge_nodes:
+        merge_nodes = cache.get(b'merge_nodes')
+        if merge_nodes is None:
             from . import merge
 
             mergestate = merge.mergestate.read(repo)
             if mergestate.active():
                 merge_nodes = (mergestate.local, mergestate.other)
+            else:
+                merge_nodes = ()
             cache[b'merge_nodes'] = merge_nodes
 
         if ctx.node() in merge_nodes:
