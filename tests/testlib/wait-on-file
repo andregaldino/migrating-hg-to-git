@@ -29,7 +29,7 @@ then
 fi
 while [ "$timer" -gt 0 ] && [ ! -f "$wait_on" ];
 do
-    timer=$(( timer - 1))
+    timer=$(( $timer - 1))
     sleep 0.01
 done
 if [ "$timer" -le 0 ]; then
