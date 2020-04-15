@@ -628,14 +628,12 @@ def determineactions(repo, deficiencies, sourcereqs, destreqs):
     """
     newactions = []
 
-    knownreqs = supporteddestrequirements(repo)
-
     for d in deficiencies:
-        name = d.name
+        name = d._requirement
 
         # If the action is a requirement that doesn't show up in the
         # destination requirements, prune the action.
-        if name in knownreqs and name not in destreqs:
+        if name is not None and name not in destreqs:
             continue
 
         newactions.append(d)
