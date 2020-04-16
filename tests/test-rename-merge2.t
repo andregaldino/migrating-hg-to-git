@@ -79,7 +79,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -117,7 +118,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -156,7 +158,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -194,7 +197,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -231,7 +235,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -263,7 +268,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -294,7 +300,8 @@ $4 = expected result
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -327,7 +334,8 @@ $4 = expected result
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -355,7 +363,10 @@ $4 = expected result
   test L:um a b R:um a b W:       - 9  do merge with ancestor in a
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -400,8 +411,10 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
     unmatched files in other:
      c
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' !
-     src: 'a' -> dst: 'c' !
+     on local side:
+      src: 'a' -> dst: 'b' !
+     on remote side:
+      src: 'a' -> dst: 'c' !
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -434,7 +447,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nc a b R:up b   W:       - 12 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -473,7 +487,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up b   R:nm a b W:       - 13 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -513,7 +528,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nc a b R:up a b W:       - 14 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -522,19 +538,15 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    preserving rev for resolve of rev
    a: remote is newer -> g
   getting a
-   b: both created -> m (premerge)
+   b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
-  my b@86a2aa42fc76+ other b@8dbce441892a ancestor b@000000000000
+  my b@86a2aa42fc76+ other b@8dbce441892a ancestor a@924404dff337
+   premerge successful
    rev: versions differ -> m (premerge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
-   b: both created -> m (merge)
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@86a2aa42fc76+ other b@8dbce441892a ancestor b@000000000000
-  launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
-  merge tool returned: 0
    rev: versions differ -> m (merge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
@@ -553,7 +565,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up b   R:nm a b W:       - 15 merge b no ancestor, remove a
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -593,7 +606,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nc a b R:up a b W:       - 16 get a, merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -602,19 +616,15 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    preserving rev for resolve of rev
    a: remote is newer -> g
   getting a
-   b: both created -> m (premerge)
+   b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
-  my b@86a2aa42fc76+ other b@8dbce441892a ancestor b@000000000000
+  my b@86a2aa42fc76+ other b@8dbce441892a ancestor a@924404dff337
+   premerge successful
    rev: versions differ -> m (premerge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
-   b: both created -> m (merge)
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@86a2aa42fc76+ other b@8dbce441892a ancestor b@000000000000
-  launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
-  merge tool returned: 0
    rev: versions differ -> m (merge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
@@ -633,7 +643,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up a b R:nc a b W:       - 17 keep a, merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -641,19 +652,15 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    preserving b for resolve of b
    preserving rev for resolve of rev
   starting 4 threads for background file closing (?)
-   b: both created -> m (premerge)
+   b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
-  my b@0b76e65c8289+ other b@4ce40f5aca24 ancestor b@000000000000
+  my b@0b76e65c8289+ other b@4ce40f5aca24 ancestor a@924404dff337
+   premerge successful
    rev: versions differ -> m (premerge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@0b76e65c8289+ other rev@4ce40f5aca24 ancestor rev@924404dff337
-   b: both created -> m (merge)
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@0b76e65c8289+ other b@4ce40f5aca24 ancestor b@000000000000
-  launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
-  merge tool returned: 0
    rev: versions differ -> m (merge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@0b76e65c8289+ other rev@4ce40f5aca24 ancestor rev@924404dff337
@@ -672,7 +679,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:nm a b R:up a b W:       - 18 merge b no ancestor
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -680,35 +688,24 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    preserving b for resolve of b
    preserving rev for resolve of rev
   starting 4 threads for background file closing (?)
-   a: prompt deleted/changed -> m (premerge)
-  picked tool ':prompt' for a (binary False symlink False changedelete True)
-  file 'a' was deleted in local [working copy] but was modified in other [merge rev].
-  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
-  What do you want to do? u
-   b: both created -> m (premerge)
+   b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
-  my b@02963e448370+ other b@8dbce441892a ancestor b@000000000000
+  my b@02963e448370+ other b@8dbce441892a ancestor a@924404dff337
+   premerge successful
    rev: versions differ -> m (premerge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@02963e448370+ other rev@8dbce441892a ancestor rev@924404dff337
-   b: both created -> m (merge)
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@02963e448370+ other b@8dbce441892a ancestor b@000000000000
-  launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
-  merge tool returned: 0
    rev: versions differ -> m (merge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@02963e448370+ other rev@8dbce441892a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
-  0 files updated, 2 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  0 files updated, 2 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
   --------------
-  M a
   M b
-  abort: unresolved merge conflicts (see 'hg help resolve')
   --------------
   
   $ tm "up a b" "nm a b" "      " "19 merge b no ancestor, prompt remove a"
@@ -717,44 +714,34 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   test L:up a b R:nm a b W:       - 19 merge b no ancestor, prompt remove a
   --------------
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' 
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 0b76e65c8289+, remote: bdb19105162a
-   preserving a for resolve of a
    preserving b for resolve of b
    preserving rev for resolve of rev
   starting 4 threads for background file closing (?)
-   a: prompt changed/deleted -> m (premerge)
-  picked tool ':prompt' for a (binary False symlink False changedelete True)
-  file 'a' was deleted in other [merge rev] but was modified in local [working copy].
-  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
-  What do you want to do? u
-   b: both created -> m (premerge)
+   b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
-  my b@0b76e65c8289+ other b@bdb19105162a ancestor b@000000000000
+  my b@0b76e65c8289+ other b@bdb19105162a ancestor a@924404dff337
+   premerge successful
    rev: versions differ -> m (premerge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@0b76e65c8289+ other rev@bdb19105162a ancestor rev@924404dff337
-   b: both created -> m (merge)
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@0b76e65c8289+ other b@bdb19105162a ancestor b@000000000000
-  launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
-  merge tool returned: 0
    rev: versions differ -> m (merge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@0b76e65c8289+ other rev@bdb19105162a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
-  0 files updated, 2 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  0 files updated, 2 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
   --------------
   M b
   C a
-  abort: unresolved merge conflicts (see 'hg help resolve')
   --------------
   
   $ tm "up a  " "um a b" "      " "20 merge a and b to b, remove a"
@@ -765,7 +752,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
     unmatched files in other:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -807,7 +795,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -853,7 +842,8 @@ m "nm a b" "um x a" "      " "22 get a, keep b"
     unmatched files in other:
      c
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -936,11 +926,14 @@ Expected result:
      4/g
      7/f
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: '1/f' -> dst: '1/g' *
-     src: '3/f' -> dst: '3/g' *
-     src: '4/f' -> dst: '4/g' *
-     src: '5/f' -> dst: '5/g' *
-     src: '6/f' -> dst: '6/g' *
+     on local side:
+      src: '1/f' -> dst: '1/g' *
+      src: '5/f' -> dst: '5/g' *
+      src: '6/f' -> dst: '6/g' *
+     on remote side:
+      src: '1/f' -> dst: '1/g' *
+      src: '3/f' -> dst: '3/g' *
+      src: '4/f' -> dst: '4/g' *
     checking for directory renames
   $ hg mani
   0/f

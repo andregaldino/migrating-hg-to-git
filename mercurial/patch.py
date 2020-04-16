@@ -2888,7 +2888,7 @@ def _filepairs(modified, added, removed, copy, opts):
     or 'rename' (the latter two only if opts.git is set).'''
     gone = set()
 
-    copyto = dict([(v, k) for k, v in copy.items()])
+    copyto = {v: k for k, v in copy.items()}
 
     addedset, removedset = set(added), set(removed)
 

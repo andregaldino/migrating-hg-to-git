@@ -171,11 +171,11 @@ def fetch(ui, repo, source=b'default', **opts):
                     % (repo.changelog.rev(firstparent), short(firstparent))
                 )
             hg.clean(repo, firstparent)
+            p2ctx = repo[secondparent]
             ui.status(
-                _(b'merging with %d:%s\n')
-                % (repo.changelog.rev(secondparent), short(secondparent))
+                _(b'merging with %d:%s\n') % (p2ctx.rev(), short(secondparent))
             )
-            err = hg.merge(repo, secondparent, remind=False)
+            err = hg.merge(p2ctx, remind=False)
 
         if not err:
             # we don't translate commit messages

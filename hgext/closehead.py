@@ -76,7 +76,7 @@ def close_branch(ui, repo, *revs, **opts):
     heads = []
     for branch in repo.branchmap():
         heads.extend(repo.branchheads(branch))
-    heads = set(repo[h].rev() for h in heads)
+    heads = {repo[h].rev() for h in heads}
     for rev in revs:
         if rev not in heads:
             raise error.Abort(_(b'revision is not an open head: %d') % rev)

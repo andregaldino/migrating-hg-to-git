@@ -364,6 +364,7 @@ Test extension help:
        eol           automatically manage newlines in repository files
        extdiff       command to allow external programs to compare revisions
        factotum      http authentication with factotum
+       fastexport    export repositories as git fast-import stream
        githelp       try mapping git commands to Mercurial commands
        gpg           commands to sign and verify changesets
        hgk           browse the repository in a graphical way
@@ -787,6 +788,12 @@ Disabled extension gets suggested
   (use 'hg help extensions' for information on enabling extensions)
   [255]
 
+Checking that help adapts based on the config:
+
+  $ hg help diff --config ui.tweakdefaults=true | egrep -e '^ *(-g|config)'
+   -g --[no-]git            use git extended diff format (default: on from
+                            config)
+
 Make sure that we don't run afoul of the help system thinking that
 this is a section and erroring out weirdly.
 
@@ -966,6 +973,8 @@ Test list of internal help commands
                  find the ancestor revision of two revisions in a given index
    debugapplystreamclonebundle
                  apply a stream clone bundle file
+   debugbackupbundle
+                 lists the changesets available in backup bundles
    debugbuilddag
                  builds a repo with a given DAG from scratch in the current
                  empty repo
@@ -1017,6 +1026,7 @@ Test list of internal help commands
                  print merge state
    debugnamecomplete
                  complete "names" - tags, open branch names, bookmark names
+   debugnodemap  write and inspect on disk nodemap
    debugobsolete
                  create arbitrary obsolete marker
    debugoptADV   (no help text available)
@@ -1054,6 +1064,8 @@ Test list of internal help commands
    debugsub      (no help text available)
    debugsuccessorssets
                  show set of successors for revision
+   debugtagscache
+                 display the contents of .hg/cache/hgtagsfnodes1
    debugtemplate
                  parse and apply a template
    debuguigetpass

@@ -141,6 +141,50 @@ class IndexObject(BaseIndexObject):
             self._extra = self._extra[: i - self._lgt]
 
 
+class PersistentNodeMapIndexObject(IndexObject):
+    """a Debug oriented class to test persistent nodemap
+
+    We need a simple python object to test API and higher level behavior. See
+    the Rust implementation for  more serious usage. This should be used only
+    through the dedicated `devel.persistent-nodemap` config.
+    """
+
+    def nodemap_data_all(self):
+        """Return bytes containing a full serialization of a nodemap
+
+        The nodemap should be valid for the full set of revisions in the
+        index."""
+        return nodemaputil.persistent_data(self)
+
+    def nodemap_data_incremental(self):
+        """Return bytes containing a incremental update to persistent nodemap
+
+        This containst the data for an append-only update of the data provided
+        in the last call to `update_nodemap_data`.
+        """
+        if self._nm_root is None:
+            return None
+        docket = self._nm_docket
+        changed, data = nodemaputil.update_persistent_data(
+            self, self._nm_root, self._nm_max_idx, self._nm_docket.tip_rev
+        )
+
+        self._nm_root = self._nm_max_idx = self._nm_docket = None
+        return docket, changed, data
+
+    def update_nodemap_data(self, docket, nm_data):
+        """provide full block of persisted binary data for a nodemap
+
+        The data are expected to come from disk. See `nodemap_data_all` for a
+        produceur of such data."""
+        if nm_data is not None:
+            self._nm_root, self._nm_max_idx = nodemaputil.parse_data(nm_data)
+            if self._nm_root:
+                self._nm_docket = docket
+            else:
+                self._nm_root = self._nm_max_idx = self._nm_docket = None
+
+
 class InlinedIndexObject(BaseIndexObject):
     def __init__(self, data, inline=0):
         self._data = data
@@ -186,6 +230,12 @@ def parse_index2(data, inline):
     if not inline:
         return IndexObject(data), None
     return InlinedIndexObject(data, inline), (0, data)
+
+
+def parse_index_devel_nodemap(data, inline):
+    """like parse_index2, but alway return a PersistentNodeMapIndexObject
+    """
+    return PersistentNodeMapIndexObject(data), None
 
 
 def parse_dirstate(dmap, copymap, st):

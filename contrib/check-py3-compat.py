@@ -32,7 +32,7 @@ def check_compat_py2(f):
     for node in ast.walk(root):
         if isinstance(node, ast.ImportFrom):
             if node.module == '__future__':
-                futures |= set(n.name for n in node.names)
+                futures |= {n.name for n in node.names}
         elif isinstance(node, ast.Print):
             haveprint = True
 

@@ -1,4 +1,4 @@
-#require cvs
+#require cvs no-root
 
   $ cvscall()
   > {

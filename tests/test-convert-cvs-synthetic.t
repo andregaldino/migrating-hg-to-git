@@ -1,4 +1,4 @@
-#require cvs112
+#require cvs112 no-root
 
 This feature requires use of builtin cvsps!
 

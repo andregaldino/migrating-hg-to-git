@@ -588,7 +588,7 @@ class filestorage(object):
             start = nullid
         if stop is None:
             stop = []
-        stoprevs = set([self.rev(n) for n in stop])
+        stoprevs = {self.rev(n) for n in stop}
         startrev = self.rev(start)
         reachable = {startrev}
         heads = {startrev}

@@ -407,7 +407,7 @@ class filefixupstate(object):
             involved = [
                 annotated[i] for i in nearbylinenums if annotated[i][0] != 1
             ]
-        involvedrevs = list(set(r for r, l in involved))
+        involvedrevs = list({r for r, l in involved})
         newfixups = []
         if len(involvedrevs) == 1 and self._iscontinuous(a1, a2 - 1, True):
             # chunk belongs to a single revision
@@ -734,10 +734,10 @@ class fixupstate(object):
     @property
     def chunkstats(self):
         """-> {path: chunkstats}. collect chunkstats from filefixupstates"""
-        return dict(
-            (path, state.chunkstats)
+        return {
+            path: state.chunkstats
             for path, state in pycompat.iteritems(self.fixupmap)
-        )
+        }
 
     def commit(self):
         """commit changes. update self.finalnode, self.replacemap"""
@@ -1077,7 +1077,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
             b'i',
             b'interactive',
             None,
-            _(b'interactively select which chunks to apply (EXPERIMENTAL)'),
+            _(b'interactively select which chunks to apply'),
         ),
         (
             b'e',

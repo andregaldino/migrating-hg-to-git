@@ -745,7 +745,7 @@ def unshelveabort(ui, repo, state):
         try:
             checkparents(repo, state)
 
-            merge.update(repo, state.pendingctx, branchmerge=False, force=True)
+            merge.clean_update(state.pendingctx)
             if state.activebookmark and state.activebookmark in repo._bookmarks:
                 bookmarks.activate(repo, state.activebookmark)
             mergefiles(ui, repo, state.wctx, state.pendingctx)
@@ -827,10 +827,6 @@ def unshelvecontinue(ui, repo, state, opts):
                 )
 
         if newnode is None:
-            # If it ended up being a no-op commit, then the normal
-            # merge state clean-up path doesn't happen, so do it
-            # here. Fix issue5494
-            merge.mergestate.clean(repo)
             shelvectx = state.pendingctx
             msg = _(
                 b'note: unshelved changes already existed '
@@ -996,7 +992,6 @@ def _rebaserestoredcommit(
         stats = merge.graft(
             repo,
             shelvectx,
-            shelvectx.p1(),
             labels=[b'working-copy', b'shelve'],
             keepconflictparent=True,
         )
@@ -1032,10 +1027,6 @@ def _rebaserestoredcommit(
             )
 
         if newnode is None:
-            # If it ended up being a no-op commit, then the normal
-            # merge state clean-up path doesn't happen, so do it
-            # here. Fix issue5494
-            merge.mergestate.clean(repo)
             shelvectx = tmpwctx
             msg = _(
                 b'note: unshelved changes already existed '
@@ -1083,7 +1074,7 @@ def _checkunshelveuntrackedproblems(ui, repo, shelvectx):
         raise error.Abort(m, hint=hint)
 
 
-def dounshelve(ui, repo, *shelved, **opts):
+def unshelvecmd(ui, repo, *shelved, **opts):
     opts = pycompat.byteskwargs(opts)
     abortf = opts.get(b'abort')
     continuef = opts.get(b'continue')
@@ -1130,6 +1121,10 @@ def dounshelve(ui, repo, *shelved, **opts):
     if not shelvedfile(repo, basename, patchextension).exists():
         raise error.Abort(_(b"shelved change '%s' not found") % basename)
 
+    return _dounshelve(ui, repo, basename, opts)
+
+
+def _dounshelve(ui, repo, basename, opts):
     repo = repo.unfiltered()
     lock = tr = None
     try:

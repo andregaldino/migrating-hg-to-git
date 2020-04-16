@@ -184,33 +184,33 @@ Rebase and collapse - more than one external (fail):
 
 Rebase and collapse - E onto H:
 
-  $ hg rebase -s E --dest I --collapse # root (E) is not a merge
-  abort: unknown revision 'I'!
-  [255]
+  $ hg rebase -s E --dest H --collapse # root (E) is not a merge
+  rebasing 5:49cb92066bfd "E" (E)
+  rebasing 6:11abe3fb10b8 "F" (F)
+  rebasing 7:64e264db77f0 "G" (G tip)
+  saved backup bundle to $TESTTMP/multiple-external-parents/.hg/strip-backup/49cb92066bfd-ee8a8a79-rebase.hg
 
   $ hg tglog
-  o    7: 64e264db77f0 'G'
-  |\
-  | o  6: 11abe3fb10b8 'F'
-  | |
-  | o  5: 49cb92066bfd 'E'
-  | |
-  o |  4: 4e4f9194f9f1 'D'
-  |\|
-  | | o  3: 575c4b5ec114 'H'
+  o    5: 8b2315790719 'Collapsed revision
+  |\   * E
+  | |  * F
+  | |  * G'
+  | o    4: 4e4f9194f9f1 'D'
+  | |\
+  o | |  3: 575c4b5ec114 'H'
   | | |
-  o---+  2: dc0947a82db8 'C'
-   / /
-  o /  1: 112478962961 'B'
+  +---o  2: dc0947a82db8 'C'
+  | |
+  | o  1: 112478962961 'B'
   |/
   o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
-  B
   C
   E
   F
+  H
 
   $ cd ..
 
@@ -486,61 +486,6 @@ Interactions between collapse and keepbranches
   abort: cannot collapse multiple named branches
   [255]
 
-  $ repeatchange() {
-  >   hg checkout $1
-  >   hg cp d z
-  >   echo blah >> z
-  >   hg commit -Am "$2" --user "$3"
-  > }
-  $ repeatchange 3 "E" "user1"
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ repeatchange 3 "E" "user2"
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  created new head
-  $ hg tglog
-  @  5: fbfb97b1089a 'E'
-  |
-  | o  4: f338eb3c2c7c 'E'
-  |/
-  o  3: 41acb9dca9eb 'D'
-  |
-  | o  2: 8ac4a08debf1 'C' two
-  | |
-  | o  1: 1ba175478953 'B' one
-  |/
-  o  0: 1994f17a630e 'A'
-  
-  $ hg rebase -s 5 -d 4
-  rebasing 5:fbfb97b1089a "E" (tip)
-  note: not rebasing 5:fbfb97b1089a "E" (tip), its destination already has all its changes
-  saved backup bundle to $TESTTMP/e/.hg/strip-backup/fbfb97b1089a-553e1d85-rebase.hg
-  $ hg tglog
-  @  4: f338eb3c2c7c 'E'
-  |
-  o  3: 41acb9dca9eb 'D'
-  |
-  | o  2: 8ac4a08debf1 'C' two
-  | |
-  | o  1: 1ba175478953 'B' one
-  |/
-  o  0: 1994f17a630e 'A'
-  
-  $ hg export tip
-  # HG changeset patch
-  # User user1
-  # Date 0 0
-  #      Thu Jan 01 00:00:00 1970 +0000
-  # Node ID f338eb3c2c7cc5b5915676a2376ba7ac558c5213
-  # Parent  41acb9dca9eb976e84cd21fcb756b4afa5a35c09
-  E
-  
-  diff -r 41acb9dca9eb -r f338eb3c2c7c z
-  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-  +++ b/z	Thu Jan 01 00:00:00 1970 +0000
-  @@ -0,0 +1,2 @@
-  +d
-  +blah
-
   $ cd ..
 
 Rebase, collapse and copies
@@ -767,7 +712,7 @@ Test aborted editor on final message
   |
   | @  2: 82b8abf9c185 'D'
   | |
-  @ |  1: f899f3910ce7 'B'
+  % |  1: f899f3910ce7 'B'
   |/
   o  0: 4a2df7238c3b 'A'
   
@@ -791,7 +736,7 @@ Test aborted editor on final message
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
   $ hg tglog
-  @  3: 63668d570d21 'C'
+  %  3: 63668d570d21 'C'
   |
   | @  2: 82b8abf9c185 'D'
   | |
@@ -817,7 +762,7 @@ Test aborted editor on final message
   abort: edit failed: false exited with status 1
   [255]
   $ hg tglog
-  o  3: 63668d570d21 'C'
+  %  3: 63668d570d21 'C'
   |
   | @  2: 82b8abf9c185 'D'
   | |

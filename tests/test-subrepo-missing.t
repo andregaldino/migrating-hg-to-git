@@ -50,7 +50,8 @@ delete .hgsub and update
   $ hg st
   warning: subrepo spec file '.hgsub' not found
   ! .hgsub
-  $ ls subrepo
+  $ ls -A subrepo
+  .hg
   a
 
 delete .hgsubstate and update
@@ -65,7 +66,8 @@ delete .hgsubstate and update
   use (c)hanged version or leave (d)eleted? c
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg st
-  $ ls subrepo
+  $ ls -A subrepo
+  .hg
   a
 
 Enable obsolete
@@ -134,7 +136,10 @@ verifying shouldn't init a new subrepo if the reference doesn't exist
   1: repository $TESTTMP/repo/subrepo not found
   3: repository $TESTTMP/repo/subrepo not found
   4: repository $TESTTMP/repo/subrepo not found
-  $ ls
+  $ ls -A
+  .hg
+  .hgsub
+  .hgsubstate
   b
   $ mv b subrepo
 

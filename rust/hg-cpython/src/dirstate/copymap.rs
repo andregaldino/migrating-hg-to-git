@@ -8,11 +8,12 @@
 //! Bindings for `hg::dirstate::dirstate_map::CopyMap` provided by the
 //! `hg-core` package.
 
-use cpython::{PyBytes, PyClone, PyDict, PyObject, PyResult, Python};
+use cpython::{
+    PyBytes, PyClone, PyDict, PyObject, PyResult, Python, UnsafePyLeaked,
+};
 use std::cell::RefCell;
 
 use crate::dirstate::dirstate_map::DirstateMap;
-use crate::ref_sharing::PyLeaked;
 use hg::{utils::hg_path::HgPathBuf, CopyMapIter};
 
 py_class!(pub class CopyMap |py| {
@@ -104,14 +105,14 @@ impl CopyMap {
 
 py_shared_iterator!(
     CopyMapKeysIterator,
-    PyLeaked<CopyMapIter<'static>>,
+    UnsafePyLeaked<CopyMapIter<'static>>,
     CopyMap::translate_key,
     Option<PyBytes>
 );
 
 py_shared_iterator!(
     CopyMapItemsIterator,
-    PyLeaked<CopyMapIter<'static>>,
+    UnsafePyLeaked<CopyMapIter<'static>>,
     CopyMap::translate_key_value,
     Option<(PyBytes, PyBytes)>
 );

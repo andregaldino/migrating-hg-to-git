@@ -1823,7 +1823,8 @@ Importing with some success and some errors:
   $ hg status -c .
   C a
   C b
-  $ ls
+  $ ls -A
+  .hg
   a
   a.rej
   b
@@ -1870,7 +1871,8 @@ Importing with zero success:
   $ hg status -c .
   C a
   C b
-  $ ls
+  $ ls -A
+  .hg
   a
   a.rej
   b
@@ -1919,7 +1921,8 @@ Importing with unknown file:
   $ hg status -c .
   C a
   C b
-  $ ls
+  $ ls -A
+  .hg
   a
   a.rej
   b

@@ -211,6 +211,7 @@ def main():
 
     ziverify.verifyClass(repository.ifilestorage, filelog.filelog)
     ziverify.verifyClass(repository.imanifestdict, manifest.manifestdict)
+    ziverify.verifyClass(repository.imanifestdict, manifest.treemanifest)
     ziverify.verifyClass(
         repository.imanifestrevisionstored, manifest.manifestctx
     )
@@ -252,7 +253,6 @@ def main():
     checkzobject(mctx)
 
     # Conforms to imanifestrevisionwritable.
-    checkzobject(mctx.new())
     checkzobject(mctx.copy())
 
     # Conforms to imanifestdict.

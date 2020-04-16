@@ -498,7 +498,10 @@ clone with subrepo disabled (update should fail)
   abort: subrepos not enabled
   (see 'hg help config.subrepos' for details)
   [255]
-  $ ls tc2
+  $ ls -A tc2
+  .hg
+  .hgsub
+  .hgsubstate
   a
 
   $ hg clone t tc3 --config subrepos.allowed=false
@@ -506,7 +509,10 @@ clone with subrepo disabled (update should fail)
   abort: subrepos not enabled
   (see 'hg help config.subrepos' for details)
   [255]
-  $ ls tc3
+  $ ls -A tc3
+  .hg
+  .hgsub
+  .hgsubstate
   a
 
 And again with just the hg type disabled
@@ -516,7 +522,10 @@ And again with just the hg type disabled
   abort: hg subrepos not allowed
   (see 'hg help config.subrepos' for details)
   [255]
-  $ ls tc4
+  $ ls -A tc4
+  .hg
+  .hgsub
+  .hgsubstate
   a
 
   $ hg clone t tc5 --config subrepos.hg:allowed=false
@@ -524,7 +533,10 @@ And again with just the hg type disabled
   abort: hg subrepos not allowed
   (see 'hg help config.subrepos' for details)
   [255]
-  $ ls tc5
+  $ ls -A tc5
+  .hg
+  .hgsub
+  .hgsubstate
   a
 
 push

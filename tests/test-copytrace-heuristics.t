@@ -292,7 +292,8 @@ Move file in one branch and delete it in another
   rebasing 1:472e38d57782 "mv a b"
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/472e38d57782-17d50e29-rebase.hg
   $ hg up -q c492ed3c7e35dcd1dc938053b8adf56e2cfbd062
-  $ ls
+  $ ls -A
+  .hg
   b
   $ cd ..
   $ rm -rf repo
@@ -433,7 +434,8 @@ Move one file and add another file in the same folder in one branch, modify file
   rebasing 3:ef716627c70b "mod a" (tip)
   merging b and a to b
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/ef716627c70b-24681561-rebase.hg
-  $ ls
+  $ ls -A
+  .hg
   b
   c
   $ cat b
@@ -470,7 +472,8 @@ Merge test
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m merge
-  $ ls
+  $ ls -A
+  .hg
   b
   $ cd ..
   $ rm -rf repo
@@ -505,7 +508,8 @@ Copy and move file
   merging b and a to b
   merging c and a to c
   saved backup bundle to $TESTTMP/repo/repo/.hg/strip-backup/ef716627c70b-24681561-rebase.hg
-  $ ls
+  $ ls -A
+  .hg
   b
   c
   $ cat b
@@ -558,7 +562,8 @@ Do a merge commit with many consequent moves in one branch
   |/   desc: mod a
   o  rev: 0, phase: draft
      desc: initial
-  $ ls
+  $ ls -A
+  .hg
   c
   $ cd ..
   $ rm -rf repo
@@ -588,7 +593,8 @@ Test shelve/unshelve
   unshelving change 'default'
   rebasing shelved changes
   merging b and a to b
-  $ ls
+  $ ls -A
+  .hg
   b
   $ cat b
   b

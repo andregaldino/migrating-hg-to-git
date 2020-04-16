@@ -28,7 +28,8 @@ https://bz.mercurial-scm.org/672
     unmatched files in other:
      1a
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: '1' -> dst: '1a' 
+     on remote side:
+      src: '1' -> dst: '1a' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -56,7 +57,8 @@ https://bz.mercurial-scm.org/672
     unmatched files in local:
      1a
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: '1' -> dst: '1a' *
+     on local side:
+      src: '1' -> dst: '1a' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -78,7 +80,8 @@ https://bz.mercurial-scm.org/672
     unmatched files in other:
      1a
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: '1' -> dst: '1a' *
+     on remote side:
+      src: '1' -> dst: '1a' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False

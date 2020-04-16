@@ -194,7 +194,7 @@ def allsuccessors(obsstore, nodes, ignoreflags=0):
 
 def _filterprunes(markers):
     """return a set with no prune markers"""
-    return set(m for m in markers if m[1])
+    return {m for m in markers if m[1]}
 
 
 def exclusivemarkers(repo, nodes):
@@ -338,12 +338,12 @@ def foreground(repo, nodes):
         # compute the whole set of successors or descendants
         while len(foreground) != plen:
             plen = len(foreground)
-            succs = set(c.node() for c in foreground)
+            succs = {c.node() for c in foreground}
             mutable = [c.node() for c in foreground if c.mutable()]
             succs.update(allsuccessors(repo.obsstore, mutable))
             known = (n for n in succs if has_node(n))
             foreground = set(repo.set(b'%ln::', known))
-    return set(c.node() for c in foreground)
+    return {c.node() for c in foreground}
 
 
 # effectflag field
@@ -855,11 +855,11 @@ def markersusers(markers):
     """ Returns a sorted list of markers users without duplicates
     """
     markersmeta = [dict(m[3]) for m in markers]
-    users = set(
+    users = {
         encoding.tolocal(meta[b'user'])
         for meta in markersmeta
         if meta.get(b'user')
-    )
+    }
 
     return sorted(users)
 
@@ -868,9 +868,9 @@ def markersoperations(markers):
     """ Returns a sorted list of markers operations without duplicates
     """
     markersmeta = [dict(m[3]) for m in markers]
-    operations = set(
+    operations = {
         meta.get(b'operation') for meta in markersmeta if meta.get(b'operation')
-    )
+    }
 
     return sorted(operations)
 

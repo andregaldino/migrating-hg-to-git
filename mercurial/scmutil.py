@@ -1457,10 +1457,10 @@ def movedirstate(repo, newctx, match=None):
     # Merge old parent and old working dir copies
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
     oldcopies.update(copies)
-    copies = dict(
-        (dst, oldcopies.get(src, src))
+    copies = {
+        dst: oldcopies.get(src, src)
         for dst, src in pycompat.iteritems(oldcopies)
-    )
+    }
     # Adjust the dirstate copies
     for dst, src in pycompat.iteritems(copies):
         if src not in newctx or dst in newctx or ds[dst] != b'a':
@@ -1900,8 +1900,11 @@ fileprefetchhooks = util.hooks()
 _reportstroubledchangesets = True
 
 
-def registersummarycallback(repo, otr, txnname=b''):
+def registersummarycallback(repo, otr, txnname=b'', as_validator=False):
     """register a callback to issue a summary after the transaction is closed
+
+    If as_validator is true, then the callbacks are registered as transaction
+    validators instead
     """
 
     def txmatch(sources):
@@ -1927,7 +1930,10 @@ def registersummarycallback(repo, otr, txnname=b''):
             func(repo, tr)
 
         newcat = b'%02i-txnreport' % len(categories)
-        otr.addpostclose(newcat, wrapped)
+        if as_validator:
+            otr.addvalidator(newcat, wrapped)
+        else:
+            otr.addpostclose(newcat, wrapped)
         categories.append(newcat)
         return wrapped
 
@@ -1942,6 +1948,8 @@ def registersummarycallback(repo, otr, txnname=b''):
             if cgheads:
                 htext = _(b" (%+d heads)") % cgheads
             msg = _(b"added %d changesets with %d changes to %d files%s\n")
+            if as_validator:
+                msg = _(b"adding %d changesets with %d changes to %d files%s\n")
             assert repo is not None  # help pytype
             repo.ui.status(msg % (cgchangesets, cgrevisions, cgfiles, htext))
 
@@ -1954,7 +1962,10 @@ def registersummarycallback(repo, otr, txnname=b''):
             if newmarkers:
                 repo.ui.status(_(b'%i new obsolescence markers\n') % newmarkers)
             if obsoleted:
-                repo.ui.status(_(b'obsoleted %i changesets\n') % len(obsoleted))
+                msg = _(b'obsoleted %i changesets\n')
+                if as_validator:
+                    msg = _(b'obsoleting %i changesets\n')
+                repo.ui.status(msg % len(obsoleted))
 
     if obsolete.isenabled(
         repo, obsolete.createmarkersopt
@@ -2047,19 +2058,17 @@ def registersummarycallback(repo, otr, txnname=b''):
             pull/unbundle.
             """
             origrepolen = tr.changes.get(b'origrepolen', len(repo))
-            phasetracking = tr.changes.get(b'phases', {})
-            if not phasetracking:
-                return
-            published = [
-                rev
-                for rev, (old, new) in pycompat.iteritems(phasetracking)
-                if new == phases.public and rev < origrepolen
-            ]
+            published = []
+            for revs, (old, new) in tr.changes.get(b'phases', []):
+                if new != phases.public:
+                    continue
+                published.extend(rev for rev in revs if rev < origrepolen)
             if not published:
                 return
-            repo.ui.status(
-                _(b'%d local changesets published\n') % len(published)
-            )
+            msg = _(b'%d local changesets published\n')
+            if as_validator:
+                msg = _(b'%d local changesets will be published\n')
+            repo.ui.status(msg % len(published))
 
 
 def getinstabilitymessage(delta, instability):

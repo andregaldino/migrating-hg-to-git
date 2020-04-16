@@ -259,6 +259,10 @@ class remotefilelog(object):
 
         raise RuntimeError(b"len not supported")
 
+    def heads(self):
+        # Fake heads of the filelog to satisfy hgweb.
+        return []
+
     def empty(self):
         return False
 
@@ -429,7 +433,7 @@ class remotefilelog(object):
             return nullid
 
         revmap, parentfunc = self._buildrevgraph(a, b)
-        nodemap = dict(((v, k) for (k, v) in pycompat.iteritems(revmap)))
+        nodemap = {v: k for (k, v) in pycompat.iteritems(revmap)}
 
         ancs = ancestor.ancestors(parentfunc, revmap[a], revmap[b])
         if ancs:
@@ -444,7 +448,7 @@ class remotefilelog(object):
             return nullid
 
         revmap, parentfunc = self._buildrevgraph(a, b)
-        nodemap = dict(((v, k) for (k, v) in pycompat.iteritems(revmap)))
+        nodemap = {v: k for (k, v) in pycompat.iteritems(revmap)}
 
         ancs = ancestor.commonancestorsheads(parentfunc, revmap[a], revmap[b])
         return map(nodemap.__getitem__, ancs)

@@ -24,6 +24,7 @@ Should show unknown and b removed
 
 Should show a and unknown
 
-  $ ls
+  $ ls -A
+  .hg
   a
   unknown

@@ -65,7 +65,7 @@ def _commitfiltered(
     base = ctx.p1()
     # ctx
     initialfiles = set(ctx.files())
-    exclude = set(f for f in initialfiles if match(f))
+    exclude = {f for f in initialfiles if match(f)}
 
     # No files matched commit, so nothing excluded
     if not exclude:
@@ -78,9 +78,9 @@ def _commitfiltered(
     files = initialfiles - exclude
     # Filter copies
     copied = copiesmod.pathcopies(base, ctx)
-    copied = dict(
-        (dst, src) for dst, src in pycompat.iteritems(copied) if dst in files
-    )
+    copied = {
+        dst: src for dst, src in pycompat.iteritems(copied) if dst in files
+    }
 
     def filectxfn(repo, memctx, path, contentctx=ctx, redirect=()):
         if path not in contentctx:

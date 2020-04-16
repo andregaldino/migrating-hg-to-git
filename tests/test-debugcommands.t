@@ -588,15 +588,15 @@ Test internal debugstacktrace command
   > EOF
   $ "$PYTHON" debugstacktrace.py
   stacktrace at:
-   debugstacktrace.py:14 in * (glob)
-   debugstacktrace.py:7  in f
+   *debugstacktrace.py:14 in * (glob)
+   *debugstacktrace.py:7  in f (glob)
   hello from g at:
-   debugstacktrace.py:14 in * (glob)
-   debugstacktrace.py:8  in f
+   *debugstacktrace.py:14 in * (glob)
+   *debugstacktrace.py:8  in f (glob)
   hi ...
   from h hidden in g at:
-   debugstacktrace.py:8  in f
-   debugstacktrace.py:11 in g
+   *debugstacktrace.py:8  in f (glob)
+   *debugstacktrace.py:11 in g (glob)
 
 Test debugcapabilities command:
 
@@ -615,6 +615,8 @@ Test debugcapabilities command:
     changegroup
       01
       02
+    checkheads
+      related
     digests
       md5
       sha1
@@ -650,7 +652,7 @@ Test debugpeer
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 440
+  remote: 463
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1
   devel-peer-request: protocaps

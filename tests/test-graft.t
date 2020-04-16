@@ -204,7 +204,8 @@ Graft out of order, skipping a merge and a duplicate
     unmatched files in local:
      b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
@@ -223,7 +224,8 @@ Graft out of order, skipping a merge and a duplicate
   updating the branch cache
   grafting 5:97f8bfe72746 "5"
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'c' -> dst: 'b' 
+     on local side:
+      src: 'c' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
@@ -239,7 +241,8 @@ Graft out of order, skipping a merge and a duplicate
   scanning for duplicate grafts
   grafting 4:9c233e8e184d "4"
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'c' -> dst: 'b' 
+     on local side:
+      src: 'c' -> dst: 'b' 
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
@@ -257,7 +260,7 @@ Graft out of order, skipping a merge and a duplicate
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Summary should mention graft:
 
@@ -314,7 +317,7 @@ Graft again:
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Continue without resolve should fail:
 
@@ -508,7 +511,7 @@ Resolve conflicted graft
   grafting 1:5d205f8b35b6 "1"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
   $ hg resolve --all
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
@@ -548,7 +551,7 @@ Resolve conflicted graft with rename
   grafting 2:5c095ad7e90f "2"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
   $ hg resolve --all
   merging a and b to b
   (no more unresolved files)
@@ -746,12 +749,16 @@ Transplants of grafts can find a destination...
   scanning for duplicate grafts
   grafting 13:7a4785234d87 "2"
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
+     on local side:
+      src: 'a' -> dst: 'b' *
+     on remote side:
+      src: 'a' -> dst: 'b' *
     checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: b592ea63bb0c, local: 7e61b508e709+, remote: 7a4785234d87
   starting 4 threads for background file closing (?)
+  nothing to commit, clearing merge state
   note: graft of 13:7a4785234d87 created no changes to commit
   $ hg log -r 'destination(13)'
 All copies of a cset
@@ -807,13 +814,14 @@ graft with --force (still doesn't graft merges)
   note: graft of 19:9627f653b421 created no changes to commit
   grafting 0:68795b066622 "0"
 
-graft --force after backout
+graft --force after backout. Do the backout with graft too, to make
+sure we support issue6248.
 
   $ echo abc > a
   $ hg ci -m 24
-  $ hg backout 24
-  reverting a
-  changeset 25:71c4e63d4f98 backs out changeset 24:2e7ea477be26
+  $ hg graft --base . -r ".^" --no-commit
+  grafting 23:b1cac6de36a9 "0"
+  $ hg commit -m 'Backed out changeset 2e7ea477be26'
   $ hg graft 24
   skipping ancestor revision 24:2e7ea477be26
   [255]
@@ -831,7 +839,7 @@ graft --continue after --force
   grafting 24:2e7ea477be26 "24"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
   $ hg resolve --all
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')

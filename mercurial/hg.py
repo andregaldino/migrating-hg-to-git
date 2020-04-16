@@ -60,12 +60,19 @@ def _local(path):
     path = util.expandpath(util.urllocalpath(path))
 
     try:
-        isfile = os.path.isfile(path)
+        # we use os.stat() directly here instead of os.path.isfile()
+        # because the latter started returning `False` on invalid path
+        # exceptions starting in 3.8 and we care about handling
+        # invalid paths specially here.
+        st = os.stat(path)
+        isfile = stat.S_ISREG(st.st_mode)
     # Python 2 raises TypeError, Python 3 ValueError.
     except (TypeError, ValueError) as e:
         raise error.Abort(
             _(b'invalid path %s: %s') % (path, pycompat.bytestr(e))
         )
+    except OSError:
+        isfile = False
 
     return isfile and bundlerepo or localrepo
 
@@ -688,7 +695,7 @@ def clone(
         # data.
         createopts[b'lfs'] = True
 
-        if extensions.disabledext(b'lfs'):
+        if extensions.disabled_help(b'lfs'):
             ui.status(
                 _(
                     b'(remote is using large file support (lfs), but it is '
@@ -1040,10 +1047,9 @@ _update = update
 def clean(repo, node, show_stats=True, quietempty=False):
     """forcibly switch the working directory to node, clobbering changes"""
     stats = updaterepo(repo, node, True)
-    repo.vfs.unlinkpath(b'graftstate', ignoremissing=True)
+    assert stats.unresolvedcount == 0
     if show_stats:
         _showstats(repo, stats, quietempty)
-    return stats.unresolvedcount > 0
 
 
 # naming conflict in updatetotally()
@@ -1138,27 +1144,12 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
 
 
 def merge(
-    repo,
-    node,
-    force=None,
-    remind=True,
-    mergeforce=False,
-    labels=None,
-    abort=False,
+    ctx, force=False, remind=True, labels=None,
 ):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
-    if abort:
-        return abortmerge(repo.ui, repo)
-
-    stats = mergemod.update(
-        repo,
-        node,
-        branchmerge=True,
-        force=force,
-        mergeforce=mergeforce,
-        labels=labels,
-    )
+    repo = ctx.repo()
+    stats = mergemod.merge(ctx, force=force, labels=labels)
     _showstats(repo, stats)
     if stats.unresolvedcount:
         repo.ui.status(
@@ -1182,9 +1173,9 @@ def abortmerge(ui, repo):
         node = repo[b'.'].hex()
 
     repo.ui.status(_(b"aborting the merge, updating back to %s\n") % node[:12])
-    stats = mergemod.update(repo, node, branchmerge=False, force=True)
+    stats = mergemod.clean_update(repo[node])
+    assert stats.unresolvedcount == 0
     _showstats(repo, stats)
-    return stats.unresolvedcount > 0
 
 
 def _incoming(

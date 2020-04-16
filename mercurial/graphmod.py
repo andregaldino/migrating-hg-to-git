@@ -58,7 +58,7 @@ def dagwalker(repo, revs):
         # partition into parents in the rev set and missing parents, then
         # augment the lists with markers, to inform graph drawing code about
         # what kind of edge to draw between nodes.
-        pset = set(p.rev() for p in ctx.parents() if p.rev() in revs)
+        pset = {p.rev() for p in ctx.parents() if p.rev() in revs}
         mpars = [
             p.rev()
             for p in ctx.parents()
@@ -95,9 +95,9 @@ def nodes(repo, nodes):
     include = set(nodes)
     for node in nodes:
         ctx = repo[node]
-        parents = set(
+        parents = {
             (PARENT, p.rev()) for p in ctx.parents() if p.node() in include
-        )
+        }
         yield (ctx.rev(), CHANGESET, ctx, sorted(parents))
 
 

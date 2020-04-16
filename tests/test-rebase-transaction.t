@@ -114,7 +114,7 @@ continued
   |
   | @  4: Z
   | |
-  @ |  3: C
+  % |  3: C
   | |
   | o  2: Y
   | |
@@ -123,9 +123,9 @@ continued
   o  0: A
   
   $ hg st
-  M C
   M conflict
   A B
+  A C
   ? conflict.orig
   $ echo resolved > conflict
   $ hg resolve -m

@@ -55,7 +55,8 @@ widen from an empty clone
   added 0 changesets with 1 changes to 1 files
   $ hg tracked
   I path:inside
-  $ ls
+  $ ls -A
+  .hg
   inside
   $ cat inside/f
   inside

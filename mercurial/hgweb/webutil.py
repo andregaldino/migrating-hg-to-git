@@ -936,5 +936,5 @@ def getwebsubs(repo):
 
 def getgraphnode(repo, ctx):
     return templatekw.getgraphnodecurrent(
-        repo, ctx
+        repo, ctx, {}
     ) + templatekw.getgraphnodesymbol(ctx)

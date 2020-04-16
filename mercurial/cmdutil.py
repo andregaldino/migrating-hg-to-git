@@ -170,7 +170,12 @@ logopts = [
 
 diffopts = [
     (b'a', b'text', None, _(b'treat all files as text')),
-    (b'g', b'git', None, _(b'use git extended diff format')),
+    (
+        b'g',
+        b'git',
+        None,
+        _(b'use git extended diff format (DEFAULT: diff.git)'),
+    ),
     (b'', b'binary', None, _(b'generate binary diffs in git mode (default)')),
     (b'', b'nodates', None, _(b'omit dates from diff headers')),
 ]
@@ -209,7 +214,9 @@ diffopts2 = (
             b'p',
             b'show-function',
             None,
-            _(b'show which function each change is in'),
+            _(
+                b'show which function each change is in (DEFAULT: diff.showfunc)'
+            ),
         ),
         (b'', b'reverse', None, _(b'produce a diff that undoes the changes')),
     ]
@@ -281,11 +288,11 @@ def check_at_most_one_arg(opts, *args):
     return previous
 
 
-def check_incompatible_arguments(opts, first, *others):
+def check_incompatible_arguments(opts, first, others):
     """abort if the first argument is given along with any of the others
 
     Unlike check_at_most_one_arg(), `others` are not mutually exclusive
-    among themselves.
+    among themselves, and they're passed as a single collection.
     """
     for other in others:
         check_at_most_one_arg(opts, first, other)
@@ -584,15 +591,8 @@ def dorecord(
             [os.unlink(repo.wjoin(c)) for c in newlyaddedandmodifiedfiles]
             # 3a. apply filtered patch to clean repo  (clean)
             if backups:
-                # Equivalent to hg.revert
                 m = scmutil.matchfiles(repo, set(backups.keys()) | alsorestore)
-                mergemod.update(
-                    repo,
-                    repo.dirstate.p1(),
-                    branchmerge=False,
-                    force=True,
-                    matcher=m,
-                )
+                mergemod.revert_to(repo[b'.'], matcher=m)
 
             # 3b. (apply)
             if dopatch:
@@ -1414,45 +1414,164 @@ def openrevlog(repo, cmd, file_, opts):
 
 
 def copy(ui, repo, pats, opts, rename=False):
+    check_incompatible_arguments(opts, b'forget', [b'dry_run'])
+
     # called with the repo lock held
     #
     # hgsep => pathname that uses "/" to separate directories
     # ossep => pathname that uses os.sep to separate directories
     cwd = repo.getcwd()
     targets = {}
+    forget = opts.get(b"forget")
     after = opts.get(b"after")
     dryrun = opts.get(b"dry_run")
-    wctx = repo[None]
+    rev = opts.get(b'at_rev')
+    if rev:
+        if not forget and not after:
+            # TODO: Remove this restriction and make it also create the copy
+            #       targets (and remove the rename source if rename==True).
+            raise error.Abort(_(b'--at-rev requires --after'))
+        ctx = scmutil.revsingle(repo, rev)
+        if len(ctx.parents()) > 1:
+            raise error.Abort(_(b'cannot mark/unmark copy in merge commit'))
+    else:
+        ctx = repo[None]
+
+    pctx = ctx.p1()
 
     uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
 
+    if forget:
+        if ctx.rev() is None:
+            new_ctx = ctx
+        else:
+            if len(ctx.parents()) > 1:
+                raise error.Abort(_(b'cannot unmark copy in merge commit'))
+            # avoid cycle context -> subrepo -> cmdutil
+            from . import context
+
+            rewriteutil.precheck(repo, [ctx.rev()], b'uncopy')
+            new_ctx = context.overlayworkingctx(repo)
+            new_ctx.setbase(ctx.p1())
+            mergemod.graft(repo, ctx, wctx=new_ctx)
+
+        match = scmutil.match(ctx, pats, opts)
+
+        current_copies = ctx.p1copies()
+        current_copies.update(ctx.p2copies())
+
+        uipathfn = scmutil.getuipathfn(repo)
+        for f in ctx.walk(match):
+            if f in current_copies:
+                new_ctx[f].markcopied(None)
+            elif match.exact(f):
+                ui.warn(
+                    _(
+                        b'%s: not unmarking as copy - file is not marked as copied\n'
+                    )
+                    % uipathfn(f)
+                )
+
+        if ctx.rev() is not None:
+            with repo.lock():
+                mem_ctx = new_ctx.tomemctx_for_amend(ctx)
+                new_node = mem_ctx.commit()
+
+                if repo.dirstate.p1() == ctx.node():
+                    with repo.dirstate.parentchange():
+                        scmutil.movedirstate(repo, repo[new_node])
+                replacements = {ctx.node(): [new_node]}
+                scmutil.cleanupnodes(
+                    repo, replacements, b'uncopy', fixphase=True
+                )
+
+        return
+
+    pats = scmutil.expandpats(pats)
+    if not pats:
+        raise error.Abort(_(b'no source or destination specified'))
+    if len(pats) == 1:
+        raise error.Abort(_(b'no destination specified'))
+    dest = pats.pop()
+
     def walkpat(pat):
         srcs = []
-        if after:
-            badstates = b'?'
-        else:
-            badstates = b'?r'
-        m = scmutil.match(wctx, [pat], opts, globbed=True)
-        for abs in wctx.walk(m):
-            state = repo.dirstate[abs]
+        m = scmutil.match(ctx, [pat], opts, globbed=True)
+        for abs in ctx.walk(m):
             rel = uipathfn(abs)
             exact = m.exact(abs)
-            if state in badstates:
-                if exact and state == b'?':
-                    ui.warn(_(b'%s: not copying - file is not managed\n') % rel)
-                if exact and state == b'r':
-                    ui.warn(
-                        _(
-                            b'%s: not copying - file has been marked for'
-                            b' remove\n'
+            if abs not in ctx:
+                if abs in pctx:
+                    if not after:
+                        if exact:
+                            ui.warn(
+                                _(
+                                    b'%s: not copying - file has been marked '
+                                    b'for remove\n'
+                                )
+                                % rel
+                            )
+                        continue
+                else:
+                    if exact:
+                        ui.warn(
+                            _(b'%s: not copying - file is not managed\n') % rel
                         )
-                        % rel
-                    )
-                continue
+                    continue
+
             # abs: hgsep
             # rel: ossep
             srcs.append((abs, rel, exact))
         return srcs
+
+    if ctx.rev() is not None:
+        rewriteutil.precheck(repo, [ctx.rev()], b'uncopy')
+        absdest = pathutil.canonpath(repo.root, cwd, dest)
+        if ctx.hasdir(absdest):
+            raise error.Abort(
+                _(b'%s: --at-rev does not support a directory as destination')
+                % uipathfn(absdest)
+            )
+        if absdest not in ctx:
+            raise error.Abort(
+                _(b'%s: copy destination does not exist in %s')
+                % (uipathfn(absdest), ctx)
+            )
+
+        # avoid cycle context -> subrepo -> cmdutil
+        from . import context
+
+        copylist = []
+        for pat in pats:
+            srcs = walkpat(pat)
+            if not srcs:
+                continue
+            for abs, rel, exact in srcs:
+                copylist.append(abs)
+
+        # TODO: Add support for `hg cp --at-rev . foo bar dir` and
+        # `hg cp --at-rev . dir1 dir2`, preferably unifying the code with the
+        # existing functions below.
+        if len(copylist) != 1:
+            raise error.Abort(_(b'--at-rev requires a single source'))
+
+        new_ctx = context.overlayworkingctx(repo)
+        new_ctx.setbase(ctx.p1())
+        mergemod.graft(repo, ctx, wctx=new_ctx)
+
+        new_ctx.markcopied(absdest, copylist[0])
+
+        with repo.lock():
+            mem_ctx = new_ctx.tomemctx_for_amend(ctx)
+            new_node = mem_ctx.commit()
+
+            if repo.dirstate.p1() == ctx.node():
+                with repo.dirstate.parentchange():
+                    scmutil.movedirstate(repo, repo[new_node])
+            replacements = {ctx.node(): [new_node]}
+            scmutil.cleanupnodes(repo, replacements, b'copy', fixphase=True)
+
+        return
 
     # abssrc: hgsep
     # relsrc: ossep
@@ -1583,13 +1702,13 @@ def copy(ui, repo, pats, opts, rename=False):
 
         # fix up dirstate
         scmutil.dirstatecopy(
-            ui, repo, wctx, abssrc, abstarget, dryrun=dryrun, cwd=cwd
+            ui, repo, ctx, abssrc, abstarget, dryrun=dryrun, cwd=cwd
         )
         if rename and not dryrun:
             if not after and srcexists and not samefile:
                 rmdir = repo.ui.configbool(b'experimental', b'removeemptydirs')
                 repo.wvfs.unlinkpath(abssrc, rmdir=rmdir)
-            wctx.forget([abssrc])
+            ctx.forget([abssrc])
 
     # pat: ossep
     # dest ossep
@@ -1659,12 +1778,6 @@ def copy(ui, repo, pats, opts, rename=False):
                     res = lambda p: dest
         return res
 
-    pats = scmutil.expandpats(pats)
-    if not pats:
-        raise error.Abort(_(b'no source or destination specified'))
-    if len(pats) == 1:
-        raise error.Abort(_(b'no destination specified'))
-    dest = pats.pop()
     destdirexists = os.path.isdir(dest) and not os.path.islink(dest)
     if not destdirexists:
         if len(pats) > 1 or matchmod.patkind(pats[0]):
@@ -3012,7 +3125,7 @@ def amend(ui, repo, old, extra, pats, opts):
         ms = mergemod.mergestate.read(repo)
         mergeutil.checkunresolved(ms)
 
-        filestoamend = set(f for f in wctx.files() if matcher(f))
+        filestoamend = {f for f in wctx.files() if matcher(f)}
 
         changes = len(filestoamend) > 0
         if changes:
@@ -3804,7 +3917,7 @@ def _performrevert(
         # Apply changes
         fp = stringio()
         # chunks are serialized per file, but files aren't sorted
-        for f in sorted(set(c.header.filename() for c in chunks if ishunk(c))):
+        for f in sorted({c.header.filename() for c in chunks if ishunk(c)}):
             prntstatusmsg(b'revert', f)
         files = set()
         for c in chunks:

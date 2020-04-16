@@ -417,7 +417,7 @@ class vfs(abstractvfs):
            file were opened multiple times, there could be unflushed data
            because the original file handle hasn't been flushed/closed yet.)
 
-        ``checkambig`` argument is passed to atomictemplfile (valid
+        ``checkambig`` argument is passed to atomictempfile (valid
         only for writing), and is useful only if target file is
         guarded by any lock (e.g. repo.lock or repo.wlock).
 

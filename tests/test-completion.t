@@ -75,6 +75,7 @@ Show debug commands if there are no other candidates
   $ hg debugcomplete debug
   debugancestor
   debugapplystreamclonebundle
+  debugbackupbundle
   debugbuilddag
   debugbundle
   debugcapabilities
@@ -107,6 +108,7 @@ Show debug commands if there are no other candidates
   debugmanifestfulltextcache
   debugmergestate
   debugnamecomplete
+  debugnodemap
   debugobsolete
   debugp1copies
   debugp2copies
@@ -128,6 +130,7 @@ Show debug commands if there are no other candidates
   debugssl
   debugsub
   debugsuccessorssets
+  debugtagscache
   debugtemplate
   debuguigetpass
   debuguiprompt
@@ -255,9 +258,10 @@ Show all commands + options
   commit: addremove, close-branch, amend, secret, edit, force-close-branch, interactive, include, exclude, message, logfile, date, user, subrepos
   config: untrusted, edit, local, global, template
   continue: dry-run
-  copy: after, force, include, exclude, dry-run
+  copy: forget, after, at-rev, force, include, exclude, dry-run
   debugancestor: 
   debugapplystreamclonebundle: 
+  debugbackupbundle: recover, patch, git, limit, no-merges, stat, graph, style, template
   debugbuilddag: mergeable-file, overwritten-file, new-file
   debugbundle: all, part-type, spec
   debugcapabilities: 
@@ -287,8 +291,9 @@ Show all commands + options
   debuglabelcomplete: 
   debuglocks: force-lock, force-wlock, set-lock, set-wlock
   debugmanifestfulltextcache: clear, add
-  debugmergestate: 
+  debugmergestate: style, template
   debugnamecomplete: 
+  debugnodemap: dump-new, dump-disk, check, metadata
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
   debugp1copies: rev
   debugp2copies: rev
@@ -310,6 +315,7 @@ Show all commands + options
   debugssl: 
   debugsub: rev
   debugsuccessorssets: closest
+  debugtagscache: 
   debugtemplate: rev, define
   debuguigetpass: prompt
   debuguiprompt: prompt
@@ -339,7 +345,7 @@ Show all commands + options
   parents: rev, style, template
   paths: template
   phase: public, draft, secret, force, rev
-  pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
+  pull: update, force, confirm, rev, bookmark, branch, ssh, remotecmd, insecure
   push: force, rev, bookmark, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
   recover: verify
   remove: after, force, subrepos, include, exclude, dry-run

@@ -3,13 +3,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-extern crate chg;
-extern crate futures;
-extern crate log;
-extern crate tokio;
-extern crate tokio_hglib;
-
-use chg::locator;
+use chg::locator::{self, Locator};
 use chg::procutil;
 use chg::{ChgClientExt, ChgUiHandler};
 use futures::sync::oneshot;
@@ -18,7 +12,6 @@ use std::io;
 use std::process;
 use std::time::Instant;
 use tokio::prelude::*;
-use tokio_hglib::UnixClient;
 
 struct DebugLogger {
     start: Instant,
@@ -64,21 +57,25 @@ fn main() {
         log::set_max_level(log::LevelFilter::Debug);
     }
 
-    let code = run().unwrap_or_else(|err| {
+    // TODO: add loop detection by $CHGINTERNALMARK
+
+    let umask = unsafe { procutil::get_umask() }; // not thread safe
+    let code = run(umask).unwrap_or_else(|err| {
         writeln!(io::stderr(), "chg: abort: {}", err).unwrap_or(());
         255
     });
     process::exit(code);
 }
 
-fn run() -> io::Result<i32> {
-    let current_dir = env::current_dir()?;
-    let sock_path = locator::prepare_server_socket_path()?;
+fn run(umask: u32) -> io::Result<i32> {
+    let mut loc = Locator::prepare_from_env()?;
+    loc.set_early_args(locator::collect_early_args(env::args_os().skip(1)));
     let handler = ChgUiHandler::new();
     let (result_tx, result_rx) = oneshot::channel();
-    let fut = UnixClient::connect(sock_path)
-        .and_then(|client| client.set_current_dir(current_dir))
-        .and_then(|client| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
+    let fut = loc
+        .connect()
+        .and_then(|(_, client)| client.attach_io(io::stdin(), io::stdout(), io::stderr()))
+        .and_then(move |client| client.set_umask(umask))
         .and_then(|client| {
             let pid = client.server_spec().process_id.unwrap();
             let pgid = client.server_spec().process_group_id;

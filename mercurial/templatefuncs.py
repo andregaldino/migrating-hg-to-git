@@ -16,6 +16,7 @@ from .node import (
 )
 from . import (
     color,
+    dagop,
     diffutil,
     encoding,
     error,
@@ -658,17 +659,19 @@ def revset(context, mapping, args):
         return m(repo)
 
     if len(args) > 1:
+        key = None  # dynamically-created revs shouldn't be cached
         formatargs = [evalfuncarg(context, mapping, a) for a in args[1:]]
         revs = query(revsetlang.formatspec(raw, *formatargs))
     else:
         cache = context.resource(mapping, b'cache')
         revsetcache = cache.setdefault(b"revsetcache", {})
-        if raw in revsetcache:
-            revs = revsetcache[raw]
+        key = raw
+        if key in revsetcache:
+            revs = revsetcache[key]
         else:
             revs = query(raw)
-            revsetcache[raw] = revs
-    return templatekw.showrevslist(context, mapping, b"revision", revs)
+            revsetcache[key] = revs
+    return templateutil.revslist(repo, revs, name=b'revision', cachekey=key)
 
 
 @templatefunc(b'rstdoc(text, style)')
@@ -838,6 +841,45 @@ def startswith(context, mapping, args):
     if text.startswith(patn):
         return text
     return b''
+
+
+@templatefunc(
+    b'subsetparents(rev, revset)',
+    argspec=b'rev revset',
+    requires={b'repo', b'cache'},
+)
+def subsetparents(context, mapping, args):
+    """Look up parents of the rev in the sub graph given by the revset."""
+    if b'rev' not in args or b'revset' not in args:
+        # i18n: "subsetparents" is a keyword
+        raise error.ParseError(_(b"subsetparents expects two arguments"))
+
+    repo = context.resource(mapping, b'repo')
+
+    rev = templateutil.evalinteger(context, mapping, args[b'rev'])
+
+    # TODO: maybe subsetparents(rev) should be allowed. the default revset
+    # will be the revisions specified by -rREV argument.
+    q = templateutil.evalwrapped(context, mapping, args[b'revset'])
+    if not isinstance(q, templateutil.revslist):
+        # i18n: "subsetparents" is a keyword
+        raise error.ParseError(_(b"subsetparents expects a queried revset"))
+    subset = q.tovalue(context, mapping)
+    key = q.cachekey
+
+    if key:
+        # cache only if revset query isn't dynamic
+        cache = context.resource(mapping, b'cache')
+        walkercache = cache.setdefault(b'subsetparentswalker', {})
+        if key in walkercache:
+            walker = walkercache[key]
+        else:
+            walker = dagop.subsetparentswalker(repo, subset)
+            walkercache[key] = walker
+    else:
+        # for one-shot use, specify startrev to limit the search space
+        walker = dagop.subsetparentswalker(repo, subset, startrev=rev)
+    return templateutil.revslist(repo, walker.parentsset(rev))
 
 
 @templatefunc(b'word(number, text[, separator])')

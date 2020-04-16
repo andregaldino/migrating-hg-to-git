@@ -896,11 +896,13 @@ Check we deny its usage on older repository
   $ hg --config "phases.new-commit=internal" commit -m "my test internal commit" 2>&1 | grep ProgrammingError
   ** ProgrammingError: this repository does not support the internal phase
       raise error.ProgrammingError(msg)
-  mercurial.error.ProgrammingError: this repository does not support the internal phase
+  mercurial.error.ProgrammingError: this repository does not support the internal phase (no-chg !)
+  ProgrammingError: this repository does not support the internal phase (chg !)
   $ hg --config "phases.new-commit=archived" commit -m "my test archived commit" 2>&1 | grep ProgrammingError
   ** ProgrammingError: this repository does not support the archived phase
       raise error.ProgrammingError(msg)
-  mercurial.error.ProgrammingError: this repository does not support the archived phase
+  mercurial.error.ProgrammingError: this repository does not support the archived phase (no-chg !)
+  ProgrammingError: this repository does not support the archived phase (chg !)
 
   $ cd ..
 

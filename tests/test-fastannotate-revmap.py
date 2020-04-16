@@ -165,7 +165,7 @@ def testcopyfrom():
     rm2.flush()
 
     # two files should be the same
-    ensure(len(set(util.readfile(p) for p in [path, path2])) == 1)
+    ensure(len({util.readfile(p) for p in [path, path2]}) == 1)
 
     os.unlink(path)
     os.unlink(path2)

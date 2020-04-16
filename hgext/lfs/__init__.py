@@ -181,7 +181,7 @@ eh.configitem(
     b'experimental', b'lfs.disableusercache', default=False,
 )
 eh.configitem(
-    b'experimental', b'lfs.worker-enable', default=False,
+    b'experimental', b'lfs.worker-enable', default=True,
 )
 
 eh.configitem(

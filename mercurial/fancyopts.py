@@ -314,7 +314,7 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
     argmap = {}
     defmap = {}
     negations = {}
-    alllong = set(o[1] for o in options)
+    alllong = {o[1] for o in options}
 
     for option in options:
         if len(option) == 5:

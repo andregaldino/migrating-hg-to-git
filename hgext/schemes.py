@@ -97,7 +97,7 @@ class ShortRepository(object):
             parts = parts[:-1]
         else:
             tail = b''
-        context = dict((b'%d' % (i + 1), v) for i, v in enumerate(parts))
+        context = {b'%d' % (i + 1): v for i, v in enumerate(parts)}
         return b''.join(self.templater.process(self.url, context)) + tail
 
 

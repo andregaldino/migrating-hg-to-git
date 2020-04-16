@@ -29,12 +29,12 @@ stderr = getattr(sys.stderr, 'buffer', sys.stderr)
 
 if sys.version_info[0] >= 3:
 
-    def _bytespath(p):
+    def _sys2bytes(p):
         if p is None:
             return p
         return p.encode('utf-8')
 
-    def _strpath(p):
+    def _bytes2sys(p):
         if p is None:
             return p
         return p.decode('utf-8')
@@ -42,10 +42,10 @@ if sys.version_info[0] >= 3:
 
 else:
 
-    def _bytespath(p):
+    def _sys2bytes(p):
         return p
 
-    _strpath = _bytespath
+    _bytes2sys = _sys2bytes
 
 
 def check(name, desc):
@@ -307,11 +307,21 @@ def has_lsprof():
         return False
 
 
-def gethgversion():
+def _gethgversion():
     m = matchoutput('hg --version --quiet 2>&1', br'(\d+)\.(\d+)')
     if not m:
         return (0, 0)
     return (int(m.group(1)), int(m.group(2)))
+
+
+_hgversion = None
+
+
+def gethgversion():
+    global _hgversion
+    if _hgversion is None:
+        _hgversion = _gethgversion()
+    return _hgversion
 
 
 @checkvers(
@@ -320,6 +330,17 @@ def gethgversion():
 def has_hg_range(v):
     major, minor = v.split('.')[0:2]
     return gethgversion() >= (int(major), int(minor))
+
+
+@check("rust", "Using the Rust extensions")
+def has_rust():
+    """Check is the mercurial currently running is using some rust code"""
+    cmd = 'hg debuginstall --quiet 2>&1'
+    match = br'checking module policy \(([^)]+)\)'
+    policy = matchoutput(cmd, match)
+    if not policy:
+        return False
+    return b'rust' in policy.group(1)
 
 
 @check("hg08", "Mercurial >= 0.8")
@@ -358,6 +379,17 @@ def getgitversion():
     if not m:
         return (0, 0)
     return (int(m.group(1)), int(m.group(2)))
+
+
+@check("pygit2", "pygit2 Python library")
+def has_git():
+    try:
+        import pygit2
+
+        pygit2.Oid  # silence unused import
+        return True
+    except ImportError:
+        return False
 
 
 # https://github.com/git-lfs/lfs-test-server
@@ -451,7 +483,7 @@ def has_hardlink():
     os.close(fh)
     name = tempfile.mktemp(dir='.', prefix=tempprefix)
     try:
-        util.oslink(_bytespath(fn), _bytespath(name))
+        util.oslink(_sys2bytes(fn), _sys2bytes(name))
         os.unlink(name)
         return True
     except OSError:
@@ -542,11 +574,14 @@ def has_root():
 
 @check("pyflakes", "Pyflakes python linter")
 def has_pyflakes():
-    return matchoutput(
-        "sh -c \"echo 'import re' 2>&1 | pyflakes\"",
-        br"<stdin>:1: 're' imported but unused",
-        True,
-    )
+    try:
+        import pyflakes
+
+        pyflakes.__version__
+    except ImportError:
+        return False
+    else:
+        return True
 
 
 @check("pylint", "Pylint python linter")
@@ -685,7 +720,7 @@ def has_tic():
 
         curses.COLOR_BLUE
         return matchoutput('test -x "`which tic`"', br'')
-    except ImportError:
+    except (ImportError, AttributeError):
         return False
 
 
@@ -1022,7 +1057,7 @@ def has_black():
     version_regex = b'black, version ([0-9a-b.]+)'
     version = matchoutput(blackcmd, version_regex)
     sv = distutils.version.StrictVersion
-    return version and sv(_strpath(version.group(1))) >= sv('19.10b0')
+    return version and sv(_bytes2sys(version.group(1))) >= sv('19.10b0')
 
 
 @check('pytype', 'the pytype type checker')
@@ -1030,7 +1065,7 @@ def has_pytype():
     pytypecmd = 'pytype --version'
     version = matchoutput(pytypecmd, b'[0-9a-b.]+')
     sv = distutils.version.StrictVersion
-    return version and sv(_strpath(version.group(0))) >= sv('2019.10.17')
+    return version and sv(_bytes2sys(version.group(0))) >= sv('2019.10.17')
 
 
 @check("rustfmt", "rustfmt tool")

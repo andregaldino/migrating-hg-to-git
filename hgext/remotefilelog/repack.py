@@ -321,7 +321,7 @@ def _computeincrementalhistorypack(ui, files):
 
 def _allpackfileswithsuffix(files, packsuffix, indexsuffix):
     result = []
-    fileset = set(fn for fn, mode, stat in files)
+    fileset = {fn for fn, mode, stat in files}
     for filename, mode, stat in files:
         if not filename.endswith(packsuffix):
             continue

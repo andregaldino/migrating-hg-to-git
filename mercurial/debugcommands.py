@@ -11,8 +11,10 @@ import codecs
 import collections
 import difflib
 import errno
+import glob
 import operator
 import os
+import platform
 import random
 import re
 import socket
@@ -27,7 +29,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullhex,
     nullid,
     nullrev,
     short,
@@ -38,6 +39,7 @@ from .pycompat import (
 )
 from . import (
     bundle2,
+    bundlerepo,
     changegroup,
     cmdutil,
     color,
@@ -75,6 +77,7 @@ from . import (
     sshpeer,
     sslutil,
     streamclone,
+    tags as tagsmod,
     templater,
     treediscovery,
     upgrade,
@@ -93,7 +96,10 @@ from .utils import (
     stringutil,
 )
 
-from .revlogutils import deltas as deltautil
+from .revlogutils import (
+    deltas as deltautil,
+    nodemap,
+)
 
 release = lockmod.release
 
@@ -578,7 +584,7 @@ def debugdag(ui, repo, file_=None, *revs, **opts):
     dots = opts.get('dots')
     if file_:
         rlog = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False), file_)
-        revs = set((int(r) for r in revs))
+        revs = {int(r) for r in revs}
 
         def events():
             for r in rlog:
@@ -1128,7 +1134,7 @@ def debugfileset(ui, repo, expr, **opts):
         (b'analyzed', filesetlang.analyze),
         (b'optimized', filesetlang.optimize),
     ]
-    stagenames = set(n for n, f in stages)
+    stagenames = {n for n, f in stages}
 
     showalways = set()
     if ui.verbose and not opts[b'show_stage']:
@@ -1487,6 +1493,11 @@ def debuginstall(ui, **opts):
         pycompat.sysexecutable or _(b"unknown"),
     )
     fm.write(
+        b'pythonimplementation',
+        _(b"checking Python implementation (%s)\n"),
+        pycompat.sysbytes(platform.python_implementation()),
+    )
+    fm.write(
         b'pythonver',
         _(b"checking Python version (%s)\n"),
         (b"%d.%d.%d" % sys.version_info[:3]),
@@ -1496,6 +1507,13 @@ def debuginstall(ui, **opts):
         _(b"checking Python lib (%s)...\n"),
         pythonlib or _(b"unknown"),
     )
+
+    try:
+        from . import rustext
+
+        rustext.__doc__  # trigger lazy import
+    except ImportError:
+        rustext = None
 
     security = set(sslutil.supportedprotocols)
     if sslutil.hassni:
@@ -1523,6 +1541,13 @@ def debuginstall(ui, **opts):
                 b'connectivity issues with some servers\n'
             )
         )
+
+    fm.plain(
+        _(
+            b"checking Rust extensions (%s)\n"
+            % (b'missing' if rustext is None else b'installed')
+        ),
+    )
 
     # TODO print CA cert info
 
@@ -1624,6 +1649,13 @@ def debuginstall(ui, **opts):
         re2 = b'available'
     fm.plain(_(b'checking "re2" regexp engine (%s)\n') % re2)
     fm.data(re2=bool(util._re2))
+
+    rust_debug_mod = policy.importrust("debug")
+    if rust_debug_mod is not None:
+        re2_rust = b'installed' if rust_debug_mod.re2_installed else b'missing'
+
+        msg = b'checking "re2" regexp engine Rust bindings (%s)\n'
+        fm.plain(_(msg % re2_rust))
 
     # templates
     p = templater.templatepaths()
@@ -1934,120 +1966,100 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
         )
 
 
-@command(b'debugmergestate', [], b'')
-def debugmergestate(ui, repo, *args):
+@command(b'debugmergestate', [] + cmdutil.templateopts, b'')
+def debugmergestate(ui, repo, *args, **opts):
     """print merge state
 
     Use --verbose to print out information about whether v1 or v2 merge state
     was chosen."""
 
-    def _hashornull(h):
-        if h == nullhex:
-            return b'null'
+    if ui.verbose:
+        ms = mergemod.mergestate(repo)
+
+        # sort so that reasonable information is on top
+        v1records = ms._readrecordsv1()
+        v2records = ms._readrecordsv2()
+
+        if not v1records and not v2records:
+            pass
+        elif not v2records:
+            ui.writenoi18n(b'no version 2 merge state\n')
+        elif ms._v1v2match(v1records, v2records):
+            ui.writenoi18n(b'v1 and v2 states match: using v2\n')
         else:
-            return h
+            ui.writenoi18n(b'v1 and v2 states mismatch: using v1\n')
 
-    def printrecords(version):
-        ui.writenoi18n(b'* version %d records\n' % version)
-        if version == 1:
-            records = v1records
-        else:
-            records = v2records
+    opts = pycompat.byteskwargs(opts)
+    if not opts[b'template']:
+        opts[b'template'] = (
+            b'{if(commits, "", "no merge state found\n")}'
+            b'{commits % "{name}{if(label, " ({label})")}: {node}\n"}'
+            b'{files % "file: {path} (state \\"{state}\\")\n'
+            b'{if(local_path, "'
+            b'  local path: {local_path} (hash {local_key}, flags \\"{local_flags}\\")\n'
+            b'  ancestor path: {ancestor_path} (node {ancestor_node})\n'
+            b'  other path: {other_path} (node {other_node})\n'
+            b'")}'
+            b'{if(rename_side, "'
+            b'  rename side: {rename_side}\n'
+            b'  renamed path: {renamed_path}\n'
+            b'")}'
+            b'{extras % "  extra: {key} = {value}\n"}'
+            b'"}'
+        )
 
-        for rtype, record in records:
-            # pretty print some record types
-            if rtype == b'L':
-                ui.writenoi18n(b'local: %s\n' % record)
-            elif rtype == b'O':
-                ui.writenoi18n(b'other: %s\n' % record)
-            elif rtype == b'm':
-                driver, mdstate = record.split(b'\0', 1)
-                ui.writenoi18n(
-                    b'merge driver: %s (state "%s")\n' % (driver, mdstate)
-                )
-            elif rtype in b'FDC':
-                r = record.split(b'\0')
-                f, state, hash, lfile, afile, anode, ofile = r[0:7]
-                if version == 1:
-                    onode = b'not stored in v1 format'
-                    flags = r[7]
-                else:
-                    onode, flags = r[7:9]
-                ui.writenoi18n(
-                    b'file: %s (record type "%s", state "%s", hash %s)\n'
-                    % (f, rtype, state, _hashornull(hash))
-                )
-                ui.writenoi18n(
-                    b'  local path: %s (flags "%s")\n' % (lfile, flags)
-                )
-                ui.writenoi18n(
-                    b'  ancestor path: %s (node %s)\n'
-                    % (afile, _hashornull(anode))
-                )
-                ui.writenoi18n(
-                    b'  other path: %s (node %s)\n'
-                    % (ofile, _hashornull(onode))
-                )
-            elif rtype == b'f':
-                filename, rawextras = record.split(b'\0', 1)
-                extras = rawextras.split(b'\0')
-                i = 0
-                extrastrings = []
-                while i < len(extras):
-                    extrastrings.append(b'%s = %s' % (extras[i], extras[i + 1]))
-                    i += 2
+    ms = mergemod.mergestate.read(repo)
 
-                ui.writenoi18n(
-                    b'file extras: %s (%s)\n'
-                    % (filename, b', '.join(extrastrings))
-                )
-            elif rtype == b'l':
-                labels = record.split(b'\0', 2)
-                labels = [l for l in labels if len(l) > 0]
-                ui.writenoi18n(b'labels:\n')
-                ui.write((b'  local: %s\n' % labels[0]))
-                ui.write((b'  other: %s\n' % labels[1]))
-                if len(labels) > 2:
-                    ui.write((b'  base:  %s\n' % labels[2]))
-            else:
-                ui.writenoi18n(
-                    b'unrecognized entry: %s\t%s\n'
-                    % (rtype, record.replace(b'\0', b'\t'))
-                )
+    fm = ui.formatter(b'debugmergestate', opts)
+    fm.startitem()
 
-    # Avoid mergestate.read() since it may raise an exception for unsupported
-    # merge state records. We shouldn't be doing this, but this is OK since this
-    # command is pretty low-level.
-    ms = mergemod.mergestate(repo)
+    fm_commits = fm.nested(b'commits')
+    if ms.active():
+        for name, node, label_index in (
+            (b'local', ms.local, 0),
+            (b'other', ms.other, 1),
+        ):
+            fm_commits.startitem()
+            fm_commits.data(name=name)
+            fm_commits.data(node=hex(node))
+            if ms._labels and len(ms._labels) > label_index:
+                fm_commits.data(label=ms._labels[label_index])
+    fm_commits.end()
 
-    # sort so that reasonable information is on top
-    v1records = ms._readrecordsv1()
-    v2records = ms._readrecordsv2()
-    order = b'LOml'
+    fm_files = fm.nested(b'files')
+    if ms.active():
+        for f in ms:
+            fm_files.startitem()
+            fm_files.data(path=f)
+            state = ms._state[f]
+            fm_files.data(state=state[0])
+            if state[0] in (
+                mergemod.MERGE_RECORD_UNRESOLVED,
+                mergemod.MERGE_RECORD_RESOLVED,
+            ):
+                fm_files.data(local_key=state[1])
+                fm_files.data(local_path=state[2])
+                fm_files.data(ancestor_path=state[3])
+                fm_files.data(ancestor_node=state[4])
+                fm_files.data(other_path=state[5])
+                fm_files.data(other_node=state[6])
+                fm_files.data(local_flags=state[7])
+            elif state[0] in (
+                mergemod.MERGE_RECORD_UNRESOLVED_PATH,
+                mergemod.MERGE_RECORD_RESOLVED_PATH,
+            ):
+                fm_files.data(renamed_path=state[1])
+                fm_files.data(rename_side=state[2])
+            fm_extras = fm_files.nested(b'extras')
+            for k, v in ms.extras(f).items():
+                fm_extras.startitem()
+                fm_extras.data(key=k)
+                fm_extras.data(value=v)
+            fm_extras.end()
 
-    def key(r):
-        idx = order.find(r[0])
-        if idx == -1:
-            return (1, r[1])
-        else:
-            return (0, idx)
+    fm_files.end()
 
-    v1records.sort(key=key)
-    v2records.sort(key=key)
-
-    if not v1records and not v2records:
-        ui.writenoi18n(b'no merge state found\n')
-    elif not v2records:
-        ui.notenoi18n(b'no version 2 merge state\n')
-        printrecords(1)
-    elif ms._v1v2match(v1records, v2records):
-        ui.notenoi18n(b'v1 and v2 states match: using v2\n')
-        printrecords(2)
-    else:
-        ui.notenoi18n(b'v1 and v2 states mismatch: using v1\n')
-        printrecords(1)
-        if ui.verbose:
-            printrecords(2)
+    fm.end()
 
 
 @command(b'debugnamecomplete', [], _(b'NAME...'))
@@ -2072,6 +2084,70 @@ def debugnamecomplete(ui, repo, *args):
         completions.update(n for n in names if n.startswith(a))
     ui.write(b'\n'.join(sorted(completions)))
     ui.write(b'\n')
+
+
+@command(
+    b'debugnodemap',
+    [
+        (
+            b'',
+            b'dump-new',
+            False,
+            _(b'write a (new) persistent binary nodemap on stdin'),
+        ),
+        (b'', b'dump-disk', False, _(b'dump on-disk data on stdin')),
+        (
+            b'',
+            b'check',
+            False,
+            _(b'check that the data on disk data are correct.'),
+        ),
+        (
+            b'',
+            b'metadata',
+            False,
+            _(b'display the on disk meta data for the nodemap'),
+        ),
+    ],
+)
+def debugnodemap(ui, repo, **opts):
+    """write and inspect on disk nodemap
+    """
+    if opts['dump_new']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        if util.safehasattr(cl.index, "nodemap_data_all"):
+            data = cl.index.nodemap_data_all()
+        else:
+            data = nodemap.persistent_data(cl.index)
+        ui.write(data)
+    elif opts['dump_disk']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        nm_data = nodemap.persisted_data(cl)
+        if nm_data is not None:
+            docket, data = nm_data
+            ui.write(data[:])
+    elif opts['check']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        nm_data = nodemap.persisted_data(cl)
+        if nm_data is not None:
+            docket, data = nm_data
+            return nodemap.check_data(ui, cl.index, data)
+    elif opts['metadata']:
+        unfi = repo.unfiltered()
+        cl = unfi.changelog
+        nm_data = nodemap.persisted_data(cl)
+        if nm_data is not None:
+            docket, data = nm_data
+            ui.write((b"uid: %s\n") % docket.uid)
+            ui.write((b"tip-rev: %d\n") % docket.tip_rev)
+            ui.write((b"tip-node: %s\n") % hex(docket.tip_node))
+            ui.write((b"data-length: %d\n") % docket.data_length)
+            ui.write((b"data-unused: %d\n") % docket.data_unused)
+            unused_perc = docket.data_unused * 100.0 / docket.data_length
+            ui.write((b"data-unused: %2.3f%%\n") % unused_perc)
 
 
 @command(
@@ -2549,7 +2625,7 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
             dirstatefiles = set(dirstate)
             manifestonly = manifestfiles - dirstatefiles
             dsonly = dirstatefiles - manifestfiles
-            dsnotadded = set(f for f in dsonly if dirstate[f] != b'a')
+            dsnotadded = {f for f in dsonly if dirstate[f] != b'a'}
             changedfiles = manifestonly | dsnotadded
 
         dirstate.rebuild(ctx.node(), ctx.manifest(), changedfiles)
@@ -3116,7 +3192,7 @@ def debugrevspec(ui, repo, expr, **opts):
         raise error.Abort(
             _(b'cannot use --verify-optimized with --no-optimized')
         )
-    stagenames = set(n for n, f in stages)
+    stagenames = {n for n, f in stages}
 
     showalways = set()
     showchanged = set()
@@ -3355,6 +3431,143 @@ def debugssl(ui, repo, source=None, **opts):
 
 
 @command(
+    b"debugbackupbundle",
+    [
+        (
+            b"",
+            b"recover",
+            b"",
+            b"brings the specified changeset back into the repository",
+        )
+    ]
+    + cmdutil.logopts,
+    _(b"hg debugbackupbundle [--recover HASH]"),
+)
+def debugbackupbundle(ui, repo, *pats, **opts):
+    """lists the changesets available in backup bundles
+
+    Without any arguments, this command prints a list of the changesets in each
+    backup bundle.
+
+    --recover takes a changeset hash and unbundles the first bundle that
+    contains that hash, which puts that changeset back in your repository.
+
+    --verbose will print the entire commit message and the bundle path for that
+    backup.
+    """
+    backups = list(
+        filter(
+            os.path.isfile, glob.glob(repo.vfs.join(b"strip-backup") + b"/*.hg")
+        )
+    )
+    backups.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+
+    opts = pycompat.byteskwargs(opts)
+    opts[b"bundle"] = b""
+    opts[b"force"] = None
+    limit = logcmdutil.getlimit(opts)
+
+    def display(other, chlist, displayer):
+        if opts.get(b"newest_first"):
+            chlist.reverse()
+        count = 0
+        for n in chlist:
+            if limit is not None and count >= limit:
+                break
+            parents = [True for p in other.changelog.parents(n) if p != nullid]
+            if opts.get(b"no_merges") and len(parents) == 2:
+                continue
+            count += 1
+            displayer.show(other[n])
+
+    recovernode = opts.get(b"recover")
+    if recovernode:
+        if scmutil.isrevsymbol(repo, recovernode):
+            ui.warn(_(b"%s already exists in the repo\n") % recovernode)
+            return
+    elif backups:
+        msg = _(
+            b"Recover changesets using: hg debugbackupbundle --recover "
+            b"<changeset hash>\n\nAvailable backup changesets:"
+        )
+        ui.status(msg, label=b"status.removed")
+    else:
+        ui.status(_(b"no backup changesets found\n"))
+        return
+
+    for backup in backups:
+        # Much of this is copied from the hg incoming logic
+        source = ui.expandpath(os.path.relpath(backup, encoding.getcwd()))
+        source, branches = hg.parseurl(source, opts.get(b"branch"))
+        try:
+            other = hg.peer(repo, opts, source)
+        except error.LookupError as ex:
+            msg = _(b"\nwarning: unable to open bundle %s") % source
+            hint = _(b"\n(missing parent rev %s)\n") % short(ex.name)
+            ui.warn(msg, hint=hint)
+            continue
+        revs, checkout = hg.addbranchrevs(
+            repo, other, branches, opts.get(b"rev")
+        )
+
+        if revs:
+            revs = [other.lookup(rev) for rev in revs]
+
+        quiet = ui.quiet
+        try:
+            ui.quiet = True
+            other, chlist, cleanupfn = bundlerepo.getremotechanges(
+                ui, repo, other, revs, opts[b"bundle"], opts[b"force"]
+            )
+        except error.LookupError:
+            continue
+        finally:
+            ui.quiet = quiet
+
+        try:
+            if not chlist:
+                continue
+            if recovernode:
+                with repo.lock(), repo.transaction(b"unbundle") as tr:
+                    if scmutil.isrevsymbol(other, recovernode):
+                        ui.status(_(b"Unbundling %s\n") % (recovernode))
+                        f = hg.openpath(ui, source)
+                        gen = exchange.readbundle(ui, f, source)
+                        if isinstance(gen, bundle2.unbundle20):
+                            bundle2.applybundle(
+                                repo,
+                                gen,
+                                tr,
+                                source=b"unbundle",
+                                url=b"bundle:" + source,
+                            )
+                        else:
+                            gen.apply(repo, b"unbundle", b"bundle:" + source)
+                        break
+            else:
+                backupdate = encoding.strtolocal(
+                    time.strftime(
+                        "%a %H:%M, %Y-%m-%d",
+                        time.localtime(os.path.getmtime(source)),
+                    )
+                )
+                ui.status(b"\n%s\n" % (backupdate.ljust(50)))
+                if ui.verbose:
+                    ui.status(b"%s%s\n" % (b"bundle:".ljust(13), source))
+                else:
+                    opts[
+                        b"template"
+                    ] = b"{label('status.modified', node|short)} {desc|firstline}\n"
+                displayer = logcmdutil.changesetdisplayer(
+                    ui, other, opts, False
+                )
+                display(other, chlist, displayer)
+                displayer.close()
+        finally:
+            cleanupfn()
+
+
+@command(
     b'debugsub',
     [(b'r', b'rev', b'', _(b'revision to check'), _(b'REV'))],
     _(b'[-r REV] [REV]'),
@@ -3421,6 +3634,17 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
                     ui.write(b' ')
                     ui.write(node2str(node))
             ui.write(b'\n')
+
+
+@command(b'debugtagscache', [])
+def debugtagscache(ui, repo):
+    """display the contents of .hg/cache/hgtagsfnodes1"""
+    cache = tagsmod.hgtagsfnodescache(repo.unfiltered())
+    for r in repo:
+        node = repo[r].node()
+        tagsnode = cache.getfnode(node, computemissing=False)
+        tagsnodedisplay = hex(tagsnode) if tagsnode else b'missing/invalid'
+        ui.write(b'%d %s %s\n' % (r, hex(node), tagsnodedisplay))
 
 
 @command(
@@ -3497,7 +3721,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
 def debuguigetpass(ui, prompt=b''):
     """show prompt to type password"""
     r = ui.getpass(prompt)
-    ui.writenoi18n(b'respose: %s\n' % r)
+    ui.writenoi18n(b'response: %s\n' % r)
 
 
 @command(

@@ -32,7 +32,7 @@ Testing the reading of old format graftstate file with newer mercurial
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Writing the nodes in old format to graftstate
 
@@ -91,7 +91,7 @@ running `hg graft --continue`
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ echo wat > b
   $ hg resolve -m
@@ -141,7 +141,7 @@ Test that --date is preserved and reused in `hg graft --continue`
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ echo foobar > b
   $ hg resolve -m
@@ -180,7 +180,7 @@ Test that --log is preserved and reused in `hg graft --continue`
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ echo foobar > b
   $ hg resolve -m
@@ -246,7 +246,7 @@ Testing the --stop flag of `hg graft` which stops the interrupted graft
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ hg graft --stop --continue
   abort: cannot use '--continue' and '--stop' together
@@ -283,7 +283,7 @@ Testing the --stop flag of `hg graft` which stops the interrupted graft
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ hg graft --stop
   stopped the interrupted graft
@@ -352,7 +352,7 @@ when stripping is required
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ hg graft --continue --abort
   abort: cannot use '--continue' and '--abort' together
@@ -399,7 +399,7 @@ when stripping is not required
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ hg abort
   graft aborted
@@ -426,12 +426,12 @@ when some of the changesets became public
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ hg log -GT "{rev}:{node|short} {desc}"
   @  6:6ec71c037d94 added x
   |
-  | o  5:36b793615f78 added foo to c
+  | %  5:36b793615f78 added foo to c
   | |
   | | o  4:863a25e1a9ea added x
   | |/
@@ -488,7 +488,7 @@ when we created new changesets on top of existing one
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ cd ..
   $ hg init pullrepo
@@ -609,7 +609,7 @@ Prepare wrdir to check --no-commit is resepected after --continue:
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Resolve conflict:
   $ echo A>a
@@ -622,7 +622,7 @@ Resolve conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | o  3:09e253b87e17 A in file a
+  | %  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |
@@ -648,7 +648,7 @@ Check --no-commit is resepected when passed with --continue:
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Resolve conflict:
   $ echo A>a
@@ -669,7 +669,7 @@ Resolve conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | o  3:09e253b87e17 A in file a
+  | %  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |
@@ -688,7 +688,7 @@ When there is conflict:
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
   $ echo A>a
   $ hg resolve --mark
@@ -712,7 +712,7 @@ When there is conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | o  3:09e253b87e17 A in file a
+  | %  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |

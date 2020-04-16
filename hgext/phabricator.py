@@ -54,13 +54,14 @@ import mimetypes
 import operator
 import re
 
-from mercurial.node import bin, nullid
+from mercurial.node import bin, nullid, short
 from mercurial.i18n import _
 from mercurial.pycompat import getattr
 from mercurial.thirdparty import attr
 from mercurial import (
     cmdutil,
     context,
+    copies,
     encoding,
     error,
     exthelper,
@@ -114,6 +115,10 @@ eh.configitem(
 eh.configitem(
     b'phabricator', b'curlcmd', default=None,
 )
+# developer config: phabricator.debug
+eh.configitem(
+    b'phabricator', b'debug', default=False,
+)
 # developer config: phabricator.repophid
 eh.configitem(
     b'phabricator', b'repophid', default=None,
@@ -123,6 +128,12 @@ eh.configitem(
 )
 eh.configitem(
     b'phabsend', b'confirm', default=False,
+)
+eh.configitem(
+    b'phabimport', b'secret', default=False,
+)
+eh.configitem(
+    b'phabimport', b'obsolete', default=False,
 )
 
 colortable = {
@@ -257,17 +268,34 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
 
-        inner.__name__ = fn.__name__
-        inner.__doc__ = fn.__doc__
+        cmd = util.checksignature(inner, depth=2)
+        cmd.__name__ = fn.__name__
+        cmd.__doc__ = fn.__doc__
+
         return command(
             name,
             fullflags,
             spec,
             helpcategory=helpcategory,
             optionalrepo=optionalrepo,
-        )(inner)
+        )(cmd)
 
     return decorate
+
+
+def _debug(ui, *msg, **opts):
+    """write debug output for Phabricator if ``phabricator.debug`` is set
+
+    Specifically, this avoids dumping Conduit and HTTP auth chatter that is
+    printed with the --debug argument.
+    """
+    if ui.configbool(b"phabricator", b"debug"):
+        flag = ui.debugflag
+        try:
+            ui.debugflag = True
+            ui.write(*msg, **opts)
+        finally:
+            ui.debugflag = flag
 
 
 def urlencodenested(params):
@@ -446,7 +474,8 @@ def getoldnodedrevmap(repo, nodelist):
     has_node = unfi.changelog.index.has_node
 
     result = {}  # {node: (oldnode?, lastdiff?, drev)}
-    toconfirm = {}  # {node: (force, {precnode}, drev)}
+    # ordered for test stability when printing new -> old mapping below
+    toconfirm = util.sortdict()  # {node: (force, {precnode}, drev)}
     for node in nodelist:
         ctx = unfi[node]
         # For tags like "D123", put them into "toconfirm" to verify later
@@ -474,18 +503,23 @@ def getoldnodedrevmap(repo, nodelist):
         alldiffs = callconduit(
             unfi.ui, b'differential.querydiffs', {b'revisionIDs': drevs}
         )
-        getnode = lambda d: bin(getdiffmeta(d).get(b'node', b'')) or None
+
+        def getnodes(d, precset):
+            # Ignore other nodes that were combined into the Differential
+            # that aren't predecessors of the current local node.
+            return [n for n in getlocalcommits(d) if n in precset]
+
         for newnode, (force, precset, drev) in toconfirm.items():
             diffs = [
                 d for d in alldiffs.values() if int(d[b'revisionID']) == drev
             ]
 
-            # "precursors" as known by Phabricator
-            phprecset = set(getnode(d) for d in diffs)
+            # local predecessors known by Phabricator
+            phprecset = {n for d in diffs for n in getnodes(d, precset)}
 
             # Ignore if precursors (Phabricator and local repo) do not overlap,
             # and force is not set (when commit message says nothing)
-            if not force and not bool(phprecset & precset):
+            if not force and not phprecset:
                 tagname = b'D%d' % drev
                 tags.tag(
                     repo,
@@ -510,7 +544,33 @@ def getoldnodedrevmap(repo, nodelist):
             oldnode = lastdiff = None
             if diffs:
                 lastdiff = max(diffs, key=lambda d: int(d[b'id']))
-                oldnode = getnode(lastdiff)
+                oldnodes = getnodes(lastdiff, precset)
+
+                _debug(
+                    unfi.ui,
+                    b"%s mapped to old nodes %s\n"
+                    % (
+                        short(newnode),
+                        stringutil.pprint([short(n) for n in sorted(oldnodes)]),
+                    ),
+                )
+
+                # If this commit was the result of `hg fold` after submission,
+                # and now resubmitted with --fold, the easiest thing to do is
+                # to leave the node clear.  This only results in creating a new
+                # diff for the _same_ Differential Revision if this commit is
+                # the first or last in the selected range.  If we picked a node
+                # from the list instead, it would have to be the lowest if at
+                # the beginning of the --fold range, or the highest at the end.
+                # Otherwise, one or more of the nodes wouldn't be considered in
+                # the diff, and the Differential wouldn't be properly updated.
+                # If this commit is the result of `hg split` in the same
+                # scenario, there is a single oldnode here (and multiple
+                # newnodes mapped to it).  That makes it the same as the normal
+                # case, as the edges of the newnode range cleanly maps to one
+                # oldnode each.
+                if len(oldnodes) == 1:
+                    oldnode = oldnodes[0]
                 if oldnode and not has_node(oldnode):
                     oldnode = None
 
@@ -542,11 +602,11 @@ def getdrevmap(repo, revs):
     return result
 
 
-def getdiff(ctx, diffopts):
+def getdiff(basectx, ctx, diffopts):
     """plain-text diff without header (user, commit message, etc)"""
     output = util.stringio()
     for chunk, _label in patch.diffui(
-        ctx.repo(), ctx.p1().node(), ctx.node(), None, opts=diffopts
+        ctx.repo(), basectx.p1().node(), ctx.node(), None, opts=diffopts
     ):
         output.write(chunk)
     return output.getvalue()
@@ -653,13 +713,13 @@ class phabdiff(object):
         )
 
 
-def maketext(pchange, ctx, fname):
+def maketext(pchange, basectx, ctx, fname):
     """populate the phabchange for a text file"""
     repo = ctx.repo()
     fmatcher = match.exact([fname])
     diffopts = mdiff.diffopts(git=True, context=32767)
     _pfctx, _fctx, header, fhunks = next(
-        patch.diffhunks(repo, ctx.p1(), ctx, fmatcher, opts=diffopts)
+        patch.diffhunks(repo, basectx.p1(), ctx, fmatcher, opts=diffopts)
     )
 
     for fhunk in fhunks:
@@ -747,12 +807,14 @@ def uploadfile(fctx):
     return fphid
 
 
-def addoldbinary(pchange, fctx):
+def addoldbinary(pchange, oldfctx, fctx):
     """add the metadata for the previous version of a binary file to the
     phabchange for the new version
+
+    ``oldfctx`` is the previous version of the file; ``fctx`` is the new
+    version of the file, or None if the file is being removed.
     """
-    oldfctx = fctx.p1()
-    if fctx.cmp(oldfctx):
+    if not fctx or fctx.cmp(oldfctx):
         # Files differ, add the old one
         pchange.metadata[b'old:file:size'] = oldfctx.size()
         mimeguess, _enc = mimetypes.guess_type(
@@ -794,8 +856,6 @@ def notutf8(fctx):
     """
     try:
         fctx.data().decode('utf-8')
-        if fctx.parents():
-            fctx.p1().data().decode('utf-8')
         return False
     except UnicodeDecodeError:
         fctx.repo().ui.write(
@@ -805,56 +865,76 @@ def notutf8(fctx):
         return True
 
 
-def addremoved(pdiff, ctx, removed):
+def addremoved(pdiff, basectx, ctx, removed):
     """add removed files to the phabdiff. Shouldn't include moves"""
     for fname in removed:
         pchange = phabchange(
             currentPath=fname, oldPath=fname, type=DiffChangeType.DELETE
         )
-        pchange.addoldmode(gitmode[ctx.p1()[fname].flags()])
-        fctx = ctx.p1()[fname]
-        if not (fctx.isbinary() or notutf8(fctx)):
-            maketext(pchange, ctx, fname)
+        oldfctx = basectx.p1()[fname]
+        pchange.addoldmode(gitmode[oldfctx.flags()])
+        if not (oldfctx.isbinary() or notutf8(oldfctx)):
+            maketext(pchange, basectx, ctx, fname)
 
         pdiff.addchange(pchange)
 
 
-def addmodified(pdiff, ctx, modified):
+def addmodified(pdiff, basectx, ctx, modified):
     """add modified files to the phabdiff"""
     for fname in modified:
         fctx = ctx[fname]
+        oldfctx = basectx.p1()[fname]
         pchange = phabchange(currentPath=fname, oldPath=fname)
-        filemode = gitmode[ctx[fname].flags()]
-        originalmode = gitmode[ctx.p1()[fname].flags()]
+        filemode = gitmode[fctx.flags()]
+        originalmode = gitmode[oldfctx.flags()]
         if filemode != originalmode:
             pchange.addoldmode(originalmode)
             pchange.addnewmode(filemode)
 
-        if fctx.isbinary() or notutf8(fctx):
+        if (
+            fctx.isbinary()
+            or notutf8(fctx)
+            or oldfctx.isbinary()
+            or notutf8(oldfctx)
+        ):
             makebinary(pchange, fctx)
-            addoldbinary(pchange, fctx)
+            addoldbinary(pchange, oldfctx, fctx)
         else:
-            maketext(pchange, ctx, fname)
+            maketext(pchange, basectx, ctx, fname)
 
         pdiff.addchange(pchange)
 
 
-def addadded(pdiff, ctx, added, removed):
+def addadded(pdiff, basectx, ctx, added, removed):
     """add file adds to the phabdiff, both new files and copies/moves"""
     # Keep track of files that've been recorded as moved/copied, so if there are
     # additional copies we can mark them (moves get removed from removed)
     copiedchanges = {}
     movedchanges = {}
+
+    copy = {}
+    if basectx != ctx:
+        copy = copies.pathcopies(basectx.p1(), ctx)
+
     for fname in added:
         fctx = ctx[fname]
+        oldfctx = None
         pchange = phabchange(currentPath=fname)
 
-        filemode = gitmode[ctx[fname].flags()]
-        renamed = fctx.renamed()
+        filemode = gitmode[fctx.flags()]
+
+        if copy:
+            originalfname = copy.get(fname, fname)
+        else:
+            originalfname = fname
+            if fctx.renamed():
+                originalfname = fctx.renamed()[0]
+
+        renamed = fname != originalfname
 
         if renamed:
-            originalfname = renamed[0]
-            originalmode = gitmode[ctx.p1()[originalfname].flags()]
+            oldfctx = basectx.p1()[originalfname]
+            originalmode = gitmode[oldfctx.flags()]
             pchange.oldPath = originalfname
 
             if originalfname in removed:
@@ -889,12 +969,16 @@ def addadded(pdiff, ctx, added, removed):
             pchange.addnewmode(gitmode[fctx.flags()])
             pchange.type = DiffChangeType.ADD
 
-        if fctx.isbinary() or notutf8(fctx):
+        if (
+            fctx.isbinary()
+            or notutf8(fctx)
+            or (oldfctx and (oldfctx.isbinary() or notutf8(oldfctx)))
+        ):
             makebinary(pchange, fctx)
             if renamed:
-                addoldbinary(pchange, fctx)
+                addoldbinary(pchange, oldfctx, fctx)
         else:
-            maketext(pchange, ctx, fname)
+            maketext(pchange, basectx, ctx, fname)
 
         pdiff.addchange(pchange)
 
@@ -904,21 +988,21 @@ def addadded(pdiff, ctx, added, removed):
         pdiff.addchange(movedchange)
 
 
-def creatediff(ctx):
+def creatediff(basectx, ctx):
     """create a Differential Diff"""
     repo = ctx.repo()
     repophid = getrepophid(repo)
     # Create a "Differential Diff" via "differential.creatediff" API
     pdiff = phabdiff(
-        sourceControlBaseRevision=b'%s' % ctx.p1().hex(),
+        sourceControlBaseRevision=b'%s' % basectx.p1().hex(),
         branch=b'%s' % ctx.branch(),
     )
-    modified, added, removed, _d, _u, _i, _c = ctx.p1().status(ctx)
+    modified, added, removed, _d, _u, _i, _c = basectx.p1().status(ctx)
     # addadded will remove moved files from removed, so addremoved won't get
     # them
-    addadded(pdiff, ctx, added, removed)
-    addmodified(pdiff, ctx, modified)
-    addremoved(pdiff, ctx, removed)
+    addadded(pdiff, basectx, ctx, added, removed)
+    addmodified(pdiff, basectx, ctx, modified)
+    addremoved(pdiff, basectx, ctx, removed)
     if repophid:
         pdiff.repositoryPHID = repophid
     diff = callconduit(
@@ -927,52 +1011,64 @@ def creatediff(ctx):
         pycompat.byteskwargs(attr.asdict(pdiff)),
     )
     if not diff:
-        raise error.Abort(_(b'cannot create diff for %s') % ctx)
+        if basectx != ctx:
+            msg = _(b'cannot create diff for %s::%s') % (basectx, ctx)
+        else:
+            msg = _(b'cannot create diff for %s') % ctx
+        raise error.Abort(msg)
     return diff
 
 
-def writediffproperties(ctx, diff):
-    """write metadata to diff so patches could be applied losslessly"""
+def writediffproperties(ctxs, diff):
+    """write metadata to diff so patches could be applied losslessly
+
+    ``ctxs`` is the list of commits that created the diff, in ascending order.
+    The list is generally a single commit, but may be several when using
+    ``phabsend --fold``.
+    """
     # creatediff returns with a diffid but query returns with an id
     diffid = diff.get(b'diffid', diff.get(b'id'))
+    basectx = ctxs[0]
+    tipctx = ctxs[-1]
+
     params = {
         b'diff_id': diffid,
         b'name': b'hg:meta',
         b'data': templatefilters.json(
             {
-                b'user': ctx.user(),
-                b'date': b'%d %d' % ctx.date(),
-                b'branch': ctx.branch(),
-                b'node': ctx.hex(),
-                b'parent': ctx.p1().hex(),
+                b'user': tipctx.user(),
+                b'date': b'%d %d' % tipctx.date(),
+                b'branch': tipctx.branch(),
+                b'node': tipctx.hex(),
+                b'parent': basectx.p1().hex(),
             }
         ),
     }
-    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
+    callconduit(basectx.repo().ui, b'differential.setdiffproperty', params)
 
+    commits = {}
+    for ctx in ctxs:
+        commits[ctx.hex()] = {
+            b'author': stringutil.person(ctx.user()),
+            b'authorEmail': stringutil.email(ctx.user()),
+            b'time': int(ctx.date()[0]),
+            b'commit': ctx.hex(),
+            b'parents': [ctx.p1().hex()],
+            b'branch': ctx.branch(),
+        }
     params = {
         b'diff_id': diffid,
         b'name': b'local:commits',
-        b'data': templatefilters.json(
-            {
-                ctx.hex(): {
-                    b'author': stringutil.person(ctx.user()),
-                    b'authorEmail': stringutil.email(ctx.user()),
-                    b'time': int(ctx.date()[0]),
-                    b'commit': ctx.hex(),
-                    b'parents': [ctx.p1().hex()],
-                    b'branch': ctx.branch(),
-                },
-            }
-        ),
+        b'data': templatefilters.json(commits),
     }
-    callconduit(ctx.repo().ui, b'differential.setdiffproperty', params)
+    callconduit(basectx.repo().ui, b'differential.setdiffproperty', params)
 
 
 def createdifferentialrevision(
-    ctx,
+    ctxs,
     revid=None,
     parentrevphid=None,
+    oldbasenode=None,
     oldnode=None,
     olddiff=None,
     actions=None,
@@ -983,22 +1079,38 @@ def createdifferentialrevision(
     If revid is None, create a new Differential Revision, otherwise update
     revid. If parentrevphid is not None, set it as a dependency.
 
+    If there is a single commit for the new Differential Revision, ``ctxs`` will
+    be a list of that single context.  Otherwise, it is a list that covers the
+    range of changes for the differential, where ``ctxs[0]`` is the first change
+    to include and ``ctxs[-1]`` is the last.
+
     If oldnode is not None, check if the patch content (without commit message
-    and metadata) has changed before creating another diff.
+    and metadata) has changed before creating another diff.  For a Revision with
+    a single commit, ``oldbasenode`` and ``oldnode`` have the same value.  For a
+    Revision covering multiple commits, ``oldbasenode`` corresponds to
+    ``ctxs[0]`` the previous time this Revision was posted, and ``oldnode``
+    corresponds to ``ctxs[-1]``.
 
     If actions is not None, they will be appended to the transaction.
     """
+    ctx = ctxs[-1]
+    basectx = ctxs[0]
+
     repo = ctx.repo()
     if oldnode:
         diffopts = mdiff.diffopts(git=True, context=32767)
-        oldctx = repo.unfiltered()[oldnode]
-        neednewdiff = getdiff(ctx, diffopts) != getdiff(oldctx, diffopts)
+        unfi = repo.unfiltered()
+        oldctx = unfi[oldnode]
+        oldbasectx = unfi[oldbasenode]
+        neednewdiff = getdiff(basectx, ctx, diffopts) != getdiff(
+            oldbasectx, oldctx, diffopts
+        )
     else:
         neednewdiff = True
 
     transactions = []
     if neednewdiff:
-        diff = creatediff(ctx)
+        diff = creatediff(basectx, ctx)
         transactions.append({b'type': b'update', b'value': diff[b'phid']})
         if comment:
             transactions.append({b'type': b'comment', b'value': comment})
@@ -1008,7 +1120,7 @@ def createdifferentialrevision(
         # pushers could know the correct node metadata.
         assert olddiff
         diff = olddiff
-    writediffproperties(ctx, diff)
+    writediffproperties(ctxs, diff)
 
     # Set the parent Revision every time, so commit re-ordering is picked-up
     if parentrevphid:
@@ -1019,14 +1131,42 @@ def createdifferentialrevision(
     if actions:
         transactions += actions
 
-    # Parse commit message and update related fields.
-    desc = ctx.description()
-    info = callconduit(
-        repo.ui, b'differential.parsecommitmessage', {b'corpus': desc}
-    )
-    for k, v in info[b'fields'].items():
-        if k in [b'title', b'summary', b'testPlan']:
-            transactions.append({b'type': k, b'value': v})
+    # When folding multiple local commits into a single review, arcanist will
+    # take the summary line of the first commit as the title, and then
+    # concatenate the rest of the remaining messages (including each of their
+    # first lines) to the rest of the first commit message (each separated by
+    # an empty line), and use that as the summary field.  Do the same here.
+    # For commits with only a one line message, there is no summary field, as
+    # this gets assigned to the title.
+    fields = util.sortdict()  # sorted for stable wire protocol in tests
+
+    for i, _ctx in enumerate(ctxs):
+        # Parse commit message and update related fields.
+        desc = _ctx.description()
+        info = callconduit(
+            repo.ui, b'differential.parsecommitmessage', {b'corpus': desc}
+        )
+
+        for k in [b'title', b'summary', b'testPlan']:
+            v = info[b'fields'].get(k)
+            if not v:
+                continue
+
+            if i == 0:
+                # Title, summary and test plan (if present) are taken verbatim
+                # for the first commit.
+                fields[k] = v.rstrip()
+                continue
+            elif k == b'title':
+                # Add subsequent titles (i.e. the first line of the commit
+                # message) back to the summary.
+                k = b'summary'
+
+            # Append any current field to the existing composite field
+            fields[k] = b'\n\n'.join(filter(None, [fields.get(k), v.rstrip()]))
+
+    for k, v in fields.items():
+        transactions.append({b'type': k, b'value': v})
 
     params = {b'transactions': transactions}
     if revid is not None:
@@ -1035,26 +1175,69 @@ def createdifferentialrevision(
 
     revision = callconduit(repo.ui, b'differential.revision.edit', params)
     if not revision:
-        raise error.Abort(_(b'cannot create revision for %s') % ctx)
+        if len(ctxs) == 1:
+            msg = _(b'cannot create revision for %s') % ctx
+        else:
+            msg = _(b'cannot create revision for %s::%s') % (basectx, ctx)
+        raise error.Abort(msg)
 
     return revision, diff
 
 
-def userphids(repo, names):
+def userphids(ui, names):
     """convert user names to PHIDs"""
     names = [name.lower() for name in names]
     query = {b'constraints': {b'usernames': names}}
-    result = callconduit(repo.ui, b'user.search', query)
+    result = callconduit(ui, b'user.search', query)
     # username not found is not an error of the API. So check if we have missed
     # some names here.
     data = result[b'data']
-    resolved = set(entry[b'fields'][b'username'].lower() for entry in data)
+    resolved = {entry[b'fields'][b'username'].lower() for entry in data}
     unresolved = set(names) - resolved
     if unresolved:
         raise error.Abort(
             _(b'unknown username: %s') % b' '.join(sorted(unresolved))
         )
     return [entry[b'phid'] for entry in data]
+
+
+def _print_phabsend_action(ui, ctx, newrevid, action):
+    """print the ``action`` that occurred when posting ``ctx`` for review
+
+    This is a utility function for the sending phase of ``phabsend``, which
+    makes it easier to show a status for all local commits with `--fold``.
+    """
+    actiondesc = ui.label(
+        {
+            b'created': _(b'created'),
+            b'skipped': _(b'skipped'),
+            b'updated': _(b'updated'),
+        }[action],
+        b'phabricator.action.%s' % action,
+    )
+    drevdesc = ui.label(b'D%d' % newrevid, b'phabricator.drev')
+    nodedesc = ui.label(bytes(ctx), b'phabricator.node')
+    desc = ui.label(ctx.description().split(b'\n')[0], b'phabricator.desc')
+    ui.write(_(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc, desc))
+
+
+def _amend_diff_properties(unfi, drevid, newnodes, diff):
+    """update the local commit list for the ``diff`` associated with ``drevid``
+
+    This is a utility function for the amend phase of ``phabsend``, which
+    converts failures to warning messages.
+    """
+    _debug(
+        unfi.ui,
+        b"new commits: %s\n" % stringutil.pprint([short(n) for n in newnodes]),
+    )
+
+    try:
+        writediffproperties([unfi[newnode] for newnode in newnodes], diff)
+    except util.urlerr.urlerror:
+        # If it fails just warn and keep going, otherwise the DREV
+        # associations will be lost
+        unfi.ui.warnnoi18n(b'Failed to update metadata for D%d\n' % drevid)
 
 
 @vcrcommand(
@@ -1071,6 +1254,7 @@ def userphids(repo, names):
             _(b'add a comment to Revisions with new/updated Diffs'),
         ),
         (b'', b'confirm', None, _(b'ask for confirmation before sending')),
+        (b'', b'fold', False, _(b'combine the revisions into one review')),
     ],
     _(b'REV [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
@@ -1099,6 +1283,12 @@ def phabsend(ui, repo, *revs, **opts):
         [phabsend]
         confirm = true
 
+    By default, a separate review will be created for each commit that is
+    selected, and will have the same parent/child relationship in Phabricator.
+    If ``--fold`` is set, multiple commits are rolled up into a single review
+    as if diffed from the parent of the first revision to the last.  The commit
+    messages are concatenated in the summary field on Phabricator.
+
     phabsend will check obsstore and the above association to decide whether to
     update an existing Differential Revision, or create a new one.
     """
@@ -1111,6 +1301,47 @@ def phabsend(ui, repo, *revs, **opts):
         raise error.Abort(_(b'phabsend requires at least one changeset'))
     if opts.get(b'amend'):
         cmdutil.checkunfinished(repo)
+
+    ctxs = [repo[rev] for rev in revs]
+
+    if any(c for c in ctxs if c.obsolete()):
+        raise error.Abort(_(b"obsolete commits cannot be posted for review"))
+
+    fold = opts.get(b'fold')
+    if fold:
+        if len(revs) == 1:
+            # TODO: just switch to --no-fold instead?
+            raise error.Abort(_(b"cannot fold a single revision"))
+
+        # There's no clear way to manage multiple commits with a Dxxx tag, so
+        # require the amend option.  (We could append "_nnn", but then it
+        # becomes jumbled if earlier commits are added to an update.)  It should
+        # lock the repo and ensure that the range is editable, but that would
+        # make the code pretty convoluted.  The default behavior of `arc` is to
+        # create a new review anyway.
+        if not opts.get(b"amend"):
+            raise error.Abort(_(b"cannot fold with --no-amend"))
+
+        # Ensure the local commits are an unbroken range
+        revrange = repo.revs(b'(first(%ld)::last(%ld))', revs, revs)
+        if any(r for r in revs if r not in revrange) or any(
+            r for r in revrange if r not in revs
+        ):
+            raise error.Abort(_(b"cannot fold non-linear revisions"))
+
+        # It might be possible to bucketize the revisions by the DREV value, and
+        # iterate over those groups when posting, and then again when amending.
+        # But for simplicity, require all selected revisions to be for the same
+        # DREV (if present).  Adding local revisions to an existing DREV is
+        # acceptable.
+        drevmatchers = [
+            _differentialrevisiondescre.search(ctx.description())
+            for ctx in ctxs
+        ]
+        if len({m.group('url') for m in drevmatchers if m}) > 1:
+            raise error.Abort(
+                _(b"cannot fold revisions with different DREV values")
+            )
 
     # {newnode: (oldnode, olddiff, olddrev}
     oldmap = getoldnodedrevmap(repo, [repo[r].node() for r in revs])
@@ -1127,10 +1358,13 @@ def phabsend(ui, repo, *revs, **opts):
     blockers = opts.get(b'blocker', [])
     phids = []
     if reviewers:
-        phids.extend(userphids(repo, reviewers))
+        phids.extend(userphids(repo.ui, reviewers))
     if blockers:
         phids.extend(
-            map(lambda phid: b'blocking(%s)' % phid, userphids(repo, blockers))
+            map(
+                lambda phid: b'blocking(%s)' % phid,
+                userphids(repo.ui, blockers),
+            )
         )
     if phids:
         actions.append({b'type': b'reviewers.add', b'value': phids})
@@ -1141,24 +1375,40 @@ def phabsend(ui, repo, *revs, **opts):
     # Send patches one by one so we know their Differential Revision PHIDs and
     # can provide dependency relationship
     lastrevphid = None
-    for rev in revs:
-        ui.debug(b'sending rev %d\n' % rev)
-        ctx = repo[rev]
+    for ctx in ctxs:
+        if fold:
+            ui.debug(b'sending rev %d::%d\n' % (ctx.rev(), ctxs[-1].rev()))
+        else:
+            ui.debug(b'sending rev %d\n' % ctx.rev())
 
         # Get Differential Revision ID
         oldnode, olddiff, revid = oldmap.get(ctx.node(), (None, None, None))
+        oldbasenode, oldbasediff, oldbaserevid = oldnode, olddiff, revid
+
+        if fold:
+            oldbasenode, oldbasediff, oldbaserevid = oldmap.get(
+                ctxs[-1].node(), (None, None, None)
+            )
+
         if oldnode != ctx.node() or opts.get(b'amend'):
             # Create or update Differential Revision
             revision, diff = createdifferentialrevision(
-                ctx,
+                ctxs if fold else [ctx],
                 revid,
                 lastrevphid,
+                oldbasenode,
                 oldnode,
                 olddiff,
                 actions,
                 opts.get(b'comment'),
             )
-            diffmap[ctx.node()] = diff
+
+            if fold:
+                for ctx in ctxs:
+                    diffmap[ctx.node()] = diff
+            else:
+                diffmap[ctx.node()] = diff
+
             newrevid = int(revision[b'object'][b'id'])
             newrevphid = revision[b'object'][b'phid']
             if revid:
@@ -1168,56 +1418,75 @@ def phabsend(ui, repo, *revs, **opts):
 
             # Create a local tag to note the association, if commit message
             # does not have it already
-            m = _differentialrevisiondescre.search(ctx.description())
-            if not m or int(m.group('id')) != newrevid:
-                tagname = b'D%d' % newrevid
-                tags.tag(
-                    repo,
-                    tagname,
-                    ctx.node(),
-                    message=None,
-                    user=None,
-                    date=None,
-                    local=True,
-                )
+            if not fold:
+                m = _differentialrevisiondescre.search(ctx.description())
+                if not m or int(m.group('id')) != newrevid:
+                    tagname = b'D%d' % newrevid
+                    tags.tag(
+                        repo,
+                        tagname,
+                        ctx.node(),
+                        message=None,
+                        user=None,
+                        date=None,
+                        local=True,
+                    )
         else:
             # Nothing changed. But still set "newrevphid" so the next revision
             # could depend on this one and "newrevid" for the summary line.
-            newrevphid = querydrev(repo, b'%d' % revid)[0][b'phid']
+            newrevphid = querydrev(repo.ui, b'%d' % revid)[0][b'phid']
             newrevid = revid
             action = b'skipped'
 
-        actiondesc = ui.label(
-            {
-                b'created': _(b'created'),
-                b'skipped': _(b'skipped'),
-                b'updated': _(b'updated'),
-            }[action],
-            b'phabricator.action.%s' % action,
-        )
-        drevdesc = ui.label(b'D%d' % newrevid, b'phabricator.drev')
-        nodedesc = ui.label(bytes(ctx), b'phabricator.node')
-        desc = ui.label(ctx.description().split(b'\n')[0], b'phabricator.desc')
-        ui.write(
-            _(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc, desc)
-        )
         drevids.append(newrevid)
         lastrevphid = newrevphid
+
+        if fold:
+            for c in ctxs:
+                if oldmap.get(c.node(), (None, None, None))[2]:
+                    action = b'updated'
+                else:
+                    action = b'created'
+                _print_phabsend_action(ui, c, newrevid, action)
+            break
+
+        _print_phabsend_action(ui, ctx, newrevid, action)
 
     # Update commit messages and remove tags
     if opts.get(b'amend'):
         unfi = repo.unfiltered()
         drevs = callconduit(ui, b'differential.query', {b'ids': drevids})
         with repo.wlock(), repo.lock(), repo.transaction(b'phabsend'):
+            # Eagerly evaluate commits to restabilize before creating new
+            # commits.  The selected revisions are excluded because they are
+            # automatically restacked as part of the submission process.
+            restack = [
+                c
+                for c in repo.set(
+                    b"(%ld::) - (%ld) - unstable() - obsolete() - public()",
+                    revs,
+                    revs,
+                )
+            ]
             wnode = unfi[b'.'].node()
             mapping = {}  # {oldnode: [newnode]}
+            newnodes = []
+
+            drevid = drevids[0]
+
             for i, rev in enumerate(revs):
                 old = unfi[rev]
-                drevid = drevids[i]
+                if not fold:
+                    drevid = drevids[i]
                 drev = [d for d in drevs if int(d[b'id']) == drevid][0]
-                newdesc = getdescfromdrev(drev)
+
+                newdesc = get_amended_desc(drev, old, fold)
                 # Make sure commit message contain "Differential Revision"
-                if old.description() != newdesc:
+                if (
+                    old.description() != newdesc
+                    or old.p1().node() in mapping
+                    or old.p2().node() in mapping
+                ):
                     if old.phase() == phases.public:
                         ui.warn(
                             _(b"warning: not updating public commit %s\n")
@@ -1241,27 +1510,93 @@ def phabsend(ui, repo, *revs, **opts):
                     newnode = new.commit()
 
                     mapping[old.node()] = [newnode]
-                    # Update diff property
-                    # If it fails just warn and keep going, otherwise the DREV
-                    # associations will be lost
-                    try:
-                        writediffproperties(unfi[newnode], diffmap[old.node()])
-                    except util.urlerr.urlerror:
-                        ui.warnnoi18n(
-                            b'Failed to update metadata for D%d\n' % drevid
-                        )
-                # Remove local tags since it's no longer necessary
-                tagname = b'D%d' % drevid
-                if tagname in repo.tags():
-                    tags.tag(
-                        repo,
-                        tagname,
-                        nullid,
-                        message=None,
-                        user=None,
-                        date=None,
-                        local=True,
+
+                    if fold:
+                        # Defer updating the (single) Diff until all nodes are
+                        # collected.  No tags were created, so none need to be
+                        # removed.
+                        newnodes.append(newnode)
+                        continue
+
+                    _amend_diff_properties(
+                        unfi, drevid, [newnode], diffmap[old.node()]
                     )
+
+                    # Remove local tags since it's no longer necessary
+                    tagname = b'D%d' % drevid
+                    if tagname in repo.tags():
+                        tags.tag(
+                            repo,
+                            tagname,
+                            nullid,
+                            message=None,
+                            user=None,
+                            date=None,
+                            local=True,
+                        )
+                elif fold:
+                    # When folding multiple commits into one review with
+                    # --fold, track even the commits that weren't amended, so
+                    # that their association isn't lost if the properties are
+                    # rewritten below.
+                    newnodes.append(old.node())
+
+            # If the submitted commits are public, no amend takes place so
+            # there are no newnodes and therefore no diff update to do.
+            if fold and newnodes:
+                diff = diffmap[old.node()]
+
+                # The diff object in diffmap doesn't have the local commits
+                # because that could be returned from differential.creatediff,
+                # not differential.querydiffs.  So use the queried diff (if
+                # present), or force the amend (a new revision is being posted.)
+                if not olddiff or set(newnodes) != getlocalcommits(olddiff):
+                    _debug(ui, b"updating local commit list for D%d\n" % drevid)
+                    _amend_diff_properties(unfi, drevid, newnodes, diff)
+                else:
+                    _debug(
+                        ui,
+                        b"local commit list for D%d is already up-to-date\n"
+                        % drevid,
+                    )
+            elif fold:
+                _debug(ui, b"no newnodes to update\n")
+
+            # Restack any children of first-time submissions that were orphaned
+            # in the process.  The ctx won't report that it is an orphan until
+            # the cleanup takes place below.
+            for old in restack:
+                parents = [
+                    mapping.get(old.p1().node(), (old.p1(),))[0],
+                    mapping.get(old.p2().node(), (old.p2(),))[0],
+                ]
+                new = context.metadataonlyctx(
+                    repo,
+                    old,
+                    parents=parents,
+                    text=old.description(),
+                    user=old.user(),
+                    date=old.date(),
+                    extra=old.extra(),
+                )
+
+                newnode = new.commit()
+
+                # Don't obsolete unselected descendants of nodes that have not
+                # been changed in this transaction- that results in an error.
+                if newnode != old.node():
+                    mapping[old.node()] = [newnode]
+                    _debug(
+                        ui,
+                        b"restabilizing %s as %s\n"
+                        % (short(old.node()), short(newnode)),
+                    )
+                else:
+                    _debug(
+                        ui,
+                        b"not restabilizing unchanged %s\n" % short(old.node()),
+                    )
+
             scmutil.cleanupnodes(repo, mapping, b'phabsend', fixphase=True)
             if wnode in mapping:
                 unfi.setparents(mapping[wnode][0])
@@ -1398,7 +1733,7 @@ def _prefetchdrevs(tree):
     return drevs, ancestordrevs
 
 
-def querydrev(repo, spec):
+def querydrev(ui, spec):
     """return a list of "Differential Revision" dicts
 
     spec is a string using a simple query language, see docstring in phabread
@@ -1407,46 +1742,49 @@ def querydrev(repo, spec):
     A "Differential Revision dict" looks like:
 
         {
-            "id": "2",
-            "phid": "PHID-DREV-672qvysjcczopag46qty",
-            "title": "example",
-            "uri": "https://phab.example.com/D2",
+            "activeDiffPHID": "PHID-DIFF-xoqnjkobbm6k4dk6hi72",
+            "authorPHID": "PHID-USER-tv3ohwc4v4jeu34otlye",
+            "auxiliary": {
+              "phabricator:depends-on": [
+                "PHID-DREV-gbapp366kutjebt7agcd"
+              ]
+              "phabricator:projects": [],
+            },
+            "branch": "default",
+            "ccs": [],
+            "commits": [],
             "dateCreated": "1499181406",
             "dateModified": "1499182103",
-            "authorPHID": "PHID-USER-tv3ohwc4v4jeu34otlye",
-            "status": "0",
-            "statusName": "Needs Review",
-            "properties": [],
-            "branch": null,
-            "summary": "",
-            "testPlan": "",
-            "lineCount": "2",
-            "activeDiffPHID": "PHID-DIFF-xoqnjkobbm6k4dk6hi72",
             "diffs": [
               "3",
               "4",
             ],
-            "commits": [],
-            "reviewers": [],
-            "ccs": [],
             "hashes": [],
-            "auxiliary": {
-              "phabricator:projects": [],
-              "phabricator:depends-on": [
-                "PHID-DREV-gbapp366kutjebt7agcd"
-              ]
-            },
+            "id": "2",
+            "lineCount": "2",
+            "phid": "PHID-DREV-672qvysjcczopag46qty",
+            "properties": {},
             "repositoryPHID": "PHID-REPO-hub2hx62ieuqeheznasv",
+            "reviewers": [],
             "sourcePath": null
+            "status": "0",
+            "statusName": "Needs Review",
+            "summary": "",
+            "testPlan": "",
+            "title": "example",
+            "uri": "https://phab.example.com/D2",
         }
     """
+    # TODO: replace differential.query and differential.querydiffs with
+    # differential.diff.search because the former (and their output) are
+    # frozen, and planned to be deprecated and removed.
 
     def fetch(params):
         """params -> single drev or None"""
         key = (params.get(b'ids') or params.get(b'phids') or [None])[0]
         if key in prefetched:
             return prefetched[key]
-        drevs = callconduit(repo.ui, b'differential.query', params)
+        drevs = callconduit(ui, b'differential.query', params)
         # Fill prefetched with the result
         for drev in drevs:
             prefetched[drev[b'phid']] = drev
@@ -1483,7 +1821,7 @@ def querydrev(repo, spec):
     drevs, ancestordrevs = _prefetchdrevs(tree)
 
     # developer config: phabricator.batchsize
-    batchsize = repo.ui.configint(b'phabricator', b'batchsize')
+    batchsize = ui.configint(b'phabricator', b'batchsize')
 
     # Prefetch Differential Revisions in batch
     tofetch = set(drevs)
@@ -1537,6 +1875,48 @@ def getdescfromdrev(drev):
     return b'\n\n'.join(filter(None, [title, summary, testplan, uri]))
 
 
+def get_amended_desc(drev, ctx, folded):
+    """similar to ``getdescfromdrev``, but supports a folded series of commits
+
+    This is used when determining if an individual commit needs to have its
+    message amended after posting it for review.  The determination is made for
+    each individual commit, even when they were folded into one review.
+    """
+    if not folded:
+        return getdescfromdrev(drev)
+
+    uri = b'Differential Revision: %s' % drev[b'uri']
+
+    # Since the commit messages were combined when posting multiple commits
+    # with --fold, the fields can't be read from Phabricator here, or *all*
+    # affected local revisions will end up with the same commit message after
+    # the URI is amended in.  Append in the DREV line, or update it if it
+    # exists.  At worst, this means commit message or test plan updates on
+    # Phabricator aren't propagated back to the repository, but that seems
+    # reasonable for the case where local commits are effectively combined
+    # in Phabricator.
+    m = _differentialrevisiondescre.search(ctx.description())
+    if not m:
+        return b'\n\n'.join([ctx.description(), uri])
+
+    return _differentialrevisiondescre.sub(uri, ctx.description())
+
+
+def getlocalcommits(diff):
+    """get the set of local commits from a diff object
+
+    See ``getdiffmeta()`` for an example diff object.
+    """
+    props = diff.get(b'properties') or {}
+    commits = props.get(b'local:commits') or {}
+    if len(commits) > 1:
+        return {bin(c) for c in commits.keys()}
+
+    # Storing the diff metadata predates storing `local:commits`, so continue
+    # to use that in the --no-fold case.
+    return {bin(getdiffmeta(diff).get(b'node', b'')) or None}
+
+
 def getdiffmeta(diff):
     """get commit metadata (date, node, user, p1) from a diff object
 
@@ -1544,6 +1924,7 @@ def getdiffmeta(diff):
 
         "properties": {
           "hg:meta": {
+            "branch": "default",
             "date": "1499571514 25200",
             "node": "98c08acae292b2faf60a279b4189beb6cff1414d",
             "user": "Foo Bar <foo@example.com>",
@@ -1557,16 +1938,16 @@ def getdiffmeta(diff):
           "local:commits": {
             "98c08acae292b2faf60a279b4189beb6cff1414d": {
               "author": "Foo Bar",
-              "time": 1499546314,
-              "branch": "default",
-              "tag": "",
-              "commit": "98c08acae292b2faf60a279b4189beb6cff1414d",
-              "rev": "98c08acae292b2faf60a279b4189beb6cff1414d",
-              "local": "1000",
-              "parents": ["6d0abad76b30e4724a37ab8721d630394070fe16"],
-              "summary": "...",
-              "message": "...",
               "authorEmail": "foo@example.com"
+              "branch": "default",
+              "commit": "98c08acae292b2faf60a279b4189beb6cff1414d",
+              "local": "1000",
+              "message": "...",
+              "parents": ["6d0abad76b30e4724a37ab8721d630394070fe16"],
+              "rev": "98c08acae292b2faf60a279b4189beb6cff1414d",
+              "summary": "...",
+              "tag": "",
+              "time": 1499546314,
             }
           }
         }
@@ -1605,24 +1986,47 @@ def getdiffmeta(diff):
     return meta
 
 
-def readpatch(repo, drevs, write):
+def _getdrevs(ui, stack, specs):
+    """convert user supplied DREVSPECs into "Differential Revision" dicts
+
+    See ``hg help phabread`` for how to specify each DREVSPEC.
+    """
+    if len(specs) > 0:
+
+        def _formatspec(s):
+            if stack:
+                s = b':(%s)' % s
+            return b'(%s)' % s
+
+        spec = b'+'.join(pycompat.maplist(_formatspec, specs))
+
+        drevs = querydrev(ui, spec)
+        if drevs:
+            return drevs
+
+    raise error.Abort(_(b"empty DREVSPEC set"))
+
+
+def readpatch(ui, drevs, write):
     """generate plain-text patch readable by 'hg import'
 
-    write is usually ui.write. drevs is what "querydrev" returns, results of
+    write takes a list of (DREV, bytes), where DREV is the differential number
+    (as bytes, without the "D" prefix) and the bytes are the text of a patch
+    to be imported. drevs is what "querydrev" returns, results of
     "differential.query".
     """
     # Prefetch hg:meta property for all diffs
-    diffids = sorted(set(max(int(v) for v in drev[b'diffs']) for drev in drevs))
-    diffs = callconduit(repo.ui, b'differential.querydiffs', {b'ids': diffids})
+    diffids = sorted({max(int(v) for v in drev[b'diffs']) for drev in drevs})
+    diffs = callconduit(ui, b'differential.querydiffs', {b'ids': diffids})
+
+    patches = []
 
     # Generate patch for each drev
     for drev in drevs:
-        repo.ui.note(_(b'reading D%s\n') % drev[b'id'])
+        ui.note(_(b'reading D%s\n') % drev[b'id'])
 
         diffid = max(int(v) for v in drev[b'diffs'])
-        body = callconduit(
-            repo.ui, b'differential.getrawdiff', {b'diffID': diffid}
-        )
+        body = callconduit(ui, b'differential.getrawdiff', {b'diffID': diffid})
         desc = getdescfromdrev(drev)
         header = b'# HG changeset patch\n'
 
@@ -1635,22 +2039,28 @@ def readpatch(repo, drevs, write):
                 header += b'# %s %s\n' % (_metanamemap[k], meta[k])
 
         content = b'%s%s\n%s' % (header, desc, body)
-        write(content)
+        patches.append((drev[b'id'], content))
+
+    # Write patches to the supplied callback
+    write(patches)
 
 
 @vcrcommand(
     b'phabread',
     [(b'', b'stack', False, _(b'read dependencies'))],
-    _(b'DREVSPEC [OPTIONS]'),
+    _(b'DREVSPEC... [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
+    optionalrepo=True,
 )
-def phabread(ui, repo, spec, **opts):
+def phabread(ui, repo, *specs, **opts):
     """print patches from Phabricator suitable for importing
 
     DREVSPEC could be a Differential Revision identity, like ``D123``, or just
     the number ``123``. It could also have common operators like ``+``, ``-``,
     ``&``, ``(``, ``)`` for complex queries. Prefix ``:`` could be used to
-    select a stack.
+    select a stack.  If multiple DREVSPEC values are given, the result is the
+    union of each individually evaluated value.  No attempt is currently made
+    to reorder the values to run from parent to child.
 
     ``abandoned``, ``accepted``, ``closed``, ``needsreview``, ``needsrevision``
     could be used to filter patches by status. For performance reason, they
@@ -1664,10 +2074,74 @@ def phabread(ui, repo, spec, **opts):
     It is equivalent to the ``:`` operator.
     """
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'stack'):
-        spec = b':(%s)' % spec
-    drevs = querydrev(repo, spec)
-    readpatch(repo, drevs, ui.write)
+    drevs = _getdrevs(ui, opts.get(b'stack'), specs)
+
+    def _write(patches):
+        for drev, content in patches:
+            ui.write(content)
+
+    readpatch(ui, drevs, _write)
+
+
+@vcrcommand(
+    b'phabimport',
+    [(b'', b'stack', False, _(b'import dependencies as well'))],
+    _(b'DREVSPEC... [OPTIONS]'),
+    helpcategory=command.CATEGORY_IMPORT_EXPORT,
+)
+def phabimport(ui, repo, *specs, **opts):
+    """import patches from Phabricator for the specified Differential Revisions
+
+    The patches are read and applied starting at the parent of the working
+    directory.
+
+    See ``hg help phabread`` for how to specify DREVSPEC.
+    """
+    opts = pycompat.byteskwargs(opts)
+
+    # --bypass avoids losing exec and symlink bits when importing on Windows,
+    # and allows importing with a dirty wdir.  It also aborts instead of leaving
+    # rejects.
+    opts[b'bypass'] = True
+
+    # Mandatory default values, synced with commands.import
+    opts[b'strip'] = 1
+    opts[b'prefix'] = b''
+    # Evolve 9.3.0 assumes this key is present in cmdutil.tryimportone()
+    opts[b'obsolete'] = False
+
+    if ui.configbool(b'phabimport', b'secret'):
+        opts[b'secret'] = True
+    if ui.configbool(b'phabimport', b'obsolete'):
+        opts[b'obsolete'] = True  # Handled by evolve wrapping tryimportone()
+
+    def _write(patches):
+        parents = repo[None].parents()
+
+        with repo.wlock(), repo.lock(), repo.transaction(b'phabimport'):
+            for drev, contents in patches:
+                ui.status(_(b'applying patch from D%s\n') % drev)
+
+                with patch.extract(ui, pycompat.bytesio(contents)) as patchdata:
+                    msg, node, rej = cmdutil.tryimportone(
+                        ui,
+                        repo,
+                        patchdata,
+                        parents,
+                        opts,
+                        [],
+                        None,  # Never update wdir to another revision
+                    )
+
+                    if not node:
+                        raise error.Abort(_(b'D%s: no diffs found') % drev)
+
+                    ui.note(msg + b'\n')
+                    parents = [repo[node]]
+
+    drevs = _getdrevs(ui, opts.get(b'stack'), specs)
+
+    readpatch(repo.ui, drevs, _write)
 
 
 @vcrcommand(
@@ -1679,10 +2153,11 @@ def phabread(ui, repo, spec, **opts):
         (b'', b'reclaim', False, _(b'reclaim revisions')),
         (b'm', b'comment', b'', _(b'comment on the last revision')),
     ],
-    _(b'DREVSPEC [OPTIONS]'),
+    _(b'DREVSPEC... [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
+    optionalrepo=True,
 )
-def phabupdate(ui, repo, spec, **opts):
+def phabupdate(ui, repo, *specs, **opts):
     """update Differential Revision in batch
 
     DREVSPEC selects revisions. See :hg:`help phabread` for its usage.
@@ -1696,7 +2171,7 @@ def phabupdate(ui, repo, spec, **opts):
     for f in flags:
         actions.append({b'type': f, b'value': True})
 
-    drevs = querydrev(repo, spec)
+    drevs = _getdrevs(ui, opts.get(b'stack'), specs)
     for i, drev in enumerate(drevs):
         if i + 1 == len(drevs) and opts.get(b'comment'):
             actions.append({b'type': b'comment', b'value': opts[b'comment']})
@@ -1759,11 +2234,11 @@ def phabstatusshowview(ui, repo, displayer):
     """Phabricator differiential status"""
     revs = repo.revs('sort(_underway(), topo)')
     drevmap = getdrevmap(repo, revs)
-    unknownrevs, drevids, revsbydrevid = [], set([]), {}
+    unknownrevs, drevids, revsbydrevid = [], set(), {}
     for rev, drevid in pycompat.iteritems(drevmap):
         if drevid is not None:
             drevids.add(drevid)
-            revsbydrevid.setdefault(drevid, set([])).add(rev)
+            revsbydrevid.setdefault(drevid, set()).add(rev)
         else:
             unknownrevs.append(rev)
 

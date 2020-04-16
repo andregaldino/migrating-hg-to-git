@@ -173,6 +173,8 @@ class bmstore(object):
             nrefs.sort()
 
     def _del(self, mark):
+        if mark not in self._refmap:
+            return
         self._clean = False
         node = self._refmap.pop(mark)
         nrefs = self._nodemap[node]
@@ -461,6 +463,10 @@ def update(repo, parents, node):
     return bool(bmchanges)
 
 
+def isdivergent(b):
+    return b'@' in b and not b.endswith(b'@')
+
+
 def listbinbookmarks(repo):
     # We may try to list bookmarks on a repo type that does not
     # support it (e.g., statichttprepository).
@@ -469,7 +475,7 @@ def listbinbookmarks(repo):
     hasnode = repo.changelog.hasnode
     for k, v in pycompat.iteritems(marks):
         # don't expose local divergent bookmarks
-        if hasnode(v) and (b'@' not in k or k.endswith(b'@')):
+        if hasnode(v) and not isdivergent(k):
             yield k, v
 
 
@@ -481,6 +487,8 @@ def listbookmarks(repo):
 
 
 def pushbookmark(repo, key, old, new):
+    if isdivergent(key):
+        return False
     if bookmarksinstore(repo):
         wlock = util.nullcontextmanager()
     else:

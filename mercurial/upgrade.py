@@ -449,7 +449,14 @@ class compressionengine(formatvariant):
 
     @classmethod
     def fromconfig(cls, repo):
-        return repo.ui.config(b'format', b'revlog-compression')
+        compengines = repo.ui.configlist(b'format', b'revlog-compression')
+        # return the first valid value as the selection code would do
+        for comp in compengines:
+            if comp in util.compengines:
+                return comp
+
+        # no valide compression found lets display it all for clarity
+        return b','.join(compengines)
 
 
 @registerformatvariant
@@ -1122,7 +1129,7 @@ def upgraderepo(
     """Upgrade a repository in place."""
     if optimize is None:
         optimize = []
-    optimize = set(legacy_opts_map.get(o, o) for o in optimize)
+    optimize = {legacy_opts_map.get(o, o) for o in optimize}
     repo = repo.unfiltered()
 
     revlogs = set(UPGRADE_ALL_REVLOGS)

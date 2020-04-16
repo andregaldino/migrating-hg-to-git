@@ -137,7 +137,7 @@ def _buildencodefun():
     asciistr = list(map(xchr, range(127)))
     capitals = list(range(ord(b"A"), ord(b"Z") + 1))
 
-    cmap = dict((x, x) for x in asciistr)
+    cmap = {x: x for x in asciistr}
     for x in _reserved():
         cmap[xchr(x)] = b"~%02x" % x
     for x in capitals + [ord(e)]:
@@ -200,7 +200,7 @@ def _buildlowerencodefun():
     'the~07quick~adshot'
     '''
     xchr = pycompat.bytechr
-    cmap = dict([(xchr(x), xchr(x)) for x in pycompat.xrange(127)])
+    cmap = {xchr(x): xchr(x) for x in pycompat.xrange(127)}
     for x in _reserved():
         cmap[xchr(x)] = b"~%02x" % x
     for x in range(ord(b"A"), ord(b"Z") + 1):

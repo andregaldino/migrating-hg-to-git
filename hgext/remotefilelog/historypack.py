@@ -132,7 +132,7 @@ class historypack(basepack.basepack):
             known = set()
         section = self._findsection(name)
         filename, offset, size, nodeindexoffset, nodeindexsize = section
-        pending = set((node,))
+        pending = {node}
         o = 0
         while o < size:
             if not pending:
@@ -291,9 +291,9 @@ class historypack(basepack.basepack):
     def cleanup(self, ledger):
         entries = ledger.sources.get(self, [])
         allkeys = set(self)
-        repackedkeys = set(
+        repackedkeys = {
             (e.filename, e.node) for e in entries if e.historyrepacked
-        )
+        }
 
         if len(allkeys - repackedkeys) == 0:
             if self.path not in ledger.created:
@@ -452,7 +452,7 @@ class mutablehistorypack(basepack.mutablebasepack):
             sectionstart = self.packfp.tell()
 
             # Write the file section content
-            entrymap = dict((e[0], e) for e in entries)
+            entrymap = {e[0]: e for e in entries}
 
             def parentfunc(node):
                 x, p1, p2, x, x, x = entrymap[node]

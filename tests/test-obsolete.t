@@ -224,6 +224,9 @@ Check that public changeset are not accounted as obsolete:
   |
   o  0:1f0dee641bb7 (public) [ ] add a
   
+  $ hg log -r 'unstable()'
+  5:5601fb93a350 (draft phase-divergent) [tip ] add new_3_c
+
 
 And that bumped changeset are detected
 --------------------------------------
@@ -377,15 +380,53 @@ Simple incoming test
   2:245bde4270cd (public) [ ] add original_c
   6:6f9641995072 (draft) [tip ] add n3w_3_c
 
-Try to pull markers
+Try to pull markers while testing pull --confirm
 (extinct changeset are excluded but marker are pushed)
 
-  $ hg pull ../tmpb
+  $ hg pull ../tmpb --confirm --config ui.interactive=true <<EOF
+  > n
+  > EOF
   pulling from ../tmpb
   requesting all changes
   adding changesets
   adding manifests
   adding file changes
+  adding 4 changesets with 4 changes to 4 files (+1 heads)
+  5 new obsolescence markers
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
+  accept incoming changes (yn)? n
+  transaction abort!
+  rollback completed
+  abort: user aborted
+  [255]
+  $ HGPLAIN=1 hg pull ../tmpb --confirm --config ui.interactive=true <<EOF
+  > n
+  > EOF
+  pulling from ../tmpb
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding 4 changesets with 4 changes to 4 files (+1 heads)
+  5 new obsolescence markers
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
+  accept incoming changes (yn)? n
+  transaction abort!
+  rollback completed
+  abort: user aborted
+  [255]
+  $ hg pull ../tmpb --confirm --config ui.interactive=true <<EOF
+  > y
+  > EOF
+  pulling from ../tmpb
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding 4 changesets with 4 changes to 4 files (+1 heads)
+  5 new obsolescence markers
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
+  accept incoming changes (yn)? y
   added 4 changesets with 4 changes to 4 files (+1 heads)
   5 new obsolescence markers
   new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
@@ -544,6 +585,8 @@ detect outgoing obsolete and unstable
   1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
+  $ hg log -r 'unstable()'
+  5:cda648ca50f5 (draft orphan) [tip ] add original_e
   $ hg debugobsolete | grep `getid original_d`
   94b33453f93bdb8d457ef9b770851a618bf413e1 0 {6f96419950729f3671185b847352890f074f7557} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   $ hg log -r 'obsolete()'

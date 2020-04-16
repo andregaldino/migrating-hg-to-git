@@ -60,7 +60,8 @@ Create some commits
   $ touch files
   $ hg add files
   $ for i in a ab abc abcd abcde; do echo $i > files; echo $i > file-$i; hg add file-$i; hg commit -m "added file-$i"; done
-  $ ls
+  $ ls -A
+  .hg
   file-a
   file-ab
   file-abc
@@ -489,7 +490,7 @@ Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b
   $ hg add b
   $ hg status
   A b
-  $ hg unc a
+  $ hg uncommit a
   note: keeping empty commit
   $ cat a
   super critical info!
@@ -503,11 +504,11 @@ Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b
   
   $ hg ci -Am 'add b'
   $ echo 'foo bar' > b
-  $ hg unc b
+  $ hg uncommit b
   abort: uncommitted changes
   (requires --allow-dirty-working-copy to uncommit)
   [255]
-  $ hg unc --allow-dirty-working-copy b
+  $ hg uncommit --allow-dirty-working-copy b
   $ hg log
   changeset:   3:30fa958635b2
   tag:         tip

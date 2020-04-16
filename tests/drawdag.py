@@ -438,13 +438,13 @@ def debugdrawdag(ui, repo, **opts):
             if cmd in (b'replace', b'rebase', b'amend'):
                 nodes = [getctx(m) for m in arg.split(b'->')]
                 for i in range(len(nodes) - 1):
-                    rels.append((nodes[i], (nodes[i + 1],)))
+                    rels.append(((nodes[i],), (nodes[i + 1],)))
             elif cmd in (b'split',):
                 pre, succs = arg.split(b'->')
                 succs = succs.split(b',')
-                rels.append((getctx(pre), (getctx(s) for s in succs)))
+                rels.append(((getctx(pre),), (getctx(s) for s in succs)))
             elif cmd in (b'prune',):
                 for n in arg.split(b','):
-                    rels.append((getctx(n), ()))
+                    rels.append(((getctx(n),), ()))
             if rels:
                 obsolete.createmarkers(repo, rels, date=(0, 0), operation=cmd)

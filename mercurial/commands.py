@@ -876,7 +876,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         )
         overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
         with ui.configoverride(overrides, b'backout'):
-            return hg.merge(repo, hex(repo.changelog.tip()))
+            return hg.merge(repo[b'tip'])
     return 0
 
 
@@ -1228,7 +1228,7 @@ def bookmark(ui, repo, *names, **opts):
 
     action = cmdutil.check_at_most_one_arg(opts, b'delete', b'rename', b'list')
     if action:
-        cmdutil.check_incompatible_arguments(opts, action, b'rev')
+        cmdutil.check_incompatible_arguments(opts, action, [b'rev'])
     elif names or rev:
         action = b'add'
     elif inactive:
@@ -1236,7 +1236,9 @@ def bookmark(ui, repo, *names, **opts):
     else:
         action = b'list'
 
-    cmdutil.check_incompatible_arguments(opts, b'inactive', b'delete', b'list')
+    cmdutil.check_incompatible_arguments(
+        opts, b'inactive', [b'delete', b'list']
+    )
     if not names and action in {b'add', b'delete'}:
         raise error.Abort(_(b"bookmark name required"))
 
@@ -2307,7 +2309,15 @@ def continuecmd(ui, repo, **opts):
 @command(
     b'copy|cp',
     [
+        (b'', b'forget', None, _(b'unmark a file as copied')),
         (b'A', b'after', None, _(b'record a copy that has already occurred')),
+        (
+            b'',
+            b'at-rev',
+            b'',
+            _(b'(un)mark copies in the given revision (EXPERIMENTAL)'),
+            _(b'REV'),
+        ),
         (
             b'f',
             b'force',
@@ -2331,8 +2341,11 @@ def copy(ui, repo, *pats, **opts):
     exist in the working directory. If invoked with -A/--after, the
     operation is recorded, but no copying is performed.
 
-    This command takes effect with the next commit. To undo a copy
-    before that, see :hg:`revert`.
+    To undo marking a file as copied, use --forget. With that option,
+    all given (positional) arguments are unmarked as copies. The destination
+    file(s) will be left in place (still tracked).
+
+    This command takes effect with the next commit by default.
 
     Returns 0 on success, 1 if errors are encountered.
     """
@@ -2938,7 +2951,7 @@ def graft(ui, repo, *revs, **opts):
 
     See :hg:`help revisions` for more about specifying revisions.
 
-    Returns 0 on successful completion.
+    Returns 0 on successful completion, 1 if there are unresolved files.
     '''
     with repo.wlock():
         return _dograft(ui, repo, *revs, **opts)
@@ -3199,10 +3212,9 @@ def _dograft(ui, repo, *revs, **opts):
                 statedata[b'nodes'] = nodes
                 stateversion = 1
                 graftstate.save(stateversion, statedata)
-                hint = _(b"use 'hg resolve' and 'hg graft --continue'")
-                raise error.Abort(
-                    _(b"unresolved conflicts, can't continue"), hint=hint
-                )
+                ui.error(_(b"abort: unresolved conflicts, can't continue\n"))
+                ui.error(_(b"(use 'hg resolve' and 'hg graft --continue')\n"))
+                return 1
         else:
             cont = False
 
@@ -3708,9 +3720,9 @@ def heads(ui, repo, *branchrevs, **opts):
         heads = [repo[h] for h in heads]
 
     if branchrevs:
-        branches = set(
+        branches = {
             repo[r].branch() for r in scmutil.revrange(repo, branchrevs)
-        )
+        }
         heads = [h for h in heads if h.branch() in branches]
 
     if opts.get(b'active') and branchrevs:
@@ -3718,7 +3730,7 @@ def heads(ui, repo, *branchrevs, **opts):
         heads = [h for h in heads if h.node() in dagheads]
 
     if branchrevs:
-        haveheads = set(h.branch() for h in heads)
+        haveheads = {h.branch() for h in heads}
         if branches - haveheads:
             headless = b', '.join(b for b in branches - haveheads)
             msg = _(b'no open branch heads found on branches %s')
@@ -4847,6 +4859,7 @@ def merge(ui, repo, node=None, **opts):
     abort = opts.get(b'abort')
     if abort and repo.dirstate.p2() == nullid:
         cmdutil.wrongtooltocontinue(repo, _(b'merge'))
+    cmdutil.check_incompatible_arguments(opts, b'abort', [b'rev', b'preview'])
     if abort:
         state = cmdutil.getunfinishedstate(repo)
         if state and state._opname != b'merge':
@@ -4856,19 +4869,16 @@ def merge(ui, repo, node=None, **opts):
             )
         if node:
             raise error.Abort(_(b"cannot specify a node with --abort"))
-        if opts.get(b'rev'):
-            raise error.Abort(_(b"cannot specify both --rev and --abort"))
-        if opts.get(b'preview'):
-            raise error.Abort(_(b"cannot specify --preview with --abort"))
+        return hg.abortmerge(repo.ui, repo)
+
     if opts.get(b'rev') and node:
         raise error.Abort(_(b"please specify just one revision"))
     if not node:
         node = opts.get(b'rev')
 
     if node:
-        node = scmutil.revsingle(repo, node).node()
-
-    if not node and not abort:
+        ctx = scmutil.revsingle(repo, node)
+    else:
         if ui.configbool(b'commands', b'merge.require-rev'):
             raise error.Abort(
                 _(
@@ -4876,12 +4886,15 @@ def merge(ui, repo, node=None, **opts):
                     b'with'
                 )
             )
-        node = repo[destutil.destmerge(repo)].node()
+        ctx = repo[destutil.destmerge(repo)]
+
+    if ctx.node() is None:
+        raise error.Abort(_(b'merging with the working copy has no effect'))
 
     if opts.get(b'preview'):
         # find nodes that are ancestors of p2 but not of p1
-        p1 = repo.lookup(b'.')
-        p2 = node
+        p1 = repo[b'.'].node()
+        p2 = ctx.node()
         nodes = repo.changelog.findmissing(common=[p1], heads=[p2])
 
         displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
@@ -4895,14 +4908,7 @@ def merge(ui, repo, node=None, **opts):
     with ui.configoverride(overrides, b'merge'):
         force = opts.get(b'force')
         labels = [b'working copy', b'merge rev']
-        return hg.merge(
-            repo,
-            node,
-            force=force,
-            mergeforce=force,
-            labels=labels,
-            abort=abort,
-        )
+        return hg.merge(ctx, force=force, labels=labels)
 
 
 statemod.addunfinished(
@@ -5337,6 +5343,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
             None,
             _(b'run even when remote repository is unrelated'),
         ),
+        (b'', b'confirm', None, _(b'confirm pull before applying changes'),),
         (
             b'r',
             b'rev',
@@ -5453,6 +5460,7 @@ def pull(ui, repo, source=b"default", **opts):
                 force=opts.get(b'force'),
                 bookmarks=opts.get(b'bookmark', ()),
                 opargs=pullopargs,
+                confirm=opts.get(b'confirm'),
             ).cgresult
 
             # brev is a name, which might be a bookmark to be activated at
@@ -5671,7 +5679,7 @@ def push(ui, repo, dest=None, **opts):
 
 @command(
     b'recover',
-    [(b'', b'verify', True, b"run `hg verify` after successful recover"),],
+    [(b'', b'verify', False, b"run `hg verify` after successful recover"),],
     helpcategory=command.CATEGORY_MAINTENANCE,
 )
 def recover(ui, repo, **opts):
@@ -5946,6 +5954,8 @@ def resolve(ui, repo, *pats, **opts):
             if not m(f):
                 continue
 
+            if ms[f] == mergemod.MERGE_RECORD_MERGED_OTHER:
+                continue
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
             fm.context(ctx=wctx)
@@ -5992,6 +6002,9 @@ def resolve(ui, repo, *pats, **opts):
                 continue
 
             didwork = True
+
+            if ms[f] == mergemod.MERGE_RECORD_MERGED_OTHER:
+                continue
 
             # don't let driver-resolved files be marked, and run the conclude
             # step if asked to resolve
@@ -6648,7 +6661,12 @@ _NOTTERSE = b'nothing'
         (b'i', b'ignored', None, _(b'show only ignored files')),
         (b'n', b'no-status', None, _(b'hide status prefix')),
         (b't', b'terse', _NOTTERSE, _(b'show the terse output (EXPERIMENTAL)')),
-        (b'C', b'copies', None, _(b'show source of copied files')),
+        (
+            b'C',
+            b'copies',
+            None,
+            _(b'show source of copied files (DEFAULT: ui.statuscopies)'),
+        ),
         (
             b'0',
             b'print0',
@@ -7571,7 +7589,7 @@ def unshelve(ui, repo, *shelved, **opts):
        unshelved.
     """
     with repo.wlock():
-        return shelvemod.dounshelve(ui, repo, *shelved, **opts)
+        return shelvemod.unshelvecmd(ui, repo, *shelved, **opts)
 
 
 statemod.addunfinished(
@@ -7653,6 +7671,7 @@ def update(ui, repo, node=None, **opts):
 
     Returns 0 on success, 1 if there are unresolved files.
     """
+    cmdutil.check_at_most_one_arg(opts, 'clean', 'check', 'merge')
     rev = opts.get('rev')
     date = opts.get('date')
     clean = opts.get('clean')
@@ -7673,14 +7692,6 @@ def update(ui, repo, node=None, **opts):
 
     if date and rev is not None:
         raise error.Abort(_(b"you can't specify a revision and a date"))
-
-    if len([x for x in (clean, check, merge) if x]) > 1:
-        raise error.Abort(
-            _(
-                b"can only specify one of -C/--clean, -c/--check, "
-                b"or -m/--merge"
-            )
-        )
 
     updatecheck = None
     if check:

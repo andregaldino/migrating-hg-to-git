@@ -45,6 +45,9 @@ hybrid
 hybriditem
     represents a scalar printable value, also supports % operator.
 
+revslist
+    represents a list of revision numbers.
+
 mappinggenerator, mappinglist
     represents mappings (i.e. a list of dicts), which may have default
     output format.

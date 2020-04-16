@@ -133,6 +133,15 @@ notify.fromauthor
   the "From" field of the notification mail. If not set, take the user
   from the pushing repo.  Default: False.
 
+notify.reply-to-predecessor (EXPERIMENTAL)
+  If set and the changeset has a predecessor in the repository, try to thread
+  the notification mail with the predecessor. This adds the "In-Reply-To" header
+  to the notification mail with a reference to the predecessor with the smallest
+  revision number. Mail threads can still be torn, especially when changesets
+  are folded.
+
+  This option must  be used in combination with ``notify.messageidseed``.
+
 If set, the following entries will also be used to customize the
 notifications:
 
@@ -160,6 +169,7 @@ from mercurial import (
     error,
     logcmdutil,
     mail,
+    obsutil,
     patch,
     pycompat,
     registrar,
@@ -217,6 +227,9 @@ configitem(
 )
 configitem(
     b'notify', b'outgoing', default=None,
+)
+configitem(
+    b'notify', b'reply-to-predecessor', default=False,
 )
 configitem(
     b'notify', b'sources', default=b'serve',
@@ -281,6 +294,16 @@ class notifier(object):
         self.merge = self.ui.configbool(b'notify', b'merge')
         self.showfunc = self.ui.configbool(b'notify', b'showfunc')
         self.messageidseed = self.ui.config(b'notify', b'messageidseed')
+        self.reply = self.ui.configbool(b'notify', b'reply-to-predecessor')
+
+        if self.reply and not self.messageidseed:
+            raise error.Abort(
+                _(
+                    b'notify.reply-to-predecessor used without '
+                    b'notify.messageidseed'
+                )
+            )
+
         if self.showfunc is None:
             self.showfunc = self.ui.configbool(b'diff', b'showfunc')
 
@@ -437,6 +460,26 @@ class notifier(object):
         msg['X-Hg-Notification'] = 'changeset %s' % ctx
         if not msg['Message-Id']:
             msg['Message-Id'] = messageid(ctx, self.domain, self.messageidseed)
+        if self.reply:
+            unfi = self.repo.unfiltered()
+            has_node = unfi.changelog.index.has_node
+            predecessors = [
+                unfi[ctx2]
+                for ctx2 in obsutil.allpredecessors(unfi.obsstore, [ctx.node()])
+                if ctx2 != ctx.node() and has_node(ctx2)
+            ]
+            if predecessors:
+                # There is at least one predecessor, so which to pick?
+                # Ideally, there is a unique root because changesets have
+                # been evolved/rebased one step at a time. In this case,
+                # just picking the oldest known changeset provides a stable
+                # base. It doesn't help when changesets are folded. Any
+                # better solution would require storing more information
+                # in the repository.
+                pred = min(predecessors, key=lambda ctx: ctx.rev())
+                msg['In-Reply-To'] = messageid(
+                    pred, self.domain, self.messageidseed
+                )
         msg['To'] = ', '.join(sorted(subs))
 
         msgtext = msg.as_bytes() if pycompat.ispy3 else msg.as_string()

@@ -103,6 +103,9 @@ The cache should have an empty entry for rev 0 and a valid entry for rev 1.
   0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
   0010: ff ff ff ff ff ff ff ff b9 15 46 36 26 b7 b4 a7 |..........F6&...|
   0020: 73 e0 9e e3 c5 2f 51 0e 19 e0 5e 1f f9 66 d8 59 |s..../Q...^..f.Y|
+  $ hg debugtagscache
+  0 acb14030fe0a21b60322c440ad2d20cf7685a376 missing/invalid
+  1 b9154636be938d3d431e75a7c906504a079bfe07 26b7b4a773e09ee3c52f510e19e05e1ff966d859
 
 Repeat with cold tag cache:
 
@@ -367,6 +370,24 @@ Extra junk data at the end should get overwritten on next cache update
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @8dbfe60eff306a54259cfe007db9e330e7ecf866 (5000)> blackbox -l 6
+
+On junk data + missing cache entries, hg also overwrites the junk.
+
+  $ rm -f .hg/cache/tags2-visible
+  >>> import os
+  >>> with open(".hg/cache/hgtagsfnodes1", "ab+") as fp:
+  ...     fp.seek(-10, os.SEEK_END) and None
+  ...     fp.truncate() and None
+
+  $ hg debugtagscache | tail -2
+  4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 missing/invalid
+  $ hg tags
+  tip                                5:8dbfe60eff30
+  bar                                1:78391a272241
+  $ hg debugtagscache | tail -2
+  4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8af31de17fab7422878ee5a2dadbc943d
 
 #if unix-permissions no-root
 Errors writing to .hgtags fnodes cache are silently ignored

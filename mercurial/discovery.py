@@ -192,7 +192,7 @@ def findcommonoutgoing(
         # ancestors of missing
         og._computecommonmissing()
         cl = repo.changelog
-        missingrevs = set(cl.rev(n) for n in og._missing)
+        missingrevs = {cl.rev(n) for n in og._missing}
         og._common = set(cl.ancestors(missingrevs)) - missingrevs
         commonheads = set(og.commonheads)
         og.missingheads = [h for h in og.missingheads if h not in commonheads]
@@ -268,8 +268,8 @@ def _headssummary(pushop):
     # If there are no obsstore, no post processing are needed.
     if repo.obsstore:
         torev = repo.changelog.rev
-        futureheads = set(torev(h) for h in outgoing.missingheads)
-        futureheads |= set(torev(h) for h in outgoing.commonheads)
+        futureheads = {torev(h) for h in outgoing.missingheads}
+        futureheads |= {torev(h) for h in outgoing.commonheads}
         allfuturecommon = repo.changelog.ancestors(futureheads, inclusive=True)
         for branch, heads in sorted(pycompat.iteritems(headssum)):
             remoteheads, newheads, unsyncedheads, placeholder = heads
@@ -452,7 +452,7 @@ def checkheads(pushop):
                 if branch not in (b'default', None):
                     errormsg = _(
                         b"push creates new remote head %s on branch '%s'!"
-                    ) % (short(dhs[0]), branch)
+                    ) % (short(dhs[0]), branch,)
                 elif repo[dhs[0]].bookmarks():
                     errormsg = _(
                         b"push creates new remote head %s "

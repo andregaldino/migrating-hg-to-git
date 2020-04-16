@@ -40,8 +40,6 @@
   summary:     1
   
   $ hg --debug up
-    unmatched files in other:
-     b
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: c19d34741b0a, local: c19d34741b0a+, remote: 1e71731e6fbb
@@ -91,8 +89,6 @@
   summary:     1
   
   $ hg --debug up
-    unmatched files in other:
-     b
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: c19d34741b0a, local: c19d34741b0a+, remote: 1e71731e6fbb

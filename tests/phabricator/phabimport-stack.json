@@ -1,0 +1,277 @@
+{
+    "version": 1, 
+    "interactions": [
+        {
+            "request": {
+                "body": "__conduit__=1&output=json&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22ids%22%3A+%5B7906%2C+7907%2C+7908%2C+7909%2C+7910%2C+7911%2C+7912%2C+7913%2C+7914%2C+7915%2C+7916%2C+7917%2C+7918%5D%7D", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.query", 
+                "headers": {
+                    "content-length": [
+                        "242"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.3+205-75107f1aa427+20200215)"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ]
+                }, 
+                "method": "POST"
+            }, 
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "headers": {
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "date": [
+                        "Sun, 16 Feb 2020 20:45:32 GMT"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"7914\",\"phid\":\"PHID-DREV-u3iz5rww54i5jrsksnr3\",\"title\":\"rust-matchers: implement `visit_children_set` for `FileMatcher`\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7914\",\"dateCreated\":\"1579212591\",\"dateModified\":\"1581399130\",\"authorPHID\":\"PHID-USER-7hh4j4mpuwlnzvkapvse\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":147,\"lines.removed\":5,\"wasAcceptedBeforeClose\":false},\"branch\":null,\"summary\":\"As per the removed inline comment, this will become useful in a future patch\\nin this series as the `IncludeMatcher` is introduced.\",\"testPlan\":\"\",\"lineCount\":\"152\",\"activeDiffPHID\":\"PHID-DIFF-n6cmaq4iwcetzbkkjvje\",\"diffs\":[\"20146\",\"19388\",\"19387\"],\"commits\":[\"PHID-CMIT-zdugtywectjyslokpg45\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-rskbts6c2kyknc66vlzt\",\"PHID-USER-cgcdlc6c3gpxapbmkwa2\",\"PHID-USER-nqkdtlvq7nwcejrriivx\",\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-lii2vixihcpnnjss3bzp\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7907\",\"phid\":\"PHID-DREV-jjmiq6h4ychdtvqh3aqu\",\"title\":\"rebase: always be graft-like, not merge-like, also for merges\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7907\",\"dateCreated\":\"1579162215\",\"dateModified\":\"1581387772\",\"authorPHID\":\"PHID-USER-rskbts6c2kyknc66vlzt\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":37,\"lines.removed\":96,\"wasAcceptedBeforeClose\":false},\"branch\":null,\"summary\":\"Rebase works by updating to a commit and then grafting changes on\\ntop. However, before this patch, it would actually merge in changes\\ninstead of grafting them in in some cases. That is, it would use the\\ncommon ancestor as base instead of using one of the parents. That\\nseems wrong to me, so I'm changing it so `defineparents()` always\\nreturns a value for `base`.\\n\\nThis fixes the bad behavior in test-rebase-newancestor.t, which was\\nintroduced in 65f215ea3e8e (tests: add test for rebasing merges with\\nancestors of the rebase destination, 2014-11-30).\\n\\nThe difference in test-rebase-dest.t is because the files in the tip\\nrevision were A, D, E, F before this patch and A, D, F, G after it. I\\nthink both files should ideally be there.\",\"testPlan\":\"\",\"lineCount\":\"133\",\"activeDiffPHID\":\"PHID-DIFF-xo54almrs3aipnwsjrju\",\"diffs\":[\"20131\",\"20093\",\"19858\",\"19699\",\"19377\",\"19343\"],\"commits\":[\"PHID-CMIT-bflrckeubx66y5jb3h2w\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-wyjh3r4pzmjaex6k5qtv\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7910\",\"phid\":\"PHID-DREV-lii2vixihcpnnjss3bzp\",\"title\":\"rust-re2: add wrapper for calling Re2 from Rust\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7910\",\"dateCreated\":\"1579182899\",\"dateModified\":\"1581379671\",\"authorPHID\":\"PHID-USER-7hh4j4mpuwlnzvkapvse\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":195,\"lines.removed\":5,\"wasAcceptedBeforeClose\":false},\"branch\":null,\"summary\":\"This assumes that Re2 is installed following Google's guide. I am not sure\\nhow we want to integrate it in the project, but I think a follow-up patch would\\nbe more appropriate for such work.\\nAs it stands, *not* having Re2 installed results in a compilation error, which\\nis a problem as it breaks install compatibility. Hence, this is gated behind\\na non-default `with-re2` compilation feature.\",\"testPlan\":\"\",\"lineCount\":\"200\",\"activeDiffPHID\":\"PHID-DIFF-hvxi3tvelg75fjugmca5\",\"diffs\":[\"20080\",\"20040\",\"19938\",\"19546\",\"19399\",\"19386\",\"19360\"],\"commits\":[\"PHID-CMIT-5tq5dqzc7uvuanxqr7ze\",\"PHID-CMIT-visqfpftvyutaadm73vj\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-nqkdtlvq7nwcejrriivx\":\"PHID-USER-nqkdtlvq7nwcejrriivx\"},\"ccs\":[\"PHID-USER-cgcdlc6c3gpxapbmkwa2\",\"PHID-USER-nqkdtlvq7nwcejrriivx\",\"PHID-USER-2lpsl6btnf4lltwv7drt\",\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-xkbqk6xlntkrgqn4x62c\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7909\",\"phid\":\"PHID-DREV-xkbqk6xlntkrgqn4x62c\",\"title\":\"rust-filepatterns: add support for `include` and `subinclude` patterns\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7909\",\"dateCreated\":\"1579174385\",\"dateModified\":\"1581379668\",\"authorPHID\":\"PHID-USER-7hh4j4mpuwlnzvkapvse\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":129,\"lines.removed\":1,\"wasAcceptedBeforeClose\":false},\"branch\":null,\"summary\":\"This prepares a future patch for `IncludeMatcher` on the road to bare\\n`hg status` support.\",\"testPlan\":\"\",\"lineCount\":\"130\",\"activeDiffPHID\":\"PHID-DIFF-rjff6a36zcgyoctyaacc\",\"diffs\":[\"20079\",\"20039\",\"19385\",\"19357\"],\"commits\":[\"PHID-CMIT-6egqfyiavkmaq3u6cy7f\",\"PHID-CMIT-5xl5pj2nijmojoenjv47\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-nqkdtlvq7nwcejrriivx\":\"PHID-USER-nqkdtlvq7nwcejrriivx\"},\"ccs\":[\"PHID-USER-cgcdlc6c3gpxapbmkwa2\",\"PHID-USER-nqkdtlvq7nwcejrriivx\",\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-k74ndkbhbsjoh6vdf6ch\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7908\",\"phid\":\"PHID-DREV-k74ndkbhbsjoh6vdf6ch\",\"title\":\"rust-filepatterns: improve API and robustness for pattern files parsing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7908\",\"dateCreated\":\"1579170142\",\"dateModified\":\"1581379666\",\"authorPHID\":\"PHID-USER-7hh4j4mpuwlnzvkapvse\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":245,\"lines.removed\":65,\"wasAcceptedBeforeClose\":false},\"branch\":null,\"summary\":\"Within the next few patches we will be using this new API.\",\"testPlan\":\"\",\"lineCount\":\"310\",\"activeDiffPHID\":\"PHID-DIFF-e7c77er3c45mjtkuzmr4\",\"diffs\":[\"20078\",\"20038\",\"19384\",\"19356\",\"19355\"],\"commits\":[\"PHID-CMIT-adevfr2rleerktrzh2zw\",\"PHID-CMIT-2vgwhgqwxfn2x26thcgr\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-nqkdtlvq7nwcejrriivx\":\"PHID-USER-nqkdtlvq7nwcejrriivx\"},\"ccs\":[\"PHID-USER-cgcdlc6c3gpxapbmkwa2\",\"PHID-USER-nqkdtlvq7nwcejrriivx\",\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-du2y5nvrvr43bahbwaia\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7906\",\"phid\":\"PHID-DREV-wyjh3r4pzmjaex6k5qtv\",\"title\":\"rebase: define base in only place in defineparents()\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7906\",\"dateCreated\":\"1579162214\",\"dateModified\":\"1580483936\",\"authorPHID\":\"PHID-USER-rskbts6c2kyknc66vlzt\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":10,\"lines.removed\":10,\"wasAcceptedBeforeClose\":true},\"branch\":null,\"summary\":\"Just a little refactoring to prepare for the next patch.\",\"testPlan\":\"\",\"lineCount\":\"20\",\"activeDiffPHID\":\"PHID-DIFF-7ihtsunr2rq5htngocse\",\"diffs\":[\"19720\",\"19698\",\"19342\"],\"commits\":[\"PHID-CMIT-jgxpobg6eadntkxz5tpa\",\"PHID-CMIT-jpk5c6pkor7pm63ztmh5\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-34jnztnonbr4lhwuybwl\":\"PHID-USER-34jnztnonbr4lhwuybwl\"},\"ccs\":[\"PHID-USER-34jnztnonbr4lhwuybwl\",\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-cknqk5y5i26nfwplj6a2\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7913\",\"phid\":\"PHID-DREV-s4borg2nl7ay2mskktwq\",\"title\":\"cext: fix compiler warning about sign changing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7913\",\"dateCreated\":\"1579207172\",\"dateModified\":\"1579709023\",\"authorPHID\":\"PHID-USER-5iutahkpkhvnxfimqjbk\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":6,\"lines.removed\":6,\"wasAcceptedBeforeClose\":false},\"branch\":null,\"summary\":\"line.len is a Py_ssize_t, and we're casing to size_t (unsigned). On my compiler,\\nthis causes a warning to be emitted:\\n\\n```\\nmercurial\\/cext\\/manifest.c: In function 'pathlen':\\nmercurial\\/cext\\/manifest.c:48:44: warning: operand of ?: changes signedness from 'Py_ssize_t' {aka 'long int'} to 'long unsigned int' due to unsignedness of other operand [-Wsign-compare]\\n  return (end) ? (size_t)(end - l-\\u003estart) : l-\\u003elen;\\n                                            ^~~~~~\\n```\",\"testPlan\":\"\",\"lineCount\":\"12\",\"activeDiffPHID\":\"PHID-DIFF-otv6bgmiu242tgi62saw\",\"diffs\":[\"19406\",\"19380\"],\"commits\":[\"PHID-CMIT-z46nrlwhoumbuxp7f2hy\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-tzhaient733lwrlbcag5\":\"PHID-USER-tzhaient733lwrlbcag5\"},\"ccs\":[\"PHID-USER-qwhdxkyioew7vwvxqc2g\",\"PHID-USER-tzhaient733lwrlbcag5\",\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7911\",\"phid\":\"PHID-DREV-rjja25ytm3wz7p262cxd\",\"title\":\"examples: refer to nightly rustfmt in Windows-compatible way\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7911\",\"dateCreated\":\"1579192910\",\"dateModified\":\"1579274016\",\"authorPHID\":\"PHID-USER-rskbts6c2kyknc66vlzt\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":1,\"lines.removed\":1,\"wasAcceptedBeforeClose\":true},\"branch\":null,\"summary\":\"Thanks to Jun Wu for the tip. I found that the new form also gave\\nbetter error messages when the nightly rustfmt wasn't installed (it\\ntold me which command to run instead of just saying \\\"error: not a\\nfile: \\u003csome path\\u003e\\\").\",\"testPlan\":\"\",\"lineCount\":\"2\",\"activeDiffPHID\":\"PHID-DIFF-xewewozhprr7tbym4sqx\",\"diffs\":[\"19408\",\"19376\"],\"commits\":[\"PHID-CMIT-zoorilx5m4ijcev7rp2z\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-34jnztnonbr4lhwuybwl\":\"PHID-USER-34jnztnonbr4lhwuybwl\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"},{\"id\":\"7918\",\"phid\":\"PHID-DREV-sfsckrwrwc77rdl3k5rz\",\"title\":\"create draft change for phabricator testing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7918\",\"dateCreated\":\"1579221164\",\"dateModified\":\"1579222305\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"4\",\"statusName\":\"Abandoned\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":1,\"lines.removed\":2},\"branch\":\"default\",\"summary\":\"\",\"testPlan\":\"\",\"lineCount\":\"3\",\"activeDiffPHID\":\"PHID-DIFF-pqdlhei24n47fzeofjph\",\"diffs\":[\"19394\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-yhl3yvijs4jploa5iqm4\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":\"\\/\"},{\"id\":\"7917\",\"phid\":\"PHID-DREV-yhl3yvijs4jploa5iqm4\",\"title\":\"create public change for phabricator testing\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7917\",\"dateCreated\":\"1579221160\",\"dateModified\":\"1579222286\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"4\",\"statusName\":\"Abandoned\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":1,\"lines.removed\":1},\"branch\":\"default\",\"summary\":\"\",\"testPlan\":\"\",\"lineCount\":\"2\",\"activeDiffPHID\":\"PHID-DIFF-e64weyerxtutv2jvj2dt\",\"diffs\":[\"19393\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":\"\\/\"},{\"id\":\"7916\",\"phid\":\"PHID-DREV-nk73cg2l2oqfozxnw2i3\",\"title\":\"create beta for phabricator test\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7916\",\"dateCreated\":\"1579221145\",\"dateModified\":\"1579222261\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"4\",\"statusName\":\"Abandoned\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":1,\"lines.removed\":0},\"branch\":\"default\",\"summary\":\"\",\"testPlan\":\"\",\"lineCount\":\"1\",\"activeDiffPHID\":\"PHID-DIFF-vn5llgg5oh2rkzquipx4\",\"diffs\":[\"19392\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-3mzbavd2ajsbar5l3esr\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":\"\\/\"},{\"id\":\"7915\",\"phid\":\"PHID-DREV-3mzbavd2ajsbar5l3esr\",\"title\":\"create alpha for phabricator test \\u20ac\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7915\",\"dateCreated\":\"1579221124\",\"dateModified\":\"1579222242\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"4\",\"statusName\":\"Abandoned\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":2,\"lines.removed\":0},\"branch\":\"default\",\"summary\":\"\",\"testPlan\":\"\",\"lineCount\":\"2\",\"activeDiffPHID\":\"PHID-DIFF-fu7z4h6aahgcq2h2q33b\",\"diffs\":[\"19391\",\"19390\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":\"\\/\"},{\"id\":\"7912\",\"phid\":\"PHID-DREV-6sl7k5ssqpiymujoeppg\",\"title\":\"py3: fix curses chunkselector fallback (when diffs are too large) on py3\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D7912\",\"dateCreated\":\"1579206015\",\"dateModified\":\"1579211357\",\"authorPHID\":\"PHID-USER-5iutahkpkhvnxfimqjbk\",\"status\":\"3\",\"statusName\":\"Closed\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":1,\"lines.removed\":1,\"wasAcceptedBeforeClose\":false},\"branch\":null,\"summary\":\"Previously we showed the message using Exception.message, which is removed in\\npy3. Since crecordmod.fallbackerror inherits from error.Abort, we can just use\\n`b'%s' % exception` to print the message. This does not print the hint, but\\nthat's fine - we don't set one. We inherit from error.Abort so that if a\\ncodepath doesn't handle fallback specially, it exits to the terminal with a sane\\nmessage instead of an unknown exception error.\",\"testPlan\":\"\",\"lineCount\":\"2\",\"activeDiffPHID\":\"PHID-DIFF-45onijfyde7kwtva3efa\",\"diffs\":[\"19381\",\"19379\"],\"commits\":[\"PHID-CMIT-i2qbhmmfpgrrkhubbr5v\"],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[[\"hgcm\",\"\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\\u0000\"]],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"}],\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }, 
+        {
+            "request": {
+                "body": "__conduit__=1&output=json&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22ids%22%3A+%5B19393%2C+19394%5D%7D", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.querydiffs", 
+                "headers": {
+                    "content-length": [
+                        "156"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.3+205-75107f1aa427+20200215)"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ]
+                }, 
+                "method": "POST"
+            }, 
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "headers": {
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "date": [
+                        "Sun, 16 Feb 2020 20:45:33 GMT"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"19394\":{\"id\":\"19394\",\"revisionID\":\"7918\",\"dateCreated\":\"1579221161\",\"dateModified\":\"1579221164\",\"sourceControlBaseRevision\":\"7b4185ab5d16acf98e41d566be38c5dbea10878d\",\"sourceControlPath\":\"\\/\",\"sourceControlSystem\":\"hg\",\"branch\":\"default\",\"bookmark\":null,\"creationMethod\":\"phabsend\",\"description\":null,\"unitStatus\":\"0\",\"lintStatus\":\"0\",\"changes\":[{\"id\":\"52927\",\"metadata\":{\"line:first\":1,\"hash.effect\":\"sjHKTvwwqRoW\"},\"oldPath\":\"alpha\",\"currentPath\":\"alpha\",\"awayPaths\":[],\"oldProperties\":[],\"newProperties\":[],\"type\":\"2\",\"fileType\":\"1\",\"commitHash\":null,\"addLines\":\"1\",\"delLines\":\"2\",\"hunks\":[{\"oldOffset\":\"1\",\"newOffset\":\"1\",\"oldLength\":\"2\",\"newLength\":\"1\",\"addLines\":null,\"delLines\":null,\"isMissingOldNewline\":null,\"isMissingNewNewline\":null,\"corpus\":\"-alpha\\n-more\\n+draft change\\n\"}]}],\"properties\":{\"hg:meta\":{\"branch\":\"default\",\"date\":\"0 0\",\"node\":\"3244dc4a33342b4d91ad534ae091685244ac5ed4\",\"parent\":\"7b4185ab5d16acf98e41d566be38c5dbea10878d\",\"user\":\"test\"},\"local:commits\":{\"3244dc4a33342b4d91ad534ae091685244ac5ed4\":{\"author\":\"test\",\"authorEmail\":\"test\",\"branch\":\"default\",\"commit\":\"3244dc4a33342b4d91ad534ae091685244ac5ed4\",\"parents\":[\"7b4185ab5d16acf98e41d566be38c5dbea10878d\"],\"time\":0}}},\"authorName\":\"test\",\"authorEmail\":\"test\"},\"19393\":{\"id\":\"19393\",\"revisionID\":\"7917\",\"dateCreated\":\"1579221158\",\"dateModified\":\"1579221160\",\"sourceControlBaseRevision\":\"a692622e693757674f85ff481c7ff77057a7f82a\",\"sourceControlPath\":\"\\/\",\"sourceControlSystem\":\"hg\",\"branch\":\"default\",\"bookmark\":null,\"creationMethod\":\"phabsend\",\"description\":null,\"unitStatus\":\"0\",\"lintStatus\":\"0\",\"changes\":[{\"id\":\"52926\",\"metadata\":{\"line:first\":1,\"hash.effect\":\"uKa4JPWhh2di\"},\"oldPath\":\"beta\",\"currentPath\":\"beta\",\"awayPaths\":[],\"oldProperties\":[],\"newProperties\":[],\"type\":\"2\",\"fileType\":\"1\",\"commitHash\":null,\"addLines\":\"1\",\"delLines\":\"1\",\"hunks\":[{\"oldOffset\":\"1\",\"newOffset\":\"1\",\"oldLength\":\"1\",\"newLength\":\"1\",\"addLines\":null,\"delLines\":null,\"isMissingOldNewline\":null,\"isMissingNewNewline\":null,\"corpus\":\"-beta\\n+public change\\n\"}]}],\"properties\":{\"hg:meta\":{\"branch\":\"default\",\"date\":\"0 0\",\"node\":\"7b4185ab5d16acf98e41d566be38c5dbea10878d\",\"parent\":\"a692622e693757674f85ff481c7ff77057a7f82a\",\"user\":\"test\"},\"local:commits\":{\"7b4185ab5d16acf98e41d566be38c5dbea10878d\":{\"author\":\"test\",\"authorEmail\":\"test\",\"branch\":\"default\",\"commit\":\"7b4185ab5d16acf98e41d566be38c5dbea10878d\",\"parents\":[\"a692622e693757674f85ff481c7ff77057a7f82a\"],\"time\":0}}},\"authorName\":\"test\",\"authorEmail\":\"test\"}},\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }, 
+        {
+            "request": {
+                "body": "__conduit__=1&output=json&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22diffID%22%3A+19393%7D", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.getrawdiff", 
+                "headers": {
+                    "content-length": [
+                        "144"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.3+205-75107f1aa427+20200215)"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ]
+                }, 
+                "method": "POST"
+            }, 
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "headers": {
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "date": [
+                        "Sun, 16 Feb 2020 20:45:33 GMT"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":\"diff --git a\\/beta b\\/beta\\n--- a\\/beta\\n+++ b\\/beta\\n@@ -1 +1 @@\\n-beta\\n+public change\\n\\n\",\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }, 
+        {
+            "request": {
+                "body": "__conduit__=1&output=json&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22diffID%22%3A+19394%7D", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.getrawdiff", 
+                "headers": {
+                    "content-length": [
+                        "144"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.3+205-75107f1aa427+20200215)"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ]
+                }, 
+                "method": "POST"
+            }, 
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "headers": {
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "date": [
+                        "Sun, 16 Feb 2020 20:45:34 GMT"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":\"diff --git a\\/alpha b\\/alpha\\n--- a\\/alpha\\n+++ b\\/alpha\\n@@ -1,2 +1 @@\\n-alpha\\n-more\\n+draft change\\n\\n\",\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }
+    ]
+}

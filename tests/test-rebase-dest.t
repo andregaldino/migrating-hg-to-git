@@ -156,7 +156,7 @@ Multiple destinations and --collapse are not compatible:
 
 Multiple destinations cannot be used with --base:
 
-  $ rebasewithdag -b B+E -d 'SRC^^' --collapse <<'EOS'
+  $ rebasewithdag -b B -b E -d 'SRC^^' --collapse <<'EOS'
   > B E
   > | |
   > A D
@@ -256,7 +256,7 @@ Different destinations for merge changesets with a same root:
   > EOS
   rebasing 3:a4256619d830 "B" (B)
   rebasing 6:8e139e245220 "C" (C tip)
-  o    8: 51e2ce92e06a C
+  o    8: d7d1169e9b1c C
   |\
   | o    7: 2ed0c8546285 B
   | |\
@@ -272,7 +272,7 @@ Different destinations for merge changesets with a same root:
   
 Move to a previous parent:
 
-  $ rebasewithdag -s E+F+G -d 'SRC^^' <<'EOS'
+  $ rebasewithdag -s E -s F -s G -d 'SRC^^' <<'EOS'
   >     H
   >     |
   >   D G

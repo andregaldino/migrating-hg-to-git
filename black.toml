@@ -9,7 +9,6 @@ build/
 | \.mypy_cache/
 | \.venv/
 | mercurial/thirdparty/
-| contrib/python-zstandard/
 '''
 skip-string-normalization = true
 quiet = true

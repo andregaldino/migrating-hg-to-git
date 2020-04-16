@@ -213,7 +213,14 @@ baseopt = (
     ),
     _(b'REV'),
 )
-revopt = (b'r', b'rev', [], _(b'revisions to fix'), _(b'REV'))
+revopt = (b'r', b'rev', [], _(b'revisions to fix (ADVANCED)'), _(b'REV'))
+sourceopt = (
+    b's',
+    b'source',
+    [],
+    _(b'fix the specified revisions and their descendants'),
+    _(b'REV'),
+)
 wdiropt = (b'w', b'working-dir', False, _(b'fix the working directory'))
 wholeopt = (b'', b'whole', False, _(b'always fix every line of a file'))
 usage = _(b'[OPTION]... [FILE]...')
@@ -221,7 +228,7 @@ usage = _(b'[OPTION]... [FILE]...')
 
 @command(
     b'fix',
-    [allopt, baseopt, revopt, wdiropt, wholeopt],
+    [allopt, baseopt, revopt, sourceopt, wdiropt, wholeopt],
     usage,
     helpcategory=command.CATEGORY_FILE_CONTENTS,
 )
@@ -249,10 +256,11 @@ def fix(ui, repo, *pats, **opts):
     override this default behavior, though it is not usually desirable to do so.
     """
     opts = pycompat.byteskwargs(opts)
-    cmdutil.check_at_most_one_arg(opts, b'all', b'rev')
-    if opts[b'all']:
-        opts[b'rev'] = [b'not public() and not obsolete()']
-        opts[b'working_dir'] = True
+    cmdutil.check_at_most_one_arg(opts, b'all', b'source', b'rev')
+    cmdutil.check_incompatible_arguments(
+        opts, b'working_dir', [b'all', b'source']
+    )
+
     with repo.wlock(), repo.lock(), repo.transaction(b'fix'):
         revstofix = getrevstofix(ui, repo, opts)
         basectxs = getbasectxs(repo, opts, revstofix)
@@ -398,16 +406,28 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
 
 def getrevstofix(ui, repo, opts):
     """Returns the set of revision numbers that should be fixed"""
-    revs = set(scmutil.revrange(repo, opts[b'rev']))
+    if opts[b'all']:
+        revs = repo.revs(b'(not public() and not obsolete()) or wdir()')
+    elif opts[b'source']:
+        source_revs = scmutil.revrange(repo, opts[b'source'])
+        revs = set(repo.revs(b'%ld::', source_revs))
+        if wdirrev in source_revs:
+            # `wdir()::` is currently empty, so manually add wdir
+            revs.add(wdirrev)
+        if repo[b'.'].rev() in revs:
+            revs.add(wdirrev)
+    else:
+        revs = set(scmutil.revrange(repo, opts[b'rev']))
+        if opts.get(b'working_dir'):
+            revs.add(wdirrev)
     for rev in revs:
         checkfixablectx(ui, repo, repo[rev])
-    if revs:
+    # Allow fixing only wdir() even if there's an unfinished operation
+    if not (len(revs) == 1 and wdirrev in revs):
         cmdutil.checkunfinished(repo)
         rewriteutil.precheck(repo, revs, b'fix')
-    if opts.get(b'working_dir'):
-        revs.add(wdirrev)
-        if list(merge.mergestate.read(repo).unresolved()):
-            raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
+    if wdirrev in revs and list(merge.mergestate.read(repo).unresolved()):
+        raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
     if not revs:
         raise error.Abort(
             b'no changesets specified', hint=b'use --rev or --working-dir'
@@ -735,15 +755,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
 
     wctx = context.overlayworkingctx(repo)
     wctx.setbase(repo[newp1node])
-    merge.update(
-        repo,
-        ctx.rev(),
-        branchmerge=False,
-        force=True,
-        ancestor=p1rev,
-        mergeancestor=False,
-        wc=wctx,
-    )
+    merge.revert_to(ctx, wc=wctx)
     copies.graftcopies(wctx, ctx, ctx.p1())
 
     for path in filedata.keys():

@@ -25,8 +25,6 @@ revision.
   $ hg ci -qAm 'add bar'
 
   $ hg merge --debug
-    unmatched files in local:
-     bar
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: bbd179dfa0a7, local: 71766447bdbb+, remote: 4d9e78aaceee

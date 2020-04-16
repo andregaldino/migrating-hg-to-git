@@ -396,26 +396,40 @@ def showfiles(context, mapping):
     return templateutil.compatfileslist(context, mapping, b'file', ctx.files())
 
 
-@templatekeyword(b'graphnode', requires={b'repo', b'ctx'})
+@templatekeyword(b'graphnode', requires={b'repo', b'ctx', b'cache'})
 def showgraphnode(context, mapping):
     """String. The character representing the changeset node in an ASCII
     revision graph."""
     repo = context.resource(mapping, b'repo')
     ctx = context.resource(mapping, b'ctx')
-    return getgraphnode(repo, ctx)
+    cache = context.resource(mapping, b'cache')
+    return getgraphnode(repo, ctx, cache)
 
 
-def getgraphnode(repo, ctx):
-    return getgraphnodecurrent(repo, ctx) or getgraphnodesymbol(ctx)
+def getgraphnode(repo, ctx, cache):
+    return getgraphnodecurrent(repo, ctx, cache) or getgraphnodesymbol(ctx)
 
 
-def getgraphnodecurrent(repo, ctx):
+def getgraphnodecurrent(repo, ctx, cache):
     wpnodes = repo.dirstate.parents()
     if wpnodes[1] == nullid:
         wpnodes = wpnodes[:1]
     if ctx.node() in wpnodes:
         return b'@'
     else:
+        merge_nodes = cache.get(b'merge_nodes')
+        if merge_nodes is None:
+            from . import merge
+
+            mergestate = merge.mergestate.read(repo)
+            if mergestate.active():
+                merge_nodes = (mergestate.local, mergestate.other)
+            else:
+                merge_nodes = ()
+            cache[b'merge_nodes'] = merge_nodes
+
+        if ctx.node() in merge_nodes:
+            return b'%'
         return b''
 
 
@@ -548,7 +562,11 @@ def shownames(context, mapping, namespace):
     """helper method to generate a template keyword for a namespace"""
     repo = context.resource(mapping, b'repo')
     ctx = context.resource(mapping, b'ctx')
-    ns = repo.names[namespace]
+    ns = repo.names.get(namespace)
+    if ns is None:
+        # namespaces.addnamespace() registers new template keyword, but
+        # the registered namespace might not exist in the current repo.
+        return
     names = ns.names(repo, ctx.node())
     return compatlist(
         context, mapping, ns.templatename, names, plural=namespace
@@ -859,24 +877,6 @@ def showrev(context, mapping):
     """Integer. The repository-local changeset revision number."""
     ctx = context.resource(mapping, b'ctx')
     return scmutil.intrev(ctx)
-
-
-def showrevslist(context, mapping, name, revs):
-    """helper to generate a list of revisions in which a mapped template will
-    be evaluated"""
-    repo = context.resource(mapping, b'repo')
-    # revs may be a smartset; don't compute it until f() has to be evaluated
-    def f():
-        srevs = [b'%d' % r for r in revs]
-        return _showcompatlist(context, mapping, name, srevs)
-
-    return _hybrid(
-        f,
-        revs,
-        lambda x: {name: x, b'ctx': repo[x]},
-        pycompat.identity,
-        keytype=int,
-    )
 
 
 @templatekeyword(b'subrepos', requires={b'ctx'})

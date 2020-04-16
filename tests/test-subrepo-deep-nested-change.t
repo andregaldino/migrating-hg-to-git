@@ -355,6 +355,11 @@ A deleted subrepo file is flagged as dirty, like the top level repo
   R sub1/sub2/folder/test.txt
   ! sub1/.hgsub
   ? sub1/x.hgsub
+  $ hg status -R sub1
+  warning: subrepo spec file 'sub1/.hgsub' not found
+  R .hgsubstate
+  ! .hgsub
+  ? x.hgsub
   $ mv sub1/x.hgsub sub1/.hgsub
   $ hg update -Cq
   $ touch sub1/foo

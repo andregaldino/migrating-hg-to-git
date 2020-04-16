@@ -1,16 +1,25 @@
 // revlog.rs
 //
-// Copyright 2019 Georges Racinet <georges.racinet@octobus.net>
+// Copyright 2019-2020 Georges Racinet <georges.racinet@octobus.net>
 //
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::cindex;
-use cpython::{
-    ObjectProtocol, PyClone, PyDict, PyModule, PyObject, PyResult, PyTuple,
-    Python, PythonObject, ToPyObject,
+use crate::{
+    cindex,
+    utils::{node_from_py_bytes, node_from_py_object},
 };
-use hg::Revision;
+use cpython::{
+    buffer::{Element, PyBuffer},
+    exc::{IndexError, ValueError},
+    ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyModule, PyObject,
+    PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
+};
+use hg::{
+    nodemap::{Block, NodeMapError, NodeTree},
+    revlog::{nodemap::NodeMap, RevlogIndex},
+    NodeError, Revision,
+};
 use std::cell::RefCell;
 
 /// Return a Struct implementing the Graph trait
@@ -26,10 +35,13 @@ pub(crate) fn pyindex_to_graph(
 
 py_class!(pub class MixedIndex |py| {
     data cindex: RefCell<cindex::Index>;
+    data nt: RefCell<Option<NodeTree>>;
+    data docket: RefCell<Option<PyObject>>;
+    // Holds a reference to the mmap'ed persistent nodemap data
+    data mmap: RefCell<Option<PyBuffer>>;
 
     def __new__(_cls, cindex: PyObject) -> PyResult<MixedIndex> {
-        Self::create_instance(py, RefCell::new(
-            cindex::Index::new(py, cindex)?))
+        Self::new(py, cindex)
     }
 
     /// Compatibility layer used for Python consumers needing access to the C index
@@ -43,8 +55,99 @@ py_class!(pub class MixedIndex |py| {
         Ok(self.cindex(py).borrow().inner().clone_ref(py))
     }
 
+    // Index API involving nodemap, as defined in mercurial/pure/parsers.py
 
+    /// Return Revision if found, raises a bare `error.RevlogError`
+    /// in case of ambiguity, same as C version does
+    def get_rev(&self, node: PyBytes) -> PyResult<Option<Revision>> {
+        let opt = self.get_nodetree(py)?.borrow();
+        let nt = opt.as_ref().unwrap();
+        let idx = &*self.cindex(py).borrow();
+        let node = node_from_py_bytes(py, &node)?;
+        nt.find_bin(idx, (&node).into()).map_err(|e| nodemap_error(py, e))
+    }
+
+    /// same as `get_rev()` but raises a bare `error.RevlogError` if node
+    /// is not found.
+    ///
+    /// No need to repeat `node` in the exception, `mercurial/revlog.py`
+    /// will catch and rewrap with it
+    def rev(&self, node: PyBytes) -> PyResult<Revision> {
+        self.get_rev(py, node)?.ok_or_else(|| revlog_error(py))
+    }
+
+    /// return True if the node exist in the index
+    def has_node(&self, node: PyBytes) -> PyResult<bool> {
+        self.get_rev(py, node).map(|opt| opt.is_some())
+    }
+
+    /// find length of shortest hex nodeid of a binary ID
+    def shortest(&self, node: PyBytes) -> PyResult<usize> {
+        let opt = self.get_nodetree(py)?.borrow();
+        let nt = opt.as_ref().unwrap();
+        let idx = &*self.cindex(py).borrow();
+        match nt.unique_prefix_len_node(idx, &node_from_py_bytes(py, &node)?)
+        {
+            Ok(Some(l)) => Ok(l),
+            Ok(None) => Err(revlog_error(py)),
+            Err(e) => Err(nodemap_error(py, e)),
+        }
+    }
+
+    def partialmatch(&self, node: PyObject) -> PyResult<Option<PyBytes>> {
+        let opt = self.get_nodetree(py)?.borrow();
+        let nt = opt.as_ref().unwrap();
+        let idx = &*self.cindex(py).borrow();
+
+        let node_as_string = if cfg!(feature = "python3-sys") {
+            node.cast_as::<PyString>(py)?.to_string(py)?.to_string()
+        }
+        else {
+            let node = node.extract::<PyBytes>(py)?;
+            String::from_utf8_lossy(node.data(py)).to_string()
+        };
+
+        nt.find_hex(idx, &node_as_string)
+            // TODO make an inner API returning the node directly
+            .map(|opt| opt.map(
+                |rev| PyBytes::new(py, idx.node(rev).unwrap().as_bytes())))
+            .map_err(|e| nodemap_error(py, e))
+
+    }
+
+    /// append an index entry
+    def append(&self, tup: PyTuple) -> PyResult<PyObject> {
+        if tup.len(py) < 8 {
+            // this is better than the panic promised by tup.get_item()
+            return Err(
+                PyErr::new::<IndexError, _>(py, "tuple index out of range"))
+        }
+        let node_bytes = tup.get_item(py, 7).extract(py)?;
+        let node = node_from_py_object(py, &node_bytes)?;
+
+        let mut idx = self.cindex(py).borrow_mut();
+        let rev = idx.len() as Revision;
+
+        idx.append(py, tup)?;
+        self.get_nodetree(py)?.borrow_mut().as_mut().unwrap()
+            .insert(&*idx, &node, rev)
+            .map_err(|e| nodemap_error(py, e))?;
+        Ok(py.None())
+    }
+
+    def __delitem__(&self, key: PyObject) -> PyResult<()> {
+        // __delitem__ is both for `del idx[r]` and `del idx[r1:r2]`
+        self.cindex(py).borrow().inner().del_item(py, key)?;
+        let mut opt = self.get_nodetree(py)?.borrow_mut();
+        let mut nt = opt.as_mut().unwrap();
+        nt.invalidate_all();
+        self.fill_nodemap(py, &mut nt)?;
+        Ok(())
+    }
+
+    //
     // Reforwarded C index API
+    //
 
     // index_methods (tp_methods). Same ordering as in revlog.c
 
@@ -58,29 +161,18 @@ py_class!(pub class MixedIndex |py| {
         self.call_cindex(py, "commonancestorsheads", args, kw)
     }
 
-    /// clear the index caches
+    /// Clear the index caches and inner py_class data.
+    /// It is Python's responsibility to call `update_nodemap_data` again.
     def clearcaches(&self, *args, **kw) -> PyResult<PyObject> {
+        self.nt(py).borrow_mut().take();
+        self.docket(py).borrow_mut().take();
+        self.mmap(py).borrow_mut().take();
         self.call_cindex(py, "clearcaches", args, kw)
     }
 
     /// get an index entry
     def get(&self, *args, **kw) -> PyResult<PyObject> {
         self.call_cindex(py, "get", args, kw)
-    }
-
-    /// return `rev` associated with a node or None
-    def get_rev(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "get_rev", args, kw)
-    }
-
-    /// return True if the node exist in the index
-    def has_node(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "has_node", args, kw)
-    }
-
-    /// return `rev` associated with a node or raise RevlogError
-    def rev(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "rev", args, kw)
     }
 
     /// compute phases
@@ -123,21 +215,6 @@ py_class!(pub class MixedIndex |py| {
         self.call_cindex(py, "slicechunktodensity", args, kw)
     }
 
-    /// append an index entry
-    def append(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "append", args, kw)
-    }
-
-    /// match a potentially ambiguous node ID
-    def partialmatch(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "partialmatch", args, kw)
-    }
-
-    /// find length of shortest hex nodeid of a binary ID
-    def shortest(&self, *args, **kw) -> PyResult<PyObject> {
-        self.call_cindex(py, "shortest", args, kw)
-    }
-
     /// stats for the index
     def stats(&self, *args, **kw) -> PyResult<PyObject> {
         self.call_cindex(py, "stats", args, kw)
@@ -158,7 +235,7 @@ py_class!(pub class MixedIndex |py| {
         // `index_getitem` does not handle conversion from PyLong,
         // which expressions such as [e for e in index] internally use.
         // Note that we don't seem to have a direct way to call
-        // PySequence_GetItem (does the job), which would be better for
+        // PySequence_GetItem (does the job), which would possibly be better
         // for performance
         let key = match key.extract::<Revision>(py) {
             Ok(rev) => rev.to_py_object(py).into_object(),
@@ -169,10 +246,6 @@ py_class!(pub class MixedIndex |py| {
 
     def __setitem__(&self, key: PyObject, value: PyObject) -> PyResult<()> {
         self.cindex(py).borrow().inner().set_item(py, key, value)
-    }
-
-    def __delitem__(&self, key: PyObject) -> PyResult<()> {
-        self.cindex(py).borrow().inner().del_item(py, key)
     }
 
     def __contains__(&self, item: PyObject) -> PyResult<bool> {
@@ -195,10 +268,66 @@ py_class!(pub class MixedIndex |py| {
         }
     }
 
+    def nodemap_data_all(&self) -> PyResult<PyBytes> {
+        self.inner_nodemap_data_all(py)
+    }
+
+    def nodemap_data_incremental(&self) -> PyResult<PyObject> {
+        self.inner_nodemap_data_incremental(py)
+    }
+    def update_nodemap_data(
+        &self,
+        docket: PyObject,
+        nm_data: PyObject
+    ) -> PyResult<PyObject> {
+        self.inner_update_nodemap_data(py, docket, nm_data)
+    }
+
 
 });
 
 impl MixedIndex {
+    fn new(py: Python, cindex: PyObject) -> PyResult<MixedIndex> {
+        Self::create_instance(
+            py,
+            RefCell::new(cindex::Index::new(py, cindex)?),
+            RefCell::new(None),
+            RefCell::new(None),
+            RefCell::new(None),
+        )
+    }
+
+    /// This is scaffolding at this point, but it could also become
+    /// a way to start a persistent nodemap or perform a
+    /// vacuum / repack operation
+    fn fill_nodemap(
+        &self,
+        py: Python,
+        nt: &mut NodeTree,
+    ) -> PyResult<PyObject> {
+        let index = self.cindex(py).borrow();
+        for r in 0..index.len() {
+            let rev = r as Revision;
+            // in this case node() won't ever return None
+            nt.insert(&*index, index.node(rev).unwrap(), rev)
+                .map_err(|e| nodemap_error(py, e))?
+        }
+        Ok(py.None())
+    }
+
+    fn get_nodetree<'a>(
+        &'a self,
+        py: Python<'a>,
+    ) -> PyResult<&'a RefCell<Option<NodeTree>>> {
+        if self.nt(py).borrow().is_none() {
+            let readonly = Box::new(Vec::new());
+            let mut nt = NodeTree::load_bytes(readonly, 0);
+            self.fill_nodemap(py, &mut nt)?;
+            self.nt(py).borrow_mut().replace(nt);
+        }
+        Ok(self.nt(py))
+    }
+
     /// forward a method call to the underlying C index
     fn call_cindex(
         &self,
@@ -216,6 +345,138 @@ impl MixedIndex {
     pub fn clone_cindex(&self, py: Python) -> cindex::Index {
         self.cindex(py).borrow().clone_ref(py)
     }
+
+    /// Returns the full nodemap bytes to be written as-is to disk
+    fn inner_nodemap_data_all(&self, py: Python) -> PyResult<PyBytes> {
+        let nodemap = self.get_nodetree(py)?.borrow_mut().take().unwrap();
+        let (readonly, bytes) = nodemap.into_readonly_and_added_bytes();
+
+        // If there's anything readonly, we need to build the data again from
+        // scratch
+        let bytes = if readonly.len() > 0 {
+            let mut nt = NodeTree::load_bytes(Box::new(vec![]), 0);
+            self.fill_nodemap(py, &mut nt)?;
+
+            let (readonly, bytes) = nt.into_readonly_and_added_bytes();
+            assert_eq!(readonly.len(), 0);
+
+            bytes
+        } else {
+            bytes
+        };
+
+        let bytes = PyBytes::new(py, &bytes);
+        Ok(bytes)
+    }
+
+    /// Returns the last saved docket along with the size of any changed data
+    /// (in number of blocks), and said data as bytes.
+    fn inner_nodemap_data_incremental(
+        &self,
+        py: Python,
+    ) -> PyResult<PyObject> {
+        let docket = self.docket(py).borrow();
+        let docket = match docket.as_ref() {
+            Some(d) => d,
+            None => return Ok(py.None()),
+        };
+
+        let node_tree = self.get_nodetree(py)?.borrow_mut().take().unwrap();
+        let masked_blocks = node_tree.masked_readonly_blocks();
+        let (_, data) = node_tree.into_readonly_and_added_bytes();
+        let changed = masked_blocks * std::mem::size_of::<Block>();
+
+        Ok((docket, changed, PyBytes::new(py, &data))
+            .to_py_object(py)
+            .into_object())
+    }
+
+    /// Update the nodemap from the new (mmaped) data.
+    /// The docket is kept as a reference for later incremental calls.
+    fn inner_update_nodemap_data(
+        &self,
+        py: Python,
+        docket: PyObject,
+        nm_data: PyObject,
+    ) -> PyResult<PyObject> {
+        let buf = PyBuffer::get(py, &nm_data)?;
+        let len = buf.item_count();
+
+        // Build a slice from the mmap'ed buffer data
+        let cbuf = buf.buf_ptr();
+        let bytes = if std::mem::size_of::<u8>() == buf.item_size()
+            && buf.is_c_contiguous()
+            && u8::is_compatible_format(buf.format())
+        {
+            unsafe { std::slice::from_raw_parts(cbuf as *const u8, len) }
+        } else {
+            return Err(PyErr::new::<ValueError, _>(
+                py,
+                "Nodemap data buffer has an invalid memory representation"
+                    .to_string(),
+            ));
+        };
+
+        // Keep a reference to the mmap'ed buffer, otherwise we get a dangling
+        // pointer.
+        self.mmap(py).borrow_mut().replace(buf);
+
+        let mut nt = NodeTree::load_bytes(Box::new(bytes), len);
+
+        let data_tip =
+            docket.getattr(py, "tip_rev")?.extract::<Revision>(py)?;
+        self.docket(py).borrow_mut().replace(docket.clone_ref(py));
+        let idx = self.cindex(py).borrow();
+        let current_tip = idx.len();
+
+        for r in (data_tip + 1)..current_tip as Revision {
+            let rev = r as Revision;
+            // in this case node() won't ever return None
+            nt.insert(&*idx, idx.node(rev).unwrap(), rev)
+                .map_err(|e| nodemap_error(py, e))?
+        }
+
+        *self.nt(py).borrow_mut() = Some(nt);
+
+        Ok(py.None())
+    }
+}
+
+fn revlog_error(py: Python) -> PyErr {
+    match py
+        .import("mercurial.error")
+        .and_then(|m| m.get(py, "RevlogError"))
+    {
+        Err(e) => e,
+        Ok(cls) => PyErr::from_instance(py, cls),
+    }
+}
+
+fn rev_not_in_index(py: Python, rev: Revision) -> PyErr {
+    PyErr::new::<ValueError, _>(
+        py,
+        format!(
+            "Inconsistency: Revision {} found in nodemap \
+             is not in revlog index",
+            rev
+        ),
+    )
+}
+
+/// Standard treatment of NodeMapError
+fn nodemap_error(py: Python, err: NodeMapError) -> PyErr {
+    match err {
+        NodeMapError::MultipleResults => revlog_error(py),
+        NodeMapError::RevisionNotInIndex(r) => rev_not_in_index(py, r),
+        NodeMapError::InvalidNodePrefix(s) => invalid_node_prefix(py, &s),
+    }
+}
+
+fn invalid_node_prefix(py: Python, ne: &NodeError) -> PyErr {
+    PyErr::new::<ValueError, _>(
+        py,
+        format!("Invalid node or prefix: {:?}", ne),
+    )
 }
 
 /// Create the module, with __package__ given from parent

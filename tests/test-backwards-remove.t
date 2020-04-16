@@ -2,7 +2,8 @@
   $ echo This is file a1 > a
   $ hg add a
   $ hg commit -m "commit #0"
-  $ ls
+  $ ls -A
+  .hg
   a
   $ echo This is file b1 > b
   $ hg add b
@@ -12,5 +13,6 @@
 
 B should disappear
 
-  $ ls
+  $ ls -A
+  .hg
   a

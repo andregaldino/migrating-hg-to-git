@@ -121,7 +121,8 @@
 # unbundle
 
   $ clearcache
-  $ ls
+  $ ls -A
+  .hg
   w
   x
   y

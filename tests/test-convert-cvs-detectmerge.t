@@ -1,4 +1,4 @@
-#require cvs
+#require cvs no-root
 
 Test config convert.cvsps.mergefrom config setting.
 (Should test similar mergeto feature, but I don't understand it yet.)

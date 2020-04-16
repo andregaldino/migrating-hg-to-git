@@ -54,6 +54,8 @@ Cannot stream clone when server.uncompressed is set
     changegroup
       01
       02
+    checkheads
+      related
     digests
       md5
       sha1
@@ -120,6 +122,8 @@ Cannot stream clone when server.uncompressed is set
     changegroup
       01
       02
+    checkheads
+      related
     digests
       md5
       sha1

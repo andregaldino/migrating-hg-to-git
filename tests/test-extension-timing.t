@@ -1,3 +1,5 @@
+#require no-chg
+
 Test basic extension support
 
   $ cat > foobar.py <<EOF

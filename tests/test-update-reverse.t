@@ -12,7 +12,8 @@
 
 'main' should be gone:
 
-  $ ls
+  $ ls -A
+  .hg
   a
 
   $ touch side1
@@ -59,7 +60,8 @@
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     Added main
   
-  $ ls
+  $ ls -A
+  .hg
   a
   side1
   side2
@@ -76,7 +78,8 @@
   getting main
   1 files updated, 0 files merged, 2 files removed, 0 files unresolved
 
-  $ ls
+  $ ls -A
+  .hg
   a
   main
 

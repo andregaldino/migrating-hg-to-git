@@ -130,6 +130,16 @@ umask = platform.umask
 unlink = platform.unlink
 username = platform.username
 
+
+def setumask(val):
+    ''' updates the umask. used by chg server '''
+    if pycompat.iswindows:
+        return
+    os.umask(val)
+    global umask
+    platform.umask = umask = val & 0o777
+
+
 # small compat layer
 compengines = compression.compengines
 SERVERROLE = compression.SERVERROLE
@@ -1846,14 +1856,14 @@ def pathto(root, n1, n2):
     return pycompat.ossep.join(([b'..'] * len(a)) + b) or b'.'
 
 
-def checksignature(func):
+def checksignature(func, depth=1):
     '''wrap a function with code to check for calling errors'''
 
     def check(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except TypeError:
-            if len(traceback.extract_tb(sys.exc_info()[2])) == 1:
+            if len(traceback.extract_tb(sys.exc_info()[2])) == depth:
                 raise error.SignatureError
             raise
 
@@ -2213,7 +2223,7 @@ def fspath(name, root):
     '''
 
     def _makefspathcacheentry(dir):
-        return dict((normcase(n), n) for n in os.listdir(dir))
+        return {normcase(n): n for n in os.listdir(dir)}
 
     seps = pycompat.ossep
     if pycompat.osaltsep:

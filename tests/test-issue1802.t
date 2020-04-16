@@ -52,8 +52,6 @@ Create extension that can disable exec checks:
 Simulate a Windows merge:
 
   $ hg --config extensions.n=$TESTTMP/noexec.py merge --debug
-    unmatched files in local:
-     b
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: a03b0deabf2b, local: d6fa54f68ae1+, remote: 2d8bcf2dda39

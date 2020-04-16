@@ -22,9 +22,14 @@ A new repository uses zlib storage, which doesn't need a requirement
 Unknown compression engine to format.compression aborts
 
   $ hg --config format.revlog-compression=unknown init unknown
-  abort: compression engine unknown defined by format.revlog-compression not available
+  abort: compression engines "unknown" defined by format.revlog-compression not available
   (run "hg debuginstall" to list available compression engines)
   [255]
+
+unknown compression engine in a list with known one works fine
+
+  $ hg --config format.revlog-compression=zlib,unknown init zlib-before-unknow
+  $ hg --config format.revlog-compression=unknown,zlib init unknown-before-zlib
 
 A requirement specifying an unknown compression engine results in bail
 

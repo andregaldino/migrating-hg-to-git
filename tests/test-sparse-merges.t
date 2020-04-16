@@ -28,7 +28,8 @@ test merging things outside of the sparse checkout
 
 Verify bar was merged temporarily
 
-  $ ls
+  $ ls -A
+  .hg
   bar
   foo
   $ hg status
@@ -39,7 +40,8 @@ Verify bar disappears automatically when the working copy becomes clean
   $ hg commit -m "merged"
   cleaned up 1 temporarily added file(s) from the sparse checkout
   $ hg status
-  $ ls
+  $ ls -A
+  .hg
   foo
 
   $ hg cat -r . bar
@@ -108,7 +110,9 @@ file is excluded from sparse checkout
   o  0:53f3774ed939 added .hgignore
   
   $ hg debugsparse --exclude "d"
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   a
 
   $ hg merge
@@ -168,7 +172,9 @@ another
   o  0:53f3774ed939 added .hgignore
   
   $ hg debugsparse --exclude "a"
-  $ ls
+  $ ls -A
+  .hg
+  .hgignore
   d
 
   $ hg merge

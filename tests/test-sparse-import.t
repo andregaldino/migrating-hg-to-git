@@ -32,7 +32,8 @@ Import a rules file against a 'blank' sparse profile
   > *.py
   > EOF
   $ hg debugsparse --import-rules $TESTTMP/rules_to_import
-  $ ls
+  $ ls -A
+  .hg
   data.py
 
   $ hg debugsparse --reset
@@ -44,7 +45,8 @@ Import a rules file against a 'blank' sparse profile
   > *.py
   > EOF
   $ hg debugsparse --import-rules $TESTTMP/rules_to_import
-  $ ls
+  $ ls -A
+  .hg
   base.sparse
   data.py
   webpage.sparse
@@ -65,7 +67,8 @@ Start against an existing profile; rules *already active* should be ignored
   > *.py
   > EOF
   $ hg debugsparse --import-rules $TESTTMP/rules_to_import
-  $ ls
+  $ ls -A
+  .hg
   base.sparse
   index.html
   readme.txt

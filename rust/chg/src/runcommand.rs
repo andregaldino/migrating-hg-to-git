@@ -15,9 +15,9 @@ use tokio_hglib::codec::ChannelMessage;
 use tokio_hglib::protocol::MessageLoop;
 use tokio_hglib::{Client, Connection};
 
-use super::attachio::AttachIo;
-use super::message::{self, CommandType};
-use super::uihandler::SystemHandler;
+use crate::attachio::AttachIo;
+use crate::message::{self, CommandType};
+use crate::uihandler::SystemHandler;
 
 enum AsyncS<R, S> {
     Ready(R),
@@ -37,7 +37,7 @@ where
     Finished,
 }
 
-type CommandPoll<C, H> = io::Result<(AsyncS<(Client<C>, H, i32), CommandState<C, H>>)>;
+type CommandPoll<C, H> = io::Result<AsyncS<(Client<C>, H, i32), CommandState<C, H>>>;
 
 /// Future resolves to `(exit_code, client)`.
 #[must_use = "futures do nothing unless polled"]
@@ -140,30 +140,31 @@ where
     C: Connection,
     H: SystemHandler,
 {
-    match msg {
-        ChannelMessage::Data(b'r', data) => {
-            let code = message::parse_result_code(data)?;
-            Ok(AsyncS::Ready((client, handler, code)))
-        }
-        ChannelMessage::Data(..) => {
-            // just ignores data sent to optional channel
-            let msg_loop = MessageLoop::resume(client);
-            Ok(AsyncS::PollAgain(CommandState::Running(msg_loop, handler)))
-        }
-        ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) => Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "unsupported request",
-        )),
-        ChannelMessage::SystemRequest(data) => {
-            let (cmd_type, cmd_spec) = message::parse_command_spec(data)?;
-            match cmd_type {
-                CommandType::Pager => {
-                    let fut = handler.spawn_pager(cmd_spec).into_future();
-                    Ok(AsyncS::PollAgain(CommandState::SpawningPager(client, fut)))
-                }
-                CommandType::System => {
-                    let fut = handler.run_system(cmd_spec).into_future();
-                    Ok(AsyncS::PollAgain(CommandState::WaitingSystem(client, fut)))
+    {
+        match msg {
+            ChannelMessage::Data(b'r', data) => {
+                let code = message::parse_result_code(data)?;
+                Ok(AsyncS::Ready((client, handler, code)))
+            }
+            ChannelMessage::Data(..) => {
+                // just ignores data sent to optional channel
+                let msg_loop = MessageLoop::resume(client);
+                Ok(AsyncS::PollAgain(CommandState::Running(msg_loop, handler)))
+            }
+            ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) => Err(
+                io::Error::new(io::ErrorKind::InvalidData, "unsupported request"),
+            ),
+            ChannelMessage::SystemRequest(data) => {
+                let (cmd_type, cmd_spec) = message::parse_command_spec(data)?;
+                match cmd_type {
+                    CommandType::Pager => {
+                        let fut = handler.spawn_pager(cmd_spec).into_future();
+                        Ok(AsyncS::PollAgain(CommandState::SpawningPager(client, fut)))
+                    }
+                    CommandType::System => {
+                        let fut = handler.run_system(cmd_spec).into_future();
+                        Ok(AsyncS::PollAgain(CommandState::WaitingSystem(client, fut)))
+                    }
                 }
             }
         }

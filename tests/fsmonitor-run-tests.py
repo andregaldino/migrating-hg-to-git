@@ -30,7 +30,7 @@ if sys.version_info > (3, 5, 0):
     PYTHON3 = True
     xrange = range  # we use xrange in one place, and we'd rather not use range
 
-    def _bytespath(p):
+    def _sys2bytes(p):
         return p.encode('utf-8')
 
 
@@ -47,7 +47,7 @@ else:
     # bytestrings by default, so we don't have to do any extra
     # fiddling there. We define the wrapper functions anyway just to
     # help keep code consistent between platforms.
-    def _bytespath(p):
+    def _sys2bytes(p):
         return p
 
 
@@ -107,7 +107,7 @@ def watchman(args):
         ]
 
         envb = osenvironb.copy()
-        envb[b'WATCHMAN_CONFIG_FILE'] = _bytespath(cfgfile)
+        envb[b'WATCHMAN_CONFIG_FILE'] = _sys2bytes(cfgfile)
         with open(clilogfile, 'wb') as f:
             proc = subprocess.Popen(
                 argv, env=envb, stdin=None, stdout=f, stderr=f
@@ -129,7 +129,7 @@ def run():
     args, runtestsargv = parser.parse_known_args()
 
     with watchman(args) as sockfile:
-        osenvironb[b'WATCHMAN_SOCK'] = _bytespath(sockfile)
+        osenvironb[b'WATCHMAN_SOCK'] = _sys2bytes(sockfile)
         # Indicate to hghave that we're running with fsmonitor enabled.
         osenvironb[b'HGFSMONITOR_TESTS'] = b'1'
 

@@ -24,7 +24,7 @@ from . import (
 )
 from .utils import stringutil
 
-rustmod = policy.importrust('filepatterns')
+rustmod = policy.importrust('dirstate')
 
 allpatternkinds = (
     b're',
@@ -666,7 +666,10 @@ class _dirchildren(object):
 class includematcher(basematcher):
     def __init__(self, root, kindpats, badfn=None):
         super(includematcher, self).__init__(badfn)
-
+        if rustmod is not None:
+            # We need to pass the patterns to Rust because they can contain
+            # patterns from the user interface
+            self._kindpats = kindpats
         self._pats, self.matchfn = _buildmatch(kindpats, b'(?:/|$)', root)
         self._prefix = _prefix(kindpats)
         roots, dirs, parents = _rootsdirsandparents(kindpats)
@@ -772,7 +775,7 @@ class exactmatcher(basematcher):
         candidates = self._fileset | self._dirs - {b''}
         if dir != b'':
             d = dir + b'/'
-            candidates = set(c[len(d) :] for c in candidates if c.startswith(d))
+            candidates = {c[len(d) :] for c in candidates if c.startswith(d)}
         # self._dirs includes all of the directories, recursively, so if
         # we're attempting to match foo/bar/baz.txt, it'll have '', 'foo',
         # 'foo/bar' in it. Thus we can safely ignore a candidate that has a
@@ -1273,15 +1276,6 @@ def _regex(kind, pat, globsuffix):
     '''Convert a (normalized) pattern of any kind into a
     regular expression.
     globsuffix is appended to the regexp of globs.'''
-
-    if rustmod is not None:
-        try:
-            return rustmod.build_single_regex(kind, pat, globsuffix)
-        except rustmod.PatternError:
-            raise error.ProgrammingError(
-                b'not a regex pattern: %s:%s' % (kind, pat)
-            )
-
     if not pat and kind in (b'glob', b'relpath'):
         return b''
     if kind == b're':
@@ -1553,18 +1547,6 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     (pattern, lineno, originalline).
     This is useful to debug ignore patterns.
     '''
-
-    if rustmod is not None:
-        result, warnings = rustmod.read_pattern_file(
-            filepath, bool(warn), sourceinfo,
-        )
-
-        for warning_params in warnings:
-            # Can't be easily emitted from Rust, because it would require
-            # a mechanism for both gettext and calling the `warn` function.
-            warn(_(b"%s: ignoring invalid syntax '%s'\n") % warning_params)
-
-        return result
 
     syntaxes = {
         b're': b'relre:',

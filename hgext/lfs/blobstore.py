@@ -21,6 +21,7 @@ from mercurial.pycompat import getattr
 from mercurial import (
     encoding,
     error,
+    httpconnection as httpconnectionmod,
     node,
     pathutil,
     pycompat,
@@ -94,33 +95,16 @@ class nullvfs(lfsvfs):
         pass
 
 
-class filewithprogress(object):
-    """a file-like object that supports __len__ and read.
-
-    Useful to provide progress information for how many bytes are read.
+class lfsuploadfile(httpconnectionmod.httpsendfile):
+    """a file-like object that supports keepalive.
     """
 
-    def __init__(self, fp, callback):
-        self._fp = fp
-        self._callback = callback  # func(readsize)
-        fp.seek(0, os.SEEK_END)
-        self._len = fp.tell()
-        fp.seek(0)
+    def __init__(self, ui, filename):
+        super(lfsuploadfile, self).__init__(ui, filename, b'rb')
+        self.read = self._data.read
 
-    def __len__(self):
-        return self._len
-
-    def read(self, size):
-        if self._fp is None:
-            return b''
-        data = self._fp.read(size)
-        if data:
-            if self._callback:
-                self._callback(len(data))
-        else:
-            self._fp.close()
-            self._fp = None
-        return data
+    def _makeprogress(self):
+        return None  # progress is handled by the worker client
 
 
 class local(object):
@@ -144,6 +128,17 @@ class local(object):
     def open(self, oid):
         """Open a read-only file descriptor to the named blob, in either the
         usercache or the local store."""
+        return open(self.path(oid), 'rb')
+
+    def path(self, oid):
+        """Build the path for the given blob ``oid``.
+
+        If the blob exists locally, the path may point to either the usercache
+        or the local store.  If it doesn't, it will point to the local store.
+        This is meant for situations where existing code that isn't LFS aware
+        needs to open a blob.  Generally, prefer the ``open`` method on this
+        class.
+        """
         # The usercache is the most likely place to hold the file.  Commit will
         # write to both it and the local store, as will anything that downloads
         # the blobs.  However, things like clone without an update won't
@@ -151,9 +146,9 @@ class local(object):
         # the usercache is the only place it _could_ be.  If not present, the
         # missing file msg here will indicate the local repo, not the usercache.
         if self.cachevfs.exists(oid):
-            return self.cachevfs(oid, b'rb')
+            return self.cachevfs.join(oid)
 
-        return self.vfs(oid, b'rb')
+        return self.vfs.join(oid)
 
     def download(self, oid, src, content_length):
         """Read the blob from the remote source in chunks, verify the content,
@@ -495,15 +490,17 @@ class _gitlfsremote(object):
                     _(b'detected corrupt lfs object: %s') % oid,
                     hint=_(b'run hg verify'),
                 )
-            request.data = filewithprogress(localstore.open(oid), None)
-            request.get_method = lambda: r'PUT'
-            request.add_header('Content-Type', 'application/octet-stream')
-            request.add_header('Content-Length', len(request.data))
 
         for k, v in headers:
             request.add_header(pycompat.strurl(k), pycompat.strurl(v))
 
         try:
+            if action == b'upload':
+                request.data = lfsuploadfile(self.ui, localstore.path(oid))
+                request.get_method = lambda: 'PUT'
+                request.add_header('Content-Type', 'application/octet-stream')
+                request.add_header('Content-Length', request.data.length)
+
             with contextlib.closing(self.urlopener.open(request)) as res:
                 contentlength = res.info().get(b"content-length")
                 ui = self.ui  # Shorten debug lines
@@ -545,6 +542,9 @@ class _gitlfsremote(object):
             raise LfsRemoteError(
                 _(b'LFS error: %s') % _urlerrorreason(ex), hint=hint
             )
+        finally:
+            if request.data:
+                request.data.close()
 
     def _batch(self, pointers, localstore, action):
         if action not in [b'upload', b'download']:

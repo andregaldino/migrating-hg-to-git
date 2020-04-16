@@ -138,12 +138,37 @@ client side: pull from the server
 
   $ hg up 'desc("ROOT")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg pull
+  $ hg pull --confirm --config ui.interactive=True << EOF
+  > n
+  > EOF
   pulling from $TESTTMP/distributed-chain-building/server
   searching for changes
   adding changesets
   adding manifests
   adding file changes
+  adding 1 changesets with 1 changes to 1 files (+1 heads)
+  1 new obsolescence markers
+  obsoleting 1 changesets
+  new changesets 391a2bf12b1b (1 drafts)
+  accept incoming changes (yn)? n
+  transaction abort!
+  rollback completed
+  abort: user aborted
+  [255]
+
+  $ hg pull --confirm --config ui.interactive=True << EOF
+  > y
+  > EOF
+  pulling from $TESTTMP/distributed-chain-building/server
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding 1 changesets with 1 changes to 1 files (+1 heads)
+  1 new obsolescence markers
+  obsoleting 1 changesets
+  new changesets 391a2bf12b1b (1 drafts)
+  accept incoming changes (yn)? y
   added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   obsoleted 1 changesets

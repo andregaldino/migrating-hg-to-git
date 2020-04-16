@@ -326,12 +326,18 @@ pulling from Publish=False to publish=False with some public
   o  0 public a-A - 054250a37db4
   
   $ cd ../mu
-  $ hg pull ../nu
+  $ hg pull ../nu --confirm --config ui.interactive=True<<EOF
+  > y
+  > EOF
   pulling from ../nu
   searching for changes
   adding changesets
   adding manifests
   adding file changes
+  adding 2 changesets with 2 changes to 2 files
+  new changesets d6bcb4f74035:145e75495359 (2 drafts)
+  4 local changesets will be published
+  accept incoming changes (yn)? y
   added 2 changesets with 2 changes to 2 files
   new changesets d6bcb4f74035:145e75495359 (2 drafts)
   4 local changesets published

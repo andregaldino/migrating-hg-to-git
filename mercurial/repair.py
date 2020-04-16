@@ -351,7 +351,7 @@ def _createstripbackup(repo, stripbases, node, topic):
 def safestriproots(ui, repo, nodes):
     """return list of roots of nodes where descendants are covered by nodes"""
     torev = repo.unfiltered().changelog.rev
-    revs = set(torev(n) for n in nodes)
+    revs = {torev(n) for n in nodes}
     # tostrip = wanted - unsafe = wanted - ancestors(orphaned)
     # orphaned = affected - wanted
     # affected = descendants(roots(wanted))

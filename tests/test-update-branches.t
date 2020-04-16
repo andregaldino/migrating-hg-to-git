@@ -189,17 +189,17 @@ Cases are run as shown in that table, row by row.
   parent=2
 
   $ revtest '-cC dirty linear'  dirty 1 2 -cC
-  abort: can only specify one of -C/--clean, -c/--check, or -m/--merge
+  abort: cannot specify both --clean and --check
   parent=1
   M foo
 
   $ revtest '-mc dirty linear'  dirty 1 2 -mc
-  abort: can only specify one of -C/--clean, -c/--check, or -m/--merge
+  abort: cannot specify both --check and --merge
   parent=1
   M foo
 
   $ revtest '-mC dirty linear'  dirty 1 2 -mC
-  abort: can only specify one of -C/--clean, -c/--check, or -m/--merge
+  abort: cannot specify both --clean and --merge
   parent=1
   M foo
 
@@ -249,6 +249,19 @@ Cases are run as shown in that table, row by row.
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges
   [1]
+  $ hg log -G --template '{rev}:{node|short} {parents} {branches}\n'
+  o  5:ff252e8273df  b1
+  |
+  @  4:d047485b3896 0:60829823a42a  b1
+  |
+  | %  3:6efa171f091b 1:0786582aa4b1
+  | |
+  | | o  2:bd10386d478c
+  | |/
+  | o  1:0786582aa4b1
+  |/
+  o  0:60829823a42a
+  
   $ hg st
   M a
   ? a.orig
@@ -329,6 +342,21 @@ File conflict is not allowed
   
   $ hg resolve -l
   U a
+
+Try to make empty commit while there are conflicts
+  $ hg revert -r . a
+  $ rm a.orig
+  $ hg ci -m empty
+  abort: unresolved merge conflicts (see 'hg help resolve')
+  [255]
+  $ hg resolve -m a
+  (no more unresolved files)
+  $ hg resolve -l
+  R a
+  $ hg ci -m empty
+  nothing changed
+  [1]
+  $ hg resolve -l
 
 Change/delete conflict is not allowed
   $ hg up -qC 3

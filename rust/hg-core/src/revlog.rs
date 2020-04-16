@@ -5,6 +5,10 @@
 // GNU General Public License version 2 or any later version.
 //! Mercurial concepts for handling revision history
 
+pub mod node;
+pub mod nodemap;
+pub use node::{Node, NodeError, NodePrefix, NodePrefixRef};
+
 /// Mercurial revision numbers
 ///
 /// As noted in revlog.c, revision numbers are actually encoded in
@@ -35,4 +39,18 @@ pub trait Graph {
 pub enum GraphError {
     ParentOutOfRange(Revision),
     WorkingDirectoryUnsupported,
+}
+
+/// The Mercurial Revlog Index
+///
+/// This is currently limited to the minimal interface that is needed for
+/// the [`nodemap`](nodemap/index.html) module
+pub trait RevlogIndex {
+    /// Total number of Revisions referenced in this index
+    fn len(&self) -> usize;
+
+    /// Return a reference to the Node or `None` if rev is out of bounds
+    ///
+    /// `NULL_REVISION` is not considered to be out of bounds.
+    fn node(&self, rev: Revision) -> Option<&Node>;
 }

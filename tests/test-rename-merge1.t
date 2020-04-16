@@ -28,9 +28,11 @@
      b
      b2
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a' -> dst: 'b' *
-     src: 'a2' -> dst: 'b2' !
-     src: 'a2' -> dst: 'c2' !
+     on local side:
+      src: 'a2' -> dst: 'c2' !
+     on remote side:
+      src: 'a' -> dst: 'b' *
+      src: 'a2' -> dst: 'b2' !
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -170,7 +172,8 @@ Check for issue3074
     unmatched files in other:
      newfile
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'file' -> dst: 'newfile' %
+     on remote side:
+      src: 'file' -> dst: 'newfile' %
     checking for directory renames
   resolving manifests
    branchmerge: True, force: False, partial: False
@@ -184,3 +187,50 @@ Check for issue3074
   $ hg status
   M newfile
   $ cd ..
+
+Create x and y, then modify y and rename x to z on one side of merge, and
+modify x and rename y to z on the other side.
+  $ hg init conflicting-target
+  $ cd conflicting-target
+  $ echo x > x
+  $ echo y > y
+  $ hg ci -Aqm 'add x and y'
+  $ hg mv x z
+  $ echo foo >> y
+  $ hg ci -qm 'modify y, rename x to z'
+  $ hg co -q 0
+  $ hg mv y z
+  $ echo foo >> x
+  $ hg ci -qm 'modify x, rename y to z'
+# We should probably tell the user about the conflicting rename sources.
+# Depending on which side they pick, we should take that rename and get
+# the changes to the source from the other side. The unchanged file should
+# remain.
+  $ hg merge --debug 1 -t :merge3
+    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
+     on local side:
+      src: 'y' -> dst: 'z' *
+     on remote side:
+      src: 'x' -> dst: 'z' *
+    checking for directory renames
+  resolving manifests
+   branchmerge: True, force: False, partial: False
+   ancestor: 5151c134577e, local: 07fcbc9a74ed+, remote: f21419739508
+   preserving z for resolve of z
+  starting 4 threads for background file closing (?)
+   z: both renamed from y -> m (premerge)
+  picked tool ':merge3' for z (binary False symlink False changedelete False)
+  merging z
+  my z@07fcbc9a74ed+ other z@f21419739508 ancestor y@5151c134577e
+   premerge successful
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls
+  x
+  z
+  $ cat x
+  x
+  foo
+# 'z' should have had the added 'foo' line
+  $ cat z
+  x

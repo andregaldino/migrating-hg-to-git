@@ -267,7 +267,7 @@ class basectx(object):
     def _fileinfo(self, path):
         if '_manifest' in self.__dict__:
             try:
-                return self._manifest[path], self._manifest.flags(path)
+                return self._manifest.find(path)
             except KeyError:
                 raise error.ManifestLookupError(
                     self._node, path, _(b'not found in manifest')
@@ -2357,8 +2357,7 @@ class overlayworkingctx(committablectx):
         # Test the other direction -- that this path from p2 isn't a directory
         # in p1 (test that p1 doesn't have any paths matching `path/*`).
         match = self.match([path], default=b'path')
-        matches = self.p1().manifest().matches(match)
-        mfiles = matches.keys()
+        mfiles = list(self.p1().manifest().walk(match))
         if len(mfiles) > 0:
             if len(mfiles) == 1 and mfiles[0] == path:
                 return
@@ -2486,6 +2485,17 @@ class overlayworkingctx(committablectx):
             user=user,
             branch=branch,
             editor=editor,
+        )
+
+    def tomemctx_for_amend(self, precursor):
+        extra = precursor.extra().copy()
+        extra[b'amend_source'] = precursor.hex()
+        return self.tomemctx(
+            text=precursor.description(),
+            branch=precursor.branch(),
+            extra=extra,
+            date=precursor.date(),
+            user=precursor.user(),
         )
 
     def isdirty(self, path):

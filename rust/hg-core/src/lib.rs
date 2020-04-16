@@ -13,7 +13,9 @@ pub use dirstate::{
     dirs_multiset::{DirsMultiset, DirsMultisetIter},
     dirstate_map::DirstateMap,
     parsers::{pack_dirstate, parse_dirstate, PARENT_SIZE},
-    status::{status, StatusResult},
+    status::{
+        status, BadMatch, BadType, DirstateStatus, StatusError, StatusOptions,
+    },
     CopyMap, CopyMapIter, DirstateEntry, DirstateParents, EntryState,
     StateMap, StateMapIter,
 };
@@ -21,6 +23,8 @@ mod filepatterns;
 pub mod matchers;
 pub mod revlog;
 pub use revlog::*;
+#[cfg(feature = "with-re2")]
+pub mod re2;
 pub mod utils;
 
 // Remove this to see (potential) non-artificial compile failures. MacOS
@@ -31,12 +35,17 @@ compile_error!(
      likely not behave correctly on other platforms."
 );
 
-use crate::utils::hg_path::HgPathBuf;
+use crate::utils::hg_path::{HgPathBuf, HgPathError};
 pub use filepatterns::{
-    build_single_regex, read_pattern_file, PatternSyntax, PatternTuple,
+    parse_pattern_syntax, read_pattern_file, IgnorePattern,
+    PatternFileWarning, PatternSyntax,
 };
 use std::collections::HashMap;
 use twox_hash::RandomXxHashBuilder64;
+
+/// This is a contract between the `micro-timer` crate and us, to expose
+/// the `log` crate as `crate::log`.
+use log;
 
 pub type LineNumber = usize;
 
@@ -87,22 +96,22 @@ impl From<std::io::Error> for DirstatePackError {
 pub enum DirstateMapError {
     PathNotFound(HgPathBuf),
     EmptyPath,
-    ConsecutiveSlashes,
+    InvalidPath(HgPathError),
 }
 
 impl ToString for DirstateMapError {
     fn to_string(&self) -> String {
-        use crate::DirstateMapError::*;
         match self {
-            PathNotFound(_) => "expected a value, found none".to_string(),
-            EmptyPath => "Overflow in dirstate.".to_string(),
-            ConsecutiveSlashes => {
-                "found invalid consecutive slashes in path".to_string()
+            DirstateMapError::PathNotFound(_) => {
+                "expected a value, found none".to_string()
             }
+            DirstateMapError::EmptyPath => "Overflow in dirstate.".to_string(),
+            DirstateMapError::InvalidPath(e) => e.to_string(),
         }
     }
 }
 
+#[derive(Debug)]
 pub enum DirstateError {
     Parse(DirstateParseError),
     Pack(DirstatePackError),
@@ -124,18 +133,44 @@ impl From<DirstatePackError> for DirstateError {
 
 #[derive(Debug)]
 pub enum PatternError {
+    Path(HgPathError),
     UnsupportedSyntax(String),
-}
-
-#[derive(Debug)]
-pub enum PatternFileError {
+    UnsupportedSyntaxInFile(String, String, usize),
+    TooLong(usize),
     IO(std::io::Error),
-    Pattern(PatternError, LineNumber),
+    /// Needed a pattern that can be turned into a regex but got one that
+    /// can't. This should only happen through programmer error.
+    NonRegexPattern(IgnorePattern),
+    /// This is temporary, see `re2/mod.rs`.
+    /// This will cause a fallback to Python.
+    Re2NotInstalled,
 }
 
-impl From<std::io::Error> for PatternFileError {
-    fn from(e: std::io::Error) -> Self {
-        PatternFileError::IO(e)
+impl ToString for PatternError {
+    fn to_string(&self) -> String {
+        match self {
+            PatternError::UnsupportedSyntax(syntax) => {
+                format!("Unsupported syntax {}", syntax)
+            }
+            PatternError::UnsupportedSyntaxInFile(syntax, file_path, line) => {
+                format!(
+                    "{}:{}: unsupported syntax {}",
+                    file_path, line, syntax
+                )
+            }
+            PatternError::TooLong(size) => {
+                format!("matcher pattern is too long ({} bytes)", size)
+            }
+            PatternError::IO(e) => e.to_string(),
+            PatternError::Path(e) => e.to_string(),
+            PatternError::NonRegexPattern(pattern) => {
+                format!("'{:?}' cannot be turned into a regex", pattern)
+            }
+            PatternError::Re2NotInstalled => {
+                "Re2 is not installed, cannot use regex functionality."
+                    .to_string()
+            }
+        }
     }
 }
 
@@ -148,5 +183,17 @@ impl From<DirstateMapError> for DirstateError {
 impl From<std::io::Error> for DirstateError {
     fn from(e: std::io::Error) -> Self {
         DirstateError::IO(e)
+    }
+}
+
+impl From<std::io::Error> for PatternError {
+    fn from(e: std::io::Error) -> Self {
+        PatternError::IO(e)
+    }
+}
+
+impl From<HgPathError> for PatternError {
+    fn from(e: HgPathError) -> Self {
+        PatternError::Path(e)
     }
 }

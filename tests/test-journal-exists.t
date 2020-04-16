@@ -15,11 +15,7 @@
 
   $ hg recover
   rolling back interrupted transaction
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
-  checked 1 changesets with 1 changes to 1 files
+  (verify step skipped, run `hg verify` to check your repository content)
 
 recover, explicit verify
 

@@ -62,7 +62,8 @@ should merge c into a
   merging with 1:d36c0562f908
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   new changeset 3:a323a0c43ec4 merges remote changes with local
-  $ ls c
+  $ ls -A c
+  .hg
   a
   b
   c

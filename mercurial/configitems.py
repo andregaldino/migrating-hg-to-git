@@ -405,6 +405,21 @@ coreconfigitem(
 coreconfigitem(
     b'devel', b'legacy.exchange', default=list,
 )
+# TODO before getting `persistent-nodemap` out of experimental
+#
+# * decide for a "status" of the persistent nodemap and associated location
+#   - part of the store next the revlog itself (new requirements)
+#   - part of the cache directory
+#   - part of an `index` directory
+#     (https://www.mercurial-scm.org/wiki/ComputedIndexPlan)
+# * do we want to use this for more than just changelog? if so we need:
+#   - simpler "pending" logic for them
+#   - double check the memory story (we dont want to keep all revlog in memory)
+#   - think about the naming scheme if we are in "cache"
+# * increment the version format to "1" and freeze it.
+coreconfigitem(
+    b'devel', b'persistent-nodemap', default=False,
+)
 coreconfigitem(
     b'devel', b'servercafile', default=b'',
 )
@@ -660,6 +675,12 @@ coreconfigitem(
     b'experimental', b'rust.index', default=False,
 )
 coreconfigitem(
+    b'experimental', b'exp-persistent-nodemap', default=False,
+)
+coreconfigitem(
+    b'experimental', b'exp-persistent-nodemap.mmap', default=True,
+)
+coreconfigitem(
     b'experimental', b'server.filesdata.recommended-batch-size', default=50000,
 )
 coreconfigitem(
@@ -750,7 +771,7 @@ coreconfigitem(
 coreconfigitem(
     b'format',
     b'revlog-compression',
-    default=b'zlib',
+    default=lambda: [b'zlib'],
     alias=[(b'experimental', b'format.compression')],
 )
 coreconfigitem(
@@ -1044,6 +1065,9 @@ coreconfigitem(
     b'progress', b'width', default=dynamicdefault,
 )
 coreconfigitem(
+    b'pull', b'confirm', default=False,
+)
+coreconfigitem(
     b'push', b'pushvars.server', default=False,
 )
 coreconfigitem(
@@ -1107,7 +1131,7 @@ coreconfigitem(
     b'server', b'compressionengines', default=list,
 )
 coreconfigitem(
-    b'server', b'concurrent-push-mode', default=b'strict',
+    b'server', b'concurrent-push-mode', default=b'check-related',
 )
 coreconfigitem(
     b'server', b'disablefullbundle', default=False,

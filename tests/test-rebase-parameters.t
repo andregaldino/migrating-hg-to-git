@@ -92,6 +92,18 @@ These fail:
   empty "rev" revision set - nothing to rebase
   [1]
 
+  $ hg rebase --rev 'wdir()' --dest 6
+  abort: cannot rebase the working copy
+  [255]
+
+  $ hg rebase --source 'wdir()' --dest 6
+  abort: cannot rebase the working copy
+  [255]
+
+  $ hg rebase --source 1 --source 'wdir()' --dest 6
+  abort: cannot rebase the working copy
+  [255]
+
   $ hg rebase --source '1 & !1' --dest 8
   empty "source" revision set - nothing to rebase
   [1]
@@ -473,11 +485,9 @@ Test --tool parameter:
   $ hg summary
   parent: 1:56daeba07f4b 
    c2
-  parent: 2:e4e3f3546619 tip
-   c2b
   branch: default
-  commit: 1 modified, 1 unresolved (merge)
-  update: (current)
+  commit: 1 unresolved (clean)
+  update: 1 new changesets, 2 branch heads (merge)
   phases: 3 draft
   rebase: 0 rebased, 1 remaining (rebase --continue)
 

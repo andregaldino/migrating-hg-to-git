@@ -54,7 +54,8 @@ Cloning a specific file when stream clone is supported
   transferred * KB in * seconds (* */sec) (glob)
 
   $ cd narrow
-  $ ls
+  $ ls -A
+  .hg
   $ hg tracked
   I path:dir/src/F10
 

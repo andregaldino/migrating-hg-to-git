@@ -88,6 +88,10 @@ class basemanifesttests(object):
         with self.assertRaises(KeyError):
             m[b'wat']
 
+    def testManifestLongHashes(self):
+        m = self.parsemanifest(b'a\0' + b'f' * 64 + b'\n')
+        self.assertEqual(binascii.unhexlify(b'f' * 64), m[b'a'])
+
     def testSetItem(self):
         want = BIN_HASH_1
 
@@ -171,7 +175,7 @@ class basemanifesttests(object):
         self.assertEqual(want, m[b'foo'])
         # make sure the suffix survives a copy
         match = matchmod.match(util.localpath(b'/repo'), b'', [b're:foo'])
-        m2 = m.matches(match)
+        m2 = m._matches(match)
         self.assertEqual(want, m2[b'foo'])
         self.assertEqual(1, len(m2))
         m2 = m.copy()
@@ -196,7 +200,7 @@ class basemanifesttests(object):
 
         match.matchfn = filt
         with self.assertRaises(AssertionError):
-            m.matches(match)
+            m._matches(match)
 
     def testRemoveItem(self):
         m = self.parsemanifest(A_SHORT_MANIFEST)
@@ -300,7 +304,7 @@ class basemanifesttests(object):
         m = self.parsemanifest(A_HUGE_MANIFEST)
 
         match = matchmod.exact([b'file1', b'file200', b'file300'])
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         w = (b'file1\0%sx\n' b'file200\0%sl\n' b'file300\0%s\n') % (
             HASH_2,
@@ -318,7 +322,7 @@ class basemanifesttests(object):
         match = matchmod.exact(
             [b'a/b/c/bar.txt', b'a/b/d/qux.py', b'readme.txt', b'nonexistent']
         )
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual(
             [b'a/b/c/bar.txt', b'a/b/d/qux.py', b'readme.txt'], m2.keys()
@@ -332,7 +336,7 @@ class basemanifesttests(object):
         match = matchmod.match(
             util.localpath(b'/repo'), b'', [b'a/f'], default=b'relpath'
         )
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual([], m2.keys())
 
@@ -343,7 +347,7 @@ class basemanifesttests(object):
 
         flist = m.keys()[80:300]
         match = matchmod.exact(flist)
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual(flist, m2.keys())
 
@@ -352,7 +356,7 @@ class basemanifesttests(object):
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.match(util.localpath(b'/repo'), b'', [b''])
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual(m.keys(), m2.keys())
 
@@ -364,7 +368,7 @@ class basemanifesttests(object):
         match = matchmod.match(
             util.localpath(b'/repo'), b'', [b'a/b'], default=b'relpath'
         )
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual(
             [
@@ -388,7 +392,7 @@ class basemanifesttests(object):
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.exact([b'a/b'])
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual([], m2.keys())
 
@@ -400,7 +404,7 @@ class basemanifesttests(object):
         match = matchmod.match(
             util.localpath(b'/repo'), b'a/b', [b'.'], default=b'relpath'
         )
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual(
             [
@@ -423,7 +427,7 @@ class basemanifesttests(object):
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.match(util.localpath(b'/repo'), b'', [b'a/b/*/*.txt'])
-        m2 = m.matches(match)
+        m2 = m._matches(match)
 
         self.assertEqual(
             [b'a/b/c/bar.txt', b'a/b/c/foo.txt', b'a/b/d/ten.txt'], m2.keys()

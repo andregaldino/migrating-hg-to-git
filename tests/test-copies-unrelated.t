@@ -109,7 +109,7 @@ BROKEN: This should succeed and merge the changes from x into y
   What do you want to do? u
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Add x, remove it, then add it back, then rename x to y. Similar to the case
 above, but here the break in history is before the rename.
@@ -193,7 +193,7 @@ BROKEN: This should succeed and merge the changes from x into y
   What do you want to do? u
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 #endif
   $ hg co -qC 2
 BROKEN: This should succeed and merge the changes from x into y
@@ -204,7 +204,7 @@ BROKEN: This should succeed and merge the changes from x into y
   What do you want to do? u
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Add x, remove it, then add it back, rename x to y from the first commit.
 Similar to the case above, but here the break in history is parallel to the
@@ -278,7 +278,7 @@ BROKEN: This should succeed and merge the changes from x into y
   What do you want to do? u
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Add x on two branches, then rename x to y on one side. Similar to the case
 above, but here the break in history is via the base commit.
@@ -361,7 +361,7 @@ BROKEN: This should succeed and merge the changes from x into y
   What do you want to do? u
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 #endif
   $ hg co -qC 2
 BROKEN: This should succeed and merge the changes from x into y
@@ -372,7 +372,7 @@ BROKEN: This should succeed and merge the changes from x into y
   What do you want to do? u
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
-  [255]
+  [1]
 
 Copies via null revision (there shouldn't be any)
   $ newrepo

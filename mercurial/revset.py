@@ -247,7 +247,15 @@ def notset(repo, subset, x, order):
 
 
 def relationset(repo, subset, x, y, order):
-    raise error.ParseError(_(b"can't use a relation in this context"))
+    # this is pretty basic implementation of 'x#y' operator, still
+    # experimental so undocumented. see the wiki for further ideas.
+    # https://www.mercurial-scm.org/wiki/RevsetOperatorPlan
+    rel = getsymbol(y)
+    if rel in relations:
+        return relations[rel](repo, subset, x, rel, order)
+
+    relnames = [r for r in relations.keys() if len(r) > 1]
+    raise error.UnknownIdentifier(rel, relnames)
 
 
 def _splitrange(a, b):
@@ -281,7 +289,12 @@ def _splitrange(a, b):
     return ancdepths, descdepths
 
 
-def generationsrel(repo, subset, x, rel, z, order):
+def generationsrel(repo, subset, x, rel, order):
+    z = (b'rangeall', None)
+    return generationssubrel(repo, subset, x, rel, z, order)
+
+
+def generationssubrel(repo, subset, x, rel, z, order):
     # TODO: rewrite tests, and drop startdepth argument from ancestors() and
     # descendants() predicates
     a, b = getintrange(
@@ -769,6 +782,38 @@ def commonancestors(repo, subset, x):
     return subset
 
 
+@predicate(b'conflictlocal()', safe=True)
+def conflictlocal(repo, subset, x):
+    """The local side of the merge, if currently in an unresolved merge.
+
+    "merge" here includes merge conflicts from e.g. 'hg rebase' or 'hg graft'.
+    """
+    getargs(x, 0, 0, _(b"conflictlocal takes no arguments"))
+    from . import merge
+
+    mergestate = merge.mergestate.read(repo)
+    if mergestate.active() and repo.changelog.hasnode(mergestate.local):
+        return subset & {repo.changelog.rev(mergestate.local)}
+
+    return baseset()
+
+
+@predicate(b'conflictother()', safe=True)
+def conflictother(repo, subset, x):
+    """The other side of the merge, if currently in an unresolved merge.
+
+    "merge" here includes merge conflicts from e.g. 'hg rebase' or 'hg graft'.
+    """
+    getargs(x, 0, 0, _(b"conflictother takes no arguments"))
+    from . import merge
+
+    mergestate = merge.mergestate.read(repo)
+    if mergestate.active() and repo.changelog.hasnode(mergestate.other):
+        return subset & {repo.changelog.rev(mergestate.other)}
+
+    return baseset()
+
+
 @predicate(b'contains(pattern)', weight=100)
 def contains(repo, subset, x):
     """The revision's manifest contains a file matching pattern (but might not
@@ -1022,7 +1067,7 @@ def extdata(repo, subset, x):
 
 @predicate(b'extinct()', safe=True)
 def extinct(repo, subset, x):
-    """Obsolete changesets with obsolete descendants only.
+    """Obsolete changesets with obsolete descendants only. (EXPERIMENTAL)
     """
     # i18n: "extinct" is a keyword
     getargs(x, 0, 0, _(b"extinct takes no arguments"))
@@ -1670,7 +1715,7 @@ def none(repo, subset, x):
 
 @predicate(b'obsolete()', safe=True)
 def obsolete(repo, subset, x):
-    """Mutable changeset with a newer version."""
+    """Mutable changeset with a newer version. (EXPERIMENTAL)"""
     # i18n: "obsolete" is a keyword
     getargs(x, 0, 0, _(b"obsolete takes no arguments"))
     obsoletes = obsmod.getrevs(repo, b'obsolete')
@@ -1843,7 +1888,7 @@ def parents(repo, subset, x):
     The set of all parents for all changesets in set, or the working directory.
     """
     if x is None:
-        ps = set(p.rev() for p in repo[x].parents())
+        ps = {p.rev() for p in repo[x].parents()}
     else:
         ps = set()
         cl = repo.changelog
@@ -2050,19 +2095,11 @@ def removes(repo, subset, x):
 
 @predicate(b'rev(number)', safe=True)
 def rev(repo, subset, x):
-    """Revision with the given numeric identifier.
-    """
-    # i18n: "rev" is a keyword
-    l = getargs(x, 1, 1, _(b"rev requires one argument"))
+    """Revision with the given numeric identifier."""
     try:
-        # i18n: "rev" is a keyword
-        l = int(getstring(l[0], _(b"rev requires a number")))
-    except (TypeError, ValueError):
-        # i18n: "rev" is a keyword
-        raise error.ParseError(_(b"rev expects a number"))
-    if l not in repo.changelog and l not in _virtualrevs:
+        return _rev(repo, subset, x)
+    except error.RepoLookupError:
         return baseset()
-    return subset & baseset([l])
 
 
 @predicate(b'_rev(number)', safe=True)
@@ -2076,7 +2113,11 @@ def _rev(repo, subset, x):
     except (TypeError, ValueError):
         # i18n: "rev" is a keyword
         raise error.ParseError(_(b"rev expects a number"))
-    repo.changelog.node(l)  # check that the rev exists
+    if l not in _virtualrevs:
+        try:
+            repo.changelog.node(l)  # check that the rev exists
+        except IndexError:
+            raise error.RepoLookupError(_(b"unknown revision '%d'") % l)
     return subset & baseset([l])
 
 
@@ -2405,14 +2446,15 @@ def _mapbynodefunc(repo, s, f):
     cl = repo.unfiltered().changelog
     torev = cl.index.get_rev
     tonode = cl.node
-    result = set(torev(n) for n in f(tonode(r) for r in s))
+    result = {torev(n) for n in f(tonode(r) for r in s)}
     result.discard(None)
     return smartset.baseset(result - repo.changelog.filteredrevs)
 
 
 @predicate(b'successors(set)', safe=True)
 def successors(repo, subset, x):
-    """All successors for set, including the given set themselves"""
+    """All successors for set, including the given set themselves.
+    (EXPERIMENTAL)"""
     s = getset(repo, fullreposet(repo), x)
     f = lambda nodes: obsutil.allsuccessors(repo.obsstore, nodes)
     d = _mapbynodefunc(repo, s, f)
@@ -2477,6 +2519,19 @@ def orphan(repo, subset, x):
     getargs(x, 0, 0, _(b"orphan takes no arguments"))
     orphan = obsmod.getrevs(repo, b'orphan')
     return subset & orphan
+
+
+@predicate(b'unstable()', safe=True)
+def unstable(repo, subset, x):
+    """Changesets with instabilities. (EXPERIMENTAL)
+    """
+    # i18n: "unstable" is a keyword
+    getargs(x, 0, 0, b'unstable takes no arguments')
+    _unstable = set()
+    _unstable.update(obsmod.getrevs(repo, b'orphan'))
+    _unstable.update(obsmod.getrevs(repo, b'phasedivergent'))
+    _unstable.update(obsmod.getrevs(repo, b'contentdivergent'))
+    return subset & baseset(_unstable)
 
 
 @predicate(b'user(string)', safe=True, weight=10)
@@ -2605,9 +2660,14 @@ methods = {
     b"smartset": rawsmartset,
 }
 
-subscriptrelations = {
+relations = {
     b"g": generationsrel,
     b"generations": generationsrel,
+}
+
+subscriptrelations = {
+    b"g": generationssubrel,
+    b"generations": generationssubrel,
 }
 
 

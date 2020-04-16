@@ -12,8 +12,8 @@ use std::process::{Command, Stdio};
 use tokio;
 use tokio_process::{ChildStdin, CommandExt};
 
-use super::message::CommandSpec;
-use super::procutil;
+use crate::message::CommandSpec;
+use crate::procutil;
 
 /// Callback to process shell command requests received from server.
 pub trait SystemHandler: Sized {

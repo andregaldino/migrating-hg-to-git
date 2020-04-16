@@ -30,10 +30,10 @@ mod conversion;
 #[macro_use]
 pub mod ref_sharing;
 pub mod dagops;
+pub mod debug;
 pub mod dirstate;
 pub mod discovery;
 pub mod exceptions;
-pub mod filepatterns;
 pub mod parsers;
 pub mod revlog;
 pub mod utils;
@@ -48,30 +48,16 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     let dotted_name: String = m.get(py, "__name__")?.extract(py)?;
     m.add(py, "ancestor", ancestors::init_module(py, &dotted_name)?)?;
     m.add(py, "dagop", dagops::init_module(py, &dotted_name)?)?;
+    m.add(py, "debug", debug::init_module(py, &dotted_name)?)?;
     m.add(py, "discovery", discovery::init_module(py, &dotted_name)?)?;
     m.add(py, "dirstate", dirstate::init_module(py, &dotted_name)?)?;
     m.add(py, "revlog", revlog::init_module(py, &dotted_name)?)?;
-    m.add(
-        py,
-        "filepatterns",
-        filepatterns::init_module(py, &dotted_name)?,
-    )?;
     m.add(
         py,
         "parsers",
         parsers::init_parsers_module(py, &dotted_name)?,
     )?;
     m.add(py, "GraphError", py.get_type::<exceptions::GraphError>())?;
-    m.add(
-        py,
-        "PatternFileError",
-        py.get_type::<exceptions::PatternFileError>(),
-    )?;
-    m.add(
-        py,
-        "PatternError",
-        py.get_type::<exceptions::PatternError>(),
-    )?;
     Ok(())
 });
 

@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import collections
+import weakref
 
 from .i18n import _
 from .node import (
@@ -856,7 +857,11 @@ def _processcompared(pushop, pushed, explicit, remotebms, comp):
     for b, scid, dcid in addsrc:
         if b in explicit:
             explicit.remove(b)
-            pushop.outbookmarks.append((b, b'', scid))
+            if bookmod.isdivergent(b):
+                pushop.ui.warn(_(b'cannot push divergent bookmark %s!\n') % b)
+                pushop.bkresult = 2
+            else:
+                pushop.outbookmarks.append((b, b'', scid))
     # search for overwritten bookmark
     for b, scid, dcid in list(advdst) + list(diverge) + list(differ):
         if b in explicit:
@@ -1675,12 +1680,12 @@ def _fullpullbundle2(repo, pullop):
     def headsofdiff(h1, h2):
         """Returns heads(h1 % h2)"""
         res = unfi.set(b'heads(%ln %% %ln)', h1, h2)
-        return set(ctx.node() for ctx in res)
+        return {ctx.node() for ctx in res}
 
     def headsofunion(h1, h2):
         """Returns heads((h1 + h2) - null)"""
         res = unfi.set(b'heads((%ln + %ln - null))', h1, h2)
-        return set(ctx.node() for ctx in res)
+        return {ctx.node() for ctx in res}
 
     while True:
         old_heads = unficl.heads()
@@ -1701,6 +1706,25 @@ def _fullpullbundle2(repo, pullop):
         pullop.rheads = set(pullop.rheads) - pullop.common
 
 
+def add_confirm_callback(repo, pullop):
+    """ adds a finalize callback to transaction which can be used to show stats
+    to user and confirm the pull before committing transaction """
+
+    tr = pullop.trmanager.transaction()
+    scmutil.registersummarycallback(
+        repo, tr, txnname=b'pull', as_validator=True
+    )
+    reporef = weakref.ref(repo.unfiltered())
+
+    def prompt(tr):
+        repo = reporef()
+        cm = _(b'accept incoming changes (yn)?$$ &Yes $$ &No')
+        if repo.ui.promptchoice(cm):
+            raise error.Abort("user aborted")
+
+    tr.addvalidator(b'900-pull-prompt', prompt)
+
+
 def pull(
     repo,
     remote,
@@ -1712,6 +1736,7 @@ def pull(
     includepats=None,
     excludepats=None,
     depth=None,
+    confirm=None,
 ):
     """Fetch repository data from a remote.
 
@@ -1736,6 +1761,8 @@ def pull(
     ``depth`` is an integer indicating the DAG depth of history we're
     interested in. If defined, for each revision specified in ``heads``, we
     will fetch up to this many of its ancestors and data associated with them.
+    ``confirm`` is a boolean indicating whether the pull should be confirmed
+    before committing the transaction. This overrides HGPLAIN.
 
     Returns the ``pulloperation`` created for this pull.
     """
@@ -1782,6 +1809,11 @@ def pull(
     if not bookmod.bookmarksinstore(repo):
         wlock = repo.wlock()
     with wlock, repo.lock(), pullop.trmanager:
+        if confirm or (
+            repo.ui.configbool(b"pull", b"confirm") and not repo.ui.plain()
+        ):
+            add_confirm_callback(repo, pullop)
+
         # Use the modern wire protocol, if available.
         if remote.capable(b'command-changesetdata'):
             exchangev2.pull(pullop)
@@ -3068,7 +3100,15 @@ def sortclonebundleentries(ui, entries):
     if not prefers:
         return list(entries)
 
-    prefers = [p.split(b'=', 1) for p in prefers]
+    def _split(p):
+        if b'=' not in p:
+            hint = _(b"each comma separated item should be key=value pairs")
+            raise error.Abort(
+                _(b"invalid ui.clonebundleprefers item: %s") % p, hint=hint
+            )
+        return p.split(b'=', 1)
+
+    prefers = [_split(p) for p in prefers]
 
     items = sorted(clonebundleentry(v, prefers) for v in entries)
     return [i.value for i in items]

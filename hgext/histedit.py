@@ -649,7 +649,7 @@ def applychanges(ui, repo, ctx, opts):
             repo.ui.setconfig(
                 b'ui', b'forcemerge', opts.get(b'tool', b''), b'histedit'
             )
-            stats = mergemod.graft(repo, ctx, ctx.p1(), [b'local', b'histedit'])
+            stats = mergemod.graft(repo, ctx, labels=[b'local', b'histedit'])
         finally:
             repo.ui.setconfig(b'ui', b'forcemerge', b'', b'histedit')
     return stats
@@ -835,10 +835,10 @@ class fold(histeditaction):
             return ctx, [(self.node, (parentctxnode,))]
 
         parentctx = repo[parentctxnode]
-        newcommits = set(
+        newcommits = {
             c.node()
             for c in repo.set(b'(%d::. - %d)', parentctx.rev(), parentctx.rev())
-        )
+        }
         if not newcommits:
             repo.ui.warn(
                 _(
@@ -945,7 +945,7 @@ class fold(histeditaction):
 class base(histeditaction):
     def run(self):
         if self.repo[b'.'].node() != self.node:
-            mergemod.update(self.repo, self.node, branchmerge=False, force=True)
+            mergemod.clean_update(self.repo[self.node])
         return self.continueclean()
 
     def continuedirty(self):
@@ -1113,7 +1113,8 @@ def screen_size():
 
 
 class histeditrule(object):
-    def __init__(self, ctx, pos, action=b'pick'):
+    def __init__(self, ui, ctx, pos, action=b'pick'):
+        self.ui = ui
         self.ctx = ctx
         self.action = action
         self.origpos = pos
@@ -1153,6 +1154,14 @@ class histeditrule(object):
 
     @property
     def desc(self):
+        summary = (
+            cmdutil.rendertemplate(
+                self.ctx, self.ui.config(b'histedit', b'summary-template')
+            )
+            or b''
+        )
+        if summary:
+            return summary
         # This is split off from the prefix property so that we can
         # separately make the description for 'roll' red (since it
         # will get discarded).
@@ -1258,7 +1267,7 @@ def changeview(state, delta, unit):
     num_lines = len(mode_state[b'patchcontents'])
     page_height = state[b'page_height']
     unit = page_height if unit == b'page' else 1
-    num_pages = 1 + (num_lines - 1) / page_height
+    num_pages = 1 + (num_lines - 1) // page_height
     max_offset = (num_pages - 1) * page_height
     newline = mode_state[b'line_offset'] + delta * unit
     mode_state[b'line_offset'] = max(0, min(max_offset, newline))
@@ -1700,7 +1709,7 @@ def _chistedit(ui, repo, freeargs, opts):
 
         ctxs = []
         for i, r in enumerate(revs):
-            ctxs.append(histeditrule(repo[r], i))
+            ctxs.append(histeditrule(ui, repo[r], i))
         # Curses requires setting the locale or it will default to the C
         # locale. This sets the locale to the user's default system
         # locale.
@@ -2412,7 +2421,7 @@ def verifyactions(actions, state, ctxs):
     Will abort if there are to many or too few rules, a malformed rule,
     or a rule on a changeset outside of the user-given range.
     """
-    expected = set(c.node() for c in ctxs)
+    expected = {c.node() for c in ctxs}
     seen = set()
     prev = None
 

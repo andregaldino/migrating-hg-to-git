@@ -383,8 +383,8 @@ def supportedcompengines(ui, role):
     # reason for it (like server operators wanting to achieve specific
     # performance characteristics). So fail fast if the config references
     # unusable compression engines.
-    validnames = set(e.name() for e in compengines)
-    invalidnames = set(e for e in configengines if e not in validnames)
+    validnames = {e.name() for e in compengines}
+    invalidnames = {e for e in configengines if e not in validnames}
     if invalidnames:
         raise error.Abort(
             _(b'invalid compression engine defined in %s: %s')

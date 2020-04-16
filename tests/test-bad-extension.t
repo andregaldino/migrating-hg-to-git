@@ -1,3 +1,4 @@
+#require no-chg
   $ filterlog () {
   >   sed -e 's!^[0-9/]* [0-9:]* ([0-9]*)>!YYYY/MM/DD HH:MM:SS (PID)>!'
   > }

@@ -86,10 +86,10 @@ elif _nativeenviron:
 else:
     # preferred encoding isn't known yet; use utf-8 to avoid unicode error
     # and recreate it once encoding is settled
-    environ = dict(
-        (k.encode('utf-8'), v.encode('utf-8'))
+    environ = {
+        k.encode('utf-8'): v.encode('utf-8')
         for k, v in os.environ.items()  # re-exports
-    )
+    }
 
 _encodingrewrites = {
     b'646': b'ascii',
@@ -285,10 +285,10 @@ else:
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
-    environ = dict(
-        (tolocal(k.encode('utf-8')), tolocal(v.encode('utf-8')))
+    environ = {
+        tolocal(k.encode('utf-8')): tolocal(v.encode('utf-8'))
         for k, v in os.environ.items()  # re-exports
-    )
+    }
 
 if pycompat.ispy3:
     # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which

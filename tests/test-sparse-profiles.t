@@ -42,7 +42,8 @@ Config file without [section] is rejected
 Verify enabling a single profile works
 
   $ hg debugsparse --enable-profile webpage.sparse
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   index.html
   webpage.sparse
@@ -50,7 +51,8 @@ Verify enabling a single profile works
 Verify enabling two profiles works
 
   $ hg debugsparse --enable-profile backend.sparse
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   index.html
@@ -59,7 +61,8 @@ Verify enabling two profiles works
 Verify disabling a profile works
 
   $ hg debugsparse --disable-profile webpage.sparse
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   webpage.sparse
@@ -81,20 +84,23 @@ Verify that a profile is updated across multiple commits
   $ echo foo >> data.py
 
   $ hg ci -m 'edit profile'
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   readme.txt
   webpage.sparse
 
   $ hg up -q 0
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   webpage.sparse
 
   $ hg up -q 1
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   readme.txt
@@ -111,7 +117,8 @@ Introduce a conflicting .hgsparse change
   $ echo bar >> data.py
 
   $ hg ci -qAm "edit profile other"
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   index.html
   webpage.sparse
@@ -129,7 +136,8 @@ Verify conflicting merge pulls in the conflicting changes
   [1]
 
   $ rm *.orig
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   index.html
@@ -154,7 +162,8 @@ Verify resolving the merge removes the temporarily unioned files
   (no more unresolved files)
 
   $ hg ci -qAm "merge profiles"
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   index.html
   readme.txt
@@ -168,7 +177,8 @@ Verify resolving the merge removes the temporarily unioned files
 Verify stripping refreshes dirstate
 
   $ hg strip -q -r .
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   index.html
   webpage.sparse
@@ -176,7 +186,8 @@ Verify stripping refreshes dirstate
 Verify rebase conflicts pulls in the conflicting changes
 
   $ hg up -q 1
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   readme.txt
@@ -192,7 +203,8 @@ Verify rebase conflicts pulls in the conflicting changes
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
   $ rm *.orig
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   data.py
   index.html
@@ -217,7 +229,8 @@ Verify resolving conflict removes the temporary files
   continue: hg rebase --continue
 
   $ hg rebase -q --continue
-  $ ls
+  $ ls -A
+  .hg
   backend.sparse
   index.html
   readme.txt
@@ -237,13 +250,15 @@ warning message can be suppressed by setting missingwarning = false in
   $ hg commit -m "delete profiles"
   $ hg up -q ".^"
   $ hg debugsparse --enable-profile backend.sparse
-  $ ls
+  $ ls -A
+  .hg
   index.html
   readme.txt
   $ hg up tip | grep warning
   warning: sparse profile 'backend.sparse' not found in rev bfcb76de99cc - ignoring it
   [1]
-  $ ls
+  $ ls -A
+  .hg
   data.py
   index.html
   readme.txt

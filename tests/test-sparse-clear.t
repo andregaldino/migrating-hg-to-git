@@ -28,10 +28,12 @@ test sparse
 Clear rules when there are includes
 
   $ hg debugsparse --include *.py
-  $ ls
+  $ ls -A
+  .hg
   data.py
   $ hg debugsparse --clear-rules
-  $ ls
+  $ ls -A
+  .hg
   base.sparse
   data.py
   index.html
@@ -41,12 +43,14 @@ Clear rules when there are includes
 Clear rules when there are excludes
 
   $ hg debugsparse --exclude *.sparse
-  $ ls
+  $ ls -A
+  .hg
   data.py
   index.html
   readme.txt
   $ hg debugsparse --clear-rules
-  $ ls
+  $ ls -A
+  .hg
   base.sparse
   data.py
   index.html
@@ -56,18 +60,21 @@ Clear rules when there are excludes
 Clearing rules should not alter profiles
 
   $ hg debugsparse --enable-profile webpage.sparse
-  $ ls
+  $ ls -A
+  .hg
   base.sparse
   index.html
   webpage.sparse
   $ hg debugsparse --include *.py
-  $ ls
+  $ ls -A
+  .hg
   base.sparse
   data.py
   index.html
   webpage.sparse
   $ hg debugsparse --clear-rules
-  $ ls
+  $ ls -A
+  .hg
   base.sparse
   index.html
   webpage.sparse

@@ -95,3 +95,32 @@ Apply bundles
   OK
   ---- Applying src-lfs.bundle to dst-lfs ----
   OK
+
+Hint if the cache location cannot be inferred from the environment
+
+#if windows
+  $ unset LOCALAPPDATA
+  $ unset APPDATA
+  $ HGRCPATH= hg config lfs --debug
+  abort: unknown lfs usercache location
+  (define LOCALAPPDATA or APPDATA in the environment, or set lfs.usercache)
+  [255]
+#endif
+
+#if osx
+  $ unset HOME
+  $ HGRCPATH= hg config lfs --debug
+  abort: unknown lfs usercache location
+  (define HOME in the environment, or set lfs.usercache)
+  [255]
+#endif
+
+#if no-windows no-osx
+  $ unset XDG_CACHE_HOME
+  $ unset HOME
+  $ HGRCPATH= hg config lfs --debug
+  abort: unknown lfs usercache location
+  (define XDG_CACHE_HOME or HOME in the environment, or set lfs.usercache)
+  [255]
+#endif
+

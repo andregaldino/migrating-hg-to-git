@@ -352,6 +352,21 @@ class revlogio(object):
         return p
 
 
+NodemapRevlogIO = None
+
+if util.safehasattr(parsers, 'parse_index_devel_nodemap'):
+
+    class NodemapRevlogIO(revlogio):
+        """A debug oriented IO class that return a PersistentNodeMapIndexObject
+
+        The PersistentNodeMapIndexObject object is meant to test the persistent nodemap feature.
+        """
+
+        def parseindex(self, data, inline):
+            index, cache = parsers.parse_index_devel_nodemap(data, inline)
+            return index, cache
+
+
 class rustrevlogio(revlogio):
     def parseindex(self, data, inline):
         index, cache = super(rustrevlogio, self).parseindex(data, inline)
@@ -407,6 +422,7 @@ class revlog(object):
         mmaplargeindex=False,
         censorable=False,
         upperboundcomp=None,
+        persistentnodemap=False,
     ):
         """
         create a revlog object
@@ -418,6 +434,17 @@ class revlog(object):
         self.upperboundcomp = upperboundcomp
         self.indexfile = indexfile
         self.datafile = datafile or (indexfile[:-2] + b".d")
+        self.nodemap_file = None
+        if persistentnodemap:
+            if indexfile.endswith(b'.a'):
+                pending_path = indexfile[:-4] + b".n.a"
+                if opener.exists(pending_path):
+                    self.nodemap_file = pending_path
+                else:
+                    self.nodemap_file = indexfile[:-4] + b".n"
+            else:
+                self.nodemap_file = indexfile[:-2] + b".n"
+
         self.opener = opener
         #  When True, indexfile is opened with checkambig=True at writing, to
         #  avoid file stat ambiguity.
@@ -435,6 +462,7 @@ class revlog(object):
         self._maxchainlen = None
         self._deltabothparents = True
         self.index = None
+        self._nodemap_docket = None
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
         # Mapping of revision integer to full node.
@@ -591,13 +619,42 @@ class revlog(object):
 
         self._storedeltachains = True
 
+        devel_nodemap = (
+            self.nodemap_file
+            and opts.get(b'devel-force-nodemap', False)
+            and NodemapRevlogIO is not None
+        )
+
+        use_rust_index = False
+        if rustrevlog is not None:
+            if self.nodemap_file is not None:
+                use_rust_index = True
+            else:
+                use_rust_index = self.opener.options.get(b'rust.index')
+
         self._io = revlogio()
         if self.version == REVLOGV0:
             self._io = revlogoldio()
-        elif rustrevlog is not None and self.opener.options.get(b'rust.index'):
+        elif devel_nodemap:
+            self._io = NodemapRevlogIO()
+        elif use_rust_index:
             self._io = rustrevlogio()
         try:
             d = self._io.parseindex(indexdata, self._inline)
+            index, _chunkcache = d
+            use_nodemap = (
+                not self._inline
+                and self.nodemap_file is not None
+                and util.safehasattr(index, 'update_nodemap_data')
+            )
+            if use_nodemap:
+                nodemap_data = nodemaputil.persisted_data(self)
+                if nodemap_data is not None:
+                    docket = nodemap_data[0]
+                    if d[0][docket.tip_rev][7] == docket.tip_node:
+                        # no changelog tampering
+                        self._nodemap_docket = docket
+                        index.update_nodemap_data(*nodemap_data)
         except (ValueError, IndexError):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.indexfile
@@ -708,12 +765,32 @@ class revlog(object):
             return False
         return True
 
+    def update_caches(self, transaction):
+        if self.nodemap_file is not None:
+            if transaction is None:
+                nodemaputil.update_persistent_nodemap(self)
+            else:
+                nodemaputil.setup_persistent_nodemap(transaction, self)
+
     def clearcaches(self):
         self._revisioncache = None
         self._chainbasecache.clear()
         self._chunkcache = (0, b'')
         self._pcache = {}
+        self._nodemap_docket = None
         self.index.clearcaches()
+        # The python code is the one responsible for validating the docket, we
+        # end up having to refresh it here.
+        use_nodemap = (
+            not self._inline
+            and self.nodemap_file is not None
+            and util.safehasattr(self.index, 'update_nodemap_data')
+        )
+        if use_nodemap:
+            nodemap_data = nodemaputil.persisted_data(self)
+            if nodemap_data is not None:
+                self._nodemap_docket = nodemap_data[0]
+                self.index.update_nodemap_data(*nodemap_data)
 
     def rev(self, node):
         try:
@@ -897,9 +974,6 @@ class revlog(object):
 
         if rustancestor is not None:
             lazyancestors = rustancestor.LazyAncestors
-            arg = self.index
-        elif util.safehasattr(parsers, b'rustlazyancestors'):
-            lazyancestors = ancestor.rustlazyancestors
             arg = self.index
         else:
             lazyancestors = ancestor.lazyancestors
@@ -1239,7 +1313,7 @@ class revlog(object):
         else:
             start = self.rev(start)
 
-        stoprevs = set(self.rev(n) for n in stop or [])
+        stoprevs = {self.rev(n) for n in stop or []}
 
         revs = dagop.headrevssubset(
             self.revs, self.parentrevs, startrev=start, stoprevs=stoprevs
@@ -1960,6 +2034,7 @@ class revlog(object):
             # manager
 
         tr.replace(self.indexfile, trindex * self._io.size)
+        nodemaputil.setup_persistent_nodemap(tr, self)
         self._chunkclear()
 
     def _nodeduplicatecallback(self, transaction, node):
@@ -2286,6 +2361,7 @@ class revlog(object):
             ifh.write(data[0])
             ifh.write(data[1])
             self._enforceinlinesize(transaction, ifh)
+        nodemaputil.setup_persistent_nodemap(transaction, self)
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
         """

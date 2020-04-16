@@ -281,24 +281,36 @@ on clone (and update) with various substitutions:
   $ hg clone -q main main2
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main2
+  $ ls -A main2
+  .hg
+  .hgsub
+  .hgsubstate
 
   $ SUB=sub1 hg clone -q main main3
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main3
+  $ ls -A main3
+  .hg
+  .hgsub
+  .hgsubstate
 
   $ SUB=sub2 hg clone -q main main4
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main4
+  $ ls -A main4
+  .hg
+  .hgsub
+  .hgsubstate
 
 on clone empty subrepo into .hg, then pull (and update), which at least fails:
 
   $ SUB=.hg hg clone -qr0 main main5
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main5
+  $ ls -A main5
+  .hg
+  .hgsub
+  .hgsubstate
   $ test -d main5/.hg/.hg
   [1]
   $ SUB=.hg hg -R main5 pull -u
@@ -320,7 +332,10 @@ on clone (and update) into .hg, which at least fails:
   $ SUB=.hg hg clone -q main main6
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main6
+  $ ls -A main6
+  .hg
+  .hgsub
+  .hgsubstate
   $ cat main6/.hg/hgrc | grep pwned
   [1]
 
@@ -329,7 +344,10 @@ on clone (and update) into .hg/* subdir:
   $ SUB=.hg/foo hg clone -q main main7
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main7
+  $ ls -A main7
+  .hg
+  .hgsub
+  .hgsubstate
   $ test -d main7/.hg/.hg
   [1]
 
@@ -338,7 +356,10 @@ on clone (and update) into outer tree:
   $ SUB=../out-of-tree-write hg clone -q main main8
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main8
+  $ ls -A main8
+  .hg
+  .hgsub
+  .hgsubstate
 
 on clone (and update) into e.g. $HOME, which doesn't work since subrepo paths
 are concatenated prior to variable expansion:
@@ -346,8 +367,8 @@ are concatenated prior to variable expansion:
   $ SUB="$TESTTMP/envvar/fakehome" hg clone -q main main9
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls main9 | wc -l
-  \s*0 (re)
+  $ ls -A main9 | wc -l
+  \s*3 (re)
 
   $ ls
   main
@@ -618,7 +639,8 @@ then pull (and update):
   $ SUB="$FAKEHOME" hg clone -qr1 main main6
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls "$FAKEHOME"
+  $ ls -A "$FAKEHOME"
+  .hg
   a
   $ SUB="$FAKEHOME" hg -R main6 pull -u
   pulling from $TESTTMP/envvarsym/main
@@ -631,7 +653,8 @@ then pull (and update):
   .hgsubstate: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
   [255]
-  $ ls "$FAKEHOME"
+  $ ls -A "$FAKEHOME"
+  .hg
   a
 
 on clone only symlink with hg-managed fakehome directory,
@@ -642,7 +665,8 @@ then pull (and update):
   $ touch "$FAKEHOME/a"
   $ hg -R "$FAKEHOME" ci -qAm 'add fakehome file'
   $ SUB="$FAKEHOME" hg clone -qr0 main main7
-  $ ls "$FAKEHOME"
+  $ ls -A "$FAKEHOME"
+  .hg
   a
   $ SUB="$FAKEHOME" hg -R main7 pull -uf
   pulling from $TESTTMP/envvarsym/main
@@ -654,7 +678,8 @@ then pull (and update):
   new changesets * (glob)
   abort: subrepo path contains illegal component: $SUB
   [255]
-  $ ls "$FAKEHOME"
+  $ ls -A "$FAKEHOME"
+  .hg
   a
 
   $ cd ..
@@ -698,7 +723,10 @@ on clone (and update):
 #else
 
   $ hg clone -q driveletter driveletter2
-  $ ls driveletter2
+  $ ls -A driveletter2
+  .hg
+  .hgsub
+  .hgsubstate
   X:
 
 #endif

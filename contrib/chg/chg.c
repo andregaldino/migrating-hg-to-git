@@ -226,6 +226,16 @@ static void execcmdserver(const struct cmdserveropts *opts)
 	}
 	argv[argsize - 1] = NULL;
 
+	const char *lc_ctype_env = getenv("LC_CTYPE");
+	if (lc_ctype_env == NULL) {
+		if (putenv("CHG_CLEAR_LC_CTYPE=") != 0)
+			abortmsgerrno("failed to putenv CHG_CLEAR_LC_CTYPE");
+	} else {
+		if (setenv("CHGORIG_LC_CTYPE", lc_ctype_env, 1) != 0) {
+			abortmsgerrno("failed to setenv CHGORIG_LC_CTYYPE");
+		}
+	}
+
 	if (putenv("CHGINTERNALMARK=") != 0)
 		abortmsgerrno("failed to putenv");
 	if (execvp(hgcmd, (char **)argv) < 0)
@@ -364,8 +374,7 @@ static int runinstructions(struct cmdserveropts *opts, const char **insts)
 
 /*
  * Test whether the command is unsupported or not. This is not designed to
- * cover all cases. But it's fast, does not depend on the server and does
- * not return false positives.
+ * cover all cases. But it's fast, does not depend on the server.
  */
 static int isunsupported(int argc, const char *argv[])
 {
@@ -378,7 +387,12 @@ static int isunsupported(int argc, const char *argv[])
 	for (i = 0; i < argc; ++i) {
 		if (strcmp(argv[i], "--") == 0)
 			break;
-		if (i == 0 && strcmp("serve", argv[i]) == 0)
+		/*
+		 * there can be false positives but no false negative
+		 * we cannot assume `serve` will always be first argument
+		 * because global options can be passed before the command name
+		 */
+		if (strcmp("serve", argv[i]) == 0)
 			state |= SERVE;
 		else if (strcmp("-d", argv[i]) == 0 ||
 		         strcmp("--daemon", argv[i]) == 0)

@@ -51,7 +51,8 @@ narrow clone the inside file
   $ cd narrow
   $ hg tracked
   I path:inside
-  $ ls
+  $ ls -A
+  .hg
   inside
   $ cat inside/f
   inside

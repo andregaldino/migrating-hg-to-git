@@ -2273,6 +2273,8 @@ Check that adding an arbitrary name shows up in log automatically
   > from mercurial import namespaces
   > 
   > def reposetup(ui, repo):
+  >     if not repo.local():
+  >         return
   >     foo = {b'foo': repo[0].node()}
   >     names = lambda r: foo.keys()
   >     namemap = lambda r, name: foo.get(name)
@@ -2327,6 +2329,18 @@ multi-line template with error
   [255]
 
   $ cd ..
+
+New namespace is registered per repo instance, but the template keyword
+is global. So we shouldn't expect the namespace always exists. Using
+ssh:// makes sure a bundle repository is created from scratch. (issue6301)
+
+  $ hg clone -e "'$PYTHON' '$TESTDIR/dummyssh'" \
+  >          -qr0 "ssh://user@dummy/`pwd`/a" a-clone
+  $ hg incoming --config extensions.names=names.py -R a-clone \
+  >             -e "'$PYTHON' '$TESTDIR/dummyssh'" -T '{bars}\n' -l1
+  comparing with ssh://user@dummy/$TESTTMP/a
+  searching for changes
+  
 
 hg log -f dir across branches
 

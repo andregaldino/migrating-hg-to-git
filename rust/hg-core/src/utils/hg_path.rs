@@ -15,12 +15,35 @@ use std::path::{Path, PathBuf};
 pub enum HgPathError {
     /// Bytes from the invalid `HgPath`
     LeadingSlash(Vec<u8>),
-    /// Bytes and index of the second slash
-    ConsecutiveSlashes(Vec<u8>, usize),
-    /// Bytes and index of the null byte
-    ContainsNullByte(Vec<u8>, usize),
+    ConsecutiveSlashes {
+        bytes: Vec<u8>,
+        second_slash_index: usize,
+    },
+    ContainsNullByte {
+        bytes: Vec<u8>,
+        null_byte_index: usize,
+    },
     /// Bytes
     DecodeError(Vec<u8>),
+    /// The rest come from audit errors
+    EndsWithSlash(HgPathBuf),
+    ContainsIllegalComponent(HgPathBuf),
+    /// Path is inside the `.hg` folder
+    InsideDotHg(HgPathBuf),
+    IsInsideNestedRepo {
+        path: HgPathBuf,
+        nested_repo: HgPathBuf,
+    },
+    TraversesSymbolicLink {
+        path: HgPathBuf,
+        symlink: HgPathBuf,
+    },
+    NotFsCompliant(HgPathBuf),
+    /// `path` is the smallest invalid path
+    NotUnderRoot {
+        path: PathBuf,
+        root: PathBuf,
+    },
 }
 
 impl ToString for HgPathError {
@@ -29,17 +52,55 @@ impl ToString for HgPathError {
             HgPathError::LeadingSlash(bytes) => {
                 format!("Invalid HgPath '{:?}': has a leading slash.", bytes)
             }
-            HgPathError::ConsecutiveSlashes(bytes, pos) => format!(
-                "Invalid HgPath '{:?}': consecutive slahes at pos {}.",
+            HgPathError::ConsecutiveSlashes {
+                bytes,
+                second_slash_index: pos,
+            } => format!(
+                "Invalid HgPath '{:?}': consecutive slashes at pos {}.",
                 bytes, pos
             ),
-            HgPathError::ContainsNullByte(bytes, pos) => format!(
+            HgPathError::ContainsNullByte {
+                bytes,
+                null_byte_index: pos,
+            } => format!(
                 "Invalid HgPath '{:?}': contains null byte at pos {}.",
                 bytes, pos
             ),
             HgPathError::DecodeError(bytes) => {
                 format!("Invalid HgPath '{:?}': could not be decoded.", bytes)
             }
+            HgPathError::EndsWithSlash(path) => {
+                format!("Audit failed for '{}': ends with a slash.", path)
+            }
+            HgPathError::ContainsIllegalComponent(path) => format!(
+                "Audit failed for '{}': contains an illegal component.",
+                path
+            ),
+            HgPathError::InsideDotHg(path) => format!(
+                "Audit failed for '{}': is inside the '.hg' folder.",
+                path
+            ),
+            HgPathError::IsInsideNestedRepo {
+                path,
+                nested_repo: nested,
+            } => format!(
+                "Audit failed for '{}': is inside a nested repository '{}'.",
+                path, nested
+            ),
+            HgPathError::TraversesSymbolicLink { path, symlink } => format!(
+                "Audit failed for '{}': traverses symbolic link '{}'.",
+                path, symlink
+            ),
+            HgPathError::NotFsCompliant(path) => format!(
+                "Audit failed for '{}': cannot be turned into a \
+                 filesystem path.",
+                path
+            ),
+            HgPathError::NotUnderRoot { path, root } => format!(
+                "Audit failed for '{}': not under root {}.",
+                path.display(),
+                root.display()
+            ),
         }
     }
 }
@@ -112,10 +173,40 @@ impl HgPath {
     pub fn contains(&self, other: u8) -> bool {
         self.inner.contains(&other)
     }
-    pub fn starts_with(&self, needle: impl AsRef<HgPath>) -> bool {
+    pub fn starts_with(&self, needle: impl AsRef<Self>) -> bool {
         self.inner.starts_with(needle.as_ref().as_bytes())
     }
-    pub fn join<T: ?Sized + AsRef<HgPath>>(&self, other: &T) -> HgPathBuf {
+    pub fn trim_trailing_slash(&self) -> &Self {
+        Self::new(if self.inner.last() == Some(&b'/') {
+            &self.inner[..self.inner.len() - 1]
+        } else {
+            &self.inner[..]
+        })
+    }
+    /// Returns a tuple of slices `(base, filename)` resulting from the split
+    /// at the rightmost `/`, if any.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use hg::utils::hg_path::HgPath;
+    ///
+    /// let path = HgPath::new(b"cool/hg/path").split_filename();
+    /// assert_eq!(path, (HgPath::new(b"cool/hg"), HgPath::new(b"path")));
+    ///
+    /// let path = HgPath::new(b"pathwithoutsep").split_filename();
+    /// assert_eq!(path, (HgPath::new(b""), HgPath::new(b"pathwithoutsep")));
+    /// ```
+    pub fn split_filename(&self) -> (&Self, &Self) {
+        match &self.inner.iter().rposition(|c| *c == b'/') {
+            None => (HgPath::new(""), &self),
+            Some(size) => (
+                HgPath::new(&self.inner[..*size]),
+                HgPath::new(&self.inner[*size + 1..]),
+            ),
+        }
+    }
+    pub fn join<T: ?Sized + AsRef<Self>>(&self, other: &T) -> HgPathBuf {
         let mut inner = self.inner.to_owned();
         if inner.len() != 0 && inner.last() != Some(&b'/') {
             inner.push(b'/');
@@ -123,21 +214,103 @@ impl HgPath {
         inner.extend(other.as_ref().bytes());
         HgPathBuf::from_bytes(&inner)
     }
+    pub fn parent(&self) -> &Self {
+        let inner = self.as_bytes();
+        HgPath::new(match inner.iter().rposition(|b| *b == b'/') {
+            Some(pos) => &inner[..pos],
+            None => &[],
+        })
+    }
     /// Given a base directory, returns the slice of `self` relative to the
     /// base directory. If `base` is not a directory (does not end with a
     /// `b'/'`), returns `None`.
-    pub fn relative_to(&self, base: impl AsRef<HgPath>) -> Option<&HgPath> {
+    pub fn relative_to(&self, base: impl AsRef<Self>) -> Option<&Self> {
         let base = base.as_ref();
         if base.is_empty() {
             return Some(self);
         }
         let is_dir = base.as_bytes().ends_with(b"/");
         if is_dir && self.starts_with(base) {
-            Some(HgPath::new(&self.inner[base.len()..]))
+            Some(Self::new(&self.inner[base.len()..]))
         } else {
             None
         }
     }
+
+    #[cfg(windows)]
+    /// Copied from the Python stdlib's `os.path.splitdrive` implementation.
+    ///
+    /// Split a pathname into drive/UNC sharepoint and relative path
+    /// specifiers. Returns a 2-tuple (drive_or_unc, path); either part may
+    /// be empty.
+    ///
+    /// If you assign
+    ///  result = split_drive(p)
+    /// It is always true that:
+    ///  result[0] + result[1] == p
+    ///
+    /// If the path contained a drive letter, drive_or_unc will contain
+    /// everything up to and including the colon.
+    /// e.g. split_drive("c:/dir") returns ("c:", "/dir")
+    ///
+    /// If the path contained a UNC path, the drive_or_unc will contain the
+    /// host name and share up to but not including the fourth directory
+    /// separator character.
+    /// e.g. split_drive("//host/computer/dir") returns ("//host/computer",
+    /// "/dir")
+    ///
+    /// Paths cannot contain both a drive letter and a UNC path.
+    pub fn split_drive<'a>(&self) -> (&HgPath, &HgPath) {
+        let bytes = self.as_bytes();
+        let is_sep = |b| std::path::is_separator(b as char);
+
+        if self.len() < 2 {
+            (HgPath::new(b""), &self)
+        } else if is_sep(bytes[0])
+            && is_sep(bytes[1])
+            && (self.len() == 2 || !is_sep(bytes[2]))
+        {
+            // Is a UNC path:
+            // vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
+            // \\machine\mountpoint\directory\etc\...
+            //           directory ^^^^^^^^^^^^^^^
+
+            let machine_end_index = bytes[2..].iter().position(|b| is_sep(*b));
+            let mountpoint_start_index = if let Some(i) = machine_end_index {
+                i + 2
+            } else {
+                return (HgPath::new(b""), &self);
+            };
+
+            match bytes[mountpoint_start_index + 1..]
+                .iter()
+                .position(|b| is_sep(*b))
+            {
+                // A UNC path can't have two slashes in a row
+                // (after the initial two)
+                Some(0) => (HgPath::new(b""), &self),
+                Some(i) => {
+                    let (a, b) =
+                        bytes.split_at(mountpoint_start_index + 1 + i);
+                    (HgPath::new(a), HgPath::new(b))
+                }
+                None => (&self, HgPath::new(b"")),
+            }
+        } else if bytes[1] == b':' {
+            // Drive path c:\directory
+            let (a, b) = bytes.split_at(2);
+            (HgPath::new(a), HgPath::new(b))
+        } else {
+            (HgPath::new(b""), &self)
+        }
+    }
+
+    #[cfg(unix)]
+    /// Split a pathname into drive and path. On Posix, drive is always empty.
+    pub fn split_drive(&self) -> (&HgPath, &HgPath) {
+        (HgPath::new(b""), &self)
+    }
+
     /// Checks for errors in the path, short-circuiting at the first one.
     /// This generates fine-grained errors useful for debugging.
     /// To simply check if the path is valid during tests, use `is_valid`.
@@ -154,17 +327,17 @@ impl HgPath {
         for (index, byte) in bytes.iter().enumerate() {
             match byte {
                 0 => {
-                    return Err(HgPathError::ContainsNullByte(
-                        bytes.to_vec(),
-                        index,
-                    ))
+                    return Err(HgPathError::ContainsNullByte {
+                        bytes: bytes.to_vec(),
+                        null_byte_index: index,
+                    })
                 }
                 b'/' => {
                     if previous_byte.is_some() && previous_byte == Some(b'/') {
-                        return Err(HgPathError::ConsecutiveSlashes(
-                            bytes.to_vec(),
-                            index,
-                        ));
+                        return Err(HgPathError::ConsecutiveSlashes {
+                            bytes: bytes.to_vec(),
+                            second_slash_index: index,
+                        });
                     }
                 }
                 _ => (),
@@ -348,6 +521,7 @@ pub fn path_to_hg_path_buf<P: AsRef<Path>>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_path_states() {
@@ -356,11 +530,17 @@ mod tests {
             HgPath::new(b"/").check_state()
         );
         assert_eq!(
-            Err(HgPathError::ConsecutiveSlashes(b"a/b//c".to_vec(), 4)),
+            Err(HgPathError::ConsecutiveSlashes {
+                bytes: b"a/b//c".to_vec(),
+                second_slash_index: 4
+            }),
             HgPath::new(b"a/b//c").check_state()
         );
         assert_eq!(
-            Err(HgPathError::ContainsNullByte(b"a/b/\0c".to_vec(), 4)),
+            Err(HgPathError::ContainsNullByte {
+                bytes: b"a/b/\0c".to_vec(),
+                null_byte_index: 4
+            }),
             HgPath::new(b"a/b/\0c").check_state()
         );
         // TODO test HgPathError::DecodeError for the Windows implementation.
@@ -472,5 +652,117 @@ mod tests {
         let path = HgPath::new(b"ends/with/dir/");
         let base = HgPath::new(b"ends/");
         assert_eq!(Some(HgPath::new(b"with/dir/")), path.relative_to(base));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn test_split_drive() {
+        // Taken from the Python stdlib's tests
+        assert_eq!(
+            HgPath::new(br"/foo/bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"/foo/bar"))
+        );
+        assert_eq!(
+            HgPath::new(br"foo:bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"foo:bar"))
+        );
+        assert_eq!(
+            HgPath::new(br":foo:bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br":foo:bar"))
+        );
+        // Also try NT paths; should not split them
+        assert_eq!(
+            HgPath::new(br"c:\foo\bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"c:\foo\bar"))
+        );
+        assert_eq!(
+            HgPath::new(b"c:/foo/bar").split_drive(),
+            (HgPath::new(b""), HgPath::new(br"c:/foo/bar"))
+        );
+        assert_eq!(
+            HgPath::new(br"\\conky\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(b""),
+                HgPath::new(br"\\conky\mountpoint\foo\bar")
+            )
+        );
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn test_split_drive() {
+        assert_eq!(
+            HgPath::new(br"c:\foo\bar").split_drive(),
+            (HgPath::new(br"c:"), HgPath::new(br"\foo\bar"))
+        );
+        assert_eq!(
+            HgPath::new(b"c:/foo/bar").split_drive(),
+            (HgPath::new(br"c:"), HgPath::new(br"/foo/bar"))
+        );
+        assert_eq!(
+            HgPath::new(br"\\conky\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(br"\\conky\mountpoint"),
+                HgPath::new(br"\foo\bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"//conky/mountpoint/foo/bar").split_drive(),
+            (
+                HgPath::new(br"//conky/mountpoint"),
+                HgPath::new(br"/foo/bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"\\\conky\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"\\\conky\mountpoint\foo\bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"///conky/mountpoint/foo/bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"///conky/mountpoint/foo/bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"\\conky\\mountpoint\foo\bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"\\conky\\mountpoint\foo\bar")
+            )
+        );
+        assert_eq!(
+            HgPath::new(br"//conky//mountpoint/foo/bar").split_drive(),
+            (
+                HgPath::new(br""),
+                HgPath::new(br"//conky//mountpoint/foo/bar")
+            )
+        );
+        // UNC part containing U+0130
+        assert_eq!(
+            HgPath::new(b"//conky/MOUNTPO\xc4\xb0NT/foo/bar").split_drive(),
+            (
+                HgPath::new(b"//conky/MOUNTPO\xc4\xb0NT"),
+                HgPath::new(br"/foo/bar")
+            )
+        );
+    }
+
+    #[test]
+    fn test_parent() {
+        let path = HgPath::new(b"");
+        assert_eq!(path.parent(), path);
+
+        let path = HgPath::new(b"a");
+        assert_eq!(path.parent(), HgPath::new(b""));
+
+        let path = HgPath::new(b"a/b");
+        assert_eq!(path.parent(), HgPath::new(b"a"));
+
+        let path = HgPath::new(b"a/other/b");
+        assert_eq!(path.parent(), HgPath::new(b"a/other"));
     }
 }

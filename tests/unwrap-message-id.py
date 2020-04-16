@@ -1,6 +1,8 @@
 from __future__ import absolute_import, print_function
 
-import re
 import sys
 
-print(re.sub(r"(?<=Message-Id:) \n ", " ", sys.stdin.read()), end="")
+for line in sys.stdin:
+    if line.lower() in ("message-id: \n", "in-reply-to: \n"):
+        line = line[:-2]
+    print(line, end="")

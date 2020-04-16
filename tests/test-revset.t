@@ -1274,6 +1274,36 @@ test descendants with depth limit
   5
   7
 
+test ancestors/descendants relation:
+
+  $ log 'tip#generations'
+  0
+  1
+  2
+  4
+  8
+  9
+
+  $ log '3#g'
+  0
+  1
+  3
+  5
+  6
+  7
+
+  $ hg debugrevspec -p parsed 'tip#g'
+  * parsed:
+  (relation
+    (symbol 'tip')
+    (symbol 'g'))
+  0
+  1
+  2
+  4
+  8
+  9
+
 test ancestors/descendants relation subscript:
 
   $ log 'tip#generations[0]'

@@ -116,7 +116,7 @@ class memorycacher(object):
             redirectable = False
         else:
             clienttargets = set(self.redirecttargets)
-            ourtargets = set(t[b'name'] for t in loadredirecttargets(self.ui))
+            ourtargets = {t[b'name'] for t in loadredirecttargets(self.ui)}
 
             # We only ever redirect to a single target (for now). So we don't
             # need to store which target matched.

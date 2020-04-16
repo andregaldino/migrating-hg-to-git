@@ -126,7 +126,9 @@ Remove both largefiles and normal files.
   Invoking status precommit hook
   R large1
   R normal1
-  $ ls
+  $ ls -A
+  .hg
+  .hglf
   sub
   $ echo "testlargefile" > large1-test
   $ hg add --large large1-test
@@ -254,7 +256,8 @@ archiving.
   $ cat sub/large2
   large22
   $ cd ../archive2
-  $ ls
+  $ ls -A
+  .hg_archival.txt
   sub
   $ cat sub/normal2
   normal22

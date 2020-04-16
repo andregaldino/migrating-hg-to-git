@@ -475,14 +475,16 @@ Prompt before undeleting file(issue6008)
   > EOF
   add back removed file a (Yn)? y
   undeleting a
-  $ ls
+  $ ls -A
+  .hg
   a
   $ hg rm a
   $ hg revert -i<<EOF
   > n
   > EOF
   add back removed file a (Yn)? n
-  $ ls
+  $ ls -A
+  .hg
   $ hg revert -a
   undeleting a
   $ cd ..

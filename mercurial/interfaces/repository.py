@@ -985,17 +985,8 @@ class imanifestdict(interfaceutil.Interface):
     def hasdir(dir):
         """Returns a bool indicating if a directory is in this manifest."""
 
-    def matches(match):
-        """Generate a new manifest filtered through a matcher.
-
-        Returns an object conforming to the ``imanifestdict`` interface.
-        """
-
     def walk(match):
         """Generator of paths in manifest satisfying a matcher.
-
-        This is equivalent to ``self.matches(match).iterkeys()`` except a new
-        manifest object is not created.
 
         If the matcher has explicit files listed and they don't exist in
         the manifest, ``match.bad()`` is called for each missing file.
@@ -1027,8 +1018,8 @@ class imanifestdict(interfaceutil.Interface):
     def get(path, default=None):
         """Obtain the node value for a path or a default value if missing."""
 
-    def flags(path, default=b''):
-        """Return the flags value for a path or a default value if missing."""
+    def flags(path):
+        """Return the flags value for a path (default: empty bytestring)."""
 
     def copy():
         """Return a copy of this manifest."""
@@ -1061,6 +1052,9 @@ class imanifestdict(interfaceutil.Interface):
 
         Returns a 2-tuple containing ``bytearray(self.text())`` and the
         delta between ``base`` and this manifest.
+
+        If this manifest implementation can't support ``fastdelta()``,
+        raise ``mercurial.manifest.FastdeltaUnavailable``.
         """
 
 
@@ -1070,14 +1064,6 @@ class imanifestrevisionbase(interfaceutil.Interface):
     Should not be used as a primary interface: should always be inherited
     as part of a larger interface.
     """
-
-    def new():
-        """Obtain a new manifest instance.
-
-        Returns an object conforming to the ``imanifestrevisionwritable``
-        interface. The instance will be associated with the same
-        ``imanifestlog`` collection as this instance.
-        """
 
     def copy():
         """Obtain a copy of this manifest instance.

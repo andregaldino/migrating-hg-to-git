@@ -30,8 +30,9 @@
      b/a
      b/b
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a/a' -> dst: 'b/a' 
-     src: 'a/b' -> dst: 'b/b' 
+     on remote side:
+      src: 'a/a' -> dst: 'b/a' 
+      src: 'a/b' -> dst: 'b/b' 
     checking for directory renames
      discovered dir src: 'a/' -> dst: 'b/'
      pending file src: 'a/c' -> dst: 'b/c'
@@ -75,8 +76,9 @@
     unmatched files in other:
      a/c
     all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     src: 'a/a' -> dst: 'b/a' 
-     src: 'a/b' -> dst: 'b/b' 
+     on local side:
+      src: 'a/a' -> dst: 'b/a' 
+      src: 'a/b' -> dst: 'b/b' 
     checking for directory renames
      discovered dir src: 'a/' -> dst: 'b/'
      pending file src: 'a/c' -> dst: 'b/c'

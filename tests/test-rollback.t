@@ -190,7 +190,7 @@ same again, but emulate an old client that doesn't write undo.desc
 
 corrupt journal test
   $ echo "foo" > .hg/store/journal
-  $ hg recover
+  $ hg recover --verify
   rolling back interrupted transaction
   couldn't read journal entry 'foo\n'!
   checking changesets

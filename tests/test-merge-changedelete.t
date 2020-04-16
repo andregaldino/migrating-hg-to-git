@@ -76,27 +76,23 @@ Non-interactive merge:
   U file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -145,27 +141,23 @@ Interactive merge:
   R file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "r", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "r")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "r", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "r")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -227,27 +219,23 @@ Interactive merge with bad input:
   R file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "r", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "r")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "r", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "r")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   *** file1 does not exist
   --- file2 ---
   2
@@ -293,27 +281,23 @@ Interactive merge with not enough input:
   U file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "r", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "r")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   *** file1 does not exist
   --- file2 ---
   2
@@ -346,27 +330,23 @@ Choose local versions of files
   R file2
   R file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "r", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "r")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "r", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "r")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "r", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "r")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -395,27 +375,23 @@ Choose other versions of files
   R file2
   R file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "r", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "r")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "r", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "r")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "r", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "r")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   *** file1 does not exist
   --- file2 ---
   2
@@ -445,27 +421,23 @@ Fail
   U file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -506,27 +478,23 @@ Force prompts with no input (should be similar to :fail)
   U file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -569,27 +537,23 @@ Force prompts
   U file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -629,27 +593,23 @@ Choose to merge all files
   U file2
   U file3
   --- debugmergestate ---
-  * version 2 records
-  local: 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: merge rev
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): 13910f48cf7bdb2a0ba6e24b4900e4fdd5739dd4
+  other (merge rev): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
-  file extras: file3 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file3 (record type "F", state "u", hash d5b0a58bc47161b1b8a831084b366f757c4f0b11)
-    local path: file3 (flags "")
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file3 (state "u")
+    local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
     other path: file3 (node a2644c43e210356772c7772a8674544a62e06beb)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -802,22 +762,18 @@ Non-interactive linear update
   U file1
   U file2
   --- debugmergestate ---
-  * version 2 records
-  local: ab57bf49aa276a22d35a473592d4c34b5abc3eff
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: destination
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  other (destination): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -845,22 +801,18 @@ Choose local versions of files
   R file1
   R file2
   --- debugmergestate ---
-  * version 2 records
-  local: ab57bf49aa276a22d35a473592d4c34b5abc3eff
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: destination
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "r", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  other (destination): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "r")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "r", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "r")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -886,22 +838,18 @@ Choose other versions of files
   R file1
   R file2
   --- debugmergestate ---
-  * version 2 records
-  local: ab57bf49aa276a22d35a473592d4c34b5abc3eff
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: destination
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "r", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  other (destination): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "r")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "r", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "r")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   *** file1 does not exist
   --- file2 ---
   2
@@ -929,22 +877,18 @@ Fail
   U file1
   U file2
   --- debugmergestate ---
-  * version 2 records
-  local: ab57bf49aa276a22d35a473592d4c34b5abc3eff
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: destination
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  other (destination): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -980,22 +924,18 @@ Force prompts with no input
   U file1
   U file2
   --- debugmergestate ---
-  * version 2 records
-  local: ab57bf49aa276a22d35a473592d4c34b5abc3eff
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: destination
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  other (destination): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed
@@ -1032,22 +972,18 @@ Choose to merge all files
   U file1
   U file2
   --- debugmergestate ---
-  * version 2 records
-  local: ab57bf49aa276a22d35a473592d4c34b5abc3eff
-  other: 10f9a0a634e82080907e62f075ab119cbc565ea6
-  labels:
-    local: working copy
-    other: destination
-  file extras: file1 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file1 (record type "C", state "u", hash 60b27f004e454aca81b0480209cce5081ec52390)
-    local path: file1 (flags "")
+  local (working copy): ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  other (destination): 10f9a0a634e82080907e62f075ab119cbc565ea6
+  file: file1 (state "u")
+    local path: file1 (hash 60b27f004e454aca81b0480209cce5081ec52390, flags "")
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
-    other path: file1 (node null)
-  file extras: file2 (ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff)
-  file: file2 (record type "C", state "u", hash null)
-    local path: file2 (flags "")
+    other path: file1 (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+  file: file2 (state "u")
+    local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
+    extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
   --- file1 ---
   1
   changed

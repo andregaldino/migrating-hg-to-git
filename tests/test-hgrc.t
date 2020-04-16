@@ -56,7 +56,7 @@ Check %include
   $ echo '%include $TESTTMP/included' >> $HGRC
   $ hg showconfig section
   section.option=value
-#if no-windows
+#if unix-permissions no-root
   $ chmod u-r $TESTTMP/included
   $ hg showconfig section
   hg: parse error at $TESTTMP/hgrc:2: cannot include $TESTTMP/included (Permission denied)

@@ -699,6 +699,7 @@ def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
     # Map of requirements to list of extensions to load automatically when
     # requirement is present.
     autoextensions = {
+        b'git': [b'git'],
         b'largefiles': [b'largefiles'],
         b'lfs': [b'lfs'],
     }
@@ -932,6 +933,12 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     if ui.configbool(b'experimental', b'rust.index'):
         options[b'rust.index'] = True
+    if ui.configbool(b'experimental', b'exp-persistent-nodemap'):
+        options[b'exp-persistent-nodemap'] = True
+    if ui.configbool(b'experimental', b'exp-persistent-nodemap.mmap'):
+        options[b'exp-persistent-nodemap.mmap'] = True
+    if ui.configbool(b'devel', b'persistent-nodemap'):
+        options[b'devel-force-nodemap'] = True
 
     return options
 
@@ -1803,7 +1810,7 @@ class localrepository(object):
         # map tag name to (node, hist)
         alltags = tagsmod.findglobaltags(self.ui, self)
         # map tag name to tag type
-        tagtypes = dict((tag, b'global') for tag in alltags)
+        tagtypes = {tag: b'global' for tag in alltags}
 
         tagsmod.readlocaltags(self.ui, self, alltags, tagtypes)
 
@@ -1816,12 +1823,10 @@ class localrepository(object):
             if node != nullid:
                 tags[encoding.tolocal(name)] = node
         tags[b'tip'] = self.changelog.tip()
-        tagtypes = dict(
-            [
-                (encoding.tolocal(name), value)
-                for (name, value) in pycompat.iteritems(tagtypes)
-            ]
-        )
+        tagtypes = {
+            encoding.tolocal(name): value
+            for (name, value) in pycompat.iteritems(tagtypes)
+        }
         return (tags, tagtypes)
 
     def tagtype(self, tagname):
@@ -2173,15 +2178,16 @@ class localrepository(object):
                     )
             if hook.hashook(repo.ui, b'pretxnclose-phase'):
                 cl = repo.unfiltered().changelog
-                for rev, (old, new) in tr.changes[b'phases'].items():
-                    args = tr.hookargs.copy()
-                    node = hex(cl.node(rev))
-                    args.update(phases.preparehookargs(node, old, new))
-                    repo.hook(
-                        b'pretxnclose-phase',
-                        throw=True,
-                        **pycompat.strkwargs(args)
-                    )
+                for revs, (old, new) in tr.changes[b'phases']:
+                    for rev in revs:
+                        args = tr.hookargs.copy()
+                        node = hex(cl.node(rev))
+                        args.update(phases.preparehookargs(node, old, new))
+                        repo.hook(
+                            b'pretxnclose-phase',
+                            throw=True,
+                            **pycompat.strkwargs(args)
+                        )
 
             repo.hook(
                 b'pretxnclose', throw=True, **pycompat.strkwargs(tr.hookargs)
@@ -2226,7 +2232,7 @@ class localrepository(object):
         )
         tr.changes[b'origrepolen'] = len(self)
         tr.changes[b'obsmarkers'] = set()
-        tr.changes[b'phases'] = {}
+        tr.changes[b'phases'] = []
         tr.changes[b'bookmarks'] = {}
 
         tr.hookargs[b'txnid'] = txnid
@@ -2260,16 +2266,19 @@ class localrepository(object):
 
                 if hook.hashook(repo.ui, b'txnclose-phase'):
                     cl = repo.unfiltered().changelog
-                    phasemv = sorted(tr.changes[b'phases'].items())
-                    for rev, (old, new) in phasemv:
-                        args = tr.hookargs.copy()
-                        node = hex(cl.node(rev))
-                        args.update(phases.preparehookargs(node, old, new))
-                        repo.hook(
-                            b'txnclose-phase',
-                            throw=False,
-                            **pycompat.strkwargs(args)
-                        )
+                    phasemv = sorted(
+                        tr.changes[b'phases'], key=lambda r: r[0][0]
+                    )
+                    for revs, (old, new) in phasemv:
+                        for rev in revs:
+                            args = tr.hookargs.copy()
+                            node = hex(cl.node(rev))
+                            args.update(phases.preparehookargs(node, old, new))
+                            repo.hook(
+                                b'txnclose-phase',
+                                throw=False,
+                                **pycompat.strkwargs(args)
+                            )
 
                 repo.hook(
                     b'txnclose', throw=False, **pycompat.strkwargs(hookargs)
@@ -2498,6 +2507,9 @@ class localrepository(object):
 
         if full:
             unfi = self.unfiltered()
+
+            self.changelog.update_caches(transaction=tr)
+
             rbc = unfi.revbranchcache()
             for r in unfi.changelog:
                 rbc.branchinfo(r)
@@ -2843,6 +2855,14 @@ class localrepository(object):
                 fparent1, fparent2 = fparent2, nullid
             elif fparent2 in fparentancestors:
                 fparent2 = nullid
+            elif not fparentancestors:
+                # TODO: this whole if-else might be simplified much more
+                ms = mergemod.mergestate.read(self)
+                if (
+                    fname in ms
+                    and ms[fname] == mergemod.MERGE_RECORD_MERGED_OTHER
+                ):
+                    fparent1, fparent2 = fparent2, nullid
 
         # is the file changed?
         text = fctx.data()
@@ -2938,6 +2958,9 @@ class localrepository(object):
                 self, status, text, user, date, extra
             )
 
+            ms = mergemod.mergestate.read(self)
+            mergeutil.checkunresolved(ms)
+
             # internal config: ui.allowemptycommit
             allowemptycommit = (
                 wctx.branch() != wctx.p1().branch()
@@ -2947,13 +2970,12 @@ class localrepository(object):
                 or self.ui.configbool(b'ui', b'allowemptycommit')
             )
             if not allowemptycommit:
+                self.ui.debug(b'nothing to commit, clearing merge state\n')
+                ms.reset()
                 return None
 
             if merge and cctx.deleted():
                 raise error.Abort(_(b"cannot commit merge with missing files"))
-
-            ms = mergemod.mergestate.read(self)
-            mergeutil.checkunresolved(ms)
 
             if editor:
                 cctx._text = editor(self, cctx, subs)
@@ -3572,14 +3594,17 @@ def newreporequirements(ui, createopts):
             if ui.configbool(b'format', b'dotencode'):
                 requirements.add(b'dotencode')
 
-    compengine = ui.config(b'format', b'revlog-compression')
-    if compengine not in util.compengines:
+    compengines = ui.configlist(b'format', b'revlog-compression')
+    for compengine in compengines:
+        if compengine in util.compengines:
+            break
+    else:
         raise error.Abort(
             _(
-                b'compression engine %s defined by '
+                b'compression engines %s defined by '
                 b'format.revlog-compression not available'
             )
-            % compengine,
+            % b', '.join(b'"%s"' % e for e in compengines),
             hint=_(
                 b'run "hg debuginstall" to list available '
                 b'compression engines'
@@ -3587,7 +3612,7 @@ def newreporequirements(ui, createopts):
         )
 
     # zlib is the historical default and doesn't need an explicit requirement.
-    elif compengine == b'zstd':
+    if compengine == b'zstd':
         requirements.add(b'revlog-compression-zstd')
     elif compengine != b'zlib':
         requirements.add(b'exp-compression-%s' % compengine)

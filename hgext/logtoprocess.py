@@ -59,6 +59,13 @@ class processlogger(object):
 
     def log(self, ui, event, msg, opts):
         script = self._scripts[event]
+        maxmsg = 100000
+        if len(msg) > maxmsg:
+            # Each env var has a 128KiB limit on linux. msg can be long, in
+            # particular for command event, where it's the full command line.
+            # Prefer truncating the message than raising "Argument list too
+            # long" error.
+            msg = msg[:maxmsg] + b' (truncated)'
         env = {
             b'EVENT': event,
             b'HGPID': os.getpid(),

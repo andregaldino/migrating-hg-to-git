@@ -84,7 +84,7 @@ class pathauditor(object):
                         _(b"path contains illegal component: %s") % path
                     )
         if b'.hg' in _lowerclean(path):
-            lparts = [_lowerclean(p.lower()) for p in parts]
+            lparts = [_lowerclean(p) for p in parts]
             for p in b'.hg', b'.hg.':
                 if p in lparts[1:]:
                     pos = lparts.index(p)
@@ -99,10 +99,11 @@ class pathauditor(object):
 
         parts.pop()
         normparts.pop()
-        prefixes = []
         # It's important that we check the path parts starting from the root.
-        # This means we won't accidentally traverse a symlink into some other
-        # filesystem (which is potentially expensive to access).
+        # We don't want to add "foo/bar/baz" to auditeddir before checking if
+        # there's a "foo/.hg" directory. This also means we won't accidentally
+        # traverse a symlink into some other filesystem (which is potentially
+        # expensive to access).
         for i in range(len(parts)):
             prefix = pycompat.ossep.join(parts[: i + 1])
             normprefix = pycompat.ossep.join(normparts[: i + 1])
@@ -110,13 +111,11 @@ class pathauditor(object):
                 continue
             if self._realfs:
                 self._checkfs(prefix, path)
-            prefixes.append(normprefix)
+            if self._cached:
+                self.auditeddir.add(normprefix)
 
         if self._cached:
             self.audited.add(normpath)
-            # only add prefixes to the cache after checking everything: we don't
-            # want to add "foo/bar/baz" before checking if there's a "foo/.hg"
-            self.auditeddir.update(prefixes)
 
     def _checkfs(self, prefix, path):
         """raise exception if a file system backed check fails"""
@@ -287,6 +286,9 @@ class dirs(object):
     '''a multiset of directory names from a set of file paths'''
 
     def __init__(self, map, skip=None):
+        '''
+        a dict map indicates a dirstate while a list indicates a manifest
+        '''
         self._dirs = {}
         addpath = self.addpath
         if isinstance(map, dict) and skip is not None:
