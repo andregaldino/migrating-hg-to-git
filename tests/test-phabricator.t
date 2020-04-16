@@ -181,7 +181,7 @@ Phabsending a skipped commit:
   1849d7828727 mapped to old nodes ['1849d7828727']
   D7919 - skipped - 1849d7828727: create comment for phabricator test
 
-Phabsend doesn't create an instability when rebasing existing revisions on top
+Phabsend doesn't create an instability when restacking existing revisions on top
 of new revisions.
 
   $ hg init reorder
