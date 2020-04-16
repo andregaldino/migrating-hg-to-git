@@ -83,6 +83,9 @@ class namespaces(object):
     def __iter__(self):
         return self._names.__iter__()
 
+    def get(self, namespace, default=None):
+        return self._names.get(namespace, default)
+
     def items(self):
         return pycompat.iteritems(self._names)
 

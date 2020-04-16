@@ -562,7 +562,11 @@ def shownames(context, mapping, namespace):
     """helper method to generate a template keyword for a namespace"""
     repo = context.resource(mapping, b'repo')
     ctx = context.resource(mapping, b'ctx')
-    ns = repo.names[namespace]
+    ns = repo.names.get(namespace)
+    if ns is None:
+        # namespaces.addnamespace() registers new template keyword, but
+        # the registered namespace might not exist in the current repo.
+        return
     names = ns.names(repo, ctx.node())
     return compatlist(
         context, mapping, ns.templatename, names, plural=namespace
