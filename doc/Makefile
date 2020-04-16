@@ -5,7 +5,7 @@ GENDOC=gendoc.py ../mercurial/commands.py ../mercurial/help.py \
 	../mercurial/helptext/*.txt ../hgext/*.py ../hgext/*/__init__.py
 PREFIX=/usr/local
 MANDIR=$(PREFIX)/share/man
-INSTALL=install -c -m 644
+INSTALL=install -m 644
 PYTHON?=python
 RSTARGS=
 
