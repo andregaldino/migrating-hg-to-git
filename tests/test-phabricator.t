@@ -589,6 +589,13 @@ Phabimport accepts multiple DREVSPECs
   applying patch from D7917
   applying patch from D7918
 
+Phabsend requires a linear range of commits
+
+  $ hg phabsend -r 0+2+3
+  abort: cannot phabsend multiple head revisions: c44b38f24a45
+  (the revisions must form a linear chain)
+  [255]
+
 Validate arguments with --fold
 
   $ hg phabsend --fold -r 1
@@ -596,9 +603,6 @@ Validate arguments with --fold
   [255]
   $ hg phabsend --fold --no-amend -r 1::
   abort: cannot fold with --no-amend
-  [255]
-  $ hg phabsend --fold -r 0+3
-  abort: cannot fold non-linear revisions
   [255]
   $ hg phabsend --fold -r 1::
   abort: cannot fold revisions with different DREV values
