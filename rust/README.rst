@@ -54,9 +54,17 @@ However, the ``Re2`` path remains slightly faster for our use cases and remains
 a better option for getting the most speed out of your Mercurial. 
 
 If you want to use ``Re2``, you need to install ``Re2`` following Google's 
-guidelines: https://github.com/google/re2/wiki/Install
-Then, use ``HG_RUST_FEATURES=with-re2`` when building ``hg`` to use the full
-status code.
+guidelines: https://github.com/google/re2/wiki/Install.
+Then, use ``HG_RUST_FEATURES=with-re2`` and 
+``HG_RE2_PATH=system|<path to your re2 install>`` when building ``hg`` to 
+signal the use of Re2. Using the local path instead of the "system" RE2 links
+it statically.
+
+For example::
+
+  $ HG_RUST_FEATURES=with-re2 HG_RE2_PATH=system make PURE=--rust
+  $ # OR
+  $ HG_RUST_FEATURES=with-re2 HG_RE2_PATH=/path/to/re2 make PURE=--rust
 
 Developing Rust
 ===============
