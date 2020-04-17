@@ -81,7 +81,7 @@ Make and delete some tags
 Different hash because no x bit
   $ hg bookmarks
      premerge1                 3:973ef48a98a4
-     premerge2                 8:3537b15eaaca
+     premerge2                 8:1cc21e701444
 #endif
 
 Test that redoing a convert results in an identical graph
