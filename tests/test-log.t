@@ -2334,10 +2334,10 @@ New namespace is registered per repo instance, but the template keyword
 is global. So we shouldn't expect the namespace always exists. Using
 ssh:// makes sure a bundle repository is created from scratch. (issue6301)
 
-  $ hg clone -e "'$PYTHON' '$TESTDIR/dummyssh'" \
+  $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" \
   >          -qr0 "ssh://user@dummy/`pwd`/a" a-clone
   $ hg incoming --config extensions.names=names.py -R a-clone \
-  >             -e "'$PYTHON' '$TESTDIR/dummyssh'" -T '{bars}\n' -l1
+  >             -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" -T '{bars}\n' -l1
   comparing with ssh://user@dummy/$TESTTMP/a
   searching for changes
   
