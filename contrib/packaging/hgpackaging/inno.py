@@ -61,8 +61,7 @@ def build(
 
     vc_x64 = r'\x64' in os.environ.get('LIB', '')
     arch = 'x64' if vc_x64 else 'x86'
-    inno_source_dir = source_dir / 'contrib' / 'packaging' / 'inno'
-    inno_build_dir = build_dir / ('inno-%s' % arch)
+    inno_build_dir = build_dir / ('inno-py2exe-%s' % arch)
     staging_dir = inno_build_dir / 'stage'
 
     requirements_txt = (
@@ -103,6 +102,31 @@ def build(
 
         print('copying %s to %s' % (f, dest_path))
         shutil.copyfile(f, dest_path)
+
+    build_installer(
+        source_dir,
+        inno_build_dir,
+        staging_dir,
+        iscc_exe,
+        version,
+        arch="x64" if vc_x64 else None,
+    )
+
+
+def build_installer(
+    source_dir: pathlib.Path,
+    inno_build_dir: pathlib.Path,
+    staging_dir: pathlib.Path,
+    iscc_exe: pathlib.Path,
+    version,
+    arch=None,
+):
+    """Build an Inno installer from staged Mercurial files.
+
+    This function is agnostic about how to build Mercurial. It just
+    cares that Mercurial files are in ``staging_dir``.
+    """
+    inno_source_dir = source_dir / "contrib" / "packaging" / "inno"
 
     # The final package layout is simply a mirror of the staging directory.
     package_files = []
@@ -158,8 +182,8 @@ def build(
 
     args = [str(iscc_exe)]
 
-    if vc_x64:
-        args.append('/dARCH=x64')
+    if arch:
+        args.append('/dARCH=%s' % arch)
 
     if not version:
         version = read_version_py(source_dir)
