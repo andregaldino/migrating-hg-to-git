@@ -116,6 +116,7 @@ same thing, but run $EDITOR
   transaction abort!
   rollback completed
   note: commit message saved in .hg/last-message.txt
+  note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
   abort: pretxncommit hook exited with status * (glob)
   [255]
   $ cat .hg/last-message.txt

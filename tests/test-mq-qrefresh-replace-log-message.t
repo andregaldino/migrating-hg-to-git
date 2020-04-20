@@ -186,6 +186,7 @@ Test saving last-message.txt:
   HG: added file2
   ====
   note: commit message saved in .hg/last-message.txt
+  note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
   transaction abort!
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
@@ -229,6 +230,7 @@ external process
   A file2
   ====
   note: commit message saved in .hg/last-message.txt
+  note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
   transaction abort!
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)

@@ -230,6 +230,7 @@ and that combination of '--edit' and '--message' doesn't abort execution)
   HG: changed a
   ====
   note: commit message saved in .hg/last-message.txt
+  note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
   transaction abort!
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)

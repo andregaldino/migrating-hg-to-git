@@ -3016,6 +3016,12 @@ class localrepository(object):
                     self.ui.write(
                         _(b'note: commit message saved in %s\n') % msgfn
                     )
+                    self.ui.write(
+                        _(
+                            b"note: use 'hg commit --logfile "
+                            b".hg/last-message.txt --edit' to reuse it\n"
+                        )
+                    )
                 raise
 
         def commithook(unused_success):
