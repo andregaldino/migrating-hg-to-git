@@ -307,7 +307,6 @@ pub struct StatusOptions {
 /// Dispatch a single entry (file, folder, symlink...) found during `traverse`.
 /// If the entry is a folder that needs to be traversed, it will be handled
 /// in a separate thread.
-
 fn handle_traversed_entry<'a>(
     scope: &rayon::Scope<'a>,
     files_sender: &'a crossbeam::Sender<IoResult<(HgPathBuf, Dispatch)>>,
