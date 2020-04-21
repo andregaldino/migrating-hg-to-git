@@ -1,6 +1,7 @@
 use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
 
+use im_rc::ordmap::DiffItem;
 use im_rc::ordmap::OrdMap;
 
 use std::collections::HashMap;
@@ -8,7 +9,7 @@ use std::collections::HashSet;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 struct TimeStampedPathCopy {
     /// revision at which the copy information was added
     rev: Revision,
@@ -199,70 +200,116 @@ fn merge_copies_dict(
     changes: &ChangedFiles,
     is_ancestor: &impl Fn(Revision, Revision) -> bool,
 ) -> TimeStampedPathCopies {
-    let mut result = minor.clone();
-    for (dest, src_major) in major {
-        let overwrite;
-        if let Some(src_minor) = minor.get(&dest) {
-            {
+    if minor.is_empty() {
+        return major;
+    } else if major.is_empty() {
+        return minor;
+    }
+    let mut override_minor = Vec::new();
+    let mut override_major = Vec::new();
+
+    let mut to_major = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
+        override_major.push((k.clone(), v.clone()))
+    };
+    let mut to_minor = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
+        override_minor.push((k.clone(), v.clone()))
+    };
+
+    // The diff function leverage detection of the identical subpart if minor
+    // and major has some common ancestors. This make it very fast is most
+    // case.
+    //
+    // In case where the two map are vastly different in size, the current
+    // approach is still slowish because the iteration will iterate over
+    // all the "exclusive" content of the larger on. This situation can be
+    // frequent when the subgraph of revision we are processing has a lot
+    // of roots. Each roots adding they own fully new map to the mix (and
+    // likely a small map, if the path from the root to the "main path" is
+    // small.
+    //
+    // We could do better by detecting such situation and processing them
+    // differently.
+    for d in minor.diff(&major) {
+        match d {
+            DiffItem::Add(k, v) => to_minor(k, v),
+            DiffItem::Remove(k, v) => to_major(k, v),
+            DiffItem::Update { old, new } => {
+                let (dest, src_major) = new;
+                let (_, src_minor) = old;
+                let mut pick_minor = || (to_major(dest, src_minor));
+                let mut pick_major = || (to_minor(dest, src_major));
                 if src_major.path == src_minor.path {
-                    // we have the same value, no need to battle;
+                    // we have the same value, but from other source;
                     if src_major.rev == src_minor.rev {
                         // If the two entry are identical, no need to do
-                        // anything
-                        overwrite = false;
+                        // anything (but diff should not have yield them)
+                        unreachable!();
                     } else if is_ancestor(src_major.rev, src_minor.rev) {
-                        overwrite = false;
+                        pick_minor();
                     } else {
-                        overwrite = true;
+                        pick_major();
                     }
                 } else if src_major.rev == src_minor.rev {
                     // We cannot get copy information for both p1 and p2 in the
                     // same rev. So this is the same value.
-                    overwrite = false;
+                    unreachable!();
                 } else if src_major.path.is_none()
-                    && changes.salvaged.contains(&dest)
+                    && changes.salvaged.contains(dest)
                 {
                     // If the file is "deleted" in the major side but was
                     // salvaged by the merge, we keep the minor side alive
-                    overwrite = false;
+                    pick_minor();
                 } else if src_minor.path.is_none()
-                    && changes.salvaged.contains(&dest)
+                    && changes.salvaged.contains(dest)
                 {
                     // If the file is "deleted" in the minor side but was
                     // salvaged by the merge, unconditionnaly preserve the
                     // major side.
-                    overwrite = true;
-                } else if changes.merged.contains(&dest) {
+                    pick_major();
+                } else if changes.merged.contains(dest) {
                     // If the file was actively merged, copy information from
                     // each side might conflict.  The major side will win such
                     // conflict.
-                    overwrite = true;
+                    pick_major();
                 } else if is_ancestor(src_major.rev, src_minor.rev) {
                     // If the minor side is strictly newer than the major side,
                     // it should be kept.
-                    overwrite = false;
+                    pick_minor();
                 } else if src_major.path.is_some() {
                     // without any special case, the "major" value win other
                     // the "minor" one.
-                    overwrite = true;
+                    pick_major();
                 } else if is_ancestor(src_minor.rev, src_major.rev) {
                     // the "major" rev is a direct ancestors of "minor", any
                     // different value should overwrite
-                    overwrite = true;
+                    pick_major();
                 } else {
                     // major version is None (so the file was deleted on that
                     // branch) and that branch is independant (neither minor
                     // nor major is an ancestors of the other one.) We preserve
                     // the new information about the new file.
-                    overwrite = false;
+                    pick_minor();
                 }
             }
+        };
+    }
+
+    let updates;
+    let mut result;
+    if override_major.is_empty() {
+        result = major
+    } else if override_minor.is_empty() {
+        result = minor
+    } else {
+        if override_minor.len() < override_major.len() {
+            updates = override_minor;
+            result = minor;
         } else {
-            // minor had no value
-            overwrite = true;
+            updates = override_major;
+            result = major;
         }
-        if overwrite {
-            result.insert(dest, src_major);
+        for (k, v) in updates {
+            result.insert(k, v);
         }
     }
     result
