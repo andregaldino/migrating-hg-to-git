@@ -1,6 +1,8 @@
 use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
 
+use im_rc::ordmap::OrdMap;
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -16,7 +18,7 @@ struct TimeStampedPathCopy {
 }
 
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
-type TimeStampedPathCopies = HashMap<HgPathBuf, TimeStampedPathCopy>;
+type TimeStampedPathCopies = OrdMap<HgPathBuf, TimeStampedPathCopy>;
 
 /// hold parent 1, parent 2 and relevant files actions.
 pub type RevInfo = (Revision, Revision, ChangedFiles);
