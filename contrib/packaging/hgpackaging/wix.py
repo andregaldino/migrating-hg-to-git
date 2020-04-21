@@ -327,12 +327,6 @@ def build_installer(
         extra_packages_script=extra_packages_script,
     )
 
-    orig_version = version or find_version(source_dir)
-    version = normalize_windows_version(orig_version)
-    print('using version string: %s' % version)
-    if version != orig_version:
-        print('(normalized from: %s)' % orig_version)
-
     build_dir = hg_build_dir / ('wix-%s' % arch)
     staging_dir = build_dir / 'stage'
 
@@ -361,7 +355,6 @@ def build_installer(
         staging_dir,
         arch,
         version=version,
-        orig_version=orig_version,
         msi_name=msi_name,
         extra_wxs=extra_wxs,
         extra_features=extra_features,
@@ -375,7 +368,6 @@ def run_wix_packaging(
     staging_dir: pathlib.Path,
     arch: str,
     version: str,
-    orig_version: str,
     msi_name: typing.Optional[str] = "mercurial",
     extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
     extra_features: typing.Optional[typing.List[str]] = None,
@@ -389,6 +381,13 @@ def run_wix_packaging(
     we will sign both the hg.exe and the .msi using the signing credentials
     specified.
     """
+
+    orig_version = version or find_version(source_dir)
+    version = normalize_windows_version(orig_version)
+    print('using version string: %s' % version)
+    if version != orig_version:
+        print('(normalized from: %s)' % orig_version)
+
     if signing_info:
         sign_with_signtool(
             staging_dir / "hg.exe",
