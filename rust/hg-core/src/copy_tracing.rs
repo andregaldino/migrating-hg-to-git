@@ -11,17 +11,19 @@ use std::convert::TryInto;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
+type PathToken = HgPathBuf;
+
 #[derive(Clone, Debug, PartialEq)]
 struct TimeStampedPathCopy {
     /// revision at which the copy information was added
     rev: Revision,
     /// the copy source, (Set to None in case of deletion of the associated
     /// key)
-    path: Option<HgPathBuf>,
+    path: Option<PathToken>,
 }
 
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
-type TimeStampedPathCopies = OrdMap<HgPathBuf, TimeStampedPathCopy>;
+type TimeStampedPathCopies = OrdMap<PathToken, TimeStampedPathCopy>;
 
 /// hold parent 1, parent 2 and relevant files actions.
 pub type RevInfo<'a> = (Revision, Revision, ChangedFiles<'a>);
@@ -467,7 +469,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     // actively working on this code. Feel free to re-inline it once this
     // code is more settled.
     let mut cmp_value =
-        |dest: &HgPathBuf,
+        |dest: &PathToken,
          src_minor: &TimeStampedPathCopy,
          src_major: &TimeStampedPathCopy| {
             compare_value(changes, oracle, dest, src_minor, src_major)
@@ -525,10 +527,10 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
         let mut override_minor = Vec::new();
         let mut override_major = Vec::new();
 
-        let mut to_major = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
+        let mut to_major = |k: &PathToken, v: &TimeStampedPathCopy| {
             override_major.push((k.clone(), v.clone()))
         };
-        let mut to_minor = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
+        let mut to_minor = |k: &PathToken, v: &TimeStampedPathCopy| {
             override_minor.push((k.clone(), v.clone()))
         };
 
@@ -602,7 +604,7 @@ enum MergePick {
 fn compare_value<A: Fn(Revision, Revision) -> bool>(
     changes: &ChangedFiles,
     oracle: &mut AncestorOracle<A>,
-    dest: &HgPathBuf,
+    dest: &PathToken,
     src_minor: &TimeStampedPathCopy,
     src_major: &TimeStampedPathCopy,
 ) -> MergePick {
