@@ -341,7 +341,6 @@ def build_installer(
 
     hg_build_dir = source_dir / 'build'
     dist_dir = source_dir / 'dist'
-    wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
 
     requirements_txt = (
         source_dir / 'contrib' / 'packaging' / 'requirements_win32.txt'
@@ -388,13 +387,41 @@ def build_installer(
             print('removing %s' % p)
             p.unlink()
 
-    wix_pkg, wix_entry = download_entry('wix', hg_build_dir)
-    wix_path = hg_build_dir / ('wix-%s' % wix_entry['version'])
+    return run_wix_packaging(
+        source_dir,
+        build_dir,
+        staging_dir,
+        arch,
+        version=version,
+        orig_version=orig_version,
+        msi_name=msi_name,
+        extra_wxs=extra_wxs,
+        extra_features=extra_features,
+    )
+
+
+def run_wix_packaging(
+    source_dir: pathlib.Path,
+    build_dir: pathlib.Path,
+    staging_dir: pathlib.Path,
+    arch: str,
+    version: str,
+    orig_version: str,
+    msi_name: typing.Optional[str] = "mercurial",
+    extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
+    extra_features: typing.Optional[typing.List[str]] = None,
+):
+    """Invokes WiX to package up a built Mercurial."""
+
+    wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
+
+    wix_pkg, wix_entry = download_entry('wix', build_dir)
+    wix_path = build_dir / ('wix-%s' % wix_entry['version'])
 
     if not wix_path.exists():
         extract_zip_to_directory(wix_pkg, wix_path)
 
-    ensure_vc90_merge_modules(hg_build_dir)
+    ensure_vc90_merge_modules(build_dir)
 
     source_build_rel = pathlib.Path(os.path.relpath(source_dir, build_dir))
 
@@ -413,7 +440,7 @@ def build_installer(
     source = wix_dir / 'mercurial.wxs'
     defines['Version'] = version
     defines['Comments'] = 'Installs Mercurial version %s' % version
-    defines['VCRedistSrcDir'] = str(hg_build_dir)
+    defines['VCRedistSrcDir'] = str(build_dir)
     if extra_features:
         assert all(';' not in f for f in extra_features)
         defines['MercurialExtraFeatures'] = ';'.join(extra_features)
