@@ -50,6 +50,7 @@ def build_inno(pyoxidizer_target=None, python=None, iscc=None, version=None):
 
 def build_wix(
     name=None,
+    pyoxidizer_target=None,
     python=None,
     version=None,
     sign_sn=None,
@@ -60,16 +61,29 @@ def build_wix(
     extra_wxs=None,
     extra_features=None,
 ):
+    if not pyoxidizer_target and not python:
+        raise Exception("--python required unless building with PyOxidizer")
+
+    if python and not os.path.isabs(python):
+        raise Exception("--python arg must be an absolute path")
+
     kwargs = {
         "source_dir": SOURCE_DIR,
-        "python_exe": pathlib.Path(python),
         "version": version,
     }
 
-    if not os.path.isabs(python):
-        raise Exception("--python arg must be an absolute path")
+    if pyoxidizer_target:
+        fn = wix.build_installer_pyoxidizer
+        kwargs["target_triple"] = pyoxidizer_target
+    else:
+        fn = wix.build_installer_py2exe
+        kwargs["python_exe"] = pathlib.Path(python)
 
     if extra_packages_script:
+        if pyoxidizer_target:
+            raise Exception(
+                "pyoxidizer does not support --extra-packages-script"
+            )
         kwargs["extra_packages_script"] = extra_packages_script
     if extra_wxs:
         kwargs["extra_wxs"] = dict(
@@ -87,7 +101,7 @@ def build_wix(
             "timestamp_url": sign_timestamp_url,
         }
 
-    wix.build_installer(**kwargs)
+    fn(**kwargs)
 
 
 def get_parser():
@@ -115,8 +129,11 @@ def get_parser():
     )
     sp.add_argument("--name", help="Application name", default="Mercurial")
     sp.add_argument(
-        "--python", help="Path to Python executable to use", required=True
+        "--pyoxidizer-target",
+        choices={"i686-pc-windows-msvc", "x86_64-pc-windows-msvc"},
+        help="Build with PyOxidizer targeting this host triple",
     )
+    sp.add_argument("--python", help="Path to Python executable to use")
     sp.add_argument(
         "--sign-sn",
         help="Subject name (or fragment thereof) of certificate "

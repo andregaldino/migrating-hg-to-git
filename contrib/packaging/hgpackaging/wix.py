@@ -22,6 +22,7 @@ from .py2exe import (
     build_py2exe,
     stage_install,
 )
+from .pyoxidizer import run_pyoxidizer
 from .util import (
     extract_zip_to_directory,
     normalize_windows_version,
@@ -284,7 +285,7 @@ def make_files_xml(staging_dir: pathlib.Path, is_x64) -> str:
     return doc.toprettyxml()
 
 
-def build_installer(
+def build_installer_py2exe(
     source_dir: pathlib.Path,
     python_exe: pathlib.Path,
     msi_name='mercurial',
@@ -294,7 +295,7 @@ def build_installer(
     extra_features: typing.Optional[typing.List[str]] = None,
     signing_info: typing.Optional[typing.Dict[str, str]] = None,
 ):
-    """Build a WiX MSI installer.
+    """Build a WiX MSI installer using py2exe.
 
     ``source_dir`` is the path to the Mercurial source tree to use.
     ``arch`` is the target architecture. either ``x86`` or ``x64``.
@@ -355,6 +356,50 @@ def build_installer(
         staging_dir,
         arch,
         version=version,
+        python2=True,
+        msi_name=msi_name,
+        extra_wxs=extra_wxs,
+        extra_features=extra_features,
+        signing_info=signing_info,
+    )
+
+
+def build_installer_pyoxidizer(
+    source_dir: pathlib.Path,
+    target_triple: str,
+    msi_name='mercurial',
+    version=None,
+    extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
+    extra_features: typing.Optional[typing.List[str]] = None,
+    signing_info: typing.Optional[typing.Dict[str, str]] = None,
+):
+    """Build a WiX MSI installer using PyOxidizer."""
+    hg_build_dir = source_dir / "build"
+    build_dir = hg_build_dir / ("wix-%s" % target_triple)
+    staging_dir = build_dir / "stage"
+
+    arch = "x64" if "x86_64" in target_triple else "x86"
+
+    build_dir.mkdir(parents=True, exist_ok=True)
+    run_pyoxidizer(source_dir, build_dir, staging_dir, target_triple)
+
+    # We also install some extra files.
+    process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
+
+    # And remove some files we don't want.
+    for f in STAGING_REMOVE_FILES:
+        p = staging_dir / f
+        if p.exists():
+            print('removing %s' % p)
+            p.unlink()
+
+    return run_wix_packaging(
+        source_dir,
+        build_dir,
+        staging_dir,
+        arch,
+        version,
+        python2=False,
         msi_name=msi_name,
         extra_wxs=extra_wxs,
         extra_features=extra_features,
@@ -368,6 +413,7 @@ def run_wix_packaging(
     staging_dir: pathlib.Path,
     arch: str,
     version: str,
+    python2: bool,
     msi_name: typing.Optional[str] = "mercurial",
     extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
     extra_features: typing.Optional[typing.List[str]] = None,
@@ -406,7 +452,8 @@ def run_wix_packaging(
     if not wix_path.exists():
         extract_zip_to_directory(wix_pkg, wix_path)
 
-    ensure_vc90_merge_modules(build_dir)
+    if python2:
+        ensure_vc90_merge_modules(build_dir)
 
     source_build_rel = pathlib.Path(os.path.relpath(source_dir, build_dir))
 
@@ -425,7 +472,16 @@ def run_wix_packaging(
     source = wix_dir / 'mercurial.wxs'
     defines['Version'] = version
     defines['Comments'] = 'Installs Mercurial version %s' % version
-    defines['VCRedistSrcDir'] = str(build_dir)
+
+    if python2:
+        defines["PythonVersion"] = "2"
+        defines['VCRedistSrcDir'] = str(build_dir)
+    else:
+        defines["PythonVersion"] = "3"
+
+    if (staging_dir / "lib").exists():
+        defines["MercurialHasLib"] = "1"
+
     if extra_features:
         assert all(';' not in f for f in extra_features)
         defines['MercurialExtraFeatures'] = ';'.join(extra_features)
