@@ -121,30 +121,6 @@ def run_candle(wix, cwd, wxs, source_dir, defines=None):
     subprocess.run(args, cwd=str(cwd), check=True)
 
 
-def make_post_build_signing_fn(
-    name,
-    subject_name=None,
-    cert_path=None,
-    cert_password=None,
-    timestamp_url=None,
-):
-    """Create a callable that will use signtool to sign hg.exe."""
-
-    def post_build_sign(source_dir, build_dir, dist_dir, version):
-        description = '%s %s' % (name, version)
-
-        sign_with_signtool(
-            dist_dir / 'hg.exe',
-            description,
-            subject_name=subject_name,
-            cert_path=cert_path,
-            cert_password=cert_password,
-            timestamp_url=timestamp_url,
-        )
-
-    return post_build_sign
-
-
 def make_files_xml(staging_dir: pathlib.Path, is_x64) -> str:
     """Create XML string listing every file to be installed."""
 
@@ -313,10 +289,10 @@ def build_installer(
     python_exe: pathlib.Path,
     msi_name='mercurial',
     version=None,
-    post_build_fn=None,
     extra_packages_script=None,
     extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
     extra_features: typing.Optional[typing.List[str]] = None,
+    signing_info: typing.Optional[typing.Dict[str, str]] = None,
 ):
     """Build a WiX MSI installer.
 
@@ -325,10 +301,6 @@ def build_installer(
     ``python_exe`` is the path to the Python executable to use/bundle.
     ``version`` is the Mercurial version string. If not defined,
     ``mercurial/__version__.py`` will be consulted.
-    ``post_build_fn`` is a callable that will be called after building
-    Mercurial but before invoking WiX. It can be used to e.g. facilitate
-    signing. It is passed the paths to the Mercurial source, build, and
-    dist directories and the resolved Mercurial version.
     ``extra_packages_script`` is a command to be run to inject extra packages
     into the py2exe binary. It should stage packages into the virtualenv and
     print a null byte followed by a newline-separated list of packages that
@@ -340,7 +312,6 @@ def build_installer(
     arch = 'x64' if r'\x64' in os.environ.get('LIB', '') else 'x86'
 
     hg_build_dir = source_dir / 'build'
-    dist_dir = source_dir / 'dist'
 
     requirements_txt = (
         source_dir / 'contrib' / 'packaging' / 'requirements_win32.txt'
@@ -361,9 +332,6 @@ def build_installer(
     print('using version string: %s' % version)
     if version != orig_version:
         print('(normalized from: %s)' % orig_version)
-
-    if post_build_fn:
-        post_build_fn(source_dir, hg_build_dir, dist_dir, version)
 
     build_dir = hg_build_dir / ('wix-%s' % arch)
     staging_dir = build_dir / 'stage'
@@ -397,6 +365,7 @@ def build_installer(
         msi_name=msi_name,
         extra_wxs=extra_wxs,
         extra_features=extra_features,
+        signing_info=signing_info,
     )
 
 
@@ -410,8 +379,25 @@ def run_wix_packaging(
     msi_name: typing.Optional[str] = "mercurial",
     extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
     extra_features: typing.Optional[typing.List[str]] = None,
+    signing_info: typing.Optional[typing.Dict[str, str]] = None,
 ):
-    """Invokes WiX to package up a built Mercurial."""
+    """Invokes WiX to package up a built Mercurial.
+
+    ``signing_info`` is a dict defining properties to facilitate signing the
+    installer. Recognized keys include ``name``, ``subject_name``,
+    ``cert_path``, ``cert_password``, and ``timestamp_url``. If populated,
+    we will sign both the hg.exe and the .msi using the signing credentials
+    specified.
+    """
+    if signing_info:
+        sign_with_signtool(
+            staging_dir / "hg.exe",
+            "%s %s" % (signing_info["name"], version),
+            subject_name=signing_info["subject_name"],
+            cert_path=signing_info["cert_path"],
+            cert_password=signing_info["cert_password"],
+            timestamp_url=signing_info["timestamp_url"],
+        )
 
     wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
 
@@ -475,52 +461,16 @@ def run_wix_packaging(
 
     print('%s created' % msi_path)
 
+    if signing_info:
+        sign_with_signtool(
+            msi_path,
+            "%s %s" % (signing_info["name"], version),
+            subject_name=signing_info["subject_name"],
+            cert_path=signing_info["cert_path"],
+            cert_password=signing_info["cert_password"],
+            timestamp_url=signing_info["timestamp_url"],
+        )
+
     return {
         'msi_path': msi_path,
     }
-
-
-def build_signed_installer(
-    source_dir: pathlib.Path,
-    python_exe: pathlib.Path,
-    name: str,
-    version=None,
-    subject_name=None,
-    cert_path=None,
-    cert_password=None,
-    timestamp_url=None,
-    extra_packages_script=None,
-    extra_wxs=None,
-    extra_features=None,
-):
-    """Build an installer with signed executables."""
-
-    post_build_fn = make_post_build_signing_fn(
-        name,
-        subject_name=subject_name,
-        cert_path=cert_path,
-        cert_password=cert_password,
-        timestamp_url=timestamp_url,
-    )
-
-    info = build_installer(
-        source_dir,
-        python_exe=python_exe,
-        msi_name=name.lower(),
-        version=version,
-        post_build_fn=post_build_fn,
-        extra_packages_script=extra_packages_script,
-        extra_wxs=extra_wxs,
-        extra_features=extra_features,
-    )
-
-    description = '%s %s' % (name, version)
-
-    sign_with_signtool(
-        info['msi_path'],
-        description,
-        subject_name=subject_name,
-        cert_path=cert_path,
-        cert_password=cert_password,
-        timestamp_url=timestamp_url,
-    )

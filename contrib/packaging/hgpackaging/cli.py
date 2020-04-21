@@ -60,7 +60,6 @@ def build_wix(
     extra_wxs=None,
     extra_features=None,
 ):
-    fn = wix.build_installer
     kwargs = {
         "source_dir": SOURCE_DIR,
         "python_exe": pathlib.Path(python),
@@ -80,14 +79,15 @@ def build_wix(
         kwargs["extra_features"] = extra_features.split(",")
 
     if sign_sn or sign_cert:
-        fn = wix.build_signed_installer
-        kwargs["name"] = name
-        kwargs["subject_name"] = sign_sn
-        kwargs["cert_path"] = sign_cert
-        kwargs["cert_password"] = sign_password
-        kwargs["timestamp_url"] = sign_timestamp_url
+        kwargs["signing_info"] = {
+            "name": name,
+            "subject_name": sign_sn,
+            "cert_path": sign_cert,
+            "cert_password": sign_password,
+            "timestamp_url": sign_timestamp_url,
+        }
 
-    fn(**kwargs)
+    wix.build_installer(**kwargs)
 
 
 def get_parser():
