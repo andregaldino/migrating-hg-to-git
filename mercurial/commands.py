@@ -2350,7 +2350,7 @@ def copy(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if errors are encountered.
     """
     opts = pycompat.byteskwargs(opts)
-    with repo.wlock(False):
+    with repo.wlock():
         return cmdutil.copy(ui, repo, pats, opts)
 
 
@@ -5807,7 +5807,7 @@ def rename(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if errors are encountered.
     """
     opts = pycompat.byteskwargs(opts)
-    with repo.wlock(False):
+    with repo.wlock():
         return cmdutil.copy(ui, repo, pats, opts, rename=True)
 
 
