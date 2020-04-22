@@ -106,6 +106,23 @@ class filebundlestore(object):
             return None
 
 
+def format_placeholders_args(args, filename=None, handle=None):
+    """Formats `args` with Infinitepush replacements.
+
+    Hack to get `str.format()`-ed strings working in a BC way with
+    bytes.
+    """
+    formatted_args = []
+    for arg in args:
+        if filename and arg == b'{filename}':
+            formatted_args.append(filename)
+        elif handle and arg == b'{handle}':
+            formatted_args.append(handle)
+        else:
+            formatted_args.append(arg)
+    return formatted_args
+
+
 class externalbundlestore(abstractbundlestore):
     def __init__(self, put_binary, put_args, get_binary, get_args):
         """
@@ -144,9 +161,9 @@ class externalbundlestore(abstractbundlestore):
             temp.write(data)
             temp.flush()
             temp.seek(0)
-            formatted_args = [
-                arg.format(filename=temp.name) for arg in self.put_args
-            ]
+            formatted_args = format_placeholders_args(
+                self.put_args, filename=temp.name
+            )
             returncode, stdout, stderr = self._call_binary(
                 [self.put_binary] + formatted_args
             )
@@ -166,12 +183,10 @@ class externalbundlestore(abstractbundlestore):
     def read(self, handle):
         # Won't work on windows because you can't open file second time without
         # closing it
-        # TODO: rewrite without str.format()
         with pycompat.namedtempfile() as temp:
-            formatted_args = [
-                arg.format(filename=temp.name, handle=handle)
-                for arg in self.get_args
-            ]
+            formatted_args = format_placeholders_args(
+                self.get_args, filename=temp.name, handle=handle
+            )
             returncode, stdout, stderr = self._call_binary(
                 [self.get_binary] + formatted_args
             )
