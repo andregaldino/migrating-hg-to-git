@@ -20,8 +20,6 @@ from mercurial.utils import (
     procutil,
 )
 
-NamedTemporaryFile = tempfile.NamedTemporaryFile
-
 
 class BundleWriteException(Exception):
     pass
@@ -142,7 +140,7 @@ class externalbundlestore(abstractbundlestore):
         # closing it
         # TODO: rewrite without str.format() and replace NamedTemporaryFile()
         # with pycompat.namedtempfile()
-        with NamedTemporaryFile() as temp:
+        with pycompat.namedtempfile() as temp:
             temp.write(data)
             temp.flush()
             temp.seek(0)
@@ -168,9 +166,8 @@ class externalbundlestore(abstractbundlestore):
     def read(self, handle):
         # Won't work on windows because you can't open file second time without
         # closing it
-        # TODO: rewrite without str.format() and replace NamedTemporaryFile()
-        # with pycompat.namedtempfile()
-        with NamedTemporaryFile() as temp:
+        # TODO: rewrite without str.format()
+        with pycompat.namedtempfile() as temp:
             formatted_args = [
                 arg.format(filename=temp.name, handle=handle)
                 for arg in self.get_args
