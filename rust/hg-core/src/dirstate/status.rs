@@ -323,6 +323,11 @@ fn handle_traversed_entry<'a>(
     let file_type = dir_entry.file_type()?;
     let entry_option = dmap.get(&filename);
 
+    if filename.as_bytes() == b".hg" {
+        // Could be a directory or a symlink
+        return Ok(());
+    }
+
     if file_type.is_dir() {
         handle_traversed_dir(
             scope,
@@ -446,9 +451,7 @@ fn traverse_dir<'a>(
     options: StatusOptions,
 ) -> IoResult<()> {
     let directory = directory.as_ref();
-    if directory.as_bytes() == b".hg" {
-        return Ok(());
-    }
+
     let visit_entries = match matcher.visit_children_set(directory) {
         VisitChildrenSet::Empty => return Ok(()),
         VisitChildrenSet::This | VisitChildrenSet::Recursive => None,

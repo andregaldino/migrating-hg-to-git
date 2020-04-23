@@ -672,3 +672,11 @@ using log status template, the copy information is displayed correctly.
   
 
   $ cd ..
+
+Make sure .hg doesn't show up even as a symlink
+
+  $ hg init repo0
+  $ mkdir symlink-repo0
+  $ cd symlink-repo0
+  $ ln -s ../repo0/.hg
+  $ hg status
