@@ -108,10 +108,10 @@ WHEEL_FILENAME_PYTHON37_X64 = 'mercurial-{version}-cp37-cp37m-win_amd64.whl'
 WHEEL_FILENAME_PYTHON38_X86 = 'mercurial-{version}-cp38-cp38-win32.whl'
 WHEEL_FILENAME_PYTHON38_X64 = 'mercurial-{version}-cp38-cp38-win_amd64.whl'
 
-X86_EXE_FILENAME = 'Mercurial-{version}.exe'
-X64_EXE_FILENAME = 'Mercurial-{version}-x64.exe'
-X86_MSI_FILENAME = 'mercurial-{version}-x86.msi'
-X64_MSI_FILENAME = 'mercurial-{version}-x64.msi'
+X86_EXE_FILENAME = 'Mercurial-{version}-x86-python2.exe'
+X64_EXE_FILENAME = 'Mercurial-{version}-x64-python2.exe'
+X86_MSI_FILENAME = 'mercurial-{version}-x86-python2.msi'
+X64_MSI_FILENAME = 'mercurial-{version}-x64-python2.msi'
 
 MERCURIAL_SCM_BASE_URL = 'https://mercurial-scm.org/release/windows'
 

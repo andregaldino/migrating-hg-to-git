@@ -9,14 +9,13 @@
 AppCopyright=Copyright 2005-2020 Matt Mackall and others
 AppName=Mercurial
 AppVersion={#VERSION}
+OutputBaseFilename=Mercurial-{#VERSION}{#SUFFIX}
 #if ARCH == "x64"
 AppVerName=Mercurial {#VERSION} (64-bit)
-OutputBaseFilename=Mercurial-{#VERSION}-x64
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 #else
 AppVerName=Mercurial {#VERSION}
-OutputBaseFilename=Mercurial-{#VERSION}
 #endif
 InfoAfterFile=../postinstall.txt
 LicenseFile=Copying.txt

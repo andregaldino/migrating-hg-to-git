@@ -111,6 +111,7 @@ def build_with_py2exe(
         iscc_exe,
         version,
         arch="x64" if vc_x64 else None,
+        suffix="-python2",
     )
 
 
@@ -150,6 +151,7 @@ def build_installer(
     iscc_exe: pathlib.Path,
     version,
     arch=None,
+    suffix="",
 ):
     """Build an Inno installer from staged Mercurial files.
 
@@ -214,6 +216,9 @@ def build_installer(
 
     if arch:
         args.append('/dARCH=%s' % arch)
+        args.append('/dSUFFIX=-%s%s' % (arch, suffix))
+    else:
+        args.append('/dSUFFIX=-x86%s' % suffix)
 
     if not version:
         version = read_version_py(source_dir)

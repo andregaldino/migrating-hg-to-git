@@ -358,6 +358,7 @@ def build_installer_py2exe(
         version=version,
         python2=True,
         msi_name=msi_name,
+        suffix="-python2",
         extra_wxs=extra_wxs,
         extra_features=extra_features,
         signing_info=signing_info,
@@ -415,6 +416,7 @@ def run_wix_packaging(
     version: str,
     python2: bool,
     msi_name: typing.Optional[str] = "mercurial",
+    suffix: str = "",
     extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
     extra_features: typing.Optional[typing.List[str]] = None,
     signing_info: typing.Optional[typing.Dict[str, str]] = None,
@@ -489,7 +491,9 @@ def run_wix_packaging(
     run_candle(wix_path, build_dir, source, source_build_rel, defines=defines)
 
     msi_path = (
-        source_dir / 'dist' / ('%s-%s-%s.msi' % (msi_name, orig_version, arch))
+        source_dir
+        / 'dist'
+        / ('%s-%s-%s%s.msi' % (msi_name, orig_version, arch, suffix))
     )
 
     args = [
