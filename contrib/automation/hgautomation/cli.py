@@ -63,7 +63,13 @@ def bootstrap_windows_dev(hga: HGAutomation, aws_region, base_image_name):
 
 
 def build_inno(
-    hga: HGAutomation, aws_region, arch, revision, version, base_image_name
+    hga: HGAutomation,
+    aws_region,
+    python_version,
+    arch,
+    revision,
+    version,
+    base_image_name,
 ):
     c = hga.aws_connection(aws_region)
     image = aws.ensure_windows_dev_ami(c, base_image_name=base_image_name)
@@ -74,10 +80,15 @@ def build_inno(
 
         windows.synchronize_hg(SOURCE_ROOT, revision, instance)
 
-        for a in arch:
-            windows.build_inno_installer(
-                instance.winrm_client, a, DIST_PATH, version=version
-            )
+        for py_version in python_version:
+            for a in arch:
+                windows.build_inno_installer(
+                    instance.winrm_client,
+                    py_version,
+                    a,
+                    DIST_PATH,
+                    version=version,
+                )
 
 
 def build_wix(
@@ -146,11 +157,14 @@ def build_all_windows_packages(
                     dest_path=DIST_PATH,
                 )
 
+        for py_version in (2, 3):
+            for arch in ('x86', 'x64'):
+                windows.purge_hg(winrm_client)
+                windows.build_inno_installer(
+                    winrm_client, py_version, arch, DIST_PATH, version=version
+                )
+
         for arch in ('x86', 'x64'):
-            windows.purge_hg(winrm_client)
-            windows.build_inno_installer(
-                winrm_client, arch, DIST_PATH, version=version
-            )
             windows.purge_hg(winrm_client)
             windows.build_wix_installer(
                 winrm_client, arch, DIST_PATH, version=version
@@ -307,6 +321,14 @@ def get_parser():
 
     sp = subparsers.add_parser(
         'build-inno', help='Build Inno Setup installer(s)',
+    )
+    sp.add_argument(
+        '--python-version',
+        help='Which version of Python to target',
+        choices={2, 3},
+        type=int,
+        nargs='*',
+        default=[3],
     )
     sp.add_argument(
         '--arch',
