@@ -79,7 +79,7 @@ if ($LASTEXITCODE -ne 0) {{
 
 BUILD_WHEEL = r'''
 Set-Location C:\hgdev\src
-C:\hgdev\python27-{arch}\Scripts\pip.exe wheel --wheel-dir dist .
+C:\hgdev\python{python_version}-{arch}\python.exe -m pip wheel --wheel-dir dist .
 if ($LASTEXITCODE -ne 0) {{
     throw "process exited non-0: $LASTEXITCODE"
 }}
@@ -101,8 +101,13 @@ if ($LASTEXITCODE -ne 0) {{
 }}
 '''
 
-X86_WHEEL_FILENAME = 'mercurial-{version}-cp27-cp27m-win32.whl'
-X64_WHEEL_FILENAME = 'mercurial-{version}-cp27-cp27m-win_amd64.whl'
+WHEEL_FILENAME_PYTHON27_X86 = 'mercurial-{version}-cp27-cp27m-win32.whl'
+WHEEL_FILENAME_PYTHON27_X64 = 'mercurial-{version}-cp27-cp27m-win_amd64.whl'
+WHEEL_FILENAME_PYTHON37_X86 = 'mercurial-{version}-cp37-cp37m-win32.whl'
+WHEEL_FILENAME_PYTHON37_X64 = 'mercurial-{version}-cp37-cp37m-win_amd64.whl'
+WHEEL_FILENAME_PYTHON38_X86 = 'mercurial-{version}-cp38-cp38-win32.whl'
+WHEEL_FILENAME_PYTHON38_X64 = 'mercurial-{version}-cp38-cp38-win_amd64.whl'
+
 X86_EXE_FILENAME = 'Mercurial-{version}.exe'
 X64_EXE_FILENAME = 'Mercurial-{version}-x64.exe'
 X86_MSI_FILENAME = 'mercurial-{version}-x86.msi'
@@ -300,14 +305,24 @@ def build_inno_installer(
     copy_latest_dist(winrm_client, '*.exe', dest_path)
 
 
-def build_wheel(winrm_client, arch: str, dest_path: pathlib.Path):
+def build_wheel(
+    winrm_client, python_version: str, arch: str, dest_path: pathlib.Path
+):
     """Build Python wheels on a remote machine.
 
     Using a WinRM client, remote commands are executed to build a Python wheel
     for Mercurial.
     """
-    print('Building Windows wheel for %s' % arch)
-    ps = get_vc_prefix(arch) + BUILD_WHEEL.format(arch=arch)
+    print('Building Windows wheel for Python %s %s' % (python_version, arch))
+
+    ps = BUILD_WHEEL.format(
+        python_version=python_version.replace(".", ""), arch=arch
+    )
+
+    # Python 2.7 requires an activated environment.
+    if python_version == "2.7":
+        ps = get_vc_prefix(arch) + ps
+
     run_powershell(winrm_client, ps)
     copy_latest_dist(winrm_client, '*.whl', dest_path)
 
@@ -356,15 +371,23 @@ def run_tests(winrm_client, python_version, arch, test_flags=''):
 
 def resolve_wheel_artifacts(dist_path: pathlib.Path, version: str):
     return (
-        dist_path / X86_WHEEL_FILENAME.format(version=version),
-        dist_path / X64_WHEEL_FILENAME.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X64.format(version=version),
     )
 
 
 def resolve_all_artifacts(dist_path: pathlib.Path, version: str):
     return (
-        dist_path / X86_WHEEL_FILENAME.format(version=version),
-        dist_path / X64_WHEEL_FILENAME.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X64.format(version=version),
         dist_path / X86_EXE_FILENAME.format(version=version),
         dist_path / X64_EXE_FILENAME.format(version=version),
         dist_path / X86_MSI_FILENAME.format(version=version),
