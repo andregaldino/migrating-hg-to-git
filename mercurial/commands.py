@@ -1648,12 +1648,17 @@ def bundle(ui, repo, fname, dest=None, **opts):
     if complevel is not None:
         compopts[b'level'] = complevel
 
-    # Allow overriding the bundling of obsmarker in phases through
-    # configuration while we don't have a bundle version that include them
-    if repo.ui.configbool(b'experimental', b'evolution.bundle-obsmarker'):
-        bundlespec.contentopts[b'obsolescence'] = True
-    if repo.ui.configbool(b'experimental', b'bundle-phases'):
-        bundlespec.contentopts[b'phases'] = True
+    # Bundling of obsmarker and phases is optional as not all clients
+    # support the necessary features.
+    cfg = ui.configbool
+    contentopts = {
+        b'obsolescence': cfg(b'experimental', b'evolution.bundle-obsmarker'),
+        b'obsolescence-mandatory': cfg(
+            b'experimental', b'evolution.bundle-obsmarker:mandatory'
+        ),
+        b'phases': cfg(b'experimental', b'bundle-phases'),
+    }
+    bundlespec.contentopts.update(contentopts)
 
     bundle2.writenewbundle(
         ui,

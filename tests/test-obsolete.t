@@ -1682,6 +1682,24 @@ Testing that strip remove markers:
   |
   @  0:a78f55e5508c (draft) [ ] 0
   
+
+
+Test that bundles can ship the markers without making them mandatory
+for non-obsmarker enabled clients:
+
+  $ hg --config experimental.evolution.bundle-obsmarker=1 --config experimental.evolution.bundle-obsmarker:mandatory=0 bundle --base 0 -r 1:: obslog-bundle.hg
+  2 changesets found
+  $ hg debugbundle obslog-bundle.hg
+  Stream params: {Compression: BZ}
+  changegroup -- {nbchanges: 2, version: 02} (mandatory: True)
+      e016b03fd86fcccc54817d120b90b751aaf367d6
+      b0551702f918510f01ae838ab03a463054c67b46
+  cache:rev-branch-cache -- {} (mandatory: False)
+  obsmarkers -- {} (mandatory: False)
+      version: 1 (92 bytes)
+      e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
+
+
 Test that 'hg debugobsolete --index --rev' can show indices of obsmarkers when
 only a subset of those are displayed (because of --rev option)
   $ hg init doindexrev

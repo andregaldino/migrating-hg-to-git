@@ -138,14 +138,42 @@ client side: pull from the server
 
   $ hg up 'desc("ROOT")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg pull --confirm --config ui.interactive=True << EOF
+  $ hg pull --debug --confirm --config ui.interactive=True << EOF
   > n
   > EOF
   pulling from $TESTTMP/distributed-chain-building/server
+  query 1; heads
   searching for changes
+  taking quick initial sample
+  query 2; still undecided: 1, sample size is: 1
+  2 total queries in *.*s (glob)
+  1 changesets found
+  list of changesets:
+  391a2bf12b1b8b05a72400ae36b26d50a091dc22
+  listing keys for "bookmarks"
+  bundle2-output-bundle: "HG20", 5 parts total
+  bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
+  bundle2-output-part: "listkeys" (params: 1 mandatory) empty payload
+  bundle2-output-part: "obsmarkers" streamed payload
+  bundle2-output-part: "phase-heads" 48 bytes payload
+  bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
+  bundle2-input-bundle: with-transaction
+  bundle2-input-part: "changegroup" (params: 1 mandatory 1 advisory) supported
   adding changesets
+  add changeset 391a2bf12b1b
   adding manifests
   adding file changes
+  adding c_B1 revisions
+  bundle2-input-part: total payload size 485
+  bundle2-input-part: "listkeys" (params: 1 mandatory) supported
+  bundle2-input-part: "obsmarkers" supported
+  bundle2-input-part: total payload size 143
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 48
+  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
+  bundle2-input-part: total payload size 39
+  bundle2-input-bundle: 5 parts total
+  checking for updated bookmarks
   adding 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   obsoleting 1 changesets

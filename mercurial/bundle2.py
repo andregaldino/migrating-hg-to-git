@@ -1739,7 +1739,11 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
 
     if opts.get(b'obsolescence', False):
         obsmarkers = repo.obsstore.relevantmarkers(outgoing.missing)
-        buildobsmarkerspart(bundler, obsmarkers)
+        buildobsmarkerspart(
+            bundler,
+            obsmarkers,
+            mandatory=opts.get(b'obsolescence-mandatory', True),
+        )
 
     if opts.get(b'phases', False):
         headsbyphase = phases.subsetphaseheads(repo, outgoing.missing)
@@ -1862,7 +1866,7 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     part.addparam(b'requirements', requirements, mandatory=True)
 
 
-def buildobsmarkerspart(bundler, markers):
+def buildobsmarkerspart(bundler, markers, mandatory=True):
     """add an obsmarker part to the bundler with <markers>
 
     No part is created if markers is empty.
@@ -1876,7 +1880,7 @@ def buildobsmarkerspart(bundler, markers):
     if version is None:
         raise ValueError(b'bundler does not support common obsmarker format')
     stream = obsolete.encodemarkers(markers, True, version=version)
-    return bundler.newpart(b'obsmarkers', data=stream)
+    return bundler.newpart(b'obsmarkers', data=stream, mandatory=mandatory)
 
 
 def writebundle(

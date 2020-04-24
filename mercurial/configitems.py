@@ -900,6 +900,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'evolution.bundle-obsmarker:mandatory',
+    default=True,
+)
+coreconfigitem(
+    b'experimental',
     b'log.topo',
     default=False,
 )

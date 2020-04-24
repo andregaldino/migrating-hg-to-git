@@ -1444,3 +1444,35 @@ Actual testing
   # unbundling: new changesets 9ac430e15fca (1 drafts)
   # unbundling: (1 other changesets obsolete on arrival)
   # unbundling: (run 'hg update' to get a working copy)
+
+Test that advisory obsolescence markers in bundles are ignored if unsupported
+
+  $ hg init repo-with-obs
+  $ cd repo-with-obs
+  $ hg debugbuilddag +1
+  $ hg debugobsolete `getid 0`
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg bundle --config experimental.evolution.bundle-obsmarker=true --config experimental.evolution.bundle-obsmarker:mandatory=false --all --hidden bundle-with-obs
+  1 changesets found
+  $ cd ..
+  $ hg init repo-without-obs
+  $ cd repo-without-obs
+  $ hg --config experimental.evolution=False unbundle ../repo-with-obs/bundle-with-obs --debug
+  bundle2-input-bundle: 1 params with-transaction
+  bundle2-input-part: "changegroup" (params: 1 mandatory 1 advisory) supported
+  adding changesets
+  add changeset 1ea73414a91b
+  adding manifests
+  adding file changes
+  bundle2-input-part: total payload size 190
+  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
+  bundle2-input-part: total payload size 39
+  bundle2-input-part: "obsmarkers" (advisory) supported
+  bundle2-input-part: total payload size 50
+  ignoring obsolescence markers, feature not enabled
+  bundle2-input-bundle: 3 parts total
+  updating the branch cache
+  added 1 changesets with 0 changes to 0 files
+  new changesets 1ea73414a91b (1 drafts)
+  (run 'hg update' to get a working copy)
