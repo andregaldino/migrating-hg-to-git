@@ -20,8 +20,11 @@ HERE = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 SOURCE_DIR = HERE.parent.parent.parent
 
 
-def build_inno(python=None, iscc=None, version=None):
-    if not os.path.isabs(python):
+def build_inno(pyoxidizer_target=None, python=None, iscc=None, version=None):
+    if not pyoxidizer_target and not python:
+        raise Exception("--python required unless building with PyOxidizer")
+
+    if python and not os.path.isabs(python):
         raise Exception("--python arg must be an absolute path")
 
     if iscc:
@@ -35,9 +38,14 @@ def build_inno(python=None, iscc=None, version=None):
 
     build_dir = SOURCE_DIR / "build"
 
-    inno.build(
-        SOURCE_DIR, build_dir, pathlib.Path(python), iscc, version=version,
-    )
+    if pyoxidizer_target:
+        inno.build_with_pyoxidizer(
+            SOURCE_DIR, build_dir, pyoxidizer_target, iscc, version=version
+        )
+    else:
+        inno.build_with_py2exe(
+            SOURCE_DIR, build_dir, pathlib.Path(python), iscc, version=version,
+        )
 
 
 def build_wix(
@@ -88,7 +96,12 @@ def get_parser():
     subparsers = parser.add_subparsers()
 
     sp = subparsers.add_parser("inno", help="Build Inno Setup installer")
-    sp.add_argument("--python", required=True, help="path to python.exe to use")
+    sp.add_argument(
+        "--pyoxidizer-target",
+        choices={"i686-pc-windows-msvc", "x86_64-pc-windows-msvc"},
+        help="Build with PyOxidizer targeting this host triple",
+    )
+    sp.add_argument("--python", help="path to python.exe to use")
     sp.add_argument("--iscc", help="path to iscc.exe to use")
     sp.add_argument(
         "--version",

@@ -18,8 +18,9 @@ from .py2exe import (
     build_py2exe,
     stage_install,
 )
+from .pyoxidizer import run_pyoxidizer
 from .util import (
-    find_vc_runtime_files,
+    find_legacy_vc_runtime_files,
     normalize_windows_version,
     process_install_rules,
     read_version_py,
@@ -41,14 +42,14 @@ PACKAGE_FILES_METADATA = {
 }
 
 
-def build(
+def build_with_py2exe(
     source_dir: pathlib.Path,
     build_dir: pathlib.Path,
     python_exe: pathlib.Path,
     iscc_exe: pathlib.Path,
     version=None,
 ):
-    """Build the Inno installer.
+    """Build the Inno installer using py2exe.
 
     Build files will be placed in ``build_dir``.
 
@@ -92,7 +93,7 @@ def build(
     process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
 
     # hg.exe depends on VC9 runtime DLLs. Copy those into place.
-    for f in find_vc_runtime_files(vc_x64):
+    for f in find_legacy_vc_runtime_files(vc_x64):
         if f.name.endswith('.manifest'):
             basename = 'Microsoft.VC90.CRT.manifest'
         else:
@@ -110,6 +111,35 @@ def build(
         iscc_exe,
         version,
         arch="x64" if vc_x64 else None,
+    )
+
+
+def build_with_pyoxidizer(
+    source_dir: pathlib.Path,
+    build_dir: pathlib.Path,
+    target_triple: str,
+    iscc_exe: pathlib.Path,
+    version=None,
+):
+    """Build the Inno installer using PyOxidizer."""
+    if not iscc_exe.exists():
+        raise Exception("%s does not exist" % iscc_exe)
+
+    inno_build_dir = build_dir / ("inno-pyoxidizer-%s" % target_triple)
+    staging_dir = inno_build_dir / "stage"
+
+    inno_build_dir.mkdir(parents=True, exist_ok=True)
+    run_pyoxidizer(source_dir, inno_build_dir, staging_dir, target_triple)
+
+    process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
+
+    build_installer(
+        source_dir,
+        inno_build_dir,
+        staging_dir,
+        iscc_exe,
+        version,
+        arch="x64" if "x86_64" in target_triple else None,
     )
 
 

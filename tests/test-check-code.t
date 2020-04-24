@@ -27,6 +27,7 @@ New errors are not allowed. Warnings are strongly discouraged.
   Skipping contrib/packaging/hgpackaging/downloads.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/inno.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/py2exe.py it has no-che?k-code (glob)
+  Skipping contrib/packaging/hgpackaging/pyoxidizer.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/util.py it has no-che?k-code (glob)
   Skipping contrib/packaging/hgpackaging/wix.py it has no-che?k-code (glob)
   Skipping i18n/polib.py it has no-che?k-code (glob)

@@ -29,7 +29,59 @@ def extract_zip_to_directory(source: pathlib.Path, dest: pathlib.Path):
         zf.extractall(dest)
 
 
-def find_vc_runtime_files(x64=False):
+def find_vc_runtime_dll(x64=False):
+    """Finds Visual C++ Runtime DLL to include in distribution."""
+    # We invoke vswhere to find the latest Visual Studio install.
+    vswhere = (
+        pathlib.Path(os.environ["ProgramFiles(x86)"])
+        / "Microsoft Visual Studio"
+        / "Installer"
+        / "vswhere.exe"
+    )
+
+    if not vswhere.exists():
+        raise Exception(
+            "could not find vswhere.exe: %s does not exist" % vswhere
+        )
+
+    args = [
+        str(vswhere),
+        # -products * is necessary to return results from Build Tools
+        # (as opposed to full IDE installs).
+        "-products",
+        "*",
+        "-requires",
+        "Microsoft.VisualCpp.Redist.14.Latest",
+        "-latest",
+        "-property",
+        "installationPath",
+    ]
+
+    vs_install_path = pathlib.Path(
+        os.fsdecode(subprocess.check_output(args).strip())
+    )
+
+    # This just gets us a path like
+    # C:\Program Files (x86)\Microsoft Visual Studio\2019\Community
+    # Actually vcruntime140.dll is under a path like:
+    # VC\Redist\MSVC\<version>\<arch>\Microsoft.VC14<X>.CRT\vcruntime140.dll.
+
+    arch = "x64" if x64 else "x86"
+
+    search_glob = (
+        r"%s\VC\Redist\MSVC\*\%s\Microsoft.VC14*.CRT\vcruntime140.dll"
+        % (vs_install_path, arch)
+    )
+
+    candidates = glob.glob(search_glob, recursive=True)
+
+    for candidate in reversed(candidates):
+        return pathlib.Path(candidate)
+
+    raise Exception("could not find vcruntime140.dll")
+
+
+def find_legacy_vc_runtime_files(x64=False):
     """Finds Visual C++ Runtime DLLs to include in distribution."""
     winsxs = pathlib.Path(os.environ['SYSTEMROOT']) / 'WinSxS'
 
