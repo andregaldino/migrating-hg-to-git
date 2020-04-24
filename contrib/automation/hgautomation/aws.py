@@ -59,7 +59,7 @@ DEBIAN_ACCOUNT_ID_2 = '136693071363'
 UBUNTU_ACCOUNT_ID = '099720109477'
 
 
-WINDOWS_BASE_IMAGE_NAME = 'Windows_Server-2019-English-Full-Base-2019.11.13'
+WINDOWS_BASE_IMAGE_NAME = 'Windows_Server-2019-English-Full-Base-*'
 
 
 KEY_PAIRS = {
@@ -464,7 +464,7 @@ def ensure_iam_state(iamclient, iamresource, prefix='hg-'):
             profile.add_role(RoleName=role)
 
 
-def find_image(ec2resource, owner_id, name):
+def find_image(ec2resource, owner_id, name, reverse_sort_field=None):
     """Find an AMI by its owner ID and name."""
 
     images = ec2resource.images.filter(
@@ -475,6 +475,13 @@ def find_image(ec2resource, owner_id, name):
             {'Name': 'name', 'Values': [name],},
         ]
     )
+
+    if reverse_sort_field:
+        images = sorted(
+            images,
+            key=lambda image: getattr(image, reverse_sort_field),
+            reverse=True,
+        )
 
     for image in images:
         return image
@@ -1059,7 +1066,7 @@ def temporary_linux_dev_instances(
 
 
 def ensure_windows_dev_ami(
-    c: AWSConnection, prefix='hg-', base_image_name=WINDOWS_BASE_IMAGE_NAME
+    c: AWSConnection, prefix='hg-', base_image_name=WINDOWS_BASE_IMAGE_NAME,
 ):
     """Ensure Windows Development AMI is available and up-to-date.
 
@@ -1078,7 +1085,12 @@ def ensure_windows_dev_ami(
 
     name = '%s%s' % (prefix, 'windows-dev')
 
-    image = find_image(ec2resource, AMAZON_ACCOUNT_ID, base_image_name)
+    image = find_image(
+        ec2resource,
+        AMAZON_ACCOUNT_ID,
+        base_image_name,
+        reverse_sort_field="name",
+    )
 
     config = {
         'BlockDeviceMappings': [

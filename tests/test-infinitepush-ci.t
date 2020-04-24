@@ -249,12 +249,12 @@ XXX: we should show better message when the pull is happening from bundlestore
   $ hg pull -r b4e4bce660512ad3e71189e14588a70ac8e31fef
   pulling from ssh://user@dummy/repo
   searching for changes
-  no changes found
   adding changesets
   adding manifests
   adding file changes
   added 4 changesets with 4 changes to 4 files
   new changesets eaba929e866c:b4e4bce66051
+  (run 'hg update' to get a working copy)
   $ hg glog
   o  5:b4e4bce66051 added e
   |  public

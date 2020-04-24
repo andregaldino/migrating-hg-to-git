@@ -159,12 +159,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -189,12 +183,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -218,12 +206,6 @@ modern form of the option
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -332,12 +314,6 @@ Various sub-optimal detections work
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -386,12 +362,6 @@ Various sub-optimal detections work
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -417,12 +387,6 @@ Upgrading a repository that is already modern essentially no-ops
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   beginning upgrade...
   repository locked and read-only
@@ -474,12 +438,6 @@ make sure we have a .d file
   
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   beginning upgrade...
   repository locked and read-only
@@ -577,12 +535,6 @@ unless --no-backup is passed
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
@@ -616,12 +568,6 @@ We can restrict optimization to some revlog:
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -697,12 +643,6 @@ Check we can select negatively
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -749,12 +689,6 @@ Check that we can select changelog only
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -800,12 +734,6 @@ Check that we can select filelog only
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -858,12 +786,6 @@ Check you can't skip revlog clone during important format downgrade
      preserved: dotencode, fncache, generaldelta, revlogv1, store
      removed: sparserevlog
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
@@ -915,12 +837,6 @@ Check you can't skip revlog clone during important format upgrade
   
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
@@ -976,12 +892,6 @@ store files with special filenames aren't encoded during copy
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
@@ -1012,12 +922,6 @@ store files with special filenames aren't encoded during copy
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-fulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
@@ -1083,12 +987,6 @@ Check upgrading a large file repository
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, revlogv1, sparserevlog, store
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
@@ -1141,12 +1039,6 @@ Check upgrading a large file repository
   
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, lfs, revlogv1, sparserevlog, store
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   beginning upgrade...
   repository locked and read-only
@@ -1242,12 +1134,6 @@ repository config is taken in account
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-  
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
   
   re-delta-all
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time

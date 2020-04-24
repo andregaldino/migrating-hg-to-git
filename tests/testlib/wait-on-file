@@ -13,7 +13,7 @@ timer="$1"
 
 # if the test timeout have been extended, explicitly extend the provided timer
 if [ "$HGTEST_TIMEOUT_DEFAULT" -lt "$HGTEST_TIMEOUT" ]; then
-    timer=$(( ($timer * $HGTEST_TIMEOUT) / $HGTEST_TIMEOUT_DEFAULT ))
+    timer=$(( ( 100 * $timer * $HGTEST_TIMEOUT) / $HGTEST_TIMEOUT_DEFAULT ))
 fi
 
 wait_on="$2"

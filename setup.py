@@ -890,7 +890,8 @@ class hgbuilddoc(Command):
             )
             if res:
                 raise SystemExit(
-                    'error running gendoc.py: %s' % '\n'.join([out, err])
+                    'error running gendoc.py: %s'
+                    % '\n'.join([sysstr(out), sysstr(err)])
                 )
 
             with open(txt, 'wb') as fh:
@@ -907,7 +908,8 @@ class hgbuilddoc(Command):
             )
             if res:
                 raise SystemExit(
-                    'error running gendoc: %s' % '\n'.join([out, err])
+                    'error running gendoc: %s'
+                    % '\n'.join([sysstr(out), sysstr(err)])
                 )
 
             with open(gendoc, 'wb') as fh:
@@ -932,7 +934,8 @@ class hgbuilddoc(Command):
             )
             if res:
                 raise SystemExit(
-                    'error running runrst: %s' % '\n'.join([out, err])
+                    'error running runrst: %s'
+                    % '\n'.join([sysstr(out), sysstr(err)])
                 )
 
             normalizecrlf('doc/%s' % root)
@@ -957,7 +960,8 @@ class hgbuilddoc(Command):
             )
             if res:
                 raise SystemExit(
-                    'error running runrst: %s' % '\n'.join([out, err])
+                    'error running runrst: %s'
+                    % '\n'.join([sysstr(out), sysstr(err)])
                 )
 
             normalizecrlf('doc/%s.html' % root)
@@ -1312,6 +1316,9 @@ for plat, macro, code in [
 
 if sys.platform == 'darwin':
     osutil_ldflags += ['-framework', 'ApplicationServices']
+
+if sys.platform == 'sunos5':
+    osutil_ldflags += ['-lsocket']
 
 xdiff_srcs = [
     'mercurial/thirdparty/xdiff/xdiffi.c',

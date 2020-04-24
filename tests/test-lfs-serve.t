@@ -133,12 +133,6 @@ non-lfs content, and the extension enabled.
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
-  sidedata
-     Allows storage of extra data alongside a revision.
-  
-  copies-sdc
-     Allows to use more efficient algorithm to deal with copy tracing.
-  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: * (glob)

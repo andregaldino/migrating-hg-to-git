@@ -112,6 +112,11 @@ def update_persistent_nodemap(revlog):
     To be used for updating the nodemap on disk outside of a normal transaction
     setup (eg, `debugupdatecache`).
     """
+    if revlog._inline:
+        return  # inlined revlog are too small for this to be relevant
+    if revlog.nodemap_file is None:
+        return  # we do not use persistent_nodemap on this revlog
+
     notr = _NoTransaction()
     _persist_nodemap(notr, revlog)
     for k in sorted(notr._postclose):
