@@ -36,6 +36,8 @@ Test pullbundle functionality
   $ cat <<EOF > .hg/hgrc
   > [server]
   > pullbundle = True
+  > [experimental]
+  > evolution = True
   > [extensions]
   > blackbox =
   > EOF
@@ -185,3 +187,24 @@ Test recovery from misconfigured server sending no new data
   * sending pullbundle "0.hg" (glob)
   * sending pullbundle "0.hg" (glob)
   $ rm repo/.hg/blackbox.log
+
+Test processing when nodes used in the pullbundle.manifest end up being hidden
+
+  $ hg --repo repo debugobsolete ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg serve --repo repo --config server.view=visible -p $HGPORT -d --pid-file=hg.pid -E errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+  $ hg clone http://localhost:$HGPORT repo-obs
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files
+  new changesets bbd179dfa0a7:effea6de0384
+  updating to branch default
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ killdaemons.py
