@@ -12,9 +12,9 @@ use std::convert::TryInto;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
-type PathToken = HgPathBuf;
+type PathToken = usize;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Copy)]
 struct TimeStampedPathCopy {
     /// revision at which the copy information was added
     rev: Revision,
@@ -314,6 +314,37 @@ enum Parent {
     SecondParent,
 }
 
+/// A small "tokenizer" responsible of turning full HgPath into lighter
+/// PathToken
+///
+/// Dealing with small object, like integer is much faster, so HgPath input are
+/// turned into integer "PathToken" and converted back in the end.
+#[derive(Clone, Debug, Default)]
+struct TwoWayPathMap {
+    token: HashMap<HgPathBuf, PathToken>,
+    path: Vec<HgPathBuf>,
+}
+
+impl TwoWayPathMap {
+    fn tokenize(&mut self, path: &HgPath) -> PathToken {
+        match self.token.get(path) {
+            Some(a) => *a,
+            None => {
+                let a = self.token.len();
+                let buf = path.to_owned();
+                self.path.push(buf.clone());
+                self.token.insert(buf, a);
+                a
+            }
+        }
+    }
+
+    fn untokenize(&self, token: PathToken) -> &HgPathBuf {
+        assert!(token < self.path.len(), format!("Unknown token: {}", token));
+        &self.path[token]
+    }
+}
+
 /// Same as mercurial.copies._combine_changeset_copies, but in Rust.
 ///
 /// Arguments are:
@@ -337,6 +368,8 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
     let mut all_copies = HashMap::new();
     let mut oracle = AncestorOracle::new(is_ancestor);
 
+    let mut path_map = TwoWayPathMap::default();
+
     for rev in revs {
         let mut d: DataHolder<D> = DataHolder { data: None };
         let (p1, p2, changes) = rev_info(rev, &mut d);
@@ -355,6 +388,7 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
             if let Some(parent_copies) = parent_copies {
                 // combine it with data for that revision
                 let vertex_copies = add_from_changes(
+                    &mut path_map,
                     &parent_copies,
                     &changes,
                     Parent::FirstParent,
@@ -374,6 +408,7 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
             if let Some(parent_copies) = parent_copies {
                 // combine it with data for that revision
                 let vertex_copies = add_from_changes(
+                    &mut path_map,
                     &parent_copies,
                     &changes,
                     Parent::SecondParent,
@@ -388,6 +423,7 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                     // If we got data from both parents, We need to combine
                     // them.
                     Some(copies) => Some(merge_copies_dict(
+                        &path_map,
                         vertex_copies,
                         copies,
                         &changes,
@@ -412,7 +448,9 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
     let mut result = PathCopies::default();
     for (dest, tt_source) in tt_result {
         if let Some(path) = tt_source.path {
-            result.insert(dest, path);
+            let path_dest = path_map.untokenize(dest).to_owned();
+            let path_path = path_map.untokenize(path).to_owned();
+            result.insert(path_dest, path_path);
         }
     }
     result
@@ -447,6 +485,7 @@ fn get_and_clean_parent_copies(
 /// Combine ChangedFiles with some existing PathCopies information and return
 /// the result
 fn add_from_changes(
+    path_map: &mut TwoWayPathMap,
     base_copies: &TimeStampedPathCopies,
     changes: &ChangedFiles,
     parent: Parent,
@@ -455,9 +494,11 @@ fn add_from_changes(
     let mut copies = base_copies.clone();
     for action in changes.iter_actions(parent) {
         match action {
-            Action::Copied(dest, source) => {
+            Action::Copied(path_dest, path_source) => {
+                let dest = path_map.tokenize(path_dest);
+                let source = path_map.tokenize(path_source);
                 let entry;
-                if let Some(v) = base_copies.get(source) {
+                if let Some(v) = base_copies.get(&source) {
                     entry = match &v.path {
                         Some(path) => Some((*(path)).to_owned()),
                         None => Some(source.to_owned()),
@@ -475,18 +516,19 @@ fn add_from_changes(
                 };
                 copies.insert(dest.to_owned(), ttpc);
             }
-            Action::Removed(f) => {
+            Action::Removed(deleted_path) => {
                 // We must drop copy information for removed file.
                 //
                 // We need to explicitly record them as dropped to
                 // propagate this information when merging two
                 // TimeStampedPathCopies object.
-                if copies.contains_key(f.as_ref()) {
+                let deleted = path_map.tokenize(deleted_path);
+                if copies.contains_key(&deleted) {
                     let ttpc = TimeStampedPathCopy {
                         rev: current_rev,
                         path: None,
                     };
-                    copies.insert(f.to_owned(), ttpc);
+                    copies.insert(deleted, ttpc);
                 }
             }
         }
@@ -499,6 +541,7 @@ fn add_from_changes(
 /// In case of conflict, value from "major" will be picked, unless in some
 /// cases. See inline documentation for details.
 fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
+    path_map: &TwoWayPathMap,
     mut minor: TimeStampedPathCopies,
     mut major: TimeStampedPathCopies,
     changes: &ChangedFiles,
@@ -511,7 +554,9 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
         |dest: &PathToken,
          src_minor: &TimeStampedPathCopy,
          src_major: &TimeStampedPathCopy| {
-            compare_value(changes, oracle, dest, src_minor, src_major)
+            compare_value(
+                path_map, changes, oracle, dest, src_minor, src_major,
+            )
         };
     if minor.is_empty() {
         major
@@ -641,6 +686,7 @@ enum MergePick {
 /// decide which side prevails in case of conflicting values
 #[allow(clippy::if_same_then_else)]
 fn compare_value<A: Fn(Revision, Revision) -> bool>(
+    path_map: &TwoWayPathMap,
     changes: &ChangedFiles,
     oracle: &mut AncestorOracle<A>,
     dest: &PathToken,
@@ -664,7 +710,8 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
             "conflict information from p1 and p2 in the same revision"
         );
     } else {
-        let action = changes.get_merge_case(&dest);
+        let dest_path = path_map.untokenize(*dest);
+        let action = changes.get_merge_case(dest_path);
         if src_major.path.is_none() && action == MergeCase::Salvaged {
             // If the file is "deleted" in the major side but was
             // salvaged by the merge, we keep the minor side alive
