@@ -225,7 +225,7 @@ def _generic_start_transaction(handler, h, req):
 
 def _generic_proxytunnel(self):
     proxyheaders = {
-        x: self.headers[x]
+        pycompat.bytestr(x): pycompat.bytestr(self.headers[x])
         for x in self.headers
         if x.lower().startswith('proxy-')
     }
