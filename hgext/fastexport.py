@@ -80,7 +80,7 @@ def export_commit(ui, repo, rev, marks, authormap):
     ctx = repo[rev]
     revid = ctx.hex()
     if revid in marks:
-        ui.warn(_(b"warning: revision %s already exported, skipped\n") % revid)
+        ui.debug(b"warning: revision %s already exported, skipped\n" % revid)
         return
     parents = [p for p in ctx.parents() if p.rev() != nullrev]
     for p in parents:
