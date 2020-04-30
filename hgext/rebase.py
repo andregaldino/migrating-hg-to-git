@@ -367,7 +367,9 @@ class rebaseruntime(object):
         skippedset.update(obsoleteextinctsuccessors)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
 
-    def _prepareabortorcontinue(self, isabort, backup=True, suppwarns=False):
+    def _prepareabortorcontinue(
+        self, isabort, backup=True, suppwarns=False, dryrun=False, confirm=False
+    ):
         self.resume = True
         try:
             self.restorestatus()
@@ -390,7 +392,12 @@ class rebaseruntime(object):
 
         if isabort:
             backup = backup and self.backupf
-            return self._abort(backup=backup, suppwarns=suppwarns)
+            return self._abort(
+                backup=backup,
+                suppwarns=suppwarns,
+                dryrun=dryrun,
+                confirm=confirm,
+            )
 
     def _preparenewrebase(self, destmap):
         if not destmap:
@@ -749,7 +756,7 @@ class rebaseruntime(object):
         ):
             bookmarks.activate(repo, self.activebookmark)
 
-    def _abort(self, backup=True, suppwarns=False):
+    def _abort(self, backup=True, suppwarns=False, dryrun=False, confirm=False):
         '''Restore the repository to its original state.'''
 
         repo = self.repo
@@ -793,7 +800,10 @@ class rebaseruntime(object):
 
                 updateifonnodes = set(rebased)
                 updateifonnodes.update(self.destmap.values())
-                updateifonnodes.add(self.originalwd)
+
+                if not dryrun and not confirm:
+                    updateifonnodes.add(self.originalwd)
+
                 shouldupdate = repo[b'.'].rev() in updateifonnodes
 
                 # Update away from the rebase if necessary
@@ -1119,7 +1129,10 @@ def _dryrunrebase(ui, repo, action, opts):
                     rbsrt._finishrebase()
                 else:
                     rbsrt._prepareabortorcontinue(
-                        isabort=True, backup=False, suppwarns=True
+                        isabort=True,
+                        backup=False,
+                        suppwarns=True,
+                        confirm=confirm,
                     )
                 needsabort = False
             else:
@@ -1134,7 +1147,10 @@ def _dryrunrebase(ui, repo, action, opts):
             if needsabort:
                 # no need to store backup in case of dryrun
                 rbsrt._prepareabortorcontinue(
-                    isabort=True, backup=False, suppwarns=True
+                    isabort=True,
+                    backup=False,
+                    suppwarns=True,
+                    dryrun=opts.get(b'dry_run'),
                 )
 
 

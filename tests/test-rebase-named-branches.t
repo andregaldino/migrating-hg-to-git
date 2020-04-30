@@ -339,15 +339,23 @@ Reopen branch by rebase
   -A
   +A-mod
 
-BUG: This shouldn't affect wdir
+--dry-run doesn't affect a dirty working directory that is unrelated to the
+source or destination.
 
   $ hg rebase -s tip -d 4 --dry-run
   starting dry-run rebase; repository will not be changed
   rebasing 11:be1dea60f2a6 "D" (tip)
   dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase
   $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
 
-BUG: This shouldn't affect wdir
+Bailing out on --confirm doesn't affect a dirty working directory that is
+unrelated to the source or destination.
 
   $ echo A-mod > A
   $ echo n | hg rebase -s tip -d 4 --confirm --config ui.interactive=True
@@ -356,6 +364,12 @@ BUG: This shouldn't affect wdir
   rebase completed successfully
   apply changes (yn)? n
   $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
 
   $ echo A-mod > A
   $ hg rebase -s tip -d 4 --confirm
