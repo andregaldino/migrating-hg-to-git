@@ -2243,6 +2243,7 @@ class localrepository(object):
 
         tr.hookargs[b'txnid'] = txnid
         tr.hookargs[b'txnname'] = desc
+        tr.hookargs[b'changes'] = tr.changes
         # note: writing the fncache only during finalize mean that the file is
         # outdated when running hooks. As fncache is used for streaming clone,
         # this is not expected to break anything that happen during the hooks.
