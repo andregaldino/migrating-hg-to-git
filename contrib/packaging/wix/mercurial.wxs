@@ -79,16 +79,21 @@
         </Directory>
       </Directory>
 
-      <?if $(var.Platform) = "x86" ?>
-        <Merge Id='VCRuntime' DiskId='1' Language='1033'
-              SourceFile='$(var.VCRedistSrcDir)\microsoft.vcxx.crt.x86_msm.msm' />
-        <Merge Id='VCRuntimePolicy' DiskId='1' Language='1033'
-              SourceFile='$(var.VCRedistSrcDir)\policy.x.xx.microsoft.vcxx.crt.x86_msm.msm' />
-      <?else?>
-        <Merge Id='VCRuntime' DiskId='1' Language='1033'
-              SourceFile='$(var.VCRedistSrcDir)\microsoft.vcxx.crt.x64_msm.msm' />
-        <Merge Id='VCRuntimePolicy' DiskId='1' Language='1033'
-              SourceFile='$(var.VCRedistSrcDir)\policy.x.xx.microsoft.vcxx.crt.x64_msm.msm' />
+      <!-- Install VCRedist merge modules on Python 2. On Python 3,
+           vcruntimeXXX.dll is part of the install layout and gets picked up
+           as a regular file. -->
+      <?if $(var.PythonVersion) = "2" ?>
+        <?if $(var.Platform) = "x86" ?>
+          <Merge Id='VCRuntime' DiskId='1' Language='1033'
+                SourceFile='$(var.VCRedistSrcDir)\microsoft.vcxx.crt.x86_msm.msm' />
+          <Merge Id='VCRuntimePolicy' DiskId='1' Language='1033'
+                SourceFile='$(var.VCRedistSrcDir)\policy.x.xx.microsoft.vcxx.crt.x86_msm.msm' />
+        <?else?>
+          <Merge Id='VCRuntime' DiskId='1' Language='1033'
+                SourceFile='$(var.VCRedistSrcDir)\microsoft.vcxx.crt.x64_msm.msm' />
+          <Merge Id='VCRuntimePolicy' DiskId='1' Language='1033'
+                SourceFile='$(var.VCRedistSrcDir)\policy.x.xx.microsoft.vcxx.crt.x64_msm.msm' />
+        <?endif?>
       <?endif?>
     </Directory>
 
@@ -101,10 +106,14 @@
         <ComponentGroupRef Id="hg.group.ROOT" />
         <ComponentGroupRef Id="hg.group.defaultrc" />
         <ComponentGroupRef Id="hg.group.helptext" />
-        <ComponentGroupRef Id="hg.group.lib" />
+        <?ifdef MercurialHasLib?>
+          <ComponentGroupRef Id="hg.group.lib" />
+        <?endif?>
         <ComponentGroupRef Id="hg.group.templates" />
-        <MergeRef Id='VCRuntime' />
-        <MergeRef Id='VCRuntimePolicy' />
+        <?if $(var.PythonVersion) = "2" ?>
+          <MergeRef Id='VCRuntime' />
+          <MergeRef Id='VCRuntimePolicy' />
+        <?endif?>
       </Feature>
       <?ifdef MercurialExtraFeatures?>
         <?foreach EXTRAFEAT in $(var.MercurialExtraFeatures)?>

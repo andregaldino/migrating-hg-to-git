@@ -68,10 +68,20 @@ hg.exe log -r .
 Write-Output "updated Mercurial working directory to {revision}"
 '''.lstrip()
 
-BUILD_INNO = r'''
+BUILD_INNO_PYTHON3 = r'''
+$Env:RUSTUP_HOME = "C:\hgdev\rustup"
+$Env:CARGO_HOME = "C:\hgdev\cargo"
+Set-Location C:\hgdev\src
+C:\hgdev\python37-x64\python.exe contrib\packaging\packaging.py inno --pyoxidizer-target {pyoxidizer_target} --version {version}
+if ($LASTEXITCODE -ne 0) {{
+    throw "process exited non-0: $LASTEXITCODE"
+}}
+'''
+
+BUILD_INNO_PYTHON2 = r'''
 Set-Location C:\hgdev\src
 $python = "C:\hgdev\python27-{arch}\python.exe"
-C:\hgdev\python37-x64\python.exe contrib\packaging\packaging.py inno --python $python
+C:\hgdev\python37-x64\python.exe contrib\packaging\packaging.py inno --python $python {extra_args}
 if ($LASTEXITCODE -ne 0) {{
     throw "process exited non-0: $LASTEXITCODE"
 }}
@@ -79,13 +89,23 @@ if ($LASTEXITCODE -ne 0) {{
 
 BUILD_WHEEL = r'''
 Set-Location C:\hgdev\src
-C:\hgdev\python27-{arch}\Scripts\pip.exe wheel --wheel-dir dist .
+C:\hgdev\python{python_version}-{arch}\python.exe -m pip wheel --wheel-dir dist .
 if ($LASTEXITCODE -ne 0) {{
     throw "process exited non-0: $LASTEXITCODE"
 }}
 '''
 
-BUILD_WIX = r'''
+BUILD_WIX_PYTHON3 = r'''
+$Env:RUSTUP_HOME = "C:\hgdev\rustup"
+$Env:CARGO_HOME = "C:\hgdev\cargo"
+Set-Location C:\hgdev\src
+C:\hgdev\python37-x64\python.exe contrib\packaging\packaging.py wix --pyoxidizer-target {pyoxidizer_target} --version {version}
+if ($LASTEXITCODE -ne 0) {{
+    throw "process exited non-0: $LASTEXITCODE"
+}}
+'''
+
+BUILD_WIX_PYTHON2 = r'''
 Set-Location C:\hgdev\src
 $python = "C:\hgdev\python27-{arch}\python.exe"
 C:\hgdev\python37-x64\python.exe contrib\packaging\packaging.py wix --python $python {extra_args}
@@ -101,31 +121,60 @@ if ($LASTEXITCODE -ne 0) {{
 }}
 '''
 
-X86_WHEEL_FILENAME = 'mercurial-{version}-cp27-cp27m-win32.whl'
-X64_WHEEL_FILENAME = 'mercurial-{version}-cp27-cp27m-win_amd64.whl'
-X86_EXE_FILENAME = 'Mercurial-{version}.exe'
-X64_EXE_FILENAME = 'Mercurial-{version}-x64.exe'
-X86_MSI_FILENAME = 'mercurial-{version}-x86.msi'
-X64_MSI_FILENAME = 'mercurial-{version}-x64.msi'
+WHEEL_FILENAME_PYTHON27_X86 = 'mercurial-{version}-cp27-cp27m-win32.whl'
+WHEEL_FILENAME_PYTHON27_X64 = 'mercurial-{version}-cp27-cp27m-win_amd64.whl'
+WHEEL_FILENAME_PYTHON37_X86 = 'mercurial-{version}-cp37-cp37m-win32.whl'
+WHEEL_FILENAME_PYTHON37_X64 = 'mercurial-{version}-cp37-cp37m-win_amd64.whl'
+WHEEL_FILENAME_PYTHON38_X86 = 'mercurial-{version}-cp38-cp38-win32.whl'
+WHEEL_FILENAME_PYTHON38_X64 = 'mercurial-{version}-cp38-cp38-win_amd64.whl'
+
+EXE_FILENAME_PYTHON2_X86 = 'Mercurial-{version}-x86-python2.exe'
+EXE_FILENAME_PYTHON2_X64 = 'Mercurial-{version}-x64-python2.exe'
+EXE_FILENAME_PYTHON3_X86 = 'Mercurial-{version}-x86.exe'
+EXE_FILENAME_PYTHON3_X64 = 'Mercurial-{version}-x64.exe'
+
+MSI_FILENAME_PYTHON2_X86 = 'mercurial-{version}-x86-python2.msi'
+MSI_FILENAME_PYTHON2_X64 = 'mercurial-{version}-x64-python2.msi'
+MSI_FILENAME_PYTHON3_X86 = 'mercurial-{version}-x86.msi'
+MSI_FILENAME_PYTHON3_X64 = 'mercurial-{version}-x64.msi'
 
 MERCURIAL_SCM_BASE_URL = 'https://mercurial-scm.org/release/windows'
 
 X86_USER_AGENT_PATTERN = '.*Windows.*'
 X64_USER_AGENT_PATTERN = '.*Windows.*(WOW|x)64.*'
 
-X86_EXE_DESCRIPTION = (
-    'Mercurial {version} Inno Setup installer - x86 Windows '
+EXE_PYTHON2_X86_DESCRIPTION = (
+    'Mercurial {version} Inno Setup installer - x86 Windows (Python 2) '
     '- does not require admin rights'
 )
-X64_EXE_DESCRIPTION = (
-    'Mercurial {version} Inno Setup installer - x64 Windows '
+EXE_PYTHON2_X64_DESCRIPTION = (
+    'Mercurial {version} Inno Setup installer - x64 Windows (Python 2) '
     '- does not require admin rights'
 )
-X86_MSI_DESCRIPTION = (
-    'Mercurial {version} MSI installer - x86 Windows ' '- requires admin rights'
+# TODO remove Python version once Python 2 is dropped.
+EXE_PYTHON3_X86_DESCRIPTION = (
+    'Mercurial {version} Inno Setup installer - x86 Windows (Python 3) '
+    '- does not require admin rights'
 )
-X64_MSI_DESCRIPTION = (
-    'Mercurial {version} MSI installer - x64 Windows ' '- requires admin rights'
+EXE_PYTHON3_X64_DESCRIPTION = (
+    'Mercurial {version} Inno Setup installer - x64 Windows (Python 3) '
+    '- does not require admin rights'
+)
+MSI_PYTHON2_X86_DESCRIPTION = (
+    'Mercurial {version} MSI installer - x86 Windows (Python 2) '
+    '- requires admin rights'
+)
+MSI_PYTHON2_X64_DESCRIPTION = (
+    'Mercurial {version} MSI installer - x64 Windows (Python 2) '
+    '- requires admin rights'
+)
+MSI_PYTHON3_X86_DESCRIPTION = (
+    'Mercurial {version} MSI installer - x86 Windows (Python 3) '
+    '- requires admin rights'
+)
+MSI_PYTHON3_X64_DESCRIPTION = (
+    'Mercurial {version} MSI installer - x64 Windows (Python 3) '
+    '- requires admin rights'
 )
 
 
@@ -280,53 +329,113 @@ def copy_latest_dist(winrm_client, pattern, dest_path):
 
 
 def build_inno_installer(
-    winrm_client, arch: str, dest_path: pathlib.Path, version=None
+    winrm_client,
+    python_version: int,
+    arch: str,
+    dest_path: pathlib.Path,
+    version=None,
 ):
     """Build the Inno Setup installer on a remote machine.
 
     Using a WinRM client, remote commands are executed to build
     a Mercurial Inno Setup installer.
     """
-    print('building Inno Setup installer for %s' % arch)
-
-    extra_args = []
-    if version:
-        extra_args.extend(['--version', version])
-
-    ps = get_vc_prefix(arch) + BUILD_INNO.format(
-        arch=arch, extra_args=' '.join(extra_args)
+    print(
+        'building Inno Setup installer for Python %d %s'
+        % (python_version, arch)
     )
+
+    if python_version == 3:
+        # TODO fix this limitation in packaging code
+        if not version:
+            raise Exception(
+                "version string is required when building for Python 3"
+            )
+
+        if arch == "x86":
+            target_triple = "i686-pc-windows-msvc"
+        elif arch == "x64":
+            target_triple = "x86_64-pc-windows-msvc"
+        else:
+            raise Exception("unhandled arch: %s" % arch)
+
+        ps = BUILD_INNO_PYTHON3.format(
+            pyoxidizer_target=target_triple, version=version,
+        )
+    else:
+        extra_args = []
+        if version:
+            extra_args.extend(['--version', version])
+
+        ps = get_vc_prefix(arch) + BUILD_INNO_PYTHON2.format(
+            arch=arch, extra_args=' '.join(extra_args)
+        )
+
     run_powershell(winrm_client, ps)
     copy_latest_dist(winrm_client, '*.exe', dest_path)
 
 
-def build_wheel(winrm_client, arch: str, dest_path: pathlib.Path):
+def build_wheel(
+    winrm_client, python_version: str, arch: str, dest_path: pathlib.Path
+):
     """Build Python wheels on a remote machine.
 
     Using a WinRM client, remote commands are executed to build a Python wheel
     for Mercurial.
     """
-    print('Building Windows wheel for %s' % arch)
-    ps = get_vc_prefix(arch) + BUILD_WHEEL.format(arch=arch)
+    print('Building Windows wheel for Python %s %s' % (python_version, arch))
+
+    ps = BUILD_WHEEL.format(
+        python_version=python_version.replace(".", ""), arch=arch
+    )
+
+    # Python 2.7 requires an activated environment.
+    if python_version == "2.7":
+        ps = get_vc_prefix(arch) + ps
+
     run_powershell(winrm_client, ps)
     copy_latest_dist(winrm_client, '*.whl', dest_path)
 
 
 def build_wix_installer(
-    winrm_client, arch: str, dest_path: pathlib.Path, version=None
+    winrm_client,
+    python_version: int,
+    arch: str,
+    dest_path: pathlib.Path,
+    version=None,
 ):
     """Build the WiX installer on a remote machine.
 
     Using a WinRM client, remote commands are executed to build a WiX installer.
     """
-    print('Building WiX installer for %s' % arch)
-    extra_args = []
-    if version:
-        extra_args.extend(['--version', version])
+    print('Building WiX installer for Python %d %s' % (python_version, arch))
 
-    ps = get_vc_prefix(arch) + BUILD_WIX.format(
-        arch=arch, extra_args=' '.join(extra_args)
-    )
+    if python_version == 3:
+        # TODO fix this limitation in packaging code
+        if not version:
+            raise Exception(
+                "version string is required when building for Python 3"
+            )
+
+        if arch == "x86":
+            target_triple = "i686-pc-windows-msvc"
+        elif arch == "x64":
+            target_triple = "x86_64-pc-windows-msvc"
+        else:
+            raise Exception("unhandled arch: %s" % arch)
+
+        ps = BUILD_WIX_PYTHON3.format(
+            pyoxidizer_target=target_triple, version=version,
+        )
+    else:
+        extra_args = []
+        if version:
+            extra_args.extend(['--version', version])
+
+        ps = get_vc_prefix(arch) + BUILD_WIX_PYTHON2.format(
+            arch=arch, extra_args=' '.join(extra_args)
+        )
+
     run_powershell(winrm_client, ps)
     copy_latest_dist(winrm_client, '*.msi', dest_path)
 
@@ -356,56 +465,100 @@ def run_tests(winrm_client, python_version, arch, test_flags=''):
 
 def resolve_wheel_artifacts(dist_path: pathlib.Path, version: str):
     return (
-        dist_path / X86_WHEEL_FILENAME.format(version=version),
-        dist_path / X64_WHEEL_FILENAME.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X64.format(version=version),
     )
 
 
 def resolve_all_artifacts(dist_path: pathlib.Path, version: str):
     return (
-        dist_path / X86_WHEEL_FILENAME.format(version=version),
-        dist_path / X64_WHEEL_FILENAME.format(version=version),
-        dist_path / X86_EXE_FILENAME.format(version=version),
-        dist_path / X64_EXE_FILENAME.format(version=version),
-        dist_path / X86_MSI_FILENAME.format(version=version),
-        dist_path / X64_MSI_FILENAME.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON27_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON37_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON38_X64.format(version=version),
+        dist_path / EXE_FILENAME_PYTHON2_X86.format(version=version),
+        dist_path / EXE_FILENAME_PYTHON2_X64.format(version=version),
+        dist_path / EXE_FILENAME_PYTHON3_X86.format(version=version),
+        dist_path / EXE_FILENAME_PYTHON3_X64.format(version=version),
+        dist_path / MSI_FILENAME_PYTHON2_X86.format(version=version),
+        dist_path / MSI_FILENAME_PYTHON2_X64.format(version=version),
+        dist_path / MSI_FILENAME_PYTHON3_X86.format(version=version),
+        dist_path / MSI_FILENAME_PYTHON3_X64.format(version=version),
     )
 
 
 def generate_latest_dat(version: str):
-    x86_exe_filename = X86_EXE_FILENAME.format(version=version)
-    x64_exe_filename = X64_EXE_FILENAME.format(version=version)
-    x86_msi_filename = X86_MSI_FILENAME.format(version=version)
-    x64_msi_filename = X64_MSI_FILENAME.format(version=version)
+    python2_x86_exe_filename = EXE_FILENAME_PYTHON2_X86.format(version=version)
+    python2_x64_exe_filename = EXE_FILENAME_PYTHON2_X64.format(version=version)
+    python3_x86_exe_filename = EXE_FILENAME_PYTHON3_X86.format(version=version)
+    python3_x64_exe_filename = EXE_FILENAME_PYTHON3_X64.format(version=version)
+    python2_x86_msi_filename = MSI_FILENAME_PYTHON2_X86.format(version=version)
+    python2_x64_msi_filename = MSI_FILENAME_PYTHON2_X64.format(version=version)
+    python3_x86_msi_filename = MSI_FILENAME_PYTHON3_X86.format(version=version)
+    python3_x64_msi_filename = MSI_FILENAME_PYTHON3_X64.format(version=version)
 
     entries = (
         (
             '10',
             version,
             X86_USER_AGENT_PATTERN,
-            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x86_exe_filename),
-            X86_EXE_DESCRIPTION.format(version=version),
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python3_x86_exe_filename),
+            EXE_PYTHON3_X86_DESCRIPTION.format(version=version),
         ),
         (
             '10',
             version,
             X64_USER_AGENT_PATTERN,
-            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x64_exe_filename),
-            X64_EXE_DESCRIPTION.format(version=version),
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python3_x64_exe_filename),
+            EXE_PYTHON3_X64_DESCRIPTION.format(version=version),
+        ),
+        (
+            '9',
+            version,
+            X86_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python2_x86_exe_filename),
+            EXE_PYTHON2_X86_DESCRIPTION.format(version=version),
+        ),
+        (
+            '9',
+            version,
+            X64_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python2_x64_exe_filename),
+            EXE_PYTHON2_X64_DESCRIPTION.format(version=version),
         ),
         (
             '10',
             version,
             X86_USER_AGENT_PATTERN,
-            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x86_msi_filename),
-            X86_MSI_DESCRIPTION.format(version=version),
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python3_x86_msi_filename),
+            MSI_PYTHON3_X86_DESCRIPTION.format(version=version),
         ),
         (
             '10',
             version,
             X64_USER_AGENT_PATTERN,
-            '%s/%s' % (MERCURIAL_SCM_BASE_URL, x64_msi_filename),
-            X64_MSI_DESCRIPTION.format(version=version),
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python3_x64_msi_filename),
+            MSI_PYTHON3_X64_DESCRIPTION.format(version=version),
+        ),
+        (
+            '9',
+            version,
+            X86_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python2_x86_msi_filename),
+            MSI_PYTHON2_X86_DESCRIPTION.format(version=version),
+        ),
+        (
+            '9',
+            version,
+            X64_USER_AGENT_PATTERN,
+            '%s/%s' % (MERCURIAL_SCM_BASE_URL, python2_x64_msi_filename),
+            MSI_PYTHON2_X64_DESCRIPTION.format(version=version),
         ),
     )
 

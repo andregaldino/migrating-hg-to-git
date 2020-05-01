@@ -64,6 +64,9 @@ $MERCURIAL_WHEEL_FILENAME = "mercurial-5.1.2-cp27-cp27m-win_amd64.whl"
 $MERCURIAL_WHEEL_URL = "https://files.pythonhosted.org/packages/6d/47/e031e47f7fe9b16e4e3383da47e2b0a7eae6e603996bc67a03ec4fa1b3f4/$MERCURIAL_WHEEL_FILENAME"
 $MERCURIAL_WHEEL_SHA256 = "1d18c7f6ca1456f0f62ee65c9a50c14cbba48ce6e924930cdb10537f5c9eaf5f"
 
+$RUSTUP_INIT_URL = "https://static.rust-lang.org/rustup/archive/1.21.1/x86_64-pc-windows-gnu/rustup-init.exe"
+$RUSTUP_INIT_SHA256 = "d17df34ba974b9b19cf5c75883a95475aa22ddc364591d75d174090d55711c72"
+
 # Writing progress slows down downloads substantially. So disable it.
 $progressPreference = 'silentlyContinue'
 
@@ -116,6 +119,20 @@ function Install-Python3($name, $installer, $dest, $pip) {
     Invoke-Process ${dest}\python.exe $pip
 }
 
+function Install-Rust($prefix) {
+    Write-Output "installing Rust"
+    $Env:RUSTUP_HOME = "${prefix}\rustup"
+    $Env:CARGO_HOME = "${prefix}\cargo"
+
+    Invoke-Process "${prefix}\assets\rustup-init.exe" "-y --default-host x86_64-pc-windows-msvc"
+    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "target add i686-pc-windows-msvc"
+    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.42.0"
+    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "component add clippy"
+
+    # Install PyOxidizer for packaging.
+    Invoke-Process "${prefix}\cargo\bin\cargo.exe" "install --version 0.7.0 pyoxidizer"
+}
+
 function Install-Dependencies($prefix) {
     if (!(Test-Path -Path $prefix\assets)) {
         New-Item -Path $prefix\assets -ItemType Directory
@@ -140,6 +157,7 @@ function Install-Dependencies($prefix) {
     Secure-Download $INNO_SETUP_URL ${prefix}\assets\InnoSetup.exe $INNO_SETUP_SHA256
     Secure-Download $MINGW_BIN_URL ${prefix}\assets\mingw-get-bin.zip $MINGW_BIN_SHA256
     Secure-Download $MERCURIAL_WHEEL_URL ${prefix}\assets\${MERCURIAL_WHEEL_FILENAME} $MERCURIAL_WHEEL_SHA256
+    Secure-Download $RUSTUP_INIT_URL ${prefix}\assets\rustup-init.exe $RUSTUP_INIT_SHA256
 
     Write-Output "installing Python 2.7 32-bit"
     Invoke-Process msiexec.exe "/i ${prefix}\assets\python27-x86.msi /l* ${prefix}\assets\python27-x86.log /q TARGETDIR=${prefix}\python27-x86 ALLUSERS="
@@ -162,6 +180,8 @@ function Install-Dependencies($prefix) {
 
     Write-Output "installing Visual Studio 2017 Build Tools and SDKs"
     Invoke-Process ${prefix}\assets\vs_buildtools.exe "--quiet --wait --norestart --nocache --channelUri https://aka.ms/vs/15/release/channel --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Component.Windows10SDK.17763 --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows10SDK --add Microsoft.VisualStudio.Component.VC.140"
+
+    Install-Rust ${prefix}
 
     Write-Output "installing Visual C++ 9.0 for Python 2.7"
     Invoke-Process msiexec.exe "/i ${prefix}\assets\VCForPython27.msi /l* ${prefix}\assets\VCForPython27.log /q"

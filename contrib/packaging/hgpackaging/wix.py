@@ -22,6 +22,7 @@ from .py2exe import (
     build_py2exe,
     stage_install,
 )
+from .pyoxidizer import run_pyoxidizer
 from .util import (
     extract_zip_to_directory,
     normalize_windows_version,
@@ -119,30 +120,6 @@ def run_candle(wix, cwd, wxs, source_dir, defines=None):
         args.extend('-d%s=%s' % define for define in sorted(defines.items()))
 
     subprocess.run(args, cwd=str(cwd), check=True)
-
-
-def make_post_build_signing_fn(
-    name,
-    subject_name=None,
-    cert_path=None,
-    cert_password=None,
-    timestamp_url=None,
-):
-    """Create a callable that will use signtool to sign hg.exe."""
-
-    def post_build_sign(source_dir, build_dir, dist_dir, version):
-        description = '%s %s' % (name, version)
-
-        sign_with_signtool(
-            dist_dir / 'hg.exe',
-            description,
-            subject_name=subject_name,
-            cert_path=cert_path,
-            cert_password=cert_password,
-            timestamp_url=timestamp_url,
-        )
-
-    return post_build_sign
 
 
 def make_files_xml(staging_dir: pathlib.Path, is_x64) -> str:
@@ -308,27 +285,23 @@ def make_files_xml(staging_dir: pathlib.Path, is_x64) -> str:
     return doc.toprettyxml()
 
 
-def build_installer(
+def build_installer_py2exe(
     source_dir: pathlib.Path,
     python_exe: pathlib.Path,
     msi_name='mercurial',
     version=None,
-    post_build_fn=None,
     extra_packages_script=None,
     extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
     extra_features: typing.Optional[typing.List[str]] = None,
+    signing_info: typing.Optional[typing.Dict[str, str]] = None,
 ):
-    """Build a WiX MSI installer.
+    """Build a WiX MSI installer using py2exe.
 
     ``source_dir`` is the path to the Mercurial source tree to use.
     ``arch`` is the target architecture. either ``x86`` or ``x64``.
     ``python_exe`` is the path to the Python executable to use/bundle.
     ``version`` is the Mercurial version string. If not defined,
     ``mercurial/__version__.py`` will be consulted.
-    ``post_build_fn`` is a callable that will be called after building
-    Mercurial but before invoking WiX. It can be used to e.g. facilitate
-    signing. It is passed the paths to the Mercurial source, build, and
-    dist directories and the resolved Mercurial version.
     ``extra_packages_script`` is a command to be run to inject extra packages
     into the py2exe binary. It should stage packages into the virtualenv and
     print a null byte followed by a newline-separated list of packages that
@@ -340,8 +313,6 @@ def build_installer(
     arch = 'x64' if r'\x64' in os.environ.get('LIB', '') else 'x86'
 
     hg_build_dir = source_dir / 'build'
-    dist_dir = source_dir / 'dist'
-    wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
 
     requirements_txt = (
         source_dir / 'contrib' / 'packaging' / 'requirements_win32.txt'
@@ -356,15 +327,6 @@ def build_installer(
         extra_packages=EXTRA_PACKAGES,
         extra_packages_script=extra_packages_script,
     )
-
-    orig_version = version or find_version(source_dir)
-    version = normalize_windows_version(orig_version)
-    print('using version string: %s' % version)
-    if version != orig_version:
-        print('(normalized from: %s)' % orig_version)
-
-    if post_build_fn:
-        post_build_fn(source_dir, hg_build_dir, dist_dir, version)
 
     build_dir = hg_build_dir / ('wix-%s' % arch)
     staging_dir = build_dir / 'stage'
@@ -388,13 +350,112 @@ def build_installer(
             print('removing %s' % p)
             p.unlink()
 
-    wix_pkg, wix_entry = download_entry('wix', hg_build_dir)
-    wix_path = hg_build_dir / ('wix-%s' % wix_entry['version'])
+    return run_wix_packaging(
+        source_dir,
+        build_dir,
+        staging_dir,
+        arch,
+        version=version,
+        python2=True,
+        msi_name=msi_name,
+        suffix="-python2",
+        extra_wxs=extra_wxs,
+        extra_features=extra_features,
+        signing_info=signing_info,
+    )
+
+
+def build_installer_pyoxidizer(
+    source_dir: pathlib.Path,
+    target_triple: str,
+    msi_name='mercurial',
+    version=None,
+    extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
+    extra_features: typing.Optional[typing.List[str]] = None,
+    signing_info: typing.Optional[typing.Dict[str, str]] = None,
+):
+    """Build a WiX MSI installer using PyOxidizer."""
+    hg_build_dir = source_dir / "build"
+    build_dir = hg_build_dir / ("wix-%s" % target_triple)
+    staging_dir = build_dir / "stage"
+
+    arch = "x64" if "x86_64" in target_triple else "x86"
+
+    build_dir.mkdir(parents=True, exist_ok=True)
+    run_pyoxidizer(source_dir, build_dir, staging_dir, target_triple)
+
+    # We also install some extra files.
+    process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
+
+    # And remove some files we don't want.
+    for f in STAGING_REMOVE_FILES:
+        p = staging_dir / f
+        if p.exists():
+            print('removing %s' % p)
+            p.unlink()
+
+    return run_wix_packaging(
+        source_dir,
+        build_dir,
+        staging_dir,
+        arch,
+        version,
+        python2=False,
+        msi_name=msi_name,
+        extra_wxs=extra_wxs,
+        extra_features=extra_features,
+        signing_info=signing_info,
+    )
+
+
+def run_wix_packaging(
+    source_dir: pathlib.Path,
+    build_dir: pathlib.Path,
+    staging_dir: pathlib.Path,
+    arch: str,
+    version: str,
+    python2: bool,
+    msi_name: typing.Optional[str] = "mercurial",
+    suffix: str = "",
+    extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
+    extra_features: typing.Optional[typing.List[str]] = None,
+    signing_info: typing.Optional[typing.Dict[str, str]] = None,
+):
+    """Invokes WiX to package up a built Mercurial.
+
+    ``signing_info`` is a dict defining properties to facilitate signing the
+    installer. Recognized keys include ``name``, ``subject_name``,
+    ``cert_path``, ``cert_password``, and ``timestamp_url``. If populated,
+    we will sign both the hg.exe and the .msi using the signing credentials
+    specified.
+    """
+
+    orig_version = version or find_version(source_dir)
+    version = normalize_windows_version(orig_version)
+    print('using version string: %s' % version)
+    if version != orig_version:
+        print('(normalized from: %s)' % orig_version)
+
+    if signing_info:
+        sign_with_signtool(
+            staging_dir / "hg.exe",
+            "%s %s" % (signing_info["name"], version),
+            subject_name=signing_info["subject_name"],
+            cert_path=signing_info["cert_path"],
+            cert_password=signing_info["cert_password"],
+            timestamp_url=signing_info["timestamp_url"],
+        )
+
+    wix_dir = source_dir / 'contrib' / 'packaging' / 'wix'
+
+    wix_pkg, wix_entry = download_entry('wix', build_dir)
+    wix_path = build_dir / ('wix-%s' % wix_entry['version'])
 
     if not wix_path.exists():
         extract_zip_to_directory(wix_pkg, wix_path)
 
-    ensure_vc90_merge_modules(hg_build_dir)
+    if python2:
+        ensure_vc90_merge_modules(build_dir)
 
     source_build_rel = pathlib.Path(os.path.relpath(source_dir, build_dir))
 
@@ -413,7 +474,16 @@ def build_installer(
     source = wix_dir / 'mercurial.wxs'
     defines['Version'] = version
     defines['Comments'] = 'Installs Mercurial version %s' % version
-    defines['VCRedistSrcDir'] = str(hg_build_dir)
+
+    if python2:
+        defines["PythonVersion"] = "2"
+        defines['VCRedistSrcDir'] = str(build_dir)
+    else:
+        defines["PythonVersion"] = "3"
+
+    if (staging_dir / "lib").exists():
+        defines["MercurialHasLib"] = "1"
+
     if extra_features:
         assert all(';' not in f for f in extra_features)
         defines['MercurialExtraFeatures'] = ';'.join(extra_features)
@@ -421,7 +491,9 @@ def build_installer(
     run_candle(wix_path, build_dir, source, source_build_rel, defines=defines)
 
     msi_path = (
-        source_dir / 'dist' / ('%s-%s-%s.msi' % (msi_name, orig_version, arch))
+        source_dir
+        / 'dist'
+        / ('%s-%s-%s%s.msi' % (msi_name, orig_version, arch, suffix))
     )
 
     args = [
@@ -448,52 +520,16 @@ def build_installer(
 
     print('%s created' % msi_path)
 
+    if signing_info:
+        sign_with_signtool(
+            msi_path,
+            "%s %s" % (signing_info["name"], version),
+            subject_name=signing_info["subject_name"],
+            cert_path=signing_info["cert_path"],
+            cert_password=signing_info["cert_password"],
+            timestamp_url=signing_info["timestamp_url"],
+        )
+
     return {
         'msi_path': msi_path,
     }
-
-
-def build_signed_installer(
-    source_dir: pathlib.Path,
-    python_exe: pathlib.Path,
-    name: str,
-    version=None,
-    subject_name=None,
-    cert_path=None,
-    cert_password=None,
-    timestamp_url=None,
-    extra_packages_script=None,
-    extra_wxs=None,
-    extra_features=None,
-):
-    """Build an installer with signed executables."""
-
-    post_build_fn = make_post_build_signing_fn(
-        name,
-        subject_name=subject_name,
-        cert_path=cert_path,
-        cert_password=cert_password,
-        timestamp_url=timestamp_url,
-    )
-
-    info = build_installer(
-        source_dir,
-        python_exe=python_exe,
-        msi_name=name.lower(),
-        version=version,
-        post_build_fn=post_build_fn,
-        extra_packages_script=extra_packages_script,
-        extra_wxs=extra_wxs,
-        extra_features=extra_features,
-    )
-
-    description = '%s %s' % (name, version)
-
-    sign_with_signtool(
-        info['msi_path'],
-        description,
-        subject_name=subject_name,
-        cert_path=cert_path,
-        cert_password=cert_password,
-        timestamp_url=timestamp_url,
-    )

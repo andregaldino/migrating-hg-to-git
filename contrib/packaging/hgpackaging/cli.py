@@ -20,8 +20,11 @@ HERE = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 SOURCE_DIR = HERE.parent.parent.parent
 
 
-def build_inno(python=None, iscc=None, version=None):
-    if not os.path.isabs(python):
+def build_inno(pyoxidizer_target=None, python=None, iscc=None, version=None):
+    if not pyoxidizer_target and not python:
+        raise Exception("--python required unless building with PyOxidizer")
+
+    if python and not os.path.isabs(python):
         raise Exception("--python arg must be an absolute path")
 
     if iscc:
@@ -35,13 +38,19 @@ def build_inno(python=None, iscc=None, version=None):
 
     build_dir = SOURCE_DIR / "build"
 
-    inno.build(
-        SOURCE_DIR, build_dir, pathlib.Path(python), iscc, version=version,
-    )
+    if pyoxidizer_target:
+        inno.build_with_pyoxidizer(
+            SOURCE_DIR, build_dir, pyoxidizer_target, iscc, version=version
+        )
+    else:
+        inno.build_with_py2exe(
+            SOURCE_DIR, build_dir, pathlib.Path(python), iscc, version=version,
+        )
 
 
 def build_wix(
     name=None,
+    pyoxidizer_target=None,
     python=None,
     version=None,
     sign_sn=None,
@@ -52,17 +61,29 @@ def build_wix(
     extra_wxs=None,
     extra_features=None,
 ):
-    fn = wix.build_installer
+    if not pyoxidizer_target and not python:
+        raise Exception("--python required unless building with PyOxidizer")
+
+    if python and not os.path.isabs(python):
+        raise Exception("--python arg must be an absolute path")
+
     kwargs = {
         "source_dir": SOURCE_DIR,
-        "python_exe": pathlib.Path(python),
         "version": version,
     }
 
-    if not os.path.isabs(python):
-        raise Exception("--python arg must be an absolute path")
+    if pyoxidizer_target:
+        fn = wix.build_installer_pyoxidizer
+        kwargs["target_triple"] = pyoxidizer_target
+    else:
+        fn = wix.build_installer_py2exe
+        kwargs["python_exe"] = pathlib.Path(python)
 
     if extra_packages_script:
+        if pyoxidizer_target:
+            raise Exception(
+                "pyoxidizer does not support --extra-packages-script"
+            )
         kwargs["extra_packages_script"] = extra_packages_script
     if extra_wxs:
         kwargs["extra_wxs"] = dict(
@@ -72,12 +93,13 @@ def build_wix(
         kwargs["extra_features"] = extra_features.split(",")
 
     if sign_sn or sign_cert:
-        fn = wix.build_signed_installer
-        kwargs["name"] = name
-        kwargs["subject_name"] = sign_sn
-        kwargs["cert_path"] = sign_cert
-        kwargs["cert_password"] = sign_password
-        kwargs["timestamp_url"] = sign_timestamp_url
+        kwargs["signing_info"] = {
+            "name": name,
+            "subject_name": sign_sn,
+            "cert_path": sign_cert,
+            "cert_password": sign_password,
+            "timestamp_url": sign_timestamp_url,
+        }
 
     fn(**kwargs)
 
@@ -88,7 +110,12 @@ def get_parser():
     subparsers = parser.add_subparsers()
 
     sp = subparsers.add_parser("inno", help="Build Inno Setup installer")
-    sp.add_argument("--python", required=True, help="path to python.exe to use")
+    sp.add_argument(
+        "--pyoxidizer-target",
+        choices={"i686-pc-windows-msvc", "x86_64-pc-windows-msvc"},
+        help="Build with PyOxidizer targeting this host triple",
+    )
+    sp.add_argument("--python", help="path to python.exe to use")
     sp.add_argument("--iscc", help="path to iscc.exe to use")
     sp.add_argument(
         "--version",
@@ -102,8 +129,11 @@ def get_parser():
     )
     sp.add_argument("--name", help="Application name", default="Mercurial")
     sp.add_argument(
-        "--python", help="Path to Python executable to use", required=True
+        "--pyoxidizer-target",
+        choices={"i686-pc-windows-msvc", "x86_64-pc-windows-msvc"},
+        help="Build with PyOxidizer targeting this host triple",
     )
+    sp.add_argument("--python", help="Path to Python executable to use")
     sp.add_argument(
         "--sign-sn",
         help="Subject name (or fragment thereof) of certificate "
