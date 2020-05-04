@@ -1307,6 +1307,26 @@ def phabsend(ui, repo, *revs, **opts):
     if any(c for c in ctxs if c.obsolete()):
         raise error.Abort(_(b"obsolete commits cannot be posted for review"))
 
+    # Ensure the local commits are an unbroken range.  The semantics of the
+    # --fold option implies this, and the auto restacking of orphans requires
+    # it.  Otherwise A+C in A->B->C will cause B to be orphaned, and C' to
+    # get A' as a parent.
+    def _fail_nonlinear_revs(revs, skiprev, revtype):
+        badnodes = [repo[r].node() for r in revs if r != skiprev]
+        raise error.Abort(
+            _(b"cannot phabsend multiple %s revisions: %s")
+            % (revtype, scmutil.nodesummaries(repo, badnodes)),
+            hint=_(b"the revisions must form a linear chain"),
+        )
+
+    heads = repo.revs(b'heads(%ld)', revs)
+    if len(heads) > 1:
+        _fail_nonlinear_revs(heads, heads.max(), b"head")
+
+    roots = repo.revs(b'roots(%ld)', revs)
+    if len(roots) > 1:
+        _fail_nonlinear_revs(roots, roots.min(), b"root")
+
     fold = opts.get(b'fold')
     if fold:
         if len(revs) == 1:
@@ -1321,13 +1341,6 @@ def phabsend(ui, repo, *revs, **opts):
         # create a new review anyway.
         if not opts.get(b"amend"):
             raise error.Abort(_(b"cannot fold with --no-amend"))
-
-        # Ensure the local commits are an unbroken range
-        revrange = repo.revs(b'(first(%ld)::last(%ld))', revs, revs)
-        if any(r for r in revs if r not in revrange) or any(
-            r for r in revrange if r not in revs
-        ):
-            raise error.Abort(_(b"cannot fold non-linear revisions"))
 
         # It might be possible to bucketize the revisions by the DREV value, and
         # iterate over those groups when posting, and then again when amending.
