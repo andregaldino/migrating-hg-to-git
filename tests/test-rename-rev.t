@@ -47,13 +47,11 @@ Test moved file (not copied)
   $ hg add d1/d
   $ hg ci -m 'move d1/b to d1/d'
   created new head
-BROKEN: this should work
   $ hg cp -A --at-rev . d1/b d1/d
-  d1/b: no such file in rev 519850c3ea27
-  abort: --at-rev requires a single source
-  [255]
+  saved backup bundle to $TESTTMP/.hg/strip-backup/519850c3ea27-153c8fbb-copy.hg
   $ hg st -C --change .
   A d1/d
+    d1/b
   R d1/b
 
 Test using directory as destination
