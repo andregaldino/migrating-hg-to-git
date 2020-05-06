@@ -1552,6 +1552,8 @@ def copy(ui, repo, pats, opts, rename=False):
             for abs, rel, exact in srcs:
                 copylist.append(abs)
 
+        if not copylist:
+            raise error.Abort(_(b'no files to copy'))
         # TODO: Add support for `hg cp --at-rev . foo bar dir` and
         # `hg cp --at-rev . dir1 dir2`, preferably unifying the code with the
         # existing functions below.

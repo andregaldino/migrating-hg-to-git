@@ -25,10 +25,9 @@ Test single file
   abort: --at-rev requires --after
   [255]
 # Errors out with non-existent source
-BROKEN: this should have a better error message
   $ hg cp -A --at-rev . d1/non-existent d1/d
   d1/non-existent: no such file in rev 55d1fd85ef0a
-  abort: --at-rev requires a single source
+  abort: no files to copy
   [255]
 # Errors out with non-existent destination
   $ hg cp -A --at-rev . d1/b d1/non-existent
