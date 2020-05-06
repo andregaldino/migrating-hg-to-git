@@ -11,7 +11,7 @@
 
 Test single file
 
-# One recoded copy, one copy to record after commit
+# One recorded copy, one copy to record after commit
   $ hg cp d1/b d1/c
   $ cp d1/b d1/d
   $ hg add d1/d
@@ -23,6 +23,12 @@ Test single file
 # Errors out without --after for now
   $ hg cp --at-rev . d1/b d1/d
   abort: --at-rev requires --after
+  [255]
+# Errors out with non-existent source
+BROKEN: this should have a better error message
+  $ hg cp -A --at-rev . d1/non-existent d1/d
+  d1/non-existent: no such file in rev 55d1fd85ef0a
+  abort: --at-rev requires a single source
   [255]
 # Errors out with non-existent destination
   $ hg cp -A --at-rev . d1/b d1/non-existent
