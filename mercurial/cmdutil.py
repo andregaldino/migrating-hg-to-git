@@ -1496,8 +1496,11 @@ def copy(ui, repo, pats, opts, rename=False):
 
     def walkpat(pat):
         srcs = []
-        m = scmutil.match(ctx, [pat], opts, globbed=True)
-        for abs in ctx.walk(m):
+        # TODO: Inline and simplify the non-working-copy version of this code
+        # since it shares very little with the working-copy version of it.
+        ctx_to_walk = ctx if ctx.rev() is None else pctx
+        m = scmutil.match(ctx_to_walk, [pat], opts, globbed=True)
+        for abs in ctx_to_walk.walk(m):
             rel = uipathfn(abs)
             exact = m.exact(abs)
             if abs not in ctx:
