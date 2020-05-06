@@ -38,10 +38,28 @@ Test single file
   A d1/d
     d1/b
 
-Test using directory as destination
+Test moved file (not copied)
 
   $ hg co 0
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ mv d1/b d1/d
+  $ hg rm -A d1/b
+  $ hg add d1/d
+  $ hg ci -m 'move d1/b to d1/d'
+  created new head
+BROKEN: this should work
+  $ hg cp -A --at-rev . d1/b d1/d
+  d1/b: no such file in rev 519850c3ea27
+  abort: --at-rev requires a single source
+  [255]
+  $ hg st -C --change .
+  A d1/d
+  R d1/b
+
+Test using directory as destination
+
+  $ hg co 0
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ cp -R d1 d3
   $ hg add d3
   adding d3/a
