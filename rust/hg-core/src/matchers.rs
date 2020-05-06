@@ -24,6 +24,7 @@ use crate::{
     PatternSyntax,
 };
 
+use crate::filepatterns::normalize_path_bytes;
 use std::borrow::ToOwned;
 use std::collections::HashSet;
 use std::fmt::{Display, Error, Formatter};
@@ -373,15 +374,32 @@ fn re_matcher(
 fn build_regex_match<'a>(
     ignore_patterns: &'a [&'a IgnorePattern],
 ) -> PatternResult<(Vec<u8>, Box<dyn Fn(&HgPath) -> bool + Sync>)> {
-    let regexps: Result<Vec<_>, PatternError> = ignore_patterns
-        .into_iter()
-        .map(|k| build_single_regex(*k))
-        .collect();
-    let regexps = regexps?;
+    let mut regexps = vec![];
+    let mut exact_set = HashSet::new();
+
+    for pattern in ignore_patterns {
+        if let Some(re) = build_single_regex(pattern)? {
+            regexps.push(re);
+        } else {
+            let exact = normalize_path_bytes(&pattern.pattern);
+            exact_set.insert(HgPathBuf::from_bytes(&exact));
+        }
+    }
+
     let full_regex = regexps.join(&b'|');
 
-    let matcher = re_matcher(&full_regex)?;
-    let func = Box::new(move |filename: &HgPath| matcher(filename));
+    // An empty pattern would cause the regex engine to incorrectly match the
+    // (empty) root directory
+    let func = if !(regexps.is_empty()) {
+        let matcher = re_matcher(&full_regex)?;
+        let func = move |filename: &HgPath| {
+            exact_set.contains(filename) || matcher(filename)
+        };
+        Box::new(func) as Box<dyn Fn(&HgPath) -> bool + Sync>
+    } else {
+        let func = move |filename: &HgPath| exact_set.contains(filename);
+        Box::new(func) as Box<dyn Fn(&HgPath) -> bool + Sync>
+    };
 
     Ok((full_regex, func))
 }

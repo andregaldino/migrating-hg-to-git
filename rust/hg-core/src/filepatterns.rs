@@ -271,7 +271,7 @@ pub fn normalize_path_bytes(bytes: &[u8]) -> Vec<u8> {
 /// that don't need to be transformed into a regex.
 pub fn build_single_regex(
     entry: &IgnorePattern,
-) -> Result<Vec<u8>, PatternError> {
+) -> Result<Option<Vec<u8>>, PatternError> {
     let IgnorePattern {
         pattern, syntax, ..
     } = entry;
@@ -288,16 +288,11 @@ pub fn build_single_regex(
     if *syntax == PatternSyntax::RootGlob
         && !pattern.iter().any(|b| GLOB_SPECIAL_CHARACTERS.contains(b))
     {
-        // The `regex` crate adds `.*` to the start and end of expressions
-        // if there are no anchors, so add the start anchor.
-        let mut escaped = vec![b'^'];
-        escaped.extend(escape_pattern(&pattern));
-        escaped.extend(GLOB_SUFFIX);
-        Ok(escaped)
+        Ok(None)
     } else {
         let mut entry = entry.clone();
         entry.pattern = pattern;
-        Ok(_build_single_regex(&entry))
+        Ok(Some(_build_single_regex(&entry)))
     }
 }
 
@@ -628,7 +623,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"(?:.*/)?rust/target(?:/|$)".to_vec(),
+            Some(br"(?:.*/)?rust/target(?:/|$)".to_vec()),
         );
     }
 
@@ -641,7 +636,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"^\.(?:/|$)".to_vec(),
+            None,
         );
         assert_eq!(
             build_single_regex(&IgnorePattern::new(
@@ -650,7 +645,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"^whatever(?:/|$)".to_vec(),
+            None,
         );
         assert_eq!(
             build_single_regex(&IgnorePattern::new(
@@ -659,7 +654,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"^[^/]*\.o(?:/|$)".to_vec(),
+            Some(br"^[^/]*\.o(?:/|$)".to_vec()),
         );
     }
 }
