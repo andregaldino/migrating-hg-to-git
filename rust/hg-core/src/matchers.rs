@@ -670,6 +670,12 @@ impl<'a> IncludeMatcher<'a> {
 
 impl<'a> Display for IncludeMatcher<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        // XXX What about exact matches?
+        // I'm not sure it's worth it to clone the HashSet and keep it
+        // around just in case someone wants to display the matcher, plus
+        // it's going to be unreadable after a few entries, but we need to
+        // inform in this display that exact matches are being used and are
+        // (on purpose) missing from the `includes`.
         write!(
             f,
             "IncludeMatcher(includes='{}')",
