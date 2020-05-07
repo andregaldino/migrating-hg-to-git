@@ -29,6 +29,7 @@ from . import (
     bundlecaches,
     changegroup,
     cmdutil,
+    context as contextmod,
     copies,
     debugcommands as debugcommandsmod,
     destutil,
@@ -2464,6 +2465,16 @@ def debugcomplete(ui, cmd=b'', **opts):
         (b'', b'from', b'', _(b'revision to diff from'), _(b'REV1')),
         (b'', b'to', b'', _(b'revision to diff to'), _(b'REV2')),
         (b'c', b'change', b'', _(b'change made by revision'), _(b'REV')),
+        (
+            b'',
+            b'merge',
+            False,
+            _(
+                b'show difference between auto-merge and committed '
+                b'merge for merge commits (EXPERIMENTAL)'
+            ),
+            _(b'REV'),
+        ),
     ]
     + diffopts
     + diffopts2
@@ -2544,13 +2555,31 @@ def diff(ui, repo, *pats, **opts):
     to_rev = opts.get(b'to')
     stat = opts.get(b'stat')
     reverse = opts.get(b'reverse')
+    diffmerge = opts.get(b'merge')
 
     cmdutil.check_incompatible_arguments(opts, b'from', [b'rev', b'change'])
     cmdutil.check_incompatible_arguments(opts, b'to', [b'rev', b'change'])
     if change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
         ctx2 = scmutil.revsingle(repo, change, None)
-        ctx1 = ctx2.p1()
+        if diffmerge and ctx2.p2().node() != nullid:
+            pctx1 = ctx2.p1()
+            pctx2 = ctx2.p2()
+            wctx = contextmod.overlayworkingctx(repo)
+            wctx.setbase(pctx1)
+            with ui.configoverride(
+                {
+                    (
+                        b'ui',
+                        b'forcemerge',
+                    ): b'internal:merge3-lie-about-conflicts',
+                },
+                b'diff --merge',
+            ):
+                mergemod.merge(pctx2, wc=wctx)
+            ctx1 = wctx
+        else:
+            ctx1 = ctx2.p1()
     elif from_rev or to_rev:
         repo = scmutil.unhidehashlikerevs(
             repo, [from_rev] + [to_rev], b'nowarn'

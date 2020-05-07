@@ -194,4 +194,108 @@ must be similar to 'hg diff --change 5':
    9
    10
 
+merge diff should show only manual edits to a merge:
+
+  $ hg diff --merge -c 6
+  merging file.txt
+(no diff output is expected here)
+
+Construct an "evil merge" that does something other than just the merge.
+
+  $ hg co ".^"
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge -r 5
+  merging file.txt
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ echo 11 >> file.txt
+  $ hg ci -m 'merge 8 to y with manual edit of 11' # 7
+  created new head
+  $ hg diff -c 7
+  diff -r 273b50f17c6d -r 8ad85e839ba7 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -6,6 +6,7 @@
+   5
+   6
+   7
+  -8
+  +y
+   9
+   10
+  +11
+Contrast with the `hg diff -c 7` version above: only the manual edit shows
+up, making it easy to identify changes someone is otherwise trying to sneak
+into a merge.
+  $ hg diff --merge -c 7
+  merging file.txt
+  diff -r 8ad85e839ba7 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -9,3 +9,4 @@
+   y
+   9
+   10
+  +11
+
+Set up a conflict.
+  $ hg co ".^"
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ sed -e 's,^8$,z,' file.txt > file.txt.tmp
+  $ mv file.txt.tmp file.txt
+  $ hg ci -m 'conflicting edit: 8 to z'
+  created new head
+  $ echo "this file is new in p1 of the merge" > new-file-p1.txt
+  $ hg ci -Am 'new file' new-file-p1.txt
+  $ hg log -r . --template 'p1 will be rev {rev}\n'
+  p1 will be rev 9
+  $ hg co 5
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo "this file is new in p2 of the merge" > new-file-p2.txt
+  $ hg ci -Am 'new file' new-file-p2.txt
+  created new head
+  $ hg log -r . --template 'p2 will be rev {rev}\n'
+  p2 will be rev 10
+  $ hg co -- 9
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge -r 10
+  merging file.txt
+  warning: conflicts while merging file.txt! (edit, then use 'hg resolve --mark')
+  1 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg revert file.txt -r .
+  $ hg resolve -ma
+  (no more unresolved files)
+  $ hg commit -m 'merge conflicted edit'
+Without --merge, it's a diff against p1
+  $ hg diff --no-merge -c 11
+  diff -r fd1f17c90d7c -r 5010caab09f6 new-file-p2.txt
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/new-file-p2.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this file is new in p2 of the merge
+With --merge, it's a diff against the conflicted content.
+  $ hg diff --merge -c 11
+  merging file.txt
+  diff -r 5010caab09f6 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -6,12 +6,6 @@
+   5
+   6
+   7
+  -<<<<<<< local: fd1f17c90d7c - test: new file
+   z
+  -||||||| base
+  -8
+  -=======
+  -y
+  ->>>>>>> other: d9e7de69eac3 - test: new file
+   9
+   10
+
+There must _NOT_ be a .hg/merge directory leftover.
+  $ test ! -d .hg/merge
+(No output is expected)
   $ cd ..
