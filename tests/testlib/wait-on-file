@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # wait up to TIMEOUT seconds until a WAIT_ON_FILE is created.
 #
@@ -22,13 +22,11 @@ if [ $# -eq 3 ]; then
     create="$3"
 fi
 
-if [ -n "$create" ];
-then
+if [ -n "$create" ]; then
     touch "$create"
     create=""
 fi
-while [ "$timer" -gt 0 ] && [ ! -f "$wait_on" ];
-do
+while [ "$timer" -gt 0 ] && [ ! -f "$wait_on" ]; do
     timer=$(( $timer - 1))
     sleep 0.01
 done
