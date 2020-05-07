@@ -625,6 +625,15 @@ mod tests {
             .unwrap(),
             Some(br"(?:.*/)?rust/target(?:/|$)".to_vec()),
         );
+        assert_eq!(
+            build_single_regex(&IgnorePattern::new(
+                PatternSyntax::Regexp,
+                br"rust/target/\d+",
+                Path::new("")
+            ))
+            .unwrap(),
+            Some(br"rust/target/\d+".to_vec()),
+        );
     }
 
     #[test]
