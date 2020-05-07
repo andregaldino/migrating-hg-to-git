@@ -612,6 +612,7 @@ else:
                     # We use a thread to make the overhead tiny.
                     def _do_wait():
                         os.waitpid(pid, 0)
+
                     threading.Thread(target=_do_wait, daemon=True).start()
                     return
                 # Parent process
