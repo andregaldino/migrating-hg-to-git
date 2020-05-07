@@ -72,8 +72,8 @@ def diffordiffstat(
     ui,
     repo,
     diffopts,
-    node1,
-    node2,
+    ctx1,
+    ctx2,
     match,
     changes=None,
     stat=False,
@@ -85,8 +85,6 @@ def diffordiffstat(
     hunksfilterfn=None,
 ):
     '''show diff or diffstat.'''
-    ctx1 = repo[node1]
-    ctx2 = repo[node2]
     if root:
         relroot = pathutil.canonpath(repo.root, repo.getcwd(), root)
     else:
@@ -173,6 +171,7 @@ def diffordiffstat(
             for chunk, label in chunks:
                 ui.write(chunk, label=label)
 
+    node2 = ctx2.node()
     for subpath, sub in scmutil.itersubrepos(ctx1, ctx2):
         tempnode2 = node2
         try:
@@ -208,15 +207,12 @@ class changesetdiffer(object):
         return None
 
     def showdiff(self, ui, ctx, diffopts, graphwidth=0, stat=False):
-        repo = ctx.repo()
-        node = ctx.node()
-        prev = ctx.p1().node()
         diffordiffstat(
             ui,
-            repo,
+            ctx.repo(),
             diffopts,
-            prev,
-            node,
+            ctx.p1(),
+            ctx,
             match=self._makefilematcher(ctx),
             stat=stat,
             graphwidth=graphwidth,
