@@ -31,6 +31,8 @@ use std::iter::FromIterator;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
+use micro_timer::timed;
+
 #[derive(Debug, PartialEq)]
 pub enum VisitChildrenSet<'a> {
     /// Don't visit anything
@@ -322,6 +324,7 @@ impl<'a> Matcher for IncludeMatcher<'a> {
 ///
 /// This can fail when the pattern is invalid or not supported by the
 /// underlying engine `Re2`, for instance anything with back-references.
+#[timed]
 fn re_matcher(
     pattern: &[u8],
 ) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
@@ -337,6 +340,7 @@ fn re_matcher(
 /// This can fail when the pattern is invalid or not supported by the
 /// underlying engine (the `regex` crate), for instance anything with
 /// back-references.
+#[timed]
 fn re_matcher(
     pattern: &[u8],
 ) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
