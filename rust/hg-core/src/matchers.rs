@@ -347,7 +347,9 @@ fn re_matcher(
 ) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
     use std::io::Write;
 
-    let mut escaped_bytes = vec![];
+    // The `regex` crate adds `.*` to the start and end of expressions if there
+    // are no anchors, so add the start anchor.
+    let mut escaped_bytes = vec![b'^', b'(', b'?', b':'];
     for byte in pattern {
         if *byte > 127 {
             write!(escaped_bytes, "\\x{:x}", *byte).unwrap();
@@ -355,6 +357,7 @@ fn re_matcher(
             escaped_bytes.push(*byte);
         }
     }
+    escaped_bytes.push(b')');
 
     // Avoid the cost of UTF8 checking
     //

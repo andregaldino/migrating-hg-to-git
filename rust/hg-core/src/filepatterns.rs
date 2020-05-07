@@ -176,9 +176,7 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         return vec![];
     }
     match syntax {
-        // The `regex` crate adds `.*` to the start and end of expressions
-        // if there are no anchors, so add them.
-        PatternSyntax::Regexp => [b"^", &pattern[..], b"$"].concat(),
+        PatternSyntax::Regexp => pattern.to_owned(),
         PatternSyntax::RelRegexp => {
             // The `regex` crate accepts `**` while `re2` and Python's `re`
             // do not. Checking for `*` correctly triggers the same error all
@@ -196,15 +194,14 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         }
         PatternSyntax::RootFiles => {
             let mut res = if pattern == b"." {
-                vec![b'^']
+                vec![]
             } else {
                 // Pattern is a directory name.
-                [b"^", escape_pattern(pattern).as_slice(), b"/"].concat()
+                [escape_pattern(pattern).as_slice(), b"/"].concat()
             };
 
             // Anything after the pattern must be a non-directory.
             res.extend(b"[^/]+$");
-            res.push(b'$');
             res
         }
         PatternSyntax::RelGlob => {
@@ -216,7 +213,7 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
             }
         }
         PatternSyntax::Glob | PatternSyntax::RootGlob => {
-            [b"^", glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
+            [glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
         }
         PatternSyntax::Include | PatternSyntax::SubInclude => unreachable!(),
     }
@@ -654,7 +651,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            Some(br"^[^/]*\.o(?:/|$)".to_vec()),
+            Some(br"[^/]*\.o(?:/|$)".to_vec()),
         );
     }
 }
