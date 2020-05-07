@@ -181,7 +181,10 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
             // The `regex` crate accepts `**` while `re2` and Python's `re`
             // do not. Checking for `*` correctly triggers the same error all
             // engines.
-            if pattern[0] == b'^' || pattern[0] == b'*' {
+            if pattern[0] == b'^'
+                || pattern[0] == b'*'
+                || pattern.starts_with(b".*")
+            {
                 return pattern.to_owned();
             }
             [&b".*"[..], pattern].concat()
