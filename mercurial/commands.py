@@ -2489,10 +2489,13 @@ def diff(ui, repo, *pats, **opts):
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, b'nowarn')
         ctx1, ctx2 = scmutil.revpair(repo, revs)
-    node1, node2 = ctx1.node(), ctx2.node()
 
     if reverse:
-        node1, node2 = node2, node1
+        ctxleft = ctx2
+        ctxright = ctx1
+    else:
+        ctxleft = ctx1
+        ctxright = ctx2
 
     diffopts = patch.diffallopts(ui, opts)
     m = scmutil.match(ctx2, pats, opts)
@@ -2502,8 +2505,8 @@ def diff(ui, repo, *pats, **opts):
         ui,
         repo,
         diffopts,
-        repo[node1],
-        repo[node2],
+        ctxleft,
+        ctxright,
         m,
         stat=stat,
         listsubrepos=opts.get(b'subrepos'),
