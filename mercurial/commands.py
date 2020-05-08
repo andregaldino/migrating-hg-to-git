@@ -2475,16 +2475,14 @@ def diff(ui, repo, *pats, **opts):
     Returns 0 on success.
     """
 
+    cmdutil.check_at_most_one_arg(opts, 'rev', 'change')
     opts = pycompat.byteskwargs(opts)
     revs = opts.get(b'rev')
     change = opts.get(b'change')
     stat = opts.get(b'stat')
     reverse = opts.get(b'reverse')
 
-    if revs and change:
-        msg = _(b'cannot specify --rev and --change at the same time')
-        raise error.Abort(msg)
-    elif change:
+    if change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
         ctx2 = scmutil.revsingle(repo, change, None)
         ctx1 = ctx2.p1()

@@ -360,14 +360,12 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
     - just invoke the diff for a single file in the working dir
     '''
 
+    cmdutil.check_at_most_one_arg(opts, b'rev', b'change')
     revs = opts.get(b'rev')
     change = opts.get(b'change')
     do3way = b'$parent2' in cmdline
 
-    if revs and change:
-        msg = _(b'cannot specify --rev and --change at the same time')
-        raise error.Abort(msg)
-    elif change:
+    if change:
         ctx2 = scmutil.revsingle(repo, change, None)
         ctx1a, ctx1b = ctx2.p1(), ctx2.p2()
     else:
