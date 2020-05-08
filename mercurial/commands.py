@@ -6784,6 +6784,7 @@ def status(ui, repo, *pats, **opts):
 
     """
 
+    cmdutil.check_at_most_one_arg(opts, 'rev', 'change')
     opts = pycompat.byteskwargs(opts)
     revs = opts.get(b'rev')
     change = opts.get(b'change')
@@ -6794,10 +6795,7 @@ def status(ui, repo, *pats, **opts):
         else:
             terse = ui.config(b'commands', b'status.terse')
 
-    if revs and change:
-        msg = _(b'cannot specify --rev and --change at the same time')
-        raise error.Abort(msg)
-    elif revs and terse:
+    if revs and terse:
         msg = _(b'cannot use --terse with --rev')
         raise error.Abort(msg)
     elif change:
