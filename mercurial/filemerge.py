@@ -538,6 +538,25 @@ def _imerge3(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
 
 
 @internaltool(
+    b'merge3-lie-about-conflicts',
+    fullmerge,
+    b'',
+    precheck=_mergecheck,
+)
+def _imerge3alwaysgood(*args, **kwargs):
+    # Like merge3, but record conflicts as resolved with markers in place.
+    #
+    # This is used for `hg diff --merge` to show the differences between
+    # the auto-merge state and the committed merge state. It may be
+    # useful for other things.
+    b1, junk, b2 = _imerge3(*args, **kwargs)
+    # TODO is this right? I'm not sure what these return values mean,
+    # but as far as I can tell this will indicate to callers tha the
+    # merge succeeded.
+    return b1, False, b2
+
+
+@internaltool(
     b'mergediff',
     fullmerge,
     _(
