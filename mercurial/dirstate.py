@@ -103,6 +103,13 @@ class dirstate(object):
         # raises an exception).
         self._cwd
 
+    def prefetch_parents(self):
+        """make sure the parents are loaded
+
+        Used to avoid a race condition.
+        """
+        self._pl
+
     @contextlib.contextmanager
     def parentchange(self):
         '''Context manager for handling dirstate parents.
