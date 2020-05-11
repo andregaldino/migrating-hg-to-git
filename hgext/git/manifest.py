@@ -205,7 +205,7 @@ class gittreemanifestctx(object):
         return memgittreemanifestctx(self._repo, self._tree)
 
     def find(self, path):
-        self.read()[path]
+        return self.read()[path]
 
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
