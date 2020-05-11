@@ -456,9 +456,7 @@ def formatrevnode(ui, rev, node):
 
 
 def resolvehexnodeidprefix(repo, prefix):
-    if prefix.startswith(b'x') and repo.ui.configbool(
-        b'experimental', b'revisions.prefixhexnode'
-    ):
+    if prefix.startswith(b'x'):
         prefix = prefix[1:]
     try:
         # Uses unfiltered repo because it's faster when prefix is ambiguous/
