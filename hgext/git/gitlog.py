@@ -247,6 +247,60 @@ class changelog(baselog):
     def descendants(self, revs):
         return dagop.descendantrevs(revs, self.revs, self.parentrevs)
 
+    def incrementalmissingrevs(self, common=None):
+        """Return an object that can be used to incrementally compute the
+        revision numbers of the ancestors of arbitrary sets that are not
+        ancestors of common. This is an ancestor.incrementalmissingancestors
+        object.
+
+        'common' is a list of revision numbers. If common is not supplied, uses
+        nullrev.
+        """
+        if common is None:
+            common = [nodemod.nullrev]
+
+        return ancestor.incrementalmissingancestors(self.parentrevs, common)
+
+    def findmissing(self, common=None, heads=None):
+        """Return the ancestors of heads that are not ancestors of common.
+
+        More specifically, return a list of nodes N such that every N
+        satisfies the following constraints:
+
+          1. N is an ancestor of some node in 'heads'
+          2. N is not an ancestor of any node in 'common'
+
+        The list is sorted by revision number, meaning it is
+        topologically sorted.
+
+        'heads' and 'common' are both lists of node IDs.  If heads is
+        not supplied, uses all of the revlog's heads.  If common is not
+        supplied, uses nullid."""
+        if common is None:
+            common = [nodemod.nullid]
+        if heads is None:
+            heads = self.heads()
+
+        common = [self.rev(n) for n in common]
+        heads = [self.rev(n) for n in heads]
+
+        inc = self.incrementalmissingrevs(common=common)
+        return [self.node(r) for r in inc.missingancestors(heads)]
+
+    def children(self, node):
+        """find the children of a given node"""
+        c = []
+        p = self.rev(node)
+        for r in self.revs(start=p + 1):
+            prevs = [pr for pr in self.parentrevs(r) if pr != nodemod.nullrev]
+            if prevs:
+                for pr in prevs:
+                    if pr == p:
+                        c.append(self.node(r))
+            elif p == nodemod.nullrev:
+                c.append(self.node(r))
+        return c
+
     def reachableroots(self, minroot, heads, roots, includepath=False):
         return dagop._reachablerootspure(
             self.parentrevs, minroot, roots, heads, includepath
