@@ -270,7 +270,10 @@ class changelog(baselog):
     def parentrevs(self, rev):
         n = self.node(rev)
         hn = gitutil.togitnode(n)
-        c = self.gitrepo[hn]
+        if hn != gitutil.nullgit:
+            c = self.gitrepo[hn]
+        else:
+            return nodemod.nullrev, nodemod.nullrev
         p1 = p2 = nodemod.nullrev
         if c.parents:
             p1 = self.rev(c.parents[0].id.raw)
