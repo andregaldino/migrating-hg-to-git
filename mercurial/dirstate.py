@@ -1107,6 +1107,7 @@ class dirstate(object):
             unknown,
             warnings,
             bad,
+            traversed,
         ) = rustmod.status(
             self._map._rustmap,
             matcher,
@@ -1117,7 +1118,13 @@ class dirstate(object):
             bool(list_clean),
             bool(list_ignored),
             bool(list_unknown),
+            bool(matcher.traversedir),
         )
+
+        if matcher.traversedir:
+            for dir in traversed:
+                matcher.traversedir(dir)
+
         if self._ui.warn:
             for item in warnings:
                 if isinstance(item, tuple):
@@ -1192,8 +1199,6 @@ class dirstate(object):
         elif subrepos:
             use_rust = False
         elif sparse.enabled:
-            use_rust = False
-        elif match.traversedir is not None:
             use_rust = False
         elif not isinstance(match, allowed_matchers):
             # Some matchers have yet to be implemented
