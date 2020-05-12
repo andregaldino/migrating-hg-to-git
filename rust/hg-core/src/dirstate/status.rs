@@ -221,6 +221,7 @@ fn walk_explicit<'a>(
     dmap: &'a DirstateMap,
     root_dir: impl AsRef<Path> + Sync + Send + 'a,
     options: StatusOptions,
+    traversed_sender: crossbeam::Sender<HgPathBuf>,
 ) -> impl ParallelIterator<Item = IoResult<(&'a HgPath, Dispatch)>> {
     files
         .unwrap_or(&DEFAULT_WORK)
@@ -255,6 +256,13 @@ fn walk_explicit<'a>(
                         Some(Ok((normalized, Dispatch::Unknown)))
                     } else {
                         if file_type.is_dir() {
+                            if options.collect_traversed_dirs {
+                                // The receiver always outlives the sender,
+                                // so unwrap.
+                                traversed_sender
+                                    .send(normalized.to_owned())
+                                    .unwrap()
+                            }
                             Some(Ok((
                                 normalized,
                                 Dispatch::Directory {
@@ -302,6 +310,9 @@ pub struct StatusOptions {
     pub list_clean: bool,
     pub list_unknown: bool,
     pub list_ignored: bool,
+    /// Whether to collect traversed dirs for applying a callback later.
+    /// Used by `hg purge` for example.
+    pub collect_traversed_dirs: bool,
 }
 
 /// Dispatch a single entry (file, folder, symlink...) found during `traverse`.
@@ -319,6 +330,7 @@ fn handle_traversed_entry<'a>(
     options: StatusOptions,
     filename: HgPathBuf,
     dir_entry: DirEntry,
+    traversed_sender: crossbeam::Sender<HgPathBuf>,
 ) -> IoResult<()> {
     let file_type = dir_entry.file_type()?;
     let entry_option = dmap.get(&filename);
@@ -341,6 +353,7 @@ fn handle_traversed_entry<'a>(
             options,
             entry_option,
             filename,
+            traversed_sender,
         );
     } else if file_type.is_file() || file_type.is_symlink() {
         if let Some(entry) = entry_option {
@@ -407,6 +420,7 @@ fn handle_traversed_dir<'a>(
     options: StatusOptions,
     entry_option: Option<&'a DirstateEntry>,
     directory: HgPathBuf,
+    traversed_sender: crossbeam::Sender<HgPathBuf>,
 ) {
     scope.spawn(move |_| {
         // Nested `if` until `rust-lang/rust#53668` is stable
@@ -433,6 +447,7 @@ fn handle_traversed_dir<'a>(
                 ignore_fn,
                 dir_ignore_fn,
                 options,
+                traversed_sender,
             )
             .unwrap_or_else(|e| files_sender.send(Err(e)).unwrap())
         }
@@ -451,8 +466,14 @@ fn traverse_dir<'a>(
     ignore_fn: &IgnoreFnType,
     dir_ignore_fn: &IgnoreFnType,
     options: StatusOptions,
+    traversed_sender: crossbeam::Sender<HgPathBuf>,
 ) -> IoResult<()> {
     let directory = directory.as_ref();
+
+    if options.collect_traversed_dirs {
+        // The receiver always outlives the sender, so unwrap.
+        traversed_sender.send(directory.to_owned()).unwrap()
+    }
 
     let visit_entries = match matcher.visit_children_set(directory) {
         VisitChildrenSet::Empty => return Ok(()),
@@ -510,6 +531,7 @@ fn traverse_dir<'a>(
                     options,
                     filename,
                     dir_entry,
+                    traversed_sender.clone(),
                 )?;
             }
         }
@@ -533,6 +555,7 @@ fn traverse<'a>(
     dir_ignore_fn: &IgnoreFnType,
     options: StatusOptions,
     results: &mut Vec<(Cow<'a, HgPath>, Dispatch)>,
+    traversed_sender: crossbeam::Sender<HgPathBuf>,
 ) -> IoResult<()> {
     let root_dir = root_dir.as_ref();
 
@@ -550,6 +573,7 @@ fn traverse<'a>(
         &ignore_fn,
         &dir_ignore_fn,
         options,
+        traversed_sender,
     )?;
 
     // Disconnect the channel so the receiver stops waiting
@@ -640,11 +664,14 @@ pub struct DirstateStatus<'a> {
     pub ignored: Vec<Cow<'a, HgPath>>,
     pub unknown: Vec<Cow<'a, HgPath>>,
     pub bad: Vec<(Cow<'a, HgPath>, BadMatch)>,
+    /// Only filled if `collect_traversed_dirs` is `true`
+    pub traversed: Vec<HgPathBuf>,
 }
 
 #[timed]
 fn build_response<'a>(
     results: impl IntoIterator<Item = (Cow<'a, HgPath>, Dispatch)>,
+    traversed: Vec<HgPathBuf>,
 ) -> (Vec<Cow<'a, HgPath>>, DirstateStatus<'a>) {
     let mut lookup = vec![];
     let mut modified = vec![];
@@ -683,6 +710,7 @@ fn build_response<'a>(
             ignored,
             unknown,
             bad,
+            traversed,
         },
     )
 }
@@ -849,8 +877,17 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
 
     let files = matcher.file_set();
 
+    // `crossbeam::Sender` is `Send`, while `mpsc::Sender` is not.
+    let (traversed_sender, traversed_recv) = crossbeam::channel::unbounded();
+
     // Step 1: check the files explicitly mentioned by the user
-    let explicit = walk_explicit(files, &dmap, root_dir, options);
+    let explicit = walk_explicit(
+        files,
+        &dmap,
+        root_dir,
+        options,
+        traversed_sender.clone(),
+    );
 
     // Collect results into a `Vec` because we do very few lookups in most
     // cases.
@@ -888,6 +925,7 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
                             &dir_ignore_fn,
                             options,
                             &mut results,
+                            traversed_sender.clone(),
                         )?;
                     }
                 }
@@ -911,5 +949,9 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
         }
     }
 
-    Ok((build_response(results), warnings))
+    // Close the channel
+    drop(traversed_sender);
+    let traversed_dirs = traversed_recv.into_iter().collect();
+
+    Ok((build_response(results, traversed_dirs), warnings))
 }
