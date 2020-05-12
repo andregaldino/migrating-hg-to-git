@@ -53,7 +53,7 @@ def convert_to_git_user(authormap, user, rev):
 
 def convert_to_git_date(date):
     timestamp, utcoff = date
-    tzsign = b"+" if utcoff < 0 else b"-"
+    tzsign = b"+" if utcoff <= 0 else b"-"
     if utcoff % 60 != 0:
         raise error.Abort(
             _(b"UTC offset in %b is not an integer number of seconds") % (date,)
