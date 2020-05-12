@@ -371,9 +371,11 @@ fn handle_traversed_entry<'a>(
                         .unwrap();
                 }
             } else {
-                files_sender
-                    .send(Ok((filename.to_owned(), Dispatch::Unknown)))
-                    .unwrap();
+                if options.list_unknown {
+                    files_sender
+                        .send(Ok((filename.to_owned(), Dispatch::Unknown)))
+                        .unwrap();
+                }
             }
         } else if ignore_fn(&filename) && options.list_ignored {
             files_sender
