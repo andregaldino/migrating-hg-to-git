@@ -1196,7 +1196,7 @@ class dirstate(object):
         elif match.traversedir is not None:
             use_rust = False
         elif not isinstance(match, allowed_matchers):
-            # Matchers have yet to be implemented
+            # Some matchers have yet to be implemented
             use_rust = False
 
         if use_rust:
