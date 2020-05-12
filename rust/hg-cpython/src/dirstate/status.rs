@@ -104,6 +104,7 @@ pub fn status_wrapper(
     list_clean: bool,
     list_ignored: bool,
     list_unknown: bool,
+    collect_traversed_dirs: bool,
 ) -> PyResult<PyTuple> {
     let bytes = root_dir.extract::<PyBytes>(py)?;
     let root_dir = get_path_from_bytes(bytes.data(py));
@@ -134,6 +135,7 @@ pub fn status_wrapper(
                     list_clean,
                     list_ignored,
                     list_unknown,
+                    collect_traversed_dirs,
                 },
             )
             .map_err(|e| handle_fallback(py, e))?;
@@ -170,6 +172,7 @@ pub fn status_wrapper(
                     list_clean,
                     list_ignored,
                     list_unknown,
+                    collect_traversed_dirs,
                 },
             )
             .map_err(|e| handle_fallback(py, e))?;
@@ -224,6 +227,7 @@ pub fn status_wrapper(
                     list_clean,
                     list_ignored,
                     list_unknown,
+                    collect_traversed_dirs,
                 },
             )
             .map_err(|e| handle_fallback(py, e))?;
@@ -256,6 +260,7 @@ fn build_response(
     let unknown = collect_pybytes_list(py, status_res.unknown.as_ref());
     let lookup = collect_pybytes_list(py, lookup.as_ref());
     let bad = collect_bad_matches(py, status_res.bad.as_ref())?;
+    let traversed = collect_pybytes_list(py, status_res.traversed.as_ref());
     let py_warnings = PyList::new(py, &[]);
     for warning in warnings.iter() {
         // We use duck-typing on the Python side for dispatch, good enough for
@@ -292,6 +297,7 @@ fn build_response(
             unknown.into_object(),
             py_warnings.into_object(),
             bad.into_object(),
+            traversed.into_object(),
         ][..],
     ))
 }
