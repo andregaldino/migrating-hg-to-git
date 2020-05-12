@@ -3,19 +3,16 @@ ROOT = CWD + "/../.."
 # Code to run in Python interpreter.
 RUN_CODE = "import hgdemandimport; hgdemandimport.enable(); from mercurial import dispatch; dispatch.run()"
 
-
 set_build_path(ROOT + "/build/pyoxidizer")
-
 
 def make_distribution():
     return default_python_distribution()
 
-
 def make_distribution_windows():
-    return default_python_distribution(flavor="standalone_dynamic")
-
+    return default_python_distribution(flavor = "standalone_dynamic")
 
 def make_exe(dist):
+    """Builds a Rust-wrapped Mercurial binary."""
     config = PythonInterpreterConfig(
         raw_allocator = "system",
         run_eval = RUN_CODE,
@@ -58,11 +55,10 @@ def make_exe(dist):
     # On Windows, we install extra packages for convenience.
     if "windows" in BUILD_TARGET_TRIPLE:
         exe.add_python_resources(
-            dist.pip_install(["-r", ROOT + "/contrib/packaging/requirements_win32.txt"])
+            dist.pip_install(["-r", ROOT + "/contrib/packaging/requirements_win32.txt"]),
         )
 
     return exe
-
 
 def make_manifest(dist, exe):
     m = FileManifest()
@@ -70,10 +66,8 @@ def make_manifest(dist, exe):
 
     return m
 
-
 def make_embedded_resources(exe):
     return exe.to_embedded_resources()
-
 
 register_target("distribution_posix", make_distribution)
 register_target("distribution_windows", make_distribution_windows)
