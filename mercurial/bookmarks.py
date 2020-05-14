@@ -754,7 +754,8 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
     if changed:
         tr = trfunc()
         changes = []
-        for b, node, writer, msg in sorted(changed):
+        key = lambda t: (t[0], t[1] or b'')
+        for b, node, writer, msg in sorted(changed, key=key):
             changes.append((b, node))
             writer(msg)
         localmarks.applychanges(repo, tr, changes)
