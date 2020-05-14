@@ -13,7 +13,7 @@ import os
 # bug link: https://bugs.python.org/issue25270
 supportedpy = ','.join(
     [
-        '>=2.7',
+        '>=2.7.4',
         '!=3.0.*',
         '!=3.1.*',
         '!=3.2.*',
@@ -54,7 +54,7 @@ else:
 # should have a chance of getting a 4.2 release, and when we ratchet
 # the version requirement forward again hopefully everyone will get
 # something that works for them.
-if sys.version_info < (2, 7, 0, 'final'):
+if sys.version_info < (2, 7, 4, 'final'):
     pip_message = (
         'This may be due to an out of date pip. '
         'Make sure you have pip >= 9.0.1.'
@@ -74,7 +74,7 @@ if sys.version_info < (2, 7, 0, 'final'):
     except Exception:
         pass
     error = """
-Mercurial does not support Python older than 2.7.
+Mercurial does not support Python older than 2.7.4.
 Python {py} detected.
 {pip}
 """.format(
