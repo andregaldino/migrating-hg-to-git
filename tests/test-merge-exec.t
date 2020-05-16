@@ -209,6 +209,5 @@ merge them (from the chmod side)
     a
   R a
   $ [ -x z ] || echo "executable bit lost"
-  executable bit lost
 
   $ cd ..
