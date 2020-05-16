@@ -80,3 +80,60 @@ merge them (from the chmod side)
 
   $ cd ..
 
+Testing merging mode change with rename
+=======================================
+
+  $ hg clone base-repo rename-merge-repo
+  updating to branch default
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd rename-merge-repo
+
+make "a" executable on one side
+
+  $ chmod +x a
+  $ hg status
+  M a
+  $ hg ci -m "make a executable"
+  $ [ -x a ] || echo "executable bit not recorded"
+  $ hg up ".^"
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+make "a" renamed on the other side
+
+  $ hg mv a z
+  $ hg st --copies
+  A z
+    a
+  R a
+  $ hg ci -m "rename a to z"
+  created new head
+
+merge them (from the rename side)
+
+  $ hg merge 'desc("make a executable")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (false !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (true !)
+  (branch merge, don't forget to commit)
+  $ hg st --copies
+  M z (false !)
+    a (false !)
+  $ [ -x z ] || echo "executable bit lost"
+  executable bit lost (true !)
+
+merge them (from the chmod side)
+
+  $ hg up -C 'desc("make a executable")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("rename a to z")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (false !)
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (true !)
+  (branch merge, don't forget to commit)
+  $ hg st --copies
+  M z
+    a (false !)
+  R a
+  $ [ -x z ] || echo "executable bit lost"
+  executable bit lost (true !)
+
+
+  $ cd ..
