@@ -111,29 +111,25 @@ make "a" renamed on the other side
 merge them (from the rename side)
 
   $ hg merge 'desc("make a executable")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (false !)
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (true !)
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg st --copies
-  M z (false !)
-    a (false !)
+  M z
+    a
   $ [ -x z ] || echo "executable bit lost"
-  executable bit lost (true !)
 
 merge them (from the chmod side)
 
   $ hg up -C 'desc("make a executable")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("rename a to z")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (false !)
-  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (true !)
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg st --copies
   M z
-    a (false !)
+    a
   R a
   $ [ -x z ] || echo "executable bit lost"
-  executable bit lost (true !)
 
 
   $ cd ..
