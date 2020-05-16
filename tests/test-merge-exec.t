@@ -195,7 +195,6 @@ merge them (from the rename side)
   M z
     a
   $ [ -x z ] || echo "executable bit lost"
-  executable bit lost
 
 merge them (from the chmod side)
 
