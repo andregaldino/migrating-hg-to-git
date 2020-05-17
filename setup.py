@@ -1396,7 +1396,7 @@ class RustExtension(Extension):
 
             env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
 
-        cargocmd = ['cargo', 'rustc', '-vv', '--release']
+        cargocmd = ['cargo', 'rustc', '--release']
 
         feature_flags = []
 
