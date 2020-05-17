@@ -3428,8 +3428,11 @@ def grep(ui, repo, pattern, *pats, **opts):
                 m = regexp.search(self.line, p)
                 if not m:
                     break
-                yield m.span()
-                p = m.end()
+                if m.end() == p:
+                    p += 1
+                else:
+                    yield m.span()
+                    p = m.end()
 
     matches = {}
     copies = {}

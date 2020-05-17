@@ -660,7 +660,7 @@ Existing tracked files in the working directory are searched by default
   $ echo 'added, missing' > added-missing; hg add added-missing; rm added-missing
   $ echo 'untracked' > untracked
   $ hg rm old
-  $ hg grep '[^Z]'
+  $ hg grep ''
   added:added
   new:something else
   new:modified
