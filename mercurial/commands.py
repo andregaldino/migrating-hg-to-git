@@ -3578,18 +3578,27 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     getrenamed = scmutil.getrenamedfn(repo)
 
-    def get_file_content(filename, filelog, filenode, context, revision):
-        try:
-            content = filelog.read(filenode)
-        except error.WdirUnsupported:
-            content = context[filename].data()
-        except error.CensoredNodeError:
-            content = None
-            ui.warn(
-                _(b'cannot search in censored file: %(filename)s:%(revnum)s\n')
-                % {b'filename': filename, b'revnum': pycompat.bytestr(revision)}
-            )
-        return content
+    def readfile(ctx, fn):
+        rev = ctx.rev()
+        if rev is None:
+            fctx = ctx[fn]
+            try:
+                return fctx.data()
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+        else:
+            flog = getfile(fn)
+            fnode = ctx.filenode(fn)
+            try:
+                return flog.read(fnode)
+            except error.CensoredNodeError:
+                ui.warn(
+                    _(
+                        b'cannot search in censored file: %(filename)s:%(revnum)s\n'
+                    )
+                    % {b'filename': fn, b'revnum': pycompat.bytestr(rev),}
+                )
 
     def prep(ctx, fns):
         rev = ctx.rev()
@@ -3600,10 +3609,10 @@ def grep(ui, repo, pattern, *pats, **opts):
             matches.setdefault(parent, {})
         files = revfiles.setdefault(rev, [])
         for fn in fns:
-            flog = getfile(fn)
-            try:
-                fnode = ctx.filenode(fn)
-            except error.LookupError:
+            # fn might not exist in the revision (could be a file removed by the
+            # revision). We could check `fn not in ctx` even when rev is None,
+            # but it's less racy to protect againt that in readfile.
+            if rev is not None and fn not in ctx:
                 continue
 
             copy = None
@@ -3618,20 +3627,12 @@ def grep(ui, repo, pattern, *pats, **opts):
             files.append(fn)
 
             if fn not in matches[rev]:
-                content = get_file_content(fn, flog, fnode, ctx, rev)
-                grepbody(fn, rev, content)
+                grepbody(fn, rev, readfile(ctx, fn))
 
             if diff:
                 pfn = copy or fn
-                if pfn not in matches[parent]:
-                    try:
-                        pfnode = pctx.filenode(pfn)
-                        pcontent = get_file_content(
-                            pfn, flog, pfnode, pctx, parent
-                        )
-                        grepbody(pfn, parent, pcontent)
-                    except error.LookupError:
-                        pass
+                if pfn not in matches[parent] and pfn in pctx:
+                    grepbody(pfn, parent, readfile(pctx, pfn))
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
