@@ -847,7 +847,7 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
     Vec<PatternFileWarning>,
 )> {
     // Needs to outlive `dir_ignore_fn` since it's captured.
-    let mut ignore_fn: IgnoreFnType;
+    let ignore_fn: IgnoreFnType;
 
     // Only involve real ignore mechanism if we're listing unknowns or ignored.
     let (dir_ignore_fn, warnings): (IgnoreFnType, _) = if options.list_ignored
