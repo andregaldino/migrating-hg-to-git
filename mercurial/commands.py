@@ -3594,9 +3594,10 @@ def grep(ui, repo, pattern, *pats, **opts):
     def prep(ctx, fns):
         rev = ctx.rev()
         pctx = ctx.p1()
-        parent = pctx.rev()
         matches.setdefault(rev, {})
-        matches.setdefault(parent, {})
+        if diff:
+            parent = pctx.rev()
+            matches.setdefault(parent, {})
         files = revfiles.setdefault(rev, [])
         for fn in fns:
             flog = getfile(fn)
@@ -3620,14 +3621,17 @@ def grep(ui, repo, pattern, *pats, **opts):
                 content = get_file_content(fn, flog, fnode, ctx, rev)
                 grepbody(fn, rev, content)
 
-            pfn = copy or fn
-            if pfn not in matches[parent]:
-                try:
-                    pfnode = pctx.filenode(pfn)
-                    pcontent = get_file_content(pfn, flog, pfnode, pctx, parent)
-                    grepbody(pfn, parent, pcontent)
-                except error.LookupError:
-                    pass
+            if diff:
+                pfn = copy or fn
+                if pfn not in matches[parent]:
+                    try:
+                        pfnode = pctx.filenode(pfn)
+                        pcontent = get_file_content(
+                            pfn, flog, pfnode, pctx, parent
+                        )
+                        grepbody(pfn, parent, pcontent)
+                    except error.LookupError:
+                        pass
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
