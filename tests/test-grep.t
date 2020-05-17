@@ -645,18 +645,24 @@ Test for showing working of allfiles flag
   $ hg init sng
   $ cd sng
   $ echo "unmod" >> um
-  $ hg ci -A -m "adds unmod to um"
-  adding um
+  $ echo old > old
+  $ hg ci -q -A -m "adds unmod to um"
   $ echo "something else" >> new
   $ hg ci -A -m "second commit"
   adding new
   $ hg grep -r "." "unmod"
   um:1:unmod
 
-Working directory is searched by default
+Existing tracked files in the working directory are searched by default
 
   $ echo modified >> new
-  $ hg grep mod
+  $ echo 'added' > added; hg add added
+  $ echo 'added, missing' > added-missing; hg add added-missing; rm added-missing
+  $ echo 'untracked' > untracked
+  $ hg rm old
+  $ hg grep '[^Z]'
+  added:added
+  new:something else
   new:modified
   um:unmod
 
@@ -667,17 +673,6 @@ Working directory is searched by default
 
   $ hg grep --diff mod
   um:0:+:unmod
-
-  $ cd ..
-
-Fix_Wdir(): test that passing wdir() t -r flag does greps on the
-files modified in the working directory
-
-  $ cd a
-  $ echo "abracadara" >> a
-  $ hg add a
-  $ hg grep -r "wdir()" "abra"
-  a:2147483647:abracadara
 
   $ cd ..
 
