@@ -1,0 +1,93 @@
+== New Features ==
+
+ * `hg purge`/`hg clean` can now delete ignored files instead of
+   untracked files, with the new -i flag.
+
+ * `hg pull` now has a `--confirm` flag to prompt before applying changes.
+   Config option `pull.confirm` is also added for that.
+
+ * `hg log` now defaults to using an '%' symbol for commits involved
+    in unresolved merge conflicts. That includes unresolved conflicts
+    caused by e.g. `hg update --merge` and `hg graft`. '@' still takes
+    precedence, so what used to be marked '@' still is.
+
+ * New `conflictlocal()` and `conflictother()` revsets return the
+   commits that are being merged, when there are conflicts. Also works
+   for conflicts caused by e.g. `hg graft`.
+
+ * `hg copy --forget` can be used to unmark a file as copied.
+
+ * The `format.revlog-compression` configuration entry now accept a list. The
+   first available option will be used. for example setting::
+
+     [format]
+     revlog-compression=zstd, zlib
+
+   Will use `zstd` compression for new repositories is available, and will
+   simply fall back to `zlib` if not.
+
+ * `hg debugmergestate` output is now templated, which may be useful
+   e.g. for IDEs that want to help the user resolve merge conflicts.
+
+
+== New Experimental Features ==
+
+ * `hg copy` now supports a `--at-rev` argument to mark files as
+   copied in the specified commit. It only works with `--after` for
+   now (i.e., it's only useful for marking files copied using non-hg
+   `cp` as copied).
+
+ * Use `hg copy --forget --at-rev REV` to unmark already committed
+   copies.
+
+== Bug Fixes  ==
+
+ * Fix server exception when concurrent pushes delete the same bookmark
+
+ * Prevent pushes of divergent bookmarks (foo@remote)
+
+ * The push error "remote repository changed while pushing - please
+   try again" now only happens when a concurrent push changed related
+   heads (instead of when a concurrent pushed any revision).
+
+
+== Backwards Compatibility Changes ==
+
+ * When `hg rebase` pauses for merge conflict resolution, the working
+   copy will no longer have the rebased node as a second parent. You
+   can use the new `conflictparents()` revset for finding the other
+   parent during a conflict.
+
+ * `hg rebase` now accepts repeated `--source` and `--base`
+   arguments. For example, `hg rebase --source 'A + B'` is equivalent
+   to `hg rebase --source A --source B`. This is a
+   backwards-incompatible change because it will break overriding an
+   alias `myrebase = rebase --source A` by `hg myrebase --source B`
+   (it will now rebase `(A + B)::` instead of `B::`).
+
+ * `hg recover` does not verify the validity of the whole repository
+   anymore. You can pass `--verify` or call `hg verify` if necessary.
+
+ * `hg debugmergestate` output format changed. Let us know if that is
+   causing you problems and we'll roll it back.
+
+ * Resolved merge conflicts are now cleared by `hg commit` even if the
+   working copy has no changes.
+
+
+== Internal API Changes ==
+
+ * The deprecated `ui.progress()` has now been deleted. Please use
+   `ui.makeprogress()` instead.
+
+ * `hg.merge()` now takes a `ctx` instead of the previous `repo` and
+   `node` arguments.
+
+ * `hg.merge()` has lost its `abort` argument. Please call
+   `hg.abortmerge()` directly instead.
+
+ * `hg.merge()` has lost its `mergeforce` argument. It should have
+   only ever been called with the same value as the `force` argument.
+
+ * The `*others` argument of `cmdutil.check_incompatible_arguments()`
+   changed from being varargs argument to being a single collection.
