@@ -34,6 +34,7 @@ from . import (
     error,
     fileset,
     match as matchmod,
+    mergestate as mergestatemod,
     obsolete as obsmod,
     patch,
     pathutil,
@@ -473,6 +474,12 @@ class basectx(object):
         r.clean.sort()
 
         return r
+
+    def mergestate(self, clean=False):
+        """Get a mergestate object for this context."""
+        raise NotImplementedError(
+            '%s does not implement mergestate()' % self.__class__
+        )
 
 
 class changectx(basectx):
@@ -2002,6 +2009,11 @@ class workingctx(committablectx):
         self._repo.dirstate.write(self._repo.currenttransaction())
 
         sparse.aftercommit(self._repo, node)
+
+    def mergestate(self, clean=False):
+        if clean:
+            return mergestatemod.mergestate.clean(self._repo)
+        return mergestatemod.mergestate.read(self._repo)
 
 
 class committablefilectx(basefilectx):
