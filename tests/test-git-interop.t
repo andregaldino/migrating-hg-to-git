@@ -199,6 +199,9 @@ hg log FILE
      summary:     Add beta
   
 
+  $ hg log -r "children(3d9be8deba43)" -T"{node|short} {children}\n"
+  a1983dd7fb19 3:d8ee22687733
+
 hg annotate
 
   $ hg annotate alpha
