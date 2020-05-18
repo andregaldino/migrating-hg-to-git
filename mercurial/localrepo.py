@@ -44,7 +44,7 @@ from . import (
     hook,
     lock as lockmod,
     match as matchmod,
-    merge as mergemod,
+    mergestate as mergestatemod,
     mergeutil,
     namespaces,
     narrowspec,
@@ -2468,7 +2468,7 @@ class localrepository(object):
                 ui.status(
                     _(b'working directory now based on revision %d\n') % parents
                 )
-            mergemod.mergestate.clean(self, self[b'.'].node())
+            mergestatemod.mergestate.clean(self, self[b'.'].node())
 
         # TODO: if we know which new heads may result from this rollback, pass
         # them to destroy(), which will prevent the branchhead cache from being
@@ -2867,10 +2867,10 @@ class localrepository(object):
                 fparent2 = nullid
             elif not fparentancestors:
                 # TODO: this whole if-else might be simplified much more
-                ms = mergemod.mergestate.read(self)
+                ms = mergestatemod.mergestate.read(self)
                 if (
                     fname in ms
-                    and ms[fname] == mergemod.MERGE_RECORD_MERGED_OTHER
+                    and ms[fname] == mergestatemod.MERGE_RECORD_MERGED_OTHER
                 ):
                     fparent1, fparent2 = fparent2, nullid
 
@@ -2968,7 +2968,7 @@ class localrepository(object):
                 self, status, text, user, date, extra
             )
 
-            ms = mergemod.mergestate.read(self)
+            ms = mergestatemod.mergestate.read(self)
             mergeutil.checkunresolved(ms)
 
             # internal config: ui.allowemptycommit

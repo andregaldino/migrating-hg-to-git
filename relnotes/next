@@ -11,3 +11,6 @@
 
  * logcmdutil.diffordiffstat() now takes contexts instead of nodes.
 
+ * The `mergestate` class along with some related methods and constants have
+   moved from `mercurial.merge` to a new `mercurial.mergestate` module.
+

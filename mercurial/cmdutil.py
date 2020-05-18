@@ -38,6 +38,7 @@ from . import (
     logcmdutil,
     match as matchmod,
     merge as mergemod,
+    mergestate as mergestatemod,
     mergeutil,
     obsolete,
     patch,
@@ -890,7 +891,7 @@ To mark files as resolved:  hg resolve --mark FILE'''
 def readmorestatus(repo):
     """Returns a morestatus object if the repo has unfinished state."""
     statetuple = statemod.getrepostate(repo)
-    mergestate = mergemod.mergestate.read(repo)
+    mergestate = mergestatemod.mergestate.read(repo)
     activemerge = mergestate.active()
     if not statetuple and not activemerge:
         return None
@@ -3127,7 +3128,7 @@ def amend(ui, repo, old, extra, pats, opts):
             if subs:
                 subrepoutil.writestate(repo, newsubstate)
 
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         mergeutil.checkunresolved(ms)
 
         filestoamend = {f for f in wctx.files() if matcher(f)}

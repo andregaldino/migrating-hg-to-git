@@ -18,6 +18,7 @@ from . import (
     error,
     match as matchmod,
     merge as mergemod,
+    mergestate as mergestatemod,
     pathutil,
     pycompat,
     scmutil,
@@ -406,7 +407,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         elif file in wctx:
             prunedactions[file] = (b'r', args, msg)
 
-        if branchmerge and type == mergemod.ACTION_MERGE:
+        if branchmerge and type == mergestatemod.ACTION_MERGE:
             f1, f2, fa, move, anc = args
             if not sparsematch(f1):
                 temporaryfiles.append(f1)

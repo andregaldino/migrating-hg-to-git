@@ -144,6 +144,7 @@ from mercurial import (
     match as matchmod,
     mdiff,
     merge,
+    mergestate as mergestatemod,
     pycompat,
     registrar,
     rewriteutil,
@@ -426,7 +427,9 @@ def getrevstofix(ui, repo, opts):
     if not (len(revs) == 1 and wdirrev in revs):
         cmdutil.checkunfinished(repo)
         rewriteutil.precheck(repo, revs, b'fix')
-    if wdirrev in revs and list(merge.mergestate.read(repo).unresolved()):
+    if wdirrev in revs and list(
+        mergestatemod.mergestate.read(repo).unresolved()
+    ):
         raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
     if not revs:
         raise error.Abort(

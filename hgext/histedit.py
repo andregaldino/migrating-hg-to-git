@@ -224,6 +224,7 @@ from mercurial import (
     hg,
     logcmdutil,
     merge as mergemod,
+    mergestate as mergestatemod,
     mergeutil,
     node,
     obsolete,
@@ -2289,7 +2290,7 @@ def _getsummary(ctx):
 def bootstrapcontinue(ui, state, opts):
     repo = state.repo
 
-    ms = mergemod.mergestate.read(repo)
+    ms = mergestatemod.mergestate.read(repo)
     mergeutil.checkunresolved(ms)
 
     if state.actions:

@@ -58,7 +58,7 @@ from . import (
     localrepo,
     lock as lockmod,
     logcmdutil,
-    merge as mergemod,
+    mergestate as mergestatemod,
     obsolete,
     obsutil,
     pathutil,
@@ -1974,7 +1974,7 @@ def debugmergestate(ui, repo, *args, **opts):
     was chosen."""
 
     if ui.verbose:
-        ms = mergemod.mergestate(repo)
+        ms = mergestatemod.mergestate(repo)
 
         # sort so that reasonable information is on top
         v1records = ms._readrecordsv1()
@@ -2008,7 +2008,7 @@ def debugmergestate(ui, repo, *args, **opts):
             b'"}'
         )
 
-    ms = mergemod.mergestate.read(repo)
+    ms = mergestatemod.mergestate.read(repo)
 
     fm = ui.formatter(b'debugmergestate', opts)
     fm.startitem()
@@ -2034,8 +2034,8 @@ def debugmergestate(ui, repo, *args, **opts):
             state = ms._state[f]
             fm_files.data(state=state[0])
             if state[0] in (
-                mergemod.MERGE_RECORD_UNRESOLVED,
-                mergemod.MERGE_RECORD_RESOLVED,
+                mergestatemod.MERGE_RECORD_UNRESOLVED,
+                mergestatemod.MERGE_RECORD_RESOLVED,
             ):
                 fm_files.data(local_key=state[1])
                 fm_files.data(local_path=state[2])
@@ -2045,8 +2045,8 @@ def debugmergestate(ui, repo, *args, **opts):
                 fm_files.data(other_node=state[6])
                 fm_files.data(local_flags=state[7])
             elif state[0] in (
-                mergemod.MERGE_RECORD_UNRESOLVED_PATH,
-                mergemod.MERGE_RECORD_RESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_UNRESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_RESOLVED_PATH,
             ):
                 fm_files.data(renamed_path=state[1])
                 fm_files.data(rename_side=state[2])

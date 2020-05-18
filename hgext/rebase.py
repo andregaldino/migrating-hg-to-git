@@ -36,6 +36,7 @@ from mercurial import (
     extensions,
     hg,
     merge as mergemod,
+    mergestate as mergestatemod,
     mergeutil,
     node as nodemod,
     obsolete,
@@ -537,7 +538,7 @@ class rebaseruntime(object):
                     user=ctx.user(),
                     date=date,
                 )
-                mergemod.mergestate.clean(repo)
+                mergestatemod.mergestate.clean(repo)
             else:
                 newnode = commitnode(
                     repo,
@@ -1074,7 +1075,7 @@ def rebase(ui, repo, **opts):
             )
             # TODO: Make in-memory merge not use the on-disk merge state, so
             # we don't have to clean it here
-            mergemod.mergestate.clean(repo)
+            mergestatemod.mergestate.clean(repo)
             clearstatus(repo)
             clearcollapsemsg(repo)
             return _dorebase(ui, repo, action, opts, inmemory=False)
@@ -1175,7 +1176,7 @@ def _origrebase(
             if action == b'abort' and opts.get(b'tool', False):
                 ui.warn(_(b'tool option will be ignored\n'))
             if action == b'continue':
-                ms = mergemod.mergestate.read(repo)
+                ms = mergestatemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
             retcode = rbsrt._prepareabortorcontinue(
@@ -2185,7 +2186,7 @@ def abortrebase(ui, repo):
 def continuerebase(ui, repo):
     with repo.wlock(), repo.lock():
         rbsrt = rebaseruntime(repo, ui)
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         mergeutil.checkunresolved(ms)
         retcode = rbsrt._prepareabortorcontinue(isabort=False)
         if retcode is not None:

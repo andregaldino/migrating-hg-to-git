@@ -92,7 +92,7 @@ don't allow marking or unmarking driver-resolved files
   $ cat > $TESTTMP/markdriver.py << EOF
   > '''mark and unmark files as driver-resolved'''
   > from mercurial import (
-  >    merge,
+  >    mergestate,
   >    pycompat,
   >    registrar,
   >    scmutil,
@@ -106,7 +106,7 @@ don't allow marking or unmarking driver-resolved files
   >     wlock = repo.wlock()
   >     opts = pycompat.byteskwargs(opts)
   >     try:
-  >         ms = merge.mergestate.read(repo)
+  >         ms = mergestate.mergestate.read(repo)
   >         m = scmutil.match(repo[None], pats, opts)
   >         for f in ms:
   >             if not m(f):

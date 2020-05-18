@@ -46,6 +46,7 @@ from . import (
     hg,
     logcmdutil,
     merge as mergemod,
+    mergestate as mergestatemod,
     narrowspec,
     obsolete,
     obsutil,
@@ -5938,7 +5939,7 @@ def resolve(ui, repo, *pats, **opts):
     if show:
         ui.pager(b'resolve')
         fm = ui.formatter(b'resolve', opts)
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         wctx = repo[None]
         m = scmutil.match(wctx, pats, opts)
 
@@ -5946,14 +5947,20 @@ def resolve(ui, repo, *pats, **opts):
         # as 'P'.  Resolved path conflicts show as 'R', the same as normal
         # resolved conflicts.
         mergestateinfo = {
-            mergemod.MERGE_RECORD_UNRESOLVED: (b'resolve.unresolved', b'U'),
-            mergemod.MERGE_RECORD_RESOLVED: (b'resolve.resolved', b'R'),
-            mergemod.MERGE_RECORD_UNRESOLVED_PATH: (
+            mergestatemod.MERGE_RECORD_UNRESOLVED: (
+                b'resolve.unresolved',
+                b'U',
+            ),
+            mergestatemod.MERGE_RECORD_RESOLVED: (b'resolve.resolved', b'R'),
+            mergestatemod.MERGE_RECORD_UNRESOLVED_PATH: (
                 b'resolve.unresolved',
                 b'P',
             ),
-            mergemod.MERGE_RECORD_RESOLVED_PATH: (b'resolve.resolved', b'R'),
-            mergemod.MERGE_RECORD_DRIVER_RESOLVED: (
+            mergestatemod.MERGE_RECORD_RESOLVED_PATH: (
+                b'resolve.resolved',
+                b'R',
+            ),
+            mergestatemod.MERGE_RECORD_DRIVER_RESOLVED: (
                 b'resolve.driverresolved',
                 b'D',
             ),
@@ -5963,7 +5970,7 @@ def resolve(ui, repo, *pats, **opts):
             if not m(f):
                 continue
 
-            if ms[f] == mergemod.MERGE_RECORD_MERGED_OTHER:
+            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
                 continue
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
@@ -5975,7 +5982,7 @@ def resolve(ui, repo, *pats, **opts):
         return 0
 
     with repo.wlock():
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
 
         if not (ms.active() or repo.dirstate.p2() != nullid):
             raise error.Abort(
@@ -5986,7 +5993,7 @@ def resolve(ui, repo, *pats, **opts):
 
         if (
             ms.mergedriver
-            and ms.mdstate() == mergemod.MERGE_DRIVER_STATE_UNMARKED
+            and ms.mdstate() == mergestatemod.MERGE_DRIVER_STATE_UNMARKED
         ):
             proceed = mergemod.driverpreprocess(repo, ms, wctx)
             ms.commit()
@@ -6012,12 +6019,12 @@ def resolve(ui, repo, *pats, **opts):
 
             didwork = True
 
-            if ms[f] == mergemod.MERGE_RECORD_MERGED_OTHER:
+            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
                 continue
 
             # don't let driver-resolved files be marked, and run the conclude
             # step if asked to resolve
-            if ms[f] == mergemod.MERGE_RECORD_DRIVER_RESOLVED:
+            if ms[f] == mergestatemod.MERGE_RECORD_DRIVER_RESOLVED:
                 exact = m.exact(f)
                 if mark:
                     if exact:
@@ -6037,14 +6044,14 @@ def resolve(ui, repo, *pats, **opts):
 
             # path conflicts must be resolved manually
             if ms[f] in (
-                mergemod.MERGE_RECORD_UNRESOLVED_PATH,
-                mergemod.MERGE_RECORD_RESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_UNRESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_RESOLVED_PATH,
             ):
                 if mark:
-                    ms.mark(f, mergemod.MERGE_RECORD_RESOLVED_PATH)
+                    ms.mark(f, mergestatemod.MERGE_RECORD_RESOLVED_PATH)
                 elif unmark:
-                    ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED_PATH)
-                elif ms[f] == mergemod.MERGE_RECORD_UNRESOLVED_PATH:
+                    ms.mark(f, mergestatemod.MERGE_RECORD_UNRESOLVED_PATH)
+                elif ms[f] == mergestatemod.MERGE_RECORD_UNRESOLVED_PATH:
                     ui.warn(
                         _(b'%s: path conflict must be resolved manually\n')
                         % uipathfn(f)
@@ -6056,12 +6063,12 @@ def resolve(ui, repo, *pats, **opts):
                     fdata = repo.wvfs.tryread(f)
                     if (
                         filemerge.hasconflictmarkers(fdata)
-                        and ms[f] != mergemod.MERGE_RECORD_RESOLVED
+                        and ms[f] != mergestatemod.MERGE_RECORD_RESOLVED
                     ):
                         hasconflictmarkers.append(f)
-                ms.mark(f, mergemod.MERGE_RECORD_RESOLVED)
+                ms.mark(f, mergestatemod.MERGE_RECORD_RESOLVED)
             elif unmark:
-                ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED)
+                ms.mark(f, mergestatemod.MERGE_RECORD_UNRESOLVED)
             else:
                 # backup pre-resolve (merge uses .orig for its own purposes)
                 a = repo.wjoin(f)
@@ -6942,7 +6949,7 @@ def summary(ui, repo, **opts):
     marks = []
 
     try:
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
     except error.UnsupportedMergeRecords as e:
         s = b' '.join(e.recordtypes)
         ui.warn(

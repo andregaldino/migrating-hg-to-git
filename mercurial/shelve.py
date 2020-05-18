@@ -42,6 +42,7 @@ from . import (
     lock as lockmod,
     mdiff,
     merge,
+    mergestate as mergestatemod,
     node as nodemod,
     patch,
     phases,
@@ -801,7 +802,7 @@ def unshelvecontinue(ui, repo, state, opts):
     basename = state.name
     with repo.lock():
         checkparents(repo, state)
-        ms = merge.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         if list(ms.unresolved()):
             raise error.Abort(
                 _(b"unresolved conflicts, can't continue"),

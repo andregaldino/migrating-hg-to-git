@@ -33,6 +33,7 @@ from . import (
     logcmdutil,
     logexchange,
     merge as mergemod,
+    mergestate as mergestatemod,
     narrowspec,
     node,
     phases,
@@ -1164,7 +1165,7 @@ def merge(
 
 
 def abortmerge(ui, repo):
-    ms = mergemod.mergestate.read(repo)
+    ms = mergestatemod.mergestate.read(repo)
     if ms.active():
         # there were conflicts
         node = ms.localctx.hex()
