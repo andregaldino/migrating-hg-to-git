@@ -1920,7 +1920,7 @@ def _update(
             if len(pl) > 1:
                 raise error.Abort(_(b"outstanding uncommitted merge"))
             ms = wc.mergestate()
-            if list(ms.unresolved()):
+            if ms.unresolvedcount():
                 raise error.Abort(
                     _(b"outstanding merge conflicts"),
                     hint=_(b"use 'hg resolve' to resolve"),

@@ -6082,7 +6082,7 @@ def resolve(ui, repo, *pats, **opts):
             if hint:
                 ui.warn(hint)
 
-    unresolvedf = list(ms.unresolved())
+    unresolvedf = ms.unresolvedcount()
     if not unresolvedf:
         ui.status(_(b'(no more unresolved files)\n'))
         cmdutil.checkafterresolved(repo)
