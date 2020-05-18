@@ -9,3 +9,5 @@
 
 == Internal API Changes ==
 
+ * logcmdutil.diffordiffstat() now takes contexts instead of nodes.
+
