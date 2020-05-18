@@ -248,3 +248,5 @@ node|shortest works correctly
   $ hg log -r ae1ab744f95bfd5b07cf573baef98a778058537b --template "{shortest(node,1)}\n"
   ae
 
+This coveres changelog.findmissing()
+  $ hg merge --preview 3d9be8deba43
