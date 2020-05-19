@@ -667,7 +667,7 @@ def overridestatus(
 
 class poststatus(object):
     def __init__(self, startclock):
-        self._startclock = startclock
+        self._startclock = pycompat.sysbytes(startclock)
 
     def __call__(self, wctx, status):
         clock = wctx.repo()._fsmonitorstate.getlastclock() or self._startclock
