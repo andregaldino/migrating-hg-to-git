@@ -24,7 +24,7 @@
   $ cat <<EOF >> b/.hg/hgrc
   > [hooks]
   > incoming.notify = python:hgext.notify.hook
-  > pretxnclose.changeset_obsoleted = python:hgext.hooklib.changeset_obsoleted.hook
+  > txnclose.changeset_obsoleted = python:hgext.hooklib.changeset_obsoleted.hook
   > EOF
   $ hg --cwd b pull ../a | "$PYTHON" $TESTDIR/unwrap-message-id.py
   pulling from ../a
@@ -72,6 +72,8 @@
   pushing to ../b
   searching for changes
   no changes found
+  1 new obsolescence markers
+  obsoleted 1 changesets
   Subject: changeset abandoned
   In-reply-to: <hg.81c297828fd2d5afaadf2775a6a71b74143b6451dfaac09fac939e9107a50d01@example.com>
   Message-Id: <hg.d6329e9481594f0f3c8a84362b3511318bfbce50748ab1123f909eb6fbcab018@example.com>
@@ -80,5 +82,33 @@
   To: baz@example.com
   
   This changeset has been abandoned.
+
+Check that known changesets with known successors do not result in a mail.
+
+  $ hg init c
+  $ hg init d
+  $ cat <<EOF >> d/.hg/hgrc
+  > [hooks]
+  > incoming.notify = python:hgext.notify.hook
+  > txnclose.changeset_obsoleted = python:hgext.hooklib.changeset_obsoleted.hook
+  > EOF
+  $ hg --cwd c debugbuilddag '.:parent.*parent'
+  $ hg --cwd c push ../d -r 1
+  pushing to ../d
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 0 files
+  $ hg --cwd c debugobsolete $(hg --cwd c log -T '{node}' -r 1) $(hg --cwd c log -T '{node}' -r 2)
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg --cwd c push ../d | "$PYTHON" $TESTDIR/unwrap-message-id.py
+  pushing to ../d
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files (+1 heads)
   1 new obsolescence markers
   obsoleted 1 changesets
