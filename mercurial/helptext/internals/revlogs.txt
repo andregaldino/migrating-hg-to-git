@@ -161,7 +161,7 @@ Version 2 Format
 
 (In development. Format not finalized or stable.)
 
-Version 2 is identical to version 2 with the following differences.
+Version 2 is identical to version 1 with the following differences.
 
 There is no dedicated *generaldelta* revlog format flag. Instead,
 the feature is implied enabled by default.
