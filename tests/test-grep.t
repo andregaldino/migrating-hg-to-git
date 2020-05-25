@@ -672,6 +672,15 @@ Grepping a symlink greps its destination
   $ rm -f added; ln -s symlink-added added
   $ hg grep '' | grep added
   added:symlink-added
+
+But we reject symlinks as directories components of a tracked file as
+usual:
+
+  $ mkdir dir; touch dir/f; hg add dir/f
+  $ rm -rf dir; ln -s / dir
+  $ hg grep ''
+  abort: path 'dir/f' traverses symbolic link 'dir'
+  [255]
 #endif
 
 But we can search files from some other revision with -rREV
