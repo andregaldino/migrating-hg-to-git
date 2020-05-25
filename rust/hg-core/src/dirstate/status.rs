@@ -257,11 +257,9 @@ fn walk_explicit<'a>(
                     } else {
                         if file_type.is_dir() {
                             if options.collect_traversed_dirs {
-                                // The receiver always outlives the sender,
-                                // so unwrap.
                                 traversed_sender
                                     .send(normalized.to_owned())
-                                    .unwrap()
+                                    .expect("receiver should outlive sender");
                             }
                             Some(Ok((
                                 normalized,
@@ -471,8 +469,9 @@ fn traverse_dir<'a>(
     let directory = directory.as_ref();
 
     if options.collect_traversed_dirs {
-        // The receiver always outlives the sender, so unwrap.
-        traversed_sender.send(directory.to_owned()).unwrap()
+        traversed_sender
+            .send(directory.to_owned())
+            .expect("receiver should outlive sender");
     }
 
     let visit_entries = match matcher.visit_children_set(directory) {
