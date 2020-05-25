@@ -666,7 +666,15 @@ Existing tracked files in the working directory are searched by default
   new:modified
   um:unmod
 
- which can be overridden by -rREV
+#if symlink
+Grepping a symlink greps its destination
+
+  $ rm -f added; ln -s symlink-added added
+  $ hg grep '' | grep added
+  added:symlink-added
+#endif
+
+But we can search files from some other revision with -rREV
 
   $ hg grep -r. mod
   um:1:unmod
