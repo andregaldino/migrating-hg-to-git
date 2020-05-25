@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import contextlib
 import errno
 import os
 import posixpath
@@ -147,6 +148,19 @@ class pathauditor(object):
             return True
         except (OSError, error.Abort):
             return False
+
+    @contextlib.contextmanager
+    def cached(self):
+        if self._cached:
+            yield
+        else:
+            try:
+                self._cached = True
+                yield
+            finally:
+                self.audited.clear()
+                self.auditeddir.clear()
+                self._cached = False
 
 
 def canonpath(root, cwd, myname, auditor=None):

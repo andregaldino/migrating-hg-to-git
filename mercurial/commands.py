@@ -3609,31 +3609,38 @@ def grep(ui, repo, pattern, *pats, **opts):
             parent = pctx.rev()
             matches.setdefault(parent, {})
         files = revfiles.setdefault(rev, [])
-        for fn in fns:
-            # fn might not exist in the revision (could be a file removed by the
-            # revision). We could check `fn not in ctx` even when rev is None,
-            # but it's less racy to protect againt that in readfile.
-            if rev is not None and fn not in ctx:
-                continue
+        if rev is None:
+            # in `hg grep pattern`, 2/3 of the time is spent is spent in
+            # pathauditor checks without this in mozilla-central
+            contextmanager = repo.wvfs.audit.cached
+        else:
+            contextmanager = util.nullcontextmanager
+        with contextmanager():
+            for fn in fns:
+                # fn might not exist in the revision (could be a file removed by
+                # the revision). We could check `fn not in ctx` even when rev is
+                # None, but it's less racy to protect againt that in readfile.
+                if rev is not None and fn not in ctx:
+                    continue
 
-            copy = None
-            if follow:
-                copy = getrenamed(fn, rev)
-                if copy:
-                    copies.setdefault(rev, {})[fn] = copy
-                    if fn in skip:
-                        skip.add(copy)
-            if fn in skip:
-                continue
-            files.append(fn)
+                copy = None
+                if follow:
+                    copy = getrenamed(fn, rev)
+                    if copy:
+                        copies.setdefault(rev, {})[fn] = copy
+                        if fn in skip:
+                            skip.add(copy)
+                if fn in skip:
+                    continue
+                files.append(fn)
 
-            if fn not in matches[rev]:
-                grepbody(fn, rev, readfile(ctx, fn))
+                if fn not in matches[rev]:
+                    grepbody(fn, rev, readfile(ctx, fn))
 
-            if diff:
-                pfn = copy or fn
-                if pfn not in matches[parent] and pfn in pctx:
-                    grepbody(pfn, parent, readfile(pctx, pfn))
+                if diff:
+                    pfn = copy or fn
+                    if pfn not in matches[parent] and pfn in pctx:
+                        grepbody(pfn, parent, readfile(pctx, pfn))
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
