@@ -560,7 +560,7 @@ fn traverse<'a>(
     let root_dir = root_dir.as_ref();
 
     // The traversal is done in parallel, so use a channel to gather entries.
-    // `crossbeam::Sender` is `Send`, while `mpsc::Sender` is not.
+    // `crossbeam::Sender` is `Sync`, while `mpsc::Sender` is not.
     let (files_transmitter, files_receiver) = crossbeam::channel::unbounded();
 
     traverse_dir(
@@ -877,7 +877,7 @@ pub fn status<'a: 'c, 'b: 'c, 'c>(
 
     let files = matcher.file_set();
 
-    // `crossbeam::Sender` is `Send`, while `mpsc::Sender` is not.
+    // `crossbeam::Sender` is `Sync`, while `mpsc::Sender` is not.
     let (traversed_sender, traversed_recv) = crossbeam::channel::unbounded();
 
     // Step 1: check the files explicitly mentioned by the user
