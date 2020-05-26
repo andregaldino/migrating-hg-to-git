@@ -804,8 +804,8 @@ def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
     if relative:
         cwd = repo.getcwd()
         if cwd != b'':
-            # this branch is correct when cwd == b'', ie cwd = repo root,
-            # but it's slower
+            # this branch would work even if cwd == b'' (ie cwd = repo
+            # root), but its generality makes the returned function slower
             pathto = repo.pathto
             return lambda f: pathto(f, cwd)
     if repo.ui.configbool(b'ui', b'slash'):
