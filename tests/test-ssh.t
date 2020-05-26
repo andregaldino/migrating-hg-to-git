@@ -47,6 +47,7 @@ repo not found error
   abort: no suitable response from remote hg!
   [255]
   $ hg clone -q -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/nonexistent local
+  remote: abort: repository nonexistent not found!
   abort: no suitable response from remote hg!
   [255]
 

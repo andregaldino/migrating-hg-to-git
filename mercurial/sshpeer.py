@@ -36,15 +36,16 @@ def _serverquote(s):
     return b"'%s'" % s.replace(b"'", b"'\\''")
 
 
-def _forwardoutput(ui, pipe):
+def _forwardoutput(ui, pipe, warn=False):
     """display all data currently available on pipe as remote output.
 
     This is non blocking."""
     if pipe:
         s = procutil.readpipe(pipe)
         if s:
+            display = ui.warn if warn else ui.status
             for l in s.splitlines():
-                ui.status(_(b"remote: "), l, b'\n')
+                display(_(b"remote: "), l, b'\n')
 
 
 class doublepipe(object):
@@ -204,8 +205,12 @@ def _clientcapabilities():
 
 def _performhandshake(ui, stdin, stdout, stderr):
     def badresponse():
-        # Flush any output on stderr.
-        _forwardoutput(ui, stderr)
+        # Flush any output on stderr. In general, the stderr contains errors
+        # from the remote (ssh errors, some hg errors), and status indications
+        # (like "adding changes"), with no current way to tell them apart.
+        # Here we failed so early that it's almost certainly only errors, so
+        # use warn=True so -q doesn't hide them.
+        _forwardoutput(ui, stderr, warn=True)
 
         msg = _(b'no suitable response from remote hg')
         hint = ui.config(b'ui', b'ssherrorhint')
@@ -307,7 +312,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
     while lines[-1] and max_noise:
         try:
             l = stdout.readline()
-            _forwardoutput(ui, stderr)
+            _forwardoutput(ui, stderr, warn=True)
 
             # Look for reply to protocol upgrade request. It has a token
             # in it, so there should be no false positives.
@@ -374,7 +379,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
         badresponse()
 
     # Flush any output on stderr before proceeding.
-    _forwardoutput(ui, stderr)
+    _forwardoutput(ui, stderr, warn=True)
 
     return protoname, caps
 
