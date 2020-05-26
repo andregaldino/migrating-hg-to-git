@@ -97,9 +97,18 @@ class LazyFinder(object):
     def __setattr__(self, name, value):
         return setattr(object.__getattribute__(self, "_finder"), name, value)
 
-    def find_spec(self, *args, **kwargs):
+    def find_spec(self, fullname, path, target=None):
         finder = object.__getattribute__(self, "_finder")
-        spec = finder.find_spec(*args, **kwargs)
+        try:
+            find_spec = finder.find_spec
+        except AttributeError:
+            loader = finder.find_module(fullname, path)
+            if loader is None:
+                spec = None
+            else:
+                spec = importlib.util.spec_from_loader(fullname, loader)
+        else:
+            spec = find_spec(fullname, path, target)
 
         # Lazy loader requires exec_module().
         if (

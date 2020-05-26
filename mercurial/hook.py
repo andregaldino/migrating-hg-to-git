@@ -210,7 +210,7 @@ def _allhooks(ui):
     # in that section uses "_fromuntrusted" as its command.
     untrustedhooks = _hookitems(ui, _untrusted=True)
     for name, value in untrustedhooks.items():
-        trustedvalue = hooks.get(name, (None, None, name, _fromuntrusted))
+        trustedvalue = hooks.get(name, ((), (), name, _fromuntrusted))
         if value != trustedvalue:
             (lp, lo, lk, lv) = trustedvalue
             hooks[name] = (lp, lo, lk, _fromuntrusted)
@@ -226,7 +226,7 @@ def _hookitems(ui, _untrusted=False):
             continue
 
         priority = ui.configint(b'hooks', b'priority.%s' % name, 0)
-        hooks[name] = (-priority, len(hooks), name, cmd)
+        hooks[name] = ((-priority,), (len(hooks),), name, cmd)
     return hooks
 
 

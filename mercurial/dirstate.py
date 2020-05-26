@@ -103,6 +103,13 @@ class dirstate(object):
         # raises an exception).
         self._cwd
 
+    def prefetch_parents(self):
+        """make sure the parents are loaded
+
+        Used to avoid a race condition.
+        """
+        self._pl
+
     @contextlib.contextmanager
     def parentchange(self):
         '''Context manager for handling dirstate parents.
@@ -1748,9 +1755,22 @@ if rustmod is not None:
 
         @propertycache
         def _rustmap(self):
-            self._rustmap = rustmod.DirstateMap(self._root)
+            """
+            Fills the Dirstatemap when called.
+            Use `self._inner_rustmap` if reading the dirstate is not necessary.
+            """
+            self._rustmap = self._inner_rustmap
             self.read()
             return self._rustmap
+
+        @propertycache
+        def _inner_rustmap(self):
+            """
+            Does not fill the Dirstatemap when called. This allows for
+            optimizations where only setting/getting the parents is needed.
+            """
+            self._inner_rustmap = rustmod.DirstateMap(self._root)
+            return self._inner_rustmap
 
         @property
         def copymap(self):
@@ -1761,6 +1781,7 @@ if rustmod is not None:
 
         def clear(self):
             self._rustmap.clear()
+            self._inner_rustmap.clear()
             self.setparents(nullid, nullid)
             util.clearcachedproperty(self, b"_dirs")
             util.clearcachedproperty(self, b"_alldirs")
@@ -1817,7 +1838,7 @@ if rustmod is not None:
                     st = b''
 
                 try:
-                    self._parents = self._rustmap.parents(st)
+                    self._parents = self._inner_rustmap.parents(st)
                 except ValueError:
                     raise error.Abort(
                         _(b'working directory state appears damaged!')

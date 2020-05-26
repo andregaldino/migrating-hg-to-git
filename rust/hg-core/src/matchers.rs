@@ -366,6 +366,10 @@ fn re_matcher(
     let pattern_string = unsafe { String::from_utf8_unchecked(escaped_bytes) };
     let re = regex::bytes::RegexBuilder::new(&pattern_string)
         .unicode(false)
+        // Big repos with big `.hgignore` will hit the default limit and
+        // incur a significant performance hit. One repo's `hg status` hit
+        // multiple *minutes*.
+        .dfa_size_limit(50 * (1 << 20))
         .build()
         .map_err(|e| PatternError::UnsupportedSyntax(e.to_string()))?;
 

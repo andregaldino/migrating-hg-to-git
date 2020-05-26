@@ -160,7 +160,10 @@ _hg()
     if [[ -n "$aliashg" ]]; then
       aliashg=${aliashg#"alias $hg='"}
       aliashg=${aliashg%"'"}
-      hg=$aliashg
+      # `source`d aliases break completion, so ignore them
+      if [[ "${aliashg:0:7}" != "source " ]]; then
+        hg=$aliashg
+      fi
     fi
 
     COMPREPLY=()

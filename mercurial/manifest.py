@@ -1455,18 +1455,29 @@ class manifestfulltextcache(util.lrucachedict):
         if not self._dirty or self._opener is None:
             return
         # rotate backwards to the first used node
-        with self._opener(
-            self._file, b'w', atomictemp=True, checkambig=True
-        ) as fp:
-            node = self._head.prev
-            while True:
-                if node.key in self._cache:
-                    fp.write(node.key)
-                    fp.write(struct.pack(b'>L', len(node.value)))
-                    fp.write(node.value)
-                if node is self._head:
-                    break
-                node = node.prev
+        try:
+            with self._opener(
+                self._file, b'w', atomictemp=True, checkambig=True
+            ) as fp:
+                node = self._head.prev
+                while True:
+                    if node.key in self._cache:
+                        fp.write(node.key)
+                        fp.write(struct.pack(b'>L', len(node.value)))
+                        fp.write(node.value)
+                    if node is self._head:
+                        break
+                    node = node.prev
+        except IOError:
+            # We could not write the cache (eg: permission error)
+            # the content can be missing.
+            #
+            # We could try harder and see if we could recreate a wcache
+            # directory were we coudl write too.
+            #
+            # XXX the error pass silently, having some way to issue an error
+            # log `ui.log` would be nice.
+            pass
 
     def __len__(self):
         if not self._read:

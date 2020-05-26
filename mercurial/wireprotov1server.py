@@ -391,7 +391,7 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
     res = exchange.filterclonebundleentries(repo, res)
     if not res:
         return None
-    cl = repo.changelog
+    cl = repo.unfiltered().changelog
     heads_anc = cl.ancestors([cl.rev(rev) for rev in heads], inclusive=True)
     common_anc = cl.ancestors([cl.rev(rev) for rev in common], inclusive=True)
     compformats = clientcompressionsupport(proto)

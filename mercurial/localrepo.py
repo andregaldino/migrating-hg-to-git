@@ -1456,6 +1456,8 @@ class localrepository(object):
 
     @storecache(b'00changelog.i')
     def changelog(self):
+        # load dirstate before changelog to avoid race see issue6303
+        self.dirstate.prefetch_parents()
         return self.store.changelog(txnutil.mayhavepending(self.root))
 
     @storecache(b'00manifest.i')
