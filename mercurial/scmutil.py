@@ -803,9 +803,12 @@ def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
 
     if relative:
         cwd = repo.getcwd()
-        pathto = repo.pathto
-        return lambda f: pathto(f, cwd)
-    elif repo.ui.configbool(b'ui', b'slash'):
+        if cwd != b'':
+            # this branch is correct when cwd == b'', ie cwd = repo root,
+            # but it's slower
+            pathto = repo.pathto
+            return lambda f: pathto(f, cwd)
+    if repo.ui.configbool(b'ui', b'slash'):
         return lambda f: f
     else:
         return util.localpath
