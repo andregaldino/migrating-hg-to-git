@@ -853,6 +853,26 @@ graft --continue after --force
   $ cat a
   abc
 
+graft --continue after --base with conflits
+
+  $ echo base > d
+  $ hg ci -m _
+  $ hg graft -r 6
+  skipping ungraftable merge revision 6
+  [255]
+  $ hg graft -r 6 --base 5
+  grafting 6:25a2b029d3ae "6"
+  merging d
+  merging e
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [1]
+  $ echo a > d && hg resolve -qm
+  continue: hg graft --continue
+  $ hg graft --continue
+  grafting 6:25a2b029d3ae "6"
+
 Continue testing same origin policy, using revision numbers from test above
 but do some destructive editing of the repo:
 

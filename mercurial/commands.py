@@ -2969,9 +2969,6 @@ def _dograft(ui, repo, *revs, **opts):
 
     revs = list(revs)
     revs.extend(opts.get(b'rev'))
-    basectx = None
-    if opts.get(b'base'):
-        basectx = scmutil.revsingle(repo, opts[b'base'], None)
     # a dict of data to be stored in state file
     statedata = {}
     # list of new nodes created by ongoing graft
@@ -3061,6 +3058,8 @@ def _dograft(ui, repo, *revs, **opts):
                 opts[b'log'] = True
             if statedata.get(b'no_commit'):
                 opts[b'no_commit'] = statedata.get(b'no_commit')
+            if statedata.get(b'base'):
+                opts[b'base'] = statedata.get(b'base')
             nodes = statedata[b'nodes']
             revs = [repo[node].rev() for node in nodes]
         else:
@@ -3073,6 +3072,9 @@ def _dograft(ui, repo, *revs, **opts):
         revs = scmutil.revrange(repo, revs)
 
     skipped = set()
+    basectx = None
+    if opts.get(b'base'):
+        basectx = scmutil.revsingle(repo, opts[b'base'], None)
     if basectx is None:
         # check for merges
         for rev in repo.revs(b'%ld and merge()', revs):
@@ -3165,6 +3167,8 @@ def _dograft(ui, repo, *revs, **opts):
 
     if opts.get(b'no_commit'):
         statedata[b'no_commit'] = True
+    if opts.get(b'base'):
+        statedata[b'base'] = True
     for pos, ctx in enumerate(repo.set(b"%ld", revs)):
         desc = b'%d:%s "%s"' % (
             ctx.rev(),
