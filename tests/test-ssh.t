@@ -46,6 +46,9 @@ repo not found error
   remote: abort: repository nonexistent not found!
   abort: no suitable response from remote hg!
   [255]
+  $ hg clone -q -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/nonexistent local
+  abort: no suitable response from remote hg!
+  [255]
 
 non-existent absolute path
 
@@ -552,6 +555,7 @@ debug output
   $ cd $TESTTMP
 
   $ cat dummylog
+  Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R $TESTTMP/nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
