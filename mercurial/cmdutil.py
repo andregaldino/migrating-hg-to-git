@@ -2752,15 +2752,28 @@ def files(ui, ctx, m, uipathfn, fm, fmt, subrepos):
     ret = 1
 
     needsfctx = ui.verbose or {b'size', b'flags'} & fm.datahint()
-    for f in ctx.matches(m):
-        fm.startitem()
-        fm.context(ctx=ctx)
-        if needsfctx:
-            fc = ctx[f]
-            fm.write(b'size flags', b'% 10d % 1s ', fc.size(), fc.flags())
-        fm.data(path=f)
-        fm.plain(fmt % uipathfn(f))
-        ret = 0
+    if fm.isplain() and not needsfctx:
+        # Fast path. The speed-up comes from skipping the formatter, and batching
+        # calls to ui.write.
+        buf = []
+        for f in ctx.matches(m):
+            buf.append(fmt % uipathfn(f))
+            if len(buf) > 100:
+                ui.write(b''.join(buf))
+                del buf[:]
+            ret = 0
+        if buf:
+            ui.write(b''.join(buf))
+    else:
+        for f in ctx.matches(m):
+            fm.startitem()
+            fm.context(ctx=ctx)
+            if needsfctx:
+                fc = ctx[f]
+                fm.write(b'size flags', b'% 10d % 1s ', fc.size(), fc.flags())
+            fm.data(path=f)
+            fm.plain(fmt % uipathfn(f))
+            ret = 0
 
     for subpath in sorted(ctx.substate):
         submatch = matchmod.subdirmatcher(subpath, m)
