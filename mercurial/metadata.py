@@ -11,6 +11,7 @@ import multiprocessing
 
 from . import (
     error,
+    node,
     pycompat,
     util,
 )
@@ -29,6 +30,61 @@ def computechangesetfilesadded(ctx):
         if not any(f in p for p in ctx.parents()):
             added.append(f)
     return added
+
+
+def get_removal_filter(ctx, x=None):
+    """return a function to detect files "wrongly" detected as `removed`
+
+    When a file is removed relative to p1 in a merge, this
+    function determines whether the absence is due to a
+    deletion from a parent, or whether the merge commit
+    itself deletes the file. We decide this by doing a
+    simplified three way merge of the manifest entry for
+    the file. There are two ways we decide the merge
+    itself didn't delete a file:
+    - neither parent (nor the merge) contain the file
+    - exactly one parent contains the file, and that
+      parent has the same filelog entry as the merge
+      ancestor (or all of them if there two). In other
+      words, that parent left the file unchanged while the
+      other one deleted it.
+    One way to think about this is that deleting a file is
+    similar to emptying it, so the list of changed files
+    should be similar either way. The computation
+    described above is not done directly in _filecommit
+    when creating the list of changed files, however
+    it does something very similar by comparing filelog
+    nodes.
+    """
+
+    if x is not None:
+        p1, p2, m1, m2 = x
+    else:
+        p1 = ctx.p1()
+        p2 = ctx.p2()
+        m1 = p1.manifest()
+        m2 = p2.manifest()
+
+    @util.cachefunc
+    def mas():
+        p1n = p1.node()
+        p2n = p2.node()
+        cahs = ctx.repo().changelog.commonancestorsheads(p1n, p2n)
+        if not cahs:
+            cahs = [node.nullrev]
+        return [ctx.repo()[r].manifest() for r in cahs]
+
+    def deletionfromparent(f):
+        if f in m1:
+            return f not in m2 and all(
+                f in ma and ma.find(f) == m1.find(f) for ma in mas()
+            )
+        elif f in m2:
+            return all(f in ma and ma.find(f) == m2.find(f) for ma in mas())
+        else:
+            return True
+
+    return deletionfromparent
 
 
 def computechangesetfilesremoved(ctx):
