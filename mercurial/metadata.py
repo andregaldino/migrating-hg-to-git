@@ -94,6 +94,9 @@ def computechangesetfilesremoved(ctx):
     for f in ctx.files():
         if f not in ctx:
             removed.append(f)
+    if removed:
+        rf = get_removal_filter(ctx)
+        removed = [r for r in removed if not rf(r)]
     return removed
 
 
