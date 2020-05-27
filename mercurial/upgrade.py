@@ -13,12 +13,12 @@ from .i18n import _
 from .pycompat import getattr
 from . import (
     changelog,
-    copies,
     error,
     filelog,
     hg,
     localrepo,
     manifest,
+    metadata,
     pycompat,
     revlog,
     scmutil,
@@ -734,9 +734,9 @@ def getsidedatacompanion(srcrepo, dstrepo):
             return False, (), {}
 
     elif localrepo.COPIESSDC_REQUIREMENT in addedreqs:
-        sidedatacompanion = copies.getsidedataadder(srcrepo, dstrepo)
+        sidedatacompanion = metadata.getsidedataadder(srcrepo, dstrepo)
     elif localrepo.COPIESSDC_REQUIREMENT in removedreqs:
-        sidedatacompanion = copies.getsidedataremover(srcrepo, dstrepo)
+        sidedatacompanion = metadata.getsidedataremover(srcrepo, dstrepo)
     return sidedatacompanion
 
 

@@ -16,9 +16,9 @@ from .node import (
 from .thirdparty import attr
 
 from . import (
-    copies,
     encoding,
     error,
+    metadata,
     pycompat,
     revlog,
 )
@@ -318,7 +318,7 @@ class changelogrevision(object):
             rawindices = self.extra.get(b'filesadded')
         if rawindices is None:
             return None
-        return copies.decodefileindices(self.files, rawindices)
+        return metadata.decodefileindices(self.files, rawindices)
 
     @property
     def filesremoved(self):
@@ -330,7 +330,7 @@ class changelogrevision(object):
             rawindices = self.extra.get(b'filesremoved')
         if rawindices is None:
             return None
-        return copies.decodefileindices(self.files, rawindices)
+        return metadata.decodefileindices(self.files, rawindices)
 
     @property
     def p1copies(self):
@@ -342,7 +342,7 @@ class changelogrevision(object):
             rawcopies = self.extra.get(b'p1copies')
         if rawcopies is None:
             return None
-        return copies.decodecopies(self.files, rawcopies)
+        return metadata.decodecopies(self.files, rawcopies)
 
     @property
     def p2copies(self):
@@ -354,7 +354,7 @@ class changelogrevision(object):
             rawcopies = self.extra.get(b'p2copies')
         if rawcopies is None:
             return None
-        return copies.decodecopies(self.files, rawcopies)
+        return metadata.decodecopies(self.files, rawcopies)
 
     @property
     def description(self):
@@ -570,13 +570,13 @@ class changelog(revlog.revlog):
             ):
                 extra.pop(name, None)
         if p1copies is not None:
-            p1copies = copies.encodecopies(sortedfiles, p1copies)
+            p1copies = metadata.encodecopies(sortedfiles, p1copies)
         if p2copies is not None:
-            p2copies = copies.encodecopies(sortedfiles, p2copies)
+            p2copies = metadata.encodecopies(sortedfiles, p2copies)
         if filesadded is not None:
-            filesadded = copies.encodefileindices(sortedfiles, filesadded)
+            filesadded = metadata.encodefileindices(sortedfiles, filesadded)
         if filesremoved is not None:
-            filesremoved = copies.encodefileindices(sortedfiles, filesremoved)
+            filesremoved = metadata.encodefileindices(sortedfiles, filesremoved)
         if self._copiesstorage == b'extra':
             extrasentries = p1copies, p2copies, filesadded, filesremoved
             if extra is None and any(x is not None for x in extrasentries):

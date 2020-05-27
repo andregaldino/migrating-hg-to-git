@@ -28,13 +28,13 @@ from .pycompat import (
     open,
 )
 from . import (
-    copies,
     dagop,
     encoding,
     error,
     fileset,
     match as matchmod,
     mergestate as mergestatemod,
+    metadata,
     obsolete as obsmod,
     patch,
     pathutil,
@@ -300,7 +300,7 @@ class basectx(object):
 
     @propertycache
     def _copies(self):
-        return copies.computechangesetcopies(self)
+        return metadata.computechangesetcopies(self)
 
     def p1copies(self):
         return self._copies[0]
@@ -589,7 +589,7 @@ class changectx(basectx):
                 filesadded = None
         if filesadded is None:
             if compute_on_none:
-                filesadded = copies.computechangesetfilesadded(self)
+                filesadded = metadata.computechangesetfilesadded(self)
             else:
                 filesadded = []
         return filesadded
@@ -608,7 +608,7 @@ class changectx(basectx):
                 filesremoved = None
         if filesremoved is None:
             if compute_on_none:
-                filesremoved = copies.computechangesetfilesremoved(self)
+                filesremoved = metadata.computechangesetfilesremoved(self)
             else:
                 filesremoved = []
         return filesremoved
