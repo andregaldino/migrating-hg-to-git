@@ -67,6 +67,14 @@ legacystates = {b'-2', b'-3', b'-4', b'-5'}
 
 cmdtable = {}
 command = registrar.command(cmdtable)
+
+configtable = {}
+configitem = registrar.configitem(configtable)
+configitem(
+    b'devel',
+    b'rebase.force-in-memory-merge',
+    default=False,
+)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -1112,6 +1120,8 @@ def rebase(ui, repo, **opts):
             with ui.configoverride(overrides, b'rebase'):
                 return _dorebase(ui, repo, action, opts, inmemory=inmemory)
         except error.InMemoryMergeConflictsError:
+            if ui.configbool(b'devel', b'rebase.force-in-memory-merge'):
+                raise
             ui.warn(
                 _(
                     b'hit merge conflicts; re-running rebase without in-memory'

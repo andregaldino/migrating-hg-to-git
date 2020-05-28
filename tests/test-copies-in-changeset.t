@@ -345,7 +345,10 @@ Test rebasing a commit with copy information
   $ hg co -q 0
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
-  $ hg rebase -d 1 --config rebase.experimental.inmemory=yes
+Not only do we want this to run in-memory, it shouldn't fall back to
+on-disk merge (no conflicts), so we force it to be in-memory
+with no fallback.
+  $ hg rebase -d 1 --config rebase.experimental.inmemory=yes --config devel.rebase.force-in-memory-merge=yes
   rebasing 2:* tip "rename a to b" (glob)
   merging a and b to b
   saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/*-*-rebase.hg (glob)
