@@ -628,8 +628,17 @@ def log(ui, repo, *args, **kwargs):
         (b'', b'stat', None, b''),
         (b'', b'graph', None, b''),
         (b'p', b'patch', None, b''),
+        (b'G', b'grep-diff', b'', b''),
+        (b'S', b'pickaxe-regex', b'', b''),
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
+    grep_pat = opts.get(b'grep_diff') or opts.get(b'pickaxe_regex')
+    if grep_pat:
+        cmd = Command(b'grep')
+        cmd[b'--diff'] = grep_pat
+        ui.status(b'%s\n' % bytes(cmd))
+        return
+
     ui.status(
         _(
             b'note: -v prints the entire commit message like Git does. To '
