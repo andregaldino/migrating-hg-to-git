@@ -31,6 +31,13 @@ def _droponode(data):
     return b'\0'.join(bits)
 
 
+def _filectxorabsent(hexnode, ctx, f):
+    if hexnode == nullhex:
+        return filemerge.absentfilectx(ctx, f)
+    else:
+        return ctx[f]
+
+
 # Merge state record types. See ``mergestate`` docs for more.
 RECORD_LOCAL = b'L'
 RECORD_OTHER = b'O'
@@ -600,8 +607,8 @@ class mergestate(object):
             actx = self._repo[anccommitnode]
         else:
             actx = None
-        fcd = self._filectxorabsent(localkey, wctx, dfile)
-        fco = self._filectxorabsent(onode, octx, ofile)
+        fcd = _filectxorabsent(localkey, wctx, dfile)
+        fco = _filectxorabsent(onode, octx, ofile)
         # TODO: move this to filectxorabsent
         fca = self._repo.filectx(afile, fileid=anode, changectx=actx)
         # "premerge" x flags
@@ -678,12 +685,6 @@ class mergestate(object):
             self._results[dfile] = r, action
 
         return complete, r
-
-    def _filectxorabsent(self, hexnode, ctx, f):
-        if hexnode == nullhex:
-            return filemerge.absentfilectx(ctx, f)
-        else:
-            return ctx[f]
 
     def preresolve(self, dfile, wctx):
         """run premerge process for dfile
