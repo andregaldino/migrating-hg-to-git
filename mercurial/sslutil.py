@@ -33,9 +33,8 @@ from .utils import (
 # support for TLS 1.1, TLS 1.2, SNI, system CA stores, etc. These features are
 # all exposed via the "ssl" module.
 #
-# Depending on the version of Python being used, SSL/TLS support is either
-# modern/secure or legacy/insecure. Many operations in this module have
-# separate code paths depending on support in Python.
+# We require in setup.py the presence of ssl.SSLContext, which indicates modern
+# SSL/TLS support.
 
 configprotocols = {
     b'tls1.0',
@@ -53,67 +52,8 @@ if util.safehasattr(ssl, b'PROTOCOL_TLSv1_1'):
 if util.safehasattr(ssl, b'PROTOCOL_TLSv1_2'):
     supportedprotocols.add(b'tls1.2')
 
-try:
-    # ssl.SSLContext was added in 2.7.9 and presence indicates modern
-    # SSL/TLS features are available.
-    SSLContext = ssl.SSLContext
-    modernssl = True
-    _canloaddefaultcerts = True
-except AttributeError:
-    modernssl = False
-    _canloaddefaultcerts = False
-
-    # We implement SSLContext using the interface from the standard library.
-    class SSLContext(object):
-        def __init__(self, protocol):
-            # From the public interface of SSLContext
-            self.protocol = protocol
-            self.check_hostname = False
-            self.options = 0
-            self.verify_mode = ssl.CERT_NONE
-
-            # Used by our implementation.
-            self._certfile = None
-            self._keyfile = None
-            self._certpassword = None
-            self._cacerts = None
-            self._ciphers = None
-
-        def load_cert_chain(self, certfile, keyfile=None, password=None):
-            self._certfile = certfile
-            self._keyfile = keyfile
-            self._certpassword = password
-
-        def load_default_certs(self, purpose=None):
-            pass
-
-        def load_verify_locations(self, cafile=None, capath=None, cadata=None):
-            if capath:
-                raise error.Abort(_(b'capath not supported'))
-            if cadata:
-                raise error.Abort(_(b'cadata not supported'))
-
-            self._cacerts = cafile
-
-        def set_ciphers(self, ciphers):
-            self._ciphers = ciphers
-
-        def wrap_socket(self, socket, server_hostname=None, server_side=False):
-            # server_hostname is unique to SSLContext.wrap_socket and is used
-            # for SNI in that context. So there's nothing for us to do with it
-            # in this legacy code since we don't support SNI.
-
-            args = {
-                'keyfile': self._keyfile,
-                'certfile': self._certfile,
-                'server_side': server_side,
-                'cert_reqs': self.verify_mode,
-                'ssl_version': self.protocol,
-                'ca_certs': self._cacerts,
-                'ciphers': self._ciphers,
-            }
-
-            return ssl.wrap_socket(socket, **args)
+modernssl = True
+_canloaddefaultcerts = True
 
 
 def _hostsettings(ui, hostname):
@@ -414,7 +354,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
     # bundle with a specific CA cert removed. If the system/default CA bundle
     # is loaded and contains that removed CA, you've just undone the user's
     # choice.
-    sslcontext = SSLContext(settings[b'protocol'])
+    sslcontext = ssl.SSLContext(settings[b'protocol'])
 
     # This is a no-op unless using modern ssl.
     sslcontext.options |= settings[b'ctxoptions']
@@ -642,7 +582,7 @@ def wrapserversocket(
         # We /could/ use create_default_context() here since it doesn't load
         # CAs when configured for client auth. However, it is hard-coded to
         # use ssl.PROTOCOL_SSLv23 which may not be appropriate here.
-        sslcontext = SSLContext(protocol)
+        sslcontext = ssl.SSLContext(protocol)
         sslcontext.options |= options
 
         # Improve forward secrecy.
@@ -654,7 +594,7 @@ def wrapserversocket(
             sslcontext.options |= getattr(ssl, 'OP_CIPHER_SERVER_PREFERENCE', 0)
             sslcontext.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
     else:
-        sslcontext = SSLContext(ssl.PROTOCOL_TLSv1)
+        sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
 
     if requireclientcert:
         sslcontext.verify_mode = ssl.CERT_REQUIRED
