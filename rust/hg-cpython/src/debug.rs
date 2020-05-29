@@ -16,8 +16,6 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     m.add(py, "__package__", package)?;
     m.add(py, "__doc__", "Rust debugging information")?;
 
-    m.add(py, "re2_installed", cfg!(feature = "with-re2"))?;
-
     let sys = PyModule::import(py, "sys")?;
     let sys_modules: PyDict = sys.get(py, "modules")?.extract(py)?;
     sys_modules.set_item(py, dotted_name, &m)?;

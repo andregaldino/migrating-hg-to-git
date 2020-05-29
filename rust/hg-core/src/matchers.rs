@@ -7,8 +7,6 @@
 
 //! Structs and types for matching files and directories.
 
-#[cfg(feature = "with-re2")]
-use crate::re2::Re2;
 use crate::{
     dirstate::dirs_multiset::DirsChildrenMultiset,
     filepatterns::{
@@ -239,29 +237,24 @@ impl<'a> Matcher for FileMatcher<'a> {
 }
 
 /// Matches files that are included in the ignore rules.
-#[cfg_attr(
-    feature = "with-re2",
-    doc = r##"
-```
-use hg::{
-    matchers::{IncludeMatcher, Matcher},
-    IgnorePattern,
-    PatternSyntax,
-    utils::hg_path::HgPath
-};
-use std::path::Path;
-///
-let ignore_patterns =
-vec![IgnorePattern::new(PatternSyntax::RootGlob, b"this*", Path::new(""))];
-let (matcher, _) = IncludeMatcher::new(ignore_patterns, "").unwrap();
-///
-assert_eq!(matcher.matches(HgPath::new(b"testing")), false);
-assert_eq!(matcher.matches(HgPath::new(b"this should work")), true);
-assert_eq!(matcher.matches(HgPath::new(b"this also")), true);
-assert_eq!(matcher.matches(HgPath::new(b"but not this")), false);
-```
-"##
-)]
+/// ```
+/// use hg::{
+///     matchers::{IncludeMatcher, Matcher},
+///     IgnorePattern,
+///     PatternSyntax,
+///     utils::hg_path::HgPath
+/// };
+/// use std::path::Path;
+/// ///
+/// let ignore_patterns =
+/// vec![IgnorePattern::new(PatternSyntax::RootGlob, b"this*", Path::new(""))];
+/// let (matcher, _) = IncludeMatcher::new(ignore_patterns, "").unwrap();
+/// ///
+/// assert_eq!(matcher.matches(HgPath::new(b"testing")), false);
+/// assert_eq!(matcher.matches(HgPath::new(b"this should work")), true);
+/// assert_eq!(matcher.matches(HgPath::new(b"this also")), true);
+/// assert_eq!(matcher.matches(HgPath::new(b"but not this")), false);
+/// ```
 pub struct IncludeMatcher<'a> {
     patterns: Vec<u8>,
     match_fn: Box<dyn for<'r> Fn(&'r HgPath) -> bool + 'a + Sync>,
@@ -319,22 +312,6 @@ impl<'a> Matcher for IncludeMatcher<'a> {
     }
 }
 
-#[cfg(feature = "with-re2")]
-/// Returns a function that matches an `HgPath` against the given regex
-/// pattern.
-///
-/// This can fail when the pattern is invalid or not supported by the
-/// underlying engine `Re2`, for instance anything with back-references.
-#[timed]
-fn re_matcher(
-    pattern: &[u8],
-) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
-    let regex = Re2::new(pattern);
-    let regex = regex.map_err(|e| PatternError::UnsupportedSyntax(e))?;
-    Ok(move |path: &HgPath| regex.is_match(path.as_bytes()))
-}
-
-#[cfg(not(feature = "with-re2"))]
 /// Returns a function that matches an `HgPath` against the given regex
 /// pattern.
 ///
@@ -844,7 +821,6 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "with-re2")]
     #[test]
     fn test_includematcher() {
         // VisitchildrensetPrefix
