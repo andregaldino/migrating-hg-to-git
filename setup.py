@@ -83,6 +83,21 @@ Python {py} detected.
     printf(error, file=sys.stderr)
     sys.exit(1)
 
+import ssl
+
+try:
+    ssl.SSLContext
+except AttributeError:
+    error = """
+The `ssl` module does not have the `SSLContext` class. This indicates an old
+Python version which does not support modern security features (which were
+added to Python 2.7 as part of "PEP 466"). Please make sure you have installed
+at least Python 2.7.9 or a Python version with backports of these security
+features.
+"""
+    printf(error, file=sys.stderr)
+    sys.exit(1)
+
 if sys.version_info[0] >= 3:
     DYLIB_SUFFIX = sysconfig.get_config_vars()['EXT_SUFFIX']
 else:
