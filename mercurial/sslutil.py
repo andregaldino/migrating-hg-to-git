@@ -264,8 +264,6 @@ def protocolsettings(protocol):
     # only (as opposed to multiple versions). So the method for
     # supporting multiple TLS versions is to use PROTOCOL_SSLv23 and
     # disable protocols via SSLContext.options and OP_NO_* constants.
-    # However, SSLContext.options doesn't work unless we have the
-    # full/real SSLContext available to us.
     if supportedprotocols == {b'tls1.0'}:
         if protocol != b'tls1.0':
             raise error.Abort(
@@ -278,9 +276,6 @@ def protocolsettings(protocol):
             )
 
         return ssl.PROTOCOL_TLSv1, 0, b'tls1.0'
-
-    # WARNING: returned options don't work unless the modern ssl module
-    # is available. Be careful when adding options here.
 
     # SSLv2 and SSLv3 are broken. We ban them outright.
     options = ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
@@ -355,11 +350,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
     # is loaded and contains that removed CA, you've just undone the user's
     # choice.
     sslcontext = ssl.SSLContext(settings[b'protocol'])
-
-    # This is a no-op unless using modern ssl.
     sslcontext.options |= settings[b'ctxoptions']
-
-    # This still works on our fake SSLContext.
     sslcontext.verify_mode = settings[b'verifymode']
 
     if settings[b'ciphers']:
