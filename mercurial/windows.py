@@ -474,11 +474,6 @@ def shellsplit(s):
     return pycompat.maplist(_unquote, pycompat.shlexsplit(s, posix=False))
 
 
-def quotecommand(cmd):
-    """Build a command string suitable for os.popen* calls."""
-    return cmd
-
-
 # if you change this stub into a real check, please try to implement the
 # username and groupname functions above, too.
 def isowner(st):

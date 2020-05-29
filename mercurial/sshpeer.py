@@ -179,7 +179,6 @@ def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
     )
 
     ui.debug(b'running %s\n' % cmd)
-    cmd = procutil.quotecommand(cmd)
 
     # no buffer allow the use of 'select'
     # feel free to remove buffering and select usage when we ultimately

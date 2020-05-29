@@ -233,7 +233,6 @@ def _systembackground(cmd, environ=None, cwd=None):
     ''' like 'procutil.system', but returns the Popen object directly
         so we don't have to wait on it.
     '''
-    cmd = procutil.quotecommand(cmd)
     env = procutil.shellenviron(environ)
     proc = subprocess.Popen(
         procutil.tonativestr(cmd),

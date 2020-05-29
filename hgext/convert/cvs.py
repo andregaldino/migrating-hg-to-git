@@ -226,8 +226,7 @@ class convert_cvs(converter_source):
                     cmd = [rsh, host] + cmd
 
             # popen2 does not support argument lists under Windows
-            cmd = [procutil.shellquote(arg) for arg in cmd]
-            cmd = procutil.quotecommand(b' '.join(cmd))
+            cmd = b' '.join(procutil.shellquote(arg) for arg in cmd)
             self.writep, self.readp = procutil.popen2(cmd)
 
         self.realroot = root

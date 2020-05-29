@@ -320,7 +320,7 @@ class channeledsystem(object):
         self.channel = channel
 
     def __call__(self, cmd, environ, cwd=None, type=b'system', cmdtable=None):
-        args = [type, procutil.quotecommand(cmd), os.path.abspath(cwd or b'.')]
+        args = [type, cmd, os.path.abspath(cwd or b'.')]
         args.extend(b'%s=%s' % (k, v) for k, v in pycompat.iteritems(environ))
         data = b'\0'.join(args)
         self.out.write(struct.pack(b'>cI', self.channel, len(data)))

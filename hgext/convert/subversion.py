@@ -1235,7 +1235,7 @@ class svn_source(converter_source):
         arg = encodeargs(args)
         hgexe = procutil.hgexecutable()
         cmd = b'%s debugsvnlog' % procutil.shellquote(hgexe)
-        stdin, stdout = procutil.popen2(procutil.quotecommand(cmd))
+        stdin, stdout = procutil.popen2(cmd)
         stdin.write(arg)
         try:
             stdin.close()

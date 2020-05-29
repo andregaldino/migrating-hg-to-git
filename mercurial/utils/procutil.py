@@ -73,7 +73,6 @@ _gethgcmd = platform.gethgcmd
 getuser = platform.getuser
 getpid = os.getpid
 hidewindow = platform.hidewindow
-quotecommand = platform.quotecommand
 readpipe = platform.readpipe
 setbinary = platform.setbinary
 setsignalhandler = platform.setsignalhandler
@@ -138,7 +137,7 @@ def popen(cmd, mode=b'rb', bufsize=-1):
 
 def _popenreader(cmd, bufsize):
     p = subprocess.Popen(
-        tonativestr(quotecommand(cmd)),
+        tonativestr(cmd),
         shell=True,
         bufsize=bufsize,
         close_fds=closefds,
@@ -149,7 +148,7 @@ def _popenreader(cmd, bufsize):
 
 def _popenwriter(cmd, bufsize):
     p = subprocess.Popen(
-        tonativestr(quotecommand(cmd)),
+        tonativestr(cmd),
         shell=True,
         bufsize=bufsize,
         close_fds=closefds,
@@ -395,7 +394,6 @@ def system(cmd, environ=None, cwd=None, out=None):
         stdout.flush()
     except Exception:
         pass
-    cmd = quotecommand(cmd)
     env = shellenviron(environ)
     if out is None or isstdout(out):
         rc = subprocess.call(
