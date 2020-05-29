@@ -476,9 +476,6 @@ def shellsplit(s):
 
 def quotecommand(cmd):
     """Build a command string suitable for os.popen* calls."""
-    if sys.version_info < (2, 7, 1):
-        # Python versions since 2.7.1 do this extra quoting themselves
-        return b'"' + cmd + b'"'
     return cmd
 
 
