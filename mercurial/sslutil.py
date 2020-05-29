@@ -257,9 +257,7 @@ def protocolsettings(minimumprotocol):
         raise ValueError(b'protocol value not supported: %s' % minimumprotocol)
 
     # Despite its name, PROTOCOL_SSLv23 selects the highest protocol
-    # that both ends support, including TLS protocols. On legacy stacks,
-    # the highest it likely goes is TLS 1.0. On modern stacks, it can
-    # support TLS 1.2.
+    # that both ends support, including TLS protocols.
     #
     # The PROTOCOL_TLSv* constants select a specific TLS version
     # only (as opposed to multiple versions). So the method for
