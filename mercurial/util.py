@@ -2844,7 +2844,7 @@ if pyplatform.python_implementation() == b'CPython' and sys.version_info < (
     # [1]: fixed by changeset 67dc99a989cd in the cpython hg repo.
     #
     # Here we workaround the EINTR issue for fileobj.__iter__. Other methods
-    # like "read*" are ignored for now, as Python < 2.7.4 is a minority.
+    # like "read*" work fine, as we do not support Python < 2.7.4.
     #
     # Although we can workaround the EINTR issue for fp.__iter__, it is slower:
     # "for x in fp" is 4x faster than "for x in iter(fp.readline, '')" in
@@ -2856,39 +2856,6 @@ if pyplatform.python_implementation() == b'CPython' and sys.version_info < (
     # affects things like pipes, sockets, ttys etc. We treat "normal" (S_ISREG)
     # files approximately as "fast" files and use the fast (unsafe) code path,
     # to minimize the performance impact.
-    if sys.version_info >= (2, 7, 4):
-        # fp.readline deals with EINTR correctly, use it as a workaround.
-        def _safeiterfile(fp):
-            return iter(fp.readline, b'')
-
-    else:
-        # fp.read* are broken too, manually deal with EINTR in a stupid way.
-        # note: this may block longer than necessary because of bufsize.
-        def _safeiterfile(fp, bufsize=4096):
-            fd = fp.fileno()
-            line = b''
-            while True:
-                try:
-                    buf = os.read(fd, bufsize)
-                except OSError as ex:
-                    # os.read only raises EINTR before any data is read
-                    if ex.errno == errno.EINTR:
-                        continue
-                    else:
-                        raise
-                line += buf
-                if b'\n' in buf:
-                    splitted = line.splitlines(True)
-                    line = b''
-                    for l in splitted:
-                        if l[-1] == b'\n':
-                            yield l
-                        else:
-                            line = l
-                if not buf:
-                    break
-            if line:
-                yield line
 
     def iterfile(fp):
         fastpath = True
@@ -2897,7 +2864,8 @@ if pyplatform.python_implementation() == b'CPython' and sys.version_info < (
         if fastpath:
             return fp
         else:
-            return _safeiterfile(fp)
+            # fp.readline deals with EINTR correctly, use it as a workaround.
+            return iter(fp.readline, b'')
 
 
 else:
