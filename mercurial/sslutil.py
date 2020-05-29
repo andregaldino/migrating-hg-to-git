@@ -52,7 +52,6 @@ if util.safehasattr(ssl, b'PROTOCOL_TLSv1_1'):
 if util.safehasattr(ssl, b'PROTOCOL_TLSv1_2'):
     supportedprotocols.add(b'tls1.2')
 
-modernssl = True
 _canloaddefaultcerts = True
 
 
@@ -399,8 +398,6 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
         # If we're doing certificate verification and no CA certs are loaded,
         # that is almost certainly the reason why verification failed. Provide
         # a hint to the user.
-        # Only modern ssl module exposes SSLContext.get_ca_certs() so we can
-        # only show this warning if modern ssl is available.
         # The exception handler is here to handle bugs around cert attributes:
         # https://bugs.python.org/issue20916#msg213479.  (See issues5313.)
         # When the main 20916 bug occurs, 'sslcontext.get_ca_certs()' is a
@@ -409,7 +406,6 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             if (
                 caloaded
                 and settings[b'verifymode'] == ssl.CERT_REQUIRED
-                and modernssl
                 and not sslcontext.get_ca_certs()
             ):
                 ui.warn(
@@ -569,23 +565,20 @@ def wrapserversocket(
             _(b'invalid value for serverexactprotocol: %s') % exactprotocol
         )
 
-    if modernssl:
-        # We /could/ use create_default_context() here since it doesn't load
-        # CAs when configured for client auth. However, it is hard-coded to
-        # use ssl.PROTOCOL_SSLv23 which may not be appropriate here.
-        sslcontext = ssl.SSLContext(protocol)
-        sslcontext.options |= options
+    # We /could/ use create_default_context() here since it doesn't load
+    # CAs when configured for client auth. However, it is hard-coded to
+    # use ssl.PROTOCOL_SSLv23 which may not be appropriate here.
+    sslcontext = ssl.SSLContext(protocol)
+    sslcontext.options |= options
 
-        # Improve forward secrecy.
-        sslcontext.options |= getattr(ssl, 'OP_SINGLE_DH_USE', 0)
-        sslcontext.options |= getattr(ssl, 'OP_SINGLE_ECDH_USE', 0)
+    # Improve forward secrecy.
+    sslcontext.options |= getattr(ssl, 'OP_SINGLE_DH_USE', 0)
+    sslcontext.options |= getattr(ssl, 'OP_SINGLE_ECDH_USE', 0)
 
-        # Use the list of more secure ciphers if found in the ssl module.
-        if util.safehasattr(ssl, b'_RESTRICTED_SERVER_CIPHERS'):
-            sslcontext.options |= getattr(ssl, 'OP_CIPHER_SERVER_PREFERENCE', 0)
-            sslcontext.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
-    else:
-        sslcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    # Use the list of more secure ciphers if found in the ssl module.
+    if util.safehasattr(ssl, b'_RESTRICTED_SERVER_CIPHERS'):
+        sslcontext.options |= getattr(ssl, 'OP_CIPHER_SERVER_PREFERENCE', 0)
+        sslcontext.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
 
     if requireclientcert:
         sslcontext.verify_mode = ssl.CERT_REQUIRED
