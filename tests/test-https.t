@@ -49,14 +49,14 @@ Test server address cannot be reused
 Our test cert is not signed by a trusted CA. It should fail to verify if
 we are able to load CA certs.
 
-#if sslcontext defaultcacerts no-defaultcacertsloaded
+#if sslcontext no-defaultcacertsloaded
   $ hg clone https://localhost:$HGPORT/ copy-pull
   (an attempt was made to load CA certificates but none were loaded; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error)
   abort: error: *certificate verify failed* (glob)
   [255]
 #endif
 
-#if no-sslcontext defaultcacerts
+#if no-sslcontext
   $ hg clone https://localhost:$HGPORT/ copy-pull
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (using CA certificates from *; if you see this message, your Mercurial install is not properly configured; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this message) (glob) (?)
@@ -87,15 +87,6 @@ we are able to load CA certs.
   (using CA certificates from *; if you see this message, your Mercurial install is not properly configured; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this message) (glob) (?)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
-#endif
-
-#if no-defaultcacerts
-  $ hg clone https://localhost:$HGPORT/ copy-pull
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
-  (unable to load * certificates; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this message) (glob) (?)
-  abort: localhost certificate error: no certificate received
-  (set hostsecurity.localhost:certfingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e config setting or use --insecure to connect insecurely)
   [255]
 #endif
 
