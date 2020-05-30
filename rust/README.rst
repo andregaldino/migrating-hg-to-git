@@ -27,8 +27,6 @@ built without rust previously)::
   $ ./hg debuginstall | grep -i rust # to validate rust is in use
   checking Rust extensions (installed)
   checking module policy (rust+c-allow)
-  checking "re2" regexp engine Rust bindings (installed)
-
 
 If the environment variable ``HGWITHRUSTEXT=cpython`` is set, the Rust
 extension will be used by default unless ``--no-rust``.
