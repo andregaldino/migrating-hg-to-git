@@ -8,9 +8,9 @@ improves performance in some areas.
 
 There are currently three independent rust projects:
 - chg. An implementation of chg, in rust instead of C.
-- hgcli. A experiment for starting hg in rust rather than in python,
-  by linking with the python runtime. Probably meant to be replaced by
-  PyOxidizer at some point.
+- hgcli. A project that provide a (mostly) self-contained "hg" binary,
+  for ease of deployment and a bit of speed, using PyOxidizer. See
+  hgcli/README.md.
 - hg-core (and hg-cpython): implementation of some
   functionality of mercurial in rust, e.g. ancestry computations in
   revision graphs, status or pull discovery. The top-level ``Cargo.toml`` file
