@@ -268,12 +268,6 @@ Test server cert which no longer is valid
   abort: error: *certificate verify failed* (glob)
   [255]
 
-Disabling the TLS 1.0 warning works
-  $ hg -R copy-pull id https://localhost:$HGPORT/ \
-  > --config hostsecurity.localhost:fingerprints=sha1:ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03 \
-  > --config hostsecurity.disabletls10warning=true
-  5fed3813f7f5
-
 Setting ciphers to an invalid value aborts
   $ P="$CERTSDIR" hg --config hostsecurity.ciphers=invalid -R copy-pull id https://localhost:$HGPORT/
   abort: could not set ciphers: No cipher can be selected.

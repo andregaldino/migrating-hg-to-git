@@ -808,9 +808,6 @@ coreconfigitem(
     b'hostsecurity', b'ciphers', default=None,
 )
 coreconfigitem(
-    b'hostsecurity', b'disabletls10warning', default=False,
-)
-coreconfigitem(
     b'hostsecurity', b'minimumprotocol', default=dynamicdefault,
 )
 coreconfigitem(
