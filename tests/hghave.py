@@ -645,24 +645,10 @@ def has_ssl():
         return False
 
 
-@check("sslcontext", "python >= 2.7.9 ssl")
-def has_sslcontext():
-    try:
-        import ssl
-
-        ssl.SSLContext
-        return True
-    except (ImportError, AttributeError):
-        return False
-
-
 @check("defaultcacertsloaded", "detected presence of loaded system CA certs")
 def has_defaultcacertsloaded():
     import ssl
     from mercurial import sslutil, ui as uimod
-
-    if not has_sslcontext():
-        return False
 
     ui = uimod.ui.load()
     cafile = sslutil._defaultcacerts(ui)

@@ -39,23 +39,12 @@ Utility functions:
 Our test cert is not signed by a trusted CA. It should fail to verify if
 we are able to load CA certs:
 
-#if sslcontext no-defaultcacertsloaded
+#if no-defaultcacertsloaded
   $ try
   this patch series consists of 1 patches.
   
   
   (an attempt was made to load CA certificates but none were loaded; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error)
-  (?i)abort: .*?certificate.verify.failed.* (re)
-  [255]
-#endif
-
-#if no-sslcontext
-  $ try
-  this patch series consists of 1 patches.
-  
-  
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info
-  (using CA certificates from *; if you see this message, your Mercurial install is not properly configured; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this message) (glob) (?)
   (?i)abort: .*?certificate.verify.failed.* (re)
   [255]
 #endif

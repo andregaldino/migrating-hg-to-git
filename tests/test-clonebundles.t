@@ -255,16 +255,14 @@ Automatic fallback when all entries are filtered
   added 2 changesets with 2 changes to 2 files
   new changesets 53245c60e682:aaff8d2ffbbf
 
-URLs requiring SNI are filtered in Python <2.7.9
+We require a Python version that supports SNI. Therefore, URLs requiring SNI
+are not filtered.
 
   $ cp full.hg sni.hg
   $ cat > server/.hg/clonebundles.manifest << EOF
   > http://localhost:$HGPORT1/sni.hg REQUIRESNI=true
   > http://localhost:$HGPORT1/full.hg
   > EOF
-
-#if sslcontext
-Python 2.7.9+ support SNI
 
   $ hg clone -U http://localhost:$HGPORT sni-supported
   applying clone bundle from http://localhost:$HGPORT1/sni.hg
@@ -276,20 +274,6 @@ Python 2.7.9+ support SNI
   searching for changes
   no changes found
   2 local changesets published
-#else
-Python <2.7.9 will filter SNI URLs
-
-  $ hg clone -U http://localhost:$HGPORT sni-unsupported
-  applying clone bundle from http://localhost:$HGPORT1/full.hg
-  adding changesets
-  adding manifests
-  adding file changes
-  added 2 changesets with 2 changes to 2 files
-  finished applying clone bundle
-  searching for changes
-  no changes found
-  2 local changesets published
-#endif
 
 Stream clone bundles are supported
 

@@ -49,35 +49,10 @@ Test server address cannot be reused
 Our test cert is not signed by a trusted CA. It should fail to verify if
 we are able to load CA certs.
 
-#if sslcontext no-defaultcacertsloaded
+#if no-defaultcacertsloaded
   $ hg clone https://localhost:$HGPORT/ copy-pull
   (an attempt was made to load CA certificates but none were loaded; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error)
   abort: error: *certificate verify failed* (glob)
-  [255]
-#endif
-
-#if no-sslcontext
-  $ hg clone https://localhost:$HGPORT/ copy-pull
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
-  (using CA certificates from *; if you see this message, your Mercurial install is not properly configured; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this message) (glob) (?)
-  abort: error: *certificate verify failed* (glob)
-  [255]
-#endif
-
-#if no-sslcontext windows
-  $ hg clone https://localhost:$HGPORT/ copy-pull
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info
-  (unable to load Windows CA certificates; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this message)
-  abort: error: *certificate verify failed* (glob)
-  [255]
-#endif
-
-#if no-sslcontext osx
-  $ hg clone https://localhost:$HGPORT/ copy-pull
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info
-  (unable to load CA certificates; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this message)
-  abort: localhost certificate error: no certificate received
-  (set hostsecurity.localhost:certfingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e config setting or use --insecure to connect insecurely)
   [255]
 #endif
 
@@ -101,35 +76,21 @@ C:/path/to/msysroot will print on Windows.
 A malformed per-host certificate file will raise an error
 
   $ echo baddata > badca.pem
-#if sslcontext
   $ hg --config hostsecurity.localhost:verifycertsfile=badca.pem clone https://localhost:$HGPORT/
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: error loading CA file badca.pem: * (glob)
   (file is empty or malformed?)
   [255]
-#else
-  $ hg --config hostsecurity.localhost:verifycertsfile=badca.pem clone https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
-  abort: error: * (glob)
-  [255]
-#endif
 
 A per-host certificate mismatching the server will fail verification
 
 (modern ssl is able to discern whether the loaded cert is a CA cert)
-#if sslcontext
   $ hg --config hostsecurity.localhost:verifycertsfile="$CERTSDIR/client-cert.pem" clone https://localhost:$HGPORT/
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (an attempt was made to load CA certificates but none were loaded; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
   [255]
-#else
-  $ hg --config hostsecurity.localhost:verifycertsfile="$CERTSDIR/client-cert.pem" clone https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
-  abort: error: *certificate verify failed* (glob)
-  [255]
-#endif
 
 A per-host certificate matching the server's cert will be accepted
 
@@ -269,20 +230,12 @@ empty cacert file
 
   $ touch emptycafile
 
-#if sslcontext
   $ hg --config web.cacerts=emptycafile -R copy-pull pull
   pulling from https://localhost:$HGPORT/
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: error loading CA file emptycafile: * (glob)
   (file is empty or malformed?)
   [255]
-#else
-  $ hg --config web.cacerts=emptycafile -R copy-pull pull
-  pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
-  abort: error: * (glob)
-  [255]
-#endif
 
 cacert mismatch
 
@@ -344,20 +297,6 @@ Disabling the TLS 1.0 warning works
   > --config hostsecurity.disabletls10warning=true
   5fed3813f7f5
 
-Error message for setting ciphers is different depending on SSLContext support
-
-#if no-sslcontext
-  $ P="$CERTSDIR" hg --config hostsecurity.ciphers=invalid -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info
-  abort: *No cipher can be selected. (glob)
-  [255]
-
-  $ P="$CERTSDIR" hg --config hostsecurity.ciphers=HIGH -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info
-  5fed3813f7f5
-#endif
-
-#if sslcontext
 Setting ciphers to an invalid value aborts
   $ P="$CERTSDIR" hg --config hostsecurity.ciphers=invalid -R copy-pull id https://localhost:$HGPORT/
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
@@ -376,7 +315,6 @@ Changing the cipher string works
   $ P="$CERTSDIR" hg --config hostsecurity.ciphers=HIGH -R copy-pull id https://localhost:$HGPORT/
   warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   5fed3813f7f5
-#endif
 
 Fingerprints
 
@@ -449,7 +387,7 @@ Ports used by next test. Kill servers.
   $ killdaemons.py hg1.pid
   $ killdaemons.py hg2.pid
 
-#if sslcontext tls1.2
+#if tls1.2
 Start servers running supported TLS versions
 
   $ cd test
@@ -603,8 +541,6 @@ Test https with cert problems through proxy
 
   $ killdaemons.py hg0.pid
 
-#if sslcontext
-
   $ cd test
 
 Missing certificate file(s) are detected
@@ -668,5 +604,3 @@ Missing certficate and key files result in error
   abort: certificate file (*/missing/key) does not exist; cannot connect to localhost (glob)
   (restore missing file or fix references in Mercurial config)
   [255]
-
-#endif
