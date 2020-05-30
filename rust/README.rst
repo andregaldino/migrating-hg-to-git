@@ -34,6 +34,21 @@ extension will be used by default unless ``--no-rust``.
 One day we may use this environment variable to switch to new experimental
 binding crates like a hypothetical ``HGWITHRUSTEXT=hpy``.
 
+Profiling
+=========
+
+Setting the environment variable ``RUST_LOG=trace`` will make hg print
+a few high level rust-related performance numbers. It can also
+indicate why the rust code cannot be used (say, using lookarounds in
+hgignore).
+
+``py-spy`` (https://github.com/benfred/py-spy) can be used to
+construct a single profile with rust functions and python functions
+(as opposed to ``hg --profile``, which attributes time spent in rust
+to some unlucky python code running shortly after the rust code, and
+as opposed to tools for native code like ``perf``, which attribute
+time to the python interpreter instead of python functions).
+
 Developing Rust
 ===============
 
