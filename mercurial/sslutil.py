@@ -58,7 +58,7 @@ try:
     # SSL/TLS features are available.
     SSLContext = ssl.SSLContext
     modernssl = True
-    _canloaddefaultcerts = util.safehasattr(SSLContext, b'load_default_certs')
+    _canloaddefaultcerts = True
 except AttributeError:
     modernssl = False
     _canloaddefaultcerts = False
