@@ -6,6 +6,9 @@
 
 == Backwards Compatibility Changes ==
 
+* Mercurial now requires at least Python 2.7.9 or a Python version that
+  backported modern SSL/TLS features (as defined in PEP 466).
+
 
 == Internal API Changes ==
 
