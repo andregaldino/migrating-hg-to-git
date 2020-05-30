@@ -52,8 +52,6 @@ if util.safehasattr(ssl, b'PROTOCOL_TLSv1_1'):
 if util.safehasattr(ssl, b'PROTOCOL_TLSv1_2'):
     supportedprotocols.add(b'tls1.2')
 
-_canloaddefaultcerts = True
-
 
 def _hostsettings(ui, hostname):
     """Obtain security settings for a hostname.
@@ -227,7 +225,7 @@ def _hostsettings(ui, hostname):
 
         # Require certificate validation if CA certs are being loaded and
         # verification hasn't been disabled above.
-        if cafile or (_canloaddefaultcerts and s[b'allowloaddefaultcerts']):
+        if cafile or s[b'allowloaddefaultcerts']:
             s[b'verifymode'] = ssl.CERT_REQUIRED
         else:
             # At this point we don't have a fingerprint, aren't being
@@ -721,14 +719,6 @@ def _plainapplepython():
     )
 
 
-_systemcacertpaths = [
-    # RHEL, CentOS, and Fedora
-    b'/etc/pki/tls/certs/ca-bundle.trust.crt',
-    # Debian, Ubuntu, Gentoo
-    b'/etc/ssl/certs/ca-certificates.crt',
-]
-
-
 def _defaultcacerts(ui):
     """return path to default CA certificates or None.
 
@@ -751,23 +741,6 @@ def _defaultcacerts(ui):
     except (ImportError, AttributeError):
         pass
 
-    # On Windows, only the modern ssl module is capable of loading the system
-    # CA certificates. If we're not capable of doing that, emit a warning
-    # because we'll get a certificate verification error later and the lack
-    # of loaded CA certificates will be the reason why.
-    # Assertion: this code is only called if certificates are being verified.
-    if pycompat.iswindows:
-        if not _canloaddefaultcerts:
-            ui.warn(
-                _(
-                    b'(unable to load Windows CA certificates; see '
-                    b'https://mercurial-scm.org/wiki/SecureConnections for '
-                    b'how to configure Mercurial to avoid this message)\n'
-                )
-            )
-
-        return None
-
     # Apple's OpenSSL has patches that allow a specially constructed certificate
     # to load the system CA store. If we're running on Apple Python, use this
     # trick.
@@ -777,58 +750,6 @@ def _defaultcacerts(ui):
         )
         if os.path.exists(dummycert):
             return dummycert
-
-    # The Apple OpenSSL trick isn't available to us. If Python isn't able to
-    # load system certs, we're out of luck.
-    if pycompat.isdarwin:
-        # FUTURE Consider looking for Homebrew or MacPorts installed certs
-        # files. Also consider exporting the keychain certs to a file during
-        # Mercurial install.
-        if not _canloaddefaultcerts:
-            ui.warn(
-                _(
-                    b'(unable to load CA certificates; see '
-                    b'https://mercurial-scm.org/wiki/SecureConnections for '
-                    b'how to configure Mercurial to avoid this message)\n'
-                )
-            )
-        return None
-
-    # / is writable on Windows. Out of an abundance of caution make sure
-    # we're not on Windows because paths from _systemcacerts could be installed
-    # by non-admin users.
-    assert not pycompat.iswindows
-
-    # Try to find CA certificates in well-known locations. We print a warning
-    # when using a found file because we don't want too much silent magic
-    # for security settings. The expectation is that proper Mercurial
-    # installs will have the CA certs path defined at install time and the
-    # installer/packager will make an appropriate decision on the user's
-    # behalf. We only get here and perform this setting as a feature of
-    # last resort.
-    if not _canloaddefaultcerts:
-        for path in _systemcacertpaths:
-            if os.path.isfile(path):
-                ui.warn(
-                    _(
-                        b'(using CA certificates from %s; if you see this '
-                        b'message, your Mercurial install is not properly '
-                        b'configured; see '
-                        b'https://mercurial-scm.org/wiki/SecureConnections '
-                        b'for how to configure Mercurial to avoid this '
-                        b'message)\n'
-                    )
-                    % path
-                )
-                return path
-
-        ui.warn(
-            _(
-                b'(unable to load CA certificates; see '
-                b'https://mercurial-scm.org/wiki/SecureConnections for '
-                b'how to configure Mercurial to avoid this message)\n'
-            )
-        )
 
     return None
 
