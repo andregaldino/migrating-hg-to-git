@@ -3,6 +3,12 @@
 
 == New Experimental Features ==
 
+ * The core of some hg operations have been (and are being)
+   implemented in rust, for speed. `hg status` on a repository with
+   300k tracked files goes from 1.8s to 0.6s for instance.
+   This has currently been tested only on linux, and does not build on
+   windows. See rust/README.rst in the mercurial repository for
+   instructions to opt into this.
 
 == Backwards Compatibility Changes ==
 
