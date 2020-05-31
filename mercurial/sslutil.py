@@ -553,6 +553,8 @@ def wrapserversocket(
     # footgun to kill security. Don't define it.
     exactprotocol = ui.config(b'devel', b'serverexactprotocol')
     if exactprotocol == b'tls1.0':
+        if b'tls1.0' not in supportedprotocols:
+            raise error.Abort(_(b'TLS 1.0 not supported by this Python'))
         protocol = ssl.PROTOCOL_TLSv1
     elif exactprotocol == b'tls1.1':
         if b'tls1.1' not in supportedprotocols:
