@@ -102,27 +102,14 @@ def _hostsettings(ui, hostname):
                 % b' '.join(sorted(configprotocols)),
             )
 
-    # We default to TLS 1.1+ where we can because TLS 1.0 has known
-    # vulnerabilities (like BEAST and POODLE). We allow users to downgrade to
-    # TLS 1.0+ via config options in case a legacy server is encountered.
-    if supportedprotocols - {b'tls1.0'}:
-        defaultminimumprotocol = b'tls1.1'
-    else:
-        # Let people know they are borderline secure.
-        # We don't document this config option because we want people to see
-        # the bold warnings on the web site.
-        # internal config: hostsecurity.disabletls10warning
-        if not ui.configbool(b'hostsecurity', b'disabletls10warning'):
-            ui.warn(
-                _(
-                    b'warning: connecting to %s using legacy security '
-                    b'technology (TLS 1.0); see '
-                    b'https://mercurial-scm.org/wiki/SecureConnections for '
-                    b'more info\n'
-                )
-                % bhostname
-            )
-        defaultminimumprotocol = b'tls1.0'
+    # We default to TLS 1.1+ because TLS 1.0 has known vulnerabilities (like
+    # BEAST and POODLE). We allow users to downgrade to TLS 1.0+ via config
+    # options in case a legacy server is encountered.
+
+    # setup.py checks that either TLS 1.1 or TLS 1.2 is present, so the
+    # following assert should not fail.
+    assert supportedprotocols - {b'tls1.0'}
+    defaultminimumprotocol = b'tls1.1'
 
     key = b'minimumprotocol'
     minimumprotocol = ui.config(b'hostsecurity', key, defaultminimumprotocol)

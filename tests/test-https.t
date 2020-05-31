@@ -34,7 +34,6 @@ Make server certificates:
 cacert not found
 
   $ hg in --config web.cacerts=no-such.pem https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: could not find web.cacerts: no-such.pem
   [255]
 
@@ -58,7 +57,6 @@ we are able to load CA certs.
 
 #if defaultcacertsloaded
   $ hg clone https://localhost:$HGPORT/ copy-pull
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
   [255]
@@ -68,7 +66,6 @@ Specifying a per-host certificate file that doesn't exist will abort.  The full
 C:/path/to/msysroot will print on Windows.
 
   $ hg --config hostsecurity.localhost:verifycertsfile=/does/not/exist clone https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: path specified by hostsecurity.localhost:verifycertsfile does not exist: */does/not/exist (glob)
   [255]
 
@@ -76,7 +73,6 @@ A malformed per-host certificate file will raise an error
 
   $ echo baddata > badca.pem
   $ hg --config hostsecurity.localhost:verifycertsfile=badca.pem clone https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: error loading CA file badca.pem: * (glob)
   (file is empty or malformed?)
   [255]
@@ -85,7 +81,6 @@ A per-host certificate mismatching the server will fail verification
 
 (modern ssl is able to discern whether the loaded cert is a CA cert)
   $ hg --config hostsecurity.localhost:verifycertsfile="$CERTSDIR/client-cert.pem" clone https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (an attempt was made to load CA certificates but none were loaded; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
@@ -94,7 +89,6 @@ A per-host certificate mismatching the server will fail verification
 A per-host certificate matching the server's cert will be accepted
 
   $ hg --config hostsecurity.localhost:verifycertsfile="$CERTSDIR/pub.pem" clone -U https://localhost:$HGPORT/ perhostgood1
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   requesting all changes
   adding changesets
   adding manifests
@@ -106,7 +100,6 @@ A per-host certificate with multiple certs and one matching will be accepted
 
   $ cat "$CERTSDIR/client-cert.pem" "$CERTSDIR/pub.pem" > perhost.pem
   $ hg --config hostsecurity.localhost:verifycertsfile=perhost.pem clone -U https://localhost:$HGPORT/ perhostgood2
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   requesting all changes
   adding changesets
   adding manifests
@@ -117,7 +110,6 @@ A per-host certificate with multiple certs and one matching will be accepted
 Defining both per-host certificate and a fingerprint will print a warning
 
   $ hg --config hostsecurity.localhost:verifycertsfile="$CERTSDIR/pub.pem" --config hostsecurity.localhost:fingerprints=sha1:ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03 clone -U https://localhost:$HGPORT/ caandfingerwarning
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (hostsecurity.localhost:verifycertsfile ignored when host fingerprints defined; using host fingerprints for verification)
   requesting all changes
   adding changesets
@@ -131,13 +123,11 @@ Defining both per-host certificate and a fingerprint will print a warning
 Inability to verify peer certificate will result in abort
 
   $ hg clone https://localhost:$HGPORT/ copy-pull $DISABLECACERTS
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: unable to verify security of localhost (no loaded CA certificates); refusing to connect
   (see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error or set hostsecurity.localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e to trust this server)
   [255]
 
   $ hg clone --insecure https://localhost:$HGPORT/ copy-pull
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   warning: connection security to localhost is disabled per current settings; communication is susceptible to eavesdropping and tampering
   requesting all changes
   adding changesets
@@ -168,14 +158,12 @@ pull without cacert
   > EOF
   $ hg pull $DISABLECACERTS
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: unable to verify security of localhost (no loaded CA certificates); refusing to connect
   (see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error or set hostsecurity.localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e to trust this server)
   [255]
 
   $ hg pull --insecure
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   warning: connection security to localhost is disabled per current settings; communication is susceptible to eavesdropping and tampering
   searching for changes
   adding changesets
@@ -203,7 +191,6 @@ cacert configured in local repo
   $ echo "cacerts=$CERTSDIR/pub.pem" >> copy-pull/.hg/hgrc
   $ hg -R copy-pull pull
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   searching for changes
   no changes found
   $ mv copy-pull/.hg/hgrc.bu copy-pull/.hg/hgrc
@@ -215,12 +202,10 @@ variables in the filename
   $ echo 'cacerts=$P/pub.pem' >> $HGRCPATH
   $ P="$CERTSDIR" hg -R copy-pull pull
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   searching for changes
   no changes found
   $ P="$CERTSDIR" hg -R copy-pull pull --insecure
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   warning: connection security to localhost is disabled per current settings; communication is susceptible to eavesdropping and tampering
   searching for changes
   no changes found
@@ -231,7 +216,6 @@ empty cacert file
 
   $ hg --config web.cacerts=emptycafile -R copy-pull pull
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: error loading CA file emptycafile: * (glob)
   (file is empty or malformed?)
   [255]
@@ -241,27 +225,23 @@ cacert mismatch
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub.pem" \
   > https://$LOCALIP:$HGPORT/
   pulling from https://*:$HGPORT/ (glob)
-  warning: connecting to $LOCALIP using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: $LOCALIP certificate error: certificate is for localhost (glob)
   (set hostsecurity.$LOCALIP:certfingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e config setting or use --insecure to connect insecurely)
   [255]
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub.pem" \
   > https://$LOCALIP:$HGPORT/ --insecure
   pulling from https://*:$HGPORT/ (glob)
-  warning: connecting to $LOCALIP using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   warning: connection security to $LOCALIP is disabled per current settings; communication is susceptible to eavesdropping and tampering (glob)
   searching for changes
   no changes found
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub-other.pem"
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
   [255]
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub-other.pem" \
   > --insecure
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   warning: connection security to localhost is disabled per current settings; communication is susceptible to eavesdropping and tampering
   searching for changes
   no changes found
@@ -273,7 +253,6 @@ Test server cert which isn't valid yet
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub-not-yet.pem" \
   > https://localhost:$HGPORT1/
   pulling from https://localhost:$HGPORT1/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
   [255]
@@ -285,7 +264,6 @@ Test server cert which no longer is valid
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub-expired.pem" \
   > https://localhost:$HGPORT2/
   pulling from https://localhost:$HGPORT2/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
   [255]
@@ -298,13 +276,11 @@ Disabling the TLS 1.0 warning works
 
 Setting ciphers to an invalid value aborts
   $ P="$CERTSDIR" hg --config hostsecurity.ciphers=invalid -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: could not set ciphers: No cipher can be selected.
   (change cipher string (invalid) in config)
   [255]
 
   $ P="$CERTSDIR" hg --config hostsecurity.localhost:ciphers=invalid -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: could not set ciphers: No cipher can be selected.
   (change cipher string (invalid) in config)
   [255]
@@ -312,63 +288,52 @@ Setting ciphers to an invalid value aborts
 Changing the cipher string works
 
   $ P="$CERTSDIR" hg --config hostsecurity.ciphers=HIGH -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   5fed3813f7f5
 
 Fingerprints
 
 - works without cacerts (hostfingerprints)
   $ hg -R copy-pull id https://localhost:$HGPORT/ --insecure --config hostfingerprints.localhost=ec:d8:7c:d6:b3:86:d0:4f:c1:b8:b4:1c:9d:8f:5e:16:8e:ef:1c:03
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (SHA-1 fingerprint for localhost found in legacy [hostfingerprints] section; if you trust this fingerprint, remove the old SHA-1 fingerprint from [hostfingerprints] and add the following entry to the new [hostsecurity] section: localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e)
   5fed3813f7f5
 
 - works without cacerts (hostsecurity)
   $ hg -R copy-pull id https://localhost:$HGPORT/ --config hostsecurity.localhost:fingerprints=sha1:ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   5fed3813f7f5
 
   $ hg -R copy-pull id https://localhost:$HGPORT/ --config hostsecurity.localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   5fed3813f7f5
 
 - multiple fingerprints specified and first matches
   $ hg --config 'hostfingerprints.localhost=ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03, deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' -R copy-pull id https://localhost:$HGPORT/ --insecure
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (SHA-1 fingerprint for localhost found in legacy [hostfingerprints] section; if you trust this fingerprint, remove the old SHA-1 fingerprint from [hostfingerprints] and add the following entry to the new [hostsecurity] section: localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e)
   5fed3813f7f5
 
   $ hg --config 'hostsecurity.localhost:fingerprints=sha1:ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03, sha1:deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   5fed3813f7f5
 
 - multiple fingerprints specified and last matches
   $ hg --config 'hostfingerprints.localhost=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef, ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03' -R copy-pull id https://localhost:$HGPORT/ --insecure
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (SHA-1 fingerprint for localhost found in legacy [hostfingerprints] section; if you trust this fingerprint, remove the old SHA-1 fingerprint from [hostfingerprints] and add the following entry to the new [hostsecurity] section: localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e)
   5fed3813f7f5
 
   $ hg --config 'hostsecurity.localhost:fingerprints=sha1:deadbeefdeadbeefdeadbeefdeadbeefdeadbeef, sha1:ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03' -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   5fed3813f7f5
 
 - multiple fingerprints specified and none match
 
   $ hg --config 'hostfingerprints.localhost=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef, aeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' -R copy-pull id https://localhost:$HGPORT/ --insecure
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: certificate for localhost has unexpected fingerprint ec:d8:7c:d6:b3:86:d0:4f:c1:b8:b4:1c:9d:8f:5e:16:8e:ef:1c:03
   (check hostfingerprint configuration)
   [255]
 
   $ hg --config 'hostsecurity.localhost:fingerprints=sha1:deadbeefdeadbeefdeadbeefdeadbeefdeadbeef, sha1:aeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' -R copy-pull id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: certificate for localhost has unexpected fingerprint sha1:ec:d8:7c:d6:b3:86:d0:4f:c1:b8:b4:1c:9d:8f:5e:16:8e:ef:1c:03
   (check hostsecurity configuration)
   [255]
 
 - fails when cert doesn't match hostname (port is ignored)
   $ hg -R copy-pull id https://localhost:$HGPORT1/ --config hostfingerprints.localhost=ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: certificate for localhost has unexpected fingerprint f4:2f:5a:0c:3e:52:5b:db:e7:24:a8:32:1d:18:97:6d:69:b5:87:84
   (check hostfingerprint configuration)
   [255]
@@ -376,7 +341,6 @@ Fingerprints
 
 - ignores that certificate doesn't match hostname
   $ hg -R copy-pull id https://$LOCALIP:$HGPORT/ --config hostfingerprints.$LOCALIP=ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03
-  warning: connecting to $LOCALIP using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (SHA-1 fingerprint for $LOCALIP found in legacy [hostfingerprints] section; if you trust this fingerprint, remove the old SHA-1 fingerprint from [hostfingerprints] and add the following entry to the new [hostsecurity] section: $LOCALIP:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e)
   5fed3813f7f5
 
@@ -500,7 +464,6 @@ Test unvalidated https through proxy
 
   $ http_proxy=http://localhost:$HGPORT1/ hg -R copy-pull pull --insecure
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   warning: connection security to localhost is disabled per current settings; communication is susceptible to eavesdropping and tampering
   searching for changes
   no changes found
@@ -510,12 +473,10 @@ Test https with cacert and fingerprint through proxy
   $ http_proxy=http://localhost:$HGPORT1/ hg -R copy-pull pull \
   > --config web.cacerts="$CERTSDIR/pub.pem"
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   searching for changes
   no changes found
   $ http_proxy=http://localhost:$HGPORT1/ hg -R copy-pull pull https://localhost:$HGPORT/ --config hostfingerprints.localhost=ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03 --trace
   pulling from https://*:$HGPORT/ (glob)
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (SHA-1 fingerprint for localhost found in legacy [hostfingerprints] section; if you trust this fingerprint, remove the old SHA-1 fingerprint from [hostfingerprints] and add the following entry to the new [hostsecurity] section: localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e)
   searching for changes
   no changes found
@@ -525,14 +486,12 @@ Test https with cert problems through proxy
   $ http_proxy=http://localhost:$HGPORT1/ hg -R copy-pull pull \
   > --config web.cacerts="$CERTSDIR/pub-other.pem"
   pulling from https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
   [255]
   $ http_proxy=http://localhost:$HGPORT1/ hg -R copy-pull pull \
   > --config web.cacerts="$CERTSDIR/pub-expired.pem" https://localhost:$HGPORT2/
   pulling from https://localhost:$HGPORT2/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
   [255]
@@ -564,7 +523,6 @@ Start hgweb that requires client certificates:
 without client certificate:
 
   $ P="$CERTSDIR" hg id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: error: .*(\$ECONNRESET\$|certificate required|handshake failure).* (re)
   [255]
 
@@ -579,16 +537,13 @@ with client certificate:
 
   $ P="$CERTSDIR" hg id https://localhost:$HGPORT/ \
   > --config auth.l.key="$CERTSDIR/client-key-decrypted.pem"
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   5fed3813f7f5
 
   $ printf '1234\n' | env P="$CERTSDIR" hg id https://localhost:$HGPORT/ \
   > --config ui.interactive=True --config ui.nontty=True
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   passphrase for */client-key.pem: 5fed3813f7f5 (glob)
 
   $ env P="$CERTSDIR" hg id https://localhost:$HGPORT/
-  warning: connecting to localhost using legacy security technology (TLS 1.0); see https://mercurial-scm.org/wiki/SecureConnections for more info (?)
   abort: error: * (glob)
   [255]
 
