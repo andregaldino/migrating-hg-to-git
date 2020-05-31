@@ -76,7 +76,7 @@ def _hostsettings(ui, hostname):
         b'protocol': None,
         # String representation of minimum protocol to be used for UI
         # presentation.
-        b'protocolui': None,
+        b'minimumprotocolui': None,
         # ssl.CERT_* constant used by SSLContext.verify_mode.
         b'verifymode': None,
         # Defines extra ssl.OP* bitwise options to set.
@@ -99,7 +99,7 @@ def _hostsettings(ui, hostname):
     # vulnerabilities (like BEAST and POODLE). We allow users to downgrade to
     # TLS 1.0+ via config options in case a legacy server is encountered.
     if b'tls1.1' in supportedprotocols:
-        defaultprotocol = b'tls1.1'
+        defaultminimumprotocol = b'tls1.1'
     else:
         # Let people know they are borderline secure.
         # We don't document this config option because we want people to see
@@ -115,24 +115,24 @@ def _hostsettings(ui, hostname):
                 )
                 % bhostname
             )
-        defaultprotocol = b'tls1.0'
+        defaultminimumprotocol = b'tls1.0'
 
     key = b'minimumprotocol'
-    protocol = ui.config(b'hostsecurity', key, defaultprotocol)
-    validateprotocol(protocol, key)
+    minimumprotocol = ui.config(b'hostsecurity', key, defaultminimumprotocol)
+    validateprotocol(minimumprotocol, key)
 
     key = b'%s:minimumprotocol' % bhostname
-    protocol = ui.config(b'hostsecurity', key, protocol)
-    validateprotocol(protocol, key)
+    minimumprotocol = ui.config(b'hostsecurity', key, minimumprotocol)
+    validateprotocol(minimumprotocol, key)
 
     # If --insecure is used, we allow the use of TLS 1.0 despite config options.
     # We always print a "connection security to %s is disabled..." message when
     # --insecure is used. So no need to print anything more here.
     if ui.insecureconnections:
-        protocol = b'tls1.0'
+        minimumprotocol = b'tls1.0'
 
-    s[b'protocolui'] = protocol
-    s[b'protocol'], s[b'ctxoptions'] = protocolsettings(protocol)
+    s[b'minimumprotocolui'] = minimumprotocol
+    s[b'protocol'], s[b'ctxoptions'] = protocolsettings(minimumprotocol)
 
     ciphers = ui.config(b'hostsecurity', b'ciphers')
     ciphers = ui.config(b'hostsecurity', b'%s:ciphers' % bhostname, ciphers)
@@ -241,13 +241,13 @@ def _hostsettings(ui, hostname):
     return s
 
 
-def protocolsettings(protocol):
+def protocolsettings(minimumprotocol):
     """Resolve the protocol for a config value.
 
     Returns a tuple of (protocol, options) which are values used by SSLContext.
     """
-    if protocol not in configprotocols:
-        raise ValueError(b'protocol value not supported: %s' % protocol)
+    if minimumprotocol not in configprotocols:
+        raise ValueError(b'protocol value not supported: %s' % minimumprotocol)
 
     # Despite its name, PROTOCOL_SSLv23 selects the highest protocol
     # that both ends support, including TLS protocols. On legacy stacks,
@@ -259,10 +259,10 @@ def protocolsettings(protocol):
     # supporting multiple TLS versions is to use PROTOCOL_SSLv23 and
     # disable protocols via SSLContext.options and OP_NO_* constants.
     if supportedprotocols == {b'tls1.0'}:
-        if protocol != b'tls1.0':
+        if minimumprotocol != b'tls1.0':
             raise error.Abort(
                 _(b'current Python does not support protocol setting %s')
-                % protocol,
+                % minimumprotocol,
                 hint=_(
                     b'upgrade Python or disable setting since '
                     b'only TLS 1.0 is supported'
@@ -274,12 +274,12 @@ def protocolsettings(protocol):
     # SSLv2 and SSLv3 are broken. We ban them outright.
     options = ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
 
-    if protocol == b'tls1.0':
+    if minimumprotocol == b'tls1.0':
         # Defaults above are to use TLS 1.0+
         pass
-    elif protocol == b'tls1.1':
+    elif minimumprotocol == b'tls1.1':
         options |= ssl.OP_NO_TLSv1
-    elif protocol == b'tls1.2':
+    elif minimumprotocol == b'tls1.2':
         options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
     else:
         raise error.Abort(_(b'this should not happen'))
@@ -424,7 +424,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             # reason, try to emit an actionable warning.
             if e.reason == 'UNSUPPORTED_PROTOCOL':
                 # We attempted TLS 1.0+.
-                if settings[b'protocolui'] == b'tls1.0':
+                if settings[b'minimumprotocolui'] == b'tls1.0':
                     # We support more than just TLS 1.0+. If this happens,
                     # the likely scenario is either the client or the server
                     # is really old. (e.g. server doesn't support TLS 1.0+ or
@@ -469,7 +469,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                             b'to be more secure than the server can support)\n'
                         )
                         % (
-                            settings[b'protocolui'],
+                            settings[b'minimumprotocolui'],
                             pycompat.bytesurl(serverhostname),
                         )
                     )
