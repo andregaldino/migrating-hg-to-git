@@ -105,7 +105,7 @@ def _hostsettings(ui, hostname):
     # We default to TLS 1.1+ where we can because TLS 1.0 has known
     # vulnerabilities (like BEAST and POODLE). We allow users to downgrade to
     # TLS 1.0+ via config options in case a legacy server is encountered.
-    if b'tls1.1' in supportedprotocols:
+    if supportedprotocols - {b'tls1.0'}:
         defaultminimumprotocol = b'tls1.1'
     else:
         # Let people know they are borderline secure.
