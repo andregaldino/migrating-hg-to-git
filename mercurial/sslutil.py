@@ -250,18 +250,6 @@ def protocolsettings(minimumprotocol):
     # only (as opposed to multiple versions). So the method for
     # supporting multiple TLS versions is to use PROTOCOL_SSLv23 and
     # disable protocols via SSLContext.options and OP_NO_* constants.
-    if supportedprotocols == {b'tls1.0'}:
-        if minimumprotocol != b'tls1.0':
-            raise error.Abort(
-                _(b'current Python does not support protocol setting %s')
-                % minimumprotocol,
-                hint=_(
-                    b'upgrade Python or disable setting since '
-                    b'only TLS 1.0 is supported'
-                ),
-            )
-
-        return ssl.PROTOCOL_TLSv1, 0
 
     # SSLv2 and SSLv3 are broken. We ban them outright.
     options = ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
