@@ -131,9 +131,8 @@ def _hostsettings(ui, hostname):
     if ui.insecureconnections:
         protocol = b'tls1.0'
 
-    s[b'protocol'], s[b'ctxoptions'], s[b'protocolui'] = protocolsettings(
-        protocol
-    )
+    s[b'protocolui'] = protocol
+    s[b'protocol'], s[b'ctxoptions'] = protocolsettings(protocol)
 
     ciphers = ui.config(b'hostsecurity', b'ciphers')
     ciphers = ui.config(b'hostsecurity', b'%s:ciphers' % bhostname, ciphers)
@@ -245,9 +244,7 @@ def _hostsettings(ui, hostname):
 def protocolsettings(protocol):
     """Resolve the protocol for a config value.
 
-    Returns a 3-tuple of (protocol, options, ui value) where the first
-    2 items are values used by SSLContext and the last is a string value
-    of the ``minimumprotocol`` config option equivalent.
+    Returns a tuple of (protocol, options) which are values used by SSLContext.
     """
     if protocol not in configprotocols:
         raise ValueError(b'protocol value not supported: %s' % protocol)
@@ -272,7 +269,7 @@ def protocolsettings(protocol):
                 ),
             )
 
-        return ssl.PROTOCOL_TLSv1, 0, b'tls1.0'
+        return ssl.PROTOCOL_TLSv1, 0
 
     # SSLv2 and SSLv3 are broken. We ban them outright.
     options = ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
@@ -291,7 +288,7 @@ def protocolsettings(protocol):
     # There is no guarantee this attribute is defined on the module.
     options |= getattr(ssl, 'OP_NO_COMPRESSION', 0)
 
-    return ssl.PROTOCOL_SSLv23, options, protocol
+    return ssl.PROTOCOL_SSLv23, options
 
 
 def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
@@ -543,7 +540,7 @@ def wrapserversocket(
                 _(b'referenced certificate file (%s) does not exist') % f
             )
 
-    protocol, options, _protocolui = protocolsettings(b'tls1.0')
+    protocol, options = protocolsettings(b'tls1.0')
 
     # This config option is intended for use in tests only. It is a giant
     # footgun to kill security. Don't define it.
