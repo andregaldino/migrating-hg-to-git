@@ -44,19 +44,17 @@ configprotocols = {
 
 hassni = getattr(ssl, 'HAS_SNI', False)
 
-# TLS 1.1 and 1.2 may not be supported if the OpenSSL Python is compiled
-# against doesn't support them.
-# FIXME: Since CPython commit 6e8cda91d92da72800d891b2fc2073ecbc134d98
-# individual TLS versions can be turned on and off, and the
-# ssl.PROTOCOL_TLSv1_* constants are always defined.
-# This means that, on unusual configurations, the following dict may contain
-# too many entries. A proper fix would be to check ssl.HAS_TLSv* where
-# available (Python 3.7+). Before that, this module should be proofed against
-# all possible combinations.
-supportedprotocols = {b'tls1.0'}
-if util.safehasattr(ssl, b'PROTOCOL_TLSv1_1'):
+# ssl.HAS_TLSv1* are preferred to check support but they were added in Python
+# 3.7. Prior to CPython commit 6e8cda91d92da72800d891b2fc2073ecbc134d98
+# (backported to the 3.7 branch), ssl.PROTOCOL_TLSv1_1 / ssl.PROTOCOL_TLSv1_2
+# were defined only if compiled against a OpenSSL version with TLS 1.1 / 1.2
+# support. At the mentioned commit, they were unconditionally defined.
+supportedprotocols = set()
+if getattr(ssl, 'HAS_TLSv1', util.safehasattr(ssl, 'PROTOCOL_TLSv1')):
+    supportedprotocols.add(b'tls1.0')
+if getattr(ssl, 'HAS_TLSv1_1', util.safehasattr(ssl, 'PROTOCOL_TLSv1_1')):
     supportedprotocols.add(b'tls1.1')
-if util.safehasattr(ssl, b'PROTOCOL_TLSv1_2'):
+if getattr(ssl, 'HAS_TLSv1_2', util.safehasattr(ssl, 'PROTOCOL_TLSv1_2')):
     supportedprotocols.add(b'tls1.2')
 
 
