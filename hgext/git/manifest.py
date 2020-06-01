@@ -126,9 +126,79 @@ class gittreemanifest(object):
     def hasdir(self, dir):
         return dir in self._dirs
 
-    def diff(self, other, match=None, clean=False):
-        # TODO
-        assert False
+    def diff(self, other, match=lambda x: True, clean=False):
+        '''Finds changes between the current manifest and m2.
+
+        The result is returned as a dict with filename as key and
+        values of the form ((n1,fl1),(n2,fl2)), where n1/n2 is the
+        nodeid in the current/other manifest and fl1/fl2 is the flag
+        in the current/other manifest. Where the file does not exist,
+        the nodeid will be None and the flags will be the empty
+        string.
+        '''
+        result = {}
+
+        def _iterativediff(t1, t2, subdir):
+            """compares two trees and appends new tree nodes to examine to
+            the stack"""
+            if t1 is None:
+                t1 = {}
+            if t2 is None:
+                t2 = {}
+
+            for e1 in t1:
+                realname = subdir + pycompat.fsencode(e1.name)
+
+                if e1.type == pygit2.GIT_OBJ_TREE:
+                    try:
+                        e2 = t2[e1.name]
+                        if e2.type != pygit2.GIT_OBJ_TREE:
+                            e2 = None
+                    except KeyError:
+                        e2 = None
+
+                    stack.append((realname + b'/', e1, e2))
+                else:
+                    n1, fl1 = self.find(realname)
+
+                    try:
+                        e2 = t2[e1.name]
+                        n2, fl2 = other.find(realname)
+                    except KeyError:
+                        e2 = None
+                        n2, fl2 = (None, b'')
+
+                    if e2 is not None and e2.type == pygit2.GIT_OBJ_TREE:
+                        stack.append((realname + b'/', None, e2))
+
+                    if not match(realname):
+                        continue
+
+                    if n1 != n2 or fl1 != fl2:
+                        result[realname] = ((n1, fl1), (n2, fl2))
+                    elif clean:
+                        result[realname] = None
+
+            for e2 in t2:
+                if e2.name in t1:
+                    continue
+
+                realname = subdir + pycompat.fsencode(e2.name)
+
+                if e2.type == pygit2.GIT_OBJ_TREE:
+                    stack.append((realname + b'/', None, e2))
+                elif match(realname):
+                    n2, fl2 = other.find(realname)
+                    result[realname] = ((None, b''), (n2, fl2))
+
+        stack = []
+        _iterativediff(self._tree, other._tree, b'')
+        while stack:
+            subdir, t1, t2 = stack.pop()
+            # stack is populated in the function call
+            _iterativediff(t1, t2, subdir)
+
+        return result
 
     def setflag(self, path, flag):
         node, unused_flag = self._resolve_entry(path)
