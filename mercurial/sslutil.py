@@ -77,15 +77,11 @@ def _hostsettings(ui, hostname):
         b'disablecertverification': False,
         # Whether the legacy [hostfingerprints] section has data for this host.
         b'legacyfingerprint': False,
-        # PROTOCOL_* constant to use for SSLContext.__init__.
-        b'protocol': None,
         # String representation of minimum protocol to be used for UI
         # presentation.
         b'minimumprotocol': None,
         # ssl.CERT_* constant used by SSLContext.verify_mode.
         b'verifymode': None,
-        # Defines extra ssl.OP* bitwise options to set.
-        b'ctxoptions': None,
         # OpenSSL Cipher List to use (instead of default).
         b'ciphers': None,
     }
@@ -124,7 +120,6 @@ def _hostsettings(ui, hostname):
         minimumprotocol = b'tls1.0'
 
     s[b'minimumprotocol'] = minimumprotocol
-    s[b'protocol'], s[b'ctxoptions'] = protocolsettings(minimumprotocol)
 
     ciphers = ui.config(b'hostsecurity', b'ciphers')
     ciphers = ui.config(b'hostsecurity', b'%s:ciphers' % bhostname, ciphers)
@@ -226,8 +221,6 @@ def _hostsettings(ui, hostname):
             # user).
             s[b'verifymode'] = ssl.CERT_NONE
 
-    assert s[b'protocol'] is not None
-    assert s[b'ctxoptions'] is not None
     assert s[b'verifymode'] is not None
 
     return s
@@ -321,8 +314,9 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
     # bundle with a specific CA cert removed. If the system/default CA bundle
     # is loaded and contains that removed CA, you've just undone the user's
     # choice.
-    sslcontext = ssl.SSLContext(settings[b'protocol'])
-    sslcontext.options |= settings[b'ctxoptions']
+    protocol, options = protocolsettings(settings[b'minimumprotocol'])
+    sslcontext = ssl.SSLContext(protocol)
+    sslcontext.options |= options
     sslcontext.verify_mode = settings[b'verifymode']
 
     if settings[b'ciphers']:
