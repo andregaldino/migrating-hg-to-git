@@ -490,6 +490,71 @@ Remove lines may delete changesets:
      +3
   
 
+Setting config rewrite.empty-successor=keep causes empty changesets to get committed:
+
+  $ cd ..
+  $ hg init repo4a
+  $ cd repo4a
+  $ cat > a <<EOF
+  > 1
+  > 2
+  > EOF
+  $ hg commit -m a12 -A a
+  $ cat > b <<EOF
+  > 1
+  > 2
+  > EOF
+  $ hg commit -m b12 -A b
+  $ echo 3 >> b
+  $ hg commit -m b3
+  $ echo 4 >> b
+  $ hg commit -m b4
+  $ echo 1 > b
+  $ echo 3 >> a
+  $ hg absorb -pn
+  showing changes for a
+          @@ -2,0 +2,1 @@
+  bfafb49 +3
+  showing changes for b
+          @@ -1,3 +1,0 @@
+  1154859 -2
+  30970db -3
+  a393a58 -4
+  
+  4 changesets affected
+  a393a58 b4
+  30970db b3
+  1154859 b12
+  bfafb49 a12
+  $ hg absorb -av --config rewrite.empty-successor=keep | grep became
+  0:bfafb49242db: 1 file(s) changed, became 4:1a2de97fc652
+  1:115485984805: 2 file(s) changed, became 5:0c930dfab74c
+  2:30970dbf7b40: 2 file(s) changed, became 6:df6574ae635c
+  3:a393a58b9a85: 2 file(s) changed, became 7:ad4bd3462c9e
+  $ hg log -T '{rev} {desc}\n' -Gp
+  @  7 b4
+  |
+  o  6 b3
+  |
+  o  5 b12
+  |  diff --git a/b b/b
+  |  new file mode 100644
+  |  --- /dev/null
+  |  +++ b/b
+  |  @@ -0,0 +1,1 @@
+  |  +1
+  |
+  o  4 a12
+     diff --git a/a b/a
+     new file mode 100644
+     --- /dev/null
+     +++ b/a
+     @@ -0,0 +1,3 @@
+     +1
+     +2
+     +3
+  
+
 Use revert to make the current change and its parent disappear.
 This should move us to the non-obsolete ancestor.
 

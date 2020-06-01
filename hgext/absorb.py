@@ -50,6 +50,7 @@ from mercurial import (
     phases,
     pycompat,
     registrar,
+    rewriteutil,
     scmutil,
     util,
 )
@@ -782,8 +783,10 @@ class fixupstate(object):
                 # nothing changed, nothing commited
                 nextp1 = ctx
                 continue
-            if ctx.files() and self._willbecomenoop(
-                memworkingcopy, ctx, nextp1
+            if (
+                self.skip_empty_successor
+                and ctx.files()
+                and self._willbecomenoop(memworkingcopy, ctx, nextp1)
             ):
                 # changeset is no longer necessary
                 self.replacemap[ctx.node()] = None
@@ -934,6 +937,10 @@ class fixupstate(object):
             scmutil.cleanupnodes(
                 self.repo, replacements, operation=b'absorb', fixphase=True
             )
+
+    @util.propertycache
+    def skip_empty_successor(self):
+        return rewriteutil.skip_empty_successor(self.ui, b'absorb')
 
 
 def _parsechunk(hunk):
