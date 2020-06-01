@@ -226,21 +226,11 @@ def _hostsettings(ui, hostname):
     return s
 
 
-def protocolsettings(minimumprotocol):
-    """Resolve the protocol for a config value.
-
-    Returns a tuple of (protocol, options) which are values used by SSLContext.
+def commonssloptions(minimumprotocol):
+    """Return SSLContext options common to servers and clients.
     """
     if minimumprotocol not in configprotocols:
         raise ValueError(b'protocol value not supported: %s' % minimumprotocol)
-
-    # Despite its name, PROTOCOL_SSLv23 selects the highest protocol
-    # that both ends support, including TLS protocols.
-    #
-    # The PROTOCOL_TLSv* constants select a specific TLS version
-    # only (as opposed to multiple versions). So the method for
-    # supporting multiple TLS versions is to use PROTOCOL_SSLv23 and
-    # disable protocols via SSLContext.options and OP_NO_* constants.
 
     # SSLv2 and SSLv3 are broken. We ban them outright.
     options = ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
@@ -259,7 +249,7 @@ def protocolsettings(minimumprotocol):
     # There is no guarantee this attribute is defined on the module.
     options |= getattr(ssl, 'OP_NO_COMPRESSION', 0)
 
-    return ssl.PROTOCOL_SSLv23, options
+    return options
 
 
 def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
@@ -314,9 +304,12 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
     # bundle with a specific CA cert removed. If the system/default CA bundle
     # is loaded and contains that removed CA, you've just undone the user's
     # choice.
-    protocol, options = protocolsettings(settings[b'minimumprotocol'])
-    sslcontext = ssl.SSLContext(protocol)
-    sslcontext.options |= options
+    #
+    # Despite its name, PROTOCOL_SSLv23 selects the highest protocol that both
+    # ends support, including TLS protocols. commonssloptions() restricts the
+    # set of allowed protocols.
+    sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    sslcontext.options |= commonssloptions(settings[b'minimumprotocol'])
     sslcontext.verify_mode = settings[b'verifymode']
 
     if settings[b'ciphers']:
@@ -512,7 +505,11 @@ def wrapserversocket(
                 _(b'referenced certificate file (%s) does not exist') % f
             )
 
-    protocol, options = protocolsettings(b'tls1.0')
+    # Despite its name, PROTOCOL_SSLv23 selects the highest protocol that both
+    # ends support, including TLS protocols. commonssloptions() restricts the
+    # set of allowed protocols.
+    protocol = ssl.PROTOCOL_SSLv23
+    options = commonssloptions(b'tls1.0')
 
     # This config option is intended for use in tests only. It is a giant
     # footgun to kill security. Don't define it.
