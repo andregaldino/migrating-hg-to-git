@@ -525,3 +525,31 @@ This should move us to the non-obsolete ancestor.
   a: 1 of 1 chunk(s) applied
   $ hg id
   bfafb49242db tip
+
+  $ cd ..
+  $ hg init repo6
+  $ cd repo6
+  $ echo a1 > a
+  $ touch b
+  $ hg commit -m a -A a b
+  $ hg branch foo -q
+  $ echo b > b
+  $ hg commit -m foo  # will become empty
+  $ hg branch bar -q
+  $ hg commit -m bar  # is already empty
+  $ echo a2 > a
+  $ printf '' > b
+  $ hg absorb --apply-changes --verbose | grep became
+  0:0cde1ae39321: 1 file(s) changed, became 3:fc7fcdd90fdb
+  1:795dfb1adcef: 2 file(s) changed, became 4:a8740537aa53
+  2:b02935f68891: 2 file(s) changed, became 5:59533e01c707
+  $ hg log -T '{rev} (branch: {branch}) {desc}\n' -G --stat
+  @  5 (branch: bar) bar
+  |
+  o  4 (branch: foo) foo
+  |
+  o  3 (branch: default) a
+      a |  1 +
+      b |  0
+      2 files changed, 1 insertions(+), 0 deletions(-)
+  

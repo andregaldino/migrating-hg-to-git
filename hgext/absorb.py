@@ -887,6 +887,8 @@ class fixupstate(object):
             if len(parents) != 1:
                 return False
             pctx = parents[0]
+        if ctx.branch() != pctx.branch():
+            return False
         # ctx changes more files (not a subset of memworkingcopy)
         if not set(ctx.files()).issubset(set(memworkingcopy)):
             return False
