@@ -56,8 +56,9 @@ class gittreemanifest(object):
             return val
         t = self._tree
         comps = upath.split('/')
+        te = self._tree
         for comp in comps[:-1]:
-            te = self._tree[comp]
+            te = te[comp]
             t = self._git_repo[te.id]
         ent = t[comps[-1]]
         if ent.filemode == pygit2.GIT_FILEMODE_BLOB:
