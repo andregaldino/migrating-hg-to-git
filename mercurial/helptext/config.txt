@@ -1896,7 +1896,8 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     operations. If set to ``skip``, the successor is not created. If set to
     ``keep``, the empty successor is created and kept.
 
-    Currently, no command considers this configuration. (EXPERIMENTAL)
+    Currently, only the rebase command considers this configuration.
+    (EXPERIMENTAL)
 
 ``storage``
 -----------

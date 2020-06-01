@@ -206,6 +206,9 @@ class rebaseruntime(object):
         self.backupf = ui.configbool(b'rewrite', b'backup-bundle')
         self.keepf = opts.get(b'keep', False)
         self.keepbranchesf = opts.get(b'keepbranches', False)
+        self.skipemptysuccessorf = rewriteutil.skip_empty_successor(
+            repo.ui, b'rebase'
+        )
         self.obsoletenotrebased = {}
         self.obsoletewithoutsuccessorindestination = set()
         self.inmemory = inmemory
@@ -530,7 +533,10 @@ class rebaseruntime(object):
         for c in self.extrafns:
             c(ctx, extra)
         destphase = max(ctx.phase(), phases.draft)
-        overrides = {(b'phases', b'new-commit'): destphase}
+        overrides = {
+            (b'phases', b'new-commit'): destphase,
+            (b'ui', b'allowemptycommit'): not self.skipemptysuccessorf,
+        }
         with repo.ui.configoverride(overrides, b'rebase'):
             if self.inmemory:
                 newnode = commitmemorynode(
@@ -650,6 +656,14 @@ class rebaseruntime(object):
             if newnode is not None:
                 self.state[rev] = repo[newnode].rev()
                 ui.debug(b'rebased as %s\n' % short(newnode))
+                if repo[newnode].isempty():
+                    ui.warn(
+                        _(
+                            b'note: created empty successor for %s, its '
+                            b'destination already has all its changes\n'
+                        )
+                        % desc
+                    )
             else:
                 if not self.collapsef:
                     ui.warn(
