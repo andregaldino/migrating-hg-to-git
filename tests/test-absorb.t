@@ -553,3 +553,37 @@ This should move us to the non-obsolete ancestor.
       b |  0
       2 files changed, 1 insertions(+), 0 deletions(-)
   
+
+  $ cd ..
+  $ hg init repo7
+  $ cd repo7
+  $ echo a1 > a
+  $ touch b
+  $ hg commit -m a -A a b
+  $ echo b > b
+  $ hg commit -m foo --close-branch  # will become empty
+  $ echo c > c
+  $ hg commit -m reopen -A c -q
+  $ hg commit -m bar --close-branch  # is already empty
+  $ echo a2 > a
+  $ printf '' > b
+  $ hg absorb --apply-changes --verbose | grep became
+  0:0cde1ae39321: 1 file(s) changed, became 4:fc7fcdd90fdb
+  1:651b953d5764: 2 file(s) changed, became 5:0c9de988ecdc
+  2:76017bba73f6: 2 file(s) changed, became 6:d53ac896eb25
+  3:c7c1d67efc1d: 2 file(s) changed, became 7:66520267fe96
+  $ hg up null -q  # to make visible closed heads
+  $ hg log -T '{rev} {desc}\n' -G --stat
+  _  7 bar
+  |
+  o  6 reopen
+  |   c |  1 +
+  |   1 files changed, 1 insertions(+), 0 deletions(-)
+  |
+  _  5 foo
+  |
+  o  4 a
+      a |  1 +
+      b |  0
+      2 files changed, 1 insertions(+), 0 deletions(-)
+  
