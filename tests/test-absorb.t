@@ -509,6 +509,7 @@ Setting config rewrite.empty-successor=keep causes empty changesets to get commi
   $ hg commit -m b3
   $ echo 4 >> b
   $ hg commit -m b4
+  $ hg commit -m empty --config ui.allowemptycommit=True
   $ echo 1 > b
   $ echo 3 >> a
   $ hg absorb -pn
@@ -527,16 +528,19 @@ Setting config rewrite.empty-successor=keep causes empty changesets to get commi
   1154859 b12
   bfafb49 a12
   $ hg absorb -av --config rewrite.empty-successor=keep | grep became
-  0:bfafb49242db: 1 file(s) changed, became 4:1a2de97fc652
-  1:115485984805: 2 file(s) changed, became 5:0c930dfab74c
-  2:30970dbf7b40: 2 file(s) changed, became 6:df6574ae635c
-  3:a393a58b9a85: 2 file(s) changed, became 7:ad4bd3462c9e
+  0:bfafb49242db: 1 file(s) changed, became 5:1a2de97fc652
+  1:115485984805: 2 file(s) changed, became 6:0c930dfab74c
+  2:30970dbf7b40: 2 file(s) changed, became empty and became 7:df6574ae635c
+  3:a393a58b9a85: 2 file(s) changed, became empty and became 8:ad4bd3462c9e
+  4:1bb0e8cff87a: 2 file(s) changed, became 9:2dbed75af996
   $ hg log -T '{rev} {desc}\n' -Gp
-  @  7 b4
+  @  9 empty
   |
-  o  6 b3
+  o  8 b4
   |
-  o  5 b12
+  o  7 b3
+  |
+  o  6 b12
   |  diff --git a/b b/b
   |  new file mode 100644
   |  --- /dev/null
@@ -544,7 +548,7 @@ Setting config rewrite.empty-successor=keep causes empty changesets to get commi
   |  @@ -0,0 +1,1 @@
   |  +1
   |
-  o  4 a12
+  o  5 a12
      diff --git a/a b/a
      new file mode 100644
      --- /dev/null

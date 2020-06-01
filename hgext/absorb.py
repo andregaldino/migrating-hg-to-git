@@ -783,11 +783,10 @@ class fixupstate(object):
                 # nothing changed, nothing commited
                 nextp1 = ctx
                 continue
-            if (
-                self.skip_empty_successor
-                and ctx.files()
-                and self._willbecomenoop(memworkingcopy, ctx, nextp1)
-            ):
+            willbecomenoop = ctx.files() and self._willbecomenoop(
+                memworkingcopy, ctx, nextp1
+            )
+            if self.skip_empty_successor and willbecomenoop:
                 # changeset is no longer necessary
                 self.replacemap[ctx.node()] = None
                 msg = _(b'became empty and was dropped')
@@ -798,7 +797,14 @@ class fixupstate(object):
                 nextp1 = lastcommitted
                 self.replacemap[ctx.node()] = lastcommitted.node()
                 if memworkingcopy:
-                    msg = _(b'%d file(s) changed, became %s') % (
+                    if willbecomenoop:
+                        msg = _(
+                            b'%d file(s) changed, became empty '
+                            b'and became %s'
+                        )
+                    else:
+                        msg = _(b'%d file(s) changed, became %s')
+                    msg = msg % (
                         len(memworkingcopy),
                         self._ctx2str(lastcommitted),
                     )
