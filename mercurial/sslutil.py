@@ -81,7 +81,7 @@ def _hostsettings(ui, hostname):
         b'protocol': None,
         # String representation of minimum protocol to be used for UI
         # presentation.
-        b'minimumprotocolui': None,
+        b'minimumprotocol': None,
         # ssl.CERT_* constant used by SSLContext.verify_mode.
         b'verifymode': None,
         # Defines extra ssl.OP* bitwise options to set.
@@ -123,7 +123,7 @@ def _hostsettings(ui, hostname):
     if ui.insecureconnections:
         minimumprotocol = b'tls1.0'
 
-    s[b'minimumprotocolui'] = minimumprotocol
+    s[b'minimumprotocol'] = minimumprotocol
     s[b'protocol'], s[b'ctxoptions'] = protocolsettings(minimumprotocol)
 
     ciphers = ui.config(b'hostsecurity', b'ciphers')
@@ -402,7 +402,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             # reason, try to emit an actionable warning.
             if e.reason == 'UNSUPPORTED_PROTOCOL':
                 # We attempted TLS 1.0+.
-                if settings[b'minimumprotocolui'] == b'tls1.0':
+                if settings[b'minimumprotocol'] == b'tls1.0':
                     # We support more than just TLS 1.0+. If this happens,
                     # the likely scenario is either the client or the server
                     # is really old. (e.g. server doesn't support TLS 1.0+ or
@@ -447,7 +447,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
                             b'to be more secure than the server can support)\n'
                         )
                         % (
-                            settings[b'minimumprotocolui'],
+                            settings[b'minimumprotocol'],
                             pycompat.bytesurl(serverhostname),
                         )
                     )
