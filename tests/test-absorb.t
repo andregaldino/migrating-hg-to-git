@@ -587,3 +587,21 @@ This should move us to the non-obsolete ancestor.
       b |  0
       2 files changed, 1 insertions(+), 0 deletions(-)
   
+
+  $ cd ..
+  $ hg init repo8
+  $ cd repo8
+  $ echo a1 > a
+  $ hg commit -m a -A a
+  $ hg commit -m empty --config ui.allowemptycommit=True
+  $ echo a2 > a
+  $ hg absorb --apply-changes --verbose | grep became
+  0:ecf99a8d6699: 1 file(s) changed, became 2:7e3ccf8e2fa5
+  1:97f72456ae0d: 1 file(s) changed, became 3:2df488325d6f
+  $ hg log -T '{rev} {desc}\n' -G --stat
+  @  3 empty
+  |
+  o  2 a
+      a |  1 +
+      1 files changed, 1 insertions(+), 0 deletions(-)
+  
