@@ -173,9 +173,8 @@ class gittreemanifest(object):
                     self._git_repo[te.id], match, realname + b'/'
                 ):
                     yield inner
-            if not match(realname):
-                continue
-            yield pycompat.fsencode(realname)
+            elif match(realname):
+                yield pycompat.fsencode(realname)
 
     def walk(self, match):
         # TODO: this is a very lazy way to merge in the pending
