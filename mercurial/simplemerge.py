@@ -456,7 +456,7 @@ def _bytes_to_set(b):
     return set(b[x : x + 1] for x in range(len(b)))
 
 
-def is_null(ctx):
+def is_not_null(ctx):
     if not util.safehasattr(ctx, "node"):
         return False
     return ctx.node() != nodemod.nullid
@@ -520,7 +520,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
     flags = localctx.flags()
     localflags = _bytes_to_set(flags)
     otherflags = _bytes_to_set(otherctx.flags())
-    if is_null(basectx) and localflags != otherflags:
+    if is_not_null(basectx) and localflags != otherflags:
         baseflags = _bytes_to_set(basectx.flags())
         flags = localflags & otherflags
         for f in localflags.symmetric_difference(otherflags):
