@@ -517,11 +517,9 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
     otherflags = set(pycompat.iterbytestr(otherctx.flags()))
     if is_not_null(basectx) and localflags != otherflags:
         baseflags = set(pycompat.iterbytestr(basectx.flags()))
-        flags = localflags & otherflags
-        for f in localflags.symmetric_difference(otherflags):
-            if f not in baseflags:
-                flags.add(f)
-        flags = b''.join(sorted(flags))
+        commonflags = localflags & otherflags
+        addedflags = (localflags ^ otherflags) - baseflags
+        flags = b''.join(sorted(commonflags | addedflags))
 
     if not opts.get(b'print'):
         localctx.write(mergedtext, flags)
