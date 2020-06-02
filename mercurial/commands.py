@@ -3168,7 +3168,7 @@ def _dograft(ui, repo, *revs, **opts):
     if opts.get(b'no_commit'):
         statedata[b'no_commit'] = True
     if opts.get(b'base'):
-        statedata[b'base'] = True
+        statedata[b'base'] = opts[b'base']
     for pos, ctx in enumerate(repo.set(b"%ld", revs)):
         desc = b'%d:%s "%s"' % (
             ctx.rev(),
