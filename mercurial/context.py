@@ -2322,7 +2322,7 @@ class overlayworkingctx(committablectx):
                 return self._cache[path][b'flags']
             else:
                 raise error.ProgrammingError(
-                    b"No such file or directory: %s" % self._path
+                    b"No such file or directory: %s" % path
                 )
         else:
             return self._wrappedctx[path].flags()
@@ -2439,7 +2439,7 @@ class overlayworkingctx(committablectx):
                 return len(self._cache[path][b'data'])
             else:
                 raise error.ProgrammingError(
-                    b"No such file or directory: %s" % self._path
+                    b"No such file or directory: %s" % path
                 )
         return self._wrappedctx[path].size()
 
