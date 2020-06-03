@@ -253,3 +253,11 @@ node|shortest works correctly
 
 This coveres changelog.findmissing()
   $ hg merge --preview 3d9be8deba43
+
+This covers manifest.diff()
+  $ hg diff -c 3d9be8deba43
+  diff -r c5864c9d16fb -r 3d9be8deba43 beta
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/beta	Mon Jan 01 00:00:11 2007 +0000
+  @@ -0,0 +1,1 @@
+  +beta
