@@ -604,9 +604,9 @@ def _checksinglesidecopies(
         # thing in pathcopies(): pathcopies(x, y) can return a copy where the
         # destination doesn't exist in y.
         pass
-    elif m2[src] != mb[src]:
-        if not _related(c2[src], base[src]):
-            return
+    elif mb[src] != m2[src] and not _related(c2[src], base[src]):
+        return
+    elif mb[src] != m2[src] or mb.flags(src) != m2.flags(src):
         # modified on side 2
         for dst in dsts1:
             copy[dst] = src

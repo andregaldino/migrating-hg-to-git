@@ -1465,6 +1465,18 @@ class committablectx(basectx):
     def children(self):
         return []
 
+    def flags(self, path):
+        if '_manifest' in self.__dict__:
+            try:
+                return self._manifest.flags(path)
+            except KeyError:
+                return b''
+
+        try:
+            return self._flagfunc(path)
+        except OSError:
+            return b''
+
     def ancestor(self, c2):
         """return the "best" ancestor context of self and c2"""
         return self._parents[0].ancestor(c2)  # punt on two parents for now
@@ -1601,12 +1613,6 @@ class workingctx(committablectx):
         return self._repo.dirstate.flagfunc(self._buildflagfunc)
 
     def flags(self, path):
-        if '_manifest' in self.__dict__:
-            try:
-                return self._manifest.flags(path)
-            except KeyError:
-                return b''
-
         try:
             return self._flagfunc(path)
         except OSError:

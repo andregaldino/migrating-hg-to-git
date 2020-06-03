@@ -22,7 +22,9 @@ from .i18n import _
 from . import (
     error,
     mdiff,
+    node as nodemod,
     pycompat,
+    util,
 )
 from .utils import stringutil
 
@@ -449,6 +451,17 @@ def _picklabels(defaults, overrides):
     return result
 
 
+def _bytes_to_set(b):
+    """turns a multiple bytes (usually flags) into a set of individual byte"""
+    return set(b[x : x + 1] for x in range(len(b)))
+
+
+def is_null(ctx):
+    if not util.safehasattr(ctx, "node"):
+        return False
+    return ctx.node() != nodemod.nullid
+
+
 def simplemerge(ui, localctx, basectx, otherctx, **opts):
     """Performs the simplemerge algorithm.
 
@@ -503,8 +516,20 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         else:
             mergedtext += line
 
+    # merge flags if necessary
+    flags = localctx.flags()
+    localflags = _bytes_to_set(flags)
+    otherflags = _bytes_to_set(otherctx.flags())
+    if is_null(basectx) and localflags != otherflags:
+        baseflags = _bytes_to_set(basectx.flags())
+        flags = localflags & otherflags
+        for f in localflags.symmetric_difference(otherflags):
+            if f not in baseflags:
+                flags.add(f)
+        flags = b''.join(sorted(flags))
+
     if not opts.get(b'print'):
-        localctx.write(mergedtext, localctx.flags())
+        localctx.write(mergedtext, flags)
 
     if m3.conflicts and not mode == b'union':
         return 1
