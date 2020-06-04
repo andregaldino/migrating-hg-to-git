@@ -1200,7 +1200,7 @@ class ui(object):
                 dest.write(msg)
             # stderr may be buffered under win32 when redirected to files,
             # including stdout.
-            if dest is self._ferr and not getattr(self._ferr, 'closed', False):
+            if dest is self._ferr and not getattr(dest, 'closed', False):
                 dest.flush()
         except IOError as err:
             if dest is self._ferr and err.errno in (
