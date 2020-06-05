@@ -1,3 +1,6 @@
+mod find_root;
+pub use find_root::{FindRoot, FindRootError, FindRootErrorKind};
+
 /// An interface for high-level hg operations.
 ///
 /// A distinction is made between operation and commands.
