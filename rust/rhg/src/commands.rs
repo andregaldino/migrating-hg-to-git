@@ -1,3 +1,4 @@
+pub mod root;
 use crate::error::CommandError;
 
 /// The common trait for rhg commands

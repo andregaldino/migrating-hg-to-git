@@ -489,6 +489,9 @@ dependencies = [
 [[package]]
 name = "rhg"
 version = "0.1.0"
+dependencies = [
+ "hg-core 0.1.0",
+]
 
 [[package]]
 name = "rustc_version"
