@@ -23,6 +23,7 @@ mod filepatterns;
 pub mod matchers;
 pub mod revlog;
 pub use revlog::*;
+pub mod operations;
 pub mod utils;
 
 // Remove this to see (potential) non-artificial compile failures. MacOS
