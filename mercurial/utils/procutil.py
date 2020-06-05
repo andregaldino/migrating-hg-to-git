@@ -49,9 +49,11 @@ def isatty(fp):
         return False
 
 
-# glibc determines buffering on first write to stdout - if we replace a TTY
-# destined stdout with a pipe destined stdout (e.g. pager), we want line
-# buffering (or unbuffered, on Windows)
+# Python 2 uses the C library's standard I/O streams. Glibc determines
+# buffering on first write to stdout - if we replace a TTY destined stdout with
+# a pipe destined stdout (e.g. pager), we want line buffering (or unbuffered,
+# on Windows).
+# Python 3 rolls its own standard I/O streams.
 if isatty(stdout):
     if pycompat.iswindows:
         # Windows doesn't support line buffering
