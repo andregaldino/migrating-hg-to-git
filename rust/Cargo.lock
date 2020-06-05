@@ -487,6 +487,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "rhg"
+version = "0.1.0"
+
+[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

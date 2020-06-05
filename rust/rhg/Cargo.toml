@@ -1,0 +1,8 @@
+[package]
+name = "rhg"
+version = "0.1.0"
+authors = ["Antoine Cezar <antoine.cezar@octobus.net>"]
+edition = "2018"
+
+[dependencies]
+
