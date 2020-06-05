@@ -769,8 +769,7 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
 
     # resolve path conflicts
     for f, args, msg in actions.get(ACTION_PATH_CONFLICT_RESOLVE, []):
-        (f0,) = args
-        origf0 = repo.dirstate.copied(f0) or f0
+        (f0, origf0) = args
         repo.dirstate.add(f)
         repo.dirstate.copy(origf0, f)
         if f0 == origf0:

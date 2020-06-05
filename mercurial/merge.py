@@ -460,9 +460,10 @@ def checkpathconflicts(repo, wctx, mctx, actions):
         if p not in deletedfiles:
             ctxname = bytes(wctx).rstrip(b'+')
             pnew = util.safename(p, ctxname, wctx, set(actions.keys()))
+            porig = wctx[p].copysource() or p
             actions[pnew] = (
                 mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
-                (p,),
+                (p, porig),
                 b'local path conflict',
             )
             actions[p] = (
@@ -1280,7 +1281,7 @@ def applyupdates(
     # resolve path conflicts (must come before getting)
     for f, args, msg in actions[mergestatemod.ACTION_PATH_CONFLICT_RESOLVE]:
         repo.ui.debug(b" %s: %s -> pr\n" % (f, msg))
-        (f0,) = args
+        (f0, origf0) = args
         if wctx[f0].lexists():
             repo.ui.note(_(b"moving %s to %s\n") % (f0, f))
             wctx[f].audit()
