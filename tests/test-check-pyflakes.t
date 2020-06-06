@@ -9,7 +9,7 @@ run pyflakes on all tracked files ending in .py or without a file ending
   > print(undefinedname)
   > EOF
   $ $PYTHON -m pyflakes test.py 2>/dev/null | "$TESTDIR/filterpyflakes.py"
-  test.py:1: undefined name 'undefinedname'
+  test.py:1:* undefined name 'undefinedname' (glob)
   
   $ cd "`dirname "$TESTDIR"`"
 
@@ -21,8 +21,8 @@ run pyflakes on all tracked files ending in .py or without a file ending
   > -X mercurial/thirdparty/zope \
   > 2>/dev/null \
   > | xargs $PYTHON -m pyflakes 2>/dev/null | "$TESTDIR/filterpyflakes.py"
-  contrib/perf.py:*: undefined name 'xrange' (glob) (?)
-  mercurial/hgweb/server.py:*: undefined name 'reload' (glob) (?)
-  mercurial/util.py:*: undefined name 'file' (glob) (?)
-  mercurial/encoding.py:*: undefined name 'localstr' (glob) (?)
+  contrib/perf.py:*:* undefined name 'xrange' (glob) (?)
+  mercurial/hgweb/server.py:*:* undefined name 'reload' (glob) (?)
+  mercurial/util.py:*:* undefined name 'file' (glob) (?)
+  mercurial/encoding.py:*:* undefined name 'localstr' (glob) (?)
   
