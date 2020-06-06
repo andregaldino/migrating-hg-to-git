@@ -16,9 +16,7 @@ run pyflakes on all tracked files ending in .py or without a file ending
   $ testrepohg locate 'set:**.py or grep("^#!.*python")' \
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/pycompat.py -X contrib/python-zstandard \
-  > -X mercurial/thirdparty/cbor \
-  > -X mercurial/thirdparty/concurrent \
-  > -X mercurial/thirdparty/zope \
+  > -X mercurial/thirdparty \
   > 2>/dev/null \
   > | xargs $PYTHON -m pyflakes 2>/dev/null | "$TESTDIR/filterpyflakes.py"
   contrib/perf.py:*:* undefined name 'xrange' (glob) (?)
