@@ -2260,7 +2260,7 @@ class TestResult(unittest._TextTestResult):
                         'changes)'
                     )
                 else:
-                    self.stream.write('Accept this change? [n] ')
+                    self.stream.write('Accept this change? [y/N] ')
                     self.stream.flush()
                     answer = sys.stdin.readline().strip()
                     if answer.lower() in ('y', 'yes'):
