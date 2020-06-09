@@ -1650,7 +1650,7 @@ def _confirmbeforesend(repo, revs, oldmap):
         )
 
     if ui.promptchoice(
-        _(b'Send the above changes to %s (yn)?$$ &Yes $$ &No') % url
+        _(b'Send the above changes to %s (Y/n)?$$ &Yes $$ &No') % url
     ):
         return False
 

@@ -670,7 +670,7 @@ The folding of immutable commits works...
   NEW - a959a3f69d8d: one: first commit to review
   NEW - 24a4438154ba: two: second commit to review
   NEW - d235829e802c: 3: a commit with no detailed message
-  Send the above changes to https://phab.mercurial-scm.org/ (yn)? y
+  Send the above changes to https://phab.mercurial-scm.org/ (Y/n)? y
   D8387 - created - a959a3f69d8d: one: first commit to review
   D8387 - created - 24a4438154ba: two: second commit to review
   D8387 - created - d235829e802c: 3: a commit with no detailed message
@@ -734,7 +734,7 @@ updated.
   D8387 - 602c4e738243: one: first commit to review
   D8387 - 0124e5474c88: two: second commit to review
   D8387 - e4edb1fe3565: 3: a commit with no detailed message
-  Send the above changes to https://phab.mercurial-scm.org/ (yn)? y
+  Send the above changes to https://phab.mercurial-scm.org/ (Y/n)? y
   D8387 - updated - 602c4e738243: one: first commit to review
   D8387 - updated - 0124e5474c88: two: second commit to review
   D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message
