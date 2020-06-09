@@ -36,8 +36,12 @@ This status invocation shows some hg gunk because we didn't use
   $ cd ..
 
 Now globally enable extension for the rest of the test:
-  $ echo "[extensions]" >> $HGRCPATH
-  > echo "git=" >> $HGRCPATH
+  $ cat <<EOF >> $HGRCPATH
+  > [extensions]
+  > git=
+  > [git]
+  > log-index-cache-miss = yes
+  > EOF
 
 Make a new repo with git:
   $ mkdir foo
@@ -68,6 +72,7 @@ Without creating the .hg, hg status fails:
 But if you run hg init --git, it works:
   $ hg init --git
   $ hg id --traceback
+  heads mismatch, rebuilding dagcache
   3d9be8deba43 tip master
   $ hg status
   ? gamma
@@ -167,9 +172,12 @@ hg log FILE
   $ hg ci -m 'more alpha' --traceback --date '1583522787 18000'
   $ echo b >> beta
   $ hg ci -m 'more beta'
+  heads mismatch, rebuilding dagcache
   $ echo a >> alpha
   $ hg ci -m 'even more alpha'
+  heads mismatch, rebuilding dagcache
   $ hg log -G alpha
+  heads mismatch, rebuilding dagcache
   @  changeset:   4:6626247b7dc8
   :  bookmark:    master
   :  tag:         tip
@@ -238,6 +246,7 @@ hg and git status both clean
   On branch master
   nothing to commit, working tree clean
   $ hg status
+  heads mismatch, rebuilding dagcache
 
 
 node|shortest works correctly

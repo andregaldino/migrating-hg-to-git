@@ -399,7 +399,7 @@ class changelog(baselog):
             'refs/hg/internal/latest-commit', oid, force=True
         )
         # Reindex now to pick up changes. We omit the progress
-        # callback because this will be very quick.
+        # and log callbacks because this will be very quick.
         index._index_repo(self.gitrepo, self._db)
         return oid.raw
 

@@ -216,7 +216,12 @@ def fill_in_filelog(gitrepo, db, startcommit, path, startfilenode):
     db.commit()
 
 
-def _index_repo(gitrepo, db, progress_factory=lambda *args, **kwargs: None):
+def _index_repo(
+    gitrepo,
+    db,
+    logfn=lambda x: None,
+    progress_factory=lambda *args, **kwargs: None,
+):
     # Identify all references so we can tell the walker to visit all of them.
     all_refs = gitrepo.listall_references()
     possible_heads = set()
@@ -253,6 +258,7 @@ def _index_repo(gitrepo, db, progress_factory=lambda *args, **kwargs: None):
     cur_cache_heads = {h.hex for h in possible_heads}
     if cur_cache_heads == cache_heads:
         return
+    logfn(b'heads mismatch, rebuilding dagcache\n')
     for start in possible_heads:
         if walker is None:
             walker = gitrepo.walk(start, _OUR_ORDER)
@@ -339,7 +345,9 @@ def _index_repo(gitrepo, db, progress_factory=lambda *args, **kwargs: None):
         prog.complete()
 
 
-def get_index(gitrepo, progress_factory=lambda *args, **kwargs: None):
+def get_index(
+    gitrepo, logfn=lambda x: None, progress_factory=lambda *args, **kwargs: None
+):
     cachepath = os.path.join(
         pycompat.fsencode(gitrepo.path), b'..', b'.hg', b'cache'
     )
@@ -349,5 +357,5 @@ def get_index(gitrepo, progress_factory=lambda *args, **kwargs: None):
     db = _createdb(dbpath)
     # TODO check against gitrepo heads before doing a full index
     # TODO thread a ui.progress call into this layer
-    _index_repo(gitrepo, db, progress_factory)
+    _index_repo(gitrepo, db, logfn, progress_factory)
     return db

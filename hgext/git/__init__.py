@@ -16,6 +16,7 @@ from mercurial import (
     extensions,
     localrepo,
     pycompat,
+    registrar,
     scmutil,
     store,
     util,
@@ -26,6 +27,13 @@ from . import (
     gitlog,
     gitutil,
     index,
+)
+
+configtable = {}
+configitem = registrar.configitem(configtable)
+# git.log-index-cache-miss: internal knob for testing
+configitem(
+    b"git", b"log-index-cache-miss", default=False,
 )
 
 # TODO: extract an interface for this in core
@@ -41,13 +49,14 @@ class gitstore(object):  # store.basicstore):
             os.path.normpath(os.path.join(path, b'..', b'.git'))
         )
         self._progress_factory = lambda *args, **kwargs: None
+        self._logfn = lambda x: None
 
     @util.propertycache
     def _db(self):
         # We lazy-create the database because we want to thread a
         # progress callback down to the indexing process if it's
         # required, and we don't have a ui handle in makestore().
-        return index.get_index(self.git, self._progress_factory)
+        return index.get_index(self.git, self._logfn, self._progress_factory)
 
     def join(self, f):
         """Fake store.join method for git repositories.
@@ -276,6 +285,8 @@ def reposetup(ui, repo):
     if repo.local() and isinstance(repo.store, gitstore):
         orig = repo.__class__
         repo.store._progress_factory = repo.ui.makeprogress
+        if ui.configbool(b'git', b'log-index-cache-miss'):
+            repo.store._logfn = repo.ui.warn
 
         class gitlocalrepo(orig):
             def _makedirstate(self):
