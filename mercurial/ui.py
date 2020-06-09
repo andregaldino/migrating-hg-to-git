@@ -2119,6 +2119,22 @@ class ui(object):
             if (b'ui', b'quiet') in overrides:
                 self.fixconfig(section=b'ui')
 
+    def estimatememory(self):
+        """Provide an estimate for the available system memory in Bytes.
+
+        This can be overriden via ui.available-memory. It returns None, if
+        no estimate can be computed.
+        """
+        value = self.config(b'ui', b'available-memory')
+        if value is not None:
+            try:
+                return util.sizetoint(value)
+            except error.ParseError:
+                raise error.ConfigError(
+                    _(b"ui.available-memory value is invalid ('%s')") % value
+                )
+        return util._estimatememory()
+
 
 class paths(dict):
     """Represents a collection of paths and their configs.

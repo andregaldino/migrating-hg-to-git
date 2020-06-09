@@ -1231,6 +1231,10 @@ coreconfigitem(
     b'ui', b'askusername', default=False,
 )
 coreconfigitem(
+    b'ui', b'available-memory', default=None,
+)
+
+coreconfigitem(
     b'ui', b'clonebundlefallback', default=False,
 )
 coreconfigitem(

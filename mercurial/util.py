@@ -3626,3 +3626,44 @@ def with_lc_ctype():
             locale.setlocale(locale.LC_CTYPE, oldloc)
     else:
         yield
+
+
+def _estimatememory():
+    """Provide an estimate for the available system memory in Bytes.
+
+    If no estimate can be provided on the platform, returns None.
+    """
+    if pycompat.sysplatform.startswith(b'win'):
+        # On Windows, use the GlobalMemoryStatusEx kernel function directly.
+        from ctypes import c_long as DWORD, c_ulonglong as DWORDLONG
+        from ctypes.wintypes import Structure, byref, sizeof, windll
+
+        class MEMORYSTATUSEX(Structure):
+            _fields_ = [
+                ('dwLength', DWORD),
+                ('dwMemoryLoad', DWORD),
+                ('ullTotalPhys', DWORDLONG),
+                ('ullAvailPhys', DWORDLONG),
+                ('ullTotalPageFile', DWORDLONG),
+                ('ullAvailPageFile', DWORDLONG),
+                ('ullTotalVirtual', DWORDLONG),
+                ('ullAvailVirtual', DWORDLONG),
+                ('ullExtendedVirtual', DWORDLONG),
+            ]
+
+        x = MEMORYSTATUSEX()
+        x.dwLength = sizeof(x)
+        windll.kernel32.GlobalMemoryStatusEx(byref(x))
+        return x.ullAvailPhys
+
+    # On newer Unix-like systems and Mac OSX, the sysconf interface
+    # can be used. _SC_PAGE_SIZE is part of POSIX; _SC_PHYS_PAGES
+    # seems to be implemented on most systems.
+    try:
+        pagesize = os.sysconf(os.sysconf_names['SC_PAGE_SIZE'])
+        pages = os.sysconf(os.sysconf_names['SC_PHYS_PAGES'])
+        return pagesize * pages
+    except OSError:  # sysconf can fail
+        pass
+    except KeyError:  # unknown parameter
+        pass
