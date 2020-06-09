@@ -245,7 +245,10 @@ def _index_repo(gitrepo, db, progress_factory=lambda *args, **kwargs: None):
     # TODO: we should figure out how to incrementally index history
     # (preferably by detecting rewinds!) so that we don't have to do a
     # full changelog walk every time a new commit is created.
-    cache_heads = {x[0] for x in db.execute('SELECT node FROM possible_heads')}
+    cache_heads = {
+        pycompat.sysstr(x[0])
+        for x in db.execute('SELECT node FROM possible_heads')
+    }
     walker = None
     cur_cache_heads = {h.hex for h in possible_heads}
     if cur_cache_heads == cache_heads:
