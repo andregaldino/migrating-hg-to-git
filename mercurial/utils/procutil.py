@@ -49,6 +49,25 @@ def isatty(fp):
         return False
 
 
+if pycompat.ispy3:
+
+    class LineBufferedWrapper(object):
+        def __init__(self, orig):
+            self.orig = orig
+
+        def __getattr__(self, attr):
+            return getattr(self.orig, attr)
+
+        def write(self, s):
+            orig = self.orig
+            res = orig.write(s)
+            if s.endswith(b'\n'):
+                orig.flush()
+            return res
+
+    io.BufferedIOBase.register(LineBufferedWrapper)
+
+
 # glibc determines buffering on first write to stdout - if we replace a TTY
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
 # buffering (or unbuffered, on Windows)
@@ -56,9 +75,14 @@ if isatty(stdout):
     if pycompat.iswindows:
         # Windows doesn't support line buffering
         stdout = os.fdopen(stdout.fileno(), 'wb', 0)
-    elif not pycompat.ispy3:
-        # on Python 3, stdout (sys.stdout.buffer) is already line buffered and
-        # buffering=1 is not handled in binary mode
+    elif pycompat.ispy3:
+        # On Python 3, buffered binary streams can't be set line-buffered.
+        # Therefore we have a wrapper that implements line buffering.
+        if isinstance(stdout, io.BufferedIOBase) and not isinstance(
+            stdout, LineBufferedWrapper
+        ):
+            stdout = LineBufferedWrapper(stdout)
+    else:
         stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
 if pycompat.iswindows:
