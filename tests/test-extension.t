@@ -1852,17 +1852,6 @@ Test synopsis and docstring extending
       GREPME make sure that this is in the help!
   $ cd ..
 
-Show deprecation warning for the use of cmdutil.command
-
-  $ cat > nonregistrar.py <<EOF
-  > from mercurial import cmdutil
-  > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
-  > @command(b'foo', [], norepo=True)
-  > def foo(ui):
-  >     pass
-  > EOF
-
 Prohibit the use of unicode strings as the default value of options
 
   $ hg init $TESTTMP/opt-unicode-default
