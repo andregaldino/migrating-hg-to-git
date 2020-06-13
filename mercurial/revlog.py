@@ -651,7 +651,10 @@ class revlog(object):
                 nodemap_data = nodemaputil.persisted_data(self)
                 if nodemap_data is not None:
                     docket = nodemap_data[0]
-                    if d[0][docket.tip_rev][7] == docket.tip_node:
+                    if (
+                        len(d[0]) > docket.tip_rev
+                        and d[0][docket.tip_rev][7] == docket.tip_node
+                    ):
                         # no changelog tampering
                         self._nodemap_docket = docket
                         index.update_nodemap_data(*nodemap_data)

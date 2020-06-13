@@ -411,3 +411,25 @@ Check that a failing transaction will properly revert the data
   .hg/store/00changelog-????????????????.nd: size=123584, sha256=8c6cef6fd3d3fac291968793ee19a4be6d0b8375e9508bd5c7d4a8879e8df180 (glob) (pure !)
   .hg/store/00changelog-????????????????.nd: size=123584, sha256=eb9e9a4bcafdb5e1344bc8a0cbb3288b2106413b8efae6265fb8a7973d7e97f9 (glob) (rust !)
   .hg/store/00changelog-????????????????.nd: size=123136, sha256=4f504f5a834db3811ced50ab3e9e80bcae3581bb0f9b13a7a9f94b7fc34bcebe (glob) (no-pure no-rust !)
+
+Check that removing content does not confuse the nodemap
+--------------------------------------------------------
+
+removing data with rollback
+
+  $ echo aso > a
+  $ hg ci -m a4
+  $ hg rollback
+  repository tip rolled back to revision 5005 (undo commit)
+  working directory now based on revision 5005
+  $ hg id -r .
+  bae4d45c759e tip
+
+roming data with strip
+
+  $ echo aso > a
+  $ hg ci -m a4
+  $ hg --config extensions.strip= strip -r . --no-backup
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg id -r . --traceback
+  bae4d45c759e tip
