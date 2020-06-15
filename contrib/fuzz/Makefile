@@ -11,6 +11,7 @@ CXX = clang++
 LIB_FUZZING_ENGINE ?= standalone_fuzz_target_runner.o
 
 PYTHON_CONFIG ?= $$OUT/sanpy/bin/python-config
+PYTHON_CONFIG_FLAGS ?= --ldflags
 
 CXXFLAGS += -Wno-deprecated-register
 
@@ -67,7 +68,7 @@ dirs_fuzzer: dirs.cc pyutil.o $(PARSERS_OBJS) $$OUT/dirs_fuzzer_seed_corpus.zip
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial dirs.cc \
 	  pyutil.o $(PARSERS_OBJS) \
-	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) $(PYTHON_CONFIG_FLAGS)` \
 	  -o $$OUT/dirs_fuzzer
 
 fncache_fuzzer: fncache.cc 
@@ -75,7 +76,7 @@ fncache_fuzzer: fncache.cc
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial fncache.cc \
 	  pyutil.o $(PARSERS_OBJS) \
-	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) $(PYTHON_CONFIG_FLAGS)` \
 	  -o $$OUT/fncache_fuzzer
 
 jsonescapeu8fast_fuzzer: jsonescapeu8fast.cc pyutil.o $(PARSERS_OBJS)
@@ -83,7 +84,7 @@ jsonescapeu8fast_fuzzer: jsonescapeu8fast.cc pyutil.o $(PARSERS_OBJS)
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial jsonescapeu8fast.cc \
 	  pyutil.o $(PARSERS_OBJS) \
-	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) $(PYTHON_CONFIG_FLAGS)` \
 	  -o $$OUT/jsonescapeu8fast_fuzzer
 
 manifest_fuzzer: manifest.cc pyutil.o $(PARSERS_OBJS) $$OUT/manifest_fuzzer_seed_corpus.zip
@@ -91,7 +92,7 @@ manifest_fuzzer: manifest.cc pyutil.o $(PARSERS_OBJS) $$OUT/manifest_fuzzer_seed
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial manifest.cc \
 	  pyutil.o $(PARSERS_OBJS) \
-	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) $(PYTHON_CONFIG_FLAGS)` \
 	  -o $$OUT/manifest_fuzzer
 
 revlog_fuzzer: revlog.cc pyutil.o $(PARSERS_OBJS) $$OUT/revlog_fuzzer_seed_corpus.zip
@@ -99,7 +100,7 @@ revlog_fuzzer: revlog.cc pyutil.o $(PARSERS_OBJS) $$OUT/revlog_fuzzer_seed_corpu
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial revlog.cc \
 	  pyutil.o $(PARSERS_OBJS) \
-	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) $(PYTHON_CONFIG_FLAGS)` \
 	  -o $$OUT/revlog_fuzzer
 
 dirstate_fuzzer: dirstate.cc pyutil.o $(PARSERS_OBJS) $$OUT/dirstate_fuzzer_seed_corpus.zip
@@ -107,7 +108,7 @@ dirstate_fuzzer: dirstate.cc pyutil.o $(PARSERS_OBJS) $$OUT/dirstate_fuzzer_seed
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial dirstate.cc \
 	  pyutil.o $(PARSERS_OBJS) \
-	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) $(PYTHON_CONFIG_FLAGS)` \
 	  -o $$OUT/dirstate_fuzzer
 
 fm1readmarkers_fuzzer: fm1readmarkers.cc pyutil.o $(PARSERS_OBJS) $$OUT/fm1readmarkers_fuzzer_seed_corpus.zip
@@ -115,7 +116,7 @@ fm1readmarkers_fuzzer: fm1readmarkers.cc pyutil.o $(PARSERS_OBJS) $$OUT/fm1readm
 	  -Wno-register -Wno-macro-redefined \
 	  -I../../mercurial fm1readmarkers.cc \
 	  pyutil.o $(PARSERS_OBJS) \
-	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) --ldflags` \
+	  $(LIB_FUZZING_ENGINE) `$(PYTHON_CONFIG) $(PYTHON_CONFIG_FLAGS)` \
 	  -o $$OUT/fm1readmarkers_fuzzer
 
 clean:
