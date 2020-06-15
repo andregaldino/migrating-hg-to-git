@@ -90,10 +90,7 @@ impl Index {
                 ),
             ));
         }
-        Ok(Index {
-            index: index,
-            capi: capi,
-        })
+        Ok(Index { index, capi })
     }
 
     /// return a reference to the CPython Index object in this Struct
@@ -158,7 +155,7 @@ impl RevlogIndex for Index {
         unsafe { (self.capi.index_length)(self.index.as_ptr()) as usize }
     }
 
-    fn node<'a>(&'a self, rev: Revision) -> Option<&'a Node> {
+    fn node(&self, rev: Revision) -> Option<&Node> {
         let raw = unsafe {
             (self.capi.index_node)(self.index.as_ptr(), rev as c_int)
         };

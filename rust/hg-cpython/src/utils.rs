@@ -32,10 +32,7 @@ pub fn node_from_py_object<'a>(
 
 /// Clone incoming Python bytes given as `PyBytes` as a `Node`,
 /// doing the necessary checks.
-pub fn node_from_py_bytes<'a>(
-    py: Python,
-    bytes: &'a PyBytes,
-) -> PyResult<Node> {
+pub fn node_from_py_bytes(py: Python, bytes: &PyBytes) -> PyResult<Node> {
     <NodeData>::try_from(bytes.data(py))
         .map_err(|_| {
             PyErr::new::<ValueError, _>(
@@ -43,5 +40,5 @@ pub fn node_from_py_bytes<'a>(
                 format!("{}-byte hash required", NODE_BYTES_LENGTH),
             )
         })
-        .map(|n| n.into())
+        .map(Into::into)
 }

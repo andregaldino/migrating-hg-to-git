@@ -324,6 +324,8 @@ pub fn parse_pattern_file_contents<P: AsRef<Path>>(
     warn: bool,
 ) -> Result<(Vec<IgnorePattern>, Vec<PatternFileWarning>), PatternError> {
     let comment_regex = Regex::new(r"((?:^|[^\\])(?:\\\\)*)#.*").unwrap();
+
+    #[allow(clippy::trivial_regex)]
     let comment_escape_regex = Regex::new(r"\\#").unwrap();
     let mut inputs: Vec<IgnorePattern> = vec![];
     let mut warnings: Vec<PatternFileWarning> = vec![];
@@ -458,9 +460,7 @@ pub fn get_patterns_from_file(
         .into_iter()
         .flat_map(|entry| -> PatternResult<_> {
             let IgnorePattern {
-                syntax,
-                pattern,
-                source: _,
+                syntax, pattern, ..
             } = &entry;
             Ok(match syntax {
                 PatternSyntax::Include => {
@@ -504,10 +504,11 @@ impl SubInclude {
             normalize_path_bytes(&get_bytes_from_path(source));
 
         let source_root = get_path_from_bytes(&normalized_source);
-        let source_root = source_root.parent().unwrap_or(source_root.deref());
+        let source_root =
+            source_root.parent().unwrap_or_else(|| source_root.deref());
 
         let path = source_root.join(get_path_from_bytes(pattern));
-        let new_root = path.parent().unwrap_or(path.deref());
+        let new_root = path.parent().unwrap_or_else(|| path.deref());
 
         let prefix = canonical_path(&root_dir, &root_dir, new_root)?;
 

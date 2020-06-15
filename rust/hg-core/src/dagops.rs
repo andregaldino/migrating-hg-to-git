@@ -16,10 +16,10 @@ use super::{Graph, GraphError, Revision, NULL_REVISION};
 use crate::ancestors::AncestorsIterator;
 use std::collections::{BTreeSet, HashSet};
 
-fn remove_parents(
+fn remove_parents<S: std::hash::BuildHasher>(
     graph: &impl Graph,
     rev: Revision,
-    set: &mut HashSet<Revision>,
+    set: &mut HashSet<Revision, S>,
 ) -> Result<(), GraphError> {
     for parent in graph.parents(rev)?.iter() {
         if *parent != NULL_REVISION {
@@ -65,9 +65,9 @@ pub fn heads<'a>(
 ///
 /// # Performance notes
 /// Internally, this function will store a full copy of `revs` in a `Vec`.
-pub fn retain_heads(
+pub fn retain_heads<S: std::hash::BuildHasher>(
     graph: &impl Graph,
-    revs: &mut HashSet<Revision>,
+    revs: &mut HashSet<Revision, S>,
 ) -> Result<(), GraphError> {
     revs.remove(&NULL_REVISION);
     // we need to construct an iterable copy of revs to avoid itering while
@@ -84,9 +84,9 @@ pub fn retain_heads(
 /// Roots of `revs`, passed as a `HashSet`
 ///
 /// They are returned in arbitrary order
-pub fn roots<G: Graph>(
+pub fn roots<G: Graph, S: std::hash::BuildHasher>(
     graph: &G,
-    revs: &HashSet<Revision>,
+    revs: &HashSet<Revision, S>,
 ) -> Result<Vec<Revision>, GraphError> {
     let mut roots: Vec<Revision> = Vec::new();
     for rev in revs {
@@ -229,7 +229,8 @@ mod tests {
         graph: &impl Graph,
         revs: &[Revision],
     ) -> Result<Vec<Revision>, GraphError> {
-        let mut as_vec = roots(graph, &revs.iter().cloned().collect())?;
+        let set: HashSet<_> = revs.iter().cloned().collect();
+        let mut as_vec = roots(graph, &set)?;
         as_vec.sort();
         Ok(as_vec)
     }

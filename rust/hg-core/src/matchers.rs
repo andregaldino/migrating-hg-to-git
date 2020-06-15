@@ -164,7 +164,7 @@ impl<'a> FileMatcher<'a> {
         files: &'a [impl AsRef<HgPath>],
     ) -> Result<Self, DirstateMapError> {
         Ok(Self {
-            files: HashSet::from_iter(files.iter().map(|f| f.as_ref())),
+            files: HashSet::from_iter(files.iter().map(AsRef::as_ref)),
             dirs: DirsMultiset::from_manifest(files)?,
         })
     }
@@ -190,10 +190,10 @@ impl<'a> Matcher for FileMatcher<'a> {
         if self.files.is_empty() || !self.dirs.contains(&directory) {
             return VisitChildrenSet::Empty;
         }
-        let dirs_as_set = self.dirs.iter().map(|k| k.deref()).collect();
+        let dirs_as_set = self.dirs.iter().map(Deref::deref).collect();
 
         let mut candidates: HashSet<&HgPath> =
-            self.files.union(&dirs_as_set).map(|k| *k).collect();
+            self.files.union(&dirs_as_set).cloned().collect();
         candidates.remove(HgPath::new(b""));
 
         if !directory.as_ref().is_empty() {
@@ -470,7 +470,7 @@ fn roots_dirs_and_parents(
                 _ => unreachable!(),
             })?
             .iter()
-            .map(|k| k.to_owned()),
+            .map(ToOwned::to_owned),
     );
     parents.extend(
         DirsMultiset::from_manifest(&roots)
@@ -479,7 +479,7 @@ fn roots_dirs_and_parents(
                 _ => unreachable!(),
             })?
             .iter()
-            .map(|k| k.to_owned()),
+            .map(ToOwned::to_owned),
     );
 
     Ok(RootsDirsAndParents {
@@ -523,7 +523,7 @@ fn build_match<'a, 'b>(
         let match_subinclude = move |filename: &HgPath| {
             for prefix in prefixes.iter() {
                 if let Some(rel) = filename.relative_to(prefix) {
-                    if (submatchers.get(prefix).unwrap())(rel) {
+                    if (submatchers[prefix])(rel) {
                         return true;
                     }
                 }

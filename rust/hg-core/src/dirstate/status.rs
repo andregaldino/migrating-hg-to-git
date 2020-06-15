@@ -127,7 +127,7 @@ fn list_directory(
         if skip_dot_hg && filename.as_bytes() == b".hg" && file_type.is_dir() {
             return Ok(vec![]);
         } else {
-            results.push((HgPathBuf::from(filename), entry))
+            results.push((filename, entry))
         }
     }
 
@@ -164,14 +164,15 @@ fn dispatch_found(
                 (mode ^ st_mode as i32) & 0o100 != 0o000 && options.check_exec;
             let metadata_changed = size >= 0 && (size_changed || mode_changed);
             let other_parent = size == SIZE_FROM_OTHER_PARENT;
+
             if metadata_changed
                 || other_parent
                 || copy_map.contains_key(filename.as_ref())
             {
                 Dispatch::Modified
-            } else if mod_compare(mtime, st_mtime as i32) {
-                Dispatch::Unsure
-            } else if st_mtime == options.last_normal_time {
+            } else if mod_compare(mtime, st_mtime as i32)
+                || st_mtime == options.last_normal_time
+            {
                 // the file may have just been marked as normal and
                 // it may have changed in the same second without
                 // changing its size. This can happen if we quickly
@@ -226,9 +227,9 @@ fn walk_explicit<'a>(
     files
         .unwrap_or(&DEFAULT_WORK)
         .par_iter()
-        .map(move |filename| {
+        .map(move |&filename| {
             // TODO normalization
-            let normalized = filename.as_ref();
+            let normalized = filename;
 
             let buf = match hg_path_to_path_buf(normalized) {
                 Ok(x) => x,
@@ -254,33 +255,31 @@ fn walk_explicit<'a>(
                             )));
                         }
                         Some(Ok((normalized, Dispatch::Unknown)))
-                    } else {
-                        if file_type.is_dir() {
-                            if options.collect_traversed_dirs {
-                                traversed_sender
-                                    .send(normalized.to_owned())
-                                    .expect("receiver should outlive sender");
-                            }
-                            Some(Ok((
-                                normalized,
-                                Dispatch::Directory {
-                                    was_file: in_dmap.is_some(),
-                                },
-                            )))
-                        } else {
-                            Some(Ok((
-                                normalized,
-                                Dispatch::Bad(BadMatch::BadType(
-                                    // TODO do more than unknown
-                                    // Support for all `BadType` variant
-                                    // varies greatly between platforms.
-                                    // So far, no tests check the type and
-                                    // this should be good enough for most
-                                    // users.
-                                    BadType::Unknown,
-                                )),
-                            )))
+                    } else if file_type.is_dir() {
+                        if options.collect_traversed_dirs {
+                            traversed_sender
+                                .send(normalized.to_owned())
+                                .expect("receiver should outlive sender");
                         }
+                        Some(Ok((
+                            normalized,
+                            Dispatch::Directory {
+                                was_file: in_dmap.is_some(),
+                            },
+                        )))
+                    } else {
+                        Some(Ok((
+                            normalized,
+                            Dispatch::Bad(BadMatch::BadType(
+                                // TODO do more than unknown
+                                // Support for all `BadType` variant
+                                // varies greatly between platforms.
+                                // So far, no tests check the type and
+                                // this should be good enough for most
+                                // users.
+                                BadType::Unknown,
+                            )),
+                        )))
                     };
                 }
                 Err(_) => {
@@ -381,12 +380,10 @@ fn handle_traversed_entry<'a>(
                         .send(Ok((filename.to_owned(), Dispatch::Ignored)))
                         .unwrap();
                 }
-            } else {
-                if options.list_unknown {
-                    files_sender
-                        .send(Ok((filename.to_owned(), Dispatch::Unknown)))
-                        .unwrap();
-                }
+            } else if options.list_unknown {
+                files_sender
+                    .send(Ok((filename.to_owned(), Dispatch::Unknown)))
+                    .unwrap();
             }
         } else if ignore_fn(&filename) && options.list_ignored {
             files_sender

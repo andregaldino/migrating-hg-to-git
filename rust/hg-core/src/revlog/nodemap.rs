@@ -218,7 +218,7 @@ pub struct Block([u8; BLOCK_SIZE]);
 /// Not derivable for arrays of length >32 until const generics are stable
 impl PartialEq for Block {
     fn eq(&self, other: &Self) -> bool {
-        &self.0[..] == &other.0[..]
+        self.0[..] == other.0[..]
     }
 }
 
@@ -343,14 +343,11 @@ impl NodeTree {
     ///
     /// We keep `readonly` and clone its root block if it isn't empty.
     fn new(readonly: Box<dyn Deref<Target = [Block]> + Send>) -> Self {
-        let root = readonly
-            .last()
-            .map(|b| b.clone())
-            .unwrap_or_else(|| Block::new());
+        let root = readonly.last().cloned().unwrap_or_else(Block::new);
         NodeTree {
-            readonly: readonly,
+            readonly,
             growable: Vec::new(),
-            root: root,
+            root,
             masked_inner_blocks: 0,
         }
     }
@@ -461,7 +458,7 @@ impl NodeTree {
     ) -> NodeTreeVisitor<'n, 'p> {
         NodeTreeVisitor {
             nt: self,
-            prefix: prefix,
+            prefix,
             visit: self.len() - 1,
             nybble_idx: 0,
             done: false,
@@ -486,8 +483,7 @@ impl NodeTree {
         let glen = self.growable.len();
         if idx < ro_len {
             self.masked_inner_blocks += 1;
-            // TODO OPTIM I think this makes two copies
-            self.growable.push(ro_blocks[idx].clone());
+            self.growable.push(ro_blocks[idx]);
             (glen + ro_len, &mut self.growable[glen], glen + 1)
         } else if glen + ro_len == idx {
             (idx, &mut self.root, glen)
@@ -674,8 +670,8 @@ impl<'n, 'p> Iterator for NodeTreeVisitor<'n, 'p> {
 
         Some(NodeTreeVisitItem {
             block_idx: visit,
-            nybble: nybble,
-            element: element,
+            nybble,
+            element,
         })
     }
 }

@@ -181,8 +181,8 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
             common: MissingAncestors::new(graph, vec![]),
             missing: HashSet::new(),
             rng: Rng::from_seed(seed),
-            respect_size: respect_size,
-            randomize: randomize,
+            respect_size,
+            randomize,
         }
     }
 
@@ -284,7 +284,7 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
 
     /// Did we acquire full knowledge of our Revisions that the peer has?
     pub fn is_complete(&self) -> bool {
-        self.undecided.as_ref().map_or(false, |s| s.is_empty())
+        self.undecided.as_ref().map_or(false, HashSet::is_empty)
     }
 
     /// Return the heads of the currently known common set of revisions.
@@ -332,7 +332,7 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
             FastHashMap::default();
         for &rev in self.undecided.as_ref().unwrap() {
             for p in ParentsIterator::graph_parents(&self.graph, rev)? {
-                children.entry(p).or_insert_with(|| Vec::new()).push(rev);
+                children.entry(p).or_insert_with(Vec::new).push(rev);
             }
         }
         self.children_cache = Some(children);
@@ -342,7 +342,7 @@ impl<G: Graph + Clone> PartialDiscovery<G> {
     /// Provide statistics about the current state of the discovery process
     pub fn stats(&self) -> DiscoveryStats {
         DiscoveryStats {
-            undecided: self.undecided.as_ref().map(|s| s.len()),
+            undecided: self.undecided.as_ref().map(HashSet::len),
         }
     }
 

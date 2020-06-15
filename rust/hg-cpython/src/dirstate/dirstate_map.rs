@@ -179,7 +179,7 @@ py_class!(pub class DirstateMap |py| {
             "other_parent",
             other_parent
                 .iter()
-                .map(|v| PyBytes::new(py, v.as_ref()))
+                .map(|v| PyBytes::new(py, v.as_bytes()))
                 .collect::<Vec<PyBytes>>()
                 .to_py_object(py),
         )?;
@@ -348,7 +348,11 @@ py_class!(pub class DirstateMap |py| {
         for (key, value) in
             self.inner(py).borrow_mut().build_file_fold_map().iter()
         {
-            dict.set_item(py, key.as_ref().to_vec(), value.as_ref().to_vec())?;
+            dict.set_item(
+                py,
+                key.as_bytes().to_vec(),
+                value.as_bytes().to_vec(),
+            )?;
         }
         Ok(dict)
     }
@@ -440,8 +444,8 @@ py_class!(pub class DirstateMap |py| {
         for (key, value) in self.inner(py).borrow().copy_map.iter() {
             dict.set_item(
                 py,
-                PyBytes::new(py, key.as_ref()),
-                PyBytes::new(py, value.as_ref()),
+                PyBytes::new(py, key.as_bytes()),
+                PyBytes::new(py, value.as_bytes()),
             )?;
         }
         Ok(dict)
@@ -450,7 +454,7 @@ py_class!(pub class DirstateMap |py| {
     def copymapgetitem(&self, key: PyObject) -> PyResult<PyBytes> {
         let key = key.extract::<PyBytes>(py)?;
         match self.inner(py).borrow().copy_map.get(HgPath::new(key.data(py))) {
-            Some(copy) => Ok(PyBytes::new(py, copy.as_ref())),
+            Some(copy) => Ok(PyBytes::new(py, copy.as_bytes())),
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
                 String::from_utf8_lossy(key.data(py)),
@@ -485,7 +489,7 @@ py_class!(pub class DirstateMap |py| {
             .get(HgPath::new(key.data(py)))
         {
             Some(copy) => Ok(Some(
-                PyBytes::new(py, copy.as_ref()).into_object(),
+                PyBytes::new(py, copy.as_bytes()).into_object(),
             )),
             None => Ok(default),
         }
@@ -549,7 +553,7 @@ impl DirstateMap {
         py: Python,
         res: (&HgPathBuf, &DirstateEntry),
     ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res.0.as_ref())))
+        Ok(Some(PyBytes::new(py, res.0.as_bytes())))
     }
     fn translate_key_value(
         py: Python,
@@ -557,7 +561,7 @@ impl DirstateMap {
     ) -> PyResult<Option<(PyBytes, PyObject)>> {
         let (f, entry) = res;
         Ok(Some((
-            PyBytes::new(py, f.as_ref()),
+            PyBytes::new(py, f.as_bytes()),
             make_dirstate_tuple(py, entry)?,
         )))
     }

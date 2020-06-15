@@ -37,15 +37,15 @@ fn parse_dirstate_wrapper(
             for (filename, entry) in &dirstate_map {
                 dmap.set_item(
                     py,
-                    PyBytes::new(py, filename.as_ref()),
+                    PyBytes::new(py, filename.as_bytes()),
                     make_dirstate_tuple(py, entry)?,
                 )?;
             }
             for (path, copy_path) in copies {
                 copymap.set_item(
                     py,
-                    PyBytes::new(py, path.as_ref()),
-                    PyBytes::new(py, copy_path.as_ref()),
+                    PyBytes::new(py, path.as_bytes()),
+                    PyBytes::new(py, copy_path.as_bytes()),
                 )?;
             }
             Ok(
@@ -116,7 +116,7 @@ fn pack_dirstate_wrapper(
             for (filename, entry) in &dirstate_map {
                 dmap.set_item(
                     py,
-                    PyBytes::new(py, filename.as_ref()),
+                    PyBytes::new(py, filename.as_bytes()),
                     make_dirstate_tuple(py, entry)?,
                 )?;
             }

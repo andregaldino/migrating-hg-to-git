@@ -68,6 +68,7 @@ pub trait SliceExt {
     fn drop_prefix(&self, needle: &Self) -> Option<&Self>;
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn is_not_whitespace(c: &u8) -> bool {
     !(*c as char).is_whitespace()
 }
@@ -75,7 +76,7 @@ fn is_not_whitespace(c: &u8) -> bool {
 impl SliceExt for [u8] {
     fn trim_end(&self) -> &[u8] {
         if let Some(last) = self.iter().rposition(is_not_whitespace) {
-            &self[..last + 1]
+            &self[..=last]
         } else {
             &[]
         }
@@ -151,7 +152,7 @@ impl Escaped for u8 {
 
 impl<'a, T: Escaped> Escaped for &'a [T] {
     fn escaped_bytes(&self) -> Vec<u8> {
-        self.iter().flat_map(|item| item.escaped_bytes()).collect()
+        self.iter().flat_map(Escaped::escaped_bytes).collect()
     }
 }
 

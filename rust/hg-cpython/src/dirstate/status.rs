@@ -236,12 +236,10 @@ pub fn status_wrapper(
 
             build_response(py, lookup, status_res, all_warnings)
         }
-        e => {
-            return Err(PyErr::new::<ValueError, _>(
-                py,
-                format!("Unsupported matcher {}", e),
-            ));
-        }
+        e => Err(PyErr::new::<ValueError, _>(
+            py,
+            format!("Unsupported matcher {}", e),
+        )),
     }
 }
 

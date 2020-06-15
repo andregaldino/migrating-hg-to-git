@@ -112,7 +112,7 @@ impl PathAuditor {
         // accidentally traverse a symlink into some other filesystem (which
         // is potentially expensive to access).
         for index in 0..parts.len() {
-            let prefix = &parts[..index + 1].join(&b'/');
+            let prefix = &parts[..=index].join(&b'/');
             let prefix = HgPath::new(prefix);
             if self.audited_dirs.read().unwrap().contains(prefix) {
                 continue;
