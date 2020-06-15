@@ -597,7 +597,7 @@ class svn_source(converter_source):
             self.removed = set()
 
         files.sort()
-        files = zip(files, [rev] * len(files))
+        files = pycompat.ziplist(files, [rev] * len(files))
         return (files, copies)
 
     def getchanges(self, rev, full):
