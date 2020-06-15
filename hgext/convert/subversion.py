@@ -55,7 +55,7 @@ try:
     import warnings
 
     warnings.filterwarnings(
-        b'ignore', module=b'svn.core', category=DeprecationWarning
+        'ignore', module='svn.core', category=DeprecationWarning
     )
     svn.core.SubversionException  # trigger import to catch error
 
