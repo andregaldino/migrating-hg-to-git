@@ -87,7 +87,7 @@ def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
 def encodeargs(args):
     def encodearg(s):
         lines = base64.encodestring(s)
-        lines = [l.splitlines()[0] for l in lines]
+        lines = [l.splitlines()[0] for l in pycompat.iterbytestr(lines)]
         return b''.join(lines)
 
     s = pickle.dumps(args)
