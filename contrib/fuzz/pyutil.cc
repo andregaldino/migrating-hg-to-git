@@ -21,7 +21,7 @@ static PyObject *globals;
 void initpy(const char *cselfpath)
 {
 #ifdef HG_FUZZER_PY3
-	const std::string subdir = "/sanpy/lib/python3.7";
+	const std::string subdir = "/sanpy/lib/python3.8";
 #else
 	const std::string subdir = "/sanpy/lib/python2.7";
 #endif
