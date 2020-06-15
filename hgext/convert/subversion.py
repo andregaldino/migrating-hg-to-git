@@ -773,7 +773,7 @@ class svn_source(converter_source):
         self.convertfp.flush()
 
     def revid(self, revnum, module=None):
-        return b'svn:%s%s@%s' % (self.uuid, module or self.module, revnum)
+        return b'svn:%s%s@%d' % (self.uuid, module or self.module, revnum)
 
     def revnum(self, rev):
         return int(rev.split(b'@')[-1])
