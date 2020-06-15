@@ -143,6 +143,11 @@ if ispy3:
 
     long = int
 
+    # Warning: sys.stdout.buffer and sys.stderr.buffer do not necessarily have
+    # the same buffering behavior as sys.stdout and sys.stderr. The interpreter
+    # initializes them with block-buffered streams or unbuffered streams (when
+    # the -u option or the PYTHONUNBUFFERED environment variable is set), never
+    # with a line-buffered stream.
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
     stdin = sys.stdin.buffer

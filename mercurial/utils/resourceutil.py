@@ -23,10 +23,10 @@ def mainfrozen():
     (portable, not much used).
     """
     return (
-        pycompat.safehasattr(sys, "frozen")
-        or pycompat.safehasattr(sys, "importers")  # new py2exe
-        or imp.is_frozen("__main__")  # old py2exe
-    )  # tools/freeze
+        pycompat.safehasattr(sys, "frozen")  # new py2exe
+        or pycompat.safehasattr(sys, "importers")  # old py2exe
+        or imp.is_frozen("__main__")  # tools/freeze
+    )
 
 
 # the location of data files matching the source code

@@ -293,6 +293,139 @@ Reopen branch by rebase
   rebasing 9:e522577ccdbd "D"
   saved backup bundle to $TESTTMP/a1/.hg/strip-backup/8e279d293175-b023e27c-rebase.hg
 
+  $ hg log -G -Tcompact
+  o  11[tip]   be1dea60f2a6   2011-04-30 15:24 +0200   nicdumz
+  |    D
+  |
+  o  10   ac34ce92632a   2011-04-30 15:24 +0200   nicdumz
+  |    C
+  |
+  o  9   7bd665b6ce12   2011-04-30 15:24 +0200   nicdumz
+  |    B
+  |
+  o  8   58e7c36e77f7   1970-01-01 00:00 +0000   test
+  |    dev-two named branch
+  |
+  o  7   8e5a320651f3   2011-04-30 15:24 +0200   nicdumz
+  |    H
+  |
+  @  6   2b586e70108d   1970-01-01 00:00 +0000   test
+  |    close b
+  |
+  o  5:3   3f9d5df8a707   1970-01-01 00:00 +0000   test
+  |    create b
+  |
+  | o  4:3,1   aeefee77ab01   2011-04-30 15:24 +0200   nicdumz
+  |/|    G
+  | |
+  o |  3   e908b85f3729   2011-04-30 15:24 +0200   nicdumz
+  | |    F
+  | |
+  o |  2:0   bc8139ee757c   1970-01-01 00:00 +0000   test
+  | |    dev-one named branch
+  | |
+  | o  1   9520eea781bc   2011-04-30 15:24 +0200   nicdumz
+  |/     E
+  |
+  o  0   cd010b8cd998   2011-04-30 15:24 +0200   nicdumz
+       A
+  
+  $ echo A-mod > A
+  $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
+
+--dry-run doesn't affect a dirty working directory that is unrelated to the
+source or destination.
+
+  $ hg rebase -s tip -d 4 --dry-run
+  starting dry-run rebase; repository will not be changed
+  rebasing 11:be1dea60f2a6 "D" (tip)
+  dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase
+  $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
+
+Bailing out on --confirm doesn't affect a dirty working directory that is
+unrelated to the source or destination.
+
+  $ echo A-mod > A
+  $ echo n | hg rebase -s tip -d 4 --confirm --config ui.interactive=True
+  starting in-memory rebase
+  rebasing 11:be1dea60f2a6 "D" (tip)
+  rebase completed successfully
+  apply changes (yn)? n
+  $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
+
+  $ echo A-mod > A
+  $ hg rebase -s tip -d 4 --confirm
+  starting in-memory rebase
+  rebasing 11:be1dea60f2a6 "D" (tip)
+  rebase completed successfully
+  apply changes (yn)? y
+  saved backup bundle to $TESTTMP/a1/.hg/strip-backup/be1dea60f2a6-ca6d2dac-rebase.hg
+  $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
+
+Attempting to rebase the parent of a dirty working directory will abort, without
+mangling the working directory...
+
+  $ hg rebase -s 5 -d 4 --dry-run
+  starting dry-run rebase; repository will not be changed
+  abort: uncommitted changes
+  [255]
+  $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
+
+... ditto for --confirm
+
+  $ echo n | hg rebase -s 5 -d 4 --confirm --config ui.interactive=True
+  starting in-memory rebase
+  abort: uncommitted changes
+  [255]
+  $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
+  $ hg rebase -s 5 -d 4 --confirm
+  starting in-memory rebase
+  abort: uncommitted changes
+  [255]
+  $ hg diff
+  diff -r 2b586e70108d A
+  --- a/A	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/A	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -A
+  +A-mod
+
   $ cd ..
 
 Rebase to other head on branch

@@ -1647,7 +1647,7 @@ class Zeroconf(object):
                     and record.alias == info.name
                 ):
                     if info.name.find(b'.') < 0:
-                        info.name = b"%w.[%s:%d].%s" % (
+                        info.name = b"%s.[%s:%d].%s" % (
                             info.name,
                             info.address,
                             info.port,

@@ -148,7 +148,7 @@ Create an extension to test bundle2 API
   >        bundler.newpart(b'output', data=genraise(), mandatory=False)
   > 
   >     if path is None:
-  >        file = pycompat.stdout
+  >         file = pycompat.stdout
   >     else:
   >         file = open(path, 'wb')
   > 

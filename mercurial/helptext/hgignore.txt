@@ -95,3 +95,9 @@ Here is an example ignore file. ::
   # switch to regexp syntax.
   syntax: regexp
   ^\.pc/
+
+Debugging
+=========
+
+Use the ``debugignore`` command to see if and why a file is ignored, or to
+see the combined ignore pattern. See :hg:`help debugignore` for details.
