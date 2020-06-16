@@ -817,7 +817,7 @@ class svn_source(converter_source):
                         # We do not know the latest changed revision,
                         # keep the first one with changed paths.
                         break
-                    if revnum <= stop:
+                    if stop is not None and revnum <= stop:
                         break
 
                     for p in paths:
