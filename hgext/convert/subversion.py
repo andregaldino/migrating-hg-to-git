@@ -535,7 +535,9 @@ class svn_source(converter_source):
                         % (name, path)
                     )
                 return None
-            self.ui.note(_(b'found %s at %r\n') % (name, path))
+            self.ui.note(
+                _(b'found %s at %r\n') % (name, pycompat.bytestr(path))
+            )
             return path
 
         rev = optrev(self.last_changed)
@@ -1208,7 +1210,10 @@ class svn_source(converter_source):
                 return relative
 
         # The path is outside our tracked tree...
-        self.ui.debug(b'%r is not under %r, ignoring\n' % (path, module))
+        self.ui.debug(
+            b'%r is not under %r, ignoring\n'
+            % (pycompat.bytestr(path), pycompat.bytestr(module))
+        )
         return None
 
     def _checkpath(self, path, revnum, module=None):
