@@ -917,12 +917,12 @@ class svn_source(converter_source):
                 if not copyfrom_path:
                     continue
                 self.ui.debug(
-                    b"copied to %s from %s@%s\n"
+                    b"copied to %s from %s@%d\n"
                     % (entrypath, copyfrom_path, ent.copyfrom_rev)
                 )
                 copies[self.recode(entrypath)] = self.recode(copyfrom_path)
             elif kind == 0:  # gone, but had better be a deleted *file*
-                self.ui.debug(b"gone from %s\n" % ent.copyfrom_rev)
+                self.ui.debug(b"gone from %d\n" % ent.copyfrom_rev)
                 pmodule, prevnum = revsplit(parents[0])[1:]
                 parentpath = pmodule + b"/" + entrypath
                 fromkind = self._checkpath(entrypath, prevnum, pmodule)
