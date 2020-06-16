@@ -321,7 +321,26 @@ def issvnurl(ui, url):
                 and path[2:6].lower() == b'%3a/'
             ):
                 path = path[:2] + b':/' + path[6:]
-            path = urlreq.url2pathname(path)
+            # pycompat.fsdecode() / pycompat.fsencode() are used so that bytes
+            # in the URL roundtrip correctly on Unix. urlreq.url2pathname() on
+            # py3 will decode percent-encoded bytes using the utf-8 encoding
+            # and the "replace" error handler. This means that it will not
+            # preserve non-UTF-8 bytes (https://bugs.python.org/issue40983).
+            # url.open() uses the reverse function (urlreq.pathname2url()) and
+            # has a similar problem
+            # (https://bz.mercurial-scm.org/show_bug.cgi?id=6357). It makes
+            # sense to solve both problems together and handle all file URLs
+            # consistently. For now, we warn.
+            unicodepath = urlreq.url2pathname(pycompat.fsdecode(path))
+            if pycompat.ispy3 and u'\N{REPLACEMENT CHARACTER}' in unicodepath:
+                ui.warn(
+                    _(
+                        b'on Python 3, we currently do not support non-UTF-8 '
+                        b'percent-encoded bytes in file URLs for Subversion '
+                        b'repositories\n'
+                    )
+                )
+            path = pycompat.fsencode(unicodepath)
     except ValueError:
         proto = b'file'
         path = os.path.abspath(url)
