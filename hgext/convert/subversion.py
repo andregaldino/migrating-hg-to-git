@@ -662,9 +662,9 @@ class svn_source(converter_source):
     def checkrevformat(self, revstr, mapname=b'splicemap'):
         """ fails if revision format does not match the correct format"""
         if not re.match(
-            r'svn:[0-9a-f]{8,8}-[0-9a-f]{4,4}-'
-            r'[0-9a-f]{4,4}-[0-9a-f]{4,4}-[0-9a-f]'
-            r'{12,12}(.*)@[0-9]+$',
+            br'svn:[0-9a-f]{8,8}-[0-9a-f]{4,4}-'
+            br'[0-9a-f]{4,4}-[0-9a-f]{4,4}-[0-9a-f]'
+            br'{12,12}(.*)@[0-9]+$',
             revstr,
         ):
             raise error.Abort(
