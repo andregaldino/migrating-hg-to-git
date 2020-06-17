@@ -229,13 +229,13 @@ check that server events are recorded:
   server.log.1
 
 print only the last 10 lines, since we aren't sure how many records are
-preserved (since setprocname isn't available on py3, the 10th-most-recent line
-is different when using py3):
+preserved (since setprocname isn't available on py3 and pure version,
+the 10th-most-recent line is different when using py3):
 
   $ cat log/server.log.1 log/server.log | tail -10 | filterlog
-  YYYY/MM/DD HH:MM:SS (PID)> confighash = ... mtimehash = ... (py3 !)
+  YYYY/MM/DD HH:MM:SS (PID)> confighash = ... mtimehash = ... (no-setprocname !)
   YYYY/MM/DD HH:MM:SS (PID)> forked worker process (pid=...)
-  YYYY/MM/DD HH:MM:SS (PID)> setprocname: ... (no-py3 !)
+  YYYY/MM/DD HH:MM:SS (PID)> setprocname: ... (setprocname !)
   YYYY/MM/DD HH:MM:SS (PID)> received fds: ...
   YYYY/MM/DD HH:MM:SS (PID)> chdir to '$TESTTMP/extreload'
   YYYY/MM/DD HH:MM:SS (PID)> setumask 18

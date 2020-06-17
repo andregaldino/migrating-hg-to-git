@@ -683,6 +683,17 @@ def has_serve():
     return True
 
 
+@check("setprocname", "whether osutil.setprocname is available or not")
+def has_setprocname():
+    try:
+        from mercurial.utils import procutil
+
+        procutil.setprocname
+        return True
+    except AttributeError:
+        return False
+
+
 @check("test-repo", "running tests from repository")
 def has_test_repo():
     t = os.environ["TESTDIR"]
