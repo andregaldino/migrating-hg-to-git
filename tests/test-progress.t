@@ -18,7 +18,8 @@
   > @command(b'loop',
   >     [(b'', b'total', b'', b'override for total'),
   >     (b'', b'nested', False, b'show nested results'),
-  >     (b'', b'parallel', False, b'show parallel sets of results')],
+  >     (b'', b'parallel', False, b'show parallel sets of results'),
+  >     (b'', b'warn', False, b'show warning if step divisible by 3')],
   >     b'hg loop LOOPS',
   >     norepo=True)
   > def loop(ui, loops, **opts):
@@ -32,6 +33,7 @@
   >     if opts.get('nested', None):
   >         nested = True
   >     loops = abs(loops)
+  >     showwarn = opts.get('warn', False)
   > 
   >     progress = ui.makeprogress(topiclabel, unit=b'loopnum', total=total)
   >     other = ui.makeprogress(b'other', unit=b'othernum', total=total)
@@ -48,6 +50,8 @@
   >             for j in range(nested_steps):
   >                 nested.update(j, item=b'nested.%d' % j)
   >             nested.complete()
+  >         if showwarn and i % 3 == 0:
+  >             ui.warn(b'reached step %d\n' %i)
   >     progress.complete()
   > 
   > topiclabel = b'loop'
@@ -177,6 +181,42 @@ make sure things don't fall over if count > total
   loop [===================================>            ] 3/4\r (no-eol) (esc)
   loop [===============================================>] 4/4\r (no-eol) (esc)
   loop [ <=>                                            ] 5/4\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+
+test interaction with ui.warn
+
+  $ hg loop --warn 6
+  \r (no-eol) (esc)
+  loop [                                                ] 0/6\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  reached step 0
+  \r (no-eol) (esc)
+  loop [=======>                                        ] 1/6\r (no-eol) (esc)
+  loop [===============>                                ] 2/6\r (no-eol) (esc)
+  loop [=======================>                        ] 3/6\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  reached step 3
+  \r (no-eol) (esc)
+  loop [===============================>                ] 4/6\r (no-eol) (esc)
+  loop [=======================================>        ] 5/6\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+
+test interaction with ui.timestamp-output
+
+  $ hg loop --warn --config ui.timestamp-output=true 6
+  \r (no-eol) (esc)
+  loop [                                                ] 0/6\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] reached step 0 (re)
+  \r (no-eol) (esc)
+  loop [=======>                                        ] 1/6\r (no-eol) (esc)
+  loop [===============>                                ] 2/6\r (no-eol) (esc)
+  loop [=======================>                        ] 3/6\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] reached step 3 (re)
+  \r (no-eol) (esc)
+  loop [===============================>                ] 4/6\r (no-eol) (esc)
+  loop [=======================================>        ] 5/6\r (no-eol) (esc)
                                                               \r (no-eol) (esc)
 
 test immediate progress completion

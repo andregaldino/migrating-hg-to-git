@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import collections
 import contextlib
+import datetime
 import errno
 import getpass
 import inspect
@@ -242,6 +243,7 @@ class ui(object):
         self._terminfoparams = {}
         self._styles = {}
         self._uninterruptible = False
+        self.showtimestamp = False
 
         if src:
             self._fout = src._fout
@@ -561,6 +563,7 @@ class ui(object):
             self._reportuntrusted = self.debugflag or self.configbool(
                 b"ui", b"report_untrusted"
             )
+            self.showtimestamp = self.configbool(b'ui', b'timestamp-output')
             self.tracebackflag = self.configbool(b'ui', b'traceback')
             self.logblockedtimes = self.configbool(b'ui', b'logblockedtimes')
 
@@ -1217,7 +1220,20 @@ class ui(object):
             ) * 1000
 
     def _writemsg(self, dest, *args, **opts):
+        timestamp = self.showtimestamp and opts.get('type') in {
+            b'debug',
+            b'error',
+            b'note',
+            b'status',
+            b'warning',
+        }
+        if timestamp:
+            args = (
+                b'[%s] ' % bytes(datetime.datetime.now().isoformat(), 'ASCII'),
+            ) + args
         _writemsgwith(self._write, dest, *args, **opts)
+        if timestamp:
+            dest.flush()
 
     def _writemsgnobuf(self, dest, *args, **opts):
         _writemsgwith(self._writenobuf, dest, *args, **opts)

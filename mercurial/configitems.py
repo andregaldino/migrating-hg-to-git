@@ -1384,6 +1384,9 @@ coreconfigitem(
     b'ui', b'timeout.warn', default=0,
 )
 coreconfigitem(
+    b'ui', b'timestamp-output', default=False,
+)
+coreconfigitem(
     b'ui', b'traceback', default=False,
 )
 coreconfigitem(
