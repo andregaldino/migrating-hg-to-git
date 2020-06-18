@@ -152,21 +152,25 @@ Check that extensions are loaded in phases:
   > from __future__ import print_function
   > import os
   > from mercurial import exthelper
+  > from mercurial.utils import procutil
+  > 
+  > write = procutil.stdout.write
   > name = os.path.basename(__file__).rsplit('.', 1)[0]
-  > print("1) %s imported" % name, flush=True)
+  > bytesname = name.encode('utf-8')
+  > write(b"1) %s imported\n" % bytesname)
   > eh = exthelper.exthelper()
   > @eh.uisetup
   > def _uisetup(ui):
-  >     print("2) %s uisetup" % name, flush=True)
+  >     write(b"2) %s uisetup\n" % bytesname)
   > @eh.extsetup
   > def _extsetup(ui):
-  >     print("3) %s extsetup" % name, flush=True)
+  >     write(b"3) %s extsetup\n" % bytesname)
   > @eh.uipopulate
   > def _uipopulate(ui):
-  >     print("4) %s uipopulate" % name, flush=True)
+  >     write(b"4) %s uipopulate\n" % bytesname)
   > @eh.reposetup
   > def _reposetup(ui, repo):
-  >     print("5) %s reposetup" % name, flush=True)
+  >     write(b"5) %s reposetup\n" % bytesname)
   > 
   > extsetup = eh.finalextsetup
   > reposetup = eh.finalreposetup
@@ -174,7 +178,6 @@ Check that extensions are loaded in phases:
   > uisetup = eh.finaluisetup
   > revsetpredicate = eh.revsetpredicate
   > 
-  > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
   > from mercurial import (
   >     smartset,
