@@ -583,30 +583,32 @@ class phasecache(object):
             raise error.ProgrammingError(msg)
 
         repo = repo.unfiltered()
-        currentroots = self.phaseroots[targetphase]
+        torev = repo.changelog.rev
+        tonode = repo.changelog.node
+        currentroots = {torev(node) for node in self.phaseroots[targetphase]}
         finalroots = oldroots = set(currentroots)
+        newroots = [torev(node) for node in nodes]
         newroots = [
-            n for n in nodes if self.phase(repo, repo[n].rev()) < targetphase
+            rev for rev in newroots if self.phase(repo, rev) < targetphase
         ]
-        if newroots:
 
-            if nullid in newroots:
+        if newroots:
+            if nullrev in newroots:
                 raise error.Abort(_(b'cannot change null revision phase'))
-            currentroots = currentroots.copy()
             currentroots.update(newroots)
 
             # Only compute new roots for revs above the roots that are being
             # retracted.
-            minnewroot = min(repo[n].rev() for n in newroots)
-            aboveroots = [
-                n for n in currentroots if repo[n].rev() >= minnewroot
-            ]
-            updatedroots = repo.set(b'roots(%ln::)', aboveroots)
+            minnewroot = min(newroots)
+            aboveroots = [rev for rev in currentroots if rev >= minnewroot]
+            updatedroots = repo.set(b'roots(%ld::)', aboveroots)
 
-            finalroots = {n for n in currentroots if repo[n].rev() < minnewroot}
-            finalroots.update(ctx.node() for ctx in updatedroots)
+            finalroots = {rev for rev in currentroots if rev < minnewroot}
+            finalroots.update(ctx.rev() for ctx in updatedroots)
         if finalroots != oldroots:
-            self._updateroots(targetphase, finalroots, tr)
+            self._updateroots(
+                targetphase, {tonode(rev) for rev in finalroots}, tr
+            )
             return True
         return False
 
