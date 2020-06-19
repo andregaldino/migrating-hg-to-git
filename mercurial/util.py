@@ -204,6 +204,8 @@ def nouideprecwarn(msg, version, stacklevel=1):
             b" update your code.)"
         ) % version
         warnings.warn(pycompat.sysstr(msg), DeprecationWarning, stacklevel + 1)
+        # on python 3 with chg, we will need to explicitly flush the output
+        sys.stderr.flush()
 
 
 DIGESTS = {
