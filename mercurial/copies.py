@@ -636,6 +636,12 @@ class branch_copies(object):
         self.dirmove = {} if dirmove is None else dirmove
         self.movewithdir = {} if movewithdir is None else movewithdir
 
+    def __repr__(self):
+        return (
+            '<branch_copies\n  copy=%r\n  renamedelete=%r\n  dirmove=%r\n  movewithdir=%r\n>'
+            % (self.copy, self.renamedelete, self.dirmove, self.movewithdir,)
+        )
+
 
 def _fullcopytracing(repo, c1, c2, base):
     """ The full copytracing algorithm which finds all the new files that were
