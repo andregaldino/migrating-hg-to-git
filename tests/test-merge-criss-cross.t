@@ -469,3 +469,225 @@ Verify that the old context ancestor works with / despite preferancestor:
   getting d2/b
   1 files updated, 0 files merged, 2 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+
+
+Check that removal reversion does not go unotified
+==================================================
+
+On a merge, a file can be removed and user can revert that removal. This means
+user has made an explicit choice of keeping the file or reverting the removal
+even though the merge algo wanted to remove it.
+Based on this, when we do criss cross merges, merge algorithm should not again
+choose to remove the file as in one of the merges, user made an explicit choice
+to revert the removal.
+Following test cases demonstrate how merge algo does not take in account
+explicit choices made by users to revert the removal and on criss-cross merging
+removes the file again.
+
+"Simple" case where the filenode changes
+----------------------------------------
+
+  $ cd ..
+  $ hg init criss-cross-merge-reversal-with-update
+  $ cd criss-cross-merge-reversal-with-update
+  $ echo the-file > the-file
+  $ echo other-file > other-file
+  $ hg add the-file other-file
+  $ hg ci -m 'root-commit'
+  $ echo foo >> the-file
+  $ echo bar >> other-file
+  $ hg ci -m 'updating-both-file'
+  $ hg up 'desc("root-commit")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg rm the-file
+  $ hg ci -m 'delete-the-file'
+  created new head
+  $ hg log -G -T '{node|short} {desc}\n'
+  @  7801bc9b9899 delete-the-file
+  |
+  | o  9b610631ab29 updating-both-file
+  |/
+  o  955800955977 root-commit
+  
+
+Do all the merge combination (from the deleted or the update side × keeping and deleting the file
+
+  $ hg update 'desc("delete-the-file")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("updating-both-file")' -t :local
+  1 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "merge-deleting-the-file-from-deleted"
+  $ hg manifest
+  other-file
+
+  $ hg update 'desc("updating-both-file")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("delete-the-file")' -t :other
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "merge-deleting-the-file-from-updated"
+  created new head
+  $ hg manifest
+  other-file
+
+  $ hg update 'desc("delete-the-file")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("updating-both-file")' -t :other
+  1 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "merge-keeping-the-file-from-deleted"
+  created new head
+  $ hg manifest
+  other-file
+  the-file
+
+  $ hg update 'desc("updating-both-file")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("delete-the-file")' -t :local
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "merge-keeping-the-file-from-updated"
+  created new head
+  $ hg manifest
+  other-file
+  the-file
+
+There the resulting merge together (leading to criss cross situation). Check
+the conflict is properly detected.
+
+(merging two deletion together → no conflict)
+
+  $ hg update --clean 'desc("merge-deleting-the-file-from-deleted")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-deleting-the-file-from-updated")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-deleting-the-file-from-deleted")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+  the-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-deleting-the-file-from-deleted")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-keeping-the-file-from-updated")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+  the-file
+
+(merging two deletion together → no conflict)
+
+  $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-deleting-the-file-from-deleted")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+  the-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-keeping-the-file-from-updated")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+  the-file
+
+(merging two "keeping" together → no conflict)
+
+  $ hg update --clean 'desc("merge-keeping-the-file-from-updated")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+  the-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-keeping-the-file-from-updated")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-deleted-the-file-from-deleted")'
+  abort: empty revision set
+  [255]
+  $ ls -1
+  other-file
+  the-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-keeping-the-file-from-updated")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-deleting-the-file-from-updated")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+
+(merging two "keeping" together → no conflict)
+
+  $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-keeping-the-file-from-updated")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
+  the-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-deleted-the-file-from-deleted")'
+  abort: empty revision set
+  [255]
+  $ ls -1
+  other-file
+  the-file
+
+(merging a deletion with keeping → conflict)
+BROKEN: this should result in conflict
+
+  $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge          'desc("merge-deleting-the-file-from-updated")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ ls -1
+  other-file
