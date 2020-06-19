@@ -853,3 +853,76 @@ Note:
   |
   o  0 i-0 initial commit: a b h
   
+
+
+Comparing with merging with a deletion (and keeping the file)
+-------------------------------------------------------------
+
+Merge:
+- one removing a file (d)
+- one updating that file
+- the merge keep the modified version of the file (canceling the delete)
+
+In this case, the file keep on living after the merge. So we should not drop its
+copy tracing chain.
+
+  $ hg up 'desc("c-1")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("g-1")'
+  file 'd' was deleted in local [working copy] but was modified in other [merge rev].
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg resolve -t :other d
+  (no more unresolved files)
+  $ hg ci -m "mCGm-0"
+  created new head
+
+  $ hg up 'desc("g-1")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("c-1")'
+  file 'd' was deleted in other [merge rev] but was modified in local [working copy].
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg resolve -t :local d
+  (no more unresolved files)
+  $ hg ci -m "mGCm-0"
+  created new head
+
+  $ hg log -G --rev '::(desc("mCGm")+desc("mGCm"))'
+  @    31 mGCm-0
+  |\
+  +---o  30 mCGm-0
+  | |/
+  | o  25 g-1: update d
+  | |
+  o |  6 c-1 delete d
+  |/
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
+
+BROKEN: 'a' should be the the source of 'd' in the changeset centric algorithm too
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCGm-0")'
+  A d
+    a (filelog !)
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGCm-0")'
+  A d
+    a (filelog !)
+  R a
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCGm-0")'
+  A d
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mGCm-0")'
+  A d
+  $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mCGm-0")'
+  $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mGCm-0")'
