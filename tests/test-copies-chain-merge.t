@@ -926,3 +926,71 @@ BROKEN: 'a' should be the the source of 'd' in the changeset centric algorithm t
   A d
   $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mCGm-0")'
   $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mGCm-0")'
+
+
+Comparing with merge restoring an untouched deleted file
+--------------------------------------------------------
+
+Merge:
+- one removing a file (d)
+- one leaving the file untouched
+- the merge actively restore the file to the same content.
+
+In this case, the file keep on living after the merge. So we should not drop its
+copy tracing chain.
+
+  $ hg up 'desc("c-1")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("b-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg revert --rev 'desc("b-1")' d
+  $ hg ci -m "mCB-revert-m-0"
+  created new head
+
+  $ hg up 'desc("b-1")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("c-1")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg revert --rev 'desc("b-1")' d
+  $ hg ci -m "mBC-revert-m-0"
+  created new head
+
+  $ hg log -G --rev '::(desc("mCB-revert-m")+desc("mBC-revert-m"))'
+  @    33 mBC-revert-m-0
+  |\
+  +---o  32 mCB-revert-m-0
+  | |/
+  | o  6 c-1 delete d
+  | |
+  o |  5 b-1: b update
+  |/
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
+
+BROKEN: 'a' should be the the source of 'd' in the changeset centric algorithm too
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB-revert-m-0")'
+  M b
+  A d
+    a (filelog !)
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-revert-m-0")'
+  M b
+  A d
+    a (filelog !)
+  R a
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCB-revert-m-0")'
+  M b
+  A d
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mBC-revert-m-0")'
+  M b
+  A d
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mCB-revert-m-0")'
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBC-revert-m-0")'
+
