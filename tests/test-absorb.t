@@ -97,7 +97,7 @@ Delete a few lines and related commits will be removed if they will be empty:
   84e5416 commit 5
   ff5d556 commit 3
   f548282 commit 1
-  apply changes (yn)?  y
+  apply changes (y/N)?  y
   saved backup bundle to * (glob)
   3 of 3 chunk(s) applied
   $ hg annotate a
