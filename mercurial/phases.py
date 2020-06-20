@@ -601,10 +601,10 @@ class phasecache(object):
             # retracted.
             minnewroot = min(newroots)
             aboveroots = [rev for rev in currentroots if rev >= minnewroot]
-            updatedroots = repo.set(b'roots(%ld::)', aboveroots)
+            updatedroots = repo.revs(b'roots(%ld::)', aboveroots)
 
             finalroots = {rev for rev in currentroots if rev < minnewroot}
-            finalroots.update(ctx.rev() for ctx in updatedroots)
+            finalroots.update(updatedroots)
         if finalroots != oldroots:
             self._updateroots(
                 targetphase, {tonode(rev) for rev in finalroots}, tr
