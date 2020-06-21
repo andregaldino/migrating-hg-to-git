@@ -551,3 +551,88 @@ Test clone bundle retrieved through bundle2
   searching for changes
   no changes found
   2 local changesets published
+  $ killdaemons.py
+
+A manifest with a gzip bundle requiring too much memory for a 16MB system and working
+on a 32MB system.
+
+  $ "$PYTHON" $TESTDIR/dumbhttp.py -p $HGPORT1 --pid http.pid
+  $ cat http.pid >> $DAEMON_PIDS
+  $ hg -R server serve -d -p $HGPORT --pid-file hg.pid --accesslog access.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ cat > server/.hg/clonebundles.manifest << EOF
+  > http://localhost:$HGPORT1/gz-a.hg BUNDLESPEC=gzip-v2 REQUIREDRAM=12MB
+  > EOF
+
+  $ hg clone -U --debug --config ui.available-memory=16MB http://localhost:$HGPORT gzip-too-large
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  sending clonebundles command
+  filtering http://localhost:$HGPORT1/gz-a.hg as it needs more than 2/3 of system memory
+  no compatible clone bundles available on server; falling back to regular clone
+  (you may want to report this to the server operator)
+  query 1; heads
+  sending batch command
+  requesting all changes
+  sending getbundle command
+  bundle2-input-bundle: with-transaction
+  bundle2-input-part: "changegroup" (params: 1 mandatory 1 advisory) supported
+  adding changesets
+  add changeset 53245c60e682
+  add changeset aaff8d2ffbbf
+  adding manifests
+  adding file changes
+  adding bar revisions
+  adding foo revisions
+  bundle2-input-part: total payload size 920
+  bundle2-input-part: "listkeys" (params: 1 mandatory) supported
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
+  bundle2-input-part: total payload size 59
+  bundle2-input-bundle: 4 parts total
+  checking for updated bookmarks
+  updating the branch cache
+  added 2 changesets with 2 changes to 2 files
+  new changesets 53245c60e682:aaff8d2ffbbf
+  calling hook changegroup.lfiles: hgext.largefiles.reposetup.checkrequireslfiles
+  (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+  $ hg clone -U --debug --config ui.available-memory=32MB http://localhost:$HGPORT gzip-too-large2
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  sending clonebundles command
+  applying clone bundle from http://localhost:$HGPORT1/gz-a.hg
+  bundle2-input-bundle: 1 params with-transaction
+  bundle2-input-part: "changegroup" (params: 1 mandatory 1 advisory) supported
+  adding changesets
+  add changeset 53245c60e682
+  add changeset aaff8d2ffbbf
+  adding manifests
+  adding file changes
+  adding bar revisions
+  adding foo revisions
+  bundle2-input-part: total payload size 920
+  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
+  bundle2-input-part: total payload size 59
+  bundle2-input-bundle: 2 parts total
+  updating the branch cache
+  added 2 changesets with 2 changes to 2 files
+  finished applying clone bundle
+  query 1; heads
+  sending batch command
+  searching for changes
+  all remote heads known locally
+  no changes found
+  sending getbundle command
+  bundle2-input-bundle: with-transaction
+  bundle2-input-part: "listkeys" (params: 1 mandatory) supported
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-bundle: 2 parts total
+  checking for updated bookmarks
+  2 local changesets published
+  calling hook changegroup.lfiles: hgext.largefiles.reposetup.checkrequireslfiles
+  (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)
+  $ killdaemons.py

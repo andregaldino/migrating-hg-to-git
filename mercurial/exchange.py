@@ -3025,6 +3025,23 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
             )
             continue
 
+        if b'REQUIREDRAM' in entry:
+            try:
+                requiredram = util.sizetoint(entry[b'REQUIREDRAM'])
+            except error.ParseError:
+                repo.ui.debug(
+                    b'filtering %s due to a bad REQUIREDRAM attribute\n'
+                    % entry[b'URL']
+                )
+                continue
+            actualram = repo.ui.estimatememory()
+            if actualram is not None and actualram * 0.66 < requiredram:
+                repo.ui.debug(
+                    b'filtering %s as it needs more than 2/3 of system memory\n'
+                    % entry[b'URL']
+                )
+                continue
+
         newentries.append(entry)
 
     return newentries

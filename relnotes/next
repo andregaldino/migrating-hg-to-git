@@ -1,5 +1,9 @@
 == New Features ==
 
+ * clonebundles can be annotated with the expected memory requirements
+   using the `REQUIREDRAM` option. This allows clients to skip
+   bundles created with large zstd windows and fallback to larger, but
+   less demanding bundles.
 
 == New Experimental Features ==
 
