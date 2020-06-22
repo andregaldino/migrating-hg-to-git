@@ -1,3 +1,5 @@
+mod commands;
+mod error;
 mod exitcode;
 
 fn main() {
