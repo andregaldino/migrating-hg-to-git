@@ -1595,7 +1595,7 @@ class TTest(Test):
             casepath = b'#'.join(case)
             self.name = '%s#%s' % (self.name, _bytes2sys(casepath))
             self.errpath = b'%s#%s.err' % (self.errpath[:-4], casepath)
-            self._tmpname += b'-%s' % casepath
+            self._tmpname += b'-%s' % casepath.replace(b'#', b'-')
         self._have = {}
 
     @property
