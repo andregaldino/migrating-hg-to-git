@@ -496,16 +496,17 @@ should be propagated to y.
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
-BROKEN: should be "modified"
+This should ideally be "modified", but we will probably not be able to fix
+that in the filelog case.
   $ cat y
   original
 #else
   $ hg merge 2
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  merging x and y to y
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-BROKEN: should be "modified"
   $ cat y
-  original
+  modified
 #endif
 Same as above, but in the opposite direction
 #if filelog
@@ -523,11 +524,11 @@ BROKEN: should be "modified"
 #else
   $ hg co -qC 2
   $ hg merge 3
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  merging y and x to y
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-BROKEN: should be "modified"
   $ cat y
-  original
+  modified
 #endif
 
 Create x and y, then rename x to z on one side of merge, and rename y to z and

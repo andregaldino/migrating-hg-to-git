@@ -817,6 +817,22 @@ def manifestmerge(
                     args = (f, f, None, False, pa.node())
                     msg = b'both created'
                 mresult.addfile(f, mergestatemod.ACTION_MERGE, args, msg)
+            elif f in branch_copies1.copy:
+                fa = branch_copies1.copy[f]
+                mresult.addfile(
+                    f,
+                    mergestatemod.ACTION_MERGE,
+                    (f, fa, fa, False, pa.node()),
+                    b'local replaced from %s' % fa,
+                )
+            elif f in branch_copies2.copy:
+                fa = branch_copies2.copy[f]
+                mresult.addfile(
+                    f,
+                    mergestatemod.ACTION_MERGE,
+                    (fa, f, fa, False, pa.node()),
+                    b'other replaced from %s' % fa,
+                )
             else:
                 a = ma[f]
                 fla = ma.flags(f)
