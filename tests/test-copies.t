@@ -462,6 +462,73 @@ Try merging the other direction too
   $ hg debugpathcopies 0 5
   x -> z
 
+Create x and y, then remove y and rename x to y on one side of merge, and
+modify x on the other side. The modification to x from the second side
+should be propagated to y.
+  $ newrepo
+  $ echo original > x
+  $ hg add x
+  $ echo unrelated > y
+  $ hg add y
+  $ hg commit -m 'add x and y'
+  $ hg remove y
+  $ hg commit -m 'remove y'
+  $ hg rename x y
+  $ hg commit -m 'rename x to y'
+  $ hg checkout -q 0
+  $ echo modified > x
+  $ hg commit -m 'modify x'
+  created new head
+  $ hg l
+  @  3 modify x
+  |  x
+  | o  2 rename x to y
+  | |  x y
+  | o  1 remove y
+  |/   y
+  o  0 add x and y
+     x y
+#if filelog
+  $ hg merge 2
+  file 'x' was deleted in other [merge rev] but was modified in local [working copy].
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
+  1 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+BROKEN: should be "modified"
+  $ cat y
+  original
+#else
+  $ hg merge 2
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+BROKEN: should be "modified"
+  $ cat y
+  original
+#endif
+Same as above, but in the opposite direction
+#if filelog
+  $ hg co -qC 2
+  $ hg merge 3
+  file 'x' was deleted in local [working copy] but was modified in other [merge rev].
+  You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
+  What do you want to do? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+BROKEN: should be "modified"
+  $ cat y
+  original
+#else
+  $ hg co -qC 2
+  $ hg merge 3
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+BROKEN: should be "modified"
+  $ cat y
+  original
+#endif
 
 Create x and y, then rename x to z on one side of merge, and rename y to z and
 then delete z on the other side.
