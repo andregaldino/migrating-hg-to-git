@@ -232,7 +232,7 @@ static void execcmdserver(const struct cmdserveropts *opts)
 			abortmsgerrno("failed to putenv CHG_CLEAR_LC_CTYPE");
 	} else {
 		if (setenv("CHGORIG_LC_CTYPE", lc_ctype_env, 1) != 0) {
-			abortmsgerrno("failed to setenv CHGORIG_LC_CTYYPE");
+			abortmsgerrno("failed to setenv CHGORIG_LC_CTYPE");
 		}
 	}
 
