@@ -1,3 +1,4 @@
+mod dirstate_status;
 mod find_root;
 pub use find_root::{FindRoot, FindRootError, FindRootErrorKind};
 

@@ -13,6 +13,7 @@ use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
     filepatterns::PatternFileWarning,
     matchers::{get_ignore_function, Matcher, VisitChildrenSet},
+    operations::Operation,
     utils::{
         files::{find_dirs, HgMetadata},
         hg_path::{
@@ -101,7 +102,7 @@ type IgnoreFnType<'a> = Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
 
 /// We have a good mix of owned (from directory traversal) and borrowed (from
 /// the dirstate/explicit) paths, this comes up a lot.
-type HgPathCow<'a> = Cow<'a, HgPath>;
+pub type HgPathCow<'a> = Cow<'a, HgPath>;
 
 /// A path with its computed ``Dispatch`` information
 type DispatchedPath<'a> = (HgPathCow<'a>, Dispatch);
@@ -294,9 +295,9 @@ impl ToString for StatusError {
 /// and how, compared to the revision we're based on
 pub struct Status<'a, M: Matcher + Sync> {
     dmap: &'a DirstateMap,
-    matcher: &'a M,
+    pub(crate) matcher: &'a M,
     root_dir: PathBuf,
-    options: StatusOptions,
+    pub(crate) options: StatusOptions,
     ignore_fn: IgnoreFnType<'a>,
 }
 
@@ -708,7 +709,7 @@ where
     /// This takes a mutable reference to the results to account for the
     /// `extend` in timings
     #[timed]
-    fn handle_unknowns(
+    pub fn handle_unknowns(
         &self,
         results: &mut Vec<DispatchedPath<'a>>,
     ) -> IoResult<()> {
@@ -787,7 +788,7 @@ where
     /// This takes a mutable reference to the results to account for the
     /// `extend` in timings
     #[timed]
-    fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
+    pub fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
         results.par_extend(self.dmap.par_iter().flat_map(
             move |(filename, entry)| {
                 let filename: &HgPath = filename;
@@ -837,7 +838,7 @@ where
 }
 
 #[timed]
-fn build_response<'a>(
+pub fn build_response<'a>(
     results: impl IntoIterator<Item = DispatchedPath<'a>>,
     traversed: Vec<HgPathBuf>,
 ) -> (Vec<HgPathCow<'a>>, DirstateStatus<'a>) {
@@ -899,56 +900,8 @@ pub fn status<'a>(
     (Vec<HgPathCow<'a>>, DirstateStatus<'a>),
     Vec<PatternFileWarning>,
 )> {
-    let (traversed_sender, traversed_receiver) =
-        crossbeam::channel::unbounded();
-    let (st, warnings) =
+    let (status, warnings) =
         Status::new(dmap, matcher, root_dir, ignore_files, options)?;
 
-    // Step 1: check the files explicitly mentioned by the user
-    let (work, mut results) = st.walk_explicit(traversed_sender.clone());
-
-    if !work.is_empty() {
-        // Hashmaps are quite a bit slower to build than vecs, so only build it
-        // if needed.
-        let old_results = results.iter().cloned().collect();
-
-        // Step 2: recursively check the working directory for changes if
-        // needed
-        for (dir, dispatch) in work {
-            match dispatch {
-                Dispatch::Directory { was_file } => {
-                    if was_file {
-                        results.push((dir.to_owned(), Dispatch::Removed));
-                    }
-                    if options.list_ignored
-                        || options.list_unknown && !st.dir_ignore(&dir)
-                    {
-                        st.traverse(
-                            &dir,
-                            &old_results,
-                            &mut results,
-                            traversed_sender.clone(),
-                        )?;
-                    }
-                }
-                _ => unreachable!("There can only be directories in `work`"),
-            }
-        }
-    }
-
-    if !matcher.is_exact() {
-        if options.list_unknown {
-            st.handle_unknowns(&mut results)?;
-        } else {
-            // TODO this is incorrect, see issue6335
-            // This requires a fix in both Python and Rust that can happen
-            // with other pending changes to `status`.
-            st.extend_from_dmap(&mut results);
-        }
-    }
-
-    drop(traversed_sender);
-    let traversed = traversed_receiver.into_iter().collect();
-
-    Ok((build_response(results, traversed), warnings))
+    Ok((status.run()?, warnings))
 }
