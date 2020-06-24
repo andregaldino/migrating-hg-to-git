@@ -69,7 +69,7 @@ pub enum BadMatch {
     BadType(BadType),
 }
 
-/// Marker enum used to dispatch new status entries into the right collections.
+/// Enum used to dispatch new status entries into the right collections.
 /// Is similar to `crate::EntryState`, but represents the transient state of
 /// entries during the lifetime of a command.
 #[derive(Debug, Copy, Clone)]
@@ -94,9 +94,17 @@ pub enum Dispatch {
 }
 
 type IoResult<T> = std::io::Result<T>;
+
 /// `Box<dyn Trait>` is syntactic sugar for `Box<dyn Trait, 'static>`, so add
 /// an explicit lifetime here to not fight `'static` bounds "out of nowhere".
 type IgnoreFnType<'a> = Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
+
+/// We have a good mix of owned (from directory traversal) and borrowed (from
+/// the dirstate/explicit) paths, this comes up a lot.
+type HgPathCow<'a> = Cow<'a, HgPath>;
+
+/// A path with its computed ``Dispatch`` information
+type DispatchedPath<'a> = (HgPathCow<'a>, Dispatch);
 
 /// Dates and times that are outside the 31-bit signed range are compared
 /// modulo 2^31. This should prevent hg from behaving badly with very large
@@ -232,22 +240,25 @@ pub struct StatusOptions {
 
 #[derive(Debug)]
 pub struct DirstateStatus<'a> {
-    pub modified: Vec<Cow<'a, HgPath>>,
-    pub added: Vec<Cow<'a, HgPath>>,
-    pub removed: Vec<Cow<'a, HgPath>>,
-    pub deleted: Vec<Cow<'a, HgPath>>,
-    pub clean: Vec<Cow<'a, HgPath>>,
-    pub ignored: Vec<Cow<'a, HgPath>>,
-    pub unknown: Vec<Cow<'a, HgPath>>,
-    pub bad: Vec<(Cow<'a, HgPath>, BadMatch)>,
+    pub modified: Vec<HgPathCow<'a>>,
+    pub added: Vec<HgPathCow<'a>>,
+    pub removed: Vec<HgPathCow<'a>>,
+    pub deleted: Vec<HgPathCow<'a>>,
+    pub clean: Vec<HgPathCow<'a>>,
+    pub ignored: Vec<HgPathCow<'a>>,
+    pub unknown: Vec<HgPathCow<'a>>,
+    pub bad: Vec<(HgPathCow<'a>, BadMatch)>,
     /// Only filled if `collect_traversed_dirs` is `true`
     pub traversed: Vec<HgPathBuf>,
 }
 
 #[derive(Debug)]
 pub enum StatusError {
+    /// Generic IO error
     IO(std::io::Error),
+    /// An invalid path that cannot be represented in Mercurial was found
     Path(HgPathError),
+    /// An invalid "ignore" pattern was found
     Pattern(PatternError),
 }
 
@@ -279,6 +290,8 @@ impl ToString for StatusError {
     }
 }
 
+/// Gives information about which files are changed in the working directory
+/// and how, compared to the revision we're based on
 pub struct Status<'a, M: Matcher + Sync> {
     dmap: &'a DirstateMap,
     matcher: &'a M,
@@ -319,6 +332,7 @@ where
         ))
     }
 
+    /// Is the path ignored?
     pub fn is_ignored(&self, path: impl AsRef<HgPath>) -> bool {
         (self.ignore_fn)(path.as_ref())
     }
@@ -342,16 +356,15 @@ where
         }
     }
 
-    /// Get stat data about the files explicitly specified by match.
+    /// Get stat data about the files explicitly specified by the matcher.
+    /// Returns a tuple of the directories that need to be traversed and the
+    /// files with their corresponding `Dispatch`.
     /// TODO subrepos
     #[timed]
     pub fn walk_explicit(
         &self,
         traversed_sender: crossbeam::Sender<HgPathBuf>,
-    ) -> (
-        Vec<(Cow<'a, HgPath>, Dispatch)>,
-        Vec<(Cow<'a, HgPath>, Dispatch)>,
-    ) {
+    ) -> (Vec<DispatchedPath<'a>>, Vec<DispatchedPath<'a>>) {
         self.matcher
             .file_set()
             .unwrap_or(&DEFAULT_WORK)
@@ -443,8 +456,8 @@ where
     pub fn traverse(
         &self,
         path: impl AsRef<HgPath>,
-        old_results: &FastHashMap<Cow<'a, HgPath>, Dispatch>,
-        results: &mut Vec<(Cow<'a, HgPath>, Dispatch)>,
+        old_results: &FastHashMap<HgPathCow<'a>, Dispatch>,
+        results: &mut Vec<DispatchedPath<'a>>,
         traversed_sender: crossbeam::Sender<HgPathBuf>,
     ) -> IoResult<()> {
         // The traversal is done in parallel, so use a channel to gather
@@ -637,23 +650,25 @@ where
 
         let skip_dot_hg = !directory.as_bytes().is_empty();
         let entries = match list_directory(dir_path, skip_dot_hg) {
-            Err(e) => match e.kind() {
-                ErrorKind::NotFound | ErrorKind::PermissionDenied => {
-                    files_sender
-                        .send(Ok((
-                            directory.to_owned(),
-                            Dispatch::Bad(BadMatch::OsError(
-                                // Unwrapping here is OK because the error
-                                // always is a
-                                // real os error
-                                e.raw_os_error().unwrap(),
-                            )),
-                        )))
-                        .unwrap();
-                    return Ok(());
-                }
-                _ => return Err(e),
-            },
+            Err(e) => {
+                return match e.kind() {
+                    ErrorKind::NotFound | ErrorKind::PermissionDenied => {
+                        files_sender
+                            .send(Ok((
+                                directory.to_owned(),
+                                Dispatch::Bad(BadMatch::OsError(
+                                    // Unwrapping here is OK because the error
+                                    // always is a
+                                    // real os error
+                                    e.raw_os_error().unwrap(),
+                                )),
+                            )))
+                            .expect("receiver should outlive sender");
+                        Ok(())
+                    }
+                    _ => Err(e),
+                };
+            }
             Ok(entries) => entries,
         };
 
@@ -686,12 +701,16 @@ where
         })
     }
 
+    /// Checks all files that are in the dirstate but were not found during the
+    /// working directory traversal. This means that the rest must
+    /// be either ignored, under a symlink or under a new nested repo.
+    ///
     /// This takes a mutable reference to the results to account for the
     /// `extend` in timings
     #[timed]
     fn handle_unknowns(
         &self,
-        results: &mut Vec<(Cow<'a, HgPath>, Dispatch)>,
+        results: &mut Vec<DispatchedPath<'a>>,
     ) -> IoResult<()> {
         let to_visit: Vec<(&HgPath, &DirstateEntry)> =
             if results.is_empty() && self.matcher.matches_everything() {
@@ -714,9 +733,6 @@ where
                     .collect()
             };
 
-        // We walked all dirs under the roots that weren't ignored, and
-        // everything that matched was stat'ed and is already in results.
-        // The rest must thus be ignored or under a symlink.
         let path_auditor = PathAuditor::new(&self.root_dir);
 
         // TODO don't collect. Find a way of replicating the behavior of
@@ -766,13 +782,12 @@ where
         Ok(())
     }
 
+    /// Add the files in the dirstate to the results.
+    ///
     /// This takes a mutable reference to the results to account for the
     /// `extend` in timings
     #[timed]
-    fn extend_from_dmap(
-        &self,
-        results: &mut Vec<(Cow<'a, HgPath>, Dispatch)>,
-    ) {
+    fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
         results.par_extend(self.dmap.par_iter().flat_map(
             move |(filename, entry)| {
                 let filename: &HgPath = filename;
@@ -823,9 +838,9 @@ where
 
 #[timed]
 fn build_response<'a>(
-    results: impl IntoIterator<Item = (Cow<'a, HgPath>, Dispatch)>,
+    results: impl IntoIterator<Item = DispatchedPath<'a>>,
     traversed: Vec<HgPathBuf>,
-) -> (Vec<Cow<'a, HgPath>>, DirstateStatus<'a>) {
+) -> (Vec<HgPathCow<'a>>, DirstateStatus<'a>) {
     let mut lookup = vec![];
     let mut modified = vec![];
     let mut added = vec![];
@@ -881,7 +896,7 @@ pub fn status<'a>(
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,
 ) -> StatusResult<(
-    (Vec<Cow<'a, HgPath>>, DirstateStatus<'a>),
+    (Vec<HgPathCow<'a>>, DirstateStatus<'a>),
     Vec<PatternFileWarning>,
 )> {
     let (traversed_sender, traversed_receiver) =
@@ -922,16 +937,12 @@ pub fn status<'a>(
     }
 
     if !matcher.is_exact() {
-        // Step 3: Check the remaining files from the dmap.
-        // If a dmap file is not in results yet, it was either
-        // a) not matched b) ignored, c) missing, or d) under a
-        // symlink directory.
-
         if options.list_unknown {
             st.handle_unknowns(&mut results)?;
         } else {
-            // We may not have walked the full directory tree above, so stat
-            // and check everything we missed.
+            // TODO this is incorrect, see issue6335
+            // This requires a fix in both Python and Rust that can happen
+            // with other pending changes to `status`.
             st.extend_from_dmap(&mut results);
         }
     }
