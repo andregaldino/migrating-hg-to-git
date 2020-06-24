@@ -127,7 +127,7 @@ pub fn status_wrapper(
             let ((lookup, status_res), warnings) = status(
                 &dmap,
                 &matcher,
-                &root_dir,
+                root_dir.to_path_buf(),
                 ignore_files,
                 StatusOptions {
                     check_exec,
@@ -164,7 +164,7 @@ pub fn status_wrapper(
             let ((lookup, status_res), warnings) = status(
                 &dmap,
                 &matcher,
-                &root_dir,
+                root_dir.to_path_buf(),
                 ignore_files,
                 StatusOptions {
                     check_exec,
@@ -219,7 +219,7 @@ pub fn status_wrapper(
             let ((lookup, status_res), warnings) = status(
                 &dmap,
                 &matcher,
-                &root_dir,
+                root_dir.to_path_buf(),
                 ignore_files,
                 StatusOptions {
                     check_exec,
