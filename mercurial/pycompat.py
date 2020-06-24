@@ -178,9 +178,16 @@ if ispy3:
         if os.name == r'nt':
             sysargv = [a.encode("mbcs", "ignore") for a in sys.argv]
         else:
+
+            def getdefaultlocale_if_known():
+                try:
+                    return locale.getdefaultlocale()
+                except ValueError:
+                    return None, None
+
             encoding = (
                 locale.getlocale()[1]
-                or locale.getdefaultlocale()[1]
+                or getdefaultlocale_if_known()[1]
                 or sys.getfilesystemencoding()
             )
             sysargv = [a.encode(encoding, "surrogateescape") for a in sys.argv]
