@@ -108,6 +108,7 @@ def supporteddestrequirements(repo):
         requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
+        requirements.SHARESAFE_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]

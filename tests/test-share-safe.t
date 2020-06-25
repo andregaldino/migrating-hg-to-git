@@ -167,6 +167,38 @@ Test that if share source config is untrusted, we dont read it
   $ hg showconfig hooks --config extensions.untrusted=$TESTTMP/untrusted.py
   [1]
 
+Update the source repository format and check that shared repo works
+
+  $ cd ../source
+  $ echo "[format]" >> .hg/hgrc
+  $ echo "revlog-compression=zstd" >> .hg/hgrc
+
+  $ hg debugupgraderepo --run -q -R ../shared1
+  abort: cannot upgrade repository; unsupported source requirement: shared
+  [255]
+
+  $ hg debugupgraderepo --run -q
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlogv1, sparserevlog, store
+     added: revlog-compression-zstd
+  
+  $ hg log -r .
+  changeset:   1:5f6d8a4bf34a
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     added b
+  
+Shared one should work
+  $ cd ../shared1
+  $ hg log -r .
+  changeset:   2:155349b645be
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     added c
+  
 Unsharing works
 
   $ hg unshare
