@@ -4613,7 +4613,8 @@ def log(ui, repo, *pats, **opts):
 
     With --graph the revisions are shown as an ASCII art DAG with the most
     recent changeset at the top.
-    'o' is a changeset, '@' is a working directory parent, '_' closes a branch,
+    'o' is a changeset, '@' is a working directory parent, '%' is a changeset
+    involved in an unresolved merge conflict, '_' closes a branch,
     'x' is obsolete, '*' is unstable, and '+' represents a fork where the
     changeset from the lines below is a parent of the 'o' merge on the same
     line.

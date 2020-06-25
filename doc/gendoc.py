@@ -40,6 +40,7 @@ from mercurial.i18n import (
     gettext,
     _,
 )
+from mercurial.utils import stringutil
 
 table = commands.table
 globalopts = commands.globalopts
@@ -85,7 +86,9 @@ def get_opts(opts):
         if b'\n' in desc:
             # only remove line breaks and indentation
             desc = b' '.join(l.lstrip() for l in desc.split(b'\n'))
-        desc += default and _(b" (default: %s)") % bytes(default) or b""
+        if default:
+            default = stringutil.forcebytestr(default)
+            desc += _(b" (default: %s)") % default
         yield (b", ".join(allopts), desc)
 
 

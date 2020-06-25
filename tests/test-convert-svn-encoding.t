@@ -152,3 +152,23 @@ Check tags are in UTF-8
   f7e66f98380ed1e53a797c5c7a7a2616a7ab377d branch\xc3\xa9 (esc)
 
   $ cd ..
+
+#if py3
+For now, on Python 3, we abort when encountering non-UTF-8 percent-encoded
+bytes in a filename.
+
+  $ hg convert file:///%ff test
+  initializing destination test repository
+  on Python 3, we currently do not support non-UTF-8 percent-encoded bytes in file URLs for Subversion repositories
+  file:///%ff does not look like a CVS checkout
+  $TESTTMP/file:/%ff does not look like a Git repository
+  file:///%ff does not look like a Subversion repository
+  file:///%ff is not a local Mercurial repository
+  file:///%ff does not look like a darcs repository
+  file:///%ff does not look like a monotone repository
+  file:///%ff does not look like a GNU Arch repository
+  file:///%ff does not look like a Bazaar repository
+  file:///%ff does not look like a P4 repository
+  abort: file:///%ff: missing or unsupported repository
+  [255]
+#endif

@@ -55,7 +55,7 @@ try:
     import warnings
 
     warnings.filterwarnings(
-        b'ignore', module=b'svn.core', category=DeprecationWarning
+        'ignore', module='svn.core', category=DeprecationWarning
     )
     svn.core.SubversionException  # trigger import to catch error
 
@@ -321,7 +321,26 @@ def issvnurl(ui, url):
                 and path[2:6].lower() == b'%3a/'
             ):
                 path = path[:2] + b':/' + path[6:]
-            path = urlreq.url2pathname(path)
+            # pycompat.fsdecode() / pycompat.fsencode() are used so that bytes
+            # in the URL roundtrip correctly on Unix. urlreq.url2pathname() on
+            # py3 will decode percent-encoded bytes using the utf-8 encoding
+            # and the "replace" error handler. This means that it will not
+            # preserve non-UTF-8 bytes (https://bugs.python.org/issue40983).
+            # url.open() uses the reverse function (urlreq.pathname2url()) and
+            # has a similar problem
+            # (https://bz.mercurial-scm.org/show_bug.cgi?id=6357). It makes
+            # sense to solve both problems together and handle all file URLs
+            # consistently. For now, we warn.
+            unicodepath = urlreq.url2pathname(pycompat.fsdecode(path))
+            if pycompat.ispy3 and u'\N{REPLACEMENT CHARACTER}' in unicodepath:
+                ui.warn(
+                    _(
+                        b'on Python 3, we currently do not support non-UTF-8 '
+                        b'percent-encoded bytes in file URLs for Subversion '
+                        b'repositories\n'
+                    )
+                )
+            path = pycompat.fsencode(unicodepath)
     except ValueError:
         proto = b'file'
         path = os.path.abspath(url)
@@ -516,7 +535,9 @@ class svn_source(converter_source):
                         % (name, path)
                     )
                 return None
-            self.ui.note(_(b'found %s at %r\n') % (name, path))
+            self.ui.note(
+                _(b'found %s at %r\n') % (name, pycompat.bytestr(path))
+            )
             return path
 
         rev = optrev(self.last_changed)
@@ -597,7 +618,7 @@ class svn_source(converter_source):
             self.removed = set()
 
         files.sort()
-        files = zip(files, [rev] * len(files))
+        files = pycompat.ziplist(files, [rev] * len(files))
         return (files, copies)
 
     def getchanges(self, rev, full):
@@ -641,9 +662,9 @@ class svn_source(converter_source):
     def checkrevformat(self, revstr, mapname=b'splicemap'):
         """ fails if revision format does not match the correct format"""
         if not re.match(
-            r'svn:[0-9a-f]{8,8}-[0-9a-f]{4,4}-'
-            r'[0-9a-f]{4,4}-[0-9a-f]{4,4}-[0-9a-f]'
-            r'{12,12}(.*)@[0-9]+$',
+            br'svn:[0-9a-f]{8,8}-[0-9a-f]{4,4}-'
+            br'[0-9a-f]{4,4}-[0-9a-f]{4,4}-[0-9a-f]'
+            br'{12,12}(.*)@[0-9]+$',
             revstr,
         ):
             raise error.Abort(
@@ -773,7 +794,7 @@ class svn_source(converter_source):
         self.convertfp.flush()
 
     def revid(self, revnum, module=None):
-        return b'svn:%s%s@%s' % (self.uuid, module or self.module, revnum)
+        return b'svn:%s%s@%d' % (self.uuid, module or self.module, revnum)
 
     def revnum(self, rev):
         return int(rev.split(b'@')[-1])
@@ -796,7 +817,7 @@ class svn_source(converter_source):
                         # We do not know the latest changed revision,
                         # keep the first one with changed paths.
                         break
-                    if revnum <= stop:
+                    if stop is not None and revnum <= stop:
                         break
 
                     for p in paths:
@@ -898,12 +919,12 @@ class svn_source(converter_source):
                 if not copyfrom_path:
                     continue
                 self.ui.debug(
-                    b"copied to %s from %s@%s\n"
+                    b"copied to %s from %s@%d\n"
                     % (entrypath, copyfrom_path, ent.copyfrom_rev)
                 )
                 copies[self.recode(entrypath)] = self.recode(copyfrom_path)
             elif kind == 0:  # gone, but had better be a deleted *file*
-                self.ui.debug(b"gone from %s\n" % ent.copyfrom_rev)
+                self.ui.debug(b"gone from %d\n" % ent.copyfrom_rev)
                 pmodule, prevnum = revsplit(parents[0])[1:]
                 parentpath = pmodule + b"/" + entrypath
                 fromkind = self._checkpath(entrypath, prevnum, pmodule)
@@ -1189,7 +1210,10 @@ class svn_source(converter_source):
                 return relative
 
         # The path is outside our tracked tree...
-        self.ui.debug(b'%r is not under %r, ignoring\n' % (path, module))
+        self.ui.debug(
+            b'%r is not under %r, ignoring\n'
+            % (pycompat.bytestr(path), pycompat.bytestr(module))
+        )
         return None
 
     def _checkpath(self, path, revnum, module=None):

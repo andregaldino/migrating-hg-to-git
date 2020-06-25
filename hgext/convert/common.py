@@ -84,10 +84,18 @@ def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
     return l
 
 
+if pycompat.ispy3:
+    base64_encodebytes = base64.encodebytes
+    base64_decodebytes = base64.decodebytes
+else:
+    base64_encodebytes = base64.encodestring
+    base64_decodebytes = base64.decodestring
+
+
 def encodeargs(args):
     def encodearg(s):
-        lines = base64.encodestring(s)
-        lines = [l.splitlines()[0] for l in lines]
+        lines = base64_encodebytes(s)
+        lines = [l.splitlines()[0] for l in pycompat.iterbytestr(lines)]
         return b''.join(lines)
 
     s = pickle.dumps(args)
@@ -95,7 +103,7 @@ def encodeargs(args):
 
 
 def decodeargs(s):
-    s = base64.decodestring(s)
+    s = base64_decodebytes(s)
     return pickle.loads(s)
 
 
