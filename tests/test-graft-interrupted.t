@@ -249,7 +249,7 @@ Testing the --stop flag of `hg graft` which stops the interrupted graft
   [1]
 
   $ hg graft --stop --continue
-  abort: cannot use '--continue' and '--stop' together
+  abort: cannot specify both --stop and --continue
   [255]
 
   $ hg graft --stop -U
@@ -355,11 +355,11 @@ when stripping is required
   [1]
 
   $ hg graft --continue --abort
-  abort: cannot use '--continue' and '--abort' together
+  abort: cannot specify both --abort and --continue
   [255]
 
   $ hg graft --abort --stop
-  abort: cannot use '--abort' and '--stop' together
+  abort: cannot specify both --abort and --stop
   [255]
 
   $ hg graft --abort --currentuser

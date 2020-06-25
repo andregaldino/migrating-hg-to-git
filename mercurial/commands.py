@@ -2982,6 +2982,8 @@ def _dograft(ui, repo, *revs, **opts):
         editform=b'graft', **pycompat.strkwargs(opts)
     )
 
+    cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
+
     cont = False
     if opts.get(b'no_commit'):
         if opts.get(b'edit'):
@@ -3004,13 +3006,6 @@ def _dograft(ui, repo, *revs, **opts):
     graftstate = statemod.cmdstate(repo, b'graftstate')
 
     if opts.get(b'stop'):
-        if opts.get(b'continue'):
-            raise error.Abort(
-                _(b"cannot use '--continue' and '--stop' together")
-            )
-        if opts.get(b'abort'):
-            raise error.Abort(_(b"cannot use '--abort' and '--stop' together"))
-
         if any(
             (
                 opts.get(b'edit'),
@@ -3025,10 +3020,6 @@ def _dograft(ui, repo, *revs, **opts):
             raise error.Abort(_(b"cannot specify any other flag with '--stop'"))
         return _stopgraft(ui, repo, graftstate)
     elif opts.get(b'abort'):
-        if opts.get(b'continue'):
-            raise error.Abort(
-                _(b"cannot use '--continue' and '--abort' together")
-            )
         if any(
             (
                 opts.get(b'edit'),
