@@ -407,7 +407,7 @@ actually serving file content
   $ sleep 1
   $ echo >> repo/f1
   $ echo >> repo/f2
-  $ hg -R repo ci -m "1"
+  $ hg -R repo ci -m "1" 2>/dev/null
   $ wait
   $ hg -R clone id
   000000000000
