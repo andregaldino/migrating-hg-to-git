@@ -1572,7 +1572,11 @@ def update(
                     ),
                 )
             )
-    with repo.wlock():
+    if wc is not None and wc.isinmemory():
+        maybe_wlock = util.nullcontextmanager()
+    else:
+        maybe_wlock = repo.wlock()
+    with maybe_wlock:
         if wc is None:
             wc = repo[None]
         pl = wc.parents()
