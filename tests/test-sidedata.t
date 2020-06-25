@@ -54,6 +54,7 @@ Check that we can upgrade to sidedata
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -66,6 +67,7 @@ Check that we can upgrade to sidedata
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no    yes      no
   persistent-nodemap:  no     no      no
@@ -84,6 +86,7 @@ Check that we can downgrade from sidedata
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes     no      no
   persistent-nodemap:  no     no      no
@@ -96,6 +99,7 @@ Check that we can downgrade from sidedata
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes     no      no
   persistent-nodemap:  no     no      no

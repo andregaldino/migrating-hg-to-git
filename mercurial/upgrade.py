@@ -137,6 +137,7 @@ def allowednewrequirements(repo):
         requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
+        requirements.SHARESAFE_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -333,6 +334,26 @@ class generaldelta(requirementformatvariant):
         b'storage model should require less network and '
         b'CPU resources, making "hg push" and "hg pull" '
         b'faster'
+    )
+
+
+@registerformatvariant
+class sharedsafe(requirementformatvariant):
+    name = b'exp-sharesafe'
+    _requirement = requirements.SHARESAFE_REQUIREMENT
+
+    default = False
+
+    description = _(
+        b'old shared repositories do not share source repository '
+        b'requirements and config. This leads to various problems '
+        b'when the source repository format is upgraded or some new '
+        b'extensions are enabled.'
+    )
+
+    upgrademessage = _(
+        b'Upgrades a repository to share-safe format so that future '
+        b'shares of this repository share its requirements and configs.'
     )
 
 
@@ -1437,5 +1458,15 @@ def upgraderepo(
                         b'the old repository will not be deleted; remove '
                         b'it to free up disk space once the upgraded '
                         b'repository is verified\n'
+                    )
+                )
+
+            if sharedsafe.name in addedreqs:
+                ui.warn(
+                    _(
+                        b'repository upgraded to share safe mode, existing'
+                        b' shares will still work in old non-safe mode. '
+                        b'Re-share existing shares to use them in safe mode'
+                        b' New shares will be created in safe mode.\n'
                     )
                 )

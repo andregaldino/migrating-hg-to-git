@@ -292,3 +292,89 @@ of current repo is still respected over the config which came from source config
   [255]
   $ hg showconfig ui.curses -R ../shared1
   false
+
+  $ cd ../
+
+Test that upgrading using debugupgraderepo works
+=================================================
+
+  $ hg init non-share-safe --config format.exp-share-safe=false
+  $ cd non-share-safe
+  $ hg debugrequirements
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+  $ echo foo > foo
+  $ hg ci -Aqm 'added foo'
+  $ echo bar > bar
+  $ hg ci -Aqm 'added bar'
+
+Create a share before upgrading
+
+  $ cd ..
+  $ hg share non-share-safe nss-share
+  updating working directory
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg debugrequirements -R nss-share
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  shared
+  sparserevlog
+  store
+  $ cd non-share-safe
+
+Upgrade
+
+  $ hg debugupgraderepo -q
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     added: exp-sharesafe
+  
+  $ hg debugupgraderepo --run -q
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     added: exp-sharesafe
+  
+  repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
+
+  $ hg debugrequirements
+  dotencode
+  exp-sharesafe
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+
+  $ cat .hg/requires
+  exp-sharesafe
+
+  $ cat .hg/store/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+
+  $ hg log -GT "{node}: {desc}\n"
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
+Make sure existing shares still works
+
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+  $ hg unshare -R ../nss-share

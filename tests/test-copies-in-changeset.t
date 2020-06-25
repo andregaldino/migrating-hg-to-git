@@ -37,6 +37,7 @@ Check that copies are recorded correctly
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
@@ -50,6 +51,7 @@ Check that copies are recorded correctly
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -417,6 +419,7 @@ downgrading (keeping some sidedata)
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
@@ -442,6 +445,7 @@ downgrading (keeping some sidedata)
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
@@ -469,6 +473,7 @@ upgrading
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no

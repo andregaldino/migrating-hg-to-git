@@ -15,6 +15,7 @@ Test the persistent on-disk nodemap
   fncache:            yes
   dotencode:          yes
   generaldelta:       yes
+  exp-sharesafe:       no
   sparserevlog:       yes
   sidedata:            no
   persistent-nodemap: yes
@@ -476,6 +477,7 @@ downgrading
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap: yes     no      no
@@ -506,6 +508,7 @@ upgrading
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
+  exp-sharesafe:       no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no    yes      no
