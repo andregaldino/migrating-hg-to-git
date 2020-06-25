@@ -635,7 +635,9 @@ else:
                     def _do_wait():
                         os.waitpid(pid, 0)
 
-                    threading.Thread(target=_do_wait, daemon=True).start()
+                    t = threading.Thread(target=_do_wait)
+                    t.daemon = True
+                    t.start()
                     return
                 # Parent process
                 (_pid, status) = os.waitpid(pid, 0)

@@ -5,6 +5,15 @@
 
 '''share a common history between several working directories
 
+The share extension introduces a new command :hg:`share` to create a new
+working directory. This is similar to :hg:`clone`, but doesn't involve
+copying or linking the storage of the repository. This allows working on
+different branches or changes in parallel without the associated cost in
+terms of disk space.
+
+Note: destructive operations or extensions like :hg:`rollback` should be
+used with care as they can result in confusing problems.
+
 Automatic Pooled Storage for Clones
 -----------------------------------
 
