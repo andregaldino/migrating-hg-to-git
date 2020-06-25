@@ -3,7 +3,7 @@ from __future__ import absolute_import, print_function
 import unittest
 
 from mercurial.hgweb import request as requestmod
-from mercurial import error
+from mercurial import error, pycompat
 
 DEFAULT_ENV = {
     'REQUEST_METHOD': 'GET',
@@ -431,6 +431,18 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
         self.assertEqual(r.dispatchpath, b'path1/path2')
         self.assertEqual(r.reponame, b'repo')
+
+    def testenvencoding(self):
+        if pycompat.iswindows:
+            # On Windows, we can't generally know which non-ASCII characters
+            # are supported.
+            r = parse(DEFAULT_ENV, extra={'foo': 'bar'})
+            self.assertEqual(r.rawenv[b'foo'], b'bar')
+        else:
+            # Unix is byte-based. Therefore we test all possible bytes.
+            b = b''.join(pycompat.bytechr(i) for i in range(256))
+            r = parse(DEFAULT_ENV, extra={'foo': pycompat.fsdecode(b)})
+            self.assertEqual(r.rawenv[b'foo'], b)
 
 
 if __name__ == '__main__':
