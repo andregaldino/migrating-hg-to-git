@@ -553,15 +553,15 @@ Testing --no-commit option:|
 Check reporting when --no-commit used with non-applicable options:
 
   $ hg graft 1 --no-commit -e
-  abort: cannot specify --no-commit and --edit together
+  abort: cannot specify both --no-commit and --edit
   [255]
 
   $ hg graft 1 --no-commit --log
-  abort: cannot specify --no-commit and --log together
+  abort: cannot specify both --no-commit and --log
   [255]
 
   $ hg graft 1 --no-commit -D
-  abort: cannot specify --no-commit and --currentdate together
+  abort: cannot specify both --no-commit and --currentdate
   [255]
 
 Test --no-commit is working:

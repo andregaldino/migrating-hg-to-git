@@ -2986,22 +2986,11 @@ def _dograft(ui, repo, *revs, **opts):
 
     cont = False
     if opts.get(b'no_commit'):
-        if opts.get(b'edit'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --edit together")
-            )
-        if opts.get(b'currentuser'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --currentuser together")
-            )
-        if opts.get(b'currentdate'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --currentdate together")
-            )
-        if opts.get(b'log'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --log together")
-            )
+        cmdutil.check_incompatible_arguments(
+            opts,
+            b'no_commit',
+            [b'edit', b'currentuser', b'currentdate', b'log'],
+        )
 
     graftstate = statemod.cmdstate(repo, b'graftstate')
 
