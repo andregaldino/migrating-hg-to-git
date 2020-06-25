@@ -253,13 +253,13 @@ Testing the --stop flag of `hg graft` which stops the interrupted graft
   [255]
 
   $ hg graft --stop -U
-  abort: cannot specify any other flag with '--stop'
+  abort: cannot specify both --stop and --user
   [255]
   $ hg graft --stop --rev 4
-  abort: cannot specify any other flag with '--stop'
+  abort: cannot specify both --stop and --rev
   [255]
   $ hg graft --stop --log
-  abort: cannot specify any other flag with '--stop'
+  abort: cannot specify both --stop and --log
   [255]
 
   $ hg graft --stop
@@ -363,11 +363,11 @@ when stripping is required
   [255]
 
   $ hg graft --abort --currentuser
-  abort: cannot specify any other flag with '--abort'
+  abort: cannot specify both --abort and --user
   [255]
 
   $ hg graft --abort --edit
-  abort: cannot specify any other flag with '--abort'
+  abort: cannot specify both --abort and --edit
   [255]
 
 #if abortcommand

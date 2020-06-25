@@ -2995,35 +2995,34 @@ def _dograft(ui, repo, *revs, **opts):
     graftstate = statemod.cmdstate(repo, b'graftstate')
 
     if opts.get(b'stop'):
-        if any(
-            (
-                opts.get(b'edit'),
-                opts.get(b'log'),
-                opts.get(b'user'),
-                opts.get(b'date'),
-                opts.get(b'currentdate'),
-                opts.get(b'currentuser'),
-                opts.get(b'rev'),
-            )
-        ):
-            raise error.Abort(_(b"cannot specify any other flag with '--stop'"))
+        cmdutil.check_incompatible_arguments(
+            opts,
+            b'stop',
+            [
+                b'edit',
+                b'log',
+                b'user',
+                b'date',
+                b'currentdate',
+                b'currentuser',
+                b'rev',
+            ],
+        )
         return _stopgraft(ui, repo, graftstate)
     elif opts.get(b'abort'):
-        if any(
-            (
-                opts.get(b'edit'),
-                opts.get(b'log'),
-                opts.get(b'user'),
-                opts.get(b'date'),
-                opts.get(b'currentdate'),
-                opts.get(b'currentuser'),
-                opts.get(b'rev'),
-            )
-        ):
-            raise error.Abort(
-                _(b"cannot specify any other flag with '--abort'")
-            )
-
+        cmdutil.check_incompatible_arguments(
+            opts,
+            b'abort',
+            [
+                b'edit',
+                b'log',
+                b'user',
+                b'date',
+                b'currentdate',
+                b'currentuser',
+                b'rev',
+            ],
+        )
         return cmdutil.abortgraft(ui, repo, graftstate)
     elif opts.get(b'continue'):
         cont = True
