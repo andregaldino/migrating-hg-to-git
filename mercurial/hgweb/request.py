@@ -12,6 +12,7 @@ from __future__ import absolute_import
 
 from ..thirdparty import attr
 from .. import (
+    encoding,
     error,
     pycompat,
     util,
@@ -162,11 +163,19 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # strings on Python 3 must be between \00000-\000FF. We deal with bytes
     # in Mercurial, so mass convert string keys and values to bytes.
     if pycompat.ispy3:
-        env = {k.encode('latin-1'): v for k, v in pycompat.iteritems(env)}
-        env = {
-            k: v.encode('latin-1') if isinstance(v, str) else v
-            for k, v in pycompat.iteritems(env)
-        }
+
+        def tobytes(s):
+            if not isinstance(s, str):
+                return s
+            if pycompat.iswindows:
+                # This is what mercurial.encoding does for os.environ on
+                # Windows.
+                return encoding.strtolocal(s)
+            else:
+                # This is what is documented to be used for os.environ on Unix.
+                return pycompat.fsencode(s)
+
+        env = {tobytes(k): tobytes(v) for k, v in pycompat.iteritems(env)}
 
     # Some hosting solutions are emulating hgwebdir, and dispatching directly
     # to an hgweb instance using this environment variable.  This was always
