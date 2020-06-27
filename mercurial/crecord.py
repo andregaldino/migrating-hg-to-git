@@ -63,15 +63,7 @@ try:
 
     curses.error
 except (ImportError, AttributeError):
-    # I have no idea if wcurses works with crecord...
-    try:
-        import wcurses as curses
-
-        curses.error
-    except (ImportError, AttributeError):
-        # wcurses is not shipped on Windows by default, or python is not
-        # compiled with curses
-        curses = False
+    curses = False
 
 
 class fallbackerror(error.Abort):
