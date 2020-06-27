@@ -130,9 +130,7 @@ def computemutable(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     # fast check to avoid revset call on huge repo
     if repo._phasecache.hasnonpublicphases(repo):
-        getphase = repo._phasecache.phase
-        maymutable = filterrevs(repo, b'base')
-        return frozenset(r for r in maymutable if getphase(repo, r))
+        return frozenset(repo._phasecache.getrevset(repo, phases.mutablephases))
     return frozenset()
 
 
