@@ -212,6 +212,9 @@ coreconfigitem(
     default=lambda: [b'chgserver', b'cmdserver', b'repocache'],
 )
 coreconfigitem(
+    b'cmdserver', b'shutdown-on-interrupt', default=True,
+)
+coreconfigitem(
     b'color', b'.*', default=None, generic=True,
 )
 coreconfigitem(

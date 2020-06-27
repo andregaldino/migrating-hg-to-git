@@ -244,8 +244,23 @@ class server(object):
 
         self.client = fin
 
+        # If shutdown-on-interrupt is off, the default SIGINT handler is
+        # removed so that client-server communication wouldn't be interrupted.
+        # For example, 'runcommand' handler will issue three short read()s.
+        # If one of the first two read()s were interrupted, the communication
+        # channel would be left at dirty state and the subsequent request
+        # wouldn't be parsed. So catching KeyboardInterrupt isn't enough.
+        self._shutdown_on_interrupt = ui.configbool(
+            b'cmdserver', b'shutdown-on-interrupt'
+        )
+        self._old_inthandler = None
+        if not self._shutdown_on_interrupt:
+            self._old_inthandler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+
     def cleanup(self):
         """release and restore resources taken during server session"""
+        if not self._shutdown_on_interrupt:
+            signal.signal(signal.SIGINT, self._old_inthandler)
 
     def _read(self, size):
         if not size:
@@ -277,6 +292,32 @@ class server(object):
             return s.split(b'\0')
         else:
             return []
+
+    def _dispatchcommand(self, req):
+        from . import dispatch  # avoid cycle
+
+        if self._shutdown_on_interrupt:
+            # no need to restore SIGINT handler as it is unmodified.
+            return dispatch.dispatch(req)
+
+        try:
+            signal.signal(signal.SIGINT, self._old_inthandler)
+            return dispatch.dispatch(req)
+        except error.SignalInterrupt:
+            # propagate SIGBREAK, SIGHUP, or SIGTERM.
+            raise
+        except KeyboardInterrupt:
+            # SIGINT may be received out of the try-except block of dispatch(),
+            # so catch it as last ditch. Another KeyboardInterrupt may be
+            # raised while handling exceptions here, but there's no way to
+            # avoid that except for doing everything in C.
+            pass
+        finally:
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
+        # On KeyboardInterrupt, print error message and exit *after* SIGINT
+        # handler removed.
+        req.ui.error(_(b'interrupted!\n'))
+        return -1
 
     def runcommand(self):
         """ reads a list of \0 terminated arguments, executes
@@ -318,7 +359,10 @@ class server(object):
         )
 
         try:
-            ret = dispatch.dispatch(req) & 255
+            ret = self._dispatchcommand(req) & 255
+            # If shutdown-on-interrupt is off, it's important to write the
+            # result code *after* SIGINT handler removed. If the result code
+            # were lost, the client wouldn't be able to continue processing.
             self.cresult.write(struct.pack(b'>i', int(ret)))
         finally:
             # restore old cwd

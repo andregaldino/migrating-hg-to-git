@@ -734,6 +734,51 @@ don't fall back to cwd if invalid -R path is specified (issue4805):
   $ cd ..
 
 
+#if no-windows
+
+option to not shutdown on SIGINT:
+
+  $ cat <<'EOF' > dbgint.py
+  > import os
+  > import signal
+  > import time
+  > from mercurial import commands, registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b"debugsleep", norepo=True)
+  > def debugsleep(ui):
+  >     time.sleep(1)
+  > @command(b"debugsuicide", norepo=True)
+  > def debugsuicide(ui):
+  >     os.kill(os.getpid(), signal.SIGINT)
+  >     time.sleep(1)
+  > EOF
+
+  >>> import signal
+  >>> import time
+  >>> from hgclient import checkwith, readchannel, runcommand
+  >>> @checkwith(extraargs=[b'--config', b'cmdserver.shutdown-on-interrupt=False',
+  ...                       b'--config', b'extensions.dbgint=dbgint.py'])
+  ... def nointr(server):
+  ...     readchannel(server)
+  ...     server.send_signal(signal.SIGINT)  # server won't be terminated
+  ...     time.sleep(1)
+  ...     runcommand(server, [b'debugsleep'])
+  ...     server.send_signal(signal.SIGINT)  # server won't be terminated
+  ...     runcommand(server, [b'debugsleep'])
+  ...     runcommand(server, [b'debugsuicide'])  # command can be interrupted
+  ...     server.send_signal(signal.SIGTERM)  # server will be terminated
+  ...     time.sleep(1)
+  *** runcommand debugsleep
+  *** runcommand debugsleep
+  *** runcommand debugsuicide
+  interrupted!
+  killed!
+   [255]
+
+#endif
+
+
 structured message channel:
 
   $ cat <<'EOF' >> repo2/.hg/hgrc

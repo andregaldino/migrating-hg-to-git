@@ -408,6 +408,18 @@ Supported arguments:
 If no suitable authentication entry is found, the user is prompted
 for credentials as usual if required by the remote.
 
+``cmdserver``
+-------------
+
+Controls command server settings. (ADVANCED)
+
+``shutdown-on-interrupt``
+    If set to false, the server's main loop will continue running after
+    SIGINT received. ``runcommand`` requests can still be interrupted by
+    SIGINT. Close the write end of the pipe to shut down the server
+    process gracefully.
+    (default: True)
+
 ``color``
 ---------
 
