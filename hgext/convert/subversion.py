@@ -187,13 +187,14 @@ def debugsvnlog(ui, **opts):
     """Fetch SVN log in a subprocess and channel them back to parent to
     avoid memory collection issues.
     """
-    if svn is None:
-        raise error.Abort(
-            _(b'debugsvnlog could not load Subversion python bindings')
-        )
+    with util.with_lc_ctype():
+        if svn is None:
+            raise error.Abort(
+                _(b'debugsvnlog could not load Subversion python bindings')
+            )
 
-    args = decodeargs(ui.fin.read())
-    get_log_child(ui.fout, *args)
+        args = decodeargs(ui.fin.read())
+        get_log_child(ui.fout, *args)
 
 
 class logstream(object):
@@ -420,18 +421,19 @@ class svn_source(converter_source):
         self.url = geturl(url)
         self.encoding = b'UTF-8'  # Subversion is always nominal UTF-8
         try:
-            self.transport = transport.SvnRaTransport(url=self.url)
-            self.ra = self.transport.ra
-            self.ctx = self.transport.client
-            self.baseurl = svn.ra.get_repos_root(self.ra)
-            # Module is either empty or a repository path starting with
-            # a slash and not ending with a slash.
-            self.module = urlreq.unquote(self.url[len(self.baseurl) :])
-            self.prevmodule = None
-            self.rootmodule = self.module
-            self.commits = {}
-            self.paths = {}
-            self.uuid = svn.ra.get_uuid(self.ra)
+            with util.with_lc_ctype():
+                self.transport = transport.SvnRaTransport(url=self.url)
+                self.ra = self.transport.ra
+                self.ctx = self.transport.client
+                self.baseurl = svn.ra.get_repos_root(self.ra)
+                # Module is either empty or a repository path starting with
+                # a slash and not ending with a slash.
+                self.module = urlreq.unquote(self.url[len(self.baseurl) :])
+                self.prevmodule = None
+                self.rootmodule = self.module
+                self.commits = {}
+                self.paths = {}
+                self.uuid = svn.ra.get_uuid(self.ra)
         except svn.core.SubversionException:
             ui.traceback()
             svnversion = b'%d.%d.%d' % (
@@ -477,7 +479,8 @@ class svn_source(converter_source):
             )
 
         try:
-            self.head = self.latest(self.module, latest)
+            with util.with_lc_ctype():
+                self.head = self.latest(self.module, latest)
         except SvnPathNotFound:
             self.head = None
         if not self.head:
@@ -493,6 +496,13 @@ class svn_source(converter_source):
         else:
             self.wc = None
         self.convertfp = None
+
+    def before(self):
+        self.with_lc_ctype = util.with_lc_ctype()
+        self.with_lc_ctype.__enter__()
+
+    def after(self):
+        self.with_lc_ctype.__exit__(None, None, None)
 
     def setrevmap(self, revmap):
         lastrevs = {}
