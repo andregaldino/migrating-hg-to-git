@@ -1559,8 +1559,8 @@ Test version number support in 'hg version':
   
   Enabled extensions:
   
-    throw  external  1.twentythree
     strip  internal  
+    throw  external  1.twentythree
 
   $ hg version -q --config extensions.throw=throw.py
   Mercurial Distributed SCM (version *) (glob)
@@ -1600,8 +1600,8 @@ Test template output of version:
 
   $ hg version --config extensions.throw=throw.py --config extensions.strip= \
   > -T'{extensions % "{name}  {pad(ver, 16)}  ({if(bundled, "internal", "external")})\n"}'
-  throw  1.twentythree     (external)
   strip                    (internal)
+  throw  1.twentythree     (external)
 
 Refuse to load extensions with minimum version requirements
 

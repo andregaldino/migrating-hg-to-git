@@ -7830,7 +7830,7 @@ def version_(ui, **opts):
     names = []
     vers = []
     isinternals = []
-    for name, module in extensions.extensions():
+    for name, module in sorted(extensions.extensions()):
         names.append(name)
         vers.append(extensions.moduleversion(module) or None)
         isinternals.append(extensions.ismoduleinternal(module))
