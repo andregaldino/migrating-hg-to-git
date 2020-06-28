@@ -191,7 +191,6 @@ _messageencoders = {
 
 
 def _selectmessageencoder(ui):
-    # experimental config: cmdserver.message-encodings
     encnames = ui.configlist(b'cmdserver', b'message-encodings')
     for n in encnames:
         f = _messageencoders.get(n)
@@ -234,9 +233,6 @@ class server(object):
             self.ui = self.ui.copy()
             setuplogging(self.ui, repo=None, fp=self.cdebug)
 
-        # TODO: add this to help/config.txt when stabilized
-        # ``channel``
-        #   Use separate channel for structured output. (Command-server only)
         self.cmsg = None
         if ui.config(b'ui', b'message-output') == b'channel':
             encname, encfn = _selectmessageencoder(ui)

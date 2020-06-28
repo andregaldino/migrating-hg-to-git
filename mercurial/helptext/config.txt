@@ -413,6 +413,12 @@ for credentials as usual if required by the remote.
 
 Controls command server settings. (ADVANCED)
 
+``message-encodings``
+    List of encodings for the ``m`` (message) channel. The first encoding
+    supported by the server will be selected and advertised in the hello
+    message. This is useful only when ``ui.message-output`` is set to
+    ``channel``. Supported encodings are ``cbor``.
+
 ``shutdown-on-interrupt``
     If set to false, the server's main loop will continue running after
     SIGINT received. ``runcommand`` requests can still be interrupted by
@@ -2383,6 +2389,8 @@ User interface controls.
 ``message-output``
     Where to write status and error messages. (default: ``stdio``)
 
+    ``channel``
+      Use separate channel for structured output. (Command-server only)
     ``stderr``
       Everything to stderr.
     ``stdio``

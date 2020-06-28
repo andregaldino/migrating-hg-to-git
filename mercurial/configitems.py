@@ -204,7 +204,7 @@ coreconfigitem(
     b'cmdserver', b'max-repo-cache', default=0, experimental=True,
 )
 coreconfigitem(
-    b'cmdserver', b'message-encodings', default=list, experimental=True,
+    b'cmdserver', b'message-encodings', default=list,
 )
 coreconfigitem(
     b'cmdserver',
