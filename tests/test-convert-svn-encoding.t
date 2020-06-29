@@ -163,6 +163,26 @@ Subversion sources don't support non-ASCII characters in HTTP(S) URLs.
   abort: http://localhost:$HGPORT/\xff: missing or unsupported repository (esc)
   [255]
 
+In Subversion, paths are Unicode (encoded as UTF-8). Therefore paths that can't
+be converted between UTF-8 and the locale encoding (which is always ASCII in
+tests) don't work.
+
+  $ cp -R svn-repo $XFF
+  $ hg convert $XFF test
+  initializing destination test repository
+  Subversion requires that paths can be converted to Unicode using the current locale encoding (ascii)
+  \xff does not look like a CVS checkout (glob) (esc)
+  $TESTTMP/\xff does not look like a Git repository (esc)
+  \xff does not look like a Subversion repository (glob) (esc)
+  \xff is not a local Mercurial repository (glob) (esc)
+  \xff does not look like a darcs repository (glob) (esc)
+  \xff does not look like a monotone repository (glob) (esc)
+  \xff does not look like a GNU Arch repository (glob) (esc)
+  \xff does not look like a Bazaar repository (glob) (esc)
+  cannot find required "p4" tool
+  abort: \xff: missing or unsupported repository (glob) (esc)
+  [255]
+
 #if py3
 For now, on Python 3, we abort when encountering non-UTF-8 percent-encoded
 bytes in a filename.

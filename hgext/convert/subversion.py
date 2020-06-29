@@ -3,6 +3,8 @@
 # Copyright(C) 2007 Daniel Holth et al
 from __future__ import absolute_import
 
+import codecs
+import locale
 import os
 import re
 import xml.dom.minidom
@@ -63,6 +65,38 @@ except ImportError:
     svn = None
 
 
+# In Subversion, paths are Unicode (encoded as UTF-8), which Subversion
+# converts from / to native strings when interfacing with the OS. When passing
+# paths to Subversion, we have to recode them such that it roundstrips with
+# what Subversion is doing.
+
+fsencoding = None
+
+
+def init_fsencoding():
+    global fsencoding, fsencoding_is_utf8
+    if fsencoding is not None:
+        return
+    if pycompat.iswindows:
+        # On Windows, filenames are Unicode, but we store them using the MBCS
+        # encoding.
+        fsencoding = 'mbcs'
+    else:
+        # This is the encoding used to convert UTF-8 back to natively-encoded
+        # strings in Subversion 1.14.0 or earlier with APR 1.7.0 or earlier.
+        with util.with_lc_ctype():
+            fsencoding = locale.nl_langinfo(locale.CODESET) or 'ISO-8859-1'
+    fsencoding = codecs.lookup(fsencoding).name
+    fsencoding_is_utf8 = fsencoding == codecs.lookup('utf-8').name
+
+
+def fs2svn(s):
+    if fsencoding_is_utf8:
+        return s
+    else:
+        return s.decode(fsencoding).encode('utf-8')
+
+
 class SvnPathNotFound(Exception):
     pass
 
@@ -117,7 +151,7 @@ def geturl(path):
             path = b'/' + util.normpath(path)
         # Module URL is later compared with the repository URL returned
         # by svn API, which is UTF-8.
-        path = encoding.tolocal(path)
+        path = fs2svn(path)
         path = b'file://%s' % quote(path)
     return svn.core.svn_path_canonicalize(path)
 
@@ -347,6 +381,17 @@ def issvnurl(ui, url):
     except ValueError:
         proto = b'file'
         path = os.path.abspath(url)
+        try:
+            path.decode(fsencoding)
+        except UnicodeDecodeError:
+            ui.warn(
+                _(
+                    b'Subversion requires that paths can be converted to '
+                    b'Unicode using the current locale encoding (%s)\n'
+                )
+                % pycompat.sysbytes(fsencoding)
+            )
+            return False
     if proto == b'file':
         path = util.pconvert(path)
     elif proto in (b'http', 'https'):
@@ -384,6 +429,7 @@ class svn_source(converter_source):
     def __init__(self, ui, repotype, url, revs=None):
         super(svn_source, self).__init__(ui, repotype, url, revs=revs)
 
+        init_fsencoding()
         if not (
             url.startswith(b'svn://')
             or url.startswith(b'svn+ssh://')
