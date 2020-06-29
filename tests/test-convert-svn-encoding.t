@@ -201,18 +201,18 @@ tests) don't work.
 For now, on Python 3, we abort when encountering non-UTF-8 percent-encoded
 bytes in a filename.
 
-  $ hg convert file:///%ff test
+  $ hg convert file://$TESTTMP/%FF test
   initializing destination test repository
   on Python 3, we currently do not support non-UTF-8 percent-encoded bytes in file URLs for Subversion repositories
-  file:///%ff does not look like a CVS checkout
-  $TESTTMP/file:/%ff does not look like a Git repository
-  file:///%ff does not look like a Subversion repository
-  file:///%ff is not a local Mercurial repository
-  file:///%ff does not look like a darcs repository
-  file:///%ff does not look like a monotone repository
-  file:///%ff does not look like a GNU Arch repository
-  file:///%ff does not look like a Bazaar repository
-  file:///%ff does not look like a P4 repository
-  abort: file:///%ff: missing or unsupported repository
+  file:/*/$TESTTMP/%FF does not look like a CVS checkout (glob)
+  $TESTTMP/file:$TESTTMP/%FF does not look like a Git repository
+  file:/*/$TESTTMP/%FF does not look like a Subversion repository (glob)
+  file:/*/$TESTTMP/%FF is not a local Mercurial repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a darcs repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a monotone repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a GNU Arch repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a Bazaar repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a P4 repository (glob)
+  abort: file:/*/$TESTTMP/%FF: missing or unsupported repository (glob)
   [255]
 #endif
