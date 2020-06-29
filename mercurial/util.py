@@ -22,6 +22,7 @@ import errno
 import gc
 import hashlib
 import itertools
+import locale
 import mmap
 import os
 import platform as pyplatform
@@ -3596,3 +3597,32 @@ def uvarintdecodestream(fh):
         if not (byte & 0x80):
             return result
         shift += 7
+
+
+# Passing the '' locale means that the locale should be set according to the
+# user settings (environment variables).
+# Python sometimes avoids setting the global locale settings. When interfacing
+# with C code (e.g. the curses module or the Subversion bindings), the global
+# locale settings must be initialized correctly. Python 2 does not initialize
+# the global locale settings on interpreter startup. Python 3 sometimes
+# initializes LC_CTYPE, but not consistently at least on Windows. Therefore we
+# explicitly initialize it to get consistent behavior if it's not already
+# initialized. Since CPython commit 177d921c8c03d30daa32994362023f777624b10d,
+# LC_CTYPE is always initialized. If we require Python 3.8+, we should re-check
+# if we can remove this code.
+@contextlib.contextmanager
+def with_lc_ctype():
+    oldloc = locale.setlocale(locale.LC_CTYPE, None)
+    if oldloc == 'C':
+        try:
+            try:
+                locale.setlocale(locale.LC_CTYPE, '')
+            except locale.Error:
+                # The likely case is that the locale from the environment
+                # variables is unknown.
+                pass
+            yield
+        finally:
+            locale.setlocale(locale.LC_CTYPE, oldloc)
+    else:
+        yield

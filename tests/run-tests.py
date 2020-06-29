@@ -2069,7 +2069,7 @@ class TTest(Test):
         if el.endswith(b" (esc)\n"):
             if PYTHON3:
                 el = el[:-7].decode('unicode_escape') + '\n'
-                el = el.encode('utf-8')
+                el = el.encode('latin-1')
             else:
                 el = el[:-7].decode('string-escape') + '\n'
         if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:

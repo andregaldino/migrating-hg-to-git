@@ -10,7 +10,6 @@
 
 from __future__ import absolute_import
 
-import locale
 import os
 import re
 import signal
@@ -566,14 +565,12 @@ def chunkselector(ui, headerlist, operation=None):
     """
     ui.write(_(b'starting interactive selection\n'))
     chunkselector = curseschunkselector(headerlist, ui, operation)
-    # This is required for ncurses to display non-ASCII characters in
-    # default user locale encoding correctly.  --immerrr
-    locale.setlocale(locale.LC_ALL, '')
     origsigtstp = sentinel = object()
     if util.safehasattr(signal, b'SIGTSTP'):
         origsigtstp = signal.getsignal(signal.SIGTSTP)
     try:
-        curses.wrapper(chunkselector.main)
+        with util.with_lc_ctype():
+            curses.wrapper(chunkselector.main)
         if chunkselector.initexc is not None:
             raise chunkselector.initexc
         # ncurses does not restore signal handler for SIGTSTP
