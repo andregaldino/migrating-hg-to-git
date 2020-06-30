@@ -153,6 +153,16 @@ Check tags are in UTF-8
 
   $ cd ..
 
+Subversion sources don't support non-ASCII characters in HTTP(S) URLs.
+
+  $ XFF=$($PYTHON -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")')
+  $ hg convert --source-type=svn http://localhost:$HGPORT/$XFF test
+  initializing destination test repository
+  Subversion sources don't support non-ASCII characters in HTTP(S) URLs. Please percent-encode them.
+  http://localhost:$HGPORT/\xff does not look like a Subversion repository (esc)
+  abort: http://localhost:$HGPORT/\xff: missing or unsupported repository (esc)
+  [255]
+
 #if py3
 For now, on Python 3, we abort when encountering non-UTF-8 percent-encoded
 bytes in a filename.

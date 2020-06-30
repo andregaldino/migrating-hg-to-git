@@ -347,6 +347,15 @@ def issvnurl(ui, url):
         path = os.path.abspath(url)
     if proto == b'file':
         path = util.pconvert(path)
+    elif proto in (b'http', 'https'):
+        if not encoding.isasciistr(path):
+            ui.warn(
+                _(
+                    b"Subversion sources don't support non-ASCII characters in "
+                    b"HTTP(S) URLs. Please percent-encode them.\n"
+                )
+            )
+            return False
     check = protomap.get(proto, lambda *args: False)
     while b'/' in path:
         if check(ui, path, proto):
