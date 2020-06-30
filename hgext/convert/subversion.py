@@ -354,6 +354,32 @@ protomap = {
 }
 
 
+class NonUtf8PercentEncodedBytes(Exception):
+    pass
+
+
+# Subversion paths are Unicode. Since the percent-decoding is done on
+# UTF-8-encoded strings, percent-encoded bytes are interpreted as UTF-8.
+def url2pathname_like_subversion(unicodepath):
+    if pycompat.ispy3:
+        # On Python 3, we have to pass unicode to urlreq.url2pathname().
+        # Percent-decoded bytes get decoded using UTF-8 and the 'replace' error
+        # handler.
+        unicodepath = urlreq.url2pathname(unicodepath)
+        if u'\N{REPLACEMENT CHARACTER}' in unicodepath:
+            raise NonUtf8PercentEncodedBytes
+        else:
+            return unicodepath
+    else:
+        # If we passed unicode on Python 2, it would be converted using the
+        # latin-1 encoding. Therefore, we pass UTF-8-encoded bytes.
+        unicodepath = urlreq.url2pathname(unicodepath.encode('utf-8'))
+        try:
+            return unicodepath.decode('utf-8')
+        except UnicodeDecodeError:
+            raise NonUtf8PercentEncodedBytes
+
+
 def issvnurl(ui, url):
     try:
         proto, path = url.split(b'://', 1)
@@ -366,7 +392,7 @@ def issvnurl(ui, url):
             ):
                 path = path[:2] + b':/' + path[6:]
             try:
-                path.decode(fsencoding)
+                unicodepath = path.decode(fsencoding)
             except UnicodeDecodeError:
                 ui.warn(
                     _(
@@ -376,28 +402,22 @@ def issvnurl(ui, url):
                     % pycompat.sysbytes(fsencoding)
                 )
                 return False
-            # FIXME: The following reasoning and logic is wrong and will be
-            # fixed in a following changeset.
-            # pycompat.fsdecode() / pycompat.fsencode() are used so that bytes
-            # in the URL roundtrip correctly on Unix. urlreq.url2pathname() on
-            # py3 will decode percent-encoded bytes using the utf-8 encoding
-            # and the "replace" error handler. This means that it will not
-            # preserve non-UTF-8 bytes (https://bugs.python.org/issue40983).
-            # url.open() uses the reverse function (urlreq.pathname2url()) and
-            # has a similar problem
-            # (https://bz.mercurial-scm.org/show_bug.cgi?id=6357). It makes
-            # sense to solve both problems together and handle all file URLs
-            # consistently. For now, we warn.
-            unicodepath = urlreq.url2pathname(pycompat.fsdecode(path))
-            if pycompat.ispy3 and u'\N{REPLACEMENT CHARACTER}' in unicodepath:
+            try:
+                unicodepath = url2pathname_like_subversion(unicodepath)
+            except NonUtf8PercentEncodedBytes:
                 ui.warn(
                     _(
-                        b'on Python 3, we currently do not support non-UTF-8 '
-                        b'percent-encoded bytes in file URLs for Subversion '
-                        b'repositories\n'
+                        b'Subversion does not support non-UTF-8 '
+                        b'percent-encoded bytes in file URLs\n'
                     )
                 )
-            path = pycompat.fsencode(unicodepath)
+                return False
+            # Below, we approximate how Subversion checks the path. On Unix, we
+            # should therefore convert the path to bytes using `fsencoding`
+            # (like Subversion does). On Windows, the right thing would
+            # actually be to leave the path as unicode. For now, we restrict
+            # the path to MBCS.
+            path = unicodepath.encode(fsencoding)
     except ValueError:
         proto = b'file'
         path = os.path.abspath(url)
