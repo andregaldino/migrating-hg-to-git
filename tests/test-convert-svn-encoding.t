@@ -182,6 +182,20 @@ tests) don't work.
   cannot find required "p4" tool
   abort: \xff: missing or unsupported repository (glob) (esc)
   [255]
+  $ hg convert file://$TESTTMP/$XFF test
+  initializing destination test repository
+  Subversion requires that file URLs can be converted to Unicode using the current locale encoding (ascii)
+  file:/*/$TESTTMP/\xff does not look like a CVS checkout (glob) (esc)
+  $TESTTMP/file:$TESTTMP/\xff does not look like a Git repository (esc)
+  file:/*/$TESTTMP/\xff does not look like a Subversion repository (glob) (esc)
+  file:/*/$TESTTMP/\xff is not a local Mercurial repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a darcs repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a monotone repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a GNU Arch repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a Bazaar repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a P4 repository (glob) (esc)
+  abort: file:/*/$TESTTMP/\xff: missing or unsupported repository (glob) (esc)
+  [255]
 
 #if py3
 For now, on Python 3, we abort when encountering non-UTF-8 percent-encoded

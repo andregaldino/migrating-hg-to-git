@@ -65,10 +65,10 @@ except ImportError:
     svn = None
 
 
-# In Subversion, paths are Unicode (encoded as UTF-8), which Subversion
-# converts from / to native strings when interfacing with the OS. When passing
-# paths to Subversion, we have to recode them such that it roundstrips with
-# what Subversion is doing.
+# In Subversion, paths and URLs are Unicode (encoded as UTF-8), which
+# Subversion converts from / to native strings when interfacing with the OS.
+# When passing paths and URLs to Subversion, we have to recode them such that
+# it roundstrips with what Subversion is doing.
 
 fsencoding = None
 
@@ -141,7 +141,9 @@ def quote(s):
 
 def geturl(path):
     try:
-        return svn.client.url_from_path(svn.core.svn_path_canonicalize(path))
+        return svn.client.url_from_path(
+            svn.core.svn_path_canonicalize(fs2svn(path))
+        )
     except svn.core.SubversionException:
         # svn.client.url_from_path() fails with local repositories
         pass
@@ -358,6 +360,19 @@ def issvnurl(ui, url):
                 and path[2:6].lower() == b'%3a/'
             ):
                 path = path[:2] + b':/' + path[6:]
+            try:
+                path.decode(fsencoding)
+            except UnicodeDecodeError:
+                ui.warn(
+                    _(
+                        b'Subversion requires that file URLs can be converted '
+                        b'to Unicode using the current locale encoding (%s)\n'
+                    )
+                    % pycompat.sysbytes(fsencoding)
+                )
+                return False
+            # FIXME: The following reasoning and logic is wrong and will be
+            # fixed in a following changeset.
             # pycompat.fsdecode() / pycompat.fsencode() are used so that bytes
             # in the URL roundtrip correctly on Unix. urlreq.url2pathname() on
             # py3 will decode percent-encoded bytes using the utf-8 encoding
