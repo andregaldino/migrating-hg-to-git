@@ -284,7 +284,9 @@ def filecheck(ui, path, proto):
 def httpcheck(ui, path, proto):
     try:
         opener = urlreq.buildopener()
-        rsp = opener.open(b'%s://%s/!svn/ver/0/.svn' % (proto, path), b'rb')
+        rsp = opener.open(
+            pycompat.strurl(b'%s://%s/!svn/ver/0/.svn' % (proto, path)), b'rb'
+        )
         data = rsp.read()
     except urlerr.httperror as inst:
         if inst.code != 404:
