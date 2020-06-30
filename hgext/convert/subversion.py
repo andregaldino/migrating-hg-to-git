@@ -140,6 +140,11 @@ def quote(s):
 
 
 def geturl(path):
+    """Convert path or URL to a SVN URL, encoded in UTF-8.
+
+    This can raise UnicodeDecodeError if the path or URL can't be converted to
+    unicode using `fsencoding`.
+    """
     try:
         return svn.client.url_from_path(
             svn.core.svn_path_canonicalize(fs2svn(path))
