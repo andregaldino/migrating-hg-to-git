@@ -153,22 +153,65 @@ Check tags are in UTF-8
 
   $ cd ..
 
-#if py3
-For now, on Python 3, we abort when encountering non-UTF-8 percent-encoded
-bytes in a filename.
+Subversion sources don't support non-ASCII characters in HTTP(S) URLs.
 
-  $ hg convert file:///%ff test
+  $ XFF=$($PYTHON -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")')
+  $ hg convert --source-type=svn http://localhost:$HGPORT/$XFF test
   initializing destination test repository
-  on Python 3, we currently do not support non-UTF-8 percent-encoded bytes in file URLs for Subversion repositories
-  file:///%ff does not look like a CVS checkout
-  $TESTTMP/file:/%ff does not look like a Git repository
-  file:///%ff does not look like a Subversion repository
-  file:///%ff is not a local Mercurial repository
-  file:///%ff does not look like a darcs repository
-  file:///%ff does not look like a monotone repository
-  file:///%ff does not look like a GNU Arch repository
-  file:///%ff does not look like a Bazaar repository
-  file:///%ff does not look like a P4 repository
-  abort: file:///%ff: missing or unsupported repository
+  Subversion sources don't support non-ASCII characters in HTTP(S) URLs. Please percent-encode them.
+  http://localhost:$HGPORT/\xff does not look like a Subversion repository (esc)
+  abort: http://localhost:$HGPORT/\xff: missing or unsupported repository (esc)
   [255]
-#endif
+
+In Subversion, paths are Unicode (encoded as UTF-8). Therefore paths that can't
+be converted between UTF-8 and the locale encoding (which is always ASCII in
+tests) don't work.
+
+  $ cp -R svn-repo $XFF
+  $ hg convert $XFF test
+  initializing destination test repository
+  Subversion requires that paths can be converted to Unicode using the current locale encoding (ascii)
+  \xff does not look like a CVS checkout (glob) (esc)
+  $TESTTMP/\xff does not look like a Git repository (esc)
+  \xff does not look like a Subversion repository (glob) (esc)
+  \xff is not a local Mercurial repository (glob) (esc)
+  \xff does not look like a darcs repository (glob) (esc)
+  \xff does not look like a monotone repository (glob) (esc)
+  \xff does not look like a GNU Arch repository (glob) (esc)
+  \xff does not look like a Bazaar repository (glob) (esc)
+  cannot find required "p4" tool
+  abort: \xff: missing or unsupported repository (glob) (esc)
+  [255]
+  $ hg convert file://$TESTTMP/$XFF test
+  initializing destination test repository
+  Subversion requires that file URLs can be converted to Unicode using the current locale encoding (ascii)
+  file:/*/$TESTTMP/\xff does not look like a CVS checkout (glob) (esc)
+  $TESTTMP/file:$TESTTMP/\xff does not look like a Git repository (esc)
+  file:/*/$TESTTMP/\xff does not look like a Subversion repository (glob) (esc)
+  file:/*/$TESTTMP/\xff is not a local Mercurial repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a darcs repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a monotone repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a GNU Arch repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a Bazaar repository (glob) (esc)
+  file:/*/$TESTTMP/\xff does not look like a P4 repository (glob) (esc)
+  abort: file:/*/$TESTTMP/\xff: missing or unsupported repository (glob) (esc)
+  [255]
+
+Subversion decodes percent-encoded bytes on the converted, UTF-8-encoded
+string. Therefore, if the percent-encoded bytes aren't valid UTF-8, Subversion
+would choke on them when converting them to the locale encoding.
+
+  $ hg convert file://$TESTTMP/%FF test
+  initializing destination test repository
+  Subversion does not support non-UTF-8 percent-encoded bytes in file URLs
+  file:/*/$TESTTMP/%FF does not look like a CVS checkout (glob)
+  $TESTTMP/file:$TESTTMP/%FF does not look like a Git repository
+  file:/*/$TESTTMP/%FF does not look like a Subversion repository (glob)
+  file:/*/$TESTTMP/%FF is not a local Mercurial repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a darcs repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a monotone repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a GNU Arch repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a Bazaar repository (glob)
+  file:/*/$TESTTMP/%FF does not look like a P4 repository (glob)
+  abort: file:/*/$TESTTMP/%FF: missing or unsupported repository (glob)
+  [255]
