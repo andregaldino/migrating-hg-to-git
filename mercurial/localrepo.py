@@ -715,18 +715,28 @@ def loadhgrc(ui, wdirvfs, hgvfs, requirements, sharedvfs=None):
     if not rcutil.use_repo_hgrc():
         return False
 
+    ret = False
     # first load config from shared source if we has to
     if requirementsmod.SHARESAFE_REQUIREMENT in requirements and sharedvfs:
         try:
             ui.readconfig(sharedvfs.join(b'hgrc'), root=sharedvfs.base)
+            ret = True
         except IOError:
             pass
 
     try:
         ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
-        return True
+        ret = True
     except IOError:
-        return False
+        pass
+
+    try:
+        ui.readconfig(hgvfs.join(b'hgrc-not-shared'), root=wdirvfs.base)
+        ret = True
+    except IOError:
+        pass
+
+    return ret
 
 
 def afterhgrcload(ui, wdirvfs, hgvfs, requirements):

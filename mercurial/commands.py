@@ -2139,6 +2139,7 @@ def _docommit(ui, repo, *pats, **opts):
             None,
             _(b'edit shared source repository config (EXPERIMENTAL)'),
         ),
+        (b'', b'non-shared', None, _(b'edit non shared config (EXPERIMENTAL)')),
         (b'g', b'global', None, _(b'edit global config')),
     ]
     + formatteropts,
@@ -2169,6 +2170,9 @@ def config(ui, repo, *values, **opts):
 
     .. container:: verbose
 
+      --non-shared flag is used to edit `.hg/hgrc-not-shared` config file.
+      This file is not shared across shares when in share-safe mode.
+
       Template:
 
       The following keywords are supported. See also :hg:`help templates`.
@@ -2186,7 +2190,7 @@ def config(ui, repo, *values, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
-    editopts = (b'edit', b'local', b'global', b'shared')
+    editopts = (b'edit', b'local', b'global', b'shared', b'non_shared')
     if any(opts.get(o) for o in editopts):
         cmdutil.check_at_most_one_arg(opts, *editopts[1:])
         if opts.get(b'local'):
@@ -2208,6 +2212,8 @@ def config(ui, repo, *values, **opts):
                         )
                     )
             paths = [vfsmod.vfs(repo.sharedpath).join(b'hgrc')]
+        elif opts.get(b'non_shared'):
+            paths = [repo.vfs.join(b'hgrc-not-shared')]
         else:
             paths = rcutil.userrcpath()
 

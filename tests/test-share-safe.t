@@ -253,6 +253,25 @@ Shared one should work
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     added c
   
+
+Testing that nonsharedrc is loaded for source and not shared
+
+  $ cd ../source
+  $ touch .hg/hgrc-not-shared
+  $ echo "[ui]" >> .hg/hgrc-not-shared
+  $ echo "traceback=true" >> .hg/hgrc-not-shared
+
+  $ hg showconfig ui.traceback
+  true
+
+  $ HGEDITOR=cat hg config --non-shared
+  [ui]
+  traceback=true
+
+  $ cd ../shared1
+  $ hg showconfig ui.traceback
+  [1]
+
 Unsharing works
 
   $ hg unshare

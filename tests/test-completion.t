@@ -259,7 +259,7 @@ Show all commands + options
   cat: output, rev, decode, include, exclude, template
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, stream, ssh, remotecmd, insecure
   commit: addremove, close-branch, amend, secret, edit, force-close-branch, interactive, include, exclude, message, logfile, date, user, subrepos
-  config: untrusted, edit, local, shared, global, template
+  config: untrusted, edit, local, shared, non-shared, global, template
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
   debugancestor: 

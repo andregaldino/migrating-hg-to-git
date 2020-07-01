@@ -987,6 +987,7 @@ def _getlocal(ui, rpath, wd=None):
         if rcutil.use_repo_hgrc():
             _readsharedsourceconfig(lui, path)
             lui.readconfig(os.path.join(path, b".hg", b"hgrc"), path)
+            lui.readconfig(os.path.join(path, b".hg", b"hgrc-not-shared"), path)
 
     if rpath:
         path = lui.expandpath(rpath)
@@ -994,6 +995,7 @@ def _getlocal(ui, rpath, wd=None):
         if rcutil.use_repo_hgrc():
             _readsharedsourceconfig(lui, path)
             lui.readconfig(os.path.join(path, b".hg", b"hgrc"), path)
+            lui.readconfig(os.path.join(path, b".hg", b"hgrc-not-shared"), path)
 
     return path, lui
 
