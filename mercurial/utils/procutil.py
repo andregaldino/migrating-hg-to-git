@@ -49,23 +49,22 @@ def isatty(fp):
         return False
 
 
-if pycompat.ispy3:
+class LineBufferedWrapper(object):
+    def __init__(self, orig):
+        self.orig = orig
 
-    class LineBufferedWrapper(object):
-        def __init__(self, orig):
-            self.orig = orig
+    def __getattr__(self, attr):
+        return getattr(self.orig, attr)
 
-        def __getattr__(self, attr):
-            return getattr(self.orig, attr)
+    def write(self, s):
+        orig = self.orig
+        res = orig.write(s)
+        if s.endswith(b'\n'):
+            orig.flush()
+        return res
 
-        def write(self, s):
-            orig = self.orig
-            res = orig.write(s)
-            if s.endswith(b'\n'):
-                orig.flush()
-            return res
 
-    io.BufferedIOBase.register(LineBufferedWrapper)
+io.BufferedIOBase.register(LineBufferedWrapper)
 
 
 # glibc determines buffering on first write to stdout - if we replace a TTY
