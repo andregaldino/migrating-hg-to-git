@@ -265,13 +265,14 @@ Test a shallow clone with only some files
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=1170; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos) (?)
   add changeset 3390ef850073
   add changeset b709380892b1
   add changeset 47fe012ab237
   add changeset 97765fc3cd62
   add changeset dc666cf9ecf3
   add changeset 93a8bd067ed2
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos) (?)
   checking for updated bookmarks
   sending 1 commands
   sending command manifestdata: {
