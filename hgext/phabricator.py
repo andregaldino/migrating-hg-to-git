@@ -167,7 +167,7 @@ _VCR_FLAGS = [
 
 
 @eh.wrapfunction(localrepo, "loadhgrc")
-def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements):
+def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements, **opts):
     """Load ``.arcconfig`` content into a ui instance on repository open.
     """
     result = False
@@ -201,7 +201,9 @@ def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements):
     if cfg:
         ui.applyconfig(cfg, source=wdirvfs.join(b".arcconfig"))
 
-    return orig(ui, wdirvfs, hgvfs, requirements) or result  # Load .hg/hgrc
+    return (
+        orig(ui, wdirvfs, hgvfs, requirements, **opts) or result
+    )  # Load .hg/hgrc
 
 
 def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):

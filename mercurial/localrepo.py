@@ -569,7 +569,7 @@ def makelocalrepository(baseui, path, intents=None):
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
     # process any new extensions that it may have pulled in.
-    if loadhgrc(ui, wdirvfs, hgvfs, requirements):
+    if loadhgrc(ui, wdirvfs, hgvfs, requirements, sharedvfs):
         afterhgrcload(ui, wdirvfs, hgvfs, requirements)
         extensions.loadall(ui)
         extensions.populateui(ui)
@@ -697,7 +697,7 @@ def makelocalrepository(baseui, path, intents=None):
     )
 
 
-def loadhgrc(ui, wdirvfs, hgvfs, requirements):
+def loadhgrc(ui, wdirvfs, hgvfs, requirements, sharedvfs=None):
     """Load hgrc files/content into a ui instance.
 
     This is called during repository opening to load any additional
@@ -708,9 +708,20 @@ def loadhgrc(ui, wdirvfs, hgvfs, requirements):
     Extensions should monkeypatch this function to modify how per-repo
     configs are loaded. For example, an extension may wish to pull in
     configs from alternate files or sources.
+
+    sharedvfs is vfs object pointing to source repo if the current one is a
+    shared one
     """
     if not rcutil.use_repo_hgrc():
         return False
+
+    # first load config from shared source if we has to
+    if requirementsmod.SHARESAFE_REQUIREMENT in requirements and sharedvfs:
+        try:
+            ui.readconfig(sharedvfs.join(b'hgrc'), root=sharedvfs.base)
+        except IOError:
+            pass
+
     try:
         ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
         return True

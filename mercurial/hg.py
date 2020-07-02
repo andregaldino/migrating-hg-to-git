@@ -332,6 +332,28 @@ def share(
     return r
 
 
+def _prependsourcehgrc(repo):
+    """ copies the source repo config and prepend it in current repo .hg/hgrc
+    on unshare. This is only done if the share was perfomed using share safe
+    method where we share config of source in shares"""
+    srcvfs = vfsmod.vfs(repo.sharedpath)
+    dstvfs = vfsmod.vfs(repo.path)
+
+    if not srcvfs.exists(b'hgrc'):
+        return
+
+    currentconfig = b''
+    if dstvfs.exists(b'hgrc'):
+        currentconfig = dstvfs.read(b'hgrc')
+
+    with dstvfs(b'hgrc', b'wb') as fp:
+        sourceconfig = srcvfs.read(b'hgrc')
+        fp.write(b"# Config copied from shared source\n")
+        fp.write(sourceconfig)
+        fp.write(b'\n')
+        fp.write(currentconfig)
+
+
 def unshare(ui, repo):
     """convert a shared repository to a normal one
 
@@ -350,6 +372,11 @@ def unshare(ui, repo):
         # fail
         destlock = copystore(ui, repo, repo.path)
         with destlock or util.nullcontextmanager():
+            if requirements.SHARESAFE_REQUIREMENT in repo.requirements:
+                # we were sharing .hg/hgrc of the share source with the current
+                # repo. We need to copy that while unsharing otherwise it can
+                # disable hooks and other checks
+                _prependsourcehgrc(repo)
 
             sharefile = repo.vfs.join(b'sharedpath')
             util.rename(sharefile, sharefile + b'.old')
