@@ -3438,7 +3438,7 @@ def commitstatus(repo, node, branch, bheads=None, opts=None):
         and bheads
         and node not in bheads
         and not any(
-            x.node() in bheads and x.branch() == branch for x in parents
+            p.node() in bheads and p.branch() == branch for p in parents
         )
     ):
         repo.ui.status(_(b'created new head\n'))
