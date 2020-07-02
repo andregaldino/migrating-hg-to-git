@@ -3437,9 +3437,9 @@ def commitstatus(repo, node, branch, bheads=None, opts=None):
         not opts.get(b'amend')
         and bheads
         and node not in bheads
-        and not [
-            x for x in parents if x.node() in bheads and x.branch() == branch
-        ]
+        and not any(
+            x.node() in bheads and x.branch() == branch for x in parents
+        )
     ):
         repo.ui.status(_(b'created new head\n'))
         # The message is not printed for initial roots. For the other
