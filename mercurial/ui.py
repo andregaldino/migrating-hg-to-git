@@ -1229,7 +1229,8 @@ class ui(object):
         }
         if timestamp:
             args = (
-                b'[%s] ' % bytes(datetime.datetime.now().isoformat(), 'ASCII'),
+                b'[%s] '
+                % pycompat.bytestr(datetime.datetime.now().isoformat()),
             ) + args
         _writemsgwith(self._write, dest, *args, **opts)
         if timestamp:
