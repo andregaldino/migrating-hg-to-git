@@ -436,8 +436,8 @@ Check that a failing transaction will properly revert the data
   data-unused: 0.369% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
   $ f --size --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: size=123584, sha256=8c6cef6fd3d3fac291968793ee19a4be6d0b8375e9508bd5c7d4a8879e8df180 (glob) (pure !)
-  .hg/store/00changelog-????????????????.nd: size=123584, sha256=eb9e9a4bcafdb5e1344bc8a0cbb3288b2106413b8efae6265fb8a7973d7e97f9 (glob) (rust !)
+  .hg/store/00changelog-????????????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
+  .hg/store/00changelog-????????????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
   .hg/store/00changelog-????????????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
 
 Check that removing content does not confuse the nodemap
