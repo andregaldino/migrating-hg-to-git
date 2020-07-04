@@ -67,6 +67,18 @@ class LineBufferedWrapper(object):
 io.BufferedIOBase.register(LineBufferedWrapper)
 
 
+def make_line_buffered(stream):
+    if pycompat.ispy3 and not isinstance(stream, io.BufferedIOBase):
+        # On Python 3, buffered streams can be expected to subclass
+        # BufferedIOBase. This is definitively the case for the streams
+        # initialized by the interpreter. For unbuffered streams, we don't need
+        # to emulate line buffering.
+        return stream
+    if isinstance(stream, LineBufferedWrapper):
+        return stream
+    return LineBufferedWrapper(stream)
+
+
 # glibc determines buffering on first write to stdout - if we replace a TTY
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
 # buffering (or unbuffered, on Windows)
@@ -77,10 +89,7 @@ if isatty(stdout):
     elif pycompat.ispy3:
         # On Python 3, buffered binary streams can't be set line-buffered.
         # Therefore we have a wrapper that implements line buffering.
-        if isinstance(stdout, io.BufferedIOBase) and not isinstance(
-            stdout, LineBufferedWrapper
-        ):
-            stdout = LineBufferedWrapper(stdout)
+        stdout = make_line_buffered(stdout)
     else:
         stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
