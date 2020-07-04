@@ -37,6 +37,11 @@ from ..utils import resourceutil
 
 osutil = policy.importmod('osutil')
 
+if pycompat.iswindows:
+    from .. import windows as platform
+else:
+    from .. import posix as platform
+
 
 def isatty(fp):
     try:
@@ -94,11 +99,8 @@ if isatty(stdout):
         stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
 if pycompat.iswindows:
-    from .. import windows as platform
-
     stdout = platform.winstdout(stdout)
-else:
-    from .. import posix as platform
+
 
 findexe = platform.findexe
 _gethgcmd = platform.gethgcmd
