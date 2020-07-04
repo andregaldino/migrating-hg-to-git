@@ -37,10 +37,6 @@ from ..utils import resourceutil
 
 osutil = policy.importmod('osutil')
 
-stderr = pycompat.stderr
-stdin = pycompat.stdin
-stdout = pycompat.stdout
-
 
 def isatty(fp):
     try:
@@ -78,6 +74,10 @@ def make_line_buffered(stream):
         return stream
     return LineBufferedWrapper(stream)
 
+
+stderr = pycompat.stderr
+stdin = pycompat.stdin
+stdout = pycompat.stdout
 
 # glibc determines buffering on first write to stdout - if we replace a TTY
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
