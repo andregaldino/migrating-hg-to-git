@@ -84,22 +84,20 @@ stderr = pycompat.stderr
 stdin = pycompat.stdin
 stdout = pycompat.stdout
 
+if pycompat.iswindows:
+    stdout = platform.winstdout(stdout)
+
 # glibc determines buffering on first write to stdout - if we replace a TTY
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
-# buffering (or unbuffered, on Windows)
+# buffering.
 if isatty(stdout):
-    if pycompat.iswindows:
-        # Windows doesn't support line buffering
-        stdout = os.fdopen(stdout.fileno(), 'wb', 0)
-    elif pycompat.ispy3:
+    if pycompat.ispy3 or pycompat.iswindows:
         # On Python 3, buffered binary streams can't be set line-buffered.
+        # On Python 2, Windows doesn't support line buffering.
         # Therefore we have a wrapper that implements line buffering.
         stdout = make_line_buffered(stdout)
     else:
         stdout = os.fdopen(stdout.fileno(), 'wb', 1)
-
-if pycompat.iswindows:
-    stdout = platform.winstdout(stdout)
 
 
 findexe = platform.findexe

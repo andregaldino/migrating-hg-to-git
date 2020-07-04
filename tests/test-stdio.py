@@ -89,7 +89,6 @@ class TestStdout(unittest.TestCase):
     def test_stdout_ptys_unbuffered(self):
         self._test(_ptys, UNBUFFERED, python_args=['-u'])
 
-    # On Windows, test_stdout_ptys wouldn't pass, but it's skipped anyway.
     if not pycompat.ispy3 and not pycompat.iswindows:
         # On Python 2 on non-Windows, we manually open stdout in line-buffered
         # mode if connected to a TTY. We should check if Python was configured
