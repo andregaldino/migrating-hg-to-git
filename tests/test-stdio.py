@@ -20,10 +20,10 @@ from mercurial import dispatch
 from mercurial.utils import procutil
 
 dispatch.initstdio()
-procutil.stdout.write(b'aaa')
-os.write(procutil.stdout.fileno(), b'[written aaa]')
-procutil.stdout.write(b'bbb\n')
-os.write(procutil.stdout.fileno(), b'[written bbb\\n]')
+procutil.{stream}.write(b'aaa')
+os.write(procutil.{stream}.fileno(), b'[written aaa]')
+procutil.{stream}.write(b'bbb\n')
+os.write(procutil.{stream}.fileno(), b'[written bbb\\n]')
 '''
 UNBUFFERED = b'aaa[written aaa]bbb\n[written bbb\\n]'
 LINE_BUFFERED = b'[written aaa]aaabbb\n[written bbb\\n]'
@@ -62,32 +62,35 @@ def _ptys():
         yield rwpair
 
 
-class TestStdout(unittest.TestCase):
-    def _test(self, rwpair_generator, expected_output, python_args=[]):
-        with rwpair_generator() as (stdout_receiver, child_stdout), open(
+class TestStdio(unittest.TestCase):
+    def _test(self, stream, rwpair_generator, expected_output, python_args=[]):
+        assert stream in ('stdout', 'stderr')
+        with rwpair_generator() as (stream_receiver, child_stream), open(
             os.devnull, 'rb'
         ) as child_stdin:
             proc = subprocess.Popen(
-                [sys.executable] + python_args + ['-c', CHILD_PROCESS],
+                [sys.executable]
+                + python_args
+                + ['-c', CHILD_PROCESS.format(stream=stream)],
                 stdin=child_stdin,
-                stdout=child_stdout,
-                stderr=None,
+                stdout=child_stream if stream == 'stdout' else None,
+                stderr=child_stream if stream == 'stderr' else None,
             )
             retcode = proc.wait()
             self.assertEqual(retcode, 0)
-            self.assertEqual(os.read(stdout_receiver, 1024), expected_output)
+            self.assertEqual(os.read(stream_receiver, 1024), expected_output)
 
     def test_stdout_pipes(self):
-        self._test(_pipes, FULLY_BUFFERED)
+        self._test('stdout', _pipes, FULLY_BUFFERED)
 
     def test_stdout_ptys(self):
-        self._test(_ptys, LINE_BUFFERED)
+        self._test('stdout', _ptys, LINE_BUFFERED)
 
     def test_stdout_pipes_unbuffered(self):
-        self._test(_pipes, UNBUFFERED, python_args=['-u'])
+        self._test('stdout', _pipes, UNBUFFERED, python_args=['-u'])
 
     def test_stdout_ptys_unbuffered(self):
-        self._test(_ptys, UNBUFFERED, python_args=['-u'])
+        self._test('stdout', _ptys, UNBUFFERED, python_args=['-u'])
 
     if not pycompat.ispy3 and not pycompat.iswindows:
         # On Python 2 on non-Windows, we manually open stdout in line-buffered
