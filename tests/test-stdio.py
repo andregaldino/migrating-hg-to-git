@@ -100,6 +100,18 @@ class TestStdio(unittest.TestCase):
             test_stdout_ptys_unbuffered
         )
 
+    def test_stderr_pipes(self):
+        self._test('stderr', _pipes, UNBUFFERED)
+
+    def test_stderr_ptys(self):
+        self._test('stderr', _ptys, UNBUFFERED)
+
+    def test_stderr_pipes_unbuffered(self):
+        self._test('stderr', _pipes, UNBUFFERED, python_args=['-u'])
+
+    def test_stderr_ptys_unbuffered(self):
+        self._test('stderr', _ptys, UNBUFFERED, python_args=['-u'])
+
 
 if __name__ == '__main__':
     import silenttestrunner
