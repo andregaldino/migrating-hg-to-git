@@ -1665,6 +1665,22 @@ class manifestrevlog(object):
         readtree=None,
         match=None,
     ):
+        """add some manifest entry in to the manifest log
+
+        input:
+
+          m:           the manifest dict we want to store
+          transaction: the open transaction
+          p1:          manifest-node of p1
+          p2:          manifest-node of p2
+          added:       file added/changed compared to parent
+          removed:     file removed compared to parent
+
+        tree manifest input:
+
+          readtree:    a function to read a subtree
+          match:       a filematcher for the subpart of the tree manifest
+        """
         try:
             if p1 not in self.fulltextcache:
                 raise FastdeltaUnavailable()
