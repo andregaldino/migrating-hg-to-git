@@ -2802,6 +2802,9 @@ class localrepository(object):
             touched = 'added'
 
         if isinstance(fctx, context.filectx):
+            # This block fast path most comparisons which are usually done. It
+            # assumes that bare filectx is used and no merge happened, hence no
+            # need to create a new file revision in this case.
             node = fctx.filenode()
             if node in [fparent1, fparent2]:
                 self.ui.debug(b'reusing %s filelog entry\n' % fname)
