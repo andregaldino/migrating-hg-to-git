@@ -80,9 +80,16 @@ def make_line_buffered(stream):
     return LineBufferedWrapper(stream)
 
 
-stderr = pycompat.stderr
-stdin = pycompat.stdin
-stdout = pycompat.stdout
+if pycompat.ispy3:
+    # TODO: .buffer might not exist if std streams were replaced; we'll need
+    # a silly wrapper to make a bytes stream backed by a unicode one.
+    stdin = sys.stdin.buffer
+    stdout = sys.stdout.buffer
+    stderr = sys.stderr.buffer
+else:
+    stdin = sys.stdin
+    stdout = sys.stdout
+    stderr = sys.stderr
 
 if pycompat.iswindows:
     stdout = platform.winstdout(stdout)

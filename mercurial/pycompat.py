@@ -142,17 +142,6 @@ if ispy3:
 
     long = int
 
-    # Warning: sys.stdout.buffer and sys.stderr.buffer do not necessarily have
-    # the same buffering behavior as sys.stdout and sys.stderr. The interpreter
-    # initializes them with block-buffered streams or unbuffered streams (when
-    # the -u option or the PYTHONUNBUFFERED environment variable is set), never
-    # with a line-buffered stream.
-    # TODO: .buffer might not exist if std streams were replaced; we'll need
-    # a silly wrapper to make a bytes stream backed by a unicode one.
-    stdin = sys.stdin.buffer
-    stdout = sys.stdout.buffer
-    stderr = sys.stderr.buffer
-
     if getattr(sys, 'argv', None) is not None:
         # On POSIX, the char** argv array is converted to Python str using
         # Py_DecodeLocale(). The inverse of this is Py_EncodeLocale(), which
@@ -476,9 +465,6 @@ else:
     osaltsep = os.altsep
     osdevnull = os.devnull
     long = long
-    stdin = sys.stdin
-    stdout = sys.stdout
-    stderr = sys.stderr
     if getattr(sys, 'argv', None) is not None:
         sysargv = sys.argv
     sysplatform = sys.platform
