@@ -2786,6 +2786,22 @@ class localrepository(object):
     ):
         """
         commit an individual file as part of a larger transaction
+
+        input:
+
+            fctx:       a file context with the content we are trying to commit
+            manifest1:  manifest of changeset first parent
+            manifest2:  manifest of changeset second parent
+            linkrev:    revision number of the changeset being created
+            tr:         current transation
+            changelist: list of file being changed (modified inplace)
+            individual: boolean, set to False to skip storing the copy data
+                        (only used by the Google specific feature of using
+                        changeset extra as copy source of truth).
+
+        output:
+
+            The resulting filenode
         """
 
         fname = fctx.path()
