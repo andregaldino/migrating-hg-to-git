@@ -58,14 +58,16 @@ def _parse(data):
         prev = l
         f, n = l.split(b'\0')
         nl = len(n)
-        if 64 < nl:
-            # modern hash, full width
-            yield f, bin(n[:64]), n[64:]
-        elif 40 < nl < 45:
-            # legacy hash, always sha1
-            yield f, bin(n[:40]), n[40:]
+        flags = n[-1:]
+        if flags in _manifestflags:
+            n = n[:-1]
+            nl -= 1
         else:
-            yield f, bin(n), b''
+            flags = b''
+        if nl not in (40, 64):
+            raise ValueError(b'Invalid manifest line')
+
+        yield f, bin(n), flags
 
 
 def _text(it):
