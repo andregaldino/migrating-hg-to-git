@@ -3121,8 +3121,8 @@ class localrepository(object):
                 # check in files
                 added = []
                 filesadded = []
-                changed = []
                 removed = list(ctx.removed())
+                touched = []
                 linkrev = len(self)
                 self.ui.note(_(b"committing files:\n"))
                 uipathfn = scmutil.getuipathfn(self)
@@ -3138,7 +3138,7 @@ class localrepository(object):
                                 fctx, m1, m2, linkrev, trp, writefilecopymeta,
                             )
                             if is_touched:
-                                changed.append(f)
+                                touched.append(f)
                                 if writechangesetcopy and is_touched == 'added':
                                     filesadded.append(f)
                             m.setflag(f, fctx.flags())
@@ -3167,7 +3167,7 @@ class localrepository(object):
                 if writechangesetcopy:
                     filesremoved = removed
 
-                files = changed + removed
+                files = touched + removed
                 md = None
                 if not files:
                     # if no "files" actually changed in terms of the changelog,
