@@ -156,39 +156,6 @@ class basemanifesttests(object):
         with self.assertRaises(KeyError):
             m[b'foo']
 
-    def testSetGetNodeSuffix(self):
-        clean = self.parsemanifest(A_SHORT_MANIFEST)
-        m = self.parsemanifest(A_SHORT_MANIFEST)
-        h = m[b'foo']
-        f = m.flags(b'foo')
-        want = h + b'a'
-        # Merge code wants to set 21-byte fake hashes at times
-        m[b'foo'] = want
-        self.assertEqual(want, m[b'foo'])
-        self.assertEqual(
-            [(b'bar/baz/qux.py', BIN_HASH_2), (b'foo', BIN_HASH_1 + b'a')],
-            list(m.items()),
-        )
-        # Sometimes it even tries a 22-byte fake hash, but we can
-        # return 21 and it'll work out
-        m[b'foo'] = want + b'+'
-        self.assertEqual(want, m[b'foo'])
-        # make sure the suffix survives a copy
-        match = matchmod.match(util.localpath(b'/repo'), b'', [b're:foo'])
-        m2 = m._matches(match)
-        self.assertEqual(want, m2[b'foo'])
-        self.assertEqual(1, len(m2))
-        m2 = m.copy()
-        self.assertEqual(want, m2[b'foo'])
-        # suffix with iteration
-        self.assertEqual(
-            [(b'bar/baz/qux.py', BIN_HASH_2), (b'foo', want)], list(m.items())
-        )
-
-        # shows up in diff
-        self.assertEqual({b'foo': ((want, f), (h, b''))}, m.diff(clean))
-        self.assertEqual({b'foo': ((h, b''), (want, f))}, clean.diff(m))
-
     def testMatchException(self):
         m = self.parsemanifest(A_SHORT_MANIFEST)
         match = matchmod.match(util.localpath(b'/repo'), b'', [b're:.*'])

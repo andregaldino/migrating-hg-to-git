@@ -121,8 +121,20 @@ class lazymanifestiterentries(object):
             self.pos += 1
             return data
         zeropos = data.find(b'\x00', pos)
-        hashval = unhexlify(data, self.lm.extrainfo[self.pos], zeropos + 1, 40)
-        flags = self.lm._getflags(data, self.pos, zeropos)
+        nlpos = data.find(b'\n', pos)
+        if zeropos == -1 or nlpos == -1 or nlpos < zeropos:
+            raise error.StorageError(b'Invalid manifest line')
+        flags = data[nlpos - 1 : nlpos]
+        if flags in _manifestflags:
+            hlen = nlpos - zeropos - 2
+        else:
+            hlen = nlpos - zeropos - 1
+            flags = b''
+        if hlen not in (40, 64):
+            raise error.StorageError(b'Invalid manifest line')
+        hashval = unhexlify(
+            data, self.lm.extrainfo[self.pos], zeropos + 1, hlen
+        )
         self.pos += 1
         return (data[pos:zeropos], hashval, flags)
 
@@ -138,6 +150,9 @@ def unhexlify(data, extra, pos, length):
 
 def _cmp(a, b):
     return (a > b) - (a < b)
+
+
+_manifestflags = {b'', b'l', b't', b'x'}
 
 
 class _lazymanifest(object):
@@ -251,15 +266,6 @@ class _lazymanifest(object):
     def __contains__(self, key):
         return self.bsearch(key) != -1
 
-    def _getflags(self, data, needle, pos):
-        start = pos + 41
-        end = data.find(b"\n", start)
-        if end == -1:
-            end = len(data) - 1
-        if start == end:
-            return b''
-        return self.data[start:end]
-
     def __getitem__(self, key):
         if not isinstance(key, bytes):
             raise TypeError(b"getitem: manifest keys must be a bytes.")
@@ -273,13 +279,17 @@ class _lazymanifest(object):
         nlpos = data.find(b'\n', zeropos)
         assert 0 <= needle <= len(self.positions)
         assert len(self.extrainfo) == len(self.positions)
+        if zeropos == -1 or nlpos == -1 or nlpos < zeropos:
+            raise error.StorageError(b'Invalid manifest line')
         hlen = nlpos - zeropos - 1
-        # Hashes sometimes have an extra byte tucked on the end, so
-        # detect that.
-        if hlen % 2:
+        flags = data[nlpos - 1 : nlpos]
+        if flags in _manifestflags:
             hlen -= 1
+        else:
+            flags = b''
+        if hlen not in (40, 64):
+            raise error.StorageError(b'Invalid manifest line')
         hashval = unhexlify(data, self.extrainfo[needle], zeropos + 1, hlen)
-        flags = self._getflags(data, needle, zeropos)
         return (hashval, flags)
 
     def __delitem__(self, key):
@@ -408,9 +418,7 @@ class _lazymanifest(object):
 
     def _pack(self, d):
         n = d[1]
-        if len(n) == 21 or len(n) == 33:
-            n = n[:-1]
-        assert len(n) == 20 or len(n) == 32
+        assert len(n) in (20, 32)
         return d[0] + b'\x00' + hex(n) + d[2] + b'\n'
 
     def text(self):
@@ -609,6 +617,8 @@ class manifestdict(object):
         return self._lm.diff(m2._lm, clean)
 
     def setflag(self, key, flag):
+        if flag not in _manifestflags:
+            raise TypeError(b"Invalid manifest flag set.")
         self._lm[key] = self[key], flag
 
     def get(self, key, default=None):
@@ -1049,11 +1059,10 @@ class treemanifest(object):
             self._dirs[dir].__setitem__(subpath, n)
         else:
             # manifest nodes are either 20 bytes or 32 bytes,
-            # depending on the hash in use. An extra byte is
-            # occasionally used by hg, but won't ever be
-            # persisted. Trim to 21 or 33 bytes as appropriate.
-            trim = 21 if len(n) < 25 else 33
-            self._files[f] = n[:trim]  # to match manifestdict's behavior
+            # depending on the hash in use. Assert this as historically
+            # sometimes extra bytes were added.
+            assert len(n) in (20, 32)
+            self._files[f] = n
         self._dirty = True
 
     def _load(self):
@@ -1066,6 +1075,8 @@ class treemanifest(object):
 
     def setflag(self, f, flags):
         """Set the flags (symlink, executable) for path f."""
+        if flags not in _manifestflags:
+            raise TypeError(b"Invalid manifest flag set.")
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:

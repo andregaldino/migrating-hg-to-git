@@ -49,23 +49,35 @@ static Py_ssize_t pathlen(line *l)
 }
 
 /* get the node value of a single line */
-static PyObject *nodeof(line *l)
+static PyObject *nodeof(line *l, char *flag)
 {
 	char *s = l->start;
 	Py_ssize_t llen = pathlen(l);
 	Py_ssize_t hlen = l->len - llen - 2;
-	Py_ssize_t hlen_raw = 20;
+	Py_ssize_t hlen_raw;
 	PyObject *hash;
 	if (llen + 1 + 40 + 1 > l->len) { /* path '\0' hash '\n' */
 		PyErr_SetString(PyExc_ValueError, "manifest line too short");
 		return NULL;
 	}
+	/* Detect flags after the hash first. */
+	switch (s[llen + hlen]) {
+	case 'l':
+	case 't':
+	case 'x':
+		*flag = s[llen + hlen];
+		--hlen;
+		break;
+	default:
+		*flag = '\0';
+		break;
+	}
+
 	switch (hlen) {
 	case 40: /* sha1 */
-	case 41: /* sha1 with cruft for a merge */
+		hlen_raw = 20;
 		break;
 	case 64: /* new hash */
-	case 65: /* new hash with cruft for a merge */
 		hlen_raw = 32;
 		break;
 	default:
@@ -89,9 +101,8 @@ static PyObject *nodeof(line *l)
 /* get the node hash and flags of a line as a tuple */
 static PyObject *hashflags(line *l)
 {
-	char *s = l->start;
-	Py_ssize_t plen = pathlen(l);
-	PyObject *hash = nodeof(l);
+	char flag;
+	PyObject *hash = nodeof(l, &flag);
 	ssize_t hlen;
 	Py_ssize_t hplen, flen;
 	PyObject *flags;
@@ -99,14 +110,7 @@ static PyObject *hashflags(line *l)
 
 	if (!hash)
 		return NULL;
-	/* hash is either 20 or 21 bytes for an old hash, so we use a
-	   ternary here to get the "real" hexlified sha length. */
-	hlen = PyBytes_GET_SIZE(hash) < 22 ? 40 : 64;
-	/* 1 for null byte, 1 for newline */
-	hplen = plen + hlen + 2;
-	flen = l->len - hplen;
-
-	flags = PyBytes_FromStringAndSize(s + hplen - 1, flen);
+	flags = PyBytes_FromStringAndSize(&flag, flag ? 1 : 0);
 	if (!flags) {
 		Py_DECREF(hash);
 		return NULL;
@@ -291,6 +295,7 @@ static PyObject *lmiter_iterentriesnext(PyObject *o)
 {
 	Py_ssize_t pl;
 	line *l;
+	char flag;
 	Py_ssize_t consumed;
 	PyObject *ret = NULL, *path = NULL, *hash = NULL, *flags = NULL;
 	l = lmiter_nextline((lmIter *)o);
@@ -299,13 +304,11 @@ static PyObject *lmiter_iterentriesnext(PyObject *o)
 	}
 	pl = pathlen(l);
 	path = PyBytes_FromStringAndSize(l->start, pl);
-	hash = nodeof(l);
+	hash = nodeof(l, &flag);
 	if (!path || !hash) {
 		goto done;
 	}
-	consumed = pl + 41;
-	flags = PyBytes_FromStringAndSize(l->start + consumed,
-					   l->len - consumed - 1);
+	flags = PyBytes_FromStringAndSize(&flag, flag ? 1 : 0);
 	if (!flags) {
 		goto done;
 	}
@@ -568,19 +571,13 @@ static int lazymanifest_setitem(
 	pyhash = PyTuple_GetItem(value, 0);
 	if (!PyBytes_Check(pyhash)) {
 		PyErr_Format(PyExc_TypeError,
-			     "node must be a 20-byte string");
+			     "node must be a 20 or 32 bytes string");
 		return -1;
 	}
 	hlen = PyBytes_Size(pyhash);
-	/* Some parts of the codebase try and set 21 or 22
-	 * byte "hash" values in order to perturb things for
-	 * status. We have to preserve at least the 21st
-	 * byte. Sigh. If there's a 22nd byte, we drop it on
-	 * the floor, which works fine.
-	 */
-	if (hlen != 20 && hlen != 21 && hlen != 22) {
+	if (hlen != 20 && hlen != 32) {
 		PyErr_Format(PyExc_TypeError,
-			     "node must be a 20-byte string");
+			     "node must be a 20 or 32 bytes string");
 		return -1;
 	}
 	hash = PyBytes_AsString(pyhash);
@@ -588,28 +585,39 @@ static int lazymanifest_setitem(
 	pyflags = PyTuple_GetItem(value, 1);
 	if (!PyBytes_Check(pyflags) || PyBytes_Size(pyflags) > 1) {
 		PyErr_Format(PyExc_TypeError,
-			     "flags must a 0 or 1 byte string");
+			     "flags must a 0 or 1 bytes string");
 		return -1;
 	}
 	if (PyBytes_AsStringAndSize(pyflags, &flags, &flen) == -1) {
 		return -1;
 	}
+	if (flen == 1) {
+		switch (*flags) {
+		case 'l':
+		case 't':
+		case 'x':
+			break;
+		default:
+			PyErr_Format(PyExc_TypeError, "invalid manifest flag");
+			return -1;
+		}
+	}
 	/* one null byte and one newline */
-	dlen = plen + 41 + flen + 1;
+	dlen = plen + hlen * 2 + 1 + flen + 1;
 	dest = malloc(dlen);
 	if (!dest) {
 		PyErr_NoMemory();
 		return -1;
 	}
 	memcpy(dest, path, plen + 1);
-	for (i = 0; i < 20; i++) {
+	for (i = 0; i < hlen; i++) {
 		/* Cast to unsigned, so it will not get sign-extended when promoted
 		 * to int (as is done when passing to a variadic function)
 		 */
 		sprintf(dest + plen + 1 + (i * 2), "%02x", (unsigned char)hash[i]);
 	}
-	memcpy(dest + plen + 41, flags, flen);
-	dest[plen + 41 + flen] = '\n';
+	memcpy(dest + plen + 2 * hlen + 1, flags, flen);
+	dest[plen + 2 * hlen + 1 + flen] = '\n';
 	new.start = dest;
 	new.len = dlen;
 	new.hash_suffix = '\0';

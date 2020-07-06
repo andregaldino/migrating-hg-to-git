@@ -725,8 +725,7 @@ def manifestmerge(
                             b'prompt changed/deleted',
                         )
                 elif n1 == addednodeid:
-                    # This extra 'a' is added by working copy manifest to mark
-                    # the file as locally added. We should forget it instead of
+                    # This file was locally added. We should forget it instead of
                     # deleting it.
                     actions[f] = (
                         mergestatemod.ACTION_FORGET,
