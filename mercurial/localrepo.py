@@ -3109,7 +3109,11 @@ class localrepository(object):
                 if writechangesetcopy:
                     filesadded = ctx.filesadded()
                     filesremoved = ctx.filesremoved()
-            elif ctx.files():
+            elif not ctx.files():
+                self.ui.debug(b'reusing manifest from p1 (no file change)\n')
+                mn = p1.manifestnode()
+                files = []
+            else:
                 m1ctx = p1.manifestctx()
                 m2ctx = p2.manifestctx()
                 mctx = m1ctx.copy()
@@ -3205,10 +3209,6 @@ class localrepository(object):
                         b'actually unchanged)\n'
                     )
                     mn = p1.manifestnode()
-            else:
-                self.ui.debug(b'reusing manifest from p1 (no file change)\n')
-                mn = p1.manifestnode()
-                files = []
 
             if writecopiesto == b'changeset-only':
                 # If writing only to changeset extras, use None to indicate that
