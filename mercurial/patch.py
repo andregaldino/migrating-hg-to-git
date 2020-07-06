@@ -2922,6 +2922,18 @@ def _filepairs(modified, added, removed, copy, opts):
         yield f1, f2, copyop
 
 
+def _gitindex(text):
+    if not text:
+        text = b""
+    l = len(text)
+    s = hashutil.sha1(b'blob %d\0' % l)
+    s.update(text)
+    return hex(s.digest())
+
+
+_gitmode = {b'l': b'120000', b'x': b'100755', b'': b'100644'}
+
+
 def trydiff(
     repo,
     revs,
@@ -2944,14 +2956,6 @@ def trydiff(
     pathfn is applied to every path in the diff output.
     '''
 
-    def gitindex(text):
-        if not text:
-            text = b""
-        l = len(text)
-        s = hashutil.sha1(b'blob %d\0' % l)
-        s.update(text)
-        return hex(s.digest())
-
     if opts.noprefix:
         aprefix = bprefix = b''
     else:
@@ -2967,8 +2971,6 @@ def trydiff(
 
     date1 = dateutil.datestr(ctx1.date())
     date2 = dateutil.datestr(ctx2.date())
-
-    gitmode = {b'l': b'120000', b'x': b'100755', b'': b'100644'}
 
     if not pathfn:
         pathfn = lambda f: f
@@ -3023,11 +3025,11 @@ def trydiff(
                 b'diff --git %s%s %s%s' % (aprefix, path1, bprefix, path2)
             )
             if not f1:  # added
-                header.append(b'new file mode %s' % gitmode[flag2])
+                header.append(b'new file mode %s' % _gitmode[flag2])
             elif not f2:  # removed
-                header.append(b'deleted file mode %s' % gitmode[flag1])
+                header.append(b'deleted file mode %s' % _gitmode[flag1])
             else:  # modified/copied/renamed
-                mode1, mode2 = gitmode[flag1], gitmode[flag2]
+                mode1, mode2 = _gitmode[flag1], _gitmode[flag2]
                 if mode1 != mode2:
                     header.append(b'old mode %s' % mode1)
                     header.append(b'new mode %s' % mode2)
@@ -3071,39 +3073,66 @@ def trydiff(
             if fctx2 is not None:
                 content2 = fctx2.data()
 
-        if binary and opts.git and not opts.nobinary:
-            text = mdiff.b85diff(content1, content2)
-            if text:
-                header.append(
-                    b'index %s..%s' % (gitindex(content1), gitindex(content2))
-                )
-            hunks = ((None, [text]),)
-        else:
-            if opts.git and opts.index > 0:
-                flag = flag1
-                if flag is None:
-                    flag = flag2
-                header.append(
-                    b'index %s..%s %s'
-                    % (
-                        gitindex(content1)[0 : opts.index],
-                        gitindex(content2)[0 : opts.index],
-                        gitmode[flag],
-                    )
-                )
+        data1 = (ctx1, fctx1, path1, flag1, content1, date1)
+        data2 = (ctx2, fctx2, path2, flag2, content2, date2)
+        yield diffcontent(data1, data2, header, binary, opts)
 
-            uheaders, hunks = mdiff.unidiff(
-                content1,
-                date1,
-                content2,
-                date2,
-                path1,
-                path2,
-                binary=binary,
-                opts=opts,
+
+def diffcontent(data1, data2, header, binary, opts):
+    """ diffs two versions of a file.
+
+    data1 and data2 are tuples containg:
+
+        * ctx: changeset for the file
+        * fctx: file context for that file
+        * path1: name of the file
+        * flag: flags of the file
+        * content: full content of the file (can be null in case of binary)
+        * date: date of the changeset
+
+    header: the patch header
+    binary: whether the any of the version of file is binary or not
+    opts:   user passed options
+
+    It exists as a separate function so that extensions like extdiff can wrap
+    it and use the file content directly.
+    """
+
+    ctx1, fctx1, path1, flag1, content1, date1 = data1
+    ctx2, fctx2, path2, flag2, content2, date2 = data2
+    if binary and opts.git and not opts.nobinary:
+        text = mdiff.b85diff(content1, content2)
+        if text:
+            header.append(
+                b'index %s..%s' % (_gitindex(content1), _gitindex(content2))
             )
-            header.extend(uheaders)
-        yield fctx1, fctx2, header, hunks
+        hunks = ((None, [text]),)
+    else:
+        if opts.git and opts.index > 0:
+            flag = flag1
+            if flag is None:
+                flag = flag2
+            header.append(
+                b'index %s..%s %s'
+                % (
+                    _gitindex(content1)[0 : opts.index],
+                    _gitindex(content2)[0 : opts.index],
+                    _gitmode[flag],
+                )
+            )
+
+        uheaders, hunks = mdiff.unidiff(
+            content1,
+            date1,
+            content2,
+            date2,
+            path1,
+            path2,
+            binary=binary,
+            opts=opts,
+        )
+        header.extend(uheaders)
+    return fctx1, fctx2, header, hunks
 
 
 def diffstatsum(stats):
