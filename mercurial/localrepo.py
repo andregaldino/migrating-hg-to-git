@@ -3120,6 +3120,7 @@ class localrepository(object):
 
                 # check in files
                 added = []
+                filesadded = []
                 changed = []
                 removed = list(ctx.removed())
                 linkrev = len(self)
@@ -3138,6 +3139,8 @@ class localrepository(object):
                             )
                             if is_touched:
                                 changed.append(f)
+                                if writechangesetcopy and is_touched == 'added':
+                                    filesadded.append(f)
                             m.setflag(f, fctx.flags())
                     except OSError:
                         self.ui.warn(
@@ -3193,9 +3196,6 @@ class localrepository(object):
                     )
 
                     if writechangesetcopy:
-                        filesadded = [
-                            f for f in changed if not (f in m1 or f in m2)
-                        ]
                         filesremoved = removed
                 else:
                     self.ui.debug(
