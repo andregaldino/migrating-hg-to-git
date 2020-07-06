@@ -479,25 +479,24 @@ and its ancestor by overriding "repo._filecommit".
 
   $ cat > ../legacyrepo.py <<EOF
   > from __future__ import absolute_import
-  > from mercurial import error, node
-  > def reposetup(ui, repo):
-  >     class legacyrepo(repo.__class__):
-  >         def _filecommit(self, fctx, manifest1, manifest2,
-  >                         linkrev, tr, includecopymeta):
-  >             fname = fctx.path()
-  >             text = fctx.data()
-  >             flog = self.file(fname)
-  >             fparent1 = manifest1.get(fname, node.nullid)
-  >             fparent2 = manifest2.get(fname, node.nullid)
-  >             meta = {}
-  >             copy = fctx.copysource()
-  >             if copy and copy != fname:
-  >                 raise error.Abort('copying is not supported')
-  >             if fparent2 != node.nullid:
-  >                 return flog.add(text, meta, tr, linkrev,
-  >                                 fparent1, fparent2), 'modified'
-  >             raise error.Abort('only merging is supported')
-  >     repo.__class__ = legacyrepo
+  > from mercurial import commit, error, extensions, node
+  > def _filecommit(orig, repo, fctx, manifest1, manifest2,
+  >                 linkrev, tr, includecopymeta):
+  >     fname = fctx.path()
+  >     text = fctx.data()
+  >     flog = repo.file(fname)
+  >     fparent1 = manifest1.get(fname, node.nullid)
+  >     fparent2 = manifest2.get(fname, node.nullid)
+  >     meta = {}
+  >     copy = fctx.copysource()
+  >     if copy and copy != fname:
+  >         raise error.Abort('copying is not supported')
+  >     if fparent2 != node.nullid:
+  >         return flog.add(text, meta, tr, linkrev,
+  >                         fparent1, fparent2), 'modified'
+  >     raise error.Abort('only merging is supported')
+  > def uisetup(ui):
+  >     extensions.wrapfunction(commit, '_filecommit', _filecommit)
   > EOF
 
   $ cat > baz <<EOF
