@@ -2899,7 +2899,7 @@ class localrepository(object):
 
         # is the file changed?
         text = fctx.data()
-        if fparent2 != nullid or flog.cmp(fparent1, text) or meta:
+        if fparent2 != nullid or meta or flog.cmp(fparent1, text):
             changelist.append(fname)
             return flog.add(text, meta, tr, linkrev, fparent1, fparent2)
         # are just the flags changed during merge?
