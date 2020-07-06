@@ -2772,14 +2772,7 @@ class localrepository(object):
         return self._currentlock(self._wlockref)
 
     def _filecommit(
-        self,
-        fctx,
-        manifest1,
-        manifest2,
-        linkrev,
-        tr,
-        changelist,
-        includecopymeta,
+        self, fctx, manifest1, manifest2, linkrev, tr, includecopymeta,
     ):
         """
         commit an individual file as part of a larger transaction
@@ -2791,19 +2784,23 @@ class localrepository(object):
             manifest2:  manifest of changeset second parent
             linkrev:    revision number of the changeset being created
             tr:         current transation
-            changelist: list of file being changed (modified inplace)
             individual: boolean, set to False to skip storing the copy data
                         (only used by the Google specific feature of using
                         changeset extra as copy source of truth).
 
-        output:
+        output: (filenode, touched)
 
-            The resulting filenode
+            filenode: the filenode that should be used by this changeset
+            touched:  one of: None, 'added' or 'modified'
         """
 
         fname = fctx.path()
         fparent1 = manifest1.get(fname, nullid)
         fparent2 = manifest2.get(fname, nullid)
+        touched = None
+        if fparent1 == fparent2 == nullid:
+            touched = 'added'
+
         if isinstance(fctx, context.filectx):
             node = fctx.filenode()
             if node in [fparent1, fparent2]:
@@ -2815,12 +2812,14 @@ class localrepository(object):
                     fparent2 != nullid
                     and manifest2.flags(fname) != fctx.flags()
                 ):
-                    changelist.append(fname)
-                return node
+                    touched = 'modified'
+                return node, touched
 
         flog = self.file(fname)
         meta = {}
         cfname = fctx.copysource()
+        fnode = None
+
         if cfname and cfname != fname:
             # Mark the new revision of this file as a copy of another
             # file.  This copy data will effectively act as a parent
@@ -2897,13 +2896,16 @@ class localrepository(object):
         # is the file changed?
         text = fctx.data()
         if fparent2 != nullid or meta or flog.cmp(fparent1, text):
-            changelist.append(fname)
-            return flog.add(text, meta, tr, linkrev, fparent1, fparent2)
+            if touched is None:  # do not overwrite added
+                touched = 'modified'
+            fnode = flog.add(text, meta, tr, linkrev, fparent1, fparent2)
         # are just the flags changed during merge?
         elif fname in manifest1 and manifest1.flags(fname) != fctx.flags():
-            changelist.append(fname)
-
-        return fparent1
+            touched = 'modified'
+            fnode = fparent1
+        else:
+            fnode = fparent1
+        return fnode, touched
 
     def checkcommitpatterns(self, wctx, match, status, fail):
         """check for commit arguments that aren't committable"""
@@ -3131,15 +3133,11 @@ class localrepository(object):
                             removed.append(f)
                         else:
                             added.append(f)
-                            m[f] = self._filecommit(
-                                fctx,
-                                m1,
-                                m2,
-                                linkrev,
-                                trp,
-                                changed,
-                                writefilecopymeta,
+                            m[f], is_touched = self._filecommit(
+                                fctx, m1, m2, linkrev, trp, writefilecopymeta,
                             )
+                            if is_touched:
+                                changed.append(f)
                             m.setflag(f, fctx.flags())
                     except OSError:
                         self.ui.warn(

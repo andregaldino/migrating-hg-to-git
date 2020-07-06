@@ -483,7 +483,7 @@ and its ancestor by overriding "repo._filecommit".
   > def reposetup(ui, repo):
   >     class legacyrepo(repo.__class__):
   >         def _filecommit(self, fctx, manifest1, manifest2,
-  >                         linkrev, tr, changelist, includecopymeta):
+  >                         linkrev, tr, includecopymeta):
   >             fname = fctx.path()
   >             text = fctx.data()
   >             flog = self.file(fname)
@@ -494,9 +494,8 @@ and its ancestor by overriding "repo._filecommit".
   >             if copy and copy != fname:
   >                 raise error.Abort('copying is not supported')
   >             if fparent2 != node.nullid:
-  >                 changelist.append(fname)
   >                 return flog.add(text, meta, tr, linkrev,
-  >                                 fparent1, fparent2)
+  >                                 fparent1, fparent2), 'modified'
   >             raise error.Abort('only merging is supported')
   >     repo.__class__ = legacyrepo
   > EOF
