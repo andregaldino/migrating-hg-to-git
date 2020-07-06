@@ -45,8 +45,8 @@ class ParseError(Exception):
 
 
 def showhelp():
-    pycompat.stdout.write(usage)
-    pycompat.stdout.write(b'\noptions:\n')
+    procutil.stdout.write(usage)
+    procutil.stdout.write(b'\noptions:\n')
 
     out_opts = []
     for shortopt, longopt, default, desc in options:
@@ -62,11 +62,11 @@ def showhelp():
         )
     opts_len = max([len(opt[0]) for opt in out_opts])
     for first, second in out_opts:
-        pycompat.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
+        procutil.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
 
 
 try:
-    for fp in (sys.stdin, pycompat.stdout, sys.stderr):
+    for fp in (sys.stdin, procutil.stdout, sys.stderr):
         procutil.setbinary(fp)
 
     opts = {}
@@ -92,11 +92,11 @@ try:
     )
 except ParseError as e:
     e = stringutil.forcebytestr(e)
-    pycompat.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))
+    procutil.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))
     showhelp()
     sys.exit(1)
 except error.Abort as e:
-    pycompat.stderr.write(b"abort: %s\n" % e)
+    procutil.stderr.write(b"abort: %s\n" % e)
     sys.exit(255)
 except KeyboardInterrupt:
     sys.exit(255)

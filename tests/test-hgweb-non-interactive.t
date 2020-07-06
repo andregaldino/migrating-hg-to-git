@@ -14,9 +14,11 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   >     dispatch,
   >     encoding,
   >     hg,
-  >     pycompat,
   >     ui as uimod,
   >     util,
+  > )
+  > from mercurial.utils import (
+  >     procutil,
   > )
   > ui = uimod.ui
   > from mercurial.hgweb import hgweb_mod
@@ -69,8 +71,8 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   > for c in i(env, startrsp):
   >     pass
   > sys.stdout.flush()
-  > pycompat.stdout.write(b'---- ERRORS\n')
-  > pycompat.stdout.write(b'%s\n' % errors.getvalue())
+  > procutil.stdout.write(b'---- ERRORS\n')
+  > procutil.stdout.write(b'%s\n' % errors.getvalue())
   > print('---- OS.ENVIRON wsgi variables')
   > print(sorted([x for x in os.environ if x.startswith('wsgi')]))
   > print('---- request.ENVIRON wsgi variables')

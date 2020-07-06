@@ -22,8 +22,8 @@ Create an extension to test bundle2 API
   > from mercurial import changegroup
   > from mercurial import error
   > from mercurial import obsolete
-  > from mercurial import pycompat
   > from mercurial import registrar
+  > from mercurial.utils import procutil
   > 
   > 
   > try:
@@ -148,7 +148,7 @@ Create an extension to test bundle2 API
   >        bundler.newpart(b'output', data=genraise(), mandatory=False)
   > 
   >     if path is None:
-  >         file = pycompat.stdout
+  >         file = procutil.stdout
   >     else:
   >         file = open(path, 'wb')
   > 
@@ -181,7 +181,7 @@ Create an extension to test bundle2 API
   >         lock = repo.lock()
   >         tr = repo.transaction(b'processbundle')
   >         try:
-  >             unbundler = bundle2.getunbundler(ui, pycompat.stdin)
+  >             unbundler = bundle2.getunbundler(ui, procutil.stdin)
   >             op = bundle2.processbundle(repo, unbundler, lambda: tr)
   >             tr.close()
   >         except error.BundleValueError as exc:
@@ -192,7 +192,7 @@ Create an extension to test bundle2 API
   >         if tr is not None:
   >             tr.release()
   >         lock.release()
-  >         remains = pycompat.stdin.read()
+  >         remains = procutil.stdin.read()
   >         ui.write(b'%i unread bytes\n' % len(remains))
   >     if op.records[b'song']:
   >         totalverses = sum(r[b'verses'] for r in op.records[b'song'])
@@ -207,7 +207,7 @@ Create an extension to test bundle2 API
   > @command(b'statbundle2', [], b'')
   > def cmdstatbundle2(ui, repo):
   >     """print statistic on the bundle2 container read from stdin"""
-  >     unbundler = bundle2.getunbundler(ui, pycompat.stdin)
+  >     unbundler = bundle2.getunbundler(ui, procutil.stdin)
   >     try:
   >         params = unbundler.params
   >     except error.BundleValueError as exc:

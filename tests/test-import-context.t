@@ -19,9 +19,8 @@ Test applying context diffs
   > EOF
   $ cat > cat.py <<EOF
   > import sys
-  > from mercurial import pycompat
-  > from mercurial.utils import stringutil
-  > pycompat.stdout.write(b'%s\n'
+  > from mercurial.utils import procutil, stringutil
+  > procutil.stdout.write(b'%s\n'
   >                       % stringutil.pprint(open(sys.argv[1], 'rb').read()))
   > EOF
 

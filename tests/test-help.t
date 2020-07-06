@@ -1917,9 +1917,9 @@ such str.lower().
   > EOF
 
   $ "$PYTHON" <<EOF | sh
-  > from mercurial import pycompat
+  > from mercurial.utils import procutil
   > upper = b"\x8bL\x98^"
-  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % upper)
+  > procutil.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % upper)
   > EOF
   \x8bL\x98^ (esc)
   ----
@@ -1928,9 +1928,9 @@ such str.lower().
   
 
   $ "$PYTHON" <<EOF | sh
-  > from mercurial import pycompat
+  > from mercurial.utils import procutil
   > lower = b"\x8bl\x98^"
-  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % lower)
+  > procutil.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % lower)
   > EOF
   \x8bl\x98^ (esc)
   ----

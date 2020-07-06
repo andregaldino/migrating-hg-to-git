@@ -9,7 +9,6 @@ import sys
 from mercurial import (
     encoding,
     node,
-    pycompat,
     revlog,
     transaction,
     vfs as vfsmod,
@@ -30,7 +29,7 @@ while True:
     if l.startswith("file:"):
         f = encoding.strtolocal(l[6:-1])
         r = revlog.revlog(opener, f)
-        pycompat.stdout.write(b'%s\n' % f)
+        procutil.stdout.write(b'%s\n' % f)
     elif l.startswith("node:"):
         n = node.bin(l[6:-1])
     elif l.startswith("linkrev:"):

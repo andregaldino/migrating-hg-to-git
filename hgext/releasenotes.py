@@ -30,7 +30,10 @@ from mercurial import (
     scmutil,
     util,
 )
-from mercurial.utils import stringutil
+from mercurial.utils import (
+    procutil,
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -689,7 +692,7 @@ def releasenotes(ui, repo, file_=None, **opts):
 def debugparsereleasenotes(ui, path, repo=None):
     """parse release notes and print resulting data structure"""
     if path == b'-':
-        text = pycompat.stdin.read()
+        text = procutil.stdin.read()
     else:
         with open(path, b'rb') as fh:
             text = fh.read()
