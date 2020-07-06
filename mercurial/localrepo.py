@@ -3164,10 +3164,12 @@ class localrepository(object):
                     rf = metadata.get_removal_filter(ctx, (p1, p2, m1, m2))
                     removed = [f for f in removed if not rf(f)]
 
+                touched.extend(removed)
+
                 if writechangesetcopy:
                     filesremoved = removed
 
-                files = touched + removed
+                files = touched
                 md = None
                 if not files:
                     # if no "files" actually changed in terms of the changelog,
