@@ -14,7 +14,7 @@ import unittest
 from mercurial import pycompat
 
 
-CHILD_PROCESS = r'''
+BUFFERING_CHILD_SCRIPT = r'''
 import os
 
 from mercurial import dispatch
@@ -89,7 +89,7 @@ class TestStdio(unittest.TestCase):
             proc = subprocess.Popen(
                 [sys.executable]
                 + python_args
-                + ['-c', CHILD_PROCESS.format(stream=stream)],
+                + ['-c', BUFFERING_CHILD_SCRIPT.format(stream=stream)],
                 stdin=child_stdin,
                 stdout=child_stream if stream == 'stdout' else None,
                 stderr=child_stream if stream == 'stderr' else None,
@@ -106,36 +106,36 @@ class TestStdio(unittest.TestCase):
                 retcode = proc.wait()
             self.assertEqual(retcode, 0)
 
-    def test_stdout_pipes(self):
+    def test_buffering_stdout_pipes(self):
         self._test('stdout', _pipes, FULLY_BUFFERED)
 
-    def test_stdout_ptys(self):
+    def test_buffering_stdout_ptys(self):
         self._test('stdout', _ptys, LINE_BUFFERED)
 
-    def test_stdout_pipes_unbuffered(self):
+    def test_buffering_stdout_pipes_unbuffered(self):
         self._test('stdout', _pipes, UNBUFFERED, python_args=['-u'])
 
-    def test_stdout_ptys_unbuffered(self):
+    def test_buffering_stdout_ptys_unbuffered(self):
         self._test('stdout', _ptys, UNBUFFERED, python_args=['-u'])
 
     if not pycompat.ispy3 and not pycompat.iswindows:
         # On Python 2 on non-Windows, we manually open stdout in line-buffered
         # mode if connected to a TTY. We should check if Python was configured
         # to use unbuffered stdout, but it's hard to do that.
-        test_stdout_ptys_unbuffered = unittest.expectedFailure(
-            test_stdout_ptys_unbuffered
+        test_buffering_stdout_ptys_unbuffered = unittest.expectedFailure(
+            test_buffering_stdout_ptys_unbuffered
         )
 
-    def test_stderr_pipes(self):
+    def test_buffering_stderr_pipes(self):
         self._test('stderr', _pipes, UNBUFFERED)
 
-    def test_stderr_ptys(self):
+    def test_buffering_stderr_ptys(self):
         self._test('stderr', _ptys, UNBUFFERED)
 
-    def test_stderr_pipes_unbuffered(self):
+    def test_buffering_stderr_pipes_unbuffered(self):
         self._test('stderr', _pipes, UNBUFFERED, python_args=['-u'])
 
-    def test_stderr_ptys_unbuffered(self):
+    def test_buffering_stderr_ptys_unbuffered(self):
         self._test('stderr', _ptys, UNBUFFERED, python_args=['-u'])
 
 
