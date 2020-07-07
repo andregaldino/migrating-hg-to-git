@@ -777,12 +777,12 @@ def subsetphaseheads(repo, subset):
 
 def updatephases(repo, trgetter, headsbyphase):
     """Updates the repo with the given phase heads"""
-    # Now advance phase boundaries of all but secret phase
+    # Now advance phase boundaries of all phases
     #
     # run the update (and fetch transaction) only if there are actually things
     # to update. This avoid creating empty transaction during no-op operation.
 
-    for phase in allphases[:-1]:
+    for phase in allphases:
         revset = b'%ln - _phase(%s)'
         heads = [c.node() for c in repo.set(revset, headsbyphase[phase], phase)]
         if heads:
