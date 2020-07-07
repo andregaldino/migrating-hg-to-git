@@ -5,6 +5,7 @@ Tests the buffering behavior of stdio streams in `mercurial.utils.procutil`.
 from __future__ import absolute_import
 
 import contextlib
+import errno
 import os
 import subprocess
 import sys
@@ -62,6 +63,23 @@ def _ptys():
         yield rwpair
 
 
+def _readall(fd, buffer_size):
+    buf = []
+    while True:
+        try:
+            s = os.read(fd, buffer_size)
+        except OSError as e:
+            if e.errno == errno.EIO:
+                # If the child-facing PTY got closed, reading from the
+                # parent-facing PTY raises EIO.
+                break
+            raise
+        if not s:
+            break
+        buf.append(s)
+    return b''.join(buf)
+
+
 class TestStdio(unittest.TestCase):
     def _test(self, stream, rwpair_generator, expected_output, python_args=[]):
         assert stream in ('stdout', 'stderr')
@@ -76,9 +94,14 @@ class TestStdio(unittest.TestCase):
                 stdout=child_stream if stream == 'stdout' else None,
                 stderr=child_stream if stream == 'stderr' else None,
             )
-            retcode = proc.wait()
+            try:
+                os.close(child_stream)
+                self.assertEqual(
+                    _readall(stream_receiver, 1024), expected_output
+                )
+            finally:
+                retcode = proc.wait()
             self.assertEqual(retcode, 0)
-            self.assertEqual(os.read(stream_receiver, 1024), expected_output)
 
     def test_stdout_pipes(self):
         self._test('stdout', _pipes, FULLY_BUFFERED)
