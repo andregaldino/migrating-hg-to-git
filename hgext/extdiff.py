@@ -350,32 +350,32 @@ def _runperfilediff(
                 proc.wait()
 
 
-def diffpatch(ui, repo, node1a, node2, tmproot, matcher, cmdline):
+def diffpatch(ui, repo, node1, node2, tmproot, matcher, cmdline):
     template = b'hg-%h.patch'
+    # write patches to temporary files
     with formatter.nullformatter(ui, b'extdiff', {}) as fm:
         cmdutil.export(
             repo,
-            [repo[node1a].rev(), repo[node2].rev()],
+            [repo[node1].rev(), repo[node2].rev()],
             fm,
             fntemplate=repo.vfs.reljoin(tmproot, template),
             match=matcher,
         )
-    label1a = cmdutil.makefilename(repo[node1a], template)
+    label1 = cmdutil.makefilename(repo[node1], template)
     label2 = cmdutil.makefilename(repo[node2], template)
-    dir1a = repo.vfs.reljoin(tmproot, label1a)
-    dir2 = repo.vfs.reljoin(tmproot, label2)
-    dir1b = None
-    label1b = None
+    file1 = repo.vfs.reljoin(tmproot, label1)
+    file2 = repo.vfs.reljoin(tmproot, label2)
     cmdline = formatcmdline(
         cmdline,
         repo.root,
-        parent1=dir1a,
-        plabel1=label1a,
-        parent2=dir1b,
-        plabel2=label1b,
-        child=dir2,
         # no 3way while comparing patches
         do3way=False,
+        parent1=file1,
+        plabel1=label1,
+        # while comparing patches, there is no second parent
+        parent2=None,
+        plabel2=None,
+        child=file2,
         clabel=label2,
     )
     ui.debug(b'running %r in %s\n' % (pycompat.bytestr(cmdline), tmproot))
