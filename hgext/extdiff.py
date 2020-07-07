@@ -398,6 +398,8 @@ def diffrevs(
 ):
 
     subrepos = opts.get(b'subrepos')
+
+    # calculate list of files changed between both revs
     st = repo.status(node1a, node2, matcher, listsubrepos=subrepos)
     mod_a, add_a, rem_a = set(st.modified), set(st.added), set(st.removed)
     if do3way:
@@ -413,11 +415,18 @@ def diffrevs(
     common = modadd | rem_a | rem_b
     if not common:
         return 0
+
     # Always make a copy of node1a (and node1b, if applicable)
+    # dir1a should contain files which are:
+    #   * modified or removed from node1a to node2
+    #   * modified or added from node1b to node2
+    #     (except file added from node1a to node2 as they were not present in
+    #     node1a)
     dir1a_files = mod_a | rem_a | ((mod_b | add_b) - add_a)
     dir1a = snapshot(ui, repo, dir1a_files, node1a, tmproot, subrepos)[0]
     rev1a = b'@%d' % repo[node1a].rev()
     if do3way:
+        # file calculation criteria same as dir1a
         dir1b_files = mod_b | rem_b | ((mod_a | add_a) - add_b)
         dir1b = snapshot(ui, repo, dir1b_files, node1b, tmproot, subrepos)[0]
         rev1b = b'@%d' % repo[node1b].rev()
