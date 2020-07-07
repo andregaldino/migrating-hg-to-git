@@ -99,6 +99,9 @@ class TestStdio(unittest.TestCase):
                 self.assertEqual(
                     _readall(stream_receiver, 1024), expected_output
                 )
+            except:  # re-raises
+                proc.terminate()
+                raise
             finally:
                 retcode = proc.wait()
             self.assertEqual(retcode, 0)
