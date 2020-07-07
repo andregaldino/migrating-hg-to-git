@@ -3164,6 +3164,9 @@ class localrepository(object):
                     rf = metadata.get_removal_filter(ctx, (p1, p2, m1, m2))
                     removed = [f for f in removed if not rf(f)]
 
+                if writechangesetcopy:
+                    filesremoved = removed
+
                 files = changed + removed
                 md = None
                 if not files:
@@ -3194,9 +3197,6 @@ class localrepository(object):
                         drop,
                         match=self.narrowmatch(),
                     )
-
-                    if writechangesetcopy:
-                        filesremoved = removed
                 else:
                     self.ui.debug(
                         b'reusing manifest from p1 (listed files '
