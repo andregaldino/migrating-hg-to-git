@@ -35,6 +35,7 @@ and migrate secret keys
   $ hg sigs
 
   $ HGEDITOR=cat hg sign -e 0
+  gpg: error retrieving key fingerprint from card: Invalid name (?)
   signing 0:e63c23eaa88a
   Added signature for changeset e63c23eaa88a
   

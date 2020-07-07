@@ -3681,7 +3681,7 @@ class TestRunner(object):
         for p in osenvironb.get(b'PATH', dpb).split(sepb):
             name = os.path.join(p, program)
             if os.name == 'nt' or os.access(name, os.X_OK):
-                return name
+                return _bytes2sys(name)
         return None
 
     def _checktools(self):
@@ -3692,7 +3692,7 @@ class TestRunner(object):
             found = self._findprogram(p)
             p = p.decode("utf-8")
             if found:
-                vlog("# Found prerequisite", p, "at", _bytes2sys(found))
+                vlog("# Found prerequisite", p, "at", found)
             else:
                 print("WARNING: Did not find prerequisite tool: %s " % p)
 
