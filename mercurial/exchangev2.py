@@ -82,15 +82,12 @@ def pull(pullop):
         phases.registernew(repo, tr, phases.draft, csetres[b'added'])
 
     # And adjust the phase of all changesets accordingly.
-    for phase in phases.phasenames:
+    for phasenumber, phase in phases.phasenames.items():
         if phase == b'secret' or not csetres[b'nodesbyphase'][phase]:
             continue
 
         phases.advanceboundary(
-            repo,
-            tr,
-            phases.phasenames.index(phase),
-            csetres[b'nodesbyphase'][phase],
+            repo, tr, phasenumber, csetres[b'nodesbyphase'][phase],
         )
 
     # Write bookmark updates.
@@ -361,7 +358,7 @@ def _processchangesetdata(repo, tr, objs):
         # so we can set the linkrev accordingly when manifests are added.
         manifestnodes[cl.rev(node)] = revision.manifest
 
-    nodesbyphase = {phase: set() for phase in phases.phasenames}
+    nodesbyphase = {phase: set() for phase in phases.phasenames.values()}
     remotebookmarks = {}
 
     # addgroup() expects a 7-tuple describing revisions. This normalizes

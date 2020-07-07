@@ -1024,12 +1024,12 @@ def _pushb2checkphases(pushop, bundler):
     hasphaseheads = b'heads' in b2caps.get(b'phases', ())
     if pushop.remotephases is not None and hasphaseheads:
         # check that the remote phase has not changed
-        checks = [[] for p in phases.allphases]
+        checks = {p: [] for p in phases.allphases}
         checks[phases.public].extend(pushop.remotephases.publicheads)
         checks[phases.draft].extend(pushop.remotephases.draftroots)
-        if any(checks):
-            for nodes in checks:
-                nodes.sort()
+        if any(pycompat.itervalues(checks)):
+            for phase in checks:
+                checks[phase].sort()
             checkdata = phases.binaryencode(checks)
             bundler.newpart(b'check:phases', data=checkdata)
 
@@ -1104,7 +1104,7 @@ def _pushb2phaseheads(pushop, bundler):
     """push phase information through a bundle2 - binary part"""
     pushop.stepsdone.add(b'phases')
     if pushop.outdatedphases:
-        updates = [[] for p in phases.allphases]
+        updates = {p: [] for p in phases.allphases}
         updates[0].extend(h.node() for h in pushop.outdatedphases)
         phasedata = phases.binaryencode(updates)
         bundler.newpart(b'phase-heads', data=phasedata)
@@ -2658,9 +2658,9 @@ def _getbundlephasespart(
                     headsbyphase[phases.public].add(node(r))
 
         # transform data in a format used by the encoding function
-        phasemapping = []
-        for phase in phases.allphases:
-            phasemapping.append(sorted(headsbyphase[phase]))
+        phasemapping = {
+            phase: sorted(headsbyphase[phase]) for phase in phases.allphases
+        }
 
         # generate the actual part
         phasedata = phases.binaryencode(phasemapping)

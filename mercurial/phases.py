@@ -128,25 +128,28 @@ from . import (
 
 _fphasesentry = struct.Struct(b'>i20s')
 
-INTERNAL_FLAG = 64  # Phases for mercurial internal usage only
-HIDEABLE_FLAG = 32  # Phases that are hideable
-
 # record phase index
 public, draft, secret = range(3)
-internal = INTERNAL_FLAG | HIDEABLE_FLAG
-archived = HIDEABLE_FLAG
-allphases = list(range(internal + 1))
-trackedphases = allphases[1:]
+archived = 32  # non-continuous for compatibility
+internal = 96  # non-continuous for compatibility
+allphases = (public, draft, secret, archived, internal)
+trackedphases = (draft, secret, archived, internal)
 # record phase names
 cmdphasenames = [b'public', b'draft', b'secret']  # known to `hg phase` command
-phasenames = [None] * len(allphases)
-phasenames[: len(cmdphasenames)] = cmdphasenames
+phasenames = dict(enumerate(cmdphasenames))
 phasenames[archived] = b'archived'
 phasenames[internal] = b'internal'
+# map phase name to phase number
+phasenumber = {name: phase for phase, name in phasenames.items()}
+# like phasenumber, but also include maps for the numeric and binary
+# phase number to the phase number
+phasenumber2 = phasenumber.copy()
+phasenumber2.update({phase: phase for phase in phasenames})
+phasenumber2.update({b'%i' % phase: phase for phase in phasenames})
 # record phase property
-mutablephases = tuple(allphases[1:])
-remotehiddenphases = tuple(allphases[2:])
-localhiddenphases = tuple(p for p in allphases if p & HIDEABLE_FLAG)
+mutablephases = (draft, secret, archived, internal)
+remotehiddenphases = (secret, archived, internal)
+localhiddenphases = (internal, archived)
 
 
 def supportinternal(repo):
@@ -167,7 +170,7 @@ def _readroots(repo, phasedefaults=None):
     """
     repo = repo.unfiltered()
     dirty = False
-    roots = [set() for i in allphases]
+    roots = [set() for i in range(max(allphases) + 1)]
     try:
         f, pending = txnutil.trypending(repo.root, repo.svfs, b'phaseroots')
         try:
@@ -189,11 +192,10 @@ def _readroots(repo, phasedefaults=None):
 def binaryencode(phasemapping):
     """encode a 'phase -> nodes' mapping into a binary stream
 
-    Since phases are integer the mapping is actually a python list:
-    [[PUBLIC_HEADS], [DRAFTS_HEADS], [SECRET_HEADS]]
+    The revision lists are encoded as (phase, root) pairs.
     """
     binarydata = []
-    for phase, nodes in enumerate(phasemapping):
+    for phase, nodes in pycompat.iteritems(phasemapping):
         for head in nodes:
             binarydata.append(_fphasesentry.pack(phase, head))
     return b''.join(binarydata)
@@ -202,8 +204,9 @@ def binaryencode(phasemapping):
 def binarydecode(stream):
     """decode a binary stream into a 'phase -> nodes' mapping
 
-    Since phases are integer the mapping is actually a python list."""
-    headsbyphase = [[] for i in allphases]
+    The (phase, root) pairs are turned back into a dictionary with
+    the phase as index and the aggregated roots of that phase as value."""
+    headsbyphase = {i: [] for i in allphases}
     entrysize = _fphasesentry.size
     while True:
         entry = stream.read(entrysize)
@@ -427,12 +430,16 @@ class phasecache(object):
             nativeroots.append(
                 pycompat.maplist(repo.changelog.rev, self.phaseroots[phase])
             )
-        return repo.changelog.computephases(nativeroots)
+        revslen, phasesets = repo.changelog.computephases(nativeroots)
+        phasesets2 = [set() for phase in range(max(allphases) + 1)]
+        for phase, phaseset in zip(allphases, phasesets):
+            phasesets2[phase] = phaseset
+        return revslen, phasesets2
 
     def _computephaserevspure(self, repo):
         repo = repo.unfiltered()
         cl = repo.changelog
-        self._phasesets = [set() for phase in allphases]
+        self._phasesets = [set() for phase in range(max(allphases) + 1)]
         lowerroots = set()
         for phase in reversed(trackedphases):
             roots = pycompat.maplist(cl.rev, self.phaseroots[phase])
@@ -533,7 +540,7 @@ class phasecache(object):
 
         changes = set()  # set of revisions to be changed
         delroots = []  # set of root deleted by this path
-        for phase in pycompat.xrange(targetphase + 1, len(allphases)):
+        for phase in (phase for phase in allphases if phase > targetphase):
             # filter nodes that are not in a compatible phase already
             nodes = [
                 n for n in nodes if self.phase(repo, repo[n].rev()) >= phase
@@ -766,7 +773,7 @@ def subsetphaseheads(repo, subset):
     """
     cl = repo.changelog
 
-    headsbyphase = [[] for i in allphases]
+    headsbyphase = {i: [] for i in allphases}
     # No need to keep track of secret phase; any heads in the subset that
     # are not mentioned are implicitly secret.
     for phase in allphases[:secret]:
@@ -897,13 +904,11 @@ def newcommitphase(ui):
     """
     v = ui.config(b'phases', b'new-commit')
     try:
-        return phasenames.index(v)
-    except ValueError:
-        try:
-            return int(v)
-        except ValueError:
-            msg = _(b"phases.new-commit: not a valid phase name ('%s')")
-            raise error.ConfigError(msg % v)
+        return phasenumber2[v]
+    except KeyError:
+        raise error.ConfigError(
+            _(b"phases.new-commit: not a valid phase name ('%s')") % v
+        )
 
 
 def hassecret(repo):
