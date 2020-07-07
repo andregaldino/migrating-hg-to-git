@@ -350,7 +350,7 @@ def _runperfilediff(
                 proc.wait()
 
 
-def diffpatch(ui, repo, node1a, node2, tmproot, matcher, cmdline, do3way):
+def diffpatch(ui, repo, node1a, node2, tmproot, matcher, cmdline):
     template = b'hg-%h.patch'
     with formatter.nullformatter(ui, b'extdiff', {}) as fm:
         cmdutil.export(
@@ -369,12 +369,13 @@ def diffpatch(ui, repo, node1a, node2, tmproot, matcher, cmdline, do3way):
     cmdline = formatcmdline(
         cmdline,
         repo.root,
-        do3way=do3way,
         parent1=dir1a,
         plabel1=label1a,
         parent2=dir1b,
         plabel2=label1b,
         child=dir2,
+        # no 3way while comparing patches
+        do3way=False,
         clabel=label2,
     )
     ui.debug(b'running %r in %s\n' % (pycompat.bytestr(cmdline), tmproot))
@@ -567,9 +568,7 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
     tmproot = pycompat.mkdtemp(prefix=b'extdiff.')
     try:
         if opts.get(b'patch'):
-            return diffpatch(
-                ui, repo, node1a, node2, tmproot, matcher, cmdline, do3way
-            )
+            return diffpatch(ui, repo, node1a, node2, tmproot, matcher, cmdline)
 
         return diffrevs(
             ui,
