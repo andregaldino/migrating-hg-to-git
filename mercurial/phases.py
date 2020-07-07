@@ -323,6 +323,28 @@ class phasecache(object):
             self.filterunknown(repo)
             self.opener = repo.svfs
 
+    def hasnonpublicphases(self, repo):
+        """detect if there are revisions with non-public phase"""
+        repo = repo.unfiltered()
+        cl = repo.changelog
+        if len(cl) >= self._loadedrevslen:
+            self.invalidate()
+            self.loadphaserevs(repo)
+        return any(self.phaseroots[1:])
+
+    def nonpublicphaseroots(self, repo):
+        """returns the roots of all non-public phases
+
+        The roots are not minimized, so if the secret revisions are
+        descendants of draft revisions, their roots will still be present.
+        """
+        repo = repo.unfiltered()
+        cl = repo.changelog
+        if len(cl) >= self._loadedrevslen:
+            self.invalidate()
+            self.loadphaserevs(repo)
+        return set().union(*[roots for roots in self.phaseroots[1:] if roots])
+
     def getrevset(self, repo, phases, subset=None):
         """return a smartset for the given phases"""
         self.loadphaserevs(repo)  # ensure phase's sets are loaded

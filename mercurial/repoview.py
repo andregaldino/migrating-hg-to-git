@@ -129,7 +129,7 @@ def computeunserved(repo, visibilityexceptions=None):
 def computemutable(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     # fast check to avoid revset call on huge repo
-    if any(repo._phasecache.phaseroots[1:]):
+    if repo._phasecache.hasnonpublicphases(repo):
         getphase = repo._phasecache.phase
         maymutable = filterrevs(repo, b'base')
         return frozenset(r for r in maymutable if getphase(repo, r))
@@ -154,9 +154,9 @@ def computeimpactable(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     cl = repo.changelog
     firstmutable = len(cl)
-    for roots in repo._phasecache.phaseroots[1:]:
-        if roots:
-            firstmutable = min(firstmutable, min(cl.rev(r) for r in roots))
+    roots = repo._phasecache.nonpublicphaseroots(repo)
+    if roots:
+        firstmutable = min(firstmutable, min(cl.rev(r) for r in roots))
     # protect from nullrev root
     firstmutable = max(0, firstmutable)
     return frozenset(pycompat.xrange(firstmutable, len(cl)))
