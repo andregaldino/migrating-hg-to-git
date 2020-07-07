@@ -170,7 +170,7 @@ def _readroots(repo, phasedefaults=None):
     """
     repo = repo.unfiltered()
     dirty = False
-    roots = [set() for i in range(max(allphases) + 1)]
+    roots = {i: set() for i in allphases}
     try:
         f, pending = txnutil.trypending(repo.root, repo.svfs, b'phaseroots')
         try:
@@ -333,7 +333,11 @@ class phasecache(object):
         if len(cl) >= self._loadedrevslen:
             self.invalidate()
             self.loadphaserevs(repo)
-        return any(self.phaseroots[1:])
+        return any(
+            revs
+            for phase, revs in pycompat.iteritems(self.phaseroots)
+            if phase != public
+        )
 
     def nonpublicphaseroots(self, repo):
         """returns the roots of all non-public phases
@@ -346,7 +350,13 @@ class phasecache(object):
         if len(cl) >= self._loadedrevslen:
             self.invalidate()
             self.loadphaserevs(repo)
-        return set().union(*[roots for roots in self.phaseroots[1:] if roots])
+        return set().union(
+            *[
+                revs
+                for phase, revs in pycompat.iteritems(self.phaseroots)
+                if phase != public
+            ]
+        )
 
     def getrevset(self, repo, phases, subset=None):
         """return a smartset for the given phases"""
@@ -405,7 +415,7 @@ class phasecache(object):
         # Shallow copy meant to ensure isolation in
         # advance/retractboundary(), nothing more.
         ph = self.__class__(None, None, _load=False)
-        ph.phaseroots = self.phaseroots[:]
+        ph.phaseroots = self.phaseroots.copy()
         ph.dirty = self.dirty
         ph.opener = self.opener
         ph._loadedrevslen = self._loadedrevslen
@@ -425,21 +435,12 @@ class phasecache(object):
 
     def _getphaserevsnative(self, repo):
         repo = repo.unfiltered()
-        nativeroots = []
-        for phase in trackedphases:
-            nativeroots.append(
-                pycompat.maplist(repo.changelog.rev, self.phaseroots[phase])
-            )
-        revslen, phasesets = repo.changelog.computephases(nativeroots)
-        phasesets2 = [set() for phase in range(max(allphases) + 1)]
-        for phase, phaseset in zip(allphases, phasesets):
-            phasesets2[phase] = phaseset
-        return revslen, phasesets2
+        return repo.changelog.computephases(self.phaseroots)
 
     def _computephaserevspure(self, repo):
         repo = repo.unfiltered()
         cl = repo.changelog
-        self._phasesets = [set() for phase in range(max(allphases) + 1)]
+        self._phasesets = {phase: set() for phase in allphases}
         lowerroots = set()
         for phase in reversed(trackedphases):
             roots = pycompat.maplist(cl.rev, self.phaseroots[phase])
@@ -493,7 +494,7 @@ class phasecache(object):
             f.close()
 
     def _write(self, fp):
-        for phase, roots in enumerate(self.phaseroots):
+        for phase, roots in pycompat.iteritems(self.phaseroots):
             for h in sorted(roots):
                 fp.write(b'%i %s\n' % (phase, hex(h)))
         self.dirty = False
@@ -575,7 +576,11 @@ class phasecache(object):
         return changes
 
     def retractboundary(self, repo, tr, targetphase, nodes):
-        oldroots = self.phaseroots[: targetphase + 1]
+        oldroots = {
+            phase: revs
+            for phase, revs in pycompat.iteritems(self.phaseroots)
+            if phase <= targetphase
+        }
         if tr is None:
             phasetracking = None
         else:
@@ -594,7 +599,7 @@ class phasecache(object):
             # find the phase of the affected revision
             for phase in pycompat.xrange(targetphase, -1, -1):
                 if phase:
-                    roots = oldroots[phase]
+                    roots = oldroots.get(phase, [])
                     revs = set(repo.revs(b'%ln::%ld', roots, affected))
                     affected -= revs
                 else:  # public phase
@@ -648,7 +653,7 @@ class phasecache(object):
         """
         filtered = False
         has_node = repo.changelog.index.has_node  # to filter unknown nodes
-        for phase, nodes in enumerate(self.phaseroots):
+        for phase, nodes in pycompat.iteritems(self.phaseroots):
             missing = sorted(node for node in nodes if not has_node(node))
             if missing:
                 for mnode in missing:

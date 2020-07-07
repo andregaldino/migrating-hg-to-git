@@ -185,7 +185,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   > ops = [
   >     ('reachableroots',
   >      lambda: cl.index.reachableroots2(0, [1], [0], False)),
-  >     ('compute_phases_map_sets', lambda: cl.computephases([[0], []])),
+  >     ('compute_phases_map_sets', lambda: cl.computephases({1: {cl.node(0)}})),
   >     ('index_headrevs', lambda: cl.headrevs()),
   >     ('find_gca_candidates', lambda: cl.commonancestorsheads(n0, n1)),
   >     ('find_deepest', lambda: cl.ancestor(n0, n1)),

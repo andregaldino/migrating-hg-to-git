@@ -109,6 +109,9 @@ static const Py_ssize_t nullrev = -1;
 
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 
+static int index_find_node(indexObject *self, const char *node,
+                           Py_ssize_t nodelen);
+
 #if LONG_MAX == 0x7fffffffL
 static const char *const tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
 #else
@@ -577,34 +580,6 @@ static int check_filter(PyObject *filter, Py_ssize_t arg)
 	}
 }
 
-static Py_ssize_t add_roots_get_min(indexObject *self, PyObject *list,
-                                    Py_ssize_t marker, char *phases)
-{
-	PyObject *iter = NULL;
-	PyObject *iter_item = NULL;
-	Py_ssize_t min_idx = index_length(self) + 2;
-	long iter_item_long;
-
-	if (PyList_GET_SIZE(list) != 0) {
-		iter = PyObject_GetIter(list);
-		if (iter == NULL)
-			return -2;
-		while ((iter_item = PyIter_Next(iter))) {
-			if (!pylong_to_long(iter_item, &iter_item_long)) {
-				Py_DECREF(iter_item);
-				return -2;
-			}
-			Py_DECREF(iter_item);
-			if (iter_item_long < min_idx)
-				min_idx = iter_item_long;
-			phases[iter_item_long] = (char)marker;
-		}
-		Py_DECREF(iter);
-	}
-
-	return min_idx;
-}
-
 static inline void set_phase_from_parents(char *phases, int parent_1,
                                           int parent_2, Py_ssize_t i)
 {
@@ -773,99 +748,165 @@ bail:
 	return NULL;
 }
 
+static int add_roots_get_min(indexObject *self, PyObject *roots, char *phases,
+                             char phase)
+{
+	Py_ssize_t len = index_length(self);
+	PyObject *iter;
+	PyObject *item;
+	PyObject *iterator;
+	int rev, minrev = -1;
+	char *node;
+
+	if (!PySet_Check(roots))
+		return -2;
+	iterator = PyObject_GetIter(roots);
+	if (iterator == NULL)
+		return -2;
+	while ((item = PyIter_Next(iterator))) {
+		if (node_check(item, &node) == -1)
+			goto failed;
+		rev = index_find_node(self, node, 20);
+		/* null is implicitly public, so negative is invalid */
+		if (rev < 0 || rev >= len)
+			goto failed;
+		phases[rev] = phase;
+		if (minrev == -1 || minrev > rev)
+			minrev = rev;
+		Py_DECREF(item);
+	}
+	Py_DECREF(iterator);
+	return minrev;
+failed:
+	Py_DECREF(iterator);
+	Py_DECREF(item);
+	return -2;
+}
+
 static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 {
-	PyObject *roots = Py_None;
+	/* 0: public (untracked), 1: draft, 2: secret, 32: archive,
+	   96: internal */
+	static const char trackedphases[] = {1, 2, 32, 96};
 	PyObject *ret = NULL;
-	PyObject *phasessize = NULL;
+	PyObject *roots = Py_None;
+	PyObject *idx = NULL;
+	PyObject *pyphase = NULL;
+	PyObject *pyrev = NULL;
 	PyObject *phaseroots = NULL;
-	PyObject *phaseset = NULL;
-	PyObject *phasessetlist = NULL;
-	PyObject *rev = NULL;
+	PyObject *phasessize = NULL;
+	PyObject *phasesets[4] = {NULL, NULL, NULL, NULL};
 	Py_ssize_t len = index_length(self);
-	Py_ssize_t numphase = 0;
-	Py_ssize_t minrevallphases = 0;
-	Py_ssize_t minrevphase = 0;
-	Py_ssize_t i = 0;
+	const char *currentphase;
 	char *phases = NULL;
-	long phase;
+	int minphaserev = -1, rev, i;
+	const int numphases = (int)(sizeof(phasesets) / sizeof(phasesets[0]));
 
 	if (!PyArg_ParseTuple(args, "O", &roots))
-		goto done;
-	if (roots == NULL || !PyList_Check(roots)) {
-		PyErr_SetString(PyExc_TypeError, "roots must be a list");
-		goto done;
+		return NULL;
+	if (roots == NULL || !PyDict_Check(roots)) {
+		PyErr_SetString(PyExc_TypeError, "roots must be a dictionary");
+		return NULL;
 	}
 
-	phases = calloc(
-	    len, 1); /* phase per rev: {0: public, 1: draft, 2: secret} */
+	phases = calloc(len, 1);
 	if (phases == NULL) {
 		PyErr_NoMemory();
-		goto done;
+		return NULL;
 	}
-	/* Put the phase information of all the roots in phases */
-	numphase = PyList_GET_SIZE(roots) + 1;
-	minrevallphases = len + 1;
-	phasessetlist = PyList_New(numphase);
-	if (phasessetlist == NULL)
-		goto done;
 
-	PyList_SET_ITEM(phasessetlist, 0, Py_None);
-	Py_INCREF(Py_None);
-
-	for (i = 0; i < numphase - 1; i++) {
-		phaseroots = PyList_GET_ITEM(roots, i);
-		phaseset = PySet_New(NULL);
-		if (phaseset == NULL)
+	for (i = 0; i < numphases; ++i) {
+		pyphase = PyInt_FromLong(trackedphases[i]);
+		if (pyphase == NULL)
 			goto release;
-		PyList_SET_ITEM(phasessetlist, i + 1, phaseset);
-		if (!PyList_Check(phaseroots)) {
-			PyErr_SetString(PyExc_TypeError,
-			                "roots item must be a list");
+		phaseroots = PyDict_GetItem(roots, pyphase);
+		Py_DECREF(pyphase);
+		if (phaseroots == NULL)
+			continue;
+		rev = add_roots_get_min(self, phaseroots, phases, trackedphases[i]);
+		phaseroots = NULL;
+		if (rev == -2)
 			goto release;
-		}
-		minrevphase =
-		    add_roots_get_min(self, phaseroots, i + 1, phases);
-		if (minrevphase == -2) /* Error from add_roots_get_min */
-			goto release;
-		minrevallphases = MIN(minrevallphases, minrevphase);
+		if (rev != -1 && (minphaserev == -1 || rev < minphaserev))
+			minphaserev = rev;
 	}
-	/* Propagate the phase information from the roots to the revs */
-	if (minrevallphases != -1) {
+
+	for (i = 0; i < numphases; ++i) {
+		phasesets[i] = PySet_New(NULL);
+		if (phasesets[i] == NULL)
+			goto release;
+	}
+
+	if (minphaserev == -1)
+		minphaserev = len;
+	for (rev = minphaserev; rev < len; ++rev) {
 		int parents[2];
-		for (i = minrevallphases; i < len; i++) {
-			if (index_get_parents(self, i, parents, (int)len - 1) <
-			    0)
-				goto release;
-			set_phase_from_parents(phases, parents[0], parents[1],
-			                       i);
+		/*
+		 * The parent lookup could be skipped for phaseroots, but
+		 * phase --force would historically not recompute them
+		 * correctly, leaving descendents with a lower phase around.
+		 * As such, unconditionally recompute the phase.
+		 */
+		if (index_get_parents(self, rev, parents, (int)len - 1) < 0)
+			goto release;
+		set_phase_from_parents(phases, parents[0], parents[1], rev);
+		switch (phases[rev]) {
+		case 0:
+			continue;
+		case 1:
+			pyphase = phasesets[0];
+			break;
+		case 2:
+			pyphase = phasesets[1];
+			break;
+		case 32:
+			pyphase = phasesets[2];
+			break;
+		case 96:
+			pyphase = phasesets[3];
+			break;
+		default:
+			goto release;
 		}
+		pyrev = PyInt_FromLong(rev);
+		if (pyrev == NULL)
+			goto release;
+		if (PySet_Add(pyphase, pyrev) == -1) {
+			Py_DECREF(pyrev);
+			goto release;
+		}
+		Py_DECREF(pyrev);
 	}
-	/* Transform phase list to a python list */
+	phaseroots = _dict_new_presized(numphases);
+	if (phaseroots == NULL)
+		goto release;
+	for (int i = 0; i < numphases; ++i) {
+		pyphase = PyInt_FromLong(trackedphases[i]);
+		if (pyphase == NULL)
+			goto release;
+		if (PyDict_SetItem(phaseroots, pyphase, phasesets[i]) == -1) {
+			Py_DECREF(pyphase);
+			goto release;
+		}
+		Py_DECREF(phasesets[i]);
+		phasesets[i] = NULL;
+	}
 	phasessize = PyInt_FromSsize_t(len);
 	if (phasessize == NULL)
 		goto release;
-	for (i = 0; i < len; i++) {
-		phase = phases[i];
-		/* We only store the sets of phase for non public phase, the
-		 * public phase is computed as a difference */
-		if (phase != 0) {
-			phaseset = PyList_GET_ITEM(phasessetlist, phase);
-			rev = PyInt_FromSsize_t(i);
-			if (rev == NULL)
-				goto release;
-			PySet_Add(phaseset, rev);
-			Py_XDECREF(rev);
-		}
-	}
-	ret = PyTuple_Pack(2, phasessize, phasessetlist);
+
+	ret = PyTuple_Pack(2, phasessize, phaseroots);
+	Py_DECREF(phasessize);
+	Py_DECREF(phaseroots);
+	return ret;
 
 release:
-	Py_XDECREF(phasessize);
-	Py_XDECREF(phasessetlist);
-done:
+	for (i = 0; i < numphases; ++i)
+		Py_XDECREF(phasesets[i]);
+	Py_XDECREF(phaseroots);
+
 	free(phases);
-	return ret;
+	return NULL;
 }
 
 static PyObject *index_headrevs(indexObject *self, PyObject *args)
