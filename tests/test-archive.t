@@ -576,12 +576,18 @@ old file -- date clamped to 1980
 
 test xz support only available in Python 3.4
 
-#if py3
+#if lzma
   $ hg archive ../archive.txz
   $ which xz >/dev/null && xz -l ../archive.txz | head -n1 || true
   Strms  Blocks   Compressed Uncompressed  Ratio  Check   Filename (xz !)
   $ rm -f ../archive.txz
-#else
+#endif
+#if py3 no-lzma
+  $ hg archive ../archive.txz
+  abort: lzma module is not available
+  [255]
+#endif
+#if no-py3
   $ hg archive ../archive.txz
   abort: xz compression is only available in Python 3
   [255]
