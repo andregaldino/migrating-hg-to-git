@@ -41,13 +41,17 @@ def _filectxorabsent(hexnode, ctx, f):
 # Merge state record types. See ``mergestate`` docs for more.
 RECORD_LOCAL = b'L'
 RECORD_OTHER = b'O'
+# record extra information about files
+RECORD_FILE_VALUES = b'f'
+# record merge labels
+RECORD_LABELS = b'l'
+
 RECORD_MERGED = b'F'
 RECORD_CHANGEDELETE_CONFLICT = b'C'
 RECORD_MERGE_DRIVER_MERGE = b'D'
 RECORD_PATH_CONFLICT = b'P'
+
 RECORD_MERGE_DRIVER_STATE = b'm'
-RECORD_FILE_VALUES = b'f'
-RECORD_LABELS = b'l'
 RECORD_OVERRIDE = b't'
 RECORD_UNSUPPORTED_MANDATORY = b'X'
 RECORD_UNSUPPORTED_ADVISORY = b'x'
