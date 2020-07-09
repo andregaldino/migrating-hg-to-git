@@ -1465,8 +1465,8 @@ def debuginstall(ui, **opts):
     fm = ui.formatter(b'debuginstall', opts)
     fm.startitem()
 
-    # encoding
-    fm.write(b'encoding', _(b"checking encoding (%s)...\n"), encoding.encoding)
+    # encoding might be unknown or wrong. don't translate these messages.
+    fm.write(b'encoding', b"checking encoding (%s)...\n", encoding.encoding)
     err = None
     try:
         codecs.lookup(pycompat.sysstr(encoding.encoding))
@@ -1476,7 +1476,7 @@ def debuginstall(ui, **opts):
     fm.condwrite(
         err,
         b'encodingerror',
-        _(b" %s\n (check that your locale is properly set)\n"),
+        b" %s\n (check that your locale is properly set)\n",
         err,
     )
 
