@@ -39,25 +39,40 @@ def _filectxorabsent(hexnode, ctx, f):
 
 
 # Merge state record types. See ``mergestate`` docs for more.
+
+####
+# merge records which records metadata about a current merge
+# exists only once in a mergestate
+#####
 RECORD_LOCAL = b'L'
 RECORD_OTHER = b'O'
-# record extra information about files
-RECORD_FILE_VALUES = b'f'
 # record merge labels
 RECORD_LABELS = b'l'
+# store info about merge driver used and it's state
+RECORD_MERGE_DRIVER_STATE = b'm'
 
+#####
+# record extra information about files, with one entry containing info about one
+# file. Hence, multiple of them can exists
+#####
+RECORD_FILE_VALUES = b'f'
+
+#####
+# merge records which represents state of individual merges of files/folders
+# These are top level records for each entry containing merge related info.
+# Each record of these has info about one file. Hence multiple of them can
+# exists
+#####
 RECORD_MERGED = b'F'
 RECORD_CHANGEDELETE_CONFLICT = b'C'
 RECORD_MERGE_DRIVER_MERGE = b'D'
+# the path was dir on one side of merge and file on another
 RECORD_PATH_CONFLICT = b'P'
 
-RECORD_MERGE_DRIVER_STATE = b'm'
-RECORD_OVERRIDE = b't'
-
-MERGE_DRIVER_STATE_UNMARKED = b'u'
-MERGE_DRIVER_STATE_MARKED = b'm'
-MERGE_DRIVER_STATE_SUCCESS = b's'
-
+#####
+# possible state which a merge entry can have. These are stored inside top-level
+# merge records mentioned just above.
+#####
 MERGE_RECORD_UNRESOLVED = b'u'
 MERGE_RECORD_RESOLVED = b'r'
 MERGE_RECORD_UNRESOLVED_PATH = b'pu'
@@ -66,6 +81,21 @@ MERGE_RECORD_DRIVER_RESOLVED = b'd'
 # represents that the file was automatically merged in favor
 # of other version. This info is used on commit.
 MERGE_RECORD_MERGED_OTHER = b'o'
+
+#####
+# top level record which stores other unknown records. Multiple of these can
+# exists
+#####
+RECORD_OVERRIDE = b't'
+
+#####
+# possible states which a merge driver can have. These are stored inside a
+# RECORD_MERGE_DRIVER_STATE entry
+#####
+MERGE_DRIVER_STATE_UNMARKED = b'u'
+MERGE_DRIVER_STATE_MARKED = b'm'
+MERGE_DRIVER_STATE_SUCCESS = b's'
+
 
 ACTION_FORGET = b'f'
 ACTION_REMOVE = b'r'
