@@ -529,11 +529,8 @@ class rebaseruntime(object):
         extra = {b'rebase_source': ctx.hex()}
         for c in self.extrafns:
             c(ctx, extra)
-        keepbranch = self.keepbranchesf and repo[p1].branch() != ctx.branch()
         destphase = max(ctx.phase(), phases.draft)
         overrides = {(b'phases', b'new-commit'): destphase}
-        if keepbranch:
-            overrides[(b'ui', b'allowemptycommit')] = True
         with repo.ui.configoverride(overrides, b'rebase'):
             if self.inmemory:
                 newnode = commitmemorynode(
