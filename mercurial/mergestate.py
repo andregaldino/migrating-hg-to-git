@@ -756,11 +756,6 @@ class mergestate(object):
                 actions[action].append((f, None, b"merge result"))
         return actions
 
-    def recordactions(self):
-        """record remove/add/get actions in the dirstate"""
-        branchmerge = self._repo.dirstate.p2() != nullid
-        recordupdates(self._repo, self.actions(), branchmerge, None)
-
     def queueremove(self, f):
         """queues a file to be removed from the dirstate
 

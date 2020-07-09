@@ -6129,7 +6129,8 @@ def resolve(ui, repo, *pats, **opts):
                     raise
 
         ms.commit()
-        ms.recordactions()
+        branchmerge = repo.dirstate.p2() != nullid
+        mergestatemod.recordupdates(repo, ms.actions(), branchmerge, None)
 
         if not didwork and pats:
             hint = None
