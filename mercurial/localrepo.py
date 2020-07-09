@@ -2996,7 +2996,7 @@ class localrepository(object):
 
             # internal config: ui.allowemptycommit
             allowemptycommit = (
-                wctx.branch() != wctx.p1().branch()
+                cctx.branch() != cctx.p1().branch()
                 or extra.get(b'close')
                 or merge
                 or cctx.files()
