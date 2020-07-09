@@ -267,6 +267,11 @@ class mergestate(object):
                 self._labels = [l for l in labels if len(l) > 0]
             elif not rtype.islower():
                 unsupported.add(rtype)
+        # contains a mapping of form:
+        # {filename : (merge_return_value, action_to_be_performed}
+        # these are results of re-running merge process
+        # this dict is used to perform actions on dirstate caused by re-running
+        # the merge
         self._results = {}
         self._dirty = False
 
