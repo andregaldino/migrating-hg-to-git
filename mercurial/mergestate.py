@@ -619,7 +619,10 @@ class mergestate(object):
         return self._stateextras.setdefault(filename, {})
 
     def _resolve(self, preresolve, dfile, wctx):
-        """rerun merge process for file path `dfile`"""
+        """rerun merge process for file path `dfile`.
+        Returns whether the merge was completed and the return value of merge
+        obtained from filemerge._filemerge().
+        """
         if self[dfile] in (MERGE_RECORD_RESOLVED, MERGE_RECORD_DRIVER_RESOLVED):
             return True, 0
         if self._state[dfile][0] == MERGE_RECORD_MERGED_OTHER:
@@ -660,7 +663,7 @@ class mergestate(object):
                 f.close()
             else:
                 wctx[dfile].remove(ignoremissing=True)
-            complete, r, deleted = filemerge.premerge(
+            complete, merge_ret, deleted = filemerge.premerge(
                 self._repo,
                 wctx,
                 self._local,
@@ -671,7 +674,7 @@ class mergestate(object):
                 labels=self._labels,
             )
         else:
-            complete, r, deleted = filemerge.filemerge(
+            complete, merge_ret, deleted = filemerge.filemerge(
                 self._repo,
                 wctx,
                 self._local,
@@ -681,12 +684,12 @@ class mergestate(object):
                 fca,
                 labels=self._labels,
             )
-        if r is None:
-            # no real conflict
+        if merge_ret is None:
+            # If return value of merge is None, then there are no real conflict
             del self._state[dfile]
             self._stateextras.pop(dfile, None)
             self._dirty = True
-        elif not r:
+        elif not merge_ret:
             self.mark(dfile, MERGE_RECORD_RESOLVED)
 
         if complete:
@@ -708,9 +711,9 @@ class mergestate(object):
                     else:
                         action = ACTION_ADD
                 # else: regular merges (no action necessary)
-            self._results[dfile] = r, action
+            self._results[dfile] = merge_ret, action
 
-        return complete, r
+        return complete, merge_ret
 
     def preresolve(self, dfile, wctx):
         """run premerge process for dfile
