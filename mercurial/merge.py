@@ -1477,6 +1477,49 @@ def applyupdates(
     return updateresult(updated, merged, removed, unresolved), getfiledata
 
 
+def _advertisefsmonitor(repo, num_gets, p1node):
+    # Advertise fsmonitor when its presence could be useful.
+    #
+    # We only advertise when performing an update from an empty working
+    # directory. This typically only occurs during initial clone.
+    #
+    # We give users a mechanism to disable the warning in case it is
+    # annoying.
+    #
+    # We only allow on Linux and MacOS because that's where fsmonitor is
+    # considered stable.
+    fsmonitorwarning = repo.ui.configbool(b'fsmonitor', b'warn_when_unused')
+    fsmonitorthreshold = repo.ui.configint(
+        b'fsmonitor', b'warn_update_file_count'
+    )
+    try:
+        # avoid cycle: extensions -> cmdutil -> merge
+        from . import extensions
+
+        extensions.find(b'fsmonitor')
+        fsmonitorenabled = repo.ui.config(b'fsmonitor', b'mode') != b'off'
+        # We intentionally don't look at whether fsmonitor has disabled
+        # itself because a) fsmonitor may have already printed a warning
+        # b) we only care about the config state here.
+    except KeyError:
+        fsmonitorenabled = False
+
+    if (
+        fsmonitorwarning
+        and not fsmonitorenabled
+        and p1node == nullid
+        and num_gets >= fsmonitorthreshold
+        and pycompat.sysplatform.startswith((b'linux', b'darwin'))
+    ):
+        repo.ui.warn(
+            _(
+                b'(warning: large working directory being used without '
+                b'fsmonitor enabled; enable fsmonitor to improve performance; '
+                b'see "hg help -e fsmonitor")\n'
+            )
+        )
+
+
 UPDATECHECK_ABORT = b'abort'  # handled at higher layers
 UPDATECHECK_NONE = b'none'
 UPDATECHECK_LINEAR = b'linear'
@@ -1815,46 +1858,9 @@ def update(
             # note that we're in the middle of an update
             repo.vfs.write(b'updatestate', p2.hex())
 
-        # Advertise fsmonitor when its presence could be useful.
-        #
-        # We only advertise when performing an update from an empty working
-        # directory. This typically only occurs during initial clone.
-        #
-        # We give users a mechanism to disable the warning in case it is
-        # annoying.
-        #
-        # We only allow on Linux and MacOS because that's where fsmonitor is
-        # considered stable.
-        fsmonitorwarning = repo.ui.configbool(b'fsmonitor', b'warn_when_unused')
-        fsmonitorthreshold = repo.ui.configint(
-            b'fsmonitor', b'warn_update_file_count'
+        _advertisefsmonitor(
+            repo, len(actions[mergestatemod.ACTION_GET]), p1.node()
         )
-        try:
-            # avoid cycle: extensions -> cmdutil -> merge
-            from . import extensions
-
-            extensions.find(b'fsmonitor')
-            fsmonitorenabled = repo.ui.config(b'fsmonitor', b'mode') != b'off'
-            # We intentionally don't look at whether fsmonitor has disabled
-            # itself because a) fsmonitor may have already printed a warning
-            # b) we only care about the config state here.
-        except KeyError:
-            fsmonitorenabled = False
-
-        if (
-            fsmonitorwarning
-            and not fsmonitorenabled
-            and p1.node() == nullid
-            and len(actions[mergestatemod.ACTION_GET]) >= fsmonitorthreshold
-            and pycompat.sysplatform.startswith((b'linux', b'darwin'))
-        ):
-            repo.ui.warn(
-                _(
-                    b'(warning: large working directory being used without '
-                    b'fsmonitor enabled; enable fsmonitor to improve performance; '
-                    b'see "hg help -e fsmonitor")\n'
-                )
-            )
 
         wantfiledata = updatedirstate and not branchmerge
         stats, getfiledata = applyupdates(
