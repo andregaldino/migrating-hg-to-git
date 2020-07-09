@@ -34,6 +34,7 @@ FULLY_BUFFERED = b'[written aaa][written bbb\\n]aaabbb\n'
 
 
 TEST_LARGE_WRITE_CHILD_SCRIPT = r'''
+import os
 import signal
 import sys
 
@@ -43,7 +44,10 @@ from mercurial.utils import procutil
 signal.signal(signal.SIGINT, lambda *x: None)
 dispatch.initstdio()
 write_result = procutil.{stream}.write(b'x' * 1048576)
-with open({write_result_fn}, 'w') as write_result_f:
+with os.fdopen(
+    os.open({write_result_fn!r}, os.O_WRONLY | getattr(os, 'O_TEMPORARY', 0)),
+    'w',
+) as write_result_f:
     write_result_f.write(str(write_result))
 '''
 
@@ -201,8 +205,7 @@ class TestStdio(unittest.TestCase):
             )
 
         def post_child_check():
-            with open(write_result_fn, 'r') as write_result_f:
-                write_result_str = write_result_f.read()
+            write_result_str = write_result_f.read()
             if pycompat.ispy3:
                 # On Python 3, we test that the correct number of bytes is
                 # claimed to have been written.
@@ -213,14 +216,10 @@ class TestStdio(unittest.TestCase):
                 expected_write_result_str = 'None'
             self.assertEqual(write_result_str, expected_write_result_str)
 
-        try:
-            # tempfile.mktemp() is unsafe in general, as a malicious process
-            # could create the file before we do. But in tests, we're running
-            # in a controlled environment.
-            write_result_fn = tempfile.mktemp()
+        with tempfile.NamedTemporaryFile('r') as write_result_f:
             self._test(
                 TEST_LARGE_WRITE_CHILD_SCRIPT.format(
-                    stream=stream, write_result_fn=repr(write_result_fn)
+                    stream=stream, write_result_fn=write_result_f.name
                 ),
                 stream,
                 rwpair_generator,
@@ -228,11 +227,6 @@ class TestStdio(unittest.TestCase):
                 python_args,
                 post_child_check=post_child_check,
             )
-        finally:
-            try:
-                os.unlink(write_result_fn)
-            except OSError:
-                pass
 
     def test_large_write_stdout_devnull(self):
         self._test_large_write('stdout', _devnull)
