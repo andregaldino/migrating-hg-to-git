@@ -540,7 +540,7 @@ class mergestate(object):
         self._stateextras[fd] = {b'ancestorlinknode': hex(fca.node())}
         self._dirty = True
 
-    def addpath(self, path, frename, forigin):
+    def addpathconflict(self, path, frename, forigin):
         """add a new conflicting path to the merge state
         path:    the path that conflicts
         frename: the filename the conflicting file was renamed to

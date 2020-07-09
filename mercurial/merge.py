@@ -1264,7 +1264,7 @@ def applyupdates(
         else:
             s(_(b"the remote file has been renamed to %s\n") % f1)
         s(_(b"resolve manually then use 'hg resolve --mark %s'\n") % f)
-        ms.addpath(f, f1, fo)
+        ms.addpathconflict(f, f1, fo)
         progress.increment(item=f)
 
     # When merging in-memory, we can't support worker processes, so set the
