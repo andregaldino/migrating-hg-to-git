@@ -58,6 +58,13 @@ def _closing(fds):
 
 
 @contextlib.contextmanager
+def _devnull():
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    with _closing([devnull]):
+        yield (None, devnull)
+
+
+@contextlib.contextmanager
 def _pipes():
     rwpair = os.pipe()
     with _closing(rwpair):
@@ -115,7 +122,8 @@ class TestStdio(unittest.TestCase):
             )
             try:
                 os.close(child_stream)
-                check_output(stream_receiver, proc)
+                if stream_receiver is not None:
+                    check_output(stream_receiver, proc)
             except:  # re-raises
                 proc.terminate()
                 raise
@@ -137,11 +145,17 @@ class TestStdio(unittest.TestCase):
             python_args,
         )
 
+    def test_buffering_stdout_devnull(self):
+        self._test_buffering('stdout', _devnull, None)
+
     def test_buffering_stdout_pipes(self):
         self._test_buffering('stdout', _pipes, FULLY_BUFFERED)
 
     def test_buffering_stdout_ptys(self):
         self._test_buffering('stdout', _ptys, LINE_BUFFERED)
+
+    def test_buffering_stdout_devnull_unbuffered(self):
+        self._test_buffering('stdout', _devnull, None, python_args=['-u'])
 
     def test_buffering_stdout_pipes_unbuffered(self):
         self._test_buffering('stdout', _pipes, UNBUFFERED, python_args=['-u'])
@@ -188,11 +202,17 @@ class TestStdio(unittest.TestCase):
             python_args,
         )
 
+    def test_large_write_stdout_devnull(self):
+        self._test_large_write('stdout', _devnull)
+
     def test_large_write_stdout_pipes(self):
         self._test_large_write('stdout', _pipes)
 
     def test_large_write_stdout_ptys(self):
         self._test_large_write('stdout', _ptys)
+
+    def test_large_write_stdout_devnull_unbuffered(self):
+        self._test_large_write('stdout', _devnull, python_args=['-u'])
 
     def test_large_write_stdout_pipes_unbuffered(self):
         self._test_large_write('stdout', _pipes, python_args=['-u'])
@@ -200,11 +220,17 @@ class TestStdio(unittest.TestCase):
     def test_large_write_stdout_ptys_unbuffered(self):
         self._test_large_write('stdout', _ptys, python_args=['-u'])
 
+    def test_large_write_stderr_devnull(self):
+        self._test_large_write('stderr', _devnull)
+
     def test_large_write_stderr_pipes(self):
         self._test_large_write('stderr', _pipes)
 
     def test_large_write_stderr_ptys(self):
         self._test_large_write('stderr', _ptys)
+
+    def test_large_write_stderr_devnull_unbuffered(self):
+        self._test_large_write('stderr', _devnull, python_args=['-u'])
 
     def test_large_write_stderr_pipes_unbuffered(self):
         self._test_large_write('stderr', _pipes, python_args=['-u'])
