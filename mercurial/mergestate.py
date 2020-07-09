@@ -53,8 +53,6 @@ RECORD_PATH_CONFLICT = b'P'
 
 RECORD_MERGE_DRIVER_STATE = b'm'
 RECORD_OVERRIDE = b't'
-RECORD_UNSUPPORTED_MANDATORY = b'X'
-RECORD_UNSUPPORTED_ADVISORY = b'x'
 
 MERGE_DRIVER_STATE_UNMARKED = b'u'
 MERGE_DRIVER_STATE_MARKED = b'm'
@@ -115,8 +113,6 @@ class mergestate(object):
     m: the external merge driver defined for this merge plus its run state
        (experimental)
     f: a (filename, dictionary) tuple of optional values for a given file
-    X: unsupported mandatory record type (used in tests)
-    x: unsupported advisory record type (used in tests)
     l: the labels for the parts of the merge.
 
     Merge driver run states (experimental):
