@@ -51,7 +51,6 @@ RECORD_LABELS = b'l'
 RECORD_OVERRIDE = b't'
 RECORD_UNSUPPORTED_MANDATORY = b'X'
 RECORD_UNSUPPORTED_ADVISORY = b'x'
-RECORD_RESOLVED_OTHER = b'R'
 
 MERGE_DRIVER_STATE_UNMARKED = b'u'
 MERGE_DRIVER_STATE_MARKED = b'm'
@@ -220,7 +219,6 @@ class mergestate(object):
                 RECORD_CHANGEDELETE_CONFLICT,
                 RECORD_PATH_CONFLICT,
                 RECORD_MERGE_DRIVER_MERGE,
-                RECORD_RESOLVED_OTHER,
             ):
                 bits = record.split(b'\0')
                 self._state[bits[0]] = bits[1:]
@@ -448,9 +446,7 @@ class mergestate(object):
                     (RECORD_PATH_CONFLICT, b'\0'.join([filename] + v))
                 )
             elif v[0] == MERGE_RECORD_MERGED_OTHER:
-                records.append(
-                    (RECORD_RESOLVED_OTHER, b'\0'.join([filename] + v))
-                )
+                records.append((RECORD_MERGED, b'\0'.join([filename] + v)))
             elif v[1] == nullhex or v[6] == nullhex:
                 # Change/Delete or Delete/Change conflicts. These are stored in
                 # 'C' records. v[1] is the local file, and is nullhex when the
