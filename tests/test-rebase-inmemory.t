@@ -920,3 +920,50 @@ Test rebasing when we're in the middle of a rebase already
   |/   foo
   o  0: r0
      r0
+
+  $ cd ..
+
+Changesets that become empty should not be committed. Merges are not empty by
+definition.
+
+  $ hg init keep_merge
+  $ cd keep_merge
+  $ echo base > base; hg add base; hg ci -m base
+  $ echo test > test; hg add test; hg ci -m a
+  $ hg up 0 -q
+  $ echo test > test; hg add test; hg ci -m b -q
+  $ hg up 0 -q
+  $ echo test > test; hg add test; hg ci -m c -q
+  $ hg up 1 -q
+  $ hg merge 2 -q
+  $ hg ci -m merge
+  $ hg up null -q
+  $ hg tglog
+  o    4: 59c8292117b1 'merge'
+  |\
+  | | o  3: 531f80391e4a 'c'
+  | | |
+  | o |  2: 0194f1db184a 'b'
+  | |/
+  o /  1: 6f252845ea45 'a'
+  |/
+  o  0: d20a80d4def3 'base'
+  
+FIXME: It's broken for inmemory merges.
+  $ hg rebase -s 2 -d 3
+  rebasing 2:0194f1db184a "b"
+  note: not rebasing 2:0194f1db184a "b", its destination already has all its changes
+  rebasing 4:59c8292117b1 "merge" (tip)
+  note: not rebasing 4:59c8292117b1 "merge" (tip), its destination already has all its changes (true !)
+  saved backup bundle to $TESTTMP/keep_merge/.hg/strip-backup/0194f1db184a-aee31d03-rebase.hg
+#if false
+  $ hg tglog
+  o    3: 506e2454484b 'merge'
+  |\
+  | o  2: 531f80391e4a 'c'
+  | |
+  o |  1: 6f252845ea45 'a'
+  |/
+  o  0: d20a80d4def3 'base'
+  
+#endif
