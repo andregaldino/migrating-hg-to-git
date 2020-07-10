@@ -98,9 +98,11 @@ if pycompat.iswindows:
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
 # buffering.
 if isatty(stdout):
-    if pycompat.ispy3 or pycompat.iswindows:
+    if pycompat.ispy3:
         # Python 3 implements its own I/O streams.
         # The standard library doesn't offer line-buffered binary streams.
+        stdout = make_line_buffered(stdout)
+    elif pycompat.iswindows:
         # Python 2 uses the I/O streams provided by the C library.
         # The Windows C runtime library doesn't support line buffering.
         stdout = make_line_buffered(stdout)
