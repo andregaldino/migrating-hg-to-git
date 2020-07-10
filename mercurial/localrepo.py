@@ -2995,14 +2995,9 @@ class localrepository(object):
             mergeutil.checkunresolved(ms)
 
             # internal config: ui.allowemptycommit
-            allowemptycommit = (
-                cctx.branch() != cctx.p1().branch()
-                or extra.get(b'close')
-                or merge
-                or cctx.files()
-                or self.ui.configbool(b'ui', b'allowemptycommit')
-            )
-            if not allowemptycommit:
+            if cctx.isempty() and not self.ui.configbool(
+                b'ui', b'allowemptycommit'
+            ):
                 self.ui.debug(b'nothing to commit, clearing merge state\n')
                 ms.reset()
                 return None

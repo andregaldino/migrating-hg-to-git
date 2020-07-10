@@ -481,6 +481,14 @@ class basectx(object):
             '%s does not implement mergestate()' % self.__class__
         )
 
+    def isempty(self):
+        return not (
+            len(self.parents()) > 1
+            or self.branch() != self.p1().branch()
+            or self.closesbranch()
+            or self.files()
+        )
+
 
 class changectx(basectx):
     """A changecontext object makes access to data related to a particular
