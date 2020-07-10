@@ -91,9 +91,6 @@ else:
     stdout = sys.stdout
     stderr = sys.stderr
 
-if pycompat.iswindows:
-    stdout = platform.winstdout(stdout)
-
 # glibc determines buffering on first write to stdout - if we replace a TTY
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
 # buffering.
@@ -103,6 +100,8 @@ if isatty(stdout):
         # The standard library doesn't offer line-buffered binary streams.
         stdout = make_line_buffered(stdout)
     elif pycompat.iswindows:
+        # Work around size limit when writing to console.
+        stdout = platform.winstdout(stdout)
         # Python 2 uses the I/O streams provided by the C library.
         # The Windows C runtime library doesn't support line buffering.
         stdout = make_line_buffered(stdout)
