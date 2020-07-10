@@ -148,7 +148,7 @@ from mercurial import (
     extensions,
     hg,
     localrepo,
-    match,
+    match as matchmod,
     merge,
     node as nodemod,
     patch,
@@ -824,12 +824,12 @@ def filelogrevset(orig, repo, subset, x):
 
     # i18n: "filelog" is a keyword
     pat = revset.getstring(x, _(b"filelog requires a pattern"))
-    m = match.match(
+    m = matchmod.match(
         repo.root, repo.getcwd(), [pat], default=b'relpath', ctx=repo[None]
     )
     s = set()
 
-    if not match.patkind(pat):
+    if not matchmod.patkind(pat):
         # slow
         for r in subset:
             ctx = repo[r]
@@ -1118,10 +1118,10 @@ def exchangepull(orig, repo, remote, *args, **kwargs):
     return orig(repo, remote, *args, **kwargs)
 
 
-def _fileprefetchhook(repo, revs, match):
+def _fileprefetchhook(repo, revmatches):
     if isenabled(repo):
         allfiles = []
-        for rev in revs:
+        for rev, match in revmatches:
             if rev == nodemod.wdirrev or rev is None:
                 continue
             ctx = repo[rev]

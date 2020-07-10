@@ -337,7 +337,7 @@ def vfsinit(orig, self, othervfs):
             setattr(self, name, getattr(othervfs, name))
 
 
-def _prefetchfiles(repo, revs, match):
+def _prefetchfiles(repo, revmatches):
     """Ensure that required LFS blobs are present, fetching them as a group if
     needed."""
     if not util.safehasattr(repo.svfs, b'lfslocalblobstore'):
@@ -347,7 +347,7 @@ def _prefetchfiles(repo, revs, match):
     oids = set()
     localstore = repo.svfs.lfslocalblobstore
 
-    for rev in revs:
+    for rev, match in revmatches:
         ctx = repo[rev]
         for f in ctx.walk(match):
             p = pointerfromctx(ctx, f)

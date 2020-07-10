@@ -2138,7 +2138,9 @@ def _prefetchchangedfiles(repo, revs, match):
         for file in repo[rev].files():
             if not match or match(file):
                 allfiles.add(file)
-    scmutil.prefetchfiles(repo, revs, scmutil.matchfiles(repo, allfiles))
+    match = scmutil.matchfiles(repo, allfiles)
+    revmatches = [(rev, match) for rev in revs]
+    scmutil.prefetchfiles(repo, revmatches)
 
 
 def export(
@@ -2997,14 +2999,14 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         try:
             if mfnode and mfl[mfnode].find(file)[0]:
                 if _catfmtneedsdata(basefm):
-                    scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+                    scmutil.prefetchfiles(repo, [(ctx.rev(), matcher)])
                 write(file)
                 return 0
         except KeyError:
             pass
 
     if _catfmtneedsdata(basefm):
-        scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+        scmutil.prefetchfiles(repo, [(ctx.rev(), matcher)])
 
     for abs in ctx.walk(matcher):
         write(abs)
@@ -3769,11 +3771,11 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             needdata = (b'revert', b'add', b'undelete')
             oplist = [actions[name][0] for name in needdata]
             prefetch = scmutil.prefetchfiles
-            matchfiles = scmutil.matchfiles
+            matchfiles = scmutil.matchfiles(
+                repo, [f for sublist in oplist for f in sublist]
+            )
             prefetch(
-                repo,
-                [ctx.rev()],
-                matchfiles(repo, [f for sublist in oplist for f in sublist]),
+                repo, [(ctx.rev(), matchfiles)],
             )
             match = scmutil.match(repo[None], pats)
             _performrevert(

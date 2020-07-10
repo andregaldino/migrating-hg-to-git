@@ -1121,8 +1121,14 @@ def _prefetchfiles(repo, ctx, actions):
     matchfiles = scmutil.matchfiles
     prefetch(
         repo,
-        [ctx.rev()],
-        matchfiles(repo, [f for sublist in oplist for f, args, msg in sublist]),
+        [
+            (
+                ctx.rev(),
+                matchfiles(
+                    repo, [f for sublist in oplist for f, args, msg in sublist]
+                ),
+            )
+        ],
     )
 
 

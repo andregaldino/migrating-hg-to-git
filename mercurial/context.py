@@ -2540,8 +2540,12 @@ class overlayworkingctx(committablectx):
         # using things like remotefilelog.
         scmutil.prefetchfiles(
             self.repo(),
-            [self.p1().rev()],
-            scmutil.matchfiles(self.repo(), self._cache.keys()),
+            [
+                (
+                    self.p1().rev(),
+                    scmutil.matchfiles(self.repo(), self._cache.keys()),
+                )
+            ],
         )
 
         for path in self._cache.keys():

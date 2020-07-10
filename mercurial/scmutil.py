@@ -1880,18 +1880,29 @@ _reportnewcssource = [
 ]
 
 
-def prefetchfiles(repo, revs, match):
+def prefetchfiles(repo, revmatches):
     """Invokes the registered file prefetch functions, allowing extensions to
     ensure the corresponding files are available locally, before the command
-    uses them."""
-    if match:
-        # The command itself will complain about files that don't exist, so
-        # don't duplicate the message.
-        match = matchmod.badmatch(match, lambda fn, msg: None)
-    else:
-        match = matchall(repo)
+    uses them.
 
-    fileprefetchhooks(repo, revs, match)
+    Args:
+      revmatches: a list of (revision, match) tuples to indicate the files to
+      fetch at each revision. If any of the match elements is None, it matches
+      all files.
+    """
+
+    def _matcher(m):
+        if m:
+            assert isinstance(m, matchmod.basematcher)
+            # The command itself will complain about files that don't exist, so
+            # don't duplicate the message.
+            return matchmod.badmatch(m, lambda fn, msg: None)
+        else:
+            return matchall(repo)
+
+    revbadmatches = [(rev, _matcher(match)) for (rev, match) in revmatches]
+
+    fileprefetchhooks(repo, revbadmatches)
 
 
 # a list of (repo, revs, match) prefetch functions

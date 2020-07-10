@@ -2666,7 +2666,11 @@ def diffhunks(
     prefetchmatch = scmutil.matchfiles(
         repo, list(modifiedset | addedset | removedset)
     )
-    scmutil.prefetchfiles(repo, [ctx1.rev(), ctx2.rev()], prefetchmatch)
+    revmatches = [
+        (ctx1.rev(), prefetchmatch),
+        (ctx2.rev(), prefetchmatch),
+    ]
+    scmutil.prefetchfiles(repo, revmatches)
 
     def difffn(opts, losedata):
         return trydiff(
