@@ -99,9 +99,10 @@ if pycompat.iswindows:
 # buffering.
 if isatty(stdout):
     if pycompat.ispy3 or pycompat.iswindows:
-        # On Python 3, buffered binary streams can't be set line-buffered.
-        # On Python 2, Windows doesn't support line buffering.
-        # Therefore we have a wrapper that implements line buffering.
+        # Python 3 implements its own I/O streams.
+        # The standard library doesn't offer line-buffered binary streams.
+        # Python 2 uses the I/O streams provided by the C library.
+        # The Windows C runtime library doesn't support line buffering.
         stdout = make_line_buffered(stdout)
     else:
         stdout = os.fdopen(stdout.fileno(), 'wb', 1)
