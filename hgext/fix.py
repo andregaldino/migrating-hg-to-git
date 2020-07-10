@@ -271,6 +271,11 @@ def fix(ui, repo, *pats, **opts):
         basepaths = getbasepaths(repo, opts, workqueue, basectxs)
         fixers = getfixers(ui)
 
+        # Rather than letting each worker independently fetch the files
+        # (which also would add complications for shared/keepalive
+        # connections), prefetch them all first.
+        _prefetchfiles(repo, workqueue, basepaths)
+
         # There are no data dependencies between the workers fixing each file
         # revision, so we can use all available parallelism.
         def getfixes(items):
@@ -628,6 +633,29 @@ def getbasectxs(repo, opts, revstofix):
             else:
                 basectxs[rev].add(pctx)
     return basectxs
+
+
+def _prefetchfiles(repo, workqueue, basepaths):
+    toprefetch = set()
+
+    # Prefetch the files that will be fixed.
+    for rev, path in workqueue:
+        if rev == wdirrev:
+            continue
+        toprefetch.add((rev, path))
+
+    # Prefetch the base contents for lineranges().
+    for (baserev, fixrev, path), basepath in basepaths.items():
+        toprefetch.add((baserev, basepath))
+
+    if toprefetch:
+        scmutil.prefetchfiles(
+            repo,
+            [
+                (rev, scmutil.matchfiles(repo, [path]))
+                for rev, path in toprefetch
+            ],
+        )
 
 
 def fixfile(ui, repo, opts, fixers, fixctx, path, basepaths, basectxs):
