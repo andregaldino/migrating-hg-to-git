@@ -91,9 +91,6 @@ else:
     stdout = sys.stdout
     stderr = sys.stderr
 
-# glibc determines buffering on first write to stdout - if we replace a TTY
-# destined stdout with a pipe destined stdout (e.g. pager), we want line
-# buffering.
 if isatty(stdout):
     if pycompat.ispy3:
         # Python 3 implements its own I/O streams.
@@ -106,6 +103,9 @@ if isatty(stdout):
         # The Windows C runtime library doesn't support line buffering.
         stdout = make_line_buffered(stdout)
     else:
+        # glibc determines buffering on first write to stdout - if we
+        # replace a TTY destined stdout with a pipe destined stdout (e.g.
+        # pager), we want line buffering.
         stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
 
