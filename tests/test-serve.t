@@ -103,7 +103,10 @@ With out of bounds accesses
 
 issue6362: Previously, this crashed on Python 3
 
-  $ hg serve -a 0.0.0.0 -d
-  listening at http://*:$HGPORT1/ (bound to *:$HGPORT1) (glob)
+  $ hg serve -a 0.0.0.0 -d --pid-file=hg.pid
+  listening at http://*:$HGPORT1/ (bound to *:$HGPORT1) (glob) (?)
+
+  $ cat hg.pid > "$DAEMON_PIDS"
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
   $ cd ..
