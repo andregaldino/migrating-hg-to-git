@@ -7,6 +7,7 @@ from __future__ import absolute_import
 import contextlib
 import errno
 import os
+import signal
 import subprocess
 import sys
 import unittest
@@ -29,6 +30,19 @@ os.write(procutil.{stream}.fileno(), b'[written bbb\\n]')
 UNBUFFERED = b'aaa[written aaa]bbb\n[written bbb\\n]'
 LINE_BUFFERED = b'[written aaa]aaabbb\n[written bbb\\n]'
 FULLY_BUFFERED = b'[written aaa][written bbb\\n]aaabbb\n'
+
+
+TEST_LARGE_WRITE_CHILD_SCRIPT = r'''
+import signal
+import sys
+
+from mercurial import dispatch
+from mercurial.utils import procutil
+
+signal.signal(signal.SIGINT, lambda *x: None)
+dispatch.initstdio()
+procutil.{stream}.write(b'x' * 1048576)
+'''
 
 
 @contextlib.contextmanager
@@ -63,8 +77,8 @@ def _ptys():
         yield rwpair
 
 
-def _readall(fd, buffer_size):
-    buf = []
+def _readall(fd, buffer_size, initial_buf=None):
+    buf = initial_buf or []
     while True:
         try:
             s = os.read(fd, buffer_size)
@@ -101,7 +115,7 @@ class TestStdio(unittest.TestCase):
             )
             try:
                 os.close(child_stream)
-                check_output(stream_receiver)
+                check_output(stream_receiver, proc)
             except:  # re-raises
                 proc.terminate()
                 raise
@@ -112,7 +126,7 @@ class TestStdio(unittest.TestCase):
     def _test_buffering(
         self, stream, rwpair_generator, expected_output, python_args=[]
     ):
-        def check_output(stream_receiver):
+        def check_output(stream_receiver, proc):
             self.assertEqual(_readall(stream_receiver, 1024), expected_output)
 
         self._test(
@@ -142,6 +156,61 @@ class TestStdio(unittest.TestCase):
         test_buffering_stdout_ptys_unbuffered = unittest.expectedFailure(
             test_buffering_stdout_ptys_unbuffered
         )
+
+    def _test_large_write(self, stream, rwpair_generator, python_args=[]):
+        if not pycompat.ispy3 and pycompat.isdarwin:
+            # Python 2 doesn't always retry on EINTR, but the libc might retry.
+            # So far, it was observed only on macOS that EINTR is raised at the
+            # Python level. As Python 2 support will be dropped soon-ish, we
+            # won't attempt to fix it.
+            raise unittest.SkipTest("raises EINTR on macOS")
+
+        def check_output(stream_receiver, proc):
+            if not pycompat.iswindows:
+                # On Unix, we can provoke a partial write() by interrupting it
+                # by a signal handler as soon as a bit of data was written.
+                # We test that write() is called until all data is written.
+                buf = [os.read(stream_receiver, 1)]
+                proc.send_signal(signal.SIGINT)
+            else:
+                # On Windows, there doesn't seem to be a way to cause partial
+                # writes.
+                buf = []
+            self.assertEqual(
+                _readall(stream_receiver, 131072, buf), b'x' * 1048576
+            )
+
+        self._test(
+            TEST_LARGE_WRITE_CHILD_SCRIPT.format(stream=stream),
+            stream,
+            rwpair_generator,
+            check_output,
+            python_args,
+        )
+
+    def test_large_write_stdout_pipes(self):
+        self._test_large_write('stdout', _pipes)
+
+    def test_large_write_stdout_ptys(self):
+        self._test_large_write('stdout', _ptys)
+
+    def test_large_write_stdout_pipes_unbuffered(self):
+        self._test_large_write('stdout', _pipes, python_args=['-u'])
+
+    def test_large_write_stdout_ptys_unbuffered(self):
+        self._test_large_write('stdout', _ptys, python_args=['-u'])
+
+    def test_large_write_stderr_pipes(self):
+        self._test_large_write('stderr', _pipes)
+
+    def test_large_write_stderr_ptys(self):
+        self._test_large_write('stderr', _ptys)
+
+    def test_large_write_stderr_pipes_unbuffered(self):
+        self._test_large_write('stderr', _pipes, python_args=['-u'])
+
+    def test_large_write_stderr_ptys_unbuffered(self):
+        self._test_large_write('stderr', _ptys, python_args=['-u'])
 
 
 if __name__ == '__main__':

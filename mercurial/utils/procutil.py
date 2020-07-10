@@ -80,16 +80,49 @@ def make_line_buffered(stream):
     return LineBufferedWrapper(stream)
 
 
+class WriteAllWrapper(object):
+    def __init__(self, orig):
+        self.orig = orig
+
+    def __getattr__(self, attr):
+        return getattr(self.orig, attr)
+
+    def write(self, s):
+        write1 = self.orig.write
+        m = memoryview(s)
+        total_to_write = len(s)
+        total_written = 0
+        while total_written < total_to_write:
+            total_written += write1(m[total_written:])
+        return total_written
+
+
+io.IOBase.register(WriteAllWrapper)
+
+
+def make_write_all(stream):
+    assert pycompat.ispy3
+    if isinstance(stream, WriteAllWrapper):
+        return stream
+    if isinstance(stream, io.BufferedIOBase):
+        # The io.BufferedIOBase.write() contract guarantees that all data is
+        # written.
+        return stream
+    # In general, the write() method of streams is free to write only part of
+    # the data.
+    return WriteAllWrapper(stream)
+
+
 if pycompat.ispy3:
     # Python 3 implements its own I/O streams.
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
     stdin = sys.stdin.buffer
-    stdout = sys.stdout.buffer
+    stdout = make_write_all(sys.stdout.buffer)
     if isatty(stdout):
         # The standard library doesn't offer line-buffered binary streams.
         stdout = make_line_buffered(stdout)
-    stderr = sys.stderr.buffer
+    stderr = make_write_all(sys.stderr.buffer)
 else:
     # Python 2 uses the I/O streams provided by the C library.
     stdin = sys.stdin
