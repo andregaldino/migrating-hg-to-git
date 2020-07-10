@@ -2519,7 +2519,7 @@ class overlayworkingctx(committablectx):
     def isdirty(self, path):
         return path in self._cache
 
-    def isempty(self):
+    def nofilechanges(self):
         # We need to discard any keys that are actually clean before the empty
         # commit check.
         self._compact()

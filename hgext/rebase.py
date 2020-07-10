@@ -1427,8 +1427,10 @@ def externalparent(repo, state, destancestors):
 def commitmemorynode(repo, wctx, editor, extra, user, date, commitmsg):
     '''Commit the memory changes with parents p1 and p2.
     Return node of committed revision.'''
-    # Replicates the empty check in ``repo.commit``.
-    if wctx.isempty() and not repo.ui.configbool(b'ui', b'allowemptycommit'):
+    # FIXME: make empty commit check consistent with ``repo.commit``
+    if wctx.nofilechanges() and not repo.ui.configbool(
+        b'ui', b'allowemptycommit'
+    ):
         return None
 
     # By convention, ``extra['branch']`` (set by extrafn) clobbers
