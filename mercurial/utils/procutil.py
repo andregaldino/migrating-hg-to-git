@@ -81,32 +81,31 @@ def make_line_buffered(stream):
 
 
 if pycompat.ispy3:
+    # Python 3 implements its own I/O streams.
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
     stdin = sys.stdin.buffer
     stdout = sys.stdout.buffer
     stderr = sys.stderr.buffer
+    if isatty(stdout):
+        # The standard library doesn't offer line-buffered binary streams.
+        stdout = make_line_buffered(stdout)
 else:
+    # Python 2 uses the I/O streams provided by the C library.
     stdin = sys.stdin
     stdout = sys.stdout
     stderr = sys.stderr
-
-if isatty(stdout):
-    if pycompat.ispy3:
-        # Python 3 implements its own I/O streams.
-        # The standard library doesn't offer line-buffered binary streams.
-        stdout = make_line_buffered(stdout)
-    elif pycompat.iswindows:
-        # Work around size limit when writing to console.
-        stdout = platform.winstdout(stdout)
-        # Python 2 uses the I/O streams provided by the C library.
-        # The Windows C runtime library doesn't support line buffering.
-        stdout = make_line_buffered(stdout)
-    else:
-        # glibc determines buffering on first write to stdout - if we
-        # replace a TTY destined stdout with a pipe destined stdout (e.g.
-        # pager), we want line buffering.
-        stdout = os.fdopen(stdout.fileno(), 'wb', 1)
+    if isatty(stdout):
+        if pycompat.iswindows:
+            # Work around size limit when writing to console.
+            stdout = platform.winstdout(stdout)
+            # The Windows C runtime library doesn't support line buffering.
+            stdout = make_line_buffered(stdout)
+        else:
+            # glibc determines buffering on first write to stdout - if we
+            # replace a TTY destined stdout with a pipe destined stdout (e.g.
+            # pager), we want line buffering.
+            stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
 
 findexe = platform.findexe
