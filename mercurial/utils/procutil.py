@@ -86,15 +86,14 @@ if pycompat.ispy3:
     # a silly wrapper to make a bytes stream backed by a unicode one.
     stdin = sys.stdin.buffer
     stdout = sys.stdout.buffer
-    stderr = sys.stderr.buffer
     if isatty(stdout):
         # The standard library doesn't offer line-buffered binary streams.
         stdout = make_line_buffered(stdout)
+    stderr = sys.stderr.buffer
 else:
     # Python 2 uses the I/O streams provided by the C library.
     stdin = sys.stdin
     stdout = sys.stdout
-    stderr = sys.stderr
     if isatty(stdout):
         if pycompat.iswindows:
             # Work around size limit when writing to console.
@@ -106,6 +105,7 @@ else:
             # replace a TTY destined stdout with a pipe destined stdout (e.g.
             # pager), we want line buffering.
             stdout = os.fdopen(stdout.fileno(), 'wb', 1)
+    stderr = sys.stderr
 
 
 findexe = platform.findexe
