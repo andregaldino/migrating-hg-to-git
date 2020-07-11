@@ -106,18 +106,6 @@ if isatty(stdout):
     else:
         stdout = os.fdopen(stdout.fileno(), 'wb', 1)
 
-# stderr should be unbuffered
-if pycompat.ispy3:
-    # On Python 3, buffered streams may expose an underlying raw stream. This is
-    # definitively the case for the streams initialized by the interpreter. If
-    # the attribute isn't present, the stream is already unbuffered or doesn't
-    # expose an underlying raw stream, in which case we use the stream as-is.
-    stderr = getattr(stderr, 'raw', stderr)
-elif pycompat.iswindows:
-    # On Windows, stderr is buffered at least when connected to a pipe.
-    stderr = os.fdopen(stderr.fileno(), 'wb', 0)
-# On other platforms, stderr is always unbuffered.
-
 
 findexe = platform.findexe
 _gethgcmd = platform.gethgcmd
