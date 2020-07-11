@@ -949,14 +949,11 @@ definition.
   |/
   o  0: d20a80d4def3 'base'
   
-FIXME: It's broken for inmemory merges.
   $ hg rebase -s 2 -d 3
   rebasing 2:0194f1db184a "b"
   note: not rebasing 2:0194f1db184a "b", its destination already has all its changes
   rebasing 4:59c8292117b1 "merge" (tip)
-  note: not rebasing 4:59c8292117b1 "merge" (tip), its destination already has all its changes (true !)
   saved backup bundle to $TESTTMP/keep_merge/.hg/strip-backup/0194f1db184a-aee31d03-rebase.hg
-#if false
   $ hg tglog
   o    3: 506e2454484b 'merge'
   |\
@@ -966,4 +963,3 @@ FIXME: It's broken for inmemory merges.
   |/
   o  0: d20a80d4def3 'base'
   
-#endif
