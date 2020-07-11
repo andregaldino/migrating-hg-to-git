@@ -2891,6 +2891,11 @@ class memctx(committablectx):
 
         return scmutil.status(modified, added, removed, [], [], [], [])
 
+    def parents(self):
+        if self._parents[1].node() == nullid:
+            return [self._parents[0]]
+        return self._parents
+
 
 class memfilectx(committablefilectx):
     """memfilectx represents an in-memory file to commit.
