@@ -1890,6 +1890,14 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     applicable for `hg amend`, `hg commit --amend` and `hg uncommit` in the
     current version.
 
+``empty-successor``
+
+    Control what happens with empty successors that are the result of rewrite
+    operations. If set to ``skip``, the successor is not created. If set to
+    ``keep``, the empty successor is created and kept.
+
+    Currently, no command considers this configuration. (EXPERIMENTAL)
+
 ``storage``
 -----------
 

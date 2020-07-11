@@ -1068,6 +1068,9 @@ coreconfigitem(
     b'rewrite', b'update-timestamp', default=False,
 )
 coreconfigitem(
+    b'rewrite', b'empty-successor', default=b'skip', experimental=True,
+)
+coreconfigitem(
     b'storage', b'new-repo-backend', default=b'revlogv1', experimental=True,
 )
 coreconfigitem(
