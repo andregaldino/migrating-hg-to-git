@@ -2527,51 +2527,8 @@ class overlayworkingctx(committablectx):
     def isdirty(self, path):
         return path in self._cache
 
-    def nofilechanges(self):
-        # We need to discard any keys that are actually clean before the empty
-        # commit check.
-        self._compact()
-        return len(self._cache) == 0
-
     def clean(self):
         self._cache = {}
-
-    def _compact(self):
-        """Removes keys from the cache that are actually clean, by comparing
-        them with the underlying context.
-
-        This can occur during the merge process, e.g. by passing --tool :local
-        to resolve a conflict.
-        """
-        keys = []
-        # This won't be perfect, but can help performance significantly when
-        # using things like remotefilelog.
-        scmutil.prefetchfiles(
-            self.repo(),
-            [
-                (
-                    self.p1().rev(),
-                    scmutil.matchfiles(self.repo(), self._cache.keys()),
-                )
-            ],
-        )
-
-        for path in self._cache.keys():
-            cache = self._cache[path]
-            try:
-                underlying = self._wrappedctx[path]
-                if (
-                    underlying.data() == cache[b'data']
-                    and underlying.flags() == cache[b'flags']
-                ):
-                    keys.append(path)
-            except error.ManifestLookupError:
-                # Path not in the underlying manifest (created).
-                continue
-
-        for path in keys:
-            del self._cache[path]
-        return keys
 
     def _markdirty(
         self, path, exists, data=None, date=None, flags=b'', copied=None
