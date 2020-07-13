@@ -140,8 +140,10 @@ def run():
                 status = -1
 
         _silencestdio()
-    finally:
-        pass
+    except KeyboardInterrupt:
+        # Catch early/late KeyboardInterrupt as last ditch. Here nothing will
+        # be printed to console to avoid another IOError/KeyboardInterrupt.
+        status = -1
     sys.exit(status & 255)
 
 
