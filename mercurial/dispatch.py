@@ -104,41 +104,44 @@ class request(object):
 
 def run():
     """run the command in sys.argv"""
-    initstdio()
-    with tracing.log('parse args into request'):
-        req = request(pycompat.sysargv[1:])
-    err = None
     try:
-        status = dispatch(req)
-    except error.StdioError as e:
-        err = e
-        status = -1
-
-    # In all cases we try to flush stdio streams.
-    if util.safehasattr(req.ui, b'fout'):
-        assert req.ui is not None  # help pytype
-        assert req.ui.fout is not None  # help pytype
+        initstdio()
+        with tracing.log('parse args into request'):
+            req = request(pycompat.sysargv[1:])
+        err = None
         try:
-            req.ui.fout.flush()
-        except IOError as e:
+            status = dispatch(req)
+        except error.StdioError as e:
             err = e
             status = -1
 
-    if util.safehasattr(req.ui, b'ferr'):
-        assert req.ui is not None  # help pytype
-        assert req.ui.ferr is not None  # help pytype
-        try:
-            if err is not None and err.errno != errno.EPIPE:
-                req.ui.ferr.write(
-                    b'abort: %s\n' % encoding.strtolocal(err.strerror)
-                )
-            req.ui.ferr.flush()
-        # There's not much we can do about an I/O error here. So (possibly)
-        # change the status code and move on.
-        except IOError:
-            status = -1
+        # In all cases we try to flush stdio streams.
+        if util.safehasattr(req.ui, b'fout'):
+            assert req.ui is not None  # help pytype
+            assert req.ui.fout is not None  # help pytype
+            try:
+                req.ui.fout.flush()
+            except IOError as e:
+                err = e
+                status = -1
 
-    _silencestdio()
+        if util.safehasattr(req.ui, b'ferr'):
+            assert req.ui is not None  # help pytype
+            assert req.ui.ferr is not None  # help pytype
+            try:
+                if err is not None and err.errno != errno.EPIPE:
+                    req.ui.ferr.write(
+                        b'abort: %s\n' % encoding.strtolocal(err.strerror)
+                    )
+                req.ui.ferr.flush()
+            # There's not much we can do about an I/O error here. So (possibly)
+            # change the status code and move on.
+            except IOError:
+                status = -1
+
+        _silencestdio()
+    finally:
+        pass
     sys.exit(status & 255)
 
 
