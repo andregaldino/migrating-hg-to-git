@@ -56,6 +56,7 @@ IGNORES = {
     '__builtin__',
     'builtins',
     'urwid.command_map',  # for pudb
+    'lzma',
 }
 
 _pypy = '__pypy__' in sys.builtin_module_names

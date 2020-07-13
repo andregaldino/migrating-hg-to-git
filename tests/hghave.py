@@ -1061,3 +1061,14 @@ def has_rustfmt():
     return matchoutput(
         '`rustup which --toolchain nightly rustfmt` --version', b'rustfmt'
     )
+
+
+@check("lzma", "python lzma module")
+def has_lzma():
+    try:
+        import _lzma
+
+        _lzma.FORMAT_XZ
+        return True
+    except ImportError:
+        return False
