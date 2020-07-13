@@ -27,7 +27,7 @@ Testing on-failure=continue
   merging b
   merging a failed!
   merging b failed!
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ hg resolve --list

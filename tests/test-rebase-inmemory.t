@@ -471,7 +471,7 @@ In-memory rebase that fails due to merge conflicts
   rebasing 4:e860deea161a "e"
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --abort
   saved backup bundle to $TESTTMP/repo3/.hg/strip-backup/c1e524d4287c-f91f82e1-backup.hg
@@ -863,7 +863,7 @@ Test rebasing when the file we are merging in destination is empty
   rebasing 2:fb62b706688e "add b to foo" (tip)
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ cd $TESTTMP
@@ -897,7 +897,7 @@ Test rebasing when we're in the middle of a rebase already
   rebasing 2:b4d249fbf8dd "bye from foo"
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase -r 3 -d 1 -t:merge3
   abort: rebase in progress

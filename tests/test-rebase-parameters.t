@@ -479,7 +479,7 @@ Test --tool parameter:
 
   $ hg rebase -s 2 -d 1 --tool internal:fail
   rebasing 2:e4e3f3546619 "c2b" (tip)
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ hg summary

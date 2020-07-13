@@ -200,7 +200,7 @@ Verify rebase temporarily includes excluded files
   temporarily included 2 file(s) in the sparse checkout for merging
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ hg debugsparse

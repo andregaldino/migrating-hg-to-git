@@ -20,7 +20,7 @@ Abort absorb if there is an unfinished operation.
   rebasing 1:c3b6dc0e177a "foo 2" (tip)
   merging foo.whole
   warning: conflicts while merging foo.whole! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ hg --config extensions.rebase= absorb

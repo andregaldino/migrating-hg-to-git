@@ -632,8 +632,8 @@ class rebaseruntime(object):
                         else:
                             raise error.InterventionRequired(
                                 _(
-                                    b'unresolved conflicts (see hg '
-                                    b'resolve, then hg rebase --continue)'
+                                    b"unresolved conflicts (see 'hg "
+                                    b"resolve', then 'hg rebase --continue')"
                                 )
                             )
             if not self.collapsef:

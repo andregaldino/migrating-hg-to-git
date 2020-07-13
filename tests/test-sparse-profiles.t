@@ -200,7 +200,7 @@ Verify rebase conflicts pulls in the conflicting changes
   merging data.py
   warning: conflicts while merging backend.sparse! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging data.py! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ rm *.orig
   $ ls -A

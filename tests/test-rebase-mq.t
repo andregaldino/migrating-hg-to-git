@@ -62,7 +62,7 @@ Rebase - generate a conflict:
   rebasing 2:3504f44bffc0 "P0" (f.patch qbase)
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Fix the 1st conflict:
@@ -76,7 +76,7 @@ Fix the 1st conflict:
   rebasing 3:929394423cd3 "P1" (f2.patch qtip tip)
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Fix the 2nd conflict:

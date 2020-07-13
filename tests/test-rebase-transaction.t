@@ -107,7 +107,7 @@ continued
   rebasing 3:c26739dbe603 "C" (C)
   merging conflict
   warning: conflicts while merging conflict! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg tglog
   o  5: D
