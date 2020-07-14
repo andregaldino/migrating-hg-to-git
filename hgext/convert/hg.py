@@ -217,6 +217,7 @@ class mercurial_sink(common.converter_sink):
         """
         anc = [p1ctx.ancestor(p2ctx)]
         # Calculate what files are coming from p2
+        # TODO: mresult.commitinfo might be able to get that info
         mresult = mergemod.calculateupdates(
             self.repo,
             p1ctx,

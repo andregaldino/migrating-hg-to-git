@@ -546,18 +546,21 @@ class mergeresult(object):
     It has information about what actions need to be performed on dirstate
     mapping of divergent renames and other such cases. '''
 
-    def __init__(self, actions, diverge, renamedelete):
+    def __init__(self, actions, diverge, renamedelete, commitinfo):
         """
         actions: dict of filename as keys and action related info as values
         diverge: mapping of source name -> list of dest name for
                  divergent renames
         renamedelete: mapping of source name -> list of destinations for files
                       deleted on one side and renamed on other.
+        commitinfo: dict containing data which should be used on commit
+                    contains a filename -> info mapping
         """
 
         self._actions = actions
         self._diverge = diverge
         self._renamedelete = renamedelete
+        self._commitinfo = commitinfo
 
     @property
     def actions(self):
@@ -570,6 +573,10 @@ class mergeresult(object):
     @property
     def renamedelete(self):
         return self._renamedelete
+
+    @property
+    def commitinfo(self):
+        return self._commitinfo
 
     def setactions(self, actions):
         self._actions = actions
@@ -608,6 +615,10 @@ def manifestmerge(
     branch_copies1 = copies.branch_copies()
     branch_copies2 = copies.branch_copies()
     diverge = {}
+    # information from merge which is needed at commit time
+    # for example choosing filelog of which parent to commit
+    # TODO: use specific constants in future for this mapping
+    commitinfo = {}
     if followcopies:
         branch_copies1, branch_copies2, diverge = copies.mergecopies(
             repo, wctx, p2, pa
@@ -701,6 +712,8 @@ def manifestmerge(
                             (fl2, False),
                             b'remote is newer',
                         )
+                        if branchmerge:
+                            commitinfo[f] = b'other'
                 elif nol and n2 == a:  # remote only changed 'x'
                     actions[f] = (
                         mergestatemod.ACTION_EXEC,
@@ -715,6 +728,8 @@ def manifestmerge(
                         (fl1, False),
                         b'remote is newer',
                     )
+                    if branchmerge:
+                        commitinfo[f] = b'other'
                 else:  # both changed something
                     actions[f] = (
                         mergestatemod.ACTION_MERGE,
@@ -875,7 +890,7 @@ def manifestmerge(
     renamedelete = branch_copies1.renamedelete
     renamedelete.update(branch_copies2.renamedelete)
 
-    return mergeresult(actions, diverge, renamedelete)
+    return mergeresult(actions, diverge, renamedelete, commitinfo)
 
 
 def _resolvetrivial(repo, wctx, mctx, ancestor, actions):
@@ -1034,7 +1049,8 @@ def calculateupdates(
             actions[f] = l[0]
             continue
         repo.ui.note(_(b'end of auction\n\n'))
-        mresult = mergeresult(actions, diverge, renamedelete)
+        # TODO: think about commitinfo when bid merge is used
+        mresult = mergeresult(actions, diverge, renamedelete, {})
 
     if wctx.rev() is None:
         fractions = _forgetremoved(wctx, mctx, branchmerge)
