@@ -706,12 +706,17 @@ def _disabledpaths():
     '''find paths of disabled extensions. returns a dict of {name: path}'''
     import hgext
 
-    extpath = os.path.dirname(
-        os.path.abspath(pycompat.fsencode(hgext.__file__))
-    )
-    try:  # might not be a filesystem path
-        files = os.listdir(extpath)
-    except OSError:
+    # The hgext might not have a __file__ attribute (e.g. in PyOxidizer) and
+    # it might not be on a filesystem even if it does.
+    if util.safehasattr(hgext, '__file__'):
+        extpath = os.path.dirname(
+            os.path.abspath(pycompat.fsencode(hgext.__file__))
+        )
+        try:
+            files = os.listdir(extpath)
+        except OSError:
+            return {}
+    else:
         return {}
 
     exts = {}
