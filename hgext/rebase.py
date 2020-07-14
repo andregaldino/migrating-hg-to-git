@@ -630,12 +630,7 @@ class rebaseruntime(object):
                         if self.inmemory:
                             raise error.InMemoryMergeConflictsError()
                         else:
-                            raise error.InterventionRequired(
-                                _(
-                                    b"unresolved conflicts (see 'hg "
-                                    b"resolve', then 'hg rebase --continue')"
-                                )
-                            )
+                            raise error.ConflictResolutionRequired(b'rebase')
             if not self.collapsef:
                 merging = p2 != nullrev
                 editform = cmdutil.mergeeditform(merging, b'rebase')

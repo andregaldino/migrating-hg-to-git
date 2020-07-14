@@ -1014,12 +1014,7 @@ def _rebaserestoredcommit(
                 activebookmark,
                 interactive,
             )
-            raise error.InterventionRequired(
-                _(
-                    b"unresolved conflicts (see 'hg resolve', then "
-                    b"'hg unshelve --continue')"
-                )
-            )
+            raise error.ConflictResolutionRequired(b'unshelve')
 
         with repo.dirstate.parentchange():
             repo.setparents(tmpwctx.node(), nodemod.nullid)
