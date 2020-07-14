@@ -558,6 +558,13 @@ def manifestmerge(
     branchmerge and force are as passed in to update
     matcher = matcher to filter file lists
     acceptremote = accept the incoming changes without prompting
+
+    Returns:
+
+    actions: dict of filename as keys and action related info as values
+    diverge: mapping of source name -> list of dest name for divergent renames
+    renamedelete: mapping of source name -> list of destinations for files
+                  deleted on one side and renamed on other.
     """
     if matcher is not None and matcher.always():
         matcher = None
@@ -875,7 +882,17 @@ def calculateupdates(
     matcher=None,
     mergeforce=False,
 ):
-    """Calculate the actions needed to merge mctx into wctx using ancestors"""
+    """
+    Calculate the actions needed to merge mctx into wctx using ancestors
+
+    Uses manifestmerge() to merge manifest and get list of actions required to
+    perform for merging two manifests. If there are multiple ancestors, uses bid
+    merge if enabled.
+
+    Also filters out actions which are unrequired if repository is sparse.
+
+    Returns same 3 element tuple as manifestmerge().
+    """
     # Avoid cycle.
     from . import sparse
 
