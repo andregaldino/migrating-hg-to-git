@@ -113,8 +113,6 @@ ACTION_DIR_RENAME_MOVE_LOCAL = b'dm'
 ACTION_KEEP = b'k'
 ACTION_EXEC = b'e'
 ACTION_CREATED_MERGE = b'cm'
-# GET the other/remote side and store this info in mergestate
-ACTION_GET_OTHER_AND_STORE = b'gs'
 
 
 class mergestate(object):

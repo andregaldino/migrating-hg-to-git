@@ -706,9 +706,7 @@ def manifestmerge(
                         )
                     else:
                         actions[f] = (
-                            mergestatemod.ACTION_GET_OTHER_AND_STORE
-                            if branchmerge
-                            else mergestatemod.ACTION_GET,
+                            mergestatemod.ACTION_GET,
                             (fl2, False),
                             b'remote is newer',
                         )
@@ -722,9 +720,7 @@ def manifestmerge(
                     )
                 elif nol and n1 == a:  # local only changed 'x'
                     actions[f] = (
-                        mergestatemod.ACTION_GET_OTHER_AND_STORE
-                        if branchmerge
-                        else mergestatemod.ACTION_GET,
+                        mergestatemod.ACTION_GET,
                         (fl1, False),
                         b'remote is newer',
                     )
@@ -999,8 +995,6 @@ def calculateupdates(
 
             for f, a in sorted(pycompat.iteritems(mresult1.actions)):
                 m, args, msg = a
-                if m == mergestatemod.ACTION_GET_OTHER_AND_STORE:
-                    m = mergestatemod.ACTION_GET
                 repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m))
                 if f in fbids:
                     d = fbids[f]
@@ -1235,7 +1229,6 @@ def emptyactions():
             mergestatemod.ACTION_KEEP,
             mergestatemod.ACTION_PATH_CONFLICT,
             mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
-            mergestatemod.ACTION_GET_OTHER_AND_STORE,
         )
     }
 
@@ -1278,10 +1271,6 @@ def applyupdates(
         # mergestate so that it can be reused on commit
         if op == b'other':
             ms.addmergedother(f)
-
-    # add ACTION_GET_OTHER_AND_STORE to mergestate
-    for e in actions[mergestatemod.ACTION_GET_OTHER_AND_STORE]:
-        ms.addmergedother(e[0])
 
     moves = []
     for m, l in actions.items():
@@ -1827,7 +1816,6 @@ def update(
                     mergestatemod.ACTION_EXEC,
                     mergestatemod.ACTION_REMOVE,
                     mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
-                    mergestatemod.ACTION_GET_OTHER_AND_STORE,
                 ):
                     msg = _(b"conflicting changes")
                     hint = _(b"commit or update --clean to discard changes")
@@ -1897,10 +1885,6 @@ def update(
             if m not in actions:
                 actions[m] = []
             actions[m].append((f, args, msg))
-
-        # ACTION_GET_OTHER_AND_STORE is a mergestatemod.ACTION_GET + store in mergestate
-        for e in actions[mergestatemod.ACTION_GET_OTHER_AND_STORE]:
-            actions[mergestatemod.ACTION_GET].append(e)
 
         if not util.fscasesensitive(repo.path):
             # check collision between files only in p2 for clean update
