@@ -1,0 +1,141 @@
+{
+    "version": 1, 
+    "interactions": [
+        {
+            "response": {
+                "headers": {
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "date": [
+                        "Wed, 15 Jul 2020 17:23:27 GMT"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"6876\",\"phid\":\"PHID-DREV-looitrxgt3omaau7a7qk\",\"title\":\"phabricator: support automatically obsoleting old revisions of pulled commits\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D6876\",\"dateCreated\":\"1569388644\",\"dateModified\":\"1579887103\",\"authorPHID\":\"PHID-USER-tzhaient733lwrlbcag5\",\"status\":\"1\",\"statusName\":\"Needs Revision\",\"properties\":{\"draft.broadcast\":true,\"lines.added\":68,\"lines.removed\":1},\"branch\":null,\"summary\":\"This is basically an import of the `pullcreatemarkers` extension[1] from the FB\\nrepo, with minor adjustments to `getmatchingdiff()` to work with modern hg.\\nSince this is very phabricator specific, it makes more sense to me to bundle it\\ninto the existing extension.  It wasn't very obvious from the old name what\\nfunctionality was provided, and it may make sense to do this in other scenarios\\nbesides `hg pull`.\\n\\nThere are two use cases that I can see- first, ensuring that old revisions are\\ncleaned up for a contributor (I seem to recall something I submitted recently\\nneeded to be explicitly pruned, though most submissions do clean up\\nautomatically).  Second, any `hg phabread | hg import -` would otherwise need to\\nbe manually cleaned up.  The latter is annoying enough that I tend not to grab\\nthe code and try it when reviewing.\\n\\nIt is currently guarded by a config option (off by default), because @marmoute\\nexpressed concerns about duplicate marker creation if the pushing reviewer also\\ncreates a marker.  I don't think that's possible here, since the obsolete\\nrevisions are explicitly excluded.  But maybe there are other reasons someone\\nwouldn't want older revisions obsoleted.  The config name reflects the fact that\\nI'm not sure if other things like import should get this too.\\n\\nI suspect that we could wrap a function deeper in the pull sequence to improve\\nboth the code and the UX.  For example, when pulling an obsolete marker, it can\\nprint out a warning that the working directory parent is obsolete, but that\\ndoesn't happen here.  (It won't happen with this test.  It *should* without the\\n`--bypass` option, but doesn't.)  It should also be possible to not have to\\nquery the range of new revisions, and maybe it can be added to the existing\\ntransaction.\\n\\n[1] https:\\/\\/bitbucket.org\\/facebook\\/hg-experimental\\/src\\/default\\/hgext3rd\\/pullcreatemarkers.py\",\"testPlan\":\"\",\"lineCount\":\"69\",\"activeDiffPHID\":\"PHID-DIFF-jdpqpzciqcooaxf2kojh\",\"diffs\":[\"16604\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\",\"PHID-USER-cah4b6i3kszy6debh3bl\":\"PHID-USER-cah4b6i3kszy6debh3bl\"},\"ccs\":[\"PHID-USER-34jnztnonbr4lhwuybwl\",\"PHID-USER-e66t6wbudjtigdnqbl3e\",\"PHID-USER-5iy6mkoveguhm2zthvww\",\"PHID-USER-q42dn7cc3donqriafhjx\",\"PHID-USER-vflsibccj4unqydwfvne\"],\"hashes\":[],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-2dbanvk64h5wguhxta2o\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\",\"sourcePath\":null}],\"error_code\":null,\"error_info\":null}"
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }
+            }, 
+            "request": {
+                "uri": "https://phab.mercurial-scm.org//api/differential.query", 
+                "body": "output=json&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22ids%22%3A+%5B6876%5D%7D&__conduit__=1", 
+                "method": "POST", 
+                "headers": {
+                    "content-length": [
+                        "146"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.4.2+207-8403cc54bc83+20200709)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }
+            }
+        }, 
+        {
+            "response": {
+                "headers": {
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "date": [
+                        "Wed, 15 Jul 2020 17:23:28 GMT"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ], 
+                    "transfer-encoding": [
+                        "chunked"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "referrer-policy": [
+                        "no-referrer"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"object\":{\"id\":6876,\"phid\":\"PHID-DREV-looitrxgt3omaau7a7qk\"},\"transactions\":[{\"phid\":\"PHID-XACT-DREV-g2xkgr2sjkrmhcr\"},{\"phid\":\"PHID-XACT-DREV-lgbrex6poz6x5pk\"}]},\"error_code\":null,\"error_info\":null}"
+                }, 
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }
+            }, 
+            "request": {
+                "uri": "https://phab.mercurial-scm.org//api/differential.revision.edit", 
+                "body": "output=json&params=%7B%22__conduit__%22%3A+%7B%22token%22%3A+%22cli-hahayouwish%22%7D%2C+%22objectIdentifier%22%3A+%22PHID-DREV-looitrxgt3omaau7a7qk%22%2C+%22transactions%22%3A+%5B%7B%22type%22%3A+%22plan-changes%22%2C+%22value%22%3A+true%7D%5D%7D&__conduit__=1", 
+                "method": "POST", 
+                "headers": {
+                    "content-length": [
+                        "278"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 5.4.2+207-8403cc54bc83+20200709)"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ]
+                }
+            }
+        }
+    ]
+}

@@ -86,6 +86,10 @@ phabupdate with an accept:
   [255]
   $ hg phabupdate --accept D7913 -m 'LGTM' --test-vcr "$VCR/accept-7913.json"
 
+phabupdate with --plan-changes:
+
+  $ hg phabupdate --plan-changes D6876 --test-vcr "$VCR/phabupdate-change-6876.json"
+
 Create a differential diff:
   $ HGENCODING=utf-8; export HGENCODING
   $ echo alpha > alpha

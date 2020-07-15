@@ -2164,6 +2164,7 @@ def phabimport(ui, repo, *specs, **opts):
         (b'', b'reject', False, _(b'reject revisions')),
         (b'', b'abandon', False, _(b'abandon revisions')),
         (b'', b'reclaim', False, _(b'reclaim revisions')),
+        (b'', b'plan-changes', False, _(b'plan changes for revisions')),
         (b'm', b'comment', b'', _(b'comment on the last revision')),
     ],
     _(b'DREVSPEC... [OPTIONS]'),
@@ -2176,7 +2177,14 @@ def phabupdate(ui, repo, *specs, **opts):
     DREVSPEC selects revisions. See :hg:`help phabread` for its usage.
     """
     opts = pycompat.byteskwargs(opts)
-    flags = [n for n in b'accept reject abandon reclaim'.split() if opts.get(n)]
+    transactions = [
+        b'abandon',
+        b'accept',
+        b'plan-changes',
+        b'reclaim',
+        b'reject',
+    ]
+    flags = [n for n in transactions if opts.get(n.replace(b'-', b'_'))]
     if len(flags) > 1:
         raise error.Abort(_(b'%s cannot be used together') % b', '.join(flags))
 
