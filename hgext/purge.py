@@ -64,7 +64,7 @@ testedwith = b'ships-with-hg-core'
     ]
     + cmdutil.walkopts,
     _(b'hg purge [OPTION]... [DIR]...'),
-    helpcategory=command.CATEGORY_MAINTENANCE,
+    helpcategory=command.CATEGORY_WORKING_DIRECTORY,
 )
 def purge(ui, repo, *dirs, **opts):
     '''removes files not tracked by Mercurial
