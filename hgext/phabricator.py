@@ -2166,6 +2166,7 @@ def phabimport(ui, repo, *specs, **opts):
         (b'', b'abandon', False, _(b'abandon revisions')),
         (b'', b'reclaim', False, _(b'reclaim revisions')),
         (b'', b'close', False, _(b'close revisions')),
+        (b'', b'reopen', False, _(b'reopen revisions')),
         (b'', b'plan-changes', False, _(b'plan changes for revisions')),
         (b'm', b'comment', b'', _(b'comment on the last revision')),
     ],
@@ -2186,6 +2187,7 @@ def phabupdate(ui, repo, *specs, **opts):
         b'plan-changes',
         b'reclaim',
         b'reject',
+        b'reopen',
         b'request-review',
     ]
     flags = [n for n in transactions if opts.get(n.replace(b'-', b'_'))]
