@@ -75,18 +75,28 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
 
 
 class outgoing(object):
-    '''Represents the set of nodes present in a local repo but not in a
-    (possibly) remote one.
+    '''Represents the result of a findcommonoutgoing() call.
 
     Members:
 
-      missing is a list of all nodes present in local but not in remote.
-      common is a list of all nodes shared between the two repos.
-      excluded is the list of missing changeset that shouldn't be sent remotely.
-      missingheads is the list of heads of missing.
+      ancestorsof is a list of the nodes whose ancestors are included in the
+      outgoing operation.
+
+      missing is a list of those ancestors of ancestorsof that are present in
+      local but not in remote.
+
+      common is a set containing revs common between the local and the remote
+      repository (at least all of those that are ancestors of ancestorsof).
+
       commonheads is the list of heads of common.
 
-    The sets are computed on demand from the heads, unless provided upfront
+      excluded is the list of missing changeset that shouldn't be sent
+      remotely.
+
+      missingheads is an alias to ancestorsof, but the name is wrong and it
+      will be removed
+
+    Some members are computed on demand from the heads, unless provided upfront
     by discovery.'''
 
     def __init__(
@@ -134,6 +144,10 @@ class outgoing(object):
         if self._missing is None:
             self._computecommonmissing()
         return self._missing
+
+    @property
+    def ancestorsof(self):
+        return self.missingheads
 
 
 def findcommonoutgoing(
