@@ -100,7 +100,7 @@ class WriteAllWrapper(object):
 io.IOBase.register(WriteAllWrapper)
 
 
-def make_write_all(stream):
+def _make_write_all(stream):
     assert pycompat.ispy3
     if isinstance(stream, WriteAllWrapper):
         return stream
@@ -118,11 +118,11 @@ if pycompat.ispy3:
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
     stdin = sys.stdin.buffer
-    stdout = make_write_all(sys.stdout.buffer)
+    stdout = _make_write_all(sys.stdout.buffer)
     if isatty(stdout):
         # The standard library doesn't offer line-buffered binary streams.
         stdout = make_line_buffered(stdout)
-    stderr = make_write_all(sys.stderr.buffer)
+    stderr = _make_write_all(sys.stderr.buffer)
 else:
     # Python 2 uses the I/O streams provided by the C library.
     stdin = sys.stdin
