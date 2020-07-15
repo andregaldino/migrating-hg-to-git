@@ -41,8 +41,8 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
       any longer.
     "heads" is either the supplied heads, or else the remote's heads.
     "ancestorsof" if not None, restrict the discovery to a subset defined by
-      these nodes. Changeset outside of this set won't be considered (and
-      won't appears in "common")
+      these nodes. Changeset outside of this set won't be considered (but may
+      still appear in "common").
 
     If you pass heads and they are all known locally, the response lists just
     these heads in "common" and in "heads".
