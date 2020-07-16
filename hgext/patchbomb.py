@@ -207,7 +207,7 @@ def _formatflags(ui, repo, rev, flags):
     if not tmpl:
         return b' '.join(flags)
     out = util.stringio()
-    spec = formatter.templatespec(b'', templater.unquotestring(tmpl), None)
+    spec = formatter.literal_templatespec(templater.unquotestring(tmpl))
     with formatter.templateformatter(ui, out, b'patchbombflag', {}, spec) as fm:
         fm.startitem()
         fm.context(ctx=repo[rev])
