@@ -103,8 +103,6 @@ static PyObject *hashflags(line *l)
 {
 	char flag;
 	PyObject *hash = nodeof(l, &flag);
-	ssize_t hlen;
-	Py_ssize_t hplen, flen;
 	PyObject *flags;
 	PyObject *tup;
 
@@ -296,7 +294,6 @@ static PyObject *lmiter_iterentriesnext(PyObject *o)
 	Py_ssize_t pl;
 	line *l;
 	char flag;
-	Py_ssize_t consumed;
 	PyObject *ret = NULL, *path = NULL, *hash = NULL, *flags = NULL;
 	l = lmiter_nextline((lmIter *)o);
 	if (!l) {

@@ -752,7 +752,6 @@ static int add_roots_get_min(indexObject *self, PyObject *roots, char *phases,
                              char phase)
 {
 	Py_ssize_t len = index_length(self);
-	PyObject *iter;
 	PyObject *item;
 	PyObject *iterator;
 	int rev, minrev = -1;
@@ -790,14 +789,12 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	static const char trackedphases[] = {1, 2, 32, 96};
 	PyObject *ret = NULL;
 	PyObject *roots = Py_None;
-	PyObject *idx = NULL;
 	PyObject *pyphase = NULL;
 	PyObject *pyrev = NULL;
 	PyObject *phaseroots = NULL;
 	PyObject *phasessize = NULL;
 	PyObject *phasesets[4] = {NULL, NULL, NULL, NULL};
 	Py_ssize_t len = index_length(self);
-	const char *currentphase;
 	char *phases = NULL;
 	int minphaserev = -1, rev, i;
 	const int numphases = (int)(sizeof(phasesets) / sizeof(phasesets[0]));
@@ -880,7 +877,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	phaseroots = _dict_new_presized(numphases);
 	if (phaseroots == NULL)
 		goto release;
-	for (int i = 0; i < numphases; ++i) {
+	for (i = 0; i < numphases; ++i) {
 		pyphase = PyInt_FromLong(trackedphases[i]);
 		if (pyphase == NULL)
 			goto release;
