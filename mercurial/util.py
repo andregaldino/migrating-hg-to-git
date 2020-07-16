@@ -1381,8 +1381,8 @@ def acceptintervention(tr=None):
 
 
 @contextlib.contextmanager
-def nullcontextmanager():
-    yield
+def nullcontextmanager(enter_result=None):
+    yield enter_result
 
 
 class _lrucachenode(object):
