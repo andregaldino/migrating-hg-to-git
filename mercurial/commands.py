@@ -6663,7 +6663,7 @@ _NOTTERSE = b'nothing'
         (b'm', b'modified', None, _(b'show only modified files')),
         (b'a', b'added', None, _(b'show only added files')),
         (b'r', b'removed', None, _(b'show only removed files')),
-        (b'd', b'deleted', None, _(b'show only deleted (but tracked) files')),
+        (b'd', b'deleted', None, _(b'show only missing files')),
         (b'c', b'clean', None, _(b'show only files without changes')),
         (b'u', b'unknown', None, _(b'show only unknown (not tracked) files')),
         (b'i', b'ignored', None, _(b'show only ignored files')),

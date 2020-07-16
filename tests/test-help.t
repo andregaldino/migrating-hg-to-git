@@ -730,7 +730,7 @@ Test command without options
    -m --modified            show only modified files
    -a --added               show only added files
    -r --removed             show only removed files
-   -d --deleted             show only deleted (but tracked) files
+   -d --deleted             show only missing files
    -c --clean               show only files without changes
    -u --unknown             show only unknown (not tracked) files
    -i --ignored             show only ignored files
