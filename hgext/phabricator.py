@@ -1311,8 +1311,8 @@ def phabsend(ui, repo, *revs, **opts):
     # --fold option implies this, and the auto restacking of orphans requires
     # it.  Otherwise A+C in A->B->C will cause B to be orphaned, and C' to
     # get A' as a parent.
-    def _fail_nonlinear_revs(revs, skiprev, revtype):
-        badnodes = [repo[r].node() for r in revs if r != skiprev]
+    def _fail_nonlinear_revs(revs, revtype):
+        badnodes = [repo[r].node() for r in revs]
         raise error.Abort(
             _(b"cannot phabsend multiple %s revisions: %s")
             % (revtype, scmutil.nodesummaries(repo, badnodes)),
@@ -1321,11 +1321,11 @@ def phabsend(ui, repo, *revs, **opts):
 
     heads = repo.revs(b'heads(%ld)', revs)
     if len(heads) > 1:
-        _fail_nonlinear_revs(heads, heads.max(), b"head")
+        _fail_nonlinear_revs(heads, b"head")
 
     roots = repo.revs(b'roots(%ld)', revs)
     if len(roots) > 1:
-        _fail_nonlinear_revs(roots, roots.min(), b"root")
+        _fail_nonlinear_revs(roots, b"root")
 
     fold = opts.get(b'fold')
     if fold:

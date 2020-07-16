@@ -596,7 +596,7 @@ Phabimport accepts multiple DREVSPECs
 Phabsend requires a linear range of commits
 
   $ hg phabsend -r 0+2+3
-  abort: cannot phabsend multiple head revisions: c44b38f24a45
+  abort: cannot phabsend multiple head revisions: c44b38f24a45 aaef04066140
   (the revisions must form a linear chain)
   [255]
 
