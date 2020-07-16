@@ -1695,6 +1695,9 @@ if py2exeloaded:
     if dllexcludes:
         py2exedllexcludes.extend(dllexcludes.split(' '))
 
+if os.environ.get('PYOXIDIZER'):
+    hgbuild.sub_commands.insert(0, ('build_hgextindex', None))
+
 if os.name == 'nt':
     # Windows binary file versions for exe/dll files must have the
     # form W.X.Y.Z, where W,X,Y,Z are numbers in the range 0..65535
