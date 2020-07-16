@@ -16,6 +16,25 @@ import unittest
 from mercurial import pycompat
 
 
+if pycompat.ispy3:
+
+    def set_noninheritable(fd):
+        # On Python 3, file descriptors are non-inheritable by default.
+        pass
+
+
+else:
+    if pycompat.iswindows:
+        # unused
+        set_noninheritable = None
+    else:
+        import fcntl
+
+        def set_noninheritable(fd):
+            old = fcntl.fcntl(fd, fcntl.F_GETFD)
+            fcntl.fcntl(fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
+
+
 TEST_BUFFERING_CHILD_SCRIPT = r'''
 import os
 
@@ -64,9 +83,15 @@ def _closing(fds):
                 pass
 
 
+# In the following, we set the FDs non-inheritable mainly to make it possible
+# for tests to close the receiving end of the pipe / PTYs.
+
+
 @contextlib.contextmanager
 def _devnull():
     devnull = os.open(os.devnull, os.O_WRONLY)
+    # We don't have a receiving end, so it's not worth the effort on Python 2
+    # on Windows to make the FD non-inheritable.
     with _closing([devnull]):
         yield (None, devnull)
 
@@ -74,6 +99,10 @@ def _devnull():
 @contextlib.contextmanager
 def _pipes():
     rwpair = os.pipe()
+    # Pipes are already non-inheritable on Windows.
+    if not pycompat.iswindows:
+        set_noninheritable(rwpair[0])
+        set_noninheritable(rwpair[1])
     with _closing(rwpair):
         yield rwpair
 
@@ -86,6 +115,8 @@ def _ptys():
     import tty
 
     rwpair = pty.openpty()
+    set_noninheritable(rwpair[0])
+    set_noninheritable(rwpair[1])
     with _closing(rwpair):
         tty.setraw(rwpair[0])
         yield rwpair
