@@ -500,8 +500,12 @@ class uihunk(patchnode):
         """
         dels = []
         adds = []
+        noeol = False
         for line in self.changedlines:
             text = line.linetext
+            if line.linetext == b'\\ No newline at end of file\n':
+                noeol = True
+                break
             if line.applied:
                 if text.startswith(b'+'):
                     dels.append(text[1:])
@@ -511,6 +515,9 @@ class uihunk(patchnode):
                 dels.append(text[1:])
                 adds.append(text[1:])
         hunk = [b'-%s' % l for l in dels] + [b'+%s' % l for l in adds]
+        if noeol and hunk:
+            # Remove the newline from the end of the hunk.
+            hunk[-1] = hunk[-1][:-1]
         h = self._hunk
         return patchmod.recordhunk(
             h.header, h.toline, h.fromline, h.proc, h.before, hunk, h.after
