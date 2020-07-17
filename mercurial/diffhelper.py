@@ -14,6 +14,8 @@ from . import (
     pycompat,
 )
 
+MISSING_NEWLINE_MARKER = b'\\ No newline at end of file\n'
+
 
 def addlines(fp, hunk, lena, lenb, a, b):
     """Read lines from fp into the hunk
@@ -32,7 +34,7 @@ def addlines(fp, hunk, lena, lenb, a, b):
             s = fp.readline()
             if not s:
                 raise error.ParseError(_(b'incomplete hunk'))
-            if s == b"\\ No newline at end of file\n":
+            if s == MISSING_NEWLINE_MARKER:
                 fixnewline(hunk, a, b)
                 continue
             if s == b'\n' or s == b'\r\n':

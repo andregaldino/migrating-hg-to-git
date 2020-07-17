@@ -20,6 +20,7 @@ from .pycompat import (
     open,
 )
 from . import (
+    diffhelper,
     encoding,
     error,
     patch as patchmod,
@@ -416,7 +417,7 @@ class uihunk(patchnode):
         contextlen = (
             len(self.before) + len(self.after) + removedconvertedtocontext
         )
-        if self.after and self.after[-1] == b'\\ No newline at end of file\n':
+        if self.after and self.after[-1] == diffhelper.MISSING_NEWLINE_MARKER:
             contextlen -= 1
         fromlen = contextlen + self.removed
         tolen = contextlen + self.added
@@ -503,7 +504,7 @@ class uihunk(patchnode):
         noeol = False
         for line in self.changedlines:
             text = line.linetext
-            if line.linetext == b'\\ No newline at end of file\n':
+            if line.linetext == diffhelper.MISSING_NEWLINE_MARKER:
                 noeol = True
                 break
             if line.applied:

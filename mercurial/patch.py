@@ -785,7 +785,7 @@ class patchfile(object):
             for l in x.hunk:
                 lines.append(l)
                 if l[-1:] != b'\n':
-                    lines.append(b"\n\\ No newline at end of file\n")
+                    lines.append(b'\n' + diffhelper.MISSING_NEWLINE_MARKER)
         self.backend.writerej(self.fname, len(self.rej), self.hunks, lines)
 
     def apply(self, h):
@@ -1069,7 +1069,7 @@ class recordhunk(object):
 
     def write(self, fp):
         delta = len(self.before) + len(self.after)
-        if self.after and self.after[-1] == b'\\ No newline at end of file\n':
+        if self.after and self.after[-1] == diffhelper.MISSING_NEWLINE_MARKER:
             delta -= 1
         fromlen = delta + self.removed
         tolen = delta + self.added
