@@ -905,27 +905,32 @@ def _pushcheckoutgoing(pushop):
         # if repo.obsstore == False --> no obsolete
         # then, save the iteration
         if unfi.obsstore:
-            # this message are here for 80 char limit reason
-            mso = _(b"push includes obsolete changeset: %s!")
-            mspd = _(b"push includes phase-divergent changeset: %s!")
-            mscd = _(b"push includes content-divergent changeset: %s!")
-            mst = {
-                b"orphan": _(b"push includes orphan changeset: %s!"),
-                b"phase-divergent": mspd,
-                b"content-divergent": mscd,
-            }
-            # If we are to push if there is at least one
-            # obsolete or unstable changeset in missing, at
-            # least one of the missinghead will be obsolete or
-            # unstable. So checking heads only is ok
-            for node in outgoing.ancestorsof:
+            obsoletes = []
+            unstables = []
+            for node in outgoing.missing:
                 ctx = unfi[node]
                 if ctx.obsolete():
-                    raise error.Abort(mso % ctx)
+                    obsoletes.append(ctx)
                 elif ctx.isunstable():
-                    # TODO print more than one instability in the abort
-                    # message
-                    raise error.Abort(mst[ctx.instabilities()[0]] % ctx)
+                    unstables.append(ctx)
+            if obsoletes or unstables:
+                msg = b""
+                if obsoletes:
+                    msg += _(b"push includes obsolete changesets:\n")
+                    msg += b"\n".join(b'  %s' % ctx for ctx in obsoletes)
+                if unstables:
+                    if msg:
+                        msg += b"\n"
+                    msg += _(b"push includes unstable changesets:\n")
+                    msg += b"\n".join(
+                        b'  %s (%s)'
+                        % (
+                            ctx,
+                            b", ".join(_(ins) for ins in ctx.instabilities()),
+                        )
+                        for ctx in unstables
+                    )
+                raise error.Abort(msg)
 
         discovery.checkheads(pushop)
     return True
