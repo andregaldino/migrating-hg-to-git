@@ -627,6 +627,26 @@ refuse to push unstable changeset
   abort: push includes orphan changeset: cda648ca50f5!
   [255]
 
+with --force it will work anyway
+
+  $ hg push ../tmpc/ --force
+  pushing to ../tmpc/
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files
+  1 new obsolescence markers
+  1 new orphan changesets
+
+if the orphan changeset is already on the server, pushing should work
+
+  $ hg push ../tmpc/
+  pushing to ../tmpc/
+  searching for changes
+  no changes found
+  [1]
+
 Test that extinct changeset are properly detected
 
   $ hg log -r 'extinct()'
