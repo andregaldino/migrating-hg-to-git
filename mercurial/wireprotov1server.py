@@ -339,7 +339,7 @@ def capabilities(repo, proto):
 def changegroup(repo, proto, roots):
     nodes = wireprototypes.decodelist(roots)
     outgoing = discovery.outgoing(
-        repo, missingroots=nodes, missingheads=repo.heads()
+        repo, missingroots=nodes, ancestorsof=repo.heads()
     )
     cg = changegroupmod.makechangegroup(repo, outgoing, b'01', b'serve')
     gen = iter(lambda: cg.read(32768), b'')
@@ -350,7 +350,7 @@ def changegroup(repo, proto, roots):
 def changegroupsubset(repo, proto, bases, heads):
     bases = wireprototypes.decodelist(bases)
     heads = wireprototypes.decodelist(heads)
-    outgoing = discovery.outgoing(repo, missingroots=bases, missingheads=heads)
+    outgoing = discovery.outgoing(repo, missingroots=bases, ancestorsof=heads)
     cg = changegroupmod.makechangegroup(repo, outgoing, b'01', b'serve')
     gen = iter(lambda: cg.read(32768), b'')
     return wireprototypes.streamres(gen=gen)

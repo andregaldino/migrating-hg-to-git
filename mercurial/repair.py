@@ -66,7 +66,7 @@ def backupbundle(
     else:
         bundletype = b"HG10UN"
 
-    outgoing = discovery.outgoing(repo, missingroots=bases, missingheads=heads)
+    outgoing = discovery.outgoing(repo, missingroots=bases, ancestorsof=heads)
     contentopts = {
         b'cg.version': cgversion,
         b'obsolescence': obsolescence,

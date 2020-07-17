@@ -412,13 +412,13 @@ class locallegacypeer(localpeer):
 
     def changegroup(self, nodes, source):
         outgoing = discovery.outgoing(
-            self._repo, missingroots=nodes, missingheads=self._repo.heads()
+            self._repo, missingroots=nodes, ancestorsof=self._repo.heads()
         )
         return changegroup.makechangegroup(self._repo, outgoing, b'01', source)
 
     def changegroupsubset(self, bases, heads, source):
         outgoing = discovery.outgoing(
-            self._repo, missingroots=bases, missingheads=heads
+            self._repo, missingroots=bases, ancestorsof=heads
         )
         return changegroup.makechangegroup(self._repo, outgoing, b'01', source)
 

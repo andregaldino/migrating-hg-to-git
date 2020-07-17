@@ -466,7 +466,7 @@ def _rebundle(bundlerepo, bundleroots, unknownhead):
 
     version = b'02'
     outgoing = discovery.outgoing(
-        bundlerepo, commonheads=bundleroots, missingheads=[unknownhead]
+        bundlerepo, commonheads=bundleroots, ancestorsof=[unknownhead]
     )
     cgstream = changegroup.makestream(bundlerepo, outgoing, version, b'pull')
     cgstream = util.chunkbuffer(cgstream).read()

@@ -162,7 +162,7 @@ class shelvedfile(object):
         repo = self.repo.unfiltered()
 
         outgoing = discovery.outgoing(
-            repo, missingroots=bases, missingheads=[node]
+            repo, missingroots=bases, ancestorsof=[node]
         )
         cg = changegroup.makechangegroup(repo, outgoing, cgversion, b'shelve')
 

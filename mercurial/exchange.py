@@ -503,7 +503,7 @@ class pushoperation(object):
     @util.propertycache
     def futureheads(self):
         """future remote heads if the changeset push succeeds"""
-        return self.outgoing.missingheads
+        return self.outgoing.ancestorsof
 
     @util.propertycache
     def fallbackheads(self):
@@ -512,20 +512,20 @@ class pushoperation(object):
             # not target to push, all common are relevant
             return self.outgoing.commonheads
         unfi = self.repo.unfiltered()
-        # I want cheads = heads(::missingheads and ::commonheads)
-        # (missingheads is revs with secret changeset filtered out)
+        # I want cheads = heads(::ancestorsof and ::commonheads)
+        # (ancestorsof is revs with secret changeset filtered out)
         #
         # This can be expressed as:
-        #     cheads = ( (missingheads and ::commonheads)
-        #              + (commonheads and ::missingheads))"
+        #     cheads = ( (ancestorsof and ::commonheads)
+        #              + (commonheads and ::ancestorsof))"
         #              )
         #
         # while trying to push we already computed the following:
         #     common = (::commonheads)
-        #     missing = ((commonheads::missingheads) - commonheads)
+        #     missing = ((commonheads::ancestorsof) - commonheads)
         #
         # We can pick:
-        # * missingheads part of common (::commonheads)
+        # * ancestorsof part of common (::commonheads)
         common = self.outgoing.common
         rev = self.repo.changelog.index.rev
         cheads = [node for node in self.revs if rev(node) in common]
@@ -918,7 +918,7 @@ def _pushcheckoutgoing(pushop):
             # obsolete or unstable changeset in missing, at
             # least one of the missinghead will be obsolete or
             # unstable. So checking heads only is ok
-            for node in outgoing.missingheads:
+            for node in outgoing.ancestorsof:
                 ctx = unfi[node]
                 if ctx.obsolete():
                     raise error.Abort(mso % ctx)
@@ -969,7 +969,7 @@ def _pushb2ctxcheckheads(pushop, bundler):
     """
     # * 'force' do not check for push race,
     # * if we don't push anything, there are nothing to check.
-    if not pushop.force and pushop.outgoing.missingheads:
+    if not pushop.force and pushop.outgoing.ancestorsof:
         allowunrelated = b'related' in bundler.capabilities.get(
             b'checkheads', ()
         )
