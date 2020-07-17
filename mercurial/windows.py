@@ -186,6 +186,14 @@ def posixfile(name, mode=b'r', buffering=-1):
 listdir = osutil.listdir
 
 
+# copied from .utils.procutil, remove after Python 2 support was dropped
+def _isatty(fp):
+    try:
+        return fp.isatty()
+    except AttributeError:
+        return False
+
+
 class winstdout(object):
     '''Some files on Windows misbehave.
 
@@ -197,7 +205,7 @@ class winstdout(object):
 
     def __init__(self, fp):
         self.fp = fp
-        self.throttle = not pycompat.ispy3 and fp.isatty()
+        self.throttle = not pycompat.ispy3 and _isatty(fp)
 
     def __getattr__(self, key):
         return getattr(self.fp, key)
