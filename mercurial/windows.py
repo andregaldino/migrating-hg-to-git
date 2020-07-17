@@ -187,7 +187,13 @@ listdir = osutil.listdir
 
 
 class winstdout(object):
-    '''stdout on windows misbehaves if sent through a pipe'''
+    '''Some files on Windows misbehave.
+
+    When writing to a broken pipe, EINVAL instead of EPIPE may be raised.
+
+    When writing too many bytes to a console at the same, a "Not enough space"
+    error may happen. Python 3 already works around that.
+    '''
 
     def __init__(self, fp):
         self.fp = fp
