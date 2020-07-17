@@ -16,6 +16,9 @@ fn main() {
         .version("0.0.1")
         .subcommand(
             SubCommand::with_name("root").about(commands::root::HELP_TEXT),
+        )
+        .subcommand(
+            SubCommand::with_name("files").about(commands::files::HELP_TEXT),
         );
 
     let matches = app.clone().get_matches_safe().unwrap_or_else(|_| {
@@ -27,6 +30,7 @@ fn main() {
     let command_result = match matches.subcommand_name() {
         Some(name) => match name {
             "root" => commands::root::RootCommand::new(&ui).run(),
+            "files" => commands::files::FilesCommand::new(&ui).run(),
             _ => std::process::exit(exitcode::UNIMPLEMENTED_COMMAND),
         },
         _ => {
