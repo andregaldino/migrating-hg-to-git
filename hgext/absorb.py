@@ -798,10 +798,7 @@ class fixupstate(object):
                 self.replacemap[ctx.node()] = lastcommitted.node()
                 if memworkingcopy:
                     if willbecomenoop:
-                        msg = _(
-                            b'%d file(s) changed, became empty '
-                            b'and became %s'
-                        )
+                        msg = _(b'%d file(s) changed, became empty as %s')
                     else:
                         msg = _(b'%d file(s) changed, became %s')
                     msg = msg % (

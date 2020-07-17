@@ -530,8 +530,8 @@ Setting config rewrite.empty-successor=keep causes empty changesets to get commi
   $ hg absorb -av --config rewrite.empty-successor=keep | grep became
   0:bfafb49242db: 1 file(s) changed, became 5:1a2de97fc652
   1:115485984805: 2 file(s) changed, became 6:0c930dfab74c
-  2:30970dbf7b40: 2 file(s) changed, became empty and became 7:df6574ae635c
-  3:a393a58b9a85: 2 file(s) changed, became empty and became 8:ad4bd3462c9e
+  2:30970dbf7b40: 2 file(s) changed, became empty as 7:df6574ae635c
+  3:a393a58b9a85: 2 file(s) changed, became empty as 8:ad4bd3462c9e
   4:1bb0e8cff87a: 2 file(s) changed, became 9:2dbed75af996
   $ hg log -T '{rev} {desc}\n' -Gp
   @  9 empty
