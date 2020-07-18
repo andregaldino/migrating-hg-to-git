@@ -867,6 +867,10 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 			pyphase = phasesets[3];
 			break;
 		default:
+			/* this should never happen since the phase number is
+			 * specified by this function. */
+			PyErr_SetString(PyExc_SystemError,
+			                "bad phase number in internal list");
 			goto release;
 		}
 		pyrev = PyInt_FromLong(rev);
