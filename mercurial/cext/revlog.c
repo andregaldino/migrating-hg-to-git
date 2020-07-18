@@ -791,10 +791,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	   96: internal */
 	static const char trackedphases[] = {1, 2, 32, 96};
 	PyObject *roots = Py_None;
-	PyObject *pyphase = NULL;
-	PyObject *pyrev = NULL;
 	PyObject *phasesetsdict = NULL;
-	PyObject *phaseroots = NULL;
 	PyObject *phasesets[4] = {NULL, NULL, NULL, NULL};
 	Py_ssize_t len = index_length(self);
 	char *phases = NULL;
@@ -815,7 +812,8 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	}
 
 	for (i = 0; i < numphases; ++i) {
-		pyphase = PyInt_FromLong(trackedphases[i]);
+		PyObject *pyphase = PyInt_FromLong(trackedphases[i]);
+		PyObject *phaseroots = NULL;
 		if (pyphase == NULL)
 			goto release;
 		phaseroots = PyDict_GetItem(roots, pyphase);
@@ -824,7 +822,6 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 			continue;
 		rev = add_roots_get_min(self, phaseroots, phases,
 		                        trackedphases[i]);
-		phaseroots = NULL;
 		if (rev == -2)
 			goto release;
 		if (rev != -1 && (minphaserev == -1 || rev < minphaserev))
@@ -840,6 +837,8 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	if (minphaserev == -1)
 		minphaserev = len;
 	for (rev = minphaserev; rev < len; ++rev) {
+		PyObject *pyphase = NULL;
+		PyObject *pyrev = NULL;
 		int parents[2];
 		/*
 		 * The parent lookup could be skipped for phaseroots, but
@@ -886,7 +885,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	if (phasesetsdict == NULL)
 		goto release;
 	for (i = 0; i < numphases; ++i) {
-		pyphase = PyInt_FromLong(trackedphases[i]);
+		PyObject *pyphase = PyInt_FromLong(trackedphases[i]);
 		if (pyphase == NULL)
 			goto release;
 		if (PyDict_SetItem(phasesetsdict, pyphase, phasesets[i]) ==
