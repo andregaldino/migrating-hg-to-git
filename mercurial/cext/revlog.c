@@ -757,8 +757,11 @@ static int add_roots_get_min(indexObject *self, PyObject *roots, char *phases,
 	int rev, minrev = -1;
 	char *node;
 
-	if (!PySet_Check(roots))
+	if (!PySet_Check(roots)) {
+		PyErr_SetString(PyExc_TypeError,
+		                "roots must be a set of nodes");
 		return -2;
+	}
 	iterator = PyObject_GetIter(roots);
 	if (iterator == NULL)
 		return -2;
