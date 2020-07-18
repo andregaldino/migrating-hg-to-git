@@ -217,8 +217,6 @@ class winstdout(object):
             pass
 
     def write(self, s):
-        if not pycompat.ispy3:
-            self.softspace = 0
         try:
             if not self.throttle:
                 return self.fp.write(s)
