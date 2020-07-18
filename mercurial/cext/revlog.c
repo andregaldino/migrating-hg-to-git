@@ -790,12 +790,10 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	/* 0: public (untracked), 1: draft, 2: secret, 32: archive,
 	   96: internal */
 	static const char trackedphases[] = {1, 2, 32, 96};
-	PyObject *ret = NULL;
 	PyObject *roots = Py_None;
 	PyObject *pyphase = NULL;
 	PyObject *pyrev = NULL;
 	PyObject *phaseroots = NULL;
-	PyObject *phasessize = NULL;
 	PyObject *phasesets[4] = {NULL, NULL, NULL, NULL};
 	Py_ssize_t len = index_length(self);
 	char *phases = NULL;
@@ -896,14 +894,8 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		Py_DECREF(phasesets[i]);
 		phasesets[i] = NULL;
 	}
-	phasessize = PyInt_FromSsize_t(len);
-	if (phasessize == NULL)
-		goto release;
 
-	ret = PyTuple_Pack(2, phasessize, phaseroots);
-	Py_DECREF(phasessize);
-	Py_DECREF(phaseroots);
-	return ret;
+	return Py_BuildValue("nN", len, phaseroots);
 
 release:
 	for (i = 0; i < numphases; ++i)
