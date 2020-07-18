@@ -823,7 +823,8 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		Py_DECREF(pyphase);
 		if (phaseroots == NULL)
 			continue;
-		rev = add_roots_get_min(self, phaseroots, phases, trackedphases[i]);
+		rev = add_roots_get_min(self, phaseroots, phases,
+		                        trackedphases[i]);
 		phaseroots = NULL;
 		if (rev == -2)
 			goto release;
