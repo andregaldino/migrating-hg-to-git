@@ -793,6 +793,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	PyObject *roots = Py_None;
 	PyObject *pyphase = NULL;
 	PyObject *pyrev = NULL;
+	PyObject *phasesetsdict = NULL;
 	PyObject *phaseroots = NULL;
 	PyObject *phasesets[4] = {NULL, NULL, NULL, NULL};
 	Py_ssize_t len = index_length(self);
@@ -880,14 +881,16 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		}
 		Py_DECREF(pyrev);
 	}
-	phaseroots = _dict_new_presized(numphases);
-	if (phaseroots == NULL)
+
+	phasesetsdict = _dict_new_presized(numphases);
+	if (phasesetsdict == NULL)
 		goto release;
 	for (i = 0; i < numphases; ++i) {
 		pyphase = PyInt_FromLong(trackedphases[i]);
 		if (pyphase == NULL)
 			goto release;
-		if (PyDict_SetItem(phaseroots, pyphase, phasesets[i]) == -1) {
+		if (PyDict_SetItem(phasesetsdict, pyphase, phasesets[i]) ==
+		    -1) {
 			Py_DECREF(pyphase);
 			goto release;
 		}
@@ -895,12 +898,12 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		phasesets[i] = NULL;
 	}
 
-	return Py_BuildValue("nN", len, phaseroots);
+	return Py_BuildValue("nN", len, phasesetsdict);
 
 release:
 	for (i = 0; i < numphases; ++i)
 		Py_XDECREF(phasesets[i]);
-	Py_XDECREF(phaseroots);
+	Py_XDECREF(phasesetsdict);
 
 	free(phases);
 	return NULL;
