@@ -5,6 +5,12 @@
    bundles created with large zstd windows and fallback to larger, but
    less demanding bundles.
 
+ * The `phabricator` extension now provides more functionality of the
+   arcanist CLI like changing the status of a differential.
+
+ * Phases processing is much faster, especially for repositories with
+   old non-public changesets.
+
 == New Experimental Features ==
 
  * The core of some hg operations have been (and are being)
@@ -33,3 +39,7 @@
  * The `mergestate` class along with some related methods and constants have
    moved from `mercurial.merge` to a new `mercurial.mergestate` module.
 
+ * The `phasecache` class now uses sparse dictionaries for the phase data.
+   New accessors are provided to detect if any non-public changeset exists
+   (`hasnonpublicphases`) and get the correponsponding root set
+   (`nonpublicphaseroots`).
