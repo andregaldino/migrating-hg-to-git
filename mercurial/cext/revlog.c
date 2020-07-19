@@ -2885,7 +2885,7 @@ PyTypeObject HgRevlogIndex_Type = {
  */
 PyObject *parse_index2(PyObject *self, PyObject *args)
 {
-	PyObject *tuple = NULL, *cache = NULL;
+	PyObject *cache = NULL;
 	indexObject *idx;
 	int ret;
 
@@ -2906,15 +2906,11 @@ PyObject *parse_index2(PyObject *self, PyObject *args)
 		Py_INCREF(cache);
 	}
 
-	tuple = Py_BuildValue("NN", idx, cache);
-	if (!tuple)
-		goto bail;
-	return tuple;
+	return Py_BuildValue("NN", idx, cache);
 
 bail:
 	Py_XDECREF(idx);
 	Py_XDECREF(cache);
-	Py_XDECREF(tuple);
 	return NULL;
 }
 
