@@ -11,6 +11,7 @@
  * Phases processing is much faster, especially for repositories with
    old non-public changesets.
 
+
 == New Experimental Features ==
 
  * The core of some hg operations have been (and are being)
@@ -19,6 +20,7 @@
    This has currently been tested only on linux, and does not build on
    windows. See rust/README.rst in the mercurial repository for
    instructions to opt into this.
+
 
 == Backwards Compatibility Changes ==
 
