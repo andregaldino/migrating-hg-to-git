@@ -22,9 +22,11 @@ fn main() {
         std::process::exit(exitcode::UNIMPLEMENTED_COMMAND)
     });
 
+    let ui = ui::Ui::new();
+
     let command_result = match matches.subcommand_name() {
         Some(name) => match name {
-            "root" => commands::root::RootCommand::new().run(),
+            "root" => commands::root::RootCommand::new(&ui).run(),
             _ => std::process::exit(exitcode::UNIMPLEMENTED_COMMAND),
         },
         _ => {
@@ -37,6 +39,15 @@ fn main() {
 
     match command_result {
         Ok(_) => std::process::exit(exitcode::OK),
-        Err(e) => e.exit(),
+        Err(e) => {
+            let message = e.get_error_message_bytes();
+            if let Some(msg) = message {
+                match ui.write_stderr(&msg) {
+                    Ok(_) => (),
+                    Err(_) => std::process::exit(exitcode::ABORT),
+                };
+            };
+            e.exit()
+        }
     }
 }

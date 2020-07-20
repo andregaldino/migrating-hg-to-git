@@ -1,14 +1,16 @@
 use crate::exitcode;
 use crate::ui::UiError;
+use hg::utils::files::get_bytes_from_path;
 use std::convert::From;
+use std::path::PathBuf;
 
 /// The kind of command error
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum CommandErrorKind {
     /// The root of the repository cannot be found
-    RootNotFound,
+    RootNotFound(PathBuf),
     /// The current directory cannot be found
-    CurrentDirNotFound,
+    CurrentDirNotFound(std::io::Error),
     /// The standard output stream cannot be written to
     StdoutError,
     /// The standard error stream cannot be written to
@@ -18,16 +20,44 @@ pub enum CommandErrorKind {
 impl CommandErrorKind {
     pub fn get_exit_code(&self) -> exitcode::ExitCode {
         match self {
-            CommandErrorKind::RootNotFound => exitcode::ABORT,
-            CommandErrorKind::CurrentDirNotFound => exitcode::ABORT,
+            CommandErrorKind::RootNotFound(_) => exitcode::ABORT,
+            CommandErrorKind::CurrentDirNotFound(_) => exitcode::ABORT,
             CommandErrorKind::StdoutError => exitcode::ABORT,
             CommandErrorKind::StderrError => exitcode::ABORT,
+        }
+    }
+
+    /// Return the message corresponding to the error kind if any
+    pub fn get_error_message_bytes(&self) -> Option<Vec<u8>> {
+        match self {
+            // TODO use formating macro
+            CommandErrorKind::RootNotFound(path) => {
+                let bytes = get_bytes_from_path(path);
+                Some(
+                    [
+                        b"abort: no repository found in '",
+                        bytes.as_slice(),
+                        b"' (.hg not found)!\n",
+                    ]
+                    .concat(),
+                )
+            }
+            // TODO use formating macro
+            CommandErrorKind::CurrentDirNotFound(e) => Some(
+                [
+                    b"abort: error getting current working directory: ",
+                    e.to_string().as_bytes(),
+                    b"\n",
+                ]
+                .concat(),
+            ),
+            _ => None,
         }
     }
 }
 
 /// The error type for the Command trait
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct CommandError {
     pub kind: CommandErrorKind,
 }
@@ -36,6 +66,11 @@ impl CommandError {
     /// Exist the process with the corresponding exit code.
     pub fn exit(&self) -> () {
         std::process::exit(self.kind.get_exit_code())
+    }
+
+    /// Return the message corresponding to the command error if any
+    pub fn get_error_message_bytes(&self) -> Option<Vec<u8>> {
+        self.kind.get_error_message_bytes()
     }
 }
 
