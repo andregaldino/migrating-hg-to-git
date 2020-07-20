@@ -53,3 +53,20 @@ def disallowednewunstable(repo, revs):
     if allowunstable:
         return revset.baseset()
     return repo.revs(b"(%ld::) - %ld", revs, revs)
+
+
+def skip_empty_successor(ui, command):
+    empty_successor = ui.config(b'rewrite', b'empty-successor')
+    if empty_successor == b'skip':
+        return True
+    elif empty_successor == b'keep':
+        return False
+    else:
+        raise error.ConfigError(
+            _(
+                b"%s doesn't know how to handle config "
+                b"rewrite.empty-successor=%s (only 'skip' and 'keep' are "
+                b"supported)"
+            )
+            % (command, empty_successor)
+        )

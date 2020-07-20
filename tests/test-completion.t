@@ -74,6 +74,7 @@ Do not show debug commands if there are other candidates
 Show debug commands if there are no other candidates
   $ hg debugcomplete debug
   debugancestor
+  debugantivirusrunning
   debugapplystreamclonebundle
   debugbackupbundle
   debugbuilddag
@@ -121,6 +122,7 @@ Show debug commands if there are no other candidates
   debugrebuilddirstate
   debugrebuildfncache
   debugrename
+  debugrequires
   debugrevlog
   debugrevlogindex
   debugrevspec
@@ -260,6 +262,7 @@ Show all commands + options
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
   debugancestor: 
+  debugantivirusrunning: 
   debugapplystreamclonebundle: 
   debugbackupbundle: recover, patch, git, limit, no-merges, stat, graph, style, template
   debugbuilddag: mergeable-file, overwritten-file, new-file
@@ -306,6 +309,7 @@ Show all commands + options
   debugrebuilddirstate: rev, minimal
   debugrebuildfncache: 
   debugrename: rev
+  debugrequires: 
   debugrevlog: changelog, manifest, dir, dump
   debugrevlogindex: changelog, manifest, dir, format
   debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized

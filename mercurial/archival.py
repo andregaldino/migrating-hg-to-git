@@ -369,7 +369,7 @@ def archive(
     if total:
         files.sort()
         scmutil.prefetchfiles(
-            repo, [ctx.rev()], scmutil.matchfiles(repo, files)
+            repo, [(ctx.rev(), scmutil.matchfiles(repo, files))]
         )
         progress = repo.ui.makeprogress(
             _(b'archiving'), unit=_(b'files'), total=total

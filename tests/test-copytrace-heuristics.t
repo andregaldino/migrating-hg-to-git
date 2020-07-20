@@ -91,7 +91,7 @@ Make sure filename heuristics do not when they are not related
   file 'a' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ cd ..
@@ -248,7 +248,7 @@ With small limit
   file 'a' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ hg rebase --abort
@@ -710,7 +710,7 @@ When the sourcecommitlimit is small and we have more drafts, we use heuristics o
   file 'a' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 But when we have "sourcecommitlimit > (no. of drafts from base to c1)", we do

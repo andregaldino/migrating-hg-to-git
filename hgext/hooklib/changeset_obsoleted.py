@@ -122,10 +122,18 @@ def _report_commit(ui, repo, ctx):
         )
 
 
+def has_successor(repo, rev):
+    return any(
+        r for r in obsutil.allsuccessors(repo.obsstore, [rev]) if r != rev
+    )
+
+
 def hook(ui, repo, hooktype, node=None, **kwargs):
-    if hooktype != b"pretxnclose":
+    if hooktype != b"txnclose":
         raise error.Abort(
             _(b'Unsupported hook type %r') % pycompat.bytestr(hooktype)
         )
-    for rev in obsutil.getobsoleted(repo, repo.currenttransaction()):
-        _report_commit(ui, repo, repo.unfiltered()[rev])
+    for rev in obsutil.getobsoleted(repo, changes=kwargs['changes']):
+        ctx = repo.unfiltered()[rev]
+        if not has_successor(repo, ctx.node()):
+            _report_commit(ui, repo, ctx)

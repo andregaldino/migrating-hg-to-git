@@ -336,7 +336,7 @@ static PyObject *makestat(const struct stat *st)
 static PyObject *_listdir_stat(char *path, int pathlen, int keepstat,
 			       char *skip)
 {
-	PyObject *list, *elem, *stat = NULL, *ret = NULL;
+	PyObject *list, *elem, *ret = NULL;
 	char fullpath[PATH_MAX + 10];
 	int kind, err;
 	struct stat st;
@@ -409,7 +409,7 @@ static PyObject *_listdir_stat(char *path, int pathlen, int keepstat,
 		}
 
 		if (keepstat) {
-			stat = makestat(&st);
+			PyObject *stat = makestat(&st);
 			if (!stat)
 				goto error;
 			elem = Py_BuildValue(PY23("siN", "yiN"), ent->d_name,
@@ -419,7 +419,6 @@ static PyObject *_listdir_stat(char *path, int pathlen, int keepstat,
 					     kind);
 		if (!elem)
 			goto error;
-		stat = NULL;
 
 		PyList_Append(list, elem);
 		Py_DECREF(elem);
@@ -430,7 +429,6 @@ static PyObject *_listdir_stat(char *path, int pathlen, int keepstat,
 
 error:
 	Py_DECREF(list);
-	Py_XDECREF(stat);
 error_list:
 	closedir(dir);
 	/* closedir also closes its dirfd */
@@ -480,7 +478,7 @@ int attrkind(attrbuf_entry *entry)
 static PyObject *_listdir_batch(char *path, int pathlen, int keepstat,
 				char *skip, bool *fallback)
 {
-	PyObject *list, *elem, *stat = NULL, *ret = NULL;
+	PyObject *list, *elem, *ret = NULL;
 	int kind, err;
 	unsigned long index;
 	unsigned int count, old_state, new_state;
@@ -586,6 +584,7 @@ static PyObject *_listdir_batch(char *path, int pathlen, int keepstat,
 			}
 
 			if (keepstat) {
+				PyObject *stat = NULL;
 				/* from the getattrlist(2) man page: "Only the
 				   permission bits ... are valid". */
 				st.st_mode = (entry->access_mask & ~S_IFMT) | kind;
@@ -601,7 +600,6 @@ static PyObject *_listdir_batch(char *path, int pathlen, int keepstat,
 						     filename, kind);
 			if (!elem)
 				goto error;
-			stat = NULL;
 
 			PyList_Append(list, elem);
 			Py_DECREF(elem);
@@ -615,7 +613,6 @@ static PyObject *_listdir_batch(char *path, int pathlen, int keepstat,
 
 error:
 	Py_DECREF(list);
-	Py_XDECREF(stat);
 error_dir:
 	close(dfd);
 error_value:

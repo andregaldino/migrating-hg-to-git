@@ -41,8 +41,8 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
       any longer.
     "heads" is either the supplied heads, or else the remote's heads.
     "ancestorsof" if not None, restrict the discovery to a subset defined by
-      these nodes. Changeset outside of this set won't be considered (and
-      won't appears in "common")
+      these nodes. Changeset outside of this set won't be considered (but may
+      still appear in "common").
 
     If you pass heads and they are all known locally, the response lists just
     these heads in "common" and in "heads".
@@ -75,28 +75,35 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
 
 
 class outgoing(object):
-    '''Represents the set of nodes present in a local repo but not in a
-    (possibly) remote one.
+    '''Represents the result of a findcommonoutgoing() call.
 
     Members:
 
-      missing is a list of all nodes present in local but not in remote.
-      common is a list of all nodes shared between the two repos.
-      excluded is the list of missing changeset that shouldn't be sent remotely.
-      missingheads is the list of heads of missing.
+      ancestorsof is a list of the nodes whose ancestors are included in the
+      outgoing operation.
+
+      missing is a list of those ancestors of ancestorsof that are present in
+      local but not in remote.
+
+      common is a set containing revs common between the local and the remote
+      repository (at least all of those that are ancestors of ancestorsof).
+
       commonheads is the list of heads of common.
 
-    The sets are computed on demand from the heads, unless provided upfront
+      excluded is the list of missing changeset that shouldn't be sent
+      remotely.
+
+    Some members are computed on demand from the heads, unless provided upfront
     by discovery.'''
 
     def __init__(
-        self, repo, commonheads=None, missingheads=None, missingroots=None
+        self, repo, commonheads=None, ancestorsof=None, missingroots=None
     ):
         # at least one of them must not be set
         assert None in (commonheads, missingroots)
         cl = repo.changelog
-        if missingheads is None:
-            missingheads = cl.heads()
+        if ancestorsof is None:
+            ancestorsof = cl.heads()
         if missingroots:
             discbases = []
             for n in missingroots:
@@ -104,14 +111,14 @@ class outgoing(object):
             # TODO remove call to nodesbetween.
             # TODO populate attributes on outgoing instance instead of setting
             # discbases.
-            csets, roots, heads = cl.nodesbetween(missingroots, missingheads)
+            csets, roots, heads = cl.nodesbetween(missingroots, ancestorsof)
             included = set(csets)
-            missingheads = heads
+            ancestorsof = heads
             commonheads = [n for n in discbases if n not in included]
         elif not commonheads:
             commonheads = [nullid]
         self.commonheads = commonheads
-        self.missingheads = missingheads
+        self.ancestorsof = ancestorsof
         self._revlog = cl
         self._common = None
         self._missing = None
@@ -119,7 +126,7 @@ class outgoing(object):
 
     def _computecommonmissing(self):
         sets = self._revlog.findcommonmissing(
-            self.commonheads, self.missingheads
+            self.commonheads, self.ancestorsof
         )
         self._common, self._missing = sets
 
@@ -135,6 +142,17 @@ class outgoing(object):
             self._computecommonmissing()
         return self._missing
 
+    @property
+    def missingheads(self):
+        util.nouideprecwarn(
+            b'outgoing.missingheads never contained what the name suggests and '
+            b'was renamed to outgoing.ancestorsof. check your code for '
+            b'correctness.',
+            b'5.5',
+            stacklevel=2,
+        )
+        return self.ancestorsof
+
 
 def findcommonoutgoing(
     repo, other, onlyheads=None, force=False, commoninc=None, portable=False
@@ -149,7 +167,7 @@ def findcommonoutgoing(
     If commoninc is given, it must be the result of a prior call to
     findcommonincoming(repo, other, force) to avoid recomputing it here.
 
-    If portable is given, compute more conservative common and missingheads,
+    If portable is given, compute more conservative common and ancestorsof,
     to make bundles created from the instance more portable.'''
     # declare an empty outgoing object to be filled later
     og = outgoing(repo, None, None)
@@ -164,10 +182,10 @@ def findcommonoutgoing(
     # compute outgoing
     mayexclude = repo._phasecache.phaseroots[phases.secret] or repo.obsstore
     if not mayexclude:
-        og.missingheads = onlyheads or repo.heads()
+        og.ancestorsof = onlyheads or repo.heads()
     elif onlyheads is None:
         # use visible heads as it should be cached
-        og.missingheads = repo.filtered(b"served").heads()
+        og.ancestorsof = repo.filtered(b"served").heads()
         og.excluded = [ctx.node() for ctx in repo.set(b'secret() or extinct()')]
     else:
         # compute common, missing and exclude secret stuff
@@ -182,12 +200,12 @@ def findcommonoutgoing(
             else:
                 missing.append(node)
         if len(missing) == len(allmissing):
-            missingheads = onlyheads
+            ancestorsof = onlyheads
         else:  # update missing heads
-            missingheads = phases.newheads(repo, onlyheads, excluded)
-        og.missingheads = missingheads
+            ancestorsof = phases.newheads(repo, onlyheads, excluded)
+        og.ancestorsof = ancestorsof
     if portable:
-        # recompute common and missingheads as if -r<rev> had been given for
+        # recompute common and ancestorsof as if -r<rev> had been given for
         # each head of missing, and --base <rev> for each head of the proper
         # ancestors of missing
         og._computecommonmissing()
@@ -195,7 +213,7 @@ def findcommonoutgoing(
         missingrevs = {cl.rev(n) for n in og._missing}
         og._common = set(cl.ancestors(missingrevs)) - missingrevs
         commonheads = set(og.commonheads)
-        og.missingheads = [h for h in og.missingheads if h not in commonheads]
+        og.ancestorsof = [h for h in og.ancestorsof if h not in commonheads]
 
     return og
 
@@ -268,7 +286,7 @@ def _headssummary(pushop):
     # If there are no obsstore, no post processing are needed.
     if repo.obsstore:
         torev = repo.changelog.rev
-        futureheads = {torev(h) for h in outgoing.missingheads}
+        futureheads = {torev(h) for h in outgoing.ancestorsof}
         futureheads |= {torev(h) for h in outgoing.commonheads}
         allfuturecommon = repo.changelog.ancestors(futureheads, inclusive=True)
         for branch, heads in sorted(pycompat.iteritems(headssum)):

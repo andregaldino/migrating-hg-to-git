@@ -10,7 +10,9 @@ after the command.
 
 Every flag has at least a long name, such as --repository. Some flags may also
 have a short one-letter name, such as the equivalent -R. Using the short or long
-name is equivalent and has the same effect.
+name is equivalent and has the same effect. The long name may be abbreviated to
+any unambiguous prefix. For example, :hg:`commit --amend` can be abbreviated
+to :hg:`commit --am`.
 
 Flags that have a short name can also be bundled together - for instance, to
 specify both --edit (short -e) and --interactive (short -i), one could use::

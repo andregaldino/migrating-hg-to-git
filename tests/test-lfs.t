@@ -697,6 +697,7 @@ absence doesn't cause an abort.)
   >     revlog,
   > )
   > from mercurial.utils import (
+  >     procutil,
   >     stringutil,
   > )
   > def hash(rawtext):
@@ -713,7 +714,7 @@ absence doesn't cause an abort.)
   >         texts = [fl.rawdata(i) for i in fl]
   >         flags = [int(fl._revlog.flags(i)) for i in fl]
   >         hashes = [hash(t) for t in texts]
-  >         pycompat.stdout.write(b'  %s: rawsizes=%r flags=%r hashes=%s\n'
+  >         procutil.stdout.write(b'  %s: rawsizes=%r flags=%r hashes=%s\n'
   >                               % (name, sizes, flags, stringutil.pprint(hashes)))
   > EOF
 

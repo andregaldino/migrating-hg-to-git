@@ -20,6 +20,7 @@ from . import (
     narrowspec,
     phases,
     pycompat,
+    scmutil,
     store,
     util,
 )
@@ -187,7 +188,7 @@ def maybeperformlegacystreamclone(pullop):
         repo.svfs.options = localrepo.resolvestorevfsoptions(
             repo.ui, repo.requirements, repo.features
         )
-        repo._writerequirements()
+        scmutil.writereporequirements(repo)
 
         if rbranchmap:
             repo._branchcaches.replace(repo, rbranchmap)
@@ -730,4 +731,4 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
     repo.svfs.options = localrepo.resolvestorevfsoptions(
         repo.ui, repo.requirements, repo.features
     )
-    repo._writerequirements()
+    scmutil.writereporequirements(repo)

@@ -50,27 +50,29 @@ Check that we can upgrade to sidedata
 
   $ hg init up-no-side-data --config format.exp-use-side-data=no
   $ hg debugformat -v -R up-no-side-data
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugformat -v -R up-no-side-data --config format.exp-use-side-data=yes
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no    yes      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugupgraderepo -R up-no-side-data --config format.exp-use-side-data=yes > /dev/null
 
 Check that we can downgrade from sidedata
@@ -78,25 +80,27 @@ Check that we can downgrade from sidedata
 
   $ hg init up-side-data --config format.exp-use-side-data=yes
   $ hg debugformat -v -R up-side-data
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugformat -v -R up-side-data --config format.exp-use-side-data=no
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugupgraderepo -R up-side-data --config format.exp-use-side-data=no > /dev/null

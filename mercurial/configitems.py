@@ -204,12 +204,15 @@ coreconfigitem(
     b'cmdserver', b'max-repo-cache', default=0, experimental=True,
 )
 coreconfigitem(
-    b'cmdserver', b'message-encodings', default=list, experimental=True,
+    b'cmdserver', b'message-encodings', default=list,
 )
 coreconfigitem(
     b'cmdserver',
     b'track-log',
     default=lambda: [b'chgserver', b'cmdserver', b'repocache'],
+)
+coreconfigitem(
+    b'cmdserver', b'shutdown-on-interrupt', default=True,
 )
 coreconfigitem(
     b'color', b'.*', default=None, generic=True,
@@ -405,18 +408,6 @@ coreconfigitem(
 coreconfigitem(
     b'devel', b'legacy.exchange', default=list,
 )
-# TODO before getting `persistent-nodemap` out of experimental
-#
-# * decide for a "status" of the persistent nodemap and associated location
-#   - part of the store next the revlog itself (new requirements)
-#   - part of the cache directory
-#   - part of an `index` directory
-#     (https://www.mercurial-scm.org/wiki/ComputedIndexPlan)
-# * do we want to use this for more than just changelog? if so we need:
-#   - simpler "pending" logic for them
-#   - double check the memory story (we dont want to keep all revlog in memory)
-#   - think about the naming scheme if we are in "cache"
-# * increment the version format to "1" and freeze it.
 coreconfigitem(
     b'devel', b'persistent-nodemap', default=False,
 )
@@ -675,12 +666,6 @@ coreconfigitem(
     b'experimental', b'rust.index', default=False,
 )
 coreconfigitem(
-    b'experimental', b'exp-persistent-nodemap', default=False,
-)
-coreconfigitem(
-    b'experimental', b'exp-persistent-nodemap.mmap', default=True,
-)
-coreconfigitem(
     b'experimental', b'server.filesdata.recommended-batch-size', default=50000,
 )
 coreconfigitem(
@@ -783,6 +768,12 @@ coreconfigitem(
 coreconfigitem(
     b'format', b'usestore', default=True,
 )
+# Right now, the only efficient implement of the nodemap logic is in Rust, so
+# the persistent nodemap feature needs to stay experimental as long as the Rust
+# extensions are an experimental feature.
+coreconfigitem(
+    b'format', b'use-persistent-nodemap', default=False, experimental=True
+)
 coreconfigitem(
     b'format',
     b'exp-use-copies-side-data-changeset',
@@ -818,9 +809,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'hostsecurity', b'ciphers', default=None,
-)
-coreconfigitem(
-    b'hostsecurity', b'disabletls10warning', default=False,
 )
 coreconfigitem(
     b'hostsecurity', b'minimumprotocol', default=dynamicdefault,
@@ -1080,6 +1068,9 @@ coreconfigitem(
     b'rewrite', b'update-timestamp', default=False,
 )
 coreconfigitem(
+    b'rewrite', b'empty-successor', default=b'skip', experimental=True,
+)
+coreconfigitem(
     b'storage', b'new-repo-backend', default=b'revlogv1', experimental=True,
 )
 coreconfigitem(
@@ -1087,6 +1078,14 @@ coreconfigitem(
     b'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[(b'format', b'aggressivemergedeltas')],
+)
+# experimental as long as rust is experimental (or a C version is implemented)
+coreconfigitem(
+    b'storage', b'revlog.nodemap.mmap', default=True, experimental=True
+)
+# experimental as long as format.use-persistent-nodemap is.
+coreconfigitem(
+    b'storage', b'revlog.nodemap.mode', default=b'compat', experimental=True
 )
 coreconfigitem(
     b'storage', b'revlog.reuse-external-delta', default=True,
@@ -1234,6 +1233,10 @@ coreconfigitem(
 coreconfigitem(
     b'ui', b'askusername', default=False,
 )
+coreconfigitem(
+    b'ui', b'available-memory', default=None,
+)
+
 coreconfigitem(
     b'ui', b'clonebundlefallback', default=False,
 )
@@ -1389,6 +1392,9 @@ coreconfigitem(
 )
 coreconfigitem(
     b'ui', b'timeout.warn', default=0,
+)
+coreconfigitem(
+    b'ui', b'timestamp-output', default=False,
 )
 coreconfigitem(
     b'ui', b'traceback', default=False,

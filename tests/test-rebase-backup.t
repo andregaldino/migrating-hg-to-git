@@ -126,7 +126,7 @@ When backup-bundle = True:
   rebasing 6:f8bc7d28e573 "c"
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --abort
   saved backup bundle to $TESTTMP/repo1/.hg/strip-backup/818c1a43c916-2b644d96-backup.hg
@@ -142,7 +142,7 @@ When backup-bundle = False:
   rebasing 6:f8bc7d28e573 "c"
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --abort
   rebase aborted

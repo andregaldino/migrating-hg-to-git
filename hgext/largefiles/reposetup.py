@@ -448,7 +448,7 @@ def reposetup(ui, repo):
             lfutil.shortname + b'/' in f[0] for f in repo.store.datafiles()
         ):
             repo.requirements.add(b'largefiles')
-            repo._writerequirements()
+            scmutil.writereporequirements(repo)
 
     ui.setconfig(
         b'hooks', b'changegroup.lfiles', checkrequireslfiles, b'largefiles'

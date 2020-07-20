@@ -18,6 +18,7 @@ from . import (
     error,
     match as matchmod,
     merge as mergemod,
+    mergestate as mergestatemod,
     pathutil,
     pycompat,
     scmutil,
@@ -406,7 +407,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         elif file in wctx:
             prunedactions[file] = (b'r', args, msg)
 
-        if branchmerge and type == mergemod.ACTION_MERGE:
+        if branchmerge and type == mergestatemod.ACTION_MERGE:
             f1, f2, fa, move, anc = args
             if not sparsematch(f1):
                 temporaryfiles.append(f1)
@@ -600,10 +601,10 @@ def _updateconfigandrefreshwdir(
 
     if b'exp-sparse' in oldrequires and removing:
         repo.requirements.discard(b'exp-sparse')
-        scmutil.writerequires(repo.vfs, repo.requirements)
+        scmutil.writereporequirements(repo)
     elif b'exp-sparse' not in oldrequires:
         repo.requirements.add(b'exp-sparse')
-        scmutil.writerequires(repo.vfs, repo.requirements)
+        scmutil.writereporequirements(repo)
 
     try:
         writeconfig(repo, includes, excludes, profiles)
@@ -612,7 +613,7 @@ def _updateconfigandrefreshwdir(
         if repo.requirements != oldrequires:
             repo.requirements.clear()
             repo.requirements |= oldrequires
-            scmutil.writerequires(repo.vfs, repo.requirements)
+            scmutil.writereporequirements(repo)
         writeconfig(repo, oldincludes, oldexcludes, oldprofiles)
         raise
 

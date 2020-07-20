@@ -58,7 +58,7 @@ from . import (
     localrepo,
     lock as lockmod,
     logcmdutil,
-    merge as mergemod,
+    mergestate as mergestatemod,
     obsolete,
     obsutil,
     pathutil,
@@ -125,6 +125,23 @@ def debugancestor(ui, repo, *args):
         raise error.Abort(_(b'either two or three arguments required'))
     a = r.ancestor(lookup(rev1), lookup(rev2))
     ui.write(b'%d:%s\n' % (r.rev(a), hex(a)))
+
+
+@command(b'debugantivirusrunning', [])
+def debugantivirusrunning(ui, repo):
+    """attempt to trigger an antivirus scanner to see if one is active"""
+    with repo.cachevfs.open('eicar-test-file.com', b'wb') as f:
+        f.write(
+            util.b85decode(
+                # This is a base85-armored version of the EICAR test file. See
+                # https://en.wikipedia.org/wiki/EICAR_test_file for details.
+                b'ST#=}P$fV?P+K%yP+C|uG$>GBDK|qyDK~v2MM*<JQY}+dK~6+LQba95P'
+                b'E<)&Nm5l)EmTEQR4qnHOhq9iNGnJx'
+            )
+        )
+    # Give an AV engine time to scan the file.
+    time.sleep(2)
+    util.unlink(repo.cachevfs.join('eicar-test-file.com'))
 
 
 @command(b'debugapplystreamclonebundle', [], b'FILE')
@@ -1465,8 +1482,8 @@ def debuginstall(ui, **opts):
     fm = ui.formatter(b'debuginstall', opts)
     fm.startitem()
 
-    # encoding
-    fm.write(b'encoding', _(b"checking encoding (%s)...\n"), encoding.encoding)
+    # encoding might be unknown or wrong. don't translate these messages.
+    fm.write(b'encoding', b"checking encoding (%s)...\n", encoding.encoding)
     err = None
     try:
         codecs.lookup(pycompat.sysstr(encoding.encoding))
@@ -1476,7 +1493,7 @@ def debuginstall(ui, **opts):
     fm.condwrite(
         err,
         b'encodingerror',
-        _(b" %s\n (check that your locale is properly set)\n"),
+        b" %s\n (check that your locale is properly set)\n",
         err,
     )
 
@@ -1649,13 +1666,6 @@ def debuginstall(ui, **opts):
         re2 = b'available'
     fm.plain(_(b'checking "re2" regexp engine (%s)\n') % re2)
     fm.data(re2=bool(util._re2))
-
-    rust_debug_mod = policy.importrust("debug")
-    if rust_debug_mod is not None:
-        re2_rust = b'installed' if rust_debug_mod.re2_installed else b'missing'
-
-        msg = b'checking "re2" regexp engine Rust bindings (%s)\n'
-        fm.plain(_(msg % re2_rust))
 
     # templates
     p = templater.templatepaths()
@@ -1974,7 +1984,7 @@ def debugmergestate(ui, repo, *args, **opts):
     was chosen."""
 
     if ui.verbose:
-        ms = mergemod.mergestate(repo)
+        ms = mergestatemod.mergestate(repo)
 
         # sort so that reasonable information is on top
         v1records = ms._readrecordsv1()
@@ -2008,7 +2018,7 @@ def debugmergestate(ui, repo, *args, **opts):
             b'"}'
         )
 
-    ms = mergemod.mergestate.read(repo)
+    ms = mergestatemod.mergestate.read(repo)
 
     fm = ui.formatter(b'debugmergestate', opts)
     fm.startitem()
@@ -2034,8 +2044,8 @@ def debugmergestate(ui, repo, *args, **opts):
             state = ms._state[f]
             fm_files.data(state=state[0])
             if state[0] in (
-                mergemod.MERGE_RECORD_UNRESOLVED,
-                mergemod.MERGE_RECORD_RESOLVED,
+                mergestatemod.MERGE_RECORD_UNRESOLVED,
+                mergestatemod.MERGE_RECORD_RESOLVED,
             ):
                 fm_files.data(local_key=state[1])
                 fm_files.data(local_path=state[2])
@@ -2045,8 +2055,8 @@ def debugmergestate(ui, repo, *args, **opts):
                 fm_files.data(other_node=state[6])
                 fm_files.data(local_flags=state[7])
             elif state[0] in (
-                mergemod.MERGE_RECORD_UNRESOLVED_PATH,
-                mergemod.MERGE_RECORD_RESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_UNRESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_RESOLVED_PATH,
             ):
                 fm_files.data(renamed_path=state[1])
                 fm_files.data(rename_side=state[2])
@@ -2656,6 +2666,13 @@ def debugrename(ui, repo, *pats, **opts):
             ui.write(_(b"%s renamed from %s:%s\n") % (rel, o[0], hex(o[1])))
         else:
             ui.write(_(b"%s not renamed\n") % rel)
+
+
+@command(b'debugrequires|debugrequirements', [], b'')
+def debugrequirements(ui, repo):
+    """ print the current repo requirements """
+    for r in sorted(repo.requirements):
+        ui.write(b"%s\n" % r)
 
 
 @command(

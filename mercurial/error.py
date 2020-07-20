@@ -106,6 +106,22 @@ class InterventionRequired(Hint, Exception):
     __bytes__ = _tobytes
 
 
+class ConflictResolutionRequired(InterventionRequired):
+    """Exception raised when a continuable command required merge conflict resolution."""
+
+    def __init__(self, opname):
+        from .i18n import _
+
+        self.opname = opname
+        InterventionRequired.__init__(
+            self,
+            _(
+                b"unresolved conflicts (see 'hg resolve', then 'hg %s --continue')"
+            )
+            % opname,
+        )
+
+
 class Abort(Hint, Exception):
     """Raised if a command needs to print an error and exit."""
 

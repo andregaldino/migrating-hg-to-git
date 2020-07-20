@@ -129,7 +129,16 @@ Merge and its ancestors all become empty
   > B
   > EOS
 
-  $ hg rebase -r '(A::)-(B::)-A' -d H
+Previously, there was a bug where the empty commit check compared the parent
+branch name with the wdir branch name instead of the actual branch name (which
+should stay unchanged if --keepbranches is passed), and erroneously assumed
+that an otherwise empty changeset should be created because of the incorrectly
+assumed branch name change.
+
+  $ hg update H -q
+  $ hg branch foo -q
+
+  $ hg rebase -r '(A::)-(B::)-A' -d H --keepbranches
   rebasing 2:dc0947a82db8 "C" (BOOK-C)
   note: not rebasing 2:dc0947a82db8 "C" (BOOK-C), its destination already has all its changes
   rebasing 3:b18e25de2cf5 "D" (BOOK-D)
@@ -137,6 +146,7 @@ Merge and its ancestors all become empty
   rebasing 4:86a1f6686812 "E" (BOOK-E E)
   note: not rebasing 4:86a1f6686812 "E" (BOOK-E E), its destination already has all its changes
   saved backup bundle to $TESTTMP/merge1/.hg/strip-backup/b18e25de2cf5-1fd0a4ba-rebase.hg
+  $ hg update null -q
 
   $ hg log -G -T '{rev} {desc} {bookmarks}'
   o  4 H BOOK-C BOOK-D BOOK-E

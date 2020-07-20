@@ -5,6 +5,8 @@ image: octobus/ci-mercurial-core
 before_script:
     - hg clone . /tmp/mercurial-ci/ --noupdate
     - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
+    - cd /tmp/mercurial-ci/rust/rhg
+    - cargo build
     - cd /tmp/mercurial-ci/
     - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
 
@@ -79,3 +81,9 @@ test-py3-rust:
         RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "rust+c"
+
+test-py2-chg:
+    <<: *runtests
+    variables:
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
+        TEST_HGMODULEPOLICY: "c"

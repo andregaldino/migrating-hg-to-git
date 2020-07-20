@@ -42,6 +42,7 @@ from . import (
     lock as lockmod,
     mdiff,
     merge,
+    mergestate as mergestatemod,
     node as nodemod,
     patch,
     phases,
@@ -161,7 +162,7 @@ class shelvedfile(object):
         repo = self.repo.unfiltered()
 
         outgoing = discovery.outgoing(
-            repo, missingroots=bases, missingheads=[node]
+            repo, missingroots=bases, ancestorsof=[node]
         )
         cg = changegroup.makechangegroup(repo, outgoing, cgversion, b'shelve')
 
@@ -801,7 +802,7 @@ def unshelvecontinue(ui, repo, state, opts):
     basename = state.name
     with repo.lock():
         checkparents(repo, state)
-        ms = merge.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         if list(ms.unresolved()):
             raise error.Abort(
                 _(b"unresolved conflicts, can't continue"),
@@ -1013,12 +1014,7 @@ def _rebaserestoredcommit(
                 activebookmark,
                 interactive,
             )
-            raise error.InterventionRequired(
-                _(
-                    b"unresolved conflicts (see 'hg resolve', then "
-                    b"'hg unshelve --continue')"
-                )
-            )
+            raise error.ConflictResolutionRequired(b'unshelve')
 
         with repo.dirstate.parentchange():
             repo.setparents(tmpwctx.node(), nodemod.nullid)

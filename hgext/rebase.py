@@ -36,6 +36,7 @@ from mercurial import (
     extensions,
     hg,
     merge as mergemod,
+    mergestate as mergestatemod,
     mergeutil,
     node as nodemod,
     obsolete,
@@ -205,6 +206,9 @@ class rebaseruntime(object):
         self.backupf = ui.configbool(b'rewrite', b'backup-bundle')
         self.keepf = opts.get(b'keep', False)
         self.keepbranchesf = opts.get(b'keepbranches', False)
+        self.skipemptysuccessorf = rewriteutil.skip_empty_successor(
+            repo.ui, b'rebase'
+        )
         self.obsoletenotrebased = {}
         self.obsoletewithoutsuccessorindestination = set()
         self.inmemory = inmemory
@@ -528,11 +532,11 @@ class rebaseruntime(object):
         extra = {b'rebase_source': ctx.hex()}
         for c in self.extrafns:
             c(ctx, extra)
-        keepbranch = self.keepbranchesf and repo[p1].branch() != ctx.branch()
         destphase = max(ctx.phase(), phases.draft)
-        overrides = {(b'phases', b'new-commit'): destphase}
-        if keepbranch:
-            overrides[(b'ui', b'allowemptycommit')] = True
+        overrides = {
+            (b'phases', b'new-commit'): destphase,
+            (b'ui', b'allowemptycommit'): not self.skipemptysuccessorf,
+        }
         with repo.ui.configoverride(overrides, b'rebase'):
             if self.inmemory:
                 newnode = commitmemorynode(
@@ -544,7 +548,7 @@ class rebaseruntime(object):
                     user=ctx.user(),
                     date=date,
                 )
-                mergemod.mergestate.clean(repo)
+                mergestatemod.mergestate.clean(repo)
             else:
                 newnode = commitnode(
                     repo,
@@ -626,12 +630,7 @@ class rebaseruntime(object):
                         if self.inmemory:
                             raise error.InMemoryMergeConflictsError()
                         else:
-                            raise error.InterventionRequired(
-                                _(
-                                    b'unresolved conflicts (see hg '
-                                    b'resolve, then hg rebase --continue)'
-                                )
-                            )
+                            raise error.ConflictResolutionRequired(b'rebase')
             if not self.collapsef:
                 merging = p2 != nullrev
                 editform = cmdutil.mergeeditform(merging, b'rebase')
@@ -652,6 +651,14 @@ class rebaseruntime(object):
             if newnode is not None:
                 self.state[rev] = repo[newnode].rev()
                 ui.debug(b'rebased as %s\n' % short(newnode))
+                if repo[newnode].isempty():
+                    ui.warn(
+                        _(
+                            b'note: created empty successor for %s, its '
+                            b'destination already has all its changes\n'
+                        )
+                        % desc
+                    )
             else:
                 if not self.collapsef:
                     ui.warn(
@@ -1084,7 +1091,7 @@ def rebase(ui, repo, **opts):
             )
             # TODO: Make in-memory merge not use the on-disk merge state, so
             # we don't have to clean it here
-            mergemod.mergestate.clean(repo)
+            mergestatemod.mergestate.clean(repo)
             clearstatus(repo)
             clearcollapsemsg(repo)
             return _dorebase(ui, repo, action, opts, inmemory=False)
@@ -1191,7 +1198,7 @@ def _origrebase(
             if action == b'abort' and opts.get(b'tool', False):
                 ui.warn(_(b'tool option will be ignored\n'))
             if action == b'continue':
-                ms = mergemod.mergestate.read(repo)
+                ms = mergestatemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
             retcode = rbsrt._prepareabortorcontinue(
@@ -1429,10 +1436,6 @@ def externalparent(repo, state, destancestors):
 def commitmemorynode(repo, wctx, editor, extra, user, date, commitmsg):
     '''Commit the memory changes with parents p1 and p2.
     Return node of committed revision.'''
-    # Replicates the empty check in ``repo.commit``.
-    if wctx.isempty() and not repo.ui.configbool(b'ui', b'allowemptycommit'):
-        return None
-
     # By convention, ``extra['branch']`` (set by extrafn) clobbers
     # ``branch`` (used when passing ``--keepbranches``).
     branch = None
@@ -1447,6 +1450,8 @@ def commitmemorynode(repo, wctx, editor, extra, user, date, commitmsg):
         branch=branch,
         editor=editor,
     )
+    if memctx.isempty() and not repo.ui.configbool(b'ui', b'allowemptycommit'):
+        return None
     commitres = repo.commitctx(memctx)
     wctx.clean()  # Might be reused
     return commitres
@@ -2201,7 +2206,7 @@ def abortrebase(ui, repo):
 def continuerebase(ui, repo):
     with repo.wlock(), repo.lock():
         rbsrt = rebaseruntime(repo, ui)
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         mergeutil.checkunresolved(ms)
         retcode = rbsrt._prepareabortorcontinue(isabort=False)
         if retcode is not None:

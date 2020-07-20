@@ -69,7 +69,7 @@ Rebasing B onto E - check keep: and phases
   rebasing 2:965c486023db "C"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Solve the conflict and go on:
@@ -126,7 +126,7 @@ Rebase F onto E - check keepbranches:
   rebasing 5:01e6ebbd8272 "F" (tip)
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Solve the conflict and go on:

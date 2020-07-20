@@ -5,7 +5,7 @@
 from __future__ import absolute_import
 
 from mercurial import (
-    merge,
+    mergestate as mergestatemod,
     registrar,
 )
 
@@ -23,7 +23,7 @@ command = registrar.command(cmdtable)
 )
 def fakemergerecord(ui, repo, *pats, **opts):
     with repo.wlock():
-        ms = merge.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         records = ms._makerecords()
         if opts.get('mandatory'):
             records.append((b'X', b'mandatory record'))

@@ -72,7 +72,7 @@ Can rebase onto conflicting changes inside narrow spec
   $ hg rebase -d 'desc("modify inside/f1")' 2>&1 | egrep -v '(warning:|incomplete!)'
   rebasing 6:cdce97fbf653 "conflicting inside/f1" (tip)
   merging inside/f1
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   $ echo modified3 > inside/f1
   $ hg resolve -m 2>&1 | grep -v continue:
   (no more unresolved files)

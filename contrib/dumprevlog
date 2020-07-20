@@ -28,7 +28,7 @@ binopen.options = {}
 
 def printb(data, end=b'\n'):
     sys.stdout.flush()
-    pycompat.stdout.write(data + end)
+    procutil.stdout.write(data + end)
 
 
 for f in sys.argv[1:]:

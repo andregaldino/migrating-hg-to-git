@@ -166,6 +166,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    scmutil,
     streamclone,
     tags,
     url,
@@ -1710,7 +1711,7 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
                 b'nbchanges', b'%d' % cg.extras[b'clcount'], mandatory=False
             )
         if opts.get(b'phases') and repo.revs(
-            b'%ln and secret()', outgoing.missingheads
+            b'%ln and secret()', outgoing.ancestorsof
         ):
             part.addparam(
                 b'targetphase', b'%d' % phases.secret, mandatory=False
@@ -1752,7 +1753,7 @@ def addparttagsfnodescache(repo, bundler, outgoing):
     # consume little memory (1M heads is 40MB) b) we don't want to send the
     # part if we don't have entries and knowing if we have entries requires
     # cache lookups.
-    for node in outgoing.missingheads:
+    for node in outgoing.ancestorsof:
         # Don't compute missing, as this may slow down serving.
         fnode = cache.getfnode(node, computemissing=False)
         if fnode is not None:
@@ -1977,7 +1978,7 @@ def handlechangegroup(op, inpart):
         op.repo.svfs.options = localrepo.resolvestorevfsoptions(
             op.repo.ui, op.repo.requirements, op.repo.features
         )
-        op.repo._writerequirements()
+        scmutil.writereporequirements(op.repo)
 
     bundlesidedata = bool(b'exp-sidedata' in inpart.params)
     reposidedata = bool(b'exp-sidedata-flag' in op.repo.requirements)
@@ -2207,7 +2208,7 @@ def handlecheckphases(op, inpart):
         b'remote repository changed while pushing - please try again '
         b'(%s is %s expected %s)'
     )
-    for expectedphase, nodes in enumerate(phasetonodes):
+    for expectedphase, nodes in pycompat.iteritems(phasetonodes):
         for n in nodes:
             actualphase = phasecache.phase(unfi, cl.rev(n))
             if actualphase != expectedphase:

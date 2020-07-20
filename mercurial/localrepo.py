@@ -44,8 +44,9 @@ from . import (
     hook,
     lock as lockmod,
     match as matchmod,
-    merge as mergemod,
+    mergestate as mergestatemod,
     mergeutil,
+    metadata,
     namespaces,
     narrowspec,
     obsolete,
@@ -411,13 +412,13 @@ class locallegacypeer(localpeer):
 
     def changegroup(self, nodes, source):
         outgoing = discovery.outgoing(
-            self._repo, missingroots=nodes, missingheads=self._repo.heads()
+            self._repo, missingroots=nodes, ancestorsof=self._repo.heads()
         )
         return changegroup.makechangegroup(self._repo, outgoing, b'01', source)
 
     def changegroupsubset(self, bases, heads, source):
         outgoing = discovery.outgoing(
-            self._repo, missingroots=bases, missingheads=heads
+            self._repo, missingroots=bases, ancestorsof=heads
         )
         return changegroup.makechangegroup(self._repo, outgoing, b'01', source)
 
@@ -444,6 +445,9 @@ SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
 # A repository with the the copies-sidedata-changeset requirement will store
 # copies related information in changeset's sidedata.
 COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
+
+# The repository use persistent nodemap for the changelog and the manifest.
+NODEMAP_REQUIREMENT = b'persistent-nodemap'
 
 # Functions receiving (ui, features) that extensions can register to impact
 # the ability to load repositories with custom requirements. Only
@@ -505,6 +509,11 @@ def makelocalrepository(baseui, path, intents=None):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
+        except ValueError as e:
+            # Can be raised on Python 3.8 when path is invalid.
+            raise error.Abort(
+                _(b'invalid path %s: %s') % (path, pycompat.bytestr(e))
+            )
 
         raise error.RepoError(_(b'repository %s not found') % path)
 
@@ -933,10 +942,12 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     if ui.configbool(b'experimental', b'rust.index'):
         options[b'rust.index'] = True
-    if ui.configbool(b'experimental', b'exp-persistent-nodemap'):
-        options[b'exp-persistent-nodemap'] = True
-    if ui.configbool(b'experimental', b'exp-persistent-nodemap.mmap'):
-        options[b'exp-persistent-nodemap.mmap'] = True
+    if NODEMAP_REQUIREMENT in requirements:
+        options[b'persistent-nodemap'] = True
+    if ui.configbool(b'storage', b'revlog.nodemap.mmap'):
+        options[b'persistent-nodemap.mmap'] = True
+    epnm = ui.config(b'storage', b'revlog.nodemap.mode')
+    options[b'persistent-nodemap.mode'] = epnm
     if ui.configbool(b'devel', b'persistent-nodemap'):
         options[b'devel-force-nodemap'] = True
 
@@ -1021,6 +1032,7 @@ class localrepository(object):
         REVLOGV2_REQUIREMENT,
         SIDEDATA_REQUIREMENT,
         SPARSEREVLOG_REQUIREMENT,
+        NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
@@ -1223,8 +1235,9 @@ class localrepository(object):
             if path.startswith(b'cache/'):
                 msg = b'accessing cache with vfs instead of cachevfs: "%s"'
                 repo.ui.develwarn(msg % path, stacklevel=3, config=b"cache-vfs")
-            if path.startswith(b'journal.') or path.startswith(b'undo.'):
-                # journal is covered by 'lock'
+            # path prefixes covered by 'lock'
+            vfs_path_prefixes = (b'journal.', b'undo.', b'strip-backup/')
+            if any(path.startswith(prefix) for prefix in vfs_path_prefixes):
                 if repo._currentlock(repo._lockref) is None:
                     repo.ui.develwarn(
                         b'write with no lock: "%s"' % path,
@@ -1284,9 +1297,6 @@ class localrepository(object):
             )
             caps.add(b'bundle2=' + urlreq.quote(capsblob))
         return caps
-
-    def _writerequirements(self):
-        scmutil.writerequires(self.vfs, self.requirements)
 
     # Don't cache auditor/nofsauditor, or you'll end up with reference cycle:
     # self -> auditor -> self._checknested -> self
@@ -2239,6 +2249,7 @@ class localrepository(object):
 
         tr.hookargs[b'txnid'] = txnid
         tr.hookargs[b'txnname'] = desc
+        tr.hookargs[b'changes'] = tr.changes
         # note: writing the fncache only during finalize mean that the file is
         # outdated when running hooks. As fncache is used for streaming clone,
         # this is not expected to break anything that happen during the hooks.
@@ -2461,7 +2472,7 @@ class localrepository(object):
                 ui.status(
                     _(b'working directory now based on revision %d\n') % parents
                 )
-            mergemod.mergestate.clean(self, self[b'.'].node())
+            mergestatemod.mergestate.clean(self, self[b'.'].node())
 
         # TODO: if we know which new heads may result from this rollback, pass
         # them to destroy(), which will prevent the branchhead cache from being
@@ -2511,6 +2522,7 @@ class localrepository(object):
             unfi = self.unfiltered()
 
             self.changelog.update_caches(transaction=tr)
+            self.manifestlog.update_caches(transaction=tr)
 
             rbc = unfi.revbranchcache()
             for r in unfi.changelog:
@@ -2771,6 +2783,22 @@ class localrepository(object):
     ):
         """
         commit an individual file as part of a larger transaction
+
+        input:
+
+            fctx:       a file context with the content we are trying to commit
+            manifest1:  manifest of changeset first parent
+            manifest2:  manifest of changeset second parent
+            linkrev:    revision number of the changeset being created
+            tr:         current transation
+            changelist: list of file being changed (modified inplace)
+            individual: boolean, set to False to skip storing the copy data
+                        (only used by the Google specific feature of using
+                        changeset extra as copy source of truth).
+
+        output:
+
+            The resulting filenode
         """
 
         fname = fctx.path()
@@ -2859,16 +2887,16 @@ class localrepository(object):
                 fparent2 = nullid
             elif not fparentancestors:
                 # TODO: this whole if-else might be simplified much more
-                ms = mergemod.mergestate.read(self)
+                ms = mergestatemod.mergestate.read(self)
                 if (
                     fname in ms
-                    and ms[fname] == mergemod.MERGE_RECORD_MERGED_OTHER
+                    and ms[fname] == mergestatemod.MERGE_RECORD_MERGED_OTHER
                 ):
                     fparent1, fparent2 = fparent2, nullid
 
         # is the file changed?
         text = fctx.data()
-        if fparent2 != nullid or flog.cmp(fparent1, text) or meta:
+        if fparent2 != nullid or meta or flog.cmp(fparent1, text):
             changelist.append(fname)
             return flog.add(text, meta, tr, linkrev, fparent1, fparent2)
         # are just the flags changed during merge?
@@ -2960,18 +2988,13 @@ class localrepository(object):
                 self, status, text, user, date, extra
             )
 
-            ms = mergemod.mergestate.read(self)
+            ms = mergestatemod.mergestate.read(self)
             mergeutil.checkunresolved(ms)
 
             # internal config: ui.allowemptycommit
-            allowemptycommit = (
-                wctx.branch() != wctx.p1().branch()
-                or extra.get(b'close')
-                or merge
-                or cctx.files()
-                or self.ui.configbool(b'ui', b'allowemptycommit')
-            )
-            if not allowemptycommit:
+            if cctx.isempty() and not self.ui.configbool(
+                b'ui', b'allowemptycommit'
+            ):
                 self.ui.debug(b'nothing to commit, clearing merge state\n')
                 ms.reset()
                 return None
@@ -3017,6 +3040,12 @@ class localrepository(object):
                 if edited:
                     self.ui.write(
                         _(b'note: commit message saved in %s\n') % msgfn
+                    )
+                    self.ui.write(
+                        _(
+                            b"note: use 'hg commit --logfile "
+                            b".hg/last-message.txt --edit' to reuse it\n"
+                        )
                     )
                 raise
 
@@ -3131,51 +3160,8 @@ class localrepository(object):
                 for f in drop:
                     del m[f]
                 if p2.rev() != nullrev:
-
-                    @util.cachefunc
-                    def mas():
-                        p1n = p1.node()
-                        p2n = p2.node()
-                        cahs = self.changelog.commonancestorsheads(p1n, p2n)
-                        if not cahs:
-                            cahs = [nullrev]
-                        return [self[r].manifest() for r in cahs]
-
-                    def deletionfromparent(f):
-                        # When a file is removed relative to p1 in a merge, this
-                        # function determines whether the absence is due to a
-                        # deletion from a parent, or whether the merge commit
-                        # itself deletes the file. We decide this by doing a
-                        # simplified three way merge of the manifest entry for
-                        # the file. There are two ways we decide the merge
-                        # itself didn't delete a file:
-                        # - neither parent (nor the merge) contain the file
-                        # - exactly one parent contains the file, and that
-                        #   parent has the same filelog entry as the merge
-                        #   ancestor (or all of them if there two). In other
-                        #   words, that parent left the file unchanged while the
-                        #   other one deleted it.
-                        # One way to think about this is that deleting a file is
-                        # similar to emptying it, so the list of changed files
-                        # should be similar either way. The computation
-                        # described above is not done directly in _filecommit
-                        # when creating the list of changed files, however
-                        # it does something very similar by comparing filelog
-                        # nodes.
-                        if f in m1:
-                            return f not in m2 and all(
-                                f in ma and ma.find(f) == m1.find(f)
-                                for ma in mas()
-                            )
-                        elif f in m2:
-                            return all(
-                                f in ma and ma.find(f) == m2.find(f)
-                                for ma in mas()
-                            )
-                        else:
-                            return True
-
-                    removed = [f for f in removed if not deletionfromparent(f)]
+                    rf = metadata.get_removal_filter(ctx, (p1, p2, m1, m2))
+                    removed = [f for f in removed if not rf(f)]
 
                 files = changed + removed
                 md = None
@@ -3652,6 +3638,9 @@ def newreporequirements(ui, createopts):
 
     if ui.configbool(b'format', b'bookmarks-in-store'):
         requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
+
+    if ui.configbool(b'format', b'use-persistent-nodemap'):
+        requirements.add(NODEMAP_REQUIREMENT)
 
     return requirements
 

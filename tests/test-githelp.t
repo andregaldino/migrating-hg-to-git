@@ -318,3 +318,10 @@ githelp for reflog
   hg journal --all
   
   note: in hg commits can be deleted from repo but we always have backups
+
+  $ hg githelp -- git log -Gnarf
+  hg grep --diff narf
+  $ hg githelp -- git log -S narf
+  hg grep --diff narf
+  $ hg githelp -- git log --pickaxe-regex narf
+  hg grep --diff narf

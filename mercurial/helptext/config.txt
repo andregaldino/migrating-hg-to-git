@@ -408,6 +408,24 @@ Supported arguments:
 If no suitable authentication entry is found, the user is prompted
 for credentials as usual if required by the remote.
 
+``cmdserver``
+-------------
+
+Controls command server settings. (ADVANCED)
+
+``message-encodings``
+    List of encodings for the ``m`` (message) channel. The first encoding
+    supported by the server will be selected and advertised in the hello
+    message. This is useful only when ``ui.message-output`` is set to
+    ``channel``. Supported encodings are ``cbor``.
+
+``shutdown-on-interrupt``
+    If set to false, the server's main loop will continue running after
+    SIGINT received. ``runcommand`` requests can still be interrupted by
+    SIGINT. Close the write end of the pipe to shut down the server
+    process gracefully.
+    (default: True)
+
 ``color``
 ---------
 
@@ -1872,6 +1890,15 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     applicable for `hg amend`, `hg commit --amend` and `hg uncommit` in the
     current version.
 
+``empty-successor``
+
+    Control what happens with empty successors that are the result of rewrite
+    operations. If set to ``skip``, the successor is not created. If set to
+    ``keep``, the empty successor is created and kept.
+
+    Currently, only the rebase and absorb commands consider this configuration.
+    (EXPERIMENTAL)
+
 ``storage``
 -----------
 
@@ -2371,6 +2398,8 @@ User interface controls.
 ``message-output``
     Where to write status and error messages. (default: ``stdio``)
 
+    ``channel``
+      Use separate channel for structured output. (Command-server only)
     ``stderr``
       Everything to stderr.
     ``stdio``

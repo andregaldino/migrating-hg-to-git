@@ -31,6 +31,7 @@ from mercurial import (
     logcmdutil,
     match as matchmod,
     merge,
+    mergestate as mergestatemod,
     pathutil,
     pycompat,
     scmutil,
@@ -622,7 +623,7 @@ def overridecalculateupdates(
     return actions, diverge, renamedelete
 
 
-@eh.wrapfunction(merge, b'recordupdates')
+@eh.wrapfunction(mergestatemod, b'recordupdates')
 def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
     if b'lfmr' in actions:
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)

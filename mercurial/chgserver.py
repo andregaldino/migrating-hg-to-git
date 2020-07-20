@@ -320,7 +320,7 @@ class channeledsystem(object):
         self.channel = channel
 
     def __call__(self, cmd, environ, cwd=None, type=b'system', cmdtable=None):
-        args = [type, procutil.quotecommand(cmd), os.path.abspath(cwd or b'.')]
+        args = [type, cmd, os.path.abspath(cwd or b'.')]
         args.extend(b'%s=%s' % (k, v) for k, v in pycompat.iteritems(environ))
         data = b'\0'.join(args)
         self.out.write(struct.pack(b'>cI', self.channel, len(data)))
@@ -442,7 +442,20 @@ class chgcmdserver(commandserver.server):
             if newfp is not fp:
                 newfp.close()
             # restore original fd: fp is open again
-            os.dup2(fd, fp.fileno())
+            try:
+                os.dup2(fd, fp.fileno())
+            except OSError as err:
+                # According to issue6330, running chg on heavy loaded systems
+                # can lead to EBUSY. [man dup2] indicates that, on Linux,
+                # EBUSY comes from a race condition between open() and dup2().
+                # However it's not clear why open() race occurred for
+                # newfd=stdin/out/err.
+                self.ui.log(
+                    b'chgserver',
+                    b'got %s while duplicating %s\n',
+                    stringutil.forcebytestr(err),
+                    fn,
+                )
             os.close(fd)
             setattr(self, cn, ch)
             setattr(ui, fn, fp)

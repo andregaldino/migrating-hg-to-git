@@ -176,14 +176,15 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         return vec![];
     }
     match syntax {
-        // The `regex` crate adds `.*` to the start and end of expressions
-        // if there are no anchors, so add them.
-        PatternSyntax::Regexp => [b"^", &pattern[..], b"$"].concat(),
+        PatternSyntax::Regexp => pattern.to_owned(),
         PatternSyntax::RelRegexp => {
             // The `regex` crate accepts `**` while `re2` and Python's `re`
             // do not. Checking for `*` correctly triggers the same error all
             // engines.
-            if pattern[0] == b'^' || pattern[0] == b'*' {
+            if pattern[0] == b'^'
+                || pattern[0] == b'*'
+                || pattern.starts_with(b".*")
+            {
                 return pattern.to_owned();
             }
             [&b".*"[..], pattern].concat()
@@ -196,15 +197,14 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         }
         PatternSyntax::RootFiles => {
             let mut res = if pattern == b"." {
-                vec![b'^']
+                vec![]
             } else {
                 // Pattern is a directory name.
-                [b"^", escape_pattern(pattern).as_slice(), b"/"].concat()
+                [escape_pattern(pattern).as_slice(), b"/"].concat()
             };
 
             // Anything after the pattern must be a non-directory.
             res.extend(b"[^/]+$");
-            res.push(b'$');
             res
         }
         PatternSyntax::RelGlob => {
@@ -216,7 +216,7 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
             }
         }
         PatternSyntax::Glob | PatternSyntax::RootGlob => {
-            [b"^", glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
+            [glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
         }
         PatternSyntax::Include | PatternSyntax::SubInclude => unreachable!(),
     }
@@ -271,7 +271,7 @@ pub fn normalize_path_bytes(bytes: &[u8]) -> Vec<u8> {
 /// that don't need to be transformed into a regex.
 pub fn build_single_regex(
     entry: &IgnorePattern,
-) -> Result<Vec<u8>, PatternError> {
+) -> Result<Option<Vec<u8>>, PatternError> {
     let IgnorePattern {
         pattern, syntax, ..
     } = entry;
@@ -288,16 +288,11 @@ pub fn build_single_regex(
     if *syntax == PatternSyntax::RootGlob
         && !pattern.iter().any(|b| GLOB_SPECIAL_CHARACTERS.contains(b))
     {
-        // The `regex` crate adds `.*` to the start and end of expressions
-        // if there are no anchors, so add the start anchor.
-        let mut escaped = vec![b'^'];
-        escaped.extend(escape_pattern(&pattern));
-        escaped.extend(GLOB_SUFFIX);
-        Ok(escaped)
+        Ok(None)
     } else {
         let mut entry = entry.clone();
         entry.pattern = pattern;
-        Ok(_build_single_regex(&entry))
+        Ok(Some(_build_single_regex(&entry)))
     }
 }
 
@@ -329,6 +324,8 @@ pub fn parse_pattern_file_contents<P: AsRef<Path>>(
     warn: bool,
 ) -> Result<(Vec<IgnorePattern>, Vec<PatternFileWarning>), PatternError> {
     let comment_regex = Regex::new(r"((?:^|[^\\])(?:\\\\)*)#.*").unwrap();
+
+    #[allow(clippy::trivial_regex)]
     let comment_escape_regex = Regex::new(r"\\#").unwrap();
     let mut inputs: Vec<IgnorePattern> = vec![];
     let mut warnings: Vec<PatternFileWarning> = vec![];
@@ -463,9 +460,7 @@ pub fn get_patterns_from_file(
         .into_iter()
         .flat_map(|entry| -> PatternResult<_> {
             let IgnorePattern {
-                syntax,
-                pattern,
-                source: _,
+                syntax, pattern, ..
             } = &entry;
             Ok(match syntax {
                 PatternSyntax::Include => {
@@ -509,10 +504,11 @@ impl SubInclude {
             normalize_path_bytes(&get_bytes_from_path(source));
 
         let source_root = get_path_from_bytes(&normalized_source);
-        let source_root = source_root.parent().unwrap_or(source_root.deref());
+        let source_root =
+            source_root.parent().unwrap_or_else(|| source_root.deref());
 
         let path = source_root.join(get_path_from_bytes(pattern));
-        let new_root = path.parent().unwrap_or(path.deref());
+        let new_root = path.parent().unwrap_or_else(|| path.deref());
 
         let prefix = canonical_path(&root_dir, &root_dir, new_root)?;
 
@@ -628,7 +624,16 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"(?:.*/)?rust/target(?:/|$)".to_vec(),
+            Some(br"(?:.*/)?rust/target(?:/|$)".to_vec()),
+        );
+        assert_eq!(
+            build_single_regex(&IgnorePattern::new(
+                PatternSyntax::Regexp,
+                br"rust/target/\d+",
+                Path::new("")
+            ))
+            .unwrap(),
+            Some(br"rust/target/\d+".to_vec()),
         );
     }
 
@@ -641,7 +646,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"^\.(?:/|$)".to_vec(),
+            None,
         );
         assert_eq!(
             build_single_regex(&IgnorePattern::new(
@@ -650,7 +655,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"^whatever(?:/|$)".to_vec(),
+            None,
         );
         assert_eq!(
             build_single_regex(&IgnorePattern::new(
@@ -659,7 +664,7 @@ mod tests {
                 Path::new("")
             ))
             .unwrap(),
-            br"^[^/]*\.o(?:/|$)".to_vec(),
+            Some(br"[^/]*\.o(?:/|$)".to_vec()),
         );
     }
 }

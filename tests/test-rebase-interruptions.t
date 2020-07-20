@@ -61,7 +61,7 @@ Rebasing B onto E:
   rebasing 2:965c486023db "C"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Force a commit on C during the interruption:
@@ -98,7 +98,7 @@ Resume the rebasing:
   rebasing 2:965c486023db "C"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Solve the conflict and go on:
@@ -157,7 +157,7 @@ Rebasing B onto E:
   rebasing 2:965c486023db "C"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Force a commit on B' during the interruption:
@@ -229,7 +229,7 @@ Rebasing B onto E:
   rebasing 2:965c486023db "C"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Change phase on B and B'
@@ -302,7 +302,7 @@ Continue rebase after upgrading from an hg version before 9c9cfecd4600:
   rebasing 2:965c486023db "C"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg tglog
   @  5: 45396c49d53b 'B'
@@ -505,7 +505,7 @@ Make sure merge state is cleaned up after a no-op rebase merge (issue5494)
   rebasing 1:fdaca8533b86 "b"
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ echo a > a
   $ echo c >> a
@@ -525,7 +525,7 @@ Now try again with --collapse
   rebasing 2:fdaca8533b86 "b" (tip)
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ echo a > a
   $ echo c >> a

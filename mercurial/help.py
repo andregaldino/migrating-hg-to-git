@@ -345,6 +345,11 @@ def loaddoc(topic, subdir=None):
 
 internalstable = sorted(
     [
+        (
+            [b'bid-merge'],
+            _(b'Bid Merge Algorithm'),
+            loaddoc(b'bid-merge', subdir=b'internals'),
+        ),
         ([b'bundle2'], _(b'Bundle2'), loaddoc(b'bundle2', subdir=b'internals')),
         ([b'bundles'], _(b'Bundles'), loaddoc(b'bundles', subdir=b'internals')),
         ([b'cbor'], _(b'CBOR'), loaddoc(b'cbor', subdir=b'internals')),

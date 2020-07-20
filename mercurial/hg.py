@@ -33,6 +33,7 @@ from . import (
     logcmdutil,
     logexchange,
     merge as mergemod,
+    mergestate as mergestatemod,
     narrowspec,
     node,
     phases,
@@ -355,7 +356,7 @@ def unshare(ui, repo):
 
             repo.requirements.discard(b'shared')
             repo.requirements.discard(b'relshared')
-            repo._writerequirements()
+            scmutil.writereporequirements(repo)
 
     # Removing share changes some fundamental properties of the repo instance.
     # So we instantiate a new repo object and operate on it rather than
@@ -1164,7 +1165,7 @@ def merge(
 
 
 def abortmerge(ui, repo):
-    ms = mergemod.mergestate.read(repo)
+    ms = mergestatemod.mergestate.read(repo)
     if ms.active():
         # there were conflicts
         node = ms.localctx.hex()

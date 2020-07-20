@@ -1595,7 +1595,7 @@ class TTest(Test):
             casepath = b'#'.join(case)
             self.name = '%s#%s' % (self.name, _bytes2sys(casepath))
             self.errpath = b'%s#%s.err' % (self.errpath[:-4], casepath)
-            self._tmpname += b'-%s' % casepath
+            self._tmpname += b'-%s' % casepath.replace(b'#', b'-')
         self._have = {}
 
     @property
@@ -2260,7 +2260,7 @@ class TestResult(unittest._TextTestResult):
                         'changes)'
                     )
                 else:
-                    self.stream.write('Accept this change? [n] ')
+                    self.stream.write('Accept this change? [y/N] ')
                     self.stream.flush()
                     answer = sys.stdin.readline().strip()
                     if answer.lower() in ('y', 'yes'):

@@ -152,21 +152,25 @@ Check that extensions are loaded in phases:
   > from __future__ import print_function
   > import os
   > from mercurial import exthelper
+  > from mercurial.utils import procutil
+  > 
+  > write = procutil.stdout.write
   > name = os.path.basename(__file__).rsplit('.', 1)[0]
-  > print("1) %s imported" % name, flush=True)
+  > bytesname = name.encode('utf-8')
+  > write(b"1) %s imported\n" % bytesname)
   > eh = exthelper.exthelper()
   > @eh.uisetup
   > def _uisetup(ui):
-  >     print("2) %s uisetup" % name, flush=True)
+  >     write(b"2) %s uisetup\n" % bytesname)
   > @eh.extsetup
   > def _extsetup(ui):
-  >     print("3) %s extsetup" % name, flush=True)
+  >     write(b"3) %s extsetup\n" % bytesname)
   > @eh.uipopulate
   > def _uipopulate(ui):
-  >     print("4) %s uipopulate" % name, flush=True)
+  >     write(b"4) %s uipopulate\n" % bytesname)
   > @eh.reposetup
   > def _reposetup(ui, repo):
-  >     print("5) %s reposetup" % name, flush=True)
+  >     write(b"5) %s reposetup\n" % bytesname)
   > 
   > extsetup = eh.finalextsetup
   > reposetup = eh.finalreposetup
@@ -174,7 +178,6 @@ Check that extensions are loaded in phases:
   > uisetup = eh.finaluisetup
   > revsetpredicate = eh.revsetpredicate
   > 
-  > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
   > from mercurial import (
   >     smartset,
@@ -1556,8 +1559,8 @@ Test version number support in 'hg version':
   
   Enabled extensions:
   
-    throw  external  1.twentythree
     strip  internal  
+    throw  external  1.twentythree
 
   $ hg version -q --config extensions.throw=throw.py
   Mercurial Distributed SCM (version *) (glob)
@@ -1597,8 +1600,8 @@ Test template output of version:
 
   $ hg version --config extensions.throw=throw.py --config extensions.strip= \
   > -T'{extensions % "{name}  {pad(ver, 16)}  ({if(bundled, "internal", "external")})\n"}'
-  throw  1.twentythree     (external)
   strip                    (internal)
+  throw  1.twentythree     (external)
 
 Refuse to load extensions with minimum version requirements
 
@@ -1851,17 +1854,6 @@ Test synopsis and docstring extending
   hg bookmarks [OPTIONS]... [NAME]... GREPME [--foo] [-x]
       GREPME make sure that this is in the help!
   $ cd ..
-
-Show deprecation warning for the use of cmdutil.command
-
-  $ cat > nonregistrar.py <<EOF
-  > from mercurial import cmdutil
-  > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
-  > @command(b'foo', [], norepo=True)
-  > def foo(ui):
-  >     pass
-  > EOF
 
 Prohibit the use of unicode strings as the default value of options
 

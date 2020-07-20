@@ -730,7 +730,7 @@ Test command without options
    -m --modified            show only modified files
    -a --added               show only added files
    -r --removed             show only removed files
-   -d --deleted             show only deleted (but tracked) files
+   -d --deleted             show only missing files
    -c --clean               show only files without changes
    -u --unknown             show only unknown (not tracked) files
    -i --ignored             show only ignored files
@@ -971,6 +971,8 @@ Test list of internal help commands
   
    debugancestor
                  find the ancestor revision of two revisions in a given index
+   debugantivirusrunning
+                 attempt to trigger an antivirus scanner to see if one is active
    debugapplystreamclonebundle
                  apply a stream clone bundle file
    debugbackupbundle
@@ -1051,6 +1053,8 @@ Test list of internal help commands
    debugrebuildfncache
                  rebuild the fncache file
    debugrename   dump rename information
+   debugrequires
+                 print the current repo requirements
    debugrevlog   show data and statistics about a revlog
    debugrevlogindex
                  dump the contents of a revlog index
@@ -1094,6 +1098,7 @@ internals topic renders index of available sub-topics
   
       To access a subtopic, use "hg help internals.{subtopic-name}"
   
+       bid-merge     Bid Merge Algorithm
        bundle2       Bundle2
        bundles       Bundles
        cbor          CBOR
@@ -1917,9 +1922,9 @@ such str.lower().
   > EOF
 
   $ "$PYTHON" <<EOF | sh
-  > from mercurial import pycompat
+  > from mercurial.utils import procutil
   > upper = b"\x8bL\x98^"
-  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % upper)
+  > procutil.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % upper)
   > EOF
   \x8bL\x98^ (esc)
   ----
@@ -1928,9 +1933,9 @@ such str.lower().
   
 
   $ "$PYTHON" <<EOF | sh
-  > from mercurial import pycompat
+  > from mercurial.utils import procutil
   > lower = b"\x8bl\x98^"
-  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % lower)
+  > procutil.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % lower)
   > EOF
   \x8bl\x98^ (esc)
   ----
@@ -3438,6 +3443,13 @@ Sub-topic indexes rendered properly
   <table class="bigtable">
   <tr><td colspan="2"><h2><a name="topics" href="#topics">Topics</a></h2></td></tr>
   
+  <tr><td>
+  <a href="/help/internals.bid-merge">
+  bid-merge
+  </a>
+  </td><td>
+  Bid Merge Algorithm
+  </td></tr>
   <tr><td>
   <a href="/help/internals.bundle2">
   bundle2

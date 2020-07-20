@@ -223,7 +223,7 @@ impl DirstateMap {
         self.get_non_normal_other_parent_entries()
             .0
             .union(&other)
-            .map(|e| e.to_owned())
+            .map(ToOwned::to_owned)
             .collect()
     }
 

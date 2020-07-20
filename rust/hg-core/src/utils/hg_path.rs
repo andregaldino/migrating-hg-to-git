@@ -208,7 +208,7 @@ impl HgPath {
     }
     pub fn join<T: ?Sized + AsRef<Self>>(&self, other: &T) -> HgPathBuf {
         let mut inner = self.inner.to_owned();
-        if inner.len() != 0 && inner.last() != Some(&b'/') {
+        if !inner.is_empty() && inner.last() != Some(&b'/') {
             inner.push(b'/');
         }
         inner.extend(other.as_ref().bytes());
@@ -315,7 +315,7 @@ impl HgPath {
     /// This generates fine-grained errors useful for debugging.
     /// To simply check if the path is valid during tests, use `is_valid`.
     pub fn check_state(&self) -> Result<(), HgPathError> {
-        if self.len() == 0 {
+        if self.is_empty() {
             return Ok(());
         }
         let bytes = self.as_bytes();
@@ -366,14 +366,14 @@ impl fmt::Display for HgPath {
     }
 }
 
-#[derive(Eq, Ord, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Default, Eq, Ord, Clone, PartialEq, PartialOrd, Hash)]
 pub struct HgPathBuf {
     inner: Vec<u8>,
 }
 
 impl HgPathBuf {
     pub fn new() -> Self {
-        Self { inner: Vec::new() }
+        Default::default()
     }
     pub fn push(&mut self, byte: u8) {
         self.inner.push(byte);
@@ -383,9 +383,6 @@ impl HgPathBuf {
     }
     pub fn into_vec(self) -> Vec<u8> {
         self.inner
-    }
-    pub fn as_ref(&self) -> &[u8] {
-        self.inner.as_ref()
     }
 }
 

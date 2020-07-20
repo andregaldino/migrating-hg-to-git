@@ -84,7 +84,7 @@ Abort doesn't lose the commits that were already in the right place
   rebasing 2:ef8c0fe0897b "D" (D)
   merging file
   warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --abort
   rebase aborted

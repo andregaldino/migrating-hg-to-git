@@ -11,5 +11,5 @@ pub mod procutil;
 mod runcommand;
 mod uihandler;
 
-pub use clientext::ChgClientExt;
+pub use clientext::ChgClient;
 pub use uihandler::{ChgUiHandler, SystemHandler};

@@ -144,6 +144,7 @@ from mercurial import (
     match as matchmod,
     mdiff,
     merge,
+    mergestate as mergestatemod,
     pycompat,
     registrar,
     rewriteutil,
@@ -267,7 +268,13 @@ def fix(ui, repo, *pats, **opts):
         workqueue, numitems = getworkqueue(
             ui, repo, pats, opts, revstofix, basectxs
         )
+        basepaths = getbasepaths(repo, opts, workqueue, basectxs)
         fixers = getfixers(ui)
+
+        # Rather than letting each worker independently fetch the files
+        # (which also would add complications for shared/keepalive
+        # connections), prefetch them all first.
+        _prefetchfiles(repo, workqueue, basepaths)
 
         # There are no data dependencies between the workers fixing each file
         # revision, so we can use all available parallelism.
@@ -276,7 +283,7 @@ def fix(ui, repo, *pats, **opts):
                 ctx = repo[rev]
                 olddata = ctx[path].data()
                 metadata, newdata = fixfile(
-                    ui, repo, opts, fixers, ctx, path, basectxs[rev]
+                    ui, repo, opts, fixers, ctx, path, basepaths, basectxs[rev]
                 )
                 # Don't waste memory/time passing unchanged content back, but
                 # produce one result per item either way.
@@ -426,7 +433,9 @@ def getrevstofix(ui, repo, opts):
     if not (len(revs) == 1 and wdirrev in revs):
         cmdutil.checkunfinished(repo)
         rewriteutil.precheck(repo, revs, b'fix')
-    if wdirrev in revs and list(merge.mergestate.read(repo).unresolved()):
+    if wdirrev in revs and list(
+        mergestatemod.mergestate.read(repo).unresolved()
+    ):
         raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
     if not revs:
         raise error.Abort(
@@ -470,7 +479,7 @@ def pathstofix(ui, repo, pats, opts, match, basectxs, fixctx):
     return files
 
 
-def lineranges(opts, path, basectxs, fixctx, content2):
+def lineranges(opts, path, basepaths, basectxs, fixctx, content2):
     """Returns the set of line ranges that should be fixed in a file
 
     Of the form [(10, 20), (30, 40)].
@@ -489,13 +498,29 @@ def lineranges(opts, path, basectxs, fixctx, content2):
 
     rangeslist = []
     for basectx in basectxs:
-        basepath = copies.pathcopies(basectx, fixctx).get(path, path)
+        basepath = basepaths.get((basectx.rev(), fixctx.rev(), path), path)
+
         if basepath in basectx:
             content1 = basectx[basepath].data()
         else:
             content1 = b''
         rangeslist.extend(difflineranges(content1, content2))
     return unionranges(rangeslist)
+
+
+def getbasepaths(repo, opts, workqueue, basectxs):
+    if opts.get(b'whole'):
+        # Base paths will never be fetched for line range determination.
+        return {}
+
+    basepaths = {}
+    for rev, path in workqueue:
+        fixctx = repo[rev]
+        for basectx in basectxs[rev]:
+            basepath = copies.pathcopies(basectx, fixctx).get(path, path)
+            if basepath in basectx:
+                basepaths[(basectx.rev(), fixctx.rev(), path)] = basepath
+    return basepaths
 
 
 def unionranges(rangeslist):
@@ -610,7 +635,30 @@ def getbasectxs(repo, opts, revstofix):
     return basectxs
 
 
-def fixfile(ui, repo, opts, fixers, fixctx, path, basectxs):
+def _prefetchfiles(repo, workqueue, basepaths):
+    toprefetch = set()
+
+    # Prefetch the files that will be fixed.
+    for rev, path in workqueue:
+        if rev == wdirrev:
+            continue
+        toprefetch.add((rev, path))
+
+    # Prefetch the base contents for lineranges().
+    for (baserev, fixrev, path), basepath in basepaths.items():
+        toprefetch.add((baserev, basepath))
+
+    if toprefetch:
+        scmutil.prefetchfiles(
+            repo,
+            [
+                (rev, scmutil.matchfiles(repo, [path]))
+                for rev, path in toprefetch
+            ],
+        )
+
+
+def fixfile(ui, repo, opts, fixers, fixctx, path, basepaths, basectxs):
     """Run any configured fixers that should affect the file in this context
 
     Returns the file content that results from applying the fixers in some order
@@ -626,7 +674,9 @@ def fixfile(ui, repo, opts, fixers, fixctx, path, basectxs):
     newdata = fixctx[path].data()
     for fixername, fixer in pycompat.iteritems(fixers):
         if fixer.affects(opts, fixctx, path):
-            ranges = lineranges(opts, path, basectxs, fixctx, newdata)
+            ranges = lineranges(
+                opts, path, basepaths, basectxs, fixctx, newdata
+            )
             command = fixer.command(ui, path, ranges)
             if command is None:
                 continue

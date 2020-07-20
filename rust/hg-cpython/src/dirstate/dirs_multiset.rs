@@ -128,7 +128,7 @@ impl Dirs {
         py: Python,
         res: &HgPathBuf,
     ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res.as_ref())))
+        Ok(Some(PyBytes::new(py, res.as_bytes())))
     }
 }
 

@@ -13,12 +13,12 @@ from .i18n import _
 from .pycompat import getattr
 from . import (
     changelog,
-    copies,
     error,
     filelog,
     hg,
     localrepo,
     manifest,
+    metadata,
     pycompat,
     revlog,
     scmutil,
@@ -78,6 +78,7 @@ def supportremovedrequirements(repo):
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
         localrepo.COPIESSDC_REQUIREMENT,
+        localrepo.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -105,6 +106,7 @@ def supporteddestrequirements(repo):
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
         localrepo.COPIESSDC_REQUIREMENT,
+        localrepo.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -132,6 +134,7 @@ def allowednewrequirements(repo):
         localrepo.SPARSEREVLOG_REQUIREMENT,
         localrepo.SIDEDATA_REQUIREMENT,
         localrepo.COPIESSDC_REQUIREMENT,
+        localrepo.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -371,6 +374,21 @@ class sidedata(requirementformatvariant):
     )
 
     upgrademessage = _(b'Allows storage of extra data alongside a revision.')
+
+
+@registerformatvariant
+class persistentnodemap(requirementformatvariant):
+    name = b'persistent-nodemap'
+
+    _requirement = localrepo.NODEMAP_REQUIREMENT
+
+    default = False
+
+    description = _(
+        b'persist the node -> rev mapping on disk to speedup lookup'
+    )
+
+    upgrademessage = _(b'Speedup revision lookup by node id.')
 
 
 @registerformatvariant
@@ -716,9 +734,9 @@ def getsidedatacompanion(srcrepo, dstrepo):
             return False, (), {}
 
     elif localrepo.COPIESSDC_REQUIREMENT in addedreqs:
-        sidedatacompanion = copies.getsidedataadder(srcrepo, dstrepo)
+        sidedatacompanion = metadata.getsidedataadder(srcrepo, dstrepo)
     elif localrepo.COPIESSDC_REQUIREMENT in removedreqs:
-        sidedatacompanion = copies.getsidedataremover(srcrepo, dstrepo)
+        sidedatacompanion = metadata.getsidedataremover(srcrepo, dstrepo)
     return sidedatacompanion
 
 
@@ -807,14 +825,14 @@ def _clonerevlogs(
     if not revcount:
         return
 
-    ui.write(
+    ui.status(
         _(
             b'migrating %d total revisions (%d in filelogs, %d in manifests, '
             b'%d in changelog)\n'
         )
         % (revcount, frevcount, mrevcount, crevcount)
     )
-    ui.write(
+    ui.status(
         _(b'migrating %s in store; %s tracked data\n')
         % ((util.bytecount(srcsize), util.bytecount(srcrawsize)))
     )
@@ -837,7 +855,7 @@ def _clonerevlogs(
         oldrl = _revlogfrompath(srcrepo, unencoded)
 
         if isinstance(oldrl, changelog.changelog) and b'c' not in seen:
-            ui.write(
+            ui.status(
                 _(
                     b'finished migrating %d manifest revisions across %d '
                     b'manifests; change in size: %s\n'
@@ -845,7 +863,7 @@ def _clonerevlogs(
                 % (mrevcount, mcount, util.bytecount(mdstsize - msrcsize))
             )
 
-            ui.write(
+            ui.status(
                 _(
                     b'migrating changelog containing %d revisions '
                     b'(%s in store; %s tracked data)\n'
@@ -861,7 +879,7 @@ def _clonerevlogs(
                 _(b'changelog revisions'), total=crevcount
             )
         elif isinstance(oldrl, manifest.manifestrevlog) and b'm' not in seen:
-            ui.write(
+            ui.status(
                 _(
                     b'finished migrating %d filelog revisions across %d '
                     b'filelogs; change in size: %s\n'
@@ -869,7 +887,7 @@ def _clonerevlogs(
                 % (frevcount, fcount, util.bytecount(fdstsize - fsrcsize))
             )
 
-            ui.write(
+            ui.status(
                 _(
                     b'migrating %d manifests containing %d revisions '
                     b'(%s in store; %s tracked data)\n'
@@ -888,7 +906,7 @@ def _clonerevlogs(
                 _(b'manifest revisions'), total=mrevcount
             )
         elif b'f' not in seen:
-            ui.write(
+            ui.status(
                 _(
                     b'migrating %d filelogs containing %d revisions '
                     b'(%s in store; %s tracked data)\n'
@@ -941,7 +959,7 @@ def _clonerevlogs(
 
     progress.complete()
 
-    ui.write(
+    ui.status(
         _(
             b'finished migrating %d changelog revisions; change in size: '
             b'%s\n'
@@ -949,7 +967,7 @@ def _clonerevlogs(
         % (crevcount, util.bytecount(cdstsize - csrcsize))
     )
 
-    ui.write(
+    ui.status(
         _(
             b'finished migrating %d total revisions; total change in store '
             b'size: %s\n'
@@ -975,7 +993,7 @@ def _filterstorefile(srcrepo, dstrepo, requirements, path, mode, st):
     Function should return ``True`` if the file is to be copied.
     """
     # Skip revlogs.
-    if path.endswith((b'.i', b'.d')):
+    if path.endswith((b'.i', b'.d', b'.n', b'.nd')):
         return False
     # Skip transaction related files.
     if path.startswith(b'undo'):
@@ -1013,7 +1031,7 @@ def _upgraderepo(
     assert srcrepo.currentwlock()
     assert dstrepo.currentwlock()
 
-    ui.write(
+    ui.status(
         _(
             b'(it is safe to interrupt this process any time before '
             b'data migration completes)\n'
@@ -1048,14 +1066,14 @@ def _upgraderepo(
         if not _filterstorefile(srcrepo, dstrepo, requirements, p, kind, st):
             continue
 
-        srcrepo.ui.write(_(b'copying %s\n') % p)
+        srcrepo.ui.status(_(b'copying %s\n') % p)
         src = srcrepo.store.rawvfs.join(p)
         dst = dstrepo.store.rawvfs.join(p)
         util.copyfile(src, dst, copystat=True)
 
     _finishdatamigration(ui, srcrepo, dstrepo, requirements)
 
-    ui.write(_(b'data fully migrated to temporary repository\n'))
+    ui.status(_(b'data fully migrated to temporary repository\n'))
 
     backuppath = pycompat.mkdtemp(prefix=b'upgradebackup.', dir=srcrepo.path)
     backupvfs = vfsmod.vfs(backuppath)
@@ -1067,28 +1085,28 @@ def _upgraderepo(
     # as a mechanism to lock out new clients during the data swap. This is
     # better than allowing a client to continue while the repository is in
     # an inconsistent state.
-    ui.write(
+    ui.status(
         _(
             b'marking source repository as being upgraded; clients will be '
             b'unable to read from repository\n'
         )
     )
-    scmutil.writerequires(
-        srcrepo.vfs, srcrepo.requirements | {b'upgradeinprogress'}
+    scmutil.writereporequirements(
+        srcrepo, srcrepo.requirements | {b'upgradeinprogress'}
     )
 
-    ui.write(_(b'starting in-place swap of repository data\n'))
-    ui.write(_(b'replaced files will be backed up at %s\n') % backuppath)
+    ui.status(_(b'starting in-place swap of repository data\n'))
+    ui.status(_(b'replaced files will be backed up at %s\n') % backuppath)
 
     # Now swap in the new store directory. Doing it as a rename should make
     # the operation nearly instantaneous and atomic (at least in well-behaved
     # environments).
-    ui.write(_(b'replacing store...\n'))
+    ui.status(_(b'replacing store...\n'))
     tstart = util.timer()
     util.rename(srcrepo.spath, backupvfs.join(b'store'))
     util.rename(dstrepo.spath, srcrepo.spath)
     elapsed = util.timer() - tstart
-    ui.write(
+    ui.status(
         _(
             b'store replacement complete; repository was inconsistent for '
             b'%0.1fs\n'
@@ -1098,13 +1116,13 @@ def _upgraderepo(
 
     # We first write the requirements file. Any new requirements will lock
     # out legacy clients.
-    ui.write(
+    ui.status(
         _(
             b'finalizing requirements file and making repository readable '
             b'again\n'
         )
     )
-    scmutil.writerequires(srcrepo.vfs, requirements)
+    scmutil.writereporequirements(srcrepo, requirements)
 
     # The lock file from the old store won't be removed because nothing has a
     # reference to its new location. So clean it up manually. Alternatively, we
@@ -1274,9 +1292,20 @@ def upgraderepo(
             ui.write((b'\n'))
         ui.write(b'\n')
 
+    def printoptimisations():
+        optimisations = [a for a in actions if a.type == optimisation]
+        optimisations.sort(key=lambda a: a.name)
+        if optimisations:
+            ui.write(_(b'optimisations: '))
+            write_labeled(
+                [a.name for a in optimisations],
+                "upgrade-repo.optimisation.performed",
+            )
+            ui.write(b'\n\n')
+
     def printupgradeactions():
         for a in actions:
-            ui.write(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
+            ui.status(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
 
     if not run:
         fromconfig = []
@@ -1291,35 +1320,35 @@ def upgraderepo(
         if fromconfig or onlydefault:
 
             if fromconfig:
-                ui.write(
+                ui.status(
                     _(
                         b'repository lacks features recommended by '
                         b'current config options:\n\n'
                     )
                 )
                 for i in fromconfig:
-                    ui.write(b'%s\n   %s\n\n' % (i.name, i.description))
+                    ui.status(b'%s\n   %s\n\n' % (i.name, i.description))
 
             if onlydefault:
-                ui.write(
+                ui.status(
                     _(
                         b'repository lacks features used by the default '
                         b'config options:\n\n'
                     )
                 )
                 for i in onlydefault:
-                    ui.write(b'%s\n   %s\n\n' % (i.name, i.description))
+                    ui.status(b'%s\n   %s\n\n' % (i.name, i.description))
 
-            ui.write(b'\n')
+            ui.status(b'\n')
         else:
-            ui.write(
+            ui.status(
                 _(
                     b'(no feature deficiencies found in existing '
                     b'repository)\n'
                 )
             )
 
-        ui.write(
+        ui.status(
             _(
                 b'performing an upgrade with "--run" will make the following '
                 b'changes:\n\n'
@@ -1327,31 +1356,33 @@ def upgraderepo(
         )
 
         printrequirements()
+        printoptimisations()
         printupgradeactions()
 
         unusedoptimize = [i for i in alloptimizations if i not in actions]
 
         if unusedoptimize:
-            ui.write(
+            ui.status(
                 _(
                     b'additional optimizations are available by specifying '
                     b'"--optimize <name>":\n\n'
                 )
             )
             for i in unusedoptimize:
-                ui.write(_(b'%s\n   %s\n\n') % (i.name, i.description))
+                ui.status(_(b'%s\n   %s\n\n') % (i.name, i.description))
         return
 
     # Else we're in the run=true case.
     ui.write(_(b'upgrade will perform the following actions:\n\n'))
     printrequirements()
+    printoptimisations()
     printupgradeactions()
 
     upgradeactions = [a.name for a in actions]
 
-    ui.write(_(b'beginning upgrade...\n'))
+    ui.status(_(b'beginning upgrade...\n'))
     with repo.wlock(), repo.lock():
-        ui.write(_(b'repository locked and read-only\n'))
+        ui.status(_(b'repository locked and read-only\n'))
         # Our strategy for upgrading the repository is to create a new,
         # temporary repository, write data to it, then do a swap of the
         # data. There are less heavyweight ways to do this, but it is easier
@@ -1360,7 +1391,7 @@ def upgraderepo(
         tmppath = pycompat.mkdtemp(prefix=b'upgrade.', dir=repo.path)
         backuppath = None
         try:
-            ui.write(
+            ui.status(
                 _(
                     b'creating temporary repository to stage migrated '
                     b'data: %s\n'
@@ -1377,15 +1408,17 @@ def upgraderepo(
                     ui, repo, dstrepo, newreqs, upgradeactions, revlogs=revlogs
                 )
             if not (backup or backuppath is None):
-                ui.write(_(b'removing old repository content%s\n') % backuppath)
+                ui.status(
+                    _(b'removing old repository content%s\n') % backuppath
+                )
                 repo.vfs.rmtree(backuppath, forcibly=True)
                 backuppath = None
 
         finally:
-            ui.write(_(b'removing temporary repository %s\n') % tmppath)
+            ui.status(_(b'removing temporary repository %s\n') % tmppath)
             repo.vfs.rmtree(tmppath, forcibly=True)
 
-            if backuppath:
+            if backuppath and not ui.quiet:
                 ui.warn(
                     _(b'copy of old repository backed up at %s\n') % backuppath
                 )

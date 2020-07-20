@@ -456,9 +456,7 @@ def formatrevnode(ui, rev, node):
 
 
 def resolvehexnodeidprefix(repo, prefix):
-    if prefix.startswith(b'x') and repo.ui.configbool(
-        b'experimental', b'revisions.prefixhexnode'
-    ):
+    if prefix.startswith(b'x'):
         prefix = prefix[1:]
     try:
         # Uses unfiltered repo because it's faster when prefix is ambiguous/
@@ -805,9 +803,12 @@ def getuipathfn(repo, legacyrelativevalue=False, forcerelativevalue=None):
 
     if relative:
         cwd = repo.getcwd()
-        pathto = repo.pathto
-        return lambda f: pathto(f, cwd)
-    elif repo.ui.configbool(b'ui', b'slash'):
+        if cwd != b'':
+            # this branch would work even if cwd == b'' (ie cwd = repo
+            # root), but its generality makes the returned function slower
+            pathto = repo.pathto
+            return lambda f: pathto(f, cwd)
+    if repo.ui.configbool(b'ui', b'slash'):
         return lambda f: f
     else:
         return util.localpath
@@ -1469,6 +1470,13 @@ def movedirstate(repo, newctx, match=None):
     repo._quick_access_changeid_invalidate()
 
 
+def writereporequirements(repo, requirements=None):
+    """ writes requirements for the repo to .hg/requires """
+    if requirements:
+        repo.requirements = requirements
+    writerequires(repo.vfs, repo.requirements)
+
+
 def writerequires(opener, requirements):
     with opener(b'requires', b'w', atomictemp=True) as fp:
         for r in sorted(requirements):
@@ -1879,18 +1887,29 @@ _reportnewcssource = [
 ]
 
 
-def prefetchfiles(repo, revs, match):
+def prefetchfiles(repo, revmatches):
     """Invokes the registered file prefetch functions, allowing extensions to
     ensure the corresponding files are available locally, before the command
-    uses them."""
-    if match:
-        # The command itself will complain about files that don't exist, so
-        # don't duplicate the message.
-        match = matchmod.badmatch(match, lambda fn, msg: None)
-    else:
-        match = matchall(repo)
+    uses them.
 
-    fileprefetchhooks(repo, revs, match)
+    Args:
+      revmatches: a list of (revision, match) tuples to indicate the files to
+      fetch at each revision. If any of the match elements is None, it matches
+      all files.
+    """
+
+    def _matcher(m):
+        if m:
+            assert isinstance(m, matchmod.basematcher)
+            # The command itself will complain about files that don't exist, so
+            # don't duplicate the message.
+            return matchmod.badmatch(m, lambda fn, msg: None)
+        else:
+            return matchall(repo)
+
+    revbadmatches = [(rev, _matcher(match)) for (rev, match) in revmatches]
+
+    fileprefetchhooks(repo, revbadmatches)
 
 
 # a list of (repo, revs, match) prefetch functions

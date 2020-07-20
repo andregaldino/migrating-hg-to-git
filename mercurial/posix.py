@@ -538,10 +538,6 @@ def shellsplit(s):
     return pycompat.shlexsplit(s, posix=True)
 
 
-def quotecommand(cmd):
-    return cmd
-
-
 def testpid(pid):
     '''return False if pid dead, True if running or not sure'''
     if pycompat.sysplatform == b'OpenVMS':

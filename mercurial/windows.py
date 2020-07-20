@@ -186,11 +186,26 @@ def posixfile(name, mode=b'r', buffering=-1):
 listdir = osutil.listdir
 
 
+# copied from .utils.procutil, remove after Python 2 support was dropped
+def _isatty(fp):
+    try:
+        return fp.isatty()
+    except AttributeError:
+        return False
+
+
 class winstdout(object):
-    '''stdout on windows misbehaves if sent through a pipe'''
+    '''Some files on Windows misbehave.
+
+    When writing to a broken pipe, EINVAL instead of EPIPE may be raised.
+
+    When writing too many bytes to a console at the same, a "Not enough space"
+    error may happen. Python 3 already works around that.
+    '''
 
     def __init__(self, fp):
         self.fp = fp
+        self.throttle = not pycompat.ispy3 and _isatty(fp)
 
     def __getattr__(self, key):
         return getattr(self.fp, key)
@@ -203,12 +218,13 @@ class winstdout(object):
 
     def write(self, s):
         try:
+            if not self.throttle:
+                return self.fp.write(s)
             # This is workaround for "Not enough space" error on
             # writing large size of data to console.
             limit = 16000
             l = len(s)
             start = 0
-            self.softspace = 0
             while start < l:
                 end = start + limit
                 self.fp.write(s[start:end])
@@ -472,14 +488,6 @@ def _unquote(s):
 def shellsplit(s):
     """Parse a command string in cmd.exe way (best-effort)"""
     return pycompat.maplist(_unquote, pycompat.shlexsplit(s, posix=False))
-
-
-def quotecommand(cmd):
-    """Build a command string suitable for os.popen* calls."""
-    if sys.version_info < (2, 7, 1):
-        # Python versions since 2.7.1 do this extra quoting themselves
-        return b'"' + cmd + b'"'
-    return cmd
 
 
 # if you change this stub into a real check, please try to implement the

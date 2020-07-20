@@ -15,6 +15,7 @@
   > |
   > A
   > EOF
+  $ root_node=$(hg log -r A -T '{node}')
 
   $ hg serve -p $HGPORT -d --pid-file hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -23,7 +24,7 @@ lookup for known node works
 
   $ sendhttpv2peer << EOF
   > command lookup
-  >     key 426bada5c67598ca65036d57d9e4b64b0c1ce7a0
+  >     key $root_node
   > EOF
   creating http peer for wire protocol version 2
   sending lookup command

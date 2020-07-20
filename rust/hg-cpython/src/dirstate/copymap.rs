@@ -89,7 +89,7 @@ impl CopyMap {
         py: Python,
         res: (&HgPathBuf, &HgPathBuf),
     ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res.0.as_ref())))
+        Ok(Some(PyBytes::new(py, res.0.as_bytes())))
     }
     fn translate_key_value(
         py: Python,
@@ -97,8 +97,8 @@ impl CopyMap {
     ) -> PyResult<Option<(PyBytes, PyBytes)>> {
         let (k, v) = res;
         Ok(Some((
-            PyBytes::new(py, k.as_ref()),
-            PyBytes::new(py, v.as_ref()),
+            PyBytes::new(py, k.as_bytes()),
+            PyBytes::new(py, v.as_bytes()),
         )))
     }
 }

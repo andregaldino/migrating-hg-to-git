@@ -591,7 +591,7 @@ def has_pylint():
 
 @check("clang-format", "clang-format C code formatter")
 def has_clang_format():
-    m = matchoutput('clang-format --version', br'clang-format version (\d)')
+    m = matchoutput('clang-format --version', br'clang-format version (\d*)')
     # style changed somewhere between 4.x and 6.x
     return m and int(m.group(1)) >= 6
 
@@ -645,34 +645,10 @@ def has_ssl():
         return False
 
 
-@check("sslcontext", "python >= 2.7.9 ssl")
-def has_sslcontext():
-    try:
-        import ssl
-
-        ssl.SSLContext
-        return True
-    except (ImportError, AttributeError):
-        return False
-
-
-@check("defaultcacerts", "can verify SSL certs by system's CA certs store")
-def has_defaultcacerts():
-    from mercurial import sslutil, ui as uimod
-
-    ui = uimod.ui.load()
-    return sslutil._defaultcacerts(ui) or sslutil._canloaddefaultcerts
-
-
 @check("defaultcacertsloaded", "detected presence of loaded system CA certs")
 def has_defaultcacertsloaded():
     import ssl
     from mercurial import sslutil, ui as uimod
-
-    if not has_defaultcacerts():
-        return False
-    if not has_sslcontext():
-        return False
 
     ui = uimod.ui.load()
     cafile = sslutil._defaultcacerts(ui)
@@ -705,6 +681,17 @@ def has_system_sh():
 @check("serve", "platform and python can manage 'hg serve -d'")
 def has_serve():
     return True
+
+
+@check("setprocname", "whether osutil.setprocname is available or not")
+def has_setprocname():
+    try:
+        from mercurial.utils import procutil
+
+        procutil.setprocname
+        return True
+    except AttributeError:
+        return False
 
 
 @check("test-repo", "running tests from repository")

@@ -142,9 +142,9 @@ SEC: check for unsafe ssh url
   pulling from ssh://fakehost%7Ctouch%24%7BIFS%7Downed/path
   abort: no suitable response from remote hg!
   [255]
-  $ hg pull 'ssh://fakehost%7Ctouch%20owned/path'
-  pulling from ssh://fakehost%7Ctouch%20owned/path
-  abort: no suitable response from remote hg!
+  $ hg --config ui.timestamp-output=true pull 'ssh://fakehost%7Ctouch%20owned/path'
+  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] pulling from ssh://fakehost%7Ctouch%20owned/path (re)
+  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] abort: no suitable response from remote hg! (re)
   [255]
 
   $ [ ! -f owned ] || echo 'you got owned'

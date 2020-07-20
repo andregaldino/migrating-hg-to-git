@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import collections
 import contextlib
+import datetime
 import errno
 import getpass
 import inspect
@@ -242,6 +243,7 @@ class ui(object):
         self._terminfoparams = {}
         self._styles = {}
         self._uninterruptible = False
+        self.showtimestamp = False
 
         if src:
             self._fout = src._fout
@@ -561,6 +563,7 @@ class ui(object):
             self._reportuntrusted = self.debugflag or self.configbool(
                 b"ui", b"report_untrusted"
             )
+            self.showtimestamp = self.configbool(b'ui', b'timestamp-output')
             self.tracebackflag = self.configbool(b'ui', b'traceback')
             self.logblockedtimes = self.configbool(b'ui', b'logblockedtimes')
 
@@ -1200,7 +1203,7 @@ class ui(object):
                 dest.write(msg)
             # stderr may be buffered under win32 when redirected to files,
             # including stdout.
-            if dest is self._ferr and not getattr(self._ferr, 'closed', False):
+            if dest is self._ferr and not getattr(dest, 'closed', False):
                 dest.flush()
         except IOError as err:
             if dest is self._ferr and err.errno in (
@@ -1217,7 +1220,21 @@ class ui(object):
             ) * 1000
 
     def _writemsg(self, dest, *args, **opts):
+        timestamp = self.showtimestamp and opts.get('type') in {
+            b'debug',
+            b'error',
+            b'note',
+            b'status',
+            b'warning',
+        }
+        if timestamp:
+            args = (
+                b'[%s] '
+                % pycompat.bytestr(datetime.datetime.now().isoformat()),
+            ) + args
         _writemsgwith(self._write, dest, *args, **opts)
+        if timestamp:
+            dest.flush()
 
     def _writemsgnobuf(self, dest, *args, **opts):
         _writemsgwith(self._writenobuf, dest, *args, **opts)
@@ -2101,6 +2118,22 @@ class ui(object):
             # as it does not update ui.quiet class member
             if (b'ui', b'quiet') in overrides:
                 self.fixconfig(section=b'ui')
+
+    def estimatememory(self):
+        """Provide an estimate for the available system memory in Bytes.
+
+        This can be overriden via ui.available-memory. It returns None, if
+        no estimate can be computed.
+        """
+        value = self.config(b'ui', b'available-memory')
+        if value is not None:
+            try:
+                return util.sizetoint(value)
+            except error.ParseError:
+                raise error.ConfigError(
+                    _(b"ui.available-memory value is invalid ('%s')") % value
+                )
+        return util._estimatememory()
 
 
 class paths(dict):

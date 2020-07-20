@@ -297,7 +297,7 @@ Ensure --continue restores a correct state (issue3046) and phase:
   rebasing 3:17b4880d2402 "B2" (tip)
   merging B
   warning: conflicts while merging B! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg resolve --all -t internal:local
   (no more unresolved files)

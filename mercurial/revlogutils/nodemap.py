@@ -13,6 +13,8 @@ import os
 import re
 import struct
 
+from ..i18n import _
+
 from .. import (
     error,
     node as nodemod,
@@ -48,7 +50,7 @@ def persisted_data(revlog):
     docket.data_unused = data_unused
 
     filename = _rawdata_filepath(revlog, docket)
-    use_mmap = revlog.opener.options.get(b"exp-persistent-nodemap.mmap")
+    use_mmap = revlog.opener.options.get(b"persistent-nodemap.mmap")
     try:
         with revlog.opener(filename) as fd:
             if use_mmap:
@@ -105,6 +107,9 @@ class _NoTransaction(object):
     def addabort(self, *args, **kwargs):
         pass
 
+    def _report(self, *args):
+        pass
+
 
 def update_persistent_nodemap(revlog):
     """update the persistent nodemap right now
@@ -137,7 +142,14 @@ def _persist_nodemap(tr, revlog, pending=False):
     can_incremental = util.safehasattr(revlog.index, "nodemap_data_incremental")
     ondisk_docket = revlog._nodemap_docket
     feed_data = util.safehasattr(revlog.index, "update_nodemap_data")
-    use_mmap = revlog.opener.options.get(b"exp-persistent-nodemap.mmap")
+    use_mmap = revlog.opener.options.get(b"persistent-nodemap.mmap")
+    mode = revlog.opener.options.get(b"persistent-nodemap.mode")
+    if not can_incremental:
+        msg = _(b"persistent nodemap in strict mode without efficient method")
+        if mode == b'warn':
+            tr._report(b"%s\n" % msg)
+        elif mode == b'strict':
+            raise error.Abort(msg)
 
     data = None
     # first attemp an incremental update of the data
@@ -255,8 +267,7 @@ def _persist_nodemap(tr, revlog, pending=False):
 # data. Its content is currently very light, but it will expand as the on disk
 # nodemap gains the necessary features to be used in production.
 
-# version 0 is experimental, no BC garantee, do no use outside of tests.
-ONDISK_VERSION = 0
+ONDISK_VERSION = 1
 S_VERSION = struct.Struct(">B")
 S_HEADER = struct.Struct(">BQQQQ")
 

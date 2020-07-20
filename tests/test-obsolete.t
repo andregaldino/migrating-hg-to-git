@@ -251,7 +251,8 @@ And that we can't push bumped changeset
   $ hg push ../tmpa
   pushing to ../tmpa
   searching for changes
-  abort: push includes phase-divergent changeset: 5601fb93a350!
+  abort: push includes unstable changesets:
+    5601fb93a350 (phase-divergent)
   [255]
 
 Fixing "bumped" situation
@@ -616,7 +617,8 @@ refuse to push obsolete changeset
   $ hg push ../tmpc/ -r 'desc("original_d")'
   pushing to ../tmpc/
   searching for changes
-  abort: push includes obsolete changeset: 94b33453f93b!
+  abort: push includes obsolete changesets:
+    94b33453f93b
   [255]
 
 refuse to push unstable changeset
@@ -624,8 +626,51 @@ refuse to push unstable changeset
   $ hg push ../tmpc/
   pushing to ../tmpc/
   searching for changes
-  abort: push includes orphan changeset: cda648ca50f5!
+  abort: push includes obsolete changesets:
+    94b33453f93b
+  push includes unstable changesets:
+    cda648ca50f5 (orphan)
   [255]
+
+with --force it will work anyway
+
+  $ hg push ../tmpc/ --force
+  pushing to ../tmpc/
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files
+  1 new obsolescence markers
+  1 new orphan changesets
+
+if the orphan changeset is already on the server, pushing should work
+
+  $ hg push ../tmpc/
+  pushing to ../tmpc/
+  searching for changes
+  no changes found
+  [1]
+
+pushing should work even if the outgoing changes contain an unrelated changeset
+(neither obsolete nor unstable) (issue6372)
+
+  $ hg up 1 -q
+  $ hg branch new -q
+  $ mkcommit c
+
+  $ hg push ../tmpc/ --new-branch
+  pushing to ../tmpc/
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files (+1 heads)
+
+make later tests work unmodified
+
+  $ hg --config extensions.strip= strip tip -q
+  $ hg up 5 -q
 
 Test that extinct changeset are properly detected
 
@@ -1175,6 +1220,14 @@ test whyunstable template keyword
   orphan: obsolete parent 3de5
   phase-divergent: immutable predecessor 245b
   content-divergent: predecessor 245b
+
+  $ hg push  ../tmpf -r 50c51b361e60
+  pushing to ../tmpf
+  searching for changes
+  abort: push includes unstable changesets:
+    50c51b361e60 (orphan, phase-divergent, content-divergent)
+  [255]
+
 
 #if serve
 

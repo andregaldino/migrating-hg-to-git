@@ -98,6 +98,9 @@ class absentfilectx(object):
         self._ctx = ctx
         self._f = f
 
+    def __bytes__(self):
+        return b'absent file %s@%s' % (self._f, self._ctx)
+
     def path(self):
         return self._f
 

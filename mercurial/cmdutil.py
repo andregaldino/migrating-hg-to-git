@@ -38,6 +38,7 @@ from . import (
     logcmdutil,
     match as matchmod,
     merge as mergemod,
+    mergestate as mergestatemod,
     mergeutil,
     obsolete,
     patch,
@@ -890,7 +891,7 @@ To mark files as resolved:  hg resolve --mark FILE'''
 def readmorestatus(repo):
     """Returns a morestatus object if the repo has unfinished state."""
     statetuple = statemod.getrepostate(repo)
-    mergestate = mergemod.mergestate.read(repo)
+    mergestate = mergestatemod.mergestate.read(repo)
     activemerge = mergestate.active()
     if not statetuple and not activemerge:
         return None
@@ -2137,7 +2138,9 @@ def _prefetchchangedfiles(repo, revs, match):
         for file in repo[rev].files():
             if not match or match(file):
                 allfiles.add(file)
-    scmutil.prefetchfiles(repo, revs, scmutil.matchfiles(repo, allfiles))
+    match = scmutil.matchfiles(repo, allfiles)
+    revmatches = [(rev, match) for rev in revs]
+    scmutil.prefetchfiles(repo, revmatches)
 
 
 def export(
@@ -2751,15 +2754,28 @@ def files(ui, ctx, m, uipathfn, fm, fmt, subrepos):
     ret = 1
 
     needsfctx = ui.verbose or {b'size', b'flags'} & fm.datahint()
-    for f in ctx.matches(m):
-        fm.startitem()
-        fm.context(ctx=ctx)
-        if needsfctx:
-            fc = ctx[f]
-            fm.write(b'size flags', b'% 10d % 1s ', fc.size(), fc.flags())
-        fm.data(path=f)
-        fm.plain(fmt % uipathfn(f))
-        ret = 0
+    if fm.isplain() and not needsfctx:
+        # Fast path. The speed-up comes from skipping the formatter, and batching
+        # calls to ui.write.
+        buf = []
+        for f in ctx.matches(m):
+            buf.append(fmt % uipathfn(f))
+            if len(buf) > 100:
+                ui.write(b''.join(buf))
+                del buf[:]
+            ret = 0
+        if buf:
+            ui.write(b''.join(buf))
+    else:
+        for f in ctx.matches(m):
+            fm.startitem()
+            fm.context(ctx=ctx)
+            if needsfctx:
+                fc = ctx[f]
+                fm.write(b'size flags', b'% 10d % 1s ', fc.size(), fc.flags())
+            fm.data(path=f)
+            fm.plain(fmt % uipathfn(f))
+            ret = 0
 
     for subpath in sorted(ctx.substate):
         submatch = matchmod.subdirmatcher(subpath, m)
@@ -2983,14 +2999,14 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         try:
             if mfnode and mfl[mfnode].find(file)[0]:
                 if _catfmtneedsdata(basefm):
-                    scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+                    scmutil.prefetchfiles(repo, [(ctx.rev(), matcher)])
                 write(file)
                 return 0
         except KeyError:
             pass
 
     if _catfmtneedsdata(basefm):
-        scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
+        scmutil.prefetchfiles(repo, [(ctx.rev(), matcher)])
 
     for abs in ctx.walk(matcher):
         write(abs)
@@ -3127,7 +3143,7 @@ def amend(ui, repo, old, extra, pats, opts):
             if subs:
                 subrepoutil.writestate(repo, newsubstate)
 
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         mergeutil.checkunresolved(ms)
 
         filestoamend = {f for f in wctx.files() if matcher(f)}
@@ -3423,9 +3439,9 @@ def commitstatus(repo, node, branch, bheads=None, opts=None):
         not opts.get(b'amend')
         and bheads
         and node not in bheads
-        and not [
-            x for x in parents if x.node() in bheads and x.branch() == branch
-        ]
+        and not any(
+            p.node() in bheads and p.branch() == branch for p in parents
+        )
     ):
         repo.ui.status(_(b'created new head\n'))
         # The message is not printed for initial roots. For the other
@@ -3755,11 +3771,11 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             needdata = (b'revert', b'add', b'undelete')
             oplist = [actions[name][0] for name in needdata]
             prefetch = scmutil.prefetchfiles
-            matchfiles = scmutil.matchfiles
+            matchfiles = scmutil.matchfiles(
+                repo, [f for sublist in oplist for f in sublist]
+            )
             prefetch(
-                repo,
-                [ctx.rev()],
-                matchfiles(repo, [f for sublist in oplist for f in sublist]),
+                repo, [(ctx.rev(), matchfiles)],
             )
             match = scmutil.match(repo[None], pats)
             _performrevert(

@@ -108,7 +108,7 @@ impl DirsMultiset {
         for subpath in files::find_dirs(path.as_ref()) {
             match self.inner.entry(subpath.to_owned()) {
                 Entry::Occupied(mut entry) => {
-                    let val = entry.get().clone();
+                    let val = *entry.get();
                     if val > 1 {
                         entry.insert(val - 1);
                         break;
@@ -137,6 +137,10 @@ impl DirsMultiset {
     pub fn len(&self) -> usize {
         self.inner.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 /// This is basically a reimplementation of `DirsMultiset` that stores the
@@ -156,7 +160,7 @@ impl<'a> DirsChildrenMultiset<'a> {
         let mut new = Self {
             inner: HashMap::default(),
             only_include: only_include
-                .map(|s| s.iter().map(|p| p.as_ref()).collect()),
+                .map(|s| s.iter().map(AsRef::as_ref).collect()),
         };
 
         for path in paths {

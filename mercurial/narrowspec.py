@@ -14,6 +14,7 @@ from . import (
     error,
     match as matchmod,
     merge,
+    mergestate as mergestatemod,
     scmutil,
     sparse,
     util,
@@ -272,7 +273,7 @@ def _deletecleanfiles(repo, files):
 
 def _writeaddedfiles(repo, pctx, files):
     actions = merge.emptyactions()
-    addgaction = actions[merge.ACTION_GET].append
+    addgaction = actions[mergestatemod.ACTION_GET].append
     mf = repo[b'.'].manifest()
     for f in files:
         if not repo.wvfs.exists(f):

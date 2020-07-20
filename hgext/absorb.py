@@ -50,6 +50,7 @@ from mercurial import (
     phases,
     pycompat,
     registrar,
+    rewriteutil,
     scmutil,
     util,
 )
@@ -782,7 +783,10 @@ class fixupstate(object):
                 # nothing changed, nothing commited
                 nextp1 = ctx
                 continue
-            if self._willbecomenoop(memworkingcopy, ctx, nextp1):
+            willbecomenoop = ctx.files() and self._willbecomenoop(
+                memworkingcopy, ctx, nextp1
+            )
+            if self.skip_empty_successor and willbecomenoop:
                 # changeset is no longer necessary
                 self.replacemap[ctx.node()] = None
                 msg = _(b'became empty and was dropped')
@@ -793,7 +797,11 @@ class fixupstate(object):
                 nextp1 = lastcommitted
                 self.replacemap[ctx.node()] = lastcommitted.node()
                 if memworkingcopy:
-                    msg = _(b'%d file(s) changed, became %s') % (
+                    if willbecomenoop:
+                        msg = _(b'%d file(s) changed, became empty as %s')
+                    else:
+                        msg = _(b'%d file(s) changed, became %s')
+                    msg = msg % (
                         len(memworkingcopy),
                         self._ctx2str(lastcommitted),
                     )
@@ -887,6 +895,10 @@ class fixupstate(object):
             if len(parents) != 1:
                 return False
             pctx = parents[0]
+        if ctx.branch() != pctx.branch():
+            return False
+        if ctx.extra().get(b'close'):
+            return False
         # ctx changes more files (not a subset of memworkingcopy)
         if not set(ctx.files()).issubset(set(memworkingcopy)):
             return False
@@ -928,6 +940,10 @@ class fixupstate(object):
             scmutil.cleanupnodes(
                 self.repo, replacements, operation=b'absorb', fixphase=True
             )
+
+    @util.propertycache
+    def skip_empty_successor(self):
+        return rewriteutil.skip_empty_successor(self.ui, b'absorb')
 
 
 def _parsechunk(hunk):
@@ -1045,7 +1061,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
             not opts.get(b'apply_changes')
             and state.ctxaffected
             and ui.promptchoice(
-                b"apply changes (yn)? $$ &Yes $$ &No", default=1
+                b"apply changes (y/N)? $$ &Yes $$ &No", default=1
             )
         ):
             raise error.Abort(_(b'absorb cancelled\n'))

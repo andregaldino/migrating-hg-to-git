@@ -37,9 +37,10 @@ from ..utils import resourceutil
 
 osutil = policy.importmod('osutil')
 
-stderr = pycompat.stderr
-stdin = pycompat.stdin
-stdout = pycompat.stdout
+if pycompat.iswindows:
+    from .. import windows as platform
+else:
+    from .. import posix as platform
 
 
 def isatty(fp):
@@ -49,33 +50,108 @@ def isatty(fp):
         return False
 
 
-# Python 2 uses the C library's standard I/O streams. Glibc determines
-# buffering on first write to stdout - if we replace a TTY destined stdout with
-# a pipe destined stdout (e.g. pager), we want line buffering (or unbuffered,
-# on Windows).
-# Python 3 rolls its own standard I/O streams.
-if isatty(stdout):
+class LineBufferedWrapper(object):
+    def __init__(self, orig):
+        self.orig = orig
+
+    def __getattr__(self, attr):
+        return getattr(self.orig, attr)
+
+    def write(self, s):
+        orig = self.orig
+        res = orig.write(s)
+        if s.endswith(b'\n'):
+            orig.flush()
+        return res
+
+
+io.BufferedIOBase.register(LineBufferedWrapper)
+
+
+def make_line_buffered(stream):
+    if pycompat.ispy3 and not isinstance(stream, io.BufferedIOBase):
+        # On Python 3, buffered streams can be expected to subclass
+        # BufferedIOBase. This is definitively the case for the streams
+        # initialized by the interpreter. For unbuffered streams, we don't need
+        # to emulate line buffering.
+        return stream
+    if isinstance(stream, LineBufferedWrapper):
+        return stream
+    return LineBufferedWrapper(stream)
+
+
+class WriteAllWrapper(object):
+    def __init__(self, orig):
+        self.orig = orig
+
+    def __getattr__(self, attr):
+        return getattr(self.orig, attr)
+
+    def write(self, s):
+        write1 = self.orig.write
+        m = memoryview(s)
+        total_to_write = len(s)
+        total_written = 0
+        while total_written < total_to_write:
+            total_written += write1(m[total_written:])
+        return total_written
+
+
+io.IOBase.register(WriteAllWrapper)
+
+
+def _make_write_all(stream):
+    assert pycompat.ispy3
+    if isinstance(stream, WriteAllWrapper):
+        return stream
+    if isinstance(stream, io.BufferedIOBase):
+        # The io.BufferedIOBase.write() contract guarantees that all data is
+        # written.
+        return stream
+    # In general, the write() method of streams is free to write only part of
+    # the data.
+    return WriteAllWrapper(stream)
+
+
+if pycompat.ispy3:
+    # Python 3 implements its own I/O streams.
+    # TODO: .buffer might not exist if std streams were replaced; we'll need
+    # a silly wrapper to make a bytes stream backed by a unicode one.
+    stdin = sys.stdin.buffer
+    stdout = _make_write_all(sys.stdout.buffer)
+    stderr = _make_write_all(sys.stderr.buffer)
     if pycompat.iswindows:
-        # Windows doesn't support line buffering
-        stdout = os.fdopen(stdout.fileno(), 'wb', 0)
-    elif not pycompat.ispy3:
-        # on Python 3, stdout (sys.stdout.buffer) is already line buffered and
-        # buffering=1 is not handled in binary mode
-        stdout = os.fdopen(stdout.fileno(), 'wb', 1)
-
-if pycompat.iswindows:
-    from .. import windows as platform
-
-    stdout = platform.winstdout(stdout)
+        # Work around Windows bugs.
+        stdout = platform.winstdout(stdout)
+        stderr = platform.winstdout(stderr)
+    if isatty(stdout):
+        # The standard library doesn't offer line-buffered binary streams.
+        stdout = make_line_buffered(stdout)
 else:
-    from .. import posix as platform
+    # Python 2 uses the I/O streams provided by the C library.
+    stdin = sys.stdin
+    stdout = sys.stdout
+    stderr = sys.stderr
+    if pycompat.iswindows:
+        # Work around Windows bugs.
+        stdout = platform.winstdout(stdout)
+        stderr = platform.winstdout(stderr)
+    if isatty(stdout):
+        if pycompat.iswindows:
+            # The Windows C runtime library doesn't support line buffering.
+            stdout = make_line_buffered(stdout)
+        else:
+            # glibc determines buffering on first write to stdout - if we
+            # replace a TTY destined stdout with a pipe destined stdout (e.g.
+            # pager), we want line buffering.
+            stdout = os.fdopen(stdout.fileno(), 'wb', 1)
+
 
 findexe = platform.findexe
 _gethgcmd = platform.gethgcmd
 getuser = platform.getuser
 getpid = os.getpid
 hidewindow = platform.hidewindow
-quotecommand = platform.quotecommand
 readpipe = platform.readpipe
 setbinary = platform.setbinary
 setsignalhandler = platform.setsignalhandler
@@ -140,7 +216,7 @@ def popen(cmd, mode=b'rb', bufsize=-1):
 
 def _popenreader(cmd, bufsize):
     p = subprocess.Popen(
-        tonativestr(quotecommand(cmd)),
+        tonativestr(cmd),
         shell=True,
         bufsize=bufsize,
         close_fds=closefds,
@@ -151,7 +227,7 @@ def _popenreader(cmd, bufsize):
 
 def _popenwriter(cmd, bufsize):
     p = subprocess.Popen(
-        tonativestr(quotecommand(cmd)),
+        tonativestr(cmd),
         shell=True,
         bufsize=bufsize,
         close_fds=closefds,
@@ -397,7 +473,6 @@ def system(cmd, environ=None, cwd=None, out=None):
         stdout.flush()
     except Exception:
         pass
-    cmd = quotecommand(cmd)
     env = shellenviron(environ)
     if out is None or isstdout(out):
         rc = subprocess.call(

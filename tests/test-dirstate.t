@@ -70,14 +70,15 @@ coherent (issue4353)
   > from mercurial import (
   >   error,
   >   extensions,
-  >   merge,
+  >   mergestate as mergestatemod,
   > )
   > 
   > def wraprecordupdates(*args):
   >     raise error.Abort("simulated error while recording dirstateupdates")
   > 
   > def reposetup(ui, repo):
-  >     extensions.wrapfunction(merge, 'recordupdates', wraprecordupdates)
+  >     extensions.wrapfunction(mergestatemod, 'recordupdates',
+  >                             wraprecordupdates)
   > EOF
 
   $ hg rm a

@@ -443,7 +443,7 @@ more there after
   HG_PENDING=$TESTTMP/a
   
   transaction abort!
-  txnabort Python hook: txnid,txnname
+  txnabort Python hook: changes,txnid,txnname
   txnabort hook: HG_HOOKNAME=txnabort.1
   HG_HOOKTYPE=txnabort
   HG_TXNID=TXN:$ID$

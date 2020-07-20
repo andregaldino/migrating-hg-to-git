@@ -25,6 +25,7 @@ pub const NULL_REVISION: Revision = -1;
 ///
 /// This is also equal to `i32::max_value()`, but it's better to spell
 /// it out explicitely, same as in `mercurial.node`
+#[allow(clippy::unreadable_literal)]
 pub const WORKING_DIRECTORY_REVISION: Revision = 0x7fffffff;
 
 /// The simplest expression of what we need of Mercurial DAGs.
@@ -48,6 +49,10 @@ pub enum GraphError {
 pub trait RevlogIndex {
     /// Total number of Revisions referenced in this index
     fn len(&self) -> usize;
+
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 
     /// Return a reference to the Node or `None` if rev is out of bounds
     ///

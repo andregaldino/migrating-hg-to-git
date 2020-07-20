@@ -573,11 +573,13 @@ Test internal debugstacktrace command
   $ cat > debugstacktrace.py << EOF
   > from __future__ import absolute_import
   > from mercurial import (
-  >     pycompat,
   >     util,
   > )
+  > from mercurial.utils import (
+  >     procutil,
+  > )
   > def f():
-  >     util.debugstacktrace(f=pycompat.stdout)
+  >     util.debugstacktrace(f=procutil.stdout)
   >     g()
   > def g():
   >     util.dst(b'hello from g\\n', skip=1)
@@ -588,15 +590,15 @@ Test internal debugstacktrace command
   > EOF
   $ "$PYTHON" debugstacktrace.py
   stacktrace at:
-   *debugstacktrace.py:14 in * (glob)
-   *debugstacktrace.py:7  in f (glob)
+   *debugstacktrace.py:16 in * (glob)
+   *debugstacktrace.py:9  in f (glob)
   hello from g at:
-   *debugstacktrace.py:14 in * (glob)
-   *debugstacktrace.py:8  in f (glob)
+   *debugstacktrace.py:16 in * (glob)
+   *debugstacktrace.py:10 in f (glob)
   hi ...
   from h hidden in g at:
-   *debugstacktrace.py:8  in f (glob)
-   *debugstacktrace.py:11 in g (glob)
+   *debugstacktrace.py:10 in f (glob)
+   *debugstacktrace.py:13 in g (glob)
 
 Test debugcapabilities command:
 

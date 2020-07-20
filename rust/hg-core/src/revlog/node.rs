@@ -208,6 +208,10 @@ impl<'a> NodePrefixRef<'a> {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn is_prefix_of(&self, node: &Node) -> bool {
         if self.is_odd {
             let buf = self.buf;
@@ -242,13 +246,13 @@ impl<'a> NodePrefixRef<'a> {
         } else {
             buf.len()
         };
-        for i in 0..until {
-            if buf[i] != node.data[i] {
-                if buf[i] & 0xf0 == node.data[i] & 0xf0 {
-                    return Some(2 * i + 1);
+        for (i, item) in buf.iter().enumerate().take(until) {
+            if *item != node.data[i] {
+                return if *item & 0xf0 == node.data[i] & 0xf0 {
+                    Some(2 * i + 1)
                 } else {
-                    return Some(2 * i);
-                }
+                    Some(2 * i)
+                };
             }
         }
         if self.is_odd && buf[until] & 0xf0 != node.data[until] & 0xf0 {

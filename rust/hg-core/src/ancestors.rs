@@ -55,19 +55,19 @@ impl<G: Graph> AncestorsIterator<G> {
         let filtered_initrevs = initrevs.into_iter().filter(|&r| r >= stoprev);
         if inclusive {
             let visit: BinaryHeap<Revision> = filtered_initrevs.collect();
-            let seen = visit.iter().map(|&x| x).collect();
+            let seen = visit.iter().cloned().collect();
             return Ok(AncestorsIterator {
-                visit: visit,
-                seen: seen,
-                stoprev: stoprev,
-                graph: graph,
+                visit,
+                seen,
+                stoprev,
+                graph,
             });
         }
         let mut this = AncestorsIterator {
             visit: BinaryHeap::new(),
             seen: HashSet::new(),
-            stoprev: stoprev,
-            graph: graph,
+            stoprev,
+            graph,
         };
         this.seen.insert(NULL_REVISION);
         for rev in filtered_initrevs {
@@ -107,7 +107,7 @@ impl<G: Graph> AncestorsIterator<G> {
     }
 
     pub fn peek(&self) -> Option<Revision> {
-        self.visit.peek().map(|&r| r)
+        self.visit.peek().cloned()
     }
 
     /// Tell if the iterator is about an empty set
@@ -182,8 +182,8 @@ impl<G: Graph + Clone> LazyAncestors<G> {
                 inclusive,
             )?,
             initrevs: v,
-            stoprev: stoprev,
-            inclusive: inclusive,
+            stoprev,
+            inclusive,
         })
     }
 
@@ -211,7 +211,7 @@ impl<G: Graph + Clone> LazyAncestors<G> {
 impl<G: Graph> MissingAncestors<G> {
     pub fn new(graph: G, bases: impl IntoIterator<Item = Revision>) -> Self {
         let mut created = MissingAncestors {
-            graph: graph,
+            graph,
             bases: HashSet::new(),
             max_base: NULL_REVISION,
         };

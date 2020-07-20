@@ -3794,19 +3794,47 @@ def perflrucache(
         fm.end()
 
 
-@command(b'perfwrite', formatteropts)
+@command(
+    b'perfwrite',
+    formatteropts
+    + [
+        (b'', b'write-method', b'write', b'ui write method'),
+        (b'', b'nlines', 100, b'number of lines'),
+        (b'', b'nitems', 100, b'number of items (per line)'),
+        (b'', b'item', b'x', b'item that is written'),
+        (b'', b'batch-line', None, b'pass whole line to write method at once'),
+        (b'', b'flush-line', None, b'flush after each line'),
+    ],
+)
 def perfwrite(ui, repo, **opts):
-    """microbenchmark ui.write
+    """microbenchmark ui.write (and others)
     """
     opts = _byteskwargs(opts)
 
+    write = getattr(ui, _sysstr(opts[b'write_method']))
+    nlines = int(opts[b'nlines'])
+    nitems = int(opts[b'nitems'])
+    item = opts[b'item']
+    batch_line = opts.get(b'batch_line')
+    flush_line = opts.get(b'flush_line')
+
+    if batch_line:
+        line = item * nitems + b'\n'
+
+    def benchmark():
+        for i in pycompat.xrange(nlines):
+            if batch_line:
+                write(line)
+            else:
+                for i in pycompat.xrange(nitems):
+                    write(item)
+                write(b'\n')
+            if flush_line:
+                ui.flush()
+        ui.flush()
+
     timer, fm = gettimer(ui, opts)
-
-    def write():
-        for i in range(100000):
-            ui.writenoi18n(b'Testing write performance\n')
-
-    timer(write)
+    timer(benchmark)
     fm.end()
 
 

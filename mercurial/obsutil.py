@@ -13,6 +13,7 @@ from .i18n import _
 from . import (
     diffutil,
     encoding,
+    error,
     node as nodemod,
     phases,
     pycompat,
@@ -481,14 +482,23 @@ def geteffectflag(source, successors):
     return effects
 
 
-def getobsoleted(repo, tr):
-    """return the set of pre-existing revisions obsoleted by a transaction"""
+def getobsoleted(repo, tr=None, changes=None):
+    """return the set of pre-existing revisions obsoleted by a transaction
+
+    Either the transaction or changes item of the transaction (for hooks)
+    must be provided, but not both.
+    """
+    if (tr is None) == (changes is None):
+        e = b"exactly one of tr and changes must be provided"
+        raise error.ProgrammingError(e)
     torev = repo.unfiltered().changelog.index.get_rev
     phase = repo._phasecache.phase
     succsmarkers = repo.obsstore.successors.get
     public = phases.public
-    addedmarkers = tr.changes[b'obsmarkers']
-    origrepolen = tr.changes[b'origrepolen']
+    if changes is None:
+        changes = tr.changes
+    addedmarkers = changes[b'obsmarkers']
+    origrepolen = changes[b'origrepolen']
     seenrevs = set()
     obsoleted = set()
     for mark in addedmarkers:

@@ -81,7 +81,7 @@ Conflicting rebase:
   rebasing 4:46f0b057b5c0 "L2" (tip)
   merging common
   warning: conflicts while merging common! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
 Insert unsupported advisory merge record:
@@ -148,7 +148,7 @@ earlier than 2.7 by renaming ".hg/rebasestate" temporarily.
   rebasing 4:46f0b057b5c0 "L2" (tip)
   merging common
   warning: conflicts while merging common! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ mv .hg/rebasestate .hg/rebasestate.back
@@ -218,7 +218,7 @@ Rebase and abort without generating new changesets:
   rebasing 4:145842775fec "C1" (tip)
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ hg tglog
@@ -277,7 +277,7 @@ rebase abort should not leave working copy in a merge state if tip-1 is public
   rebasing 3:6c0f977a22d8 "C" (foo tip)
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg abort
   rebase aborted
@@ -315,7 +315,7 @@ user has somehow managed to update to a different revision (issue4009)
 
   $ hg rebase -d @ -b foo --tool=internal:fail
   rebasing 2:070cf4580bb5 "b2" (foo tip)
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ mv .hg/rebasestate ./ # so we're allowed to hg up like in mercurial <2.6.3
@@ -462,7 +462,7 @@ during a rebase (issue4661)
 
   $ hg rebase -d 1 --tool 'internal:fail'
   rebasing 2:e4ea5cdc9789 "conflicting 1"
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg abort
   rebase aborted
@@ -503,7 +503,7 @@ commit will cause merge conflict on rebase
   $ hg rebase -d 'public()' --tool :merge -q
   note: not rebasing 3:0682fd3dabf5 "disappear draft", its destination already has all its changes
   warning: conflicts while merging root! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg abort
   rebase aborted

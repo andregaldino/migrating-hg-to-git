@@ -98,7 +98,6 @@ if ispy3:
     import codecs
     import functools
     import io
-    import locale
     import struct
 
     if os.name == r'nt' and sys.version_info >= (3, 6):
@@ -143,29 +142,12 @@ if ispy3:
 
     long = int
 
-    # Warning: sys.stdout.buffer and sys.stderr.buffer do not necessarily have
-    # the same buffering behavior as sys.stdout and sys.stderr. The interpreter
-    # initializes them with block-buffered streams or unbuffered streams (when
-    # the -u option or the PYTHONUNBUFFERED environment variable is set), never
-    # with a line-buffered stream.
-    # TODO: .buffer might not exist if std streams were replaced; we'll need
-    # a silly wrapper to make a bytes stream backed by a unicode one.
-    stdin = sys.stdin.buffer
-    stdout = sys.stdout.buffer
-    stderr = sys.stderr.buffer
-
     if getattr(sys, 'argv', None) is not None:
         # On POSIX, the char** argv array is converted to Python str using
-        # Py_DecodeLocale(). The inverse of this is Py_EncodeLocale(), which isn't
-        # directly callable from Python code. So, we need to emulate it.
-        # Py_DecodeLocale() calls mbstowcs() and falls back to mbrtowc() with
-        # surrogateescape error handling on failure. These functions take the
-        # current system locale into account. So, the inverse operation is to
-        # .encode() using the system locale's encoding and using the
-        # surrogateescape error handler. The only tricky part here is getting
-        # the system encoding correct, since `locale.getlocale()` can return
-        # None. We fall back to the filesystem encoding if lookups via `locale`
-        # fail, as this seems like a reasonable thing to do.
+        # Py_DecodeLocale(). The inverse of this is Py_EncodeLocale(), which
+        # isn't directly callable from Python code. In practice, os.fsencode()
+        # can be used instead (this is recommended by Python's documentation
+        # for sys.argv).
         #
         # On Windows, the wchar_t **argv is passed into the interpreter as-is.
         # Like POSIX, we need to emulate what Py_EncodeLocale() would do. But
@@ -178,19 +160,7 @@ if ispy3:
         if os.name == r'nt':
             sysargv = [a.encode("mbcs", "ignore") for a in sys.argv]
         else:
-
-            def getdefaultlocale_if_known():
-                try:
-                    return locale.getdefaultlocale()
-                except ValueError:
-                    return None, None
-
-            encoding = (
-                locale.getlocale()[1]
-                or getdefaultlocale_if_known()[1]
-                or sys.getfilesystemencoding()
-            )
-            sysargv = [a.encode(encoding, "surrogateescape") for a in sys.argv]
+            sysargv = [fsencode(a) for a in sys.argv]
 
     bytechr = struct.Struct('>B').pack
     byterepr = b'%r'.__mod__
@@ -495,9 +465,6 @@ else:
     osaltsep = os.altsep
     osdevnull = os.devnull
     long = long
-    stdin = sys.stdin
-    stdout = sys.stdout
-    stderr = sys.stderr
     if getattr(sys, 'argv', None) is not None:
         sysargv = sys.argv
     sysplatform = sys.platform

@@ -86,6 +86,10 @@ phabupdate with an accept:
   [255]
   $ hg phabupdate --accept D7913 -m 'LGTM' --test-vcr "$VCR/accept-7913.json"
 
+phabupdate with --plan-changes:
+
+  $ hg phabupdate --plan-changes D6876 --test-vcr "$VCR/phabupdate-change-6876.json"
+
 Create a differential diff:
   $ HGENCODING=utf-8; export HGENCODING
   $ echo alpha > alpha
@@ -592,7 +596,7 @@ Phabimport accepts multiple DREVSPECs
 Phabsend requires a linear range of commits
 
   $ hg phabsend -r 0+2+3
-  abort: cannot phabsend multiple head revisions: c44b38f24a45
+  abort: cannot phabsend multiple head revisions: c44b38f24a45 aaef04066140
   (the revisions must form a linear chain)
   [255]
 
@@ -670,7 +674,7 @@ The folding of immutable commits works...
   NEW - a959a3f69d8d: one: first commit to review
   NEW - 24a4438154ba: two: second commit to review
   NEW - d235829e802c: 3: a commit with no detailed message
-  Send the above changes to https://phab.mercurial-scm.org/ (yn)? y
+  Send the above changes to https://phab.mercurial-scm.org/ (Y/n)? y
   D8387 - created - a959a3f69d8d: one: first commit to review
   D8387 - created - 24a4438154ba: two: second commit to review
   D8387 - created - d235829e802c: 3: a commit with no detailed message
@@ -734,7 +738,7 @@ updated.
   D8387 - 602c4e738243: one: first commit to review
   D8387 - 0124e5474c88: two: second commit to review
   D8387 - e4edb1fe3565: 3: a commit with no detailed message
-  Send the above changes to https://phab.mercurial-scm.org/ (yn)? y
+  Send the above changes to https://phab.mercurial-scm.org/ (Y/n)? y
   D8387 - updated - 602c4e738243: one: first commit to review
   D8387 - updated - 0124e5474c88: two: second commit to review
   D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message

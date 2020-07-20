@@ -238,8 +238,8 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
 
     def decorate(fn):
         def inner(*args, **kwargs):
-            cassette = pycompat.fsdecode(kwargs.pop('test_vcr', None))
-            if cassette:
+            if kwargs.get('test_vcr'):
+                cassette = pycompat.fsdecode(kwargs.pop('test_vcr'))
                 import hgdemandimport
 
                 with hgdemandimport.deactivated():
@@ -1311,8 +1311,8 @@ def phabsend(ui, repo, *revs, **opts):
     # --fold option implies this, and the auto restacking of orphans requires
     # it.  Otherwise A+C in A->B->C will cause B to be orphaned, and C' to
     # get A' as a parent.
-    def _fail_nonlinear_revs(revs, skiprev, revtype):
-        badnodes = [repo[r].node() for r in revs if r != skiprev]
+    def _fail_nonlinear_revs(revs, revtype):
+        badnodes = [repo[r].node() for r in revs]
         raise error.Abort(
             _(b"cannot phabsend multiple %s revisions: %s")
             % (revtype, scmutil.nodesummaries(repo, badnodes)),
@@ -1321,11 +1321,11 @@ def phabsend(ui, repo, *revs, **opts):
 
     heads = repo.revs(b'heads(%ld)', revs)
     if len(heads) > 1:
-        _fail_nonlinear_revs(heads, heads.max(), b"head")
+        _fail_nonlinear_revs(heads, b"head")
 
     roots = repo.revs(b'roots(%ld)', revs)
     if len(roots) > 1:
-        _fail_nonlinear_revs(roots, roots.min(), b"root")
+        _fail_nonlinear_revs(roots, b"root")
 
     fold = opts.get(b'fold')
     if fold:
@@ -1650,7 +1650,7 @@ def _confirmbeforesend(repo, revs, oldmap):
         )
 
     if ui.promptchoice(
-        _(b'Send the above changes to %s (yn)?$$ &Yes $$ &No') % url
+        _(b'Send the above changes to %s (Y/n)?$$ &Yes $$ &No') % url
     ):
         return False
 
@@ -2162,8 +2162,14 @@ def phabimport(ui, repo, *specs, **opts):
     [
         (b'', b'accept', False, _(b'accept revisions')),
         (b'', b'reject', False, _(b'reject revisions')),
+        (b'', b'request-review', False, _(b'request review on revisions')),
         (b'', b'abandon', False, _(b'abandon revisions')),
         (b'', b'reclaim', False, _(b'reclaim revisions')),
+        (b'', b'close', False, _(b'close revisions')),
+        (b'', b'reopen', False, _(b'reopen revisions')),
+        (b'', b'plan-changes', False, _(b'plan changes for revisions')),
+        (b'', b'resign', False, _(b'resign as a reviewer from revisions')),
+        (b'', b'commandeer', False, _(b'commandeer revisions')),
         (b'm', b'comment', b'', _(b'comment on the last revision')),
     ],
     _(b'DREVSPEC... [OPTIONS]'),
@@ -2176,7 +2182,19 @@ def phabupdate(ui, repo, *specs, **opts):
     DREVSPEC selects revisions. See :hg:`help phabread` for its usage.
     """
     opts = pycompat.byteskwargs(opts)
-    flags = [n for n in b'accept reject abandon reclaim'.split() if opts.get(n)]
+    transactions = [
+        b'abandon',
+        b'accept',
+        b'close',
+        b'commandeer',
+        b'plan-changes',
+        b'reclaim',
+        b'reject',
+        b'reopen',
+        b'request-review',
+        b'resign',
+    ]
+    flags = [n for n in transactions if opts.get(n.replace(b'-', b'_'))]
     if len(flags) > 1:
         raise error.Abort(_(b'%s cannot be used together') % b', '.join(flags))
 

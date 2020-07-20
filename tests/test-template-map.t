@@ -675,20 +675,20 @@ test CBOR style:
   > from __future__ import absolute_import
   > from mercurial import (
   >     dispatch,
-  >     pycompat,
   > )
   > from mercurial.utils import (
   >     cborutil,
+  >     procutil,
   >     stringutil,
   > )
   > dispatch.initstdio()
-  > data = pycompat.stdin.read()
+  > data = procutil.stdin.read()
   > # our CBOR decoder doesn't support parsing indefinite-length arrays,
   > # but the log output is indefinite stream by nature.
   > assert data[:1] == cborutil.BEGIN_INDEFINITE_ARRAY
   > assert data[-1:] == cborutil.BREAK
   > items = cborutil.decodeall(data[1:-1])
-  > pycompat.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
+  > procutil.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
   > EOF
 
   $ hg log -k nosuch -Tcbor | "$PYTHON" "$TESTTMP/decodecborarray.py"

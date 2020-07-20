@@ -471,7 +471,7 @@ In-memory rebase that fails due to merge conflicts
   rebasing 4:e860deea161a "e"
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --abort
   saved backup bundle to $TESTTMP/repo3/.hg/strip-backup/c1e524d4287c-f91f82e1-backup.hg
@@ -863,7 +863,7 @@ Test rebasing when the file we are merging in destination is empty
   rebasing 2:fb62b706688e "add b to foo" (tip)
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ cd $TESTTMP
@@ -897,7 +897,7 @@ Test rebasing when we're in the middle of a rebase already
   rebasing 2:b4d249fbf8dd "bye from foo"
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase -r 3 -d 1 -t:merge3
   abort: rebase in progress
@@ -920,3 +920,46 @@ Test rebasing when we're in the middle of a rebase already
   |/   foo
   o  0: r0
      r0
+
+  $ cd ..
+
+Changesets that become empty should not be committed. Merges are not empty by
+definition.
+
+  $ hg init keep_merge
+  $ cd keep_merge
+  $ echo base > base; hg add base; hg ci -m base
+  $ echo test > test; hg add test; hg ci -m a
+  $ hg up 0 -q
+  $ echo test > test; hg add test; hg ci -m b -q
+  $ hg up 0 -q
+  $ echo test > test; hg add test; hg ci -m c -q
+  $ hg up 1 -q
+  $ hg merge 2 -q
+  $ hg ci -m merge
+  $ hg up null -q
+  $ hg tglog
+  o    4: 59c8292117b1 'merge'
+  |\
+  | | o  3: 531f80391e4a 'c'
+  | | |
+  | o |  2: 0194f1db184a 'b'
+  | |/
+  o /  1: 6f252845ea45 'a'
+  |/
+  o  0: d20a80d4def3 'base'
+  
+  $ hg rebase -s 2 -d 3
+  rebasing 2:0194f1db184a "b"
+  note: not rebasing 2:0194f1db184a "b", its destination already has all its changes
+  rebasing 4:59c8292117b1 "merge" (tip)
+  saved backup bundle to $TESTTMP/keep_merge/.hg/strip-backup/0194f1db184a-aee31d03-rebase.hg
+  $ hg tglog
+  o    3: 506e2454484b 'merge'
+  |\
+  | o  2: 531f80391e4a 'c'
+  | |
+  o |  1: 6f252845ea45 'a'
+  |/
+  o  0: d20a80d4def3 'base'
+  

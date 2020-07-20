@@ -1864,12 +1864,12 @@ Test hexadecimal revision
   $ log 'id(2)'
   $ log 'id(8)'
   3
-  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'id(x8)'
+  $ hg log --template '{rev}\n' -r 'id(x8)'
   3
-  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'x8'
+  $ hg log --template '{rev}\n' -r 'x8'
   3
-  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'id(x)'
-  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'x'
+  $ hg log --template '{rev}\n' -r 'id(x)'
+  $ hg log --template '{rev}\n' -r 'x'
   abort: 00changelog.i@: ambiguous identifier!
   [255]
   $ log 'id(23268)'

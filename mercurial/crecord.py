@@ -20,6 +20,7 @@ from .pycompat import (
     open,
 )
 from . import (
+    diffhelper,
     encoding,
     error,
     patch as patchmod,
@@ -63,15 +64,7 @@ try:
 
     curses.error
 except (ImportError, AttributeError):
-    # I have no idea if wcurses works with crecord...
-    try:
-        import wcurses as curses
-
-        curses.error
-    except (ImportError, AttributeError):
-        # wcurses is not shipped on Windows by default, or python is not
-        # compiled with curses
-        curses = False
+    curses = False
 
 
 class fallbackerror(error.Abort):
@@ -424,7 +417,7 @@ class uihunk(patchnode):
         contextlen = (
             len(self.before) + len(self.after) + removedconvertedtocontext
         )
-        if self.after and self.after[-1] == b'\\ No newline at end of file\n':
+        if self.after and self.after[-1] == diffhelper.MISSING_NEWLINE_MARKER:
             contextlen -= 1
         fromlen = contextlen + self.removed
         tolen = contextlen + self.added
@@ -508,8 +501,12 @@ class uihunk(patchnode):
         """
         dels = []
         adds = []
+        noeol = False
         for line in self.changedlines:
             text = line.linetext
+            if line.linetext == diffhelper.MISSING_NEWLINE_MARKER:
+                noeol = True
+                break
             if line.applied:
                 if text.startswith(b'+'):
                     dels.append(text[1:])
@@ -519,6 +516,9 @@ class uihunk(patchnode):
                 dels.append(text[1:])
                 adds.append(text[1:])
         hunk = [b'-%s' % l for l in dels] + [b'+%s' % l for l in adds]
+        if noeol and hunk:
+            # Remove the newline from the end of the hunk.
+            hunk[-1] = hunk[-1][:-1]
         h = self._hunk
         return patchmod.recordhunk(
             h.header, h.toline, h.fromline, h.proc, h.before, hunk, h.after

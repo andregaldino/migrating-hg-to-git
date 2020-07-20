@@ -313,7 +313,7 @@ class _httprequesthandlerssl(_httprequesthandler):
         try:
             from .. import sslutil
 
-            sslutil.modernssl
+            sslutil.wrapserversocket
         except ImportError:
             raise error.Abort(_(b"SSL support is unavailable"))
 

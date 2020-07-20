@@ -836,7 +836,15 @@ class queue(object):
         stat = opts.get(b'stat')
         m = scmutil.match(repo[node1], files, opts)
         logcmdutil.diffordiffstat(
-            self.ui, repo, diffopts, node1, node2, m, changes, stat, fp
+            self.ui,
+            repo,
+            diffopts,
+            repo[node1],
+            repo[node2],
+            m,
+            changes,
+            stat,
+            fp,
         )
 
     def mergeone(self, repo, mergeq, head, patch, rev, diffopts):

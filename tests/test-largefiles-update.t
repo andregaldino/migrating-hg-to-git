@@ -593,7 +593,7 @@ it is aborted by conflict.
   what do you want to do? o
   merging normal1
   warning: conflicts while merging normal1! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ cat .hglf/large1
   58e24f733a964da346e2407a2bee99d9001184f5

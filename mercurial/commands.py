@@ -46,6 +46,7 @@ from . import (
     hg,
     logcmdutil,
     merge as mergemod,
+    mergestate as mergestatemod,
     narrowspec,
     obsolete,
     obsutil,
@@ -2183,7 +2184,8 @@ def config(ui, repo, *values, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'edit') or opts.get(b'local') or opts.get(b'global'):
+    editopts = (b'edit', b'local', b'global')
+    if any(opts.get(o) for o in editopts):
         if opts.get(b'local') and opts.get(b'global'):
             raise error.Abort(_(b"can't use --local and --global together"))
 
@@ -2350,7 +2352,7 @@ def copy(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if errors are encountered.
     """
     opts = pycompat.byteskwargs(opts)
-    with repo.wlock(False):
+    with repo.wlock():
         return cmdutil.copy(ui, repo, pats, opts)
 
 
@@ -2475,26 +2477,27 @@ def diff(ui, repo, *pats, **opts):
     Returns 0 on success.
     """
 
+    cmdutil.check_at_most_one_arg(opts, 'rev', 'change')
     opts = pycompat.byteskwargs(opts)
     revs = opts.get(b'rev')
     change = opts.get(b'change')
     stat = opts.get(b'stat')
     reverse = opts.get(b'reverse')
 
-    if revs and change:
-        msg = _(b'cannot specify --rev and --change at the same time')
-        raise error.Abort(msg)
-    elif change:
+    if change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
         ctx2 = scmutil.revsingle(repo, change, None)
         ctx1 = ctx2.p1()
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, b'nowarn')
         ctx1, ctx2 = scmutil.revpair(repo, revs)
-    node1, node2 = ctx1.node(), ctx2.node()
 
     if reverse:
-        node1, node2 = node2, node1
+        ctxleft = ctx2
+        ctxright = ctx1
+    else:
+        ctxleft = ctx1
+        ctxright = ctx2
 
     diffopts = patch.diffallopts(ui, opts)
     m = scmutil.match(ctx2, pats, opts)
@@ -2504,8 +2507,8 @@ def diff(ui, repo, *pats, **opts):
         ui,
         repo,
         diffopts,
-        node1,
-        node2,
+        ctxleft,
+        ctxright,
         m,
         stat=stat,
         listsubrepos=opts.get(b'subrepos'),
@@ -2980,68 +2983,47 @@ def _dograft(ui, repo, *revs, **opts):
         editform=b'graft', **pycompat.strkwargs(opts)
     )
 
+    cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
+
     cont = False
     if opts.get(b'no_commit'):
-        if opts.get(b'edit'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --edit together")
-            )
-        if opts.get(b'currentuser'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --currentuser together")
-            )
-        if opts.get(b'currentdate'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --currentdate together")
-            )
-        if opts.get(b'log'):
-            raise error.Abort(
-                _(b"cannot specify --no-commit and --log together")
-            )
+        cmdutil.check_incompatible_arguments(
+            opts,
+            b'no_commit',
+            [b'edit', b'currentuser', b'currentdate', b'log'],
+        )
 
     graftstate = statemod.cmdstate(repo, b'graftstate')
 
     if opts.get(b'stop'):
-        if opts.get(b'continue'):
-            raise error.Abort(
-                _(b"cannot use '--continue' and '--stop' together")
-            )
-        if opts.get(b'abort'):
-            raise error.Abort(_(b"cannot use '--abort' and '--stop' together"))
-
-        if any(
-            (
-                opts.get(b'edit'),
-                opts.get(b'log'),
-                opts.get(b'user'),
-                opts.get(b'date'),
-                opts.get(b'currentdate'),
-                opts.get(b'currentuser'),
-                opts.get(b'rev'),
-            )
-        ):
-            raise error.Abort(_(b"cannot specify any other flag with '--stop'"))
+        cmdutil.check_incompatible_arguments(
+            opts,
+            b'stop',
+            [
+                b'edit',
+                b'log',
+                b'user',
+                b'date',
+                b'currentdate',
+                b'currentuser',
+                b'rev',
+            ],
+        )
         return _stopgraft(ui, repo, graftstate)
     elif opts.get(b'abort'):
-        if opts.get(b'continue'):
-            raise error.Abort(
-                _(b"cannot use '--continue' and '--abort' together")
-            )
-        if any(
-            (
-                opts.get(b'edit'),
-                opts.get(b'log'),
-                opts.get(b'user'),
-                opts.get(b'date'),
-                opts.get(b'currentdate'),
-                opts.get(b'currentuser'),
-                opts.get(b'rev'),
-            )
-        ):
-            raise error.Abort(
-                _(b"cannot specify any other flag with '--abort'")
-            )
-
+        cmdutil.check_incompatible_arguments(
+            opts,
+            b'abort',
+            [
+                b'edit',
+                b'log',
+                b'user',
+                b'date',
+                b'currentdate',
+                b'currentuser',
+                b'rev',
+            ],
+        )
         return cmdutil.abortgraft(ui, repo, graftstate)
     elif opts.get(b'continue'):
         cont = True
@@ -3431,8 +3413,11 @@ def grep(ui, repo, pattern, *pats, **opts):
                 m = regexp.search(self.line, p)
                 if not m:
                     break
-                yield m.span()
-                p = m.end()
+                if m.end() == p:
+                    p += 1
+                else:
+                    yield m.span()
+                    p = m.end()
 
     matches = {}
     copies = {}
@@ -3578,56 +3563,68 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     getrenamed = scmutil.getrenamedfn(repo)
 
-    def get_file_content(filename, filelog, filenode, context, revision):
-        try:
-            content = filelog.read(filenode)
-        except error.WdirUnsupported:
-            content = context[filename].data()
-        except error.CensoredNodeError:
-            content = None
-            ui.warn(
-                _(b'cannot search in censored file: %(filename)s:%(revnum)s\n')
-                % {b'filename': filename, b'revnum': pycompat.bytestr(revision)}
-            )
-        return content
+    def readfile(ctx, fn):
+        rev = ctx.rev()
+        if rev is None:
+            fctx = ctx[fn]
+            try:
+                return fctx.data()
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+        else:
+            flog = getfile(fn)
+            fnode = ctx.filenode(fn)
+            try:
+                return flog.read(fnode)
+            except error.CensoredNodeError:
+                ui.warn(
+                    _(
+                        b'cannot search in censored file: %(filename)s:%(revnum)s\n'
+                    )
+                    % {b'filename': fn, b'revnum': pycompat.bytestr(rev),}
+                )
 
     def prep(ctx, fns):
         rev = ctx.rev()
         pctx = ctx.p1()
-        parent = pctx.rev()
         matches.setdefault(rev, {})
-        matches.setdefault(parent, {})
+        if diff:
+            parent = pctx.rev()
+            matches.setdefault(parent, {})
         files = revfiles.setdefault(rev, [])
-        for fn in fns:
-            flog = getfile(fn)
-            try:
-                fnode = ctx.filenode(fn)
-            except error.LookupError:
-                continue
+        if rev is None:
+            # in `hg grep pattern`, 2/3 of the time is spent is spent in
+            # pathauditor checks without this in mozilla-central
+            contextmanager = repo.wvfs.audit.cached
+        else:
+            contextmanager = util.nullcontextmanager
+        with contextmanager():
+            for fn in fns:
+                # fn might not exist in the revision (could be a file removed by
+                # the revision). We could check `fn not in ctx` even when rev is
+                # None, but it's less racy to protect againt that in readfile.
+                if rev is not None and fn not in ctx:
+                    continue
 
-            copy = None
-            if follow:
-                copy = getrenamed(fn, rev)
-                if copy:
-                    copies.setdefault(rev, {})[fn] = copy
-                    if fn in skip:
-                        skip.add(copy)
-            if fn in skip:
-                continue
-            files.append(fn)
+                copy = None
+                if follow:
+                    copy = getrenamed(fn, rev)
+                    if copy:
+                        copies.setdefault(rev, {})[fn] = copy
+                        if fn in skip:
+                            skip.add(copy)
+                if fn in skip:
+                    continue
+                files.append(fn)
 
-            if fn not in matches[rev]:
-                content = get_file_content(fn, flog, fnode, ctx, rev)
-                grepbody(fn, rev, content)
+                if fn not in matches[rev]:
+                    grepbody(fn, rev, readfile(ctx, fn))
 
-            pfn = copy or fn
-            if pfn not in matches[parent]:
-                try:
-                    pfnode = pctx.filenode(pfn)
-                    pcontent = get_file_content(pfn, flog, pfnode, pctx, parent)
-                    grepbody(pfn, parent, pcontent)
-                except error.LookupError:
-                    pass
+                if diff:
+                    pfn = copy or fn
+                    if pfn not in matches[parent] and pfn in pctx:
+                        grepbody(pfn, parent, readfile(pctx, pfn))
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
@@ -5812,7 +5809,7 @@ def rename(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if errors are encountered.
     """
     opts = pycompat.byteskwargs(opts)
-    with repo.wlock(False):
+    with repo.wlock():
         return cmdutil.copy(ui, repo, pats, opts, rename=True)
 
 
@@ -5934,7 +5931,7 @@ def resolve(ui, repo, *pats, **opts):
     if show:
         ui.pager(b'resolve')
         fm = ui.formatter(b'resolve', opts)
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
         wctx = repo[None]
         m = scmutil.match(wctx, pats, opts)
 
@@ -5942,14 +5939,20 @@ def resolve(ui, repo, *pats, **opts):
         # as 'P'.  Resolved path conflicts show as 'R', the same as normal
         # resolved conflicts.
         mergestateinfo = {
-            mergemod.MERGE_RECORD_UNRESOLVED: (b'resolve.unresolved', b'U'),
-            mergemod.MERGE_RECORD_RESOLVED: (b'resolve.resolved', b'R'),
-            mergemod.MERGE_RECORD_UNRESOLVED_PATH: (
+            mergestatemod.MERGE_RECORD_UNRESOLVED: (
+                b'resolve.unresolved',
+                b'U',
+            ),
+            mergestatemod.MERGE_RECORD_RESOLVED: (b'resolve.resolved', b'R'),
+            mergestatemod.MERGE_RECORD_UNRESOLVED_PATH: (
                 b'resolve.unresolved',
                 b'P',
             ),
-            mergemod.MERGE_RECORD_RESOLVED_PATH: (b'resolve.resolved', b'R'),
-            mergemod.MERGE_RECORD_DRIVER_RESOLVED: (
+            mergestatemod.MERGE_RECORD_RESOLVED_PATH: (
+                b'resolve.resolved',
+                b'R',
+            ),
+            mergestatemod.MERGE_RECORD_DRIVER_RESOLVED: (
                 b'resolve.driverresolved',
                 b'D',
             ),
@@ -5959,7 +5962,7 @@ def resolve(ui, repo, *pats, **opts):
             if not m(f):
                 continue
 
-            if ms[f] == mergemod.MERGE_RECORD_MERGED_OTHER:
+            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
                 continue
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
@@ -5971,7 +5974,7 @@ def resolve(ui, repo, *pats, **opts):
         return 0
 
     with repo.wlock():
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
 
         if not (ms.active() or repo.dirstate.p2() != nullid):
             raise error.Abort(
@@ -5982,7 +5985,7 @@ def resolve(ui, repo, *pats, **opts):
 
         if (
             ms.mergedriver
-            and ms.mdstate() == mergemod.MERGE_DRIVER_STATE_UNMARKED
+            and ms.mdstate() == mergestatemod.MERGE_DRIVER_STATE_UNMARKED
         ):
             proceed = mergemod.driverpreprocess(repo, ms, wctx)
             ms.commit()
@@ -6008,12 +6011,12 @@ def resolve(ui, repo, *pats, **opts):
 
             didwork = True
 
-            if ms[f] == mergemod.MERGE_RECORD_MERGED_OTHER:
+            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
                 continue
 
             # don't let driver-resolved files be marked, and run the conclude
             # step if asked to resolve
-            if ms[f] == mergemod.MERGE_RECORD_DRIVER_RESOLVED:
+            if ms[f] == mergestatemod.MERGE_RECORD_DRIVER_RESOLVED:
                 exact = m.exact(f)
                 if mark:
                     if exact:
@@ -6033,14 +6036,14 @@ def resolve(ui, repo, *pats, **opts):
 
             # path conflicts must be resolved manually
             if ms[f] in (
-                mergemod.MERGE_RECORD_UNRESOLVED_PATH,
-                mergemod.MERGE_RECORD_RESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_UNRESOLVED_PATH,
+                mergestatemod.MERGE_RECORD_RESOLVED_PATH,
             ):
                 if mark:
-                    ms.mark(f, mergemod.MERGE_RECORD_RESOLVED_PATH)
+                    ms.mark(f, mergestatemod.MERGE_RECORD_RESOLVED_PATH)
                 elif unmark:
-                    ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED_PATH)
-                elif ms[f] == mergemod.MERGE_RECORD_UNRESOLVED_PATH:
+                    ms.mark(f, mergestatemod.MERGE_RECORD_UNRESOLVED_PATH)
+                elif ms[f] == mergestatemod.MERGE_RECORD_UNRESOLVED_PATH:
                     ui.warn(
                         _(b'%s: path conflict must be resolved manually\n')
                         % uipathfn(f)
@@ -6052,12 +6055,12 @@ def resolve(ui, repo, *pats, **opts):
                     fdata = repo.wvfs.tryread(f)
                     if (
                         filemerge.hasconflictmarkers(fdata)
-                        and ms[f] != mergemod.MERGE_RECORD_RESOLVED
+                        and ms[f] != mergestatemod.MERGE_RECORD_RESOLVED
                     ):
                         hasconflictmarkers.append(f)
-                ms.mark(f, mergemod.MERGE_RECORD_RESOLVED)
+                ms.mark(f, mergestatemod.MERGE_RECORD_RESOLVED)
             elif unmark:
-                ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED)
+                ms.mark(f, mergestatemod.MERGE_RECORD_UNRESOLVED)
             else:
                 # backup pre-resolve (merge uses .orig for its own purposes)
                 a = repo.wjoin(f)
@@ -6126,7 +6129,8 @@ def resolve(ui, repo, *pats, **opts):
                     raise
 
         ms.commit()
-        ms.recordactions()
+        branchmerge = repo.dirstate.p2() != nullid
+        mergestatemod.recordupdates(repo, ms.actions(), branchmerge, None)
 
         if not didwork and pats:
             hint = None
@@ -6660,7 +6664,7 @@ _NOTTERSE = b'nothing'
         (b'm', b'modified', None, _(b'show only modified files')),
         (b'a', b'added', None, _(b'show only added files')),
         (b'r', b'removed', None, _(b'show only removed files')),
-        (b'd', b'deleted', None, _(b'show only deleted (but tracked) files')),
+        (b'd', b'deleted', None, _(b'show only missing files')),
         (b'c', b'clean', None, _(b'show only files without changes')),
         (b'u', b'unknown', None, _(b'show only unknown (not tracked) files')),
         (b'i', b'ignored', None, _(b'show only ignored files')),
@@ -6791,6 +6795,7 @@ def status(ui, repo, *pats, **opts):
 
     """
 
+    cmdutil.check_at_most_one_arg(opts, 'rev', 'change')
     opts = pycompat.byteskwargs(opts)
     revs = opts.get(b'rev')
     change = opts.get(b'change')
@@ -6801,10 +6806,7 @@ def status(ui, repo, *pats, **opts):
         else:
             terse = ui.config(b'commands', b'status.terse')
 
-    if revs and change:
-        msg = _(b'cannot specify --rev and --change at the same time')
-        raise error.Abort(msg)
-    elif revs and terse:
+    if revs and terse:
         msg = _(b'cannot use --terse with --rev')
         raise error.Abort(msg)
     elif change:
@@ -6940,7 +6942,7 @@ def summary(ui, repo, **opts):
     marks = []
 
     try:
-        ms = mergemod.mergestate.read(repo)
+        ms = mergestatemod.mergestate.read(repo)
     except error.UnsupportedMergeRecords as e:
         s = b' '.join(e.recordtypes)
         ui.warn(
@@ -7809,7 +7811,7 @@ def version_(ui, **opts):
     names = []
     vers = []
     isinternals = []
-    for name, module in extensions.extensions():
+    for name, module in sorted(extensions.extensions()):
         names.append(name)
         vers.append(extensions.moduleversion(module) or None)
         isinternals.append(extensions.ismoduleinternal(module))

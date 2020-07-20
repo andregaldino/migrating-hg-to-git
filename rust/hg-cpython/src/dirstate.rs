@@ -133,7 +133,8 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
                 last_normal_time: i64,
                 list_clean: bool,
                 list_ignored: bool,
-                list_unknown: bool
+                list_unknown: bool,
+                collect_traversed_dirs: bool
             )
         ),
     )?;

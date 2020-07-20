@@ -28,12 +28,13 @@ from .pycompat import (
     open,
 )
 from . import (
-    copies,
     dagop,
     encoding,
     error,
     fileset,
     match as matchmod,
+    mergestate as mergestatemod,
+    metadata,
     obsolete as obsmod,
     patch,
     pathutil,
@@ -299,7 +300,7 @@ class basectx(object):
 
     @propertycache
     def _copies(self):
-        return copies.computechangesetcopies(self)
+        return metadata.computechangesetcopies(self)
 
     def p1copies(self):
         return self._copies[0]
@@ -474,6 +475,20 @@ class basectx(object):
 
         return r
 
+    def mergestate(self, clean=False):
+        """Get a mergestate object for this context."""
+        raise NotImplementedError(
+            '%s does not implement mergestate()' % self.__class__
+        )
+
+    def isempty(self):
+        return not (
+            len(self.parents()) > 1
+            or self.branch() != self.p1().branch()
+            or self.closesbranch()
+            or self.files()
+        )
+
 
 class changectx(basectx):
     """A changecontext object makes access to data related to a particular
@@ -582,7 +597,7 @@ class changectx(basectx):
                 filesadded = None
         if filesadded is None:
             if compute_on_none:
-                filesadded = copies.computechangesetfilesadded(self)
+                filesadded = metadata.computechangesetfilesadded(self)
             else:
                 filesadded = []
         return filesadded
@@ -601,7 +616,7 @@ class changectx(basectx):
                 filesremoved = None
         if filesremoved is None:
             if compute_on_none:
-                filesremoved = copies.computechangesetfilesremoved(self)
+                filesremoved = metadata.computechangesetfilesremoved(self)
             else:
                 filesremoved = []
         return filesremoved
@@ -2009,6 +2024,11 @@ class workingctx(committablectx):
 
         sparse.aftercommit(self._repo, node)
 
+    def mergestate(self, clean=False):
+        if clean:
+            return mergestatemod.mergestate.clean(self._repo)
+        return mergestatemod.mergestate.read(self._repo)
+
 
 class committablefilectx(basefilectx):
     """A committablefilectx provides common functionality for a file context
@@ -2310,7 +2330,7 @@ class overlayworkingctx(committablectx):
                 return self._cache[path][b'flags']
             else:
                 raise error.ProgrammingError(
-                    b"No such file or directory: %s" % self._path
+                    b"No such file or directory: %s" % path
                 )
         else:
             return self._wrappedctx[path].flags()
@@ -2427,7 +2447,7 @@ class overlayworkingctx(committablectx):
                 return len(self._cache[path][b'data'])
             else:
                 raise error.ProgrammingError(
-                    b"No such file or directory: %s" % self._path
+                    b"No such file or directory: %s" % path
                 )
         return self._wrappedctx[path].size()
 
@@ -2507,47 +2527,8 @@ class overlayworkingctx(committablectx):
     def isdirty(self, path):
         return path in self._cache
 
-    def isempty(self):
-        # We need to discard any keys that are actually clean before the empty
-        # commit check.
-        self._compact()
-        return len(self._cache) == 0
-
     def clean(self):
         self._cache = {}
-
-    def _compact(self):
-        """Removes keys from the cache that are actually clean, by comparing
-        them with the underlying context.
-
-        This can occur during the merge process, e.g. by passing --tool :local
-        to resolve a conflict.
-        """
-        keys = []
-        # This won't be perfect, but can help performance significantly when
-        # using things like remotefilelog.
-        scmutil.prefetchfiles(
-            self.repo(),
-            [self.p1().rev()],
-            scmutil.matchfiles(self.repo(), self._cache.keys()),
-        )
-
-        for path in self._cache.keys():
-            cache = self._cache[path]
-            try:
-                underlying = self._wrappedctx[path]
-                if (
-                    underlying.data() == cache[b'data']
-                    and underlying.flags() == cache[b'flags']
-                ):
-                    keys.append(path)
-            except error.ManifestLookupError:
-                # Path not in the underlying manifest (created).
-                continue
-
-        for path in keys:
-            del self._cache[path]
-        return keys
 
     def _markdirty(
         self, path, exists, data=None, date=None, flags=b'', copied=None
@@ -2866,6 +2847,11 @@ class memctx(committablectx):
                 removed.append(f)
 
         return scmutil.status(modified, added, removed, [], [], [], [])
+
+    def parents(self):
+        if self._parents[1].node() == nullid:
+            return [self._parents[0]]
+        return self._parents
 
 
 class memfilectx(committablefilectx):

@@ -1395,6 +1395,9 @@ class imanifestlog(interfaceutil.Interface):
         Raises ``error.LookupError`` if the node is not known.
         """
 
+    def update_caches(transaction):
+        """update whatever cache are relevant for the used storage."""
+
 
 class ilocalrepositoryfilestorage(interfaceutil.Interface):
     """Local repository sub-interface providing access to tracked file storage.

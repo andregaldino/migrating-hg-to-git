@@ -617,8 +617,8 @@ class hgsubrepo(abstractsubrepo):
                 ui,
                 self._repo,
                 diffopts,
-                node1,
-                node2,
+                self._repo[node1],
+                self._repo[node2],
                 match,
                 prefix=prefix,
                 listsubrepos=True,
@@ -639,7 +639,7 @@ class hgsubrepo(abstractsubrepo):
         rev = self._state[1]
         ctx = self._repo[rev]
         scmutil.prefetchfiles(
-            self._repo, [ctx.rev()], scmutil.matchfiles(self._repo, files)
+            self._repo, [(ctx.rev(), scmutil.matchfiles(self._repo, files))]
         )
         total = abstractsubrepo.archive(self, archiver, prefix, match)
         for subpath in ctx.substate:

@@ -1629,7 +1629,7 @@ def makestream(
     repo = repo.unfiltered()
     commonrevs = outgoing.common
     csets = outgoing.missing
-    heads = outgoing.missingheads
+    heads = outgoing.ancestorsof
     # We go through the fast path if we get told to, or if all (unfiltered
     # heads have been requested (since we then know there all linkrevs will
     # be pulled by the client).

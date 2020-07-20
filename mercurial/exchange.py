@@ -503,7 +503,7 @@ class pushoperation(object):
     @util.propertycache
     def futureheads(self):
         """future remote heads if the changeset push succeeds"""
-        return self.outgoing.missingheads
+        return self.outgoing.ancestorsof
 
     @util.propertycache
     def fallbackheads(self):
@@ -512,20 +512,20 @@ class pushoperation(object):
             # not target to push, all common are relevant
             return self.outgoing.commonheads
         unfi = self.repo.unfiltered()
-        # I want cheads = heads(::missingheads and ::commonheads)
-        # (missingheads is revs with secret changeset filtered out)
+        # I want cheads = heads(::ancestorsof and ::commonheads)
+        # (ancestorsof is revs with secret changeset filtered out)
         #
         # This can be expressed as:
-        #     cheads = ( (missingheads and ::commonheads)
-        #              + (commonheads and ::missingheads))"
+        #     cheads = ( (ancestorsof and ::commonheads)
+        #              + (commonheads and ::ancestorsof))"
         #              )
         #
         # while trying to push we already computed the following:
         #     common = (::commonheads)
-        #     missing = ((commonheads::missingheads) - commonheads)
+        #     missing = ((commonheads::ancestorsof) - commonheads)
         #
         # We can pick:
-        # * missingheads part of common (::commonheads)
+        # * ancestorsof part of common (::commonheads)
         common = self.outgoing.common
         rev = self.repo.changelog.index.rev
         cheads = [node for node in self.revs if rev(node) in common]
@@ -905,27 +905,32 @@ def _pushcheckoutgoing(pushop):
         # if repo.obsstore == False --> no obsolete
         # then, save the iteration
         if unfi.obsstore:
-            # this message are here for 80 char limit reason
-            mso = _(b"push includes obsolete changeset: %s!")
-            mspd = _(b"push includes phase-divergent changeset: %s!")
-            mscd = _(b"push includes content-divergent changeset: %s!")
-            mst = {
-                b"orphan": _(b"push includes orphan changeset: %s!"),
-                b"phase-divergent": mspd,
-                b"content-divergent": mscd,
-            }
-            # If we are to push if there is at least one
-            # obsolete or unstable changeset in missing, at
-            # least one of the missinghead will be obsolete or
-            # unstable. So checking heads only is ok
-            for node in outgoing.missingheads:
+            obsoletes = []
+            unstables = []
+            for node in outgoing.missing:
                 ctx = unfi[node]
                 if ctx.obsolete():
-                    raise error.Abort(mso % ctx)
+                    obsoletes.append(ctx)
                 elif ctx.isunstable():
-                    # TODO print more than one instability in the abort
-                    # message
-                    raise error.Abort(mst[ctx.instabilities()[0]] % ctx)
+                    unstables.append(ctx)
+            if obsoletes or unstables:
+                msg = b""
+                if obsoletes:
+                    msg += _(b"push includes obsolete changesets:\n")
+                    msg += b"\n".join(b'  %s' % ctx for ctx in obsoletes)
+                if unstables:
+                    if msg:
+                        msg += b"\n"
+                    msg += _(b"push includes unstable changesets:\n")
+                    msg += b"\n".join(
+                        b'  %s (%s)'
+                        % (
+                            ctx,
+                            b", ".join(_(ins) for ins in ctx.instabilities()),
+                        )
+                        for ctx in unstables
+                    )
+                raise error.Abort(msg)
 
         discovery.checkheads(pushop)
     return True
@@ -969,7 +974,7 @@ def _pushb2ctxcheckheads(pushop, bundler):
     """
     # * 'force' do not check for push race,
     # * if we don't push anything, there are nothing to check.
-    if not pushop.force and pushop.outgoing.missingheads:
+    if not pushop.force and pushop.outgoing.ancestorsof:
         allowunrelated = b'related' in bundler.capabilities.get(
             b'checkheads', ()
         )
@@ -1024,12 +1029,12 @@ def _pushb2checkphases(pushop, bundler):
     hasphaseheads = b'heads' in b2caps.get(b'phases', ())
     if pushop.remotephases is not None and hasphaseheads:
         # check that the remote phase has not changed
-        checks = [[] for p in phases.allphases]
+        checks = {p: [] for p in phases.allphases}
         checks[phases.public].extend(pushop.remotephases.publicheads)
         checks[phases.draft].extend(pushop.remotephases.draftroots)
-        if any(checks):
-            for nodes in checks:
-                nodes.sort()
+        if any(pycompat.itervalues(checks)):
+            for phase in checks:
+                checks[phase].sort()
             checkdata = phases.binaryencode(checks)
             bundler.newpart(b'check:phases', data=checkdata)
 
@@ -1104,7 +1109,7 @@ def _pushb2phaseheads(pushop, bundler):
     """push phase information through a bundle2 - binary part"""
     pushop.stepsdone.add(b'phases')
     if pushop.outdatedphases:
-        updates = [[] for p in phases.allphases]
+        updates = {p: [] for p in phases.allphases}
         updates[0].extend(h.node() for h in pushop.outdatedphases)
         phasedata = phases.binaryencode(updates)
         bundler.newpart(b'phase-heads', data=phasedata)
@@ -2658,9 +2663,9 @@ def _getbundlephasespart(
                     headsbyphase[phases.public].add(node(r))
 
         # transform data in a format used by the encoding function
-        phasemapping = []
-        for phase in phases.allphases:
-            phasemapping.append(sorted(headsbyphase[phase]))
+        phasemapping = {
+            phase: sorted(headsbyphase[phase]) for phase in phases.allphases
+        }
 
         # generate the actual part
         phasedata = phases.binaryencode(phasemapping)
@@ -3024,6 +3029,23 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
                 b'filtering %s because SNI not supported\n' % entry[b'URL']
             )
             continue
+
+        if b'REQUIREDRAM' in entry:
+            try:
+                requiredram = util.sizetoint(entry[b'REQUIREDRAM'])
+            except error.ParseError:
+                repo.ui.debug(
+                    b'filtering %s due to a bad REQUIREDRAM attribute\n'
+                    % entry[b'URL']
+                )
+                continue
+            actualram = repo.ui.estimatememory()
+            if actualram is not None and actualram * 0.66 < requiredram:
+                repo.ui.debug(
+                    b'filtering %s as it needs more than 2/3 of system memory\n'
+                    % entry[b'URL']
+                )
+                continue
 
         newentries.append(entry)
 

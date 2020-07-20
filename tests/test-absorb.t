@@ -97,7 +97,7 @@ Delete a few lines and related commits will be removed if they will be empty:
   84e5416 commit 5
   ff5d556 commit 3
   f548282 commit 1
-  apply changes (yn)?  y
+  apply changes (y/N)?  y
   saved backup bundle to * (glob)
   3 of 3 chunk(s) applied
   $ hg annotate a
@@ -490,6 +490,75 @@ Remove lines may delete changesets:
      +3
   
 
+Setting config rewrite.empty-successor=keep causes empty changesets to get committed:
+
+  $ cd ..
+  $ hg init repo4a
+  $ cd repo4a
+  $ cat > a <<EOF
+  > 1
+  > 2
+  > EOF
+  $ hg commit -m a12 -A a
+  $ cat > b <<EOF
+  > 1
+  > 2
+  > EOF
+  $ hg commit -m b12 -A b
+  $ echo 3 >> b
+  $ hg commit -m b3
+  $ echo 4 >> b
+  $ hg commit -m b4
+  $ hg commit -m empty --config ui.allowemptycommit=True
+  $ echo 1 > b
+  $ echo 3 >> a
+  $ hg absorb -pn
+  showing changes for a
+          @@ -2,0 +2,1 @@
+  bfafb49 +3
+  showing changes for b
+          @@ -1,3 +1,0 @@
+  1154859 -2
+  30970db -3
+  a393a58 -4
+  
+  4 changesets affected
+  a393a58 b4
+  30970db b3
+  1154859 b12
+  bfafb49 a12
+  $ hg absorb -av --config rewrite.empty-successor=keep | grep became
+  0:bfafb49242db: 1 file(s) changed, became 5:1a2de97fc652
+  1:115485984805: 2 file(s) changed, became 6:0c930dfab74c
+  2:30970dbf7b40: 2 file(s) changed, became empty as 7:df6574ae635c
+  3:a393a58b9a85: 2 file(s) changed, became empty as 8:ad4bd3462c9e
+  4:1bb0e8cff87a: 2 file(s) changed, became 9:2dbed75af996
+  $ hg log -T '{rev} {desc}\n' -Gp
+  @  9 empty
+  |
+  o  8 b4
+  |
+  o  7 b3
+  |
+  o  6 b12
+  |  diff --git a/b b/b
+  |  new file mode 100644
+  |  --- /dev/null
+  |  +++ b/b
+  |  @@ -0,0 +1,1 @@
+  |  +1
+  |
+  o  5 a12
+     diff --git a/a b/a
+     new file mode 100644
+     --- /dev/null
+     +++ b/a
+     @@ -0,0 +1,3 @@
+     +1
+     +2
+     +3
+  
+
 Use revert to make the current change and its parent disappear.
 This should move us to the non-obsolete ancestor.
 
@@ -525,3 +594,83 @@ This should move us to the non-obsolete ancestor.
   a: 1 of 1 chunk(s) applied
   $ hg id
   bfafb49242db tip
+
+  $ cd ..
+  $ hg init repo6
+  $ cd repo6
+  $ echo a1 > a
+  $ touch b
+  $ hg commit -m a -A a b
+  $ hg branch foo -q
+  $ echo b > b
+  $ hg commit -m foo  # will become empty
+  $ hg branch bar -q
+  $ hg commit -m bar  # is already empty
+  $ echo a2 > a
+  $ printf '' > b
+  $ hg absorb --apply-changes --verbose | grep became
+  0:0cde1ae39321: 1 file(s) changed, became 3:fc7fcdd90fdb
+  1:795dfb1adcef: 2 file(s) changed, became 4:a8740537aa53
+  2:b02935f68891: 2 file(s) changed, became 5:59533e01c707
+  $ hg log -T '{rev} (branch: {branch}) {desc}\n' -G --stat
+  @  5 (branch: bar) bar
+  |
+  o  4 (branch: foo) foo
+  |
+  o  3 (branch: default) a
+      a |  1 +
+      b |  0
+      2 files changed, 1 insertions(+), 0 deletions(-)
+  
+
+  $ cd ..
+  $ hg init repo7
+  $ cd repo7
+  $ echo a1 > a
+  $ touch b
+  $ hg commit -m a -A a b
+  $ echo b > b
+  $ hg commit -m foo --close-branch  # will become empty
+  $ echo c > c
+  $ hg commit -m reopen -A c -q
+  $ hg commit -m bar --close-branch  # is already empty
+  $ echo a2 > a
+  $ printf '' > b
+  $ hg absorb --apply-changes --verbose | grep became
+  0:0cde1ae39321: 1 file(s) changed, became 4:fc7fcdd90fdb
+  1:651b953d5764: 2 file(s) changed, became 5:0c9de988ecdc
+  2:76017bba73f6: 2 file(s) changed, became 6:d53ac896eb25
+  3:c7c1d67efc1d: 2 file(s) changed, became 7:66520267fe96
+  $ hg up null -q  # to make visible closed heads
+  $ hg log -T '{rev} {desc}\n' -G --stat
+  _  7 bar
+  |
+  o  6 reopen
+  |   c |  1 +
+  |   1 files changed, 1 insertions(+), 0 deletions(-)
+  |
+  _  5 foo
+  |
+  o  4 a
+      a |  1 +
+      b |  0
+      2 files changed, 1 insertions(+), 0 deletions(-)
+  
+
+  $ cd ..
+  $ hg init repo8
+  $ cd repo8
+  $ echo a1 > a
+  $ hg commit -m a -A a
+  $ hg commit -m empty --config ui.allowemptycommit=True
+  $ echo a2 > a
+  $ hg absorb --apply-changes --verbose | grep became
+  0:ecf99a8d6699: 1 file(s) changed, became 2:7e3ccf8e2fa5
+  1:97f72456ae0d: 1 file(s) changed, became 3:2df488325d6f
+  $ hg log -T '{rev} {desc}\n' -G --stat
+  @  3 empty
+  |
+  o  2 a
+      a |  1 +
+      1 files changed, 1 insertions(+), 0 deletions(-)
+  

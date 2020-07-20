@@ -1112,3 +1112,40 @@ fixed in 86c35b7ae300:
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> found 101 common and 1 unknown server heads, 1 roundtrips in *.????s (glob)
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> -R r1 outgoing r2 *-T{rev} * --config *extensions.blackbox=* exited 0 after *.?? seconds (glob)
   $ cd ..
+
+Even if the set of revs to discover is restricted, unrelated revs may be
+returned as common heads.
+
+  $ mkdir ancestorsof
+  $ cd ancestorsof
+  $ hg init a
+  $ hg clone a b -q
+  $ cd b
+  $ hg debugbuilddag '.:root *root *root'
+  $ hg log -G -T '{node|short}'
+  o  fa942426a6fd
+  |
+  | o  66f7d451a68b
+  |/
+  o  1ea73414a91b
+  
+  $ hg push -r 66f7d451a68b -q
+  $ hg debugdiscovery --verbose --rev fa942426a6fd
+  comparing with $TESTTMP/ancestorsof/a
+  searching for changes
+  elapsed time:  * seconds (glob)
+  heads summary:
+    total common heads:          1
+      also local heads:          1
+      also remote heads:         1
+      both:                      1
+    local heads:                 2
+      common:                    1
+      missing:                   1
+    remote heads:                1
+      common:                    1
+      unknown:                   0
+  local changesets:              3
+    common:                      2
+    missing:                     1
+  common heads: 66f7d451a68b

@@ -128,25 +128,28 @@ from . import (
 
 _fphasesentry = struct.Struct(b'>i20s')
 
-INTERNAL_FLAG = 64  # Phases for mercurial internal usage only
-HIDEABLE_FLAG = 32  # Phases that are hideable
-
 # record phase index
 public, draft, secret = range(3)
-internal = INTERNAL_FLAG | HIDEABLE_FLAG
-archived = HIDEABLE_FLAG
-allphases = list(range(internal + 1))
-trackedphases = allphases[1:]
+archived = 32  # non-continuous for compatibility
+internal = 96  # non-continuous for compatibility
+allphases = (public, draft, secret, archived, internal)
+trackedphases = (draft, secret, archived, internal)
 # record phase names
 cmdphasenames = [b'public', b'draft', b'secret']  # known to `hg phase` command
-phasenames = [None] * len(allphases)
-phasenames[: len(cmdphasenames)] = cmdphasenames
+phasenames = dict(enumerate(cmdphasenames))
 phasenames[archived] = b'archived'
 phasenames[internal] = b'internal'
+# map phase name to phase number
+phasenumber = {name: phase for phase, name in phasenames.items()}
+# like phasenumber, but also include maps for the numeric and binary
+# phase number to the phase number
+phasenumber2 = phasenumber.copy()
+phasenumber2.update({phase: phase for phase in phasenames})
+phasenumber2.update({b'%i' % phase: phase for phase in phasenames})
 # record phase property
-mutablephases = tuple(allphases[1:])
-remotehiddenphases = tuple(allphases[2:])
-localhiddenphases = tuple(p for p in allphases if p & HIDEABLE_FLAG)
+mutablephases = (draft, secret, archived, internal)
+remotehiddenphases = (secret, archived, internal)
+localhiddenphases = (internal, archived)
 
 
 def supportinternal(repo):
@@ -167,7 +170,7 @@ def _readroots(repo, phasedefaults=None):
     """
     repo = repo.unfiltered()
     dirty = False
-    roots = [set() for i in allphases]
+    roots = {i: set() for i in allphases}
     try:
         f, pending = txnutil.trypending(repo.root, repo.svfs, b'phaseroots')
         try:
@@ -189,11 +192,10 @@ def _readroots(repo, phasedefaults=None):
 def binaryencode(phasemapping):
     """encode a 'phase -> nodes' mapping into a binary stream
 
-    Since phases are integer the mapping is actually a python list:
-    [[PUBLIC_HEADS], [DRAFTS_HEADS], [SECRET_HEADS]]
+    The revision lists are encoded as (phase, root) pairs.
     """
     binarydata = []
-    for phase, nodes in enumerate(phasemapping):
+    for phase, nodes in pycompat.iteritems(phasemapping):
         for head in nodes:
             binarydata.append(_fphasesentry.pack(phase, head))
     return b''.join(binarydata)
@@ -202,8 +204,9 @@ def binaryencode(phasemapping):
 def binarydecode(stream):
     """decode a binary stream into a 'phase -> nodes' mapping
 
-    Since phases are integer the mapping is actually a python list."""
-    headsbyphase = [[] for i in allphases]
+    The (phase, root) pairs are turned back into a dictionary with
+    the phase as index and the aggregated roots of that phase as value."""
+    headsbyphase = {i: [] for i in allphases}
     entrysize = _fphasesentry.size
     while True:
         entry = stream.read(entrysize)
@@ -323,6 +326,38 @@ class phasecache(object):
             self.filterunknown(repo)
             self.opener = repo.svfs
 
+    def hasnonpublicphases(self, repo):
+        """detect if there are revisions with non-public phase"""
+        repo = repo.unfiltered()
+        cl = repo.changelog
+        if len(cl) >= self._loadedrevslen:
+            self.invalidate()
+            self.loadphaserevs(repo)
+        return any(
+            revs
+            for phase, revs in pycompat.iteritems(self.phaseroots)
+            if phase != public
+        )
+
+    def nonpublicphaseroots(self, repo):
+        """returns the roots of all non-public phases
+
+        The roots are not minimized, so if the secret revisions are
+        descendants of draft revisions, their roots will still be present.
+        """
+        repo = repo.unfiltered()
+        cl = repo.changelog
+        if len(cl) >= self._loadedrevslen:
+            self.invalidate()
+            self.loadphaserevs(repo)
+        return set().union(
+            *[
+                revs
+                for phase, revs in pycompat.iteritems(self.phaseroots)
+                if phase != public
+            ]
+        )
+
     def getrevset(self, repo, phases, subset=None):
         """return a smartset for the given phases"""
         self.loadphaserevs(repo)  # ensure phase's sets are loaded
@@ -380,7 +415,7 @@ class phasecache(object):
         # Shallow copy meant to ensure isolation in
         # advance/retractboundary(), nothing more.
         ph = self.__class__(None, None, _load=False)
-        ph.phaseroots = self.phaseroots[:]
+        ph.phaseroots = self.phaseroots.copy()
         ph.dirty = self.dirty
         ph.opener = self.opener
         ph._loadedrevslen = self._loadedrevslen
@@ -400,17 +435,12 @@ class phasecache(object):
 
     def _getphaserevsnative(self, repo):
         repo = repo.unfiltered()
-        nativeroots = []
-        for phase in trackedphases:
-            nativeroots.append(
-                pycompat.maplist(repo.changelog.rev, self.phaseroots[phase])
-            )
-        return repo.changelog.computephases(nativeroots)
+        return repo.changelog.computephases(self.phaseroots)
 
     def _computephaserevspure(self, repo):
         repo = repo.unfiltered()
         cl = repo.changelog
-        self._phasesets = [set() for phase in allphases]
+        self._phasesets = {phase: set() for phase in allphases}
         lowerroots = set()
         for phase in reversed(trackedphases):
             roots = pycompat.maplist(cl.rev, self.phaseroots[phase])
@@ -464,7 +494,7 @@ class phasecache(object):
             f.close()
 
     def _write(self, fp):
-        for phase, roots in enumerate(self.phaseroots):
+        for phase, roots in pycompat.iteritems(self.phaseroots):
             for h in sorted(roots):
                 fp.write(b'%i %s\n' % (phase, hex(h)))
         self.dirty = False
@@ -511,7 +541,7 @@ class phasecache(object):
 
         changes = set()  # set of revisions to be changed
         delroots = []  # set of root deleted by this path
-        for phase in pycompat.xrange(targetphase + 1, len(allphases)):
+        for phase in (phase for phase in allphases if phase > targetphase):
             # filter nodes that are not in a compatible phase already
             nodes = [
                 n for n in nodes if self.phase(repo, repo[n].rev()) >= phase
@@ -546,7 +576,11 @@ class phasecache(object):
         return changes
 
     def retractboundary(self, repo, tr, targetphase, nodes):
-        oldroots = self.phaseroots[: targetphase + 1]
+        oldroots = {
+            phase: revs
+            for phase, revs in pycompat.iteritems(self.phaseroots)
+            if phase <= targetphase
+        }
         if tr is None:
             phasetracking = None
         else:
@@ -565,7 +599,7 @@ class phasecache(object):
             # find the phase of the affected revision
             for phase in pycompat.xrange(targetphase, -1, -1):
                 if phase:
-                    roots = oldroots[phase]
+                    roots = oldroots.get(phase, [])
                     revs = set(repo.revs(b'%ln::%ld', roots, affected))
                     affected -= revs
                 else:  # public phase
@@ -583,30 +617,32 @@ class phasecache(object):
             raise error.ProgrammingError(msg)
 
         repo = repo.unfiltered()
-        currentroots = self.phaseroots[targetphase]
+        torev = repo.changelog.rev
+        tonode = repo.changelog.node
+        currentroots = {torev(node) for node in self.phaseroots[targetphase]}
         finalroots = oldroots = set(currentroots)
+        newroots = [torev(node) for node in nodes]
         newroots = [
-            n for n in nodes if self.phase(repo, repo[n].rev()) < targetphase
+            rev for rev in newroots if self.phase(repo, rev) < targetphase
         ]
-        if newroots:
 
-            if nullid in newroots:
+        if newroots:
+            if nullrev in newroots:
                 raise error.Abort(_(b'cannot change null revision phase'))
-            currentroots = currentroots.copy()
             currentroots.update(newroots)
 
             # Only compute new roots for revs above the roots that are being
             # retracted.
-            minnewroot = min(repo[n].rev() for n in newroots)
-            aboveroots = [
-                n for n in currentroots if repo[n].rev() >= minnewroot
-            ]
-            updatedroots = repo.set(b'roots(%ln::)', aboveroots)
+            minnewroot = min(newroots)
+            aboveroots = [rev for rev in currentroots if rev >= minnewroot]
+            updatedroots = repo.revs(b'roots(%ld::)', aboveroots)
 
-            finalroots = {n for n in currentroots if repo[n].rev() < minnewroot}
-            finalroots.update(ctx.node() for ctx in updatedroots)
+            finalroots = {rev for rev in currentroots if rev < minnewroot}
+            finalroots.update(updatedroots)
         if finalroots != oldroots:
-            self._updateroots(targetphase, finalroots, tr)
+            self._updateroots(
+                targetphase, {tonode(rev) for rev in finalroots}, tr
+            )
             return True
         return False
 
@@ -617,7 +653,7 @@ class phasecache(object):
         """
         filtered = False
         has_node = repo.changelog.index.has_node  # to filter unknown nodes
-        for phase, nodes in enumerate(self.phaseroots):
+        for phase, nodes in pycompat.iteritems(self.phaseroots):
             missing = sorted(node for node in nodes if not has_node(node))
             if missing:
                 for mnode in missing:
@@ -742,7 +778,7 @@ def subsetphaseheads(repo, subset):
     """
     cl = repo.changelog
 
-    headsbyphase = [[] for i in allphases]
+    headsbyphase = {i: [] for i in allphases}
     # No need to keep track of secret phase; any heads in the subset that
     # are not mentioned are implicitly secret.
     for phase in allphases[:secret]:
@@ -753,12 +789,12 @@ def subsetphaseheads(repo, subset):
 
 def updatephases(repo, trgetter, headsbyphase):
     """Updates the repo with the given phase heads"""
-    # Now advance phase boundaries of all but secret phase
+    # Now advance phase boundaries of all phases
     #
     # run the update (and fetch transaction) only if there are actually things
     # to update. This avoid creating empty transaction during no-op operation.
 
-    for phase in allphases[:-1]:
+    for phase in allphases:
         revset = b'%ln - _phase(%s)'
         heads = [c.node() for c in repo.set(revset, headsbyphase[phase], phase)]
         if heads:
@@ -873,18 +909,16 @@ def newcommitphase(ui):
     """
     v = ui.config(b'phases', b'new-commit')
     try:
-        return phasenames.index(v)
-    except ValueError:
-        try:
-            return int(v)
-        except ValueError:
-            msg = _(b"phases.new-commit: not a valid phase name ('%s')")
-            raise error.ConfigError(msg % v)
+        return phasenumber2[v]
+    except KeyError:
+        raise error.ConfigError(
+            _(b"phases.new-commit: not a valid phase name ('%s')") % v
+        )
 
 
 def hassecret(repo):
     """utility function that check if a repo have any secret changeset."""
-    return bool(repo._phasecache.phaseroots[2])
+    return bool(repo._phasecache.phaseroots[secret])
 
 
 def preparehookargs(node, old, new):

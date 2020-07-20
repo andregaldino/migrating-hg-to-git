@@ -7,8 +7,6 @@
 
 //! Structs and types for matching files and directories.
 
-#[cfg(feature = "with-re2")]
-use crate::re2::Re2;
 use crate::{
     dirstate::dirs_multiset::DirsChildrenMultiset,
     filepatterns::{
@@ -24,12 +22,15 @@ use crate::{
     PatternSyntax,
 };
 
+use crate::filepatterns::normalize_path_bytes;
 use std::borrow::ToOwned;
 use std::collections::HashSet;
 use std::fmt::{Display, Error, Formatter};
 use std::iter::FromIterator;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
+
+use micro_timer::timed;
 
 #[derive(Debug, PartialEq)]
 pub enum VisitChildrenSet<'a> {
@@ -163,7 +164,7 @@ impl<'a> FileMatcher<'a> {
         files: &'a [impl AsRef<HgPath>],
     ) -> Result<Self, DirstateMapError> {
         Ok(Self {
-            files: HashSet::from_iter(files.iter().map(|f| f.as_ref())),
+            files: HashSet::from_iter(files.iter().map(AsRef::as_ref)),
             dirs: DirsMultiset::from_manifest(files)?,
         })
     }
@@ -189,10 +190,10 @@ impl<'a> Matcher for FileMatcher<'a> {
         if self.files.is_empty() || !self.dirs.contains(&directory) {
             return VisitChildrenSet::Empty;
         }
-        let dirs_as_set = self.dirs.iter().map(|k| k.deref()).collect();
+        let dirs_as_set = self.dirs.iter().map(Deref::deref).collect();
 
         let mut candidates: HashSet<&HgPath> =
-            self.files.union(&dirs_as_set).map(|k| *k).collect();
+            self.files.union(&dirs_as_set).cloned().collect();
         candidates.remove(HgPath::new(b""));
 
         if !directory.as_ref().is_empty() {
@@ -236,29 +237,24 @@ impl<'a> Matcher for FileMatcher<'a> {
 }
 
 /// Matches files that are included in the ignore rules.
-#[cfg_attr(
-    feature = "with-re2",
-    doc = r##"
-```
-use hg::{
-    matchers::{IncludeMatcher, Matcher},
-    IgnorePattern,
-    PatternSyntax,
-    utils::hg_path::HgPath
-};
-use std::path::Path;
-///
-let ignore_patterns =
-vec![IgnorePattern::new(PatternSyntax::RootGlob, b"this*", Path::new(""))];
-let (matcher, _) = IncludeMatcher::new(ignore_patterns, "").unwrap();
-///
-assert_eq!(matcher.matches(HgPath::new(b"testing")), false);
-assert_eq!(matcher.matches(HgPath::new(b"this should work")), true);
-assert_eq!(matcher.matches(HgPath::new(b"this also")), true);
-assert_eq!(matcher.matches(HgPath::new(b"but not this")), false);
-```
-"##
-)]
+/// ```
+/// use hg::{
+///     matchers::{IncludeMatcher, Matcher},
+///     IgnorePattern,
+///     PatternSyntax,
+///     utils::hg_path::HgPath
+/// };
+/// use std::path::Path;
+/// ///
+/// let ignore_patterns =
+/// vec![IgnorePattern::new(PatternSyntax::RootGlob, b"this*", Path::new(""))];
+/// let (matcher, _) = IncludeMatcher::new(ignore_patterns, "").unwrap();
+/// ///
+/// assert_eq!(matcher.matches(HgPath::new(b"testing")), false);
+/// assert_eq!(matcher.matches(HgPath::new(b"this should work")), true);
+/// assert_eq!(matcher.matches(HgPath::new(b"this also")), true);
+/// assert_eq!(matcher.matches(HgPath::new(b"but not this")), false);
+/// ```
 pub struct IncludeMatcher<'a> {
     patterns: Vec<u8>,
     match_fn: Box<dyn for<'r> Fn(&'r HgPath) -> bool + 'a + Sync>,
@@ -316,33 +312,21 @@ impl<'a> Matcher for IncludeMatcher<'a> {
     }
 }
 
-#[cfg(feature = "with-re2")]
-/// Returns a function that matches an `HgPath` against the given regex
-/// pattern.
-///
-/// This can fail when the pattern is invalid or not supported by the
-/// underlying engine `Re2`, for instance anything with back-references.
-fn re_matcher(
-    pattern: &[u8],
-) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
-    let regex = Re2::new(pattern);
-    let regex = regex.map_err(|e| PatternError::UnsupportedSyntax(e))?;
-    Ok(move |path: &HgPath| regex.is_match(path.as_bytes()))
-}
-
-#[cfg(not(feature = "with-re2"))]
 /// Returns a function that matches an `HgPath` against the given regex
 /// pattern.
 ///
 /// This can fail when the pattern is invalid or not supported by the
 /// underlying engine (the `regex` crate), for instance anything with
 /// back-references.
+#[timed]
 fn re_matcher(
     pattern: &[u8],
 ) -> PatternResult<impl Fn(&HgPath) -> bool + Sync> {
     use std::io::Write;
 
-    let mut escaped_bytes = vec![];
+    // The `regex` crate adds `.*` to the start and end of expressions if there
+    // are no anchors, so add the start anchor.
+    let mut escaped_bytes = vec![b'^', b'(', b'?', b':'];
     for byte in pattern {
         if *byte > 127 {
             write!(escaped_bytes, "\\x{:x}", *byte).unwrap();
@@ -350,6 +334,7 @@ fn re_matcher(
             escaped_bytes.push(*byte);
         }
     }
+    escaped_bytes.push(b')');
 
     // Avoid the cost of UTF8 checking
     //
@@ -373,15 +358,32 @@ fn re_matcher(
 fn build_regex_match<'a>(
     ignore_patterns: &'a [&'a IgnorePattern],
 ) -> PatternResult<(Vec<u8>, Box<dyn Fn(&HgPath) -> bool + Sync>)> {
-    let regexps: Result<Vec<_>, PatternError> = ignore_patterns
-        .into_iter()
-        .map(|k| build_single_regex(*k))
-        .collect();
-    let regexps = regexps?;
+    let mut regexps = vec![];
+    let mut exact_set = HashSet::new();
+
+    for pattern in ignore_patterns {
+        if let Some(re) = build_single_regex(pattern)? {
+            regexps.push(re);
+        } else {
+            let exact = normalize_path_bytes(&pattern.pattern);
+            exact_set.insert(HgPathBuf::from_bytes(&exact));
+        }
+    }
+
     let full_regex = regexps.join(&b'|');
 
-    let matcher = re_matcher(&full_regex)?;
-    let func = Box::new(move |filename: &HgPath| matcher(filename));
+    // An empty pattern would cause the regex engine to incorrectly match the
+    // (empty) root directory
+    let func = if !(regexps.is_empty()) {
+        let matcher = re_matcher(&full_regex)?;
+        let func = move |filename: &HgPath| {
+            exact_set.contains(filename) || matcher(filename)
+        };
+        Box::new(func) as Box<dyn Fn(&HgPath) -> bool + Sync>
+    } else {
+        let func = move |filename: &HgPath| exact_set.contains(filename);
+        Box::new(func) as Box<dyn Fn(&HgPath) -> bool + Sync>
+    };
 
     Ok((full_regex, func))
 }
@@ -468,7 +470,7 @@ fn roots_dirs_and_parents(
                 _ => unreachable!(),
             })?
             .iter()
-            .map(|k| k.to_owned()),
+            .map(ToOwned::to_owned),
     );
     parents.extend(
         DirsMultiset::from_manifest(&roots)
@@ -477,7 +479,7 @@ fn roots_dirs_and_parents(
                 _ => unreachable!(),
             })?
             .iter()
-            .map(|k| k.to_owned()),
+            .map(ToOwned::to_owned),
     );
 
     Ok(RootsDirsAndParents {
@@ -521,7 +523,7 @@ fn build_match<'a, 'b>(
         let match_subinclude = move |filename: &HgPath| {
             for prefix in prefixes.iter() {
                 if let Some(rel) = filename.relative_to(prefix) {
-                    if (submatchers.get(prefix).unwrap())(rel) {
+                    if (submatchers[prefix])(rel) {
                         return true;
                     }
                 }
@@ -652,6 +654,12 @@ impl<'a> IncludeMatcher<'a> {
 
 impl<'a> Display for IncludeMatcher<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        // XXX What about exact matches?
+        // I'm not sure it's worth it to clone the HashSet and keep it
+        // around just in case someone wants to display the matcher, plus
+        // it's going to be unreadable after a few entries, but we need to
+        // inform in this display that exact matches are being used and are
+        // (on purpose) missing from the `includes`.
         write!(
             f,
             "IncludeMatcher(includes='{}')",
@@ -813,7 +821,6 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "with-re2")]
     #[test]
     fn test_includematcher() {
         // VisitchildrensetPrefix

@@ -1575,15 +1575,15 @@ Test cbor filter:
   > from __future__ import absolute_import
   > from mercurial import (
   >     dispatch,
-  >     pycompat,
   > )
   > from mercurial.utils import (
   >     cborutil,
+  >     procutil,
   >     stringutil,
   > )
   > dispatch.initstdio()
-  > items = cborutil.decodeall(pycompat.stdin.read())
-  > pycompat.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
+  > items = cborutil.decodeall(procutil.stdin.read())
+  > procutil.stdout.write(stringutil.pprint(items, indent=1) + b'\n')
   > EOF
 
   $ hg log -T "{rev|cbor}" -R a -l2 | "$PYTHON" "$TESTTMP/decodecbor.py"

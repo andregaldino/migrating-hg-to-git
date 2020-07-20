@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import collections
-import multiprocessing
 import os
 
 from .i18n import _
@@ -17,7 +16,6 @@ from .i18n import _
 from .revlogutils.flagutil import REVIDX_SIDEDATA
 
 from . import (
-    error,
     match as matchmod,
     node,
     pathutil,
@@ -25,7 +23,6 @@ from . import (
     util,
 )
 
-from .revlogutils import sidedata as sidedatamod
 
 from .utils import stringutil
 
@@ -183,9 +180,26 @@ def _revinfogetter(repo):
     * p1copies: mapping of copies from p1
     * p2copies: mapping of copies from p2
     * removed: a list of removed files
+    * ismerged: a callback to know if file was merged in that revision
     """
     cl = repo.changelog
     parents = cl.parentrevs
+
+    def get_ismerged(rev):
+        ctx = repo[rev]
+
+        def ismerged(path):
+            if path not in ctx.files():
+                return False
+            fctx = ctx[path]
+            parents = fctx._filelog.parents(fctx._filenode)
+            nb_parents = 0
+            for n in parents:
+                if n != node.nullid:
+                    nb_parents += 1
+            return nb_parents >= 2
+
+        return ismerged
 
     if repo.filecopiesmode == b'changeset-sidedata':
         changelogrevision = cl.changelogrevision
@@ -218,6 +232,7 @@ def _revinfogetter(repo):
 
         def revinfo(rev):
             p1, p2 = parents(rev)
+            value = None
             if flags(rev) & REVIDX_SIDEDATA:
                 e = merge_caches.pop(rev, None)
                 if e is not None:
@@ -228,12 +243,22 @@ def _revinfogetter(repo):
                 removed = c.filesremoved
                 if p1 != node.nullrev and p2 != node.nullrev:
                     # XXX some case we over cache, IGNORE
-                    merge_caches[rev] = (p1, p2, p1copies, p2copies, removed)
+                    value = merge_caches[rev] = (
+                        p1,
+                        p2,
+                        p1copies,
+                        p2copies,
+                        removed,
+                        get_ismerged(rev),
+                    )
             else:
                 p1copies = {}
                 p2copies = {}
                 removed = []
-            return p1, p2, p1copies, p2copies, removed
+
+            if value is None:
+                value = (p1, p2, p1copies, p2copies, removed, get_ismerged(rev))
+            return value
 
     else:
 
@@ -242,7 +267,7 @@ def _revinfogetter(repo):
             ctx = repo[rev]
             p1copies, p2copies = ctx._copies
             removed = ctx.filesremoved()
-            return p1, p2, p1copies, p2copies, removed
+            return p1, p2, p1copies, p2copies, removed, get_ismerged(rev)
 
     return revinfo
 
@@ -256,6 +281,7 @@ def _changesetforwardcopies(a, b, match):
     revinfo = _revinfogetter(repo)
 
     cl = repo.changelog
+    isancestor = cl.isancestorrev  # XXX we should had chaching to this.
     missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     mrset = set(missingrevs)
     roots = set()
@@ -283,10 +309,14 @@ def _changesetforwardcopies(a, b, match):
     iterrevs.update(roots)
     iterrevs.remove(b.rev())
     revs = sorted(iterrevs)
-    return _combinechangesetcopies(revs, children, b.rev(), revinfo, match)
+    return _combinechangesetcopies(
+        revs, children, b.rev(), revinfo, match, isancestor
+    )
 
 
-def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
+def _combinechangesetcopies(
+    revs, children, targetrev, revinfo, match, isancestor
+):
     """combine the copies information for each item of iterrevs
 
     revs: sorted iterable of revision to visit
@@ -305,7 +335,7 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
             # this is a root
             copies = {}
         for i, c in enumerate(children[r]):
-            p1, p2, p1copies, p2copies, removed = revinfo(c)
+            p1, p2, p1copies, p2copies, removed, ismerged = revinfo(c)
             if r == p1:
                 parent = 1
                 childcopies = p1copies
@@ -319,9 +349,12 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
                 }
             newcopies = copies
             if childcopies:
-                newcopies = _chain(newcopies, childcopies)
-                # _chain makes a copies, we can avoid doing so in some
-                # simple/linear cases.
+                newcopies = copies.copy()
+                for dest, source in pycompat.iteritems(childcopies):
+                    prev = copies.get(source)
+                    if prev is not None and prev[1] is not None:
+                        source = prev[1]
+                    newcopies[dest] = (c, source)
                 assert newcopies is not copies
             for f in removed:
                 if f in newcopies:
@@ -330,7 +363,7 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
                         # branches.  when there are no other branches, this
                         # could be avoided.
                         newcopies = copies.copy()
-                    del newcopies[f]
+                    newcopies[f] = (c, None)
             othercopies = all_copies.get(c)
             if othercopies is None:
                 all_copies[c] = newcopies
@@ -338,21 +371,55 @@ def _combinechangesetcopies(revs, children, targetrev, revinfo, match):
                 # we are the second parent to work on c, we need to merge our
                 # work with the other.
                 #
-                # Unlike when copies are stored in the filelog, we consider
-                # it a copy even if the destination already existed on the
-                # other branch. It's simply too expensive to check if the
-                # file existed in the manifest.
-                #
                 # In case of conflict, parent 1 take precedence over parent 2.
                 # This is an arbitrary choice made anew when implementing
                 # changeset based copies. It was made without regards with
                 # potential filelog related behavior.
                 if parent == 1:
-                    othercopies.update(newcopies)
+                    _merge_copies_dict(
+                        othercopies, newcopies, isancestor, ismerged
+                    )
                 else:
-                    newcopies.update(othercopies)
+                    _merge_copies_dict(
+                        newcopies, othercopies, isancestor, ismerged
+                    )
                     all_copies[c] = newcopies
-    return all_copies[targetrev]
+
+    final_copies = {}
+    for dest, (tt, source) in all_copies[targetrev].items():
+        if source is not None:
+            final_copies[dest] = source
+    return final_copies
+
+
+def _merge_copies_dict(minor, major, isancestor, ismerged):
+    """merge two copies-mapping together, minor and major
+
+    In case of conflict, value from "major" will be picked.
+
+    - `isancestors(low_rev, high_rev)`: callable return True if `low_rev` is an
+                                        ancestors of `high_rev`,
+
+    - `ismerged(path)`: callable return True if `path` have been merged in the
+                        current revision,
+    """
+    for dest, value in major.items():
+        other = minor.get(dest)
+        if other is None:
+            minor[dest] = value
+        else:
+            new_tt = value[0]
+            other_tt = other[0]
+            if value[1] == other[1]:
+                continue
+            # content from "major" wins, unless it is older
+            # than the branch point or there is a merge
+            if (
+                new_tt == other_tt
+                or not isancestor(new_tt, other_tt)
+                or ismerged(dest)
+            ):
+                minor[dest] = value
 
 
 def _forwardcopies(a, b, base=None, match=None):
@@ -568,6 +635,12 @@ class branch_copies(object):
         self.renamedelete = {} if renamedelete is None else renamedelete
         self.dirmove = {} if dirmove is None else dirmove
         self.movewithdir = {} if movewithdir is None else movewithdir
+
+    def __repr__(self):
+        return (
+            '<branch_copies\n  copy=%r\n  renamedelete=%r\n  dirmove=%r\n  movewithdir=%r\n>'
+            % (self.copy, self.renamedelete, self.dirmove, self.movewithdir,)
+        )
 
 
 def _fullcopytracing(repo, c1, c2, base):
@@ -922,250 +995,3 @@ def graftcopies(wctx, ctx, base):
     _filter(wctx.p1(), wctx, new_copies)
     for dst, src in pycompat.iteritems(new_copies):
         wctx[dst].markcopied(src)
-
-
-def computechangesetfilesadded(ctx):
-    """return the list of files added in a changeset
-    """
-    added = []
-    for f in ctx.files():
-        if not any(f in p for p in ctx.parents()):
-            added.append(f)
-    return added
-
-
-def computechangesetfilesremoved(ctx):
-    """return the list of files removed in a changeset
-    """
-    removed = []
-    for f in ctx.files():
-        if f not in ctx:
-            removed.append(f)
-    return removed
-
-
-def computechangesetcopies(ctx):
-    """return the copies data for a changeset
-
-    The copies data are returned as a pair of dictionnary (p1copies, p2copies).
-
-    Each dictionnary are in the form: `{newname: oldname}`
-    """
-    p1copies = {}
-    p2copies = {}
-    p1 = ctx.p1()
-    p2 = ctx.p2()
-    narrowmatch = ctx._repo.narrowmatch()
-    for dst in ctx.files():
-        if not narrowmatch(dst) or dst not in ctx:
-            continue
-        copied = ctx[dst].renamed()
-        if not copied:
-            continue
-        src, srcnode = copied
-        if src in p1 and p1[src].filenode() == srcnode:
-            p1copies[dst] = src
-        elif src in p2 and p2[src].filenode() == srcnode:
-            p2copies[dst] = src
-    return p1copies, p2copies
-
-
-def encodecopies(files, copies):
-    items = []
-    for i, dst in enumerate(files):
-        if dst in copies:
-            items.append(b'%d\0%s' % (i, copies[dst]))
-    if len(items) != len(copies):
-        raise error.ProgrammingError(
-            b'some copy targets missing from file list'
-        )
-    return b"\n".join(items)
-
-
-def decodecopies(files, data):
-    try:
-        copies = {}
-        if not data:
-            return copies
-        for l in data.split(b'\n'):
-            strindex, src = l.split(b'\0')
-            i = int(strindex)
-            dst = files[i]
-            copies[dst] = src
-        return copies
-    except (ValueError, IndexError):
-        # Perhaps someone had chosen the same key name (e.g. "p1copies") and
-        # used different syntax for the value.
-        return None
-
-
-def encodefileindices(files, subset):
-    subset = set(subset)
-    indices = []
-    for i, f in enumerate(files):
-        if f in subset:
-            indices.append(b'%d' % i)
-    return b'\n'.join(indices)
-
-
-def decodefileindices(files, data):
-    try:
-        subset = []
-        if not data:
-            return subset
-        for strindex in data.split(b'\n'):
-            i = int(strindex)
-            if i < 0 or i >= len(files):
-                return None
-            subset.append(files[i])
-        return subset
-    except (ValueError, IndexError):
-        # Perhaps someone had chosen the same key name (e.g. "added") and
-        # used different syntax for the value.
-        return None
-
-
-def _getsidedata(srcrepo, rev):
-    ctx = srcrepo[rev]
-    filescopies = computechangesetcopies(ctx)
-    filesadded = computechangesetfilesadded(ctx)
-    filesremoved = computechangesetfilesremoved(ctx)
-    sidedata = {}
-    if any([filescopies, filesadded, filesremoved]):
-        sortedfiles = sorted(ctx.files())
-        p1copies, p2copies = filescopies
-        p1copies = encodecopies(sortedfiles, p1copies)
-        p2copies = encodecopies(sortedfiles, p2copies)
-        filesadded = encodefileindices(sortedfiles, filesadded)
-        filesremoved = encodefileindices(sortedfiles, filesremoved)
-        if p1copies:
-            sidedata[sidedatamod.SD_P1COPIES] = p1copies
-        if p2copies:
-            sidedata[sidedatamod.SD_P2COPIES] = p2copies
-        if filesadded:
-            sidedata[sidedatamod.SD_FILESADDED] = filesadded
-        if filesremoved:
-            sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
-    return sidedata
-
-
-def getsidedataadder(srcrepo, destrepo):
-    use_w = srcrepo.ui.configbool(b'experimental', b'worker.repository-upgrade')
-    if pycompat.iswindows or not use_w:
-        return _get_simple_sidedata_adder(srcrepo, destrepo)
-    else:
-        return _get_worker_sidedata_adder(srcrepo, destrepo)
-
-
-def _sidedata_worker(srcrepo, revs_queue, sidedata_queue, tokens):
-    """The function used by worker precomputing sidedata
-
-    It read an input queue containing revision numbers
-    It write in an output queue containing (rev, <sidedata-map>)
-
-    The `None` input value is used as a stop signal.
-
-    The `tokens` semaphore is user to avoid having too many unprocessed
-    entries. The workers needs to acquire one token before fetching a task.
-    They will be released by the consumer of the produced data.
-    """
-    tokens.acquire()
-    rev = revs_queue.get()
-    while rev is not None:
-        data = _getsidedata(srcrepo, rev)
-        sidedata_queue.put((rev, data))
-        tokens.acquire()
-        rev = revs_queue.get()
-    # processing of `None` is completed, release the token.
-    tokens.release()
-
-
-BUFF_PER_WORKER = 50
-
-
-def _get_worker_sidedata_adder(srcrepo, destrepo):
-    """The parallel version of the sidedata computation
-
-    This code spawn a pool of worker that precompute a buffer of sidedata
-    before we actually need them"""
-    # avoid circular import copies -> scmutil -> worker -> copies
-    from . import worker
-
-    nbworkers = worker._numworkers(srcrepo.ui)
-
-    tokens = multiprocessing.BoundedSemaphore(nbworkers * BUFF_PER_WORKER)
-    revsq = multiprocessing.Queue()
-    sidedataq = multiprocessing.Queue()
-
-    assert srcrepo.filtername is None
-    # queue all tasks beforehand, revision numbers are small and it make
-    # synchronisation simpler
-    #
-    # Since the computation for each node can be quite expensive, the overhead
-    # of using a single queue is not revelant. In practice, most computation
-    # are fast but some are very expensive and dominate all the other smaller
-    # cost.
-    for r in srcrepo.changelog.revs():
-        revsq.put(r)
-    # queue the "no more tasks" markers
-    for i in range(nbworkers):
-        revsq.put(None)
-
-    allworkers = []
-    for i in range(nbworkers):
-        args = (srcrepo, revsq, sidedataq, tokens)
-        w = multiprocessing.Process(target=_sidedata_worker, args=args)
-        allworkers.append(w)
-        w.start()
-
-    # dictionnary to store results for revision higher than we one we are
-    # looking for. For example, if we need the sidedatamap for 42, and 43 is
-    # received, when shelve 43 for later use.
-    staging = {}
-
-    def sidedata_companion(revlog, rev):
-        sidedata = {}
-        if util.safehasattr(revlog, b'filteredrevs'):  # this is a changelog
-            # Is the data previously shelved ?
-            sidedata = staging.pop(rev, None)
-            if sidedata is None:
-                # look at the queued result until we find the one we are lookig
-                # for (shelve the other ones)
-                r, sidedata = sidedataq.get()
-                while r != rev:
-                    staging[r] = sidedata
-                    r, sidedata = sidedataq.get()
-            tokens.release()
-        return False, (), sidedata
-
-    return sidedata_companion
-
-
-def _get_simple_sidedata_adder(srcrepo, destrepo):
-    """The simple version of the sidedata computation
-
-    It just compute it in the same thread on request"""
-
-    def sidedatacompanion(revlog, rev):
-        sidedata = {}
-        if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
-            sidedata = _getsidedata(srcrepo, rev)
-        return False, (), sidedata
-
-    return sidedatacompanion
-
-
-def getsidedataremover(srcrepo, destrepo):
-    def sidedatacompanion(revlog, rev):
-        f = ()
-        if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
-            if revlog.flags(rev) & REVIDX_SIDEDATA:
-                f = (
-                    sidedatamod.SD_P1COPIES,
-                    sidedatamod.SD_P2COPIES,
-                    sidedatamod.SD_FILESADDED,
-                    sidedatamod.SD_FILESREMOVED,
-                )
-        return False, f, {}
-
-    return sidedatacompanion

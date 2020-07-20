@@ -135,7 +135,7 @@ pub fn pack_dirstate(
         }
         let mut new_filename = new_filename.into_vec();
         if let Some(copy) = copy_map.get(filename) {
-            new_filename.push('\0' as u8);
+            new_filename.push(b'\0');
             new_filename.extend(copy.bytes());
         }
 

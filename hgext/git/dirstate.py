@@ -288,6 +288,10 @@ class gitdirstate(object):
         # TODO: track copies?
         return None
 
+    def prefetch_parents(self):
+        # TODO
+        pass
+
     @contextlib.contextmanager
     def parentchange(self):
         # TODO: track this maybe?

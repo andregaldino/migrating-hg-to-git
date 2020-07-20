@@ -98,7 +98,7 @@ impl<'a> FusedIterator for AncestorsWithBase<'a> {}
 ///
 /// The path itself isn't included unless it is b"" (meaning the root
 /// directory.)
-pub fn find_dirs<'a>(path: &'a HgPath) -> Ancestors<'a> {
+pub fn find_dirs(path: &HgPath) -> Ancestors {
     let mut dirs = Ancestors { next: Some(path) };
     if !path.is_empty() {
         dirs.next(); // skip itself
@@ -113,9 +113,7 @@ pub fn find_dirs<'a>(path: &'a HgPath) -> Ancestors<'a> {
 ///
 /// The path itself isn't included unless it is b"" (meaning the root
 /// directory.)
-pub(crate) fn find_dirs_with_base<'a>(
-    path: &'a HgPath,
-) -> AncestorsWithBase<'a> {
+pub(crate) fn find_dirs_with_base(path: &HgPath) -> AncestorsWithBase {
     let mut dirs = AncestorsWithBase {
         next: Some((path, HgPath::new(b""))),
     };
@@ -214,9 +212,9 @@ pub fn canonical_path(
     if name != root && name.starts_with(&root) {
         let name = name.strip_prefix(&root).unwrap();
         auditor.audit_path(path_to_hg_path_buf(name)?)?;
-        return Ok(name.to_owned());
+        Ok(name.to_owned())
     } else if name == root {
-        return Ok("".into());
+        Ok("".into())
     } else {
         // Determine whether `name' is in the hierarchy at or beneath `root',
         // by iterating name=name.parent() until it returns `None` (can't

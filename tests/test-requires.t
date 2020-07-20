@@ -48,6 +48,14 @@ another repository of push/pull/clone on localhost:
   > # enable extension locally
   > supportlocally = $TESTTMP/supported-locally/supportlocally.py
   > EOF
+  $ hg -R supported debugrequirements
+  dotencode
+  featuresetup-test
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
   $ hg -R supported status
 
   $ hg init push-dst

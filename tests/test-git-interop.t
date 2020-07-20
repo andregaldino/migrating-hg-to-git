@@ -36,8 +36,12 @@ This status invocation shows some hg gunk because we didn't use
   $ cd ..
 
 Now globally enable extension for the rest of the test:
-  $ echo "[extensions]" >> $HGRCPATH
-  > echo "git=" >> $HGRCPATH
+  $ cat <<EOF >> $HGRCPATH
+  > [extensions]
+  > git=
+  > [git]
+  > log-index-cache-miss = yes
+  > EOF
 
 Make a new repo with git:
   $ mkdir foo
@@ -68,6 +72,7 @@ Without creating the .hg, hg status fails:
 But if you run hg init --git, it works:
   $ hg init --git
   $ hg id --traceback
+  heads mismatch, rebuilding dagcache
   3d9be8deba43 tip master
   $ hg status
   ? gamma
@@ -167,9 +172,12 @@ hg log FILE
   $ hg ci -m 'more alpha' --traceback --date '1583522787 18000'
   $ echo b >> beta
   $ hg ci -m 'more beta'
+  heads mismatch, rebuilding dagcache
   $ echo a >> alpha
   $ hg ci -m 'even more alpha'
+  heads mismatch, rebuilding dagcache
   $ hg log -G alpha
+  heads mismatch, rebuilding dagcache
   @  changeset:   4:6626247b7dc8
   :  bookmark:    master
   :  tag:         tip
@@ -198,6 +206,9 @@ hg log FILE
   ~  date:        Mon Jan 01 00:00:11 2007 +0000
      summary:     Add beta
   
+
+  $ hg log -r "children(3d9be8deba43)" -T"{node|short} {children}\n"
+  a1983dd7fb19 3:d8ee22687733
 
 hg annotate
 
@@ -235,6 +246,7 @@ hg and git status both clean
   On branch master
   nothing to commit, working tree clean
   $ hg status
+  heads mismatch, rebuilding dagcache
 
 
 node|shortest works correctly
@@ -248,3 +260,13 @@ node|shortest works correctly
   $ hg log -r ae1ab744f95bfd5b07cf573baef98a778058537b --template "{shortest(node,1)}\n"
   ae
 
+This coveres changelog.findmissing()
+  $ hg merge --preview 3d9be8deba43
+
+This covers manifest.diff()
+  $ hg diff -c 3d9be8deba43
+  diff -r c5864c9d16fb -r 3d9be8deba43 beta
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/beta	Mon Jan 01 00:00:11 2007 +0000
+  @@ -0,0 +1,1 @@
+  +beta

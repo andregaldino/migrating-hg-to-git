@@ -17,6 +17,7 @@ from .pycompat import (
     setattr,
 )
 from . import (
+    diffhelper,
     encoding,
     error,
     policy,
@@ -24,8 +25,6 @@ from . import (
     util,
 )
 from .utils import dateutil
-
-_missing_newline_marker = b"\\ No newline at end of file\n"
 
 bdiff = policy.importmod('bdiff')
 mpatch = policy.importmod('mpatch')
@@ -309,7 +308,7 @@ def unidiff(a, ad, b, bd, fn1, fn2, binary, opts=defaultopts):
         hunklines = [b"@@ -0,0 +1,%d @@\n" % size] + [b"+" + e for e in b]
         if without_newline:
             hunklines[-1] += b'\n'
-            hunklines.append(_missing_newline_marker)
+            hunklines.append(diffhelper.MISSING_NEWLINE_MARKER)
         hunks = ((hunkrange, hunklines),)
     elif not b:
         without_newline = not a.endswith(b'\n')
@@ -325,7 +324,7 @@ def unidiff(a, ad, b, bd, fn1, fn2, binary, opts=defaultopts):
         hunklines = [b"@@ -1,%d +0,0 @@\n" % size] + [b"-" + e for e in a]
         if without_newline:
             hunklines[-1] += b'\n'
-            hunklines.append(_missing_newline_marker)
+            hunklines.append(diffhelper.MISSING_NEWLINE_MARKER)
         hunks = ((hunkrange, hunklines),)
     else:
         hunks = _unidiff(a, b, opts=opts)
@@ -418,13 +417,13 @@ def _unidiff(t1, t2, opts=defaultopts):
                     if hunklines[i].startswith(b' '):
                         skip = True
                     hunklines[i] += b'\n'
-                    hunklines.insert(i + 1, _missing_newline_marker)
+                    hunklines.insert(i + 1, diffhelper.MISSING_NEWLINE_MARKER)
                     break
         if not skip and not t2.endswith(b'\n') and bstart + blen == len(l2) + 1:
             for i in pycompat.xrange(len(hunklines) - 1, -1, -1):
                 if hunklines[i].startswith(b'+'):
                     hunklines[i] += b'\n'
-                    hunklines.insert(i + 1, _missing_newline_marker)
+                    hunklines.insert(i + 1, diffhelper.MISSING_NEWLINE_MARKER)
                     break
         yield hunkrange, hunklines
 

@@ -158,6 +158,10 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     env[b'HG_HOOKNAME'] = name
 
     for k, v in pycompat.iteritems(args):
+        # transaction changes can accumulate MBs of data, so skip it
+        # for external hooks
+        if k == b'changes':
+            continue
         if callable(v):
             v = v()
         if isinstance(v, (dict, list)):

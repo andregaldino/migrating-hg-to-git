@@ -451,12 +451,7 @@ def _picklabels(defaults, overrides):
     return result
 
 
-def _bytes_to_set(b):
-    """turns a multiple bytes (usually flags) into a set of individual byte"""
-    return set(b[x : x + 1] for x in range(len(b)))
-
-
-def is_null(ctx):
+def is_not_null(ctx):
     if not util.safehasattr(ctx, "node"):
         return False
     return ctx.node() != nodemod.nullid
@@ -518,15 +513,13 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     # merge flags if necessary
     flags = localctx.flags()
-    localflags = _bytes_to_set(flags)
-    otherflags = _bytes_to_set(otherctx.flags())
-    if is_null(basectx) and localflags != otherflags:
-        baseflags = _bytes_to_set(basectx.flags())
-        flags = localflags & otherflags
-        for f in localflags.symmetric_difference(otherflags):
-            if f not in baseflags:
-                flags.add(f)
-        flags = b''.join(sorted(flags))
+    localflags = set(pycompat.iterbytestr(flags))
+    otherflags = set(pycompat.iterbytestr(otherctx.flags()))
+    if is_not_null(basectx) and localflags != otherflags:
+        baseflags = set(pycompat.iterbytestr(basectx.flags()))
+        commonflags = localflags & otherflags
+        addedflags = (localflags ^ otherflags) - baseflags
+        flags = b''.join(sorted(commonflags | addedflags))
 
     if not opts.get(b'print'):
         localctx.write(mergedtext, flags)

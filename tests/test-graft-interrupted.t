@@ -249,17 +249,17 @@ Testing the --stop flag of `hg graft` which stops the interrupted graft
   [1]
 
   $ hg graft --stop --continue
-  abort: cannot use '--continue' and '--stop' together
+  abort: cannot specify both --stop and --continue
   [255]
 
   $ hg graft --stop -U
-  abort: cannot specify any other flag with '--stop'
+  abort: cannot specify both --stop and --user
   [255]
   $ hg graft --stop --rev 4
-  abort: cannot specify any other flag with '--stop'
+  abort: cannot specify both --stop and --rev
   [255]
   $ hg graft --stop --log
-  abort: cannot specify any other flag with '--stop'
+  abort: cannot specify both --stop and --log
   [255]
 
   $ hg graft --stop
@@ -355,19 +355,19 @@ when stripping is required
   [1]
 
   $ hg graft --continue --abort
-  abort: cannot use '--continue' and '--abort' together
+  abort: cannot specify both --abort and --continue
   [255]
 
   $ hg graft --abort --stop
-  abort: cannot use '--abort' and '--stop' together
+  abort: cannot specify both --abort and --stop
   [255]
 
   $ hg graft --abort --currentuser
-  abort: cannot specify any other flag with '--abort'
+  abort: cannot specify both --abort and --user
   [255]
 
   $ hg graft --abort --edit
-  abort: cannot specify any other flag with '--abort'
+  abort: cannot specify both --abort and --edit
   [255]
 
 #if abortcommand
@@ -553,15 +553,15 @@ Testing --no-commit option:|
 Check reporting when --no-commit used with non-applicable options:
 
   $ hg graft 1 --no-commit -e
-  abort: cannot specify --no-commit and --edit together
+  abort: cannot specify both --no-commit and --edit
   [255]
 
   $ hg graft 1 --no-commit --log
-  abort: cannot specify --no-commit and --log together
+  abort: cannot specify both --no-commit and --log
   [255]
 
   $ hg graft 1 --no-commit -D
-  abort: cannot specify --no-commit and --currentdate together
+  abort: cannot specify both --no-commit and --currentdate
   [255]
 
 Test --no-commit is working:

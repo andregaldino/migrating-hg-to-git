@@ -1032,7 +1032,7 @@ Create the changes that we will rebase
   rebasing 19:b82fb57ea638 "willconflict second version"
   merging willconflict
   warning: conflicts while merging willconflict! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ hg resolve --mark willconflict
@@ -1787,7 +1787,7 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
   rebasing 1:2ec65233581b "B"
   merging D
   warning: conflicts while merging D! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
   $ cp -R . $TESTTMP/hidden-state2
@@ -1872,7 +1872,7 @@ Test --stop option |
   rebasing 3:055a42cdd887 "d"
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --stop
   1 new orphan changesets
@@ -1934,7 +1934,7 @@ Test it aborts if unstable csets is not allowed:
   rebasing 3:055a42cdd887 "d"
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --stop
   abort: cannot remove original changesets with unrebased descendants
@@ -1952,7 +1952,7 @@ Test --stop when --keep is passed:
   rebasing 3:055a42cdd887 "d"
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --stop
   $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
@@ -2014,7 +2014,7 @@ Test --stop aborts when --collapse was passed:
   rebasing 3:055a42cdd887 "d"
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --stop
   abort: cannot stop in --collapse session
@@ -2047,7 +2047,7 @@ Test --stop raise errors with conflicting options:
   rebasing 3:055a42cdd887 "d"
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --stop --dry-run
   abort: cannot specify both --stop and --dry-run
@@ -2115,7 +2115,7 @@ Test --stop moves bookmarks of original revisions to new rebased nodes:
   rebasing 3:67a385d4e6f2 "D" (Z)
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase --stop
   1 new orphan changesets

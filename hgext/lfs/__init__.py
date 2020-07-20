@@ -255,7 +255,7 @@ def _reposetup(ui, repo):
                 ):
                     repo.requirements.add(b'lfs')
                     repo.features.add(repository.REPO_FEATURE_LFS)
-                    repo._writerequirements()
+                    scmutil.writereporequirements(repo)
                     repo.prepushoutgoinghooks.add(b'lfs', wrapper.prepush)
                     break
 

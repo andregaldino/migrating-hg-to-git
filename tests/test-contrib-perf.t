@@ -180,7 +180,7 @@ perfstatus
    perfvolatilesets
                  benchmark the computation of various volatile set
    perfwalk      (no help text available)
-   perfwrite     microbenchmark ui.write
+   perfwrite     microbenchmark ui.write (and others)
   
   (use 'hg help -v perf' to show built-in aliases and global options)
   $ hg perfaddremove

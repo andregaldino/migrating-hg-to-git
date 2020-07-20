@@ -13,7 +13,7 @@ from mercurial import (
     error,
     hg,
     lock as lockmod,
-    merge,
+    mergestate as mergestatemod,
     node as nodemod,
     pycompat,
     registrar,
@@ -269,7 +269,7 @@ def stripcmd(ui, repo, *revs, **opts):
             repo.dirstate.write(repo.currenttransaction())
 
             # clear resolve state
-            merge.mergestate.clean(repo, repo[b'.'].node())
+            mergestatemod.mergestate.clean(repo, repo[b'.'].node())
 
             update = False
 

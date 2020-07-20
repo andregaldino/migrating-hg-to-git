@@ -142,3 +142,16 @@ Support for this requirement was added in Mercurial 5.1 (released
 August 2019). The requirement will only be present on repositories
 that have opted in to this format (by having
 ``format.bookmarks-in-store=true`` set when they were created).
+
+persistent-nodemap
+==================
+
+The `nodemap` index (mapping nodeid to local revision number) is persisted on
+disk. This provides speed benefit (if the associated native code is used). The
+persistent nodemap is only used for two revlogs: the changelog and the
+manifestlog.
+
+Support for this requirement was added in Mercurial 5.5 (released August 2020).
+Note that as of 5.5, only installations compiled with the Rust extension will
+benefit from a speedup. The other installations will do the necessary work to
+keep the index up to date, but will suffer a slowdown.

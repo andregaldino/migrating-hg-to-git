@@ -62,7 +62,7 @@ impl NonNormalEntries {
         py: Python,
         key: &HgPathBuf,
     ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, key.as_ref())))
+        Ok(Some(PyBytes::new(py, key.as_bytes())))
     }
 }
 

@@ -33,28 +33,30 @@ Check that copies are recorded correctly
   $ cd repo
 #if sidedata
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes    yes      no
-  copies-sdc:        yes    yes      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:         yes    yes      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
 #else
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:           no     no      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
 #endif
   $ echo a > a
   $ hg add a
@@ -424,16 +426,17 @@ Test upgrading/downgrading to sidedata storage
 downgrading (keeping some sidedata)
 
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes    yes      no
-  copies-sdc:        yes    yes      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:         yes    yes      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugsidedata -c -- 0
   1 sidedata entries
    entry-0012 size 1
@@ -448,16 +451,17 @@ downgrading (keeping some sidedata)
   > EOF
   $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes    yes      no
-  copies-sdc:         no     no      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugsidedata -c -- 0
   $ hg debugsidedata -c -- 1
   $ hg debugsidedata -m -- 0
@@ -470,16 +474,17 @@ upgrading
   > EOF
   $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
   $ hg debugformat -v
-  format-variant    repo config default
-  fncache:           yes    yes     yes
-  dotencode:         yes    yes     yes
-  generaldelta:      yes    yes     yes
-  sparserevlog:      yes    yes     yes
-  sidedata:          yes    yes      no
-  copies-sdc:        yes    yes      no
-  plain-cl-delta:    yes    yes     yes
-  compression:       zlib   zlib    zlib
-  compression-level: default default default
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:         yes    yes      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zlib   zlib    zlib
+  compression-level:  default default default
   $ hg debugsidedata -c -- 0
   1 sidedata entries
    entry-0012 size 1
