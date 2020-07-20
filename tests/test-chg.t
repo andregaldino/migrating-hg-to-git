@@ -152,6 +152,49 @@ chg waits for pager if runcommand raises
   crash-pager: going to crash
   [255]
 
+no stdout data should be printed after pager quits, and the buffered data
+should never persist (issue6207)
+
+"killed!" may be printed if terminated by SIGPIPE, which isn't important
+in this test.
+
+  $ cat > $TESTTMP/bulkwrite.py <<'EOF'
+  > import time
+  > from mercurial import error, registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'bulkwrite')
+  > def bulkwrite(ui, repo, *pats, **opts):
+  >     ui.write(b'going to write massive data\n')
+  >     ui.flush()
+  >     t = time.time()
+  >     while time.time() - t < 2:
+  >         ui.write(b'x' * 1023 + b'\n')  # will be interrupted by SIGPIPE
+  >     raise error.Abort(b"write() doesn't block")
+  > EOF
+
+  $ cat > $TESTTMP/fakepager.py <<'EOF'
+  > import sys
+  > import time
+  > sys.stdout.write('paged! %r\n' % sys.stdin.readline())
+  > time.sleep(1)  # new data will be written
+  > EOF
+
+  $ cat >> .hg/hgrc <<EOF
+  > [extensions]
+  > bulkwrite = $TESTTMP/bulkwrite.py
+  > EOF
+
+  $ chg bulkwrite --pager=on --color no --config ui.formatted=True
+  paged! 'going to write massive data\n'
+  killed! (?)
+  [255]
+
+  $ chg bulkwrite --pager=on --color no --config ui.formatted=True
+  paged! 'going to write massive data\n'
+  killed! (?)
+  [255]
+
   $ cd ..
 
 server lifecycle
