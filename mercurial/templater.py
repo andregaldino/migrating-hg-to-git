@@ -1057,7 +1057,7 @@ def templatepath(name):
     return None
 
 
-def stylemap(styles, paths=None):
+def stylemap(styles, path=None):
     """Return path to mapfile for a given style.
 
     Searches mapfile in the following locations:
@@ -1066,10 +1066,8 @@ def stylemap(styles, paths=None):
     3. templatepath/map
     """
 
-    if paths is None:
-        paths = [templatedir()]
-    elif isinstance(paths, bytes):
-        paths = [paths]
+    if path is None:
+        path = templatedir()
 
     if isinstance(styles, bytes):
         styles = [styles]
@@ -1087,10 +1085,9 @@ def stylemap(styles, paths=None):
         locations = [os.path.join(style, b'map'), b'map-' + style]
         locations.append(b'map')
 
-        for path in paths:
-            for location in locations:
-                mapfile = os.path.join(path, location)
-                if os.path.isfile(mapfile):
-                    return style, mapfile
+        for location in locations:
+            mapfile = os.path.join(path, location)
+            if os.path.isfile(mapfile):
+                return style, mapfile
 
-    raise RuntimeError(b"No hgweb templates found in %r" % paths)
+    raise RuntimeError(b"No hgweb templates found in %r" % path)
