@@ -620,7 +620,7 @@ def _lookuptemplate(ui, tmpl, style):
     if not tmpl and not style:  # template are stronger than style
         tmpl = ui.config(b'ui', b'logtemplate')
         if tmpl:
-            return templatespec(templater.unquotestring(tmpl), None)
+            return formatter.literal_templatespec(templater.unquotestring(tmpl))
         else:
             style = util.expandpath(ui.config(b'ui', b'style'))
 
@@ -632,7 +632,7 @@ def _lookuptemplate(ui, tmpl, style):
             ) or templater.templatepath(mapfile)
             if mapname:
                 mapfile = mapname
-        return templatespec(None, mapfile)
+        return formatter.mapfile_templatespec(b'changeset', mapfile)
 
     return formatter.lookuptemplate(ui, b'changeset', tmpl)
 
@@ -640,7 +640,7 @@ def _lookuptemplate(ui, tmpl, style):
 def maketemplater(ui, repo, tmpl, buffered=False):
     """Create a changesettemplater from a literal template 'tmpl'
     byte-string."""
-    spec = templatespec(tmpl, None)
+    spec = formatter.literal_templatespec(tmpl)
     return changesettemplater(ui, repo, spec, buffered=buffered)
 
 
