@@ -252,3 +252,9 @@ Explicitly kill daemons to let the test exit on Windows
 
   $ killdaemons.py
 
+Test sharing a repository which was created with store requirement disable
+
+  $ hg init nostore --config format.usestore=false
+  $ hg share nostore sharednostore
+  abort: cannot create shared repository as source was created with 'format.usestore' config disabled
+  [255]

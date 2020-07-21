@@ -3334,6 +3334,14 @@ def checkrequirementscompat(ui, requirements):
             )
             dropped.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
 
+        if b'shared' in requirements or b'relshared' in requirements:
+            raise error.Abort(
+                _(
+                    b"cannot create shared repository as source was created"
+                    b" with 'format.usestore' config disabled"
+                )
+            )
+
     return dropped
 
 
