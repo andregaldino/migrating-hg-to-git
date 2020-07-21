@@ -1047,12 +1047,8 @@ class templater(object):
 
 def templatepaths():
     '''return locations used for template files.'''
-    pathsrel = [b'templates']
-    paths = [
-        os.path.normpath(os.path.join(resourceutil.datapath, f))
-        for f in pathsrel
-    ]
-    return [p for p in paths if os.path.isdir(p)]
+    path = os.path.normpath(os.path.join(resourceutil.datapath, b'templates'))
+    return [path] if os.path.isdir(path) else []
 
 
 def templatepath(name):
