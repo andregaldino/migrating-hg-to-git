@@ -29,7 +29,7 @@ impl RootCommand {
         // TODO use formating macro
         self.ui.write_stdout(&[bytes.as_slice(), b"\n"].concat())?;
 
-        Err(CommandErrorKind::Ok.into())
+        Ok(())
     }
 
     fn display_error(&self, error: FindRootError) -> Result<(), CommandError> {

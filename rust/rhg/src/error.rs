@@ -5,8 +5,6 @@ use std::convert::From;
 /// The kind of command error
 #[derive(Debug, PartialEq)]
 pub enum CommandErrorKind {
-    /// The command finished without error
-    Ok,
     /// The root of the repository cannot be found
     RootNotFound,
     /// The current directory cannot be found
@@ -20,7 +18,6 @@ pub enum CommandErrorKind {
 impl CommandErrorKind {
     pub fn get_exit_code(&self) -> exitcode::ExitCode {
         match self {
-            CommandErrorKind::Ok => exitcode::OK,
             CommandErrorKind::RootNotFound => exitcode::ABORT,
             CommandErrorKind::CurrentDirNotFound => exitcode::ABORT,
             CommandErrorKind::StdoutError => exitcode::ABORT,
