@@ -800,10 +800,10 @@ class engine(object):
 
 
 def stylelist():
-    paths = templatepaths()
-    if not paths:
+    path = templatedir()
+    if not path:
         return _(b'no templates found, try `hg debuginstall` for more info')
-    dirlist = os.listdir(paths[0])
+    dirlist = os.listdir(path)
     stylelist = []
     for file in dirlist:
         split = file.split(b".")
@@ -823,7 +823,7 @@ def _readmapfile(mapfile):
         )
 
     base = os.path.dirname(mapfile)
-    conf = config.config(includepaths=templatepaths())
+    conf = config.config(includepaths=[templatedir()])
     conf.read(mapfile, remap={b'': b'templates'})
 
     cache = {}
@@ -837,15 +837,13 @@ def _readmapfile(mapfile):
 
         # fallback check in template paths
         if not os.path.exists(path):
-            for p in templatepaths():
-                p2 = util.normpath(os.path.join(p, val))
-                if os.path.isfile(p2):
-                    path = p2
-                    break
+            p2 = util.normpath(os.path.join(templatedir(), val))
+            if os.path.isfile(p2):
+                path = p2
+            else:
                 p3 = util.normpath(os.path.join(p2, b"map"))
                 if os.path.isfile(p3):
                     path = p3
-                    break
 
         cache, tmap, aliases = _readmapfile(path)
 
@@ -1045,18 +1043,17 @@ class templater(object):
         return stream
 
 
-def templatepaths():
-    '''return locations used for template files.'''
+def templatedir():
+    '''return the directory used for template files, or None.'''
     path = os.path.normpath(os.path.join(resourceutil.datapath, b'templates'))
-    return [path] if os.path.isdir(path) else []
+    return path if os.path.isdir(path) else None
 
 
 def templatepath(name):
     '''return location of template file. returns None if not found.'''
-    for p in templatepaths():
-        f = os.path.join(p, name)
-        if os.path.exists(f):
-            return f
+    f = os.path.join(templatedir(), name)
+    if f and os.path.exists(f):
+        return f
     return None
 
 
@@ -1070,7 +1067,7 @@ def stylemap(styles, paths=None):
     """
 
     if paths is None:
-        paths = templatepaths()
+        paths = [templatedir()]
     elif isinstance(paths, bytes):
         paths = [paths]
 

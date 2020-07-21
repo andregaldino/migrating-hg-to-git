@@ -1668,8 +1668,8 @@ def debuginstall(ui, **opts):
     fm.data(re2=bool(util._re2))
 
     # templates
-    p = templater.templatepaths()
-    fm.write(b'templatedirs', b'checking templates (%s)...\n', b' '.join(p))
+    p = templater.templatedir()
+    fm.write(b'templatedirs', b'checking templates (%s)...\n', p)
     fm.condwrite(not p, b'', _(b" no template directories found\n"))
     if p:
         m = templater.templatepath(b"map-cmdline.default")

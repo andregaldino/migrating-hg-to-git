@@ -1319,7 +1319,7 @@ def static(web):
     # readable by the user running the CGI script
     static = web.config(b"web", b"static", untrusted=False)
     if not static:
-        tp = web.templatepath or templater.templatepaths()
+        tp = web.templatepath or templater.templatedir()
         if isinstance(tp, bytes):
             tp = [tp]
         static = [os.path.join(p, b'static') for p in tp]

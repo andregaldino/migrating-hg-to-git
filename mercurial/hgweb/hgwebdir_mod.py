@@ -414,7 +414,7 @@ class hgwebdir(object):
                     fname = req.qsparams[b'static']
                 static = self.ui.config(b"web", b"static", untrusted=False)
                 if not static:
-                    tp = self.templatepath or templater.templatepaths()
+                    tp = self.templatepath or templater.templatedir()
                     if isinstance(tp, bytes):
                         tp = [tp]
                     static = [os.path.join(p, b'static') for p in tp]
