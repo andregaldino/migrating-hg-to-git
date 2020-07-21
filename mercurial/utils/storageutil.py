@@ -180,9 +180,9 @@ def fileidlookup(store, fileid, identifier):
 
     ``fileid`` can be:
 
-    * A 20 byte binary node.
+    * A 20 or 32 byte binary node.
     * An integer revision number
-    * A 40 byte hex node.
+    * A 40 or 64 byte hex node.
     * A bytes that can be parsed as an integer representing a revision number.
 
     ``identifier`` is used to populate ``error.LookupError`` with an identifier
@@ -198,14 +198,14 @@ def fileidlookup(store, fileid, identifier):
                 b'%d' % fileid, identifier, _(b'no match found')
             )
 
-    if len(fileid) == 20:
+    if len(fileid) in (20, 32):
         try:
             store.rev(fileid)
             return fileid
         except error.LookupError:
             pass
 
-    if len(fileid) == 40:
+    if len(fileid) in (40, 64):
         try:
             rawnode = bin(fileid)
             store.rev(rawnode)
