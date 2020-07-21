@@ -607,8 +607,6 @@ def templatespec(tmpl, mapfile):
     if mapfile:
         return formatter.mapfile_templatespec(b'changeset', mapfile)
     else:
-        if pycompat.ispy3:
-            assert not isinstance(tmpl, str), b'tmpl must not be a str'
         return formatter.literal_templatespec(tmpl)
 
 
