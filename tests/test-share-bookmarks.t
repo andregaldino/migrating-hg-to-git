@@ -279,3 +279,8 @@ verify bookmark behavior after unshare
      bm3                       4:62f4ded848e4
      bm4                       5:92793bfc8cad
   $ cd ..
+
+Test that if store is disabled, we drop the bookmarksinstore requirement
+
+  $ hg init brokenrepo --config format.bookmarks-in-store=True --config format.usestore=false
+  ignoring enabled 'format.bookmarks-in-store' config beacuse it is incompatible with disabled 'format.usestore' config

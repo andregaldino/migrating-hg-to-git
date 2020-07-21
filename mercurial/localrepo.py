@@ -3315,6 +3315,28 @@ def newreporequirements(ui, createopts):
     return requirements
 
 
+def checkrequirementscompat(ui, requirements):
+    """ Checks compatibility of repository requirements enabled and disabled.
+
+    Returns a set of requirements which needs to be dropped because dependend
+    requirements are not enabled. Also warns users about it """
+
+    dropped = set()
+
+    if b'store' not in requirements:
+        if bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT in requirements:
+            ui.warn(
+                _(
+                    b'ignoring enabled \'format.bookmarks-in-store\' config '
+                    b'beacuse it is incompatible with disabled '
+                    b'\'format.usestore\' config\n'
+                )
+            )
+            dropped.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
+
+    return dropped
+
+
 def filterknowncreateopts(ui, createopts):
     """Filters a dict of repo creation options against options that are known.
 
@@ -3389,6 +3411,7 @@ def createrepository(ui, path, createopts=None):
         )
 
     requirements = newreporequirements(ui, createopts=createopts)
+    requirements -= checkrequirementscompat(ui, requirements)
 
     wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
 
