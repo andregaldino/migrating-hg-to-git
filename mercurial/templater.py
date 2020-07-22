@@ -823,11 +823,18 @@ def _readmapfile(mapfile):
         )
 
     base = os.path.dirname(mapfile)
-    conf = config.config(includepaths=[templatedir()])
+    conf = config.config()
 
     def include(rel, abs, remap, sections):
-        data = util.posixfile(abs, b'rb').read()
-        conf.parse(abs, data, sections=sections, remap=remap, include=include)
+        templatedirs = [base, templatedir()]
+        for dir in templatedirs:
+            abs = os.path.normpath(os.path.join(dir, rel))
+            if os.path.isfile(abs):
+                data = util.posixfile(abs, b'rb').read()
+                conf.parse(
+                    abs, data, sections=sections, remap=remap, include=include
+                )
+                break
 
     data = util.posixfile(mapfile, b'rb').read()
     conf.parse(mapfile, data, remap={b'': b'templates'}, include=include)
