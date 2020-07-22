@@ -213,7 +213,10 @@ class config(object):
             % (fp, fp.mode,)
         )
 
+        dir = os.path.dirname(path)
+
         def include(rel, abs, remap, sections):
+            abs = os.path.normpath(os.path.join(dir, rel))
             self.read(abs, remap=remap, sections=sections)
 
         self.parse(
