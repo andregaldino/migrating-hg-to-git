@@ -36,7 +36,7 @@ def state(ctx, ui):
     p = config.config()
     repo = ctx.repo()
 
-    def read(rel, f, sections=None, remap=None):
+    def read(f, abs, sections=None, remap=None):
         if f in ctx:
             try:
                 data = ctx[f].data()
