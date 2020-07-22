@@ -824,7 +824,13 @@ def _readmapfile(mapfile):
 
     base = os.path.dirname(mapfile)
     conf = config.config(includepaths=[templatedir()])
-    conf.read(mapfile, remap={b'': b'templates'})
+
+    def include(rel, abs, remap, sections):
+        data = util.posixfile(abs, b'rb').read()
+        conf.parse(abs, data, sections=sections, remap=remap, include=include)
+
+    data = util.posixfile(mapfile, b'rb').read()
+    conf.parse(mapfile, data, remap={b'': b'templates'}, include=include)
 
     cache = {}
     tmap = {}
