@@ -21,10 +21,9 @@ from . import (
 
 
 class config(object):
-    def __init__(self, data=None, includepaths=None):
+    def __init__(self, data=None):
         self._data = {}
         self._unset = []
-        self._includepaths = includepaths or []
         if data:
             for k in data._data:
                 self._data[k] = data[k].copy()
@@ -162,21 +161,18 @@ class config(object):
 
             if m and include:
                 expanded = util.expandpath(m.group(1))
-                includepaths = [os.path.dirname(src)] + self._includepaths
-
-                for base in includepaths:
-                    inc = os.path.normpath(os.path.join(base, expanded))
-
-                    try:
-                        include(expanded, inc, remap=remap, sections=sections)
-                        break
-                    except IOError as inst:
-                        if inst.errno != errno.ENOENT:
-                            raise error.ParseError(
-                                _(b"cannot include %s (%s)")
-                                % (inc, encoding.strtolocal(inst.strerror)),
-                                b"%s:%d" % (src, line),
-                            )
+                inc = os.path.normpath(
+                    os.path.join(os.path.dirname(src), expanded)
+                )
+                try:
+                    include(expanded, inc, remap=remap, sections=sections)
+                except IOError as inst:
+                    if inst.errno != errno.ENOENT:
+                        raise error.ParseError(
+                            _(b"cannot include %s (%s)")
+                            % (inc, encoding.strtolocal(inst.strerror)),
+                            b"%s:%d" % (src, line),
+                        )
                 continue
             if emptyre.match(l):
                 continue
