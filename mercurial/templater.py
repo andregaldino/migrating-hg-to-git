@@ -825,7 +825,7 @@ def _readmapfile(mapfile):
     base = os.path.dirname(mapfile)
     conf = config.config()
 
-    def include(rel, abs, remap, sections):
+    def include(rel, remap, sections):
         templatedirs = [base, templatedir()]
         for dir in templatedirs:
             if dir is None:

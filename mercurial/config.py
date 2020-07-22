@@ -161,16 +161,13 @@ class config(object):
 
             if m and include:
                 expanded = util.expandpath(m.group(1))
-                inc = os.path.normpath(
-                    os.path.join(os.path.dirname(src), expanded)
-                )
                 try:
-                    include(expanded, inc, remap=remap, sections=sections)
+                    include(expanded, remap=remap, sections=sections)
                 except IOError as inst:
                     if inst.errno != errno.ENOENT:
                         raise error.ParseError(
                             _(b"cannot include %s (%s)")
-                            % (inc, encoding.strtolocal(inst.strerror)),
+                            % (expanded, encoding.strtolocal(inst.strerror)),
                             b"%s:%d" % (src, line),
                         )
                 continue
@@ -215,7 +212,7 @@ class config(object):
 
         dir = os.path.dirname(path)
 
-        def include(rel, abs, remap, sections):
+        def include(rel, remap, sections):
             abs = os.path.normpath(os.path.join(dir, rel))
             self.read(abs, remap=remap, sections=sections)
 
