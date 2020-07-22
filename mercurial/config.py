@@ -168,7 +168,7 @@ class config(object):
                     inc = os.path.normpath(os.path.join(base, expanded))
 
                     try:
-                        include(inc, remap=remap, sections=sections)
+                        include(expanded, inc, remap=remap, sections=sections)
                         break
                     except IOError as inst:
                         if inst.errno != errno.ENOENT:
@@ -216,8 +216,12 @@ class config(object):
             b'config files must be opened in binary mode, got fp=%r mode=%r'
             % (fp, fp.mode,)
         )
+
+        def include(rel, abs, remap, sections):
+            self.read(abs, remap=remap, sections=sections)
+
         self.parse(
-            path, fp.read(), sections=sections, remap=remap, include=self.read
+            path, fp.read(), sections=sections, remap=remap, include=include
         )
 
 

@@ -36,7 +36,7 @@ def state(ctx, ui):
     p = config.config()
     repo = ctx.repo()
 
-    def read(f, sections=None, remap=None):
+    def read(rel, f, sections=None, remap=None):
         if f in ctx:
             try:
                 data = ctx[f].data()
@@ -56,7 +56,7 @@ def state(ctx, ui):
             )
 
     if b'.hgsub' in ctx:
-        read(b'.hgsub')
+        read(b'.hgsub', b'.hgsub')
 
     for path, src in ui.configitems(b'subpaths'):
         p.set(b'subpaths', path, src, ui.configsource(b'subpaths', path))
