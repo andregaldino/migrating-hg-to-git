@@ -238,7 +238,7 @@ def _filecommit(
     output: (filenode, touched)
 
         filenode: the filenode that should be used by this changeset
-        touched:  one of: None, 'added' or 'modified'
+        touched:  one of: None (mean untouched), 'added' or 'modified'
     """
 
     fname = fctx.path()
