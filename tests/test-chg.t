@@ -409,7 +409,7 @@ check server log:
 
   $ cat log/server.log | filterlog
   YYYY/MM/DD HH:MM:SS (PID)> worker process exited (pid=...)
-  YYYY/MM/DD HH:MM:SS (PID)> worker process exited (pid=...)
+  YYYY/MM/DD HH:MM:SS (PID)> worker process exited (pid=...) (?)
   YYYY/MM/DD HH:MM:SS (PID)> init cached
   YYYY/MM/DD HH:MM:SS (PID)> id -R cached
   YYYY/MM/DD HH:MM:SS (PID)> loaded repo into cache: $TESTTMP/cached (in  ...s)
