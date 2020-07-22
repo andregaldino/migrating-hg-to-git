@@ -125,6 +125,16 @@ Test template map inheritance
   date:        Wed Jan 01 10:01:00 2020 +0000
   summary:     third
   
+Test including a built-in template map
+
+  $ cat <<'EOF' > map-include-builtin
+  > %include map-cmdline.default
+  > [templates]
+  > changeset = "{changeset_quiet}\n"
+  > EOF
+  $ hg log -l1 -T./map-include-builtin
+  8:95c24699272e
+  
 
 Test docheader, docfooter and separator in template map
 
