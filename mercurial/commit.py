@@ -47,7 +47,6 @@ def commitctx(repo, ctx, error=False, origctx=None):
     if repo.filecopiesmode == b'changeset-sidedata':
         writechangesetcopy = True
         writefilecopymeta = True
-        writecopiesto = None
     else:
         writecopiesto = repo.ui.config(b'experimental', b'copies.write-to')
         writefilecopymeta = writecopiesto != b'changeset-only'
@@ -134,7 +133,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
             files = touched
             mn = _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop)
 
-        if writecopiesto == b'changeset-only':
+        if not writefilecopymeta:
             # If writing only to changeset extras, use None to indicate that
             # no entry should be written. If writing to both, write an empty
             # entry to prevent the reader from falling back to reading
