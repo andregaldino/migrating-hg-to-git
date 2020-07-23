@@ -434,8 +434,11 @@ class chgcmdserver(commandserver.server):
             self._oldios.append((ch, fp, fd))
 
     def _restoreio(self):
+        if not self._oldios:
+            return
+        nullfd = os.open(os.devnull, os.O_WRONLY)
         ui = self.ui
-        for (ch, fp, fd), (cn, fn, _mode) in zip(self._oldios, _iochannels):
+        for (ch, fp, fd), (cn, fn, mode) in zip(self._oldios, _iochannels):
             newfp = getattr(ui, fn)
             # close newfp while it's associated with client; otherwise it
             # would be closed when newfp is deleted
@@ -443,6 +446,12 @@ class chgcmdserver(commandserver.server):
                 newfp.close()
             # restore original fd: fp is open again
             try:
+                if newfp is fp and 'w' in mode:
+                    # Discard buffered data which couldn't be flushed because
+                    # of EPIPE. The data should belong to the current session
+                    # and should never persist.
+                    os.dup2(nullfd, fp.fileno())
+                    fp.flush()
                 os.dup2(fd, fp.fileno())
             except OSError as err:
                 # According to issue6330, running chg on heavy loaded systems
@@ -459,6 +468,7 @@ class chgcmdserver(commandserver.server):
             os.close(fd)
             setattr(self, cn, ch)
             setattr(ui, fn, fp)
+        os.close(nullfd)
         del self._oldios[:]
 
     def validate(self):
