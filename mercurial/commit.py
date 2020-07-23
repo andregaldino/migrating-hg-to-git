@@ -24,6 +24,25 @@ from . import (
 )
 
 
+def _write_copy_meta(repo):
+    """return a (changelog, filelog) boolean tuple
+
+    changelog: copy related information should be stored in the changeset
+    filelof:   copy related information should be written in the file revision
+    """
+    if repo.filecopiesmode == b'changeset-sidedata':
+        writechangesetcopy = True
+        writefilecopymeta = True
+    else:
+        writecopiesto = repo.ui.config(b'experimental', b'copies.write-to')
+        writefilecopymeta = writecopiesto != b'changeset-only'
+        writechangesetcopy = writecopiesto in (
+            b'changeset-only',
+            b'compatibility',
+        )
+    return writechangesetcopy, writefilecopymeta
+
+
 def commitctx(repo, ctx, error=False, origctx=None):
     """Add a new revision to the target repository.
     Revision information is passed via the context argument.
@@ -44,16 +63,8 @@ def commitctx(repo, ctx, error=False, origctx=None):
     p1, p2 = ctx.p1(), ctx.p2()
     user = ctx.user()
 
-    if repo.filecopiesmode == b'changeset-sidedata':
-        writechangesetcopy = True
-        writefilecopymeta = True
-    else:
-        writecopiesto = repo.ui.config(b'experimental', b'copies.write-to')
-        writefilecopymeta = writecopiesto != b'changeset-only'
-        writechangesetcopy = writecopiesto in (
-            b'changeset-only',
-            b'compatibility',
-        )
+    writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
+
     p1copies, p2copies = None, None
     if writechangesetcopy:
         p1copies = ctx.p1copies()
