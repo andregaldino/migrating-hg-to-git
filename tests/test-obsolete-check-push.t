@@ -207,3 +207,30 @@ Check something prevents a silent publication of the obsolete changeset
   [255]
 
   $ cd ../..
+
+Orphan from superseding
+-----------------------
+
+Make sure the only difference is phase:
+
+  $ cd check-superseded/client
+  $ hg push --force --rev 'not desc("unrelated")'
+  pushing to $TESTTMP/check-superseded/server
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files (+1 heads)
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  1 new orphan changesets
+
+Check something prevents a silent publication of the obsolete changeset
+
+  $ hg push --publish --new-branch
+  pushing to $TESTTMP/check-superseded/server
+  searching for changes
+  abort: push includes orphan changeset: c09d8ab29fda!
+  [255]
+
+  $ cd ../..
