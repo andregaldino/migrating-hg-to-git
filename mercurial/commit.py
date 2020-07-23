@@ -132,41 +132,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
                 filesremoved = removed
 
             files = touched
-            md = None
-            if not files:
-                # if no "files" actually changed in terms of the changelog,
-                # try hard to detect unmodified manifest entry so that the
-                # exact same commit can be reproduced later on convert.
-                md = m1.diff(m, scmutil.matchfiles(repo, ctx.files()))
-            if not files and md:
-                repo.ui.debug(
-                    b'not reusing manifest (no file change in '
-                    b'changelog, but manifest differs)\n'
-                )
-            if files or md:
-                repo.ui.note(_(b"committing manifest\n"))
-                # we're using narrowmatch here since it's already applied at
-                # other stages (such as dirstate.walk), so we're already
-                # ignoring things outside of narrowspec in most cases. The
-                # one case where we might have files outside the narrowspec
-                # at this point is merges, and we already error out in the
-                # case where the merge has files outside of the narrowspec,
-                # so this is safe.
-                mn = mctx.write(
-                    tr,
-                    linkrev,
-                    p1.manifestnode(),
-                    p2.manifestnode(),
-                    added,
-                    drop,
-                    match=repo.narrowmatch(),
-                )
-            else:
-                repo.ui.debug(
-                    b'reusing manifest from p1 (listed files '
-                    b'actually unchanged)\n'
-                )
-                mn = p1.manifestnode()
+            mn = _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop)
 
         if writecopiesto == b'changeset-only':
             # If writing only to changeset extras, use None to indicate that
@@ -349,3 +315,65 @@ def _filecommit(
     else:
         fnode = fparent1
     return fnode, touched
+
+
+def _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop):
+    """make a new manifest entry (or reuse a new one)
+
+    given an initialised manifest context and precomputed list of
+    - files: files affected by the commit
+    - added: new entries in the manifest
+    - drop:  entries present in parents but absent of this one
+
+    Create a new manifest revision, reuse existing ones if possible.
+
+    Return the nodeid of the manifest revision.
+    """
+    repo = ctx.repo()
+
+    md = None
+
+    # all this is cached, so it is find to get them all from the ctx.
+    p1 = ctx.p1()
+    p2 = ctx.p2()
+    m1ctx = p1.manifestctx()
+
+    m1 = m1ctx.read()
+
+    manifest = mctx.read()
+
+    if not files:
+        # if no "files" actually changed in terms of the changelog,
+        # try hard to detect unmodified manifest entry so that the
+        # exact same commit can be reproduced later on convert.
+        md = m1.diff(manifest, scmutil.matchfiles(repo, ctx.files()))
+    if not files and md:
+        repo.ui.debug(
+            b'not reusing manifest (no file change in '
+            b'changelog, but manifest differs)\n'
+        )
+    if files or md:
+        repo.ui.note(_(b"committing manifest\n"))
+        # we're using narrowmatch here since it's already applied at
+        # other stages (such as dirstate.walk), so we're already
+        # ignoring things outside of narrowspec in most cases. The
+        # one case where we might have files outside the narrowspec
+        # at this point is merges, and we already error out in the
+        # case where the merge has files outside of the narrowspec,
+        # so this is safe.
+        mn = mctx.write(
+            tr,
+            linkrev,
+            p1.manifestnode(),
+            p2.manifestnode(),
+            added,
+            drop,
+            match=repo.narrowmatch(),
+        )
+    else:
+        repo.ui.debug(
+            b'reusing manifest from p1 (listed files ' b'actually unchanged)\n'
+        )
+        mn = p1.manifestnode()
+
+    return mn
