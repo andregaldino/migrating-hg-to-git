@@ -121,3 +121,61 @@ Pushing the result is prevented with a message
   [255]
 
   $ cd ../..
+
+
+Orphan from superseding
+-----------------------
+
+Setup
+
+  $ cp -R base check-superseded
+  $ cd check-superseded/client
+  $ hg up 'desc("commit_A0_")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg branch other
+  marked working directory as branch other
+  $ hg commit --amend -m commit_A1_
+  1 new orphan changesets
+  $ hg log -G
+  @  changeset:   4:df9b82a99e21
+  |  branch:      other
+  |  tag:         tip
+  |  parent:      0:1e4be0697311
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     commit_A1_
+  |
+  | o  changeset:   3:16affbe0f986
+  |/   branch:      unrelated
+  |    parent:      0:1e4be0697311
+  |    user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     unrelated
+  |
+  | *  changeset:   2:c09d8ab29fda
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  instability: orphan
+  | |  summary:     commit_B0_
+  | |
+  | x  changeset:   1:37624bf21024
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    obsolete:    rewritten using amend as 4:df9b82a99e21
+  |    summary:     commit_A0_
+  |
+  o  changeset:   0:1e4be0697311
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     root
+  
+
+Pushing the result is prevented with a message
+
+  $ hg push --new-branch
+  pushing to $TESTTMP/check-superseded/server
+  searching for changes
+  abort: push includes orphan changeset: c09d8ab29fda!
+  [255]
+
+  $ cd ../..
