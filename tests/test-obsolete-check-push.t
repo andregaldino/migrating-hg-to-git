@@ -179,3 +179,31 @@ Pushing the result is prevented with a message
   [255]
 
   $ cd ../..
+
+Tests that user get warned if it is about to publish obsolete/unstable content
+------------------------------------------------------------------------------
+
+Orphan from pruning
+-------------------
+
+Make sure the only difference is phase:
+
+  $ cd check-pruned/client
+  $ hg push --force --rev 'not desc("unrelated")'
+  pushing to $TESTTMP/check-pruned/server
+  searching for changes
+  no changes found
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  1 new orphan changesets
+  [1]
+
+Check something prevents a silent publication of the obsolete changeset
+
+  $ hg push --publish --new-branch
+  pushing to $TESTTMP/check-pruned/server
+  searching for changes
+  abort: push includes orphan changeset: c09d8ab29fda!
+  [255]
+
+  $ cd ../..
