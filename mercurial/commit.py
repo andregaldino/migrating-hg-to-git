@@ -89,6 +89,9 @@ def commitctx(repo, ctx, error=False, origctx=None):
                 filesremoved = removed
                 filesadded = added
 
+        if origctx and origctx.manifestnode() == mn:
+            files = origctx.files()
+
         if not writefilecopymeta:
             # If writing only to changeset extras, use None to indicate that
             # no entry should be written. If writing to both, write an empty
@@ -98,9 +101,6 @@ def commitctx(repo, ctx, error=False, origctx=None):
             p2copies = p2copies or None
             filesadded = filesadded or None
             filesremoved = filesremoved or None
-
-        if origctx and origctx.manifestnode() == mn:
-            files = origctx.files()
 
         # update changelog
         repo.ui.note(_(b"committing changelog\n"))
