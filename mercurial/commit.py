@@ -84,66 +84,10 @@ def commitctx(repo, ctx, error=False, origctx=None):
             mn = p1.manifestnode()
             files = []
         else:
-            m1ctx = p1.manifestctx()
-            m2ctx = p2.manifestctx()
-            mctx = m1ctx.copy()
-
-            m = mctx.read()
-            m1 = m1ctx.read()
-            m2 = m2ctx.read()
-
-            # check in files
-            added = []
-            files_added = []
-            removed = list(ctx.removed())
-            touched = []
-            linkrev = len(repo)
-            repo.ui.note(_(b"committing files:\n"))
-            uipathfn = scmutil.getuipathfn(repo)
-            for f in sorted(ctx.modified() + ctx.added()):
-                repo.ui.note(uipathfn(f) + b"\n")
-                try:
-                    fctx = ctx[f]
-                    if fctx is None:
-                        removed.append(f)
-                    else:
-                        added.append(f)
-                        m[f], is_touched = _filecommit(
-                            repo, fctx, m1, m2, linkrev, tr, writefilecopymeta,
-                        )
-                        if is_touched:
-                            touched.append(f)
-                            if is_touched == 'added':
-                                files_added.append(f)
-                        m.setflag(f, fctx.flags())
-                except OSError:
-                    repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
-                    raise
-                except IOError as inst:
-                    errcode = getattr(inst, 'errno', errno.ENOENT)
-                    if error or errcode and errcode != errno.ENOENT:
-                        repo.ui.warn(
-                            _(b"trouble committing %s!\n") % uipathfn(f)
-                        )
-                    raise
-
-            # update manifest
-            removed = [f for f in removed if f in m1 or f in m2]
-            drop = sorted([f for f in removed if f in m])
-            for f in drop:
-                del m[f]
-            if p2.rev() != nullrev:
-                rf = metadata.get_removal_filter(ctx, (p1, p2, m1, m2))
-                removed = [f for f in removed if not rf(f)]
-
-            touched.extend(removed)
-
-            files = touched
-            mn = _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop)
-
+            mn, files, added, removed = _process_files(tr, ctx, error=error)
             if writechangesetcopy:
                 filesremoved = removed
-                filesadded = files_added
+                filesadded = added
 
         if not writefilecopymeta:
             # If writing only to changeset extras, use None to indicate that
@@ -190,6 +134,71 @@ def commitctx(repo, ctx, error=False, origctx=None):
             # if minimal phase was 0 we don't need to retract anything
             phases.registernew(repo, tr, targetphase, [n])
         return n
+
+
+def _process_files(tr, ctx, error=False):
+    repo = ctx.repo()
+    p1 = ctx.p1()
+    p2 = ctx.p2()
+
+    writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
+
+    m1ctx = p1.manifestctx()
+    m2ctx = p2.manifestctx()
+    mctx = m1ctx.copy()
+
+    m = mctx.read()
+    m1 = m1ctx.read()
+    m2 = m2ctx.read()
+
+    # check in files
+    added = []
+    filesadded = []
+    removed = list(ctx.removed())
+    touched = []
+    linkrev = len(repo)
+    repo.ui.note(_(b"committing files:\n"))
+    uipathfn = scmutil.getuipathfn(repo)
+    for f in sorted(ctx.modified() + ctx.added()):
+        repo.ui.note(uipathfn(f) + b"\n")
+        try:
+            fctx = ctx[f]
+            if fctx is None:
+                removed.append(f)
+            else:
+                added.append(f)
+                m[f], is_touched = _filecommit(
+                    repo, fctx, m1, m2, linkrev, tr, writefilecopymeta,
+                )
+                if is_touched:
+                    touched.append(f)
+                    if is_touched == 'added':
+                        filesadded.append(f)
+                m.setflag(f, fctx.flags())
+        except OSError:
+            repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
+            raise
+        except IOError as inst:
+            errcode = getattr(inst, 'errno', errno.ENOENT)
+            if error or errcode and errcode != errno.ENOENT:
+                repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
+            raise
+
+    # update manifest
+    removed = [f for f in removed if f in m1 or f in m2]
+    drop = sorted([f for f in removed if f in m])
+    for f in drop:
+        del m[f]
+    if p2.rev() != nullrev:
+        rf = metadata.get_removal_filter(ctx, (p1, p2, m1, m2))
+        removed = [f for f in removed if not rf(f)]
+
+    touched.extend(removed)
+
+    files = touched
+    mn = _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop)
+
+    return mn, files, filesadded, removed
 
 
 def _filecommit(
