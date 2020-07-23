@@ -64,43 +64,8 @@ def commitctx(repo, ctx, error=False, origctx=None):
     user = ctx.user()
 
     with repo.lock(), repo.transaction(b"commit") as tr:
-        writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
-
-        p1copies, p2copies = None, None
-        if writechangesetcopy:
-            p1copies = ctx.p1copies()
-            p2copies = ctx.p2copies()
-        filesadded, filesremoved = None, None
-        if ctx.manifestnode():
-            # reuse an existing manifest revision
-            repo.ui.debug(b'reusing known manifest\n')
-            mn = ctx.manifestnode()
-            files = ctx.files()
-            if writechangesetcopy:
-                filesadded = ctx.filesadded()
-                filesremoved = ctx.filesremoved()
-        elif not ctx.files():
-            repo.ui.debug(b'reusing manifest from p1 (no file change)\n')
-            mn = p1.manifestnode()
-            files = []
-        else:
-            mn, files, added, removed = _process_files(tr, ctx, error=error)
-            if writechangesetcopy:
-                filesremoved = removed
-                filesadded = added
-
-        if origctx and origctx.manifestnode() == mn:
-            files = origctx.files()
-
-        if not writefilecopymeta:
-            # If writing only to changeset extras, use None to indicate that
-            # no entry should be written. If writing to both, write an empty
-            # entry to prevent the reader from falling back to reading
-            # filelogs.
-            p1copies = p1copies or None
-            p2copies = p2copies or None
-            filesadded = filesadded or None
-            filesremoved = filesremoved or None
+        r = _prepare_files(tr, ctx, error=error, origctx=origctx)
+        mn, files, p1copies, p2copies, filesadded, filesremoved = r
 
         # update changelog
         repo.ui.note(_(b"committing changelog\n"))
@@ -134,6 +99,51 @@ def commitctx(repo, ctx, error=False, origctx=None):
             # if minimal phase was 0 we don't need to retract anything
             phases.registernew(repo, tr, targetphase, [n])
         return n
+
+
+def _prepare_files(tr, ctx, error=False, origctx=None):
+    repo = ctx.repo()
+    p1 = ctx.p1()
+
+    writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
+
+    p1copies, p2copies = None, None
+    if writechangesetcopy:
+        p1copies = ctx.p1copies()
+        p2copies = ctx.p2copies()
+    filesadded, filesremoved = None, None
+    if ctx.manifestnode():
+        # reuse an existing manifest revision
+        repo.ui.debug(b'reusing known manifest\n')
+        mn = ctx.manifestnode()
+        files = ctx.files()
+        if writechangesetcopy:
+            filesadded = ctx.filesadded()
+            filesremoved = ctx.filesremoved()
+    elif not ctx.files():
+        repo.ui.debug(b'reusing manifest from p1 (no file change)\n')
+        mn = p1.manifestnode()
+        files = []
+    else:
+        mn, files, added, removed = _process_files(tr, ctx, error=error)
+        if writechangesetcopy:
+            filesremoved = removed
+            filesadded = added
+
+    if origctx and origctx.manifestnode() == mn:
+        files = origctx.files()
+
+    if not writefilecopymeta:
+        # If writing only to changeset extras, use None to indicate that
+        # no entry should be written. If writing to both, write an empty
+        # entry to prevent the reader from falling back to reading
+        # filelogs.
+        p1copies = p1copies or None
+        p2copies = p2copies or None
+        filesadded = filesadded or None
+        filesremoved = filesremoved or None
+
+    return mn, files, p1copies, p2copies, filesadded, filesremoved
 
 
 def _process_files(tr, ctx, error=False):
