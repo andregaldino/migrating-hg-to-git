@@ -63,14 +63,14 @@ def commitctx(repo, ctx, error=False, origctx=None):
     p1, p2 = ctx.p1(), ctx.p2()
     user = ctx.user()
 
-    writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
-
-    p1copies, p2copies = None, None
-    if writechangesetcopy:
-        p1copies = ctx.p1copies()
-        p2copies = ctx.p2copies()
-    filesadded, filesremoved = None, None
     with repo.lock(), repo.transaction(b"commit") as tr:
+        writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
+
+        p1copies, p2copies = None, None
+        if writechangesetcopy:
+            p1copies = ctx.p1copies()
+            p2copies = ctx.p2copies()
+        filesadded, filesremoved = None, None
         if ctx.manifestnode():
             # reuse an existing manifest revision
             repo.ui.debug(b'reusing known manifest\n')
