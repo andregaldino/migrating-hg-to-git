@@ -125,6 +125,15 @@ Test template map inheritance
   date:        Wed Jan 01 10:01:00 2020 +0000
   summary:     third
   
+Test map inheritance with non-existent base
+
+  $ echo "__base__ = non-existent" > map-base-nonexistent
+  $ printf 'cset = "changeset: ***{rev}***\\n"\n' >> map-simple
+  $ hg log -l1 -T./map-base-nonexistent
+  abort: style '$TESTTMP/a/non-existent' not found
+  (available styles: bisect, changelog, compact, default, phases, show, status, xml)
+  [255]
+
 Test including a built-in template map
 
   $ cat <<'EOF' > map-include-builtin
@@ -135,6 +144,17 @@ Test including a built-in template map
   $ hg log -l1 -T./map-include-builtin
   8:95c24699272e
   
+
+Test including a nonexistent template map
+BROKEN: This should probably be an error just like the bad __base__ above
+
+  $ cat <<'EOF' > map-include-nonexistent
+  > %include nonexistent
+  > [templates]
+  > changeset = "test\n"
+  > EOF
+  $ hg log -l1 -T./map-include-nonexistent
+  test
 
 Test docheader, docfooter and separator in template map
 
