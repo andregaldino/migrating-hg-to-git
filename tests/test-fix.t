@@ -878,7 +878,7 @@ fixing the working directory if there are unresolved merge conflicts.
 
   $ hg --config extensions.rebase= fix -r .
   abort: rebase in progress
-  (use 'hg rebase --continue' or 'hg rebase --abort')
+  (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
   [255]
 
   $ cd ..

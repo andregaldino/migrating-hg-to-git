@@ -164,10 +164,19 @@ class _statecheck(object):
         operation
         """
         if not self._cmdhint:
-            return _(b"use 'hg %s --continue' or 'hg %s --abort'") % (
-                self._opname,
-                self._opname,
-            )
+            if not self._stopflag:
+                return _(b"use 'hg %s --continue' or 'hg %s --abort'") % (
+                    self._opname,
+                    self._opname,
+                )
+            else:
+                return _(b"use 'hg %s --continue', 'hg %s --abort', "
+                         b"or 'hg %s --stop'") % (
+                    self._opname,
+                    self._opname,
+                    self._opname,
+                )
+
         return self._cmdhint
 
     def msg(self):

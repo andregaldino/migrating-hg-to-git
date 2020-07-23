@@ -25,6 +25,6 @@ Abort absorb if there is an unfinished operation.
 
   $ hg --config extensions.rebase= absorb
   abort: rebase in progress
-  (use 'hg rebase --continue' or 'hg rebase --abort')
+  (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
   [255]
 

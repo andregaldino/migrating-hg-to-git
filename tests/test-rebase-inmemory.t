@@ -901,7 +901,7 @@ Test rebasing when we're in the middle of a rebase already
   [1]
   $ hg rebase -r 3 -d 1 -t:merge3
   abort: rebase in progress
-  (use 'hg rebase --continue' or 'hg rebase --abort')
+  (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
   [255]
   $ hg resolve --list
   U foo
