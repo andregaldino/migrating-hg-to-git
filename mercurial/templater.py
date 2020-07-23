@@ -848,17 +848,17 @@ def _readmapfile(mapfile):
     val = conf.get(b'templates', b'__base__')
     if val and val[0] not in b"'\"":
         # treat as a pointer to a base class for this style
-        path = util.normpath(os.path.join(base, val))
+        path = os.path.normpath(os.path.join(base, val))
 
         # fallback check in template paths
         if not os.path.exists(path):
             dir = templatedir()
             if dir is not None:
-                p2 = util.normpath(os.path.join(dir, val))
+                p2 = os.path.normpath(os.path.join(dir, val))
                 if os.path.isfile(p2):
                     path = p2
                 else:
-                    p3 = util.normpath(os.path.join(p2, b"map"))
+                    p3 = os.path.normpath(os.path.join(p2, b"map"))
                     if os.path.isfile(p3):
                         path = p3
 
