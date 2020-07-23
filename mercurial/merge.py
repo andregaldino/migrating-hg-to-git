@@ -540,6 +540,41 @@ def _filternarrowactions(narrowmatch, branchmerge, actions):
             )
 
 
+class mergeresult(object):
+    ''''An object representing result of merging manifests.
+
+    It has information about what actions need to be performed on dirstate
+    mapping of divergent renames and other such cases. '''
+
+    def __init__(self, actions, diverge, renamedelete):
+        """
+        actions: dict of filename as keys and action related info as values
+        diverge: mapping of source name -> list of dest name for
+                 divergent renames
+        renamedelete: mapping of source name -> list of destinations for files
+                      deleted on one side and renamed on other.
+        """
+
+        self._actions = actions
+        self._diverge = diverge
+        self._renamedelete = renamedelete
+
+    @property
+    def actions(self):
+        return self._actions
+
+    @property
+    def diverge(self):
+        return self._diverge
+
+    @property
+    def renamedelete(self):
+        return self._renamedelete
+
+    def setactions(self, actions):
+        self._actions = actions
+
+
 def manifestmerge(
     repo,
     wctx,
@@ -559,12 +594,7 @@ def manifestmerge(
     matcher = matcher to filter file lists
     acceptremote = accept the incoming changes without prompting
 
-    Returns:
-
-    actions: dict of filename as keys and action related info as values
-    diverge: mapping of source name -> list of dest name for divergent renames
-    renamedelete: mapping of source name -> list of destinations for files
-                  deleted on one side and renamed on other.
+    Returns an object of mergeresult class
     """
     if matcher is not None and matcher.always():
         matcher = None
@@ -845,7 +875,7 @@ def manifestmerge(
     renamedelete = branch_copies1.renamedelete
     renamedelete.update(branch_copies2.renamedelete)
 
-    return actions, diverge, renamedelete
+    return mergeresult(actions, diverge, renamedelete)
 
 
 def _resolvetrivial(repo, wctx, mctx, ancestor, actions):
@@ -891,13 +921,13 @@ def calculateupdates(
 
     Also filters out actions which are unrequired if repository is sparse.
 
-    Returns same 3 element tuple as manifestmerge().
+    Returns mergeresult object same as manifestmerge().
     """
     # Avoid cycle.
     from . import sparse
 
     if len(ancestors) == 1:  # default
-        actions, diverge, renamedelete = manifestmerge(
+        mresult = manifestmerge(
             repo,
             wctx,
             mctx,
@@ -908,7 +938,7 @@ def calculateupdates(
             acceptremote,
             followcopies,
         )
-        _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce)
+        _checkunknownfiles(repo, wctx, mctx, force, mresult.actions, mergeforce)
 
     else:  # only when merge.preferancestor=* - the default
         repo.ui.note(
@@ -927,7 +957,7 @@ def calculateupdates(
         diverge, renamedelete = None, None
         for ancestor in ancestors:
             repo.ui.note(_(b'\ncalculating bids for ancestor %s\n') % ancestor)
-            actions, diverge1, renamedelete1 = manifestmerge(
+            mresult1 = manifestmerge(
                 repo,
                 wctx,
                 mctx,
@@ -939,16 +969,20 @@ def calculateupdates(
                 followcopies,
                 forcefulldiff=True,
             )
-            _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce)
+            _checkunknownfiles(
+                repo, wctx, mctx, force, mresult1.actions, mergeforce
+            )
 
             # Track the shortest set of warning on the theory that bid
             # merge will correctly incorporate more information
-            if diverge is None or len(diverge1) < len(diverge):
-                diverge = diverge1
-            if renamedelete is None or len(renamedelete) < len(renamedelete1):
-                renamedelete = renamedelete1
+            if diverge is None or len(mresult1.diverge) < len(diverge):
+                diverge = mresult1.diverge
+            if renamedelete is None or len(renamedelete) < len(
+                mresult1.renamedelete
+            ):
+                renamedelete = mresult1.renamedelete
 
-            for f, a in sorted(pycompat.iteritems(actions)):
+            for f, a in sorted(pycompat.iteritems(mresult1.actions)):
                 m, args, msg = a
                 if m == mergestatemod.ACTION_GET_OTHER_AND_STORE:
                     m = mergestatemod.ACTION_GET
@@ -1000,17 +1034,19 @@ def calculateupdates(
             actions[f] = l[0]
             continue
         repo.ui.note(_(b'end of auction\n\n'))
+        mresult = mergeresult(actions, diverge, renamedelete)
 
     if wctx.rev() is None:
         fractions = _forgetremoved(wctx, mctx, branchmerge)
-        actions.update(fractions)
+        mresult.actions.update(fractions)
 
     prunedactions = sparse.filterupdatesactions(
-        repo, wctx, mctx, branchmerge, actions
+        repo, wctx, mctx, branchmerge, mresult.actions
     )
-    _resolvetrivial(repo, wctx, mctx, ancestors[0], actions)
+    _resolvetrivial(repo, wctx, mctx, ancestors[0], mresult.actions)
 
-    return prunedactions, diverge, renamedelete
+    mresult.setactions(prunedactions)
+    return mresult
 
 
 def _getcwd():
@@ -1734,7 +1770,7 @@ def update(
             followcopies = False
 
         ### calculate phase
-        actionbyfile, diverge, renamedelete = calculateupdates(
+        mresult = calculateupdates(
             repo,
             wc,
             p2,
@@ -1746,6 +1782,8 @@ def update(
             matcher=matcher,
             mergeforce=mergeforce,
         )
+
+        actionbyfile = mresult.actions
 
         if updatecheck == UPDATECHECK_NO_CONFLICT:
             for f, (m, args, msg) in pycompat.iteritems(actionbyfile):
@@ -1840,7 +1878,7 @@ def update(
                 _checkcollision(repo, wc.manifest(), actions)
 
         # divergent renames
-        for f, fl in sorted(pycompat.iteritems(diverge)):
+        for f, fl in sorted(pycompat.iteritems(mresult.diverge)):
             repo.ui.warn(
                 _(
                     b"note: possible conflict - %s was renamed "
@@ -1852,7 +1890,7 @@ def update(
                 repo.ui.warn(b" %s\n" % nf)
 
         # rename and delete
-        for f, fl in sorted(pycompat.iteritems(renamedelete)):
+        for f, fl in sorted(pycompat.iteritems(mresult.renamedelete)):
             repo.ui.warn(
                 _(
                     b"note: possible conflict - %s was deleted "

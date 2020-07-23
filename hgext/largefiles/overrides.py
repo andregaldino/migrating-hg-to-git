@@ -543,16 +543,16 @@ def overridecalculateupdates(
     origfn, repo, p1, p2, pas, branchmerge, force, acceptremote, *args, **kwargs
 ):
     overwrite = force and not branchmerge
-    actions, diverge, renamedelete = origfn(
+    mresult = origfn(
         repo, p1, p2, pas, branchmerge, force, acceptremote, *args, **kwargs
     )
 
     if overwrite:
-        return actions, diverge, renamedelete
+        return mresult
 
     # Convert to dictionary with filename as key and action as value.
     lfiles = set()
-    for f in actions:
+    for f in mresult.actions:
         splitstandin = lfutil.splitstandin(f)
         if splitstandin is not None and splitstandin in p1:
             lfiles.add(splitstandin)
@@ -561,8 +561,8 @@ def overridecalculateupdates(
 
     for lfile in sorted(lfiles):
         standin = lfutil.standin(lfile)
-        (lm, largs, lmsg) = actions.get(lfile, (None, None, None))
-        (sm, sargs, smsg) = actions.get(standin, (None, None, None))
+        (lm, largs, lmsg) = mresult.actions.get(lfile, (None, None, None))
+        (sm, sargs, smsg) = mresult.actions.get(standin, (None, None, None))
         if sm in (b'g', b'dc') and lm != b'r':
             if sm == b'dc':
                 f1, f2, fa, move, anc = sargs
@@ -578,14 +578,22 @@ def overridecalculateupdates(
                 % lfile
             )
             if repo.ui.promptchoice(usermsg, 0) == 0:  # pick remote largefile
-                actions[lfile] = (b'r', None, b'replaced by standin')
-                actions[standin] = (b'g', sargs, b'replaces standin')
+                mresult.actions[lfile] = (b'r', None, b'replaced by standin')
+                mresult.actions[standin] = (b'g', sargs, b'replaces standin')
             else:  # keep local normal file
-                actions[lfile] = (b'k', None, b'replaces standin')
+                mresult.actions[lfile] = (b'k', None, b'replaces standin')
                 if branchmerge:
-                    actions[standin] = (b'k', None, b'replaced by non-standin')
+                    mresult.actions[standin] = (
+                        b'k',
+                        None,
+                        b'replaced by non-standin',
+                    )
                 else:
-                    actions[standin] = (b'r', None, b'replaced by non-standin')
+                    mresult.actions[standin] = (
+                        b'r',
+                        None,
+                        b'replaced by non-standin',
+                    )
         elif lm in (b'g', b'dc') and sm != b'r':
             if lm == b'dc':
                 f1, f2, fa, move, anc = largs
@@ -603,24 +611,32 @@ def overridecalculateupdates(
             if repo.ui.promptchoice(usermsg, 0) == 0:  # keep local largefile
                 if branchmerge:
                     # largefile can be restored from standin safely
-                    actions[lfile] = (b'k', None, b'replaced by standin')
-                    actions[standin] = (b'k', None, b'replaces standin')
+                    mresult.actions[lfile] = (
+                        b'k',
+                        None,
+                        b'replaced by standin',
+                    )
+                    mresult.actions[standin] = (b'k', None, b'replaces standin')
                 else:
                     # "lfile" should be marked as "removed" without
                     # removal of itself
-                    actions[lfile] = (
+                    mresult.actions[lfile] = (
                         b'lfmr',
                         None,
                         b'forget non-standin largefile',
                     )
 
                     # linear-merge should treat this largefile as 're-added'
-                    actions[standin] = (b'a', None, b'keep standin')
+                    mresult.actions[standin] = (b'a', None, b'keep standin')
             else:  # pick remote normal file
-                actions[lfile] = (b'g', largs, b'replaces standin')
-                actions[standin] = (b'r', None, b'replaced by non-standin')
+                mresult.actions[lfile] = (b'g', largs, b'replaces standin')
+                mresult.actions[standin] = (
+                    b'r',
+                    None,
+                    b'replaced by non-standin',
+                )
 
-    return actions, diverge, renamedelete
+    return mresult
 
 
 @eh.wrapfunction(mergestatemod, b'recordupdates')

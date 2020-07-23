@@ -217,7 +217,7 @@ class mercurial_sink(common.converter_sink):
         """
         anc = [p1ctx.ancestor(p2ctx)]
         # Calculate what files are coming from p2
-        actions, diverge, rename = mergemod.calculateupdates(
+        mresult = mergemod.calculateupdates(
             self.repo,
             p1ctx,
             p2ctx,
@@ -228,7 +228,7 @@ class mercurial_sink(common.converter_sink):
             followcopies=False,
         )
 
-        for file, (action, info, msg) in pycompat.iteritems(actions):
+        for file, (action, info, msg) in pycompat.iteritems(mresult.actions):
             if source.targetfilebelongstosource(file):
                 # If the file belongs to the source repo, ignore the p2
                 # since it will be covered by the existing fileset.
