@@ -626,8 +626,7 @@ def loadtemplater(ui, spec, defaults=None, resources=None, cache=None):
     a map file"""
     assert not (spec.tmpl and spec.mapfile)
     if spec.mapfile:
-        frommapfile = templater.templater.frommapfile
-        return frommapfile(
+        return templater.templater.frommapfile(
             spec.mapfile, defaults=defaults, resources=resources, cache=cache
         )
     return maketemplater(
