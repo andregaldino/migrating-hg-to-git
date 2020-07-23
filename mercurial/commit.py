@@ -94,7 +94,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
 
             # check in files
             added = []
-            filesadded = []
+            files_added = []
             removed = list(ctx.removed())
             touched = []
             linkrev = len(repo)
@@ -113,8 +113,8 @@ def commitctx(repo, ctx, error=False, origctx=None):
                         )
                         if is_touched:
                             touched.append(f)
-                            if writechangesetcopy and is_touched == 'added':
-                                filesadded.append(f)
+                            if is_touched == 'added':
+                                files_added.append(f)
                         m.setflag(f, fctx.flags())
                 except OSError:
                     repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
@@ -143,6 +143,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
 
             if writechangesetcopy:
                 filesremoved = removed
+                filesadded = files_added
 
         if not writefilecopymeta:
             # If writing only to changeset extras, use None to indicate that
