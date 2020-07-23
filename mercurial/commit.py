@@ -138,11 +138,11 @@ def commitctx(repo, ctx, error=False, origctx=None):
 
             touched.extend(removed)
 
-            if writechangesetcopy:
-                filesremoved = removed
-
             files = touched
             mn = _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop)
+
+            if writechangesetcopy:
+                filesremoved = removed
 
         if not writefilecopymeta:
             # If writing only to changeset extras, use None to indicate that
