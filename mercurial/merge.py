@@ -622,6 +622,9 @@ class mergeresult(object):
     def setactions(self, actions):
         self._actions = actions
 
+    def updateactions(self, updates):
+        self._actions.update(updates)
+
     def hasconflicts(self):
         """ tells whether this merge resulted in some actions which can
         result in conflicts or not """
@@ -1125,7 +1128,7 @@ def calculateupdates(
 
     if wctx.rev() is None:
         fractions = _forgetremoved(wctx, mctx, branchmerge)
-        mresult.actions.update(fractions)
+        mresult.updateactions(fractions)
 
     prunedactions = sparse.filterupdatesactions(
         repo, wctx, mctx, branchmerge, mresult.actions
