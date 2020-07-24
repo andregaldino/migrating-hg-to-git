@@ -565,14 +565,14 @@ class mergeresult(object):
                       deleted on one side and renamed on other.
         commitinfo: dict containing data which should be used on commit
                     contains a filename -> info mapping
-        actionmapping: dict of action names as keys and list of files and
-                       related data as values
+        actionmapping: dict of action names as keys and values are dict of
+                       filename as key and related data as values
         """
         self._filemapping = {}
         self._diverge = {}
         self._renamedelete = {}
         self._commitinfo = {}
-        self._actionmapping = collections.defaultdict(list)
+        self._actionmapping = collections.defaultdict(dict)
 
     def updatevalues(self, diverge, renamedelete, commitinfo):
         self._diverge = diverge
@@ -590,20 +590,18 @@ class mergeresult(object):
         # if the file already existed, we need to delete it's old
         # entry form _actionmapping too
         if filename in self._filemapping:
-            # TODO: this is inefficient
             a, d, m = self._filemapping[filename]
-            self._actionmapping[a].remove((filename, d, m))
+            del self._actionmapping[a][filename]
 
         self._filemapping[filename] = (action, data, message)
-        self._actionmapping[action].append((filename, data, message))
+        self._actionmapping[action][filename] = (data, message)
 
     def removefile(self, filename):
         """ removes a file from the mergeresult object as the file might
         not merging anymore """
         action, data, message = self._filemapping[filename]
         del self._filemapping[filename]
-        # TODO: this is inefficient
-        self._actionmapping[action].remove((filename, data, message))
+        del self._actionmapping[action][filename]
 
     def getactions(self, actions):
         """ get list of files which are marked with these actions
@@ -612,7 +610,8 @@ class mergeresult(object):
         """
         res = []
         for a in actions:
-            res.extend(self._actionmapping[a])
+            for f, (args, msg) in pycompat.iteritems(self._actionmapping[a]):
+                res.append((f, args, msg))
         return res
 
     @property
@@ -635,13 +634,17 @@ class mergeresult(object):
     def actionsdict(self):
         """ returns a dictionary of actions to be perfomed with action as key
         and a list of files and related arguments as values """
-        return self._actionmapping
+        res = emptyactions()
+        for a, d in pycompat.iteritems(self._actionmapping):
+            for f, (args, msg) in pycompat.iteritems(d):
+                res[a].append((f, args, msg))
+        return res
 
     def setactions(self, actions):
         self._filemapping = actions
-        self._actionmapping = collections.defaultdict(list)
+        self._actionmapping = collections.defaultdict(dict)
         for f, (act, data, msg) in pycompat.iteritems(self._filemapping):
-            self._actionmapping[act].append((f, data, msg))
+            self._actionmapping[act][f] = data, msg
 
     def updateactions(self, updates):
         for f, (a, data, msg) in pycompat.iteritems(updates):
