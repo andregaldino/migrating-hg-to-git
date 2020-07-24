@@ -133,6 +133,14 @@ Test map inheritance with non-existent base
   (available styles: bisect, changelog, compact, default, phases, show, status, xml)
   [255]
 
+Test map inheritance with directory as base
+
+  $ mkdir somedir
+  $ echo "__base__ = somedir" > map-base-dir
+  $ hg log -l1 -T./map-base-dir
+  abort: Is a directory: '$TESTTMP/a/somedir'
+  [255]
+
 Test including a built-in template map
 
   $ cat <<'EOF' > map-include-builtin
@@ -153,6 +161,17 @@ BROKEN: This should probably be an error just like the bad __base__ above
   > changeset = "test\n"
   > EOF
   $ hg log -l1 -T./map-include-nonexistent
+  test
+
+Test including a directory as template map
+BROKEN: This should probably be an error just like the bad __base__ above
+
+  $ cat <<'EOF' > map-include-dir
+  > %include somedir
+  > [templates]
+  > changeset = "test\n"
+  > EOF
+  $ hg log -l1 -T./map-include-dir
   test
 
 Test docheader, docfooter and separator in template map
@@ -1254,6 +1273,12 @@ Error if no style:
   $ hg log -T list
   available styles: bisect, changelog, compact, default, phases, show, status, xml
   abort: specify a template
+  [255]
+
+Error if style is a directory:
+
+  $ hg log --style somedir
+  abort: Is a directory: 'somedir'
   [255]
 
 Error if style missing key:
