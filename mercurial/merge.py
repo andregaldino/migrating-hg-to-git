@@ -1133,9 +1133,9 @@ def calculateupdates(
     prunedactions = sparse.filterupdatesactions(
         repo, wctx, mctx, branchmerge, mresult.actions
     )
+    mresult.setactions(prunedactions)
     _resolvetrivial(repo, wctx, mctx, ancestors[0], mresult)
 
-    mresult.setactions(prunedactions)
     return mresult
 
 
