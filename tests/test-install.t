@@ -214,7 +214,7 @@ since it's bin on most platforms but Scripts on Windows.
   no problems detected
 #endif
 
-#if no-py3 virtualenv
+#if py2virtualenv
 
 Note: --no-site-packages is deprecated, but some places have an
 ancient virtualenv from their linux distro or similar and it's not yet
