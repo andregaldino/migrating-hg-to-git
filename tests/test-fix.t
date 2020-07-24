@@ -84,15 +84,15 @@ Help text for fix.
       lines of files, unless the --whole flag is used. Some tools may always
       affect the whole file regardless of --whole.
   
-      If revisions are specified with --rev, those revisions will be checked,
-      and they may be replaced with new revisions that have fixed file content.
-      It is desirable to specify all descendants of each specified revision, so
-      that the fixes propagate to the descendants. If all descendants are fixed
-      at the same time, no merging, rebasing, or evolution will be required.
-  
       If --working-dir is used, files with uncommitted changes in the working
-      copy will be fixed. If the checked-out revision is also fixed, the working
-      directory will update to the replacement revision.
+      copy will be fixed. Note that no backup are made.
+  
+      If revisions are specified with --source, those revisions and their
+      descendants will be checked, and they may be replaced with new revisions
+      that have fixed file content. By automatically including the descendants,
+      no merging, rebasing, or evolution will be required. If an ancestor of the
+      working copy is included, then the working copy itself will also be fixed,
+      and the working copy will be updated to the fixed parent.
   
       When determining what lines of each file to fix at each revision, the
       whole set of revisions being fixed is considered, so that fixes to earlier
