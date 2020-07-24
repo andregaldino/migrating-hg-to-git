@@ -6,7 +6,6 @@
 from __future__ import absolute_import
 
 import errno
-import weakref
 
 from .i18n import _
 from .node import (
@@ -62,8 +61,6 @@ def commitctx(repo, ctx, error=False, origctx=None):
         p2copies = ctx.p2copies()
     filesadded, filesremoved = None, None
     with repo.lock(), repo.transaction(b"commit") as tr:
-        trp = weakref.proxy(tr)
-
         if ctx.manifestnode():
             # reuse an existing manifest revision
             repo.ui.debug(b'reusing known manifest\n')
@@ -102,7 +99,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
                     else:
                         added.append(f)
                         m[f], is_touched = _filecommit(
-                            repo, fctx, m1, m2, linkrev, trp, writefilecopymeta,
+                            repo, fctx, m1, m2, linkrev, tr, writefilecopymeta,
                         )
                         if is_touched:
                             touched.append(f)
@@ -156,7 +153,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
                 # case where the merge has files outside of the narrowspec,
                 # so this is safe.
                 mn = mctx.write(
-                    trp,
+                    tr,
                     linkrev,
                     p1.manifestnode(),
                     p2.manifestnode(),
@@ -191,7 +188,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
             mn,
             files,
             ctx.description(),
-            trp,
+            tr,
             p1.node(),
             p2.node(),
             user,
