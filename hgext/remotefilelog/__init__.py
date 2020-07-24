@@ -150,6 +150,7 @@ from mercurial import (
     localrepo,
     match as matchmod,
     merge,
+    mergestate as mergestatemod,
     node as nodemod,
     patch,
     pycompat,
@@ -484,7 +485,7 @@ def applyupdates(
     if isenabled(repo):
         manifest = mctx.manifest()
         files = []
-        for f, args, msg in actions[b'g']:
+        for f, args, msg in actions[mergestatemod.ACTION_GET]:
             files.append((f, hex(manifest[f])))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
@@ -499,9 +500,13 @@ def checkunknownfiles(orig, repo, wctx, mctx, force, mresult, *args, **kwargs):
         for f, (m, actionargs, msg) in pycompat.iteritems(mresult.actions):
             if sparsematch and not sparsematch(f):
                 continue
-            if m in (b'c', b'dc', b'cm'):
+            if m in (
+                mergestatemod.ACTION_CREATED,
+                mergestatemod.ACTION_DELETED_CHANGED,
+                mergestatemod.ACTION_CREATED_MERGE,
+            ):
                 files.append((f, hex(mctx.filenode(f))))
-            elif m == b'dg':
+            elif m == mergestatemod.ACTION_LOCAL_DIR_RENAME_GET:
                 f2 = actionargs[0]
                 files.append((f2, hex(mctx.filenode(f2))))
         # batch fetch the needed files from the server

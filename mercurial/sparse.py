@@ -395,17 +395,17 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
         files.add(file)
         if sparsematch(file):
             prunedactions[file] = action
-        elif type == b'm':
+        elif type == mergestatemod.ACTION_MERGE:
             temporaryfiles.append(file)
             prunedactions[file] = action
         elif branchmerge:
-            if type != b'k':
+            if type != mergestatemod.ACTION_KEEP:
                 temporaryfiles.append(file)
                 prunedactions[file] = action
-        elif type == b'f':
+        elif type == mergestatemod.ACTION_FORGET:
             prunedactions[file] = action
         elif file in wctx:
-            prunedactions[file] = (b'r', args, msg)
+            prunedactions[file] = (mergestatemod.ACTION_REMOVE, args, msg)
 
         if branchmerge and type == mergestatemod.ACTION_MERGE:
             f1, f2, fa, move, anc = args
@@ -432,7 +432,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
                 actions.append((file, (fctx.flags(), False), message))
 
         typeactions = mergemod.emptyactions()
-        typeactions[b'g'] = actions
+        typeactions[mergestatemod.ACTION_GET] = actions
         mergemod.applyupdates(
             repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
         )
@@ -453,9 +453,13 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
             new = sparsematch(file)
             if not old and new:
                 flags = mf.flags(file)
-                prunedactions[file] = (b'g', (flags, False), b'')
+                prunedactions[file] = (
+                    mergestatemod.ACTION_GET,
+                    (flags, False),
+                    b'',
+                )
             elif old and not new:
-                prunedactions[file] = (b'r', [], b'')
+                prunedactions[file] = (mergestatemod.ACTION_REMOVE, [], b'')
 
     mresult.setactions(prunedactions)
 
