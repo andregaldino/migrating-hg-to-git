@@ -407,6 +407,12 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
         elif file in wctx:
             prunedactions[file] = (mergestatemod.ACTION_REMOVE, args, msg)
 
+        # in case or rename on one side, it is possible that f1 might not
+        # be present in sparse checkout we should include it
+        # TODO: should we do the same for f2?
+        # exists as a separate check because file can be in sparse and hence
+        # if we try to club this condition in above `elif type == ACTION_MERGE`
+        # it won't be triggered
         if branchmerge and type == mergestatemod.ACTION_MERGE:
             f1, f2, fa, move, anc = args
             if not sparsematch(f1):
