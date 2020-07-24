@@ -382,7 +382,7 @@ def _filesindirs(repo, manifest, dirs):
                 break
 
 
-def checkpathconflicts(repo, wctx, mctx, actions):
+def checkpathconflicts(repo, wctx, mctx, mresult):
     """
     Check if any actions introduce path conflicts in the repository, updating
     actions to record or handle the path conflict accordingly.
@@ -407,7 +407,7 @@ def checkpathconflicts(repo, wctx, mctx, actions):
     # The set of files deleted by all the actions.
     deletedfiles = set()
 
-    for f, (m, args, msg) in actions.items():
+    for f, (m, args, msg) in mresult.actions.items():
         if m in (
             mergestatemod.ACTION_CREATED,
             mergestatemod.ACTION_DELETED_CHANGED,
@@ -444,7 +444,7 @@ def checkpathconflicts(repo, wctx, mctx, actions):
                 # A file is in a directory which aliases a local file.
                 # We will need to rename the local file.
                 localconflicts.add(p)
-        if p in actions and actions[p][0] in (
+        if p in mresult.actions and mresult.actions[p][0] in (
             mergestatemod.ACTION_CREATED,
             mergestatemod.ACTION_DELETED_CHANGED,
             mergestatemod.ACTION_MERGE,
@@ -459,14 +459,16 @@ def checkpathconflicts(repo, wctx, mctx, actions):
     for p in localconflicts:
         if p not in deletedfiles:
             ctxname = bytes(wctx).rstrip(b'+')
-            pnew = util.safename(p, ctxname, wctx, set(actions.keys()))
+            pnew = util.safename(p, ctxname, wctx, set(mresult.actions.keys()))
             porig = wctx[p].copysource() or p
-            actions[pnew] = (
+            mresult.addfile(
+                pnew,
                 mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
                 (p, porig),
                 b'local path conflict',
             )
-            actions[p] = (
+            mresult.addfile(
+                p,
                 mergestatemod.ACTION_PATH_CONFLICT,
                 (pnew, b'l'),
                 b'path conflict',
@@ -477,23 +479,27 @@ def checkpathconflicts(repo, wctx, mctx, actions):
         ctxname = bytes(mctx).rstrip(b'+')
         for f, p in _filesindirs(repo, mf, remoteconflicts):
             if f not in deletedfiles:
-                m, args, msg = actions[p]
-                pnew = util.safename(p, ctxname, wctx, set(actions.keys()))
+                m, args, msg = mresult.actions[p]
+                pnew = util.safename(
+                    p, ctxname, wctx, set(mresult.actions.keys())
+                )
                 if m in (
                     mergestatemod.ACTION_DELETED_CHANGED,
                     mergestatemod.ACTION_MERGE,
                 ):
                     # Action was merge, just update target.
-                    actions[pnew] = (m, args, msg)
+                    mresult.addfile(pnew, m, args, msg)
                 else:
                     # Action was create, change to renamed get action.
                     fl = args[0]
-                    actions[pnew] = (
+                    mresult.addfile(
+                        pnew,
                         mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,
                         (p, fl),
                         b'remote path conflict',
                     )
-                actions[p] = (
+                mresult.addfile(
+                    p,
                     mergestatemod.ACTION_PATH_CONFLICT,
                     (pnew, mergestatemod.ACTION_REMOVE),
                     b'path conflict',
@@ -939,7 +945,7 @@ def manifestmerge(
 
     if repo.ui.configbool(b'experimental', b'merge.checkpathconflicts'):
         # If we are merging, look for path conflicts.
-        checkpathconflicts(repo, wctx, p2, mresult.actions)
+        checkpathconflicts(repo, wctx, p2, mresult)
 
     narrowmatch = repo.narrowmatch()
     if not narrowmatch.always():
