@@ -34,37 +34,22 @@ impl Ui {
     pub fn write_stdout(&self, bytes: &[u8]) -> Result<(), UiError> {
         let mut stdout = self.stdout.lock();
 
-        self.write_stream(&mut stdout, bytes)
-            .or_else(|e| self.handle_stdout_error(e))?;
+        stdout
+            .write_all(bytes)
+            .or_else(|e| handle_stdout_error(e))?;
 
-        stdout.flush().or_else(|e| self.handle_stdout_error(e))
-    }
-
-    /// Sometimes writing to stdout is not possible, try writing to stderr to
-    /// signal that failure, otherwise just bail.
-    fn handle_stdout_error(&self, error: io::Error) -> Result<(), UiError> {
-        self.write_stderr(
-            &[b"abort: ", error.to_string().as_bytes(), b"\n"].concat(),
-        )?;
-        Err(UiError::StdoutError(error))
+        stdout.flush().or_else(|e| handle_stdout_error(e))
     }
 
     /// Write bytes to stderr
     pub fn write_stderr(&self, bytes: &[u8]) -> Result<(), UiError> {
         let mut stderr = self.stderr.lock();
 
-        self.write_stream(&mut stderr, bytes)
-            .or_else(|e| Err(UiError::StderrError(e)))?;
+        stderr
+            .write_all(bytes)
+            .or_else(|e| handle_stderr_error(e))?;
 
         stderr.flush().or_else(|e| Err(UiError::StderrError(e)))
-    }
-
-    fn write_stream(
-        &self,
-        stream: &mut impl Write,
-        bytes: &[u8],
-    ) -> Result<(), io::Error> {
-        stream.write_all(bytes)
     }
 }
 
@@ -81,29 +66,31 @@ impl<W: Write> StdoutBuffer<W> {
 
     /// Write bytes to stdout buffer
     pub fn write_all(&mut self, bytes: &[u8]) -> Result<(), UiError> {
-        self.buf.write_all(bytes).or_else(|e| self.io_err(e))
+        self.buf
+            .write_all(bytes)
+            .or_else(|e| handle_stdout_error(e))
     }
 
     /// Flush bytes to stdout
     pub fn flush(&mut self) -> Result<(), UiError> {
-        self.buf.flush().or_else(|e| self.io_err(e))
+        self.buf.flush().or_else(|e| handle_stdout_error(e))
     }
+}
 
-    fn io_err(&self, error: io::Error) -> Result<(), UiError> {
-        if let ErrorKind::BrokenPipe = error.kind() {
-            // This makes `| head` work for example
-            return Ok(());
-        }
-        let mut stderr = io::stderr();
-
-        stderr
-            .write_all(
-                &[b"abort: ", error.to_string().as_bytes(), b"\n"].concat(),
-            )
-            .map_err(|e| UiError::StderrError(e))?;
-
-        stderr.flush().map_err(|e| UiError::StderrError(e))?;
-
-        Err(UiError::StdoutError(error))
+/// Sometimes writing to stdout is not possible, try writing to stderr to
+/// signal that failure, otherwise just bail.
+fn handle_stdout_error(error: io::Error) -> Result<(), UiError> {
+    if let ErrorKind::BrokenPipe = error.kind() {
+        // This makes `| head` work for example
+        return Ok(());
     }
+    let mut stderr = io::stderr();
+
+    stderr
+        .write_all(&[b"abort: ", error.to_string().as_bytes(), b"\n"].concat())
+        .map_err(|e| UiError::StderrError(e))?;
+
+    stderr.flush().map_err(|e| UiError::StderrError(e))?;
+
+    Err(UiError::StdoutError(error))
 }
