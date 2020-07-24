@@ -578,6 +578,19 @@ class mergeresult(object):
     def commitinfo(self):
         return self._commitinfo
 
+    @property
+    def actionsdict(self):
+        """ returns a dictionary of actions to be perfomed with action as key
+        and a list of files and related arguments as values """
+        # Convert to dictionary-of-lists format
+        actions = emptyactions()
+        for f, (m, args, msg) in pycompat.iteritems(self._actions):
+            if m not in actions:
+                actions[m] = []
+            actions[m].append((f, args, msg))
+
+        return actions
+
     def setactions(self, actions):
         self._actions = actions
 
@@ -1821,8 +1834,6 @@ def update(
             mergeforce=mergeforce,
         )
 
-        actionbyfile = mresult.actions
-
         if updatecheck == UPDATECHECK_NO_CONFLICT:
             if mresult.hasconflicts():
                 msg = _(b"conflicting changes")
@@ -1832,9 +1843,9 @@ def update(
         # Prompt and create actions. Most of this is in the resolve phase
         # already, but we can't handle .hgsubstate in filemerge or
         # subrepoutil.submerge yet so we have to keep prompting for it.
-        if b'.hgsubstate' in actionbyfile:
+        if b'.hgsubstate' in mresult.actions:
             f = b'.hgsubstate'
-            m, args, msg = actionbyfile[f]
+            m, args, msg = mresult.actions[f]
             prompts = filemerge.partextras(labels)
             prompts[b'f'] = f
             if m == mergestatemod.ACTION_CHANGED_DELETED:
@@ -1847,19 +1858,19 @@ def update(
                     % prompts,
                     0,
                 ):
-                    actionbyfile[f] = (
+                    mresult.actions[f] = (
                         mergestatemod.ACTION_REMOVE,
                         None,
                         b'prompt delete',
                     )
                 elif f in p1:
-                    actionbyfile[f] = (
+                    mresult.actions[f] = (
                         mergestatemod.ACTION_ADD_MODIFIED,
                         None,
                         b'prompt keep',
                     )
                 else:
-                    actionbyfile[f] = (
+                    mresult.actions[f] = (
                         mergestatemod.ACTION_ADD,
                         None,
                         b'prompt keep',
@@ -1879,20 +1890,16 @@ def update(
                     )
                     == 0
                 ):
-                    actionbyfile[f] = (
+                    mresult.actions[f] = (
                         mergestatemod.ACTION_GET,
                         (flags, False),
                         b'prompt recreating',
                     )
                 else:
-                    del actionbyfile[f]
+                    del mresult.actions[f]
 
         # Convert to dictionary-of-lists format
-        actions = emptyactions()
-        for f, (m, args, msg) in pycompat.iteritems(actionbyfile):
-            if m not in actions:
-                actions[m] = []
-            actions[m].append((f, args, msg))
+        actions = mresult.actionsdict
 
         if not util.fscasesensitive(repo.path):
             # check collision between files only in p2 for clean update
