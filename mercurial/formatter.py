@@ -584,7 +584,7 @@ def lookuptemplate(ui, topic, tmpl):
         mapname = templater.templatepath(
             b'map-cmdline.' + tmpl
         ) or templater.templatepath(tmpl)
-        if mapname and os.path.isfile(mapname):
+        if mapname:
             return templatespec(topic, None, mapname)
 
     # perhaps it's a reference to [templates]
