@@ -828,6 +828,8 @@ def _readmapfile(mapfile):
     def include(rel, abs, remap, sections):
         templatedirs = [base, templatedir()]
         for dir in templatedirs:
+            if dir is None:
+                continue
             abs = os.path.normpath(os.path.join(dir, rel))
             if os.path.isfile(abs):
                 data = util.posixfile(abs, b'rb').read()
@@ -850,13 +852,15 @@ def _readmapfile(mapfile):
 
         # fallback check in template paths
         if not os.path.exists(path):
-            p2 = util.normpath(os.path.join(templatedir(), val))
-            if os.path.isfile(p2):
-                path = p2
-            else:
-                p3 = util.normpath(os.path.join(p2, b"map"))
-                if os.path.isfile(p3):
-                    path = p3
+            dir = templatedir()
+            if dir is not None:
+                p2 = util.normpath(os.path.join(dir, val))
+                if os.path.isfile(p2):
+                    path = p2
+                else:
+                    p3 = util.normpath(os.path.join(p2, b"map"))
+                    if os.path.isfile(p3):
+                        path = p3
 
         cache, tmap, aliases = _readmapfile(path)
 
@@ -1064,6 +1068,9 @@ def templatedir():
 
 def templatepath(name):
     '''return location of template file. returns None if not found.'''
+    dir = templatedir()
+    if dir is None:
+        return None
     f = os.path.join(templatedir(), name)
     if f and os.path.exists(f):
         return f
@@ -1085,22 +1092,23 @@ def stylemap(styles, path=None):
     if isinstance(styles, bytes):
         styles = [styles]
 
-    for style in styles:
-        # only plain name is allowed to honor template paths
-        if (
-            not style
-            or style in (pycompat.oscurdir, pycompat.ospardir)
-            or pycompat.ossep in style
-            or pycompat.osaltsep
-            and pycompat.osaltsep in style
-        ):
-            continue
-        locations = [os.path.join(style, b'map'), b'map-' + style]
-        locations.append(b'map')
+    if path is not None:
+        for style in styles:
+            # only plain name is allowed to honor template paths
+            if (
+                not style
+                or style in (pycompat.oscurdir, pycompat.ospardir)
+                or pycompat.ossep in style
+                or pycompat.osaltsep
+                and pycompat.osaltsep in style
+            ):
+                continue
+            locations = [os.path.join(style, b'map'), b'map-' + style]
+            locations.append(b'map')
 
-        for location in locations:
-            mapfile = os.path.join(path, location)
-            if os.path.isfile(mapfile):
-                return style, mapfile
+            for location in locations:
+                mapfile = os.path.join(path, location)
+                if os.path.isfile(mapfile):
+                    return style, mapfile
 
     raise RuntimeError(b"No hgweb templates found in %r" % path)
