@@ -1281,6 +1281,12 @@ Error if style is a directory:
   abort: Is a directory: 'somedir'
   [255]
 
+Error if style is a directory whose name is a built-in style:
+
+  $ hg log --style coal
+  abort: Is a directory: '*/mercurial/templates/coal' (glob)
+  [255]
+
 Error if style missing key:
 
   $ echo 'q = q' > t
