@@ -959,26 +959,28 @@ def manifestmerge(
     return mresult
 
 
-def _resolvetrivial(repo, wctx, mctx, ancestor, actions):
+def _resolvetrivial(repo, wctx, mctx, ancestor, mresult):
     """Resolves false conflicts where the nodeid changed but the content
        remained the same."""
     # We force a copy of actions.items() because we're going to mutate
     # actions as we resolve trivial conflicts.
-    for f, (m, args, msg) in list(actions.items()):
+    for f, (m, args, msg) in list(mresult.actions.items()):
         if (
             m == mergestatemod.ACTION_CHANGED_DELETED
             and f in ancestor
             and not wctx[f].cmp(ancestor[f])
         ):
             # local did change but ended up with same content
-            actions[f] = mergestatemod.ACTION_REMOVE, None, b'prompt same'
+            mresult.addfile(
+                f, mergestatemod.ACTION_REMOVE, None, b'prompt same'
+            )
         elif (
             m == mergestatemod.ACTION_DELETED_CHANGED
             and f in ancestor
             and not mctx[f].cmp(ancestor[f])
         ):
             # remote did change but ended up with same content
-            del actions[f]  # don't get = keep local deleted
+            mresult.removefile(f)  # don't get = keep local deleted
 
 
 def calculateupdates(
@@ -1127,7 +1129,7 @@ def calculateupdates(
     prunedactions = sparse.filterupdatesactions(
         repo, wctx, mctx, branchmerge, mresult.actions
     )
-    _resolvetrivial(repo, wctx, mctx, ancestors[0], mresult.actions)
+    _resolvetrivial(repo, wctx, mctx, ancestors[0], mresult)
 
     mresult.setactions(prunedactions)
     return mresult
