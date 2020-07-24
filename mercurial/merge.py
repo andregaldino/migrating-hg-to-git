@@ -1130,10 +1130,7 @@ def calculateupdates(
         fractions = _forgetremoved(wctx, mctx, branchmerge)
         mresult.updateactions(fractions)
 
-    prunedactions = sparse.filterupdatesactions(
-        repo, wctx, mctx, branchmerge, mresult.actions
-    )
-    mresult.setactions(prunedactions)
+    sparse.filterupdatesactions(repo, wctx, mctx, branchmerge, mresult)
     _resolvetrivial(repo, wctx, mctx, ancestors[0], mresult)
 
     return mresult

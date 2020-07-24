@@ -366,16 +366,16 @@ def matcher(repo, revs=None, includetemp=True):
     return result
 
 
-def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
+def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
     """Filter updates to only lay out files that match the sparse rules."""
     if not enabled:
-        return actions
+        return
 
     oldrevs = [pctx.rev() for pctx in wctx.parents()]
     oldsparsematch = matcher(repo, oldrevs)
 
     if oldsparsematch.always():
-        return actions
+        return
 
     files = set()
     prunedactions = {}
@@ -390,7 +390,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         sparsematch = matcher(repo, [mctx.rev()])
 
     temporaryfiles = []
-    for file, action in pycompat.iteritems(actions):
+    for file, action in pycompat.iteritems(mresult.actions):
         type, args, msg = action
         files.add(file)
         if sparsematch(file):
@@ -457,7 +457,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
             elif old and not new:
                 prunedactions[file] = (b'r', [], b'')
 
-    return prunedactions
+    mresult.setactions(prunedactions)
 
 
 def refreshwdir(repo, origstatus, origsparsematch, force=False):
