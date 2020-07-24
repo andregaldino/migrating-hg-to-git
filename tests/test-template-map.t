@@ -128,7 +128,6 @@ Test template map inheritance
 Test map inheritance with non-existent base
 
   $ echo "__base__ = non-existent" > map-base-nonexistent
-  $ printf 'cset = "changeset: ***{rev}***\\n"\n' >> map-simple
   $ hg log -l1 -T./map-base-nonexistent
   abort: style '$TESTTMP/a/non-existent' not found
   (available styles: bisect, changelog, compact, default, phases, show, status, xml)
