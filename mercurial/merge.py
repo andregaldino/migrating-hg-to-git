@@ -561,11 +561,20 @@ class mergeresult(object):
         self._renamedelete = {}
         self._commitinfo = {}
 
-    def updatevalues(self, actions, diverge, renamedelete, commitinfo):
-        self._actions = actions
+    def updatevalues(self, diverge, renamedelete, commitinfo):
         self._diverge = diverge
         self._renamedelete = renamedelete
         self._commitinfo = commitinfo
+
+    def addfile(self, filename, action, data, message):
+        """ adds a new file to the mergeresult object
+
+        filename: file which we are adding
+        action: one of mergestatemod.ACTION_*
+        data: a tuple of information like fctx and ctx related to this merge
+        message: a message about the merge
+        """
+        self._actions[filename] = (action, data, message)
 
     @property
     def actions(self):
@@ -636,6 +645,7 @@ def manifestmerge(
 
     Returns an object of mergeresult class
     """
+    mresult = mergeresult()
     if matcher is not None and matcher.always():
         matcher = None
 
@@ -700,7 +710,6 @@ def manifestmerge(
 
     diff = m1.diff(m2, match=matcher)
 
-    actions = {}
     for f, ((n1, fl1), (n2, fl2)) in pycompat.iteritems(diff):
         if n1 and n2:  # file exists on both local and remote side
             if f not in ma:
@@ -709,13 +718,15 @@ def manifestmerge(
                     f, None
                 ) or branch_copies2.copy.get(f, None)
                 if fa is not None:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_MERGE,
                         (f, f, fa, False, pa.node()),
                         b'both renamed from %s' % fa,
                     )
                 else:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_MERGE,
                         (f, f, None, False, pa.node()),
                         b'both created',
@@ -725,20 +736,20 @@ def manifestmerge(
                 fla = ma.flags(f)
                 nol = b'l' not in fl1 + fl2 + fla
                 if n2 == a and fl2 == fla:
-                    actions[f] = (
-                        mergestatemod.ACTION_KEEP,
-                        (),
-                        b'remote unchanged',
+                    mresult.addfile(
+                        f, mergestatemod.ACTION_KEEP, (), b'remote unchanged',
                     )
                 elif n1 == a and fl1 == fla:  # local unchanged - use remote
                     if n1 == n2:  # optimization: keep local content
-                        actions[f] = (
+                        mresult.addfile(
+                            f,
                             mergestatemod.ACTION_EXEC,
                             (fl2,),
                             b'update permissions',
                         )
                     else:
-                        actions[f] = (
+                        mresult.addfile(
+                            f,
                             mergestatemod.ACTION_GET,
                             (fl2, False),
                             b'remote is newer',
@@ -746,13 +757,15 @@ def manifestmerge(
                         if branchmerge:
                             commitinfo[f] = b'other'
                 elif nol and n2 == a:  # remote only changed 'x'
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_EXEC,
                         (fl2,),
                         b'update permissions',
                     )
                 elif nol and n1 == a:  # local only changed 'x'
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_GET,
                         (fl1, False),
                         b'remote is newer',
@@ -760,7 +773,8 @@ def manifestmerge(
                     if branchmerge:
                         commitinfo[f] = b'other'
                 else:  # both changed something
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_MERGE,
                         (f, f, f, False, pa.node()),
                         b'versions differ',
@@ -773,20 +787,23 @@ def manifestmerge(
             ):  # directory rename, move local
                 f2 = branch_copies1.movewithdir[f]
                 if f2 in m2:
-                    actions[f2] = (
+                    mresult.addfile(
+                        f2,
                         mergestatemod.ACTION_MERGE,
                         (f, f2, None, True, pa.node()),
                         b'remote directory rename, both created',
                     )
                 else:
-                    actions[f2] = (
+                    mresult.addfile(
+                        f2,
                         mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL,
                         (f, fl1),
                         b'remote directory rename - move from %s' % f,
                     )
             elif f in branch_copies1.copy:
                 f2 = branch_copies1.copy[f]
-                actions[f] = (
+                mresult.addfile(
+                    f,
                     mergestatemod.ACTION_MERGE,
                     (f, f2, f2, False, pa.node()),
                     b'local copied/moved from %s' % f2,
@@ -794,13 +811,15 @@ def manifestmerge(
             elif f in ma:  # clean, a different, no remote
                 if n1 != ma[f]:
                     if acceptremote:
-                        actions[f] = (
+                        mresult.addfile(
+                            f,
                             mergestatemod.ACTION_REMOVE,
                             None,
                             b'remote delete',
                         )
                     else:
-                        actions[f] = (
+                        mresult.addfile(
+                            f,
                             mergestatemod.ACTION_CHANGED_DELETED,
                             (f, None, f, False, pa.node()),
                             b'prompt changed/deleted',
@@ -808,16 +827,12 @@ def manifestmerge(
                 elif n1 == addednodeid:
                     # This file was locally added. We should forget it instead of
                     # deleting it.
-                    actions[f] = (
-                        mergestatemod.ACTION_FORGET,
-                        None,
-                        b'remote deleted',
+                    mresult.addfile(
+                        f, mergestatemod.ACTION_FORGET, None, b'remote deleted',
                     )
                 else:
-                    actions[f] = (
-                        mergestatemod.ACTION_REMOVE,
-                        None,
-                        b'other deleted',
+                    mresult.addfile(
+                        f, mergestatemod.ACTION_REMOVE, None, b'other deleted',
                     )
         elif n2:  # file exists only on remote side
             if f in copied1:
@@ -825,13 +840,15 @@ def manifestmerge(
             elif f in branch_copies2.movewithdir:
                 f2 = branch_copies2.movewithdir[f]
                 if f2 in m1:
-                    actions[f2] = (
+                    mresult.addfile(
+                        f2,
                         mergestatemod.ACTION_MERGE,
                         (f2, f, None, False, pa.node()),
                         b'local directory rename, both created',
                     )
                 else:
-                    actions[f2] = (
+                    mresult.addfile(
+                        f2,
                         mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,
                         (f, fl2),
                         b'local directory rename - get from %s' % f,
@@ -839,13 +856,15 @@ def manifestmerge(
             elif f in branch_copies2.copy:
                 f2 = branch_copies2.copy[f]
                 if f2 in m2:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_MERGE,
                         (f2, f, f2, False, pa.node()),
                         b'remote copied from %s' % f2,
                     )
                 else:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_MERGE,
                         (f2, f, f2, True, pa.node()),
                         b'remote moved from %s' % f2,
@@ -863,19 +882,22 @@ def manifestmerge(
                 # Checking whether the files are different is expensive, so we
                 # don't do that when we can avoid it.
                 if not force:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_CREATED,
                         (fl2,),
                         b'remote created',
                     )
                 elif not branchmerge:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_CREATED,
                         (fl2,),
                         b'remote created',
                     )
                 else:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_CREATED_MERGE,
                         (fl2, pa.node()),
                         b'remote created, get or merge',
@@ -888,20 +910,23 @@ def manifestmerge(
                         df = branch_copies1.dirmove[d] + f[len(d) :]
                         break
                 if df is not None and df in m1:
-                    actions[df] = (
+                    mresult.addfile(
+                        df,
                         mergestatemod.ACTION_MERGE,
                         (df, f, f, False, pa.node()),
                         b'local directory rename - respect move '
                         b'from %s' % f,
                     )
                 elif acceptremote:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_CREATED,
                         (fl2,),
                         b'remote recreating',
                     )
                 else:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_DELETED_CHANGED,
                         (None, f, f, False, pa.node()),
                         b'prompt deleted/changed',
@@ -909,18 +934,17 @@ def manifestmerge(
 
     if repo.ui.configbool(b'experimental', b'merge.checkpathconflicts'):
         # If we are merging, look for path conflicts.
-        checkpathconflicts(repo, wctx, p2, actions)
+        checkpathconflicts(repo, wctx, p2, mresult.actions)
 
     narrowmatch = repo.narrowmatch()
     if not narrowmatch.always():
         # Updates "actions" in place
-        _filternarrowactions(narrowmatch, branchmerge, actions)
+        _filternarrowactions(narrowmatch, branchmerge, mresult.actions)
 
     renamedelete = branch_copies1.renamedelete
     renamedelete.update(branch_copies2.renamedelete)
 
-    mresult = mergeresult()
-    mresult.updatevalues(actions, diverge, renamedelete, commitinfo)
+    mresult.updatevalues(diverge, renamedelete, commitinfo)
     return mresult
 
 
@@ -1046,7 +1070,7 @@ def calculateupdates(
         # Call for bids
         # Pick the best bid for each file
         repo.ui.note(_(b'\nauction for merging merge bids\n'))
-        actions = {}
+        mresult = mergeresult()
         for f, bids in sorted(fbids.items()):
             # bids is a mapping from action method to list af actions
             # Consensus?
@@ -1054,19 +1078,19 @@ def calculateupdates(
                 m, l = list(bids.items())[0]
                 if all(a == l[0] for a in l[1:]):  # len(bids) is > 1
                     repo.ui.note(_(b" %s: consensus for %s\n") % (f, m))
-                    actions[f] = l[0]
+                    mresult.addfile(f, *l[0])
                     continue
             # If keep is an option, just do it.
             if mergestatemod.ACTION_KEEP in bids:
                 repo.ui.note(_(b" %s: picking 'keep' action\n") % f)
-                actions[f] = bids[mergestatemod.ACTION_KEEP][0]
+                mresult.addfile(f, *bids[mergestatemod.ACTION_KEEP][0])
                 continue
             # If there are gets and they all agree [how could they not?], do it.
             if mergestatemod.ACTION_GET in bids:
                 ga0 = bids[mergestatemod.ACTION_GET][0]
                 if all(a == ga0 for a in bids[mergestatemod.ACTION_GET][1:]):
                     repo.ui.note(_(b" %s: picking 'get' action\n") % f)
-                    actions[f] = ga0
+                    mresult.addfile(f, *ga0)
                     continue
             # TODO: Consider other simple actions such as mode changes
             # Handle inefficient democrazy.
@@ -1079,12 +1103,11 @@ def calculateupdates(
             repo.ui.warn(
                 _(b' %s: ambiguous merge - picked %s action\n') % (f, m)
             )
-            actions[f] = l[0]
+            mresult.addfile(f, *l[0])
             continue
         repo.ui.note(_(b'end of auction\n\n'))
         # TODO: think about commitinfo when bid merge is used
-        mresult = mergeresult()
-        mresult.updatevalues(actions, diverge, renamedelete, {})
+        mresult.updatevalues(diverge, renamedelete, {})
 
     if wctx.rev() is None:
         fractions = _forgetremoved(wctx, mctx, branchmerge)
@@ -1870,22 +1893,19 @@ def update(
                     % prompts,
                     0,
                 ):
-                    mresult.actions[f] = (
-                        mergestatemod.ACTION_REMOVE,
-                        None,
-                        b'prompt delete',
+                    mresult.addfile(
+                        f, mergestatemod.ACTION_REMOVE, None, b'prompt delete',
                     )
                 elif f in p1:
-                    mresult.actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_ADD_MODIFIED,
                         None,
                         b'prompt keep',
                     )
                 else:
-                    mresult.actions[f] = (
-                        mergestatemod.ACTION_ADD,
-                        None,
-                        b'prompt keep',
+                    mresult.addfile(
+                        f, mergestatemod.ACTION_ADD, None, b'prompt keep',
                     )
             elif m == mergestatemod.ACTION_DELETED_CHANGED:
                 f1, f2, fa, move, anc = args
@@ -1902,7 +1922,8 @@ def update(
                     )
                     == 0
                 ):
-                    mresult.actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_GET,
                         (flags, False),
                         b'prompt recreating',

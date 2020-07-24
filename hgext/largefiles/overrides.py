@@ -578,21 +578,17 @@ def overridecalculateupdates(
                 % lfile
             )
             if repo.ui.promptchoice(usermsg, 0) == 0:  # pick remote largefile
-                mresult.actions[lfile] = (b'r', None, b'replaced by standin')
-                mresult.actions[standin] = (b'g', sargs, b'replaces standin')
+                mresult.addfile(lfile, b'r', None, b'replaced by standin')
+                mresult.addfile(standin, b'g', sargs, b'replaces standin')
             else:  # keep local normal file
-                mresult.actions[lfile] = (b'k', None, b'replaces standin')
+                mresult.addfile(lfile, b'k', None, b'replaces standin')
                 if branchmerge:
-                    mresult.actions[standin] = (
-                        b'k',
-                        None,
-                        b'replaced by non-standin',
+                    mresult.addfile(
+                        standin, b'k', None, b'replaced by non-standin',
                     )
                 else:
-                    mresult.actions[standin] = (
-                        b'r',
-                        None,
-                        b'replaced by non-standin',
+                    mresult.addfile(
+                        standin, b'r', None, b'replaced by non-standin',
                     )
         elif lm in (b'g', b'dc') and sm != b'r':
             if lm == b'dc':
@@ -611,29 +607,23 @@ def overridecalculateupdates(
             if repo.ui.promptchoice(usermsg, 0) == 0:  # keep local largefile
                 if branchmerge:
                     # largefile can be restored from standin safely
-                    mresult.actions[lfile] = (
-                        b'k',
-                        None,
-                        b'replaced by standin',
+                    mresult.addfile(
+                        lfile, b'k', None, b'replaced by standin',
                     )
-                    mresult.actions[standin] = (b'k', None, b'replaces standin')
+                    mresult.addfile(standin, b'k', None, b'replaces standin')
                 else:
                     # "lfile" should be marked as "removed" without
                     # removal of itself
-                    mresult.actions[lfile] = (
-                        b'lfmr',
-                        None,
-                        b'forget non-standin largefile',
+                    mresult.addfile(
+                        lfile, b'lfmr', None, b'forget non-standin largefile',
                     )
 
                     # linear-merge should treat this largefile as 're-added'
-                    mresult.actions[standin] = (b'a', None, b'keep standin')
+                    mresult.addfile(standin, b'a', None, b'keep standin')
             else:  # pick remote normal file
-                mresult.actions[lfile] = (b'g', largs, b'replaces standin')
-                mresult.actions[standin] = (
-                    b'r',
-                    None,
-                    b'replaced by non-standin',
+                mresult.addfile(lfile, b'g', largs, b'replaces standin')
+                mresult.addfile(
+                    standin, b'r', None, b'replaced by non-standin',
                 )
 
     return mresult
