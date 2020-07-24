@@ -576,6 +576,11 @@ class mergeresult(object):
         """
         self._actions[filename] = (action, data, message)
 
+    def removefile(self, filename):
+        """ removes a file from the mergeresult object as the file might
+        not merging anymore """
+        del self._actions[filename]
+
     @property
     def actions(self):
         return self._actions
@@ -1929,7 +1934,7 @@ def update(
                         b'prompt recreating',
                     )
                 else:
-                    del mresult.actions[f]
+                    mresult.removefile(f)
 
         # Convert to dictionary-of-lists format
         actions = mresult.actionsdict
