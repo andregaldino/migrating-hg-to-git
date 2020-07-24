@@ -513,7 +513,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
         raise error.Abort(_(b"destination manifest contains path conflicts"))
 
 
-def _filternarrowactions(narrowmatch, branchmerge, actions):
+def _filternarrowactions(narrowmatch, branchmerge, mresult):
     """
     Filters out actions that can ignored because the repo is narrowed.
 
@@ -524,13 +524,13 @@ def _filternarrowactions(narrowmatch, branchmerge, actions):
     nonconflicttypes = set(b'a am c cm f g gs r e'.split())
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.
-    for f, action in list(actions.items()):
+    for f, action in list(mresult.actions.items()):
         if narrowmatch(f):
             pass
         elif not branchmerge:
-            del actions[f]  # just updating, ignore changes outside clone
+            mresult.removefile(f)  # just updating, ignore changes outside clone
         elif action[0] in nooptypes:
-            del actions[f]  # merge does not affect file
+            mresult.removefile(f)  # merge does not affect file
         elif action[0] in nonconflicttypes:
             raise error.Abort(
                 _(
@@ -950,7 +950,7 @@ def manifestmerge(
     narrowmatch = repo.narrowmatch()
     if not narrowmatch.always():
         # Updates "actions" in place
-        _filternarrowactions(narrowmatch, branchmerge, mresult.actions)
+        _filternarrowactions(narrowmatch, branchmerge, mresult)
 
     renamedelete = branch_copies1.renamedelete
     renamedelete.update(branch_copies2.renamedelete)
