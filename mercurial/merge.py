@@ -546,7 +546,7 @@ class mergeresult(object):
     It has information about what actions need to be performed on dirstate
     mapping of divergent renames and other such cases. '''
 
-    def __init__(self, actions, diverge, renamedelete, commitinfo):
+    def __init__(self):
         """
         actions: dict of filename as keys and action related info as values
         diverge: mapping of source name -> list of dest name for
@@ -556,7 +556,12 @@ class mergeresult(object):
         commitinfo: dict containing data which should be used on commit
                     contains a filename -> info mapping
         """
+        self._actions = {}
+        self._diverge = {}
+        self._renamedelete = {}
+        self._commitinfo = {}
 
+    def updatevalues(self, actions, diverge, renamedelete, commitinfo):
         self._actions = actions
         self._diverge = diverge
         self._renamedelete = renamedelete
@@ -914,7 +919,9 @@ def manifestmerge(
     renamedelete = branch_copies1.renamedelete
     renamedelete.update(branch_copies2.renamedelete)
 
-    return mergeresult(actions, diverge, renamedelete, commitinfo)
+    mresult = mergeresult()
+    mresult.updatevalues(actions, diverge, renamedelete, commitinfo)
+    return mresult
 
 
 def _resolvetrivial(repo, wctx, mctx, ancestor, actions):
@@ -965,6 +972,7 @@ def calculateupdates(
     # Avoid cycle.
     from . import sparse
 
+    mresult = None
     if len(ancestors) == 1:  # default
         mresult = manifestmerge(
             repo,
@@ -1075,7 +1083,8 @@ def calculateupdates(
             continue
         repo.ui.note(_(b'end of auction\n\n'))
         # TODO: think about commitinfo when bid merge is used
-        mresult = mergeresult(actions, diverge, renamedelete, {})
+        mresult = mergeresult()
+        mresult.updatevalues(actions, diverge, renamedelete, {})
 
     if wctx.rev() is None:
         fractions = _forgetremoved(wctx, mctx, branchmerge)
