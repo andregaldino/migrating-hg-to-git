@@ -760,20 +760,14 @@ def manifestmerge(
                 fa = branch_copies1.copy.get(
                     f, None
                 ) or branch_copies2.copy.get(f, None)
+                args, msg = None, None
                 if fa is not None:
-                    mresult.addfile(
-                        f,
-                        mergestatemod.ACTION_MERGE,
-                        (f, f, fa, False, pa.node()),
-                        b'both renamed from %s' % fa,
-                    )
+                    args = (f, f, fa, False, pa.node())
+                    msg = b'both renamed from %s' % fa
                 else:
-                    mresult.addfile(
-                        f,
-                        mergestatemod.ACTION_MERGE,
-                        (f, f, None, False, pa.node()),
-                        b'both created',
-                    )
+                    args = (f, f, None, False, pa.node())
+                    msg = b'both created'
+                mresult.addfile(f, mergestatemod.ACTION_MERGE, args, msg)
             else:
                 a = ma[f]
                 fla = ma.flags(f)
@@ -898,20 +892,14 @@ def manifestmerge(
                     )
             elif f in branch_copies2.copy:
                 f2 = branch_copies2.copy[f]
+                msg, args = None, None
                 if f2 in m2:
-                    mresult.addfile(
-                        f,
-                        mergestatemod.ACTION_MERGE,
-                        (f2, f, f2, False, pa.node()),
-                        b'remote copied from %s' % f2,
-                    )
+                    args = (f2, f, f2, False, pa.node())
+                    msg = b'remote copied from %s' % f2
                 else:
-                    mresult.addfile(
-                        f,
-                        mergestatemod.ACTION_MERGE,
-                        (f2, f, f2, True, pa.node()),
-                        b'remote moved from %s' % f2,
-                    )
+                    args = (f2, f, f2, True, pa.node())
+                    msg = b'remote moved from %s' % f2
+                mresult.addfile(f, mergestatemod.ACTION_MERGE, args, msg)
             elif f not in ma:
                 # local unknown, remote created: the logic is described by the
                 # following table:
