@@ -492,11 +492,11 @@ def applyupdates(
 
 
 # Prefetch merge checkunknownfiles
-def checkunknownfiles(orig, repo, wctx, mctx, force, actions, *args, **kwargs):
+def checkunknownfiles(orig, repo, wctx, mctx, force, mresult, *args, **kwargs):
     if isenabled(repo):
         files = []
         sparsematch = repo.maybesparsematch(mctx.rev())
-        for f, (m, actionargs, msg) in pycompat.iteritems(actions):
+        for f, (m, actionargs, msg) in pycompat.iteritems(mresult.actions):
             if sparsematch and not sparsematch(f):
                 continue
             if m in (b'c', b'dc', b'cm'):
@@ -506,7 +506,7 @@ def checkunknownfiles(orig, repo, wctx, mctx, force, actions, *args, **kwargs):
                 files.append((f2, hex(mctx.filenode(f2))))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
-    return orig(repo, wctx, mctx, force, actions, *args, **kwargs)
+    return orig(repo, wctx, mctx, force, mresult, *args, **kwargs)
 
 
 # Prefetch files before status attempts to look at their size and contents

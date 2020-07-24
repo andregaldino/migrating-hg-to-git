@@ -126,7 +126,7 @@ class _unknowndirschecker(object):
         return None
 
 
-def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
+def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
     """
     Considers any actions that care about the presence of conflicting unknown
     files. For some actions, the result is to abort; for others, it is to
@@ -150,7 +150,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                 warnconflicts.update(conflicts)
 
         checkunknowndirs = _unknowndirschecker()
-        for f, (m, args, msg) in pycompat.iteritems(actions):
+        for f, (m, args, msg) in pycompat.iteritems(mresult.actions):
             if m in (
                 mergestatemod.ACTION_CREATED,
                 mergestatemod.ACTION_DELETED_CHANGED,
@@ -171,7 +171,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
         collectconflicts(ignoredconflicts, ignoredconfig)
         collectconflicts(unknownconflicts, unknownconfig)
     else:
-        for f, (m, args, msg) in pycompat.iteritems(actions):
+        for f, (m, args, msg) in pycompat.iteritems(mresult.actions):
             if m == mergestatemod.ACTION_CREATED_MERGE:
                 fl2, anc = args
                 different = _checkunknownfile(repo, wctx, mctx, f)
@@ -193,13 +193,15 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                 #     don't like an abort happening in the middle of
                 #     merge.update.
                 if not different:
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_GET,
                         (fl2, False),
                         b'remote created',
                     )
                 elif mergeforce or config == b'abort':
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_MERGE,
                         (f, f, None, False, anc),
                         b'remote differs from untracked local',
@@ -209,7 +211,8 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                 else:
                     if config == b'warn':
                         warnconflicts.add(f)
-                    actions[f] = (
+                    mresult.addfile(
+                        f,
                         mergestatemod.ACTION_GET,
                         (fl2, True),
                         b'remote created',
@@ -238,7 +241,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
         else:
             repo.ui.warn(_(b"%s: replacing untracked files in directory\n") % f)
 
-    for f, (m, args, msg) in pycompat.iteritems(actions):
+    for f, (m, args, msg) in pycompat.iteritems(mresult.actions):
         if m == mergestatemod.ACTION_CREATED:
             backup = (
                 f in fileconflicts
@@ -246,7 +249,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                 or any(p in pathconflicts for p in pathutil.finddirs(f))
             )
             (flags,) = args
-            actions[f] = (mergestatemod.ACTION_GET, (flags, backup), msg)
+            mresult.addfile(f, mergestatemod.ACTION_GET, (flags, backup), msg)
 
 
 def _forgetremoved(wctx, mctx, branchmerge):
@@ -1022,7 +1025,7 @@ def calculateupdates(
             acceptremote,
             followcopies,
         )
-        _checkunknownfiles(repo, wctx, mctx, force, mresult.actions, mergeforce)
+        _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce)
 
     else:  # only when merge.preferancestor=* - the default
         repo.ui.note(
@@ -1055,9 +1058,7 @@ def calculateupdates(
                 followcopies,
                 forcefulldiff=True,
             )
-            _checkunknownfiles(
-                repo, wctx, mctx, force, mresult1.actions, mergeforce
-            )
+            _checkunknownfiles(repo, wctx, mctx, force, mresult1, mergeforce)
 
             # Track the shortest set of warning on the theory that bid
             # merge will correctly incorporate more information
