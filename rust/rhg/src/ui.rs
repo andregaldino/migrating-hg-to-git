@@ -49,7 +49,7 @@ impl Ui {
             .write_all(bytes)
             .or_else(|e| handle_stderr_error(e))?;
 
-        stderr.flush().or_else(|e| Err(UiError::StderrError(e)))
+        stderr.flush().or_else(|e| handle_stderr_error(e))
     }
 }
 
@@ -92,5 +92,15 @@ fn handle_stdout_error(error: io::Error) -> Result<(), UiError> {
 
     stderr.flush().map_err(|e| UiError::StderrError(e))?;
 
+    Err(UiError::StdoutError(error))
+}
+
+/// Sometimes writing to stderr is not possible.
+fn handle_stderr_error(error: io::Error) -> Result<(), UiError> {
+    // A broken pipe should not result in a error
+    // like with `| head` for example
+    if let ErrorKind::BrokenPipe = error.kind() {
+        return Ok(());
+    }
     Err(UiError::StdoutError(error))
 }
