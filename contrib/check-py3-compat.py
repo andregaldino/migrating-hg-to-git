@@ -97,6 +97,15 @@ if __name__ == '__main__':
     if sys.version_info[0] == 2:
         fn = check_compat_py2
     else:
+        # check_compat_py3 will import every filename we specify as long as it
+        # starts with one of a few prefixes. It does this by converting
+        # specified filenames like 'mercurial/foo.py' to 'mercurial.foo' and
+        # importing that. When running standalone (not as part of a test), this
+        # means we actually import the installed versions, not the files we just
+        # specified. When running as test-check-py3-compat.t, we technically
+        # would import the correct paths, but it's cleaner to have both cases
+        # use the same import logic.
+        sys.path.insert(0, '.')
         fn = check_compat_py3
 
     for f in sys.argv[1:]:
