@@ -1072,7 +1072,7 @@ def templatepath(name):
     if dir is None:
         return None
     f = os.path.join(templatedir(), name)
-    if f and os.path.exists(f):
+    if f and os.path.isfile(f):
         return f
     return None
 

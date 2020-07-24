@@ -1284,7 +1284,8 @@ Error if style is a directory:
 Error if style is a directory whose name is a built-in style:
 
   $ hg log --style coal
-  abort: Is a directory: '*/mercurial/templates/coal' (glob)
+  abort: style 'coal' not found
+  (available styles: bisect, changelog, compact, default, phases, show, status, xml)
   [255]
 
 Error if style missing key:
