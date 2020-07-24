@@ -13,10 +13,11 @@ use crate::{
         files::normalize_case,
         hg_path::{HgPath, HgPathBuf},
     },
-    CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
-    DirstateParents, DirstateParseError, FastHashMap, StateMap,
+    CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError, DirstateParents,
+    DirstateParseError, FastHashMap, StateMap,
 };
 use core::borrow::Borrow;
+use micro_timer::timed;
 use std::collections::HashSet;
 use std::convert::TryInto;
 use std::iter::FromIterator;
@@ -50,9 +51,7 @@ impl Deref for DirstateMap {
 }
 
 impl FromIterator<(HgPathBuf, DirstateEntry)> for DirstateMap {
-    fn from_iter<I: IntoIterator<Item = (HgPathBuf, DirstateEntry)>>(
-        iter: I,
-    ) -> Self {
+    fn from_iter<I: IntoIterator<Item = (HgPathBuf, DirstateEntry)>>(iter: I) -> Self {
         Self {
             state_map: iter.into_iter().collect(),
             ..Self::default()
@@ -84,8 +83,7 @@ impl DirstateMap {
         old_state: EntryState,
         entry: DirstateEntry,
     ) -> Result<(), DirstateMapError> {
-        if old_state == EntryState::Unknown || old_state == EntryState::Removed
-        {
+        if old_state == EntryState::Unknown || old_state == EntryState::Removed {
             if let Some(ref mut dirs) = self.dirs {
                 dirs.add_path(filename)?;
             }
@@ -122,8 +120,7 @@ impl DirstateMap {
         old_state: EntryState,
         size: i32,
     ) -> Result<(), DirstateMapError> {
-        if old_state != EntryState::Unknown && old_state != EntryState::Removed
-        {
+        if old_state != EntryState::Unknown && old_state != EntryState::Removed {
             if let Some(ref mut dirs) = self.dirs {
                 dirs.delete_path(filename)?;
             }
@@ -181,18 +178,13 @@ impl DirstateMap {
         Ok(exists)
     }
 
-    pub fn clear_ambiguous_times(
-        &mut self,
-        filenames: Vec<HgPathBuf>,
-        now: i32,
-    ) {
+    pub fn clear_ambiguous_times(&mut self, filenames: Vec<HgPathBuf>, now: i32) {
         for filename in filenames {
             let mut changed = false;
             self.state_map
                 .entry(filename.to_owned())
                 .and_modify(|entry| {
-                    if entry.state == EntryState::Normal && entry.mtime == now
-                    {
+                    if entry.state == EntryState::Normal && entry.mtime == now {
                         changed = true;
                         *entry = DirstateEntry {
                             mtime: MTIME_UNSET,
@@ -208,18 +200,12 @@ impl DirstateMap {
         }
     }
 
-    pub fn non_normal_entries_remove(
-        &mut self,
-        key: impl AsRef<HgPath>,
-    ) -> bool {
+    pub fn non_normal_entries_remove(&mut self, key: impl AsRef<HgPath>) -> bool {
         self.get_non_normal_other_parent_entries()
             .0
             .remove(key.as_ref())
     }
-    pub fn non_normal_entries_union(
-        &mut self,
-        other: HashSet<HgPathBuf>,
-    ) -> Vec<HgPathBuf> {
+    pub fn non_normal_entries_union(&mut self, other: HashSet<HgPathBuf>) -> Vec<HgPathBuf> {
         self.get_non_normal_other_parent_entries()
             .0
             .union(&other)
@@ -257,10 +243,7 @@ impl DirstateMap {
     }
 
     pub fn set_non_normal_other_parent_entries(&mut self, force: bool) {
-        if !force
-            && self.non_normal_set.is_some()
-            && self.other_parent_set.is_some()
-        {
+        if !force && self.non_normal_set.is_some() && self.other_parent_set.is_some() {
             return;
         }
         let mut non_normal = HashSet::new();
@@ -276,8 +259,7 @@ impl DirstateMap {
             if *state != EntryState::Normal || *mtime == MTIME_UNSET {
                 non_normal.insert(filename.to_owned());
             }
-            if *state == EntryState::Normal && *size == SIZE_FROM_OTHER_PARENT
-            {
+            if *state == EntryState::Normal && *size == SIZE_FROM_OTHER_PARENT {
                 other_parent.insert(filename.to_owned());
             }
         }
@@ -291,8 +273,7 @@ impl DirstateMap {
     /// good idea.
     pub fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
         if self.all_dirs.is_none() {
-            self.all_dirs =
-                Some(DirsMultiset::from_dirstate(&self.state_map, None)?);
+            self.all_dirs = Some(DirsMultiset::from_dirstate(&self.state_map, None)?);
         }
         Ok(())
     }
@@ -307,26 +288,17 @@ impl DirstateMap {
         Ok(())
     }
 
-    pub fn has_tracked_dir(
-        &mut self,
-        directory: &HgPath,
-    ) -> Result<bool, DirstateMapError> {
+    pub fn has_tracked_dir(&mut self, directory: &HgPath) -> Result<bool, DirstateMapError> {
         self.set_dirs()?;
         Ok(self.dirs.as_ref().unwrap().contains(directory))
     }
 
-    pub fn has_dir(
-        &mut self,
-        directory: &HgPath,
-    ) -> Result<bool, DirstateMapError> {
+    pub fn has_dir(&mut self, directory: &HgPath) -> Result<bool, DirstateMapError> {
         self.set_all_dirs()?;
         Ok(self.all_dirs.as_ref().unwrap().contains(directory))
     }
 
-    pub fn parents(
-        &mut self,
-        file_contents: &[u8],
-    ) -> Result<&DirstateParents, DirstateError> {
+    pub fn parents(&mut self, file_contents: &[u8]) -> Result<&DirstateParents, DirstateError> {
         if let Some(ref parents) = self.parents {
             return Ok(parents);
         }
@@ -356,10 +328,8 @@ impl DirstateMap {
         self.dirty_parents = true;
     }
 
-    pub fn read(
-        &mut self,
-        file_contents: &[u8],
-    ) -> Result<Option<DirstateParents>, DirstateError> {
+    #[timed]
+    pub fn read(&mut self, file_contents: &[u8]) -> Result<Option<DirstateParents>, DirstateError> {
         if file_contents.is_empty() {
             return Ok(None);
         }
@@ -388,8 +358,7 @@ impl DirstateMap {
         parents: DirstateParents,
         now: Duration,
     ) -> Result<Vec<u8>, DirstateError> {
-        let packed =
-            pack_dirstate(&mut self.state_map, &self.copy_map, parents, now)?;
+        let packed = pack_dirstate(&mut self.state_map, &self.copy_map, parents, now)?;
 
         self.dirty_parents = false;
 
@@ -402,11 +371,9 @@ impl DirstateMap {
             return file_fold_map;
         }
         let mut new_file_fold_map = FileFoldMap::default();
-        for (filename, DirstateEntry { state, .. }) in self.state_map.borrow()
-        {
+        for (filename, DirstateEntry { state, .. }) in self.state_map.borrow() {
             if *state == EntryState::Removed {
-                new_file_fold_map
-                    .insert(normalize_case(filename), filename.to_owned());
+                new_file_fold_map.insert(normalize_case(filename), filename.to_owned());
             }
         }
         self.file_fold_map = Some(new_file_fold_map);
@@ -495,9 +462,6 @@ mod tests {
         other_parent.insert(HgPathBuf::from_bytes(b"f4"));
         let entries = map.get_non_normal_other_parent_entries();
 
-        assert_eq!(
-            (&mut non_normal, &mut other_parent),
-            (entries.0, entries.1)
-        );
+        assert_eq!((&mut non_normal, &mut other_parent), (entries.0, entries.1));
     }
 }
