@@ -989,10 +989,12 @@ def calculateupdates(
             )
         )
 
-        # Call for bids
-        fbids = (
-            {}
-        )  # mapping filename to bids (action method to list af actions)
+        # mapping filename to bids (action method to list af actions)
+        # {FILENAME1 : BID1, FILENAME2 : BID2}
+        # BID is another dictionary which contains
+        # mapping of following form:
+        # {ACTION_X : [info, ..], ACTION_Y : [info, ..]}
+        fbids = {}
         diverge, renamedelete = None, None
         for ancestor in ancestors:
             repo.ui.note(_(b'\ncalculating bids for ancestor %s\n') % ancestor)
@@ -1033,6 +1035,7 @@ def calculateupdates(
                 else:
                     fbids[f] = {m: [a]}
 
+        # Call for bids
         # Pick the best bid for each file
         repo.ui.note(_(b'\nauction for merging merge bids\n'))
         actions = {}
