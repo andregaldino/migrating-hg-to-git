@@ -187,6 +187,14 @@ On Python 2, we use the 3rd party virtualenv module, if available.
 #if py3 ensurepip
   $ "$PYTHON" -m venv installenv >> pip.log
 
+Hack: Debian does something a bit different in ensurepip.bootstrap. This makes
+it so that pip thinks the 'wheel' wheel is installed so it can build wheels;
+when it goes to try, however, it shells out to run `python3 -u <setup.py>`,
+that *doesn't* get the 'wheel' wheel, and it fails with an invalid command
+'bdist_wheel'. To fix this, we just delete the wheel from where Debian put it in
+our virtual env. Then pip doesn't think it's installed and doesn't try to build.
+  $ rm installenv/share/python-wheels/wheel-*.whl >/dev/null 2>&1 || true
+
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
