@@ -561,43 +561,21 @@ class changelog(revlog.revlog):
                 )
         sortedfiles = sorted(files)
         sidedata = None
-        if extra is not None:
-            for name in (
-                b'p1copies',
-                b'p2copies',
-                b'filesadded',
-                b'filesremoved',
-            ):
-                extra.pop(name, None)
-        if p1copies is not None:
-            p1copies = metadata.encodecopies(sortedfiles, p1copies)
-        if p2copies is not None:
-            p2copies = metadata.encodecopies(sortedfiles, p2copies)
-        if filesadded is not None:
-            filesadded = metadata.encodefileindices(sortedfiles, filesadded)
-        if filesremoved is not None:
-            filesremoved = metadata.encodefileindices(sortedfiles, filesremoved)
-        if self._copiesstorage == b'extra':
-            extrasentries = p1copies, p2copies, filesadded, filesremoved
-            if extra is None and any(x is not None for x in extrasentries):
-                extra = {}
-            if p1copies is not None:
-                extra[b'p1copies'] = p1copies
-            if p2copies is not None:
-                extra[b'p2copies'] = p2copies
-            if filesadded is not None:
-                extra[b'filesadded'] = filesadded
-            if filesremoved is not None:
-                extra[b'filesremoved'] = filesremoved
-        elif self._copiesstorage == b'changeset-sidedata':
+        if self._copiesstorage == b'changeset-sidedata':
             sidedata = {}
             if p1copies:
+                p1copies = metadata.encodecopies(sortedfiles, p1copies)
                 sidedata[sidedatamod.SD_P1COPIES] = p1copies
             if p2copies:
+                p2copies = metadata.encodecopies(sortedfiles, p2copies)
                 sidedata[sidedatamod.SD_P2COPIES] = p2copies
             if filesadded:
+                filesadded = metadata.encodefileindices(sortedfiles, filesadded)
                 sidedata[sidedatamod.SD_FILESADDED] = filesadded
             if filesremoved:
+                filesremoved = metadata.encodefileindices(
+                    sortedfiles, filesremoved
+                )
                 sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
             if not sidedata:
                 sidedata = None

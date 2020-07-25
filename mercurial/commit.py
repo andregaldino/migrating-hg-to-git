@@ -69,6 +69,20 @@ def commitctx(repo, ctx, error=False, origctx=None):
 
         extra = ctx.extra().copy()
 
+        files = sorted(files)
+        if extra is not None:
+            for name in (
+                b'p1copies',
+                b'p2copies',
+                b'filesadded',
+                b'filesremoved',
+            ):
+                extra.pop(name, None)
+        if repo.changelog._copiesstorage == b'extra':
+            extra = _extra_with_copies(
+                repo, extra, files, p1copies, p2copies, filesadded, filesremoved
+            )
+
         # update changelog
         repo.ui.note(_(b"committing changelog\n"))
         repo.changelog.delayupdate(tr)
@@ -407,3 +421,25 @@ def _commit_manifest(tr, linkrev, ctx, mctx, manifest, files, added, drop):
         mn = p1.manifestnode()
 
     return mn
+
+
+def _extra_with_copies(
+    repo, extra, files, p1copies, p2copies, filesadded, filesremoved
+):
+    """encode copy information into a `extra` dictionnary"""
+    extrasentries = p1copies, p2copies, filesadded, filesremoved
+    if extra is None and any(x is not None for x in extrasentries):
+        extra = {}
+    if p1copies is not None:
+        p1copies = metadata.encodecopies(files, p1copies)
+        extra[b'p1copies'] = p1copies
+    if p2copies is not None:
+        p2copies = metadata.encodecopies(files, p2copies)
+        extra[b'p2copies'] = p2copies
+    if filesadded is not None:
+        filesadded = metadata.encodefileindices(files, filesadded)
+        extra[b'filesadded'] = filesadded
+    if filesremoved is not None:
+        filesremoved = metadata.encodefileindices(files, filesremoved)
+        extra[b'filesremoved'] = filesremoved
+    return extra
