@@ -8,9 +8,10 @@ versions.
   > convert =
   > EOF
   $ cat <<'EOF' > changefileslist.py
-  > from mercurial import (changelog, extensions)
+  > from mercurial import (changelog, extensions, metadata)
   > def wrap(orig, clog, manifest, files, *args, **kwargs):
-  >   return orig(clog, manifest, [b"a"], *args, **kwargs)
+  >   files = metadata.ChangingFiles(touched=[b"a"])
+  >   return orig(clog, manifest, files, *args, **kwargs)
   > def extsetup(ui):
   >   extensions.wrapfunction(changelog.changelog, 'add', wrap)
   > EOF

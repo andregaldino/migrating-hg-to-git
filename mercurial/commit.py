@@ -84,7 +84,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
         repo.changelog.delayupdate(tr)
         n = repo.changelog.add(
             mn,
-            files.touched,
+            files,
             ctx.description(),
             tr,
             p1.node(),
@@ -92,10 +92,6 @@ def commitctx(repo, ctx, error=False, origctx=None):
             user,
             ctx.date(),
             extra,
-            files.copied_from_p1,
-            files.copied_from_p2,
-            files.added,
-            files.removed,
         )
         xp1, xp2 = p1.hex(), p2 and p2.hex() or b''
         repo.hook(
