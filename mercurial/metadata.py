@@ -22,6 +22,79 @@ from .revlogutils import (
 )
 
 
+class ChangingFiles(object):
+    """A class recording the changes made to a file by a revision
+    """
+
+    def __init__(
+        self, touched=(), added=(), removed=(), p1_copies=(), p2_copies=(),
+    ):
+        self._added = set(added)
+        self._removed = set(removed)
+        self._touched = set(touched)
+        self._touched.update(self._added)
+        self._touched.update(self._removed)
+        self._p1_copies = dict(p1_copies)
+        self._p2_copies = dict(p2_copies)
+
+    @property
+    def added(self):
+        return frozenset(self._added)
+
+    def mark_added(self, filename):
+        self._added.add(filename)
+        self._touched.add(filename)
+
+    def update_added(self, filenames):
+        for f in filenames:
+            self.mark_added(f)
+
+    @property
+    def removed(self):
+        return frozenset(self._removed)
+
+    def mark_removed(self, filename):
+        self._removed.add(filename)
+        self._touched.add(filename)
+
+    def update_removed(self, filenames):
+        for f in filenames:
+            self.mark_removed(f)
+
+    @property
+    def touched(self):
+        return frozenset(self._touched)
+
+    def mark_touched(self, filename):
+        self._touched.add(filename)
+
+    def update_touched(self, filenames):
+        for f in filenames:
+            self.mark_touched(f)
+
+    @property
+    def copied_from_p1(self):
+        return self._p1_copies.copy()
+
+    def mark_copied_from_p1(self, source, dest):
+        self._p1_copies[dest] = source
+
+    def update_copies_from_p1(self, copies):
+        for dest, source in copies.items():
+            self.mark_copied_from_p1(source, dest)
+
+    @property
+    def copied_from_p2(self):
+        return self._p2_copies.copy()
+
+    def mark_copied_from_p2(self, source, dest):
+        self._p2_copies[dest] = source
+
+    def update_copies_from_p2(self, copies):
+        for dest, source in copies.items():
+            self.mark_copied_from_p2(source, dest)
+
+
 def computechangesetfilesadded(ctx):
     """return the list of files added in a changeset
     """

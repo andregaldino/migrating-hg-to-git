@@ -64,12 +64,10 @@ def commitctx(repo, ctx, error=False, origctx=None):
     user = ctx.user()
 
     with repo.lock(), repo.transaction(b"commit") as tr:
-        r = _prepare_files(tr, ctx, error=error, origctx=origctx)
-        mn, files, p1copies, p2copies, filesadded, filesremoved = r
+        mn, files = _prepare_files(tr, ctx, error=error, origctx=origctx)
 
         extra = ctx.extra().copy()
 
-        files = sorted(files)
         if extra is not None:
             for name in (
                 b'p1copies',
@@ -79,16 +77,14 @@ def commitctx(repo, ctx, error=False, origctx=None):
             ):
                 extra.pop(name, None)
         if repo.changelog._copiesstorage == b'extra':
-            extra = _extra_with_copies(
-                repo, extra, files, p1copies, p2copies, filesadded, filesremoved
-            )
+            extra = _extra_with_copies(repo, extra, files)
 
         # update changelog
         repo.ui.note(_(b"committing changelog\n"))
         repo.changelog.delayupdate(tr)
         n = repo.changelog.add(
             mn,
-            files,
+            files.touched,
             ctx.description(),
             tr,
             p1.node(),
@@ -96,10 +92,10 @@ def commitctx(repo, ctx, error=False, origctx=None):
             user,
             ctx.date(),
             extra,
-            p1copies,
-            p2copies,
-            filesadded,
-            filesremoved,
+            files.copied_from_p1,
+            files.copied_from_p2,
+            files.added,
+            files.removed,
         )
         xp1, xp2 = p1.hex(), p2 and p2.hex() or b''
         repo.hook(
@@ -149,7 +145,19 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     if origctx and origctx.manifestnode() == mn:
         touched = origctx.files()
 
-    return mn, touched, p1copies, p2copies, filesadded, filesremoved
+    files = metadata.ChangingFiles()
+    if touched:
+        files.update_touched(touched)
+    if p1copies:
+        files.update_copies_from_p1(p1copies)
+    if p2copies:
+        files.update_copies_from_p2(p2copies)
+    if filesadded:
+        files.update_added(filesadded)
+    if filesremoved:
+        files.update_removed(filesremoved)
+
+    return mn, files
 
 
 def _process_files(tr, ctx, error=False):
@@ -413,10 +421,13 @@ def _commit_manifest(tr, linkrev, ctx, mctx, manifest, files, added, drop):
     return mn
 
 
-def _extra_with_copies(
-    repo, extra, files, p1copies, p2copies, filesadded, filesremoved
-):
+def _extra_with_copies(repo, extra, files):
     """encode copy information into a `extra` dictionnary"""
+    p1copies = files.copied_from_p1
+    p2copies = files.copied_from_p2
+    filesadded = files.added
+    filesremoved = files.removed
+    files = sorted(files.touched)
     if not _write_copy_meta(repo)[1]:
         # If writing only to changeset extras, use None to indicate that
         # no entry should be written. If writing to both, write an empty
