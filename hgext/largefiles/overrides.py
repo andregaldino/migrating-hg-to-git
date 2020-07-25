@@ -52,6 +52,8 @@ eh = exthelper.exthelper()
 
 lfstatus = lfutil.lfstatus
 
+MERGE_ACTION_LARGEFILE_MARK_REMOVED = b'lfmr'
+
 # -- Utility functions: commonly/repeatedly needed functionality ---------------
 
 
@@ -495,11 +497,11 @@ def overridedebugstate(orig, ui, repo, *pats, **opts):
         orig(ui, repo, *pats, **opts)
 
 
-# Register the `lfmr` merge action in emptyactions() return type
+# Register the MERGE_ACTION_LARGEFILE_MARK_REMOVED in emptyactions() return type
 @eh.wrapfunction(merge, b'emptyactions')
 def overrideemptyactions(origfn):
     ret = origfn()
-    ret[b'lfmr'] = []
+    ret[MERGE_ACTION_LARGEFILE_MARK_REMOVED] = []
     return ret
 
 
@@ -623,7 +625,10 @@ def overridecalculateupdates(
                     # "lfile" should be marked as "removed" without
                     # removal of itself
                     mresult.addfile(
-                        lfile, b'lfmr', None, b'forget non-standin largefile',
+                        lfile,
+                        MERGE_ACTION_LARGEFILE_MARK_REMOVED,
+                        None,
+                        b'forget non-standin largefile',
                     )
 
                     # linear-merge should treat this largefile as 're-added'
@@ -639,9 +644,9 @@ def overridecalculateupdates(
 
 @eh.wrapfunction(mergestatemod, b'recordupdates')
 def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
-    if b'lfmr' in actions:
+    if MERGE_ACTION_LARGEFILE_MARK_REMOVED in actions:
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-        for lfile, args, msg in actions[b'lfmr']:
+        for lfile, args, msg in actions[MERGE_ACTION_LARGEFILE_MARK_REMOVED]:
             # this should be executed before 'orig', to execute 'remove'
             # before all other actions
             repo.dirstate.remove(lfile)
