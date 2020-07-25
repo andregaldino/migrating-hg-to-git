@@ -132,22 +132,22 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         # reuse an existing manifest revision
         repo.ui.debug(b'reusing known manifest\n')
         mn = ctx.manifestnode()
-        files = ctx.files()
+        touched = ctx.files()
         if writechangesetcopy:
             filesadded = ctx.filesadded()
             filesremoved = ctx.filesremoved()
     elif not ctx.files():
         repo.ui.debug(b'reusing manifest from p1 (no file change)\n')
         mn = p1.manifestnode()
-        files = []
+        touched = []
     else:
-        mn, files, added, removed = _process_files(tr, ctx, error=error)
+        mn, touched, added, removed = _process_files(tr, ctx, error=error)
         if writechangesetcopy:
             filesremoved = removed
             filesadded = added
 
     if origctx and origctx.manifestnode() == mn:
-        files = origctx.files()
+        touched = origctx.files()
 
     if not writefilecopymeta:
         # If writing only to changeset extras, use None to indicate that
@@ -159,7 +159,7 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         filesadded = filesadded or None
         filesremoved = filesremoved or None
 
-    return mn, files, p1copies, p2copies, filesadded, filesremoved
+    return mn, touched, p1copies, p2copies, filesadded, filesremoved
 
 
 def _process_files(tr, ctx, error=False):
