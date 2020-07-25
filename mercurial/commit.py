@@ -129,13 +129,7 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         mn = p1.manifestnode()
         files = metadata.ChangingFiles()
     else:
-        mn, touched, added, removed = _process_files(tr, ctx, error=error)
-        files = metadata.ChangingFiles()
-        files.update_touched(touched)
-        if added:
-            files.update_added(added)
-        if removed:
-            files.update_removed(removed)
+        mn, files = _process_files(tr, ctx, error=error)
 
     if origctx and origctx.manifestnode() == mn:
         origfiles = origctx.files()
@@ -211,7 +205,11 @@ def _process_files(tr, ctx, error=False):
     files = touched
     mn = _commit_manifest(tr, linkrev, ctx, mctx, m, files, added, drop)
 
-    return mn, files, filesadded, removed
+    files = metadata.ChangingFiles(
+        touched=files, added=filesadded, removed=removed
+    )
+
+    return mn, files
 
 
 def _filecommit(
