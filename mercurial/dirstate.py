@@ -1425,6 +1425,7 @@ class dirstatemap(object):
         self._opener = opener
         self._root = root
         self._filename = b'dirstate'
+        self._nodelen = 20
 
         self._parents = None
         self._dirtyparents = False
@@ -1609,7 +1610,7 @@ class dirstatemap(object):
         if not self._parents:
             try:
                 fp = self._opendirstatefile()
-                st = fp.read(40)
+                st = fp.read(2 * self._nodelen)
                 fp.close()
             except IOError as err:
                 if err.errno != errno.ENOENT:
@@ -1618,8 +1619,11 @@ class dirstatemap(object):
                 st = b''
 
             l = len(st)
-            if l == 40:
-                self._parents = (st[:20], st[20:40])
+            if l == self._nodelen * 2:
+                self._parents = (
+                    st[: self._nodelen],
+                    st[self._nodelen : 2 * self._nodelen],
+                )
             elif l == 0:
                 self._parents = (nullid, nullid)
             else:
@@ -1655,15 +1659,17 @@ class dirstatemap(object):
         if util.safehasattr(parsers, b'dict_new_presized'):
             # Make an estimate of the number of files in the dirstate based on
             # its size. From a linear regression on a set of real-world repos,
-            # all over 10,000 files, the size of a dirstate entry is 85
-            # bytes. The cost of resizing is significantly higher than the cost
+            # all over 10,000 files, the size of a dirstate entry is 2 nodes
+            # plus 45 bytes. The cost of resizing is significantly higher than the cost
             # of filling in a larger presized dict, so subtract 20% from the
             # size.
             #
             # This heuristic is imperfect in many ways, so in a future dirstate
             # format update it makes sense to just record the number of entries
             # on write.
-            self._map = parsers.dict_new_presized(len(st) // 71)
+            self._map = parsers.dict_new_presized(
+                len(st) // ((2 * self._nodelen + 45) * 4 // 5)
+            )
 
         # Python's garbage collector triggers a GC each time a certain number
         # of container objects (the number being defined by
@@ -1829,7 +1835,7 @@ if rustmod is not None:
             if not self._parents:
                 try:
                     fp = self._opendirstatefile()
-                    st = fp.read(40)
+                    st = fp.read(2 * self._nodelen)
                     fp.close()
                 except IOError as err:
                     if err.errno != errno.ENOENT:
