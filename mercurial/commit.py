@@ -115,10 +115,6 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
 
     writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
 
-    p1copies, p2copies = None, None
-    if writechangesetcopy:
-        p1copies = ctx.p1copies()
-        p2copies = ctx.p2copies()
     filesadded, filesremoved = None, None
     if ctx.manifestnode():
         # reuse an existing manifest revision
@@ -144,10 +140,9 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     files = metadata.ChangingFiles()
     if touched:
         files.update_touched(touched)
-    if p1copies:
-        files.update_copies_from_p1(p1copies)
-    if p2copies:
-        files.update_copies_from_p2(p2copies)
+    if writechangesetcopy:
+        files.update_copies_from_p1(ctx.p1copies())
+        files.update_copies_from_p2(ctx.p2copies())
     if filesadded:
         files.update_added(filesadded)
     if filesremoved:
