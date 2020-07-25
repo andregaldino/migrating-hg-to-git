@@ -67,6 +67,8 @@ def commitctx(repo, ctx, error=False, origctx=None):
         r = _prepare_files(tr, ctx, error=error, origctx=origctx)
         mn, files, p1copies, p2copies, filesadded, filesremoved = r
 
+        extra = ctx.extra().copy()
+
         # update changelog
         repo.ui.note(_(b"committing changelog\n"))
         repo.changelog.delayupdate(tr)
@@ -79,7 +81,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
             p2.node(),
             user,
             ctx.date(),
-            ctx.extra().copy(),
+            extra,
             p1copies,
             p2copies,
             filesadded,
