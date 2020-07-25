@@ -115,36 +115,36 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
 
     writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
 
-    filesadded, filesremoved = None, None
     if ctx.manifestnode():
         # reuse an existing manifest revision
         repo.ui.debug(b'reusing known manifest\n')
         mn = ctx.manifestnode()
-        touched = ctx.files()
+        files = metadata.ChangingFiles()
+        files.update_touched(ctx.files())
         if writechangesetcopy:
-            filesadded = ctx.filesadded()
-            filesremoved = ctx.filesremoved()
+            files.update_added(ctx.filesadded())
+            files.update_removed(ctx.filesremoved())
     elif not ctx.files():
         repo.ui.debug(b'reusing manifest from p1 (no file change)\n')
         mn = p1.manifestnode()
-        touched = []
+        files = metadata.ChangingFiles()
     else:
-        r = _process_files(tr, ctx, error=error)
-        mn, touched, filesadded, filesremoved = r
+        mn, touched, added, removed = _process_files(tr, ctx, error=error)
+        files = metadata.ChangingFiles()
+        files.update_touched(touched)
+        if added:
+            files.update_added(added)
+        if removed:
+            files.update_removed(removed)
 
     if origctx and origctx.manifestnode() == mn:
-        touched = origctx.files()
+        origfiles = origctx.files()
+        assert files.touched.issubset(origfiles)
+        files.update_touched(origfiles)
 
-    files = metadata.ChangingFiles()
-    if touched:
-        files.update_touched(touched)
     if writechangesetcopy:
         files.update_copies_from_p1(ctx.p1copies())
         files.update_copies_from_p2(ctx.p2copies())
-    if filesadded:
-        files.update_added(filesadded)
-    if filesremoved:
-        files.update_removed(filesremoved)
 
     return mn, files
 
