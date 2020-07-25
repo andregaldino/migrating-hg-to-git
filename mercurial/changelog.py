@@ -558,27 +558,7 @@ class changelog(revlog.revlog):
         sortedfiles = sorted(files.touched)
         sidedata = None
         if self._copiesstorage == b'changeset-sidedata':
-            sidedata = {}
-            p1copies = files.copied_from_p1
-            if p1copies:
-                p1copies = metadata.encodecopies(sortedfiles, p1copies)
-                sidedata[sidedatamod.SD_P1COPIES] = p1copies
-            p2copies = files.copied_from_p2
-            if p2copies:
-                p2copies = metadata.encodecopies(sortedfiles, p2copies)
-                sidedata[sidedatamod.SD_P2COPIES] = p2copies
-            filesadded = files.added
-            if filesadded:
-                filesadded = metadata.encodefileindices(sortedfiles, filesadded)
-                sidedata[sidedatamod.SD_FILESADDED] = filesadded
-            filesremoved = files.removed
-            if filesremoved:
-                filesremoved = metadata.encodefileindices(
-                    sortedfiles, filesremoved
-                )
-                sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
-            if not sidedata:
-                sidedata = None
+            sidedata = metadata.encode_copies_sidedata(files)
 
         if extra:
             extra = encodeextra(extra)
