@@ -129,10 +129,8 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         mn = p1.manifestnode()
         touched = []
     else:
-        mn, touched, added, removed = _process_files(tr, ctx, error=error)
-        if writechangesetcopy:
-            filesremoved = removed
-            filesadded = added
+        r = _process_files(tr, ctx, error=error)
+        mn, touched, filesadded, filesremoved = r
 
     if origctx and origctx.manifestnode() == mn:
         touched = origctx.files()
