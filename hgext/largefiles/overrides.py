@@ -495,6 +495,14 @@ def overridedebugstate(orig, ui, repo, *pats, **opts):
         orig(ui, repo, *pats, **opts)
 
 
+# Register the `lfmr` merge action in emptyactions() return type
+@eh.wrapfunction(merge, b'emptyactions')
+def overrideemptyactions(origfn):
+    ret = origfn()
+    ret[b'lfmr'] = []
+    return ret
+
+
 # Before starting the manifest merge, merge.updates will call
 # _checkunknownfile to check if there are any files in the merged-in
 # changeset that collide with unknown files in the working copy.
