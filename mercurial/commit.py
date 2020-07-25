@@ -149,16 +149,6 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     if origctx and origctx.manifestnode() == mn:
         touched = origctx.files()
 
-    if not writefilecopymeta:
-        # If writing only to changeset extras, use None to indicate that
-        # no entry should be written. If writing to both, write an empty
-        # entry to prevent the reader from falling back to reading
-        # filelogs.
-        p1copies = p1copies or None
-        p2copies = p2copies or None
-        filesadded = filesadded or None
-        filesremoved = filesremoved or None
-
     return mn, touched, p1copies, p2copies, filesadded, filesremoved
 
 
@@ -427,6 +417,16 @@ def _extra_with_copies(
     repo, extra, files, p1copies, p2copies, filesadded, filesremoved
 ):
     """encode copy information into a `extra` dictionnary"""
+    if not _write_copy_meta(repo)[1]:
+        # If writing only to changeset extras, use None to indicate that
+        # no entry should be written. If writing to both, write an empty
+        # entry to prevent the reader from falling back to reading
+        # filelogs.
+        p1copies = p1copies or None
+        p2copies = p2copies or None
+        filesadded = filesadded or None
+        filesremoved = filesremoved or None
+
     extrasentries = p1copies, p2copies, filesadded, filesremoved
     if extra is None and any(x is not None for x in extrasentries):
         extra = {}
