@@ -156,6 +156,14 @@ REQUIRESNI
 
    Value should be "true".
 
+REQUIREDRAM
+   Value specifies expected memory requirements to decode the payload.
+   Values can have suffixes for common bytes sizes. e.g. "64MB".
+
+   This key is often used with zstd-compressed bundles using a high
+   compression level / window size, which can require 100+ MB of memory
+   to decode.
+
 heads
    Used for pull bundles. This contains the ``;`` separated changeset
    hashes of the heads of the bundle content.
