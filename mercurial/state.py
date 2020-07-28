@@ -170,12 +170,10 @@ class _statecheck(object):
                     self._opname,
                 )
             else:
-                return _(b"use 'hg %s --continue', 'hg %s --abort', "
-                         b"or 'hg %s --stop'") % (
-                    self._opname,
-                    self._opname,
-                    self._opname,
-                )
+                return _(
+                    b"use 'hg %s --continue', 'hg %s --abort', "
+                    b"or 'hg %s --stop'"
+                ) % (self._opname, self._opname, self._opname,)
 
         return self._cmdhint
 
