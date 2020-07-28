@@ -353,7 +353,7 @@ Show all commands + options
   push: force, rev, bookmark, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
   recover: verify
   remove: after, force, subrepos, include, exclude, dry-run
-  rename: after, force, include, exclude, dry-run
+  rename: after, at-rev, force, include, exclude, dry-run
   resolve: all, list, mark, unmark, no-status, re-merge, tool, include, exclude, template
   revert: all, date, rev, no-backup, interactive, include, exclude, dry-run
   rollback: dry-run, force

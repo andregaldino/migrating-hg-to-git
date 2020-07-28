@@ -43,7 +43,7 @@ Test single file
   A d1/d
     d1/b
 
-Test moved file (not copied)
+Test moved file (not copied) using 'hg cp' command
 
   $ hg co 0
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
@@ -59,10 +59,40 @@ Test moved file (not copied)
     d1/b
   R d1/b
 
-Test using directory as destination
+Test moved file (not copied) using 'hg mv' command
 
   $ hg co 0
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ mv d1/b d1/d
+  $ hg rm -A d1/b
+  $ hg add d1/d
+  $ hg ci -m 'move d1/b to d1/d'
+  created new head
+  $ hg mv -A --at-rev . d1/b d1/d
+  saved backup bundle to $TESTTMP/.hg/strip-backup/519850c3ea27-153c8fbb-copy.hg
+  $ hg st -C --change .
+  A d1/d
+    d1/b
+  R d1/b
+
+Test moved file (not copied) for which source still exists
+
+  $ hg co 0
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ cp d1/b d1/d
+  $ hg add d1/d
+  $ hg ci -m 'copy d1/b to d1/d'
+  created new head
+  $ hg mv -A --at-rev . d1/b d1/d
+  saved backup bundle to $TESTTMP/.hg/strip-backup/c8d0f6bcf7ca-1c9bb53e-copy.hg
+  $ hg st -C --change .
+  A d1/d
+    d1/b
+
+Test using directory as destination
+
+  $ hg co 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ cp -R d1 d3
   $ hg add d3
   adding d3/a

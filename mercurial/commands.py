@@ -5781,6 +5781,13 @@ def remove(ui, repo, *pats, **opts):
     [
         (b'A', b'after', None, _(b'record a rename that has already occurred')),
         (
+            b'',
+            b'at-rev',
+            b'',
+            _(b'(un)mark renames in the given revision (EXPERIMENTAL)'),
+            _(b'REV'),
+        ),
+        (
             b'f',
             b'force',
             None,
