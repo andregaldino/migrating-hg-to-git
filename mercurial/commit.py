@@ -158,11 +158,11 @@ def _process_files(tr, ctx, error=False):
     m1 = m1ctx.read()
     m2 = m2ctx.read()
 
+    files = metadata.ChangingFiles()
+
     # check in files
     added = []
-    filesadded = []
     removed = list(ctx.removed())
-    touched = []
     linkrev = len(repo)
     repo.ui.note(_(b"committing files:\n"))
     uipathfn = scmutil.getuipathfn(repo)
@@ -178,9 +178,10 @@ def _process_files(tr, ctx, error=False):
                     repo, fctx, m1, m2, linkrev, tr, writefilecopymeta,
                 )
                 if is_touched:
-                    touched.append(f)
                     if is_touched == 'added':
-                        filesadded.append(f)
+                        files.mark_added(f)
+                    else:
+                        files.mark_touched(f)
                 m.setflag(f, fctx.flags())
         except OSError:
             repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
@@ -191,7 +192,6 @@ def _process_files(tr, ctx, error=False):
                 repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
             raise
 
-    files = metadata.ChangingFiles(touched=touched, added=filesadded)
     # update manifest
     removed = [f for f in removed if f in m1 or f in m2]
     drop = sorted([f for f in removed if f in m])
