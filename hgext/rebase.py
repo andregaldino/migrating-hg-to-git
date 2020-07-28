@@ -1442,6 +1442,10 @@ def commitmemorynode(repo, wctx, editor, extra, user, date, commitmsg):
     if b'branch' in extra:
         branch = extra[b'branch']
 
+    # FIXME: We call _compact() because it's required to correctly detect
+    # changed files. This was added to fix a regression shortly before the 5.5
+    # release. A proper fix will be done in the default branch.
+    wctx._compact()
     memctx = wctx.tomemctx(
         commitmsg,
         date=date,

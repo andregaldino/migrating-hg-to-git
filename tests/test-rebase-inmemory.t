@@ -963,3 +963,21 @@ definition.
   |/
   o  0: d20a80d4def3 'base'
   
+
+  $ cd ..
+
+Test (virtual) working directory without changes, created by merge conflict
+resolution. There was a regression where the file was incorrectly detected as
+changed although the file contents were the same as in the parent.
+
+  $ hg init nofilechanges
+  $ cd nofilechanges
+  $ echo a > a; hg add a; hg ci -m a
+  $ echo foo > test; hg add test; hg ci -m b
+  $ hg up 0 -q
+  $ echo bar > test; hg add test; hg ci -m c
+  created new head
+  $ hg rebase -d 2 -d 1 --tool :local
+  rebasing 2:ca2749322ee5 "c" (tip)
+  note: not rebasing 2:ca2749322ee5 "c" (tip), its destination already has all its changes
+  saved backup bundle to $TESTTMP/nofilechanges/.hg/strip-backup/ca2749322ee5-6dc7e94b-rebase.hg
