@@ -191,20 +191,20 @@ def _process_files(tr, ctx, error=False):
                 repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
             raise
 
+    files = metadata.ChangingFiles(touched=touched, added=filesadded)
     # update manifest
     removed = [f for f in removed if f in m1 or f in m2]
     drop = sorted([f for f in removed if f in m])
     for f in drop:
         del m[f]
-    if p2.rev() != nullrev:
+    if p2.rev() == nullrev:
+        files.update_removed(removed)
+    else:
         rf = metadata.get_removal_filter(ctx, (p1, p2, m1, m2))
-        removed = [f for f in removed if not rf(f)]
+        for f in removed:
+            if not rf(f):
+                files.mark_removed(f)
 
-    touched.extend(removed)
-
-    files = metadata.ChangingFiles(
-        touched=touched, added=filesadded, removed=removed
-    )
     mn = _commit_manifest(tr, linkrev, ctx, mctx, m, files.touched, added, drop)
 
     return mn, files
