@@ -1089,9 +1089,6 @@ def stylemap(styles, path=None):
     if path is None:
         path = templatedir()
 
-    if isinstance(styles, bytes):
-        styles = [styles]
-
     if path is not None:
         for style in styles:
             # only plain name is allowed to honor template paths
