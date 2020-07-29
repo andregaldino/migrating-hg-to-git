@@ -206,7 +206,7 @@ def _process_files(tr, ctx, error=False):
     touched.extend(removed)
 
     files = touched
-    mn = _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop)
+    mn = _commit_manifest(tr, linkrev, ctx, mctx, m, files, added, drop)
 
     return mn, files, filesadded, removed
 
@@ -347,7 +347,7 @@ def _filecommit(
     return fnode, touched
 
 
-def _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop):
+def _commit_manifest(tr, linkrev, ctx, mctx, manifest, files, added, drop):
     """make a new manifest entry (or reuse a new one)
 
     given an initialised manifest context and precomputed list of
@@ -369,8 +369,6 @@ def _commit_manifest(tr, linkrev, ctx, mctx, files, added, drop):
     m1ctx = p1.manifestctx()
 
     m1 = m1ctx.read()
-
-    manifest = mctx.read()
 
     if not files:
         # if no "files" actually changed in terms of the changelog,
