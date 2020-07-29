@@ -202,12 +202,10 @@ def _process_files(tr, ctx, error=False):
 
     touched.extend(removed)
 
-    files = touched
-    mn = _commit_manifest(tr, linkrev, ctx, mctx, m, files, added, drop)
-
     files = metadata.ChangingFiles(
-        touched=files, added=filesadded, removed=removed
+        touched=touched, added=filesadded, removed=removed
     )
+    mn = _commit_manifest(tr, linkrev, ctx, mctx, m, files.touched, added, drop)
 
     return mn, files
 
