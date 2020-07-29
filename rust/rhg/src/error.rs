@@ -16,6 +16,8 @@ pub enum CommandErrorKind {
     StdoutError,
     /// The standard error stream cannot be written to
     StderrError,
+    /// The command aborted
+    Abort(Option<Vec<u8>>),
 }
 
 impl CommandErrorKind {
@@ -25,6 +27,7 @@ impl CommandErrorKind {
             CommandErrorKind::CurrentDirNotFound(_) => exitcode::ABORT,
             CommandErrorKind::StdoutError => exitcode::ABORT,
             CommandErrorKind::StderrError => exitcode::ABORT,
+            CommandErrorKind::Abort(_) => exitcode::ABORT,
         }
     }
 
@@ -52,6 +55,7 @@ impl CommandErrorKind {
                 ]
                 .concat(),
             ),
+            CommandErrorKind::Abort(message) => message.to_owned(),
             _ => None,
         }
     }
