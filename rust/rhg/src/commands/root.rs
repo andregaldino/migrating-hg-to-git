@@ -1,7 +1,7 @@
 use crate::commands::Command;
-use crate::error::{CommandError, CommandErrorKind};
+use crate::error::CommandError;
 use crate::ui::Ui;
-use hg::operations::{FindRoot, FindRootErrorKind};
+use hg::operations::FindRoot;
 use hg::utils::files::get_bytes_from_path;
 
 pub const HELP_TEXT: &str = "
@@ -22,15 +22,7 @@ impl<'a> RootCommand<'a> {
 
 impl<'a> Command<'a> for RootCommand<'a> {
     fn run(&self) -> Result<(), CommandError> {
-        let path_buf =
-            FindRoot::new().run().map_err(|err| match err.kind {
-                FindRootErrorKind::RootNotFound(path) => {
-                    CommandErrorKind::RootNotFound(path)
-                }
-                FindRootErrorKind::GetCurrentDirError(e) => {
-                    CommandErrorKind::CurrentDirNotFound(e)
-                }
-            })?;
+        let path_buf = FindRoot::new().run()?;
 
         let bytes = get_bytes_from_path(path_buf);
 

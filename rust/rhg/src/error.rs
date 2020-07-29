@@ -1,5 +1,6 @@
 use crate::exitcode;
 use crate::ui::UiError;
+use hg::operations::{FindRootError, FindRootErrorKind};
 use hg::utils::files::get_bytes_from_path;
 use std::convert::From;
 use std::path::PathBuf;
@@ -86,6 +87,19 @@ impl From<UiError> for CommandError {
             kind: match error {
                 UiError::StdoutError(_) => CommandErrorKind::StdoutError,
                 UiError::StderrError(_) => CommandErrorKind::StderrError,
+            },
+        }
+    }
+}
+
+impl From<FindRootError> for CommandError {
+    fn from(err: FindRootError) -> Self {
+        match err.kind {
+            FindRootErrorKind::RootNotFound(path) => CommandError {
+                kind: CommandErrorKind::RootNotFound(path),
+            },
+            FindRootErrorKind::GetCurrentDirError(e) => CommandError {
+                kind: CommandErrorKind::CurrentDirNotFound(e),
             },
         }
     }
