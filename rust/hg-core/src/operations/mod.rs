@@ -1,13 +1,13 @@
+//! A distinction is made between operations and commands.
+//! An operation is what can be done whereas a command is what is exposed by
+//! the cli. A single command can use several operations to achieve its goal.
+
 mod dirstate_status;
 mod find_root;
 pub use find_root::{FindRoot, FindRootError, FindRootErrorKind};
 
-/// An interface for high-level hg operations.
-///
-/// A distinction is made between operation and commands.
-/// An operation is what can be done whereas a command is what is exposed by
-/// the cli. A single command can use several operations to achieve its goal.
-pub trait Operation<T> {
-    type Error;
-    fn run(&self) -> Result<T, Self::Error>;
-}
+// TODO add an `Operation` trait when GAT have landed (rust #44265):
+// there is no way to currently define a trait which can both return
+// references to `self` and to passed data, which is what we would need.
+// Generic Associated Types may fix this and allow us to have a unified
+// interface.

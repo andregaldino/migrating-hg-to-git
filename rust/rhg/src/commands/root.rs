@@ -1,7 +1,7 @@
 use crate::commands::Command;
 use crate::error::{CommandError, CommandErrorKind};
 use crate::ui::Ui;
-use hg::operations::{FindRoot, FindRootError, FindRootErrorKind, Operation};
+use hg::operations::{FindRoot, FindRootError, FindRootErrorKind};
 use hg::utils::files::get_bytes_from_path;
 use std::path::PathBuf;
 

@@ -7,7 +7,6 @@
 
 use crate::dirstate::status::{build_response, Dispatch, HgPathCow, Status};
 use crate::matchers::Matcher;
-use crate::operations::Operation;
 use crate::{DirstateStatus, StatusError};
 
 /// A tuple of the paths that need to be checked in the filelog because it's
@@ -15,10 +14,8 @@ use crate::{DirstateStatus, StatusError};
 /// files.
 pub type LookupAndStatus<'a> = (Vec<HgPathCow<'a>>, DirstateStatus<'a>);
 
-impl<'a, M: Matcher + Sync> Operation<LookupAndStatus<'a>> for Status<'a, M> {
-    type Error = StatusError;
-
-    fn run(&self) -> Result<LookupAndStatus<'a>, Self::Error> {
+impl<'a, M: Matcher + Sync> Status<'a, M> {
+    pub(crate) fn run(&self) -> Result<LookupAndStatus<'a>, StatusError> {
         let (traversed_sender, traversed_receiver) =
             crossbeam::channel::unbounded();
 

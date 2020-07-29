@@ -13,7 +13,6 @@ use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
     filepatterns::PatternFileWarning,
     matchers::{get_ignore_function, Matcher, VisitChildrenSet},
-    operations::Operation,
     utils::{
         files::{find_dirs, HgMetadata},
         hg_path::{
