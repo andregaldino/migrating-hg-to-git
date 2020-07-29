@@ -1835,7 +1835,7 @@ if rustmod is not None:
             if not self._parents:
                 try:
                     fp = self._opendirstatefile()
-                    st = fp.read(2 * self._nodelen)
+                    st = fp.read(40)
                     fp.close()
                 except IOError as err:
                     if err.errno != errno.ENOENT:
