@@ -829,17 +829,22 @@ def _readmapfile(fp, mapfile):
     conf = config.config()
 
     def include(rel, remap, sections):
-        templatedirs = [base, templatedir()]
-        for dir in templatedirs:
-            if dir is None:
-                continue
-            abs = os.path.normpath(os.path.join(dir, rel))
+        subresource = None
+        if base:
+            abs = os.path.normpath(os.path.join(base, rel))
             if os.path.isfile(abs):
-                data = util.posixfile(abs, b'rb').read()
-                conf.parse(
-                    abs, data, sections=sections, remap=remap, include=include
-                )
-                break
+                subresource = util.posixfile(abs, b'rb')
+        if not subresource:
+            dir = templatedir()
+            if dir:
+                abs = os.path.normpath(os.path.join(dir, rel))
+                if os.path.isfile(abs):
+                    subresource = util.posixfile(abs, b'rb')
+        if subresource:
+            data = subresource.read()
+            conf.parse(
+                abs, data, sections=sections, remap=remap, include=include,
+            )
 
     data = fp.read()
     conf.parse(mapfile, data, remap={b'': b'templates'}, include=include)
