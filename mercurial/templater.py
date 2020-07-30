@@ -814,14 +814,17 @@ def stylelist():
     return b", ".join(sorted(stylelist))
 
 
-def _readmapfile(mapfile):
-    """Load template elements from the given map file"""
-    if not os.path.exists(mapfile):
-        raise error.Abort(
-            _(b"style '%s' not found") % mapfile,
-            hint=_(b"available styles: %s") % stylelist(),
-        )
+def _open_mapfile(mapfile):
+    if os.path.exists(mapfile):
+        return util.posixfile(mapfile, b'rb')
+    raise error.Abort(
+        _(b"style '%s' not found") % mapfile,
+        hint=_(b"available styles: %s") % stylelist(),
+    )
 
+
+def _readmapfile(fp, mapfile):
+    """Load template elements from the given map file"""
     base = os.path.dirname(mapfile)
     conf = config.config()
 
@@ -838,7 +841,7 @@ def _readmapfile(mapfile):
                 )
                 break
 
-    data = util.posixfile(mapfile, b'rb').read()
+    data = fp.read()
     conf.parse(mapfile, data, remap={b'': b'templates'}, include=include)
 
     cache = {}
@@ -862,7 +865,8 @@ def _readmapfile(mapfile):
                     if os.path.isfile(p3):
                         path = p3
 
-        cache, tmap, aliases = _readmapfile(path)
+        fp = _open_mapfile(path)
+        cache, tmap, aliases = _readmapfile(fp, path)
 
     for key, val in conf[b'templates'].items():
         if not val:
@@ -999,7 +1003,8 @@ class templater(object):
     ):
         """Create templater from the specified map file"""
         t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
-        cache, tmap, aliases = _readmapfile(mapfile)
+        fp = _open_mapfile(mapfile)
+        cache, tmap, aliases = _readmapfile(fp, mapfile)
         t._loader.cache.update(cache)
         t._loader._map = tmap
         t._loader._aliasmap = _aliasrules.buildmap(aliases)
