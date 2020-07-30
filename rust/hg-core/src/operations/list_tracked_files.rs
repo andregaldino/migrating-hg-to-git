@@ -14,7 +14,7 @@ use std::convert::From;
 use std::fmt;
 use std::fs;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Kind of error encoutered by ListTrackedFiles
 #[derive(Debug)]
@@ -59,6 +59,15 @@ impl ListTrackedFiles {
         let dirstate = &self.root.join(".hg/dirstate");
         let content = fs::read(&dirstate)?;
         Ok(ListDirstateTrackedFiles { content })
+    }
+
+    /// Returns the repository root directory
+    /// TODO I think this is a crutch that creates a dependency that should not
+    /// be there. Operations that need the root of the repository should get
+    /// it themselves, probably in a lazy fashion. But this would make the
+    /// current series even larger, so this is simplified for now.
+    pub fn get_root(&self) -> &Path {
+        &self.root
     }
 }
 

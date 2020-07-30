@@ -2,6 +2,8 @@ use crate::commands::Command;
 use crate::error::{CommandError, CommandErrorKind};
 use crate::ui::Ui;
 use hg::operations::{ListTrackedFiles, ListTrackedFilesErrorKind};
+use hg::utils::files::{get_bytes_from_path, relativize_path};
+use hg::utils::hg_path::HgPathBuf;
 
 pub const HELP_TEXT: &str = "
 List tracked files.
@@ -38,9 +40,17 @@ impl<'a> Command<'a> for FilesCommand<'a> {
             }
         })?;
 
+        let cwd = std::env::current_dir()
+            .or_else(|e| Err(CommandErrorKind::CurrentDirNotFound(e)))?;
+        let rooted_cwd = cwd
+            .strip_prefix(operation_builder.get_root())
+            .expect("cwd was already checked within the repository");
+        let rooted_cwd = HgPathBuf::from(get_bytes_from_path(rooted_cwd));
+
         let mut stdout = self.ui.stdout_buffer();
+
         for file in files {
-            stdout.write_all(file.as_bytes())?;
+            stdout.write_all(relativize_path(file, &rooted_cwd).as_ref())?;
             stdout.write_all(b"\n")?;
         }
         stdout.flush()?;
