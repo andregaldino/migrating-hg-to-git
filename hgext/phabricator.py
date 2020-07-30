@@ -238,8 +238,9 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
 
     def decorate(fn):
         def inner(*args, **kwargs):
-            if kwargs.get('test_vcr'):
-                cassette = pycompat.fsdecode(kwargs.pop('test_vcr'))
+            vcr = kwargs.pop('test_vcr')
+            if vcr:
+                cassette = pycompat.fsdecode(vcr)
                 import hgdemandimport
 
                 with hgdemandimport.deactivated():

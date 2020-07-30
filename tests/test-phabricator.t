@@ -24,16 +24,9 @@
   > EOF
   $ VCR="$TESTDIR/phabricator"
 
-BROKEN: debugcallconduit fails without --test-vcr:
+debugcallconduit doesn't claim invalid arguments without --test-vcr:
   $ echo '{}' | HGRCSKIPREPO= hg debugcallconduit 'conduit.ping'
-  hg debugcallconduit: invalid arguments
-  hg debugcallconduit METHOD
-  
-  call Conduit API
-  
-  options:
-  
-  (use 'hg debugcallconduit -h' to show more help)
+  abort: config phabricator.url is required
   [255]
 
 Error is handled reasonably. We override the phabtoken here so that
