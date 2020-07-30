@@ -26,6 +26,7 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    formatter,
     logcmdutil,
     mail,
     pycompat,
@@ -61,7 +62,7 @@ def _report_commit(ui, repo, ctx):
         b'notify_published', b'messageidseed'
     ) or ui.config(b'notify', b'messageidseed')
     template = ui.config(b'notify_published', b'template')
-    spec = logcmdutil.templatespec(template, None)
+    spec = formatter.literal_templatespec(template)
     templater = logcmdutil.changesettemplater(ui, repo, spec)
     ui.pushbuffer()
     n = notify.notifier(ui, repo, b'incoming')
