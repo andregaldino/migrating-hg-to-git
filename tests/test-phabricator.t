@@ -24,6 +24,18 @@
   > EOF
   $ VCR="$TESTDIR/phabricator"
 
+BROKEN: debugcallconduit fails without --test-vcr:
+  $ echo '{}' | HGRCSKIPREPO= hg debugcallconduit 'conduit.ping'
+  hg debugcallconduit: invalid arguments
+  hg debugcallconduit METHOD
+  
+  call Conduit API
+  
+  options:
+  
+  (use 'hg debugcallconduit -h' to show more help)
+  [255]
+
 Error is handled reasonably. We override the phabtoken here so that
 when you're developing changes to phabricator.py you can edit the
 above config and have a real token in the test but not have to edit
