@@ -1268,6 +1268,7 @@ packages = [
     'mercurial.hgweb',
     'mercurial.interfaces',
     'mercurial.pure',
+    'mercurial.templates',
     'mercurial.thirdparty',
     'mercurial.thirdparty.attr',
     'mercurial.thirdparty.zope',
@@ -1292,6 +1293,13 @@ packages = [
     'hgext3rd',
     'hgdemandimport',
 ]
+
+for name in os.listdir(os.path.join('mercurial', 'templates')):
+    if name != '__pycache__' and os.path.isdir(
+        os.path.join('mercurial', 'templates', name)
+    ):
+        packages.append('mercurial.templates.%s' % name)
+
 if sys.version_info[0] == 2:
     packages.extend(
         [
