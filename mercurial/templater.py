@@ -835,11 +835,17 @@ def _readmapfile(fp, mapfile):
             if os.path.isfile(abs):
                 subresource = util.posixfile(abs, b'rb')
         if not subresource:
-            dir = templatedir()
-            if dir:
-                abs = os.path.normpath(os.path.join(dir, rel))
-                if os.path.isfile(abs):
-                    subresource = util.posixfile(abs, b'rb')
+            if pycompat.ossep not in rel:
+                abs = rel
+                subresource = resourceutil.open_resource(
+                    b'mercurial.templates', rel
+                )
+            else:
+                dir = templatedir()
+                if dir:
+                    abs = os.path.normpath(os.path.join(dir, rel))
+                    if os.path.isfile(abs):
+                        subresource = util.posixfile(abs, b'rb')
         if subresource:
             data = subresource.read()
             conf.parse(
