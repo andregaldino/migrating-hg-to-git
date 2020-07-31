@@ -118,9 +118,7 @@ check that mercurial refuse to push
   $ hg push ../other
   pushing to ../other
   searching for changes
-  abort: push includes unstable changesets:
-    82623d38b9ba (content-divergent)
-    392fd25390da (content-divergent)
+  abort: push includes content-divergent changeset: 392fd25390da!
   [255]
 
   $ cd ..

@@ -8,7 +8,6 @@ from __future__ import absolute_import
 import abc
 import os
 import subprocess
-import tempfile
 
 from mercurial.pycompat import open
 from mercurial import (
