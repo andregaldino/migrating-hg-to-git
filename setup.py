@@ -1635,10 +1635,8 @@ def ordinarypath(p):
 
 for root in ('templates',):
     for curdir, dirs, files in os.walk(os.path.join('mercurial', root)):
-        curdir = curdir.split(os.sep, 1)[1]
-        for f in filter(ordinarypath, files):
-            f = os.path.join(curdir, f)
-            packagedata['mercurial'].append(f)
+        packagename = curdir.replace(os.sep, '.')
+        packagedata[packagename] = list(filter(ordinarypath, files))
 
 datafiles = []
 
