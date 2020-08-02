@@ -581,6 +581,21 @@ class mergeresult(object):
     def setactions(self, actions):
         self._actions = actions
 
+    def hasconflicts(self):
+        """ tells whether this merge resulted in some actions which can
+        result in conflicts or not """
+        for _f, (m, _unused, _unused) in pycompat.iteritems(self._actions):
+            if m not in (
+                mergestatemod.ACTION_GET,
+                mergestatemod.ACTION_KEEP,
+                mergestatemod.ACTION_EXEC,
+                mergestatemod.ACTION_REMOVE,
+                mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
+            ):
+                return True
+
+        return False
+
 
 def manifestmerge(
     repo,
@@ -1809,17 +1824,10 @@ def update(
         actionbyfile = mresult.actions
 
         if updatecheck == UPDATECHECK_NO_CONFLICT:
-            for f, (m, args, msg) in pycompat.iteritems(actionbyfile):
-                if m not in (
-                    mergestatemod.ACTION_GET,
-                    mergestatemod.ACTION_KEEP,
-                    mergestatemod.ACTION_EXEC,
-                    mergestatemod.ACTION_REMOVE,
-                    mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
-                ):
-                    msg = _(b"conflicting changes")
-                    hint = _(b"commit or update --clean to discard changes")
-                    raise error.Abort(msg, hint=hint)
+            if mresult.hasconflicts():
+                msg = _(b"conflicting changes")
+                hint = _(b"commit or update --clean to discard changes")
+                raise error.Abort(msg, hint=hint)
 
         # Prompt and create actions. Most of this is in the resolve phase
         # already, but we can't handle .hgsubstate in filemerge or
