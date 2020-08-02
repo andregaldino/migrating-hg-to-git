@@ -557,7 +557,7 @@ class mergeresult(object):
 
     def __init__(self):
         """
-        actions: dict of filename as keys and action related info as values
+        filemapping: dict of filename as keys and action related info as values
         diverge: mapping of source name -> list of dest name for
                  divergent renames
         renamedelete: mapping of source name -> list of destinations for files
@@ -565,7 +565,7 @@ class mergeresult(object):
         commitinfo: dict containing data which should be used on commit
                     contains a filename -> info mapping
         """
-        self._actions = {}
+        self._filemapping = {}
         self._diverge = {}
         self._renamedelete = {}
         self._commitinfo = {}
@@ -583,16 +583,16 @@ class mergeresult(object):
         data: a tuple of information like fctx and ctx related to this merge
         message: a message about the merge
         """
-        self._actions[filename] = (action, data, message)
+        self._filemapping[filename] = (action, data, message)
 
     def removefile(self, filename):
         """ removes a file from the mergeresult object as the file might
         not merging anymore """
-        del self._actions[filename]
+        del self._filemapping[filename]
 
     @property
     def actions(self):
-        return self._actions
+        return self._filemapping
 
     @property
     def diverge(self):
@@ -612,7 +612,7 @@ class mergeresult(object):
         and a list of files and related arguments as values """
         # Convert to dictionary-of-lists format
         actions = emptyactions()
-        for f, (m, args, msg) in pycompat.iteritems(self._actions):
+        for f, (m, args, msg) in pycompat.iteritems(self._filemapping):
             if m not in actions:
                 actions[m] = []
             actions[m].append((f, args, msg))
@@ -620,15 +620,15 @@ class mergeresult(object):
         return actions
 
     def setactions(self, actions):
-        self._actions = actions
+        self._filemapping = actions
 
     def updateactions(self, updates):
-        self._actions.update(updates)
+        self._filemapping.update(updates)
 
     def hasconflicts(self):
         """ tells whether this merge resulted in some actions which can
         result in conflicts or not """
-        for _f, (m, _unused, _unused) in pycompat.iteritems(self._actions):
+        for _f, (m, _unused, _unused) in pycompat.iteritems(self._filemapping):
             if m not in (
                 mergestatemod.ACTION_GET,
                 mergestatemod.ACTION_KEEP,
