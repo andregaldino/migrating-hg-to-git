@@ -151,20 +151,23 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
                 warnconflicts.update(conflicts)
 
         checkunknowndirs = _unknowndirschecker()
-        for f, (m, args, msg) in pycompat.iteritems(mresult.actions):
-            if m in (
+        for f, args, msg in mresult.getactions(
+            [
                 mergestatemod.ACTION_CREATED,
                 mergestatemod.ACTION_DELETED_CHANGED,
-            ):
-                if _checkunknownfile(repo, wctx, mctx, f):
-                    fileconflicts.add(f)
-                elif pathconfig and f not in wctx:
-                    path = checkunknowndirs(repo, wctx, f)
-                    if path is not None:
-                        pathconflicts.add(path)
-            elif m == mergestatemod.ACTION_LOCAL_DIR_RENAME_GET:
-                if _checkunknownfile(repo, wctx, mctx, f, args[0]):
-                    fileconflicts.add(f)
+            ]
+        ):
+            if _checkunknownfile(repo, wctx, mctx, f):
+                fileconflicts.add(f)
+            elif pathconfig and f not in wctx:
+                path = checkunknowndirs(repo, wctx, f)
+                if path is not None:
+                    pathconflicts.add(path)
+        for f, args, msg in mresult.getactions(
+            [mergestatemod.ACTION_LOCAL_DIR_RENAME_GET]
+        ):
+            if _checkunknownfile(repo, wctx, mctx, f, args[0]):
+                fileconflicts.add(f)
 
         allconflicts = fileconflicts | pathconflicts
         ignoredconflicts = {c for c in allconflicts if repo.dirstate._ignore(c)}
@@ -172,52 +175,50 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
         collectconflicts(ignoredconflicts, ignoredconfig)
         collectconflicts(unknownconflicts, unknownconfig)
     else:
-        for f, (m, args, msg) in pycompat.iteritems(mresult.actions):
-            if m == mergestatemod.ACTION_CREATED_MERGE:
-                fl2, anc = args
-                different = _checkunknownfile(repo, wctx, mctx, f)
-                if repo.dirstate._ignore(f):
-                    config = ignoredconfig
-                else:
-                    config = unknownconfig
+        for f, args, msg in mresult.getactions(
+            [mergestatemod.ACTION_CREATED_MERGE]
+        ):
+            fl2, anc = args
+            different = _checkunknownfile(repo, wctx, mctx, f)
+            if repo.dirstate._ignore(f):
+                config = ignoredconfig
+            else:
+                config = unknownconfig
 
-                # The behavior when force is True is described by this table:
-                #  config  different  mergeforce  |    action    backup
-                #    *         n          *       |      get        n
-                #    *         y          y       |     merge       -
-                #   abort      y          n       |     merge       -   (1)
-                #   warn       y          n       |  warn + get     y
-                #  ignore      y          n       |      get        y
-                #
-                # (1) this is probably the wrong behavior here -- we should
-                #     probably abort, but some actions like rebases currently
-                #     don't like an abort happening in the middle of
-                #     merge.update.
-                if not different:
-                    mresult.addfile(
-                        f,
-                        mergestatemod.ACTION_GET,
-                        (fl2, False),
-                        b'remote created',
-                    )
-                elif mergeforce or config == b'abort':
-                    mresult.addfile(
-                        f,
-                        mergestatemod.ACTION_MERGE,
-                        (f, f, None, False, anc),
-                        b'remote differs from untracked local',
-                    )
-                elif config == b'abort':
-                    abortconflicts.add(f)
-                else:
-                    if config == b'warn':
-                        warnconflicts.add(f)
-                    mresult.addfile(
-                        f,
-                        mergestatemod.ACTION_GET,
-                        (fl2, True),
-                        b'remote created',
-                    )
+            # The behavior when force is True is described by this table:
+            #  config  different  mergeforce  |    action    backup
+            #    *         n          *       |      get        n
+            #    *         y          y       |     merge       -
+            #   abort      y          n       |     merge       -   (1)
+            #   warn       y          n       |  warn + get     y
+            #  ignore      y          n       |      get        y
+            #
+            # (1) this is probably the wrong behavior here -- we should
+            #     probably abort, but some actions like rebases currently
+            #     don't like an abort happening in the middle of
+            #     merge.update.
+            if not different:
+                mresult.addfile(
+                    f,
+                    mergestatemod.ACTION_GET,
+                    (fl2, False),
+                    b'remote created',
+                )
+            elif mergeforce or config == b'abort':
+                mresult.addfile(
+                    f,
+                    mergestatemod.ACTION_MERGE,
+                    (f, f, None, False, anc),
+                    b'remote differs from untracked local',
+                )
+            elif config == b'abort':
+                abortconflicts.add(f)
+            else:
+                if config == b'warn':
+                    warnconflicts.add(f)
+                mresult.addfile(
+                    f, mergestatemod.ACTION_GET, (fl2, True), b'remote created',
+                )
 
     for f in sorted(abortconflicts):
         warn = repo.ui.warn
@@ -242,15 +243,14 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
         else:
             repo.ui.warn(_(b"%s: replacing untracked files in directory\n") % f)
 
-    for f, (m, args, msg) in pycompat.iteritems(mresult.actions):
-        if m == mergestatemod.ACTION_CREATED:
-            backup = (
-                f in fileconflicts
-                or f in pathconflicts
-                or any(p in pathconflicts for p in pathutil.finddirs(f))
-            )
-            (flags,) = args
-            mresult.addfile(f, mergestatemod.ACTION_GET, (flags, backup), msg)
+    for f, args, msg in mresult.getactions([mergestatemod.ACTION_CREATED]):
+        backup = (
+            f in fileconflicts
+            or f in pathconflicts
+            or any(p in pathconflicts for p in pathutil.finddirs(f))
+        )
+        (flags,) = args
+        mresult.addfile(f, mergestatemod.ACTION_GET, (flags, backup), msg)
 
 
 def _forgetremoved(wctx, mctx, branchmerge):
@@ -650,13 +650,17 @@ class mergeresult(object):
     def hasconflicts(self):
         """ tells whether this merge resulted in some actions which can
         result in conflicts or not """
-        for _f, (m, _unused, _unused) in pycompat.iteritems(self._filemapping):
-            if m not in (
-                mergestatemod.ACTION_GET,
-                mergestatemod.ACTION_KEEP,
-                mergestatemod.ACTION_EXEC,
-                mergestatemod.ACTION_REMOVE,
-                mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
+        for a in self._actionmapping.keys():
+            if (
+                a
+                not in (
+                    mergestatemod.ACTION_GET,
+                    mergestatemod.ACTION_KEEP,
+                    mergestatemod.ACTION_EXEC,
+                    mergestatemod.ACTION_REMOVE,
+                    mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
+                )
+                and self._actionmapping[a]
             ):
                 return True
 
@@ -992,21 +996,19 @@ def _resolvetrivial(repo, wctx, mctx, ancestor, mresult):
        remained the same."""
     # We force a copy of actions.items() because we're going to mutate
     # actions as we resolve trivial conflicts.
-    for f, (m, args, msg) in list(mresult.actions.items()):
-        if (
-            m == mergestatemod.ACTION_CHANGED_DELETED
-            and f in ancestor
-            and not wctx[f].cmp(ancestor[f])
-        ):
+    for f, args, msg in mresult.getactions(
+        [mergestatemod.ACTION_CHANGED_DELETED]
+    ):
+        if f in ancestor and not wctx[f].cmp(ancestor[f]):
             # local did change but ended up with same content
             mresult.addfile(
                 f, mergestatemod.ACTION_REMOVE, None, b'prompt same'
             )
-        elif (
-            m == mergestatemod.ACTION_DELETED_CHANGED
-            and f in ancestor
-            and not mctx[f].cmp(ancestor[f])
-        ):
+
+    for f, args, msg in list(
+        mresult.getactions([mergestatemod.ACTION_DELETED_CHANGED])
+    ):
+        if f in ancestor and not mctx[f].cmp(ancestor[f]):
             # remote did change but ended up with same content
             mresult.removefile(f)  # don't get = keep local deleted
 
