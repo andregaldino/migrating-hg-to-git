@@ -1614,11 +1614,8 @@ if os.name == 'nt':
     msvccompiler.MSVCCompiler = HackedMSVCCompiler
 
 packagedata = {
-    'mercurial': [
-        'locale/*/LC_MESSAGES/hg.mo',
-        'defaultrc/*.rc',
-        'dummycert.pem',
-    ],
+    'mercurial': ['locale/*/LC_MESSAGES/hg.mo', 'dummycert.pem',],
+    'mercurial.defaultrc': ['*.rc',],
     'mercurial.helptext': ['*.txt',],
     'mercurial.helptext.internals': ['*.txt',],
 }
