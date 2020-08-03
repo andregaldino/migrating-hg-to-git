@@ -175,8 +175,8 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
         collectconflicts(ignoredconflicts, ignoredconfig)
         collectconflicts(unknownconflicts, unknownconfig)
     else:
-        for f, args, msg in mresult.getactions(
-            [mergestatemod.ACTION_CREATED_MERGE]
+        for f, args, msg in list(
+            mresult.getactions([mergestatemod.ACTION_CREATED_MERGE])
         ):
             fl2, anc = args
             different = _checkunknownfile(repo, wctx, mctx, f)
@@ -243,7 +243,9 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
         else:
             repo.ui.warn(_(b"%s: replacing untracked files in directory\n") % f)
 
-    for f, args, msg in mresult.getactions([mergestatemod.ACTION_CREATED]):
+    for f, args, msg in list(
+        mresult.getactions([mergestatemod.ACTION_CREATED])
+    ):
         backup = (
             f in fileconflicts
             or f in pathconflicts
@@ -610,18 +612,16 @@ class mergeresult(object):
 
         Returns a list of tuple of form (filename, data, message)
         """
-        res = []
         for a in actions:
             if sort:
                 for f in sorted(self._actionmapping[a]):
                     args, msg = self._actionmapping[a][f]
-                    res.append((f, args, msg))
+                    yield f, args, msg
             else:
                 for f, (args, msg) in pycompat.iteritems(
                     self._actionmapping[a]
                 ):
-                    res.append((f, args, msg))
-        return res
+                    yield f, args, msg
 
     def len(self, actions=None):
         """ returns number of files which needs actions
@@ -1007,8 +1007,8 @@ def _resolvetrivial(repo, wctx, mctx, ancestor, mresult):
        remained the same."""
     # We force a copy of actions.items() because we're going to mutate
     # actions as we resolve trivial conflicts.
-    for f, args, msg in mresult.getactions(
-        [mergestatemod.ACTION_CHANGED_DELETED]
+    for f, args, msg in list(
+        mresult.getactions([mergestatemod.ACTION_CHANGED_DELETED])
     ):
         if f in ancestor and not wctx[f].cmp(ancestor[f]):
             # local did change but ended up with same content
@@ -1382,13 +1382,15 @@ def applyupdates(
     moves = []
 
     # 'cd' and 'dc' actions are treated like other merge conflicts
-    mergeactions = mresult.getactions(
-        [
-            mergestatemod.ACTION_CHANGED_DELETED,
-            mergestatemod.ACTION_DELETED_CHANGED,
-            mergestatemod.ACTION_MERGE,
-        ],
-        sort=True,
+    mergeactions = list(
+        mresult.getactions(
+            [
+                mergestatemod.ACTION_CHANGED_DELETED,
+                mergestatemod.ACTION_DELETED_CHANGED,
+                mergestatemod.ACTION_MERGE,
+            ],
+            sort=True,
+        )
     )
     for f, args, msg in mergeactions:
         f1, f2, fa, move, anc = args
@@ -1459,7 +1461,7 @@ def applyupdates(
         cost,
         batchremove,
         (repo, wctx),
-        mresult.getactions([mergestatemod.ACTION_REMOVE], sort=True),
+        list(mresult.getactions([mergestatemod.ACTION_REMOVE], sort=True)),
     )
     for i, item in prog:
         progress.increment(step=i, item=item)
@@ -1487,7 +1489,7 @@ def applyupdates(
         cost,
         batchget,
         (repo, mctx, wctx, wantfiledata),
-        mresult.getactions([mergestatemod.ACTION_GET], sort=True),
+        list(mresult.getactions([mergestatemod.ACTION_GET], sort=True)),
         threadsafe=threadsafe,
         hasretval=True,
     )
@@ -1667,7 +1669,7 @@ def applyupdates(
             # those lists aren't consulted again.
             mfiles.difference_update(a[0] for a in acts)
 
-        for a in mresult.getactions([mergestatemod.ACTION_MERGE]):
+        for a in list(mresult.getactions((mergestatemod.ACTION_MERGE,))):
             if a[0] not in mfiles:
                 mresult.removefile(a[0])
 
