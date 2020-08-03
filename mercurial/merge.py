@@ -604,15 +604,23 @@ class mergeresult(object):
         del self._filemapping[filename]
         del self._actionmapping[action][filename]
 
-    def getactions(self, actions):
+    def getactions(self, actions, sort=False):
         """ get list of files which are marked with these actions
+        if sort is true, files for each action is sorted and then added
 
         Returns a list of tuple of form (filename, data, message)
         """
         res = []
         for a in actions:
-            for f, (args, msg) in pycompat.iteritems(self._actionmapping[a]):
-                res.append((f, args, msg))
+            if sort:
+                for f in sorted(self._actionmapping[a]):
+                    args, msg = self._actionmapping[a][f]
+                    res.append((f, args, msg))
+            else:
+                for f, (args, msg) in pycompat.iteritems(
+                    self._actionmapping[a]
+                ):
+                    res.append((f, args, msg))
         return res
 
     @property
