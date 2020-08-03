@@ -275,7 +275,7 @@ def prunetemporaryincludes(repo):
     for file in tempincludes:
         if file in dirstate and not sparsematch(file):
             message = _(b'dropping temporarily included sparse files')
-            mresult.addfile(file, b'r', None, message)
+            mresult.addfile(file, mergestatemod.ACTION_REMOVE, None, message)
             dropped.append(file)
 
     mergemod.applyupdates(
@@ -516,17 +516,19 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
         if (new and not old) or (old and new and not file in dirstate):
             fl = mf.flags(file)
             if repo.wvfs.exists(file):
-                mresult.addfile(file, b'e', (fl,), b'')
+                mresult.addfile(file, mergestatemod.ACTION_EXEC, (fl,), b'')
                 lookup.append(file)
             else:
-                mresult.addfile(file, b'g', (fl, False), b'')
+                mresult.addfile(
+                    file, mergestatemod.ACTION_GET, (fl, False), b''
+                )
                 added.append(file)
         # Drop files that are newly excluded, or that still exist in
         # the dirstate.
         elif (old and not new) or (not old and not new and file in dirstate):
             dropped.append(file)
             if file not in pending:
-                mresult.addfile(file, b'r', [], b'')
+                mresult.addfile(file, mergestatemod.ACTION_REMOVE, [], b'')
 
     # Verify there are no pending changes in newly included files
     abort = False
