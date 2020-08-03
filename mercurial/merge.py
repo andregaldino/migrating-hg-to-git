@@ -1328,7 +1328,7 @@ def emptyactions():
 
 def applyupdates(
     repo,
-    actions,
+    mresult,
     wctx,
     mctx,
     overwrite,
@@ -1338,6 +1338,7 @@ def applyupdates(
 ):
     """apply the merge action list to the working directory
 
+    mresult is a mergeresult object representing result of the merge
     wctx is the working copy context
     mctx is the context to be merged into the working copy
     commitinfo is a mapping of information which needs to be stored somewhere
@@ -1349,6 +1350,7 @@ def applyupdates(
     batchget.
     """
 
+    actions = mresult.actionsdict
     _prefetchfiles(repo, mctx, actions)
 
     updated, merged, removed = 0, 0, 0
@@ -1613,6 +1615,8 @@ def applyupdates(
         mfiles = {a[0] for a in actions[mergestatemod.ACTION_MERGE]}
         for k, acts in pycompat.iteritems(extraactions):
             actions[k].extend(acts)
+            for a in acts:
+                mresult.addfile(a[0], k, *a[1:])
             if k == mergestatemod.ACTION_GET and wantfiledata:
                 # no filedata until mergestate is updated to provide it
                 for a in acts:
@@ -1638,6 +1642,9 @@ def applyupdates(
         actions[mergestatemod.ACTION_MERGE] = [
             a for a in actions[mergestatemod.ACTION_MERGE] if a[0] in mfiles
         ]
+        for a in mresult.getactions([mergestatemod.ACTION_MERGE]):
+            if a[0] not in mfiles:
+                mresult.removefile(a[0])
 
     progress.complete()
     assert len(getfiledata) == (
@@ -2016,7 +2023,7 @@ def update(
         wantfiledata = updatedirstate and not branchmerge
         stats, getfiledata = applyupdates(
             repo,
-            actions,
+            mresult,
             wc,
             p2,
             overwrite,
@@ -2029,7 +2036,7 @@ def update(
             with repo.dirstate.parentchange():
                 repo.setparents(fp1, fp2)
                 mergestatemod.recordupdates(
-                    repo, actions, branchmerge, getfiledata
+                    repo, mresult.actionsdict, branchmerge, getfiledata
                 )
                 # update completed, clear state
                 util.unlink(repo.vfs.join(b'updatestate'))

@@ -480,16 +480,16 @@ def storewrapper(orig, requirements, path, vfstype):
 
 # prefetch files before update
 def applyupdates(
-    orig, repo, actions, wctx, mctx, overwrite, wantfiledata, **opts
+    orig, repo, mresult, wctx, mctx, overwrite, wantfiledata, **opts
 ):
     if isenabled(repo):
         manifest = mctx.manifest()
         files = []
-        for f, args, msg in actions[mergestatemod.ACTION_GET]:
+        for f, args, msg in mresult.getactions([mergestatemod.ACTION_GET]):
             files.append((f, hex(manifest[f])))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
-    return orig(repo, actions, wctx, mctx, overwrite, wantfiledata, **opts)
+    return orig(repo, mresult, wctx, mctx, overwrite, wantfiledata, **opts)
 
 
 # Prefetch merge checkunknownfiles

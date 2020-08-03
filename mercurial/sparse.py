@@ -269,19 +269,17 @@ def prunetemporaryincludes(repo):
 
     sparsematch = matcher(repo, includetemp=False)
     dirstate = repo.dirstate
-    actions = []
+    mresult = mergemod.mergeresult()
     dropped = []
     tempincludes = readtemporaryincludes(repo)
     for file in tempincludes:
         if file in dirstate and not sparsematch(file):
             message = _(b'dropping temporarily included sparse files')
-            actions.append((file, None, message))
+            mresult.addfile(file, b'r', None, message)
             dropped.append(file)
 
-    typeactions = mergemod.emptyactions()
-    typeactions[b'r'] = actions
     mergemod.applyupdates(
-        repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+        repo, mresult, repo[None], repo[b'.'], False, wantfiledata=False
     )
 
     # Fix dirstate
@@ -429,22 +427,25 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
         addtemporaryincludes(repo, temporaryfiles)
 
         # Add the new files to the working copy so they can be merged, etc
-        actions = []
+        tmresult = mergemod.mergeresult()
         message = b'temporarily adding to sparse checkout'
         wctxmanifest = repo[None].manifest()
         for file in temporaryfiles:
             if file in wctxmanifest:
                 fctx = repo[None][file]
-                actions.append((file, (fctx.flags(), False), message))
+                tmresult.addfile(
+                    file,
+                    mergestatemod.ACTION_GET,
+                    (fctx.flags(), False),
+                    message,
+                )
 
-        typeactions = mergemod.emptyactions()
-        typeactions[mergestatemod.ACTION_GET] = actions
         mergemod.applyupdates(
-            repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+            repo, tmresult, repo[None], repo[b'.'], False, wantfiledata=False
         )
 
         dirstate = repo.dirstate
-        for file, flags, msg in actions:
+        for file, flags, msg in tmresult.getactions([mergestatemod.ACTION_GET]):
             dirstate.normal(file)
 
     profiles = activeconfig(repo)[2]
@@ -497,7 +498,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
             _(b'could not update sparseness due to pending changes')
         )
 
-    # Calculate actions
+    # Calculate merge result
     dirstate = repo.dirstate
     ctx = repo[b'.']
     added = []
@@ -505,8 +506,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
     dropped = []
     mf = ctx.manifest()
     files = set(mf)
-
-    actions = {}
+    mresult = mergemod.mergeresult()
 
     for file in files:
         old = origsparsematch(file)
@@ -516,17 +516,17 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
         if (new and not old) or (old and new and not file in dirstate):
             fl = mf.flags(file)
             if repo.wvfs.exists(file):
-                actions[file] = (b'e', (fl,), b'')
+                mresult.addfile(file, b'e', (fl,), b'')
                 lookup.append(file)
             else:
-                actions[file] = (b'g', (fl, False), b'')
+                mresult.addfile(file, b'g', (fl, False), b'')
                 added.append(file)
         # Drop files that are newly excluded, or that still exist in
         # the dirstate.
         elif (old and not new) or (not old and not new and file in dirstate):
             dropped.append(file)
             if file not in pending:
-                actions[file] = (b'r', [], b'')
+                mresult.addfile(file, b'r', [], b'')
 
     # Verify there are no pending changes in newly included files
     abort = False
@@ -550,13 +550,8 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
             if old and not new:
                 dropped.append(file)
 
-    # Apply changes to disk
-    typeactions = mergemod.emptyactions()
-    for f, (m, args, msg) in pycompat.iteritems(actions):
-        typeactions[m].append((f, args, msg))
-
     mergemod.applyupdates(
-        repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+        repo, mresult, repo[None], repo[b'.'], False, wantfiledata=False
     )
 
     # Fix dirstate

@@ -272,15 +272,19 @@ def _deletecleanfiles(repo, files):
 
 
 def _writeaddedfiles(repo, pctx, files):
-    actions = merge.emptyactions()
-    addgaction = actions[mergestatemod.ACTION_GET].append
+    mresult = merge.mergeresult()
     mf = repo[b'.'].manifest()
     for f in files:
         if not repo.wvfs.exists(f):
-            addgaction((f, (mf.flags(f), False), b"narrowspec updated"))
+            mresult.addfile(
+                f,
+                mergestatemod.ACTION_GET,
+                (mf.flags(f), False),
+                b"narrowspec updated",
+            )
     merge.applyupdates(
         repo,
-        actions,
+        mresult,
         wctx=repo[None],
         mctx=repo[b'.'],
         overwrite=False,
