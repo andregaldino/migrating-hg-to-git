@@ -1256,34 +1256,28 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
     yield True, filedata
 
 
-def _prefetchfiles(repo, ctx, actions):
+def _prefetchfiles(repo, ctx, mresult):
     """Invoke ``scmutil.prefetchfiles()`` for the files relevant to the dict
     of merge actions.  ``ctx`` is the context being merged in."""
 
     # Skipping 'a', 'am', 'f', 'r', 'dm', 'e', 'k', 'p' and 'pr', because they
     # don't touch the context to be merged in.  'cd' is skipped, because
     # changed/deleted never resolves to something from the remote side.
-    oplist = [
-        actions[a]
-        for a in (
+    files = []
+    for f, args, msg in mresult.getactions(
+        [
             mergestatemod.ACTION_GET,
             mergestatemod.ACTION_DELETED_CHANGED,
             mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,
             mergestatemod.ACTION_MERGE,
-        )
-    ]
+        ]
+    ):
+        files.append(f)
+
     prefetch = scmutil.prefetchfiles
     matchfiles = scmutil.matchfiles
     prefetch(
-        repo,
-        [
-            (
-                ctx.rev(),
-                matchfiles(
-                    repo, [f for sublist in oplist for f, args, msg in sublist]
-                ),
-            )
-        ],
+        repo, [(ctx.rev(), matchfiles(repo, files),)],
     )
 
 
@@ -1351,7 +1345,7 @@ def applyupdates(
     """
 
     actions = mresult.actionsdict
-    _prefetchfiles(repo, mctx, actions)
+    _prefetchfiles(repo, mctx, mresult)
 
     updated, merged, removed = 0, 0, 0
     ms = mergestatemod.mergestate.clean(
