@@ -288,7 +288,7 @@ def _forgetremoved(wctx, mctx, branchmerge):
     return actions
 
 
-def _checkcollision(repo, wmf, actions):
+def _checkcollision(repo, wmf, mresult):
     """
     Check for case-folding collisions.
     """
@@ -296,39 +296,40 @@ def _checkcollision(repo, wmf, actions):
     narrowmatch = repo.narrowmatch()
     if not narrowmatch.always():
         pmmf = set(wmf.walk(narrowmatch))
-        if actions:
-            narrowactions = {}
-            for m, actionsfortype in pycompat.iteritems(actions):
-                narrowactions[m] = []
-                for (f, args, msg) in actionsfortype:
-                    if narrowmatch(f):
-                        narrowactions[m].append((f, args, msg))
-            actions = narrowactions
+        if mresult:
+            for f, actionsfortype in pycompat.iteritems(mresult.actions):
+                if not narrowmatch(f):
+                    mresult.removefile(f)
     else:
         # build provisional merged manifest up
         pmmf = set(wmf)
 
-    if actions:
+    if mresult:
         # KEEP and EXEC are no-op
-        for m in (
-            mergestatemod.ACTION_ADD,
-            mergestatemod.ACTION_ADD_MODIFIED,
-            mergestatemod.ACTION_FORGET,
-            mergestatemod.ACTION_GET,
-            mergestatemod.ACTION_CHANGED_DELETED,
-            mergestatemod.ACTION_DELETED_CHANGED,
+        for f, args, msg in mresult.getactions(
+            (
+                mergestatemod.ACTION_ADD,
+                mergestatemod.ACTION_ADD_MODIFIED,
+                mergestatemod.ACTION_FORGET,
+                mergestatemod.ACTION_GET,
+                mergestatemod.ACTION_CHANGED_DELETED,
+                mergestatemod.ACTION_DELETED_CHANGED,
+            )
         ):
-            for f, args, msg in actions[m]:
-                pmmf.add(f)
-        for f, args, msg in actions[mergestatemod.ACTION_REMOVE]:
+            pmmf.add(f)
+        for f, args, msg in mresult.getactions([mergestatemod.ACTION_REMOVE]):
             pmmf.discard(f)
-        for f, args, msg in actions[mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL]:
+        for f, args, msg in mresult.getactions(
+            [mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL]
+        ):
             f2, flags = args
             pmmf.discard(f2)
             pmmf.add(f)
-        for f, args, msg in actions[mergestatemod.ACTION_LOCAL_DIR_RENAME_GET]:
+        for f, args, msg in mresult.getactions(
+            [mergestatemod.ACTION_LOCAL_DIR_RENAME_GET]
+        ):
             pmmf.add(f)
-        for f, args, msg in actions[mergestatemod.ACTION_MERGE]:
+        for f, args, msg in mresult.getactions([mergestatemod.ACTION_MERGE]):
             f1, f2, fa, move, anc = args
             if move:
                 pmmf.discard(f1)
@@ -1960,9 +1961,6 @@ def update(
                 else:
                     mresult.removefile(f)
 
-        # Convert to dictionary-of-lists format
-        actions = mresult.actionsdict
-
         if not util.fscasesensitive(repo.path):
             # check collision between files only in p2 for clean update
             if not branchmerge and (
@@ -1970,7 +1968,7 @@ def update(
             ):
                 _checkcollision(repo, p2.manifest(), None)
             else:
-                _checkcollision(repo, wc.manifest(), actions)
+                _checkcollision(repo, wc.manifest(), mresult)
 
         # divergent renames
         for f, fl in sorted(pycompat.iteritems(mresult.diverge)):
@@ -2007,6 +2005,9 @@ def update(
             repo.hook(b'preupdate', throw=True, parent1=xp1, parent2=xp2)
             # note that we're in the middle of an update
             repo.vfs.write(b'updatestate', p2.hex())
+
+        # Convert to dictionary-of-lists format
+        actions = mresult.actionsdict
 
         _advertisefsmonitor(
             repo, len(actions[mergestatemod.ACTION_GET]), p1.node()
