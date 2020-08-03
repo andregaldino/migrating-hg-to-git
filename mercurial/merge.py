@@ -623,6 +623,17 @@ class mergeresult(object):
                     res.append((f, args, msg))
         return res
 
+    def len(self, actions=None):
+        """ returns number of files which needs actions
+
+        if actions is passed, total of number of files in that action
+        only is returned """
+
+        if actions is None:
+            return len(self._filemapping)
+
+        return sum(len(self._actionmapping[a]) for a in actions)
+
     @property
     def actions(self):
         return self._filemapping
@@ -1409,9 +1420,7 @@ def applyupdates(
             wctx[f].audit()
             wctx[f].remove()
 
-    numupdates = len(mresult.actions) - len(
-        mresult._actionmapping[mergestatemod.ACTION_KEEP]
-    )
+    numupdates = mresult.len() - mresult.len((mergestatemod.ACTION_KEEP,))
     progress = repo.ui.makeprogress(
         _(b'updating'), unit=_(b'files'), total=numupdates
     )
@@ -1454,7 +1463,7 @@ def applyupdates(
     )
     for i, item in prog:
         progress.increment(step=i, item=item)
-    removed = len(mresult._actionmapping[mergestatemod.ACTION_REMOVE])
+    removed = mresult.len((mergestatemod.ACTION_REMOVE,))
 
     # resolve path conflicts (must come before getting)
     for f, args, msg in mresult.getactions(
@@ -1489,7 +1498,7 @@ def applyupdates(
         else:
             i, item = res
             progress.increment(step=i, item=item)
-    updated = len(mresult._actionmapping[mergestatemod.ACTION_GET])
+    updated = mresult.len((mergestatemod.ACTION_GET,))
 
     if b'.hgsubstate' in mresult._actionmapping[mergestatemod.ACTION_GET]:
         subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
@@ -1664,9 +1673,7 @@ def applyupdates(
 
     progress.complete()
     assert len(getfiledata) == (
-        len(mresult._actionmapping[mergestatemod.ACTION_GET])
-        if wantfiledata
-        else 0
+        mresult.len((mergestatemod.ACTION_GET,)) if wantfiledata else 0
     )
     return updateresult(updated, merged, removed, unresolved), getfiledata
 
@@ -2031,11 +2038,8 @@ def update(
             # note that we're in the middle of an update
             repo.vfs.write(b'updatestate', p2.hex())
 
-        # Convert to dictionary-of-lists format
-        actions = mresult.actionsdict
-
         _advertisefsmonitor(
-            repo, len(actions[mergestatemod.ACTION_GET]), p1.node()
+            repo, mresult.len((mergestatemod.ACTION_GET,)), p1.node()
         )
 
         wantfiledata = updatedirstate and not branchmerge
