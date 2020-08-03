@@ -1352,7 +1352,6 @@ def applyupdates(
     batchget.
     """
 
-    actions = mresult.actionsdict
     _prefetchfiles(repo, mctx, mresult)
 
     updated, merged, removed = 0, 0, 0
@@ -1370,13 +1369,16 @@ def applyupdates(
             ms.addmergedother(f)
 
     moves = []
-    for m, l in actions.items():
-        l.sort()
 
     # 'cd' and 'dc' actions are treated like other merge conflicts
-    mergeactions = sorted(actions[mergestatemod.ACTION_CHANGED_DELETED])
-    mergeactions.extend(sorted(actions[mergestatemod.ACTION_DELETED_CHANGED]))
-    mergeactions.extend(actions[mergestatemod.ACTION_MERGE])
+    mergeactions = mresult.getactions(
+        [
+            mergestatemod.ACTION_CHANGED_DELETED,
+            mergestatemod.ACTION_DELETED_CHANGED,
+            mergestatemod.ACTION_MERGE,
+        ],
+        sort=True,
+    )
     for f, args, msg in mergeactions:
         f1, f2, fa, move, anc = args
         if f == b'.hgsubstate':  # merged internally
@@ -1407,22 +1409,20 @@ def applyupdates(
             wctx[f].audit()
             wctx[f].remove()
 
-    numupdates = sum(
-        len(l) for m, l in actions.items() if m != mergestatemod.ACTION_KEEP
+    numupdates = len(mresult.actions) - len(
+        mresult._actionmapping[mergestatemod.ACTION_KEEP]
     )
     progress = repo.ui.makeprogress(
         _(b'updating'), unit=_(b'files'), total=numupdates
     )
 
-    if [
-        a
-        for a in actions[mergestatemod.ACTION_REMOVE]
-        if a[0] == b'.hgsubstate'
-    ]:
+    if b'.hgsubstate' in mresult._actionmapping[mergestatemod.ACTION_REMOVE]:
         subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
 
     # record path conflicts
-    for f, args, msg in actions[mergestatemod.ACTION_PATH_CONFLICT]:
+    for f, args, msg in mresult.getactions(
+        [mergestatemod.ACTION_PATH_CONFLICT], sort=True
+    ):
         f1, fo = args
         s = repo.ui.status
         s(
@@ -1450,14 +1450,16 @@ def applyupdates(
         cost,
         batchremove,
         (repo, wctx),
-        actions[mergestatemod.ACTION_REMOVE],
+        mresult.getactions([mergestatemod.ACTION_REMOVE], sort=True),
     )
     for i, item in prog:
         progress.increment(step=i, item=item)
-    removed = len(actions[mergestatemod.ACTION_REMOVE])
+    removed = len(mresult._actionmapping[mergestatemod.ACTION_REMOVE])
 
     # resolve path conflicts (must come before getting)
-    for f, args, msg in actions[mergestatemod.ACTION_PATH_CONFLICT_RESOLVE]:
+    for f, args, msg in mresult.getactions(
+        [mergestatemod.ACTION_PATH_CONFLICT_RESOLVE], sort=True
+    ):
         repo.ui.debug(b" %s: %s -> pr\n" % (f, msg))
         (f0, origf0) = args
         if wctx[f0].lexists():
@@ -1476,7 +1478,7 @@ def applyupdates(
         cost,
         batchget,
         (repo, mctx, wctx, wantfiledata),
-        actions[mergestatemod.ACTION_GET],
+        mresult.getactions([mergestatemod.ACTION_GET], sort=True),
         threadsafe=threadsafe,
         hasretval=True,
     )
@@ -1487,33 +1489,43 @@ def applyupdates(
         else:
             i, item = res
             progress.increment(step=i, item=item)
-    updated = len(actions[mergestatemod.ACTION_GET])
+    updated = len(mresult._actionmapping[mergestatemod.ACTION_GET])
 
-    if [a for a in actions[mergestatemod.ACTION_GET] if a[0] == b'.hgsubstate']:
+    if b'.hgsubstate' in mresult._actionmapping[mergestatemod.ACTION_GET]:
         subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
 
     # forget (manifest only, just log it) (must come first)
-    for f, args, msg in actions[mergestatemod.ACTION_FORGET]:
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_FORGET,), sort=True
+    ):
         repo.ui.debug(b" %s: %s -> f\n" % (f, msg))
         progress.increment(item=f)
 
     # re-add (manifest only, just log it)
-    for f, args, msg in actions[mergestatemod.ACTION_ADD]:
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_ADD,), sort=True
+    ):
         repo.ui.debug(b" %s: %s -> a\n" % (f, msg))
         progress.increment(item=f)
 
     # re-add/mark as modified (manifest only, just log it)
-    for f, args, msg in actions[mergestatemod.ACTION_ADD_MODIFIED]:
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_ADD_MODIFIED,), sort=True
+    ):
         repo.ui.debug(b" %s: %s -> am\n" % (f, msg))
         progress.increment(item=f)
 
     # keep (noop, just log it)
-    for f, args, msg in actions[mergestatemod.ACTION_KEEP]:
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_KEEP,), sort=True
+    ):
         repo.ui.debug(b" %s: %s -> k\n" % (f, msg))
         # no progress
 
     # directory rename, move local
-    for f, args, msg in actions[mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL]:
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL,), sort=True
+    ):
         repo.ui.debug(b" %s: %s -> dm\n" % (f, msg))
         progress.increment(item=f)
         f0, flags = args
@@ -1524,7 +1536,9 @@ def applyupdates(
         updated += 1
 
     # local directory rename, get
-    for f, args, msg in actions[mergestatemod.ACTION_LOCAL_DIR_RENAME_GET]:
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,), sort=True
+    ):
         repo.ui.debug(b" %s: %s -> dg\n" % (f, msg))
         progress.increment(item=f)
         f0, flags = args
@@ -1533,7 +1547,9 @@ def applyupdates(
         updated += 1
 
     # exec
-    for f, args, msg in actions[mergestatemod.ACTION_EXEC]:
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_EXEC,), sort=True
+    ):
         repo.ui.debug(b" %s: %s -> e\n" % (f, msg))
         progress.increment(item=f)
         (flags,) = args
@@ -1614,9 +1630,10 @@ def applyupdates(
 
     extraactions = ms.actions()
     if extraactions:
-        mfiles = {a[0] for a in actions[mergestatemod.ACTION_MERGE]}
+        mfiles = {
+            a[0] for a in mresult.getactions((mergestatemod.ACTION_MERGE,))
+        }
         for k, acts in pycompat.iteritems(extraactions):
-            actions[k].extend(acts)
             for a in acts:
                 mresult.addfile(a[0], k, *a[1:])
             if k == mergestatemod.ACTION_GET and wantfiledata:
@@ -1641,16 +1658,15 @@ def applyupdates(
             # those lists aren't consulted again.
             mfiles.difference_update(a[0] for a in acts)
 
-        actions[mergestatemod.ACTION_MERGE] = [
-            a for a in actions[mergestatemod.ACTION_MERGE] if a[0] in mfiles
-        ]
         for a in mresult.getactions([mergestatemod.ACTION_MERGE]):
             if a[0] not in mfiles:
                 mresult.removefile(a[0])
 
     progress.complete()
     assert len(getfiledata) == (
-        len(actions[mergestatemod.ACTION_GET]) if wantfiledata else 0
+        len(mresult._actionmapping[mergestatemod.ACTION_GET])
+        if wantfiledata
+        else 0
     )
     return updateresult(updated, merged, removed, unresolved), getfiledata
 
