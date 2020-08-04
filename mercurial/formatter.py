@@ -540,6 +540,7 @@ class templatespec(object):
     tmpl = attr.ib()
     mapfile = attr.ib()
     refargs = attr.ib(default=None)
+    fp = attr.ib(default=None)
 
 
 def empty_templatespec():
@@ -556,8 +557,8 @@ def literal_templatespec(tmpl):
     return templatespec(b'', tmpl, None)
 
 
-def mapfile_templatespec(topic, mapfile):
-    return templatespec(topic, None, mapfile)
+def mapfile_templatespec(topic, mapfile, fp=None):
+    return templatespec(topic, None, mapfile, fp=fp)
 
 
 def lookuptemplate(ui, topic, tmpl):
@@ -603,7 +604,7 @@ def lookuptemplate(ui, topic, tmpl):
             b'map-cmdline.' + tmpl
         ) or templater.open_template(tmpl)
         if mapname:
-            return mapfile_templatespec(topic, mapname)
+            return mapfile_templatespec(topic, mapname, fp)
 
     # perhaps it's a reference to [templates]
     if ui.config(b'templates', tmpl):
@@ -645,7 +646,11 @@ def loadtemplater(ui, spec, defaults=None, resources=None, cache=None):
     assert not (spec.tmpl and spec.mapfile)
     if spec.mapfile:
         return templater.templater.frommapfile(
-            spec.mapfile, defaults=defaults, resources=resources, cache=cache
+            spec.mapfile,
+            spec.fp,
+            defaults=defaults,
+            resources=resources,
+            cache=cache,
         )
     return maketemplater(
         ui, spec.tmpl, defaults=defaults, resources=resources, cache=cache

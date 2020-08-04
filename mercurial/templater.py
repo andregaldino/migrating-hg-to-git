@@ -994,6 +994,7 @@ class templater(object):
     def frommapfile(
         cls,
         mapfile,
+        fp=None,
         filters=None,
         defaults=None,
         resources=None,
@@ -1003,7 +1004,8 @@ class templater(object):
     ):
         """Create templater from the specified map file"""
         t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
-        fp = _open_mapfile(mapfile)
+        if not fp:
+            fp = _open_mapfile(mapfile)
         cache, tmap, aliases = _readmapfile(fp, mapfile)
         t._loader.cache.update(cache)
         t._loader._map = tmap

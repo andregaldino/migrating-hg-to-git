@@ -626,13 +626,14 @@ def _lookuptemplate(ui, tmpl, style):
 
     if not tmpl and style:
         mapfile = style
+        fp = None
         if not os.path.split(mapfile)[0]:
             (mapname, fp) = templater.open_template(
                 b'map-cmdline.' + mapfile
             ) or templater.open_template(mapfile)
             if mapname:
                 mapfile = mapname
-        return formatter.mapfile_templatespec(b'changeset', mapfile)
+        return formatter.mapfile_templatespec(b'changeset', mapfile, fp)
 
     return formatter.lookuptemplate(ui, b'changeset', tmpl)
 
