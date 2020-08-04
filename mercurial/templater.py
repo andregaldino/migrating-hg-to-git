@@ -1075,37 +1075,3 @@ def templatepath(name):
     if f and os.path.isfile(f):
         return f
     return None
-
-
-def stylemap(styles, path=None):
-    """Return path to mapfile for a given style.
-
-    Searches mapfile in the following locations:
-    1. templatepath/style/map
-    2. templatepath/map-style
-    3. templatepath/map
-    """
-
-    if path is None:
-        path = templatedir()
-
-    if path is not None:
-        for style in styles:
-            # only plain name is allowed to honor template paths
-            if (
-                not style
-                or style in (pycompat.oscurdir, pycompat.ospardir)
-                or pycompat.ossep in style
-                or pycompat.osaltsep
-                and pycompat.osaltsep in style
-            ):
-                continue
-            locations = [os.path.join(style, b'map'), b'map-' + style]
-            locations.append(b'map')
-
-            for location in locations:
-                mapfile = os.path.join(path, location)
-                if os.path.isfile(mapfile):
-                    return style, mapfile
-
-    raise RuntimeError(b"No hgweb templates found in %r" % path)
