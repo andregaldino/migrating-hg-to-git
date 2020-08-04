@@ -1074,7 +1074,12 @@ def templatedir():
 
 
 def open_template(name):
-    '''returns a file-like object for the given template, and its full path'''
+    '''returns a file-like object for the given template, and its full path
+
+    If the name is a relative path and we're in a frozen binary, the template
+    will be read from the mercurial.templates package instead. The returned path
+    will then be the relative path.
+    '''
     templatepath = templatedir()
     if templatepath is not None or os.path.isabs(name):
         f = os.path.join(templatepath, name)
@@ -1083,5 +1088,12 @@ def open_template(name):
         except EnvironmentError:
             return None, None
     else:
-        # TODO: read from resources here
-        return None, None
+        name_parts = pycompat.sysstr(name).split('/')
+        package_name = '.'.join(['mercurial', 'templates'] + name_parts[:-1])
+        try:
+            return (
+                name,
+                resourceutil.open_resource(package_name, name_parts[-1]),
+            )
+        except (ModuleNotFoundError, FileNotFoundError):
+            return None, None
