@@ -416,7 +416,7 @@ class hgwebdir(object):
                 if not static:
                     tp = self.templatepath or templater.templatedir()
                     if tp is not None:
-                        static = [os.path.join(tp, b'static')]
+                        static = os.path.join(tp, b'static')
 
                 staticfile(static, fname, res)
                 return res.sendresponse()

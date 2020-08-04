@@ -191,12 +191,7 @@ def staticfile(directory, fname, res):
         return
 
     fpath = os.path.join(*fname.split(b'/'))
-    if isinstance(directory, bytes):
-        directory = [directory]
-    for d in directory:
-        path = os.path.join(d, fpath)
-        if os.path.exists(path):
-            break
+    path = os.path.join(directory, fpath)
     try:
         os.stat(path)
         ct = pycompat.sysbytes(
