@@ -11,18 +11,16 @@ List tracked files.
 Returns 0 on success.
 ";
 
-pub struct FilesCommand<'a> {
-    ui: &'a Ui,
-}
+pub struct FilesCommand {}
 
-impl<'a> FilesCommand<'a> {
-    pub fn new(ui: &'a Ui) -> Self {
-        FilesCommand { ui }
+impl FilesCommand {
+    pub fn new() -> Self {
+        FilesCommand {}
     }
 }
 
-impl<'a> Command<'a> for FilesCommand<'a> {
-    fn run(&self) -> Result<(), CommandError> {
+impl Command for FilesCommand {
+    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let operation_builder = ListTrackedFiles::new()?;
         let operation = operation_builder.load().map_err(|err| {
             CommandErrorKind::Abort(Some(
@@ -47,7 +45,7 @@ impl<'a> Command<'a> for FilesCommand<'a> {
             .expect("cwd was already checked within the repository");
         let rooted_cwd = HgPathBuf::from(get_bytes_from_path(rooted_cwd));
 
-        let mut stdout = self.ui.stdout_buffer();
+        let mut stdout = ui.stdout_buffer();
 
         for file in files {
             stdout.write_all(relativize_path(file, &rooted_cwd).as_ref())?;

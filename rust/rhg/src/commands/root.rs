@@ -10,24 +10,22 @@ Print the root directory of the current repository.
 Returns 0 on success.
 ";
 
-pub struct RootCommand<'a> {
-    ui: &'a Ui,
-}
+pub struct RootCommand {}
 
-impl<'a> RootCommand<'a> {
-    pub fn new(ui: &'a Ui) -> Self {
-        RootCommand { ui }
+impl RootCommand {
+    pub fn new() -> Self {
+        RootCommand {}
     }
 }
 
-impl<'a> Command<'a> for RootCommand<'a> {
-    fn run(&self) -> Result<(), CommandError> {
+impl Command for RootCommand {
+    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let path_buf = FindRoot::new().run()?;
 
         let bytes = get_bytes_from_path(path_buf);
 
         // TODO use formating macro
-        self.ui.write_stdout(&[bytes.as_slice(), b"\n"].concat())?;
+        ui.write_stdout(&[bytes.as_slice(), b"\n"].concat())?;
 
         Ok(())
     }

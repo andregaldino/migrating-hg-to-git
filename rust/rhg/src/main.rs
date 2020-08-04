@@ -29,8 +29,8 @@ fn main() {
 
     let command_result = match matches.subcommand_name() {
         Some(name) => match name {
-            "root" => commands::root::RootCommand::new(&ui).run(),
-            "files" => commands::files::FilesCommand::new(&ui).run(),
+            "root" => commands::root::RootCommand::new().run(&ui),
+            "files" => commands::files::FilesCommand::new().run(&ui),
             _ => std::process::exit(exitcode::UNIMPLEMENTED_COMMAND),
         },
         _ => {
