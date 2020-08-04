@@ -1320,7 +1320,8 @@ def static(web):
     static = web.config(b"web", b"static", untrusted=False)
     if not static:
         tp = web.templatepath or templater.templatedir()
-        static = os.path.join(tp, b'static')
+        if tp is not None:
+            static = os.path.join(tp, b'static')
 
     staticfile(static, fname, web.res)
     return web.res.sendresponse()
