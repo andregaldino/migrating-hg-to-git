@@ -201,7 +201,7 @@ def staticfile(templatepath, directory, fname, res):
     try:
         os.stat(path)
         ct = pycompat.sysbytes(
-            mimetypes.guess_type(pycompat.fsdecode(path))[0] or r"text/plain"
+            mimetypes.guess_type(pycompat.fsdecode(fpath))[0] or r"text/plain"
         )
         with open(path, b'rb') as fh:
             data = fh.read()
