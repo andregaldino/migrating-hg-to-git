@@ -364,11 +364,17 @@ impl DirstateMap {
             return Ok(None);
         }
 
-        let parents = parse_dirstate(
-            &mut self.state_map,
-            &mut self.copy_map,
-            file_contents,
-        )?;
+        let (parents, entries, copies) = parse_dirstate(file_contents)?;
+        self.state_map.extend(
+            entries
+                .into_iter()
+                .map(|(path, entry)| (path.to_owned(), entry)),
+        );
+        self.copy_map.extend(
+            copies
+                .into_iter()
+                .map(|(path, copy)| (path.to_owned(), copy.to_owned())),
+        );
 
         if !self.dirty_parents {
             self.set_parents(&parents);

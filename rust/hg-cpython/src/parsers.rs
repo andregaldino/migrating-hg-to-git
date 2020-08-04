@@ -14,7 +14,7 @@ use cpython::{
     PythonObject, ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf,
+    pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf, DirstateEntry,
     DirstatePackError, DirstateParents, DirstateParseError, FastHashMap,
     PARENT_SIZE,
 };
@@ -29,11 +29,17 @@ fn parse_dirstate_wrapper(
     copymap: PyDict,
     st: PyBytes,
 ) -> PyResult<PyTuple> {
-    let mut dirstate_map = FastHashMap::default();
-    let mut copies = FastHashMap::default();
+    match parse_dirstate(st.data(py)) {
+        Ok((parents, entries, copies)) => {
+            let dirstate_map: FastHashMap<HgPathBuf, DirstateEntry> = entries
+                .into_iter()
+                .map(|(path, entry)| (path.to_owned(), entry))
+                .collect();
+            let copy_map: FastHashMap<HgPathBuf, HgPathBuf> = copies
+                .into_iter()
+                .map(|(path, copy)| (path.to_owned(), copy.to_owned()))
+                .collect();
 
-    match parse_dirstate(&mut dirstate_map, &mut copies, st.data(py)) {
-        Ok(parents) => {
             for (filename, entry) in &dirstate_map {
                 dmap.set_item(
                     py,
@@ -41,7 +47,7 @@ fn parse_dirstate_wrapper(
                     make_dirstate_tuple(py, entry)?,
                 )?;
             }
-            for (path, copy_path) in copies {
+            for (path, copy_path) in copy_map {
                 copymap.set_item(
                     py,
                     PyBytes::new(py, path.as_bytes()),
