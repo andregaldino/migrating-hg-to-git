@@ -197,18 +197,14 @@ def staticfile(templatepath, directory, fname, res):
             directory = os.path.join(tp, b'static')
 
     fpath = os.path.join(*fname.split(b'/'))
+    ct = pycompat.sysbytes(
+        mimetypes.guess_type(pycompat.fsdecode(fpath))[0] or r"text/plain"
+    )
     path = os.path.join(directory, fpath)
     try:
         os.stat(path)
-        ct = pycompat.sysbytes(
-            mimetypes.guess_type(pycompat.fsdecode(fpath))[0] or r"text/plain"
-        )
         with open(path, b'rb') as fh:
             data = fh.read()
-
-        res.headers[b'Content-Type'] = ct
-        res.setbodybytes(data)
-        return res
     except TypeError:
         raise ErrorResponse(HTTP_SERVER_ERROR, b'illegal filename')
     except OSError as err:
@@ -218,6 +214,10 @@ def staticfile(templatepath, directory, fname, res):
             raise ErrorResponse(
                 HTTP_SERVER_ERROR, encoding.strtolocal(err.strerror)
             )
+
+    res.headers[b'Content-Type'] = ct
+    res.setbodybytes(data)
+    return res
 
 
 def paritygen(stripecount, offset=0):
