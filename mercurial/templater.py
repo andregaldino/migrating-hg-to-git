@@ -1071,12 +1071,15 @@ def templatedir():
     return path if os.path.isdir(path) else None
 
 
-def templatepath(name):
-    '''return location of template file. returns None if not found.'''
-    dir = templatedir()
-    if dir is None:
-        return None
-    f = os.path.join(templatedir(), name)
-    if f and os.path.isfile(f):
-        return f
-    return None
+def open_template(name):
+    '''returns a file-like object for the given template, and its full path'''
+    templatepath = templatedir()
+    if templatepath is not None or os.path.isabs(name):
+        f = os.path.join(templatepath, name)
+        try:
+            return f, open(f, mode='rb')
+        except EnvironmentError:
+            return None, None
+    else:
+        # TODO: read from resources here
+        return None, None
