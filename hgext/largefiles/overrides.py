@@ -571,8 +571,8 @@ def overridecalculateupdates(
 
     for lfile in sorted(lfiles):
         standin = lfutil.standin(lfile)
-        (lm, largs, lmsg) = mresult.actions.get(lfile, (None, None, None))
-        (sm, sargs, smsg) = mresult.actions.get(standin, (None, None, None))
+        (lm, largs, lmsg) = mresult.getfile(lfile, (None, None, None))
+        (sm, sargs, smsg) = mresult.getfile(standin, (None, None, None))
         if sm in (b'g', b'dc') and lm != b'r':
             if sm == b'dc':
                 f1, f2, fa, move, anc = sargs

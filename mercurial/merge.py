@@ -454,7 +454,8 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
                 # A file is in a directory which aliases a local file.
                 # We will need to rename the local file.
                 localconflicts.add(p)
-        if p in mresult.actions and mresult.actions[p][0] in (
+        pd = mresult.getfile(p)
+        if pd and pd[0] in (
             mergestatemod.ACTION_CREATED,
             mergestatemod.ACTION_DELETED_CHANGED,
             mergestatemod.ACTION_MERGE,
@@ -489,7 +490,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
         ctxname = bytes(mctx).rstrip(b'+')
         for f, p in _filesindirs(repo, mf, remoteconflicts):
             if f not in deletedfiles:
-                m, args, msg = mresult.actions[p]
+                m, args, msg = mresult.getfile(p)
                 pnew = util.safename(
                     p, ctxname, wctx, set(mresult.actions.keys())
                 )
@@ -611,6 +612,14 @@ class mergeresult(object):
 
         self._filemapping[filename] = (action, data, message)
         self._actionmapping[action][filename] = (data, message)
+
+    def getfile(self, filename, default_return=None):
+        """ returns (action, args, msg) about this file
+
+        returns default_return if the file is not present """
+        if filename in self._filemapping:
+            return self._filemapping[filename]
+        return default_return
 
     def removefile(self, filename):
         """ removes a file from the mergeresult object as the file might
@@ -1960,9 +1969,10 @@ def update(
         # Prompt and create actions. Most of this is in the resolve phase
         # already, but we can't handle .hgsubstate in filemerge or
         # subrepoutil.submerge yet so we have to keep prompting for it.
-        if b'.hgsubstate' in mresult.actions:
+        vals = mresult.getfile(b'.hgsubstate')
+        if vals:
             f = b'.hgsubstate'
-            m, args, msg = mresult.actions[f]
+            m, args, msg = vals
             prompts = filemerge.partextras(labels)
             prompts[b'f'] = f
             if m == mergestatemod.ACTION_CHANGED_DELETED:
