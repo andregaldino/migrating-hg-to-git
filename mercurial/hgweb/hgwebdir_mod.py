@@ -537,8 +537,9 @@ class hgwebdir(object):
         return res.sendresponse()
 
     def templater(self, req, nonce):
-        def config(section, name, default=uimod._unset, untrusted=True):
-            return self.ui.config(section, name, default, untrusted)
+        def config(*args, **kwargs):
+            kwargs.setdefault('untrusted', True)
+            return self.ui.config(*args, **kwargs)
 
         vars = {}
         styles, (style, mapfile) = hgweb_mod.getstyle(

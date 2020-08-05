@@ -151,23 +151,21 @@ class requestcontext(object):
         self.csp, self.nonce = cspvalues(self.repo.ui)
 
     # Trust the settings from the .hg/hgrc files by default.
-    def config(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.config(section, name, default, untrusted=untrusted)
+    def config(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.config(*args, **kwargs)
 
-    def configbool(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configbool(
-            section, name, default, untrusted=untrusted
-        )
+    def configbool(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.configbool(*args, **kwargs)
 
-    def configint(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configint(
-            section, name, default, untrusted=untrusted
-        )
+    def configint(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.configint(*args, **kwargs)
 
-    def configlist(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configlist(
-            section, name, default, untrusted=untrusted
-        )
+    def configlist(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.configlist(*args, **kwargs)
 
     def archivelist(self, nodeid):
         return webutil.archivelist(self.repo.ui, nodeid)
