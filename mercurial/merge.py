@@ -1500,7 +1500,6 @@ def applyupdates(
         else:
             i, item = res
             progress.increment(step=i, item=item)
-    updated = mresult.len((mergestatemod.ACTION_GET,))
 
     if b'.hgsubstate' in mresult._actionmapping[mergestatemod.ACTION_GET]:
         subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
@@ -1544,7 +1543,6 @@ def applyupdates(
         wctx[f].audit()
         wctx[f].write(wctx.filectx(f0).data(), flags)
         wctx[f0].remove()
-        updated += 1
 
     # local directory rename, get
     for f, args, msg in mresult.getactions(
@@ -1555,7 +1553,6 @@ def applyupdates(
         f0, flags = args
         repo.ui.note(_(b"getting %s to %s\n") % (f0, f))
         wctx[f].write(mctx.filectx(f0).data(), flags)
-        updated += 1
 
     # exec
     for f, args, msg in mresult.getactions(
@@ -1566,8 +1563,16 @@ def applyupdates(
         (flags,) = args
         wctx[f].audit()
         wctx[f].setflags(b'l' in flags, b'x' in flags)
-        updated += 1
 
+    # these actions updates the file
+    updated = mresult.len(
+        (
+            mergestatemod.ACTION_GET,
+            mergestatemod.ACTION_EXEC,
+            mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,
+            mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL,
+        )
+    )
     # the ordering is important here -- ms.mergedriver will raise if the merge
     # driver has changed, and we want to be able to bypass it when overwrite is
     # True
