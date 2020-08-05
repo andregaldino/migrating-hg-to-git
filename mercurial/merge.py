@@ -414,30 +414,33 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
     # The set of files deleted by all the actions.
     deletedfiles = set()
 
-    for f, (m, args, msg) in mresult.actions.items():
-        if m in (
+    for (f, args, msg) in mresult.getactions(
+        (
             mergestatemod.ACTION_CREATED,
             mergestatemod.ACTION_DELETED_CHANGED,
             mergestatemod.ACTION_MERGE,
             mergestatemod.ACTION_CREATED_MERGE,
-        ):
-            # This action may create a new local file.
-            createdfiledirs.update(pathutil.finddirs(f))
-            if mf.hasdir(f):
-                # The file aliases a local directory.  This might be ok if all
-                # the files in the local directory are being deleted.  This
-                # will be checked once we know what all the deleted files are.
-                remoteconflicts.add(f)
-        # Track the names of all deleted files.
-        if m == mergestatemod.ACTION_REMOVE:
-            deletedfiles.add(f)
-        if m == mergestatemod.ACTION_MERGE:
-            f1, f2, fa, move, anc = args
-            if move:
-                deletedfiles.add(f1)
-        if m == mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL:
-            f2, flags = args
-            deletedfiles.add(f2)
+        )
+    ):
+        # This action may create a new local file.
+        createdfiledirs.update(pathutil.finddirs(f))
+        if mf.hasdir(f):
+            # The file aliases a local directory.  This might be ok if all
+            # the files in the local directory are being deleted.  This
+            # will be checked once we know what all the deleted files are.
+            remoteconflicts.add(f)
+    # Track the names of all deleted files.
+    for (f, args, msg) in mresult.getactions((mergestatemod.ACTION_REMOVE,)):
+        deletedfiles.add(f)
+    for (f, args, msg) in mresult.getactions((mergestatemod.ACTION_MERGE,)):
+        f1, f2, fa, move, anc = args
+        if move:
+            deletedfiles.add(f1)
+    for (f, args, msg) in mresult.getactions(
+        (mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL,)
+    ):
+        f2, flags = args
+        deletedfiles.add(f2)
 
     # Check all directories that contain created files for path conflicts.
     for p in createdfiledirs:
