@@ -79,8 +79,7 @@ def _stylemap(styles, path=None):
                 and pycompat.osaltsep in style
             ):
                 continue
-            locations = [os.path.join(style, b'map'), b'map-' + style]
-            locations.append(b'map')
+            locations = (os.path.join(style, b'map'), b'map-' + style, b'map')
 
             for location in locations:
                 mapfile = os.path.join(path, location)
