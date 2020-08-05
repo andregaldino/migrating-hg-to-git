@@ -497,7 +497,7 @@ def checkunknownfiles(orig, repo, wctx, mctx, force, mresult, *args, **kwargs):
     if isenabled(repo):
         files = []
         sparsematch = repo.maybesparsematch(mctx.rev())
-        for f, (m, actionargs, msg) in pycompat.iteritems(mresult.actions):
+        for f, (m, actionargs, msg) in mresult.filemap():
             if sparsematch and not sparsematch(f):
                 continue
             if m in (

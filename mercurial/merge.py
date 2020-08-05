@@ -541,7 +541,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
     }
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.
-    for f, action in list(mresult.actions.items()):
+    for f, action in mresult.filemap():
         if narrowmatch(f):
             pass
         elif not branchmerge:
@@ -668,9 +668,13 @@ class mergeresult(object):
 
         return sum(len(self._actionmapping[a]) for a in actions)
 
-    @property
-    def actions(self):
-        return self._filemapping
+    def filemap(self, sort=False):
+        if sorted:
+            for key, val in sorted(pycompat.iteritems(self._filemapping)):
+                yield key, val
+        else:
+            for key, val in pycompat.iteritems(self._filemapping):
+                yield key, val
 
     @property
     def diverge(self):
@@ -1137,7 +1141,7 @@ def calculateupdates(
             ):
                 renamedelete = mresult1.renamedelete
 
-            for f, a in sorted(pycompat.iteritems(mresult1.actions)):
+            for f, a in mresult1.filemap(sort=True):
                 m, args, msg = a
                 repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m))
                 if f in fbids:

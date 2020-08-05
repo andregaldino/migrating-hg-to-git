@@ -388,7 +388,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
         sparsematch = matcher(repo, [mctx.rev()])
 
     temporaryfiles = []
-    for file, action in pycompat.iteritems(mresult.actions):
+    for file, action in mresult.filemap():
         type, args, msg = action
         files.add(file)
         if sparsematch(file):

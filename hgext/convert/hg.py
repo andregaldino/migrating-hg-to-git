@@ -229,7 +229,7 @@ class mercurial_sink(common.converter_sink):
             followcopies=False,
         )
 
-        for file, (action, info, msg) in pycompat.iteritems(mresult.actions):
+        for file, (action, info, msg) in mresult.filemap():
             if source.targetfilebelongstosource(file):
                 # If the file belongs to the source repo, ignore the p2
                 # since it will be covered by the existing fileset.
