@@ -562,7 +562,7 @@ def overridecalculateupdates(
 
     # Convert to dictionary with filename as key and action as value.
     lfiles = set()
-    for f in mresult.actions:
+    for f in mresult.files():
         splitstandin = lfutil.splitstandin(f)
         if splitstandin is not None and splitstandin in p1:
             lfiles.add(splitstandin)

@@ -151,11 +151,11 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
                 warnconflicts.update(conflicts)
 
         checkunknowndirs = _unknowndirschecker()
-        for f, args, msg in mresult.getactions(
-            [
+        for f in mresult.files(
+            (
                 mergestatemod.ACTION_CREATED,
                 mergestatemod.ACTION_DELETED_CHANGED,
-            ]
+            )
         ):
             if _checkunknownfile(repo, wctx, mctx, f):
                 fileconflicts.add(f)
@@ -299,7 +299,7 @@ def _checkcollision(repo, wmf, mresult):
     if not narrowmatch.always():
         pmmf = set(wmf.walk(narrowmatch))
         if mresult:
-            for f, actionsfortype in pycompat.iteritems(mresult.actions):
+            for f in list(mresult.files()):
                 if not narrowmatch(f):
                     mresult.removefile(f)
     else:
@@ -308,7 +308,7 @@ def _checkcollision(repo, wmf, mresult):
 
     if mresult:
         # KEEP and EXEC are no-op
-        for f, args, msg in mresult.getactions(
+        for f in mresult.files(
             (
                 mergestatemod.ACTION_ADD,
                 mergestatemod.ACTION_ADD_MODIFIED,
@@ -319,7 +319,7 @@ def _checkcollision(repo, wmf, mresult):
             )
         ):
             pmmf.add(f)
-        for f, args, msg in mresult.getactions([mergestatemod.ACTION_REMOVE]):
+        for f in mresult.files((mergestatemod.ACTION_REMOVE,)):
             pmmf.discard(f)
         for f, args, msg in mresult.getactions(
             [mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL]
@@ -327,9 +327,7 @@ def _checkcollision(repo, wmf, mresult):
             f2, flags = args
             pmmf.discard(f2)
             pmmf.add(f)
-        for f, args, msg in mresult.getactions(
-            [mergestatemod.ACTION_LOCAL_DIR_RENAME_GET]
-        ):
+        for f in mresult.files((mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,)):
             pmmf.add(f)
         for f, args, msg in mresult.getactions([mergestatemod.ACTION_MERGE]):
             f1, f2, fa, move, anc = args
@@ -414,7 +412,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
     # The set of files deleted by all the actions.
     deletedfiles = set()
 
-    for (f, args, msg) in mresult.getactions(
+    for f in mresult.files(
         (
             mergestatemod.ACTION_CREATED,
             mergestatemod.ACTION_DELETED_CHANGED,
@@ -430,7 +428,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
             # will be checked once we know what all the deleted files are.
             remoteconflicts.add(f)
     # Track the names of all deleted files.
-    for (f, args, msg) in mresult.getactions((mergestatemod.ACTION_REMOVE,)):
+    for f in mresult.files((mergestatemod.ACTION_REMOVE,)):
         deletedfiles.add(f)
     for (f, args, msg) in mresult.getactions((mergestatemod.ACTION_MERGE,)):
         f1, f2, fa, move, anc = args
@@ -470,7 +468,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
     for p in localconflicts:
         if p not in deletedfiles:
             ctxname = bytes(wctx).rstrip(b'+')
-            pnew = util.safename(p, ctxname, wctx, set(mresult.actions.keys()))
+            pnew = util.safename(p, ctxname, wctx, set(mresult.files()))
             porig = wctx[p].copysource() or p
             mresult.addfile(
                 pnew,
@@ -491,9 +489,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
         for f, p in _filesindirs(repo, mf, remoteconflicts):
             if f not in deletedfiles:
                 m, args, msg = mresult.getfile(p)
-                pnew = util.safename(
-                    p, ctxname, wctx, set(mresult.actions.keys())
-                )
+                pnew = util.safename(p, ctxname, wctx, set(mresult.files()))
                 if m in (
                     mergestatemod.ACTION_DELETED_CHANGED,
                     mergestatemod.ACTION_MERGE,
@@ -620,6 +616,22 @@ class mergeresult(object):
         if filename in self._filemapping:
             return self._filemapping[filename]
         return default_return
+
+    def files(self, actions=None):
+        """ returns files on which provided action needs to perfromed
+
+        If actions is None, all files are returned
+        """
+        # TODO: think whether we should return renamedelete and
+        # diverge filenames also
+        if actions is None:
+            for f in self._filemapping:
+                yield f
+
+        else:
+            for a in actions:
+                for f in self._actionmapping[a]:
+                    yield f
 
     def removefile(self, filename):
         """ removes a file from the mergeresult object as the file might
@@ -1029,18 +1041,14 @@ def _resolvetrivial(repo, wctx, mctx, ancestor, mresult):
        remained the same."""
     # We force a copy of actions.items() because we're going to mutate
     # actions as we resolve trivial conflicts.
-    for f, args, msg in list(
-        mresult.getactions([mergestatemod.ACTION_CHANGED_DELETED])
-    ):
+    for f in list(mresult.files((mergestatemod.ACTION_CHANGED_DELETED,))):
         if f in ancestor and not wctx[f].cmp(ancestor[f]):
             # local did change but ended up with same content
             mresult.addfile(
                 f, mergestatemod.ACTION_REMOVE, None, b'prompt same'
             )
 
-    for f, args, msg in list(
-        mresult.getactions([mergestatemod.ACTION_DELETED_CHANGED])
-    ):
+    for f in list(mresult.files((mergestatemod.ACTION_DELETED_CHANGED,))):
         if f in ancestor and not mctx[f].cmp(ancestor[f]):
             # remote did change but ended up with same content
             mresult.removefile(f)  # don't get = keep local deleted
@@ -1304,16 +1312,14 @@ def _prefetchfiles(repo, ctx, mresult):
     # Skipping 'a', 'am', 'f', 'r', 'dm', 'e', 'k', 'p' and 'pr', because they
     # don't touch the context to be merged in.  'cd' is skipped, because
     # changed/deleted never resolves to something from the remote side.
-    files = []
-    for f, args, msg in mresult.getactions(
+    files = mresult.files(
         [
             mergestatemod.ACTION_GET,
             mergestatemod.ACTION_DELETED_CHANGED,
             mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,
             mergestatemod.ACTION_MERGE,
         ]
-    ):
-        files.append(f)
+    )
 
     prefetch = scmutil.prefetchfiles
     matchfiles = scmutil.matchfiles
