@@ -542,7 +542,7 @@ class hgwebdir(object):
             return self.ui.config(*args, **kwargs)
 
         vars = {}
-        styles, (style, mapfile) = hgweb_mod.getstyle(
+        styles, (style, mapfile, fp) = hgweb_mod.getstyle(
             req, config, self.templatepath
         )
         if style == styles[0]:
@@ -577,5 +577,6 @@ class hgwebdir(object):
             else:
                 yield config(b'web', b'motd')
 
-        tmpl = templater.templater.frommapfile(mapfile, defaults=defaults)
-        return tmpl
+        return templater.templater.frommapfile(
+            mapfile, fp=fp, defaults=defaults
+        )

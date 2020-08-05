@@ -80,7 +80,7 @@ def _stylemap(styles, path=None):
         for location in locations:
             mapfile, fp = templater.open_template(location, path)
             if mapfile:
-                return style, mapfile
+                return style, mapfile, fp
 
     raise RuntimeError(b"No hgweb templates found in %r" % path)
 
@@ -180,7 +180,9 @@ class requestcontext(object):
         # figure out which style to use
 
         vars = {}
-        styles, (style, mapfile) = getstyle(req, self.config, self.templatepath)
+        styles, (style, mapfile, fp) = getstyle(
+            req, self.config, self.templatepath
+        )
         if style == styles[0]:
             vars[b'style'] = style
 
@@ -223,10 +225,9 @@ class requestcontext(object):
             yield self.config(b'web', b'motd')
 
         tres = formatter.templateresources(self.repo.ui, self.repo)
-        tmpl = templater.templater.frommapfile(
-            mapfile, filters=filters, defaults=defaults, resources=tres
+        return templater.templater.frommapfile(
+            mapfile, fp=fp, filters=filters, defaults=defaults, resources=tres
         )
-        return tmpl
 
     def sendtemplate(self, name, **kwargs):
         """Helper function to send a response generated from a template."""
