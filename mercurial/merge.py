@@ -530,8 +530,18 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
     Raise an exception if the merge cannot be completed because the repo is
     narrowed.
     """
-    nooptypes = {b'k'}  # TODO: handle with nonconflicttypes
-    nonconflicttypes = set(b'a am c cm f g gs r e'.split())
+    # TODO: handle with nonconflicttypes
+    nooptypes = {mergestatemod.ACTION_KEEP}
+    nonconflicttypes = {
+        mergestatemod.ACTION_ADD,
+        mergestatemod.ACTION_ADD_MODIFIED,
+        mergestatemod.ACTION_CREATED,
+        mergestatemod.ACTION_CREATED_MERGE,
+        mergestatemod.ACTION_FORGET,
+        mergestatemod.ACTION_GET,
+        mergestatemod.ACTION_REMOVE,
+        mergestatemod.ACTION_EXEC,
+    }
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.
     for f, action in list(mresult.actions.items()):
