@@ -1084,14 +1084,15 @@ def templatedir():
     return path if os.path.isdir(path) else None
 
 
-def open_template(name):
+def open_template(name, templatepath=None):
     '''returns a file-like object for the given template, and its full path
 
     If the name is a relative path and we're in a frozen binary, the template
     will be read from the mercurial.templates package instead. The returned path
     will then be the relative path.
     '''
-    templatepath = templatedir()
+    if templatepath is None:
+        templatepath = templatedir()
     if templatepath is not None or os.path.isabs(name):
         f = os.path.join(templatepath, name)
         try:

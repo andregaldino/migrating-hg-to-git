@@ -82,8 +82,8 @@ def _stylemap(styles, path=None):
             locations = (os.path.join(style, b'map'), b'map-' + style, b'map')
 
             for location in locations:
-                mapfile = os.path.join(path, location)
-                if os.path.isfile(mapfile):
+                mapfile, fp = templater.open_template(location, path)
+                if mapfile:
                     return style, mapfile
 
     raise RuntimeError(b"No hgweb templates found in %r" % path)
