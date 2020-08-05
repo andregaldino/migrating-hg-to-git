@@ -65,26 +65,22 @@ def _stylemap(styles, path=None):
     3. templatepath/map
     """
 
-    if path is None:
-        path = templater.templatedir()
+    for style in styles:
+        # only plain name is allowed to honor template paths
+        if (
+            not style
+            or style in (pycompat.oscurdir, pycompat.ospardir)
+            or pycompat.ossep in style
+            or pycompat.osaltsep
+            and pycompat.osaltsep in style
+        ):
+            continue
+        locations = (os.path.join(style, b'map'), b'map-' + style, b'map')
 
-    if path is not None:
-        for style in styles:
-            # only plain name is allowed to honor template paths
-            if (
-                not style
-                or style in (pycompat.oscurdir, pycompat.ospardir)
-                or pycompat.ossep in style
-                or pycompat.osaltsep
-                and pycompat.osaltsep in style
-            ):
-                continue
-            locations = (os.path.join(style, b'map'), b'map-' + style, b'map')
-
-            for location in locations:
-                mapfile, fp = templater.open_template(location, path)
-                if mapfile:
-                    return style, mapfile
+        for location in locations:
+            mapfile, fp = templater.open_template(location, path)
+            if mapfile:
+                return style, mapfile
 
     raise RuntimeError(b"No hgweb templates found in %r" % path)
 
