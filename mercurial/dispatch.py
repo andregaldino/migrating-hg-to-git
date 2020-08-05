@@ -323,7 +323,7 @@ def dispatch(req):
             ret = -1
         finally:
             duration = util.timer() - starttime
-            req.ui.flush()
+            req.ui.flush()  # record blocked times
             if req.ui.logblockedtimes:
                 req.ui._blockedtimes[b'command_duration'] = duration * 1000
                 req.ui.log(
@@ -346,6 +346,8 @@ def dispatch(req):
                 req._runexithandlers()
             except:  # exiting, so no re-raises
                 ret = ret or -1
+            # do flush again since ui.log() and exit handlers may write to ui
+            req.ui.flush()
         return ret
 
 

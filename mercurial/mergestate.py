@@ -96,6 +96,12 @@ MERGE_DRIVER_STATE_UNMARKED = b'u'
 MERGE_DRIVER_STATE_MARKED = b'm'
 MERGE_DRIVER_STATE_SUCCESS = b's'
 
+#####
+# legacy records which are no longer used but kept to prevent breaking BC
+#####
+# This record was release in 5.4 and usage was removed in 5.5
+LEGACY_RECORD_RESOLVED_OTHER = b'R'
+
 
 ACTION_FORGET = b'f'
 ACTION_REMOVE = b'r'
@@ -247,6 +253,7 @@ class mergestate(object):
                 RECORD_CHANGEDELETE_CONFLICT,
                 RECORD_PATH_CONFLICT,
                 RECORD_MERGE_DRIVER_MERGE,
+                LEGACY_RECORD_RESOLVED_OTHER,
             ):
                 bits = record.split(b'\0')
                 self._state[bits[0]] = bits[1:]
