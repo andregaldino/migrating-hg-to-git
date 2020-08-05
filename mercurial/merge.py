@@ -255,7 +255,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
         mresult.addfile(f, mergestatemod.ACTION_GET, (flags, backup), msg)
 
 
-def _forgetremoved(wctx, mctx, branchmerge):
+def _forgetremoved(wctx, mctx, branchmerge, mresult):
     """
     Forget removed files
 
@@ -270,24 +270,19 @@ def _forgetremoved(wctx, mctx, branchmerge):
     as removed.
     """
 
-    actions = {}
     m = mergestatemod.ACTION_FORGET
     if branchmerge:
         m = mergestatemod.ACTION_REMOVE
     for f in wctx.deleted():
         if f not in mctx:
-            actions[f] = m, None, b"forget deleted"
+            mresult.addfile(f, m, None, b"forget deleted")
 
     if not branchmerge:
         for f in wctx.removed():
             if f not in mctx:
-                actions[f] = (
-                    mergestatemod.ACTION_FORGET,
-                    None,
-                    b"forget removed",
+                mresult.addfile(
+                    f, mergestatemod.ACTION_FORGET, None, b"forget removed",
                 )
-
-    return actions
 
 
 def _checkcollision(repo, wmf, mresult):
@@ -703,10 +698,6 @@ class mergeresult(object):
         self._actionmapping = collections.defaultdict(dict)
         for f, (act, data, msg) in pycompat.iteritems(self._filemapping):
             self._actionmapping[act][f] = data, msg
-
-    def updateactions(self, updates):
-        for f, (a, data, msg) in pycompat.iteritems(updates):
-            self.addfile(f, a, data, msg)
 
     def hasconflicts(self):
         """ tells whether this merge resulted in some actions which can
@@ -1196,8 +1187,7 @@ def calculateupdates(
         mresult.updatevalues(diverge, renamedelete, {})
 
     if wctx.rev() is None:
-        fractions = _forgetremoved(wctx, mctx, branchmerge)
-        mresult.updateactions(fractions)
+        _forgetremoved(wctx, mctx, branchmerge, mresult)
 
     sparse.filterupdatesactions(repo, wctx, mctx, branchmerge, mresult)
     _resolvetrivial(repo, wctx, mctx, ancestors[0], mresult)
