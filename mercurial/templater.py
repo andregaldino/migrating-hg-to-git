@@ -913,7 +913,8 @@ class loader(object):
         """Get parsed tree for the given template name. Use a local cache."""
         if t not in self.cache:
             try:
-                self.cache[t] = util.readfile(self._map[t])
+                mapfile, fp = open_template(self._map[t])
+                self.cache[t] = fp.read()
             except KeyError as inst:
                 raise templateutil.TemplateNotFound(
                     _(b'"%s" not in template map') % inst.args[0]
@@ -1092,7 +1093,7 @@ def open_template(name, templatepath=None):
     will then be the relative path.
     '''
     # Does the name point directly to a map file?
-    if os.path.isabs(name):
+    if os.path.isfile(name) or os.path.isabs(name):
         return name, open(name, mode='rb')
 
     # Does the name point to a template in the provided templatepath, or
