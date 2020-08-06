@@ -1107,5 +1107,5 @@ def open_template(name, templatepath=None):
                 name,
                 resourceutil.open_resource(package_name, name_parts[-1]),
             )
-        except (ModuleNotFoundError, FileNotFoundError):
+        except (ImportError, OSError):
             return None, None
