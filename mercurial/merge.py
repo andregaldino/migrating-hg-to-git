@@ -1339,22 +1339,13 @@ class updateresult(object):
 
 
 def applyupdates(
-    repo,
-    mresult,
-    wctx,
-    mctx,
-    overwrite,
-    wantfiledata,
-    labels=None,
-    commitinfo=None,
+    repo, mresult, wctx, mctx, overwrite, wantfiledata, labels=None,
 ):
     """apply the merge action list to the working directory
 
     mresult is a mergeresult object representing result of the merge
     wctx is the working copy context
     mctx is the context to be merged into the working copy
-    commitinfo is a mapping of information which needs to be stored somewhere
-               (probably mergestate) so that it can be used at commit time.
 
     Return a tuple of (counts, filedata), where counts is a tuple
     (updated, merged, removed, unresolved) that describes how many
@@ -1369,10 +1360,7 @@ def applyupdates(
         repo, wctx.p1().node(), mctx.node(), labels
     )
 
-    if commitinfo is None:
-        commitinfo = {}
-
-    for f, op in pycompat.iteritems(commitinfo):
+    for f, op in pycompat.iteritems(mresult.commitinfo):
         # the other side of filenode was choosen while merging, store this in
         # mergestate so that it can be reused on commit
         if op == b'other':
@@ -2051,14 +2039,7 @@ def update(
 
         wantfiledata = updatedirstate and not branchmerge
         stats, getfiledata = applyupdates(
-            repo,
-            mresult,
-            wc,
-            p2,
-            overwrite,
-            wantfiledata,
-            labels=labels,
-            commitinfo=mresult.commitinfo,
+            repo, mresult, wc, p2, overwrite, wantfiledata, labels=labels,
         )
 
         if updatedirstate:
