@@ -1091,18 +1091,25 @@ def open_template(name, templatepath=None):
     will be read from the mercurial.templates package instead. The returned path
     will then be the relative path.
     '''
+    # Does the name point directly to a map file?
+    if os.path.isabs(name):
+        return name, open(name, mode='rb')
+
+    # Does the name point to a template in the provided templatepath, or
+    # in mercurial/templates/ if no path was provided?
     if templatepath is None:
         templatepath = templatedir()
-    if templatepath is not None or os.path.isabs(name):
+    if templatepath is not None:
         f = os.path.join(templatepath, name)
         return f, open(f, mode='rb')
-    else:
-        name_parts = pycompat.sysstr(name).split('/')
-        package_name = '.'.join(['mercurial', 'templates'] + name_parts[:-1])
-        return (
-            name,
-            resourceutil.open_resource(package_name, name_parts[-1]),
-        )
+
+    # Otherwise try to read it using the resources API
+    name_parts = pycompat.sysstr(name).split('/')
+    package_name = '.'.join(['mercurial', 'templates'] + name_parts[:-1])
+    return (
+        name,
+        resourceutil.open_resource(package_name, name_parts[-1]),
+    )
 
 
 def try_open_template(name, templatepath=None):
