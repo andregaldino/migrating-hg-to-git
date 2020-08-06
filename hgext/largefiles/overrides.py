@@ -497,14 +497,6 @@ def overridedebugstate(orig, ui, repo, *pats, **opts):
         orig(ui, repo, *pats, **opts)
 
 
-# Register the MERGE_ACTION_LARGEFILE_MARK_REMOVED in emptyactions() return type
-@eh.wrapfunction(merge, b'emptyactions')
-def overrideemptyactions(origfn):
-    ret = origfn()
-    ret[MERGE_ACTION_LARGEFILE_MARK_REMOVED] = []
-    return ret
-
-
 # Before starting the manifest merge, merge.updates will call
 # _checkunknownfile to check if there are any files in the merged-in
 # changeset that collide with unknown files in the working copy.

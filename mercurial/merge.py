@@ -687,7 +687,7 @@ class mergeresult(object):
     def actionsdict(self):
         """ returns a dictionary of actions to be perfomed with action as key
         and a list of files and related arguments as values """
-        res = emptyactions()
+        res = collections.defaultdict(list)
         for a, d in pycompat.iteritems(self._actionmapping):
             for f, (args, msg) in pycompat.iteritems(d):
                 res[a].append((f, args, msg))
@@ -1336,29 +1336,6 @@ class updateresult(object):
             or self.removedcount
             or self.unresolvedcount
         )
-
-
-def emptyactions():
-    """create an actions dict, to be populated and passed to applyupdates()"""
-    return {
-        m: []
-        for m in (
-            mergestatemod.ACTION_ADD,
-            mergestatemod.ACTION_ADD_MODIFIED,
-            mergestatemod.ACTION_FORGET,
-            mergestatemod.ACTION_GET,
-            mergestatemod.ACTION_CHANGED_DELETED,
-            mergestatemod.ACTION_DELETED_CHANGED,
-            mergestatemod.ACTION_REMOVE,
-            mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL,
-            mergestatemod.ACTION_LOCAL_DIR_RENAME_GET,
-            mergestatemod.ACTION_MERGE,
-            mergestatemod.ACTION_EXEC,
-            mergestatemod.ACTION_KEEP,
-            mergestatemod.ACTION_PATH_CONFLICT,
-            mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
-        )
-    }
 
 
 def applyupdates(
