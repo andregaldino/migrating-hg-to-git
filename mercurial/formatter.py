@@ -600,9 +600,9 @@ def lookuptemplate(ui, topic, tmpl):
 
     # perhaps a stock style?
     if not os.path.split(tmpl)[0]:
-        (mapname, fp) = templater.open_template(
+        (mapname, fp) = templater.try_open_template(
             b'map-cmdline.' + tmpl
-        ) or templater.open_template(tmpl)
+        ) or templater.try_open_template(tmpl)
         if mapname:
             return mapfile_templatespec(topic, mapname, fp)
 

@@ -1095,17 +1095,18 @@ def open_template(name, templatepath=None):
         templatepath = templatedir()
     if templatepath is not None or os.path.isabs(name):
         f = os.path.join(templatepath, name)
-        try:
-            return f, open(f, mode='rb')
-        except EnvironmentError:
-            return None, None
+        return f, open(f, mode='rb')
     else:
         name_parts = pycompat.sysstr(name).split('/')
         package_name = '.'.join(['mercurial', 'templates'] + name_parts[:-1])
-        try:
-            return (
-                name,
-                resourceutil.open_resource(package_name, name_parts[-1]),
-            )
-        except (ImportError, OSError):
-            return None, None
+        return (
+            name,
+            resourceutil.open_resource(package_name, name_parts[-1]),
+        )
+
+
+def try_open_template(name, templatepath=None):
+    try:
+        return open_template(name, templatepath)
+    except (EnvironmentError, ImportError):
+        return None, None

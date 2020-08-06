@@ -628,9 +628,9 @@ def _lookuptemplate(ui, tmpl, style):
         mapfile = style
         fp = None
         if not os.path.split(mapfile)[0]:
-            (mapname, fp) = templater.open_template(
+            (mapname, fp) = templater.try_open_template(
                 b'map-cmdline.' + mapfile
-            ) or templater.open_template(mapfile)
+            ) or templater.try_open_template(mapfile)
             if mapname:
                 mapfile = mapname
         return formatter.mapfile_templatespec(b'changeset', mapfile, fp)

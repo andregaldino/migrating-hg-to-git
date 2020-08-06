@@ -1672,7 +1672,7 @@ def debuginstall(ui, **opts):
     fm.write(b'templatedirs', b'checking templates (%s)...\n', p or b'')
     fm.condwrite(not p, b'', _(b" no template directories found\n"))
     if p:
-        (m, fp) = templater.open_template(b"map-cmdline.default")
+        (m, fp) = templater.try_open_template(b"map-cmdline.default")
         if m:
             # template found, check if it is working
             err = None

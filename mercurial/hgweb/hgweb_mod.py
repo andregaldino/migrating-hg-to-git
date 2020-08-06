@@ -78,7 +78,7 @@ def _stylemap(styles, path=None):
         locations = (os.path.join(style, b'map'), b'map-' + style, b'map')
 
         for location in locations:
-            mapfile, fp = templater.open_template(location, path)
+            mapfile, fp = templater.try_open_template(location, path)
             if mapfile:
                 return style, mapfile, fp
 
