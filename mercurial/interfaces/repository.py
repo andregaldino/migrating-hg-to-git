@@ -18,6 +18,10 @@ NARROW_REQUIREMENT = b'narrowhg-experimental'
 # Enables sparse working directory usage
 SPARSE_REQUIREMENT = b'exp-sparse'
 
+# Enables the internal phase which is used to hide changesets instead
+# of stripping them
+INTERNAL_PHASE_REQUIREMENT = b'internal-phase'
+
 # Local repository feature string.
 
 # Revlogs are being used for file storage.

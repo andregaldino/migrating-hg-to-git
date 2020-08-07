@@ -125,6 +125,7 @@ from . import (
     txnutil,
     util,
 )
+from .interfaces import repository
 
 _fphasesentry = struct.Struct(b'>i20s')
 
@@ -154,7 +155,7 @@ localhiddenphases = (internal, archived)
 
 def supportinternal(repo):
     """True if the internal phase can be used on a repository"""
-    return b'internal-phase' in repo.requirements
+    return repository.INTERNAL_PHASE_REQUIREMENT in repo.requirements
 
 
 def _readroots(repo, phasedefaults=None):

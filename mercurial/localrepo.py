@@ -1068,7 +1068,7 @@ class localrepository(object):
         b'relshared',
         b'dotencode',
         repository.SPARSE_REQUIREMENT,
-        b'internal-phase',
+        repository.INTERNAL_PHASE_REQUIREMENT,
     }
 
     # list of prefix for file which can be written without 'wlock'
@@ -3324,7 +3324,7 @@ def newreporequirements(ui, createopts):
         requirements.add(REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
     if ui.configbool(b'format', b'internal-phase'):
-        requirements.add(b'internal-phase')
+        requirements.add(repository.INTERNAL_PHASE_REQUIREMENT)
 
     if createopts.get(b'narrowfiles'):
         requirements.add(repository.NARROW_REQUIREMENT)
