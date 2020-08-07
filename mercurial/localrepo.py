@@ -484,6 +484,25 @@ def _getsharedvfs(hgvfs, requirements):
     return sharedvfs
 
 
+def _readrequires(vfs, allowmissing):
+    """ reads the require file present at root of this vfs
+    and return a set of requirements
+
+    If allowmissing is True, we suppress ENOENT if raised"""
+    # requires file contains a newline-delimited list of
+    # features/capabilities the opener (us) must have in order to use
+    # the repository. This file was introduced in Mercurial 0.9.2,
+    # which means very old repositories may not have one. We assume
+    # a missing file translates to no requirements.
+    try:
+        requirements = set(vfs.read(b'requires').splitlines())
+    except IOError as e:
+        if not (allowmissing and e.errno == errno.ENOENT):
+            raise
+        requirements = set()
+    return requirements
+
+
 def makelocalrepository(baseui, path, intents=None):
     """Create a local repository object.
 
@@ -546,17 +565,7 @@ def makelocalrepository(baseui, path, intents=None):
 
         raise error.RepoError(_(b'repository %s not found') % path)
 
-    # .hg/requires file contains a newline-delimited list of
-    # features/capabilities the opener (us) must have in order to use
-    # the repository. This file was introduced in Mercurial 0.9.2,
-    # which means very old repositories may not have one. We assume
-    # a missing file translates to no requirements.
-    try:
-        requirements = set(hgvfs.read(b'requires').splitlines())
-    except IOError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        requirements = set()
+    requirements = _readrequires(hgvfs, True)
 
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
