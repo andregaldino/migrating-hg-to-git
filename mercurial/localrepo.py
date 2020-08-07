@@ -459,6 +459,31 @@ NODEMAP_REQUIREMENT = b'persistent-nodemap'
 featuresetupfuncs = set()
 
 
+def _getsharedvfs(hgvfs, requirements):
+    """ returns the vfs object pointing to root of shared source
+    repo for a shared repository
+
+    hgvfs is vfs pointing at .hg/ of current repo (shared one)
+    requirements is a set of requirements of current repo (shared one)
+    """
+    # The ``shared`` or ``relshared`` requirements indicate the
+    # store lives in the path contained in the ``.hg/sharedpath`` file.
+    # This is an absolute path for ``shared`` and relative to
+    # ``.hg/`` for ``relshared``.
+    sharedpath = hgvfs.read(b'sharedpath').rstrip(b'\n')
+    if b'relshared' in requirements:
+        sharedpath = hgvfs.join(sharedpath)
+
+    sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
+
+    if not sharedvfs.exists():
+        raise error.RepoError(
+            _(b'.hg/sharedpath points to nonexistent directory %s')
+            % sharedvfs.base
+        )
+    return sharedvfs
+
+
 def makelocalrepository(baseui, path, intents=None):
     """Create a local repository object.
 
@@ -500,6 +525,10 @@ def makelocalrepository(baseui, path, intents=None):
     # Main VFS for .hg/ directory.
     hgpath = wdirvfs.join(b'.hg')
     hgvfs = vfsmod.vfs(hgpath, cacheaudited=True)
+    # Whether this repository is shared one or not
+    shared = False
+    # If this repository is shared, vfs pointing to shared repo
+    sharedvfs = None
 
     # The .hg/ path should exist and should be a directory. All other
     # cases are errors.
@@ -567,27 +596,15 @@ def makelocalrepository(baseui, path, intents=None):
     features = set()
 
     # The "store" part of the repository holds versioned data. How it is
-    # accessed is determined by various requirements. The ``shared`` or
-    # ``relshared`` requirements indicate the store lives in the path contained
-    # in the ``.hg/sharedpath`` file. This is an absolute path for
-    # ``shared`` and relative to ``.hg/`` for ``relshared``.
-    if b'shared' in requirements or b'relshared' in requirements:
-        sharedpath = hgvfs.read(b'sharedpath').rstrip(b'\n')
-        if b'relshared' in requirements:
-            sharedpath = hgvfs.join(sharedpath)
-
-        sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
-
-        if not sharedvfs.exists():
-            raise error.RepoError(
-                _(b'.hg/sharedpath points to nonexistent directory %s')
-                % sharedvfs.base
-            )
-
-        features.add(repository.REPO_FEATURE_SHARED_STORAGE)
-
+    # accessed is determined by various requirements. If `shared` or
+    # `relshared` requirements are present, this indicates current repository
+    # is a share and store exists in path mentioned in `.hg/sharedpath`
+    shared = b'shared' in requirements or b'relshared' in requirements
+    if shared:
+        sharedvfs = _getsharedvfs(hgvfs, requirements)
         storebasepath = sharedvfs.base
         cachepath = sharedvfs.join(b'cache')
+        features.add(repository.REPO_FEATURE_SHARED_STORAGE)
     else:
         storebasepath = hgvfs.base
         cachepath = hgvfs.join(b'cache')
