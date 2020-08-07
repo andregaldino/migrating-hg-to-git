@@ -38,6 +38,7 @@ from . import (
     phases,
     policy,
     pycompat,
+    requirements as requirementsmod,
     revsetlang,
     similar,
     smartset,
@@ -1470,11 +1471,34 @@ def movedirstate(repo, newctx, match=None):
     repo._quick_access_changeid_invalidate()
 
 
+def filterrequirements(requirements):
+    """ filters the requirements into two sets:
+
+    wcreq: requirements which should be written in .hg/requires
+    storereq: which should be written in .hg/store/requires
+
+    Returns (wcreq, storereq)
+    """
+    if False:
+        wc, store = set(), set()
+        for r in requirements:
+            if r in requirementsmod.WORKING_DIR_REQUIREMENTS:
+                wc.add(r)
+            else:
+                store.add(r)
+        return wc, store
+    return requirements, None
+
+
 def writereporequirements(repo, requirements=None):
     """ writes requirements for the repo to .hg/requires """
     if requirements:
         repo.requirements = requirements
-    writerequires(repo.vfs, repo.requirements)
+    wcreq, storereq = filterrequirements(repo.requirements)
+    if wcreq is not None:
+        writerequires(repo.vfs, wcreq)
+    if storereq is not None:
+        writerequires(repo.svfs, storereq)
 
 
 def writerequires(opener, requirements):
