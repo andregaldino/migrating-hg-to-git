@@ -373,10 +373,18 @@ def _calcmode(vfs):
     return mode
 
 
-_data = (
-    b'bookmarks narrowspec data meta 00manifest.d 00manifest.i'
-    b' 00changelog.d 00changelog.i phaseroots obsstore'
-)
+_data = [
+    b'bookmarks',
+    b'narrowspec',
+    b'data',
+    b'meta',
+    b'00manifest.d',
+    b'00manifest.i',
+    b'00changelog.d',
+    b'00changelog.i',
+    b'phaseroots',
+    b'obsstore',
+]
 
 
 def isrevlog(f, kind, st):
@@ -447,7 +455,7 @@ class basicstore(object):
             yield x
 
     def copylist(self):
-        return [b'requires'] + _data.split()
+        return [b'requires'] + _data
 
     def write(self, tr):
         pass
@@ -494,9 +502,7 @@ class encodedstore(basicstore):
         return self.path + b'/' + encodefilename(f)
 
     def copylist(self):
-        return [b'requires', b'00changelog.i'] + [
-            b'store/' + f for f in _data.split()
-        ]
+        return [b'requires', b'00changelog.i'] + [b'store/' + f for f in _data]
 
 
 class fncache(object):
@@ -686,12 +692,20 @@ class fncachestore(basicstore):
 
     def copylist(self):
         d = (
-            b'bookmarks narrowspec data meta dh fncache phaseroots obsstore'
-            b' 00manifest.d 00manifest.i 00changelog.d 00changelog.i'
+            b'bookmarks',
+            b'narrowspec',
+            b'data',
+            b'meta',
+            b'dh',
+            b'fncache',
+            b'phaseroots',
+            b'obsstore',
+            b'00manifest.d',
+            b'00manifest.i',
+            b'00changelog.d',
+            b'00changelog.i',
         )
-        return [b'requires', b'00changelog.i'] + [
-            b'store/' + f for f in d.split()
-        ]
+        return [b'requires', b'00changelog.i'] + [b'store/' + f for f in d]
 
     def write(self, tr):
         self.fncache.write(tr)
