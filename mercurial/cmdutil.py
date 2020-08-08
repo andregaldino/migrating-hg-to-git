@@ -46,6 +46,7 @@ from . import (
     phases,
     pycompat,
     repair,
+    requirements,
     revlog,
     rewriteutil,
     scmutil,
@@ -57,8 +58,6 @@ from . import (
     util,
     vfs as vfsmod,
 )
-
-from .interfaces import repository
 
 from .utils import (
     dateutil,
@@ -1360,7 +1359,7 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
         if cl:
             r = repo.unfiltered().changelog
         elif dir:
-            if repository.TREEMANIFEST_REQUIREMENT not in repo.requirements:
+            if requirements.TREEMANIFEST_REQUIREMENT not in repo.requirements:
                 raise error.Abort(
                     _(
                         b"--dir can only be used on repos with "

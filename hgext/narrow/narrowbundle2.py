@@ -20,11 +20,11 @@ from mercurial import (
     localrepo,
     narrowspec,
     repair,
+    requirements,
     scmutil,
     util,
     wireprototypes,
 )
-from mercurial.interfaces import repository
 from mercurial.utils import stringutil
 
 _NARROWACL_SECTION = b'narrowacl'
@@ -108,7 +108,7 @@ def generateellipsesbundle2(
 
         part = bundler.newpart(b'changegroup', data=cgdata)
         part.addparam(b'version', version)
-        if repository.TREEMANIFEST_REQUIREMENT in repo.requirements:
+        if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
             part.addparam(b'treemanifest', b'1')
 
 
@@ -163,7 +163,7 @@ def generate_ellipses_bundle2_for_widening(
 
         part = bundler.newpart(b'changegroup', data=cgdata)
         part.addparam(b'version', version)
-        if repository.TREEMANIFEST_REQUIREMENT in repo.requirements:
+        if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
             part.addparam(b'treemanifest', b'1')
 
 
@@ -178,8 +178,8 @@ def _handlechangespec_2(op, inpart):
     narrowspec.validatepatterns(includepats)
     narrowspec.validatepatterns(excludepats)
 
-    if not repository.NARROW_REQUIREMENT in op.repo.requirements:
-        op.repo.requirements.add(repository.NARROW_REQUIREMENT)
+    if not requirements.NARROW_REQUIREMENT in op.repo.requirements:
+        op.repo.requirements.add(requirements.NARROW_REQUIREMENT)
         scmutil.writereporequirements(op.repo)
     op.repo.setnarrowpats(includepats, excludepats)
     narrowspec.copytoworkingcopy(op.repo)
@@ -194,8 +194,8 @@ def _handlenarrowspecs(op, inpart):
     narrowspec.validatepatterns(includepats)
     narrowspec.validatepatterns(excludepats)
 
-    if repository.NARROW_REQUIREMENT not in op.repo.requirements:
-        op.repo.requirements.add(repository.NARROW_REQUIREMENT)
+    if requirements.NARROW_REQUIREMENT not in op.repo.requirements:
+        op.repo.requirements.add(requirements.NARROW_REQUIREMENT)
         scmutil.writereporequirements(op.repo)
     op.repo.setnarrowpats(includepats, excludepats)
     narrowspec.copytoworkingcopy(op.repo)

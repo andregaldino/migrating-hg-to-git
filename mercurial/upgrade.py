@@ -20,13 +20,13 @@ from . import (
     manifest,
     metadata,
     pycompat,
+    requirements,
     revlog,
     scmutil,
     util,
     vfs as vfsmod,
 )
 
-from .interfaces import repository
 from .utils import compression
 
 # list of requirements that request a clone of all revlog if added/removed
@@ -59,7 +59,7 @@ def blocksourcerequirements(repo):
     return {
         # The upgrade code does not yet support these experimental features.
         # This is an artificial limitation.
-        repository.TREEMANIFEST_REQUIREMENT,
+        requirements.TREEMANIFEST_REQUIREMENT,
         # This was a precursor to generaldelta and was never enabled by default.
         # It should (hopefully) not exist in the wild.
         b'parentdelta',

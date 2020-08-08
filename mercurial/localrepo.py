@@ -56,6 +56,7 @@ from . import (
     pycompat,
     rcutil,
     repoview,
+    requirements as requirementsmod,
     revset,
     revsetlang,
     scmutil,
@@ -816,7 +817,10 @@ def ensurerequirementscompatible(ui, requirements):
 
     ``error.RepoError`` should be raised on failure.
     """
-    if repository.SPARSE_REQUIREMENT in requirements and not sparse.enabled:
+    if (
+        requirementsmod.SPARSE_REQUIREMENT in requirements
+        and not sparse.enabled
+    ):
         raise error.RepoError(
             _(
                 b'repository is using sparse feature but '
@@ -846,7 +850,7 @@ def resolvestorevfsoptions(ui, requirements, features):
     """
     options = {}
 
-    if repository.TREEMANIFEST_REQUIREMENT in requirements:
+    if requirementsmod.TREEMANIFEST_REQUIREMENT in requirements:
         options[b'treemanifest'] = True
 
     # experimental config: format.manifestcachesize
@@ -963,7 +967,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
             msg = _(b'invalid value for `storage.revlog.zstd.level` config: %d')
             raise error.Abort(msg % options[b'zstd.level'])
 
-    if repository.NARROW_REQUIREMENT in requirements:
+    if requirementsmod.NARROW_REQUIREMENT in requirements:
         options[b'enableellipsis'] = True
 
     if ui.configbool(b'experimental', b'rust.index'):
@@ -1012,7 +1016,7 @@ def makefilestorage(requirements, features, **kwargs):
     features.add(repository.REPO_FEATURE_REVLOG_FILE_STORAGE)
     features.add(repository.REPO_FEATURE_STREAM_CLONE)
 
-    if repository.NARROW_REQUIREMENT in requirements:
+    if requirementsmod.NARROW_REQUIREMENT in requirements:
         return revlognarrowfilestorage
     else:
         return revlogfilestorage
@@ -1053,7 +1057,7 @@ class localrepository(object):
     supportedformats = {
         b'revlogv1',
         b'generaldelta',
-        repository.TREEMANIFEST_REQUIREMENT,
+        requirementsmod.TREEMANIFEST_REQUIREMENT,
         COPIESSDC_REQUIREMENT,
         REVLOGV2_REQUIREMENT,
         SIDEDATA_REQUIREMENT,
@@ -1067,8 +1071,8 @@ class localrepository(object):
         b'shared',
         b'relshared',
         b'dotencode',
-        repository.SPARSE_REQUIREMENT,
-        repository.INTERNAL_PHASE_REQUIREMENT,
+        requirementsmod.SPARSE_REQUIREMENT,
+        requirementsmod.INTERNAL_PHASE_REQUIREMENT,
     }
 
     # list of prefix for file which can be written without 'wlock'
@@ -1529,14 +1533,14 @@ class localrepository(object):
 
     @storecache(narrowspec.FILENAME)
     def _storenarrowmatch(self):
-        if repository.NARROW_REQUIREMENT not in self.requirements:
+        if requirementsmod.NARROW_REQUIREMENT not in self.requirements:
             return matchmod.always()
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
 
     @storecache(narrowspec.FILENAME)
     def _narrowmatch(self):
-        if repository.NARROW_REQUIREMENT not in self.requirements:
+        if requirementsmod.NARROW_REQUIREMENT not in self.requirements:
             return matchmod.always()
         narrowspec.checkworkingcopynarrowspec(self)
         include, exclude = self.narrowpats
@@ -3314,7 +3318,7 @@ def newreporequirements(ui, createopts):
         requirements.add(SIDEDATA_REQUIREMENT)
         requirements.add(COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
-        requirements.add(repository.TREEMANIFEST_REQUIREMENT)
+        requirements.add(requirementsmod.TREEMANIFEST_REQUIREMENT)
 
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
@@ -3324,10 +3328,10 @@ def newreporequirements(ui, createopts):
         requirements.add(REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
     if ui.configbool(b'format', b'internal-phase'):
-        requirements.add(repository.INTERNAL_PHASE_REQUIREMENT)
+        requirements.add(requirementsmod.INTERNAL_PHASE_REQUIREMENT)
 
     if createopts.get(b'narrowfiles'):
-        requirements.add(repository.NARROW_REQUIREMENT)
+        requirements.add(requirementsmod.NARROW_REQUIREMENT)
 
     if createopts.get(b'lfs'):
         requirements.add(b'lfs')

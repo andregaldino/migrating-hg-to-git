@@ -23,6 +23,7 @@ from mercurial import (
     extensions,
     match,
     pycompat,
+    requirements,
     store,
     streamclone,
     util,
@@ -30,7 +31,6 @@ from mercurial import (
     wireprototypes,
     wireprotov1server,
 )
-from mercurial.interfaces import repository
 from . import (
     constants,
     shallowutil,
@@ -170,7 +170,7 @@ def onetimesetup(ui):
                         if kind == stat.S_IFDIR:
                             visit.append(fp)
 
-            if repository.TREEMANIFEST_REQUIREMENT in repo.requirements:
+            if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
                 for (u, e, s) in repo.store.datafiles():
                     if u.startswith(b'meta/') and (
                         u.endswith(b'.i') or u.endswith(b'.d')

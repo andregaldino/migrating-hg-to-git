@@ -26,6 +26,7 @@ from . import (
     mdiff,
     phases,
     pycompat,
+    requirements,
     util,
 )
 
@@ -949,7 +950,7 @@ class cgpacker(object):
         # either, because we don't discover which directory nodes to
         # send along with files. This could probably be fixed.
         fastpathlinkrev = fastpathlinkrev and (
-            repository.TREEMANIFEST_REQUIREMENT not in repo.requirements
+            requirements.TREEMANIFEST_REQUIREMENT not in repo.requirements
         )
 
         fnodes = {}  # needed file nodes
@@ -1467,7 +1468,7 @@ def allsupportedversions(repo):
     if (
         repo.ui.configbool(b'experimental', b'changegroup3')
         or repo.ui.configbool(b'experimental', b'treemanifest')
-        or repository.TREEMANIFEST_REQUIREMENT in repo.requirements
+        or requirements.TREEMANIFEST_REQUIREMENT in repo.requirements
     ):
         # we keep version 03 because we need to to exchange treemanifest data
         #
@@ -1495,7 +1496,7 @@ def supportedincomingversions(repo):
 # Changegroup versions that can be created from the repo
 def supportedoutgoingversions(repo):
     versions = allsupportedversions(repo)
-    if repository.TREEMANIFEST_REQUIREMENT in repo.requirements:
+    if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
         # Versions 01 and 02 support only flat manifests and it's just too
         # expensive to convert between the flat manifest and tree manifest on
         # the fly. Since tree manifests are hashed differently, all of history
@@ -1503,7 +1504,7 @@ def supportedoutgoingversions(repo):
         # support versions 01 and 02.
         versions.discard(b'01')
         versions.discard(b'02')
-    if repository.NARROW_REQUIREMENT in repo.requirements:
+    if requirements.NARROW_REQUIREMENT in repo.requirements:
         # Versions 01 and 02 don't support revlog flags, and we need to
         # support that for stripping and unbundling to work.
         versions.discard(b'01')

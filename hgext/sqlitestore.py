@@ -67,6 +67,7 @@ from mercurial import (
     mdiff,
     pycompat,
     registrar,
+    requirements,
     util,
     verify,
 )
@@ -1151,7 +1152,7 @@ def featuresetup(ui, supported):
     supported.add(REQUIREMENT_ZLIB)
     supported.add(REQUIREMENT_NONE)
     supported.add(REQUIREMENT_SHALLOW_FILES)
-    supported.add(repository.NARROW_REQUIREMENT)
+    supported.add(requirements.NARROW_REQUIREMENT)
 
 
 def newreporequirements(orig, ui, createopts):

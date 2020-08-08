@@ -11,9 +11,9 @@ from __future__ import absolute_import
 from mercurial import (
     localrepo,
     registrar,
+    requirements,
 )
 
-from mercurial.interfaces import repository
 
 from . import (
     narrowbundle2,
@@ -52,7 +52,7 @@ cmdtable = narrowcommands.table
 
 
 def featuresetup(ui, features):
-    features.add(repository.NARROW_REQUIREMENT)
+    features.add(requirements.NARROW_REQUIREMENT)
 
 
 def uisetup(ui):
@@ -69,7 +69,7 @@ def reposetup(ui, repo):
         return
 
     repo.ui.setconfig(b'experimental', b'narrow', True, b'narrow-ext')
-    if repository.NARROW_REQUIREMENT in repo.requirements:
+    if requirements.NARROW_REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo)
         narrowwirepeer.reposetup(repo)
 

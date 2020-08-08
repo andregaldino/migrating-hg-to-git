@@ -121,11 +121,11 @@ from .pycompat import (
 from . import (
     error,
     pycompat,
+    requirements,
     smartset,
     txnutil,
     util,
 )
-from .interfaces import repository
 
 _fphasesentry = struct.Struct(b'>i20s')
 
@@ -155,7 +155,7 @@ localhiddenphases = (internal, archived)
 
 def supportinternal(repo):
     """True if the internal phase can be used on a repository"""
-    return repository.INTERNAL_PHASE_REQUIREMENT in repo.requirements
+    return requirements.INTERNAL_PHASE_REQUIREMENT in repo.requirements
 
 
 def _readroots(repo, phasedefaults=None):

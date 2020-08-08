@@ -38,6 +38,7 @@ from . import (
     node,
     phases,
     pycompat,
+    requirements,
     scmutil,
     sshpeer,
     statichttprepo,
@@ -49,7 +50,6 @@ from . import (
     vfs as vfsmod,
 )
 from .utils import hashutil
-from .interfaces import repository as repositorymod
 
 release = lock.release
 
@@ -388,7 +388,7 @@ def postshare(sourcerepo, destrepo, defaultpath=None):
     if default:
         template = b'[paths]\ndefault = %s\n'
         destrepo.vfs.write(b'hgrc', util.tonativeeol(template % default))
-    if repositorymod.NARROW_REQUIREMENT in sourcerepo.requirements:
+    if requirements.NARROW_REQUIREMENT in sourcerepo.requirements:
         with destrepo.wlock():
             narrowspec.copytoworkingcopy(destrepo)
 

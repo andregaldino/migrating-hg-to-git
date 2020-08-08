@@ -9,12 +9,12 @@ from __future__ import absolute_import
 
 from .i18n import _
 from .pycompat import getattr
-from .interfaces import repository
 from . import (
     error,
     match as matchmod,
     merge,
     mergestate as mergestatemod,
+    requirements,
     scmutil,
     sparse,
     util,
@@ -186,7 +186,7 @@ def copytoworkingcopy(repo):
 
 
 def savebackup(repo, backupname):
-    if repository.NARROW_REQUIREMENT not in repo.requirements:
+    if requirements.NARROW_REQUIREMENT not in repo.requirements:
         return
     svfs = repo.svfs
     svfs.tryunlink(backupname)
@@ -194,13 +194,13 @@ def savebackup(repo, backupname):
 
 
 def restorebackup(repo, backupname):
-    if repository.NARROW_REQUIREMENT not in repo.requirements:
+    if requirements.NARROW_REQUIREMENT not in repo.requirements:
         return
     util.rename(repo.svfs.join(backupname), repo.svfs.join(FILENAME))
 
 
 def savewcbackup(repo, backupname):
-    if repository.NARROW_REQUIREMENT not in repo.requirements:
+    if requirements.NARROW_REQUIREMENT not in repo.requirements:
         return
     vfs = repo.vfs
     vfs.tryunlink(backupname)
@@ -212,7 +212,7 @@ def savewcbackup(repo, backupname):
 
 
 def restorewcbackup(repo, backupname):
-    if repository.NARROW_REQUIREMENT not in repo.requirements:
+    if requirements.NARROW_REQUIREMENT not in repo.requirements:
         return
     # It may not exist in old repos
     if repo.vfs.exists(backupname):
@@ -220,7 +220,7 @@ def restorewcbackup(repo, backupname):
 
 
 def clearwcbackup(repo, backupname):
-    if repository.NARROW_REQUIREMENT not in repo.requirements:
+    if requirements.NARROW_REQUIREMENT not in repo.requirements:
         return
     repo.vfs.tryunlink(backupname)
 

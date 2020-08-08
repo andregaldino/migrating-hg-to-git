@@ -11,20 +11,6 @@ from ..i18n import _
 from .. import error
 from . import util as interfaceutil
 
-# When narrowing is finalized and no longer subject to format changes,
-# we should move this to just "narrow" or similar.
-NARROW_REQUIREMENT = b'narrowhg-experimental'
-
-# Enables sparse working directory usage
-SPARSE_REQUIREMENT = b'exp-sparse'
-
-# Enables the internal phase which is used to hide changesets instead
-# of stripping them
-INTERNAL_PHASE_REQUIREMENT = b'internal-phase'
-
-# Stores manifest in Tree structure
-TREEMANIFEST_REQUIREMENT = b'treemanifest'
-
 # Local repository feature string.
 
 # Revlogs are being used for file storage.

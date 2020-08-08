@@ -21,10 +21,10 @@ from . import (
     mergestate as mergestatemod,
     pathutil,
     pycompat,
+    requirements,
     scmutil,
     util,
 )
-from .interfaces import repository
 from .utils import hashutil
 
 
@@ -608,11 +608,11 @@ def _updateconfigandrefreshwdir(
     # updated. But this requires massive rework to matcher() and its
     # consumers.
 
-    if repository.SPARSE_REQUIREMENT in oldrequires and removing:
-        repo.requirements.discard(repository.SPARSE_REQUIREMENT)
+    if requirements.SPARSE_REQUIREMENT in oldrequires and removing:
+        repo.requirements.discard(requirements.SPARSE_REQUIREMENT)
         scmutil.writereporequirements(repo)
-    elif repository.SPARSE_REQUIREMENT not in oldrequires:
-        repo.requirements.add(repository.SPARSE_REQUIREMENT)
+    elif requirements.SPARSE_REQUIREMENT not in oldrequires:
+        repo.requirements.add(requirements.SPARSE_REQUIREMENT)
         scmutil.writereporequirements(repo)
 
     try:

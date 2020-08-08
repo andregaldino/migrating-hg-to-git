@@ -13,8 +13,8 @@ from mercurial import (
     error,
     extensions,
     localrepo,
+    requirements,
 )
-from mercurial.interfaces import repository
 
 
 def clonecommand(orig, ui, repo, *args, **kwargs):
@@ -31,7 +31,7 @@ def clonecommand(orig, ui, repo, *args, **kwargs):
 
 
 def featuresetup(ui, features):
-    features.add(repository.NARROW_REQUIREMENT)
+    features.add(requirements.NARROW_REQUIREMENT)
 
 
 def extsetup(ui):
