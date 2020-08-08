@@ -4,7 +4,11 @@
 
 mod dirstate_status;
 mod find_root;
+mod list_tracked_files;
 pub use find_root::{FindRoot, FindRootError, FindRootErrorKind};
+pub use list_tracked_files::{
+    ListTrackedFiles, ListTrackedFilesError, ListTrackedFilesErrorKind,
+};
 
 // TODO add an `Operation` trait when GAT have landed (rust #44265):
 // there is no way to currently define a trait which can both return
