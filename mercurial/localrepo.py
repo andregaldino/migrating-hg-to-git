@@ -426,30 +426,6 @@ class locallegacypeer(localpeer):
     # End of baselegacywirecommands interface.
 
 
-# Increment the sub-version when the revlog v2 format changes to lock out old
-# clients.
-REVLOGV2_REQUIREMENT = b'exp-revlogv2.1'
-
-# A repository with the sparserevlog feature will have delta chains that
-# can spread over a larger span. Sparse reading cuts these large spans into
-# pieces, so that each piece isn't too big.
-# Without the sparserevlog capability, reading from the repository could use
-# huge amounts of memory, because the whole span would be read at once,
-# including all the intermediate revisions that aren't pertinent for the chain.
-# This is why once a repository has enabled sparse-read, it becomes required.
-SPARSEREVLOG_REQUIREMENT = b'sparserevlog'
-
-# A repository with the sidedataflag requirement will allow to store extra
-# information for revision without altering their original hashes.
-SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
-
-# A repository with the the copies-sidedata-changeset requirement will store
-# copies related information in changeset's sidedata.
-COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
-
-# The repository use persistent nodemap for the changelog and the manifest.
-NODEMAP_REQUIREMENT = b'persistent-nodemap'
-
 # Functions receiving (ui, features) that extensions can register to impact
 # the ability to load repositories with custom requirements. Only
 # functions defined in loaded extensions are called.
@@ -863,12 +839,15 @@ def resolvestorevfsoptions(ui, requirements, features):
     # This revlog format is super old and we don't bother trying to parse
     # opener options for it because those options wouldn't do anything
     # meaningful on such old repos.
-    if b'revlogv1' in requirements or REVLOGV2_REQUIREMENT in requirements:
+    if (
+        b'revlogv1' in requirements
+        or requirementsmod.REVLOGV2_REQUIREMENT in requirements
+    ):
         options.update(resolverevlogstorevfsoptions(ui, requirements, features))
     else:  # explicitly mark repo as using revlogv0
         options[b'revlogv0'] = True
 
-    if COPIESSDC_REQUIREMENT in requirements:
+    if requirementsmod.COPIESSDC_REQUIREMENT in requirements:
         options[b'copies-storage'] = b'changeset-sidedata'
     else:
         writecopiesto = ui.config(b'experimental', b'copies.write-to')
@@ -887,7 +866,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     if b'revlogv1' in requirements:
         options[b'revlogv1'] = True
-    if REVLOGV2_REQUIREMENT in requirements:
+    if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
         options[b'revlogv2'] = True
 
     if b'generaldelta' in requirements:
@@ -931,12 +910,12 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     options[b'sparse-read-density-threshold'] = srdensitythres
     options[b'sparse-read-min-gap-size'] = srmingapsize
 
-    sparserevlog = SPARSEREVLOG_REQUIREMENT in requirements
+    sparserevlog = requirementsmod.SPARSEREVLOG_REQUIREMENT in requirements
     options[b'sparse-revlog'] = sparserevlog
     if sparserevlog:
         options[b'generaldelta'] = True
 
-    sidedata = SIDEDATA_REQUIREMENT in requirements
+    sidedata = requirementsmod.SIDEDATA_REQUIREMENT in requirements
     options[b'side-data'] = sidedata
 
     maxchainlen = None
@@ -972,7 +951,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
 
     if ui.configbool(b'experimental', b'rust.index'):
         options[b'rust.index'] = True
-    if NODEMAP_REQUIREMENT in requirements:
+    if requirementsmod.NODEMAP_REQUIREMENT in requirements:
         options[b'persistent-nodemap'] = True
     if ui.configbool(b'storage', b'revlog.nodemap.mmap'):
         options[b'persistent-nodemap.mmap'] = True
@@ -1058,11 +1037,11 @@ class localrepository(object):
         b'revlogv1',
         b'generaldelta',
         requirementsmod.TREEMANIFEST_REQUIREMENT,
-        COPIESSDC_REQUIREMENT,
-        REVLOGV2_REQUIREMENT,
-        SIDEDATA_REQUIREMENT,
-        SPARSEREVLOG_REQUIREMENT,
-        NODEMAP_REQUIREMENT,
+        requirementsmod.COPIESSDC_REQUIREMENT,
+        requirementsmod.REVLOGV2_REQUIREMENT,
+        requirementsmod.SIDEDATA_REQUIREMENT,
+        requirementsmod.SPARSEREVLOG_REQUIREMENT,
+        requirementsmod.NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
@@ -1241,7 +1220,7 @@ class localrepository(object):
         self._extrafilterid = repoview.extrafilter(ui)
 
         self.filecopiesmode = None
-        if COPIESSDC_REQUIREMENT in self.requirements:
+        if requirementsmod.COPIESSDC_REQUIREMENT in self.requirements:
             self.filecopiesmode = b'changeset-sidedata'
 
     def _getvfsward(self, origfunc):
@@ -3308,15 +3287,15 @@ def newreporequirements(ui, createopts):
     if scmutil.gdinitconfig(ui):
         requirements.add(b'generaldelta')
         if ui.configbool(b'format', b'sparse-revlog'):
-            requirements.add(SPARSEREVLOG_REQUIREMENT)
+            requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
     # experimental config: format.exp-use-side-data
     if ui.configbool(b'format', b'exp-use-side-data'):
-        requirements.add(SIDEDATA_REQUIREMENT)
+        requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
-        requirements.add(SIDEDATA_REQUIREMENT)
-        requirements.add(COPIESSDC_REQUIREMENT)
+        requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
+        requirements.add(requirementsmod.COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
         requirements.add(requirementsmod.TREEMANIFEST_REQUIREMENT)
 
@@ -3325,7 +3304,7 @@ def newreporequirements(ui, createopts):
         requirements.remove(b'revlogv1')
         # generaldelta is implied by revlogv2.
         requirements.discard(b'generaldelta')
-        requirements.add(REVLOGV2_REQUIREMENT)
+        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
     if ui.configbool(b'format', b'internal-phase'):
         requirements.add(requirementsmod.INTERNAL_PHASE_REQUIREMENT)
@@ -3340,7 +3319,7 @@ def newreporequirements(ui, createopts):
         requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
 
     if ui.configbool(b'format', b'use-persistent-nodemap'):
-        requirements.add(NODEMAP_REQUIREMENT)
+        requirements.add(requirementsmod.NODEMAP_REQUIREMENT)
 
     return requirements
 

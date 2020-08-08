@@ -20,3 +20,27 @@ INTERNAL_PHASE_REQUIREMENT = b'internal-phase'
 
 # Stores manifest in Tree structure
 TREEMANIFEST_REQUIREMENT = b'treemanifest'
+
+# Increment the sub-version when the revlog v2 format changes to lock out old
+# clients.
+REVLOGV2_REQUIREMENT = b'exp-revlogv2.1'
+
+# A repository with the sparserevlog feature will have delta chains that
+# can spread over a larger span. Sparse reading cuts these large spans into
+# pieces, so that each piece isn't too big.
+# Without the sparserevlog capability, reading from the repository could use
+# huge amounts of memory, because the whole span would be read at once,
+# including all the intermediate revisions that aren't pertinent for the chain.
+# This is why once a repository has enabled sparse-read, it becomes required.
+SPARSEREVLOG_REQUIREMENT = b'sparserevlog'
+
+# A repository with the sidedataflag requirement will allow to store extra
+# information for revision without altering their original hashes.
+SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
+
+# A repository with the the copies-sidedata-changeset requirement will store
+# copies related information in changeset's sidedata.
+COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
+
+# The repository use persistent nodemap for the changelog and the manifest.
+NODEMAP_REQUIREMENT = b'persistent-nodemap'

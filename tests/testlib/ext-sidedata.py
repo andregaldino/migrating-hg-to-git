@@ -12,8 +12,8 @@ import struct
 
 from mercurial import (
     extensions,
-    localrepo,
     node,
+    requirements,
     revlog,
     upgrade,
 )
@@ -54,7 +54,7 @@ def wraprevision(orig, self, nodeorrev, *args, **kwargs):
 def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
     sidedatacompanion = orig(srcrepo, dstrepo)
     addedreqs = dstrepo.requirements - srcrepo.requirements
-    if localrepo.SIDEDATA_REQUIREMENT in addedreqs:
+    if requirements.SIDEDATA_REQUIREMENT in addedreqs:
         assert sidedatacompanion is None  # deal with composition later
 
         def sidedatacompanion(revlog, rev):

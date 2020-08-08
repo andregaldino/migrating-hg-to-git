@@ -32,7 +32,7 @@ from .utils import compression
 # list of requirements that request a clone of all revlog if added/removed
 RECLONES_REQUIREMENTS = {
     b'generaldelta',
-    localrepo.SPARSEREVLOG_REQUIREMENT,
+    requirements.SPARSEREVLOG_REQUIREMENT,
 }
 
 
@@ -76,10 +76,10 @@ def supportremovedrequirements(repo):
     to be allowed.
     """
     supported = {
-        localrepo.SPARSEREVLOG_REQUIREMENT,
-        localrepo.SIDEDATA_REQUIREMENT,
-        localrepo.COPIESSDC_REQUIREMENT,
-        localrepo.NODEMAP_REQUIREMENT,
+        requirements.SPARSEREVLOG_REQUIREMENT,
+        requirements.SIDEDATA_REQUIREMENT,
+        requirements.COPIESSDC_REQUIREMENT,
+        requirements.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -104,10 +104,10 @@ def supporteddestrequirements(repo):
         b'generaldelta',
         b'revlogv1',
         b'store',
-        localrepo.SPARSEREVLOG_REQUIREMENT,
-        localrepo.SIDEDATA_REQUIREMENT,
-        localrepo.COPIESSDC_REQUIREMENT,
-        localrepo.NODEMAP_REQUIREMENT,
+        requirements.SPARSEREVLOG_REQUIREMENT,
+        requirements.SIDEDATA_REQUIREMENT,
+        requirements.COPIESSDC_REQUIREMENT,
+        requirements.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -132,10 +132,10 @@ def allowednewrequirements(repo):
         b'dotencode',
         b'fncache',
         b'generaldelta',
-        localrepo.SPARSEREVLOG_REQUIREMENT,
-        localrepo.SIDEDATA_REQUIREMENT,
-        localrepo.COPIESSDC_REQUIREMENT,
-        localrepo.NODEMAP_REQUIREMENT,
+        requirements.SPARSEREVLOG_REQUIREMENT,
+        requirements.SIDEDATA_REQUIREMENT,
+        requirements.COPIESSDC_REQUIREMENT,
+        requirements.NODEMAP_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -339,7 +339,7 @@ class generaldelta(requirementformatvariant):
 class sparserevlog(requirementformatvariant):
     name = b'sparserevlog'
 
-    _requirement = localrepo.SPARSEREVLOG_REQUIREMENT
+    _requirement = requirements.SPARSEREVLOG_REQUIREMENT
 
     default = True
 
@@ -365,7 +365,7 @@ class sparserevlog(requirementformatvariant):
 class sidedata(requirementformatvariant):
     name = b'sidedata'
 
-    _requirement = localrepo.SIDEDATA_REQUIREMENT
+    _requirement = requirements.SIDEDATA_REQUIREMENT
 
     default = False
 
@@ -381,7 +381,7 @@ class sidedata(requirementformatvariant):
 class persistentnodemap(requirementformatvariant):
     name = b'persistent-nodemap'
 
-    _requirement = localrepo.NODEMAP_REQUIREMENT
+    _requirement = requirements.NODEMAP_REQUIREMENT
 
     default = False
 
@@ -396,7 +396,7 @@ class persistentnodemap(requirementformatvariant):
 class copiessdc(requirementformatvariant):
     name = b'copies-sdc'
 
-    _requirement = localrepo.COPIESSDC_REQUIREMENT
+    _requirement = requirements.COPIESSDC_REQUIREMENT
 
     default = False
 
@@ -726,7 +726,7 @@ def getsidedatacompanion(srcrepo, dstrepo):
     sidedatacompanion = None
     removedreqs = srcrepo.requirements - dstrepo.requirements
     addedreqs = dstrepo.requirements - srcrepo.requirements
-    if localrepo.SIDEDATA_REQUIREMENT in removedreqs:
+    if requirements.SIDEDATA_REQUIREMENT in removedreqs:
 
         def sidedatacompanion(rl, rev):
             rl = getattr(rl, '_revlog', rl)
@@ -734,9 +734,9 @@ def getsidedatacompanion(srcrepo, dstrepo):
                 return True, (), {}
             return False, (), {}
 
-    elif localrepo.COPIESSDC_REQUIREMENT in addedreqs:
+    elif requirements.COPIESSDC_REQUIREMENT in addedreqs:
         sidedatacompanion = metadata.getsidedataadder(srcrepo, dstrepo)
-    elif localrepo.COPIESSDC_REQUIREMENT in removedreqs:
+    elif requirements.COPIESSDC_REQUIREMENT in removedreqs:
         sidedatacompanion = metadata.getsidedataremover(srcrepo, dstrepo)
     return sidedatacompanion
 
