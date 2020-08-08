@@ -846,7 +846,7 @@ def resolvestorevfsoptions(ui, requirements, features):
     """
     options = {}
 
-    if b'treemanifest' in requirements:
+    if repository.TREEMANIFEST_REQUIREMENT in requirements:
         options[b'treemanifest'] = True
 
     # experimental config: format.manifestcachesize
@@ -1053,7 +1053,7 @@ class localrepository(object):
     supportedformats = {
         b'revlogv1',
         b'generaldelta',
-        b'treemanifest',
+        repository.TREEMANIFEST_REQUIREMENT,
         COPIESSDC_REQUIREMENT,
         REVLOGV2_REQUIREMENT,
         SIDEDATA_REQUIREMENT,
@@ -3314,7 +3314,7 @@ def newreporequirements(ui, createopts):
         requirements.add(SIDEDATA_REQUIREMENT)
         requirements.add(COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
-        requirements.add(b'treemanifest')
+        requirements.add(repository.TREEMANIFEST_REQUIREMENT)
 
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':

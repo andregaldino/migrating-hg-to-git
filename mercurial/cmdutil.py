@@ -58,6 +58,8 @@ from . import (
     vfs as vfsmod,
 )
 
+from .interfaces import repository
+
 from .utils import (
     dateutil,
     stringutil,
@@ -1358,7 +1360,7 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
         if cl:
             r = repo.unfiltered().changelog
         elif dir:
-            if b'treemanifest' not in repo.requirements:
+            if repository.TREEMANIFEST_REQUIREMENT not in repo.requirements:
                 raise error.Abort(
                     _(
                         b"--dir can only be used on repos with "

@@ -22,6 +22,9 @@ SPARSE_REQUIREMENT = b'exp-sparse'
 # of stripping them
 INTERNAL_PHASE_REQUIREMENT = b'internal-phase'
 
+# Stores manifest in Tree structure
+TREEMANIFEST_REQUIREMENT = b'treemanifest'
+
 # Local repository feature string.
 
 # Revlogs are being used for file storage.

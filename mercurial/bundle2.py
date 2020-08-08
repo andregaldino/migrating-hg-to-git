@@ -172,6 +172,7 @@ from . import (
     url,
     util,
 )
+from .interfaces import repository
 from .utils import stringutil
 
 urlerr = util.urlerr
@@ -1965,7 +1966,7 @@ def handlechangegroup(op, inpart):
         nbchangesets = int(inpart.params.get(b'nbchanges'))
     if (
         b'treemanifest' in inpart.params
-        and b'treemanifest' not in op.repo.requirements
+        and repository.TREEMANIFEST_REQUIREMENT not in op.repo.requirements
     ):
         if len(op.repo.changelog) != 0:
             raise error.Abort(
@@ -1974,7 +1975,7 @@ def handlechangegroup(op, inpart):
                     b"non-empty and does not use tree manifests"
                 )
             )
-        op.repo.requirements.add(b'treemanifest')
+        op.repo.requirements.add(repository.TREEMANIFEST_REQUIREMENT)
         op.repo.svfs.options = localrepo.resolvestorevfsoptions(
             op.repo.ui, op.repo.requirements, op.repo.features
         )
@@ -2576,7 +2577,7 @@ def widen_bundle(
 
         part = bundler.newpart(b'changegroup', data=cgdata)
         part.addparam(b'version', cgversion)
-        if b'treemanifest' in repo.requirements:
+        if repository.TREEMANIFEST_REQUIREMENT in repo.requirements:
             part.addparam(b'treemanifest', b'1')
         if b'exp-sidedata-flag' in repo.requirements:
             part.addparam(b'exp-sidedata', b'1')

@@ -949,7 +949,7 @@ class cgpacker(object):
         # either, because we don't discover which directory nodes to
         # send along with files. This could probably be fixed.
         fastpathlinkrev = fastpathlinkrev and (
-            b'treemanifest' not in repo.requirements
+            repository.TREEMANIFEST_REQUIREMENT not in repo.requirements
         )
 
         fnodes = {}  # needed file nodes
@@ -1467,7 +1467,7 @@ def allsupportedversions(repo):
     if (
         repo.ui.configbool(b'experimental', b'changegroup3')
         or repo.ui.configbool(b'experimental', b'treemanifest')
-        or b'treemanifest' in repo.requirements
+        or repository.TREEMANIFEST_REQUIREMENT in repo.requirements
     ):
         # we keep version 03 because we need to to exchange treemanifest data
         #
@@ -1495,7 +1495,7 @@ def supportedincomingversions(repo):
 # Changegroup versions that can be created from the repo
 def supportedoutgoingversions(repo):
     versions = allsupportedversions(repo)
-    if b'treemanifest' in repo.requirements:
+    if repository.TREEMANIFEST_REQUIREMENT in repo.requirements:
         # Versions 01 and 02 support only flat manifests and it's just too
         # expensive to convert between the flat manifest and tree manifest on
         # the fly. Since tree manifests are hashed differently, all of history
