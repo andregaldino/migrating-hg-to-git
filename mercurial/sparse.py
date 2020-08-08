@@ -24,7 +24,9 @@ from . import (
     scmutil,
     util,
 )
+from .interfaces import repository
 from .utils import hashutil
+
 
 # Whether sparse features are enabled. This variable is intended to be
 # temporary to facilitate porting sparse to core. It should eventually be
@@ -606,11 +608,11 @@ def _updateconfigandrefreshwdir(
     # updated. But this requires massive rework to matcher() and its
     # consumers.
 
-    if b'exp-sparse' in oldrequires and removing:
-        repo.requirements.discard(b'exp-sparse')
+    if repository.SPARSE_REQUIREMENT in oldrequires and removing:
+        repo.requirements.discard(repository.SPARSE_REQUIREMENT)
         scmutil.writereporequirements(repo)
-    elif b'exp-sparse' not in oldrequires:
-        repo.requirements.add(b'exp-sparse')
+    elif repository.SPARSE_REQUIREMENT not in oldrequires:
+        repo.requirements.add(repository.SPARSE_REQUIREMENT)
         scmutil.writereporequirements(repo)
 
     try:

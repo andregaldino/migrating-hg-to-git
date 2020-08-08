@@ -816,7 +816,7 @@ def ensurerequirementscompatible(ui, requirements):
 
     ``error.RepoError`` should be raised on failure.
     """
-    if b'exp-sparse' in requirements and not sparse.enabled:
+    if repository.SPARSE_REQUIREMENT in requirements and not sparse.enabled:
         raise error.RepoError(
             _(
                 b'repository is using sparse feature but '
@@ -1067,7 +1067,7 @@ class localrepository(object):
         b'shared',
         b'relshared',
         b'dotencode',
-        b'exp-sparse',
+        repository.SPARSE_REQUIREMENT,
         b'internal-phase',
     }
 

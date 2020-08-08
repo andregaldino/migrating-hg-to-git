@@ -15,6 +15,9 @@ from . import util as interfaceutil
 # we should move this to just "narrow" or similar.
 NARROW_REQUIREMENT = b'narrowhg-experimental'
 
+# Enables sparse working directory usage
+SPARSE_REQUIREMENT = b'exp-sparse'
+
 # Local repository feature string.
 
 # Revlogs are being used for file storage.
