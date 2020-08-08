@@ -234,7 +234,6 @@ osx:
 	make -C contrib/chg \
 	  HGPATH=/usr/local/bin/hg \
 	  PYTHON=/usr/bin/python2.7 \
-	  HGEXTDIR=/Library/Python/2.7/site-packages/hgext \
 	  DESTDIR=../../build/mercurial \
 	  PREFIX=/usr/local \
 	  clean install
