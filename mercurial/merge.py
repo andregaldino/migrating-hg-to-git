@@ -579,7 +579,7 @@ class mergeresult(object):
         self._filemapping = {}
         self._diverge = {}
         self._renamedelete = {}
-        self._commitinfo = {}
+        self._commitinfo = collections.defaultdict(dict)
         self._actionmapping = collections.defaultdict(dict)
 
     def updatevalues(self, diverge, renamedelete, commitinfo):
@@ -756,7 +756,7 @@ def manifestmerge(
     # information from merge which is needed at commit time
     # for example choosing filelog of which parent to commit
     # TODO: use specific constants in future for this mapping
-    commitinfo = {}
+    commitinfo = collections.defaultdict(dict)
     if followcopies:
         branch_copies1, branch_copies2, diverge = copies.mergecopies(
             repo, wctx, p2, pa
@@ -844,7 +844,7 @@ def manifestmerge(
                             b'remote is newer',
                         )
                         if branchmerge:
-                            commitinfo[f] = b'other'
+                            commitinfo[f][b'filenode-source'] = b'other'
                 elif nol and n2 == a:  # remote only changed 'x'
                     mresult.addfile(
                         f,
@@ -860,7 +860,7 @@ def manifestmerge(
                         b'remote is newer',
                     )
                     if branchmerge:
-                        commitinfo[f] = b'other'
+                        commitinfo[f][b'filenode-source'] = b'other'
                 else:  # both changed something
                     mresult.addfile(
                         f,
@@ -1363,7 +1363,7 @@ def applyupdates(
     for f, op in pycompat.iteritems(mresult.commitinfo):
         # the other side of filenode was choosen while merging, store this in
         # mergestate so that it can be reused on commit
-        if op == b'other':
+        if op[b'filenode-source'] == b'other':
             ms.addmergedother(f)
 
     moves = []
