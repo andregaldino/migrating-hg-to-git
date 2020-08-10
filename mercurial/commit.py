@@ -325,10 +325,7 @@ def _filecommit(
         elif not fparentancestors:
             # TODO: this whole if-else might be simplified much more
             ms = mergestate.mergestate.read(repo)
-            if (
-                fname in ms
-                and ms[fname] == mergestate.MERGE_RECORD_MERGED_OTHER
-            ):
+            if ms.extras(fname).get(b'filenode-source') == b'other':
                 fparent1, fparent2 = fparent2, nullid
 
     # is the file changed?

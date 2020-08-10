@@ -5969,8 +5969,6 @@ def resolve(ui, repo, *pats, **opts):
             if not m(f):
                 continue
 
-            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
-                continue
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
             fm.context(ctx=wctx)
@@ -6017,9 +6015,6 @@ def resolve(ui, repo, *pats, **opts):
                 continue
 
             didwork = True
-
-            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
-                continue
 
             # don't let driver-resolved files be marked, and run the conclude
             # step if asked to resolve

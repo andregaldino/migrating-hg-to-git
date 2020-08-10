@@ -81,6 +81,8 @@ MERGE_RECORD_RESOLVED_PATH = b'pr'
 MERGE_RECORD_DRIVER_RESOLVED = b'd'
 # represents that the file was automatically merged in favor
 # of other version. This info is used on commit.
+# This is now deprecated and commit related information is now
+# stored in RECORD_FILE_VALUES
 MERGE_RECORD_MERGED_OTHER = b'o'
 
 #####
@@ -257,7 +259,13 @@ class mergestate(object):
                 LEGACY_RECORD_RESOLVED_OTHER,
             ):
                 bits = record.split(b'\0')
-                self._state[bits[0]] = bits[1:]
+                # merge entry type MERGE_RECORD_MERGED_OTHER is deprecated
+                # and we now store related information in _stateextras, so
+                # lets write to _stateextras directly
+                if bits[1] == MERGE_RECORD_MERGED_OTHER:
+                    self._stateextras[bits[0]][b'filenode-source'] = b'other'
+                else:
+                    self._state[bits[0]] = bits[1:]
             elif rtype == RECORD_FILE_VALUES:
                 filename, rawextras = record.split(b'\0', 1)
                 extraparts = rawextras.split(b'\0')
@@ -486,8 +494,6 @@ class mergestate(object):
                 records.append(
                     (RECORD_PATH_CONFLICT, b'\0'.join([filename] + v))
                 )
-            elif v[0] == MERGE_RECORD_MERGED_OTHER:
-                records.append((RECORD_MERGED, b'\0'.join([filename] + v)))
             elif v[1] == nullhex or v[6] == nullhex:
                 # Change/Delete or Delete/Change conflicts. These are stored in
                 # 'C' records. v[1] is the local file, and is nullhex when the
@@ -587,7 +593,7 @@ class mergestate(object):
         self._dirty = True
 
     def addmergedother(self, path):
-        self._state[path] = [MERGE_RECORD_MERGED_OTHER, nullhex, nullhex]
+        self._stateextras[path] = {b'filenode-source': b'other'}
         self._dirty = True
 
     def __contains__(self, dfile):
@@ -635,8 +641,6 @@ class mergestate(object):
         obtained from filemerge._filemerge().
         """
         if self[dfile] in (MERGE_RECORD_RESOLVED, MERGE_RECORD_DRIVER_RESOLVED):
-            return True, 0
-        if self._state[dfile][0] == MERGE_RECORD_MERGED_OTHER:
             return True, 0
         stateentry = self._state[dfile]
         state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
