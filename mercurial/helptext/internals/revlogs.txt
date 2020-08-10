@@ -215,14 +215,16 @@ Revision Entries
 Revision entries consist of an optional 1 byte header followed by an
 encoding of the revision data. The headers are as follows:
 
-\0 (0x00)
-   Revision data is the entirety of the entry, including this header.
-u (0x75)
-   Raw revision data follows.
-x (0x78)
-   zlib (RFC 1950) data.
+\0  (0x00)
+    Revision data is the entirety of the entry, including this header.
+(   (0x28)
+    zstd https://github.com/facebook/zstd
+u   (0x75)
+    Raw revision data follows.
+x   (0x78)
+    zlib (RFC 1950) data.
 
-   The 0x78 value is actually the first byte of the zlib header (CMF byte).
+    The 0x78 value is actually the first byte of the zlib header (CMF byte).
 
 Hash Computation
 ================
