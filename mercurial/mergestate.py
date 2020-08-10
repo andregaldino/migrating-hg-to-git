@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import collections
 import errno
 import shutil
 import struct
@@ -194,7 +195,7 @@ class mergestate(object):
 
     def reset(self, node=None, other=None, labels=None):
         self._state = {}
-        self._stateextras = {}
+        self._stateextras = collections.defaultdict(dict)
         self._local = None
         self._other = None
         self._labels = labels
@@ -220,7 +221,7 @@ class mergestate(object):
         of on disk file.
         """
         self._state = {}
-        self._stateextras = {}
+        self._stateextras = collections.defaultdict(dict)
         self._local = None
         self._other = None
         for var in ('localctx', 'otherctx'):
@@ -626,7 +627,7 @@ class mergestate(object):
                 yield f
 
     def extras(self, filename):
-        return self._stateextras.setdefault(filename, {})
+        return self._stateextras[filename]
 
     def _resolve(self, preresolve, dfile, wctx):
         """rerun merge process for file path `dfile`.
