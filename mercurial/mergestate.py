@@ -592,8 +592,10 @@ class mergestate(object):
         self._state[path] = [MERGE_RECORD_UNRESOLVED_PATH, frename, forigin]
         self._dirty = True
 
-    def addmergedother(self, path):
-        self._stateextras[path] = {b'filenode-source': b'other'}
+    def addcommitinfo(self, path, data):
+        """ stores information which is required at commit
+        into _stateextras """
+        self._stateextras[path].update(data)
         self._dirty = True
 
     def __contains__(self, dfile):

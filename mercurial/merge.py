@@ -1367,8 +1367,7 @@ def applyupdates(
     for f, op in pycompat.iteritems(mresult.commitinfo):
         # the other side of filenode was choosen while merging, store this in
         # mergestate so that it can be reused on commit
-        if op[b'filenode-source'] == b'other':
-            ms.addmergedother(f)
+        ms.addcommitinfo(f, op)
 
     moves = []
 
