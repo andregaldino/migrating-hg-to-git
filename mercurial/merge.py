@@ -582,10 +582,9 @@ class mergeresult(object):
         self._commitinfo = collections.defaultdict(dict)
         self._actionmapping = collections.defaultdict(dict)
 
-    def updatevalues(self, diverge, renamedelete, commitinfo):
+    def updatevalues(self, diverge, renamedelete):
         self._diverge = diverge
         self._renamedelete = renamedelete
-        self._commitinfo = commitinfo
 
     def addfile(self, filename, action, data, message):
         """ adds a new file to the mergeresult object
@@ -670,6 +669,11 @@ class mergeresult(object):
         else:
             for key, val in pycompat.iteritems(self._filemapping):
                 yield key, val
+
+    def addcommitinfo(self, filename, key, value):
+        """ adds key-value information about filename which will be required
+        while committing this merge """
+        self._commitinfo[filename][key] = value
 
     @property
     def diverge(self):
@@ -756,7 +760,6 @@ def manifestmerge(
     # information from merge which is needed at commit time
     # for example choosing filelog of which parent to commit
     # TODO: use specific constants in future for this mapping
-    commitinfo = collections.defaultdict(dict)
     if followcopies:
         branch_copies1, branch_copies2, diverge = copies.mergecopies(
             repo, wctx, p2, pa
@@ -844,7 +847,9 @@ def manifestmerge(
                             b'remote is newer',
                         )
                         if branchmerge:
-                            commitinfo[f][b'filenode-source'] = b'other'
+                            mresult.addcommitinfo(
+                                f, b'filenode-source', b'other'
+                            )
                 elif nol and n2 == a:  # remote only changed 'x'
                     mresult.addfile(
                         f,
@@ -860,7 +865,7 @@ def manifestmerge(
                         b'remote is newer',
                     )
                     if branchmerge:
-                        commitinfo[f][b'filenode-source'] = b'other'
+                        mresult.addcommitinfo(f, b'filenode-source', b'other')
                 else:  # both changed something
                     mresult.addfile(
                         f,
@@ -1027,7 +1032,7 @@ def manifestmerge(
     renamedelete = branch_copies1.renamedelete
     renamedelete.update(branch_copies2.renamedelete)
 
-    mresult.updatevalues(diverge, renamedelete, commitinfo)
+    mresult.updatevalues(diverge, renamedelete)
     return mresult
 
 
@@ -1183,8 +1188,7 @@ def calculateupdates(
             mresult.addfile(f, *l[0])
             continue
         repo.ui.note(_(b'end of auction\n\n'))
-        # TODO: think about commitinfo when bid merge is used
-        mresult.updatevalues(diverge, renamedelete, {})
+        mresult.updatevalues(diverge, renamedelete)
 
     if wctx.rev() is None:
         _forgetremoved(wctx, mctx, branchmerge, mresult)
