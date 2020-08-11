@@ -3493,9 +3493,9 @@ def postcommitstatus(repo, pats, opts):
     return repo.status(match=scmutil.match(repo[None], pats, opts))
 
 
-def revert(ui, repo, ctx, parents, *pats, **opts):
+def revert(ui, repo, ctx, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
-    parent, p2 = parents
+    parent, p2 = repo.dirstate.parents()
     node = ctx.node()
 
     mf = ctx.manifest()
@@ -3781,7 +3781,6 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             match = scmutil.match(repo[None], pats)
             _performrevert(
                 repo,
-                parents,
                 ctx,
                 names,
                 uipathfn,
@@ -3807,7 +3806,6 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
 
 def _performrevert(
     repo,
-    parents,
     ctx,
     names,
     uipathfn,
@@ -3823,7 +3821,7 @@ def _performrevert(
 
     Make sure you have the working directory locked when calling this function.
     """
-    parent, p2 = parents
+    parent, p2 = repo.dirstate.parents()
     node = ctx.node()
     excluded_files = []
 

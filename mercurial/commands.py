@@ -837,7 +837,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
     else:
         hg.clean(repo, node, show_stats=False)
         repo.dirstate.setbranch(branch)
-        cmdutil.revert(ui, repo, rctx, repo.dirstate.parents())
+        cmdutil.revert(ui, repo, rctx)
 
     if opts.get(b'no_commit'):
         msg = _(b"changeset %s backed out, don't forget to commit.\n")
@@ -6301,9 +6301,7 @@ def revert(ui, repo, *pats, **opts):
             hint = _(b"use --all to revert all files")
         raise error.Abort(msg, hint=hint)
 
-    return cmdutil.revert(
-        ui, repo, ctx, (parent, p2), *pats, **pycompat.strkwargs(opts)
-    )
+    return cmdutil.revert(ui, repo, ctx, *pats, **pycompat.strkwargs(opts))
 
 
 @command(

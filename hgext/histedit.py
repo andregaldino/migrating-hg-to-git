@@ -635,12 +635,11 @@ def commitfuncfor(repo, src):
 
 def applychanges(ui, repo, ctx, opts):
     """Merge changeset from ctx (only) in the current working directory"""
-    wcpar = repo.dirstate.p1()
-    if ctx.p1().node() == wcpar:
+    if ctx.p1().node() == repo.dirstate.p1():
         # edits are "in place" we do not need to make any merge,
         # just applies changes on parent for editing
         ui.pushbuffer()
-        cmdutil.revert(ui, repo, ctx, (wcpar, node.nullid), all=True)
+        cmdutil.revert(ui, repo, ctx, all=True)
         stats = mergemod.updateresult(0, 0, 0, 0)
         ui.popbuffer()
     else:

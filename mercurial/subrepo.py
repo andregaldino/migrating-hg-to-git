@@ -986,12 +986,11 @@ class hgsubrepo(abstractsubrepo):
 
     def filerevert(self, *pats, **opts):
         ctx = self._repo[opts['rev']]
-        parents = self._repo.dirstate.parents()
         if opts.get('all'):
             pats = [b'set:modified()']
         else:
             pats = []
-        cmdutil.revert(self.ui, self._repo, ctx, parents, *pats, **opts)
+        cmdutil.revert(self.ui, self._repo, ctx, *pats, **opts)
 
     def shortid(self, revid):
         return revid[:12]

@@ -874,7 +874,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
 # the matcher to hit standins instead of largefiles. Based on the
 # resulting standins update the largefiles.
 @eh.wrapfunction(cmdutil, b'revert')
-def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
+def overriderevert(orig, ui, repo, ctx, *pats, **opts):
     # Because we put the standins in a bad state (by updating them)
     # and then return them to a correct state we need to lock to
     # prevent others from changing them in their incorrect state.
@@ -937,7 +937,7 @@ def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
             return m
 
         with extensions.wrappedfunction(scmutil, b'match', overridematch):
-            orig(ui, repo, ctx, parents, *pats, **opts)
+            orig(ui, repo, ctx, *pats, **opts)
 
         newstandins = lfutil.getstandinsstate(repo)
         filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
