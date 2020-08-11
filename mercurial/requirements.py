@@ -44,3 +44,8 @@ COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
 
 # The repository use persistent nodemap for the changelog and the manifest.
 NODEMAP_REQUIREMENT = b'persistent-nodemap'
+
+# List of requirements which are working directory specific
+# These requirements cannot be shared between repositories if they
+# share the same store
+WORKING_DIR_REQUIREMENTS = {SPARSE_REQUIREMENT}
