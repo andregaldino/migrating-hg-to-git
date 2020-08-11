@@ -354,8 +354,8 @@ def unshare(ui, repo):
             sharefile = repo.vfs.join(b'sharedpath')
             util.rename(sharefile, sharefile + b'.old')
 
-            repo.requirements.discard(b'shared')
-            repo.requirements.discard(b'relshared')
+            repo.requirements.discard(requirements.SHARED_REQUIREMENT)
+            repo.requirements.discard(requirements.RELATIVE_SHARED_REQUIREMENT)
             scmutil.writereporequirements(repo)
 
     # Removing share changes some fundamental properties of the repo instance.

@@ -64,7 +64,7 @@ def blocksourcerequirements(repo):
         # It should (hopefully) not exist in the wild.
         b'parentdelta',
         # Upgrade should operate on the actual store, not the shared link.
-        b'shared',
+        requirements.SHARED_REQUIREMENT,
     }
 
 

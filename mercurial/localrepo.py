@@ -448,7 +448,7 @@ def _getsharedvfs(hgvfs, requirements):
     # This is an absolute path for ``shared`` and relative to
     # ``.hg/`` for ``relshared``.
     sharedpath = hgvfs.read(b'sharedpath').rstrip(b'\n')
-    if b'relshared' in requirements:
+    if requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements:
         sharedpath = hgvfs.join(sharedpath)
 
     sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
@@ -585,7 +585,10 @@ def makelocalrepository(baseui, path, intents=None):
     # accessed is determined by various requirements. If `shared` or
     # `relshared` requirements are present, this indicates current repository
     # is a share and store exists in path mentioned in `.hg/sharedpath`
-    shared = b'shared' in requirements or b'relshared' in requirements
+    shared = (
+        requirementsmod.SHARED_REQUIREMENT in requirements
+        or requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements
+    )
     if shared:
         sharedvfs = _getsharedvfs(hgvfs, requirements)
         storebasepath = sharedvfs.base
@@ -1047,8 +1050,8 @@ class localrepository(object):
     _basesupported = supportedformats | {
         b'store',
         b'fncache',
-        b'shared',
-        b'relshared',
+        requirementsmod.SHARED_REQUIREMENT,
+        requirementsmod.RELATIVE_SHARED_REQUIREMENT,
         b'dotencode',
         requirementsmod.SPARSE_REQUIREMENT,
         requirementsmod.INTERNAL_PHASE_REQUIREMENT,
@@ -3232,9 +3235,9 @@ def newreporequirements(ui, createopts):
     if b'sharedrepo' in createopts:
         requirements = set(createopts[b'sharedrepo'].requirements)
         if createopts.get(b'sharedrelative'):
-            requirements.add(b'relshared')
+            requirements.add(requirementsmod.RELATIVE_SHARED_REQUIREMENT)
         else:
-            requirements.add(b'shared')
+            requirements.add(requirementsmod.SHARED_REQUIREMENT)
 
         return requirements
 
@@ -3343,7 +3346,10 @@ def checkrequirementscompat(ui, requirements):
             )
             dropped.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
 
-        if b'shared' in requirements or b'relshared' in requirements:
+        if (
+            requirementsmod.SHARED_REQUIREMENT in requirements
+            or requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements
+        ):
             raise error.Abort(
                 _(
                     b"cannot create shared repository as source was created"

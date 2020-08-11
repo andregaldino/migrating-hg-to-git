@@ -45,7 +45,23 @@ COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'
 # The repository use persistent nodemap for the changelog and the manifest.
 NODEMAP_REQUIREMENT = b'persistent-nodemap'
 
+# Denotes that the current repository is a share
+SHARED_REQUIREMENT = b'shared'
+
+# Denotes that current repository is a share and the shared source path is
+# relative to the current repository root path
+RELATIVE_SHARED_REQUIREMENT = b'relshared'
+
 # List of requirements which are working directory specific
 # These requirements cannot be shared between repositories if they
 # share the same store
-WORKING_DIR_REQUIREMENTS = {SPARSE_REQUIREMENT}
+# * sparse is a working directory specific functionality and hence working
+#   directory specific requirement
+# * SHARED_REQUIREMENT and RELATIVE_SHARED_REQUIREMENT are requirements which
+#   represents that the current working copy/repository shares store of another
+#   repo. Hence both of them should be stored in working copy
+WORKING_DIR_REQUIREMENTS = {
+    SPARSE_REQUIREMENT,
+    SHARED_REQUIREMENT,
+    RELATIVE_SHARED_REQUIREMENT,
+}
