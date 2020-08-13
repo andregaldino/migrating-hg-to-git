@@ -2,6 +2,7 @@
 //! An operation is what can be done whereas a command is what is exposed by
 //! the cli. A single command can use several operations to achieve its goal.
 
+mod debugdata;
 mod dirstate_status;
 mod find_root;
 mod list_tracked_files;
