@@ -69,7 +69,7 @@ pub struct CommandError {
 
 impl CommandError {
     /// Exist the process with the corresponding exit code.
-    pub fn exit(&self) -> () {
+    pub fn exit(&self) {
         std::process::exit(self.kind.get_exit_code())
     }
 

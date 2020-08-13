@@ -34,22 +34,18 @@ impl Ui {
     pub fn write_stdout(&self, bytes: &[u8]) -> Result<(), UiError> {
         let mut stdout = self.stdout.lock();
 
-        stdout
-            .write_all(bytes)
-            .or_else(|e| handle_stdout_error(e))?;
+        stdout.write_all(bytes).or_else(handle_stdout_error)?;
 
-        stdout.flush().or_else(|e| handle_stdout_error(e))
+        stdout.flush().or_else(handle_stdout_error)
     }
 
     /// Write bytes to stderr
     pub fn write_stderr(&self, bytes: &[u8]) -> Result<(), UiError> {
         let mut stderr = self.stderr.lock();
 
-        stderr
-            .write_all(bytes)
-            .or_else(|e| handle_stderr_error(e))?;
+        stderr.write_all(bytes).or_else(handle_stderr_error)?;
 
-        stderr.flush().or_else(|e| handle_stderr_error(e))
+        stderr.flush().or_else(handle_stderr_error)
     }
 }
 
@@ -66,14 +62,12 @@ impl<W: Write> StdoutBuffer<W> {
 
     /// Write bytes to stdout buffer
     pub fn write_all(&mut self, bytes: &[u8]) -> Result<(), UiError> {
-        self.buf
-            .write_all(bytes)
-            .or_else(|e| handle_stdout_error(e))
+        self.buf.write_all(bytes).or_else(handle_stdout_error)
     }
 
     /// Flush bytes to stdout
     pub fn flush(&mut self) -> Result<(), UiError> {
-        self.buf.flush().or_else(|e| handle_stdout_error(e))
+        self.buf.flush().or_else(handle_stdout_error)
     }
 }
 
@@ -88,9 +82,9 @@ fn handle_stdout_error(error: io::Error) -> Result<(), UiError> {
 
     stderr
         .write_all(&[b"abort: ", error.to_string().as_bytes(), b"\n"].concat())
-        .map_err(|e| UiError::StderrError(e))?;
+        .map_err(UiError::StderrError)?;
 
-    stderr.flush().map_err(|e| UiError::StderrError(e))?;
+    stderr.flush().map_err(UiError::StderrError)?;
 
     Err(UiError::StdoutError(error))
 }
