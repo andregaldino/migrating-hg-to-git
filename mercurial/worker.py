@@ -211,7 +211,7 @@ def _posixworker(ui, func, staticargs, args, hasretval):
     parentpid = os.getpid()
     pipes = []
     retval = {}
-    for pargs in partition(args, workers):
+    for pargs in partition(args, min(workers, len(args))):
         # Every worker gets its own pipe to send results on, so we don't have to
         # implement atomic writes larger than PIPE_BUF. Each forked process has
         # its own pipe's descriptors in the local variables, and the parent
