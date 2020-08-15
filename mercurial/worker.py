@@ -71,8 +71,12 @@ if pycompat.ispy3:
         def __init__(self, wrapped):
             self._wrapped = wrapped
 
-        def __getattr__(self, attr):
-            return getattr(self._wrapped, attr)
+        # Do NOT implement readinto() by making it delegate to
+        # _wrapped.readinto(), since that is unbuffered. The unpickler is fine
+        # with just read() and readline(), so we don't need to implement it.
+
+        def readline(self):
+            return self._wrapped.readline()
 
         # issue multiple reads until size is fulfilled
         def read(self, size=-1):
@@ -91,7 +95,7 @@ if pycompat.ispy3:
 
             del view
             del buf[pos:]
-            return buf
+            return bytes(buf)
 
 
 else:
