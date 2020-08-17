@@ -56,10 +56,10 @@ impl<'a> FindRoot<'a> {
         };
 
         if current_dir.join(".hg").exists() {
-            return Ok(current_dir.into());
+            return Ok(current_dir);
         }
-        let mut ancestors = current_dir.ancestors();
-        while let Some(parent) = ancestors.next() {
+        let ancestors = current_dir.ancestors();
+        for parent in ancestors {
             if parent.join(".hg").exists() {
                 return Ok(parent.into());
             }
