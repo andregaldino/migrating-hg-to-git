@@ -47,6 +47,11 @@ impl Ui {
 
         stderr.flush().or_else(handle_stderr_error)
     }
+
+    /// Write string line to stderr
+    pub fn writeln_stderr_str(&self, s: &str) -> Result<(), UiError> {
+        self.write_stderr(&format!("{}\n", s).as_bytes())
+    }
 }
 
 /// A buffered stdout writer for faster batch printing operations.

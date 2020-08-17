@@ -21,7 +21,8 @@ fn main() {
             SubCommand::with_name("files").about(commands::files::HELP_TEXT),
         );
 
-    let matches = app.clone().get_matches_safe().unwrap_or_else(|_| {
+    let matches = app.clone().get_matches_safe().unwrap_or_else(|err| {
+        let _ = ui::Ui::new().writeln_stderr_str(&err.message);
         std::process::exit(exitcode::UNIMPLEMENTED_COMMAND)
     });
 
