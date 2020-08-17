@@ -68,3 +68,25 @@ Listing tracked files from subdirectory
 Listing tracked files through broken pipe
   $ rhg files | head -n 1
   ../../../file1
+
+Debuging data in inline index
+  $ cd $TESTTMP
+  $ rm -rf repository
+  $ hg init repository
+  $ cd repository
+  $ for i in 1 2 3; do
+  >   echo $i >> file$i
+  >   hg add file$i
+  >   hg commit -m "commit $i" -q
+  > done
+  $ rhg debugdata -c 2
+  e36fa63d37a576b27a69057598351db6ee5746bd
+  test
+  0 0
+  file3
+  
+  commit 3 (no-eol)
+  $ rhg debugdata -m 2
+  file1\x00b8e02f6433738021a065f94175c7cd23db5f05be (esc)
+  file2\x005d9299349fc01ddd25d0070d149b124d8f10411e (esc)
+  file3\x002661d26c649684b482d10f91960cc3db683c38b4 (esc)
