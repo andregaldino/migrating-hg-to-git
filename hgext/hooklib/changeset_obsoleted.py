@@ -13,7 +13,7 @@ Usage:
   messageidseed = myseed
 
   [hooks]
-  pretxnclose.changeset_obsoleted = \
+  txnclose.changeset_obsoleted = \
     python:hgext.hooklib.changeset_obsoleted.hook
 """
 
