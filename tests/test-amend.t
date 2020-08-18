@@ -93,6 +93,30 @@ Nothing changed
   nothing changed
   [1]
 
+#if obsstore-on
+  $ hg init repo-merge-state
+  $ cd repo-merge-state
+  $ echo a > f
+  $ hg ci -Aqm a
+  $ echo b > f
+  $ hg ci -Aqm b
+  $ echo c > f
+  $ hg co -m '.^'
+  merging f
+  warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges
+  [1]
+  $ echo d > f
+  $ hg resolve -m f
+  (no more unresolved files)
+  $ hg ci --amend --config experimental.evolution.allowunstable=True
+  1 new orphan changesets
+  $ hg resolve -l
+  R f
+  $ cd ..
+#endif
+
 Matcher and metadata options
 
   $ echo 3 > C
