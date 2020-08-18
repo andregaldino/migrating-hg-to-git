@@ -3259,6 +3259,7 @@ def amend(ui, repo, old, extra, pats, opts):
         if opts.get(b'secret'):
             commitphase = phases.secret
         newid = repo.commitctx(new)
+        ms.reset()
 
         # Reroute the working copy parent to the new changeset
         repo.setparents(newid, nullid)

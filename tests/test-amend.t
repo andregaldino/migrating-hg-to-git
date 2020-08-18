@@ -113,7 +113,6 @@ Nothing changed
   $ hg ci --amend --config experimental.evolution.allowunstable=True
   1 new orphan changesets
   $ hg resolve -l
-  R f
   $ cd ..
 #endif
 
