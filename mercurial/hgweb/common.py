@@ -21,6 +21,7 @@ from ..pycompat import (
 from .. import (
     encoding,
     pycompat,
+    templater,
     util,
 )
 
@@ -178,7 +179,7 @@ def ispathsafe(path):
     return True
 
 
-def staticfile(directory, fname, res):
+def staticfile(templatepath, directory, fname, res):
     """return a file inside directory with guessed Content-Type header
 
     fname always uses '/' as directory separator and isn't allowed to
@@ -189,6 +190,11 @@ def staticfile(directory, fname, res):
     """
     if not ispathsafe(fname):
         return
+
+    if not directory:
+        tp = templatepath or templater.templatedir()
+        if tp is not None:
+            directory = os.path.join(tp, b'static')
 
     fpath = os.path.join(*fname.split(b'/'))
     path = os.path.join(directory, fpath)

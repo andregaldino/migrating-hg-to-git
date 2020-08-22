@@ -36,7 +36,6 @@ from .. import (
     revsetlang,
     scmutil,
     smartset,
-    templater,
     templateutil,
 )
 
@@ -1318,12 +1317,7 @@ def static(web):
     # a repo owner may set web.static in .hg/hgrc to get any file
     # readable by the user running the CGI script
     static = web.config(b"web", b"static", untrusted=False)
-    if not static:
-        tp = web.templatepath or templater.templatedir()
-        if tp is not None:
-            static = os.path.join(tp, b'static')
-
-    staticfile(static, fname, web.res)
+    staticfile(web.templatepath, static, fname, web.res)
     return web.res.sendresponse()
 
 

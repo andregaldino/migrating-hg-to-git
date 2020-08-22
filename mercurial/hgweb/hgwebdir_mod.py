@@ -413,12 +413,7 @@ class hgwebdir(object):
                 else:
                     fname = req.qsparams[b'static']
                 static = self.ui.config(b"web", b"static", untrusted=False)
-                if not static:
-                    tp = self.templatepath or templater.templatedir()
-                    if tp is not None:
-                        static = os.path.join(tp, b'static')
-
-                staticfile(static, fname, res)
+                staticfile(self.templatepath, static, fname, res)
                 return res.sendresponse()
 
             # top-level index
