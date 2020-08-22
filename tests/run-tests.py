@@ -2336,7 +2336,6 @@ class TestSuite(unittest.TestSuite):
         jobs=1,
         whitelist=None,
         blacklist=None,
-        retest=False,
         keywords=None,
         loop=False,
         runs_per_test=1,
@@ -2364,9 +2363,6 @@ class TestSuite(unittest.TestSuite):
         backwards compatible behavior which reports skipped tests as part
         of the results.
 
-        retest denotes whether to retest failed tests. This arguably belongs
-        outside of TestSuite.
-
         keywords denotes key words that will be used to filter which tests
         to execute. This arguably belongs outside of TestSuite.
 
@@ -2377,7 +2373,6 @@ class TestSuite(unittest.TestSuite):
         self._jobs = jobs
         self._whitelist = whitelist
         self._blacklist = blacklist
-        self._retest = retest
         self._keywords = keywords
         self._loop = loop
         self._runs_per_test = runs_per_test
@@ -2405,10 +2400,6 @@ class TestSuite(unittest.TestSuite):
             if not (self._whitelist and test.bname in self._whitelist):
                 if self._blacklist and test.bname in self._blacklist:
                     result.addSkip(test, 'blacklisted')
-                    continue
-
-                if self._retest and not os.path.exists(test.errpath):
-                    result.addIgnore(test, 'not retesting')
                     continue
 
                 if self._keywords:
@@ -3253,6 +3244,22 @@ class TestRunner(object):
                     tests.append({'path': t})
             else:
                 tests.append({'path': t})
+
+        if self.options.retest:
+            retest_args = []
+            for test in tests:
+                if 'case' in test:
+                    # for multiple dimensions test cases
+                    casestr = b'#'.join(test['case'])
+                    errpath = b'%s#%s.err' % (test['path'], casestr)
+                else:
+                    errpath = b'%s.err' % test['path']
+                if self.options.outputdir:
+                    errpath = os.path.join(self.options.outputdir, errpath)
+
+                if os.path.exists(errpath):
+                    retest_args.append(test)
+            tests = retest_args
         return tests
 
     def _runtests(self, testdescs):
@@ -3298,7 +3305,6 @@ class TestRunner(object):
                 jobs=jobs,
                 whitelist=self.options.whitelisted,
                 blacklist=self.options.blacklist,
-                retest=self.options.retest,
                 keywords=kws,
                 loop=self.options.loop,
                 runs_per_test=self.options.runs_per_test,
