@@ -7,14 +7,21 @@
 
 from __future__ import absolute_import
 
+import re
+
 from .i18n import _
 
 from . import (
     error,
     node,
     obsolete,
+    obsutil,
     revset,
+    scmutil,
 )
+
+
+sha1re = re.compile(br'\b[0-9a-f]{6,40}\b')
 
 
 def precheck(repo, revs, action=b'rewrite'):
@@ -70,3 +77,39 @@ def skip_empty_successor(ui, command):
             )
             % (command, empty_successor)
         )
+
+
+def update_hash_refs(repo, commitmsg):
+    """Replace all obsolete commit hashes in the message with the current hash.
+
+    If the obsolete commit was split or is divergent, the hash is not replaced
+    as there's no way to know which successor to choose.
+    """
+    cache = {}
+    sha1s = re.findall(sha1re, commitmsg)
+    unfi = repo.unfiltered()
+    for sha1 in sha1s:
+        fullnode = scmutil.resolvehexnodeidprefix(unfi, sha1)
+        if fullnode is None:
+            continue
+        ctx = unfi[fullnode]
+        if not ctx.obsolete():
+            continue
+
+        successors = obsutil.successorssets(repo, ctx.node(), cache=cache)
+
+        # We can't make any assumptions about how to update the hash if the
+        # cset in question was split or diverged.
+        if len(successors) == 1 and len(successors[0]) == 1:
+            newsha1 = node.hex(successors[0][0])
+            commitmsg = commitmsg.replace(sha1, newsha1[: len(sha1)])
+        else:
+            repo.ui.note(
+                _(
+                    b'The stale commit message reference to %s could '
+                    b'not be updated\n'
+                )
+                % sha1
+            )
+
+    return commitmsg
