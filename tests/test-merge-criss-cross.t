@@ -682,7 +682,9 @@ BROKEN: this should result in conflict
   extra: the-file (merge-removal-candidate = yes)
 #else
   $ hg debugmergestate
-  no merge state found
+  local (working copy): adfd88e5d7d3d3e22bdd26512991ee64d59c1d8f
+  other (merge rev): e9b7081317232edce73f7ad5ae0b7807ff5c326a
+  extra: the-file (merge-removal-candidate = yes)
 #endif
 
 (merging a deletion with keeping → conflict)
@@ -697,7 +699,9 @@ BROKEN: this should result in conflict
   $ ls -1
   other-file
   $ hg debugmergestate
-  no merge state found
+  local (working copy): adfd88e5d7d3d3e22bdd26512991ee64d59c1d8f
+  other (merge rev): 5e3eccec60d88f94a7ba57c351f32cb24c15fe0c
+  extra: the-file (merge-removal-candidate = yes)
 
 (merging two deletion together → no conflict)
 
@@ -730,7 +734,9 @@ BROKEN: this should result in conflict
   extra: the-file (merge-removal-candidate = yes)
 #else
   $ hg debugmergestate
-  no merge state found
+  local (working copy): a4e0e44229dc130be2915b92c957c093f8c7ee3e
+  other (merge rev): e9b7081317232edce73f7ad5ae0b7807ff5c326a
+  extra: the-file (merge-removal-candidate = yes)
 #endif
 
 (merging a deletion with keeping → conflict)
@@ -745,7 +751,9 @@ BROKEN: this should result in conflict
   $ ls -1
   other-file
   $ hg debugmergestate
-  no merge state found
+  local (working copy): a4e0e44229dc130be2915b92c957c093f8c7ee3e
+  other (merge rev): 5e3eccec60d88f94a7ba57c351f32cb24c15fe0c
+  extra: the-file (merge-removal-candidate = yes)
 
 (merging two "keeping" together → no conflict)
 
@@ -795,7 +803,9 @@ BROKEN: this should result in conflict
   other-file
   the-file
   $ hg debugmergestate
-  no merge state found
+  local (working copy): 5e3eccec60d88f94a7ba57c351f32cb24c15fe0c
+  other (merge rev): a4e0e44229dc130be2915b92c957c093f8c7ee3e
+  extra: the-file (merge-removal-candidate = yes)
 
 (merging two "keeping" together → no conflict)
 
@@ -843,5 +853,7 @@ BROKEN: this should result in conflict
   extra: the-file (merge-removal-candidate = yes)
 #else
   $ hg debugmergestate
-  no merge state found
+  local (working copy): e9b7081317232edce73f7ad5ae0b7807ff5c326a
+  other (merge rev): a4e0e44229dc130be2915b92c957c093f8c7ee3e
+  extra: the-file (merge-removal-candidate = yes)
 #endif

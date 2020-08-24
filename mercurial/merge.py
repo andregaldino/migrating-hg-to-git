@@ -923,6 +923,15 @@ def manifestmerge(
                     mresult.addfile(
                         f, mergestatemod.ACTION_REMOVE, None, b'other deleted',
                     )
+                    if branchmerge:
+                        # the file must be absent after merging,
+                        # howeber the user might make
+                        # the file reappear using revert and if they does,
+                        # we force create a new node
+                        mresult.addcommitinfo(
+                            f, b'merge-removal-candidate', b'yes'
+                        )
+
             else:  # file not in ancestor, not in remote
                 mresult.addfile(
                     f,
@@ -1033,6 +1042,12 @@ def manifestmerge(
                     None,
                     b'local not present, remote unchanged',
                 )
+                if branchmerge:
+                    # the file must be absent after merging
+                    # however the user might make
+                    # the file reappear using revert and if they does,
+                    # we force create a new node
+                    mresult.addcommitinfo(f, b'merge-removal-candidate', b'yes')
 
     if repo.ui.configbool(b'experimental', b'merge.checkpathconflicts'):
         # If we are merging, look for path conflicts.
