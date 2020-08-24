@@ -932,6 +932,14 @@ def manifestmerge(
                     mresult.addfile(
                         f, mergestatemod.ACTION_REMOVE, None, b'other deleted',
                     )
+            else:  # file not in ancestor, not in remote
+                mresult.addfile(
+                    f,
+                    mergestatemod.ACTION_KEEP,
+                    None,
+                    b'ancestor missing, remote missing',
+                )
+
         elif n2:  # file exists only on remote side
             if f in copied1:
                 pass  # we'll deal with it on m1 side

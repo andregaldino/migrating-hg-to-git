@@ -431,6 +431,8 @@ Verify that the old context ancestor works with / despite preferancestor:
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 11b5b303e36c, local: c0ef19750a22+, remote: 6ca01f7342b9
+   d1/a: ancestor missing, remote missing -> k
+   d1/b: ancestor missing, remote missing -> k
    d2/b: remote created -> g
   
   calculating bids for ancestor 154e6000f54e
@@ -450,24 +452,24 @@ Verify that the old context ancestor works with / despite preferancestor:
   
   auction for merging merge bids (2 ancestors)
    list of bids for d1/a:
+     ancestor missing, remote missing -> k
      other deleted -> r
-   d1/a: consensus for r
+   d1/a: picking 'keep' action
    list of bids for d1/b:
+     ancestor missing, remote missing -> k
      other deleted -> r
-   d1/b: consensus for r
+   d1/b: picking 'keep' action
    list of bids for d2/b:
      remote created -> g
      remote created -> g
    d2/b: consensus for g
   end of auction
   
-   d1/a: other deleted -> r
-  removing d1/a
-   d1/b: other deleted -> r
-  removing d1/b
    d2/b: remote created -> g
   getting d2/b
-  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+   d1/a: ancestor missing, remote missing -> k
+   d1/b: ancestor missing, remote missing -> k
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
 
@@ -649,15 +651,16 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-keeping-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-deleting-the-file-from-updated")'
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
+  the-file
 
 (merging two "keeping" together → no conflict)
 
   $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -683,7 +686,8 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-deleting-the-file-from-updated")'
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
+  the-file
