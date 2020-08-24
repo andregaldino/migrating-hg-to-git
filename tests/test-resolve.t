@@ -328,6 +328,7 @@ test json output
   [
    {
     "commits": [{"label": "working copy", "name": "local", "node": "57653b9f834a4493f7240b0681efcb9ae7cab745"}, {"label": "merge rev", "name": "other", "node": "dc77451844e37f03f5c559e3b8529b2b48d381d1"}],
+    "extras": [],
     "files": [{"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file1", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}], "local_flags": "", "local_key": "60b27f004e454aca81b0480209cce5081ec52390", "local_path": "file1", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file1", "path": "file1", "state": "r"}, {"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file2", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}], "local_flags": "", "local_key": "cb99b709a1978bd205ab9dfd4c5aaa1fc91c7523", "local_path": "file2", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file2", "path": "file2", "state": "u"}]
    }
   ]

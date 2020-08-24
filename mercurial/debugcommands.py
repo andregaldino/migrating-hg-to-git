@@ -2016,6 +2016,7 @@ def debugmergestate(ui, repo, *args, **opts):
             b'")}'
             b'{extras % "  extra: {key} = {value}\n"}'
             b'"}'
+            b'{extras % "extra: {file} ({key} = {value})\n"}'
         )
 
     ms = mergestatemod.mergestate.read(repo)
@@ -2068,6 +2069,18 @@ def debugmergestate(ui, repo, *args, **opts):
             fm_extras.end()
 
     fm_files.end()
+
+    fm_extras = fm.nested(b'extras')
+    for f, d in sorted(pycompat.iteritems(ms._stateextras)):
+        if f in ms:
+            # If file is in mergestate, we have already processed it's extras
+            continue
+        for k, v in pycompat.iteritems(d):
+            fm_extras.startitem()
+            fm_extras.data(file=f)
+            fm_extras.data(key=k)
+            fm_extras.data(value=v)
+    fm_extras.end()
 
     fm.end()
 
