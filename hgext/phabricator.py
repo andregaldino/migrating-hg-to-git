@@ -76,6 +76,7 @@ from mercurial import (
     patch,
     phases,
     pycompat,
+    rewriteutil,
     scmutil,
     smartset,
     tags,
@@ -1511,6 +1512,9 @@ def phabsend(ui, repo, *revs, **opts):
                         mapping.get(old.p1().node(), (old.p1(),))[0],
                         mapping.get(old.p2().node(), (old.p2(),))[0],
                     ]
+                    newdesc = rewriteutil.update_hash_refs(
+                        repo, newdesc, mapping,
+                    )
                     new = context.metadataonlyctx(
                         repo,
                         old,
@@ -1588,7 +1592,9 @@ def phabsend(ui, repo, *revs, **opts):
                     repo,
                     old,
                     parents=parents,
-                    text=old.description(),
+                    text=rewriteutil.update_hash_refs(
+                        repo, old.description(), mapping
+                    ),
                     user=old.user(),
                     date=old.date(),
                     extra=old.extra(),

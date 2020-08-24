@@ -970,5 +970,37 @@ Test phabsend --fold with an `hg fold` at the end of the range
   Differential Revision: https://phab.mercurial-scm.org/D8388
   
   
+Hashes in the messages are updated automatically as phabsend amends and restacks
+them.  This covers both commits that are posted and descendants that are
+restacked.
 
+  $ cat >> .hg/hgrc << EOF
+  > [experimental]
+  > evolution = all
+  > EOF
+
+  $ echo content > file.txt
+  $ hg ci -m 'base review (generate test for phabsend)'
+  $ echo 'more content' > file.txt
+  $ hg ci -m '133c1c6c6449 is my parent (generate test for phabsend)'
+  $ echo 'even more content' > file.txt
+  $ hg ci -m 'c2874a398f7e is my parent (generate test for phabsend)'
+
+  $ hg phabsend -r 17::18  --test-vcr "$VCR/phabsend-hash-fixes.json"
+  D8945 - created - 133c1c6c6449: base review (generate test for phabsend)
+  D8946 - created - c2874a398f7e: 133c1c6c6449 is my parent (generate test for phabsend)
+  new commits: ['f444f060f4d6']
+  new commits: ['9c9290f945b1']
+  restabilizing 1528c12fa2e4 as b28b20212bd4
+
+  $ hg log -l 3 -Tcompact
+  22[tip]   b28b20212bd4   1970-01-01 00:00 +0000   test
+    9c9290f945b1 is my parent (generate test for phabsend)
+  
+  21   9c9290f945b1   1970-01-01 00:00 +0000   test
+    f444f060f4d6 is my parent (generate test for phabsend)
+  
+  20:16   f444f060f4d6   1970-01-01 00:00 +0000   test
+    base review (generate test for phabsend)
+  
   $ cd ..
