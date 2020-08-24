@@ -79,12 +79,18 @@ def skip_empty_successor(ui, command):
         )
 
 
-def update_hash_refs(repo, commitmsg):
+def update_hash_refs(repo, commitmsg, pending=None):
     """Replace all obsolete commit hashes in the message with the current hash.
 
     If the obsolete commit was split or is divergent, the hash is not replaced
     as there's no way to know which successor to choose.
+
+    For commands that update a series of commits in the current transaction, the
+    new obsolete markers can be considered by setting ``pending`` to a mapping
+    of ``pending[oldnode] = [successor_node1, successor_node2,..]``.
     """
+    if not pending:
+        pending = {}
     cache = {}
     sha1s = re.findall(sha1re, commitmsg)
     unfi = repo.unfiltered()
@@ -94,9 +100,13 @@ def update_hash_refs(repo, commitmsg):
             continue
         ctx = unfi[fullnode]
         if not ctx.obsolete():
-            continue
-
-        successors = obsutil.successorssets(repo, ctx.node(), cache=cache)
+            successors = pending.get(fullnode)
+            if successors is None:
+                continue
+            # obsutil.successorssets() returns a list of list of nodes
+            successors = [successors]
+        else:
+            successors = obsutil.successorssets(repo, ctx.node(), cache=cache)
 
         # We can't make any assumptions about how to update the hash if the
         # cset in question was split or diverged.
