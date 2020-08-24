@@ -1023,6 +1023,13 @@ def manifestmerge(
                         (None, f, f, False, pa.node()),
                         b'prompt deleted/changed',
                     )
+            else:
+                mresult.addfile(
+                    f,
+                    mergestatemod.ACTION_KEEP_ABSENT,
+                    None,
+                    b'local not present, remote unchanged',
+                )
 
     if repo.ui.configbool(b'experimental', b'merge.checkpathconflicts'):
         # If we are merging, look for path conflicts.

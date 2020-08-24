@@ -572,28 +572,26 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-deleting-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
-  the-file
 
 (merging a deletion with keeping → conflict)
 BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-deleting-the-file-from-deleted")'
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-updated")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
-  the-file
 
 (merging two deletion together → no conflict)
 
   $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-deleting-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -606,23 +604,21 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
-  the-file
 
 (merging a deletion with keeping → conflict)
 BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-updated")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
-  the-file
 
 (merging two "keeping" together → no conflict)
 
