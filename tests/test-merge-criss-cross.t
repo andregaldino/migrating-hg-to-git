@@ -149,7 +149,7 @@ Redo merge with merge.preferancestor="*" to enable bid merge
    f1: versions differ -> m
    f2: remote unchanged -> k
   
-  auction for merging merge bids
+  auction for merging merge bids (2 ancestors)
    f1: picking 'get' action
    f2: picking 'keep' action
   end of auction
@@ -192,7 +192,7 @@ The other way around:
    f1: versions differ -> m
    f2: remote is newer -> g
   
-  auction for merging merge bids
+  auction for merging merge bids (2 ancestors)
    f1: picking 'keep' action
    f2: picking 'get' action
   end of auction
@@ -230,7 +230,7 @@ Verify how the output looks and and how verbose it is:
   calculating bids for ancestor 40663881a6dd
   resolving manifests
   
-  auction for merging merge bids
+  auction for merging merge bids (2 ancestors)
    f1: picking 'get' action
    f2: picking 'keep' action
   end of auction
@@ -257,7 +257,7 @@ Verify how the output looks and and how verbose it is:
    f1: versions differ -> m
    f2: remote unchanged -> k
   
-  auction for merging merge bids
+  auction for merging merge bids (2 ancestors)
    f1: picking 'get' action
    f2: picking 'keep' action
   end of auction
@@ -343,7 +343,7 @@ http://stackoverflow.com/questions/9350005/how-do-i-specify-a-merge-base-to-use-
   calculating bids for ancestor b211bbc6eb3c
   resolving manifests
   
-  auction for merging merge bids
+  auction for merging merge bids (2 ancestors)
    x: multiple bids for merge action:
     versions differ -> m
     versions differ -> m
@@ -430,7 +430,7 @@ Verify that the old context ancestor works with / despite preferancestor:
    d1/b: other deleted -> r
    d2/b: remote created -> g
   
-  auction for merging merge bids
+  auction for merging merge bids (2 ancestors)
    d1/a: consensus for r
    d1/b: consensus for r
    d2/b: consensus for g

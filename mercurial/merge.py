@@ -1151,7 +1151,10 @@ def calculateupdates(
 
         # Call for bids
         # Pick the best bid for each file
-        repo.ui.note(_(b'\nauction for merging merge bids\n'))
+        repo.ui.note(
+            _(b'\nauction for merging merge bids (%d ancestors)\n')
+            % len(ancestors)
+        )
         mresult = mergeresult()
         for f, bids in sorted(fbids.items()):
             # bids is a mapping from action method to list af actions
