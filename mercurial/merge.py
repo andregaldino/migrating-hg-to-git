@@ -1130,6 +1130,7 @@ def calculateupdates(
         # mapping of following form:
         # {ACTION_X : [info, ..], ACTION_Y : [info, ..]}
         fbids = {}
+        mresult = mergeresult()
         diverge, renamedelete = None, None
         for ancestor in ancestors:
             repo.ui.note(_(b'\ncalculating bids for ancestor %s\n') % ancestor)
@@ -1156,6 +1157,12 @@ def calculateupdates(
             ):
                 renamedelete = mresult1.renamedelete
 
+            # blindly update final mergeresult commitinfo with what we get
+            # from mergeresult object for each ancestor
+            # TODO: some commitinfo depends on what bid merge choose and hence
+            # we will need to make commitinfo also depend on bid merge logic
+            mresult._commitinfo.update(mresult1._commitinfo)
+
             for f, a in mresult1.filemap(sort=True):
                 m, args, msg = a
                 repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m))
@@ -1174,7 +1181,6 @@ def calculateupdates(
             _(b'\nauction for merging merge bids (%d ancestors)\n')
             % len(ancestors)
         )
-        mresult = mergeresult()
         for f, bids in sorted(fbids.items()):
             if repo.ui.debugflag:
                 repo.ui.debug(b" list of bids for %s:\n" % f)
