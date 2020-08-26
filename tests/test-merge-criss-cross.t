@@ -150,7 +150,13 @@ Redo merge with merge.preferancestor="*" to enable bid merge
    f2: remote unchanged -> k
   
   auction for merging merge bids (2 ancestors)
+   list of bids for f1:
+     remote is newer -> g
+     versions differ -> m
    f1: picking 'get' action
+   list of bids for f2:
+     remote unchanged -> k
+     versions differ -> m
    f2: picking 'keep' action
   end of auction
   
@@ -193,7 +199,13 @@ The other way around:
    f2: remote is newer -> g
   
   auction for merging merge bids (2 ancestors)
+   list of bids for f1:
+     remote unchanged -> k
+     versions differ -> m
    f1: picking 'keep' action
+   list of bids for f2:
+     remote is newer -> g
+     versions differ -> m
    f2: picking 'get' action
   end of auction
   
@@ -258,7 +270,13 @@ Verify how the output looks and and how verbose it is:
    f2: remote unchanged -> k
   
   auction for merging merge bids (2 ancestors)
+   list of bids for f1:
+     remote is newer -> g
+     versions differ -> m
    f1: picking 'get' action
+   list of bids for f2:
+     remote unchanged -> k
+     versions differ -> m
    f2: picking 'keep' action
   end of auction
   
@@ -431,8 +449,15 @@ Verify that the old context ancestor works with / despite preferancestor:
    d2/b: remote created -> g
   
   auction for merging merge bids (2 ancestors)
+   list of bids for d1/a:
+     other deleted -> r
    d1/a: consensus for r
+   list of bids for d1/b:
+     other deleted -> r
    d1/b: consensus for r
+   list of bids for d2/b:
+     remote created -> g
+     remote created -> g
    d2/b: consensus for g
   end of auction
   

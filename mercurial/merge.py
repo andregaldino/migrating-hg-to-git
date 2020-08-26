@@ -1157,6 +1157,11 @@ def calculateupdates(
         )
         mresult = mergeresult()
         for f, bids in sorted(fbids.items()):
+            if repo.ui.debugflag:
+                repo.ui.debug(b" list of bids for %s:\n" % f)
+                for m, l in sorted(bids.items()):
+                    for _f, args, msg in l:
+                        repo.ui.debug(b'   %s -> %s\n' % (msg, m))
             # bids is a mapping from action method to list af actions
             # Consensus?
             if len(bids) == 1:  # all bids are the same kind of method
