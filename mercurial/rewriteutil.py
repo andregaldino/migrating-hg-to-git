@@ -21,7 +21,7 @@ from . import (
 )
 
 
-sha1re = re.compile(br'\b[0-9a-f]{6,40}\b')
+NODE_RE = re.compile(br'\b[0-9a-f]{6,64}\b')
 
 
 def precheck(repo, revs, action=b'rewrite'):
@@ -92,10 +92,10 @@ def update_hash_refs(repo, commitmsg, pending=None):
     if not pending:
         pending = {}
     cache = {}
-    sha1s = re.findall(sha1re, commitmsg)
+    hashes = re.findall(NODE_RE, commitmsg)
     unfi = repo.unfiltered()
-    for sha1 in sha1s:
-        fullnode = scmutil.resolvehexnodeidprefix(unfi, sha1)
+    for h in hashes:
+        fullnode = scmutil.resolvehexnodeidprefix(unfi, h)
         if fullnode is None:
             continue
         ctx = unfi[fullnode]
@@ -111,15 +111,15 @@ def update_hash_refs(repo, commitmsg, pending=None):
         # We can't make any assumptions about how to update the hash if the
         # cset in question was split or diverged.
         if len(successors) == 1 and len(successors[0]) == 1:
-            newsha1 = node.hex(successors[0][0])
-            commitmsg = commitmsg.replace(sha1, newsha1[: len(sha1)])
+            newhash = node.hex(successors[0][0])
+            commitmsg = commitmsg.replace(h, newhash[: len(h)])
         else:
             repo.ui.note(
                 _(
                     b'The stale commit message reference to %s could '
                     b'not be updated\n'
                 )
-                % sha1
+                % h
             )
 
     return commitmsg
