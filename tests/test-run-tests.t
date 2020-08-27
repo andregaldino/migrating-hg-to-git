@@ -974,6 +974,25 @@ When using multiple dimensions of "#testcases" in .t files
   python hash seed: * (glob)
   [1]
 
+  $ rt --retest
+  running 5 tests using 1 parallel processes 
+  
+  --- $TESTTMP/test-cases.t
+  +++ $TESTTMP/test-cases.t#b#c.err
+  @@ -6,5 +6,5 @@
+   #endif
+   #if b c
+     $ echo yes
+  -  no
+  +  yes
+   #endif
+  
+  ERROR: test-cases.t#b#c output changed
+  !
+  Failed test-cases.t#b#c: output changed
+  # Ran 5 tests, 4 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
   $ rm test-cases.t#b#c.err
   $ rm test-cases.t
 
