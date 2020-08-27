@@ -844,6 +844,8 @@ Accept the fix
     $ echo 'saved backup bundle to $TESTTMP/foo.hg'
     saved backup bundle to $TESTTMP/*.hg (glob)<
 
+  $ rm test-failure.t
+
 Race condition - test file was modified when test is running
 
   $ TESTRACEDIR=`pwd`
