@@ -456,23 +456,23 @@ def diffrevs(
     label1b = rev1b
     label2 = rev2
 
-    # If only one change, diff the files instead of the directories
-    # Handle bogus modifies correctly by checking if the files exist
-    if len(common) == 1:
-        common_file = util.localpath(common.pop())
-        dir1a = os.path.join(tmproot, dir1a, common_file)
-        label1a = common_file + rev1a
-        if not os.path.isfile(dir1a):
-            dir1a = pycompat.osdevnull
-        if do3way:
-            dir1b = os.path.join(tmproot, dir1b, common_file)
-            label1b = common_file + rev1b
-            if not os.path.isfile(dir1b):
-                dir1b = pycompat.osdevnull
-        dir2 = os.path.join(dir2root, dir2, common_file)
-        label2 = common_file + rev2
-
     if not opts.get(b'per_file'):
+        # If only one change, diff the files instead of the directories
+        # Handle bogus modifies correctly by checking if the files exist
+        if len(common) == 1:
+            common_file = util.localpath(common.pop())
+            dir1a = os.path.join(tmproot, dir1a, common_file)
+            label1a = common_file + rev1a
+            if not os.path.isfile(dir1a):
+                dir1a = pycompat.osdevnull
+            if do3way:
+                dir1b = os.path.join(tmproot, dir1b, common_file)
+                label1b = common_file + rev1b
+                if not os.path.isfile(dir1b):
+                    dir1b = pycompat.osdevnull
+            dir2 = os.path.join(dir2root, dir2, common_file)
+            label2 = common_file + rev2
+
         # Run the external tool on the 2 temp directories or the patches
         cmdline = formatcmdline(
             cmdline,
