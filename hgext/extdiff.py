@@ -267,7 +267,7 @@ def _runperfilediff(
     waitprocs = []
     totalfiles = len(commonfiles)
     for idx, commonfile in enumerate(sorted(commonfiles)):
-        path1a = os.path.join(tmproot, dir1a, commonfile)
+        path1a = os.path.join(dir1a, commonfile)
         label1a = commonfile + rev1a
         if not os.path.isfile(path1a):
             path1a = pycompat.osdevnull
@@ -275,7 +275,7 @@ def _runperfilediff(
         path1b = b''
         label1b = b''
         if do3way:
-            path1b = os.path.join(tmproot, dir1b, commonfile)
+            path1b = os.path.join(dir1b, commonfile)
             label1b = commonfile + rev1b
             if not os.path.isfile(path1b):
                 path1b = pycompat.osdevnull
@@ -499,8 +499,8 @@ def diffrevs(
             confirm=opts.get(b'confirm'),
             commonfiles=common,
             tmproot=tmproot,
-            dir1a=dir1a,
-            dir1b=dir1b,
+            dir1a=os.path.join(tmproot, dir1a),
+            dir1b=os.path.join(tmproot, dir1b) if do3way else None,
             dir2root=dir2root,
             dir2=dir2,
             rev1a=rev1a,
