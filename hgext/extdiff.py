@@ -255,7 +255,6 @@ def _runperfilediff(
     tmproot,
     dir1a,
     dir1b,
-    dir2root,
     dir2,
     rev1a,
     rev1b,
@@ -280,7 +279,7 @@ def _runperfilediff(
             if not os.path.isfile(path1b):
                 path1b = pycompat.osdevnull
 
-        path2 = os.path.join(dir2root, dir2, commonfile)
+        path2 = os.path.join(dir2, commonfile)
         label2 = commonfile + rev2
 
         if confirm:
@@ -501,8 +500,7 @@ def diffrevs(
             tmproot=tmproot,
             dir1a=os.path.join(tmproot, dir1a),
             dir1b=os.path.join(tmproot, dir1b) if do3way else None,
-            dir2root=dir2root,
-            dir2=dir2,
+            dir2=os.path.join(dir2root, dir2),
             rev1a=rev1a,
             rev1b=rev1b,
             rev2=rev2,
