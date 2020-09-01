@@ -6,9 +6,14 @@ import os
 import subprocess
 import sys
 
-# Always load hg libraries from the hg we can find on $PATH.
-hglib = subprocess.check_output(['hg', 'debuginstall', '-T', '{hgmodules}'])
-sys.path.insert(0, os.path.dirname(hglib))
+try:
+    # Always load hg libraries from the hg we can find on $PATH.
+    hglib = subprocess.check_output(['hg', 'debuginstall', '-T', '{hgmodules}'])
+    sys.path.insert(0, os.path.dirname(hglib))
+except subprocess.CalledProcessError:
+    # We're probably running with a PyOxidized Mercurial, so just
+    # proceed and hope it works out okay.
+    pass
 
 from mercurial import util
 
