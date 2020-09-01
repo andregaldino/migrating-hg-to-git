@@ -1964,10 +1964,7 @@ def handlechangegroup(op, inpart):
     nbchangesets = None
     if b'nbchanges' in inpart.params:
         nbchangesets = int(inpart.params.get(b'nbchanges'))
-    if (
-        b'treemanifest' in inpart.params
-        and requirements.TREEMANIFEST_REQUIREMENT not in op.repo.requirements
-    ):
+    if b'treemanifest' in inpart.params and not scmutil.istreemanifest(op.repo):
         if len(op.repo.changelog) != 0:
             raise error.Abort(
                 _(
@@ -2577,7 +2574,7 @@ def widen_bundle(
 
         part = bundler.newpart(b'changegroup', data=cgdata)
         part.addparam(b'version', cgversion)
-        if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
+        if scmutil.istreemanifest(repo):
             part.addparam(b'treemanifest', b'1')
         if b'exp-sidedata-flag' in repo.requirements:
             part.addparam(b'exp-sidedata', b'1')

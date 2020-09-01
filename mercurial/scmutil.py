@@ -1492,6 +1492,11 @@ def filterrequirements(requirements):
     return requirements, None
 
 
+def istreemanifest(repo):
+    """ returns whether the repository is using treemanifest or not """
+    return requirementsmod.TREEMANIFEST_REQUIREMENT in repo.requirements
+
+
 def writereporequirements(repo, requirements=None):
     """ writes requirements for the repo to .hg/requires """
     if requirements:

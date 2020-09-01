@@ -108,7 +108,7 @@ def generateellipsesbundle2(
 
         part = bundler.newpart(b'changegroup', data=cgdata)
         part.addparam(b'version', version)
-        if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
+        if scmutil.istreemanifest(repo):
             part.addparam(b'treemanifest', b'1')
 
 
@@ -163,7 +163,7 @@ def generate_ellipses_bundle2_for_widening(
 
         part = bundler.newpart(b'changegroup', data=cgdata)
         part.addparam(b'version', version)
-        if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
+        if scmutil.istreemanifest(repo):
             part.addparam(b'treemanifest', b'1')
 
 

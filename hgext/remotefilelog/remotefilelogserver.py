@@ -23,7 +23,7 @@ from mercurial import (
     extensions,
     match,
     pycompat,
-    requirements,
+    scmutil,
     store,
     streamclone,
     util,
@@ -170,7 +170,7 @@ def onetimesetup(ui):
                         if kind == stat.S_IFDIR:
                             visit.append(fp)
 
-            if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
+            if scmutil.istreemanifest(repo):
                 for (u, e, s) in repo.store.datafiles():
                     if u.startswith(b'meta/') and (
                         u.endswith(b'.i') or u.endswith(b'.d')

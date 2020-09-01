@@ -27,6 +27,7 @@ from . import (
     phases,
     pycompat,
     requirements,
+    scmutil,
     util,
 )
 
@@ -949,9 +950,7 @@ class cgpacker(object):
         # Treemanifests don't work correctly with fastpathlinkrev
         # either, because we don't discover which directory nodes to
         # send along with files. This could probably be fixed.
-        fastpathlinkrev = fastpathlinkrev and (
-            requirements.TREEMANIFEST_REQUIREMENT not in repo.requirements
-        )
+        fastpathlinkrev = fastpathlinkrev and not scmutil.istreemanifest(repo)
 
         fnodes = {}  # needed file nodes
 
@@ -1468,7 +1467,7 @@ def allsupportedversions(repo):
     if (
         repo.ui.configbool(b'experimental', b'changegroup3')
         or repo.ui.configbool(b'experimental', b'treemanifest')
-        or requirements.TREEMANIFEST_REQUIREMENT in repo.requirements
+        or scmutil.istreemanifest(repo)
     ):
         # we keep version 03 because we need to to exchange treemanifest data
         #
@@ -1496,7 +1495,7 @@ def supportedincomingversions(repo):
 # Changegroup versions that can be created from the repo
 def supportedoutgoingversions(repo):
     versions = allsupportedversions(repo)
-    if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
+    if scmutil.istreemanifest(repo):
         # Versions 01 and 02 support only flat manifests and it's just too
         # expensive to convert between the flat manifest and tree manifest on
         # the fly. Since tree manifests are hashed differently, all of history

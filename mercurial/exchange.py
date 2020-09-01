@@ -1068,7 +1068,7 @@ def _pushb2ctx(pushop, bundler):
     cgpart = bundler.newpart(b'changegroup', data=cgstream)
     if cgversions:
         cgpart.addparam(b'version', version)
-    if requirements.TREEMANIFEST_REQUIREMENT in pushop.repo.requirements:
+    if scmutil.istreemanifest(pushop.repo):
         cgpart.addparam(b'treemanifest', b'1')
     if b'exp-sidedata-flag' in pushop.repo.requirements:
         cgpart.addparam(b'exp-sidedata', b'1')
@@ -2557,7 +2557,7 @@ def _getbundlechangegrouppart(
 
     part.addparam(b'nbchanges', b'%d' % len(outgoing.missing), mandatory=False)
 
-    if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
+    if scmutil.istreemanifest(repo):
         part.addparam(b'treemanifest', b'1')
 
     if b'exp-sidedata-flag' in repo.requirements:
