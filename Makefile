@@ -15,6 +15,8 @@ else
 PYTHON?=python3
 endif
 
+PYOXIDIZER?=pyoxidizer
+
 $(eval HGROOT := $(shell pwd))
 HGPYTHONS ?= $(HGROOT)/build/pythons
 PURE=
@@ -259,9 +261,12 @@ osx:
 	  --resources contrib/packaging/macosx/ \
 	  "$${OUTPUTDIR:-dist/}"/Mercurial-"$${HGVER}"-macosx"$${OSXVER}".pkg
 
+pyoxidizer:
+	$(PYOXIDIZER) build --path ./rust/hgcli --release
+
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
 	install-doc install-home install-home-bin install-home-doc \
 	dist dist-notests check tests rust-tests check-code format-c \
-	update-pot \
+	update-pot pyoxidizer \
 	$(packaging_targets) \
 	osx
