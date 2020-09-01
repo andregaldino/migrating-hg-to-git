@@ -563,7 +563,10 @@ class mergeresult(object):
     It has information about what actions need to be performed on dirstate
     mapping of divergent renames and other such cases. '''
 
-    NO_OP_ACTIONS = (mergestatemod.ACTION_KEEP,)
+    NO_OP_ACTIONS = (
+        mergestatemod.ACTION_KEEP,
+        mergestatemod.ACTION_KEEP_ABSENT,
+    )
 
     def __init__(self):
         """
@@ -1176,6 +1179,11 @@ def calculateupdates(
                 repo.ui.note(_(b" %s: picking 'keep' action\n") % f)
                 mresult.addfile(f, *bids[mergestatemod.ACTION_KEEP][0])
                 continue
+            # If keep absent is an option, just do that
+            if mergestatemod.ACTION_KEEP_ABSENT in bids:
+                repo.ui.note(_(b" %s: picking 'keep absent' action\n") % f)
+                mresult.addfile(f, *bids[mergestatemod.ACTION_KEEP_ABSENT][0])
+                continue
             # If there are gets and they all agree [how could they not?], do it.
             if mergestatemod.ACTION_GET in bids:
                 ga0 = bids[mergestatemod.ACTION_GET][0]
@@ -1529,6 +1537,11 @@ def applyupdates(
         (mergestatemod.ACTION_KEEP,), sort=True
     ):
         repo.ui.debug(b" %s: %s -> k\n" % (f, msg))
+        # no progress
+    for f, args, msg in mresult.getactions(
+        (mergestatemod.ACTION_KEEP_ABSENT,), sort=True
+    ):
+        repo.ui.debug(b" %s: %s -> ka\n" % (f, msg))
         # no progress
 
     # directory rename, move local

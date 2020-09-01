@@ -120,6 +120,10 @@ ACTION_MERGE = b'm'
 ACTION_LOCAL_DIR_RENAME_GET = b'dg'
 ACTION_DIR_RENAME_MOVE_LOCAL = b'dm'
 ACTION_KEEP = b'k'
+# the file was absent on local side before merge and we should
+# keep it absent (absent means file not present, it can be a result
+# of file deletion, rename etc.)
+ACTION_KEEP_ABSENT = b'ka'
 ACTION_EXEC = b'e'
 ACTION_CREATED_MERGE = b'cm'
 
@@ -835,6 +839,10 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
 
     # keep
     for f, args, msg in actions.get(ACTION_KEEP, []):
+        pass
+
+    # keep deleted
+    for f, args, msg in actions.get(ACTION_KEEP_ABSENT, []):
         pass
 
     # get
