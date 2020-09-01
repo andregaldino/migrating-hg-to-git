@@ -542,7 +542,11 @@ class HTTPResponse(httplib.HTTPResponse):
             return line
 
         # No newline in local buffer. Read until we find one.
-        chunks = [self._rbuf]
+        # readinto read via readinto will already return _rbuf
+        if self._raw_readinto is None:
+            chunks = [self._rbuf]
+        else:
+            chunks = []
         i = -1
         readsize = self._rbufsize
         while True:
