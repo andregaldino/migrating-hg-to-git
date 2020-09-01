@@ -232,7 +232,7 @@ from mercurial import util
 # Unlike the import statement, __import__() function should not raise
 # ImportError even if fromlist has an unknown item
 # (see Python/import.c:import_module_level() and ensure_fromlist())
-assert 'zipfile' not in sys.modules
-zipfileimp = __import__('zipfile', globals(), locals(), ['unknownattr'])
-assert f(zipfileimp) == "<module 'zipfile' from '?'>", f(zipfileimp)
+assert 'ftplib' not in sys.modules
+zipfileimp = __import__('ftplib', globals(), locals(), ['unknownattr'])
+assert f(zipfileimp) == "<module 'ftplib' from '?'>", f(zipfileimp)
 assert not util.safehasattr(zipfileimp, 'unknownattr')
