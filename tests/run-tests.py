@@ -3248,15 +3248,7 @@ class TestRunner(object):
         if self.options.retest:
             retest_args = []
             for test in tests:
-                if 'case' in test:
-                    # for multiple dimensions test cases
-                    casestr = b'#'.join(test['case'])
-                    errpath = b'%s#%s.err' % (test['path'], casestr)
-                else:
-                    errpath = b'%s.err' % test['path']
-                if self.options.outputdir:
-                    errpath = os.path.join(self.options.outputdir, errpath)
-
+                errpath = self._geterrpath(test)
                 if os.path.exists(errpath):
                     retest_args.append(test)
             tests = retest_args
@@ -3276,13 +3268,7 @@ class TestRunner(object):
                 orig = list(testdescs)
                 while testdescs:
                     desc = testdescs[0]
-                    # desc['path'] is a relative path
-                    if 'case' in desc:
-                        casestr = b'#'.join(desc['case'])
-                        errpath = b'%s#%s.err' % (desc['path'], casestr)
-                    else:
-                        errpath = b'%s.err' % desc['path']
-                    errpath = os.path.join(self._outputdir, errpath)
+                    errpath = self._geterrpath(desc)
                     if os.path.exists(errpath):
                         break
                     testdescs.pop(0)
@@ -3351,6 +3337,18 @@ class TestRunner(object):
 
         if failed:
             return 1
+
+    def _geterrpath(self, test):
+        # test['path'] is a relative path
+        if 'case' in test:
+            # for multiple dimensions test cases
+            casestr = b'#'.join(test['case'])
+            errpath = b'%s#%s.err' % (test['path'], casestr)
+        else:
+            errpath = b'%s.err' % test['path']
+        if self.options.outputdir:
+            errpath = os.path.join(self.options.outputdir, errpath)
+        return errpath
 
     def _getport(self, count):
         port = self._ports.get(count)  # do we have a cached entry?
