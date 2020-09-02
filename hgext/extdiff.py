@@ -711,6 +711,8 @@ class savedcmd(object):
 
 def uisetup(ui):
     for cmd, path in ui.configitems(b'extdiff'):
+        if cmd.startswith(b'opts.') or cmd.startswith(b'gui.'):
+            continue
         path = util.expandpath(path)
         if cmd.startswith(b'cmd.'):
             cmd = cmd[4:]
@@ -723,8 +725,6 @@ def uisetup(ui):
             if diffopts:
                 cmdline += b' ' + diffopts
             isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
-        elif cmd.startswith(b'opts.') or cmd.startswith(b'gui.'):
-            continue
         else:
             if path:
                 # case "cmd = path opts"
