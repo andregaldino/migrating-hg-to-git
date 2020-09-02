@@ -709,45 +709,67 @@ class savedcmd(object):
         )
 
 
+def _gettooldetails(ui, cmd, path):
+    """
+    returns following things for a
+    ```
+    [extdiff]
+    <cmd> = <path>
+    ```
+    entry:
+
+    cmd: command/tool name
+    path: path to the tool
+    cmdline: the command which should be run
+    isgui: whether the tool uses GUI or not
+
+    Reads all external tools related configs, whether it be extdiff section,
+    diff-tools or merge-tools section, or its specified in an old format or
+    the latest format.
+    """
+    path = util.expandpath(path)
+    if cmd.startswith(b'cmd.'):
+        cmd = cmd[4:]
+        if not path:
+            path = procutil.findexe(cmd)
+            if path is None:
+                path = filemerge.findexternaltool(ui, cmd) or cmd
+        diffopts = ui.config(b'extdiff', b'opts.' + cmd)
+        cmdline = procutil.shellquote(path)
+        if diffopts:
+            cmdline += b' ' + diffopts
+        isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
+    else:
+        if path:
+            # case "cmd = path opts"
+            cmdline = path
+            diffopts = len(pycompat.shlexsplit(cmdline)) > 1
+        else:
+            # case "cmd ="
+            path = procutil.findexe(cmd)
+            if path is None:
+                path = filemerge.findexternaltool(ui, cmd) or cmd
+            cmdline = procutil.shellquote(path)
+            diffopts = False
+        isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
+    # look for diff arguments in [diff-tools] then [merge-tools]
+    if not diffopts:
+        key = cmd + b'.diffargs'
+        for section in (b'diff-tools', b'merge-tools'):
+            args = ui.config(section, key)
+            if args:
+                cmdline += b' ' + args
+                if isgui is None:
+                    isgui = ui.configbool(section, cmd + b'.gui') or False
+                break
+    return cmd, path, cmdline, isgui
+
+
 def uisetup(ui):
     for cmd, path in ui.configitems(b'extdiff'):
         if cmd.startswith(b'opts.') or cmd.startswith(b'gui.'):
             continue
-        path = util.expandpath(path)
-        if cmd.startswith(b'cmd.'):
-            cmd = cmd[4:]
-            if not path:
-                path = procutil.findexe(cmd)
-                if path is None:
-                    path = filemerge.findexternaltool(ui, cmd) or cmd
-            diffopts = ui.config(b'extdiff', b'opts.' + cmd)
-            cmdline = procutil.shellquote(path)
-            if diffopts:
-                cmdline += b' ' + diffopts
-            isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
-        else:
-            if path:
-                # case "cmd = path opts"
-                cmdline = path
-                diffopts = len(pycompat.shlexsplit(cmdline)) > 1
-            else:
-                # case "cmd ="
-                path = procutil.findexe(cmd)
-                if path is None:
-                    path = filemerge.findexternaltool(ui, cmd) or cmd
-                cmdline = procutil.shellquote(path)
-                diffopts = False
-            isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
-        # look for diff arguments in [diff-tools] then [merge-tools]
-        if not diffopts:
-            key = cmd + b'.diffargs'
-            for section in (b'diff-tools', b'merge-tools'):
-                args = ui.config(section, key)
-                if args:
-                    cmdline += b' ' + args
-                    if isgui is None:
-                        isgui = ui.configbool(section, cmd + b'.gui') or False
-                    break
+        cmd, path, cmdline, isgui = _gettooldetails(ui, cmd, path)
         command(
             cmd,
             extdiffopts[:],
