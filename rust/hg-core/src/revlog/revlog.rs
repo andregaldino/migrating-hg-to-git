@@ -5,12 +5,15 @@ use std::ops::Deref;
 use std::path::Path;
 
 use byteorder::{BigEndian, ByteOrder};
+use crypto::digest::Digest;
+use crypto::sha1::Sha1;
 use flate2::read::ZlibDecoder;
 use memmap::{Mmap, MmapOptions};
 use micro_timer::timed;
 use zstd;
 
 use super::index::Index;
+use super::node::{NODE_BYTES_LENGTH, NULL_NODE_ID};
 use super::patch;
 use crate::revlog::Revision;
 
@@ -93,11 +96,50 @@ impl Revlog {
                 .map_err(|_| RevlogError::Corrupted)?;
         }
 
-        if delta_chain.is_empty() {
-            Ok(entry.data()?.into())
+        // TODO do not look twice in the index
+        let index = self.index();
+        let index_entry =
+            index.get_entry(rev).ok_or(RevlogError::InvalidRevision)?;
+
+        let data: Vec<u8> = if delta_chain.is_empty() {
+            entry.data()?.into()
         } else {
-            Revlog::build_data_from_deltas(entry, &delta_chain)
+            Revlog::build_data_from_deltas(entry, &delta_chain)?
+        };
+
+        if self.check_hash(
+            index_entry.p1(),
+            index_entry.p2(),
+            index_entry.hash(),
+            &data,
+        ) {
+            Ok(data)
+        } else {
+            Err(RevlogError::Corrupted)
         }
+    }
+
+    /// Check the hash of some given data against the recorded hash.
+    pub fn check_hash(
+        &self,
+        p1: Revision,
+        p2: Revision,
+        expected: &[u8],
+        data: &[u8],
+    ) -> bool {
+        let index = self.index();
+        let e1 = index.get_entry(p1);
+        let h1 = match e1 {
+            Some(ref entry) => entry.hash(),
+            None => &NULL_NODE_ID,
+        };
+        let e2 = index.get_entry(p2);
+        let h2 = match e2 {
+            Some(ref entry) => entry.hash(),
+            None => &NULL_NODE_ID,
+        };
+
+        hash(data, &h1, &h2).as_slice() == expected
     }
 
     /// Build the full data of a revision out its snapshot
@@ -232,6 +274,23 @@ pub fn is_inline(index_bytes: &[u8]) -> bool {
 /// Format version of the revlog.
 pub fn get_version(index_bytes: &[u8]) -> u16 {
     BigEndian::read_u16(&index_bytes[2..=3])
+}
+
+/// Calculate the hash of a revision given its data and its parents.
+fn hash(data: &[u8], p1_hash: &[u8], p2_hash: &[u8]) -> Vec<u8> {
+    let mut hasher = Sha1::new();
+    let (a, b) = (p1_hash, p2_hash);
+    if a > b {
+        hasher.input(b);
+        hasher.input(a);
+    } else {
+        hasher.input(a);
+        hasher.input(b);
+    }
+    hasher.input(data);
+    let mut hash = vec![0; NODE_BYTES_LENGTH];
+    hasher.result(&mut hash);
+    hash
 }
 
 #[cfg(test)]

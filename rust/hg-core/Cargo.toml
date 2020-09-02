@@ -25,6 +25,7 @@ micro-timer = "0.3.0"
 log = "0.4.8"
 memmap = "0.7.0"
 zstd = "0.5.3"
+rust-crypto = "0.2.36"
 
 # We don't use the `miniz-oxide` backend because its minimum Rust version is
 # `1.36`. However, this PR (https://github.com/Frommi/miniz_oxide/pull/84/files)

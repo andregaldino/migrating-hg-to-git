@@ -1,5 +1,6 @@
-use crate::revlog::{Revision, NULL_REVISION};
 use byteorder::{BigEndian, ByteOrder};
+
+use crate::revlog::{Revision, NULL_REVISION};
 
 pub const INDEX_ENTRY_SIZE: usize = 64;
 
@@ -140,6 +141,22 @@ impl<'a> IndexEntry<'a> {
         //      Requires to add rev to IndexEntry
 
         BigEndian::read_i32(&self.bytes[16..])
+    }
+
+    pub fn p1(&self) -> Revision {
+        BigEndian::read_i32(&self.bytes[24..])
+    }
+
+    pub fn p2(&self) -> Revision {
+        BigEndian::read_i32(&self.bytes[28..])
+    }
+
+    /// Return the hash of revision's full text.
+    ///
+    /// Currently, SHA-1 is used and only the first 20 bytes of this field
+    /// are used.
+    pub fn hash(&self) -> &[u8] {
+        &self.bytes[32..52]
     }
 }
 

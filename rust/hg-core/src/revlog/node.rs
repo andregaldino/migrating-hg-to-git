@@ -16,7 +16,12 @@ use hex::{self, FromHex, FromHexError};
 /// are private so that calling code does not expect all nodes have
 /// the same size, should we support several formats concurrently in
 /// the future.
-const NODE_BYTES_LENGTH: usize = 20;
+pub const NODE_BYTES_LENGTH: usize = 20;
+
+/// Id of the null node.
+///
+/// Used to indicate the absence of node.
+pub const NULL_NODE_ID: [u8; NODE_BYTES_LENGTH] = [0u8; NODE_BYTES_LENGTH];
 
 /// The length in bytes of a `Node`
 ///

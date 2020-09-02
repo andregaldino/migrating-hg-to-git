@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::revlog::node::NULL_NODE_ID;
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState, SIZE_FROM_OTHER_PARENT},
     pack_dirstate, parse_dirstate,
@@ -24,7 +25,6 @@ use std::time::Duration;
 
 pub type FileFoldMap = FastHashMap<HgPathBuf, HgPathBuf>;
 
-const NULL_ID: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
 
 #[derive(Default)]
@@ -72,8 +72,8 @@ impl DirstateMap {
         self.non_normal_set = None;
         self.other_parent_set = None;
         self.set_parents(&DirstateParents {
-            p1: NULL_ID,
-            p2: NULL_ID,
+            p1: NULL_NODE_ID,
+            p2: NULL_NODE_ID,
         })
     }
 
@@ -340,8 +340,8 @@ impl DirstateMap {
             };
         } else if file_contents.is_empty() {
             parents = DirstateParents {
-                p1: NULL_ID,
-                p2: NULL_ID,
+                p1: NULL_NODE_ID,
+                p2: NULL_NODE_ID,
             };
         } else {
             return Err(DirstateError::Parse(DirstateParseError::Damaged));
