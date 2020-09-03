@@ -534,6 +534,10 @@ Do all the merge combination (from the deleted or the update side × keeping and
   $ hg ci -m "merge-deleting-the-file-from-deleted"
   $ hg manifest
   other-file
+  $ hg debugrevlogindex the-file
+     rev linkrev nodeid       p1           p2
+       0       0 4b69178b9bda 000000000000 000000000000
+       1       1 59e363a07dc8 4b69178b9bda 000000000000
 
   $ hg update 'desc("updating-both-file")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -544,6 +548,10 @@ Do all the merge combination (from the deleted or the update side × keeping and
   created new head
   $ hg manifest
   other-file
+  $ hg debugrevlogindex the-file
+     rev linkrev nodeid       p1           p2
+       0       0 4b69178b9bda 000000000000 000000000000
+       1       1 59e363a07dc8 4b69178b9bda 000000000000
 
   $ hg update 'desc("delete-the-file")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -556,6 +564,15 @@ Do all the merge combination (from the deleted or the update side × keeping and
   other-file
   the-file
 
+XXX: This should create a new filenode because user explicitly decided to keep
+the file. If we reuse the same filenode, future merges (criss-cross ones mostly)
+will think that file remain unchanged and user explicit choice will not be taken
+in consideration.
+  $ hg debugrevlogindex the-file
+     rev linkrev nodeid       p1           p2
+       0       0 4b69178b9bda 000000000000 000000000000
+       1       1 59e363a07dc8 4b69178b9bda 000000000000
+
   $ hg update 'desc("updating-both-file")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("delete-the-file")' -t :local
@@ -566,6 +583,31 @@ Do all the merge combination (from the deleted or the update side × keeping and
   $ hg manifest
   other-file
   the-file
+
+XXX: This should create a new filenode because user explicitly decided to keep
+the file. If we reuse the same filenode, future merges (criss-cross ones mostly)
+will think that file remain unchanged and user explicit choice will not be taken
+in consideration.
+  $ hg debugrevlogindex the-file
+     rev linkrev nodeid       p1           p2
+       0       0 4b69178b9bda 000000000000 000000000000
+       1       1 59e363a07dc8 4b69178b9bda 000000000000
+
+  $ hg log -G -T '{node|short} {desc}\n'
+  @    5e3eccec60d8 merge-keeping-the-file-from-updated
+  |\
+  +---o  e9b708131723 merge-keeping-the-file-from-deleted
+  | |/
+  +---o  a4e0e44229dc merge-deleting-the-file-from-updated
+  | |/
+  +---o  adfd88e5d7d3 merge-deleting-the-file-from-deleted
+  | |/
+  | o  7801bc9b9899 delete-the-file
+  | |
+  o |  9b610631ab29 updating-both-file
+  |/
+  o  955800955977 root-commit
+  
 
 There the resulting merge together (leading to criss cross situation). Check
 the conflict is properly detected.
