@@ -2062,7 +2062,7 @@ def debugmergestate(ui, repo, *args, **opts):
                 fm_files.data(renamed_path=state[1])
                 fm_files.data(rename_side=state[2])
             fm_extras = fm_files.nested(b'extras')
-            for k, v in ms.extras(f).items():
+            for k, v in sorted(ms.extras(f).items()):
                 fm_extras.startitem()
                 fm_extras.data(key=k)
                 fm_extras.data(value=v)
