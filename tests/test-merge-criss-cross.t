@@ -78,9 +78,9 @@ Criss cross merging
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 0f6b37dbe527, local: 3b08d01b0ab5+, remote: adfe50279922
-   preserving f2 for resolve of f2
    f1: remote is newer -> g
   getting f1
+   preserving f2 for resolve of f2
    f2: versions differ -> m (premerge)
   picked tool ':dump' for f2 (binary False symlink False changedelete False)
   merging f2

@@ -1407,49 +1407,6 @@ def applyupdates(
         # mergestate so that it can be reused on commit
         ms.addcommitinfo(f, op)
 
-    moves = []
-
-    # 'cd' and 'dc' actions are treated like other merge conflicts
-    mergeactions = list(
-        mresult.getactions(
-            [
-                mergestatemod.ACTION_CHANGED_DELETED,
-                mergestatemod.ACTION_DELETED_CHANGED,
-                mergestatemod.ACTION_MERGE,
-            ],
-            sort=True,
-        )
-    )
-    for f, args, msg in mergeactions:
-        f1, f2, fa, move, anc = args
-        if f == b'.hgsubstate':  # merged internally
-            continue
-        if f1 is None:
-            fcl = filemerge.absentfilectx(wctx, fa)
-        else:
-            repo.ui.debug(b" preserving %s for resolve of %s\n" % (f1, f))
-            fcl = wctx[f1]
-        if f2 is None:
-            fco = filemerge.absentfilectx(mctx, fa)
-        else:
-            fco = mctx[f2]
-        actx = repo[anc]
-        if fa in actx:
-            fca = actx[fa]
-        else:
-            # TODO: move to absentfilectx
-            fca = repo.filectx(f1, fileid=nullrev)
-        ms.add(fcl, fco, fca, f)
-        if f1 != f and move:
-            moves.append(f1)
-
-    # remove renamed files after safely stored
-    for f in moves:
-        if wctx[f].lexists():
-            repo.ui.debug(b"removing %s\n" % f)
-            wctx[f].audit()
-            wctx[f].remove()
-
     numupdates = mresult.len() - mresult.len(mergeresult.NO_OP_ACTIONS)
     progress = repo.ui.makeprogress(
         _(b'updating'), unit=_(b'files'), total=numupdates
@@ -1596,6 +1553,49 @@ def applyupdates(
         (flags,) = args
         wctx[f].audit()
         wctx[f].setflags(b'l' in flags, b'x' in flags)
+
+    moves = []
+
+    # 'cd' and 'dc' actions are treated like other merge conflicts
+    mergeactions = list(
+        mresult.getactions(
+            [
+                mergestatemod.ACTION_CHANGED_DELETED,
+                mergestatemod.ACTION_DELETED_CHANGED,
+                mergestatemod.ACTION_MERGE,
+            ],
+            sort=True,
+        )
+    )
+    for f, args, msg in mergeactions:
+        f1, f2, fa, move, anc = args
+        if f == b'.hgsubstate':  # merged internally
+            continue
+        if f1 is None:
+            fcl = filemerge.absentfilectx(wctx, fa)
+        else:
+            repo.ui.debug(b" preserving %s for resolve of %s\n" % (f1, f))
+            fcl = wctx[f1]
+        if f2 is None:
+            fco = filemerge.absentfilectx(mctx, fa)
+        else:
+            fco = mctx[f2]
+        actx = repo[anc]
+        if fa in actx:
+            fca = actx[fa]
+        else:
+            # TODO: move to absentfilectx
+            fca = repo.filectx(f1, fileid=nullrev)
+        ms.add(fcl, fco, fca, f)
+        if f1 != f and move:
+            moves.append(f1)
+
+    # remove renamed files after safely stored
+    for f in moves:
+        if wctx[f].lexists():
+            repo.ui.debug(b"removing %s\n" % f)
+            wctx[f].audit()
+            wctx[f].remove()
 
     # these actions updates the file
     updated = mresult.len(

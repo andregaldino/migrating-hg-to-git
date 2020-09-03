@@ -43,9 +43,9 @@
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: c19d34741b0a, local: c19d34741b0a+, remote: 1e71731e6fbb
-   preserving a for resolve of a
    b: remote created -> g
   getting b
+   preserving a for resolve of a
    a: versions differ -> m (premerge)
   picked tool 'true' for a (binary False symlink False changedelete False)
   merging a
@@ -68,9 +68,9 @@
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 1e71731e6fbb, local: 1e71731e6fbb+, remote: c19d34741b0a
-   preserving a for resolve of a
    b: other deleted -> r
   removing b
+   preserving a for resolve of a
   starting 4 threads for background file closing (?)
    a: versions differ -> m (premerge)
   picked tool 'true' for a (binary False symlink False changedelete False)
@@ -92,9 +92,9 @@
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: c19d34741b0a, local: c19d34741b0a+, remote: 1e71731e6fbb
-   preserving a for resolve of a
    b: remote created -> g
   getting b
+   preserving a for resolve of a
    a: versions differ -> m (premerge)
   picked tool 'true' for a (binary False symlink False changedelete False)
   merging a
