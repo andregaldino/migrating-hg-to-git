@@ -909,6 +909,10 @@ def manifestmerge(
                             (f, None, f, False, pa.node()),
                             b'prompt changed/deleted',
                         )
+                        if branchmerge:
+                            mresult.addcommitinfo(
+                                f, b'merge-removal-candidate', b'yes'
+                            )
                 elif n1 == addednodeid:
                     # This file was locally added. We should forget it instead of
                     # deleting it.
@@ -1018,6 +1022,10 @@ def manifestmerge(
                         (None, f, f, False, pa.node()),
                         b'prompt deleted/changed',
                     )
+                    if branchmerge:
+                        mresult.addcommitinfo(
+                            f, b'merge-removal-candidate', b'yes'
+                        )
             else:
                 mresult.addfile(
                     f,

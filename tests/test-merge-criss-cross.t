@@ -539,6 +539,7 @@ Do all the merge combination (from the deleted or the update side × keeping and
     ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
     other path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
+    extra: merge-removal-candidate = yes
   extra: other-file (filenode-source = other)
   $ hg ci -m "merge-deleting-the-file-from-deleted"
   $ hg manifest
@@ -561,6 +562,7 @@ Do all the merge combination (from the deleted or the update side × keeping and
     ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
     other path: the-file (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
+    extra: merge-removal-candidate = yes
   $ hg ci -m "merge-deleting-the-file-from-updated"
   created new head
   $ hg manifest
@@ -583,6 +585,7 @@ Do all the merge combination (from the deleted or the update side × keeping and
     ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
     other path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
+    extra: merge-removal-candidate = yes
   extra: other-file (filenode-source = other)
   $ hg ci -m "merge-keeping-the-file-from-deleted"
   created new head
@@ -612,6 +615,7 @@ in consideration.
     ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
     other path: the-file (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
+    extra: merge-removal-candidate = yes
   $ hg ci -m "merge-keeping-the-file-from-updated"
   created new head
   $ hg manifest
