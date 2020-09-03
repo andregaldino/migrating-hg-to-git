@@ -332,9 +332,20 @@ def _filecommit(
             ):
                 fparent1, fparent2 = fparent2, nullid
 
+    force_new_node = False
+    # The file might have been deleted by merge code and user explicitly choose
+    # to revert the file and keep it. The other case can be where there is
+    # change-delete or delete-change conflict and user explicitly choose to keep
+    # the file. The goal is to create a new filenode for users explicit choices
+    if (
+        repo.ui.configbool(b'experimental', b'merge-track-salvaged')
+        and ms.active()
+        and ms.extras(fname).get(b'merge-removal-candidate') == b'yes'
+    ):
+        force_new_node = True
     # is the file changed?
     text = fctx.data()
-    if fparent2 != nullid or meta or flog.cmp(fparent1, text):
+    if fparent2 != nullid or meta or flog.cmp(fparent1, text) or force_new_node:
         if touched is None:  # do not overwrite added
             touched = 'modified'
         fnode = flog.add(text, meta, tr, linkrev, fparent1, fparent2)

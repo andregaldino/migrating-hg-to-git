@@ -593,17 +593,15 @@ Do all the merge combination (from the deleted or the update side × keeping and
   other-file
   the-file
 
-XXX: This should create a new filenode because user explicitly decided to keep
-the file. If we reuse the same filenode, future merges (criss-cross ones mostly)
-will think that file remain unchanged and user explicit choice will not be taken
-in consideration.
   $ hg debugrevlogindex the-file
      rev linkrev nodeid       p1           p2
        0       0 4b69178b9bda 000000000000 000000000000
        1       1 59e363a07dc8 4b69178b9bda 000000000000
+       2       5 885af55420b3 59e363a07dc8 000000000000 (newfilenode !)
 
   $ hg update 'desc("updating-both-file")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   $ hg merge 'desc("delete-the-file")' -t :local
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -630,11 +628,13 @@ in consideration.
      rev linkrev nodeid       p1           p2
        0       0 4b69178b9bda 000000000000 000000000000
        1       1 59e363a07dc8 4b69178b9bda 000000000000
+       2       5 885af55420b3 59e363a07dc8 000000000000 (newfilenode !)
 
   $ hg log -G -T '{node|short} {desc}\n'
   @    5e3eccec60d8 merge-keeping-the-file-from-updated
   |\
-  +---o  e9b708131723 merge-keeping-the-file-from-deleted
+  +---o  38a4c3e7cac8 merge-keeping-the-file-from-deleted (newfilenode !)
+  +---o  e9b708131723 merge-keeping-the-file-from-deleted (old !)
   | |/
   +---o  a4e0e44229dc merge-deleting-the-file-from-updated
   | |/
@@ -666,16 +666,19 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-deleting-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
+  the-file (newfilenode !)
 
 (merging a deletion with keeping → conflict)
 BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-deleting-the-file-from-deleted")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   $ hg merge          'desc("merge-keeping-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -698,16 +701,19 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
+  the-file (newfilenode !)
 
 (merging a deletion with keeping → conflict)
 BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-deleting-the-file-from-updated")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   $ hg merge          'desc("merge-keeping-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -719,7 +725,8 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-keeping-the-file-from-updated")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge          'desc("merge-keeping-the-file-from-deleted")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   (branch merge, don't forget to commit)
   $ ls -1
   other-file
@@ -729,7 +736,8 @@ BROKEN: this should result in conflict
 BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-keeping-the-file-from-updated")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   $ hg merge          'desc("merge-deleted-the-file-from-deleted")'
   abort: empty revision set
   [255]
@@ -752,7 +760,8 @@ BROKEN: this should result in conflict
 (merging two "keeping" together → no conflict)
 
   $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (newfilenode !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
   $ hg merge          'desc("merge-keeping-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
