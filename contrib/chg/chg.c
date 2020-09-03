@@ -184,13 +184,46 @@ static void setcmdserveropts(struct cmdserveropts *opts)
 		abortmsg("too long TMPDIR or CHGSOCKNAME (r = %d)", r);
 }
 
+/* If the current program is, say, /a/b/c/chg, returns /a/b/c/hg. */
+static char *getrelhgcmd(void)
+{
+	ssize_t n;
+	char *res, *slash;
+	int maxsize = 4096;
+	res = malloc(maxsize);
+	if (res == NULL)
+		goto cleanup;
+	n = readlink("/proc/self/exe", res, maxsize);
+	if (n < 0 || n >= maxsize)
+		goto cleanup;
+	res[n] = '\0';
+	slash = strrchr(res, '/');
+	if (slash == NULL)
+		goto cleanup;
+	/* 4 is strlen("/hg") + nul byte */
+	if (slash + 4 >= res + maxsize)
+		goto cleanup;
+	memcpy(slash, "/hg", 4);
+	return res;
+cleanup:
+	free(res);
+	return NULL;
+}
+
 static const char *gethgcmd(void)
 {
 	static const char *hgcmd = NULL;
+#ifdef HGPATHREL
+	int tryrelhgcmd = 1;
+#else
+	int tryrelhgcmd = 0;
+#endif
 	if (!hgcmd) {
 		hgcmd = getenv("CHGHG");
 		if (!hgcmd || hgcmd[0] == '\0')
 			hgcmd = getenv("HG");
+		if (tryrelhgcmd && (!hgcmd || hgcmd[0] == '\0'))
+			hgcmd = getrelhgcmd();
 		if (!hgcmd || hgcmd[0] == '\0')
 #ifdef HGPATH
 			hgcmd = (HGPATH);

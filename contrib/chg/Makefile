@@ -8,6 +8,9 @@ override CFLAGS += -std=gnu99
 ifdef HGPATH
 override CPPFLAGS += -DHGPATH=\"$(HGPATH)\"
 endif
+ifdef HGPATHREL
+override CPPFLAGS += -DHGPATHREL=\"$(HGPATHREL)\"
+endif
 
 DESTDIR =
 PREFIX = /usr/local
