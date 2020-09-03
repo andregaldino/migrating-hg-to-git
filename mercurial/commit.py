@@ -223,7 +223,7 @@ def _filecommit(
         manifest2:  manifest of changeset second parent
         linkrev:    revision number of the changeset being created
         tr:         current transation
-        individual: boolean, set to False to skip storing the copy data
+        includecopymeta: boolean, set to False to skip storing the copy data
                     (only used by the Google specific feature of using
                     changeset extra as copy source of truth).
 
