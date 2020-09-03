@@ -481,7 +481,7 @@ and its ancestor by overriding "repo._filecommit".
   > from __future__ import absolute_import
   > from mercurial import commit, error, extensions, node
   > def _filecommit(orig, repo, fctx, manifest1, manifest2,
-  >                 linkrev, tr, includecopymeta):
+  >                 linkrev, tr, includecopymeta, ms):
   >     fname = fctx.path()
   >     text = fctx.data()
   >     flog = repo.file(fname)

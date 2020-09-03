@@ -157,6 +157,7 @@ def _process_files(tr, ctx, error=False):
     m = mctx.read()
     m1 = m1ctx.read()
     m2 = m2ctx.read()
+    ms = mergestate.mergestate.read(repo)
 
     files = metadata.ChangingFiles()
 
@@ -175,7 +176,7 @@ def _process_files(tr, ctx, error=False):
             else:
                 added.append(f)
                 m[f], is_touched = _filecommit(
-                    repo, fctx, m1, m2, linkrev, tr, writefilecopymeta,
+                    repo, fctx, m1, m2, linkrev, tr, writefilecopymeta, ms
                 )
                 if is_touched:
                     if is_touched == 'added':
@@ -211,7 +212,7 @@ def _process_files(tr, ctx, error=False):
 
 
 def _filecommit(
-    repo, fctx, manifest1, manifest2, linkrev, tr, includecopymeta,
+    repo, fctx, manifest1, manifest2, linkrev, tr, includecopymeta, ms,
 ):
     """
     commit an individual file as part of a larger transaction
@@ -226,6 +227,7 @@ def _filecommit(
         includecopymeta: boolean, set to False to skip storing the copy data
                     (only used by the Google specific feature of using
                     changeset extra as copy source of truth).
+        ms:         mergestate object
 
     output: (filenode, touched)
 
@@ -324,8 +326,10 @@ def _filecommit(
             fparent2 = nullid
         elif not fparentancestors:
             # TODO: this whole if-else might be simplified much more
-            ms = mergestate.mergestate.read(repo)
-            if ms.extras(fname).get(b'filenode-source') == b'other':
+            if (
+                ms.active()
+                and ms.extras(fname).get(b'filenode-source') == b'other'
+            ):
                 fparent1, fparent2 = fparent2, nullid
 
     # is the file changed?
