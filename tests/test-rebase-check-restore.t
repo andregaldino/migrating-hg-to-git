@@ -153,5 +153,29 @@ Solve the conflict and go on:
   |/
   o  0:draft 'A'
   
+  $ cat >> .hg/hgrc << EOF
+  > [experimental]
+  > evolution.createmarkers=True
+  > EOF
+
+When updating away from a dirty, obsolete wdir, don't complain that the old p1
+is filtered and requires --hidden.
+
+  $ echo conflict > A
+  $ hg debugobsolete 071d07019675449d53b7e312c65bcf28adbbdb64 965c486023dbfdc9c32c52dc249a231882fd5c17
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg update -r 2 --config ui.merge=internal:merge --merge
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  1 files updated, 0 files merged, 1 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges
+  [1]
+  $ hg resolve A
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  [1]
+
+  $ hg up -C -q .
 
   $ cd ..

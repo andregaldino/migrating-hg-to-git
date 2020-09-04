@@ -1795,6 +1795,8 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
   $ hg log -G
   @  2:b18e25de2cf5 D
   |
+  | %  1:2ec65233581b B (pruned using prune)
+  |/
   o  0:426bada5c675 A
   
   $ hg summary
@@ -1802,8 +1804,8 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
    D
   branch: default
   commit: 1 modified, 1 added, 1 unknown, 1 unresolved
-  update: (current)
-  phases: 2 draft
+  update: 1 new changesets, 2 branch heads (merge)
+  phases: 3 draft
   rebase: 0 rebased, 2 remaining (rebase --continue)
 
   $ hg rebase --abort
