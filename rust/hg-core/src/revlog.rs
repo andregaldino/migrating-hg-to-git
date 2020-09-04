@@ -8,6 +8,9 @@
 pub mod node;
 pub mod nodemap;
 pub use node::{Node, NodeError, NodePrefix, NodePrefixRef};
+pub mod index;
+pub mod patch;
+pub mod revlog;
 
 /// Mercurial revision numbers
 ///
