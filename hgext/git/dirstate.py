@@ -142,6 +142,8 @@ class gitdirstate(object):
         gstatus = self.git.status()
         for path, status in gstatus.items():
             path = pycompat.fsencode(path)
+            if not match(path):
+                continue
             if status == pygit2.GIT_STATUS_IGNORED:
                 if path.endswith(b'/'):
                     continue
