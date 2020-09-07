@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import errno
+import functools
 import os
 import random
 import sys
@@ -193,6 +194,7 @@ def hasunfilteredcache(repo, name):
 def unfilteredmethod(orig):
     """decorate method that always need to be run on unfiltered version"""
 
+    @functools.wraps(orig)
     def wrapper(repo, *args, **kwargs):
         return orig(repo.unfiltered(), *args, **kwargs)
 
