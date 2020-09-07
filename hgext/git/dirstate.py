@@ -276,13 +276,22 @@ class gitdirstate(object):
         pass
 
     def add(self, f):
-        self.git.index.add(pycompat.fsdecode(f))
+        index = self.git.index
+        index.read()
+        index.add(pycompat.fsdecode(f))
+        index.write()
 
     def drop(self, f):
-        self.git.index.remove(pycompat.fsdecode(f))
+        index = self.git.index
+        index.read()
+        index.remove(pycompat.fsdecode(f))
+        index.write()
 
     def remove(self, f):
-        self.git.index.remove(pycompat.fsdecode(f))
+        index = self.git.index
+        index.read()
+        index.remove(pycompat.fsdecode(f))
+        index.write()
 
     def copied(self, path):
         # TODO: track copies?
