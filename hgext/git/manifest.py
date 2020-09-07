@@ -217,7 +217,9 @@ class gittreemanifest(object):
             return b''
 
     def copy(self):
-        pass
+        return gittreemanifest(
+            self._git_repo, self._tree, dict(self._pending_changes)
+        )
 
     def items(self):
         for f in self:
