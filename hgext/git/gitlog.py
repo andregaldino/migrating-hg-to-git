@@ -386,7 +386,7 @@ class changelog(baselog):
             encoding.unifromlocal(stringutil.person(user)),
             encoding.unifromlocal(stringutil.email(user)),
             timestamp,
-            -(tz // 60),
+            -int(tz // 60),
         )
         oid = self.gitrepo.create_commit(
             None, sig, sig, desc, gitutil.togitnode(manifest), parents
