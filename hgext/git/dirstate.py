@@ -129,6 +129,7 @@ class gitdirstate(object):
             return False
 
     def status(self, match, subrepos, ignored, clean, unknown):
+        listignored, listclean, listunknown = ignored, clean, unknown
         # TODO handling of clean files - can we get that from git.status()?
         modified, added, removed, deleted, unknown, ignored, clean = (
             [],
@@ -167,6 +168,22 @@ class gitdirstate(object):
                 raise error.Abort(
                     b'unhandled case: status for %r is %r' % (path, status)
                 )
+
+        if listclean:
+            observed = set(
+                modified + added + removed + deleted + unknown + ignored
+            )
+            index = self.git.index
+            index.read()
+            for entry in index:
+                path = pycompat.fsencode(entry.path)
+                if not match(path):
+                    continue
+                if path in observed:
+                    continue  # already in some other set
+                if path[-1] == b'/':
+                    continue  # directory
+                clean.append(path)
 
         # TODO are we really always sure of status here?
         return (
