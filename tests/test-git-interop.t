@@ -270,3 +270,8 @@ This covers manifest.diff()
   +++ b/beta	Mon Jan 01 00:00:11 2007 +0000
   @@ -0,0 +1,1 @@
   +beta
+
+
+Deleting files should also work (this was issue6398)
+  $ hg rm beta
+  $ hg ci -m 'remove beta'

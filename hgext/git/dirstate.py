@@ -303,8 +303,10 @@ class gitdirstate(object):
     def drop(self, f):
         index = self.git.index
         index.read()
-        index.remove(pycompat.fsdecode(f))
-        index.write()
+        fs = pycompat.fsdecode(f)
+        if fs in index:
+            index.remove(fs)
+            index.write()
 
     def remove(self, f):
         index = self.git.index
