@@ -1250,7 +1250,12 @@ class localrepository(object):
                 msg = b'accessing cache with vfs instead of cachevfs: "%s"'
                 repo.ui.develwarn(msg % path, stacklevel=3, config=b"cache-vfs")
             # path prefixes covered by 'lock'
-            vfs_path_prefixes = (b'journal.', b'undo.', b'strip-backup/')
+            vfs_path_prefixes = (
+                b'journal.',
+                b'undo.',
+                b'strip-backup/',
+                b'cache/',
+            )
             if any(path.startswith(prefix) for prefix in vfs_path_prefixes):
                 if repo._currentlock(repo._lockref) is None:
                     repo.ui.develwarn(
