@@ -640,6 +640,49 @@ revisions printed, just their order.
 
   $ cd ..
 
+Moved line may not be collected by "grep --diff" since it first filters
+the contents to be diffed by the pattern. (i.e.
+"diff <(grep pat a) <(grep pat b)", not "diff a b | grep pat".)
+This is much faster than generating full diff per revision.
+
+  $ hg init moved-line
+  $ cd moved-line
+  $ cat <<'EOF' > a
+  > foo
+  > bar
+  > baz
+  > EOF
+  $ hg ci -Am initial
+  adding a
+  $ cat <<'EOF' > a
+  > bar
+  > baz
+  > foo
+  > EOF
+  $ hg ci -m reorder
+
+  $ hg diff -c 1
+  diff -r a593cc55e81b -r 69789a3b6e80 a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,3 +1,3 @@
+  -foo
+   bar
+   baz
+  +foo
+
+ can't find the move of "foo" at the revision 1:
+
+  $ hg grep --diff foo -r1
+  [1]
+
+ "bar" isn't moved at the revisoin 1:
+
+  $ hg grep --diff bar -r1
+  [1]
+
+  $ cd ..
+
 Test for showing working of allfiles flag
 
   $ hg init sng
