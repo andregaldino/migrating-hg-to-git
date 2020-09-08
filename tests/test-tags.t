@@ -156,7 +156,7 @@ Tag cache debug info written to blackbox log
 Failure to acquire lock results in no write
 
   $ rm -f .hg/cache/tags2-visible .hg/cache/hgtagsfnodes1
-  $ echo 'foo:1' > .hg/wlock
+  $ echo 'foo:1' > .hg/store/lock
   $ hg identify
   b9154636be93 tip
   $ hg blackbox -l 6
@@ -170,7 +170,7 @@ Failure to acquire lock results in no write
   $ fnodescacheexists
   no fnodes cache
 
-  $ rm .hg/wlock
+  $ rm .hg/store/lock
 
   $ rm -f .hg/cache/tags2-visible .hg/cache/hgtagsfnodes1
   $ hg identify

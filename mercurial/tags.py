@@ -838,7 +838,7 @@ class hgtagsfnodescache(object):
         repo = self._repo
 
         try:
-            lock = repo.wlock(wait=False)
+            lock = repo.lock(wait=False)
         except error.LockError:
             repo.ui.log(
                 b'tagscache',
