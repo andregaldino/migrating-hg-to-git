@@ -17,6 +17,7 @@ from . import (
     diffutil,
     encoding,
     error,
+    grep as grepmod,
     hbisect,
     match as matchmod,
     node,
@@ -991,6 +992,45 @@ def destination(repo, subset, x):
         dests.__contains__,
         condrepr=lambda: b'<destination %r>' % _sortedb(dests),
     )
+
+
+@predicate(b'diff(pattern)', weight=110)
+def diff(repo, subset, x):
+    """Search revision differences for when the pattern was added or removed.
+
+    The pattern may be a substring literal or a regular expression. See
+    :hg:`help revisions.patterns`.
+    """
+    args = getargsdict(x, b'diff', b'pattern')
+    if b'pattern' not in args:
+        # i18n: "diff" is a keyword
+        raise error.ParseError(_(b'diff takes at least 1 argument'))
+
+    pattern = getstring(args[b'pattern'], _(b'diff requires a string pattern'))
+    regexp = stringutil.substringregexp(pattern, re.M)
+
+    # TODO: add support for file pattern and --follow. For example,
+    # diff(pattern[, set]) where set may be file(pattern) or follow(pattern),
+    # and we'll eventually add a support for narrowing files by revset?
+    fmatch = matchmod.always()
+
+    def makefilematcher(ctx):
+        return fmatch
+
+    # TODO: search in a windowed way
+    searcher = grepmod.grepsearcher(repo.ui, repo, regexp, diff=True)
+
+    def testdiff(rev):
+        # consume the generator to discard revfiles/matches cache
+        found = False
+        for fn, ctx, pstates, states in searcher.searchfiles(
+            baseset([rev]), makefilematcher
+        ):
+            if next(grepmod.difflinestates(pstates, states), None):
+                found = True
+        return found
+
+    return subset.filter(testdiff, condrepr=(b'<diff %r>', pattern))
 
 
 @predicate(b'contentdivergent()', safe=True)

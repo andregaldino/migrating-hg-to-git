@@ -21,6 +21,18 @@ pattern error
   grep: invalid match pattern: nothing to repeat* (glob)
   [1]
 
+invalid revset syntax
+
+  $ hg log -r 'diff()'
+  hg: parse error: diff takes at least 1 argument
+  [255]
+  $ hg log -r 'diff(:)'
+  hg: parse error: diff requires a string pattern
+  [255]
+  $ hg log -r 'diff("re:**test**")'
+  hg: parse error: invalid regular expression: nothing to repeat* (glob)
+  [255]
+
 simple
 
   $ hg grep -r tip:0 '.*'
@@ -552,6 +564,18 @@ Test wdir
   color:3:+:orange
   color:2:-:orange
   color:1:+:orange
+
+revset predicate for "grep --diff"
+
+  $ hg log -qr 'diff("re:^bl...$")'
+  0:203191eb5e21
+  $ hg log -qr 'diff("orange")'
+  1:7c585a21e0d1
+  2:11bd8bc8d653
+  3:e0116d3829f8
+  $ hg log -qr '2:0 & diff("orange")'
+  2:11bd8bc8d653
+  1:7c585a21e0d1
 
 test substring match: '^' should only match at the beginning
 
