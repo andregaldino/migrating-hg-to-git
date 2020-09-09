@@ -411,7 +411,7 @@ def adds(repo, subset, x):
     """
     # i18n: "adds" is a keyword
     pat = getstring(x, _(b"adds requires a pattern"))
-    return checkstatus(repo, subset, pat, 1)
+    return checkstatus(repo, subset, pat, 'added')
 
 
 @predicate(b'ancestor(*changeset)', safe=True, weight=0.5)
@@ -681,12 +681,8 @@ def bundle(repo, subset, x):
 
 def checkstatus(repo, subset, pat, field):
     """Helper for status-related revsets (adds, removes, modifies).
-    The field parameter says which kind is desired:
-    0: modified
-    1: added
-    2: removed
+    The field parameter says which kind is desired.
     """
-    label = {0: 'modified', 1: 'added', 2: 'removed'}[field]
     hasset = matchmod.patkind(pat) == b'set'
 
     mcache = [None]
@@ -707,7 +703,7 @@ def checkstatus(repo, subset, pat, field):
         else:
             if not any(m(f) for f in c.files()):
                 return False
-        files = getattr(repo.status(c.p1().node(), c.node()), label)
+        files = getattr(repo.status(c.p1().node(), c.node()), field)
         if fname is not None:
             if fname in files:
                 return True
@@ -715,7 +711,9 @@ def checkstatus(repo, subset, pat, field):
             if any(m(f) for f in files):
                 return True
 
-    return subset.filter(matches, condrepr=(b'<status[%r] %r>', field, pat))
+    return subset.filter(
+        matches, condrepr=(b'<status.%s %r>', pycompat.sysbytes(field), pat)
+    )
 
 
 def _children(repo, subset, parentset):
@@ -1631,7 +1629,7 @@ def modifies(repo, subset, x):
     """
     # i18n: "modifies" is a keyword
     pat = getstring(x, _(b"modifies requires a pattern"))
-    return checkstatus(repo, subset, pat, 0)
+    return checkstatus(repo, subset, pat, 'modified')
 
 
 @predicate(b'named(namespace)')
@@ -2090,7 +2088,7 @@ def removes(repo, subset, x):
     """
     # i18n: "removes" is a keyword
     pat = getstring(x, _(b"removes requires a pattern"))
-    return checkstatus(repo, subset, pat, 2)
+    return checkstatus(repo, subset, pat, 'removed')
 
 
 @predicate(b'rev(number)', safe=True)
