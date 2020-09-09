@@ -8,8 +8,12 @@
 from __future__ import absolute_import
 
 import difflib
+import errno
+
+from .i18n import _
 
 from . import (
+    error,
     pycompat,
     scmutil,
     util,
@@ -100,3 +104,26 @@ class grepsearcher(object):
         for lnum, cstart, cend, line in matchlines(body, self._regexp):
             s = linestate(line, lnum, cstart, cend)
             m.append(s)
+
+    def _readfile(self, ctx, fn):
+        rev = ctx.rev()
+        if rev is None:
+            fctx = ctx[fn]
+            try:
+                return fctx.data()
+            except IOError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+        else:
+            flog = self._getfile(fn)
+            fnode = ctx.filenode(fn)
+            try:
+                return flog.read(fnode)
+            except error.CensoredNodeError:
+                self._ui.warn(
+                    _(
+                        b'cannot search in censored file: '
+                        b'%(filename)s:%(revnum)s\n'
+                    )
+                    % {b'filename': fn, b'revnum': pycompat.bytestr(rev)}
+                )

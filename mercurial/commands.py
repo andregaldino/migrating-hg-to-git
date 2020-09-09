@@ -3519,28 +3519,6 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     getrenamed = searcher._getrenamed
 
-    def readfile(ctx, fn):
-        rev = ctx.rev()
-        if rev is None:
-            fctx = ctx[fn]
-            try:
-                return fctx.data()
-            except IOError as e:
-                if e.errno != errno.ENOENT:
-                    raise
-        else:
-            flog = getfile(fn)
-            fnode = ctx.filenode(fn)
-            try:
-                return flog.read(fnode)
-            except error.CensoredNodeError:
-                ui.warn(
-                    _(
-                        b'cannot search in censored file: %(filename)s:%(revnum)s\n'
-                    )
-                    % {b'filename': fn, b'revnum': pycompat.bytestr(rev),}
-                )
-
     def prep(ctx, fmatch):
         rev = ctx.rev()
         pctx = ctx.p1()
@@ -3581,12 +3559,14 @@ def grep(ui, repo, pattern, *pats, **opts):
                 files.append(fn)
 
                 if fn not in matches[rev]:
-                    searcher._grepbody(fn, rev, readfile(ctx, fn))
+                    searcher._grepbody(fn, rev, searcher._readfile(ctx, fn))
 
                 if diff:
                     pfn = copy or fn
                     if pfn not in matches[parent] and pfn in pctx:
-                        searcher._grepbody(pfn, parent, readfile(pctx, pfn))
+                        searcher._grepbody(
+                            pfn, parent, searcher._readfile(pctx, pfn)
+                        )
 
     wopts = logcmdutil.walkopts(
         pats=pats,
