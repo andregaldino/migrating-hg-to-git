@@ -26,7 +26,16 @@ fn main() {
             SubCommand::with_name("root").about(commands::root::HELP_TEXT),
         )
         .subcommand(
-            SubCommand::with_name("files").about(commands::files::HELP_TEXT),
+            SubCommand::with_name("files")
+                .arg(
+                    Arg::with_name("rev")
+                        .help("search the repository as it is in REV")
+                        .short("-r")
+                        .long("--revision")
+                        .value_name("REV")
+                        .takes_value(true),
+                )
+                .about(commands::files::HELP_TEXT),
         )
         .subcommand(
             SubCommand::with_name("debugdata")
@@ -86,11 +95,22 @@ fn match_subcommand(
 ) -> Result<(), CommandError> {
     match matches.subcommand() {
         ("root", _) => commands::root::RootCommand::new().run(&ui),
-        ("files", _) => commands::files::FilesCommand::new().run(&ui),
+        ("files", Some(matches)) => {
+            commands::files::FilesCommand::try_from(matches)?.run(&ui)
+        }
         ("debugdata", Some(matches)) => {
             commands::debugdata::DebugDataCommand::try_from(matches)?.run(&ui)
         }
         _ => unreachable!(), // Because of AppSettings::SubcommandRequired,
+    }
+}
+
+impl<'a> TryFrom<&'a ArgMatches<'_>> for commands::files::FilesCommand<'a> {
+    type Error = CommandError;
+
+    fn try_from(args: &'a ArgMatches) -> Result<Self, Self::Error> {
+        let rev = args.value_of("rev");
+        Ok(commands::files::FilesCommand::new(rev))
     }
 }
 
