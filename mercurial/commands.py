@@ -3400,7 +3400,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     getfile = util.lrucachefunc(repo.file)
 
-    def matchlines(body):
+    def matchlines(body, regexp):
         begin = 0
         linenum = 0
         while begin < len(body):
@@ -3427,7 +3427,7 @@ def grep(ui, repo, pattern, *pats, **opts):
         def __eq__(self, other):
             return self.line == other.line
 
-        def findpos(self):
+        def findpos(self, regexp):
             """Iterate all (start, end) indices of matches"""
             yield self.colstart, self.colend
             p = self.colend
@@ -3450,7 +3450,7 @@ def grep(ui, repo, pattern, *pats, **opts):
         if body is None:
             return
 
-        for lnum, cstart, cend, line in matchlines(body):
+        for lnum, cstart, cend, line in matchlines(body, regexp):
             s = linestate(line, lnum, cstart, cend)
             m.append(s)
 
@@ -3562,7 +3562,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     def displaymatches(fm, l):
         p = 0
-        for s, e in l.findpos():
+        for s, e in l.findpos(regexp):
             if p < s:
                 fm.startitem()
                 fm.write(b'text', b'%s', l.line[p:s])
