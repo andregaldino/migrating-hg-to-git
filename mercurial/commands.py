@@ -3400,7 +3400,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             self.colend = colend
 
         def __hash__(self):
-            return hash((self.linenum, self.line))
+            return hash(self.line)
 
         def __eq__(self, other):
             return self.line == other.line

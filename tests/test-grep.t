@@ -321,14 +321,61 @@ simple JSON without matching lines
    }
   ]
 
+diff of each revision for reference
+
+  $ hg log -p -T'== rev: {rev} ==\n'
+  == rev: 4 ==
+  diff -r 95040cfd017d -r 914fa752cdea port
+  --- a/port	Thu Jan 01 00:00:03 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:04 1970 +0000
+  @@ -1,4 +1,3 @@
+   export
+   vaportight
+   import/export
+  -import/export
+  
+  == rev: 3 ==
+  diff -r 3b325e3481a1 -r 95040cfd017d port
+  --- a/port	Thu Jan 01 00:00:02 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:03 1970 +0000
+  @@ -1,3 +1,4 @@
+   export
+   vaportight
+   import/export
+  +import/export
+  
+  == rev: 2 ==
+  diff -r 8b20f75c1585 -r 3b325e3481a1 port
+  --- a/port	Thu Jan 01 00:00:01 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:02 1970 +0000
+  @@ -1,2 +1,3 @@
+  -import
+   export
+  +vaportight
+  +import/export
+  
+  == rev: 1 ==
+  diff -r f31323c92170 -r 8b20f75c1585 port
+  --- a/port	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:01 1970 +0000
+  @@ -1,1 +1,2 @@
+   import
+  +export
+  
+  == rev: 0 ==
+  diff -r 000000000000 -r f31323c92170 port
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +import
+  
+
 all
 
   $ hg grep --traceback --all -nu port port
   port:4:4:-:spam:import/export
   port:3:4:+:eggs:import/export
   port:2:1:-:spam:import
-  port:2:2:-:spam:export
-  port:2:1:+:spam:export
   port:2:2:+:spam:vaportight
   port:2:3:+:spam:import/export
   port:1:2:+:eggs:export
@@ -366,26 +413,6 @@ all JSON
     "path": "port",
     "rev": 2,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}],
-    "user": "spam"
-   },
-   {
-    "change": "-",
-    "date": [2, 0],
-    "lineno": 2,
-    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
-    "path": "port",
-    "rev": 2,
-    "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
-    "user": "spam"
-   },
-   {
-    "change": "+",
-    "date": [2, 0],
-    "lineno": 1,
-    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
-    "path": "port",
-    "rev": 2,
-    "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
    },
    {
@@ -460,8 +487,6 @@ follow
   port:4:4:-:spam:import/export
   port:3:4:+:eggs:import/export
   port:2:1:-:spam:import
-  port:2:2:-:spam:export
-  port:2:1:+:spam:export
   port:2:2:+:spam:vaportight
   port:2:3:+:spam:import/export
   port:1:2:+:eggs:export
