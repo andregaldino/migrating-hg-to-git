@@ -14,6 +14,7 @@ from .i18n import _
 
 from . import (
     error,
+    match as matchmod,
     pycompat,
     scmutil,
     util,
@@ -80,12 +81,23 @@ def difflinestates(a, b):
 
 
 class grepsearcher(object):
-    """Search files and revisions for lines matching the given pattern"""
+    """Search files and revisions for lines matching the given pattern
 
-    def __init__(self, ui, repo, regexp):
+    Options:
+    - all_files to search unchanged files at that revision.
+    - diff to search files in the parent revision so diffs can be generated.
+    - follow to skip files across copies and renames.
+    """
+
+    def __init__(
+        self, ui, repo, regexp, all_files=False, diff=False, follow=False
+    ):
         self._ui = ui
         self._repo = repo
         self._regexp = regexp
+        self._all_files = all_files
+        self._diff = diff
+        self._follow = follow
 
         self._getfile = util.lrucachefunc(repo.file)
         self._getrenamed = scmutil.getrenamedfn(repo)
@@ -127,3 +139,50 @@ class grepsearcher(object):
                     )
                     % {b'filename': fn, b'revnum': pycompat.bytestr(rev)}
                 )
+
+    def _prep(self, ctx, fmatch):
+        rev = ctx.rev()
+        pctx = ctx.p1()
+        self._matches.setdefault(rev, {})
+        if self._diff:
+            parent = pctx.rev()
+            self._matches.setdefault(parent, {})
+        files = self._revfiles.setdefault(rev, [])
+        if rev is None:
+            # in `hg grep pattern`, 2/3 of the time is spent is spent in
+            # pathauditor checks without this in mozilla-central
+            contextmanager = self._repo.wvfs.audit.cached
+        else:
+            contextmanager = util.nullcontextmanager
+        with contextmanager():
+            # TODO: maybe better to warn missing files?
+            if self._all_files:
+                fmatch = matchmod.badmatch(fmatch, lambda f, msg: None)
+                filenames = ctx.matches(fmatch)
+            else:
+                filenames = (f for f in ctx.files() if fmatch(f))
+            for fn in filenames:
+                # fn might not exist in the revision (could be a file removed by
+                # the revision). We could check `fn not in ctx` even when rev is
+                # None, but it's less racy to protect againt that in readfile.
+                if rev is not None and fn not in ctx:
+                    continue
+
+                copy = None
+                if self._follow:
+                    copy = self._getrenamed(fn, rev)
+                    if copy:
+                        self._copies.setdefault(rev, {})[fn] = copy
+                        if fn in self._skip:
+                            self._skip.add(copy)
+                if fn in self._skip:
+                    continue
+                files.append(fn)
+
+                if fn not in self._matches[rev]:
+                    self._grepbody(fn, rev, self._readfile(ctx, fn))
+
+                if self._diff:
+                    pfn = copy or fn
+                    if pfn not in self._matches[parent] and pfn in pctx:
+                        self._grepbody(pfn, parent, self._readfile(pctx, pfn))

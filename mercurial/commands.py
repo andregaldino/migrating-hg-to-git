@@ -45,7 +45,6 @@ from . import (
     help,
     hg,
     logcmdutil,
-    match as matchmod,
     merge as mergemod,
     mergestate as mergestatemod,
     narrowspec,
@@ -3371,6 +3370,7 @@ def grep(ui, repo, pattern, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     diff = opts.get(b'all') or opts.get(b'diff')
+    follow = opts.get(b'follow')
     if diff and opts.get(b'all_files'):
         raise error.Abort(_(b'--diff and --all-files are mutually exclusive'))
     if opts.get(b'all_files') is None and not diff:
@@ -3398,7 +3398,9 @@ def grep(ui, repo, pattern, *pats, **opts):
     if opts.get(b'print0'):
         sep = eol = b'\0'
 
-    searcher = grepmod.grepsearcher(ui, repo, regexp)
+    searcher = grepmod.grepsearcher(
+        ui, repo, regexp, all_files=all_files, diff=diff, follow=follow
+    )
 
     getfile = searcher._getfile
     matches = searcher._matches
@@ -3515,58 +3517,6 @@ def grep(ui, repo, pattern, *pats, **opts):
     skip = searcher._skip
     revfiles = searcher._revfiles
     found = False
-    follow = opts.get(b'follow')
-
-    getrenamed = searcher._getrenamed
-
-    def prep(ctx, fmatch):
-        rev = ctx.rev()
-        pctx = ctx.p1()
-        matches.setdefault(rev, {})
-        if diff:
-            parent = pctx.rev()
-            matches.setdefault(parent, {})
-        files = revfiles.setdefault(rev, [])
-        if rev is None:
-            # in `hg grep pattern`, 2/3 of the time is spent is spent in
-            # pathauditor checks without this in mozilla-central
-            contextmanager = repo.wvfs.audit.cached
-        else:
-            contextmanager = util.nullcontextmanager
-        with contextmanager():
-            # TODO: maybe better to warn missing files?
-            if all_files:
-                fmatch = matchmod.badmatch(fmatch, lambda f, msg: None)
-                filenames = ctx.matches(fmatch)
-            else:
-                filenames = (f for f in ctx.files() if fmatch(f))
-            for fn in filenames:
-                # fn might not exist in the revision (could be a file removed by
-                # the revision). We could check `fn not in ctx` even when rev is
-                # None, but it's less racy to protect againt that in readfile.
-                if rev is not None and fn not in ctx:
-                    continue
-
-                copy = None
-                if follow:
-                    copy = getrenamed(fn, rev)
-                    if copy:
-                        copies.setdefault(rev, {})[fn] = copy
-                        if fn in skip:
-                            skip.add(copy)
-                if fn in skip:
-                    continue
-                files.append(fn)
-
-                if fn not in matches[rev]:
-                    searcher._grepbody(fn, rev, searcher._readfile(ctx, fn))
-
-                if diff:
-                    pfn = copy or fn
-                    if pfn not in matches[parent] and pfn in pctx:
-                        searcher._grepbody(
-                            pfn, parent, searcher._readfile(pctx, pfn)
-                        )
 
     wopts = logcmdutil.walkopts(
         pats=pats,
@@ -3582,7 +3532,9 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
-    for ctx in cmdutil.walkchangerevs(repo, revs, makefilematcher, prep):
+    for ctx in cmdutil.walkchangerevs(
+        repo, revs, makefilematcher, searcher._prep
+    ):
         rev = ctx.rev()
         parent = ctx.p1().rev()
         for fn in sorted(revfiles.get(rev, [])):
