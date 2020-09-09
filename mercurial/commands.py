@@ -3403,8 +3403,6 @@ def grep(ui, repo, pattern, *pats, **opts):
     )
 
     getfile = searcher._getfile
-    matches = searcher._matches
-    copies = searcher._copies
 
     uipathfn = scmutil.getuipathfn(repo)
 
@@ -3514,8 +3512,6 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.data(matched=False)
         fm.end()
 
-    skip = searcher._skip
-    revfiles = searcher._revfiles
     found = False
 
     wopts = logcmdutil.walkopts(
@@ -3532,29 +3528,11 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
-    for ctx in scmutil.walkchangerevs(
-        repo, revs, makefilematcher, searcher._prep
-    ):
-        rev = ctx.rev()
-        parent = ctx.p1().rev()
-        for fn in sorted(revfiles.get(rev, [])):
-            states = matches[rev][fn]
-            copy = copies.get(rev, {}).get(fn)
-            if fn in skip:
-                if copy:
-                    skip.add(copy)
-                continue
-            pstates = matches.get(parent, {}).get(copy or fn, [])
-            if pstates or states:
-                r = display(fm, fn, ctx, pstates, states)
-                found = found or r
-                if r and not diff and not all_files:
-                    searcher.skipfile(fn, rev)
-        del revfiles[rev]
-        # We will keep the matches dict for the duration of the window
-        # clear the matches dict once the window is over
-        if not revfiles:
-            matches.clear()
+    for fn, ctx, pstates, states in searcher.searchfiles(revs, makefilematcher):
+        r = display(fm, fn, ctx, pstates, states)
+        found = found or r
+        if r and not diff and not all_files:
+            searcher.skipfile(fn, ctx.rev())
     fm.end()
 
     return not found

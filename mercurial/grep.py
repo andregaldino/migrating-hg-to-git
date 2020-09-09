@@ -115,6 +115,34 @@ class grepsearcher(object):
         if copy:
             self._skip.add(copy)
 
+    def searchfiles(self, revs, makefilematcher):
+        """Walk files and revisions to yield (fn, ctx, pstates, states)
+        matches
+
+        states is a list of linestate objects. pstates may be empty unless
+        diff is True.
+        """
+        for ctx in scmutil.walkchangerevs(
+            self._repo, revs, makefilematcher, self._prep
+        ):
+            rev = ctx.rev()
+            parent = ctx.p1().rev()
+            for fn in sorted(self._revfiles.get(rev, [])):
+                states = self._matches[rev][fn]
+                copy = self._copies.get(rev, {}).get(fn)
+                if fn in self._skip:
+                    if copy:
+                        self._skip.add(copy)
+                    continue
+                pstates = self._matches.get(parent, {}).get(copy or fn, [])
+                if pstates or states:
+                    yield fn, ctx, pstates, states
+            del self._revfiles[rev]
+            # We will keep the matches dict for the duration of the window
+            # clear the matches dict once the window is over
+            if not self._revfiles:
+                self._matches.clear()
+
     def _grepbody(self, fn, rev, body):
         self._matches[rev].setdefault(fn, [])
         m = self._matches[rev][fn]
