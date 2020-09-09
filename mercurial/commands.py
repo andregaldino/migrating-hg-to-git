@@ -3549,9 +3549,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                 r = display(fm, fn, ctx, pstates, states)
                 found = found or r
                 if r and not diff and not all_files:
-                    skip.add(fn)
-                    if copy:
-                        skip.add(copy)
+                    searcher.skipfile(fn, rev)
         del revfiles[rev]
         # We will keep the matches dict for the duration of the window
         # clear the matches dict once the window is over

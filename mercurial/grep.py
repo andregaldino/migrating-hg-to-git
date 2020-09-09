@@ -107,6 +107,14 @@ class grepsearcher(object):
         self._skip = set()
         self._revfiles = {}
 
+    def skipfile(self, fn, rev):
+        """Exclude the given file (and the copy at the specified revision)
+        from future search"""
+        copy = self._copies.get(rev, {}).get(fn)
+        self._skip.add(fn)
+        if copy:
+            self._skip.add(copy)
+
     def _grepbody(self, fn, rev, body):
         self._matches[rev].setdefault(fn, [])
         m = self._matches[rev][fn]
