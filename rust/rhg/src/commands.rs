@@ -1,3 +1,4 @@
+pub mod debugdata;
 pub mod files;
 pub mod root;
 use crate::error::CommandError;

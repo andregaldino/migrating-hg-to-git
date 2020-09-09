@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::io;
 use std::io::{ErrorKind, Write};
 
@@ -102,4 +103,11 @@ fn handle_stderr_error(error: io::Error) -> Result<(), UiError> {
         return Ok(());
     }
     Err(UiError::StdoutError(error))
+}
+
+/// Encode rust strings according to the user system.
+pub fn utf8_to_local(s: &str) -> Cow<[u8]> {
+    // TODO encode for the user's system //
+    let bytes = s.as_bytes();
+    Cow::Borrowed(bytes)
 }
