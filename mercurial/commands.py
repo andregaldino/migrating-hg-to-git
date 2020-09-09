@@ -3398,9 +3398,11 @@ def grep(ui, repo, pattern, *pats, **opts):
     if opts.get(b'print0'):
         sep = eol = b'\0'
 
-    getfile = util.lrucachefunc(repo.file)
-    matches = {}
-    copies = {}
+    searcher = grepmod.grepsearcher(ui, repo, regexp)
+
+    getfile = searcher._getfile
+    matches = searcher._matches
+    copies = searcher._copies
 
     def grepbody(fn, rev, body):
         matches[rev].setdefault(fn, [])
@@ -3520,12 +3522,12 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.data(matched=False)
         fm.end()
 
-    skip = set()
-    revfiles = {}
+    skip = searcher._skip
+    revfiles = searcher._revfiles
     found = False
     follow = opts.get(b'follow')
 
-    getrenamed = scmutil.getrenamedfn(repo)
+    getrenamed = searcher._getrenamed
 
     def readfile(ctx, fn):
         rev = ctx.rev()

@@ -9,7 +9,11 @@ from __future__ import absolute_import
 
 import difflib
 
-from . import pycompat
+from . import (
+    pycompat,
+    scmutil,
+    util,
+)
 
 
 def matchlines(body, regexp):
@@ -69,3 +73,20 @@ def difflinestates(a, b):
                 yield (b'-', a[i])
             for i in pycompat.xrange(blo, bhi):
                 yield (b'+', b[i])
+
+
+class grepsearcher(object):
+    """Search files and revisions for lines matching the given pattern"""
+
+    def __init__(self, ui, repo, regexp):
+        self._ui = ui
+        self._repo = repo
+        self._regexp = regexp
+
+        self._getfile = util.lrucachefunc(repo.file)
+        self._getrenamed = scmutil.getrenamedfn(repo)
+
+        self._matches = {}
+        self._copies = {}
+        self._skip = set()
+        self._revfiles = {}
