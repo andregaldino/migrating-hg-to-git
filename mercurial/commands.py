@@ -3404,16 +3404,6 @@ def grep(ui, repo, pattern, *pats, **opts):
     matches = searcher._matches
     copies = searcher._copies
 
-    def grepbody(fn, rev, body):
-        matches[rev].setdefault(fn, [])
-        m = matches[rev][fn]
-        if body is None:
-            return
-
-        for lnum, cstart, cend, line in grepmod.matchlines(body, regexp):
-            s = grepmod.linestate(line, lnum, cstart, cend)
-            m.append(s)
-
     uipathfn = scmutil.getuipathfn(repo)
 
     def display(fm, fn, ctx, pstates, states):
@@ -3591,12 +3581,12 @@ def grep(ui, repo, pattern, *pats, **opts):
                 files.append(fn)
 
                 if fn not in matches[rev]:
-                    grepbody(fn, rev, readfile(ctx, fn))
+                    searcher._grepbody(fn, rev, readfile(ctx, fn))
 
                 if diff:
                     pfn = copy or fn
                     if pfn not in matches[parent] and pfn in pctx:
-                        grepbody(pfn, parent, readfile(pctx, pfn))
+                        searcher._grepbody(pfn, parent, readfile(pctx, pfn))
 
     wopts = logcmdutil.walkopts(
         pats=pats,

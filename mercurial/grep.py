@@ -90,3 +90,13 @@ class grepsearcher(object):
         self._copies = {}
         self._skip = set()
         self._revfiles = {}
+
+    def _grepbody(self, fn, rev, body):
+        self._matches[rev].setdefault(fn, [])
+        m = self._matches[rev][fn]
+        if body is None:
+            return
+
+        for lnum, cstart, cend, line in matchlines(body, self._regexp):
+            s = linestate(line, lnum, cstart, cend)
+            m.append(s)
