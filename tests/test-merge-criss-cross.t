@@ -431,8 +431,8 @@ Verify that the old context ancestor works with / despite preferancestor:
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 11b5b303e36c, local: c0ef19750a22+, remote: 6ca01f7342b9
-   d1/a: ancestor missing, remote missing -> k
-   d1/b: ancestor missing, remote missing -> k
+   d1/a: ancestor missing, remote missing -> kn
+   d1/b: ancestor missing, remote missing -> kn
    d2/b: remote created -> g
   
   calculating bids for ancestor 154e6000f54e
@@ -452,13 +452,13 @@ Verify that the old context ancestor works with / despite preferancestor:
   
   auction for merging merge bids (2 ancestors)
    list of bids for d1/a:
-     ancestor missing, remote missing -> k
+     ancestor missing, remote missing -> kn
      other deleted -> r
-   d1/a: picking 'keep' action
+   d1/a: picking 'keep new' action
    list of bids for d1/b:
-     ancestor missing, remote missing -> k
+     ancestor missing, remote missing -> kn
      other deleted -> r
-   d1/b: picking 'keep' action
+   d1/b: picking 'keep new' action
    list of bids for d2/b:
      remote created -> g
      remote created -> g
@@ -467,8 +467,8 @@ Verify that the old context ancestor works with / despite preferancestor:
   
    d2/b: remote created -> g
   getting d2/b
-   d1/a: ancestor missing, remote missing -> k
-   d1/b: ancestor missing, remote missing -> k
+   d1/a: ancestor missing, remote missing -> kn
+   d1/b: ancestor missing, remote missing -> kn
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 

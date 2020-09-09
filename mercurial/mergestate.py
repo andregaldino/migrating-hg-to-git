@@ -117,6 +117,9 @@ ACTION_KEEP = b'k'
 # keep it absent (absent means file not present, it can be a result
 # of file deletion, rename etc.)
 ACTION_KEEP_ABSENT = b'ka'
+# the file is absent on the ancestor and remote side of the merge
+# hence this file is new and we should keep it
+ACTION_KEEP_NEW = b'kn'
 ACTION_EXEC = b'e'
 ACTION_CREATED_MERGE = b'cm'
 
@@ -765,6 +768,10 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
 
     # keep deleted
     for f, args, msg in actions.get(ACTION_KEEP_ABSENT, []):
+        pass
+
+    # keep new
+    for f, args, msg in actions.get(ACTION_KEEP_NEW, []):
         pass
 
     # get

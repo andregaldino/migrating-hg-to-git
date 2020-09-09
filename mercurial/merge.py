@@ -552,6 +552,7 @@ class mergeresult(object):
     NO_OP_ACTIONS = (
         mergestatemod.ACTION_KEEP,
         mergestatemod.ACTION_KEEP_ABSENT,
+        mergestatemod.ACTION_KEEP_NEW,
     )
 
     def __init__(self):
@@ -921,7 +922,7 @@ def manifestmerge(
             else:  # file not in ancestor, not in remote
                 mresult.addfile(
                     f,
-                    mergestatemod.ACTION_KEEP,
+                    mergestatemod.ACTION_KEEP_NEW,
                     None,
                     b'ancestor missing, remote missing',
                 )
@@ -1190,6 +1191,11 @@ def calculateupdates(
             if mergestatemod.ACTION_KEEP_ABSENT in bids:
                 repo.ui.note(_(b" %s: picking 'keep absent' action\n") % f)
                 mresult.addfile(f, *bids[mergestatemod.ACTION_KEEP_ABSENT][0])
+                continue
+            # If keep new is an option, let's just do that
+            if mergestatemod.ACTION_KEEP_NEW in bids:
+                repo.ui.note(_(b" %s: picking 'keep new' action\n") % f)
+                mresult.addfile(f, *bids[mergestatemod.ACTION_KEEP_NEW][0])
                 continue
             # If there are gets and they all agree [how could they not?], do it.
             if mergestatemod.ACTION_GET in bids:
@@ -1496,16 +1502,10 @@ def applyupdates(
         progress.increment(item=f)
 
     # keep (noop, just log it)
-    for f, args, msg in mresult.getactions(
-        (mergestatemod.ACTION_KEEP,), sort=True
-    ):
-        repo.ui.debug(b" %s: %s -> k\n" % (f, msg))
-        # no progress
-    for f, args, msg in mresult.getactions(
-        (mergestatemod.ACTION_KEEP_ABSENT,), sort=True
-    ):
-        repo.ui.debug(b" %s: %s -> ka\n" % (f, msg))
-        # no progress
+    for a in mergeresult.NO_OP_ACTIONS:
+        for f, args, msg in mresult.getactions((a,), sort=True):
+            repo.ui.debug(b" %s: %s -> %s\n" % (f, msg, a))
+            # no progress
 
     # directory rename, move local
     for f, args, msg in mresult.getactions(
