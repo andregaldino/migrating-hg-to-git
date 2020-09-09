@@ -11,7 +11,8 @@ pub use debugdata::{
 };
 pub use find_root::{FindRoot, FindRootError, FindRootErrorKind};
 pub use list_tracked_files::{
-    ListTrackedFiles, ListTrackedFilesError, ListTrackedFilesErrorKind,
+    ListDirstateTrackedFiles, ListDirstateTrackedFilesError,
+    ListDirstateTrackedFilesErrorKind,
 };
 
 // TODO add an `Operation` trait when GAT have landed (rust #44265):
