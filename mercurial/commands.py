@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import difflib
 import errno
 import os
 import re
@@ -41,6 +40,7 @@ from . import (
     filemerge,
     formatter,
     graphmod,
+    grep as grepmod,
     hbisect,
     help,
     hg,
@@ -3399,48 +3399,6 @@ def grep(ui, repo, pattern, *pats, **opts):
         sep = eol = b'\0'
 
     getfile = util.lrucachefunc(repo.file)
-
-    def matchlines(body, regexp):
-        begin = 0
-        linenum = 0
-        while begin < len(body):
-            match = regexp.search(body, begin)
-            if not match:
-                break
-            mstart, mend = match.span()
-            linenum += body.count(b'\n', begin, mstart) + 1
-            lstart = body.rfind(b'\n', begin, mstart) + 1 or begin
-            begin = body.find(b'\n', mend) + 1 or len(body) + 1
-            lend = begin - 1
-            yield linenum, mstart - lstart, mend - lstart, body[lstart:lend]
-
-    class linestate(object):
-        def __init__(self, line, linenum, colstart, colend):
-            self.line = line
-            self.linenum = linenum
-            self.colstart = colstart
-            self.colend = colend
-
-        def __hash__(self):
-            return hash(self.line)
-
-        def __eq__(self, other):
-            return self.line == other.line
-
-        def findpos(self, regexp):
-            """Iterate all (start, end) indices of matches"""
-            yield self.colstart, self.colend
-            p = self.colend
-            while p < len(self.line):
-                m = regexp.search(self.line, p)
-                if not m:
-                    break
-                if m.end() == p:
-                    p += 1
-                else:
-                    yield m.span()
-                    p = m.end()
-
     matches = {}
     copies = {}
 
@@ -3450,24 +3408,9 @@ def grep(ui, repo, pattern, *pats, **opts):
         if body is None:
             return
 
-        for lnum, cstart, cend, line in matchlines(body, regexp):
-            s = linestate(line, lnum, cstart, cend)
+        for lnum, cstart, cend, line in grepmod.matchlines(body, regexp):
+            s = grepmod.linestate(line, lnum, cstart, cend)
             m.append(s)
-
-    def difflinestates(a, b):
-        sm = difflib.SequenceMatcher(None, a, b)
-        for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag == 'insert':
-                for i in pycompat.xrange(blo, bhi):
-                    yield (b'+', b[i])
-            elif tag == 'delete':
-                for i in pycompat.xrange(alo, ahi):
-                    yield (b'-', a[i])
-            elif tag == 'replace':
-                for i in pycompat.xrange(alo, ahi):
-                    yield (b'-', a[i])
-                for i in pycompat.xrange(blo, bhi):
-                    yield (b'+', b[i])
 
     uipathfn = scmutil.getuipathfn(repo)
 
@@ -3493,7 +3436,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
         fieldnamemap = {b'linenumber': b'lineno'}
         if diff:
-            iter = difflinestates(pstates, states)
+            iter = grepmod.difflinestates(pstates, states)
         else:
             iter = [(b'', l) for l in states]
         for change, l in iter:
