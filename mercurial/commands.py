@@ -3357,7 +3357,11 @@ def grep(ui, repo, pattern, *pats, **opts):
         raise error.Abort(_(b'--diff and --all-files are mutually exclusive'))
     if opts.get(b'all_files') is None and not diff:
         opts[b'all_files'] = True
-    plaingrep = opts.get(b'all_files') and not opts.get(b'rev')
+    plaingrep = (
+        opts.get(b'all_files')
+        and not opts.get(b'rev')
+        and not opts.get(b'follow')
+    )
     all_files = opts.get(b'all_files')
     if plaingrep:
         opts[b'rev'] = [b'wdir()']

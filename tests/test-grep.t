@@ -904,27 +904,44 @@ follow revision history from wdir parent:
   add0-rm2:0:+:data0
   add0-rm4:0:+:data0
 
- BROKEN: should not fall back to plain grep
   $ hg grep -f data
-  add0:data0
-  add0-cp1:data0
-  add0-cp1-cp3:data0
-  add0-cp1-mod1:data0
-  add0-cp1-mod1:data1
-  add0-cp1-mod1-cp3-mod3:data0
-  add0-cp1-mod1-cp3-mod3:data1
-  add0-cp1-mod1-cp3-mod3:data3
-  add0-cp4:data0
-  add0-cp4-mod4:data0
-  add0-cp4-mod4:data4
-  add0-mod1:data0
-  add0-mod1:data1
-  add0-mod2:data0
-  add0-mod3:data0
-  add0-mod3:data3
-  add0-mod4:data0
-  add0-mod4:data4
-  add0-rm2:data0
+  add0:3:data0
+  add0-cp1:3:data0
+  add0-cp1-cp3:3:data0
+  add0-cp1-mod1:3:data0
+  add0-cp1-mod1:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data0
+  add0-cp1-mod1-cp3-mod3:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data3
+  add0-mod1:3:data0
+  add0-mod1:3:data1
+  add0-mod2:3:data0
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod4:3:data0
+  add0-rm2:3:data0
+  add0-rm4:3:data0
+  add0:1:data0
+  add0-cp1:1:data0
+  add0-cp1-mod1:1:data0
+  add0-cp1-mod1:1:data1
+  add0-cp1-mod1-rm3:1:data0
+  add0-cp1-mod1-rm3:1:data1
+  add0-mod1:1:data0
+  add0-mod1:1:data1
+  add0-mod2:1:data0
+  add0-mod3:1:data0
+  add0-mod4:1:data0
+  add0-rm2:1:data0
+  add0-rm4:1:data0
+  add0:0:data0
+  add0-mod1:0:data0
+  add0-mod2:0:data0
+  add0-mod3:0:data0
+  add0-mod4:0:data0
+  add0-rm1:0:data0
+  add0-rm2:0:data0
+  add0-rm4:0:data0
 
 follow revision history from specified revision:
 
@@ -1030,10 +1047,13 @@ follow file history from wdir parent, unmodified in wdir:
   add0-mod3:3:+:data3
   add0-mod3:0:+:data0
 
- BROKEN: should not fall back to plain grep
+ BROKEN: should not include the revision 2
   $ hg grep -f data add0-mod3
-  add0-mod3:data0
-  add0-mod3:data3
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod3:2:data0
+  add0-mod3:1:data0
+  add0-mod3:0:data0
 
 follow file history from wdir parent, modified in wdir:
 
@@ -1043,10 +1063,12 @@ follow file history from wdir parent, modified in wdir:
   $ hg grep --diff -f data add0-mod4
   add0-mod4:0:+:data0
 
- BROKEN: should not fall back to plain grep
+ BROKEN: should not include the revision 2
   $ hg grep -f data add0-mod4
-  add0-mod4:data0
-  add0-mod4:data4
+  add0-mod4:3:data0
+  add0-mod4:2:data0
+  add0-mod4:1:data0
+  add0-mod4:0:data0
 
 follow file history from wdir parent, copied but unmodified:
 
@@ -1058,9 +1080,9 @@ follow file history from wdir parent, copied but unmodified:
   $ hg grep --diff -f data add0-cp1-cp3
   add0:0:+:data0
 
- BROKEN: should not fall back to plain grep
+ BROKEN: should follow history across renames
   $ hg grep -f data add0-cp1-cp3
-  add0-cp1-cp3:data0
+  add0-cp1-cp3:3:data0
 
 follow file history from wdir parent, copied and modified:
 
@@ -1074,11 +1096,11 @@ follow file history from wdir parent, copied and modified:
   add0-cp1-mod1:1:+:data1
   add0:0:+:data0
 
- BROKEN: should not fall back to plain grep
+ BROKEN: should follow history across renames
   $ hg grep -f data add0-cp1-mod1-cp3-mod3
-  add0-cp1-mod1-cp3-mod3:data0
-  add0-cp1-mod1-cp3-mod3:data1
-  add0-cp1-mod1-cp3-mod3:data3
+  add0-cp1-mod1-cp3-mod3:3:data0
+  add0-cp1-mod1-cp3-mod3:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data3
 
 follow file history from wdir parent, copied in wdir:
 
@@ -1090,9 +1112,9 @@ follow file history from wdir parent, copied in wdir:
   abort: cannot follow file not in parent revision: "add0-cp4"
   [255]
 
- BROKEN: should not fall back to plain grep
+ BROKEN: maybe better to abort
   $ hg grep -f data add0-cp4
-  add0-cp4:data0
+  [1]
 
 follow file history from wdir parent, removed:
 
@@ -1104,9 +1126,10 @@ follow file history from wdir parent, removed:
   abort: cannot follow file not in parent revision: "add0-cp1-mod1-rm3"
   [255]
 
- BROKEN: should not fall back to plain grep
+ BROKEN: maybe better to abort
   $ hg grep -f data add0-cp1-mod1-rm3
-  [1]
+  add0-cp1-mod1-rm3:1:data0
+  add0-cp1-mod1-rm3:1:data1
 
 follow file history from wdir parent (explicit), removed:
 
@@ -1132,9 +1155,12 @@ follow file history from wdir parent, removed in wdir:
   $ hg grep --diff -f data add0-rm4
   add0-rm4:0:+:data0
 
- BROKEN: should not fall back to plain grep
+ BROKEN: should not include the revision 2, and maybe better to abort
   $ hg grep -f data add0-rm4
-  [1]
+  add0-rm4:3:data0
+  add0-rm4:2:data0
+  add0-rm4:1:data0
+  add0-rm4:0:data0
 
 follow file history from wdir parent (explicit), removed in wdir:
 
@@ -1162,12 +1188,18 @@ follow file history from wdir parent, multiple files:
   add0:0:+:data0
   add0-mod3:0:+:data0
 
- BROKEN: should not fall back to plain grep
+ BROKEN: should not include the revision 2
+ BROKEN: should follow history across renames
   $ hg grep -f data add0-mod3 add0-cp1-mod1
-  add0-cp1-mod1:data0
-  add0-cp1-mod1:data1
-  add0-mod3:data0
-  add0-mod3:data3
+  add0-cp1-mod1:3:data0
+  add0-cp1-mod1:3:data1
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod3:2:data0
+  add0-cp1-mod1:1:data0
+  add0-cp1-mod1:1:data1
+  add0-mod3:1:data0
+  add0-mod3:0:data0
 
 follow file history from specified revision, modified:
 
