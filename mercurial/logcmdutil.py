@@ -711,6 +711,10 @@ class walkopts(object):
     # include revisions where files were removed
     force_changelog_traversal = attr.ib(default=False)  # type: bool
 
+    # filter revisions by file patterns, which should be disabled only if
+    # you want to include revisions where files were unmodified
+    filter_revisions_by_pats = attr.ib(default=True)  # type: bool
+
     # sort revisions prior to traversal: 'desc', 'topo', or None
     sort_revisions = attr.ib(default=None)  # type: Optional[bytes]
 
@@ -902,7 +906,7 @@ def _makerevset(repo, wopts, slowpath):
         b'user': wopts.users,
     }
 
-    if slowpath:
+    if wopts.filter_revisions_by_pats and slowpath:
         # See walkchangerevs() slow path.
         #
         # pats/include/exclude cannot be represented as separate
@@ -919,7 +923,7 @@ def _makerevset(repo, wopts, slowpath):
         for p in wopts.exclude_pats:
             matchargs.append(b'x:' + p)
         opts[b'_matchfiles'] = matchargs
-    elif not wopts.follow:
+    elif wopts.filter_revisions_by_pats and not wopts.follow:
         opts[b'_patslog'] = list(wopts.pats)
 
     expr = []
