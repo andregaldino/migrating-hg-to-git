@@ -45,6 +45,7 @@ from . import (
     help,
     hg,
     logcmdutil,
+    match as matchmod,
     merge as mergemod,
     mergestate as mergestatemod,
     narrowspec,
@@ -3621,8 +3622,13 @@ def grep(ui, repo, pattern, *pats, **opts):
         else:
             contextmanager = util.nullcontextmanager
         with contextmanager():
-            assert fmatch.isexact()
-            for fn in fmatch.files():
+            # TODO: maybe better to warn missing files?
+            if all_files:
+                fmatch = matchmod.badmatch(fmatch, lambda f, msg: None)
+                filenames = ctx.matches(fmatch)
+            else:
+                filenames = (f for f in ctx.files() if fmatch(f))
+            for fn in filenames:
                 # fn might not exist in the revision (could be a file removed by
                 # the revision). We could check `fn not in ctx` even when rev is
                 # None, but it's less racy to protect againt that in readfile.
