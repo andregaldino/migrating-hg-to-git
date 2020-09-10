@@ -23,7 +23,6 @@ from mercurial import (
     patch,
     pycompat,
     registrar,
-    scmutil,
 )
 from mercurial.utils import dateutil
 
@@ -76,8 +75,6 @@ def countrate(ui, repo, amap, *pats, **opts):
     if opts.get(b'date'):
         df = dateutil.matchdate(opts[b'date'])
 
-    m = scmutil.match(repo[None], pats, opts)
-
     def prep(ctx, fmatch):
         rev = ctx.rev()
         if df and not df(ctx.date()[0]):  # doesn't match date format
@@ -99,7 +96,15 @@ def countrate(ui, repo, amap, *pats, **opts):
 
         progress.increment()
 
-    for ctx in cmdutil.walkchangerevs(repo, m, opts, prep):
+    wopts = logcmdutil.walkopts(
+        pats=pats,
+        opts=opts,
+        revspec=opts[b'rev'],
+        include_pats=opts[b'include'],
+        exclude_pats=opts[b'exclude'],
+    )
+    revs, makefilematcher = logcmdutil.makewalker(repo, wopts)
+    for ctx in cmdutil.walkchangerevs(repo, revs, makefilematcher, prep):
         continue
 
     progress.complete()

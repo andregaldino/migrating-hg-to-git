@@ -2428,8 +2428,8 @@ class _followfilter(object):
         return False
 
 
-def walkchangerevs(repo, match, opts, prepare):
-    '''Iterate over files and the revs in which they changed.
+def walkchangerevs(repo, revs, makefilematcher, prepare):
+    '''Iterate over files and the revs in a "windowed" way.
 
     Callers most commonly need to iterate backwards over the history
     in which they are interested. Doing so has awful (quadratic-looking)
@@ -2443,107 +2443,11 @@ def walkchangerevs(repo, match, opts, prepare):
     yielding each context, the iterator will first call the prepare
     function on each context in the window in forward order.'''
 
-    allfiles = opts.get(b'all_files')
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
-    revs = _walkrevs(repo, opts)
     if not revs:
         return []
-    wanted = set()
-    slowpath = match.anypats() or (not match.always() and opts.get(b'removed'))
-    fncache = {}
     change = repo.__getitem__
 
-    # First step is to fill wanted, the set of revisions that we want to yield.
-    # When it does not induce extra cost, we also fill fncache for revisions in
-    # wanted: a cache of filenames that were changed (ctx.files()) and that
-    # match the file filtering conditions.
-
-    if match.always() or allfiles:
-        # No files, no patterns.  Display all revs.
-        wanted = revs
-    elif not slowpath:
-        # We only have to read through the filelog to find wanted revisions
-
-        try:
-            wanted = walkfilerevs(repo, match, follow, revs, fncache)
-        except FileWalkError:
-            slowpath = True
-
-            # We decided to fall back to the slowpath because at least one
-            # of the paths was not a file. Check to see if at least one of them
-            # existed in history, otherwise simply return
-            for path in match.files():
-                if path == b'.' or path in repo.store:
-                    break
-            else:
-                return []
-
-    if slowpath:
-        # We have to read the changelog to match filenames against
-        # changed files
-
-        if follow:
-            raise error.Abort(
-                _(b'can only follow copies/renames for explicit filenames')
-            )
-
-        # The slow path checks files modified in every changeset.
-        # This is really slow on large repos, so compute the set lazily.
-        class lazywantedset(object):
-            def __init__(self):
-                self.set = set()
-                self.revs = set(revs)
-
-            # No need to worry about locality here because it will be accessed
-            # in the same order as the increasing window below.
-            def __contains__(self, value):
-                if value in self.set:
-                    return True
-                elif not value in self.revs:
-                    return False
-                else:
-                    self.revs.discard(value)
-                    ctx = change(value)
-                    if allfiles:
-                        matches = list(ctx.manifest().walk(match))
-                    else:
-                        matches = [f for f in ctx.files() if match(f)]
-                    if matches:
-                        fncache[value] = matches
-                        self.set.add(value)
-                        return True
-                    return False
-
-            def discard(self, value):
-                self.revs.discard(value)
-                self.set.discard(value)
-
-        wanted = lazywantedset()
-
-    # it might be worthwhile to do this in the iterator if the rev range
-    # is descending and the prune args are all within that range
-    for rev in opts.get(b'prune', ()):
-        rev = repo[rev].rev()
-        ff = _followfilter(repo)
-        stop = min(revs[0], revs[-1])
-        for x in pycompat.xrange(rev, stop - 1, -1):
-            if ff.match(x):
-                wanted = wanted - [x]
-
-    # Now that wanted is correctly initialized, we can iterate over the
-    # revision range, yielding only revisions in wanted.
     def iterate():
-        if follow and match.always():
-            ff = _followfilter(repo, onlyfirst=opts.get(b'follow_first'))
-
-            def want(rev):
-                return ff.match(rev) and rev in wanted
-
-        else:
-
-            def want(rev):
-                return rev in wanted
-
         it = iter(revs)
         stopiteration = False
         for windowsize in increasingwindows():
@@ -2553,28 +2457,10 @@ def walkchangerevs(repo, match, opts, prepare):
                 if rev is None:
                     stopiteration = True
                     break
-                elif want(rev):
-                    nrevs.append(rev)
+                nrevs.append(rev)
             for rev in sorted(nrevs):
-                fns = fncache.get(rev)
                 ctx = change(rev)
-                if not fns:
-
-                    def fns_generator():
-                        if allfiles:
-
-                            def bad(f, msg):
-                                pass
-
-                            for f in ctx.matches(matchmod.badmatch(match, bad)):
-                                yield f
-                        else:
-                            for f in ctx.files():
-                                if match(f):
-                                    yield f
-
-                    fns = fns_generator()
-                prepare(ctx, scmutil.matchfiles(repo, fns))
+                prepare(ctx, makefilematcher(ctx))
             for rev in nrevs:
                 yield change(rev)
 

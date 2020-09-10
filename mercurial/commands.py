@@ -3579,7 +3579,6 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     skip = set()
     revfiles = {}
-    match = scmutil.match(repo[None], pats, opts)
     found = False
     follow = opts.get(b'follow')
 
@@ -3654,9 +3653,21 @@ def grep(ui, repo, pattern, *pats, **opts):
                     if pfn not in matches[parent] and pfn in pctx:
                         grepbody(pfn, parent, readfile(pctx, pfn))
 
+    wopts = logcmdutil.walkopts(
+        pats=pats,
+        opts=opts,
+        revspec=opts[b'rev'],
+        include_pats=opts[b'include'],
+        exclude_pats=opts[b'exclude'],
+        follow=follow,
+        force_changelog_traversal=all_files,
+        filter_revisions_by_pats=not all_files,
+    )
+    revs, makefilematcher = logcmdutil.makewalker(repo, wopts)
+
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
-    for ctx in cmdutil.walkchangerevs(repo, match, opts, prep):
+    for ctx in cmdutil.walkchangerevs(repo, revs, makefilematcher, prep):
         rev = ctx.rev()
         parent = ctx.p1().rev()
         for fn in sorted(revfiles.get(rev, [])):
