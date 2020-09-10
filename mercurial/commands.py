@@ -3252,7 +3252,7 @@ statemod.addunfinished(
     b'grep',
     [
         (b'0', b'print0', None, _(b'end fields with NUL')),
-        (b'', b'all', None, _(b'print all revisions that match (DEPRECATED) ')),
+        (b'', b'all', None, _(b'an alias to --diff (DEPRECATED)')),
         (
             b'',
             b'diff',
