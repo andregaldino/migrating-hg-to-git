@@ -422,7 +422,7 @@ def getgraphnodecurrent(repo, ctx, cache):
             from . import mergestate as mergestatemod
 
             mergestate = mergestatemod.mergestate.read(repo)
-            if mergestate.active():
+            if mergestate.unresolvedcount():
                 merge_nodes = (mergestate.local, mergestate.other)
             else:
                 merge_nodes = ()

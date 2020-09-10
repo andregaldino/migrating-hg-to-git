@@ -622,7 +622,7 @@ Resolve conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | %  3:09e253b87e17 A in file a
+  | o  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |
@@ -669,7 +669,7 @@ Resolve conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | %  3:09e253b87e17 A in file a
+  | o  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |
@@ -712,7 +712,7 @@ When there is conflict:
   $ hg log -GT "{rev}:{node|short} {desc}\n"
   @  4:2aa9ad1006ff B in file a
   |
-  | %  3:09e253b87e17 A in file a
+  | o  3:09e253b87e17 A in file a
   | |
   | o  2:d36c0562f908 c
   | |
