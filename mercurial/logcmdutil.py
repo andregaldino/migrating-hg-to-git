@@ -47,13 +47,14 @@ from .utils import (
 if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
+        Callable,
         Dict,
         List,
         Optional,
         Tuple,
     )
 
-    for t in (Any, Dict, List, Optional, Tuple):
+    for t in (Any, Callable, Dict, List, Optional, Tuple):
         assert t
 
 
@@ -721,7 +722,7 @@ def parseopts(ui, pats, opts):
     # type: (Any, List[bytes], Dict[bytes, Any]) -> walkopts
     """Parse log command options into walkopts
 
-    The returned walkopts will be passed in to getrevs().
+    The returned walkopts will be passed in to getrevs() or makewalker().
     """
     if opts.get(b'follow_first'):
         follow = 1
@@ -956,11 +957,12 @@ def _initialrevs(repo, wopts):
     return revs
 
 
-def getrevs(repo, wopts):
-    # type: (Any, walkopts) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
-    """Return (revs, differ) where revs is a smartset
+def makewalker(repo, wopts):
+    # type: (Any, walkopts) -> Tuple[smartset.abstractsmartset, Optional[Callable[[Any], matchmod.basematcher]]]
+    """Build (revs, makefilematcher) to scan revision/file history
 
-    differ is a changesetdiffer with pre-configured file matcher.
+    - revs is the smartset to be traversed.
+    - makefilematcher is a function to map ctx to a matcher for that revision
     """
     revs = _initialrevs(repo, wopts)
     if not revs:
@@ -1003,6 +1005,18 @@ def getrevs(repo, wopts):
     if wopts.limit is not None:
         revs = revs.slice(0, wopts.limit)
 
+    return revs, filematcher
+
+
+def getrevs(repo, wopts):
+    # type: (Any, walkopts) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
+    """Return (revs, differ) where revs is a smartset
+
+    differ is a changesetdiffer with pre-configured file matcher.
+    """
+    revs, filematcher = makewalker(repo, wopts)
+    if not revs:
+        return revs, None
     differ = changesetdiffer()
     differ._makefilematcher = filematcher
     return revs, differ
