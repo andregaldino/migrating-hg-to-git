@@ -2254,8 +2254,12 @@ def _walkrevs(repo, opts):
     # Default --rev value depends on --follow but --follow behavior
     # depends on revisions resolved from --rev...
     follow = opts.get(b'follow') or opts.get(b'follow_first')
-    if opts.get(b'rev'):
-        revs = scmutil.revrange(repo, opts[b'rev'])
+    revspec = opts.get(b'rev')
+    if follow and revspec:
+        revs = scmutil.revrange(repo, revspec)
+        revs = repo.revs(b'reverse(::%ld)', revs)
+    elif revspec:
+        revs = scmutil.revrange(repo, revspec)
     elif follow and repo.dirstate.p1() == nullid:
         revs = smartset.baseset()
     elif follow:
