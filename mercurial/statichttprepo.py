@@ -238,7 +238,12 @@ class statichttprepository(
         )
 
     def lock(self, wait=True):
-        raise error.Abort(_(b'cannot lock static-http repository'))
+        raise error.LockUnavailable(
+            0,
+            _(b'lock not available'),
+            b'lock',
+            _(b'cannot lock static-http repository'),
+        )
 
     def _writecaches(self):
         pass  # statichttprepository are read only
