@@ -136,7 +136,6 @@ from mercurial.pycompat import open
 from mercurial import (
     changegroup,
     changelog,
-    cmdutil,
     commands,
     configitems,
     context,
@@ -341,7 +340,6 @@ def uisetup(ui):
     extensions.wrapfunction(scmutil, b'getrenamedfn', getrenamedfn)
     extensions.wrapfunction(revset, b'filelog', filelogrevset)
     revset.symbols[b'filelog'] = revset.filelog
-    extensions.wrapfunction(cmdutil, b'walkfilerevs', walkfilerevs)
 
 
 def cloneshallow(orig, ui, repo, *args, **opts):
@@ -780,40 +778,6 @@ def getrenamedfn(orig, repo, endrev=None):
             return None
 
     return getrenamed
-
-
-def walkfilerevs(orig, repo, match, follow, revs, fncache):
-    if not isenabled(repo):
-        return orig(repo, match, follow, revs, fncache)
-
-    # remotefilelog's can't be walked in rev order, so throw.
-    # The caller will see the exception and walk the commit tree instead.
-    if not follow:
-        raise cmdutil.FileWalkError(b"Cannot walk via filelog")
-
-    wanted = set()
-    minrev, maxrev = min(revs), max(revs)
-
-    pctx = repo[b'.']
-    for filename in match.files():
-        if filename not in pctx:
-            raise error.Abort(
-                _(b'cannot follow file not in parent revision: "%s"') % filename
-            )
-        fctx = pctx[filename]
-
-        linkrev = fctx.linkrev()
-        if linkrev >= minrev and linkrev <= maxrev:
-            fncache.setdefault(linkrev, []).append(filename)
-            wanted.add(linkrev)
-
-        for ancestor in fctx.ancestors():
-            linkrev = ancestor.linkrev()
-            if linkrev >= minrev and linkrev <= maxrev:
-                fncache.setdefault(linkrev, []).append(ancestor.path())
-                wanted.add(linkrev)
-
-    return wanted
 
 
 def filelogrevset(orig, repo, subset, x):

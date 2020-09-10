@@ -776,8 +776,8 @@ def _makematcher(repo, revs, wopts):
     - slowpath: True if patterns aren't as simple as scanning filelogs
     """
     # pats/include/exclude are passed to match.match() directly in
-    # _matchfiles() revset but walkchangerevs() builds its matcher with
-    # scmutil.match(). The difference is input pats are globbed on
+    # _matchfiles() revset, but a log-like command should build its matcher
+    # with scmutil.match(). The difference is input pats are globbed on
     # platforms without shell expansion (windows).
     wctx = repo[None]
     match, pats = scmutil.matchandpats(wctx, wopts.pats, wopts.opts)
@@ -907,8 +907,6 @@ def _makerevset(repo, wopts, slowpath):
     }
 
     if wopts.filter_revisions_by_pats and slowpath:
-        # See walkchangerevs() slow path.
-        #
         # pats/include/exclude cannot be represented as separate
         # revset expressions as their filtering logic applies at file
         # level. For instance "-I a -X b" matches a revision touching

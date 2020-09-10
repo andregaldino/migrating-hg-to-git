@@ -16,7 +16,6 @@ from .i18n import _
 from .node import (
     hex,
     nullid,
-    nullrev,
     short,
 )
 from .pycompat import (
@@ -49,7 +48,6 @@ from . import (
     revlog,
     rewriteutil,
     scmutil,
-    smartset,
     state as statemod,
     subrepoutil,
     templatekw,
@@ -2247,185 +2245,6 @@ def increasingwindows(windowsize=8, sizelimit=512):
         yield windowsize
         if windowsize < sizelimit:
             windowsize *= 2
-
-
-def _walkrevs(repo, opts):
-    # Default --rev value depends on --follow but --follow behavior
-    # depends on revisions resolved from --rev...
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
-    revspec = opts.get(b'rev')
-    if follow and revspec:
-        revs = scmutil.revrange(repo, revspec)
-        revs = repo.revs(b'reverse(::%ld)', revs)
-    elif revspec:
-        revs = scmutil.revrange(repo, revspec)
-    elif follow and repo.dirstate.p1() == nullid:
-        revs = smartset.baseset()
-    elif follow:
-        revs = repo.revs(b'reverse(:.)')
-    else:
-        revs = smartset.spanset(repo)
-        revs.reverse()
-    return revs
-
-
-class FileWalkError(Exception):
-    pass
-
-
-def walkfilerevs(repo, match, follow, revs, fncache):
-    '''Walks the file history for the matched files.
-
-    Returns the changeset revs that are involved in the file history.
-
-    Throws FileWalkError if the file history can't be walked using
-    filelogs alone.
-    '''
-    wanted = set()
-    copies = []
-    minrev, maxrev = min(revs), max(revs)
-
-    def filerevs(filelog, last):
-        """
-        Only files, no patterns.  Check the history of each file.
-
-        Examines filelog entries within minrev, maxrev linkrev range
-        Returns an iterator yielding (linkrev, parentlinkrevs, copied)
-        tuples in backwards order
-        """
-        cl_count = len(repo)
-        revs = []
-        for j in pycompat.xrange(0, last + 1):
-            linkrev = filelog.linkrev(j)
-            if linkrev < minrev:
-                continue
-            # only yield rev for which we have the changelog, it can
-            # happen while doing "hg log" during a pull or commit
-            if linkrev >= cl_count:
-                break
-
-            parentlinkrevs = []
-            for p in filelog.parentrevs(j):
-                if p != nullrev:
-                    parentlinkrevs.append(filelog.linkrev(p))
-            n = filelog.node(j)
-            revs.append(
-                (linkrev, parentlinkrevs, follow and filelog.renamed(n))
-            )
-
-        return reversed(revs)
-
-    def iterfiles():
-        pctx = repo[b'.']
-        for filename in match.files():
-            if follow:
-                if filename not in pctx:
-                    raise error.Abort(
-                        _(
-                            b'cannot follow file not in parent '
-                            b'revision: "%s"'
-                        )
-                        % filename
-                    )
-                yield filename, pctx[filename].filenode()
-            else:
-                yield filename, None
-        for filename_node in copies:
-            yield filename_node
-
-    for file_, node in iterfiles():
-        filelog = repo.file(file_)
-        if not len(filelog):
-            if node is None:
-                # A zero count may be a directory or deleted file, so
-                # try to find matching entries on the slow path.
-                if follow:
-                    raise error.Abort(
-                        _(b'cannot follow nonexistent file: "%s"') % file_
-                    )
-                raise FileWalkError(b"Cannot walk via filelog")
-            else:
-                continue
-
-        if node is None:
-            last = len(filelog) - 1
-        else:
-            last = filelog.rev(node)
-
-        # keep track of all ancestors of the file
-        ancestors = {filelog.linkrev(last)}
-
-        # iterate from latest to oldest revision
-        for rev, flparentlinkrevs, copied in filerevs(filelog, last):
-            if not follow:
-                if rev > maxrev:
-                    continue
-            else:
-                # Note that last might not be the first interesting
-                # rev to us:
-                # if the file has been changed after maxrev, we'll
-                # have linkrev(last) > maxrev, and we still need
-                # to explore the file graph
-                if rev not in ancestors:
-                    continue
-                # XXX insert 1327 fix here
-                if flparentlinkrevs:
-                    ancestors.update(flparentlinkrevs)
-
-            fncache.setdefault(rev, []).append(file_)
-            wanted.add(rev)
-            if copied:
-                copies.append(copied)
-
-    return wanted
-
-
-class _followfilter(object):
-    def __init__(self, repo, onlyfirst=False):
-        self.repo = repo
-        self.startrev = nullrev
-        self.roots = set()
-        self.onlyfirst = onlyfirst
-
-    def match(self, rev):
-        def realparents(rev):
-            try:
-                if self.onlyfirst:
-                    return self.repo.changelog.parentrevs(rev)[0:1]
-                else:
-                    return filter(
-                        lambda x: x != nullrev,
-                        self.repo.changelog.parentrevs(rev),
-                    )
-            except error.WdirUnsupported:
-                prevs = [p.rev() for p in self.repo[rev].parents()]
-                if self.onlyfirst:
-                    return prevs[:1]
-                else:
-                    return prevs
-
-        if self.startrev == nullrev:
-            self.startrev = rev
-            return True
-
-        if rev > self.startrev:
-            # forward: all descendants
-            if not self.roots:
-                self.roots.add(self.startrev)
-            for parent in realparents(rev):
-                if parent in self.roots:
-                    self.roots.add(rev)
-                    return True
-        else:
-            # backwards: all parents
-            if not self.roots:
-                self.roots.update(realparents(self.startrev))
-            if rev in self.roots:
-                self.roots.remove(rev)
-                self.roots.update(realparents(rev))
-                return True
-
-        return False
 
 
 def walkchangerevs(repo, revs, makefilematcher, prepare):
