@@ -3606,7 +3606,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                     % {b'filename': fn, b'revnum': pycompat.bytestr(rev),}
                 )
 
-    def prep(ctx, fns):
+    def prep(ctx, fmatch):
         rev = ctx.rev()
         pctx = ctx.p1()
         matches.setdefault(rev, {})
@@ -3621,7 +3621,8 @@ def grep(ui, repo, pattern, *pats, **opts):
         else:
             contextmanager = util.nullcontextmanager
         with contextmanager():
-            for fn in fns:
+            assert fmatch.isexact()
+            for fn in fmatch.files():
                 # fn might not exist in the revision (could be a file removed by
                 # the revision). We could check `fn not in ctx` even when rev is
                 # None, but it's less racy to protect againt that in readfile.

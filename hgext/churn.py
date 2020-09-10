@@ -36,9 +36,8 @@ command = registrar.command(cmdtable)
 testedwith = b'ships-with-hg-core'
 
 
-def changedlines(ui, repo, ctx1, ctx2, fns):
+def changedlines(ui, repo, ctx1, ctx2, fmatch):
     added, removed = 0, 0
-    fmatch = scmutil.matchfiles(repo, fns)
     diff = b''.join(patch.diff(repo, ctx1.node(), ctx2.node(), fmatch))
     for l in diff.split(b'\n'):
         if l.startswith(b"+") and not l.startswith(b"+++ "):
@@ -79,7 +78,7 @@ def countrate(ui, repo, amap, *pats, **opts):
 
     m = scmutil.match(repo[None], pats, opts)
 
-    def prep(ctx, fns):
+    def prep(ctx, fmatch):
         rev = ctx.rev()
         if df and not df(ctx.date()[0]):  # doesn't match date format
             return
@@ -95,7 +94,7 @@ def countrate(ui, repo, amap, *pats, **opts):
                 return
 
             ctx1 = parents[0]
-            lines = changedlines(ui, repo, ctx1, ctx, fns)
+            lines = changedlines(ui, repo, ctx1, ctx, fmatch)
             rate[key] = [r + l for r, l in zip(rate.get(key, (0, 0)), lines)]
 
         progress.increment()

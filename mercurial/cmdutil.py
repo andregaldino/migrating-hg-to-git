@@ -2574,7 +2574,7 @@ def walkchangerevs(repo, match, opts, prepare):
                                     yield f
 
                     fns = fns_generator()
-                prepare(ctx, fns)
+                prepare(ctx, scmutil.matchfiles(repo, fns))
             for rev in nrevs:
                 yield change(rev)
 
