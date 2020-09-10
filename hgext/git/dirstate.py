@@ -129,7 +129,7 @@ class gitdirstate(object):
             return False
 
     def status(self, match, subrepos, ignored, clean, unknown):
-        listignored, listclean, listunknown = ignored, clean, unknown
+        listclean = clean
         # TODO handling of clean files - can we get that from git.status()?
         modified, added, removed, deleted, unknown, ignored, clean = (
             [],
