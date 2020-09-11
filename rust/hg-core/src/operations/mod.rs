@@ -2,10 +2,12 @@
 //! An operation is what can be done whereas a command is what is exposed by
 //! the cli. A single command can use several operations to achieve its goal.
 
+mod cat;
 mod debugdata;
 mod dirstate_status;
 mod find_root;
 mod list_tracked_files;
+pub use cat::{CatRev, CatRevError, CatRevErrorKind};
 pub use debugdata::{
     DebugData, DebugDataError, DebugDataErrorKind, DebugDataKind,
 };
