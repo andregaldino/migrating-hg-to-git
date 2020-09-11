@@ -1151,7 +1151,7 @@ class histeditrule(object):
             h,
         )
 
-    @property
+    @util.propertycache
     def desc(self):
         summary = (
             cmdutil.rendertemplate(
