@@ -698,12 +698,7 @@ def _makematcher(repo, revs, pats, opts):
                 # take the slow path.
                 if any(f not in c for c in startctxs):
                     slowpath = True
-                    continue
-                filelog = repo.file(f)
-                if not filelog:
-                    raise error.Abort(
-                        _(b'cannot follow nonexistent file: "%s"') % f
-                    )
+                    break
         elif follow:
             for f in match.files():
                 if f not in wctx:
@@ -722,6 +717,8 @@ def _makematcher(repo, revs, pats, opts):
                         )
                 filelog = repo.file(f)
                 if not filelog:
+                    # A file exists in wdir but not in history, which means
+                    # the file isn't committed yet.
                     raise error.Abort(
                         _(b'cannot follow nonexistent file: "%s"') % f
                     )

@@ -2295,15 +2295,21 @@ follow files from wdir
    1 files changed, 1 insertions(+), 0 deletions(-)
   
 
- BROKEN: added file should exist in wdir
   $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat d1/f2
-  abort: cannot follow nonexistent file: "d1/f2"
-  [255]
+  == 2147483647 ==
+   d1/f2 |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+  
 
- BROKEN: copied file should exist in wdir
   $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat f1-copy
-  abort: cannot follow nonexistent file: "f1-copy"
-  [255]
+  == 2147483647 ==
+   f1-copy |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+  
+  == 0 ==
+   d1/f1 |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+  
 
   $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat notfound
   notfound: $ENOENT$
