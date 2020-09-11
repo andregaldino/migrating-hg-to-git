@@ -1570,7 +1570,7 @@ class localrepository(object):
     def _quick_access_changeid_wc(self):
         # also fast path access to the working copy parents
         # however, only do it for filter that ensure wc is visible.
-        quick = {}
+        quick = self._quick_access_changeid_null.copy()
         cl = self.unfiltered().changelog
         for node in self.dirstate.parents():
             if node == nullid:
@@ -1609,11 +1609,9 @@ class localrepository(object):
         This contains a list of symbol we can recognise right away without
         further processing.
         """
-        mapping = self._quick_access_changeid_null
         if self.filtername in repoview.filter_has_wc:
-            mapping = mapping.copy()
-            mapping.update(self._quick_access_changeid_wc)
-        return mapping
+            return self._quick_access_changeid_wc
+        return self._quick_access_changeid_null
 
     def __getitem__(self, changeid):
         # dealing with special cases
