@@ -3347,7 +3347,8 @@ class TestRunner(object):
         else:
             errpath = b'%s.err' % test['path']
         if self.options.outputdir:
-            errpath = os.path.join(self.options.outputdir, errpath)
+            self._outputdir = canonpath(_sys2bytes(self.options.outputdir))
+            errpath = os.path.join(self._outputdir, errpath)
         return errpath
 
     def _getport(self, count):
