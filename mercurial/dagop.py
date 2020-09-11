@@ -17,6 +17,7 @@ from . import (
     node,
     patch,
     pycompat,
+    scmutil,
     smartset,
 )
 
@@ -90,7 +91,7 @@ def filectxancestors(fctxs, followfirst=False):
     visitheap = []
 
     def addvisit(fctx):
-        rev = fctx.rev()
+        rev = scmutil.intrev(fctx)
         if rev not in visit:
             visit[rev] = set()
             heapq.heappush(visitheap, -rev)  # max heap

@@ -753,7 +753,7 @@ def _fileancestors(repo, revs, match, followfirst):
     fcache = {}
 
     def filematcher(ctx):
-        return scmutil.matchfiles(repo, fcache.get(ctx.rev(), []))
+        return scmutil.matchfiles(repo, fcache.get(scmutil.intrev(ctx), []))
 
     def revgen():
         for rev, cs in dagop.filectxancestors(fctxs, followfirst=followfirst):

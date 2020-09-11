@@ -2263,6 +2263,51 @@ dirty:
    }
   ]
 
+follow files from wdir
+
+  $ hg cp d1/f1 f1-copy
+  $ hg stat --all
+  M d1/f1
+  A d1/f2
+  A f1-copy
+    d1/f1
+  R .d6/f1
+  C D2/f1
+  C D3.i/f1
+  C d4.hg/f1
+  C d5.d/f1
+
+  $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat d5.d/f1
+  == 2147483647 ==
+  
+  == 0 ==
+   d5.d/f1 |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+  
+
+  $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat d1/f1
+  == 2147483647 ==
+   d1/f1 |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+  
+  == 0 ==
+   d1/f1 |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+  
+
+ BROKEN: added file should exist in wdir
+  $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat d1/f2
+  abort: cannot follow nonexistent file: "d1/f2"
+  [255]
+
+ BROKEN: copied file should exist in wdir
+  $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat f1-copy
+  abort: cannot follow nonexistent file: "f1-copy"
+  [255]
+
+  $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat notfound
+  notfound: $ENOENT$
+
   $ hg revert -aqC
 
 Check that adding an arbitrary name shows up in log automatically
