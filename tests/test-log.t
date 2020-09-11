@@ -504,13 +504,49 @@ follow files from the specified revisions with glob patterns (issue5053)
   0 (false !)
 
 follow files from the specified revisions with missing patterns
-(BROKEN: should follow copies from e@4)
 
   $ hg log -T '{rev}\n' -fr4 e x
-  4
-  2 (false !)
+  abort: cannot follow file not in any of the specified revisions: "x"
+  [255]
+
+follow files from the specified revisions with directory patterns
+(BROKEN: should follow copies from dir/b@2)
+
+  $ hg log -T '{rev}\n' -fr2 dir/b dir
+  2
   1 (false !)
   0 (false !)
+
+follow files from multiple revisions, but the pattern is missing in
+one of the specified revisions
+
+  $ hg log -T '{rev}\n' -fr'2+4' dir/b e
+  e: no such file in rev f8954cd4dc1f
+  dir/b: no such file in rev 7e4639b4691b
+  4
+  2
+  1
+  0
+
+follow files from multiple revisions, and the pattern matches a file in
+one revision but matches a directory in another:
+(BROKEN: should follow copies from dir/b@2 and dir/b/g@5)
+(BROKEN: the revision 4 should not be included since dir/b/g@5 is unchanged)
+
+  $ mkdir -p dir/b
+  $ hg mv g dir/b
+  $ hg ci -m 'make dir/b a directory'
+
+  $ hg log -T '{rev}\n' -fr'2+5' dir/b
+  5
+  4
+  3 (false !)
+  2
+  1 (false !)
+  0 (false !)
+
+  $ hg --config extensions.strip= strip -r. --no-backup
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
 follow files from the specified revisions across copies with -p/--patch
 
@@ -2312,7 +2348,15 @@ follow files from wdir
   
 
   $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat notfound
-  notfound: $ENOENT$
+  abort: cannot follow file not in any of the specified revisions: "notfound"
+  [255]
+
+follow files from wdir and non-wdir revision:
+
+  $ hg log -T '{rev}\n' -fr'wdir()+.' f1-copy
+  f1-copy: no such file in rev 65624cd9070a
+  2147483647
+  0
 
 follow added/removed files from wdir parent
 

@@ -692,13 +692,27 @@ def _makematcher(repo, revs, pats, opts):
     if not slowpath:
         follow = opts.get(b'follow') or opts.get(b'follow_first')
         if follow and opts.get(b'rev'):
+            # There may be the case that a path doesn't exist in some (but
+            # not all) of the specified start revisions, but let's consider
+            # the path is valid. Missing files will be warned by the matcher.
             startctxs = [repo[r] for r in revs]
             for f in match.files():
-                # No idea if the path was a directory at that revision, so
-                # take the slow path.
-                if any(f not in c for c in startctxs):
-                    slowpath = True
-                    break
+                found = False
+                for c in startctxs:
+                    if f in c:
+                        found = True
+                    elif c.hasdir(f):
+                        # If a directory exists in any of the start revisions,
+                        # take the slow path.
+                        found = slowpath = True
+                if not found:
+                    raise error.Abort(
+                        _(
+                            b'cannot follow file not in any of the specified '
+                            b'revisions: "%s"'
+                        )
+                        % f
+                    )
         elif follow:
             for f in match.files():
                 if f not in wctx:
