@@ -1094,7 +1094,7 @@ def hgclone(orig, ui, opts, *args, **kwargs):
         # truncated at that point.  The user may expect a download count with
         # this option, so attempt whether or not this is a largefile repo.
         if opts.get(b'all_largefiles'):
-            success, missing = lfcommands.downloadlfiles(ui, repo, None)
+            success, missing = lfcommands.downloadlfiles(ui, repo)
 
             if missing != 0:
                 return None
