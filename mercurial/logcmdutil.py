@@ -691,39 +691,47 @@ def _makematcher(repo, revs, pats, opts):
     slowpath = match.anypats() or (not match.always() and opts.get(b'removed'))
     if not slowpath:
         follow = opts.get(b'follow') or opts.get(b'follow_first')
-        startctxs = []
         if follow and opts.get(b'rev'):
             startctxs = [repo[r] for r in revs]
-        for f in match.files():
-            if follow and startctxs:
+            for f in match.files():
                 # No idea if the path was a directory at that revision, so
                 # take the slow path.
                 if any(f not in c for c in startctxs):
                     slowpath = True
                     continue
-            elif follow and f not in wctx:
-                # If the file exists, it may be a directory, so let it
-                # take the slow path.
-                if os.path.exists(repo.wjoin(f)):
-                    slowpath = True
-                    continue
-                else:
-                    raise error.Abort(
-                        _(
-                            b'cannot follow file not in parent '
-                            b'revision: "%s"'
-                        )
-                        % f
-                    )
-            filelog = repo.file(f)
-            if not filelog:
-                # A zero count may be a directory or deleted file, so
-                # try to find matching entries on the slow path.
-                if follow:
+                filelog = repo.file(f)
+                if not filelog:
                     raise error.Abort(
                         _(b'cannot follow nonexistent file: "%s"') % f
                     )
-                slowpath = True
+        elif follow:
+            for f in match.files():
+                if f not in wctx:
+                    # If the file exists, it may be a directory, so let it
+                    # take the slow path.
+                    if os.path.exists(repo.wjoin(f)):
+                        slowpath = True
+                        continue
+                    else:
+                        raise error.Abort(
+                            _(
+                                b'cannot follow file not in parent '
+                                b'revision: "%s"'
+                            )
+                            % f
+                        )
+                filelog = repo.file(f)
+                if not filelog:
+                    raise error.Abort(
+                        _(b'cannot follow nonexistent file: "%s"') % f
+                    )
+        else:
+            for f in match.files():
+                filelog = repo.file(f)
+                if not filelog:
+                    # A zero count may be a directory or deleted file, so
+                    # try to find matching entries on the slow path.
+                    slowpath = True
 
         # We decided to fall back to the slowpath because at least one
         # of the paths was not a file. Check to see if at least one of them

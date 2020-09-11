@@ -2308,6 +2308,20 @@ follow files from wdir
   $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat notfound
   notfound: $ENOENT$
 
+follow added/removed files from wdir parent
+
+  $ hg log -T '{rev}\n' -f d1/f2
+  abort: cannot follow nonexistent file: "d1/f2"
+  [255]
+
+  $ hg log -T '{rev}\n' -f f1-copy
+  abort: cannot follow nonexistent file: "f1-copy"
+  [255]
+
+  $ hg log -T '{rev}\n' -f .d6/f1
+  abort: cannot follow file not in parent revision: ".d6/f1"
+  [255]
+
   $ hg revert -aqC
 
 Check that adding an arbitrary name shows up in log automatically
