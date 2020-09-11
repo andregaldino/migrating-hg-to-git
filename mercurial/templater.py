@@ -1105,8 +1105,8 @@ def open_template(name, templatepath=None):
         return f, open(f, mode='rb')
 
     # Otherwise try to read it using the resources API
-    name_parts = pycompat.sysstr(name).split('/')
-    package_name = '.'.join(['mercurial', 'templates'] + name_parts[:-1])
+    name_parts = name.split(b'/')
+    package_name = b'.'.join([b'mercurial', b'templates'] + name_parts[:-1])
     return (
         name,
         resourceutil.open_resource(package_name, name_parts[-1]),
