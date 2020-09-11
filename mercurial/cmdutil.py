@@ -2386,12 +2386,20 @@ class _followfilter(object):
 
     def match(self, rev):
         def realparents(rev):
-            if self.onlyfirst:
-                return self.repo.changelog.parentrevs(rev)[0:1]
-            else:
-                return filter(
-                    lambda x: x != nullrev, self.repo.changelog.parentrevs(rev)
-                )
+            try:
+                if self.onlyfirst:
+                    return self.repo.changelog.parentrevs(rev)[0:1]
+                else:
+                    return filter(
+                        lambda x: x != nullrev,
+                        self.repo.changelog.parentrevs(rev),
+                    )
+            except error.WdirUnsupported:
+                prevs = [p.rev() for p in self.repo[rev].parents()]
+                if self.onlyfirst:
+                    return prevs[:1]
+                else:
+                    return prevs
 
         if self.startrev == nullrev:
             self.startrev = rev
