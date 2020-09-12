@@ -686,6 +686,10 @@ class walkopts(object):
     pats = attr.ib()  # type: List[bytes]
     opts = attr.ib()  # type: Dict[bytes, Any]
 
+    # a list of revset expressions to be traversed; if follow, it specifies
+    # the start revisions
+    revspec = attr.ib()  # type: List[bytes]
+
     # 0: no follow, 1: follow first, 2: follow both parents
     follow = attr.ib(default=0)  # type: int
 
@@ -706,7 +710,13 @@ def parseopts(ui, pats, opts):
     else:
         follow = 0
 
-    return walkopts(pats=pats, opts=opts, follow=follow, limit=getlimit(opts))
+    return walkopts(
+        pats=pats,
+        opts=opts,
+        revspec=opts.get(b'rev', []),
+        follow=follow,
+        limit=getlimit(opts),
+    )
 
 
 def _makematcher(repo, revs, wopts):
@@ -729,7 +739,7 @@ def _makematcher(repo, revs, wopts):
         not match.always() and wopts.opts.get(b'removed')
     )
     if not slowpath:
-        if wopts.follow and wopts.opts.get(b'rev'):
+        if wopts.follow and wopts.revspec:
             # There may be the case that a path doesn't exist in some (but
             # not all) of the specified start revisions, but let's consider
             # the path is valid. Missing files will be warned by the matcher.
@@ -892,8 +902,8 @@ def _makerevset(repo, wopts, slowpath):
 
 def _initialrevs(repo, wopts):
     """Return the initial set of revisions to be filtered or followed"""
-    if wopts.opts.get(b'rev'):
-        revs = scmutil.revrange(repo, wopts.opts[b'rev'])
+    if wopts.revspec:
+        revs = scmutil.revrange(repo, wopts.revspec)
     elif wopts.follow and repo.dirstate.p1() == nullid:
         revs = smartset.baseset()
     elif wopts.follow:
