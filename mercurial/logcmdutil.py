@@ -690,6 +690,19 @@ class walkopts(object):
     # the start revisions
     revspec = attr.ib()  # type: List[bytes]
 
+    # miscellaneous queries to filter revisions (see "hg help log" for details)
+    branches = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    date = attr.ib(default=None)  # type: Optional[bytes]
+    keywords = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    no_merges = attr.ib(default=False)  # type: bool
+    only_merges = attr.ib(default=False)  # type: bool
+    prune_ancestors = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    users = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+
+    # miscellaneous matcher arguments
+    include_pats = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    exclude_pats = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+
     # 0: no follow, 1: follow first, 2: follow both parents
     follow = attr.ib(default=0)  # type: int
 
@@ -718,6 +731,17 @@ def parseopts(ui, pats, opts):
         pats=pats,
         opts=opts,
         revspec=opts.get(b'rev', []),
+        # branch and only_branch are really aliases and must be handled at
+        # the same time
+        branches=opts.get(b'branch', []) + opts.get(b'only_branch', []),
+        date=opts.get(b'date'),
+        keywords=opts.get(b'keyword', []),
+        no_merges=bool(opts.get(b'no_merges')),
+        only_merges=bool(opts.get(b'only_merges')),
+        prune_ancestors=opts.get(b'prune', []),
+        users=opts.get(b'user', []),
+        include_pats=opts.get(b'include', []),
+        exclude_pats=opts.get(b'exclude', []),
         follow=follow,
         force_changelog_traversal=bool(opts.get(b'removed')),
         limit=getlimit(opts),
@@ -855,12 +879,15 @@ _opt2logrevset = {
 
 def _makerevset(repo, wopts, slowpath):
     """Return a revset string built from log options and file patterns"""
-    opts = dict(wopts.opts)
-
-    # branch and only_branch are really aliases and must be handled at
-    # the same time
-    opts[b'branch'] = opts.get(b'branch', []) + opts.get(b'only_branch', [])
-    opts[b'branch'] = [repo.lookupbranch(b) for b in opts[b'branch']]
+    opts = {
+        b'branch': [repo.lookupbranch(b) for b in wopts.branches],
+        b'date': wopts.date,
+        b'keyword': wopts.keywords,
+        b'no_merges': wopts.no_merges,
+        b'only_merges': wopts.only_merges,
+        b'prune': wopts.prune_ancestors,
+        b'user': wopts.users,
+    }
 
     if slowpath:
         # See walkchangerevs() slow path.
@@ -874,9 +901,9 @@ def _makerevset(repo, wopts, slowpath):
         matchargs = [b'r:', b'd:relpath']
         for p in wopts.pats:
             matchargs.append(b'p:' + p)
-        for p in opts.get(b'include', []):
+        for p in wopts.include_pats:
             matchargs.append(b'i:' + p)
-        for p in opts.get(b'exclude', []):
+        for p in wopts.exclude_pats:
             matchargs.append(b'x:' + p)
         opts[b'_matchfiles'] = matchargs
     elif not wopts.follow:
@@ -885,8 +912,6 @@ def _makerevset(repo, wopts, slowpath):
     expr = []
     for op, val in sorted(pycompat.iteritems(opts)):
         if not val:
-            continue
-        if op not in _opt2logrevset:
             continue
         revop, listop = _opt2logrevset[op]
         if revop and b'%' not in revop:
