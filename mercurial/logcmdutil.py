@@ -689,6 +689,9 @@ class walkopts(object):
     # 0: no follow, 1: follow first, 2: follow both parents
     follow = attr.ib(default=0)  # type: int
 
+    # limit number of changes displayed; None means unlimited
+    limit = attr.ib(default=None)  # type: Optional[int]
+
 
 def parseopts(ui, pats, opts):
     # type: (Any, List[bytes], Dict[bytes, Any]) -> walkopts
@@ -703,7 +706,7 @@ def parseopts(ui, pats, opts):
     else:
         follow = 0
 
-    return walkopts(pats=pats, opts=opts, follow=follow)
+    return walkopts(pats=pats, opts=opts, follow=follow, limit=getlimit(opts))
 
 
 def _makematcher(repo, revs, wopts):
@@ -907,7 +910,6 @@ def getrevs(repo, wopts):
 
     differ is a changesetdiffer with pre-configured file matcher.
     """
-    limit = getlimit(wopts.opts)
     revs = _initialrevs(repo, wopts)
     if not revs:
         return smartset.baseset(), None
@@ -943,8 +945,8 @@ def getrevs(repo, wopts):
     if expr:
         matcher = revset.match(None, expr)
         revs = matcher(repo, revs)
-    if limit is not None:
-        revs = revs.slice(0, limit)
+    if wopts.limit is not None:
+        revs = revs.slice(0, wopts.limit)
 
     differ = changesetdiffer()
     differ._makefilematcher = filematcher
