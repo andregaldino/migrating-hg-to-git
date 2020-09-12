@@ -4734,7 +4734,9 @@ def log(ui, repo, *pats, **opts):
         )
 
     repo = scmutil.unhidehashlikerevs(repo, opts.get(b'rev'), b'nowarn')
-    revs, differ = logcmdutil.getrevs(repo, pats, opts)
+    revs, differ = logcmdutil.getrevs(
+        repo, logcmdutil.parseopts(ui, pats, opts)
+    )
     if linerange:
         # TODO: should follow file history from logcmdutil._initialrevs(),
         # then filter the result by logcmdutil._makerevset() and --limit

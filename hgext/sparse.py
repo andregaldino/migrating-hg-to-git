@@ -137,9 +137,9 @@ def _setuplog(ui):
         )
     )
 
-    def _initialrevs(orig, repo, opts):
-        revs = orig(repo, opts)
-        if opts.get(b'sparse'):
+    def _initialrevs(orig, repo, wopts):
+        revs = orig(repo, wopts)
+        if wopts.opts.get(b'sparse'):
             sparsematch = sparse.matcher(repo)
 
             def ctxmatch(rev):
