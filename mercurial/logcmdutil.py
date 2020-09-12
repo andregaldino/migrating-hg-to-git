@@ -686,6 +686,9 @@ class walkopts(object):
     pats = attr.ib()  # type: List[bytes]
     opts = attr.ib()  # type: Dict[bytes, Any]
 
+    # 0: no follow, 1: follow first, 2: follow both parents
+    follow = attr.ib(default=0)  # type: int
+
 
 def parseopts(ui, pats, opts):
     # type: (Any, List[bytes], Dict[bytes, Any]) -> walkopts
@@ -693,7 +696,14 @@ def parseopts(ui, pats, opts):
 
     The returned walkopts will be passed in to getrevs().
     """
-    return walkopts(pats=pats, opts=opts)
+    if opts.get(b'follow_first'):
+        follow = 1
+    elif opts.get(b'follow'):
+        follow = 2
+    else:
+        follow = 0
+
+    return walkopts(pats=pats, opts=opts, follow=follow)
 
 
 def _makematcher(repo, revs, wopts):
@@ -716,8 +726,7 @@ def _makematcher(repo, revs, wopts):
         not match.always() and wopts.opts.get(b'removed')
     )
     if not slowpath:
-        follow = wopts.opts.get(b'follow') or wopts.opts.get(b'follow_first')
-        if follow and wopts.opts.get(b'rev'):
+        if wopts.follow and wopts.opts.get(b'rev'):
             # There may be the case that a path doesn't exist in some (but
             # not all) of the specified start revisions, but let's consider
             # the path is valid. Missing files will be warned by the matcher.
@@ -739,7 +748,7 @@ def _makematcher(repo, revs, wopts):
                         )
                         % f
                     )
-        elif follow:
+        elif wopts.follow:
             for f in match.files():
                 if f not in wctx:
                     # If the file exists, it may be a directory, so let it
@@ -829,8 +838,6 @@ _opt2logrevset = {
 def _makerevset(repo, wopts, slowpath):
     """Return a revset string built from log options and file patterns"""
     opts = dict(wopts.opts)
-    # follow or not follow?
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
 
     # branch and only_branch are really aliases and must be handled at
     # the same time
@@ -854,7 +861,7 @@ def _makerevset(repo, wopts, slowpath):
         for p in opts.get(b'exclude', []):
             matchargs.append(b'x:' + p)
         opts[b'_matchfiles'] = matchargs
-    elif not follow:
+    elif not wopts.follow:
         opts[b'_patslog'] = list(wopts.pats)
 
     expr = []
@@ -882,12 +889,11 @@ def _makerevset(repo, wopts, slowpath):
 
 def _initialrevs(repo, wopts):
     """Return the initial set of revisions to be filtered or followed"""
-    follow = wopts.opts.get(b'follow') or wopts.opts.get(b'follow_first')
     if wopts.opts.get(b'rev'):
         revs = scmutil.revrange(repo, wopts.opts[b'rev'])
-    elif follow and repo.dirstate.p1() == nullid:
+    elif wopts.follow and repo.dirstate.p1() == nullid:
         revs = smartset.baseset()
-    elif follow:
+    elif wopts.follow:
         revs = repo.revs(b'.')
     else:
         revs = smartset.spanset(repo)
@@ -901,8 +907,6 @@ def getrevs(repo, wopts):
 
     differ is a changesetdiffer with pre-configured file matcher.
     """
-    follow = wopts.opts.get(b'follow') or wopts.opts.get(b'follow_first')
-    followfirst = wopts.opts.get(b'follow_first')
     limit = getlimit(wopts.opts)
     revs = _initialrevs(repo, wopts)
     if not revs:
@@ -911,11 +915,13 @@ def getrevs(repo, wopts):
     wopts = attr.evolve(wopts, pats=pats)
 
     filematcher = None
-    if follow:
+    if wopts.follow:
         if slowpath or match.always():
-            revs = dagop.revancestors(repo, revs, followfirst=followfirst)
+            revs = dagop.revancestors(repo, revs, followfirst=wopts.follow == 1)
         else:
-            revs, filematcher = _fileancestors(repo, revs, match, followfirst)
+            revs, filematcher = _fileancestors(
+                repo, revs, match, followfirst=wopts.follow == 1
+            )
         revs.reverse()
     if filematcher is None:
         filematcher = _makenofollowfilematcher(repo, wopts.pats, wopts.opts)
