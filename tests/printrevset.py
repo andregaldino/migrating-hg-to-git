@@ -16,7 +16,7 @@ def logrevset(repo, pats, opts):
     if not revs:
         return None
     match, pats, slowpath = logcmdutil._makematcher(repo, revs, pats, opts)
-    return logcmdutil._makerevset(repo, match, pats, slowpath, opts)
+    return logcmdutil._makerevset(repo, pats, slowpath, opts)
 
 
 def uisetup(ui):

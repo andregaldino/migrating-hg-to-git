@@ -800,7 +800,7 @@ _opt2logrevset = {
 }
 
 
-def _makerevset(repo, match, pats, slowpath, opts):
+def _makerevset(repo, pats, slowpath, opts):
     """Return a revset string built from log options and file patterns"""
     opts = dict(opts)
     # follow or not follow?
@@ -896,7 +896,7 @@ def getrevs(repo, pats, opts):
         def filematcher(ctx):
             return match
 
-    expr = _makerevset(repo, match, pats, slowpath, opts)
+    expr = _makerevset(repo, pats, slowpath, opts)
     if opts.get(b'graph'):
         if repo.ui.configbool(b'experimental', b'log.topo'):
             if not revs.istopo():
