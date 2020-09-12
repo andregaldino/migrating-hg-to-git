@@ -710,6 +710,9 @@ class walkopts(object):
     # include revisions where files were removed
     force_changelog_traversal = attr.ib(default=False)  # type: bool
 
+    # sort revisions prior to traversal: 'desc', 'topo', or None
+    sort_revisions = attr.ib(default=None)  # type: Optional[bytes]
+
     # limit number of changes displayed; None means unlimited
     limit = attr.ib(default=None)  # type: Optional[int]
 
@@ -726,6 +729,14 @@ def parseopts(ui, pats, opts):
         follow = 2
     else:
         follow = 0
+
+    if opts.get(b'graph'):
+        if ui.configbool(b'experimental', b'log.topo'):
+            sort_revisions = b'topo'
+        else:
+            sort_revisions = b'desc'
+    else:
+        sort_revisions = None
 
     return walkopts(
         pats=pats,
@@ -744,6 +755,7 @@ def parseopts(ui, pats, opts):
         exclude_pats=opts.get(b'exclude', []),
         follow=follow,
         force_changelog_traversal=bool(opts.get(b'removed')),
+        sort_revisions=sort_revisions,
         limit=getlimit(opts),
     )
 
@@ -975,8 +987,9 @@ def getrevs(repo, wopts):
             return match
 
     expr = _makerevset(repo, wopts, slowpath)
-    if wopts.opts.get(b'graph'):
-        if repo.ui.configbool(b'experimental', b'log.topo'):
+    if wopts.sort_revisions:
+        assert wopts.sort_revisions in {b'topo', b'desc'}
+        if wopts.sort_revisions == b'topo':
             if not revs.istopo():
                 revs = dagop.toposort(revs, repo.changelog.parentrevs)
                 # TODO: try to iterate the set lazily
