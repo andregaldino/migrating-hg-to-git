@@ -693,6 +693,10 @@ class walkopts(object):
     # 0: no follow, 1: follow first, 2: follow both parents
     follow = attr.ib(default=0)  # type: int
 
+    # do not attempt filelog-based traversal, which may be fast but cannot
+    # include revisions where files were removed
+    force_changelog_traversal = attr.ib(default=False)  # type: bool
+
     # limit number of changes displayed; None means unlimited
     limit = attr.ib(default=None)  # type: Optional[int]
 
@@ -715,6 +719,7 @@ def parseopts(ui, pats, opts):
         opts=opts,
         revspec=opts.get(b'rev', []),
         follow=follow,
+        force_changelog_traversal=bool(opts.get(b'removed')),
         limit=getlimit(opts),
     )
 
@@ -736,7 +741,7 @@ def _makematcher(repo, revs, wopts):
     wctx = repo[None]
     match, pats = scmutil.matchandpats(wctx, wopts.pats, wopts.opts)
     slowpath = match.anypats() or (
-        not match.always() and wopts.opts.get(b'removed')
+        not match.always() and wopts.force_changelog_traversal
     )
     if not slowpath:
         if wopts.follow and wopts.revspec:
@@ -923,6 +928,7 @@ def getrevs(repo, wopts):
     revs = _initialrevs(repo, wopts)
     if not revs:
         return smartset.baseset(), None
+    # TODO: might want to merge slowpath with wopts.force_changelog_traversal
     match, pats, slowpath = _makematcher(repo, revs, wopts)
     wopts = attr.evolve(wopts, pats=pats)
 
@@ -931,6 +937,7 @@ def getrevs(repo, wopts):
         if slowpath or match.always():
             revs = dagop.revancestors(repo, revs, followfirst=wopts.follow == 1)
         else:
+            assert not wopts.force_changelog_traversal
             revs, filematcher = _fileancestors(
                 repo, revs, match, followfirst=wopts.follow == 1
             )
