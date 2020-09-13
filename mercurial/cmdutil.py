@@ -2230,26 +2230,17 @@ def showmarker(fm, marker, index=None):
 
 def finddate(ui, repo, date):
     """Find the tipmost changeset that matches the given date spec"""
+    mrevs = repo.revs(b'date(%s)', date)
+    try:
+        rev = mrevs.max()
+    except ValueError:
+        raise error.Abort(_(b"revision matching date not found"))
 
-    df = dateutil.matchdate(date)
-    m = scmutil.matchall(repo)
-    results = {}
-
-    def prep(ctx, fns):
-        d = ctx.date()
-        if df(d[0]):
-            results[ctx.rev()] = d
-
-    for ctx in walkchangerevs(repo, m, {b'rev': None}, prep):
-        rev = ctx.rev()
-        if rev in results:
-            ui.status(
-                _(b"found revision %d from %s\n")
-                % (rev, dateutil.datestr(results[rev]))
-            )
-            return b'%d' % rev
-
-    raise error.Abort(_(b"revision matching date not found"))
+    ui.status(
+        _(b"found revision %d from %s\n")
+        % (rev, dateutil.datestr(repo[rev].date()))
+    )
+    return b'%d' % rev
 
 
 def increasingwindows(windowsize=8, sizelimit=512):
