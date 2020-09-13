@@ -73,7 +73,10 @@ class LookupError(RevlogError, KeyError):
             from .node import short
 
             name = short(name)
-        RevlogError.__init__(self, b'%s@%s: %s' % (index, name, message))
+        # if name is a binary node, it can be None
+        RevlogError.__init__(
+            self, b'%s@%s: %s' % (index, pycompat.bytestr(name), message)
+        )
 
     def __bytes__(self):
         return RevlogError.__bytes__(self)
