@@ -1005,7 +1005,7 @@ Test cloning with --all-largefiles flag
   getting changed largefiles
   3 largefiles updated, 0 removed
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  8 additional largefiles cached
+  7 additional largefiles cached
 
   $ rm "${USERCACHE}"/*
   $ hg clone --all-largefiles -u 0 a a-clone0
@@ -1013,7 +1013,7 @@ Test cloning with --all-largefiles flag
   getting changed largefiles
   2 largefiles updated, 0 removed
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  9 additional largefiles cached
+  8 additional largefiles cached
   $ hg -R a-clone0 sum
   parent: 0:30d30fe6a5be 
    add files
@@ -1047,7 +1047,7 @@ Test cloning with --all-largefiles flag
 
   $ rm "${USERCACHE}"/*
   $ hg clone --all-largefiles -U a a-clone-u
-  11 additional largefiles cached
+  10 additional largefiles cached
   $ hg -R a-clone-u sum
   parent: -1:000000000000  (no revision checked out)
   branch: default

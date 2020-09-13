@@ -389,17 +389,17 @@ Ensure the abort message is useful if a largefile is entirely unavailable
   $ rm largefiles-repo/.hg/largefiles/*
   $ hg lfconvert --to-normal issue3519 normalized3519
   initializing destination normalized3519
-  anotherlarge: largefile 3b71f43ff30f4b15b5cd85dd9e95ebc7e84eb5a3 not available from file:/*/$TESTTMP/largefiles-repo (glob)
-  stuff/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
-  stuff/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
-  sub/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
   large: largefile 2e000fa7e85759c7f4c254d4d9c33ef481e459a7 not available from file:/*/$TESTTMP/largefiles-repo (glob)
-  sub/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
-  large: largefile 2e000fa7e85759c7f4c254d4d9c33ef481e459a7 not available from file:/*/$TESTTMP/largefiles-repo (glob)
-  stuff/maybelarge.dat: largefile 34e163be8e43c5631d8b92e9c43ab0bf0fa62b9c not available from file:/*/$TESTTMP/largefiles-repo (glob)
   large: largefile 2e000fa7e85759c7f4c254d4d9c33ef481e459a7 not available from file:/*/$TESTTMP/largefiles-repo (glob)
   sub/maybelarge.dat: largefile 34e163be8e43c5631d8b92e9c43ab0bf0fa62b9c not available from file:/*/$TESTTMP/largefiles-repo (glob)
   large: largefile 2e000fa7e85759c7f4c254d4d9c33ef481e459a7 not available from file:/*/$TESTTMP/largefiles-repo (glob)
+  stuff/maybelarge.dat: largefile 34e163be8e43c5631d8b92e9c43ab0bf0fa62b9c not available from file:/*/$TESTTMP/largefiles-repo (glob)
+  large: largefile 2e000fa7e85759c7f4c254d4d9c33ef481e459a7 not available from file:/*/$TESTTMP/largefiles-repo (glob)
+  sub/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
+  sub/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
+  stuff/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
+  anotherlarge: largefile 3b71f43ff30f4b15b5cd85dd9e95ebc7e84eb5a3 not available from file:/*/$TESTTMP/largefiles-repo (glob)
+  stuff/maybelarge.dat: largefile 76236b6a2c6102826c61af4297dd738fb3b1de38 not available from file:/*/$TESTTMP/largefiles-repo (glob)
   0 additional largefiles cached
   11 largefiles failed to download
   abort: all largefiles must be present locally

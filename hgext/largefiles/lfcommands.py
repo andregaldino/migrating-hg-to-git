@@ -489,7 +489,7 @@ def downloadlfiles(ui, repo):
     tonode = repo.changelog.node
     totalsuccess = 0
     totalmissing = 0
-    for rev in repo.revs(b'reverse(file(%s))', b'path:' + lfutil.shortname):
+    for rev in repo.revs(b'file(%s)', b'path:' + lfutil.shortname):
         success, missing = cachelfiles(ui, repo, tonode(rev))
         totalsuccess += len(success)
         totalmissing += len(missing)
