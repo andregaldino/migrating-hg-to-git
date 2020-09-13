@@ -19,7 +19,7 @@
   $ hg co
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo bar>>foo
-  $ hg commit -m "2"
+  $ hg commit -m "2" -d '1 0'
 
   $ cd ../test
 
@@ -30,7 +30,7 @@
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 30aff43faee1
+  new changesets 84b9316f7b31
   1 local changesets published
   (run 'hg update' to get a working copy)
 
@@ -57,25 +57,47 @@ update to rev 0 with a date
   abort: you can't specify a revision and a date
   [255]
 
+update by date
+
+  $ hg update -d '<1970-01-01 00:00:02 +0000'
+  found revision 1 from Thu Jan 01 00:00:01 1970 +0000
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg update -d '<1970-01-01 00:00:01 +0000'
+  found revision 1 from Thu Jan 01 00:00:01 1970 +0000
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg update -d '<1970-01-01 00:00:00 +0000'
+  found revision 0 from Thu Jan 01 00:00:00 1970 +0000
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg update -d '>1970-01-01 00:00:02 +0000'
+  abort: revision matching date not found
+  [255]
+  $ hg update -d '>1970-01-01 00:00:01 +0000'
+  found revision 1 from Thu Jan 01 00:00:01 1970 +0000
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg update -d '>1970-01-01 00:00:00 +0000'
+  found revision 1 from Thu Jan 01 00:00:01 1970 +0000
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
 update to default destination (with empty revspec)
 
   $ hg update -q null
   $ hg update
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id
-  30aff43faee1 tip
+  84b9316f7b31 tip
 
   $ hg update -q null
   $ hg update -r ''
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id
-  30aff43faee1 tip
+  84b9316f7b31 tip
 
   $ hg update -q null
   $ hg update ''
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg id
-  30aff43faee1 tip
+  84b9316f7b31 tip
 
   $ cd ..
 
