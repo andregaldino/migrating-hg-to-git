@@ -531,6 +531,15 @@ Do all the merge combination (from the deleted or the update side × keeping and
   $ hg merge 'desc("updating-both-file")' -t :local
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+  $ hg debugmergestate
+  local (working copy): 7801bc9b9899de5e304bd162cafde9b78e10ab9b
+  other (merge rev): 9b610631ab29024c5f44af7d2c19658ef8f8f071
+  file: the-file (state "r")
+    local path: the-file (hash 0000000000000000000000000000000000000000, flags "")
+    ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
+    other path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
+    extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
+  extra: other-file (filenode-source = other)
   $ hg ci -m "merge-deleting-the-file-from-deleted"
   $ hg manifest
   other-file
@@ -544,6 +553,14 @@ Do all the merge combination (from the deleted or the update side × keeping and
   $ hg merge 'desc("delete-the-file")' -t :other
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+  $ hg debugmergestate
+  local (working copy): 9b610631ab29024c5f44af7d2c19658ef8f8f071
+  other (merge rev): 7801bc9b9899de5e304bd162cafde9b78e10ab9b
+  file: the-file (state "r")
+    local path: the-file (hash 6d2e02da5a9fe0691363dc6b573845fa271eaa35, flags "")
+    ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
+    other path: the-file (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
   $ hg ci -m "merge-deleting-the-file-from-updated"
   created new head
   $ hg manifest
@@ -558,6 +575,15 @@ Do all the merge combination (from the deleted or the update side × keeping and
   $ hg merge 'desc("updating-both-file")' -t :other
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+  $ hg debugmergestate
+  local (working copy): 7801bc9b9899de5e304bd162cafde9b78e10ab9b
+  other (merge rev): 9b610631ab29024c5f44af7d2c19658ef8f8f071
+  file: the-file (state "r")
+    local path: the-file (hash 0000000000000000000000000000000000000000, flags "")
+    ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
+    other path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
+    extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
+  extra: other-file (filenode-source = other)
   $ hg ci -m "merge-keeping-the-file-from-deleted"
   created new head
   $ hg manifest
@@ -578,6 +604,14 @@ in consideration.
   $ hg merge 'desc("delete-the-file")' -t :local
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+  $ hg debugmergestate
+  local (working copy): 9b610631ab29024c5f44af7d2c19658ef8f8f071
+  other (merge rev): 7801bc9b9899de5e304bd162cafde9b78e10ab9b
+  file: the-file (state "r")
+    local path: the-file (hash 6d2e02da5a9fe0691363dc6b573845fa271eaa35, flags "")
+    ancestor path: the-file (node 4b69178b9bdae28b651393b46e631427a72f217a)
+    other path: the-file (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
   $ hg ci -m "merge-keeping-the-file-from-updated"
   created new head
   $ hg manifest
