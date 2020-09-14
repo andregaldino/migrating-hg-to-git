@@ -140,6 +140,19 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         files.update_copies_from_p1(ctx.p1copies())
         files.update_copies_from_p2(ctx.p2copies())
 
+    copy_sd = ctx.repo().filecopiesmode == b'changeset-sidedata'
+    if copy_sd and len(ctx.parents()) > 1:
+        # XXX this `mergestate.read` could be duplicated with a the merge state
+        # reading in _process_files So we could refactor further to reuse it in
+        # some cases.
+        ms = mergestate.mergestate.read(repo)
+        if ms.active():
+            for fname in sorted(ms._stateextras.keys()):
+                might_removed = ms.extras(fname).get(b'merge-removal-candidate')
+                if might_removed == b'yes':
+                    if fname in ctx:
+                        files.mark_salvaged(fname)
+
     return mn, files
 
 
