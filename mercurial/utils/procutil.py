@@ -701,7 +701,88 @@ if pycompat.iswindows:
 
 else:
 
-    def runbgcommand(
+    def runbgcommandpy3(
+        cmd,
+        env,
+        shell=False,
+        stdout=None,
+        stderr=None,
+        ensurestart=True,
+        record_wait=None,
+        stdin_bytes=None,
+    ):
+        """Spawn a command without waiting for it to finish.
+
+
+        When `record_wait` is not None, the spawned process will not be fully
+        detached and the `record_wait` argument will be called with a the
+        `Subprocess.wait` function for the spawned process.  This is mostly
+        useful for developers that need to make sure the spawned process
+        finished before a certain point. (eg: writing test)"""
+        if pycompat.isdarwin:
+            # avoid crash in CoreFoundation in case another thread
+            # calls gui() while we're calling fork().
+            gui()
+
+        if shell:
+            script = cmd
+        else:
+            if isinstance(cmd, bytes):
+                cmd = [cmd]
+            script = b' '.join(shellquote(x) for x in cmd)
+        if record_wait is None:
+            # double-fork to completely detach from the parent process
+            script = b'( %s ) &' % script
+            start_new_session = True
+        else:
+            start_new_session = False
+            ensurestart = True
+
+        try:
+            if stdin_bytes is None:
+                stdin = subprocess.DEVNULL
+            else:
+                stdin = pycompat.unnamedtempfile()
+                stdin.write(stdin_bytes)
+                stdin.flush()
+                stdin.seek(0)
+            if stdout is None:
+                stdout = subprocess.DEVNULL
+            if stderr is None:
+                stderr = subprocess.DEVNULL
+
+            p = subprocess.Popen(
+                script,
+                shell=True,
+                env=env,
+                close_fds=True,
+                stdin=stdin,
+                stdout=stdout,
+                stderr=stderr,
+                start_new_session=start_new_session,
+            )
+        except Exception:
+            if record_wait is not None:
+                record_wait(255)
+            raise
+        finally:
+            if stdin_bytes is not None:
+                stdin.close()
+        if not ensurestart:
+            # Even though we're not waiting on the child process,
+            # we still must call waitpid() on it at some point so
+            # it's not a zombie/defunct. This is especially relevant for
+            # chg since the parent process won't die anytime soon.
+            # We use a thread to make the overhead tiny.
+            t = threading.Thread(target=lambda: p.wait)
+            t.daemon = True
+            t.start()
+        else:
+            returncode = p.wait
+            if record_wait is not None:
+                record_wait(returncode)
+
+    def runbgcommandpy2(
         cmd,
         env,
         shell=False,
@@ -811,3 +892,14 @@ else:
             stdin.close()
             if record_wait is None:
                 os._exit(returncode)
+
+    if pycompat.ispy3:
+        # This branch is more robust, because it avoids running python
+        # code (hence gc finalizers, like sshpeer.__del__, which
+        # blocks).  But we can't easily do the equivalent in py2,
+        # because of the lack of start_new_session=True flag. Given
+        # that the py2 branch should die soon, the short-lived
+        # duplication seems acceptable.
+        runbgcommand = runbgcommandpy3
+    else:
+        runbgcommand = runbgcommandpy2
