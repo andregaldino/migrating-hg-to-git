@@ -776,7 +776,13 @@ def manifestmerge(
     # - ma is the same as m1 or m2, which we're just going to diff again later
     # - The caller specifically asks for a full diff, which is useful during bid
     #   merge.
-    if pa not in ([wctx, p2] + wctx.parents()) and not forcefulldiff:
+    # - we are tracking salvaged files specifically hence should process all
+    #   files
+    if (
+        pa not in ([wctx, p2] + wctx.parents())
+        and not forcefulldiff
+        and not repo.ui.configbool(b'experimental', b'merge-track-salvaged')
+    ):
         # Identify which files are relevant to the merge, so we can limit the
         # total m1-vs-m2 diff to just those files. This has significant
         # performance benefits in large repositories.
