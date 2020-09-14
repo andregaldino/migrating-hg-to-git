@@ -523,7 +523,6 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
     narrowed.
     """
     # TODO: handle with nonconflicttypes
-    nooptypes = {mergestatemod.ACTION_KEEP}
     nonconflicttypes = {
         mergestatemod.ACTION_ADD,
         mergestatemod.ACTION_ADD_MODIFIED,
@@ -541,7 +540,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
             pass
         elif not branchmerge:
             mresult.removefile(f)  # just updating, ignore changes outside clone
-        elif action[0] in nooptypes:
+        elif action[0] in mergeresult.NO_OP_ACTIONS:
             mresult.removefile(f)  # merge does not affect file
         elif action[0] in nonconflicttypes:
             raise error.Abort(
@@ -563,6 +562,8 @@ class mergeresult(object):
 
     It has information about what actions need to be performed on dirstate
     mapping of divergent renames and other such cases. '''
+
+    NO_OP_ACTIONS = (mergestatemod.ACTION_KEEP,)
 
     def __init__(self):
         """
@@ -711,12 +712,12 @@ class mergeresult(object):
                 a
                 not in (
                     mergestatemod.ACTION_GET,
-                    mergestatemod.ACTION_KEEP,
                     mergestatemod.ACTION_EXEC,
                     mergestatemod.ACTION_REMOVE,
                     mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
                 )
                 and self._actionmapping[a]
+                and a not in self.NO_OP_ACTIONS
             ):
                 return True
 
@@ -1420,7 +1421,7 @@ def applyupdates(
             wctx[f].audit()
             wctx[f].remove()
 
-    numupdates = mresult.len() - mresult.len((mergestatemod.ACTION_KEEP,))
+    numupdates = mresult.len() - mresult.len(mergeresult.NO_OP_ACTIONS)
     progress = repo.ui.makeprogress(
         _(b'updating'), unit=_(b'files'), total=numupdates
     )
