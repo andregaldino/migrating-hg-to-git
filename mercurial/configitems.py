@@ -793,6 +793,9 @@ coreconfigitem(
     b'fsmonitor', b'warn_update_file_count', default=50000,
 )
 coreconfigitem(
+    b'fsmonitor', b'warn_update_file_count_rust', default=400000,
+)
+coreconfigitem(
     b'help', br'hidden-command\..*', default=False, generic=True,
 )
 coreconfigitem(

@@ -73,6 +73,8 @@ beneficial to performance but isn't enabled.
 
     [fsmonitor]
     warn_update_file_count = (integer)
+    # or when mercurial is built with rust support
+    warn_update_file_count_rust = (integer)
 
 If ``warn_when_unused`` is set and fsmonitor isn't enabled, a warning will
 be printed during working directory updates if this many files will be

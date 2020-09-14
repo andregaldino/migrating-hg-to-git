@@ -1698,6 +1698,15 @@ def _advertisefsmonitor(repo, num_gets, p1node):
     fsmonitorthreshold = repo.ui.configint(
         b'fsmonitor', b'warn_update_file_count'
     )
+    # avoid cycle dirstate -> sparse -> merge -> dirstate
+    from . import dirstate
+
+    if dirstate.rustmod is not None:
+        # When using rust status, fsmonitor becomes necessary at higher sizes
+        fsmonitorthreshold = repo.ui.configint(
+            b'fsmonitor', b'warn_update_file_count_rust',
+        )
+
     try:
         # avoid cycle: extensions -> cmdutil -> merge
         from . import extensions
