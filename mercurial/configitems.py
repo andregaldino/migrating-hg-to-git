@@ -590,6 +590,11 @@ coreconfigitem(
 coreconfigitem(
     b'experimental', b'maxdeltachainspan', default=-1,
 )
+# tracks files which were undeleted (merge might delete them but we explicitly
+# kept/undeleted them) and creates new filenodes for them
+coreconfigitem(
+    b'experimental', b'merge-track-salvaged', default=False,
+)
 coreconfigitem(
     b'experimental', b'mergetempdirprefix', default=None,
 )

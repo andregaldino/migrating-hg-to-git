@@ -1,3 +1,15 @@
+#testcases old newfilenode
+
+#if newfilenode
+Enable the config option
+------------------------
+
+  $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > merge-track-salvaged = True
+  > EOF
+#endif
+
 Criss cross merging
 
   $ hg init criss-cross
