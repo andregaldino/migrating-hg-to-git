@@ -781,7 +781,10 @@ def manifestmerge(
     if (
         pa not in ([wctx, p2] + wctx.parents())
         and not forcefulldiff
-        and not repo.ui.configbool(b'experimental', b'merge-track-salvaged')
+        and not (
+            repo.ui.configbool(b'experimental', b'merge-track-salvaged')
+            or repo.filecopiesmode == b'changeset-sidedata'
+        )
     ):
         # Identify which files are relevant to the merge, so we can limit the
         # total m1-vs-m2 diff to just those files. This has significant
