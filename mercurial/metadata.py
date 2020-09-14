@@ -31,6 +31,7 @@ class ChangingFiles(object):
     - added:   files actively added in the changeset.
     - merged:  files whose history got merged
     - removed: files removed in the revision
+    - salvaged: files that might have been deleted by a merge but were not
     - touched: files affected by the merge
 
     and copies information is held by 2 mappings
@@ -47,6 +48,7 @@ class ChangingFiles(object):
         added=None,
         removed=None,
         merged=None,
+        salvaged=None,
         p1_copies=None,
         p2_copies=None,
     ):
@@ -54,6 +56,7 @@ class ChangingFiles(object):
         self._merged = set(() if merged is None else merged)
         self._removed = set(() if removed is None else removed)
         self._touched = set(() if touched is None else touched)
+        self._salvaged = set(() if salvaged is None else salvaged)
         self._touched.update(self._added)
         self._touched.update(self._merged)
         self._touched.update(self._removed)
@@ -65,6 +68,7 @@ class ChangingFiles(object):
             self.added == other.added
             and self.merged == other.merged
             and self.removed == other.removed
+            and self.salvaged == other.salvaged
             and self.touched == other.touched
             and self.copied_from_p1 == other.copied_from_p1
             and self.copied_from_p2 == other.copied_from_p2
@@ -158,6 +162,26 @@ class ChangingFiles(object):
     def update_removed(self, filenames):
         for f in filenames:
             self.mark_removed(f)
+
+    @util.propertycache
+    def salvaged(self):
+        """files that might have been deleted by a merge, but still exists.
+
+        During a merge, the manifest merging might select some files for
+        removal, or for a removed/changed conflict. If at commit time the file
+        still exists, its removal was "reverted" and the file is "salvaged"
+        """
+        return frozenset(self._salvaged)
+
+    def mark_salvaged(self, filename):
+        if "salvaged" in vars(self):
+            del self.salvaged
+        self._salvaged.add(filename)
+        self.mark_touched(filename)
+
+    def update_salvaged(self, filenames):
+        for f in filenames:
+            self.mark_salvaged(f)
 
     @util.propertycache
     def touched(self):
