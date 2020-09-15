@@ -2528,6 +2528,7 @@ class overlayworkingctx(committablectx):
         return path in self._cache
 
     def clean(self):
+        self._mergestate = None
         self._cache = {}
 
     def _compact(self):
@@ -2591,6 +2592,11 @@ class overlayworkingctx(committablectx):
         return overlayworkingfilectx(
             self._repo, path, parent=self, filelog=filelog
         )
+
+    def mergestate(self, clean=False):
+        if clean or self._mergestate is None:
+            self._mergestate = mergestatemod.memmergestate(self._repo)
+        return self._mergestate
 
 
 class overlayworkingfilectx(committablefilectx):

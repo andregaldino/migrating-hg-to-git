@@ -801,6 +801,32 @@ class mergestate(_mergestate_base):
         shutil.rmtree(self._repo.vfs.join(b'merge'), True)
 
 
+class memmergestate(_mergestate_base):
+    def __init__(self, repo):
+        super(memmergestate, self).__init__(repo)
+        self._backups = {}
+
+    def _make_backup(self, fctx, localkey):
+        self._backups[localkey] = fctx.data()
+
+    def _restore_backup(self, fctx, localkey, flags):
+        fctx.write(self._backups[localkey], flags)
+
+    @util.propertycache
+    def mergedriver(self):
+        configmergedriver = self._repo.ui.config(
+            b'experimental', b'mergedriver'
+        )
+        if configmergedriver:
+            raise error.InMemoryMergeConflictsError(
+                b"in-memory merge does not support mergedriver"
+            )
+        return None
+
+    def commit(self):
+        pass
+
+
 def recordupdates(repo, actions, branchmerge, getfiledata):
     """record merge actions to the dirstate"""
     # remove (must come first)

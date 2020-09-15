@@ -1398,7 +1398,7 @@ def applyupdates(
     _prefetchfiles(repo, mctx, mresult)
 
     updated, merged, removed = 0, 0, 0
-    ms = mergestatemod.mergestate.clean(repo)
+    ms = wctx.mergestate(clean=True)
     ms.start(wctx.p1().node(), mctx.node(), labels)
 
     for f, op in pycompat.iteritems(mresult.commitinfo):
@@ -1611,10 +1611,6 @@ def applyupdates(
     usemergedriver = not overwrite and mergeactions and ms.mergedriver
 
     if usemergedriver:
-        if wctx.isinmemory():
-            raise error.InMemoryMergeConflictsError(
-                b"in-memory merge does not support mergedriver"
-            )
         ms.commit()
         proceed = driverpreprocess(repo, ms, wctx, labels=labels)
         # the driver might leave some files unresolved
@@ -1895,7 +1891,7 @@ def update(
         if not overwrite:
             if len(pl) > 1:
                 raise error.Abort(_(b"outstanding uncommitted merge"))
-            ms = mergestatemod.mergestate.read(repo)
+            ms = wc.mergestate()
             if list(ms.unresolved()):
                 raise error.Abort(
                     _(b"outstanding merge conflicts"),
