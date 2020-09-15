@@ -79,11 +79,9 @@ Check that copies are recorded correctly
   2\x00a (esc)
 #else
   $ hg debugsidedata -c -v -- -1
-  2 sidedata entries
-   entry-0010 size 11
-    '0\x00a\n1\x00a\n2\x00a'
-   entry-0012 size 5
-    '0\n1\n2'
+  1 sidedata entries
+   entry-0014 size 44
+    '\x00\x00\x00\x04\x00\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00\x06\x00\x00\x00\x03\x00\x00\x00\x00\x06\x00\x00\x00\x04\x00\x00\x00\x00abcd'
 #endif
 
   $ hg showcopies
@@ -117,13 +115,9 @@ Check that renames are recorded correctly
 
 #else
   $ hg debugsidedata -c -v -- -1
-  3 sidedata entries
-   entry-0010 size 3
-    '1\x00b'
-   entry-0012 size 1
-    '1'
-   entry-0013 size 1
-    '0'
+  1 sidedata entries
+   entry-0014 size 25
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x03\x00\x00\x00\x00bb2'
 #endif
 
   $ hg showcopies
@@ -165,8 +159,8 @@ even though there is no filelog entry.
 #else
   $ hg debugsidedata -c -v -- -1
   1 sidedata entries
-   entry-0010 size 4
-    '0\x00b2'
+   entry-0014 size 25
+    '\x00\x00\x00\x02\x00\x00\x00\x00\x02\x00\x00\x00\x00\x16\x00\x00\x00\x03\x00\x00\x00\x00b2c'
 #endif
 
   $ hg showcopies
@@ -221,13 +215,9 @@ File 'f' exists only in p1, so 'i' should be from p1
 
 #else
   $ hg debugsidedata -c -v -- -1
-  3 sidedata entries
-   entry-0010 size 7
-    '0\x00a\n2\x00f'
-   entry-0011 size 3
-    '1\x00d'
-   entry-0012 size 5
-    '0\n1\n2'
+  1 sidedata entries
+   entry-0014 size 64
+    '\x00\x00\x00\x06\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x06\x00\x00\x00\x04\x00\x00\x00\x00\x07\x00\x00\x00\x05\x00\x00\x00\x01\x06\x00\x00\x00\x06\x00\x00\x00\x02adfghi'
 #endif
 
   $ hg showcopies
@@ -250,11 +240,9 @@ Test writing to both changeset and filelog
 #else
   $ hg ci -m 'copy a to j'
   $ hg debugsidedata -c -v -- -1
-  2 sidedata entries
-   entry-0010 size 3
-    '0\x00a'
-   entry-0012 size 1
-    '0'
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x00\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00aj'
 #endif
   $ hg debugdata j 0
   \x01 (esc)
@@ -281,11 +269,9 @@ copy information on to the filelog
   $ hg ci --amend -m 'copy a to j, v2'
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
   $ hg debugsidedata -c -v -- -1
-  2 sidedata entries
-   entry-0010 size 3
-    '0\x00a'
-   entry-0012 size 1
-    '0'
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x00\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00aj'
 #endif
   $ hg showcopies --config experimental.copies.read-from=filelog-only
   a -> j
@@ -304,6 +290,9 @@ won't have to fall back to reading from filelogs)
 #else
   $ hg ci -m 'modify j'
   $ hg debugsidedata -c -v -- -1
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00j'
 #endif
 
 Test writing only to filelog
@@ -318,11 +307,9 @@ Test writing only to filelog
 #else
   $ hg ci -m 'copy a to k'
   $ hg debugsidedata -c -v -- -1
-  2 sidedata entries
-   entry-0010 size 3
-    '0\x00a'
-   entry-0012 size 1
-    '0'
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x00\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ak'
 #endif
 
   $ hg debugdata k 0
@@ -439,10 +426,10 @@ downgrading (keeping some sidedata)
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
   1 sidedata entries
-   entry-0012 size 1
+   entry-0014 size 14
   $ hg debugsidedata -c -- 1
   1 sidedata entries
-   entry-0013 size 1
+   entry-0014 size 14
   $ hg debugsidedata -m -- 0
   $ cat << EOF > .hg/hgrc
   > [format]
@@ -463,7 +450,11 @@ downgrading (keeping some sidedata)
   compression:        zlib   zlib    zlib
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
+  1 sidedata entries
+   entry-0014 size 14
   $ hg debugsidedata -c -- 1
+  1 sidedata entries
+   entry-0014 size 14
   $ hg debugsidedata -m -- 0
 
 upgrading
@@ -487,10 +478,10 @@ upgrading
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
   1 sidedata entries
-   entry-0012 size 1
+   entry-0014 size 14
   $ hg debugsidedata -c -- 1
   1 sidedata entries
-   entry-0013 size 1
+   entry-0014 size 14
   $ hg debugsidedata -m -- 0
 
 #endif

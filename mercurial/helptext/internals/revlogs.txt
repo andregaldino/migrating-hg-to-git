@@ -239,3 +239,75 @@ hash of a revision:
 2. Hash the fulltext of the revision
 
 The 20 byte node ids of the parents are fed into the hasher in ascending order.
+
+Changed Files side-data
+=======================
+
+(This feature is in active development and its behavior is not frozen yet. It
+should not be used in any production repository)
+
+When the `exp-copies-sidedata-changeset` requirement is in use, information
+related to the changed files will be stored as "side-data" for every changeset
+in the changelog.
+
+These data contains the following information:
+
+* set of files actively added by the changeset
+* set of files actively removed by the changeset
+* set of files actively merged by the changeset
+* set of files actively touched by he changeset
+* mapping of copy-source, copy-destination from first parent (p1)
+* mapping of copy-source, copy-destination from second parent (p2)
+
+The block itself is big-endian data, formatted in three sections: header, index,
+and data. See below for details:
+
+Header:
+
+    4 bytes: unsigned integer
+
+        total number of entry in the index
+
+Index:
+
+  The index contains an entry for every involved filename. It is sorted by
+  filename. The entry use the following format:
+
+    1 byte:  bits field
+
+        This byte hold two different bit fields:
+
+        The 2 lower bits carry copy information:
+
+            `00`: file has not copy information,
+            `10`: file is copied from a p1 source,
+            `11`: file is copied from a p2 source.
+
+        The 3 next bits carry action information.
+
+            `000`: file was untouched, it exist in the index as copy source,
+            `001`: file was actively added
+            `010`: file was actively merged
+            `011`: file was actively removed
+            `100`: reserved for future use
+            `101`: file was actively touched in any other way
+
+        (The last 2 bites are unused)
+
+    4 bytes: unsigned integer
+
+        Address (in bytes) of the end of the associated filename in the data
+        block. (This is the address of the first byte not part of the filename)
+
+        The start of the filename can be retrieve by reading that field for the
+        previous index entry. The filename of the first entry starts at zero.
+
+    4 bytes: unsigned integer
+
+        Index (in this very index) of the source of the copy (when a copy is
+        happening). If no copy is happening the value of this field is
+        irrelevant and could have any value. It is set to zero by convention
+
+Data:
+
+  raw bytes block containing all filename concatenated without any separator.

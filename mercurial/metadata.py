@@ -8,6 +8,7 @@
 from __future__ import absolute_import, print_function
 
 import multiprocessing
+import struct
 
 from . import (
     error,
@@ -373,54 +374,112 @@ def decodefileindices(files, data):
         return None
 
 
+# see mercurial/helptext/internals/revlogs.txt for details about the format
+
+ACTION_MASK = int("111" "00", 2)
+# note: untouched file used as copy source will as `000` for this mask.
+ADDED_FLAG = int("001" "00", 2)
+MERGED_FLAG = int("010" "00", 2)
+REMOVED_FLAG = int("011" "00", 2)
+# `100` is reserved for future use
+TOUCHED_FLAG = int("101" "00", 2)
+
+COPIED_MASK = int("11", 2)
+COPIED_FROM_P1_FLAG = int("10", 2)
+COPIED_FROM_P2_FLAG = int("11", 2)
+
+# structure is <flag><filename-end><copy-source>
+INDEX_HEADER = struct.Struct(">L")
+INDEX_ENTRY = struct.Struct(">bLL")
+
+
 def encode_files_sidedata(files):
-    sortedfiles = sorted(files.touched)
-    sidedata = {}
-    p1copies = files.copied_from_p1
-    if p1copies:
-        p1copies = encodecopies(sortedfiles, p1copies)
-        sidedata[sidedatamod.SD_P1COPIES] = p1copies
-    p2copies = files.copied_from_p2
-    if p2copies:
-        p2copies = encodecopies(sortedfiles, p2copies)
-        sidedata[sidedatamod.SD_P2COPIES] = p2copies
-    filesadded = files.added
-    if filesadded:
-        filesadded = encodefileindices(sortedfiles, filesadded)
-        sidedata[sidedatamod.SD_FILESADDED] = filesadded
-    filesremoved = files.removed
-    if filesremoved:
-        filesremoved = encodefileindices(sortedfiles, filesremoved)
-        sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
-    if not sidedata:
-        sidedata = None
-    return sidedata
+    all_files = set(files.touched)
+    all_files.update(files.copied_from_p1.values())
+    all_files.update(files.copied_from_p2.values())
+    all_files = sorted(all_files)
+    file_idx = {f: i for (i, f) in enumerate(all_files)}
+    file_idx[None] = 0
+
+    chunks = [INDEX_HEADER.pack(len(all_files))]
+
+    filename_length = 0
+    for f in all_files:
+        filename_size = len(f)
+        filename_length += filename_size
+        flag = 0
+        if f in files.added:
+            flag |= ADDED_FLAG
+        elif f in files.merged:
+            flag |= MERGED_FLAG
+        elif f in files.removed:
+            flag |= REMOVED_FLAG
+        elif f in files.touched:
+            flag |= TOUCHED_FLAG
+
+        copy = None
+        if f in files.copied_from_p1:
+            flag |= COPIED_FROM_P1_FLAG
+            copy = files.copied_from_p1.get(f)
+        elif f in files.copied_from_p2:
+            copy = files.copied_from_p2.get(f)
+            flag |= COPIED_FROM_P2_FLAG
+        copy_idx = file_idx[copy]
+        chunks.append(INDEX_ENTRY.pack(flag, filename_length, copy_idx))
+    chunks.extend(all_files)
+    return {sidedatamod.SD_FILES: b''.join(chunks)}
 
 
 def decode_files_sidedata(changelogrevision, sidedata):
-    """Return a ChangingFiles instance from a changelogrevision using sidata
-    """
-    touched = changelogrevision.files
+    md = ChangingFiles()
+    raw = sidedata.get(sidedatamod.SD_FILES)
 
-    rawindices = sidedata.get(sidedatamod.SD_FILESADDED)
-    added = decodefileindices(touched, rawindices)
+    if raw is None:
+        return md
 
-    rawindices = sidedata.get(sidedatamod.SD_FILESREMOVED)
-    removed = decodefileindices(touched, rawindices)
+    copies = []
+    all_files = []
 
-    rawcopies = sidedata.get(sidedatamod.SD_P1COPIES)
-    p1_copies = decodecopies(touched, rawcopies)
+    assert len(raw) >= INDEX_HEADER.size
+    total_files = INDEX_HEADER.unpack_from(raw, 0)[0]
 
-    rawcopies = sidedata.get(sidedatamod.SD_P2COPIES)
-    p2_copies = decodecopies(touched, rawcopies)
+    offset = INDEX_HEADER.size
+    file_offset_base = offset + (INDEX_ENTRY.size * total_files)
+    file_offset_last = file_offset_base
 
-    return ChangingFiles(
-        touched=touched,
-        added=added,
-        removed=removed,
-        p1_copies=p1_copies,
-        p2_copies=p2_copies,
-    )
+    assert len(raw) >= file_offset_base
+
+    for idx in range(total_files):
+        flag, file_end, copy_idx = INDEX_ENTRY.unpack_from(raw, offset)
+        file_end += file_offset_base
+        filename = raw[file_offset_last:file_end]
+        filesize = file_end - file_offset_last
+        assert len(filename) == filesize
+        offset += INDEX_ENTRY.size
+        file_offset_last = file_end
+        all_files.append(filename)
+        if flag & ACTION_MASK == ADDED_FLAG:
+            md.mark_added(filename)
+        elif flag & ACTION_MASK == MERGED_FLAG:
+            md.mark_merged(filename)
+        elif flag & ACTION_MASK == REMOVED_FLAG:
+            md.mark_removed(filename)
+        elif flag & ACTION_MASK == TOUCHED_FLAG:
+            md.mark_touched(filename)
+
+        copied = None
+        if flag & COPIED_MASK == COPIED_FROM_P1_FLAG:
+            copied = md.mark_copied_from_p1
+        elif flag & COPIED_MASK == COPIED_FROM_P2_FLAG:
+            copied = md.mark_copied_from_p2
+
+        if copied is not None:
+            copies.append((copied, filename, copy_idx))
+
+    for copied, filename, copy_idx in copies:
+        copied(all_files[copy_idx], filename)
+
+    return md
 
 
 def _getsidedata(srcrepo, rev):
@@ -428,23 +487,15 @@ def _getsidedata(srcrepo, rev):
     filescopies = computechangesetcopies(ctx)
     filesadded = computechangesetfilesadded(ctx)
     filesremoved = computechangesetfilesremoved(ctx)
-    sidedata = {}
-    if any([filescopies, filesadded, filesremoved]):
-        sortedfiles = sorted(ctx.files())
-        p1copies, p2copies = filescopies
-        p1copies = encodecopies(sortedfiles, p1copies)
-        p2copies = encodecopies(sortedfiles, p2copies)
-        filesadded = encodefileindices(sortedfiles, filesadded)
-        filesremoved = encodefileindices(sortedfiles, filesremoved)
-        if p1copies:
-            sidedata[sidedatamod.SD_P1COPIES] = p1copies
-        if p2copies:
-            sidedata[sidedatamod.SD_P2COPIES] = p2copies
-        if filesadded:
-            sidedata[sidedatamod.SD_FILESADDED] = filesadded
-        if filesremoved:
-            sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
-    return sidedata
+    filesmerged = computechangesetfilesmerged(ctx)
+    files = ChangingFiles()
+    files.update_touched(ctx.files())
+    files.update_added(filesadded)
+    files.update_removed(filesremoved)
+    files.update_merged(filesmerged)
+    files.update_copies_from_p1(filescopies[0])
+    files.update_copies_from_p2(filescopies[1])
+    return encode_files_sidedata(files)
 
 
 def getsidedataadder(srcrepo, destrepo):

@@ -53,6 +53,7 @@ SD_P1COPIES = 8
 SD_P2COPIES = 9
 SD_FILESADDED = 10
 SD_FILESREMOVED = 11
+SD_FILES = 12
 
 # internal format constant
 SIDEDATA_HEADER = struct.Struct('>H')
