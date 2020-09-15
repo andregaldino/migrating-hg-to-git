@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use std::borrow::Borrow;
+use std::convert::TryFrom;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::ops::Deref;
@@ -513,6 +514,13 @@ pub fn path_to_hg_path_buf<P: AsRef<Path>>(
 
     buf.check_state()?;
     Ok(buf)
+}
+
+impl TryFrom<PathBuf> for HgPathBuf {
+    type Error = HgPathError;
+    fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
+        path_to_hg_path_buf(path)
+    }
 }
 
 #[cfg(test)]
