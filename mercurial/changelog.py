@@ -305,7 +305,7 @@ class changelogrevision(object):
         if self._changes is not None:
             return self._changes
         if self._cpsd:
-            changes = metadata.decode_files_sidedata(self, self._sidedata)
+            changes = metadata.decode_files_sidedata(self._sidedata)
         else:
             changes = metadata.ChangingFiles(
                 touched=self.files or (),

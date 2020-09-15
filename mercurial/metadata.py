@@ -430,7 +430,7 @@ def encode_files_sidedata(files):
     return {sidedatamod.SD_FILES: b''.join(chunks)}
 
 
-def decode_files_sidedata(changelogrevision, sidedata):
+def decode_files_sidedata(sidedata):
     md = ChangingFiles()
     raw = sidedata.get(sidedatamod.SD_FILES)
 
