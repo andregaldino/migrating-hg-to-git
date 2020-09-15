@@ -319,6 +319,8 @@ class changelogrevision(object):
 
     @property
     def files(self):
+        if self._cpsd:
+            return sorted(self.changes.touched)
         off = self._offsets
         if off[2] == off[3]:
             return []
