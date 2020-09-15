@@ -545,6 +545,13 @@ class mergestate(object):
 
         return hex(hashutil.sha1(path).digest())
 
+    def _make_backup(self, fctx, localkey):
+        self._repo.vfs.write(b'merge/' + localkey, fctx.data())
+
+    def _restore_backup(self, fctx, localkey, flags):
+        with self._repo.vfs(b'merge/' + localkey) as f:
+            fctx.write(f.read(), flags)
+
     def add(self, fcl, fco, fca, fd):
         """add a new (potentially?) conflicting file the merge state
         fcl: file context for local,
@@ -558,7 +565,7 @@ class mergestate(object):
             localkey = nullhex
         else:
             localkey = mergestate.getlocalkey(fcl.path())
-            self._repo.vfs.write(b'merge/' + localkey, fcl.data())
+            self._make_backup(fcl, localkey)
         self._state[fd] = [
             MERGE_RECORD_UNRESOLVED,
             localkey,
@@ -664,9 +671,7 @@ class mergestate(object):
         if preresolve:
             # restore local
             if localkey != nullhex:
-                f = self._repo.vfs(b'merge/' + localkey)
-                wctx[dfile].write(f.read(), flags)
-                f.close()
+                self._restore_backup(wctx[dfile], localkey, flags)
             else:
                 wctx[dfile].remove(ignoremissing=True)
             complete, merge_ret, deleted = filemerge.premerge(
