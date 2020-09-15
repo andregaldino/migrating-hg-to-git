@@ -685,7 +685,7 @@ ACTION_MASK = int("111" "00", 2)
 ADDED_FLAG = int("001" "00", 2)
 MERGED_FLAG = int("010" "00", 2)
 REMOVED_FLAG = int("011" "00", 2)
-# `100` is reserved for future use
+SALVAGED_FLAG = int("100" "00", 2)
 TOUCHED_FLAG = int("101" "00", 2)
 
 COPIED_MASK = int("11", 2)
@@ -698,7 +698,7 @@ INDEX_ENTRY = struct.Struct(">bLL")
 
 
 def encode_files_sidedata(files):
-    all_files = set(files.touched - files.salvaged)
+    all_files = set(files.touched)
     all_files.update(files.copied_from_p1.values())
     all_files.update(files.copied_from_p2.values())
     all_files = sorted(all_files)
@@ -718,6 +718,8 @@ def encode_files_sidedata(files):
             flag |= MERGED_FLAG
         elif f in files.removed:
             flag |= REMOVED_FLAG
+        elif f in files.salvaged:
+            flag |= SALVAGED_FLAG
         elif f in files.touched:
             flag |= TOUCHED_FLAG
 
@@ -768,6 +770,8 @@ def decode_files_sidedata(sidedata):
             md.mark_merged(filename)
         elif flag & ACTION_MASK == REMOVED_FLAG:
             md.mark_removed(filename)
+        elif flag & ACTION_MASK == SALVAGED_FLAG:
+            md.mark_salvaged(filename)
         elif flag & ACTION_MASK == TOUCHED_FLAG:
             md.mark_touched(filename)
 

@@ -1174,19 +1174,23 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   merged     : d, ;
   ##### revision 30 #####
   1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
   ##### revision 31 #####
   1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
   ##### revision 32 #####
   1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
   ##### revision 33 #####
   1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
 
 #endif
