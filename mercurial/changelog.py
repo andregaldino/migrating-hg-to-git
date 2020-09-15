@@ -216,6 +216,7 @@ class changelogrevision(object):
         '_text',
         '_sidedata',
         '_cpsd',
+        '_changes',
     )
 
     def __new__(cls, text, sidedata, cpsd):
@@ -252,6 +253,7 @@ class changelogrevision(object):
         self._text = text
         self._sidedata = sidedata
         self._cpsd = cpsd
+        self._changes = None
 
         return self
 
@@ -299,6 +301,20 @@ class changelogrevision(object):
             return _defaultextra
 
         return decodeextra(raw)
+
+    @property
+    def changes(self):
+        if self._changes is not None:
+            return self._changes
+        changes = metadata.ChangingFiles(
+            touched=self.files or (),
+            added=self.filesadded or (),
+            removed=self.filesremoved or (),
+            p1_copies=self.p1copies or {},
+            p2_copies=self.p2copies or {},
+        )
+        self._changes = changes
+        return changes
 
     @property
     def files(self):
