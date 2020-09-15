@@ -38,6 +38,26 @@ fn main() {
                 .about(commands::files::HELP_TEXT),
         )
         .subcommand(
+            SubCommand::with_name("cat")
+                .arg(
+                    Arg::with_name("rev")
+                        .help("search the repository as it is in REV")
+                        .short("-r")
+                        .long("--revision")
+                        .value_name("REV")
+                        .takes_value(true),
+                )
+                .arg(
+                    clap::Arg::with_name("files")
+                        .required(true)
+                        .multiple(true)
+                        .empty_values(false)
+                        .value_name("FILE")
+                        .help("Activity to start: activity@category"),
+                )
+                .about(commands::cat::HELP_TEXT),
+        )
+        .subcommand(
             SubCommand::with_name("debugdata")
                 .about(commands::debugdata::HELP_TEXT)
                 .arg(
@@ -98,6 +118,9 @@ fn match_subcommand(
         ("files", Some(matches)) => {
             commands::files::FilesCommand::try_from(matches)?.run(&ui)
         }
+        ("cat", Some(matches)) => {
+            commands::cat::CatCommand::try_from(matches)?.run(&ui)
+        }
         ("debugdata", Some(matches)) => {
             commands::debugdata::DebugDataCommand::try_from(matches)?.run(&ui)
         }
@@ -111,6 +134,19 @@ impl<'a> TryFrom<&'a ArgMatches<'_>> for commands::files::FilesCommand<'a> {
     fn try_from(args: &'a ArgMatches) -> Result<Self, Self::Error> {
         let rev = args.value_of("rev");
         Ok(commands::files::FilesCommand::new(rev))
+    }
+}
+
+impl<'a> TryFrom<&'a ArgMatches<'_>> for commands::cat::CatCommand<'a> {
+    type Error = CommandError;
+
+    fn try_from(args: &'a ArgMatches) -> Result<Self, Self::Error> {
+        let rev = args.value_of("rev");
+        let files = match args.values_of("files") {
+            Some(files) => files.collect(),
+            None => vec![],
+        };
+        Ok(commands::cat::CatCommand::new(rev, files))
     }
 }
 

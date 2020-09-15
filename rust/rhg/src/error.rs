@@ -18,6 +18,8 @@ pub enum CommandErrorKind {
     StderrError,
     /// The command aborted
     Abort(Option<Vec<u8>>),
+    /// A mercurial capability as not been implemented.
+    Unimplemented,
 }
 
 impl CommandErrorKind {
@@ -28,6 +30,7 @@ impl CommandErrorKind {
             CommandErrorKind::StdoutError => exitcode::ABORT,
             CommandErrorKind::StderrError => exitcode::ABORT,
             CommandErrorKind::Abort(_) => exitcode::ABORT,
+            CommandErrorKind::Unimplemented => exitcode::UNIMPLEMENTED_COMMAND,
         }
     }
 

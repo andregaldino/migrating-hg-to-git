@@ -1,3 +1,4 @@
+pub mod cat;
 pub mod debugdata;
 pub mod files;
 pub mod root;
