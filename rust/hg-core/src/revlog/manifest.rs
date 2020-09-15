@@ -57,4 +57,17 @@ impl ManifestEntry {
             HgPath::new(&line[..pos])
         })
     }
+
+    /// Return an iterator over the files of the entry.
+    pub fn files_with_nodes(&self) -> impl Iterator<Item = (&HgPath, &[u8])> {
+        self.lines().filter(|line| !line.is_empty()).map(|line| {
+            let pos = line
+                .iter()
+                .position(|x| x == &b'\0')
+                .expect("manifest line should contain \\0");
+            let hash_start = pos + 1;
+            let hash_end = hash_start + 40;
+            (HgPath::new(&line[..pos]), &line[hash_start..hash_end])
+        })
+    }
 }
