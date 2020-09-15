@@ -50,6 +50,15 @@ class ChangingFiles(object):
         self._p1_copies = dict(p1_copies)
         self._p2_copies = dict(p2_copies)
 
+    def __eq__(self, other):
+        return (
+            self.added == other.added
+            and self.removed == other.removed
+            and self.touched == other.touched
+            and self.copied_from_p1 == other.copied_from_p1
+            and self.copied_from_p2 == other.copied_from_p2
+        )
+
     @property
     def added(self):
         """files actively added in the changeset
