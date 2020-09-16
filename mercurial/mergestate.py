@@ -181,7 +181,8 @@ class mergestate(object):
         """Initialize a brand new merge state, removing any existing state on
         disk."""
         ms = mergestate(repo)
-        ms.reset(node, other, labels)
+        ms.reset()
+        ms.start(node, other, labels)
         return ms
 
     @staticmethod
@@ -199,12 +200,9 @@ class mergestate(object):
         self._dirty = False
         self._labels = None
 
-    def reset(self, node=None, other=None, labels=None):
+    def reset(self):
         self._state = {}
         self._stateextras = collections.defaultdict(dict)
-        self._local = node
-        self._other = other
-        self._labels = labels
         for var in ('localctx', 'otherctx'):
             if var in vars(self):
                 delattr(self, var)
@@ -216,6 +214,11 @@ class mergestate(object):
         shutil.rmtree(self._repo.vfs.join(b'merge'), True)
         self._results = {}
         self._dirty = False
+
+    def start(self, node, other, labels=None):
+        self._local = node
+        self._other = other
+        self._labels = labels
 
     def _read(self):
         """Analyse each record content to restore a serialized state from disk
