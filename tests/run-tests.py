@@ -967,6 +967,7 @@ class Test(unittest.TestCase):
         if slowtimeout is None:
             slowtimeout = defaults['slowtimeout']
         self.path = path
+        self.relpath = os.path.relpath(path)
         self.bname = os.path.basename(path)
         self.name = _bytes2sys(self.bname)
         self._testdir = os.path.dirname(path)
@@ -2397,11 +2398,17 @@ class TestSuite(unittest.TestSuite):
                 result.addSkip(test, "Doesn't exist")
                 continue
 
-            if not (self._whitelist and test.bname in self._whitelist):
-                if self._blacklist and test.bname in self._blacklist:
+            is_whitelisted = self._whitelist and (
+                test.relpath in self._whitelist or test.bname in self._whitelist
+            )
+            if not is_whitelisted:
+                is_blacklisted = self._blacklist and (
+                    test.relpath in self._blacklist
+                    or test.bname in self._blacklist
+                )
+                if is_blacklisted:
                     result.addSkip(test, 'blacklisted')
                     continue
-
                 if self._keywords:
                     with open(test.path, 'rb') as f:
                         t = f.read().lower() + test.bname.lower()
