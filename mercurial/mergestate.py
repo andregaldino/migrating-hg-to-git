@@ -195,8 +195,20 @@ class mergestate(object):
 
         Do not use this directly! Instead call read() or clean()."""
         self._repo = repo
-        self._dirty = False
+        self._state = {}
+        self._stateextras = collections.defaultdict(dict)
+        self._local = None
+        self._other = None
         self._labels = None
+        self._readmergedriver = None
+        self._mdstate = MERGE_DRIVER_STATE_UNMARKED
+        # contains a mapping of form:
+        # {filename : (merge_return_value, action_to_be_performed}
+        # these are results of re-running merge process
+        # this dict is used to perform actions on dirstate caused by re-running
+        # the merge
+        self._results = {}
+        self._dirty = False
 
     def reset(self):
         shutil.rmtree(self._repo.vfs.join(b'merge'), True)
@@ -205,15 +217,8 @@ class mergestate(object):
         self._local = node
         self._other = other
         self._labels = labels
-        self._state = {}
-        self._stateextras = collections.defaultdict(dict)
-        self._readmergedriver = None
         if self.mergedriver:
             self._mdstate = MERGE_DRIVER_STATE_SUCCESS
-        else:
-            self._mdstate = MERGE_DRIVER_STATE_UNMARKED
-        self._results = {}
-        self._dirty = False
 
     def _read(self):
         """Analyse each record content to restore a serialized state from disk
@@ -221,11 +226,6 @@ class mergestate(object):
         This function process "record" entry produced by the de-serialization
         of on disk file.
         """
-        self._state = {}
-        self._stateextras = collections.defaultdict(dict)
-        self._local = None
-        self._other = None
-        self._readmergedriver = None
         self._mdstate = MERGE_DRIVER_STATE_SUCCESS
         unsupported = set()
         records = self._readrecords()
@@ -277,13 +277,6 @@ class mergestate(object):
                 self._labels = [l for l in labels if len(l) > 0]
             elif not rtype.islower():
                 unsupported.add(rtype)
-        # contains a mapping of form:
-        # {filename : (merge_return_value, action_to_be_performed}
-        # these are results of re-running merge process
-        # this dict is used to perform actions on dirstate caused by re-running
-        # the merge
-        self._results = {}
-        self._dirty = False
 
         if unsupported:
             raise error.UnsupportedMergeRecords(unsupported)
