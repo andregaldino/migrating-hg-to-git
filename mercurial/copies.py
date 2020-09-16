@@ -371,11 +371,15 @@ def _merge_copies_dict(minor, major, isancestor, changes):
                 continue
             # content from "major" wins, unless it is older
             # than the branch point or there is a merge
-            if (
-                new_tt == other_tt
-                or not isancestor(new_tt, other_tt)
-                or dest in changes.merged
-            ):
+            if new_tt == other_tt:
+                minor[dest] = value
+            elif value[1] is None and dest in changes.salvaged:
+                pass
+            elif other[1] is None and dest in changes.salvaged:
+                minor[dest] = value
+            elif not isancestor(new_tt, other_tt):
+                minor[dest] = value
+            elif dest in changes.merged:
                 minor[dest] = value
 
 

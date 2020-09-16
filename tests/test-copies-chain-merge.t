@@ -892,15 +892,15 @@ copy tracing chain.
   o  0 i-0 initial commit: a b h
   
 
-BROKEN: 'a' should be the the source of 'd' in the changeset centric algorithm too
+'a' is the copy source of 'd'
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCGm-0")'
   A d
-    a (filelog !)
+    a (no-compatibility !)
   R a
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGCm-0")'
   A d
-    a (filelog !)
+    a (no-compatibility !)
   R a
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCGm-0")'
   A d
@@ -955,17 +955,17 @@ copy tracing chain.
   o  0 i-0 initial commit: a b h
   
 
-BROKEN: 'a' should be the the source of 'd' in the changeset centric algorithm too
+'a' is the the copy source of 'd'
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB-revert-m-0")'
   M b
   A d
-    a (filelog !)
+    a (no-compatibility !)
   R a
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-revert-m-0")'
   M b
   A d
-    a (filelog !)
+    a (no-compatibility !)
   R a
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCB-revert-m-0")'
   M b
