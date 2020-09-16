@@ -526,7 +526,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
             pass
         elif not branchmerge:
             mresult.removefile(f)  # just updating, ignore changes outside clone
-        elif action[0] in mergeresult.NO_OP_ACTIONS:
+        elif action[0] in mergestatemod.NO_OP_ACTIONS:
             mresult.removefile(f)  # merge does not affect file
         elif action[0] in nonconflicttypes:
             raise error.Abort(
@@ -548,12 +548,6 @@ class mergeresult(object):
 
     It has information about what actions need to be performed on dirstate
     mapping of divergent renames and other such cases. '''
-
-    NO_OP_ACTIONS = (
-        mergestatemod.ACTION_KEEP,
-        mergestatemod.ACTION_KEEP_ABSENT,
-        mergestatemod.ACTION_KEEP_NEW,
-    )
 
     def __init__(self):
         """
@@ -707,7 +701,7 @@ class mergeresult(object):
                     mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
                 )
                 and self._actionmapping[a]
-                and a not in self.NO_OP_ACTIONS
+                and a not in mergestatemod.NO_OP_ACTIONS
             ):
                 return True
 
@@ -1398,7 +1392,7 @@ def applyupdates(
         # mergestate so that it can be reused on commit
         ms.addcommitinfo(f, op)
 
-    numupdates = mresult.len() - mresult.len(mergeresult.NO_OP_ACTIONS)
+    numupdates = mresult.len() - mresult.len(mergestatemod.NO_OP_ACTIONS)
     progress = repo.ui.makeprogress(
         _(b'updating'), unit=_(b'files'), total=numupdates
     )
@@ -1502,7 +1496,7 @@ def applyupdates(
         progress.increment(item=f)
 
     # keep (noop, just log it)
-    for a in mergeresult.NO_OP_ACTIONS:
+    for a in mergestatemod.NO_OP_ACTIONS:
         for f, args, msg in mresult.getactions((a,), sort=True):
             repo.ui.debug(b" %s: %s -> %s\n" % (f, msg, a))
             # no progress

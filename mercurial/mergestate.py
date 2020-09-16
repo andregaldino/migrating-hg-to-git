@@ -123,6 +123,13 @@ ACTION_KEEP_NEW = b'kn'
 ACTION_EXEC = b'e'
 ACTION_CREATED_MERGE = b'cm'
 
+# actions which are no op
+NO_OP_ACTIONS = (
+    ACTION_KEEP,
+    ACTION_KEEP_ABSENT,
+    ACTION_KEEP_NEW,
+)
+
 
 class _mergestate_base(object):
     '''track 3-way merge state of individual files
