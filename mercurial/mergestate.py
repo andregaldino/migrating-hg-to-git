@@ -200,6 +200,12 @@ class mergestate(object):
         self._labels = None
 
     def reset(self):
+        shutil.rmtree(self._repo.vfs.join(b'merge'), True)
+
+    def start(self, node, other, labels=None):
+        self._local = node
+        self._other = other
+        self._labels = labels
         self._state = {}
         self._stateextras = collections.defaultdict(dict)
         for var in ('localctx', 'otherctx'):
@@ -210,14 +216,8 @@ class mergestate(object):
             self._mdstate = MERGE_DRIVER_STATE_SUCCESS
         else:
             self._mdstate = MERGE_DRIVER_STATE_UNMARKED
-        shutil.rmtree(self._repo.vfs.join(b'merge'), True)
         self._results = {}
         self._dirty = False
-
-    def start(self, node, other, labels=None):
-        self._local = node
-        self._other = other
-        self._labels = labels
 
     def _read(self):
         """Analyse each record content to restore a serialized state from disk
