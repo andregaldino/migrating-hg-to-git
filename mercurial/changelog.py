@@ -403,8 +403,20 @@ class changelog(revlog.revlog):
         self._delayed = False
         self._delaybuf = None
         self._divert = False
-        self.filteredrevs = frozenset()
+        self._filteredrevs = frozenset()
+        self._filteredrevs_hashcache = {}
         self._copiesstorage = opener.options.get(b'copies-storage')
+
+    @property
+    def filteredrevs(self):
+        return self._filteredrevs
+
+    @filteredrevs.setter
+    def filteredrevs(self, val):
+        # Ensure all updates go through this function
+        assert isinstance(val, frozenset)
+        self._filteredrevs = val
+        self._filteredrevs_hashcache = {}
 
     def delayupdate(self, tr):
         """delay visibility of index updates to other readers"""

@@ -364,13 +364,15 @@ def filteredhash(repo, maxrev):
     cl = repo.changelog
     if not cl.filteredrevs:
         return None
-    key = None
-    revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
-    if revs:
-        s = hashutil.sha1()
-        for rev in revs:
-            s.update(b'%d;' % rev)
-        key = s.digest()
+    key = cl._filteredrevs_hashcache.get(maxrev)
+    if not key:
+        revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
+        if revs:
+            s = hashutil.sha1()
+            for rev in revs:
+                s.update(b'%d;' % rev)
+            key = s.digest()
+            cl._filteredrevs_hashcache[maxrev] = key
     return key
 
 
