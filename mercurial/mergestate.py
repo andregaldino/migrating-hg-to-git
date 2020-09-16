@@ -202,15 +202,12 @@ class mergestate(object):
     def reset(self, node=None, other=None, labels=None):
         self._state = {}
         self._stateextras = collections.defaultdict(dict)
-        self._local = None
-        self._other = None
+        self._local = node
+        self._other = other
         self._labels = labels
         for var in ('localctx', 'otherctx'):
             if var in vars(self):
                 delattr(self, var)
-        if node:
-            self._local = node
-            self._other = other
         self._readmergedriver = None
         if self.mergedriver:
             self._mdstate = MERGE_DRIVER_STATE_SUCCESS
