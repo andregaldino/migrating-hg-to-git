@@ -23,7 +23,20 @@ from .revlogutils import (
 
 
 class ChangingFiles(object):
-    """A class recording the changes made to a file by a revision
+    """A class recording the changes made to a file by a changeset
+
+    Actions performed on files are gathered into 3 sets:
+
+    - added:   files actively added in the changeset.
+    - removed: files removed in the revision
+    - touched: files affected by the merge
+
+    and copies information is held by 2 mappings
+
+    - copied_from_p1: {"<new-name>": "<source-name-in-p1>"} mapping for copies
+    - copied_from_p2: {"<new-name>": "<source-name-in-p2>"} mapping for copies
+
+    See their inline help for details.
     """
 
     def __init__(
@@ -39,6 +52,15 @@ class ChangingFiles(object):
 
     @property
     def added(self):
+        """files actively added in the changeset
+
+        Any file present in that revision that was absent in all the changeset's
+        parents.
+
+        In case of merge, this means a file absent in one of the parents but
+        existing in the other will *not* be contained in this set. (They were
+        added by an ancestor)
+        """
         return frozenset(self._added)
 
     def mark_added(self, filename):
@@ -51,6 +73,38 @@ class ChangingFiles(object):
 
     @property
     def removed(self):
+        """files actively removed by the changeset
+
+        In case of merge this will only contain the set of files removing "new"
+        content. For any file absent in the current changeset:
+
+        a) If the file exists in both parents, it is clearly "actively" removed
+        by this changeset.
+
+        b) If a file exists in only one parent and in none of the common
+        ancestors, then the file was newly added in one of the merged branches
+        and then got "actively" removed.
+
+        c) If a file exists in only one parent and at least one of the common
+        ancestors using the same filenode, then the file was unchanged on one
+        side and deleted on the other side. The merge "passively" propagated
+        that deletion, but didn't "actively" remove the file. In this case the
+        file is *not* included in the `removed` set.
+
+        d) If a file exists in only one parent and at least one of the common
+        ancestors using a different filenode, then the file was changed on one
+        side and removed on the other side. The merge process "actively"
+        decided to drop the new change and delete the file. Unlike in the
+        previous case, (c), the file included in the `removed` set.
+
+        Summary table for merge:
+
+        case | exists in parents | exists in gca || removed
+         (a) |       both        |     *         ||   yes
+         (b) |       one         |     none      ||   yes
+         (c) |       one         | same filenode ||   no
+         (d) |       one         |  new filenode ||   yes
+        """
         return frozenset(self._removed)
 
     def mark_removed(self, filename):
@@ -63,6 +117,7 @@ class ChangingFiles(object):
 
     @property
     def touched(self):
+        """files either actively modified, added or removed"""
         return frozenset(self._touched)
 
     def mark_touched(self, filename):
