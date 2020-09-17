@@ -271,7 +271,7 @@ class basectx(object):
                 return self._manifest.find(path)
             except KeyError:
                 raise error.ManifestLookupError(
-                    self._node, path, _(b'not found in manifest')
+                    self._node or b'None', path, _(b'not found in manifest')
                 )
         if '_manifestdelta' in self.__dict__ or path in self.files():
             if path in self._manifestdelta:
@@ -284,7 +284,7 @@ class basectx(object):
             node, flag = mfl[self._changeset.manifest].find(path)
         except KeyError:
             raise error.ManifestLookupError(
-                self._node, path, _(b'not found in manifest')
+                self._node or b'None', path, _(b'not found in manifest')
             )
 
         return node, flag
