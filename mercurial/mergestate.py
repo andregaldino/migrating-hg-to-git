@@ -177,12 +177,11 @@ class mergestate(object):
     statepathv2 = b'merge/state2'
 
     @staticmethod
-    def clean(repo, node=None, other=None, labels=None):
+    def clean(repo):
         """Initialize a brand new merge state, removing any existing state on
         disk."""
         ms = mergestate(repo)
         ms.reset()
-        ms.start(node, other, labels)
         return ms
 
     @staticmethod

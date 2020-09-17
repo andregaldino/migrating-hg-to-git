@@ -1398,9 +1398,8 @@ def applyupdates(
     _prefetchfiles(repo, mctx, mresult)
 
     updated, merged, removed = 0, 0, 0
-    ms = mergestatemod.mergestate.clean(
-        repo, wctx.p1().node(), mctx.node(), labels
-    )
+    ms = mergestatemod.mergestate.clean(repo)
+    ms.start(wctx.p1().node(), mctx.node(), labels)
 
     for f, op in pycompat.iteritems(mresult.commitinfo):
         # the other side of filenode was choosen while merging, store this in
