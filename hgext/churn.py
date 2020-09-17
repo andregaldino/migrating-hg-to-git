@@ -183,6 +183,9 @@ def churn(ui, repo, *pats, **opts):
       # display count of lines changed in every year
       hg churn -f "%Y" -s
 
+      # display count of lines changed in a time range
+      hg churn -d "2020-04 to 2020-09"
+
     It is possible to map alternate email addresses to a main address
     by providing a file using the following format::
 
