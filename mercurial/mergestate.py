@@ -258,64 +258,6 @@ class _mergestate_base(object):
 
     def commit(self):
         """Write current state on disk (if necessary)"""
-        if self._dirty:
-            records = self._makerecords()
-            self._writerecords(records)
-            self._dirty = False
-
-    def _makerecords(self):
-        records = []
-        records.append((RECORD_LOCAL, hex(self._local)))
-        records.append((RECORD_OTHER, hex(self._other)))
-        if self.mergedriver:
-            records.append(
-                (
-                    RECORD_MERGE_DRIVER_STATE,
-                    b'\0'.join([self.mergedriver, self._mdstate]),
-                )
-            )
-        # Write out state items. In all cases, the value of the state map entry
-        # is written as the contents of the record. The record type depends on
-        # the type of state that is stored, and capital-letter records are used
-        # to prevent older versions of Mercurial that do not support the feature
-        # from loading them.
-        for filename, v in pycompat.iteritems(self._state):
-            if v[0] == MERGE_RECORD_DRIVER_RESOLVED:
-                # Driver-resolved merge. These are stored in 'D' records.
-                records.append(
-                    (RECORD_MERGE_DRIVER_MERGE, b'\0'.join([filename] + v))
-                )
-            elif v[0] in (
-                MERGE_RECORD_UNRESOLVED_PATH,
-                MERGE_RECORD_RESOLVED_PATH,
-            ):
-                # Path conflicts. These are stored in 'P' records.  The current
-                # resolution state ('pu' or 'pr') is stored within the record.
-                records.append(
-                    (RECORD_PATH_CONFLICT, b'\0'.join([filename] + v))
-                )
-            elif v[1] == nullhex or v[6] == nullhex:
-                # Change/Delete or Delete/Change conflicts. These are stored in
-                # 'C' records. v[1] is the local file, and is nullhex when the
-                # file is deleted locally ('dc'). v[6] is the remote file, and
-                # is nullhex when the file is deleted remotely ('cd').
-                records.append(
-                    (RECORD_CHANGEDELETE_CONFLICT, b'\0'.join([filename] + v))
-                )
-            else:
-                # Normal files.  These are stored in 'F' records.
-                records.append((RECORD_MERGED, b'\0'.join([filename] + v)))
-        for filename, extras in sorted(pycompat.iteritems(self._stateextras)):
-            rawextras = b'\0'.join(
-                b'%s\0%s' % (k, v) for k, v in pycompat.iteritems(extras)
-            )
-            records.append(
-                (RECORD_FILE_VALUES, b'%s\0%s' % (filename, rawextras))
-            )
-        if self._labels is not None:
-            labels = b'\0'.join(self._labels)
-            records.append((RECORD_LABELS, labels))
-        return records
 
     @staticmethod
     def getlocalkey(path):
@@ -758,6 +700,66 @@ class mergestate(_mergestate_base):
                 raise
         return records
 
+    def commit(self):
+        if self._dirty:
+            records = self._makerecords()
+            self._writerecords(records)
+            self._dirty = False
+
+    def _makerecords(self):
+        records = []
+        records.append((RECORD_LOCAL, hex(self._local)))
+        records.append((RECORD_OTHER, hex(self._other)))
+        if self.mergedriver:
+            records.append(
+                (
+                    RECORD_MERGE_DRIVER_STATE,
+                    b'\0'.join([self.mergedriver, self._mdstate]),
+                )
+            )
+        # Write out state items. In all cases, the value of the state map entry
+        # is written as the contents of the record. The record type depends on
+        # the type of state that is stored, and capital-letter records are used
+        # to prevent older versions of Mercurial that do not support the feature
+        # from loading them.
+        for filename, v in pycompat.iteritems(self._state):
+            if v[0] == MERGE_RECORD_DRIVER_RESOLVED:
+                # Driver-resolved merge. These are stored in 'D' records.
+                records.append(
+                    (RECORD_MERGE_DRIVER_MERGE, b'\0'.join([filename] + v))
+                )
+            elif v[0] in (
+                MERGE_RECORD_UNRESOLVED_PATH,
+                MERGE_RECORD_RESOLVED_PATH,
+            ):
+                # Path conflicts. These are stored in 'P' records.  The current
+                # resolution state ('pu' or 'pr') is stored within the record.
+                records.append(
+                    (RECORD_PATH_CONFLICT, b'\0'.join([filename] + v))
+                )
+            elif v[1] == nullhex or v[6] == nullhex:
+                # Change/Delete or Delete/Change conflicts. These are stored in
+                # 'C' records. v[1] is the local file, and is nullhex when the
+                # file is deleted locally ('dc'). v[6] is the remote file, and
+                # is nullhex when the file is deleted remotely ('cd').
+                records.append(
+                    (RECORD_CHANGEDELETE_CONFLICT, b'\0'.join([filename] + v))
+                )
+            else:
+                # Normal files.  These are stored in 'F' records.
+                records.append((RECORD_MERGED, b'\0'.join([filename] + v)))
+        for filename, extras in sorted(pycompat.iteritems(self._stateextras)):
+            rawextras = b'\0'.join(
+                b'%s\0%s' % (k, v) for k, v in pycompat.iteritems(extras)
+            )
+            records.append(
+                (RECORD_FILE_VALUES, b'%s\0%s' % (filename, rawextras))
+            )
+        if self._labels is not None:
+            labels = b'\0'.join(self._labels)
+            records.append((RECORD_LABELS, labels))
+        return records
+
     def _writerecords(self, records):
         """Write current state on disk (both v1 and v2)"""
         self._writerecordsv1(records)
@@ -822,9 +824,6 @@ class memmergestate(_mergestate_base):
                 b"in-memory merge does not support mergedriver"
             )
         return None
-
-    def commit(self):
-        pass
 
 
 def recordupdates(repo, actions, branchmerge, getfiledata):
