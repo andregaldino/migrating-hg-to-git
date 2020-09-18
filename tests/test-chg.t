@@ -197,6 +197,14 @@ in this test.
 
   $ cd ..
 
+missing stdio
+-------------
+
+  $ CHGDEBUG=1 chg version -q 0<&-
+  chg: debug: * stdio fds are missing (glob)
+  chg: debug: * execute original hg (glob)
+  Mercurial Distributed SCM * (glob)
+
 server lifecycle
 ----------------
 

@@ -373,8 +373,15 @@ static int runinstructions(struct cmdserveropts *opts, const char **insts)
 }
 
 /*
- * Test whether the command is unsupported or not. This is not designed to
- * cover all cases. But it's fast, does not depend on the server.
+ * Test whether the command and the environment is unsupported or not.
+ *
+ * If any of the stdio file descriptors are not present (rare, but some tools
+ * might spawn new processes without stdio instead of redirecting them to the
+ * null device), then mark it as not supported because attachio won't work
+ * correctly.
+ *
+ * The command list is not designed to cover all cases. But it's fast, and does
+ * not depend on the server.
  */
 static int isunsupported(int argc, const char *argv[])
 {
@@ -384,6 +391,13 @@ static int isunsupported(int argc, const char *argv[])
 	};
 	unsigned int state = 0;
 	int i;
+	/* use fcntl to test missing stdio fds */
+	if (fcntl(STDIN_FILENO, F_GETFD) == -1 ||
+	    fcntl(STDOUT_FILENO, F_GETFD) == -1 ||
+	    fcntl(STDERR_FILENO, F_GETFD) == -1) {
+		debugmsg("stdio fds are missing");
+		return 1;
+	}
 	for (i = 0; i < argc; ++i) {
 		if (strcmp(argv[i], "--") == 0)
 			break;
