@@ -170,12 +170,11 @@ Test that if share source config is untrusted, we dont read it
 Update the source repository format and check that shared repo works
 
   $ cd ../source
+
+Disable zstd related tests because its not present on pure version
+#if zstd
   $ echo "[format]" >> .hg/hgrc
   $ echo "revlog-compression=zstd" >> .hg/hgrc
-
-  $ hg debugupgraderepo --run -q -R ../shared1
-  abort: cannot upgrade repository; unsupported source requirement: shared
-  [255]
 
   $ hg debugupgraderepo --run -q
   upgrade will perform the following actions:
@@ -190,6 +189,29 @@ Update the source repository format and check that shared repo works
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     added b
   
+#endif
+  $ echo "[format]" >> .hg/hgrc
+  $ echo "use-persistent-nodemap=True" >> .hg/hgrc
+
+  $ hg debugupgraderepo --run -q -R ../shared1
+  abort: cannot upgrade repository; unsupported source requirement: shared
+  [255]
+
+  $ hg debugupgraderepo --run -q
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     added: persistent-nodemap
+  
+  $ hg log -r .
+  changeset:   1:5f6d8a4bf34a
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     added b
+  
+
 Shared one should work
   $ cd ../shared1
   $ hg log -r .
