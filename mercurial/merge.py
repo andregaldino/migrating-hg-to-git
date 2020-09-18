@@ -355,20 +355,6 @@ def _checkcollision(repo, wmf, mresult):
         lastfull = f
 
 
-def driverpreprocess(repo, ms, wctx, labels=None):
-    """run the preprocess step of the merge driver, if any
-
-    This is currently not implemented -- it's an extension point."""
-    return True
-
-
-def driverconclude(repo, ms, wctx, labels=None):
-    """run the conclude step of the merge driver, if any
-
-    This is currently not implemented -- it's an extension point."""
-    return True
-
-
 def _filesindirs(repo, manifest, dirs):
     """
     Generator that yields pairs of all the files in the manifest that are found
@@ -1605,27 +1591,6 @@ def applyupdates(
             mergestatemod.ACTION_DIR_RENAME_MOVE_LOCAL,
         )
     )
-    # the ordering is important here -- ms.mergedriver will raise if the merge
-    # driver has changed, and we want to be able to bypass it when overwrite is
-    # True
-    usemergedriver = not overwrite and mergeactions and ms.mergedriver
-
-    if usemergedriver:
-        ms.commit()
-        proceed = driverpreprocess(repo, ms, wctx, labels=labels)
-        # the driver might leave some files unresolved
-        unresolvedf = set(ms.unresolved())
-        if not proceed:
-            # XXX setting unresolved to at least 1 is a hack to make sure we
-            # error out
-            return updateresult(
-                updated, merged, removed, max(len(unresolvedf), 1)
-            )
-        newactions = []
-        for f, args, msg in mergeactions:
-            if f in unresolvedf:
-                newactions.append((f, args, msg))
-        mergeactions = newactions
 
     try:
         # premerge
@@ -1655,18 +1620,6 @@ def applyupdates(
 
     unresolved = ms.unresolvedcount()
 
-    if (
-        usemergedriver
-        and not unresolved
-        and ms.mdstate() != mergestatemod.MERGE_DRIVER_STATE_SUCCESS
-    ):
-        if not driverconclude(repo, ms, wctx, labels=labels):
-            # XXX setting unresolved to at least 1 is a hack to make sure we
-            # error out
-            unresolved = max(unresolved, 1)
-
-        ms.commit()
-
     msupdated, msmerged, msremoved = ms.counts()
     updated += msupdated
     merged += msmerged
@@ -1674,9 +1627,6 @@ def applyupdates(
 
     extraactions = ms.actions()
     if extraactions:
-        mfiles = {
-            a[0] for a in mresult.getactions((mergestatemod.ACTION_MERGE,))
-        }
         for k, acts in pycompat.iteritems(extraactions):
             for a in acts:
                 mresult.addfile(a[0], k, *a[1:])
@@ -1684,27 +1634,6 @@ def applyupdates(
                 # no filedata until mergestate is updated to provide it
                 for a in acts:
                     getfiledata[a[0]] = None
-            # Remove these files from actions[ACTION_MERGE] as well. This is
-            # important because in recordupdates, files in actions[ACTION_MERGE]
-            # are processed after files in other actions, and the merge driver
-            # might add files to those actions via extraactions above. This can
-            # lead to a file being recorded twice, with poor results. This is
-            # especially problematic for actions[ACTION_REMOVE] (currently only
-            # possible with the merge driver in the initial merge process;
-            # interrupted merges don't go through this flow).
-            #
-            # The real fix here is to have indexes by both file and action so
-            # that when the action for a file is changed it is automatically
-            # reflected in the other action lists. But that involves a more
-            # complex data structure, so this will do for now.
-            #
-            # We don't need to do the same operation for 'dc' and 'cd' because
-            # those lists aren't consulted again.
-            mfiles.difference_update(a[0] for a in acts)
-
-        for a in list(mresult.getactions((mergestatemod.ACTION_MERGE,))):
-            if a[0] not in mfiles:
-                mresult.removefile(a[0])
 
     progress.complete()
     assert len(getfiledata) == (

@@ -635,9 +635,6 @@ coreconfigitem(
 coreconfigitem(
     b'experimental', b'httppostargs', default=False,
 )
-coreconfigitem(
-    b'experimental', b'mergedriver', default=None,
-)
 coreconfigitem(b'experimental', b'nointerrupt', default=False)
 coreconfigitem(b'experimental', b'nointerrupt-interactiveonly', default=True)
 

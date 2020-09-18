@@ -87,64 +87,6 @@ cleanup
   $ cd ..
   $ rmdir nested
 
-don't allow marking or unmarking driver-resolved files
-
-  $ cat > $TESTTMP/markdriver.py << EOF
-  > '''mark and unmark files as driver-resolved'''
-  > from mercurial import (
-  >    mergestate,
-  >    pycompat,
-  >    registrar,
-  >    scmutil,
-  > )
-  > cmdtable = {}
-  > command = registrar.command(cmdtable)
-  > @command(b'markdriver',
-  >   [(b'u', b'unmark', None, b'')],
-  >   b'FILE...')
-  > def markdriver(ui, repo, *pats, **opts):
-  >     wlock = repo.wlock()
-  >     opts = pycompat.byteskwargs(opts)
-  >     try:
-  >         ms = mergestate.mergestate.read(repo)
-  >         m = scmutil.match(repo[None], pats, opts)
-  >         for f in ms:
-  >             if not m(f):
-  >                 continue
-  >             if not opts[b'unmark']:
-  >                 ms.mark(f, b'd')
-  >             else:
-  >                 ms.mark(f, b'u')
-  >         ms.commit()
-  >     finally:
-  >         wlock.release()
-  > EOF
-  $ hg --config extensions.markdriver=$TESTTMP/markdriver.py markdriver file1
-  $ hg resolve --list
-  D file1
-  U file2
-  $ hg resolve --mark file1
-  not marking file1 as it is driver-resolved
-this should not print out file1
-  $ hg resolve --mark --all
-  (no more unresolved files -- run "hg resolve --all" to conclude)
-  $ hg resolve --mark 'glob:file*'
-  (no more unresolved files -- run "hg resolve --all" to conclude)
-  $ hg resolve --list
-  D file1
-  R file2
-  $ hg resolve --unmark file1
-  not unmarking file1 as it is driver-resolved
-  (no more unresolved files -- run "hg resolve --all" to conclude)
-  $ hg resolve --unmark --all
-  $ hg resolve --list
-  D file1
-  U file2
-  $ hg --config extensions.markdriver=$TESTTMP/markdriver.py markdriver --unmark file1
-  $ hg resolve --list
-  U file1
-  U file2
-
 resolve the failure
 
   $ echo resolved > file1

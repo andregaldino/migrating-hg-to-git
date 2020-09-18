@@ -17,8 +17,3 @@ def checkunresolved(ms):
         raise error.Abort(
             _(b"unresolved merge conflicts (see 'hg help resolve')")
         )
-    if ms.mdstate() != b's' or list(ms.driverresolved()):
-        raise error.Abort(
-            _(b'driver-resolved merge conflicts'),
-            hint=_(b'run "hg resolve --all" to resolve'),
-        )

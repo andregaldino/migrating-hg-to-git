@@ -48,8 +48,6 @@ RECORD_LOCAL = b'L'
 RECORD_OTHER = b'O'
 # record merge labels
 RECORD_LABELS = b'l'
-# store info about merge driver used and it's state
-RECORD_MERGE_DRIVER_STATE = b'm'
 
 #####
 # record extra information about files, with one entry containing info about one
@@ -65,7 +63,6 @@ RECORD_FILE_VALUES = b'f'
 #####
 RECORD_MERGED = b'F'
 RECORD_CHANGEDELETE_CONFLICT = b'C'
-RECORD_MERGE_DRIVER_MERGE = b'D'
 # the path was dir on one side of merge and file on another
 RECORD_PATH_CONFLICT = b'P'
 
@@ -77,7 +74,6 @@ MERGE_RECORD_UNRESOLVED = b'u'
 MERGE_RECORD_RESOLVED = b'r'
 MERGE_RECORD_UNRESOLVED_PATH = b'pu'
 MERGE_RECORD_RESOLVED_PATH = b'pr'
-MERGE_RECORD_DRIVER_RESOLVED = b'd'
 # represents that the file was automatically merged in favor
 # of other version. This info is used on commit.
 # This is now deprecated and commit related information is now
@@ -91,18 +87,16 @@ MERGE_RECORD_MERGED_OTHER = b'o'
 RECORD_OVERRIDE = b't'
 
 #####
-# possible states which a merge driver can have. These are stored inside a
-# RECORD_MERGE_DRIVER_STATE entry
-#####
-MERGE_DRIVER_STATE_UNMARKED = b'u'
-MERGE_DRIVER_STATE_MARKED = b'm'
-MERGE_DRIVER_STATE_SUCCESS = b's'
-
-#####
 # legacy records which are no longer used but kept to prevent breaking BC
 #####
 # This record was release in 5.4 and usage was removed in 5.5
 LEGACY_RECORD_RESOLVED_OTHER = b'R'
+# This record was release in 3.7 and usage was removed in 5.6
+LEGACY_RECORD_DRIVER_RESOLVED = b'd'
+# This record was release in 3.7 and usage was removed in 5.6
+LEGACY_MERGE_DRIVER_STATE = b'm'
+# This record was release in 3.7 and usage was removed in 5.6
+LEGACY_MERGE_DRIVER_MERGE = b'D'
 
 
 ACTION_FORGET = b'f'
@@ -147,26 +141,15 @@ class _mergestate_base(object):
     O: the node of the "other" part of the merge (hexified version)
     F: a file to be merged entry
     C: a change/delete or delete/change conflict
-    D: a file that the external merge driver will merge internally
-       (experimental)
     P: a path conflict (file vs directory)
-    m: the external merge driver defined for this merge plus its run state
-       (experimental)
     f: a (filename, dictionary) tuple of optional values for a given file
     l: the labels for the parts of the merge.
-
-    Merge driver run states (experimental):
-    u: driver-resolved files unmarked -- needs to be run next time we're about
-       to resolve or commit
-    m: driver-resolved files marked -- only needs to be run before commit
-    s: success/skipped -- does not need to be run any more
 
     Merge record states (stored in self._state, indexed by filename):
     u: unresolved conflict
     r: resolved conflict
     pu: unresolved path conflict (file conflicts with directory)
     pr: resolved path conflict
-    d: driver-resolved conflict
 
     The resolve command transitions between 'u' and 'r' for conflicts and
     'pu' and 'pr' for path conflicts.
@@ -182,8 +165,6 @@ class _mergestate_base(object):
         self._local = None
         self._other = None
         self._labels = None
-        self._readmergedriver = None
-        self._mdstate = MERGE_DRIVER_STATE_UNMARKED
         # contains a mapping of form:
         # {filename : (merge_return_value, action_to_be_performed}
         # these are results of re-running merge process
@@ -199,32 +180,6 @@ class _mergestate_base(object):
         self._local = node
         self._other = other
         self._labels = labels
-        if self.mergedriver:
-            self._mdstate = MERGE_DRIVER_STATE_SUCCESS
-
-    @util.propertycache
-    def mergedriver(self):
-        # protect against the following:
-        # - A configures a malicious merge driver in their hgrc, then
-        #   pauses the merge
-        # - A edits their hgrc to remove references to the merge driver
-        # - A gives a copy of their entire repo, including .hg, to B
-        # - B inspects .hgrc and finds it to be clean
-        # - B then continues the merge and the malicious merge driver
-        #  gets invoked
-        configmergedriver = self._repo.ui.config(
-            b'experimental', b'mergedriver'
-        )
-        if (
-            self._readmergedriver is not None
-            and self._readmergedriver != configmergedriver
-        ):
-            raise error.ConfigError(
-                _(b"merge driver changed since merge started"),
-                hint=_(b"revert merge driver change or abort merge"),
-            )
-
-        return configmergedriver
 
     @util.propertycache
     def local(self):
@@ -330,9 +285,6 @@ class _mergestate_base(object):
         self._state[dfile][0] = state
         self._dirty = True
 
-    def mdstate(self):
-        return self._mdstate
-
     def unresolved(self):
         """Obtain the paths of unresolved files."""
 
@@ -343,13 +295,6 @@ class _mergestate_base(object):
             ):
                 yield f
 
-    def driverresolved(self):
-        """Obtain the paths of driver-resolved files."""
-
-        for f, entry in self._state.items():
-            if entry[0] == MERGE_RECORD_DRIVER_RESOLVED:
-                yield f
-
     def extras(self, filename):
         return self._stateextras[filename]
 
@@ -358,7 +303,10 @@ class _mergestate_base(object):
         Returns whether the merge was completed and the return value of merge
         obtained from filemerge._filemerge().
         """
-        if self[dfile] in (MERGE_RECORD_RESOLVED, MERGE_RECORD_DRIVER_RESOLVED):
+        if self[dfile] in (
+            MERGE_RECORD_RESOLVED,
+            LEGACY_RECORD_DRIVER_RESOLVED,
+        ):
             return True, 0
         stateentry = self._state[dfile]
         state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
@@ -490,24 +438,6 @@ class _mergestate_base(object):
                 actions[action].append((f, None, b"merge result"))
         return actions
 
-    def queueremove(self, f):
-        """queues a file to be removed from the dirstate
-
-        Meant for use by custom merge drivers."""
-        self._results[f] = 0, ACTION_REMOVE
-
-    def queueadd(self, f):
-        """queues a file to be added to the dirstate
-
-        Meant for use by custom merge drivers."""
-        self._results[f] = 0, ACTION_ADD
-
-    def queueget(self, f):
-        """queues a file to be marked modified in the dirstate
-
-        Meant for use by custom merge drivers."""
-        self._results[f] = 0, ACTION_GET
-
 
 class mergestate(_mergestate_base):
 
@@ -535,7 +465,6 @@ class mergestate(_mergestate_base):
         This function process "record" entry produced by the de-serialization
         of on disk file.
         """
-        self._mdstate = MERGE_DRIVER_STATE_SUCCESS
         unsupported = set()
         records = self._readrecords()
         for rtype, record in records:
@@ -543,24 +472,13 @@ class mergestate(_mergestate_base):
                 self._local = bin(record)
             elif rtype == RECORD_OTHER:
                 self._other = bin(record)
-            elif rtype == RECORD_MERGE_DRIVER_STATE:
-                bits = record.split(b'\0', 1)
-                mdstate = bits[1]
-                if len(mdstate) != 1 or mdstate not in (
-                    MERGE_DRIVER_STATE_UNMARKED,
-                    MERGE_DRIVER_STATE_MARKED,
-                    MERGE_DRIVER_STATE_SUCCESS,
-                ):
-                    # the merge driver should be idempotent, so just rerun it
-                    mdstate = MERGE_DRIVER_STATE_UNMARKED
-
-                self._readmergedriver = bits[0]
-                self._mdstate = mdstate
+            elif rtype == LEGACY_MERGE_DRIVER_STATE:
+                pass
             elif rtype in (
                 RECORD_MERGED,
                 RECORD_CHANGEDELETE_CONFLICT,
                 RECORD_PATH_CONFLICT,
-                RECORD_MERGE_DRIVER_MERGE,
+                LEGACY_MERGE_DRIVER_MERGE,
                 LEGACY_RECORD_RESOLVED_OTHER,
             ):
                 bits = record.split(b'\0')
@@ -710,25 +628,13 @@ class mergestate(_mergestate_base):
         records = []
         records.append((RECORD_LOCAL, hex(self._local)))
         records.append((RECORD_OTHER, hex(self._other)))
-        if self.mergedriver:
-            records.append(
-                (
-                    RECORD_MERGE_DRIVER_STATE,
-                    b'\0'.join([self.mergedriver, self._mdstate]),
-                )
-            )
         # Write out state items. In all cases, the value of the state map entry
         # is written as the contents of the record. The record type depends on
         # the type of state that is stored, and capital-letter records are used
         # to prevent older versions of Mercurial that do not support the feature
         # from loading them.
         for filename, v in pycompat.iteritems(self._state):
-            if v[0] == MERGE_RECORD_DRIVER_RESOLVED:
-                # Driver-resolved merge. These are stored in 'D' records.
-                records.append(
-                    (RECORD_MERGE_DRIVER_MERGE, b'\0'.join([filename] + v))
-                )
-            elif v[0] in (
+            if v[0] in (
                 MERGE_RECORD_UNRESOLVED_PATH,
                 MERGE_RECORD_RESOLVED_PATH,
             ):
@@ -813,17 +719,6 @@ class memmergestate(_mergestate_base):
 
     def _restore_backup(self, fctx, localkey, flags):
         fctx.write(self._backups[localkey], flags)
-
-    @util.propertycache
-    def mergedriver(self):
-        configmergedriver = self._repo.ui.config(
-            b'experimental', b'mergedriver'
-        )
-        if configmergedriver:
-            raise error.InMemoryMergeConflictsError(
-                b"in-memory merge does not support mergedriver"
-            )
-        return None
 
 
 def recordupdates(repo, actions, branchmerge, getfiledata):

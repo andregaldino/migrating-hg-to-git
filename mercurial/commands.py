@@ -5986,10 +5986,6 @@ def resolve(ui, repo, *pats, **opts):
                 b'resolve.resolved',
                 b'R',
             ),
-            mergestatemod.MERGE_RECORD_DRIVER_RESOLVED: (
-                b'resolve.driverresolved',
-                b'D',
-            ),
         }
 
         for f in ms:
@@ -6014,21 +6010,9 @@ def resolve(ui, repo, *pats, **opts):
             )
 
         wctx = repo[None]
-
-        if (
-            ms.mergedriver
-            and ms.mdstate() == mergestatemod.MERGE_DRIVER_STATE_UNMARKED
-        ):
-            proceed = mergemod.driverpreprocess(repo, ms, wctx)
-            ms.commit()
-            # allow mark and unmark to go through
-            if not mark and not unmark and not proceed:
-                return 1
-
         m = scmutil.match(wctx, pats, opts)
         ret = 0
         didwork = False
-        runconclude = False
 
         tocomplete = []
         hasconflictmarkers = []
@@ -6042,26 +6026,6 @@ def resolve(ui, repo, *pats, **opts):
                 continue
 
             didwork = True
-
-            # don't let driver-resolved files be marked, and run the conclude
-            # step if asked to resolve
-            if ms[f] == mergestatemod.MERGE_RECORD_DRIVER_RESOLVED:
-                exact = m.exact(f)
-                if mark:
-                    if exact:
-                        ui.warn(
-                            _(b'not marking %s as it is driver-resolved\n')
-                            % uipathfn(f)
-                        )
-                elif unmark:
-                    if exact:
-                        ui.warn(
-                            _(b'not unmarking %s as it is driver-resolved\n')
-                            % uipathfn(f)
-                        )
-                else:
-                    runconclude = True
-                continue
 
             # path conflicts must be resolved manually
             if ms[f] in (
@@ -6184,32 +6148,11 @@ def resolve(ui, repo, *pats, **opts):
             ui.warn(_(b"arguments do not match paths that need resolving\n"))
             if hint:
                 ui.warn(hint)
-        elif ms.mergedriver and ms.mdstate() != b's':
-            # run conclude step when either a driver-resolved file is requested
-            # or there are no driver-resolved files
-            # we can't use 'ret' to determine whether any files are unresolved
-            # because we might not have tried to resolve some
-            if (runconclude or not list(ms.driverresolved())) and not list(
-                ms.unresolved()
-            ):
-                proceed = mergemod.driverconclude(repo, ms, wctx)
-                ms.commit()
-                if not proceed:
-                    return 1
 
-    # Nudge users into finishing an unfinished operation
     unresolvedf = list(ms.unresolved())
-    driverresolvedf = list(ms.driverresolved())
-    if not unresolvedf and not driverresolvedf:
+    if not unresolvedf:
         ui.status(_(b'(no more unresolved files)\n'))
         cmdutil.checkafterresolved(repo)
-    elif not unresolvedf:
-        ui.status(
-            _(
-                b'(no more unresolved files -- '
-                b'run "hg resolve --all" to conclude)\n'
-            )
-        )
 
     return ret
 
