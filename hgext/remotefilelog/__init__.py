@@ -362,7 +362,10 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                         self.unfiltered().__class__,
                     )
                 self.requirements.add(constants.SHALLOWREPO_REQUIREMENT)
-                scmutil.writereporequirements(self)
+                with self.lock():
+                    # acquire store lock before writing requirements as some
+                    # requirements might be written to .hg/store/requires
+                    scmutil.writereporequirements(self)
 
                 # Since setupclient hadn't been called, exchange.pull was not
                 # wrapped. So we need to manually invoke our version of it.
