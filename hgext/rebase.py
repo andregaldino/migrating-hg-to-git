@@ -166,7 +166,7 @@ def _ctxdesc(ctx):
 class rebaseruntime(object):
     """This class is a container for rebase runtime state"""
 
-    def __init__(self, repo, ui, inmemory=False, opts=None):
+    def __init__(self, repo, ui, inmemory=False, dryrun=False, opts=None):
         if opts is None:
             opts = {}
 
@@ -212,6 +212,7 @@ class rebaseruntime(object):
         self.obsoletenotrebased = {}
         self.obsoletewithoutsuccessorindestination = set()
         self.inmemory = inmemory
+        self.dryrun = dryrun
         self.stateobj = statemod.cmdstate(repo, b'rebasestate')
 
     @property
@@ -1088,7 +1089,7 @@ def rebase(ui, repo, **opts):
 
 
 def _dryrunrebase(ui, repo, action, opts):
-    rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
+    rbsrt = rebaseruntime(repo, ui, inmemory=True, dryrun=True, opts=opts)
     confirm = opts.get(b'confirm')
     if confirm:
         ui.status(_(b'starting in-memory rebase\n'))
@@ -1102,7 +1103,7 @@ def _dryrunrebase(ui, repo, action, opts):
             overrides = {(b'rebase', b'singletransaction'): True}
             with ui.configoverride(overrides, b'rebase'):
                 _origrebase(
-                    ui, repo, action, opts, rbsrt, leaveunfinished=True,
+                    ui, repo, action, opts, rbsrt,
                 )
         except error.InMemoryMergeConflictsError:
             ui.status(_(b'hit a merge conflict\n'))
@@ -1144,11 +1145,11 @@ def _dryrunrebase(ui, repo, action, opts):
 
 
 def _dorebase(ui, repo, action, opts, inmemory=False):
-    rbsrt = rebaseruntime(repo, ui, inmemory, opts)
+    rbsrt = rebaseruntime(repo, ui, inmemory, opts=opts)
     return _origrebase(ui, repo, action, opts, rbsrt)
 
 
-def _origrebase(ui, repo, action, opts, rbsrt, leaveunfinished=False):
+def _origrebase(ui, repo, action, opts, rbsrt):
     assert action != b'stop'
     with repo.wlock(), repo.lock():
         if opts.get(b'interactive'):
@@ -1222,7 +1223,7 @@ def _origrebase(ui, repo, action, opts, rbsrt, leaveunfinished=False):
                 dsguard = dirstateguard.dirstateguard(repo, b'rebase')
             with util.acceptintervention(dsguard):
                 rbsrt._performrebase(tr)
-                if not leaveunfinished:
+                if not rbsrt.dryrun:
                     rbsrt._finishrebase()
 
 
