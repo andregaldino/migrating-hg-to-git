@@ -1179,7 +1179,11 @@ test stripping a working directory parent doesn't switch named branches
 
 stripping a set containing a merge properly reset file content, including items on other branches
 
-BROKEN, The added file should move to unknown, which is the behavior we have been seeing for other `hg strip --keep` call.
+The added file is moved to unknown, which is the behavior we have been seeing for other `hg strip --keep` call.
+
+stripping a set containing a merge properly reset file content, including items on other branches
+
+The added file is moved to unknown, which is the behavior we have been seeing for other `hg strip --keep` call.
 
   $ hg unbundle -u $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
   adding changesets
@@ -1260,13 +1264,10 @@ BROKEN, The added file should move to unknown, which is the behavior we have bee
      summary:     commitA
   
 
-BROKEN: 'bar.txt' cannot possibly be clean since it is not part of the current
-working copy parents.
-
   $ hg status -A
+  ? bar.txt
   C a
   C b
-  C bar.txt
   C foo.txt
   $ cat bar.txt
   bar
