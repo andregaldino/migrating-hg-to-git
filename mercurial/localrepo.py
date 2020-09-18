@@ -3537,7 +3537,6 @@ def createrepository(ui, path, createopts=None):
     # For new shared repository, we don't need to write the store
     # requirements as they are already present in store requires
     if storereq and b'sharedrepo' not in createopts:
-        scmutil.writerequires(hgvfs, wcreq)
         storevfs = vfsmod.vfs(hgvfs.join(b'store'), cacheaudited=True)
         scmutil.writerequires(storevfs, storereq)
 
