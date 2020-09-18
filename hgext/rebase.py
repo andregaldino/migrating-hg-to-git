@@ -517,7 +517,7 @@ class rebaseruntime(object):
         p.complete()
         ui.note(_(b'rebase merging completed\n'))
 
-    def _concludenode(self, rev, p1, editor, commitmsg=None):
+    def _concludenode(self, rev, editor, commitmsg=None):
         '''Commit the wd changes with parents p1 and p2.
 
         Reuse commit info from rev but also store useful information in extra.
@@ -643,7 +643,7 @@ class rebaseruntime(object):
                 # parents, and we don't want to create a merge commit here (unless
                 # we're rebasing a merge commit).
                 self.wctx.setparents(repo[p1].node(), repo[p2].node())
-                newnode = self._concludenode(rev, p1, editor)
+                newnode = self._concludenode(rev, editor)
             else:
                 # Skip commit if we are collapsing
                 newnode = None
@@ -710,7 +710,7 @@ class rebaseruntime(object):
 
             self.wctx.setparents(repo[p1].node(), repo[self.external].node())
             newnode = self._concludenode(
-                revtoreuse, p1, editor, commitmsg=commitmsg
+                revtoreuse, editor, commitmsg=commitmsg
             )
 
             if newnode is not None:
