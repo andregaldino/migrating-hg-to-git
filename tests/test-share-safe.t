@@ -33,6 +33,10 @@ prepare source repo
   $ hg ci -Aqm "added a"
   $ echo b > b
   $ hg ci -Aqm "added b"
+
+  $ HGEDITOR=cat hg config --shared
+  abort: repository is not shared; can't use --shared
+  [255]
   $ cd ..
 
 Create a shared repo and check the requirements are shared and read correctly
@@ -84,6 +88,14 @@ However, local .hg/hgrc should override the config set by share source
 
   $ hg showconfig ui.curses
   false
+
+  $ HGEDITOR=cat hg config --shared
+  [ui]
+  curses=true
+
+  $ HGEDITOR=cat hg config --local
+  [ui]
+  curses=false
 
 Testing that hooks set in source repository also runs in shared repo
 

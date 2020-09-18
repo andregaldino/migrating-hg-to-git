@@ -55,6 +55,7 @@ from . import (
     pycompat,
     rcutil,
     registrar,
+    requirements,
     revsetlang,
     rewriteutil,
     scmutil,
@@ -66,6 +67,7 @@ from . import (
     ui as uimod,
     util,
     verify as verifymod,
+    vfs as vfsmod,
     wireprotoserver,
 )
 from .utils import (
@@ -2141,6 +2143,12 @@ def _docommit(ui, repo, *pats, **opts):
         (b'u', b'untrusted', None, _(b'show untrusted configuration options')),
         (b'e', b'edit', None, _(b'edit user config')),
         (b'l', b'local', None, _(b'edit repository config')),
+        (
+            b'',
+            b'shared',
+            None,
+            _(b'edit shared source repository config (EXPERIMENTAL)'),
+        ),
         (b'g', b'global', None, _(b'edit global config')),
     ]
     + formatteropts,
@@ -2179,22 +2187,37 @@ def config(ui, repo, *values, **opts):
       :source:  String. Filename and line number where the item is defined.
       :value:   String. Config value.
 
+      The --shared flag can be used to edit the config file of shared source
+      repository. It only works when you have shared using the experimental
+      share safe feature.
+
     Returns 0 on success, 1 if NAME does not exist.
 
     """
 
     opts = pycompat.byteskwargs(opts)
-    editopts = (b'edit', b'local', b'global')
+    editopts = (b'edit', b'local', b'global', b'shared')
     if any(opts.get(o) for o in editopts):
-        if opts.get(b'local') and opts.get(b'global'):
-            raise error.Abort(_(b"can't use --local and --global together"))
-
+        cmdutil.check_at_most_one_arg(opts, *editopts[1:])
         if opts.get(b'local'):
             if not repo:
                 raise error.Abort(_(b"can't use --local outside a repository"))
             paths = [repo.vfs.join(b'hgrc')]
         elif opts.get(b'global'):
             paths = rcutil.systemrcpath()
+        elif opts.get(b'shared'):
+            if not repo.shared():
+                raise error.Abort(
+                    _(b"repository is not shared; can't use --shared")
+                )
+                if requirements.SHARESAFE_REQUIREMENT not in repo.requirements:
+                    raise error.Abort(
+                        _(
+                            b"share safe feature not unabled; "
+                            b"unable to edit shared source repository config"
+                        )
+                    )
+            paths = [vfsmod.vfs(repo.sharedpath).join(b'hgrc')]
         else:
             paths = rcutil.userrcpath()
 
