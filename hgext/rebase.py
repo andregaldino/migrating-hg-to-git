@@ -1110,13 +1110,7 @@ def _dryrunrebase(ui, repo, action, opts):
             overrides = {(b'rebase', b'singletransaction'): True}
             with ui.configoverride(overrides, b'rebase'):
                 _origrebase(
-                    ui,
-                    repo,
-                    action,
-                    opts,
-                    rbsrt,
-                    inmemory=True,
-                    leaveunfinished=True,
+                    ui, repo, action, opts, rbsrt, leaveunfinished=True,
                 )
         except error.InMemoryMergeConflictsError:
             ui.status(_(b'hit a merge conflict\n'))
@@ -1159,12 +1153,10 @@ def _dryrunrebase(ui, repo, action, opts):
 
 def _dorebase(ui, repo, action, opts, inmemory=False):
     rbsrt = rebaseruntime(repo, ui, inmemory, opts)
-    return _origrebase(ui, repo, action, opts, rbsrt, inmemory=inmemory)
+    return _origrebase(ui, repo, action, opts, rbsrt)
 
 
-def _origrebase(
-    ui, repo, action, opts, rbsrt, inmemory=False, leaveunfinished=False
-):
+def _origrebase(ui, repo, action, opts, rbsrt, leaveunfinished=False):
     assert action != b'stop'
     with repo.wlock(), repo.lock():
         if opts.get(b'interactive'):
@@ -1209,7 +1201,7 @@ def _origrebase(
             destmap = _definedestmap(
                 ui,
                 repo,
-                inmemory,
+                rbsrt.inmemory,
                 opts.get(b'dest', None),
                 opts.get(b'source', []),
                 opts.get(b'base', []),
@@ -1234,7 +1226,7 @@ def _origrebase(
             # Same logic for the dirstate guard, except we don't create one when
             # rebasing in-memory (it's not needed).
             dsguard = None
-            if singletr and not inmemory:
+            if singletr and not rbsrt.inmemory:
                 dsguard = dirstateguard.dirstateguard(repo, b'rebase')
             with util.acceptintervention(dsguard):
                 rbsrt._performrebase(tr)
