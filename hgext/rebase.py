@@ -548,7 +548,6 @@ class rebaseruntime(object):
                     user=ctx.user(),
                     date=date,
                 )
-                mergestatemod.mergestate.clean(repo)
             else:
                 newnode = commitnode(
                     repo,
@@ -1089,9 +1088,6 @@ def rebase(ui, repo, **opts):
                     b' merge\n'
                 )
             )
-            # TODO: Make in-memory merge not use the on-disk merge state, so
-            # we don't have to clean it here
-            mergestatemod.mergestate.clean(repo)
             clearstatus(repo)
             clearcollapsemsg(repo)
             return _dorebase(ui, repo, action, opts, inmemory=False)
