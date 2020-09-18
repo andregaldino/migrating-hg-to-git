@@ -81,6 +81,43 @@ Check that config of the source repository is also loaded
   $ hg showconfig ui.curses
   true
 
+Test that extensions of source repository are also loaded
+
+  $ hg debugextensions
+  share
+  $ hg extdiff -p echo
+  hg: unknown command 'extdiff'
+  'extdiff' is provided by the following extension:
+  
+      extdiff       command to allow external programs to compare revisions
+  
+  (use 'hg help extensions' for information on enabling extensions)
+  [255]
+
+  $ echo "[extensions]" >> ../source/.hg/hgrc
+  $ echo "extdiff=" >> ../source/.hg/hgrc
+
+  $ hg debugextensions -R ../source
+  extdiff
+  share
+  $ hg extdiff -R ../source -p echo
+
+BROKEN: the command below does not work but debugextensions says that extension
+is loaded
+  $ hg debugextensions
+  extdiff
+  share
+
+BROKEN: extdiff command should work here
+  $ hg extdiff -p echo
+  hg: unknown command 'extdiff'
+  'extdiff' is provided by the following extension:
+  
+      extdiff       command to allow external programs to compare revisions
+  
+  (use 'hg help extensions' for information on enabling extensions)
+  [255]
+
 However, local .hg/hgrc should override the config set by share source
 
   $ echo "[ui]" >> .hg/hgrc
@@ -92,6 +129,8 @@ However, local .hg/hgrc should override the config set by share source
   $ HGEDITOR=cat hg config --shared
   [ui]
   curses=true
+  [extensions]
+  extdiff=
 
   $ HGEDITOR=cat hg config --local
   [ui]
