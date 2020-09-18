@@ -12,7 +12,6 @@ from .node import (
     nullhex,
     nullid,
 )
-from .pycompat import delattr
 from . import (
     error,
     filemerge,
@@ -208,9 +207,6 @@ class mergestate(object):
         self._labels = labels
         self._state = {}
         self._stateextras = collections.defaultdict(dict)
-        for var in ('localctx', 'otherctx'):
-            if var in vars(self):
-                delattr(self, var)
         self._readmergedriver = None
         if self.mergedriver:
             self._mdstate = MERGE_DRIVER_STATE_SUCCESS
@@ -229,9 +225,6 @@ class mergestate(object):
         self._stateextras = collections.defaultdict(dict)
         self._local = None
         self._other = None
-        for var in ('localctx', 'otherctx'):
-            if var in vars(self):
-                delattr(self, var)
         self._readmergedriver = None
         self._mdstate = MERGE_DRIVER_STATE_SUCCESS
         unsupported = set()
