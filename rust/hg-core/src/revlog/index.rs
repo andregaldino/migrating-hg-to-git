@@ -44,6 +44,20 @@ impl<'a> Index<'a> {
         }
     }
 
+    /// Return number of entries of the revlog index.
+    pub fn len(&self) -> usize {
+        if let Some(offsets) = &self.offsets {
+            offsets.len()
+        } else {
+            self.bytes.len() / INDEX_ENTRY_SIZE
+        }
+    }
+
+    /// Returns `true` if the `Index` has zero `entries`.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Return the index entry corresponding to the given revision if it
     /// exists.
     pub fn get_entry(&self, rev: Revision) -> Option<IndexEntry> {

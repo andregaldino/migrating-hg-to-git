@@ -6,14 +6,16 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::dirstate::parsers::parse_dirstate;
+use crate::revlog::changelog::Changelog;
+use crate::revlog::manifest::{Manifest, ManifestEntry};
+use crate::revlog::revlog::RevlogError;
+use crate::revlog::Revision;
 use crate::utils::hg_path::HgPath;
 use crate::{DirstateParseError, EntryState};
 use rayon::prelude::*;
 use std::convert::From;
-use std::fmt;
 use std::fs;
-use std::ops::Deref;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Kind of error encountered by `ListDirstateTrackedFiles`
 #[derive(Debug)]
@@ -29,14 +31,6 @@ pub enum ListDirstateTrackedFilesErrorKind {
 pub struct ListDirstateTrackedFilesError {
     /// Kind of error encountered by `ListDirstateTrackedFiles`
     pub kind: ListDirstateTrackedFilesErrorKind,
-}
-
-impl std::error::Error for ListDirstateTrackedFilesError {}
-
-impl fmt::Display for ListDirstateTrackedFilesError {
-    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        unimplemented!()
-    }
 }
 
 impl From<ListDirstateTrackedFilesErrorKind>
@@ -82,5 +76,113 @@ impl ListDirstateTrackedFiles {
             .collect();
         files.par_sort_unstable();
         Ok(files)
+    }
+}
+
+/// Kind of error encountered by `ListRevTrackedFiles`
+#[derive(Debug)]
+pub enum ListRevTrackedFilesErrorKind {
+    /// Error when reading a `revlog` file.
+    IoError(std::io::Error),
+    /// The revision has not been found.
+    InvalidRevision,
+    /// A `revlog` file is corrupted.
+    CorruptedRevlog,
+    /// The `revlog` format version is not supported.
+    UnsuportedRevlogVersion(u16),
+    /// The `revlog` data format is not supported.
+    UnknowRevlogDataFormat(u8),
+}
+
+/// A `ListRevTrackedFiles` error
+#[derive(Debug)]
+pub struct ListRevTrackedFilesError {
+    /// Kind of error encountered by `ListRevTrackedFiles`
+    pub kind: ListRevTrackedFilesErrorKind,
+}
+
+impl From<ListRevTrackedFilesErrorKind> for ListRevTrackedFilesError {
+    fn from(kind: ListRevTrackedFilesErrorKind) -> Self {
+        ListRevTrackedFilesError { kind }
+    }
+}
+
+impl From<RevlogError> for ListRevTrackedFilesError {
+    fn from(err: RevlogError) -> Self {
+        match err {
+            RevlogError::IoError(err) => {
+                ListRevTrackedFilesErrorKind::IoError(err)
+            }
+            RevlogError::UnsuportedVersion(version) => {
+                ListRevTrackedFilesErrorKind::UnsuportedRevlogVersion(version)
+            }
+            RevlogError::InvalidRevision => {
+                ListRevTrackedFilesErrorKind::InvalidRevision
+            }
+            RevlogError::Corrupted => {
+                ListRevTrackedFilesErrorKind::CorruptedRevlog
+            }
+            RevlogError::UnknowDataFormat(format) => {
+                ListRevTrackedFilesErrorKind::UnknowRevlogDataFormat(format)
+            }
+        }
+        .into()
+    }
+}
+
+/// List files under Mercurial control at a given revision.
+pub struct ListRevTrackedFiles<'a> {
+    /// The revision to list the files from.
+    rev: &'a str,
+    /// The changelog file
+    changelog: Changelog,
+    /// The manifest file
+    manifest: Manifest,
+    /// The manifest entry corresponding to the revision.
+    ///
+    /// Used to hold the owner of the returned references.
+    manifest_entry: Option<ManifestEntry>,
+}
+
+impl<'a> ListRevTrackedFiles<'a> {
+    pub fn new(
+        root: &PathBuf,
+        rev: &'a str,
+    ) -> Result<Self, ListRevTrackedFilesError> {
+        let changelog = Changelog::open(&root)?;
+        let manifest = Manifest::open(&root)?;
+
+        Ok(Self {
+            rev,
+            changelog,
+            manifest,
+            manifest_entry: None,
+        })
+    }
+
+    pub fn run(
+        &mut self,
+    ) -> Result<impl Iterator<Item = &HgPath>, ListRevTrackedFilesError> {
+        let changelog_entry = match self.rev.parse::<Revision>() {
+            Ok(rev) => self.changelog.get_rev(rev)?,
+            _ => {
+                let changelog_node = hex::decode(&self.rev).map_err(|_| {
+                    ListRevTrackedFilesErrorKind::InvalidRevision
+                })?;
+                self.changelog.get_node(&changelog_node)?
+            }
+        };
+        let manifest_node = hex::decode(&changelog_entry.manifest_node()?)
+            .map_err(|_| ListRevTrackedFilesErrorKind::CorruptedRevlog)?;
+
+        self.manifest_entry = Some(self.manifest.get_node(&manifest_node)?);
+
+        if let Some(ref manifest_entry) = self.manifest_entry {
+            Ok(manifest_entry.files())
+        } else {
+            panic!(
+                "manifest entry should have been stored in self.manifest_node to ensure its lifetime since references are returned from it"
+            )
+        }
     }
 }

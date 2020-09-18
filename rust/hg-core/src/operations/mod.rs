@@ -14,6 +14,10 @@ pub use list_tracked_files::{
     ListDirstateTrackedFiles, ListDirstateTrackedFilesError,
     ListDirstateTrackedFilesErrorKind,
 };
+pub use list_tracked_files::{
+    ListRevTrackedFiles, ListRevTrackedFilesError,
+    ListRevTrackedFilesErrorKind,
+};
 
 // TODO add an `Operation` trait when GAT have landed (rust #44265):
 // there is no way to currently define a trait which can both return

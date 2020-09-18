@@ -188,7 +188,7 @@ impl Revlog {
     }
 
     /// Return the revlog index.
-    fn index(&self) -> Index {
+    pub fn index(&self) -> Index {
         let is_inline = self.data_bytes.is_none();
         Index::new(&self.index_bytes, is_inline)
     }
