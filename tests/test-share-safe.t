@@ -102,21 +102,14 @@ Test that extensions of source repository are also loaded
   share
   $ hg extdiff -R ../source -p echo
 
-BROKEN: the command below does not work but debugextensions says that extension
+BROKEN: the command below will not work if config of shared source is not loaded
+on dispatch but debugextensions says that extension
 is loaded
   $ hg debugextensions
   extdiff
   share
 
-BROKEN: extdiff command should work here
   $ hg extdiff -p echo
-  hg: unknown command 'extdiff'
-  'extdiff' is provided by the following extension:
-  
-      extdiff       command to allow external programs to compare revisions
-  
-  (use 'hg help extensions' for information on enabling extensions)
-  [255]
 
 However, local .hg/hgrc should override the config set by share source
 
