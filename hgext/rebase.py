@@ -448,7 +448,7 @@ class rebaseruntime(object):
             from mercurial.context import overlayworkingctx
 
             self.wctx = overlayworkingctx(self.repo)
-            self.repo.ui.debug(b"rebasing in-memory\n")
+            self.repo.ui.debug(b"rebasing in memory\n")
         else:
             self.wctx = self.repo[None]
             self.repo.ui.debug(b"rebasing on disk\n")

@@ -41,7 +41,7 @@ Rebase a simple DAG:
   $ hg cat -r 2 b
   b (no-eol)
   $ hg rebase --debug -r b -d c | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 2:db0e82a16a62 "b" (b)
   $ hg tglog
   o  3: ca58782ad1e4 'b'
@@ -101,7 +101,7 @@ Write files to the working copy, and ensure they're still there after the rebase
   $ hg cat -r 3 e
   somefile (no-eol)
   $ hg rebase --debug -s b -d a | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 2:db0e82a16a62 "b" (b)
   $ hg tglog
   o  3: fc055c3b4d33 'b'
@@ -117,7 +117,7 @@ Write files to the working copy, and ensure they're still there after the rebase
   $ hg cat -r 3 b
   b (no-eol)
   $ hg rebase --debug -s 1 -d 3 | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 1:02952614a83d "d" (d)
   rebasing 2:f56b71190a8f "c"
   $ hg tglog
@@ -148,7 +148,7 @@ Rebase the working copy parent
   $ hg up -C 3
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg rebase -r 3 -d 0 --debug | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 3:753feb6fd12a "c" (tip)
   $ hg tglog
   @  3: 844a7de3e617 'c'
