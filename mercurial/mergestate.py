@@ -193,7 +193,7 @@ class _mergestate_base(object):
         self._dirty = False
 
     def reset(self):
-        shutil.rmtree(self._repo.vfs.join(b'merge'), True)
+        pass
 
     def start(self, node, other, labels=None):
         self._local = node
