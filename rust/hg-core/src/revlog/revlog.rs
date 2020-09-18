@@ -79,6 +79,32 @@ impl Revlog {
         })
     }
 
+    /// Return number of entries of the `Revlog`.
+    pub fn len(&self) -> usize {
+        self.index().len()
+    }
+
+    /// Returns `true` if the `Revlog` has zero `entries`.
+    pub fn is_empty(&self) -> bool {
+        self.index().is_empty()
+    }
+
+    /// Return the full data associated to a node.
+    #[timed]
+    pub fn get_node_rev(&self, node: &[u8]) -> Result<Revision, RevlogError> {
+        let index = self.index();
+        // This is brute force. But it is fast enough for now.
+        // Optimization will come later.
+        for rev in (0..self.len() as Revision).rev() {
+            let index_entry =
+                index.get_entry(rev).ok_or(RevlogError::Corrupted)?;
+            if node == index_entry.hash() {
+                return Ok(rev);
+            }
+        }
+        Err(RevlogError::InvalidRevision)
+    }
+
     /// Return the full data associated to a revision.
     ///
     /// All entries required to build the final data out of deltas will be
