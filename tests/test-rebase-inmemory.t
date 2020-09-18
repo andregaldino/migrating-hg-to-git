@@ -415,8 +415,6 @@ Make a conflict:
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   merging e
-  transaction abort!
-  rollback completed
   hit a merge conflict
   [1]
   $ hg diff
@@ -463,12 +461,7 @@ In-memory rebase that fails due to merge conflicts
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   merging e
-  transaction abort!
-  rollback completed
-  hit merge conflicts; re-running rebase without in-memory merge
-  rebasing 2:177f92b77385 "c"
-  rebasing 3:055a42cdd887 "d"
-  rebasing 4:e860deea161a "e"
+  hit merge conflicts; rebasing that commit again in the working copy
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -487,9 +480,9 @@ Retrying without in-memory merge won't lose working copy changes
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   merging e
+  hit merge conflicts; rebasing that commit again in the working copy
   transaction abort!
   rollback completed
-  hit merge conflicts; re-running rebase without in-memory merge
   abort: uncommitted changes
   [255]
   $ cat a
@@ -859,8 +852,7 @@ Test rebasing when the file we are merging in destination is empty
   $ hg rebase -r . -d 1 --config ui.merge=internal:merge3
   rebasing 2:fb62b706688e "add b to foo" (tip)
   merging foo
-  hit merge conflicts; re-running rebase without in-memory merge
-  rebasing 2:fb62b706688e "add b to foo" (tip)
+  hit merge conflicts; rebasing that commit again in the working copy
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -893,8 +885,7 @@ Test rebasing when we're in the middle of a rebase already
   $ hg rebase -r 2 -d 1 -t:merge3
   rebasing 2:b4d249fbf8dd "bye from foo"
   merging foo
-  hit merge conflicts; re-running rebase without in-memory merge
-  rebasing 2:b4d249fbf8dd "bye from foo"
+  hit merge conflicts; rebasing that commit again in the working copy
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')

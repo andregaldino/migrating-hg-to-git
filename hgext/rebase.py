@@ -615,9 +615,49 @@ class rebaseruntime(object):
             else:
                 overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
                 with ui.configoverride(overrides, b'rebase'):
-                    rebasenode(
-                        repo, rev, p1, p2, base, self.collapsef, wctx=self.wctx,
-                    )
+                    try:
+                        rebasenode(
+                            repo,
+                            rev,
+                            p1,
+                            p2,
+                            base,
+                            self.collapsef,
+                            wctx=self.wctx,
+                        )
+                    except error.InMemoryMergeConflictsError:
+                        if self.dryrun:
+                            raise error.ConflictResolutionRequired(b'rebase')
+                        if self.collapsef:
+                            # TODO: Make the overlayworkingctx reflected
+                            # in the working copy here instead of re-raising
+                            # so the entire rebase operation is retried.
+                            raise
+                        ui.status(
+                            _(
+                                b"hit merge conflicts; rebasing that "
+                                b"commit again in the working copy\n"
+                            )
+                        )
+                        cmdutil.bailifchanged(repo)
+                        self.inmemory = False
+                        self._assignworkingcopy()
+                        mergemod.update(
+                            repo,
+                            p1,
+                            branchmerge=False,
+                            force=False,
+                            wc=self.wctx,
+                        )
+                        rebasenode(
+                            repo,
+                            rev,
+                            p1,
+                            p2,
+                            base,
+                            self.collapsef,
+                            wctx=self.wctx,
+                        )
             if not self.collapsef:
                 merging = p2 != nullrev
                 editform = cmdutil.mergeeditform(merging, b'rebase')
@@ -1100,7 +1140,7 @@ def _dryrunrebase(ui, repo, action, opts):
                 _origrebase(
                     ui, repo, action, opts, rbsrt,
                 )
-        except error.InMemoryMergeConflictsError:
+        except error.ConflictResolutionRequired:
             ui.status(_(b'hit a merge conflict\n'))
             return 1
         except error.Abort:
