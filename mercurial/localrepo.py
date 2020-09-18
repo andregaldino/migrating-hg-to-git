@@ -2678,22 +2678,8 @@ class localrepository(object):
             ce.refresh()
 
     def _lock(
-        self,
-        vfs,
-        lockname,
-        wait,
-        releasefn,
-        acquirefn,
-        desc,
-        inheritchecker=None,
-        parentenvvar=None,
+        self, vfs, lockname, wait, releasefn, acquirefn, desc,
     ):
-        parentlock = None
-        # the contents of parentenvvar are used by the underlying lock to
-        # determine whether it can be inherited
-        if parentenvvar is not None:
-            parentlock = encoding.environ.get(parentenvvar)
-
         timeout = 0
         warntimeout = 0
         if wait:
@@ -2711,8 +2697,6 @@ class localrepository(object):
             releasefn=releasefn,
             acquirefn=acquirefn,
             desc=desc,
-            inheritchecker=inheritchecker,
-            parentlock=parentlock,
             signalsafe=signalsafe,
         )
         return l
@@ -2753,12 +2737,6 @@ class localrepository(object):
         self._lockref = weakref.ref(l)
         return l
 
-    def _wlockchecktransaction(self):
-        if self.currenttransaction() is not None:
-            raise error.LockInheritanceContractViolation(
-                b'wlock cannot be inherited in the middle of a transaction'
-            )
-
     def wlock(self, wait=True):
         '''Lock the non-store parts of the repository (everything under
         .hg except .hg/store) and return a weak reference to the lock.
@@ -2796,8 +2774,6 @@ class localrepository(object):
             unlock,
             self.invalidatedirstate,
             _(b'working directory of %s') % self.origroot,
-            inheritchecker=self._wlockchecktransaction,
-            parentenvvar=b'HG_WLOCK_LOCKER',
         )
         self._wlockref = weakref.ref(l)
         return l

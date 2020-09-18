@@ -1737,29 +1737,6 @@ def extdatasource(repo, source):
     return data
 
 
-def _locksub(repo, lock, envvar, cmd, environ=None, *args, **kwargs):
-    if lock is None:
-        raise error.LockInheritanceContractViolation(
-            b'lock can only be inherited while held'
-        )
-    if environ is None:
-        environ = {}
-    with lock.inherit() as locker:
-        environ[envvar] = locker
-        return repo.ui.system(cmd, environ=environ, *args, **kwargs)
-
-
-def wlocksub(repo, cmd, *args, **kwargs):
-    """run cmd as a subprocess that allows inheriting repo's wlock
-
-    This can only be called while the wlock is held. This takes all the
-    arguments that ui.system does, and returns the exit code of the
-    subprocess."""
-    return _locksub(
-        repo, repo.currentwlock(), b'HG_WLOCK_LOCKER', cmd, *args, **kwargs
-    )
-
-
 class progress(object):
     def __init__(self, ui, updatebar, topic, unit=b"", total=None):
         self.ui = ui

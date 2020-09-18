@@ -202,8 +202,6 @@ class lock(object):
         releasefn=None,
         acquirefn=None,
         desc=None,
-        inheritchecker=None,
-        parentlock=None,
         signalsafe=True,
         dolock=True,
     ):
@@ -214,10 +212,6 @@ class lock(object):
         self.releasefn = releasefn
         self.acquirefn = acquirefn
         self.desc = desc
-        self._inheritchecker = inheritchecker
-        self.parentlock = parentlock
-        self._parentheld = False
-        self._inherited = False
         if signalsafe:
             self._maybedelayedinterrupt = _delayedinterrupt
         else:
@@ -290,14 +284,6 @@ class lock(object):
                     if locker is None:
                         continue
 
-                    # special case where a parent process holds the lock -- this
-                    # is different from the pid being different because we do
-                    # want the unlock and postrelease functions to be called,
-                    # but the lockfile to not be removed.
-                    if locker == self.parentlock:
-                        self._parentheld = True
-                        self.held = 1
-                        return
                     locker = self._testlock(locker)
                     if locker is not None:
                         raise error.LockHeld(
@@ -377,38 +363,6 @@ class lock(object):
         locker = self._readlock()
         return self._testlock(locker)
 
-    @contextlib.contextmanager
-    def inherit(self):
-        """context for the lock to be inherited by a Mercurial subprocess.
-
-        Yields a string that will be recognized by the lock in the subprocess.
-        Communicating this string to the subprocess needs to be done separately
-        -- typically by an environment variable.
-        """
-        if not self.held:
-            raise error.LockInheritanceContractViolation(
-                b'inherit can only be called while lock is held'
-            )
-        if self._inherited:
-            raise error.LockInheritanceContractViolation(
-                b'inherit cannot be called while lock is already inherited'
-            )
-        if self._inheritchecker is not None:
-            self._inheritchecker()
-        if self.releasefn:
-            self.releasefn()
-        if self._parentheld:
-            lockname = self.parentlock
-        else:
-            lockname = b'%s:%d' % (lock._host, self.pid)
-        self._inherited = True
-        try:
-            yield lockname
-        finally:
-            if self.acquirefn:
-                self.acquirefn()
-            self._inherited = False
-
     def release(self, success=True):
         """release the lock and execute callback function if any
 
@@ -425,18 +379,16 @@ class lock(object):
                 if self.releasefn:
                     self.releasefn()
             finally:
-                if not self._parentheld:
-                    try:
-                        self.vfs.unlink(self.f)
-                    except OSError:
-                        pass
+                try:
+                    self.vfs.unlink(self.f)
+                except OSError:
+                    pass
             # The postrelease functions typically assume the lock is not held
             # at all.
-            if not self._parentheld:
-                for callback in self.postrelease:
-                    callback(success)
-                # Prevent double usage and help clear cycles.
-                self.postrelease = None
+            for callback in self.postrelease:
+                callback(success)
+            # Prevent double usage and help clear cycles.
+            self.postrelease = None
 
 
 def release(*locks):
