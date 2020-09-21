@@ -790,7 +790,8 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
 
     cmdutil.checkunfinished(repo)
     cmdutil.bailifchanged(repo)
-    node = scmutil.revsingle(repo, rev).node()
+    ctx = scmutil.revsingle(repo, rev)
+    node = ctx.node()
 
     op1, op2 = repo.dirstate.parents()
     if not repo.changelog.isancestor(node, op1):
@@ -821,14 +822,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         with dirstateguard.dirstateguard(repo, b'backout'):
             overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
             with ui.configoverride(overrides, b'backout'):
-                stats = mergemod.update(
-                    repo,
-                    parent,
-                    branchmerge=True,
-                    force=True,
-                    ancestor=node,
-                    mergeancestor=False,
-                )
+                stats = mergemod.back_out(ctx, parent=repo[parent])
             repo.setparents(op1, op2)
         hg._showstats(repo, stats)
         if stats.unresolvedcount:

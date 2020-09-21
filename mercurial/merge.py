@@ -2159,6 +2159,23 @@ def graft(
     return stats
 
 
+def back_out(ctx, parent=None, wc=None):
+    if parent is None:
+        if ctx.p2() is not None:
+            raise error.ProgrammingError(
+                b"must specify parent of merge commit to back out"
+            )
+        parent = ctx.p1()
+    return update(
+        ctx.repo(),
+        parent,
+        branchmerge=True,
+        force=True,
+        ancestor=ctx.node(),
+        mergeancestor=False,
+    )
+
+
 def purge(
     repo,
     matcher,
