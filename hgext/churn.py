@@ -24,7 +24,6 @@ from mercurial import (
     pycompat,
     registrar,
 )
-from mercurial.utils import dateutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -71,15 +70,9 @@ def countrate(ui, repo, amap, *pats, **opts):
         _(b'analyzing'), unit=_(b'revisions'), total=len(repo)
     )
     rate = {}
-    df = False
-    if opts.get(b'date'):
-        df = dateutil.matchdate(opts[b'date'])
 
     def prep(ctx, fmatch):
         rev = ctx.rev()
-        if df and not df(ctx.date()[0]):  # doesn't match date format
-            return
-
         key = getkey(ctx).strip()
         key = amap.get(key, key)  # alias remap
         if opts.get(b'changesets'):
@@ -100,6 +93,7 @@ def countrate(ui, repo, amap, *pats, **opts):
         pats=pats,
         opts=opts,
         revspec=opts[b'rev'],
+        date=opts[b'date'],
         include_pats=opts[b'include'],
         exclude_pats=opts[b'exclude'],
     )
