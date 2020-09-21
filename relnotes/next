@@ -20,3 +20,7 @@
 
 == Internal API Changes ==
 
+ * `merge.update()` is now private (renamed to `_update()`). Hopefully
+   the higher-level functions available in the same module cover your
+   use cases.
+

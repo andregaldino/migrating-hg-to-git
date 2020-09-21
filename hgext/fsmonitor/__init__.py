@@ -727,7 +727,7 @@ def extsetup(ui):
         # An assist for avoiding the dangling-symlink fsevents bug
         extensions.wrapfunction(os, b'symlink', wrapsymlink)
 
-    extensions.wrapfunction(merge, b'update', wrapupdate)
+    extensions.wrapfunction(merge, b'_update', wrapupdate)
 
 
 def wrapsymlink(orig, source, link_name):

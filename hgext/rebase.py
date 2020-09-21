@@ -642,7 +642,7 @@ class rebaseruntime(object):
                         cmdutil.bailifchanged(repo)
                         self.inmemory = False
                         self._assignworkingcopy()
-                        mergemod.update(
+                        mergemod._update(
                             repo,
                             p1,
                             branchmerge=False,
@@ -1517,7 +1517,7 @@ def rebasenode(repo, rev, p1, p2, base, collapse, wctx):
 
     # See explanation in merge.graft()
     mergeancestor = repo.changelog.isancestor(p1ctx.node(), ctx.node())
-    stats = mergemod.update(
+    stats = mergemod._update(
         repo,
         rev,
         branchmerge=True,

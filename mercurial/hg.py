@@ -1049,7 +1049,7 @@ def updaterepo(repo, node, overwrite, updatecheck=None):
     When overwrite is set, changes are clobbered, merged else
 
     returns stats (see pydoc mercurial.merge.applyupdates)"""
-    return mergemod.update(
+    return mergemod._update(
         repo,
         node,
         branchmerge=False,

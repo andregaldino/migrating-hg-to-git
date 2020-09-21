@@ -1694,7 +1694,7 @@ UPDATECHECK_LINEAR = b'linear'
 UPDATECHECK_NO_CONFLICT = b'noconflict'
 
 
-def update(
+def _update(
     repo,
     node,
     branchmerge,
@@ -2045,7 +2045,7 @@ def merge(ctx, labels=None, force=False, wc=None):
     force = whether the merge was run with 'merge --force' (deprecated)
     """
 
-    return update(
+    return _update(
         ctx.repo(),
         ctx.rev(),
         labels=labels,
@@ -2062,7 +2062,7 @@ def clean_update(ctx, wc=None):
     This involves updating to the commit and discarding any changes in the
     working copy.
     """
-    return update(ctx.repo(), ctx.rev(), branchmerge=False, force=True, wc=wc)
+    return _update(ctx.repo(), ctx.rev(), branchmerge=False, force=True, wc=wc)
 
 
 def revert_to(ctx, matcher=None, wc=None):
@@ -2072,7 +2072,7 @@ def revert_to(ctx, matcher=None, wc=None):
     be the same as in the given commit.
     """
 
-    return update(
+    return _update(
         ctx.repo(),
         ctx.rev(),
         branchmerge=False,
@@ -2123,7 +2123,7 @@ def graft(
         or pctx.rev() == base.rev()
     )
 
-    stats = update(
+    stats = _update(
         repo,
         ctx.node(),
         True,
@@ -2166,7 +2166,7 @@ def back_out(ctx, parent=None, wc=None):
                 b"must specify parent of merge commit to back out"
             )
         parent = ctx.p1()
-    return update(
+    return _update(
         ctx.repo(),
         parent,
         branchmerge=True,
