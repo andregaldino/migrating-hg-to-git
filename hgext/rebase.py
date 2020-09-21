@@ -1099,7 +1099,7 @@ def rebase(ui, repo, **opts):
                 )
             # update to the current working revision
             # to clear interrupted merge
-            hg.updaterepo(repo, rbsrt.originalwd, overwrite=True)
+            mergemod.clean_update(repo[rbsrt.originalwd])
             rbsrt._finishrebase()
             return 0
     elif inmemory:

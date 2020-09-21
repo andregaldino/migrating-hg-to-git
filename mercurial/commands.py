@@ -3247,7 +3247,7 @@ def _stopgraft(ui, repo, graftstate):
     if not graftstate.exists():
         raise error.Abort(_(b"no interrupted graft found"))
     pctx = repo[b'.']
-    hg.updaterepo(repo, pctx.node(), overwrite=True)
+    mergemod.clean_update(pctx)
     graftstate.delete()
     ui.status(_(b"stopped the interrupted graft\n"))
     ui.status(_(b"working directory is now at %s\n") % pctx.hex()[:12])

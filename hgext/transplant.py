@@ -476,7 +476,7 @@ class transplanter(object):
         """logic to stop an interrupted transplant"""
         if self.canresume():
             startctx = repo[b'.']
-            hg.updaterepo(repo, startctx.node(), overwrite=True)
+            merge.clean_update(startctx)
             ui.status(_(b"stopped the interrupted transplant\n"))
             ui.status(
                 _(b"working directory is now at %s\n") % startctx.hex()[:12]

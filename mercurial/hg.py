@@ -1074,7 +1074,7 @@ _update = update
 
 def clean(repo, node, show_stats=True, quietempty=False):
     """forcibly switch the working directory to node, clobbering changes"""
-    stats = updaterepo(repo, node, True)
+    stats = mergemod.clean_update(repo[node])
     assert stats.unresolvedcount == 0
     if show_stats:
         _showstats(repo, stats, quietempty)

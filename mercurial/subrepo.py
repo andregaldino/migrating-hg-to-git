@@ -25,6 +25,7 @@ from . import (
     exchange,
     logcmdutil,
     match as matchmod,
+    merge as merge,
     node,
     pathutil,
     phases,
@@ -783,7 +784,10 @@ class hgsubrepo(abstractsubrepo):
                     % (revision[0:12], self._path)
                 )
                 repo = urepo
-        hg.updaterepo(repo, revision, overwrite)
+        if overwrite:
+            merge.clean_update(repo[revision])
+        else:
+            hg.updaterepo(repo, revision, False)
 
     @annotatesubrepoerror
     def merge(self, state):

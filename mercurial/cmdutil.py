@@ -4154,7 +4154,6 @@ def abortgraft(ui, repo, graftstate):
         startctx = repo[b'.']
     # whether to strip or not
     cleanup = False
-    from . import hg
 
     if newnodes:
         newnodes = [repo[r].rev() for r in newnodes]
@@ -4182,7 +4181,7 @@ def abortgraft(ui, repo, graftstate):
 
         if cleanup:
             with repo.wlock(), repo.lock():
-                hg.updaterepo(repo, startctx.node(), overwrite=True)
+                mergemod.clean_update(startctx)
                 # stripping the new nodes created
                 strippoints = [
                     c.node() for c in repo.set(b"roots(%ld)", newnodes)
@@ -4192,7 +4191,7 @@ def abortgraft(ui, repo, graftstate):
     if not cleanup:
         # we don't update to the startnode if we can't strip
         startctx = repo[b'.']
-        hg.updaterepo(repo, startctx.node(), overwrite=True)
+        mergemod.clean_update(startctx)
 
     ui.status(_(b"graft aborted\n"))
     ui.status(_(b"working directory is now at %s\n") % startctx.hex()[:12])
