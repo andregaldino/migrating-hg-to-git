@@ -1177,6 +1177,14 @@ test stripping a working directory parent doesn't switch named branches
      summary:     commitA
   
 
+stripping a set containing a merge properly reset file content, including items on other branches
+
+The added file is moved to unknown, which is the behavior we have been seeing for other `hg strip --keep` call.
+
+stripping a set containing a merge properly reset file content, including items on other branches
+
+The added file is moved to unknown, which is the behavior we have been seeing for other `hg strip --keep` call.
+
   $ hg unbundle -u $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
   adding changesets
   adding manifests
@@ -1184,6 +1192,50 @@ test stripping a working directory parent doesn't switch named branches
   added 2 changesets with 1 changes to 1 files
   new changesets 35358f982181:4cf5e92caec2 (2 drafts)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg id
+  4cf5e92caec2 (new-branch) tip
+  $ hg status --rev "f62c6c09b707"
+  A bar.txt
+  $ hg diff --rev "f62c6c09b707"
+  diff -r f62c6c09b707 bar.txt
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/bar.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +bar
+  $ hg log -G -v --rev 35358f982181:: --patch
+  @    changeset:   5:4cf5e92caec2
+  |\   branch:      new-branch
+  | ~  tag:         tip
+  |    parent:      3:f62c6c09b707
+  |    parent:      4:35358f982181
+  |    user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    description:
+  |    merge
+  |
+  |
+  |    diff -r f62c6c09b707 -r 4cf5e92caec2 bar.txt
+  |    --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  |    +++ b/bar.txt	Thu Jan 01 00:00:00 1970 +0000
+  |    @@ -0,0 +1,1 @@
+  |    +bar
+  |
+  o  changeset:   4:35358f982181
+  |  parent:      1:eca11cf91c71
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     files:       bar.txt
+     description:
+     bar
+  
+  
+     diff -r eca11cf91c71 -r 35358f982181 bar.txt
+     --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+     +++ b/bar.txt	Thu Jan 01 00:00:00 1970 +0000
+     @@ -0,0 +1,1 @@
+     +bar
+  
 
   $ hg strip -k -r 35358f982181
   saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
@@ -1211,12 +1263,14 @@ test stripping a working directory parent doesn't switch named branches
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     commitA
   
-  $ hg diff
-  diff -r f62c6c09b707 bar.txt
-  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-  +++ b/bar.txt	Thu Jan 01 00:00:00 1970 +0000
-  @@ -0,0 +1,1 @@
-  +bar
+
+  $ hg status -A
+  ? bar.txt
+  C a
+  C b
+  C foo.txt
+  $ cat bar.txt
+  bar
 
 Use delayedstrip to strip inside a transaction
 
