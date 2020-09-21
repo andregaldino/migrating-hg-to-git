@@ -389,7 +389,7 @@ class changelog(baselog):
         sig = pygit2.Signature(
             encoding.unifromlocal(stringutil.person(user)),
             encoding.unifromlocal(stringutil.email(user)),
-            timestamp,
+            int(timestamp),
             -int(tz // 60),
         )
         oid = self.gitrepo.create_commit(
