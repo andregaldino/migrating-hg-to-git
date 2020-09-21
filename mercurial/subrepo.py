@@ -787,7 +787,7 @@ class hgsubrepo(abstractsubrepo):
         if overwrite:
             merge.clean_update(repo[revision])
         else:
-            hg.updaterepo(repo, revision, False)
+            merge.update(repo[revision])
 
     @annotatesubrepoerror
     def merge(self, state):

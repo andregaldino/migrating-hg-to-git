@@ -34,7 +34,6 @@ from mercurial import (
     dirstateguard,
     error,
     extensions,
-    hg,
     merge as mergemod,
     mergestate as mergestatemod,
     mergeutil,
@@ -750,7 +749,7 @@ class rebaseruntime(object):
             newwd = self.originalwd
         if newwd not in [c.rev() for c in repo[None].parents()]:
             ui.note(_(b"update back to initial working directory parent\n"))
-            hg.updaterepo(repo, newwd, overwrite=False)
+            mergemod.update(repo[newwd])
 
         collapsedas = None
         if self.collapsef and not self.keepf:

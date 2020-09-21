@@ -839,7 +839,7 @@ def unshelvecontinue(ui, repo, state, opts):
             state.nodestoremove.append(newnode)
             shelvectx = repo[newnode]
 
-        hg.updaterepo(repo, pendingctx.node(), overwrite=False)
+        merge.update(pendingctx)
         mergefiles(ui, repo, state.wctx, shelvectx)
         restorebranch(ui, repo, state.branchtorestore)
 
@@ -1031,7 +1031,7 @@ def _rebaserestoredcommit(
             ui.status(msg)
         else:
             shelvectx = repo[newnode]
-            hg.updaterepo(repo, tmpwctx.node(), False)
+            merge.update(tmpwctx)
 
     return shelvectx, ispartialunshelve
 

@@ -1061,7 +1061,7 @@ def updaterepo(repo, node, overwrite, updatecheck=None):
 
 def update(repo, node, quietempty=False, updatecheck=None):
     """update the working directory to node"""
-    stats = updaterepo(repo, node, False, updatecheck=updatecheck)
+    stats = mergemod.update(repo[node], updatecheck=updatecheck)
     _showstats(repo, stats, quietempty)
     if stats.unresolvedcount:
         repo.ui.status(_(b"use 'hg resolve' to retry unresolved file merges\n"))

@@ -881,8 +881,7 @@ class fold(histeditaction):
         return False
 
     def finishfold(self, ui, repo, ctx, oldctx, newnode, internalchanges):
-        parent = ctx.p1().node()
-        hg.updaterepo(repo, parent, overwrite=False)
+        mergemod.update(ctx.p1())
         ### prepare new commit data
         commitopts = {}
         commitopts[b'user'] = ctx.user()
@@ -926,7 +925,7 @@ class fold(histeditaction):
             )
         if n is None:
             return ctx, []
-        hg.updaterepo(repo, n, overwrite=False)
+        mergemod.update(repo[n])
         replacements = [
             (oldctx.node(), (newnode,)),
             (ctx.node(), (n,)),
@@ -2050,7 +2049,7 @@ def _continuehistedit(ui, repo, state):
 
 def _finishhistedit(ui, repo, state, fm):
     """This action runs when histedit is finishing its session"""
-    hg.updaterepo(repo, state.parentctxnode, overwrite=False)
+    mergemod.update(repo[state.parentctxnode])
 
     mapping, tmpnodes, created, ntm = processreplacement(state)
     if mapping:
