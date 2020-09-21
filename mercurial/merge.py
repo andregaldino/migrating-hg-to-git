@@ -2056,6 +2056,28 @@ def merge(ctx, labels=None, force=False, wc=None):
     )
 
 
+def update(ctx, updatecheck=None, wc=None):
+    """Do a regular update to the given commit, aborting if there are conflicts.
+
+    The 'updatecheck' argument can be used to control what to do in case of
+    conflicts.
+
+    Note: This is a new, higher-level update() than the one that used to exist
+    in this module. That function is now called _update(). You can hopefully
+    replace your callers to use this new update(), or clean_update(), merge(),
+    revert_to(), or graft().
+    """
+    return _update(
+        ctx.repo(),
+        ctx.rev(),
+        branchmerge=False,
+        force=False,
+        labels=[b'working copy', b'destination'],
+        updatecheck=updatecheck,
+        wc=wc,
+    )
+
+
 def clean_update(ctx, wc=None):
     """Do a clean update to the given commit.
 

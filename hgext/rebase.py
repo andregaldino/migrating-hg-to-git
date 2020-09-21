@@ -642,13 +642,7 @@ class rebaseruntime(object):
                         cmdutil.bailifchanged(repo)
                         self.inmemory = False
                         self._assignworkingcopy()
-                        mergemod._update(
-                            repo,
-                            p1,
-                            branchmerge=False,
-                            force=False,
-                            wc=self.wctx,
-                        )
+                        mergemod.update(repo[p1], wc=self.wctx)
                         rebasenode(
                             repo,
                             rev,

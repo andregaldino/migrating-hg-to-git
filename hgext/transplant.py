@@ -198,9 +198,7 @@ class transplanter(object):
                     if pulls:
                         if source != repo:
                             exchange.pull(repo, source.peer(), heads=pulls)
-                        merge._update(
-                            repo, pulls[-1], branchmerge=False, force=False
-                        )
+                        merge.update(repo[pulls[-1]])
                         p1 = repo.dirstate.p1()
                         pulls = []
 
@@ -275,7 +273,7 @@ class transplanter(object):
             tr.close()
             if pulls:
                 exchange.pull(repo, source.peer(), heads=pulls)
-                merge._update(repo, pulls[-1], branchmerge=False, force=False)
+                merge.update(repo[pulls[-1]])
         finally:
             self.saveseries(revmap, merges)
             self.transplants.write()
