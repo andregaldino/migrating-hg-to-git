@@ -322,7 +322,8 @@ class memgittreemanifestctx(object):
             for part in comps:
                 parent = trees[full]
                 try:
-                    new = self._repo[parent[pycompat.fsdecode(part)]]
+                    parent_tree_id = parent[pycompat.fsdecode(part)].id
+                    new = self._repo[parent_tree_id]
                 except KeyError:
                     # new directory
                     new = None
