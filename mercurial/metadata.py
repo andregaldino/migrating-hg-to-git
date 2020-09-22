@@ -318,7 +318,7 @@ def decodefileindices(files, data):
         return None
 
 
-def encode_copies_sidedata(files):
+def encode_files_sidedata(files):
     sortedfiles = sorted(files.touched)
     sidedata = {}
     p1copies = files.copied_from_p1

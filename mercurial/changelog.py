@@ -570,7 +570,7 @@ class changelog(revlog.revlog):
         sortedfiles = sorted(files.touched)
         sidedata = None
         if self._copiesstorage == b'changeset-sidedata':
-            sidedata = metadata.encode_copies_sidedata(files)
+            sidedata = metadata.encode_files_sidedata(files)
 
         if extra:
             extra = encodeextra(extra)
