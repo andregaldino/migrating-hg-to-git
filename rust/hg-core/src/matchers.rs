@@ -49,9 +49,9 @@ pub trait Matcher {
     /// Explicitly listed files
     fn file_set(&self) -> Option<&HashSet<&HgPath>>;
     /// Returns whether `filename` is in `file_set`
-    fn exact_match(&self, filename: impl AsRef<HgPath>) -> bool;
+    fn exact_match(&self, filename: &HgPath) -> bool;
     /// Returns whether `filename` is matched by this matcher
-    fn matches(&self, filename: impl AsRef<HgPath>) -> bool;
+    fn matches(&self, filename: &HgPath) -> bool;
     /// Decides whether a directory should be visited based on whether it
     /// has potential matches in it or one of its subdirectories, and
     /// potentially lists which subdirectories of that directory should be
@@ -89,10 +89,7 @@ pub trait Matcher {
     /// no files in this dir to investigate (or equivalently that if there are
     /// files to investigate in 'dir' that it will always return
     /// `VisitChildrenSet::This`).
-    fn visit_children_set(
-        &self,
-        directory: impl AsRef<HgPath>,
-    ) -> VisitChildrenSet;
+    fn visit_children_set(&self, directory: &HgPath) -> VisitChildrenSet;
     /// Matcher will match everything and `files_set()` will be empty:
     /// optimization might be possible.
     fn matches_everything(&self) -> bool;
@@ -119,16 +116,13 @@ impl Matcher for AlwaysMatcher {
     fn file_set(&self) -> Option<&HashSet<&HgPath>> {
         None
     }
-    fn exact_match(&self, _filename: impl AsRef<HgPath>) -> bool {
+    fn exact_match(&self, _filename: &HgPath) -> bool {
         false
     }
-    fn matches(&self, _filename: impl AsRef<HgPath>) -> bool {
+    fn matches(&self, _filename: &HgPath) -> bool {
         true
     }
-    fn visit_children_set(
-        &self,
-        _directory: impl AsRef<HgPath>,
-    ) -> VisitChildrenSet {
+    fn visit_children_set(&self, _directory: &HgPath) -> VisitChildrenSet {
         VisitChildrenSet::Recursive
     }
     fn matches_everything(&self) -> bool {
@@ -143,9 +137,9 @@ impl Matcher for AlwaysMatcher {
 /// patterns.
 ///
 ///```
-/// use hg::{ matchers::{Matcher, FileMatcher}, utils::hg_path::HgPath };
+/// use hg::{ matchers::{Matcher, FileMatcher}, utils::hg_path::{HgPath, HgPathBuf} };
 ///
-/// let files = [HgPath::new(b"a.txt"), HgPath::new(br"re:.*\.c$")];
+/// let files = [HgPathBuf::from_bytes(b"a.txt"), HgPathBuf::from_bytes(br"re:.*\.c$")];
 /// let matcher = FileMatcher::new(&files).unwrap();
 ///
 /// assert_eq!(matcher.matches(HgPath::new(b"a.txt")), true);
@@ -160,15 +154,13 @@ pub struct FileMatcher<'a> {
 }
 
 impl<'a> FileMatcher<'a> {
-    pub fn new(
-        files: &'a [impl AsRef<HgPath>],
-    ) -> Result<Self, DirstateMapError> {
+    pub fn new(files: &'a [HgPathBuf]) -> Result<Self, DirstateMapError> {
         Ok(Self {
             files: HashSet::from_iter(files.iter().map(AsRef::as_ref)),
             dirs: DirsMultiset::from_manifest(files)?,
         })
     }
-    fn inner_matches(&self, filename: impl AsRef<HgPath>) -> bool {
+    fn inner_matches(&self, filename: &HgPath) -> bool {
         self.files.contains(filename.as_ref())
     }
 }
@@ -177,16 +169,13 @@ impl<'a> Matcher for FileMatcher<'a> {
     fn file_set(&self) -> Option<&HashSet<&HgPath>> {
         Some(&self.files)
     }
-    fn exact_match(&self, filename: impl AsRef<HgPath>) -> bool {
+    fn exact_match(&self, filename: &HgPath) -> bool {
         self.inner_matches(filename)
     }
-    fn matches(&self, filename: impl AsRef<HgPath>) -> bool {
+    fn matches(&self, filename: &HgPath) -> bool {
         self.inner_matches(filename)
     }
-    fn visit_children_set(
-        &self,
-        directory: impl AsRef<HgPath>,
-    ) -> VisitChildrenSet {
+    fn visit_children_set(&self, directory: &HgPath) -> VisitChildrenSet {
         if self.files.is_empty() || !self.dirs.contains(&directory) {
             return VisitChildrenSet::Empty;
         }
@@ -270,18 +259,15 @@ impl<'a> Matcher for IncludeMatcher<'a> {
         None
     }
 
-    fn exact_match(&self, _filename: impl AsRef<HgPath>) -> bool {
+    fn exact_match(&self, _filename: &HgPath) -> bool {
         false
     }
 
-    fn matches(&self, filename: impl AsRef<HgPath>) -> bool {
+    fn matches(&self, filename: &HgPath) -> bool {
         (self.match_fn)(filename.as_ref())
     }
 
-    fn visit_children_set(
-        &self,
-        directory: impl AsRef<HgPath>,
-    ) -> VisitChildrenSet {
+    fn visit_children_set(&self, directory: &HgPath) -> VisitChildrenSet {
         let dir = directory.as_ref();
         if self.prefix && self.roots.contains(dir) {
             return VisitChildrenSet::Recursive;
@@ -725,7 +711,7 @@ mod tests {
     #[test]
     fn test_filematcher_visit_children_set() {
         // Visitchildrenset
-        let files = vec![HgPath::new(b"dir/subdir/foo.txt")];
+        let files = vec![HgPathBuf::from_bytes(b"dir/subdir/foo.txt")];
         let matcher = FileMatcher::new(&files).unwrap();
 
         let mut set = HashSet::new();
@@ -766,11 +752,11 @@ mod tests {
     #[test]
     fn test_filematcher_visit_children_set_files_and_dirs() {
         let files = vec![
-            HgPath::new(b"rootfile.txt"),
-            HgPath::new(b"a/file1.txt"),
-            HgPath::new(b"a/b/file2.txt"),
+            HgPathBuf::from_bytes(b"rootfile.txt"),
+            HgPathBuf::from_bytes(b"a/file1.txt"),
+            HgPathBuf::from_bytes(b"a/b/file2.txt"),
             // No file in a/b/c
-            HgPath::new(b"a/b/c/d/file4.txt"),
+            HgPathBuf::from_bytes(b"a/b/c/d/file4.txt"),
         ];
         let matcher = FileMatcher::new(&files).unwrap();
 
