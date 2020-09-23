@@ -1103,7 +1103,7 @@ def hgclone(orig, ui, opts, *args, **kwargs):
 
 
 @eh.wrapcommand(b'rebase', extension=b'rebase')
-def overriderebase(orig, ui, repo, **opts):
+def overriderebasecmd(orig, ui, repo, **opts):
     if not util.safehasattr(repo, b'_largefilesenabled'):
         return orig(ui, repo, **opts)
 
@@ -1111,10 +1111,28 @@ def overriderebase(orig, ui, repo, **opts):
     repo._lfcommithooks.append(lfutil.automatedcommithook(resuming))
     repo._lfstatuswriters.append(lambda *msg, **opts: None)
     try:
-        return orig(ui, repo, **opts)
+        with ui.configoverride(
+            {(b'rebase', b'experimental.inmemory'): False}, b"largefiles"
+        ):
+            return orig(ui, repo, **opts)
     finally:
         repo._lfstatuswriters.pop()
         repo._lfcommithooks.pop()
+
+
+@eh.extsetup
+def overriderebase(ui):
+    try:
+        rebase = extensions.find(b'rebase')
+    except KeyError:
+        pass
+    else:
+
+        def _dorebase(orig, *args, **kwargs):
+            kwargs['inmemory'] = False
+            return orig(*args, **kwargs)
+
+        extensions.wrapfunction(rebase, b'_dorebase', _dorebase)
 
 
 @eh.wrapcommand(b'archive')
@@ -1758,10 +1776,13 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
         lfdirstate.write()
 
         oldstandins = lfutil.getstandinsstate(repo)
-        # Make sure the merge runs on disk, not in-memory. largefiles is not a
-        # good candidate for in-memory merge (large files, custom dirstate,
-        # matcher usage).
-        kwargs['wc'] = repo[None]
+        wc = kwargs.get('wc')
+        if wc and wc.isinmemory():
+            # largefiles is not a good candidate for in-memory merge (large
+            # files, custom dirstate, matcher usage).
+            raise error.ProgrammingError(
+                b'largefiles is not compatible with in-memory merge'
+            )
         result = orig(repo, node, branchmerge, force, *args, **kwargs)
 
         newstandins = lfutil.getstandinsstate(repo)
