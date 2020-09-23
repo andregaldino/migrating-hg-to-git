@@ -272,6 +272,87 @@ This covers manifest.diff()
   +beta
 
 
+Interactive commit should work as expected
+
+  $ echo bar >> alpha
+  $ echo bar >> beta
+  $ hg commit -m "test interactive commit" -i --config ui.interactive=true --config ui.interface=text << EOF
+  > y
+  > y
+  > n
+  > EOF
+  diff --git a/alpha b/alpha
+  1 hunks, 1 lines changed
+  examine changes to 'alpha'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,3 +1,4 @@
+   alpha
+   a
+   a
+  +bar
+  record change 1/2 to 'alpha'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  diff --git a/beta b/beta
+  1 hunks, 1 lines changed
+  examine changes to 'beta'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+Status should be consistent for both systems
+
+  $ hg status
+  heads mismatch, rebuilding dagcache
+  M beta
+  $ git status
+  On branch master
+  Changes not staged for commit:
+    (use "git add <file>..." to update what will be committed)
+    (use "git checkout -- <file>..." to discard changes in working directory)
+  
+  	modified:   beta
+  
+  no changes added to commit (use "git add" and/or "git commit -a")
+
+Contents of each commit should be the same
+
+  $ hg ex -r .
+  # HG changeset patch
+  # User test <test>
+  # Date 0 0
+  #      Thu Jan 01 00:00:00 1970 +0000
+  # Node ID 80adc61cf57e99f6a412d83fee6239d1556cefcf
+  # Parent  ae1ab744f95bfd5b07cf573baef98a778058537b
+  test interactive commit
+  
+  diff -r ae1ab744f95b -r 80adc61cf57e alpha
+  --- a/alpha	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/alpha	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,3 +1,4 @@
+   alpha
+   a
+   a
+  +bar
+  $ git show
+  commit 80adc61cf57e99f6a412d83fee6239d1556cefcf
+  Author: test <test>
+  Date:   Thu Jan 1 00:00:00 1970 +0000
+  
+      test interactive commit
+  
+  diff --git a/alpha b/alpha
+  index d112a75..d2a2e9a 100644
+  --- a/alpha
+  +++ b/alpha
+  @@ -1,3 +1,4 @@
+   alpha
+   a
+   a
+  +bar
+
 Deleting files should also work (this was issue6398)
+  $ hg revert -r . --all
+  reverting beta
   $ hg rm beta
   $ hg ci -m 'remove beta'
+
