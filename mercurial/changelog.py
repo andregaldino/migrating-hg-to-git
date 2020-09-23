@@ -306,13 +306,16 @@ class changelogrevision(object):
     def changes(self):
         if self._changes is not None:
             return self._changes
-        changes = metadata.ChangingFiles(
-            touched=self.files or (),
-            added=self.filesadded or (),
-            removed=self.filesremoved or (),
-            p1_copies=self.p1copies or {},
-            p2_copies=self.p2copies or {},
-        )
+        if self._cpsd:
+            changes = metadata.decode_files_sidedata(self, self._sidedata)
+        else:
+            changes = metadata.ChangingFiles(
+                touched=self.files or (),
+                added=self.filesadded or (),
+                removed=self.filesremoved or (),
+                p1_copies=self.p1copies or {},
+                p2_copies=self.p2copies or {},
+            )
         self._changes = changes
         return changes
 

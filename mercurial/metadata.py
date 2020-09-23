@@ -342,6 +342,32 @@ def encode_files_sidedata(files):
     return sidedata
 
 
+def decode_files_sidedata(changelogrevision, sidedata):
+    """Return a ChangingFiles instance from a changelogrevision using sidata
+    """
+    touched = changelogrevision.files
+
+    rawindices = sidedata.get(sidedatamod.SD_FILESADDED)
+    added = decodefileindices(touched, rawindices)
+
+    rawindices = sidedata.get(sidedatamod.SD_FILESREMOVED)
+    removed = decodefileindices(touched, rawindices)
+
+    rawcopies = sidedata.get(sidedatamod.SD_P1COPIES)
+    p1_copies = decodecopies(touched, rawcopies)
+
+    rawcopies = sidedata.get(sidedatamod.SD_P2COPIES)
+    p2_copies = decodecopies(touched, rawcopies)
+
+    return ChangingFiles(
+        touched=touched,
+        added=added,
+        removed=removed,
+        p1_copies=p1_copies,
+        p2_copies=p2_copies,
+    )
+
+
 def _getsidedata(srcrepo, rev):
     ctx = srcrepo[rev]
     filescopies = computechangesetcopies(ctx)
