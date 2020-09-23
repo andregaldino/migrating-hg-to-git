@@ -615,14 +615,9 @@ class rebaseruntime(object):
             else:
                 overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
                 with ui.configoverride(overrides, b'rebase'):
-                    stats = rebasenode(
+                    rebasenode(
                         repo, rev, p1, p2, base, self.collapsef, wctx=self.wctx,
                     )
-                    if stats.unresolvedcount > 0:
-                        if self.inmemory:
-                            raise error.InMemoryMergeConflictsError()
-                        else:
-                            raise error.ConflictResolutionRequired(b'rebase')
             if not self.collapsef:
                 merging = p2 != nullrev
                 editform = cmdutil.mergeeditform(merging, b'rebase')
@@ -1500,7 +1495,12 @@ def rebasenode(repo, rev, p1, p2, base, collapse, wctx):
         # duplicate copies between the revision we're
         # rebasing and its first parent.
         copies.graftcopies(wctx, ctx, ctx.p1())
-    return stats
+
+    if stats.unresolvedcount > 0:
+        if wctx.isinmemory():
+            raise error.InMemoryMergeConflictsError()
+        else:
+            raise error.ConflictResolutionRequired(b'rebase')
 
 
 def adjustdest(repo, rev, destmap, state, skipped):
