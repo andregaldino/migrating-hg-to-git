@@ -350,9 +350,7 @@ class changelogrevision(object):
     @property
     def p1copies(self):
         if self._cpsd:
-            rawcopies = self._sidedata.get(sidedatamod.SD_P1COPIES)
-            if not rawcopies:
-                return {}
+            return self.changes.copied_from_p1
         else:
             rawcopies = self.extra.get(b'p1copies')
         if rawcopies is None:
