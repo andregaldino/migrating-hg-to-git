@@ -1826,8 +1826,8 @@ The local node should now point to a non-existent commit
     ancestor path: file (node bc7ebe2d260cff30d2a39a130d84add36216f791)
     other path: file (node b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3)
     extra: ancestorlinknode = b73b8c9a4ab4da89a5a35a6f10dfb13edc84ca37
-BROKEN: We should be able to see the log (without the deleted commit, of course)
+We should be able to see the log (without the deleted commit, of course)
   $ hg log -G
-  abort: unknown revision 'b73b8c9a4ab4da89a5a35a6f10dfb13edc84ca37'!
-  [255]
+  @  0:f53e9479dce5 (draft) [tip ] first
+  
   $ cd ..
