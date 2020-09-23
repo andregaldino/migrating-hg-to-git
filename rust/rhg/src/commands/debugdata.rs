@@ -5,6 +5,7 @@ use crate::ui::Ui;
 use hg::operations::{
     DebugData, DebugDataError, DebugDataErrorKind, DebugDataKind,
 };
+use micro_timer::timed;
 
 pub const HELP_TEXT: &str = "
 Dump the contents of a data file revision
@@ -22,6 +23,7 @@ impl<'a> DebugDataCommand<'a> {
 }
 
 impl<'a> Command for DebugDataCommand<'a> {
+    #[timed]
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let mut operation = DebugData::new(self.rev, self.kind);
         let data =

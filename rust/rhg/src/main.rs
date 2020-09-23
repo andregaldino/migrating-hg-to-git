@@ -1,3 +1,4 @@
+extern crate log;
 use clap::App;
 use clap::AppSettings;
 use clap::Arg;
@@ -15,6 +16,7 @@ use commands::Command;
 use error::CommandError;
 
 fn main() {
+    env_logger::init();
     let app = App::new("rhg")
         .setting(AppSettings::AllowInvalidUtf8)
         .setting(AppSettings::SubcommandRequired)
