@@ -27,8 +27,6 @@ from .utils import (
     stringutil,
 )
 
-from .revlogutils import sidedata as sidedatamod
-
 _defaultextra = {b'branch': b'default'}
 
 
@@ -360,9 +358,7 @@ class changelogrevision(object):
     @property
     def p2copies(self):
         if self._cpsd:
-            rawcopies = self._sidedata.get(sidedatamod.SD_P2COPIES)
-            if not rawcopies:
-                return {}
+            return self.changes.copied_from_p2
         else:
             rawcopies = self.extra.get(b'p2copies')
         if rawcopies is None:
