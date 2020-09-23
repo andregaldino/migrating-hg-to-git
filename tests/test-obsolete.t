@@ -1790,3 +1790,44 @@ Test issue 5783
   d1b09fe3ad2b2a03e23a72f0c582e29a49570145 1a1a11184d2588af24e767e5335d5d9d07e8c550 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'Testing::Obsstore', 'operation': 'amend', 'user': 'test'}
   1bfd8e3868f641e048b6667cd672c68932f26d00 79959ca316d5b27ac6be1dd0cfd0843a5b5412eb 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'Testing::Obsstore2', 'operation': 'amend', 'user': 'test'}
   $ cd ..
+
+Test that pinning of revisions in broken mergestate doesn't cause crash
+
+  $ hg init pinning-broken-mergestate
+  $ cd pinning-broken-mergestate
+  $ echo a > file
+  $ hg ci -Aqm first
+Create a pruned commit so pinning comes into play
+  $ echo pruned > pruned
+  $ hg ci -Aqm pruned
+  $ hg co -q 0
+  $ hg debugobsolete $(getid pruned)
+  1 new obsolescence markers
+  obsoleted 1 changesets
+Back up changelog, so we can restore it later after causing merge conflicts
+with it, thus ending up with mergestate that points to a non-existent commit
+  $ cp .hg/store/00changelog.i .hg/store/00changelog.i.first
+  $ echo b > file
+  $ hg ci -qm second
+  $ echo c > file
+  $ hg co -m 0
+  merging file
+  warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges
+  [1]
+  $ mv -f .hg/store/00changelog.i.first .hg/store/00changelog.i
+The local node should now point to a non-existent commit
+  $ hg debugmergestate
+  local (working copy): b73b8c9a4ab4da89a5a35a6f10dfb13edc84ca37
+  other (destination): f53e9479dce52f79c923908241fa54f7da90a7ad
+  file: file (state "u")
+    local path: file (hash 971c419dd609331343dee105fffd0f4608dc0bf2, flags "")
+    ancestor path: file (node bc7ebe2d260cff30d2a39a130d84add36216f791)
+    other path: file (node b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3)
+    extra: ancestorlinknode = b73b8c9a4ab4da89a5a35a6f10dfb13edc84ca37
+BROKEN: We should be able to see the log (without the deleted commit, of course)
+  $ hg log -G
+  abort: unknown revision 'b73b8c9a4ab4da89a5a35a6f10dfb13edc84ca37'!
+  [255]
+  $ cd ..
