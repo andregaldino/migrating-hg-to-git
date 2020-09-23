@@ -330,9 +330,7 @@ class changelogrevision(object):
     @property
     def filesadded(self):
         if self._cpsd:
-            rawindices = self._sidedata.get(sidedatamod.SD_FILESADDED)
-            if not rawindices:
-                return []
+            return self.changes.added
         else:
             rawindices = self.extra.get(b'filesadded')
         if rawindices is None:
