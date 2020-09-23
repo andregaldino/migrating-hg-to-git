@@ -562,7 +562,6 @@ class rebaseruntime(object):
 
     def _rebasenode(self, tr, rev, allowdivergence, progressfn):
         repo, ui, opts = self.repo, self.ui, self.opts
-        dest = self.destmap[rev]
         ctx = repo[rev]
         desc = _ctxdesc(ctx)
         if self.state[rev] == rev:
@@ -616,14 +615,7 @@ class rebaseruntime(object):
                 overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
                 with ui.configoverride(overrides, b'rebase'):
                     stats = rebasenode(
-                        repo,
-                        rev,
-                        p1,
-                        p2,
-                        base,
-                        self.collapsef,
-                        dest,
-                        wctx=self.wctx,
+                        repo, rev, p1, p2, base, self.collapsef, wctx=self.wctx,
                     )
                     if stats.unresolvedcount > 0:
                         if self.inmemory:
@@ -1465,7 +1457,7 @@ def commitnode(repo, editor, extra, user, date, commitmsg):
         return newnode
 
 
-def rebasenode(repo, rev, p1, p2, base, collapse, dest, wctx):
+def rebasenode(repo, rev, p1, p2, base, collapse, wctx):
     """Rebase a single revision rev on top of p1 using base as merge ancestor"""
     # Merge phase
     # Update to destination and merge it with local
@@ -1501,7 +1493,7 @@ def rebasenode(repo, rev, p1, p2, base, collapse, dest, wctx):
     )
     wctx.setparents(p1ctx.node(), repo[p2].node())
     if collapse:
-        copies.graftcopies(wctx, ctx, repo[dest])
+        copies.graftcopies(wctx, ctx, p1ctx)
     else:
         # If we're not using --collapse, we need to
         # duplicate copies between the revision we're
