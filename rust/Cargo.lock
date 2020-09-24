@@ -711,6 +711,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "time"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.77 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasi 0.10.0+wasi-snapshot-preview1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "twox-hash"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -741,6 +751,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "wasi"
 version = "0.9.0+wasi-snapshot-preview1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "wasi"
+version = "0.10.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -880,11 +895,13 @@ dependencies = [
 "checksum termcolor 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bb6bfa289a4d7c5766392812c0a1f4c1ba45afa1ad47803c11e1f407d846d75f"
 "checksum textwrap 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 "checksum thread_local 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d40c6d1b69745a6ec6fb1ca717914848da4b44ae29d9b3080cbee91d72a69b14"
+"checksum time 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)" = "6db9e6914ab8b1ae1c260a4ae7a49b6c5611b40328a735b21862567685e73255"
 "checksum twox-hash 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3bfd5b7557925ce778ff9b9ef90e3ade34c524b5ff10e239c69a42d546d2af56"
 "checksum unicode-width 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "9337591893a19b88d8d87f2cec1e73fad5cdfd10e5a6f349f498ad6ea2ffb1e3"
 "checksum unicode-xid 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "f7fe0bb3479651439c9112f72b6c505038574c9fbb575ed1bf3b797fa39dd564"
 "checksum vcpkg 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)" = "6454029bf181f092ad1b853286f23e2c507d8e8194d01d92da4a55c274a5508c"
 "checksum vec_map 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)" = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
+"checksum wasi 0.10.0+wasi-snapshot-preview1 (registry+https://github.com/rust-lang/crates.io-index)" = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
 "checksum wasi 0.9.0+wasi-snapshot-preview1 (registry+https://github.com/rust-lang/crates.io-index)" = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
 "checksum winapi 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)" = "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
 "checksum winapi-i686-pc-windows-gnu 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
