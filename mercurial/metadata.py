@@ -40,15 +40,20 @@ class ChangingFiles(object):
     """
 
     def __init__(
-        self, touched=(), added=(), removed=(), p1_copies=(), p2_copies=(),
+        self,
+        touched=None,
+        added=None,
+        removed=None,
+        p1_copies=None,
+        p2_copies=None,
     ):
-        self._added = set(added)
-        self._removed = set(removed)
-        self._touched = set(touched)
+        self._added = set(() if added is None else added)
+        self._removed = set(() if removed is None else removed)
+        self._touched = set(() if touched is None else touched)
         self._touched.update(self._added)
         self._touched.update(self._removed)
-        self._p1_copies = dict(p1_copies)
-        self._p2_copies = dict(p2_copies)
+        self._p1_copies = dict(() if p1_copies is None else p1_copies)
+        self._p2_copies = dict(() if p2_copies is None else p2_copies)
 
     def __eq__(self, other):
         return (
