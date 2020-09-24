@@ -1066,6 +1066,11 @@ def has_rustfmt():
     )
 
 
+@check("cargo", "cargo tool")
+def has_cargo():
+    return matchoutput('`rustup which cargo` --version', b'cargo')
+
+
 @check("lzma", "python lzma module")
 def has_lzma():
     try:
