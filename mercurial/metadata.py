@@ -28,6 +28,7 @@ class ChangingFiles(object):
     Actions performed on files are gathered into 3 sets:
 
     - added:   files actively added in the changeset.
+    - merged:  files whose history got merged
     - removed: files removed in the revision
     - touched: files affected by the merge
 
@@ -44,13 +45,16 @@ class ChangingFiles(object):
         touched=None,
         added=None,
         removed=None,
+        merged=None,
         p1_copies=None,
         p2_copies=None,
     ):
         self._added = set(() if added is None else added)
+        self._merged = set(() if merged is None else merged)
         self._removed = set(() if removed is None else removed)
         self._touched = set(() if touched is None else touched)
         self._touched.update(self._added)
+        self._touched.update(self._merged)
         self._touched.update(self._removed)
         self._p1_copies = dict(() if p1_copies is None else p1_copies)
         self._p2_copies = dict(() if p2_copies is None else p2_copies)
@@ -58,6 +62,7 @@ class ChangingFiles(object):
     def __eq__(self, other):
         return (
             self.added == other.added
+            and self.merged == other.merged
             and self.removed == other.removed
             and self.touched == other.touched
             and self.copied_from_p1 == other.copied_from_p1
@@ -84,6 +89,24 @@ class ChangingFiles(object):
     def update_added(self, filenames):
         for f in filenames:
             self.mark_added(f)
+
+    @property
+    def merged(self):
+        """files actively merged during a merge
+
+        Any modified files which had modification on both size that needed merging.
+
+        In this case a new filenode was created and it has two parents.
+        """
+        return frozenset(self._merged)
+
+    def mark_merged(self, filename):
+        self._merged.add(filename)
+        self._touched.add(filename)
+
+    def update_merged(self, filenames):
+        for f in filenames:
+            self.mark_merged(f)
 
     @property
     def removed(self):
