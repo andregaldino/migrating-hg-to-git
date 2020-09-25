@@ -13,8 +13,6 @@ import os
 from .i18n import _
 
 
-from .revlogutils.flagutil import REVIDX_SIDEDATA
-
 from . import (
     match as matchmod,
     node,
@@ -202,7 +200,6 @@ def _revinfo_getter(repo):
         return ismerged
 
     changelogrevision = cl.changelogrevision
-    flags = cl.flags
 
     # A small cache to avoid doing the work twice for merges
     #
@@ -232,28 +229,23 @@ def _revinfo_getter(repo):
     def revinfo(rev):
         p1, p2 = parents(rev)
         value = None
-        if flags(rev) & REVIDX_SIDEDATA:
-            e = merge_caches.pop(rev, None)
-            if e is not None:
-                return e
-            c = changelogrevision(rev)
-            p1copies = c.p1copies
-            p2copies = c.p2copies
-            removed = c.filesremoved
-            if p1 != node.nullrev and p2 != node.nullrev:
-                # XXX some case we over cache, IGNORE
-                value = merge_caches[rev] = (
-                    p1,
-                    p2,
-                    p1copies,
-                    p2copies,
-                    removed,
-                    get_ismerged(rev),
-                )
-        else:
-            p1copies = {}
-            p2copies = {}
-            removed = []
+        e = merge_caches.pop(rev, None)
+        if e is not None:
+            return e
+        c = changelogrevision(rev)
+        p1copies = c.p1copies
+        p2copies = c.p2copies
+        removed = c.filesremoved
+        if p1 != node.nullrev and p2 != node.nullrev:
+            # XXX some case we over cache, IGNORE
+            value = merge_caches[rev] = (
+                p1,
+                p2,
+                p1copies,
+                p2copies,
+                removed,
+                get_ismerged(rev),
+            )
 
         if value is None:
             value = (p1, p2, p1copies, p2copies, removed, get_ismerged(rev))
