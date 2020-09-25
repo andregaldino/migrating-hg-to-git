@@ -265,6 +265,21 @@ def computechangesetfilesremoved(ctx):
     return removed
 
 
+def computechangesetfilesmerged(ctx):
+    """return the list of files merged in a changeset
+    """
+    merged = []
+    if len(ctx.parents()) < 2:
+        return merged
+    for f in ctx.files():
+        if f in ctx:
+            fctx = ctx[f]
+            parents = fctx._filelog.parents(fctx._filenode)
+            if parents[1] != node.nullid:
+                merged.append(f)
+    return merged
+
+
 def computechangesetcopies(ctx):
     """return the copies data for a changeset
 
