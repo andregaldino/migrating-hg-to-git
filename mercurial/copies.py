@@ -309,9 +309,15 @@ def _changesetforwardcopies(a, b, match):
     iterrevs.update(roots)
     iterrevs.remove(b.rev())
     revs = sorted(iterrevs)
-    return _combine_changeset_copies(
-        revs, children, b.rev(), revinfo, match, isancestor
-    )
+
+    if repo.filecopiesmode == b'changeset-sidedata':
+        return _combine_changeset_copies(
+            revs, children, b.rev(), revinfo, match, isancestor
+        )
+    else:
+        return _combine_changeset_copies_extra(
+            revs, children, b.rev(), revinfo, match, isancestor
+        )
 
 
 def _combine_changeset_copies(
@@ -403,6 +409,98 @@ def _merge_copies_dict(minor, major, isancestor, ismerged):
     - `ismerged(path)`: callable return True if `path` have been merged in the
                         current revision,
     """
+    for dest, value in major.items():
+        other = minor.get(dest)
+        if other is None:
+            minor[dest] = value
+        else:
+            new_tt = value[0]
+            other_tt = other[0]
+            if value[1] == other[1]:
+                continue
+            # content from "major" wins, unless it is older
+            # than the branch point or there is a merge
+            if (
+                new_tt == other_tt
+                or not isancestor(new_tt, other_tt)
+                or ismerged(dest)
+            ):
+                minor[dest] = value
+
+
+def _combine_changeset_copies_extra(
+    revs, children, targetrev, revinfo, match, isancestor
+):
+    """version of `_combine_changeset_copies` that works with the Google
+    specific "extra" based storage for copy information"""
+    all_copies = {}
+    alwaysmatch = match.always()
+    for r in revs:
+        copies = all_copies.pop(r, None)
+        if copies is None:
+            # this is a root
+            copies = {}
+        for i, c in enumerate(children[r]):
+            p1, p2, p1copies, p2copies, removed, ismerged = revinfo(c)
+            if r == p1:
+                parent = 1
+                childcopies = p1copies
+            else:
+                assert r == p2
+                parent = 2
+                childcopies = p2copies
+            if not alwaysmatch:
+                childcopies = {
+                    dst: src for dst, src in childcopies.items() if match(dst)
+                }
+            newcopies = copies
+            if childcopies:
+                newcopies = copies.copy()
+                for dest, source in pycompat.iteritems(childcopies):
+                    prev = copies.get(source)
+                    if prev is not None and prev[1] is not None:
+                        source = prev[1]
+                    newcopies[dest] = (c, source)
+                assert newcopies is not copies
+            for f in removed:
+                if f in newcopies:
+                    if newcopies is copies:
+                        # copy on write to avoid affecting potential other
+                        # branches.  when there are no other branches, this
+                        # could be avoided.
+                        newcopies = copies.copy()
+                    newcopies[f] = (c, None)
+            othercopies = all_copies.get(c)
+            if othercopies is None:
+                all_copies[c] = newcopies
+            else:
+                # we are the second parent to work on c, we need to merge our
+                # work with the other.
+                #
+                # In case of conflict, parent 1 take precedence over parent 2.
+                # This is an arbitrary choice made anew when implementing
+                # changeset based copies. It was made without regards with
+                # potential filelog related behavior.
+                if parent == 1:
+                    _merge_copies_dict_extra(
+                        othercopies, newcopies, isancestor, ismerged
+                    )
+                else:
+                    _merge_copies_dict_extra(
+                        newcopies, othercopies, isancestor, ismerged
+                    )
+                    all_copies[c] = newcopies
+
+    final_copies = {}
+    for dest, (tt, source) in all_copies[targetrev].items():
+        if source is not None:
+            final_copies[dest] = source
+    return final_copies
+
+
+def _merge_copies_dict_extra(minor, major, isancestor, ismerged):
+    """version of `_merge_copies_dict` that works with the Google
+    specific "extra" based storage for copy information"""
     for dest, value in major.items():
         other = minor.get(dest)
         if other is None:
