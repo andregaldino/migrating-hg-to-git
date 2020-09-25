@@ -84,7 +84,7 @@ class ChangingFiles(object):
 
     def mark_added(self, filename):
         self._added.add(filename)
-        self._touched.add(filename)
+        self.mark_touched(filename)
 
     def update_added(self, filenames):
         for f in filenames:
@@ -102,7 +102,7 @@ class ChangingFiles(object):
 
     def mark_merged(self, filename):
         self._merged.add(filename)
-        self._touched.add(filename)
+        self.mark_touched(filename)
 
     def update_merged(self, filenames):
         for f in filenames:
@@ -146,7 +146,7 @@ class ChangingFiles(object):
 
     def mark_removed(self, filename):
         self._removed.add(filename)
-        self._touched.add(filename)
+        self.mark_touched(filename)
 
     def update_removed(self, filenames):
         for f in filenames:
