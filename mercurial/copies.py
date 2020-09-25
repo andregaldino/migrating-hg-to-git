@@ -171,33 +171,14 @@ def _committedforwardcopies(a, b, base, match):
 
 
 def _revinfo_getter(repo):
-    """return a function that return multiple data given a <rev>"i
+    """returns a function that returns the following data given a <rev>"
 
     * p1: revision number of first parent
     * p2: revision number of first parent
-    * p1copies: mapping of copies from p1
-    * p2copies: mapping of copies from p2
-    * removed: a list of removed files
-    * ismerged: a callback to know if file was merged in that revision
+    * changes: a ChangingFiles object
     """
     cl = repo.changelog
     parents = cl.parentrevs
-
-    def get_ismerged(rev):
-        ctx = repo[rev]
-
-        def ismerged(path):
-            if path not in ctx.files():
-                return False
-            fctx = ctx[path]
-            parents = fctx._filelog.parents(fctx._filenode)
-            nb_parents = 0
-            for n in parents:
-                if n != node.nullid:
-                    nb_parents += 1
-            return nb_parents >= 2
-
-        return ismerged
 
     changelogrevision = cl.changelogrevision
 
@@ -232,23 +213,10 @@ def _revinfo_getter(repo):
         e = merge_caches.pop(rev, None)
         if e is not None:
             return e
-        c = changelogrevision(rev)
-        p1copies = c.p1copies
-        p2copies = c.p2copies
-        removed = c.filesremoved
+        value = (p1, p2, changelogrevision(rev).changes)
         if p1 != node.nullrev and p2 != node.nullrev:
             # XXX some case we over cache, IGNORE
-            value = merge_caches[rev] = (
-                p1,
-                p2,
-                p1copies,
-                p2copies,
-                removed,
-                get_ismerged(rev),
-            )
-
-        if value is None:
-            value = (p1, p2, p1copies, p2copies, removed, get_ismerged(rev))
+            merge_caches[rev] = value
         return value
 
     return revinfo
@@ -324,14 +292,14 @@ def _combine_changeset_copies(
             # this is a root
             copies = {}
         for i, c in enumerate(children[r]):
-            p1, p2, p1copies, p2copies, removed, ismerged = revinfo(c)
+            p1, p2, changes = revinfo(c)
             if r == p1:
                 parent = 1
-                childcopies = p1copies
+                childcopies = changes.copied_from_p1
             else:
                 assert r == p2
                 parent = 2
-                childcopies = p2copies
+                childcopies = changes.copied_from_p2
             if not alwaysmatch:
                 childcopies = {
                     dst: src for dst, src in childcopies.items() if match(dst)
@@ -345,7 +313,7 @@ def _combine_changeset_copies(
                         source = prev[1]
                     newcopies[dest] = (c, source)
                 assert newcopies is not copies
-            for f in removed:
+            for f in changes.removed:
                 if f in newcopies:
                     if newcopies is copies:
                         # copy on write to avoid affecting potential other
@@ -366,11 +334,11 @@ def _combine_changeset_copies(
                 # potential filelog related behavior.
                 if parent == 1:
                     _merge_copies_dict(
-                        othercopies, newcopies, isancestor, ismerged
+                        othercopies, newcopies, isancestor, changes
                     )
                 else:
                     _merge_copies_dict(
-                        newcopies, othercopies, isancestor, ismerged
+                        newcopies, othercopies, isancestor, changes
                     )
                     all_copies[c] = newcopies
 
@@ -381,7 +349,7 @@ def _combine_changeset_copies(
     return final_copies
 
 
-def _merge_copies_dict(minor, major, isancestor, ismerged):
+def _merge_copies_dict(minor, major, isancestor, changes):
     """merge two copies-mapping together, minor and major
 
     In case of conflict, value from "major" will be picked.
@@ -406,7 +374,7 @@ def _merge_copies_dict(minor, major, isancestor, ismerged):
             if (
                 new_tt == other_tt
                 or not isancestor(new_tt, other_tt)
-                or ismerged(dest)
+                or dest in changes.merged
             ):
                 minor[dest] = value
 
