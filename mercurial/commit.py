@@ -181,6 +181,8 @@ def _process_files(tr, ctx, error=False):
                 if is_touched:
                     if is_touched == 'added':
                         files.mark_added(f)
+                    elif is_touched == 'merged':
+                        files.mark_merged(f)
                     else:
                         files.mark_touched(f)
                 m.setflag(f, fctx.flags())
@@ -347,7 +349,10 @@ def _filecommit(
     text = fctx.data()
     if fparent2 != nullid or meta or flog.cmp(fparent1, text) or force_new_node:
         if touched is None:  # do not overwrite added
-            touched = 'modified'
+            if fparent2 == nullid:
+                touched = 'modified'
+            else:
+                touched = 'merged'
         fnode = flog.add(text, meta, tr, linkrev, fparent1, fparent2)
     # are just the flags changed during merge?
     elif fname in manifest1 and manifest1.flags(fname) != fctx.flags():
