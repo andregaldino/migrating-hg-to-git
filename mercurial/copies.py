@@ -172,7 +172,7 @@ def _committedforwardcopies(a, b, base, match):
     return cm
 
 
-def _revinfogetter(repo):
+def _revinfo_getter(repo):
     """return a function that return multiple data given a <rev>"i
 
     * p1: revision number of first parent
@@ -278,7 +278,7 @@ def _changesetforwardcopies(a, b, match):
 
     repo = a.repo().unfiltered()
     children = {}
-    revinfo = _revinfogetter(repo)
+    revinfo = _revinfo_getter(repo)
 
     cl = repo.changelog
     isancestor = cl.isancestorrev  # XXX we should had chaching to this.
@@ -309,12 +309,12 @@ def _changesetforwardcopies(a, b, match):
     iterrevs.update(roots)
     iterrevs.remove(b.rev())
     revs = sorted(iterrevs)
-    return _combinechangesetcopies(
+    return _combine_changeset_copies(
         revs, children, b.rev(), revinfo, match, isancestor
     )
 
 
-def _combinechangesetcopies(
+def _combine_changeset_copies(
     revs, children, targetrev, revinfo, match, isancestor
 ):
     """combine the copies information for each item of iterrevs
