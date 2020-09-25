@@ -261,7 +261,7 @@ class _mergestate_base(object):
             hex(fco.filenode()),
             fcl.flags(),
         ]
-        self._stateextras[fd] = {b'ancestorlinknode': hex(fca.node())}
+        self._stateextras[fd][b'ancestorlinknode'] = hex(fca.node())
         self._dirty = True
 
     def addpathconflict(self, path, frename, forigin):
