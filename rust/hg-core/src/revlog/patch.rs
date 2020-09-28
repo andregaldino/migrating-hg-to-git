@@ -253,7 +253,7 @@ mod tests {
         }
 
         pub fn get(&mut self) -> &[u8] {
-            &self.data[..]
+            &self.data
         }
     }
 
