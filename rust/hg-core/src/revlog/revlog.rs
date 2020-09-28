@@ -247,38 +247,45 @@ impl<'a> RevlogEntry<'a> {
             // Raw revision data follows.
             b'u' => Ok(Cow::Borrowed(&self.bytes[1..])),
             // zlib (RFC 1950) data.
-            b'x' => Ok(Cow::Owned(self.uncompressed_zlib_data())),
+            b'x' => Ok(Cow::Owned(self.uncompressed_zlib_data()?)),
             // zstd data.
-            b'\x28' => Ok(Cow::Owned(self.uncompressed_zstd_data())),
+            b'\x28' => Ok(Cow::Owned(self.uncompressed_zstd_data()?)),
             format_type => Err(RevlogError::UnknowDataFormat(format_type)),
         }
     }
 
-    fn uncompressed_zlib_data(&self) -> Vec<u8> {
+    fn uncompressed_zlib_data(&self) -> Result<Vec<u8>, RevlogError> {
         let mut decoder = ZlibDecoder::new(self.bytes);
         if self.is_delta() {
             let mut buf = Vec::with_capacity(self.compressed_len);
-            decoder.read_to_end(&mut buf).expect("corrupted zlib data");
-            buf
+            decoder
+                .read_to_end(&mut buf)
+                .or(Err(RevlogError::Corrupted))?;
+            Ok(buf)
         } else {
             let mut buf = vec![0; self.uncompressed_len];
-            decoder.read_exact(&mut buf).expect("corrupted zlib data");
-            buf
+            decoder
+                .read_exact(&mut buf)
+                .or(Err(RevlogError::Corrupted))?;
+            Ok(buf)
         }
     }
 
-    fn uncompressed_zstd_data(&self) -> Vec<u8> {
+    fn uncompressed_zstd_data(&self) -> Result<Vec<u8>, RevlogError> {
         if self.is_delta() {
             let mut buf = Vec::with_capacity(self.compressed_len);
             zstd::stream::copy_decode(self.bytes, &mut buf)
-                .expect("corrupted zstd data");
-            buf
+                .or(Err(RevlogError::Corrupted))?;
+            Ok(buf)
         } else {
             let mut buf = vec![0; self.uncompressed_len];
             let len = zstd::block::decompress_to_buffer(self.bytes, &mut buf)
-                .expect("corrupted zstd data");
-            assert_eq!(len, self.uncompressed_len, "corrupted zstd data");
-            buf
+                .or(Err(RevlogError::Corrupted))?;
+            if len != self.uncompressed_len {
+                Err(RevlogError::Corrupted)
+            } else {
+                Ok(buf)
+            }
         }
     }
 
