@@ -22,7 +22,7 @@ impl Chunk<'_> {
     ///
     /// The offset, taking into account the growth/shrinkage of data
     /// induced by previously applied chunks.
-    fn start_offseted_by(&self, offset: i32) -> u32 {
+    fn start_offset_by(&self, offset: i32) -> u32 {
         let start = self.start as i32 + offset;
         assert!(start >= 0, "negative chunk start should never happen");
         start as u32
@@ -32,8 +32,8 @@ impl Chunk<'_> {
     ///
     /// The offset, taking into account the growth/shrinkage of data
     /// induced by previously applied chunks.
-    fn end_offseted_by(&self, offset: i32) -> u32 {
-        self.start_offseted_by(offset) + self.data.len() as u32
+    fn end_offset_by(&self, offset: i32) -> u32 {
+        self.start_offset_by(offset) + self.data.len() as u32
     }
 
     /// Length of the replaced chunk.
@@ -122,7 +122,7 @@ impl<'a> PatchList<'a> {
             // Add chunks of `self` that start before this chunk of `other`
             // without overlap.
             while pos < self.chunks.len()
-                && self.chunks[pos].end_offseted_by(offset) <= *start
+                && self.chunks[pos].end_offset_by(offset) <= *start
             {
                 let first = self.chunks[pos].clone();
                 offset += first.len_diff();
@@ -135,12 +135,12 @@ impl<'a> PatchList<'a> {
             // The left-most part of data is added as an insertion chunk.
             // The right-most part data is kept in the chunk.
             if pos < self.chunks.len()
-                && self.chunks[pos].start_offseted_by(offset) < *start
+                && self.chunks[pos].start_offset_by(offset) < *start
             {
                 let first = &mut self.chunks[pos];
 
                 let (data_left, data_right) = first.data.split_at(
-                    (*start - first.start_offseted_by(offset)) as usize,
+                    (*start - first.start_offset_by(offset)) as usize,
                 );
                 let left = Chunk {
                     start: first.start,
@@ -170,7 +170,7 @@ impl<'a> PatchList<'a> {
             // Discard the chunks of `self` that are totally overridden
             // by the current chunk of `other`
             while pos < self.chunks.len()
-                && self.chunks[pos].end_offseted_by(next_offset) <= *end
+                && self.chunks[pos].end_offset_by(next_offset) <= *end
             {
                 let first = &self.chunks[pos];
                 next_offset += first.len_diff();
@@ -180,12 +180,12 @@ impl<'a> PatchList<'a> {
             // Truncate the left-most part of chunk of `self` that overlaps
             // the current chunk of `other`.
             if pos < self.chunks.len()
-                && self.chunks[pos].start_offseted_by(next_offset) < *end
+                && self.chunks[pos].start_offset_by(next_offset) < *end
             {
                 let first = &mut self.chunks[pos];
 
                 let how_much_to_discard =
-                    *end - first.start_offseted_by(next_offset);
+                    *end - first.start_offset_by(next_offset);
 
                 first.data = &first.data[(how_much_to_discard as usize)..];
 
