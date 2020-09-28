@@ -56,7 +56,7 @@ impl Revlog {
             return Err(RevlogError::UnsuportedVersion(version));
         }
 
-        let index = Index::new(Box::new(index_mmap));
+        let index = Index::new(Box::new(index_mmap))?;
 
         // TODO load data only when needed //
         // type annotation required

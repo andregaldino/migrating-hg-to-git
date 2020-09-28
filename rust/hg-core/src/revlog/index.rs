@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use byteorder::{BigEndian, ByteOrder};
 
+use crate::revlog::revlog::RevlogError;
 use crate::revlog::{Revision, NULL_REVISION};
 
 pub const INDEX_ENTRY_SIZE: usize = 64;
@@ -17,7 +18,9 @@ pub struct Index {
 impl Index {
     /// Create an index from bytes.
     /// Calculate the start of each entry when is_inline is true.
-    pub fn new(bytes: Box<dyn Deref<Target = [u8]> + Send>) -> Self {
+    pub fn new(
+        bytes: Box<dyn Deref<Target = [u8]> + Send>,
+    ) -> Result<Self, RevlogError> {
         if is_inline(&bytes) {
             let mut offset: usize = 0;
             let mut offsets = Vec::new();
@@ -33,15 +36,19 @@ impl Index {
                 offset += INDEX_ENTRY_SIZE + entry.compressed_len();
             }
 
-            Self {
-                bytes,
-                offsets: Some(offsets),
+            if offset == bytes.len() {
+                Ok(Self {
+                    bytes,
+                    offsets: Some(offsets),
+                })
+            } else {
+                Err(RevlogError::Corrupted)
             }
         } else {
-            Self {
+            Ok(Self {
                 bytes,
                 offsets: None,
-            }
+            })
         }
     }
 
