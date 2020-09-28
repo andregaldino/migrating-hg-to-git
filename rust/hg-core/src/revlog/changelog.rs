@@ -12,7 +12,7 @@ impl Changelog {
     /// Open the `changelog` of a repository given by its root.
     pub fn open(root: &PathBuf) -> Result<Self, RevlogError> {
         let index_file = root.join(".hg/store/00changelog.i");
-        let revlog = Revlog::open(&index_file)?;
+        let revlog = Revlog::open(&index_file, None)?;
         Ok(Self { revlog })
     }
 

@@ -6,7 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use std::convert::From;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::revlog::changelog::Changelog;
 use crate::revlog::manifest::{Manifest, ManifestEntry};
@@ -14,7 +14,8 @@ use crate::revlog::path_encode::path_encode;
 use crate::revlog::revlog::Revlog;
 use crate::revlog::revlog::RevlogError;
 use crate::revlog::Revision;
-use crate::utils::hg_path::HgPathBuf;
+use crate::utils::files::get_path_from_bytes;
+use crate::utils::hg_path::{HgPath, HgPathBuf};
 
 const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
 
@@ -121,15 +122,13 @@ impl<'a> CatRev<'a> {
             {
                 for cat_file in self.files.iter() {
                     if cat_file.as_bytes() == manifest_file.as_bytes() {
-                        let encoded_bytes =
-                            path_encode(manifest_file.as_bytes());
-                        let revlog_index_string = format!(
-                            ".hg/store/data/{}.i",
-                            String::from_utf8_lossy(&encoded_bytes),
-                        );
-                        let revlog_index_path =
-                            self.root.join(&revlog_index_string);
-                        let file_log = Revlog::open(&revlog_index_path)?;
+                        let index_path =
+                            store_path(self.root, manifest_file, b".i");
+                        let data_path =
+                            store_path(self.root, manifest_file, b".d");
+
+                        let file_log =
+                            Revlog::open(&index_path, Some(&data_path))?;
                         let file_node = hex::decode(&node_bytes)
                             .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
                         let file_rev = file_log.get_node_rev(&file_node)?;
@@ -155,4 +154,16 @@ impl<'a> CatRev<'a> {
             unreachable!("manifest_entry should have been stored");
         }
     }
+}
+
+fn store_path(root: &Path, hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
+    let encoded_bytes =
+        path_encode(&[b"data/", hg_path.as_bytes(), suffix].concat());
+    [
+        root,
+        &Path::new(".hg/store/"),
+        get_path_from_bytes(&encoded_bytes),
+    ]
+    .iter()
+    .collect()
 }

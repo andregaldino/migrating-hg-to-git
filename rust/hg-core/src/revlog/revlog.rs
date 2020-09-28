@@ -47,7 +47,10 @@ impl Revlog {
     /// It will also open the associated data file if index and data are not
     /// interleaved.
     #[timed]
-    pub fn open(index_path: &Path) -> Result<Self, RevlogError> {
+    pub fn open(
+        index_path: &Path,
+        data_path: Option<&Path>,
+    ) -> Result<Self, RevlogError> {
         let index_mmap =
             mmap_open(&index_path).map_err(RevlogError::IoError)?;
 
@@ -58,16 +61,17 @@ impl Revlog {
 
         let index = Index::new(Box::new(index_mmap))?;
 
-        // TODO load data only when needed //
+        let default_data_path = index_path.with_extension("d");
+
         // type annotation required
         // won't recognize Mmap as Deref<Target = [u8]>
         let data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>> =
             if index.is_inline() {
                 None
             } else {
-                let data_path = index_path.with_extension("d");
+                let data_path = data_path.unwrap_or(&default_data_path);
                 let data_mmap =
-                    mmap_open(&data_path).map_err(RevlogError::IoError)?;
+                    mmap_open(data_path).map_err(RevlogError::IoError)?;
                 Some(Box::new(data_mmap))
             };
 

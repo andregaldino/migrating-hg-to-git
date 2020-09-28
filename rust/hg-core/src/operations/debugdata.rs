@@ -102,7 +102,7 @@ impl<'a> DebugData<'a> {
             DebugDataKind::Changelog => root.join(".hg/store/00changelog.i"),
             DebugDataKind::Manifest => root.join(".hg/store/00manifest.i"),
         };
-        let revlog = Revlog::open(&index_file)?;
+        let revlog = Revlog::open(&index_file, None)?;
         let data = revlog.get_rev_data(rev)?;
 
         Ok(data)
