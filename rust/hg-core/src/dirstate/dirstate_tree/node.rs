@@ -48,7 +48,11 @@ impl Default for NodeKind {
 }
 
 impl Node {
-    pub fn insert(&mut self, path: &[u8], new_entry: DirstateEntry) -> InsertResult {
+    pub fn insert(
+        &mut self,
+        path: &[u8],
+        new_entry: DirstateEntry,
+    ) -> InsertResult {
         let mut split = path.splitn(2, |&c| c == b'/');
         let head = split.next().unwrap_or(b"");
         let tail = split.next().unwrap_or(b"");
@@ -76,16 +80,24 @@ impl Node {
                             children: Default::default(),
                         })
                     }
-                    _ => return Node::insert_in_file(file, new_entry, head, tail),
+                    _ => {
+                        return Node::insert_in_file(
+                            file, new_entry, head, tail,
+                        )
+                    }
                 }
             }
         }
 
         match &mut self.kind {
             NodeKind::Directory(directory) => {
-                return Node::insert_in_directory(directory, new_entry, head, tail);
+                return Node::insert_in_directory(
+                    directory, new_entry, head, tail,
+                );
             }
-            NodeKind::File(_) => unreachable!("The file case has already been handled"),
+            NodeKind::File(_) => {
+                unreachable!("The file case has already been handled")
+            }
         }
     }
 
@@ -104,7 +116,8 @@ impl Node {
                 was_file: None,
                 children: FastHashMap::default(),
             };
-            let res = Node::insert_in_directory(&mut dir, new_entry, head, tail);
+            let res =
+                Node::insert_in_directory(&mut dir, new_entry, head, tail);
             file.was_directory = Some(Box::new(dir));
             res
         }
@@ -130,7 +143,9 @@ impl Node {
                                 entry: new_entry,
                             }),
                         };
-                        let old_entry = directory.children.insert(head.to_owned(), becomes_file);
+                        let old_entry = directory
+                            .children
+                            .insert(head.to_owned(), becomes_file);
                         return InsertResult {
                             did_insert: true,
                             old_entry,
@@ -192,7 +207,8 @@ impl Node {
                 }
                 NodeKind::File(f) => {
                     if let Some(d) = &mut f.was_directory {
-                        let RemoveResult { old_entry, .. } = Node::remove_from_directory(head, d);
+                        let RemoveResult { old_entry, .. } =
+                            Node::remove_from_directory(head, d);
                         return RemoveResult {
                             cleanup: false,
                             old_entry,
@@ -210,7 +226,8 @@ impl Node {
                         if res.cleanup {
                             d.children.remove(head);
                         }
-                        res.cleanup = d.children.len() == 0 && d.was_file.is_none();
+                        res.cleanup =
+                            d.children.len() == 0 && d.was_file.is_none();
                         res
                     } else {
                         empty_result
@@ -219,7 +236,8 @@ impl Node {
                 NodeKind::File(f) => {
                     if let Some(d) = &mut f.was_directory {
                         if let Some(child) = d.children.get_mut(head) {
-                            let RemoveResult { cleanup, old_entry } = child.remove(tail);
+                            let RemoveResult { cleanup, old_entry } =
+                                child.remove(tail);
                             if cleanup {
                                 d.children.remove(head);
                             }

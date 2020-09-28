@@ -136,7 +136,11 @@ impl Tree {
 
     /// Low-level insertion method that returns the previous node (directories
     /// included).
-    fn insert_node(&mut self, path: impl AsRef<HgPath>, kind: DirstateEntry) -> Option<Node> {
+    fn insert_node(
+        &mut self,
+        path: impl AsRef<HgPath>,
+        kind: DirstateEntry,
+    ) -> Option<Node> {
         let InsertResult {
             did_insert,
             old_entry,
@@ -154,7 +158,9 @@ impl Tree {
     pub fn get(&self, path: impl AsRef<HgPath>) -> Option<&DirstateEntry> {
         if let Some(node) = self.get_node(&path) {
             return match &node.kind {
-                NodeKind::Directory(d) => d.was_file.as_ref().map(|f| &f.entry),
+                NodeKind::Directory(d) => {
+                    d.was_file.as_ref().map(|f| &f.entry)
+                }
                 NodeKind::File(f) => Some(&f.entry),
             };
         }
@@ -168,10 +174,15 @@ impl Tree {
 
     /// Returns a mutable reference to the entry corresponding to `path` if it
     /// exists.
-    pub fn get_mut(&mut self, path: impl AsRef<HgPath>) -> Option<&mut DirstateEntry> {
+    pub fn get_mut(
+        &mut self,
+        path: impl AsRef<HgPath>,
+    ) -> Option<&mut DirstateEntry> {
         if let Some(kind) = self.root.get_mut(path.as_ref().as_bytes()) {
             return match kind {
-                NodeKind::Directory(d) => d.was_file.as_mut().map(|f| &mut f.entry),
+                NodeKind::Directory(d) => {
+                    d.was_file.as_mut().map(|f| &mut f.entry)
+                }
                 NodeKind::File(f) => Some(&mut f.entry),
             };
         }
@@ -192,8 +203,12 @@ impl Tree {
     }
 
     /// Remove the entry at `path` and returns it, if it exists.
-    pub fn remove(&mut self, path: impl AsRef<HgPath>) -> Option<DirstateEntry> {
-        let RemoveResult { old_entry, .. } = self.root.remove(path.as_ref().as_bytes());
+    pub fn remove(
+        &mut self,
+        path: impl AsRef<HgPath>,
+    ) -> Option<DirstateEntry> {
+        let RemoveResult { old_entry, .. } =
+            self.root.remove(path.as_ref().as_bytes());
         self.files_count = self
             .files_count
             .checked_sub(if old_entry.is_some() { 1 } else { 0 })
@@ -344,7 +359,10 @@ mod tests {
             size: 30,
         };
         assert_eq!(tree.insert_node(HgPath::new(b"foo"), entry), None);
-        assert_eq!(tree.insert_node(HgPath::new(b"foo/a"), removed_entry), None);
+        assert_eq!(
+            tree.insert_node(HgPath::new(b"foo/a"), removed_entry),
+            None
+        );
         // The insert should not turn `foo` into a directory as `foo` is not
         // `Removed`.
         match tree.get_node(HgPath::new(b"foo")).unwrap().kind {
@@ -516,7 +534,10 @@ mod tests {
             ..entry
         };
         assert_eq!(tree.insert(HgPath::new(b"a"), entry), None);
-        assert_eq!(tree.insert_node(HgPath::new(b"a/b/x"), removed_entry), None);
+        assert_eq!(
+            tree.insert_node(HgPath::new(b"a/b/x"), removed_entry),
+            None
+        );
         assert_eq!(tree.files_count, 2);
         dbg!(&tree);
         assert_eq!(tree.remove(HgPath::new(b"a")), Some(entry));

@@ -17,7 +17,9 @@ use std::iter::{FromIterator, FusedIterator};
 use std::path::PathBuf;
 
 impl FromIterator<(HgPathBuf, DirstateEntry)> for Tree {
-    fn from_iter<T: IntoIterator<Item = (HgPathBuf, DirstateEntry)>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = (HgPathBuf, DirstateEntry)>>(
+        iter: T,
+    ) -> Self {
         let mut tree = Self::new();
         for (path, entry) in iter {
             tree.insert(path, entry);
@@ -48,16 +50,30 @@ impl<'a> Iterator for Iter<'a> {
         while let Some((base_path, node)) = self.to_visit.pop_front() {
             match &node.kind {
                 NodeKind::Directory(dir) => {
-                    add_children_to_visit(&mut self.to_visit, &base_path, &dir);
+                    add_children_to_visit(
+                        &mut self.to_visit,
+                        &base_path,
+                        &dir,
+                    );
                     if let Some(file) = &dir.was_file {
-                        return Some((HgPathBuf::from_bytes(&base_path), file.entry));
+                        return Some((
+                            HgPathBuf::from_bytes(&base_path),
+                            file.entry,
+                        ));
                     }
                 }
                 NodeKind::File(file) => {
                     if let Some(dir) = &file.was_directory {
-                        add_children_to_visit(&mut self.to_visit, &base_path, &dir);
+                        add_children_to_visit(
+                            &mut self.to_visit,
+                            &base_path,
+                            &dir,
+                        );
                     }
-                    return Some((HgPathBuf::from_bytes(&base_path), file.entry));
+                    return Some((
+                        HgPathBuf::from_bytes(&base_path),
+                        file.entry,
+                    ));
                 }
             }
         }
@@ -107,10 +123,16 @@ impl<'a> FsIter<'a> {
     /// ```
     /// We need to dispatch the new symlink as `Unknown` and all the
     /// descendents of the directory it replace as `Deleted`.
-    fn dispatch_symlinked_directory(&mut self, path: impl AsRef<HgPath>, node: &Node) {
+    fn dispatch_symlinked_directory(
+        &mut self,
+        path: impl AsRef<HgPath>,
+        node: &Node,
+    ) {
         let path = path.as_ref();
-        self.shortcuts
-            .push_back((path.to_owned(), StatusShortcut::Dispatch(Dispatch::Unknown)));
+        self.shortcuts.push_back((
+            path.to_owned(),
+            StatusShortcut::Dispatch(Dispatch::Unknown),
+        ));
         for (file, _) in node.iter() {
             self.shortcuts.push_back((
                 path.join(&file),
@@ -171,10 +193,17 @@ impl<'a> Iterator for FsIter<'a> {
                     if self.directory_became_symlink(canonical_path) {
                         // Potential security issue, don't do a normal
                         // traversal, force the results.
-                        self.dispatch_symlinked_directory(canonical_path, &node);
+                        self.dispatch_symlinked_directory(
+                            canonical_path,
+                            &node,
+                        );
                         continue;
                     }
-                    add_children_to_visit(&mut self.to_visit, &base_path, &dir);
+                    add_children_to_visit(
+                        &mut self.to_visit,
+                        &base_path,
+                        &dir,
+                    );
                     if let Some(file) = &dir.was_file {
                         return Some((
                             HgPathBuf::from_bytes(&base_path),
@@ -184,7 +213,11 @@ impl<'a> Iterator for FsIter<'a> {
                 }
                 NodeKind::File(file) => {
                     if let Some(dir) = &file.was_directory {
-                        add_children_to_visit(&mut self.to_visit, &base_path, &dir);
+                        add_children_to_visit(
+                            &mut self.to_visit,
+                            &base_path,
+                            &dir,
+                        );
                     }
                     return Some((
                         HgPathBuf::from_bytes(&base_path),
@@ -286,7 +319,8 @@ mod tests {
 
         assert_eq!(tree.len(), 4);
 
-        let results: HashSet<_> = tree.iter().map(|(c, _)| c.to_owned()).collect();
+        let results: HashSet<_> =
+            tree.iter().map(|(c, _)| c.to_owned()).collect();
         dbg!(&results);
         assert!(results.contains(HgPath::new(b"foo2")));
         assert!(results.contains(HgPath::new(b"foo/bar")));
