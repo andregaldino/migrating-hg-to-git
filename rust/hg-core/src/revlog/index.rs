@@ -126,7 +126,7 @@ pub struct IndexEntry<'a> {
 }
 
 impl<'a> IndexEntry<'a> {
-    /// Return the offset of the data if not overridden by offset_override.
+    /// Return the offset of the data.
     pub fn offset(&self) -> usize {
         if let Some(offset_override) = self.offset_override {
             offset_override
