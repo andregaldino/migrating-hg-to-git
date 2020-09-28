@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use byteorder::{BigEndian, ByteOrder};
 
 use crate::revlog::{Revision, NULL_REVISION};
@@ -5,19 +7,18 @@ use crate::revlog::{Revision, NULL_REVISION};
 pub const INDEX_ENTRY_SIZE: usize = 64;
 
 /// A Revlog index
-#[derive(Debug)]
-pub struct Index<'a> {
-    bytes: &'a [u8],
+pub struct Index {
+    bytes: Box<dyn Deref<Target = [u8]> + Send>,
     /// Offsets of starts of index blocks.
     /// Only needed when the index is interleaved with data.
     offsets: Option<Vec<usize>>,
 }
 
-impl<'a> Index<'a> {
+impl Index {
     /// Create an index from bytes.
     /// Calculate the start of each entry when is_inline is true.
-    pub fn new(bytes: &'a [u8], is_inline: bool) -> Self {
-        if is_inline {
+    pub fn new(bytes: Box<dyn Deref<Target = [u8]> + Send>) -> Self {
+        if is_inline(&bytes) {
             let mut offset: usize = 0;
             let mut offsets = Vec::new();
 
@@ -42,6 +43,19 @@ impl<'a> Index<'a> {
                 offsets: None,
             }
         }
+    }
+
+    /// Value of the inline flag.
+    pub fn is_inline(&self) -> bool {
+        is_inline(&self.bytes)
+    }
+
+    /// Return a slice of bytes if `revlog` is inline. Panic if not.
+    pub fn data(&self, start: usize, end: usize) -> &[u8] {
+        if !self.is_inline() {
+            panic!("tried to access data in the index of a revlog that is not inline");
+        }
+        &self.bytes[start..end]
     }
 
     /// Return number of entries of the revlog index.
@@ -172,6 +186,14 @@ impl<'a> IndexEntry<'a> {
     }
 }
 
+/// Value of the inline flag.
+pub fn is_inline(index_bytes: &[u8]) -> bool {
+    match &index_bytes[0..=1] {
+        [0, 0] | [0, 2] => false,
+        _ => true,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,6 +288,39 @@ mod tests {
             bytes.extend(&self.base_revision.to_be_bytes());
             bytes
         }
+    }
+
+    #[test]
+    fn is_not_inline_when_no_inline_flag_test() {
+        let bytes = IndexEntryBuilder::new()
+            .is_first(true)
+            .with_general_delta(false)
+            .with_inline(false)
+            .build();
+
+        assert_eq!(is_inline(&bytes), false)
+    }
+
+    #[test]
+    fn is_inline_when_inline_flag_test() {
+        let bytes = IndexEntryBuilder::new()
+            .is_first(true)
+            .with_general_delta(false)
+            .with_inline(true)
+            .build();
+
+        assert_eq!(is_inline(&bytes), true)
+    }
+
+    #[test]
+    fn is_inline_when_inline_and_generaldelta_flags_test() {
+        let bytes = IndexEntryBuilder::new()
+            .is_first(true)
+            .with_general_delta(true)
+            .with_inline(true)
+            .build();
+
+        assert_eq!(is_inline(&bytes), true)
     }
 
     #[test]

@@ -36,7 +36,7 @@ pub struct Revlog {
     /// When index and data are not interleaved: bytes of the revlog index.
     /// When index and data are interleaved: bytes of the revlog index and
     /// data.
-    index_bytes: Box<dyn Deref<Target = [u8]> + Send>,
+    index: Index,
     /// When index and data are not interleaved: bytes of the revlog data
     data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>>,
 }
@@ -56,15 +56,13 @@ impl Revlog {
             return Err(RevlogError::UnsuportedVersion(version));
         }
 
-        let is_inline = is_inline(&index_mmap);
-
-        let index_bytes = Box::new(index_mmap);
+        let index = Index::new(Box::new(index_mmap));
 
         // TODO load data only when needed //
         // type annotation required
         // won't recognize Mmap as Deref<Target = [u8]>
         let data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>> =
-            if is_inline {
+            if index.is_inline() {
                 None
             } else {
                 let data_path = index_path.with_extension("d");
@@ -73,31 +71,27 @@ impl Revlog {
                 Some(Box::new(data_mmap))
             };
 
-        Ok(Revlog {
-            index_bytes,
-            data_bytes,
-        })
+        Ok(Revlog { index, data_bytes })
     }
 
     /// Return number of entries of the `Revlog`.
     pub fn len(&self) -> usize {
-        self.index().len()
+        self.index.len()
     }
 
     /// Returns `true` if the `Revlog` has zero `entries`.
     pub fn is_empty(&self) -> bool {
-        self.index().is_empty()
+        self.index.is_empty()
     }
 
     /// Return the full data associated to a node.
     #[timed]
     pub fn get_node_rev(&self, node: &[u8]) -> Result<Revision, RevlogError> {
-        let index = self.index();
         // This is brute force. But it is fast enough for now.
         // Optimization will come later.
         for rev in (0..self.len() as Revision).rev() {
             let index_entry =
-                index.get_entry(rev).ok_or(RevlogError::Corrupted)?;
+                self.index.get_entry(rev).ok_or(RevlogError::Corrupted)?;
             if node == index_entry.hash() {
                 return Ok(rev);
             }
@@ -123,9 +117,10 @@ impl Revlog {
         }
 
         // TODO do not look twice in the index
-        let index = self.index();
-        let index_entry =
-            index.get_entry(rev).ok_or(RevlogError::InvalidRevision)?;
+        let index_entry = self
+            .index
+            .get_entry(rev)
+            .ok_or(RevlogError::InvalidRevision)?;
 
         let data: Vec<u8> = if delta_chain.is_empty() {
             entry.data()?.into()
@@ -153,13 +148,12 @@ impl Revlog {
         expected: &[u8],
         data: &[u8],
     ) -> bool {
-        let index = self.index();
-        let e1 = index.get_entry(p1);
+        let e1 = self.index.get_entry(p1);
         let h1 = match e1 {
             Some(ref entry) => entry.hash(),
             None => &NULL_NODE_ID,
         };
-        let e2 = index.get_entry(p2);
+        let e2 = self.index.get_entry(p2);
         let h2 = match e2 {
             Some(ref entry) => entry.hash(),
             None => &NULL_NODE_ID,
@@ -187,30 +181,32 @@ impl Revlog {
         Ok(patch.apply(&snapshot))
     }
 
-    /// Return the revlog index.
-    pub fn index(&self) -> Index {
-        let is_inline = self.data_bytes.is_none();
-        Index::new(&self.index_bytes, is_inline)
-    }
-
     /// Return the revlog data.
     fn data(&self) -> &[u8] {
         match self.data_bytes {
             Some(ref data_bytes) => &data_bytes,
-            None => &self.index_bytes,
+            None => panic!(
+                "forgot to load the data or trying to access inline data"
+            ),
         }
     }
 
     /// Get an entry of the revlog.
     fn get_entry(&self, rev: Revision) -> Result<RevlogEntry, RevlogError> {
-        let index = self.index();
-        let index_entry =
-            index.get_entry(rev).ok_or(RevlogError::InvalidRevision)?;
+        let index_entry = self
+            .index
+            .get_entry(rev)
+            .ok_or(RevlogError::InvalidRevision)?;
         let start = index_entry.offset();
         let end = start + index_entry.compressed_len();
+        let data = if self.index.is_inline() {
+            self.index.data(start, end)
+        } else {
+            &self.data()[start..end]
+        };
         let entry = RevlogEntry {
             rev,
-            bytes: &self.data()[start..end],
+            bytes: data,
             compressed_len: index_entry.compressed_len(),
             uncompressed_len: index_entry.uncompressed_len(),
             base_rev: if index_entry.base_revision() == rev {
@@ -296,14 +292,6 @@ impl<'a> RevlogEntry<'a> {
     }
 }
 
-/// Value of the inline flag.
-pub fn is_inline(index_bytes: &[u8]) -> bool {
-    match &index_bytes[0..=1] {
-        [0, 0] | [0, 2] => false,
-        _ => true,
-    }
-}
-
 /// Format version of the revlog.
 pub fn get_version(index_bytes: &[u8]) -> u16 {
     BigEndian::read_u16(&index_bytes[2..=3])
@@ -332,113 +320,12 @@ mod tests {
 
     use super::super::index::IndexEntryBuilder;
 
-    #[cfg(test)]
-    pub struct RevlogBuilder {
-        version: u16,
-        is_general_delta: bool,
-        is_inline: bool,
-        offset: usize,
-        index: Vec<Vec<u8>>,
-        data: Vec<Vec<u8>>,
-    }
-
-    #[cfg(test)]
-    impl RevlogBuilder {
-        pub fn new() -> Self {
-            Self {
-                version: 2,
-                is_inline: false,
-                is_general_delta: true,
-                offset: 0,
-                index: vec![],
-                data: vec![],
-            }
-        }
-
-        pub fn with_inline(&mut self, value: bool) -> &mut Self {
-            self.is_inline = value;
-            self
-        }
-
-        pub fn with_general_delta(&mut self, value: bool) -> &mut Self {
-            self.is_general_delta = value;
-            self
-        }
-
-        pub fn with_version(&mut self, value: u16) -> &mut Self {
-            self.version = value;
-            self
-        }
-
-        pub fn push(
-            &mut self,
-            mut index: IndexEntryBuilder,
-            data: Vec<u8>,
-        ) -> &mut Self {
-            if self.index.is_empty() {
-                index.is_first(true);
-                index.with_general_delta(self.is_general_delta);
-                index.with_inline(self.is_inline);
-                index.with_version(self.version);
-            } else {
-                index.with_offset(self.offset);
-            }
-            self.index.push(index.build());
-            self.offset += data.len();
-            self.data.push(data);
-            self
-        }
-
-        pub fn build_inline(&self) -> Vec<u8> {
-            let mut bytes =
-                Vec::with_capacity(self.index.len() + self.data.len());
-            for (index, data) in self.index.iter().zip(self.data.iter()) {
-                bytes.extend(index);
-                bytes.extend(data);
-            }
-            bytes
-        }
-    }
-
-    #[test]
-    fn is_not_inline_when_no_inline_flag_test() {
-        let bytes = RevlogBuilder::new()
-            .with_general_delta(false)
-            .with_inline(false)
-            .push(IndexEntryBuilder::new(), vec![])
-            .build_inline();
-
-        assert_eq!(is_inline(&bytes), false)
-    }
-
-    #[test]
-    fn is_inline_when_inline_flag_test() {
-        let bytes = RevlogBuilder::new()
-            .with_general_delta(false)
-            .with_inline(true)
-            .push(IndexEntryBuilder::new(), vec![])
-            .build_inline();
-
-        assert_eq!(is_inline(&bytes), true)
-    }
-
-    #[test]
-    fn is_inline_when_inline_and_generaldelta_flags_test() {
-        let bytes = RevlogBuilder::new()
-            .with_general_delta(true)
-            .with_inline(true)
-            .push(IndexEntryBuilder::new(), vec![])
-            .build_inline();
-
-        assert_eq!(is_inline(&bytes), true)
-    }
-
     #[test]
     fn version_test() {
-        let bytes = RevlogBuilder::new()
+        let bytes = IndexEntryBuilder::new()
+            .is_first(true)
             .with_version(1)
-            .push(IndexEntryBuilder::new(), vec![])
-            .build_inline();
+            .build();
 
         assert_eq!(get_version(&bytes), 1)
     }
