@@ -100,10 +100,7 @@ impl<'a> Index<'a> {
 
         // Override the offset of the first revision as its bytes are used
         // for the index's metadata (saving space because it is always 0)
-        let offset_override = match rev {
-            0 => Some(0),
-            _ => None,
-        };
+        let offset_override = if rev == 0 { Some(0) } else { None };
 
         Some(IndexEntry {
             bytes,
