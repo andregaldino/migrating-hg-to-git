@@ -69,7 +69,7 @@ class ChangingFiles(object):
             and self.copied_from_p2 == other.copied_from_p2
         )
 
-    @property
+    @util.propertycache
     def added(self):
         """files actively added in the changeset
 
@@ -83,6 +83,8 @@ class ChangingFiles(object):
         return frozenset(self._added)
 
     def mark_added(self, filename):
+        if 'added' in vars(self):
+            del self.added
         self._added.add(filename)
         self.mark_touched(filename)
 
@@ -90,7 +92,7 @@ class ChangingFiles(object):
         for f in filenames:
             self.mark_added(f)
 
-    @property
+    @util.propertycache
     def merged(self):
         """files actively merged during a merge
 
@@ -101,6 +103,8 @@ class ChangingFiles(object):
         return frozenset(self._merged)
 
     def mark_merged(self, filename):
+        if 'merged' in vars(self):
+            del self.merged
         self._merged.add(filename)
         self.mark_touched(filename)
 
@@ -108,7 +112,7 @@ class ChangingFiles(object):
         for f in filenames:
             self.mark_merged(f)
 
-    @property
+    @util.propertycache
     def removed(self):
         """files actively removed by the changeset
 
@@ -145,6 +149,8 @@ class ChangingFiles(object):
         return frozenset(self._removed)
 
     def mark_removed(self, filename):
+        if 'removed' in vars(self):
+            del self.removed
         self._removed.add(filename)
         self.mark_touched(filename)
 
@@ -152,34 +158,40 @@ class ChangingFiles(object):
         for f in filenames:
             self.mark_removed(f)
 
-    @property
+    @util.propertycache
     def touched(self):
         """files either actively modified, added or removed"""
         return frozenset(self._touched)
 
     def mark_touched(self, filename):
+        if 'touched' in vars(self):
+            del self.touched
         self._touched.add(filename)
 
     def update_touched(self, filenames):
         for f in filenames:
             self.mark_touched(f)
 
-    @property
+    @util.propertycache
     def copied_from_p1(self):
         return self._p1_copies.copy()
 
     def mark_copied_from_p1(self, source, dest):
+        if 'copied_from_p1' in vars(self):
+            del self.copied_from_p1
         self._p1_copies[dest] = source
 
     def update_copies_from_p1(self, copies):
         for dest, source in copies.items():
             self.mark_copied_from_p1(source, dest)
 
-    @property
+    @util.propertycache
     def copied_from_p2(self):
         return self._p2_copies.copy()
 
     def mark_copied_from_p2(self, source, dest):
+        if 'copied_from_p2' in vars(self):
+            del self.copied_from_p2
         self._p2_copies[dest] = source
 
     def update_copies_from_p2(self, copies):
