@@ -17,7 +17,7 @@ struct Chunk<'a> {
     data: &'a [u8],
 }
 
-impl<'a> Chunk<'a> {
+impl Chunk<'_> {
     /// Adjusted start of the chunk to replace.
     ///
     /// Offset allow to take into account the growth/shrinkage of data
