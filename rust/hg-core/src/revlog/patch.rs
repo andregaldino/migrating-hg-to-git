@@ -20,7 +20,7 @@ struct Chunk<'a> {
 impl Chunk<'_> {
     /// Adjusted start of the chunk to replace.
     ///
-    /// Offset allow to take into account the growth/shrinkage of data
+    /// The offset, taking into account the growth/shrinkage of data
     /// induced by previously applied chunks.
     fn start_offseted_by(&self, offset: i32) -> u32 {
         let start = self.start as i32 + offset;
@@ -30,7 +30,7 @@ impl Chunk<'_> {
 
     /// Adjusted end of the chunk to replace.
     ///
-    /// Offset allow to take into account the growth/shrinkage of data
+    /// The offset, taking into account the growth/shrinkage of data
     /// induced by previously applied chunks.
     fn end_offseted_by(&self, offset: i32) -> u32 {
         self.start_offseted_by(offset) + self.data.len() as u32
