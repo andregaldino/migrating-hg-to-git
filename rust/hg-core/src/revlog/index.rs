@@ -98,7 +98,8 @@ impl<'a> Index<'a> {
         let end = start + INDEX_ENTRY_SIZE;
         let bytes = &self.bytes[start..end];
 
-        // See IndexEntry for an explanation of this override.
+        // Override the offset of the first revision as its bytes are used
+        // for the index's metadata (saving space because it is always 0)
         let offset_override = match rev {
             0 => Some(0),
             _ => None,
