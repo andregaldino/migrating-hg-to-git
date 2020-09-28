@@ -61,8 +61,8 @@ time to the python interpreter instead of python functions).
 Developing Rust
 ===============
 
-The current version of Rust in use is ``1.34.2``, because it's what Debian
-stable has. You can use ``rustup override set 1.34.2`` at the root of the repo
+The current version of Rust in use is ``1.41.1``, because it's what Debian
+stable has. You can use ``rustup override set 1.41.1`` at the root of the repo
 to make it easier on you.
 
 Go to the ``hg-cpython`` folder::
