@@ -166,14 +166,13 @@ impl<'a> ListRevTrackedFiles<'a> {
         let changelog_entry = match self.rev.parse::<Revision>() {
             Ok(rev) => self.changelog.get_rev(rev)?,
             _ => {
-                let changelog_node = hex::decode(&self.rev).map_err(|_| {
-                    ListRevTrackedFilesErrorKind::InvalidRevision
-                })?;
+                let changelog_node = hex::decode(&self.rev)
+                    .or(Err(ListRevTrackedFilesErrorKind::InvalidRevision))?;
                 self.changelog.get_node(&changelog_node)?
             }
         };
         let manifest_node = hex::decode(&changelog_entry.manifest_node()?)
-            .map_err(|_| ListRevTrackedFilesErrorKind::CorruptedRevlog)?;
+            .or(Err(ListRevTrackedFilesErrorKind::CorruptedRevlog))?;
 
         self.manifest_entry = Some(self.manifest.get_node(&manifest_node)?);
 

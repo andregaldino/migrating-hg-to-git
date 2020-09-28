@@ -111,9 +111,8 @@ impl Revlog {
         let mut delta_chain = vec![];
         while let Some(base_rev) = entry.base_rev {
             delta_chain.push(entry);
-            entry = self
-                .get_entry(base_rev)
-                .map_err(|_| RevlogError::Corrupted)?;
+            entry =
+                self.get_entry(base_rev).or(Err(RevlogError::Corrupted))?;
         }
 
         // TODO do not look twice in the index
