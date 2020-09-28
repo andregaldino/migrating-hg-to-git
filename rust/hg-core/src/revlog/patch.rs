@@ -8,7 +8,7 @@ use byteorder::{BigEndian, ByteOrder};
 /// - a replacement when `!data.is_empty() && start < end`
 /// - not doing anything when `data.is_empty() && start == end`
 #[derive(Debug, Clone)]
-struct PatchFrag<'a> {
+struct Chunk<'a> {
     /// The start position of the chunk of data to replace
     start: i32,
     /// The end position of the chunk of data to replace (open end interval)
@@ -17,7 +17,7 @@ struct PatchFrag<'a> {
     data: &'a [u8],
 }
 
-impl<'a> PatchFrag<'a> {
+impl<'a> Chunk<'a> {
     /// Adjusted start of the chunk to replace.
     ///
     /// Offset allow to take into account the growth/shrinkage of data
@@ -54,35 +54,35 @@ pub struct PatchList<'a> {
     /// - ordered from the left-most replacement to the right-most replacement
     /// - non-overlapping, meaning that two chucks can not change the same
     ///   chunk of the patched data
-    frags: Vec<PatchFrag<'a>>,
+    chunks: Vec<Chunk<'a>>,
 }
 
 impl<'a> PatchList<'a> {
     /// Create a `PatchList` from bytes.
     pub fn new(data: &'a [u8]) -> Self {
-        let mut frags = vec![];
+        let mut chunks = vec![];
         let mut data = data;
         while !data.is_empty() {
             let start = BigEndian::read_i32(&data[0..]);
             let end = BigEndian::read_i32(&data[4..]);
             let len = BigEndian::read_i32(&data[8..]);
             assert!(0 <= start && start <= end && len >= 0);
-            frags.push(PatchFrag {
+            chunks.push(Chunk {
                 start,
                 end,
                 data: &data[12..12 + (len as usize)],
             });
             data = &data[12 + (len as usize)..];
         }
-        PatchList { frags }
+        PatchList { chunks }
     }
 
     /// Return the final length of data after patching
     /// given its initial length .
     fn size(&self, initial_size: i32) -> i32 {
-        self.frags
+        self.chunks
             .iter()
-            .fold(initial_size, |acc, frag| acc + frag.len_diff())
+            .fold(initial_size, |acc, chunk| acc + chunk.len_diff())
     }
 
     /// Apply the patch to some data.
@@ -90,7 +90,7 @@ impl<'a> PatchList<'a> {
         let mut last: usize = 0;
         let mut vec =
             Vec::with_capacity(self.size(initial.len() as i32) as usize);
-        for PatchFrag { start, end, data } in self.frags.iter() {
+        for Chunk { start, end, data } in self.chunks.iter() {
             vec.extend(&initial[last..(*start as usize)]);
             vec.extend(data.iter());
             last = *end as usize;
@@ -105,7 +105,7 @@ impl<'a> PatchList<'a> {
     /// as the changes introduced by one patch can be overridden by the next.
     /// Combining patches optimizes the whole patching sequence.
     fn combine(&mut self, other: &mut Self) -> Self {
-        let mut frags = vec![];
+        let mut chunks = vec![];
 
         // Keep track of each growth/shrinkage resulting from applying a chunk
         // in order to adjust the start/end of subsequent chunks.
@@ -116,15 +116,15 @@ impl<'a> PatchList<'a> {
 
         // For each chunk of `other`, chunks of `self` are processed
         // until they start after the end of the current chunk.
-        for PatchFrag { start, end, data } in other.frags.iter() {
+        for Chunk { start, end, data } in other.chunks.iter() {
             // Add chunks of `self` that start before this chunk of `other`
             // without overlap.
-            while pos < self.frags.len()
-                && self.frags[pos].end_offseted_by(offset) <= *start
+            while pos < self.chunks.len()
+                && self.chunks[pos].end_offseted_by(offset) <= *start
             {
-                let first = self.frags[pos].clone();
+                let first = self.chunks[pos].clone();
                 offset += first.len_diff();
-                frags.push(first);
+                chunks.push(first);
                 pos += 1;
             }
 
@@ -132,15 +132,15 @@ impl<'a> PatchList<'a> {
             // with overlap.
             // The left-most part of data is added as an insertion chunk.
             // The right-most part data is kept in the chunk.
-            if pos < self.frags.len()
-                && self.frags[pos].start_offseted_by(offset) < *start
+            if pos < self.chunks.len()
+                && self.chunks[pos].start_offseted_by(offset) < *start
             {
-                let first = &mut self.frags[pos];
+                let first = &mut self.chunks[pos];
 
                 let (data_left, data_right) = first.data.split_at(
                     (*start - first.start_offseted_by(offset)) as usize,
                 );
-                let left = PatchFrag {
+                let left = Chunk {
                     start: first.start,
                     end: first.start,
                     data: data_left,
@@ -150,7 +150,7 @@ impl<'a> PatchList<'a> {
 
                 offset += left.len_diff();
 
-                frags.push(left);
+                chunks.push(left);
 
                 // There is no index incrementation because the right-most part
                 // needs further examination.
@@ -167,20 +167,20 @@ impl<'a> PatchList<'a> {
 
             // Discard the chunks of `self` that are totally overridden
             // by the current chunk of `other`
-            while pos < self.frags.len()
-                && self.frags[pos].end_offseted_by(next_offset) <= *end
+            while pos < self.chunks.len()
+                && self.chunks[pos].end_offseted_by(next_offset) <= *end
             {
-                let first = &self.frags[pos];
+                let first = &self.chunks[pos];
                 next_offset += first.len_diff();
                 pos += 1;
             }
 
             // Truncate the left-most part of chunk of `self` that overlaps
             // the current chunk of `other`.
-            if pos < self.frags.len()
-                && self.frags[pos].start_offseted_by(next_offset) < *end
+            if pos < self.chunks.len()
+                && self.chunks[pos].start_offseted_by(next_offset) < *end
             {
-                let first = &mut self.frags[pos];
+                let first = &mut self.chunks[pos];
 
                 let how_much_to_discard =
                     *end - first.start_offseted_by(next_offset);
@@ -191,7 +191,7 @@ impl<'a> PatchList<'a> {
             }
 
             // Add the chunk of `other` with adjusted position.
-            frags.push(PatchFrag {
+            chunks.push(Chunk {
                 start: *start - offset,
                 end: *end - next_offset,
                 data,
@@ -202,10 +202,10 @@ impl<'a> PatchList<'a> {
         }
 
         // Add remaining chunks of `self`.
-        for elt in &self.frags[pos..] {
-            frags.push(elt.clone());
+        for elt in &self.chunks[pos..] {
+            chunks.push(elt.clone());
         }
-        PatchList { frags }
+        PatchList { chunks }
     }
 }
 
@@ -213,7 +213,7 @@ impl<'a> PatchList<'a> {
 pub fn fold_patch_lists<'a>(lists: &[PatchList<'a>]) -> PatchList<'a> {
     if lists.len() <= 1 {
         if lists.is_empty() {
-            PatchList { frags: vec![] }
+            PatchList { chunks: vec![] }
         } else {
             lists[0].clone()
         }
