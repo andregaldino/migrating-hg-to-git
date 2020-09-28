@@ -21,7 +21,7 @@ impl<'a> Index<'a> {
             let mut offset: usize = 0;
             let mut offsets = Vec::new();
 
-            while (bytes.len() - offset) >= INDEX_ENTRY_SIZE {
+            while offset + INDEX_ENTRY_SIZE <= bytes.len() {
                 offsets.push(offset);
                 let end = offset + INDEX_ENTRY_SIZE;
                 let entry = IndexEntry {
