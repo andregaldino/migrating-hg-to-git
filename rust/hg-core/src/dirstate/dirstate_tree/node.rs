@@ -91,9 +91,9 @@ impl Node {
 
         match &mut self.kind {
             NodeKind::Directory(directory) => {
-                return Node::insert_in_directory(
+                Node::insert_in_directory(
                     directory, new_entry, head, tail,
-                );
+                )
             }
             NodeKind::File(_) => {
                 unreachable!("The file case has already been handled")
@@ -227,7 +227,7 @@ impl Node {
                             d.children.remove(head);
                         }
                         res.cleanup =
-                            d.children.len() == 0 && d.was_file.is_none();
+                            d.children.is_empty() && d.was_file.is_none();
                         res
                     } else {
                         empty_result
@@ -241,7 +241,7 @@ impl Node {
                             if cleanup {
                                 d.children.remove(head);
                             }
-                            if d.children.len() == 0 && d.was_file.is_none() {
+                            if d.children.is_empty() && d.was_file.is_none() {
                                 f.was_directory = None;
                             }
 
@@ -288,7 +288,7 @@ impl Node {
                     }
 
                     RemoveResult {
-                        cleanup: cleanup,
+                        cleanup,
                         old_entry: Some(entry),
                     }
                 }

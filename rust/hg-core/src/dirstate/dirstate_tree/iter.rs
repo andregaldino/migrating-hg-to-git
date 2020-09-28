@@ -160,7 +160,7 @@ impl<'a> FsIter<'a> {
         let meta = self.root_dir.join(filename_as_path).symlink_metadata();
         match meta {
             Ok(ref m) if m.file_type().is_symlink() => true,
-            _ => return false,
+            _ => false,
         }
     }
 }
@@ -182,7 +182,7 @@ impl<'a> Iterator for FsIter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         // If any paths have already been `Dispatch`-ed, return them
-        while let Some(res) = self.shortcuts.pop_front() {
+        if let Some(res) = self.shortcuts.pop_front() {
             return Some(res);
         }
 
@@ -250,7 +250,7 @@ fn add_children_to_visit<'a>(
 ) {
     to_visit.extend(dir.children.iter().map(|(path, child)| {
         let full_path = join_path(&base_path, &path);
-        (Cow::from(full_path), child)
+        (full_path, child)
     }));
 }
 
