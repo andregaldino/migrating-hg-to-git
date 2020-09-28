@@ -1049,6 +1049,10 @@ def updaterepo(repo, node, overwrite, updatecheck=None):
     When overwrite is set, changes are clobbered, merged else
 
     returns stats (see pydoc mercurial.merge.applyupdates)"""
+    repo.ui.deprecwarn(
+        b'prefer merge.update() or merge.clean_update() over hg.updaterepo()',
+        b'5.7',
+    )
     return mergemod._update(
         repo,
         node,
