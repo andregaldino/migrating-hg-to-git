@@ -40,9 +40,9 @@ impl<'a> Command for CatCommand<'a> {
             let normalized = cwd.join(&file);
             let stripped = normalized
                 .strip_prefix(&root)
-                .map_err(|_| CommandErrorKind::Abort(None))?;
+                .or(Err(CommandErrorKind::Abort(None)))?;
             let hg_file = HgPathBuf::try_from(stripped.to_path_buf())
-                .map_err(|_| CommandErrorKind::Abort(None))?;
+                .or(Err(CommandErrorKind::Abort(None)))?;
             files.push(hg_file);
         }
 
