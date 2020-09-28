@@ -10,9 +10,9 @@ use byteorder::{BigEndian, ByteOrder};
 #[derive(Debug, Clone)]
 struct Chunk<'a> {
     /// The start position of the chunk of data to replace
-    start: i32,
+    start: u32,
     /// The end position of the chunk of data to replace (open end interval)
-    end: i32,
+    end: u32,
     /// The data replacing the chunk
     data: &'a [u8],
 }
@@ -22,26 +22,28 @@ impl<'a> Chunk<'a> {
     ///
     /// Offset allow to take into account the growth/shrinkage of data
     /// induced by previously applied chunks.
-    fn start_offseted_by(&self, offset: i32) -> i32 {
-        self.start + offset
+    fn start_offseted_by(&self, offset: i32) -> u32 {
+        let start = self.start as i32 + offset;
+        assert!(start >= 0, "negative chunk start should never happen");
+        start as u32
     }
 
     /// Adjusted end of the chunk to replace.
     ///
     /// Offset allow to take into account the growth/shrinkage of data
     /// induced by previously applied chunks.
-    fn end_offseted_by(&self, offset: i32) -> i32 {
-        self.start_offseted_by(offset) + (self.data.len() as i32)
+    fn end_offseted_by(&self, offset: i32) -> u32 {
+        self.start_offseted_by(offset) + self.data.len() as u32
     }
 
     /// Length of the replaced chunk.
-    fn replaced_len(&self) -> i32 {
+    fn replaced_len(&self) -> u32 {
         self.end - self.start
     }
 
     /// Length difference between the replacing data and the replaced data.
     fn len_diff(&self) -> i32 {
-        (self.data.len() as i32) - self.replaced_len()
+        self.data.len() as i32 - self.replaced_len() as i32
     }
 }
 
@@ -63,10 +65,10 @@ impl<'a> PatchList<'a> {
         let mut chunks = vec![];
         let mut data = data;
         while !data.is_empty() {
-            let start = BigEndian::read_i32(&data[0..]);
-            let end = BigEndian::read_i32(&data[4..]);
-            let len = BigEndian::read_i32(&data[8..]);
-            assert!(0 <= start && start <= end && len >= 0);
+            let start = BigEndian::read_u32(&data[0..]);
+            let end = BigEndian::read_u32(&data[4..]);
+            let len = BigEndian::read_u32(&data[8..]);
+            assert!(start <= end);
             chunks.push(Chunk {
                 start,
                 end,
@@ -187,13 +189,13 @@ impl<'a> PatchList<'a> {
 
                 first.data = &first.data[(how_much_to_discard as usize)..];
 
-                next_offset += how_much_to_discard;
+                next_offset += how_much_to_discard as i32;
             }
 
             // Add the chunk of `other` with adjusted position.
             chunks.push(Chunk {
-                start: *start - offset,
-                end: *end - next_offset,
+                start: (*start as i32 - offset) as u32,
+                end: (*end as i32 - next_offset) as u32,
                 data,
             });
 
