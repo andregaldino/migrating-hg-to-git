@@ -976,3 +976,184 @@ BROKEN: 'a' should be the the source of 'd' in the changeset centric algorithm t
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mCB-revert-m-0")'
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBC-revert-m-0")'
 
+
+Test that sidedata computations during upgrades ares correct
+============================================================
+
+We upgrade a repository that is not using sidedata (the filelog case) and
+ check that the same side data have been generated as if they were computed at
+ commit time.
+
+
+#if filelog
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = yes
+  > exp-use-copies-side-data-changeset = yes
+  > EOF
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no    yes      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        * (glob)
+  compression-level:  default default default
+  $ hg debugupgraderepo --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     added: exp-copies-sidedata-changeset, exp-sidedata-flag
+  
+#endif
+
+
+#if no-compatibility
+
+  $ for rev in `hg log --rev 'all()' -T '{rev}\n'`; do
+  >     echo "##### revision $rev #####"
+  >     hg debugsidedata -c -v -- $rev
+  > done
+  ##### revision 0 #####
+  1 sidedata entries
+   entry-0014 size 34
+    '\x00\x00\x00\x03\x04\x00\x00\x00\x01\x00\x00\x00\x00\x04\x00\x00\x00\x02\x00\x00\x00\x00\x04\x00\x00\x00\x03\x00\x00\x00\x00abh'
+  ##### revision 1 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ac'
+  ##### revision 2 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00cd'
+  ##### revision 3 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00de'
+  ##### revision 4 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ef'
+  ##### revision 5 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00b'
+  ##### revision 6 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x0c\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 7 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x0c\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 8 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 9 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00bg'
+  ##### revision 10 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x06\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00fg'
+  ##### revision 11 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 12 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 13 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 14 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 15 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 16 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 17 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 18 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 19 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
+  ##### revision 20 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
+  ##### revision 21 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00hi'
+  ##### revision 22 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x16\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00di'
+  ##### revision 23 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 24 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 25 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 26 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 27 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 28 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 29 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  ##### revision 30 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 31 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 32 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 33 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+
+#endif
