@@ -230,6 +230,14 @@ def compute_all_files_changes(ctx):
     p2 = ctx.p2()
     if p1.rev() == node.nullrev and p2.rev() == node.nullrev:
         return _process_root(ctx)
+    elif p1.rev() != node.nullrev and p2.rev() == node.nullrev:
+        return _process_linear(p1, ctx)
+    elif p1.rev() == node.nullrev and p2.rev() != node.nullrev:
+        # In the wild, one can encounter changeset where p1 is null but p2 is not
+        return _process_linear(p1, ctx, parent=2)
+    elif p1.rev() == p2.rev():
+        # In the wild, one can encounter such "non-merge"
+        return _process_linear(p1, ctx)
     filescopies = computechangesetcopies(ctx)
     filesadded = computechangesetfilesadded(ctx)
     filesremoved = computechangesetfilesremoved(ctx)
@@ -252,6 +260,44 @@ def _process_root(ctx):
     manifest = ctx.manifest()
     for filename in manifest:
         md.mark_added(filename)
+    return md
+
+
+def _process_linear(parent_ctx, children_ctx, parent=1):
+    """compute the appropriate changed files for a changeset with a single parent
+    """
+    md = ChangingFiles()
+    parent_manifest = parent_ctx.manifest()
+    children_manifest = children_ctx.manifest()
+
+    copies_candidate = []
+
+    for filename, d in parent_manifest.diff(children_manifest).items():
+        if d[1][0] is None:
+            # no filenode for the "new" value, file is absent
+            md.mark_removed(filename)
+        else:
+            copies_candidate.append(filename)
+            if d[0][0] is None:
+                # not filenode for the "old" value file was absent
+                md.mark_added(filename)
+            else:
+                # filenode for both "old" and "new"
+                md.mark_touched(filename)
+
+    if parent == 1:
+        copied = md.mark_copied_from_p1
+    elif parent == 2:
+        copied = md.mark_copied_from_p2
+    else:
+        assert False, "bad parent value %d" % parent
+
+    for filename in copies_candidate:
+        copy_info = children_ctx[filename].renamed()
+        if copy_info:
+            source, srcnode = copy_info
+            copied(source, filename)
+
     return md
 
 
