@@ -226,6 +226,10 @@ class ChangingFiles(object):
 
 def compute_all_files_changes(ctx):
     """compute the files changed by a revision"""
+    p1 = ctx.p1()
+    p2 = ctx.p2()
+    if p1.rev() == node.nullrev and p2.rev() == node.nullrev:
+        return _process_root(ctx)
     filescopies = computechangesetcopies(ctx)
     filesadded = computechangesetfilesadded(ctx)
     filesremoved = computechangesetfilesremoved(ctx)
@@ -238,6 +242,17 @@ def compute_all_files_changes(ctx):
     files.update_copies_from_p1(filescopies[0])
     files.update_copies_from_p2(filescopies[1])
     return files
+
+
+def _process_root(ctx):
+    """compute the appropriate changed files for a changeset with no parents
+    """
+    # Simple, there was nothing before it, so everything is added.
+    md = ChangingFiles()
+    manifest = ctx.manifest()
+    for filename in manifest:
+        md.mark_added(filename)
+    return md
 
 
 def computechangesetfilesadded(ctx):
