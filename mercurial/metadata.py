@@ -224,6 +224,22 @@ class ChangingFiles(object):
             self.mark_copied_from_p2(source, dest)
 
 
+def compute_all_files_changes(ctx):
+    """compute the files changed by a revision"""
+    filescopies = computechangesetcopies(ctx)
+    filesadded = computechangesetfilesadded(ctx)
+    filesremoved = computechangesetfilesremoved(ctx)
+    filesmerged = computechangesetfilesmerged(ctx)
+    files = ChangingFiles()
+    files.update_touched(ctx.files())
+    files.update_added(filesadded)
+    files.update_removed(filesremoved)
+    files.update_merged(filesmerged)
+    files.update_copies_from_p1(filescopies[0])
+    files.update_copies_from_p2(filescopies[1])
+    return files
+
+
 def computechangesetfilesadded(ctx):
     """return the list of files added in a changeset
     """
@@ -508,17 +524,7 @@ def decode_files_sidedata(sidedata):
 
 def _getsidedata(srcrepo, rev):
     ctx = srcrepo[rev]
-    filescopies = computechangesetcopies(ctx)
-    filesadded = computechangesetfilesadded(ctx)
-    filesremoved = computechangesetfilesremoved(ctx)
-    filesmerged = computechangesetfilesmerged(ctx)
-    files = ChangingFiles()
-    files.update_touched(ctx.files())
-    files.update_added(filesadded)
-    files.update_removed(filesremoved)
-    files.update_merged(filesmerged)
-    files.update_copies_from_p1(filescopies[0])
-    files.update_copies_from_p2(filescopies[1])
+    files = compute_all_files_changes(ctx)
     return encode_files_sidedata(files)
 
 
