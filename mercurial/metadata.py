@@ -1,3 +1,4 @@
+# coding: utf8
 # metadata.py -- code related to various metadata computation and access.
 #
 # Copyright 2019 Google, Inc <martinvonz@google.com>
@@ -238,18 +239,8 @@ def compute_all_files_changes(ctx):
     elif p1.rev() == p2.rev():
         # In the wild, one can encounter such "non-merge"
         return _process_linear(p1, ctx)
-    filescopies = computechangesetcopies(ctx)
-    filesadded = computechangesetfilesadded(ctx)
-    filesremoved = computechangesetfilesremoved(ctx)
-    filesmerged = computechangesetfilesmerged(ctx)
-    files = ChangingFiles()
-    files.update_touched(ctx.files())
-    files.update_added(filesadded)
-    files.update_removed(filesremoved)
-    files.update_merged(filesmerged)
-    files.update_copies_from_p1(filescopies[0])
-    files.update_copies_from_p2(filescopies[1])
-    return files
+    else:
+        return _process_merge(p1, p2, ctx)
 
 
 def _process_root(ctx):
@@ -299,6 +290,218 @@ def _process_linear(parent_ctx, children_ctx, parent=1):
             copied(source, filename)
 
     return md
+
+
+def _process_merge(p1_ctx, p2_ctx, ctx):
+    """compute the appropriate changed files for a changeset with two parents
+
+    This is a more advance case. The information we need to record is summarise
+    in the following table:
+
+    ┌──────────────┬──────────────┬──────────────┬──────────────┬──────────────┐
+    │ diff ╲  diff │       ø      │ (Some, None) │ (None, Some) │ (Some, Some) │
+    │  p2   ╲  p1  │              │              │              │              │
+    ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
+    │              │              │🄱  No Changes │🄳  No Changes │              │
+    │  ø           │🄰  No Changes │      OR      │     OR       │🄵  No Changes │
+    │              │              │🄲  Deleted[1] │🄴  Salvaged[2]│     [3]      │
+    ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
+    │              │🄶  No Changes │              │              │              │
+    │ (Some, None) │      OR      │🄻  Deleted    │       ø      │      ø       │
+    │              │🄷  Deleted[1] │              │              │              │
+    ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
+    │              │🄸  No Changes │              │              │              │
+    │ (None, Some) │     OR       │      ø       │🄼   Added     │🄽   Merged    │
+    │              │🄹  Salvaged[2]│              │   (copied?)  │   (copied?)  │
+    ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
+    │              │              │              │              │              │
+    │ (Some, Some) │🄺  No Changes │      ø       │🄾   Merged    │🄿   Merged    │
+    │              │     [3]      │              │   (copied?)  │   (copied?)  │
+    └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
+
+    Special case [1]:
+
+      The situation is:
+        - parent-A:     file exists,
+        - parent-B:     no file,
+        - working-copy: no file.
+
+      Detecting a "deletion" will depend on the presence of actual change on
+      the "parent-A" branch:
+
+      Subcase 🄱 or 🄶 : if the state of the file in "parent-A" is unchanged
+      compared to the merge ancestors, then parent-A branch left the file
+      untouched while parent-B deleted it. We simply apply the change from
+      "parent-B" branch the file was automatically dropped.
+      The result is:
+          - file is not recorded as touched by the merge.
+
+      Subcase 🄲 or 🄷 : otherwise, the change from parent-A branch were explicitly dropped and
+      the file was "deleted again". From a user perspective, the message
+      about "locally changed" while "remotely deleted" (or the other way
+      around) was issued and the user chose to deleted the file.
+      The result:
+          - file is recorded as touched by the merge.
+
+
+    Special case [2]:
+
+      The situation is:
+        - parent-A:     no file,
+        - parent-B:     file,
+        - working-copy: file (same content as parent-B).
+
+      There are three subcases depending on the ancestors contents:
+
+      - A) the file is missing in all ancestors,
+      - B) at least one ancestor has the file with filenode ≠ from parent-B,
+      - C) all ancestors use the same filenode as parent-B,
+
+      Subcase (A) is the simpler, nothing happend on parent-A side while
+      parent-B added it.
+
+        The result:
+            - the file is not marked as touched by the merge.
+
+      Subcase (B) is the counter part of "Special case [1]", the file was
+        modified on parent-B side, while parent-A side deleted it. However this
+        time, the conflict was solved by keeping the file (and its
+        modification). We consider the file as "salvaged".
+
+        The result:
+            - the file is marked as "salvaged" by the merge.
+
+      Subcase (C) is subtle variation of the case above. In this case, the
+        file in unchanged on the parent-B side and actively removed on the
+        parent-A side. So the merge machinery correctly decide it should be
+        removed. However, the file was explicitly restored to its parent-B
+        content before the merge was commited. The file is be marked
+        as salvaged too. From the merge result perspective, this is similar to
+        Subcase (B), however from the merge resolution perspective they differ
+        since in (C), there was some conflict not obvious solution to the
+        merge (That got reversed)
+
+    Special case [3]:
+
+      The situation is:
+        - parent-A:     file,
+        - parent-B:     file (different filenode as parent-A),
+        - working-copy: file (same filenode as parent-B).
+
+      This case is in theory much simple, for this to happens, this mean the
+      filenode in parent-A is purely replacing the one in parent-B (either a
+      descendant, or a full new file history, see changeset). So the merge
+      introduce no changes, and the file is not affected by the merge...
+
+      However, in the wild it is possible to find commit with the above is not
+      True. For example repository have some commit where the *new* node is an
+      ancestor of the node in parent-A, or where parent-A and parent-B are two
+      branches of the same file history, yet not merge-filenode were created
+      (while the "merge" should have led to a "modification").
+
+      Detecting such cases (and not recording the file as modified) would be a
+      nice bonus. However do not any of this yet.
+    """
+
+    md = ChangingFiles()
+
+    m = ctx.manifest()
+    p1m = p1_ctx.manifest()
+    p2m = p2_ctx.manifest()
+    diff_p1 = p1m.diff(m)
+    diff_p2 = p2m.diff(m)
+
+    cahs = ctx.repo().changelog.commonancestorsheads(
+        p1_ctx.node(), p2_ctx.node()
+    )
+    if not cahs:
+        cahs = [node.nullrev]
+    mas = [ctx.repo()[r].manifest() for r in cahs]
+
+    copy_candidates = []
+
+    # Dealing with case 🄰 happens automatically.  Since there are no entry in
+    # d1 nor d2, we won't iterate on it ever.
+
+    # Iteration over d1 content will deal with all cases, but the one in the
+    # first column of the table.
+    for filename, d1 in diff_p1.items():
+
+        d2 = diff_p2.pop(filename, None)
+
+        if d2 is None:
+            # this deal with the first line of the table.
+            _process_other_unchanged(md, mas, filename, d1)
+        else:
+
+            if d1[0][0] is None and d2[0][0] is None:
+                # case 🄼 — both deleted the file.
+                md.mark_added(filename)
+                copy_candidates.append(filename)
+            elif d1[1][0] is None and d2[1][0] is None:
+                # case 🄻 — both deleted the file.
+                md.mark_removed(filename)
+            elif d1[1][0] is not None and d2[1][0] is not None:
+                # case 🄽 🄾 🄿
+                md.mark_merged(filename)
+                copy_candidates.append(filename)
+            else:
+                # Impossible case, the post-merge file status cannot be None on
+                # one side and Something on the other side.
+                assert False, "unreachable"
+
+    # Iteration over remaining d2 content deal with the first column of the
+    # table.
+    for filename, d2 in diff_p2.items():
+        _process_other_unchanged(md, mas, filename, d2)
+
+    for filename in copy_candidates:
+        copy_info = ctx[filename].renamed()
+        if copy_info:
+            source, srcnode = copy_info
+            if source in p1_ctx and p1_ctx[source].filenode() == srcnode:
+                md.mark_copied_from_p1(source, filename)
+            elif source in p2_ctx and p2_ctx[source].filenode() == srcnode:
+                md.mark_copied_from_p2(source, filename)
+    return md
+
+
+def _find(manifest, filename):
+    """return the associate filenode or None"""
+    if filename not in manifest:
+        return None
+    return manifest.find(filename)[0]
+
+
+def _process_other_unchanged(md, mas, filename, diff):
+    source_node = diff[0][0]
+    target_node = diff[1][0]
+
+    if source_node is not None and target_node is None:
+        if any(not _find(ma, filename) == source_node for ma in mas):
+            # case 🄲 of 🄷
+            md.mark_removed(filename)
+        # else, we have case 🄱 or 🄶 : no change need to be recorded
+    elif source_node is None and target_node is not None:
+        if any(_find(ma, filename) is not None for ma in mas):
+            # case 🄴 or 🄹
+            md.mark_salvaged(filename)
+        # else, we have case 🄳 or 🄸 : simple merge without intervention
+    elif source_node is not None and target_node is not None:
+        # case 🄵  or 🄺 : simple merge without intervention
+        #
+        # In buggy case where source_node is not an ancestors of target_node.
+        # There should have a been a new filenode created, recording this as
+        # "modified". We do not deal with them yet.
+        pass
+    else:
+        # An impossible case, the diff algorithm should not return entry if the
+        # file is missing on both side.
+        assert False, "unreachable"
+
+
+def _missing_from_all_ancestors(mas, filename):
+    return all(_find(ma, filename) is None for ma in mas)
 
 
 def computechangesetfilesadded(ctx):
