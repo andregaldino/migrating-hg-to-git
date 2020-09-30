@@ -91,9 +91,7 @@ impl Node {
 
         match &mut self.kind {
             NodeKind::Directory(directory) => {
-                Node::insert_in_directory(
-                    directory, new_entry, head, tail,
-                )
+                Node::insert_in_directory(directory, new_entry, head, tail)
             }
             NodeKind::File(_) => {
                 unreachable!("The file case has already been handled")
