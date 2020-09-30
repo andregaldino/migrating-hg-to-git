@@ -9,6 +9,10 @@
 //! It is currently missing a lot of functionality compared to the Python one
 //! and will only be triggered in narrow cases.
 
+#[cfg(feature = "dirstate-tree")]
+use crate::dirstate::dirstate_tree::iter::StatusShortcut;
+#[cfg(not(feature = "dirstate-tree"))]
+use crate::utils::path_auditor::PathAuditor;
 use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
     filepatterns::PatternFileWarning,
@@ -19,7 +23,6 @@ use crate::{
             hg_path_to_path_buf, os_string_to_hg_path_buf, HgPath, HgPathBuf,
             HgPathError,
         },
-        path_auditor::PathAuditor,
     },
     CopyMap, DirstateEntry, DirstateMap, EntryState, FastHashMap,
     PatternError,
@@ -701,12 +704,131 @@ where
         })
     }
 
+    /// Add the files in the dirstate to the results.
+    ///
+    /// This takes a mutable reference to the results to account for the
+    /// `extend` in timings
+    #[cfg(feature = "dirstate-tree")]
+    #[timed]
+    pub fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
+        results.par_extend(
+            self.dmap
+                .fs_iter(self.root_dir.clone())
+                .par_bridge()
+                .filter(|(path, _)| self.matcher.matches(path))
+                .flat_map(move |(filename, shortcut)| {
+                    let entry = match shortcut {
+                        StatusShortcut::Entry(e) => e,
+                        StatusShortcut::Dispatch(d) => {
+                            return Ok((Cow::Owned(filename), d))
+                        }
+                    };
+                    let filename_as_path = hg_path_to_path_buf(&filename)?;
+                    let meta = self
+                        .root_dir
+                        .join(filename_as_path)
+                        .symlink_metadata();
+
+                    match meta {
+                        Ok(ref m)
+                            if !(m.file_type().is_file()
+                                || m.file_type().is_symlink()) =>
+                        {
+                            Ok((
+                                Cow::Owned(filename),
+                                dispatch_missing(entry.state),
+                            ))
+                        }
+                        Ok(m) => {
+                            let dispatch = dispatch_found(
+                                &filename,
+                                entry,
+                                HgMetadata::from_metadata(m),
+                                &self.dmap.copy_map,
+                                self.options,
+                            );
+                            Ok((Cow::Owned(filename), dispatch))
+                        }
+                        Err(ref e)
+                            if e.kind() == ErrorKind::NotFound
+                                || e.raw_os_error() == Some(20) =>
+                        {
+                            // Rust does not yet have an `ErrorKind` for
+                            // `NotADirectory` (errno 20)
+                            // It happens if the dirstate contains `foo/bar`
+                            // and foo is not a
+                            // directory
+                            Ok((
+                                Cow::Owned(filename),
+                                dispatch_missing(entry.state),
+                            ))
+                        }
+                        Err(e) => Err(e),
+                    }
+                }),
+        );
+    }
+
+    /// Add the files in the dirstate to the results.
+    ///
+    /// This takes a mutable reference to the results to account for the
+    /// `extend` in timings
+    #[cfg(not(feature = "dirstate-tree"))]
+    #[timed]
+    pub fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
+        results.par_extend(self.dmap.par_iter().flat_map(
+            move |(filename, entry)| {
+                let filename: &HgPath = filename;
+                let filename_as_path = hg_path_to_path_buf(filename)?;
+                let meta =
+                    self.root_dir.join(filename_as_path).symlink_metadata();
+                match meta {
+                    Ok(ref m)
+                        if !(m.file_type().is_file()
+                            || m.file_type().is_symlink()) =>
+                    {
+                        Ok((
+                            Cow::Borrowed(filename),
+                            dispatch_missing(entry.state),
+                        ))
+                    }
+                    Ok(m) => Ok((
+                        Cow::Borrowed(filename),
+                        dispatch_found(
+                            filename,
+                            *entry,
+                            HgMetadata::from_metadata(m),
+                            &self.dmap.copy_map,
+                            self.options,
+                        ),
+                    )),
+                    Err(ref e)
+                        if e.kind() == ErrorKind::NotFound
+                            || e.raw_os_error() == Some(20) =>
+                    {
+                        // Rust does not yet have an `ErrorKind` for
+                        // `NotADirectory` (errno 20)
+                        // It happens if the dirstate contains `foo/bar`
+                        // and foo is not a
+                        // directory
+                        Ok((
+                            Cow::Borrowed(filename),
+                            dispatch_missing(entry.state),
+                        ))
+                    }
+                    Err(e) => Err(e),
+                }
+            },
+        ));
+    }
+
     /// Checks all files that are in the dirstate but were not found during the
     /// working directory traversal. This means that the rest must
     /// be either ignored, under a symlink or under a new nested repo.
     ///
     /// This takes a mutable reference to the results to account for the
     /// `extend` in timings
+    #[cfg(not(feature = "dirstate-tree"))]
     #[timed]
     pub fn handle_unknowns(
         &self,
@@ -780,59 +902,6 @@ where
         results.par_extend(new_results?);
 
         Ok(())
-    }
-
-    /// Add the files in the dirstate to the results.
-    ///
-    /// This takes a mutable reference to the results to account for the
-    /// `extend` in timings
-    #[timed]
-    pub fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
-        results.par_extend(self.dmap.par_iter().flat_map(
-            move |(filename, entry)| {
-                let filename: &HgPath = filename;
-                let filename_as_path = hg_path_to_path_buf(filename)?;
-                let meta =
-                    self.root_dir.join(filename_as_path).symlink_metadata();
-
-                match meta {
-                    Ok(ref m)
-                        if !(m.file_type().is_file()
-                            || m.file_type().is_symlink()) =>
-                    {
-                        Ok((
-                            Cow::Borrowed(filename),
-                            dispatch_missing(entry.state),
-                        ))
-                    }
-                    Ok(m) => Ok((
-                        Cow::Borrowed(filename),
-                        dispatch_found(
-                            filename,
-                            *entry,
-                            HgMetadata::from_metadata(m),
-                            &self.dmap.copy_map,
-                            self.options,
-                        ),
-                    )),
-                    Err(ref e)
-                        if e.kind() == ErrorKind::NotFound
-                            || e.raw_os_error() == Some(20) =>
-                    {
-                        // Rust does not yet have an `ErrorKind` for
-                        // `NotADirectory` (errno 20)
-                        // It happens if the dirstate contains `foo/bar`
-                        // and foo is not a
-                        // directory
-                        Ok((
-                            Cow::Borrowed(filename),
-                            dispatch_missing(entry.state),
-                        ))
-                    }
-                    Err(e) => Err(e),
-                }
-            },
-        ));
     }
 }
 

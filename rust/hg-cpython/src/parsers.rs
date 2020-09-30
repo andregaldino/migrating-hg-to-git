@@ -119,11 +119,11 @@ fn pack_dirstate_wrapper(
         Duration::from_secs(now.as_object().extract::<u64>(py)?),
     ) {
         Ok(packed) => {
-            for (filename, entry) in &dirstate_map {
+            for (filename, entry) in dirstate_map.iter() {
                 dmap.set_item(
                     py,
                     PyBytes::new(py, filename.as_bytes()),
-                    make_dirstate_tuple(py, entry)?,
+                    make_dirstate_tuple(py, &entry)?,
                 )?;
             }
             Ok(PyBytes::new(py, &packed))
