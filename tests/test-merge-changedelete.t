@@ -1,3 +1,15 @@
+#testcases newfilenode old
+
+#if newfilenode
+Enable the config option
+------------------------
+
+  $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > merge-track-salvaged = True
+  > EOF
+#endif
+
 Tests for change/delete conflicts, including:
 b5605d88dc27: Make ui.prompt repeat on "unrecognized response" again
  (issue897)
