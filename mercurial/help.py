@@ -638,6 +638,53 @@ def inserttweakrc(ui, topic, doc):
     return re.sub(br'( *)%s' % re.escape(marker), sub, doc)
 
 
+def _getcategorizedhelpcmds(ui, cmdtable, name, select=None):
+    # Category -> list of commands
+    cats = {}
+    # Command -> short description
+    h = {}
+    # Command -> string showing synonyms
+    syns = {}
+    for c, e in pycompat.iteritems(cmdtable):
+        fs = cmdutil.parsealiases(c)
+        f = fs[0]
+        syns[f] = fs
+        func = e[0]
+        if select and not select(f):
+            continue
+        doc = pycompat.getdoc(func)
+        if filtercmd(ui, f, func, name, doc):
+            continue
+        doc = gettext(doc)
+        if not doc:
+            doc = _(b"(no help text available)")
+        h[f] = doc.splitlines()[0].rstrip()
+
+        cat = getattr(func, 'helpcategory', None) or (
+            registrar.command.CATEGORY_NONE
+        )
+        cats.setdefault(cat, []).append(f)
+    return cats, h, syns
+
+
+def _getcategorizedhelptopics(ui, topictable):
+    # Group commands by category.
+    topiccats = {}
+    syns = {}
+    for topic in topictable:
+        names, header, doc = topic[0:3]
+        if len(topic) > 3 and topic[3]:
+            category = topic[3]
+        else:
+            category = TOPIC_CATEGORY_NONE
+
+        topicname = names[0]
+        syns[topicname] = list(names)
+        if not filtertopic(ui, topicname):
+            topiccats.setdefault(category, []).append((topicname, header))
+    return topiccats, syns
+
+
 addtopichook(b'config', inserttweakrc)
 
 
@@ -760,31 +807,9 @@ def help_(
         return rst
 
     def helplist(select=None, **opts):
-        # Category -> list of commands
-        cats = {}
-        # Command -> short description
-        h = {}
-        # Command -> string showing synonyms
-        syns = {}
-        for c, e in pycompat.iteritems(commands.table):
-            fs = cmdutil.parsealiases(c)
-            f = fs[0]
-            syns[f] = b', '.join(fs)
-            func = e[0]
-            if select and not select(f):
-                continue
-            doc = pycompat.getdoc(func)
-            if filtercmd(ui, f, func, name, doc):
-                continue
-            doc = gettext(doc)
-            if not doc:
-                doc = _(b"(no help text available)")
-            h[f] = doc.splitlines()[0].rstrip()
-
-            cat = getattr(func, 'helpcategory', None) or (
-                registrar.command.CATEGORY_NONE
-            )
-            cats.setdefault(cat, []).append(f)
+        cats, h, syns = _getcategorizedhelpcmds(
+            ui, commands.table, name, select
+        )
 
         rst = []
         if not h:
@@ -805,7 +830,7 @@ def help_(
             cmds = sorted(cmds)
             for c in cmds:
                 if ui.verbose:
-                    rst.append(b" :%s: %s\n" % (syns[c], h[c]))
+                    rst.append(b" :%s: %s\n" % (b', '.join(syns[c]), h[c]))
                 else:
                     rst.append(b' :%s: %s\n' % (c, h[c]))
 
@@ -844,20 +869,7 @@ def help_(
                 rst.extend(exts)
 
             rst.append(_(b"\nadditional help topics:\n"))
-            # Group commands by category.
-            topiccats = {}
-            for topic in helptable:
-                names, header, doc = topic[0:3]
-                if len(topic) > 3 and topic[3]:
-                    category = topic[3]
-                else:
-                    category = TOPIC_CATEGORY_NONE
-
-                topicname = names[0]
-                if not filtertopic(ui, topicname):
-                    topiccats.setdefault(category, []).append(
-                        (topicname, header)
-                    )
+            topiccats, topicsyns = _getcategorizedhelptopics(ui, helptable)
 
             # Check that all categories have an order.
             missing_order = set(topiccats.keys()) - set(TOPIC_CATEGORY_ORDER)
