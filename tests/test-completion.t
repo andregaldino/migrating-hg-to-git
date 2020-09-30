@@ -80,6 +80,7 @@ Show debug commands if there are no other candidates
   debugbuilddag
   debugbundle
   debugcapabilities
+  debugchangedfiles
   debugcheckstate
   debugcolor
   debugcommands
@@ -268,6 +269,7 @@ Show all commands + options
   debugbuilddag: mergeable-file, overwritten-file, new-file
   debugbundle: all, part-type, spec
   debugcapabilities: 
+  debugchangedfiles: 
   debugcheckstate: 
   debugcolor: style
   debugcommands: 

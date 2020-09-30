@@ -59,6 +59,7 @@ from . import (
     lock as lockmod,
     logcmdutil,
     mergestate as mergestatemod,
+    metadata,
     obsolete,
     obsutil,
     pathutil,
@@ -99,6 +100,7 @@ from .utils import (
 from .revlogutils import (
     deltas as deltautil,
     nodemap,
+    sidedata,
 )
 
 release = lockmod.release
@@ -476,6 +478,40 @@ def debugcapabilities(ui, path, **opts):
             ui.write(b'  %s\n' % key)
             for v in values:
                 ui.write(b'    %s\n' % v)
+
+
+@command(b'debugchangedfiles', [], b'REV')
+def debugchangedfiles(ui, repo, rev):
+    """list the stored files changes for a revision"""
+    ctx = scmutil.revsingle(repo, rev, None)
+    sd = repo.changelog.sidedata(ctx.rev())
+    files_block = sd.get(sidedata.SD_FILES)
+    if files_block is not None:
+        files = metadata.decode_files_sidedata(sd)
+        for f in sorted(files.touched):
+            if f in files.added:
+                action = b"added"
+            elif f in files.removed:
+                action = b"removed"
+            elif f in files.merged:
+                action = b"merged"
+            elif f in files.salvaged:
+                action = b"salvaged"
+            else:
+                action = b"touched"
+
+            copy_parent = b""
+            copy_source = b""
+            if f in files.copied_from_p1:
+                copy_parent = b"p1"
+                copy_source = files.copied_from_p1[f]
+            elif f in files.copied_from_p2:
+                copy_parent = b"p2"
+                copy_source = files.copied_from_p2[f]
+
+            data = (action, copy_parent, f, copy_source)
+            template = b"%-8s %2s: %s, %s;\n"
+            ui.write(template % data)
 
 
 @command(b'debugcheckstate', [], b'')
