@@ -418,7 +418,7 @@ INDEX_ENTRY = struct.Struct(">bLL")
 
 
 def encode_files_sidedata(files):
-    all_files = set(files.touched)
+    all_files = set(files.touched - files.salvaged)
     all_files.update(files.copied_from_p1.values())
     all_files.update(files.copied_from_p2.values())
     all_files = sorted(all_files)
