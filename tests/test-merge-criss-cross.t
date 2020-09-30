@@ -855,30 +855,61 @@ BROKEN: this should result in conflict
   no merge state found
 
 (merging a deletion with keeping → conflict)
-BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#if newfilenode
+  $ hg merge          'desc("merge-deleting-the-file-from-deleted")'
+  file 'the-file' was deleted in other [merge rev] but was modified in local [working copy].
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+#else
   $ hg merge          'desc("merge-deleting-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+#endif
   $ ls -1
   other-file
   the-file
+
+#if newfilenode
   $ hg debugmergestate
   local (working copy): 38a4c3e7cac8c294ecb0a7a85a05464e9836ca78 (newfilenode !)
   local (working copy): e9b7081317232edce73f7ad5ae0b7807ff5c326a (old !)
   other (merge rev): adfd88e5d7d3d3e22bdd26512991ee64d59c1d8f
+  file: the-file (state "u")
+    local path: the-file (hash 6d2e02da5a9fe0691363dc6b573845fa271eaa35, flags "")
+    ancestor path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
+    other path: the-file (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = 9b610631ab29024c5f44af7d2c19658ef8f8f071
+    extra: merge-removal-candidate = yes
+#else
+  $ hg debugmergestate
+  local (working copy): e9b7081317232edce73f7ad5ae0b7807ff5c326a
+  other (merge rev): adfd88e5d7d3d3e22bdd26512991ee64d59c1d8f
   extra: the-file (merge-removal-candidate = yes)
+#endif
 
 (merging a deletion with keeping → conflict)
-BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#if newfilenode
+  $ hg merge          'desc("merge-deleting-the-file-from-updated")'
+  file 'the-file' was deleted in other [merge rev] but was modified in local [working copy].
+  You can use (c)hanged version, (d)elete, or leave (u)nresolved.
+  What do you want to do? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+#else
   $ hg merge          'desc("merge-deleting-the-file-from-updated")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+#endif
   $ ls -1
   other-file
   the-file
@@ -886,7 +917,12 @@ BROKEN: this should result in conflict
   $ hg debugmergestate
   local (working copy): 38a4c3e7cac8c294ecb0a7a85a05464e9836ca78
   other (merge rev): a4e0e44229dc130be2915b92c957c093f8c7ee3e
-  extra: the-file (merge-removal-candidate = yes)
+  file: the-file (state "u")
+    local path: the-file (hash 6d2e02da5a9fe0691363dc6b573845fa271eaa35, flags "")
+    ancestor path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
+    other path: the-file (node 0000000000000000000000000000000000000000)
+    extra: ancestorlinknode = 9b610631ab29024c5f44af7d2c19658ef8f8f071
+    extra: merge-removal-candidate = yes
 #else
   $ hg debugmergestate
   local (working copy): e9b7081317232edce73f7ad5ae0b7807ff5c326a

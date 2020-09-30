@@ -1215,6 +1215,21 @@ def calculateupdates(
                 repo.ui.note(_(b" %s: picking 'keep absent' action\n") % f)
                 mresult.addfile(f, *bids[mergestatemod.ACTION_KEEP_ABSENT][0])
                 continue
+            # ACTION_KEEP_NEW and ACTION_CHANGED_DELETED are conflicting actions
+            # as one say that file is new while other says that file was present
+            # earlier too and has a change delete conflict
+            # Let's fall back to conflicting ACTION_CHANGED_DELETED and let user
+            # do the right thing
+            if (
+                mergestatemod.ACTION_CHANGED_DELETED in bids
+                and mergestatemod.ACTION_KEEP_NEW in bids
+                and len(bids) == 2
+            ):
+                repo.ui.note(_(b" %s: picking 'changed/deleted' action\n") % f)
+                mresult.addfile(
+                    f, *bids[mergestatemod.ACTION_CHANGED_DELETED][0]
+                )
+                continue
             # If keep new is an option, let's just do that
             if mergestatemod.ACTION_KEEP_NEW in bids:
                 repo.ui.note(_(b" %s: picking 'keep new' action\n") % f)
