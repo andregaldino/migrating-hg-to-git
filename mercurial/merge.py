@@ -1220,6 +1220,21 @@ def calculateupdates(
                 repo.ui.note(_(b" %s: picking 'keep new' action\n") % f)
                 mresult.addfile(f, *bids[mergestatemod.ACTION_KEEP_NEW][0])
                 continue
+            # ACTION_GET and ACTION_DELETE_CHANGED are conflicting actions as
+            # one action states the file is newer/created on remote side and
+            # other states that file is deleted locally and changed on remote
+            # side. Let's fallback and rely on a conflicting action to let user
+            # do the right thing
+            if (
+                mergestatemod.ACTION_DELETED_CHANGED in bids
+                and mergestatemod.ACTION_GET in bids
+                and len(bids) == 2
+            ):
+                repo.ui.note(_(b" %s: picking 'delete/changed' action\n") % f)
+                mresult.addfile(
+                    f, *bids[mergestatemod.ACTION_DELETED_CHANGED][0]
+                )
+                continue
             # If there are gets and they all agree [how could they not?], do it.
             if mergestatemod.ACTION_GET in bids:
                 ga0 = bids[mergestatemod.ACTION_GET][0]
