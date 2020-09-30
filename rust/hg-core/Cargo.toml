@@ -40,3 +40,9 @@ default-features = false
 clap = "*"
 pretty_assertions = "0.6.1"
 tempfile = "3.1.0"
+
+[features]
+# Use a (still unoptimized) tree for the dirstate instead of the current flat
+# dirstate. This is not yet recommended for performance reasons. A future
+# version might make it the default, or make it a runtime option.
+dirstate-tree = []

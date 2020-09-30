@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["python27"]
+dirstate-tree = ["hg-core/dirstate-tree"]
 
 # Features to build an extension module:
 python27 = ["cpython/python27-sys", "cpython/extension-module-2-7"]

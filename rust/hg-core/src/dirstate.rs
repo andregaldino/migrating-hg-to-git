@@ -11,6 +11,7 @@ use std::convert::TryFrom;
 
 pub mod dirs_multiset;
 pub mod dirstate_map;
+#[cfg(feature = "dirstate-tree")]
 pub mod dirstate_tree;
 pub mod parsers;
 pub mod status;
