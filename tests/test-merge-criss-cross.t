@@ -813,14 +813,16 @@ BROKEN: this should result in conflict
   $ hg update --clean 'desc("merge-keeping-the-file-from-updated")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved (newfilenode !)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved (old !)
-  $ hg merge          'desc("merge-deleted-the-file-from-deleted")'
-  abort: empty revision set
-  [255]
+  $ hg merge          'desc("merge-deleting-the-file-from-deleted")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
   $ ls -1
   other-file
   the-file
   $ hg debugmergestate
-  no merge state found
+  local (working copy): 5e3eccec60d88f94a7ba57c351f32cb24c15fe0c
+  other (merge rev): adfd88e5d7d3d3e22bdd26512991ee64d59c1d8f
+  extra: the-file (merge-removal-candidate = yes)
 
 (merging a deletion with keeping → conflict)
 BROKEN: this should result in conflict
@@ -857,14 +859,17 @@ BROKEN: this should result in conflict
 
   $ hg update --clean 'desc("merge-keeping-the-file-from-deleted")'
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg merge          'desc("merge-deleted-the-file-from-deleted")'
-  abort: empty revision set
-  [255]
+  $ hg merge          'desc("merge-deleting-the-file-from-deleted")'
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
   $ ls -1
   other-file
   the-file
   $ hg debugmergestate
-  no merge state found
+  local (working copy): 38a4c3e7cac8c294ecb0a7a85a05464e9836ca78 (newfilenode !)
+  local (working copy): e9b7081317232edce73f7ad5ae0b7807ff5c326a (old !)
+  other (merge rev): adfd88e5d7d3d3e22bdd26512991ee64d59c1d8f
+  extra: the-file (merge-removal-candidate = yes)
 
 (merging a deletion with keeping → conflict)
 BROKEN: this should result in conflict
