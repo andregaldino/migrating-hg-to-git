@@ -360,9 +360,11 @@ lfs content, and the extension enabled.
   # LFS required- both lfs and non-lfs revlogs have 0x2000 flag
   *** runcommand debugprocessors lfs.bin -R ../server
   registered processor '0x8000'
+  registered processor '0x800'
   registered processor '0x2000'
   *** runcommand debugprocessors nonlfs2.txt -R ../server
   registered processor '0x8000'
+  registered processor '0x800'
   registered processor '0x2000'
   *** runcommand config extensions --cwd ../server
   extensions.debugprocessors=$TESTTMP/debugprocessors.py
@@ -371,6 +373,7 @@ lfs content, and the extension enabled.
   # LFS not enabled- revlogs don't have 0x2000 flag
   *** runcommand debugprocessors nonlfs3.txt
   registered processor '0x8000'
+  registered processor '0x800'
   *** runcommand config extensions
   extensions.debugprocessors=$TESTTMP/debugprocessors.py
 
@@ -413,9 +416,11 @@ lfs content, and the extension enabled.
   # LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag
   *** runcommand debugprocessors lfs.bin -R ../server
   registered processor '0x8000'
+  registered processor '0x800'
   registered processor '0x2000'
   *** runcommand debugprocessors nonlfs2.txt -R ../server
   registered processor '0x8000'
+  registered processor '0x800'
   registered processor '0x2000'
   *** runcommand config extensions --cwd ../server
   extensions.debugprocessors=$TESTTMP/debugprocessors.py
@@ -424,6 +429,7 @@ lfs content, and the extension enabled.
   # LFS enabled without requirement- revlogs have 0x2000 flag
   *** runcommand debugprocessors nonlfs3.txt
   registered processor '0x8000'
+  registered processor '0x800'
   registered processor '0x2000'
   *** runcommand config extensions
   extensions.debugprocessors=$TESTTMP/debugprocessors.py
@@ -432,6 +438,7 @@ lfs content, and the extension enabled.
   # LFS disabled locally- revlogs don't have 0x2000 flag
   *** runcommand debugprocessors nonlfs.txt -R ../nonlfs
   registered processor '0x8000'
+  registered processor '0x800'
   *** runcommand config extensions --cwd ../nonlfs
   extensions.debugprocessors=$TESTTMP/debugprocessors.py
   extensions.lfs=!

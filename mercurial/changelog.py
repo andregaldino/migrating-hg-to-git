@@ -26,6 +26,7 @@ from .utils import (
     dateutil,
     stringutil,
 )
+from .revlogutils import flagutil
 
 _defaultextra = {b'branch': b'default'}
 
@@ -579,8 +580,17 @@ class changelog(revlog.revlog):
                     _(b'the name \'%s\' is reserved') % branch
                 )
         sortedfiles = sorted(files.touched)
+        flags = 0
         sidedata = None
         if self._copiesstorage == b'changeset-sidedata':
+            if (
+                files.removed
+                or files.merged
+                or files.salvaged
+                or files.copied_from_p1
+                or files.copied_from_p2
+            ):
+                flags |= flagutil.REVIDX_HASCOPIESINFO
             sidedata = metadata.encode_files_sidedata(files)
 
         if extra:
