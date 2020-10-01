@@ -24,6 +24,8 @@ from . import (
 
 from .utils import stringutil
 
+from .revlogutils import flagutil
+
 
 def _filter(src, dst, t):
     """filters out invalid copies after chaining"""
@@ -179,6 +181,9 @@ def _revinfo_getter(repo):
     """
     cl = repo.changelog
     parents = cl.parentrevs
+    flags = cl.flags
+
+    HASCOPIESINFO = flagutil.REVIDX_HASCOPIESINFO
 
     changelogrevision = cl.changelogrevision
 
@@ -213,7 +218,10 @@ def _revinfo_getter(repo):
         e = merge_caches.pop(rev, None)
         if e is not None:
             return e
-        value = (p1, p2, changelogrevision(rev).changes)
+        changes = None
+        if flags(rev) & HASCOPIESINFO:
+            changes = changelogrevision(rev).changes
+        value = (p1, p2, changes)
         if p1 != node.nullrev and p2 != node.nullrev:
             # XXX some case we over cache, IGNORE
             merge_caches[rev] = value
@@ -293,13 +301,16 @@ def _combine_changeset_copies(
             copies = {}
         for i, c in enumerate(children[r]):
             p1, p2, changes = revinfo(c)
+            childcopies = {}
             if r == p1:
                 parent = 1
-                childcopies = changes.copied_from_p1
+                if changes is not None:
+                    childcopies = changes.copied_from_p1
             else:
                 assert r == p2
                 parent = 2
-                childcopies = changes.copied_from_p2
+                if changes is not None:
+                    childcopies = changes.copied_from_p2
             if not alwaysmatch:
                 childcopies = {
                     dst: src for dst, src in childcopies.items() if match(dst)
@@ -313,14 +324,15 @@ def _combine_changeset_copies(
                         source = prev[1]
                     newcopies[dest] = (c, source)
                 assert newcopies is not copies
-            for f in changes.removed:
-                if f in newcopies:
-                    if newcopies is copies:
-                        # copy on write to avoid affecting potential other
-                        # branches.  when there are no other branches, this
-                        # could be avoided.
-                        newcopies = copies.copy()
-                    newcopies[f] = (c, None)
+            if changes is not None:
+                for f in changes.removed:
+                    if f in newcopies:
+                        if newcopies is copies:
+                            # copy on write to avoid affecting potential other
+                            # branches.  when there are no other branches, this
+                            # could be avoided.
+                            newcopies = copies.copy()
+                        newcopies[f] = (c, None)
             othercopies = all_copies.get(c)
             if othercopies is None:
                 all_copies[c] = newcopies
@@ -373,13 +385,21 @@ def _merge_copies_dict(minor, major, isancestor, changes):
             # than the branch point or there is a merge
             if new_tt == other_tt:
                 minor[dest] = value
-            elif value[1] is None and dest in changes.salvaged:
+            elif (
+                changes is not None
+                and value[1] is None
+                and dest in changes.salvaged
+            ):
                 pass
-            elif other[1] is None and dest in changes.salvaged:
+            elif (
+                changes is not None
+                and other[1] is None
+                and dest in changes.salvaged
+            ):
                 minor[dest] = value
             elif not isancestor(new_tt, other_tt):
                 minor[dest] = value
-            elif dest in changes.merged:
+            elif changes is not None and dest in changes.merged:
                 minor[dest] = value
 
 

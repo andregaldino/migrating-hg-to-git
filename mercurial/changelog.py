@@ -599,7 +599,7 @@ class changelog(revlog.revlog):
         l = [hex(manifest), user, parseddate] + sortedfiles + [b"", desc]
         text = b"\n".join(l)
         return self.addrevision(
-            text, transaction, len(self), p1, p2, sidedata=sidedata
+            text, transaction, len(self), p1, p2, sidedata=sidedata, flags=flags
         )
 
     def branchinfo(self, rev):
