@@ -730,7 +730,7 @@ where
                         .symlink_metadata();
 
                     match meta {
-                        Ok(ref m)
+                        Ok(m)
                             if !(m.file_type().is_file()
                                 || m.file_type().is_symlink()) =>
                         {
@@ -749,7 +749,7 @@ where
                             );
                             Ok((Cow::Owned(filename), dispatch))
                         }
-                        Err(ref e)
+                        Err(e)
                             if e.kind() == ErrorKind::NotFound
                                 || e.raw_os_error() == Some(20) =>
                         {
@@ -783,7 +783,7 @@ where
                 let meta =
                     self.root_dir.join(filename_as_path).symlink_metadata();
                 match meta {
-                    Ok(ref m)
+                    Ok(m)
                         if !(m.file_type().is_file()
                             || m.file_type().is_symlink()) =>
                     {
@@ -802,7 +802,7 @@ where
                             self.options,
                         ),
                     )),
-                    Err(ref e)
+                    Err(e)
                         if e.kind() == ErrorKind::NotFound
                             || e.raw_os_error() == Some(20) =>
                     {
