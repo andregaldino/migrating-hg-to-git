@@ -17,6 +17,7 @@ from . import (
     match as matchmod,
     node,
     pathutil,
+    policy,
     pycompat,
     util,
 )
@@ -25,6 +26,8 @@ from . import (
 from .utils import stringutil
 
 from .revlogutils import flagutil
+
+rustmod = policy.importrust("copy_tracing")
 
 
 def _filter(src, dst, t):
@@ -310,8 +313,15 @@ def _combine_changeset_copies(
 
     It returns the aggregated copies information for `targetrev`.
     """
-    all_copies = {}
+
     alwaysmatch = match.always()
+
+    if rustmod is not None and alwaysmatch:
+        return rustmod.combine_changeset_copies(
+            list(revs), children, targetrev, revinfo, isancestor
+        )
+
+    all_copies = {}
     for r in revs:
         copies = all_copies.pop(r, None)
         if copies is None:
