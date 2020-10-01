@@ -36,7 +36,8 @@ pub async fn run_command(
             ChannelMessage::Data(..) => {
                 // just ignores data sent to optional channel
             }
-            ChannelMessage::InputRequest(..) | ChannelMessage::LineRequest(..) => {
+            ChannelMessage::InputRequest(..)
+            | ChannelMessage::LineRequest(..) => {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     "unsupported request",
@@ -49,7 +50,8 @@ pub async fn run_command(
                         // server spins new command loop while pager request is
                         // in progress, which can be terminated by "" command.
                         let pin = handler.spawn_pager(&cmd_spec).await?;
-                        attachio::attach_io(proto, &io::stdin(), &pin, &pin).await?;
+                        attachio::attach_io(proto, &io::stdin(), &pin, &pin)
+                            .await?;
                         proto.send_command("").await?; // terminator
                     }
                     CommandType::System => {

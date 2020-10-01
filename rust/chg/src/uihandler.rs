@@ -22,7 +22,10 @@ pub trait SystemHandler {
     /// Handles pager command request.
     ///
     /// Returns the pipe to be attached to the server if the pager is spawned.
-    async fn spawn_pager(&mut self, spec: &CommandSpec) -> io::Result<Self::PagerStdin>;
+    async fn spawn_pager(
+        &mut self,
+        spec: &CommandSpec,
+    ) -> io::Result<Self::PagerStdin>;
 
     /// Handles system command request.
     ///
@@ -53,8 +56,12 @@ impl ChgUiHandler {
 impl SystemHandler for ChgUiHandler {
     type PagerStdin = ChildStdin;
 
-    async fn spawn_pager(&mut self, spec: &CommandSpec) -> io::Result<Self::PagerStdin> {
-        let mut pager = new_shell_command(&spec).stdin(Stdio::piped()).spawn()?;
+    async fn spawn_pager(
+        &mut self,
+        spec: &CommandSpec,
+    ) -> io::Result<Self::PagerStdin> {
+        let mut pager =
+            new_shell_command(&spec).stdin(Stdio::piped()).spawn()?;
         let pin = pager.stdin.take().unwrap();
         procutil::set_blocking_fd(pin.as_raw_fd())?;
         // TODO: if pager exits, notify the server with SIGPIPE immediately.

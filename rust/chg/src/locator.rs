@@ -71,8 +71,12 @@ impl Locator {
     }
 
     /// Specifies the arguments to be passed to the server at start.
-    pub fn set_early_args(&mut self, args: impl IntoIterator<Item = impl AsRef<OsStr>>) {
-        self.hg_early_args = args.into_iter().map(|a| a.as_ref().to_owned()).collect();
+    pub fn set_early_args(
+        &mut self,
+        args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+    ) {
+        self.hg_early_args =
+            args.into_iter().map(|a| a.as_ref().to_owned()).collect();
     }
 
     /// Connects to the server.
@@ -104,7 +108,10 @@ impl Locator {
     /// Runs instructions received from the server.
     ///
     /// Returns true if the client should try connecting to the other server.
-    fn run_instructions(&mut self, instructions: &[Instruction]) -> io::Result<bool> {
+    fn run_instructions(
+        &mut self,
+        instructions: &[Instruction],
+    ) -> io::Result<bool> {
         let mut reconnect = false;
         for inst in instructions {
             debug!("instruction: {:?}", inst);
@@ -123,7 +130,10 @@ impl Locator {
                             "insecure redirect instruction from server: {}",
                             path.display()
                         );
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, msg));
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            msg,
+                        ));
                     }
                     self.redirect_sock_path = Some(path.to_owned());
                     reconnect = true;
@@ -134,7 +144,10 @@ impl Locator {
                             "insecure unlink instruction from server: {}",
                             path.display()
                         );
-                        return Err(io::Error::new(io::ErrorKind::InvalidData, msg));
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            msg,
+                        ));
                     }
                     fs::remove_file(path).unwrap_or(()); // may race
                 }
@@ -319,7 +332,10 @@ where
     P: AsRef<Path>,
 {
     let a = fs::symlink_metadata(path.as_ref())?;
-    if a.is_dir() && a.uid() == procutil::get_effective_uid() && (a.mode() & 0o777) == 0o700 {
+    if a.is_dir()
+        && a.uid() == procutil::get_effective_uid()
+        && (a.mode() & 0o777) == 0o700
+    {
         Ok(path)
     } else {
         Err(io::Error::new(io::ErrorKind::Other, "insecure directory"))
@@ -344,7 +360,9 @@ fn check_server_capabilities(spec: &ServerSpec) -> io::Result<()> {
 }
 
 /// Collects arguments which need to be passed to the server at start.
-pub fn collect_early_args(args: impl IntoIterator<Item = impl AsRef<OsStr>>) -> Vec<OsString> {
+pub fn collect_early_args(
+    args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+) -> Vec<OsString> {
     let mut args_iter = args.into_iter();
     let mut early_args = Vec::new();
     while let Some(arg) = args_iter.next() {

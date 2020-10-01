@@ -43,11 +43,20 @@ impl ChgClient {
         stdout: &impl AsRawFd,
         stderr: &impl AsRawFd,
     ) -> io::Result<()> {
-        attachio::attach_io(self.client.borrow_protocol_mut(), stdin, stdout, stderr).await
+        attachio::attach_io(
+            self.client.borrow_protocol_mut(),
+            stdin,
+            stdout,
+            stderr,
+        )
+        .await
     }
 
     /// Changes the working directory of the server.
-    pub async fn set_current_dir(&mut self, dir: impl AsRef<Path>) -> io::Result<()> {
+    pub async fn set_current_dir(
+        &mut self,
+        dir: impl AsRef<Path>,
+    ) -> io::Result<()> {
         let dir_bytes = dir.as_ref().as_os_str().as_bytes().to_owned();
         self.client
             .borrow_protocol_mut()
@@ -67,7 +76,10 @@ impl ChgClient {
     }
 
     /// Changes the process title of the server.
-    pub async fn set_process_name(&mut self, name: impl AsRef<OsStr>) -> io::Result<()> {
+    pub async fn set_process_name(
+        &mut self,
+        name: impl AsRef<OsStr>,
+    ) -> io::Result<()> {
         let name_bytes = name.as_ref().as_bytes().to_owned();
         self.client
             .borrow_protocol_mut()
