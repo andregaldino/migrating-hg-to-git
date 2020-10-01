@@ -107,12 +107,11 @@ pub fn pack_dirstate(
     let expected_size = expected_size + PARENT_SIZE * 2;
 
     let mut packed = Vec::with_capacity(expected_size);
-    let mut new_state_map = vec![];
 
     packed.extend(&parents.p1);
     packed.extend(&parents.p2);
 
-    for (filename, entry) in state_map.iter() {
+    for (filename, entry) in state_map.iter_mut() {
         let new_filename = filename.to_owned();
         let mut new_mtime: i32 = entry.mtime;
         if entry.state == EntryState::Normal && entry.mtime == now {
@@ -126,13 +125,10 @@ pub fn pack_dirstate(
             // contents of the file if the size is the same. This prevents
             // mistakenly treating such files as clean.
             new_mtime = -1;
-            new_state_map.push((
-                filename.to_owned(),
-                DirstateEntry {
-                    mtime: new_mtime,
-                    ..*entry
-                },
-            ));
+            *entry = DirstateEntry {
+                mtime: new_mtime,
+                ..*entry
+            };
         }
         let mut new_filename = new_filename.into_vec();
         if let Some(copy) = copy_map.get(filename) {
@@ -151,8 +147,6 @@ pub fn pack_dirstate(
     if packed.len() != expected_size {
         return Err(DirstatePackError::BadSize(expected_size, packed.len()));
     }
-
-    state_map.extend(new_state_map);
 
     Ok(packed)
 }
