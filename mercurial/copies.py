@@ -397,9 +397,9 @@ def _merge_copies_dict(minor, major, isancestor, changes):
                 and dest in changes.salvaged
             ):
                 minor[dest] = value
-            elif not isancestor(new_tt, other_tt):
-                minor[dest] = value
             elif changes is not None and dest in changes.merged:
+                minor[dest] = value
+            elif not isancestor(new_tt, other_tt):
                 minor[dest] = value
 
 
