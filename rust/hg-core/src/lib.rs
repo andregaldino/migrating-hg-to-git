@@ -20,6 +20,7 @@ pub use dirstate::{
     CopyMap, CopyMapIter, DirstateEntry, DirstateParents, EntryState,
     StateMap, StateMapIter,
 };
+pub mod copy_tracing;
 mod filepatterns;
 pub mod matchers;
 pub mod revlog;
