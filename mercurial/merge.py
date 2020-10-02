@@ -1223,7 +1223,6 @@ def calculateupdates(
             if (
                 mergestatemod.ACTION_CHANGED_DELETED in bids
                 and mergestatemod.ACTION_KEEP_NEW in bids
-                and len(bids) == 2
             ):
                 repo.ui.note(_(b" %s: picking 'changed/deleted' action\n") % f)
                 mresult.addfile(
@@ -1243,7 +1242,6 @@ def calculateupdates(
             if (
                 mergestatemod.ACTION_DELETED_CHANGED in bids
                 and mergestatemod.ACTION_GET in bids
-                and len(bids) == 2
             ):
                 repo.ui.note(_(b" %s: picking 'delete/changed' action\n") % f)
                 mresult.addfile(
