@@ -259,7 +259,7 @@ def _changesetforwardcopies(a, b, match):
     children = {}
 
     cl = repo.changelog
-    isancestor = cached_is_ancestor(cl.isancestorrev)
+    isancestor = cl.isancestorrev
     missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     mrset = set(missingrevs)
     roots = set()
@@ -320,6 +320,8 @@ def _combine_changeset_copies(
         return rustmod.combine_changeset_copies(
             list(revs), children, targetrev, revinfo, isancestor
         )
+
+    isancestor = cached_is_ancestor(isancestor)
 
     all_copies = {}
     for r in revs:

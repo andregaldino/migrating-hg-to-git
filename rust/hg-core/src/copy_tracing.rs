@@ -64,6 +64,42 @@ impl ChangedFiles {
     }
 }
 
+/// A struct responsible for answering "is X ancestors of Y" quickly
+///
+/// The structure will delegate ancestors call to a callback, and cache the
+/// result.
+#[derive(Debug)]
+struct AncestorOracle<'a, A: Fn(Revision, Revision) -> bool> {
+    inner: &'a A,
+    pairs: HashMap<(Revision, Revision), bool>,
+}
+
+impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
+    fn new(func: &'a A) -> Self {
+        Self {
+            inner: func,
+            pairs: HashMap::default(),
+        }
+    }
+
+    /// returns `true` if `anc` is an ancestors of `desc`, `false` otherwise
+    fn is_ancestor(&mut self, anc: Revision, desc: Revision) -> bool {
+        if anc > desc {
+            false
+        } else if anc == desc {
+            true
+        } else {
+            if let Some(b) = self.pairs.get(&(anc, desc)) {
+                *b
+            } else {
+                let b = (self.inner)(anc, desc);
+                self.pairs.insert((anc, desc), b);
+                b
+            }
+        }
+    }
+}
+
 /// Same as mercurial.copies._combine_changeset_copies, but in Rust.
 ///
 /// Arguments are:
@@ -77,14 +113,15 @@ impl ChangedFiles {
 ///   * ChangedFiles
 /// isancestors(low_rev, high_rev): callback to check if a revision is an
 ///                                 ancestor of another
-pub fn combine_changeset_copies(
+pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool>(
     revs: Vec<Revision>,
     children: HashMap<Revision, Vec<Revision>>,
     target_rev: Revision,
     rev_info: &impl Fn(Revision) -> RevInfo,
-    is_ancestor: &impl Fn(Revision, Revision) -> bool,
+    is_ancestor: &A,
 ) -> PathCopies {
     let mut all_copies = HashMap::new();
+    let mut oracle = AncestorOracle::new(is_ancestor);
 
     for rev in revs {
         // Retrieve data computed in a previous iteration
@@ -168,7 +205,7 @@ pub fn combine_changeset_copies(
                         _ => unreachable!(),
                     };
                     let merged_copies =
-                        merge_copies_dict(minor, major, &changes, is_ancestor);
+                        merge_copies_dict(minor, major, &changes, &mut oracle);
                     all_copies.insert(child, merged_copies);
                 }
             };
@@ -194,11 +231,11 @@ pub fn combine_changeset_copies(
 /// In case of conflict, value from "major" will be picked, unless in some
 /// cases. See inline documentation for details.
 #[allow(clippy::if_same_then_else)]
-fn merge_copies_dict(
+fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     minor: TimeStampedPathCopies,
     major: TimeStampedPathCopies,
     changes: &ChangedFiles,
-    is_ancestor: &impl Fn(Revision, Revision) -> bool,
+    oracle: &mut AncestorOracle<A>,
 ) -> TimeStampedPathCopies {
     if minor.is_empty() {
         return major;
@@ -244,7 +281,8 @@ fn merge_copies_dict(
                         // If the two entry are identical, no need to do
                         // anything (but diff should not have yield them)
                         unreachable!();
-                    } else if is_ancestor(src_major.rev, src_minor.rev) {
+                    } else if oracle.is_ancestor(src_major.rev, src_minor.rev)
+                    {
                         pick_minor();
                     } else {
                         pick_major();
@@ -271,7 +309,7 @@ fn merge_copies_dict(
                     // each side might conflict.  The major side will win such
                     // conflict.
                     pick_major();
-                } else if is_ancestor(src_major.rev, src_minor.rev) {
+                } else if oracle.is_ancestor(src_major.rev, src_minor.rev) {
                     // If the minor side is strictly newer than the major side,
                     // it should be kept.
                     pick_minor();
@@ -279,7 +317,7 @@ fn merge_copies_dict(
                     // without any special case, the "major" value win other
                     // the "minor" one.
                     pick_major();
-                } else if is_ancestor(src_minor.rev, src_major.rev) {
+                } else if oracle.is_ancestor(src_minor.rev, src_major.rev) {
                     // the "major" rev is a direct ancestors of "minor", any
                     // different value should overwrite
                     pick_major();
