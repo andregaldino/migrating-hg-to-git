@@ -126,7 +126,7 @@ function Install-Rust($prefix) {
 
     Invoke-Process "${prefix}\assets\rustup-init.exe" "-y --default-host x86_64-pc-windows-msvc"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "target add i686-pc-windows-msvc"
-    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.42.0"
+    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.46.0"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "component add clippy"
 
     # Install PyOxidizer for packaging.
