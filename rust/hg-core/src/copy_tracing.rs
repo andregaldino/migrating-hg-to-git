@@ -1,3 +1,4 @@
+use crate::utils::hg_path::HgPath;
 use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
 
@@ -36,6 +37,18 @@ pub struct ChangedFiles {
     copied_from_p2: PathCopies,
 }
 
+/// Represent active changes that affect the copy tracing.
+enum Action<'a> {
+    /// The parent ? children edge is removing a file
+    ///
+    /// (actually, this could be the edge from the other parent, but it does
+    /// not matters)
+    Removed(&'a HgPath),
+    /// The parent ? children edge introduce copy information between (dest,
+    /// source)
+    Copied(&'a HgPath, &'a HgPath),
+}
+
 impl ChangedFiles {
     pub fn new(
         removed: HashSet<HgPathBuf>,
@@ -61,6 +74,19 @@ impl ChangedFiles {
             copied_from_p1: PathCopies::new(),
             copied_from_p2: PathCopies::new(),
         }
+    }
+
+    /// Return an iterator over all the `Action` in this instance.
+    fn iter_actions(&self, parent: usize) -> impl Iterator<Item = Action> {
+        let copies_iter = match parent {
+            1 => self.copied_from_p1.iter(),
+            2 => self.copied_from_p2.iter(),
+            _ => unreachable!(),
+        };
+        let remove_iter = self.removed.iter();
+        let copies_iter = copies_iter.map(|(x, y)| Action::Copied(x, y));
+        let remove_iter = remove_iter.map(|x| Action::Removed(x));
+        copies_iter.chain(remove_iter)
     }
 }
 
@@ -142,46 +168,50 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool>(
             // Creating a new PathCopies for each `rev` ? `children` vertex.
             let (p1, p2, changes) = rev_info(*child);
 
-            let (parent, child_copies) = if rev == p1 {
-                (1, &changes.copied_from_p1)
+            let parent = if rev == p1 {
+                1
             } else {
                 assert_eq!(rev, p2);
-                (2, &changes.copied_from_p2)
+                2
             };
             let mut new_copies = copies.clone();
 
-            for (dest, source) in child_copies {
-                let entry;
-                if let Some(v) = copies.get(source) {
-                    entry = match &v.path {
-                        Some(path) => Some((*(path)).to_owned()),
-                        None => Some(source.to_owned()),
+            for action in changes.iter_actions(parent) {
+                match action {
+                    Action::Copied(dest, source) => {
+                        let entry;
+                        if let Some(v) = copies.get(source) {
+                            entry = match &v.path {
+                                Some(path) => Some((*(path)).to_owned()),
+                                None => Some(source.to_owned()),
+                            }
+                        } else {
+                            entry = Some(source.to_owned());
+                        }
+                        // Each new entry is introduced by the children, we
+                        // record this information as we will need it to take
+                        // the right decision when merging conflicting copy
+                        // information. See merge_copies_dict for details.
+                        let ttpc = TimeStampedPathCopy {
+                            rev: *child,
+                            path: entry,
+                        };
+                        new_copies.insert(dest.to_owned(), ttpc);
                     }
-                } else {
-                    entry = Some(source.to_owned());
-                }
-                // Each new entry is introduced by the children, we record this
-                // information as we will need it to take the right decision
-                // when merging conflicting copy information. See
-                // merge_copies_dict for details.
-                let ttpc = TimeStampedPathCopy {
-                    rev: *child,
-                    path: entry,
-                };
-                new_copies.insert(dest.to_owned(), ttpc);
-            }
-
-            // We must drop copy information for removed file.
-            //
-            // We need to explicitly record them as dropped to propagate this
-            // information when merging two TimeStampedPathCopies object.
-            for f in changes.removed.iter() {
-                if new_copies.contains_key(f.as_ref()) {
-                    let ttpc = TimeStampedPathCopy {
-                        rev: *child,
-                        path: None,
-                    };
-                    new_copies.insert(f.to_owned(), ttpc);
+                    Action::Removed(f) => {
+                        // We must drop copy information for removed file.
+                        //
+                        // We need to explicitly record them as dropped to
+                        // propagate this information when merging two
+                        // TimeStampedPathCopies object.
+                        if new_copies.contains_key(f.as_ref()) {
+                            let ttpc = TimeStampedPathCopy {
+                                rev: *child,
+                                path: None,
+                            };
+                            new_copies.insert(f.to_owned(), ttpc);
+                        }
+                    }
                 }
             }
 
