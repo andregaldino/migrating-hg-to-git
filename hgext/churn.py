@@ -23,6 +23,7 @@ from mercurial import (
     patch,
     pycompat,
     registrar,
+    scmutil,
 )
 
 cmdtable = {}
@@ -98,7 +99,7 @@ def countrate(ui, repo, amap, *pats, **opts):
         exclude_pats=opts[b'exclude'],
     )
     revs, makefilematcher = logcmdutil.makewalker(repo, wopts)
-    for ctx in cmdutil.walkchangerevs(repo, revs, makefilematcher, prep):
+    for ctx in scmutil.walkchangerevs(repo, revs, makefilematcher, prep):
         continue
 
     progress.complete()

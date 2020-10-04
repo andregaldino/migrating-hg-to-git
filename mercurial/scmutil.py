@@ -760,6 +760,55 @@ def revrange(repo, specs, localalias=None):
     return repo.anyrevs(allspecs, user=True, localalias=localalias)
 
 
+def increasingwindows(windowsize=8, sizelimit=512):
+    while True:
+        yield windowsize
+        if windowsize < sizelimit:
+            windowsize *= 2
+
+
+def walkchangerevs(repo, revs, makefilematcher, prepare):
+    '''Iterate over files and the revs in a "windowed" way.
+
+    Callers most commonly need to iterate backwards over the history
+    in which they are interested. Doing so has awful (quadratic-looking)
+    performance, so we use iterators in a "windowed" way.
+
+    We walk a window of revisions in the desired order.  Within the
+    window, we first walk forwards to gather data, then in the desired
+    order (usually backwards) to display it.
+
+    This function returns an iterator yielding contexts. Before
+    yielding each context, the iterator will first call the prepare
+    function on each context in the window in forward order.'''
+
+    if not revs:
+        return []
+    change = repo.__getitem__
+
+    def iterate():
+        it = iter(revs)
+        stopiteration = False
+        for windowsize in increasingwindows():
+            nrevs = []
+            for i in pycompat.xrange(windowsize):
+                rev = next(it, None)
+                if rev is None:
+                    stopiteration = True
+                    break
+                nrevs.append(rev)
+            for rev in sorted(nrevs):
+                ctx = change(rev)
+                prepare(ctx, makefilematcher(ctx))
+            for rev in nrevs:
+                yield change(rev)
+
+            if stopiteration:
+                break
+
+    return iterate()
+
+
 def meaningfulparents(repo, ctx):
     """Return list of meaningful (or all if debug) parentrevs for rev.
 

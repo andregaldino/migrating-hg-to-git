@@ -3532,7 +3532,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
-    for ctx in cmdutil.walkchangerevs(
+    for ctx in scmutil.walkchangerevs(
         repo, revs, makefilematcher, searcher._prep
     ):
         rev = ctx.rev()
