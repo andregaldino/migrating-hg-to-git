@@ -49,6 +49,19 @@ enum Action<'a> {
     Copied(&'a HgPath, &'a HgPath),
 }
 
+/// This express the possible "special" case we can get in a merge
+///
+/// See mercurial/metadata.py for details on these values.
+#[derive(PartialEq)]
+enum MergeCase {
+    /// Merged: file had history on both side that needed to be merged
+    Merged,
+    /// Salvaged: file was candidate for deletion, but survived the merge
+    Salvaged,
+    /// Normal: Not one of the two cases above
+    Normal,
+}
+
 impl ChangedFiles {
     pub fn new(
         removed: HashSet<HgPathBuf>,
@@ -87,6 +100,17 @@ impl ChangedFiles {
         let copies_iter = copies_iter.map(|(x, y)| Action::Copied(x, y));
         let remove_iter = remove_iter.map(|x| Action::Removed(x));
         copies_iter.chain(remove_iter)
+    }
+
+    /// return the MergeCase value associated with a filename
+    fn get_merge_case(&self, path: &HgPath) -> MergeCase {
+        if self.salvaged.contains(path) {
+            return MergeCase::Salvaged;
+        } else if self.merged.contains(path) {
+            return MergeCase::Merged;
+        } else {
+            return MergeCase::Normal;
+        }
     }
 }
 
@@ -322,20 +346,21 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                     // same rev. So this is the same value.
                     unreachable!();
                 } else {
+                    let action = changes.get_merge_case(&dest);
                     if src_major.path.is_none()
-                        && changes.salvaged.contains(dest)
+                        && action == MergeCase::Salvaged
                     {
                         // If the file is "deleted" in the major side but was
                         // salvaged by the merge, we keep the minor side alive
                         pick_minor();
                     } else if src_minor.path.is_none()
-                        && changes.salvaged.contains(dest)
+                        && action == MergeCase::Salvaged
                     {
                         // If the file is "deleted" in the minor side but was
                         // salvaged by the merge, unconditionnaly preserve the
                         // major side.
                         pick_major();
-                    } else if changes.merged.contains(dest) {
+                    } else if action == MergeCase::Merged {
                         // If the file was actively merged, copy information
                         // from each side might conflict.  The major side will
                         // win such conflict.
