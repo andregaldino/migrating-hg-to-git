@@ -42,10 +42,10 @@ STAGING_RULES_WINDOWS = [
 ]
 
 STAGING_RULES_APP = [
-    ('mercurial/helptext/**/*.txt', 'helptext/'),
-    ('mercurial/defaultrc/*.rc', 'defaultrc/'),
-    ('mercurial/locale/**/*', 'locale/'),
-    ('mercurial/templates/**/*', 'templates/'),
+    ('lib/mercurial/helptext/**/*.txt', 'helptext/'),
+    ('lib/mercurial/defaultrc/*.rc', 'defaultrc/'),
+    ('lib/mercurial/locale/**/*', 'locale/'),
+    ('lib/mercurial/templates/**/*', 'templates/'),
 ]
 
 STAGING_EXCLUDES_WINDOWS = [
@@ -109,11 +109,9 @@ def run_pyoxidizer(
     # Now assemble all the files from PyOxidizer into the staging directory.
     shutil.copytree(build_dir, out_dir)
 
-    # Move some of those files around.
+    # Move some of those files around. We can get rid of this once Mercurial
+    # is taught to use the importlib APIs for reading resources.
     process_install_rules(STAGING_RULES_APP, build_dir, out_dir)
-    # Nuke the mercurial/* directory, as we copied resources
-    # to an appropriate location just above.
-    shutil.rmtree(out_dir / "mercurial")
 
     # We also need to run setup.py build_doc to produce html files,
     # as they aren't built as part of ``pip install``.

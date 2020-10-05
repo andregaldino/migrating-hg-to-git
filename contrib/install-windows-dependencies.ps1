@@ -130,7 +130,7 @@ function Install-Rust($prefix) {
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "component add clippy"
 
     # Install PyOxidizer for packaging.
-    Invoke-Process "${prefix}\cargo\bin\cargo.exe" "install --version 0.7.0 pyoxidizer"
+    Invoke-Process "${prefix}\cargo\bin\cargo.exe" "install --git https://github.com/indygreg/PyOxidizer.git --rev 4697fb25918dfad6dc73288daeea501063963a08 pyoxidizer"
 }
 
 function Install-Dependencies($prefix) {

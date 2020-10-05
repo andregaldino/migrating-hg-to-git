@@ -1,5 +1,7 @@
 ROOT = CWD + "/../.."
 
+IS_WINDOWS = "windows" in BUILD_TARGET_TRIPLE
+
 # Code to run in Python interpreter.
 RUN_CODE = "import hgdemandimport; hgdemandimport.enable(); from mercurial import dispatch; dispatch.run()"
 
@@ -11,8 +13,35 @@ def make_distribution():
 def make_distribution_windows():
     return default_python_distribution(flavor = "standalone_dynamic")
 
+def resource_callback(policy, resource):
+    # We use a custom resource routing policy to influence where things are loaded
+    # from.
+    #
+    # For Python modules and resources, we load from memory if they are in
+    # the standard library and from the filesystem if not. This is because
+    # parts of Mercurial and some 3rd party packages aren't yet compatible
+    # with memory loading.
+    #
+    # For Python extension modules, we load from the filesystem because
+    # this yields greatest compatibility.
+    if type(resource) in ("PythonModuleSource", "PythonPackageResource", "PythonPackageDistributionResource"):
+        if resource.is_stdlib:
+            resource.add_location = "in-memory"
+        else:
+            resource.add_location = "filesystem-relative:lib"
+
+    elif type(resource) == "PythonExtensionModule":
+        resource.add_location = "filesystem-relative:lib"
+
 def make_exe(dist):
     """Builds a Rust-wrapped Mercurial binary."""
+    packaging_policy = dist.make_python_packaging_policy()
+    # Extension may depend on any Python functionality. Include all
+    # extensions.
+    packaging_policy.extension_module_filter = "all"
+    packaging_policy.resources_policy = "prefer-in-memory-fallback-filesystem-relative:lib"
+    packaging_policy.register_resource_callback(resource_callback)
+
     config = PythonInterpreterConfig(
         raw_allocator = "system",
         run_eval = RUN_CODE,
@@ -25,37 +54,17 @@ def make_exe(dist):
 
     exe = dist.to_python_executable(
         name = "hg",
-        resources_policy = "prefer-in-memory-fallback-filesystem-relative:lib",
+        packaging_policy = packaging_policy,
         config = config,
-        # Extension may depend on any Python functionality. Include all
-        # extensions.
-        extension_module_filter = "all",
     )
 
     # Add Mercurial to resources.
-    for resource in dist.pip_install(["--verbose", ROOT]):
-        # This is a bit wonky and worth explaining.
-        #
-        # Various parts of Mercurial don't yet support loading package
-        # resources via the ResourceReader interface. Or, not having
-        # file-based resources would be too inconvenient for users.
-        #
-        # So, for package resources, we package them both in the
-        # filesystem as well as in memory. If both are defined,
-        # PyOxidizer will prefer the in-memory location. So even
-        # if the filesystem file isn't packaged in the location
-        # specified here, we should never encounter an errors as the
-        # resource will always be available in memory.
-        if type(resource) == "PythonPackageResource":
-            exe.add_filesystem_relative_python_resource(".", resource)
-            exe.add_in_memory_python_resource(resource)
-        else:
-            exe.add_python_resource(resource)
+    exe.add_python_resources(exe.pip_install(["--verbose", ROOT]))
 
     # On Windows, we install extra packages for convenience.
-    if "windows" in BUILD_TARGET_TRIPLE:
+    if IS_WINDOWS:
         exe.add_python_resources(
-            dist.pip_install(["-r", ROOT + "/contrib/packaging/requirements_win32.txt"]),
+            exe.pip_install(["-r", ROOT + "/contrib/packaging/requirements_win32.txt"]),
         )
 
     return exe
@@ -95,4 +104,5 @@ resolve_targets()
 # Everything below this is typically managed by PyOxidizer and doesn't need
 # to be updated by people.
 
-PYOXIDIZER_VERSION = "0.7.0"
+PYOXIDIZER_VERSION = "0.8.0-pre"
+PYOXIDIZER_COMMIT = "4697fb25918dfad6dc73288daeea501063963a08"
