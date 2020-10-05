@@ -333,6 +333,10 @@ class cg1unpacker(object):
             clend = len(cl)
             changesets = clend - clstart
             progress.complete()
+            del deltas
+            # TODO Python 2.7 removal
+            # del efilesset
+            efilesset = None
             self.callback = None
 
             # pull off the manifest group
