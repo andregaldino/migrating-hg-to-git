@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import contextlib
+import errno
 import os
 import sys
 
@@ -289,10 +290,18 @@ def redirect_stdio():
         # The stderr is fully buffered on Windows when connected to a pipe.
         # A forcible flush is required to make small stderr data in the
         # remote side available to the client immediately.
-        procutil.stderr.flush()
+        try:
+            procutil.stderr.flush()
+        except IOError as err:
+            if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
+                raise error.StdioError(err)
 
         if _redirect and oldstdout >= 0:
-            procutil.stdout.flush()  # write hook output to stderr fd
+            try:
+                procutil.stdout.flush()  # write hook output to stderr fd
+            except IOError as err:
+                if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
+                    raise error.StdioError(err)
             os.dup2(oldstdout, stdoutno)
             os.close(oldstdout)
 

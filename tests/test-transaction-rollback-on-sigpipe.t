@@ -64,4 +64,4 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
 
   $ check_for_abandoned_transaction
-  Abandoned transaction!
+  [1]
