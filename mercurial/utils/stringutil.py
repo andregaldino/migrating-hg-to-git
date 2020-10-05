@@ -307,6 +307,14 @@ def binary(s):
     return bool(s and b'\0' in s)
 
 
+def _splitpattern(pattern):
+    if pattern.startswith(b're:'):
+        return b're', pattern[3:]
+    elif pattern.startswith(b'literal:'):
+        return b'literal', pattern[8:]
+    return b'literal', pattern
+
+
 def stringmatcher(pattern, casesensitive=True):
     """
     accepts a string, possibly starting with 're:' or 'literal:' prefix.
@@ -345,8 +353,8 @@ def stringmatcher(pattern, casesensitive=True):
     >>> itest(b'ABCDEFG', b'abc', b'def', b'abcdefg')
     ('literal', 'ABCDEFG', [False, False, True])
     """
-    if pattern.startswith(b're:'):
-        pattern = pattern[3:]
+    kind, pattern = _splitpattern(pattern)
+    if kind == b're':
         try:
             flags = 0
             if not casesensitive:
@@ -354,16 +362,16 @@ def stringmatcher(pattern, casesensitive=True):
             regex = remod.compile(pattern, flags)
         except remod.error as e:
             raise error.ParseError(_(b'invalid regular expression: %s') % e)
-        return b're', pattern, regex.search
-    elif pattern.startswith(b'literal:'):
-        pattern = pattern[8:]
+        return kind, pattern, regex.search
+    elif kind == b'literal':
+        if casesensitive:
+            match = pattern.__eq__
+        else:
+            ipat = encoding.lower(pattern)
+            match = lambda s: ipat == encoding.lower(s)
+        return kind, pattern, match
 
-    match = pattern.__eq__
-
-    if not casesensitive:
-        ipat = encoding.lower(pattern)
-        match = lambda s: ipat == encoding.lower(s)
-    return b'literal', pattern, match
+    raise error.ProgrammingError(b'unhandled pattern kind: %s' % kind)
 
 
 def shortuser(user):
