@@ -37,6 +37,7 @@ indexformatng = b">Qiiiiii20s12x"
 indexfirst = struct.calcsize(b'Q')
 sizeint = struct.calcsize(b'i')
 indexsize = struct.calcsize(indexformatng)
+nullitem = (0, 0, 0, -1, -1, -1, -1, nullid)
 
 
 def gettype(q):
@@ -103,7 +104,7 @@ class BaseIndexObject(object):
 
     def __getitem__(self, i):
         if i == -1:
-            return (0, 0, 0, -1, -1, -1, -1, nullid)
+            return nullitem
         self._check_index(i)
         if i >= self._lgt:
             return self._extra[i - self._lgt]
