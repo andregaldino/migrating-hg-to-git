@@ -88,7 +88,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -104,7 +104,7 @@ Predecessors template should show current revision as it is the working copy
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  d004c8f274b9
@@ -175,7 +175,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 2:a468dc9b36338b14fdb7825f55ce3df4e71517ad
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  a468dc9b3633
   |/     Predecessors:
   |      semi-colon:
@@ -191,7 +191,7 @@ Predecessors template should show current revision as it is the working copy
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  d004c8f274b9
@@ -210,7 +210,7 @@ with --hidden
   |    map: 2:a468dc9b36338b14fdb7825f55ce3df4e71517ad
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  a468dc9b3633
   |/     Predecessors: 1:471f378eab4c
   |      semi-colon: 1:471f378eab4c
@@ -234,7 +234,7 @@ with --hidden
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog --hidden
   o  d004c8f274b9
@@ -258,7 +258,7 @@ visible.
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -266,7 +266,7 @@ visible.
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg tlog --hidden
   @  d004c8f274b9
@@ -276,7 +276,7 @@ visible.
   |    map: 2:a468dc9b36338b14fdb7825f55ce3df4e71517ad
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  a468dc9b3633
   |/     Predecessors: 1:471f378eab4c
   |      semi-colon: 1:471f378eab4c
@@ -300,7 +300,7 @@ visible.
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   @  d004c8f274b9
@@ -500,7 +500,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 1:471597cad322d1f659bb169751be9133dad92ef3
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  337fec4d2edc
   |    Predecessors: 1:471597cad322
   |    semi-colon: 1:471597cad322
@@ -508,7 +508,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 1:471597cad322d1f659bb169751be9133dad92ef3
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  471597cad322
   |/     Predecessors:
   |      semi-colon:
@@ -524,7 +524,7 @@ Predecessors template should show current revision as it is the working copy
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  f257fde29c7a
@@ -548,7 +548,7 @@ the log
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  337fec4d2edc
   |    Predecessors:
   |    semi-colon:
@@ -556,7 +556,7 @@ the log
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -564,7 +564,7 @@ the log
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
 Predecessors template should show both predecessors as we force their display
 with --hidden
@@ -576,7 +576,7 @@ with --hidden
   |    map: 1:471597cad322d1f659bb169751be9133dad92ef3
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  337fec4d2edc
   |    Predecessors: 1:471597cad322
   |    semi-colon: 1:471597cad322
@@ -584,7 +584,7 @@ with --hidden
   |    map: 1:471597cad322d1f659bb169751be9133dad92ef3
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  471597cad322
   |/     Predecessors:
   |      semi-colon:
@@ -600,7 +600,7 @@ with --hidden
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog --hidden
   @  f257fde29c7a
@@ -763,7 +763,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -779,7 +779,7 @@ Predecessors template should show current revision as it is the working copy
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  eb5a0daa2192
@@ -803,7 +803,7 @@ displayed
   |    map: 2:0dec01379d3be6318c470ead31b1fe7ae7cb53d5 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  0dec01379d3b
   | |    Predecessors:
   | |    semi-colon:
@@ -827,7 +827,7 @@ displayed
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  eb5a0daa2192
@@ -851,7 +851,7 @@ the log
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -859,7 +859,7 @@ the log
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 Predecessors template should show both predecessors as we force their display
 with --hidden
   $ hg tlog --hidden
@@ -870,7 +870,7 @@ with --hidden
   |    map: 2:0dec01379d3be6318c470ead31b1fe7ae7cb53d5 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  0dec01379d3b
   | |    Predecessors:
   | |    semi-colon:
@@ -894,7 +894,7 @@ with --hidden
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog --hidden
   @  eb5a0daa2192
@@ -1089,7 +1089,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | *  fdf9bde5129a
   |/     Predecessors: 1:471f378eab4c
   |      semi-colon: 1:471f378eab4c
@@ -1097,7 +1097,7 @@ Predecessors template should show current revision as it is the working copy
   |      map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |      Successors:
   |      multi-line:
-  |      json: ""
+  |      json: []
   | @  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -1114,7 +1114,7 @@ Predecessors template should show current revision as it is the working copy
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
   $ hg fatelog
   *  019fadeab383
   |
@@ -1137,7 +1137,7 @@ the log
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  fdf9bde5129a
   |/     Predecessors:
   |      semi-colon:
@@ -1145,7 +1145,7 @@ the log
   |      map:
   |      Successors:
   |      multi-line:
-  |      json: ""
+  |      json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -1153,7 +1153,7 @@ the log
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   *  019fadeab383
@@ -1172,7 +1172,7 @@ Predecessors template should the predecessors as we force their display with
   |    map: 3:65b757b745b935093c87a2bccd877521cccffcbd
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  65b757b745b9
   |/     Predecessors: 1:471f378eab4c
   |      semi-colon: 1:471f378eab4c
@@ -1188,7 +1188,7 @@ Predecessors template should the predecessors as we force their display with
   |      map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |      Successors:
   |      multi-line:
-  |      json: ""
+  |      json: []
   | x  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -1205,7 +1205,7 @@ Predecessors template should the predecessors as we force their display with
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog --hidden
   *  019fadeab383
@@ -1408,7 +1408,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -1424,7 +1424,7 @@ Predecessors template should show current revision as it is the working copy
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  eb5a0daa2192
@@ -1447,7 +1447,7 @@ Predecessors template should both predecessors as they are visible
   |    map: 2:0dec01379d3be6318c470ead31b1fe7ae7cb53d5 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  0dec01379d3b
   | |    Predecessors:
   | |    semi-colon:
@@ -1471,7 +1471,7 @@ Predecessors template should both predecessors as they are visible
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  eb5a0daa2192
@@ -1496,7 +1496,7 @@ Predecessors template should both predecessors as they are visible
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874 3:b7ea6d14e664bdc8922221f7992631b50da3fb07
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  b7ea6d14e664
   | |    Predecessors:
   | |    semi-colon:
@@ -1520,7 +1520,7 @@ Predecessors template should both predecessors as they are visible
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  eb5a0daa2192
@@ -1543,7 +1543,7 @@ Predecessors template should show no predecessors as they are both non visible
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -1551,7 +1551,7 @@ Predecessors template should show no predecessors as they are both non visible
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   @  eb5a0daa2192
@@ -1568,7 +1568,7 @@ with --hidden
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874 3:b7ea6d14e664bdc8922221f7992631b50da3fb07
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  b7ea6d14e664
   | |    Predecessors: 2:0dec01379d3b
   | |    semi-colon: 2:0dec01379d3b
@@ -1600,7 +1600,7 @@ with --hidden
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog --hidden
   @  eb5a0daa2192
@@ -1798,7 +1798,7 @@ Predecessors template should show current revision as it is the working copy
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -1814,7 +1814,7 @@ Predecessors template should show current revision as it is the working copy
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  7a230b46bf61
@@ -1835,7 +1835,7 @@ Predecessors template should show no predecessors as they are non visible
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -1843,7 +1843,7 @@ Predecessors template should show no predecessors as they are non visible
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   @  7a230b46bf61
@@ -1860,7 +1860,7 @@ with --hidden
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -1876,7 +1876,7 @@ with --hidden
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog --hidden
   @  7a230b46bf61
@@ -1969,7 +1969,7 @@ Check templates
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -1977,7 +1977,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   @  f897c6137566
@@ -1997,7 +1997,7 @@ Check templates
   |    map: 2:0dec01379d3be6318c470ead31b1fe7ae7cb53d5
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  0dec01379d3b
   | |    Predecessors: 1:471f378eab4c
   | |    semi-colon: 1:471f378eab4c
@@ -2022,7 +2022,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  f897c6137566
@@ -2044,7 +2044,7 @@ Check templates
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  471f378eab4c
   |/     Predecessors:
   |      semi-colon:
@@ -2060,7 +2060,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  f897c6137566
@@ -2080,7 +2080,7 @@ Check templates
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   @  ea207398892e
        Predecessors:
        semi-colon:
@@ -2088,7 +2088,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   o  f897c6137566
@@ -2104,7 +2104,7 @@ Check templates
   |    map: 2:0dec01379d3be6318c470ead31b1fe7ae7cb53d5
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  0dec01379d3b
   | |    Predecessors: 1:471f378eab4c
   | |    semi-colon: 1:471f378eab4c
@@ -2129,7 +2129,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
 Check other fatelog implementations
 -----------------------------------
@@ -2364,7 +2364,7 @@ Check templates
   |    map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | *  b18bc8331526
   |/     Predecessors: 6:4a004186e638
   |      semi-colon: 6:4a004186e638
@@ -2372,7 +2372,7 @@ Check templates
   |      map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
   |      Successors:
   |      multi-line:
-  |      json: ""
+  |      json: []
   | *  ba2ed02b0c9a
   | |    Predecessors:
   | |    semi-colon:
@@ -2380,7 +2380,7 @@ Check templates
   | |    map:
   | |    Successors:
   | |    multi-line:
-  | |    json: ""
+  | |    json: []
   | x  4a004186e638
   |/     Predecessors:
   |      semi-colon:
@@ -2397,7 +2397,7 @@ Check templates
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  f897c6137566
   |    Predecessors:
   |    semi-colon:
@@ -2405,7 +2405,7 @@ Check templates
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -2413,7 +2413,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
   $ hg fatelog
   @  0b997eb7ceee
   |
@@ -2437,7 +2437,7 @@ Check templates
   |    map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | *  b18bc8331526
   |/     Predecessors: 6:4a004186e638
   |      semi-colon: 6:4a004186e638
@@ -2445,7 +2445,7 @@ Check templates
   |      map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
   |      Successors:
   |      multi-line:
-  |      json: ""
+  |      json: []
   | *  ba2ed02b0c9a
   | |    Predecessors: 4:9bd10a0775e4
   | |    semi-colon: 4:9bd10a0775e4
@@ -2453,7 +2453,7 @@ Check templates
   | |    map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
   | |    Successors:
   | |    multi-line:
-  | |    json: ""
+  | |    json: []
   | x  4a004186e638
   |/     Predecessors: 4:9bd10a0775e4
   |      semi-colon: 4:9bd10a0775e4
@@ -2470,7 +2470,7 @@ Check templates
   |    map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  9bd10a0775e4
   |/     Predecessors:
   |      semi-colon:
@@ -2486,7 +2486,7 @@ Check templates
   |    map: 2:0dec01379d3be6318c470ead31b1fe7ae7cb53d5
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | x  0dec01379d3b
   | |    Predecessors: 1:471f378eab4c
   | |    semi-colon: 1:471f378eab4c
@@ -2511,7 +2511,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
   $ hg fatelog --hidden
   @  0b997eb7ceee
   |
@@ -2568,7 +2568,7 @@ Check templates
   |    map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | *  0b997eb7ceee
   | |    Predecessors: 4:9bd10a0775e4
   | |    semi-colon: 4:9bd10a0775e4
@@ -2576,7 +2576,7 @@ Check templates
   | |    map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
   | |    Successors:
   | |    multi-line:
-  | |    json: ""
+  | |    json: []
   * |  b18bc8331526
   |/     Predecessors: 4:9bd10a0775e4
   |      semi-colon: 4:9bd10a0775e4
@@ -2584,7 +2584,7 @@ Check templates
   |      map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
   |      Successors:
   |      multi-line:
-  |      json: ""
+  |      json: []
   *  dd800401bd8c
   |    Predecessors: 4:9bd10a0775e4
   |    semi-colon: 4:9bd10a0775e4
@@ -2592,7 +2592,7 @@ Check templates
   |    map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   | @  9bd10a0775e4
   |/     Predecessors:
   |      semi-colon:
@@ -2609,7 +2609,7 @@ Check templates
   |    map:
   |    Successors:
   |    multi-line:
-  |    json: ""
+  |    json: []
   o  ea207398892e
        Predecessors:
        semi-colon:
@@ -2617,7 +2617,7 @@ Check templates
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
   $ hg fatelog
   *  eceed8f98ffc
@@ -2821,7 +2821,7 @@ Check output
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
   $ hg fatelog
   @  471f378eab4c
   |    Obsfate: pruned by test (at 1970-01-01 00:00 +0000);
@@ -2874,7 +2874,7 @@ Check output
        map:
        Successors:
        multi-line:
-       json: ""
+       json: []
 
 # todo: the obsfate output is not ideal
   $ hg fatelog

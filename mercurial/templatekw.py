@@ -712,21 +712,20 @@ def showsuccessorssets(context, mapping):
     while also diverged into ctx3. (EXPERIMENTAL)"""
     repo = context.resource(mapping, b'repo')
     ctx = context.resource(mapping, b'ctx')
-    if not ctx.obsolete():
-        return b''
-
-    ssets = obsutil.successorssets(repo, ctx.node(), closest=True)
-    ssets = [[hex(n) for n in ss] for ss in ssets]
-
     data = []
-    for ss in ssets:
-        h = _hybrid(
-            None,
-            ss,
-            lambda x: {b'ctx': repo[x]},
-            lambda x: scmutil.formatchangeid(repo[x]),
-        )
-        data.append(h)
+
+    if ctx.obsolete():
+        ssets = obsutil.successorssets(repo, ctx.node(), closest=True)
+        ssets = [[hex(n) for n in ss] for ss in ssets]
+
+        for ss in ssets:
+            h = _hybrid(
+                None,
+                ss,
+                lambda x: {b'ctx': repo[x]},
+                lambda x: scmutil.formatchangeid(repo[x]),
+            )
+            data.append(h)
 
     # Format the successorssets
     def render(d):
