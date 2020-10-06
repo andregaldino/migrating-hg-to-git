@@ -42,7 +42,9 @@ use git diff to see rename
 
 Add some linear rename initialy
 
-  $ touch a b h
+  $ echo a > a
+  $ echo b > b
+  $ echo h > h
   $ hg ci -Am 'i-0 initial commit: a b h'
   adding a
   adding b
@@ -382,10 +384,10 @@ The bugs makes recorded copy is different depending of where we started the merg
   $ hg manifest --debug --rev 'desc("d-2")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
   $ hg manifest --debug --rev 'desc("b-1")' | grep '644   d'
-  01c2f5eabdc4ce2bdee42b5f86311955e6c8f573 644   d
+  169be882533bc917905d46c0c951aa9a1e288dcf 644   d
   $ hg debugindex d
      rev linkrev nodeid       p1           p2
-       0       2 01c2f5eabdc4 000000000000 000000000000
+       0       2 169be882533b 000000000000 000000000000
        1       8 b004912a8510 000000000000 000000000000
 
 Log output should not include a merge commit as it did not happen
@@ -418,13 +420,15 @@ Comparing with a merge with colliding rename
 
   $ hg up 'desc("a-2")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg merge 'desc("e-2")'
+  $ hg merge 'desc("e-2")' --tool :union
+  merging f
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m 'mAEm-0 simple merge - one way'
   $ hg up 'desc("e-2")'
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg merge 'desc("a-2")'
+  $ hg merge 'desc("a-2")' --tool :union
+  merging f
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m 'mEAm-0 simple merge - the other way'
@@ -449,18 +453,19 @@ Comparing with a merge with colliding rename
   o  0 i-0 initial commit: a b h
   
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
-  eb806e34ef6be4c264effd5933d31004ad15a793 644   f
+  c39c6083dad048d5138618a46f123e2f397f4f18 644   f
   $ hg manifest --debug --rev 'desc("mEAm-0")' | grep '644   f'
-  eb806e34ef6be4c264effd5933d31004ad15a793 644   f
+  a9a8bc3860c9d8fa5f2f7e6ea8d40498322737fd 644   f
   $ hg manifest --debug --rev 'desc("a-2")' | grep '644   f'
-  0dd616bc7ab1a111921d95d76f69cda5c2ac539c 644   f
+  263ea25e220aaeb7b9bac551c702037849aa75e8 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
-  6da5a2eecb9c833f830b67a4972366d49a9a142c 644   f
+  71b9b7e73d973572ade6dd765477fcee6890e8b1 644   f
   $ hg debugindex f
      rev linkrev nodeid       p1           p2
-       0       4 0dd616bc7ab1 000000000000 000000000000
-       1      10 6da5a2eecb9c 000000000000 000000000000
-       2      19 eb806e34ef6b 0dd616bc7ab1 6da5a2eecb9c
+       0       4 263ea25e220a 000000000000 000000000000
+       1      10 71b9b7e73d97 000000000000 000000000000
+       2      19 c39c6083dad0 263ea25e220a 71b9b7e73d97
+       3      20 a9a8bc3860c9 71b9b7e73d97 263ea25e220a
 
 # Here the filelog based implementation is not looking at the rename
 # information (because the file exist on both side). However the changelog
@@ -544,9 +549,9 @@ Merge:
   $ hg commit -m "f-2: rename i -> d"
   $ hg debugindex d
      rev linkrev nodeid       p1           p2
-       0       2 01c2f5eabdc4 000000000000 000000000000
+       0       2 169be882533b 000000000000 000000000000
        1       8 b004912a8510 000000000000 000000000000
-       2      22 c72365ee036f 000000000000 000000000000
+       2      22 4a067cf8965d 000000000000 000000000000
   $ hg up 'desc("b-1")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("f-2")'
@@ -743,7 +748,7 @@ Note:
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("g-1")' --tool :union
   merging d
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m 'mFGm-0 simple merge - one way'
   created new head
@@ -751,7 +756,7 @@ Note:
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("f-2")' --tool :union
   merging d
-  0 files updated, 1 files merged, 1 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m 'mGFm-0 simple merge - the other way'
   created new head
@@ -774,13 +779,13 @@ Note:
   
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFGm-0")'
   A d
-    h (no-filelog !)
-    a (filelog !)
+    h
   R a
   R h
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGFm-0")'
   A d
-    a
+    a (no-filelog !)
+    h (filelog !)
   R a
   R h
   $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mFGm-0")'
