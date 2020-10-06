@@ -82,9 +82,10 @@ struct indexObjectStruct {
 	    PyObject *data;     /* raw bytes of index */
 	Py_buffer buf;          /* buffer of data */
 	const char **offsets;   /* populated on demand */
-	Py_ssize_t raw_length;  /* original number of elements */
-	Py_ssize_t length;      /* current number of elements */
-	PyObject *added;        /* populated on demand */
+	Py_ssize_t length;      /* current on-disk number of elements */
+	unsigned new_length;    /* number of added elements */
+	unsigned added_length;  /* space reserved for added elements */
+	char *added;            /* populated on demand */
 	PyObject *headrevs;     /* cache, invalidated on changes */
 	PyObject *filteredrevs; /* filtered revs set */
 	nodetree nt;            /* base-16 trie */
@@ -97,9 +98,7 @@ struct indexObjectStruct {
 
 static Py_ssize_t index_length(const indexObject *self)
 {
-	if (self->added == NULL)
-		return self->length;
-	return self->length + PyList_GET_SIZE(self->added);
+	return self->length + self->new_length;
 }
 
 static PyObject *nullentry = NULL;
@@ -155,11 +154,14 @@ cleanup:
  */
 static const char *index_deref(indexObject *self, Py_ssize_t pos)
 {
+	if (pos >= self->length)
+		return self->added + (pos - self->length) * v1_hdrsize;
+
 	if (self->inlined && pos > 0) {
 		if (self->offsets == NULL) {
 			Py_ssize_t ret;
-			self->offsets = PyMem_Malloc(self->raw_length *
-			                             sizeof(*self->offsets));
+			self->offsets =
+			    PyMem_Malloc(self->length * sizeof(*self->offsets));
 			if (self->offsets == NULL)
 				return (const char *)PyErr_NoMemory();
 			ret = inline_scan(self, self->offsets);
@@ -182,23 +184,11 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 static inline int index_get_parents(indexObject *self, Py_ssize_t rev, int *ps,
                                     int maxrev)
 {
-	if (rev >= self->length) {
-		long tmp;
-		PyObject *tuple =
-		    PyList_GET_ITEM(self->added, rev - self->length);
-		if (!pylong_to_long(PyTuple_GET_ITEM(tuple, 5), &tmp)) {
-			return -1;
-		}
-		ps[0] = (int)tmp;
-		if (!pylong_to_long(PyTuple_GET_ITEM(tuple, 6), &tmp)) {
-			return -1;
-		}
-		ps[1] = (int)tmp;
-	} else {
-		const char *data = index_deref(self, rev);
-		ps[0] = getbe32(data + 24);
-		ps[1] = getbe32(data + 28);
-	}
+	const char *data = index_deref(self, rev);
+
+	ps[0] = getbe32(data + 24);
+	ps[1] = getbe32(data + 28);
+
 	/* If index file is corrupted, ps[] may point to invalid revisions. So
 	 * there is a risk of buffer overflow to trust them unconditionally. */
 	if (ps[0] < -1 || ps[0] > maxrev || ps[1] < -1 || ps[1] > maxrev) {
@@ -237,74 +227,41 @@ static int HgRevlogIndex_GetParents(PyObject *op, int rev, int *ps)
 
 static inline int64_t index_get_start(indexObject *self, Py_ssize_t rev)
 {
+	const char *data;
 	uint64_t offset;
-	if (rev == nullrev) {
+
+	if (rev == nullrev)
 		return 0;
-	}
-	if (rev >= self->length) {
-		PyObject *tuple;
-		PyObject *pylong;
-		PY_LONG_LONG tmp;
-		tuple = PyList_GET_ITEM(self->added, rev - self->length);
-		pylong = PyTuple_GET_ITEM(tuple, 0);
-		tmp = PyLong_AsLongLong(pylong);
-		if (tmp == -1 && PyErr_Occurred()) {
-			return -1;
-		}
-		if (tmp < 0) {
-			PyErr_Format(PyExc_OverflowError,
-			             "revlog entry size out of bound (%lld)",
-			             (long long)tmp);
-			return -1;
-		}
-		offset = (uint64_t)tmp;
+
+	data = index_deref(self, rev);
+	offset = getbe32(data + 4);
+	if (rev == 0) {
+		/* mask out version number for the first entry */
+		offset &= 0xFFFF;
 	} else {
-		const char *data = index_deref(self, rev);
-		offset = getbe32(data + 4);
-		if (rev == 0) {
-			/* mask out version number for the first entry */
-			offset &= 0xFFFF;
-		} else {
-			uint32_t offset_high = getbe32(data);
-			offset |= ((uint64_t)offset_high) << 32;
-		}
+		uint32_t offset_high = getbe32(data);
+		offset |= ((uint64_t)offset_high) << 32;
 	}
 	return (int64_t)(offset >> 16);
 }
 
 static inline int index_get_length(indexObject *self, Py_ssize_t rev)
 {
-	if (rev == nullrev) {
+	const char *data;
+	int tmp;
+
+	if (rev == nullrev)
 		return 0;
+
+	data = index_deref(self, rev);
+
+	tmp = (int)getbe32(data + 8);
+	if (tmp < 0) {
+		PyErr_Format(PyExc_OverflowError,
+		             "revlog entry size out of bound (%d)", tmp);
+		return -1;
 	}
-	if (rev >= self->length) {
-		PyObject *tuple;
-		PyObject *pylong;
-		long ret;
-		tuple = PyList_GET_ITEM(self->added, rev - self->length);
-		pylong = PyTuple_GET_ITEM(tuple, 1);
-		ret = PyInt_AsLong(pylong);
-		if (ret == -1 && PyErr_Occurred()) {
-			return -1;
-		}
-		if (ret < 0 || ret > (long)INT_MAX) {
-			PyErr_Format(PyExc_OverflowError,
-			             "revlog entry size out of bound (%ld)",
-			             ret);
-			return -1;
-		}
-		return (int)ret;
-	} else {
-		const char *data = index_deref(self, rev);
-		int tmp = (int)getbe32(data + 8);
-		if (tmp < 0) {
-			PyErr_Format(PyExc_OverflowError,
-			             "revlog entry size out of bound (%d)",
-			             tmp);
-			return -1;
-		}
-		return tmp;
-	}
+	return tmp;
 }
 
 /*
@@ -337,19 +294,16 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		return NULL;
 	}
 
-	if (pos >= self->length) {
-		PyObject *obj;
-		obj = PyList_GET_ITEM(self->added, pos - self->length);
-		Py_INCREF(obj);
-		return obj;
-	}
-
 	data = index_deref(self, pos);
 	if (data == NULL)
 		return NULL;
 
 	offset_flags = getbe32(data + 4);
-	if (pos == 0) /* mask out version number for the first entry */
+	/*
+	 * The first entry on-disk needs the version number masked out,
+	 * but this doesn't apply if entries are added to an empty index.
+	 */
+	if (self->length && pos == 0)
 		offset_flags &= 0xFFFF;
 	else {
 		uint32_t offset_high = getbe32(data);
@@ -382,13 +336,6 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 
 	if (pos >= length)
 		return NULL;
-
-	if (pos >= self->length) {
-		PyObject *tuple, *str;
-		tuple = PyList_GET_ITEM(self->added, pos - self->length);
-		str = PyTuple_GetItem(tuple, 7);
-		return str ? PyBytes_AS_STRING(str) : NULL;
-	}
 
 	data = index_deref(self, pos);
 	return data ? data + 32 : NULL;
@@ -423,30 +370,48 @@ static int node_check(PyObject *obj, char **node)
 
 static PyObject *index_append(indexObject *self, PyObject *obj)
 {
-	char *node;
-	Py_ssize_t len;
+	unsigned long offset_flags;
+	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
+	Py_ssize_t c_node_id_len;
+	const char *c_node_id;
+	char *data;
 
-	if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) != 8) {
+	if (!PyArg_ParseTuple(obj, tuple_format, &offset_flags, &comp_len,
+	                      &uncomp_len, &base_rev, &link_rev, &parent_1,
+	                      &parent_2, &c_node_id, &c_node_id_len)) {
 		PyErr_SetString(PyExc_TypeError, "8-tuple required");
 		return NULL;
 	}
-
-	if (node_check(PyTuple_GET_ITEM(obj, 7), &node) == -1)
+	if (c_node_id_len != 20 && c_node_id_len != 32) {
+		PyErr_SetString(PyExc_TypeError, "invalid node");
 		return NULL;
-
-	len = index_length(self);
-
-	if (self->added == NULL) {
-		self->added = PyList_New(0);
-		if (self->added == NULL)
-			return NULL;
 	}
 
-	if (PyList_Append(self->added, obj) == -1)
-		return NULL;
+	if (self->new_length == self->added_length) {
+		size_t new_added_length =
+		    self->added_length ? self->added_length * 2 : 4096;
+		void *new_added =
+		    PyMem_Realloc(self->added, new_added_length * v1_hdrsize);
+		if (!new_added)
+			return PyErr_NoMemory();
+		self->added = new_added;
+		self->added_length = new_added_length;
+	}
+	rev = self->length + self->new_length;
+	data = self->added + v1_hdrsize * self->new_length++;
+	putbe32(offset_flags >> 32, data);
+	putbe32(offset_flags & 0xffffffffU, data + 4);
+	putbe32(comp_len, data + 8);
+	putbe32(uncomp_len, data + 12);
+	putbe32(base_rev, data + 16);
+	putbe32(link_rev, data + 20);
+	putbe32(parent_1, data + 24);
+	putbe32(parent_2, data + 28);
+	memcpy(data + 32, c_node_id, c_node_id_len);
+	memset(data + 32 + c_node_id_len, 0, 32 - c_node_id_len);
 
 	if (self->ntinitialized)
-		nt_insert(&self->nt, node, (int)len);
+		nt_insert(&self->nt, c_node_id, rev);
 
 	Py_CLEAR(self->headrevs);
 	Py_RETURN_NONE;
@@ -473,20 +438,8 @@ static PyObject *index_stats(indexObject *self)
 		Py_CLEAR(t);                                                   \
 	} while (0)
 
-	if (self->added) {
-		Py_ssize_t len = PyList_GET_SIZE(self->added);
-		s = PyBytes_FromString("index entries added");
-		t = PyInt_FromSsize_t(len);
-		if (!s || !t)
-			goto bail;
-		if (PyDict_SetItem(obj, s, t) == -1)
-			goto bail;
-		Py_CLEAR(s);
-		Py_CLEAR(t);
-	}
-
-	if (self->raw_length != self->length)
-		istat(raw_length, "revs on disk");
+	if (self->added_length)
+		istat(new_length, "index entries added");
 	istat(length, "revs in memory");
 	istat(ntlookups, "node trie lookups");
 	istat(ntmisses, "node trie misses");
@@ -998,22 +951,11 @@ static inline int index_baserev(indexObject *self, int rev)
 	const char *data;
 	int result;
 
-	if (rev >= self->length) {
-		PyObject *tuple =
-		    PyList_GET_ITEM(self->added, rev - self->length);
-		long ret;
-		if (!pylong_to_long(PyTuple_GET_ITEM(tuple, 3), &ret)) {
-			return -2;
-		}
-		result = (int)ret;
-	} else {
-		data = index_deref(self, rev);
-		if (data == NULL) {
-			return -2;
-		}
+	data = index_deref(self, rev);
+	if (data == NULL)
+		return -2;
+	result = getbe32(data + 16);
 
-		result = getbe32(data + 16);
-	}
 	if (result > rev) {
 		PyErr_Format(
 		    PyExc_ValueError,
@@ -1854,7 +1796,7 @@ static PyTypeObject nodetreeType = {
 static int index_init_nt(indexObject *self)
 {
 	if (!self->ntinitialized) {
-		if (nt_init(&self->nt, self, (int)self->raw_length) == -1) {
+		if (nt_init(&self->nt, self, (int)self->length) == -1) {
 			nt_dealloc(&self->nt);
 			return -1;
 		}
@@ -2479,17 +2421,17 @@ static PyObject *index_ancestors(indexObject *self, PyObject *args)
  */
 static void index_invalidate_added(indexObject *self, Py_ssize_t start)
 {
-	Py_ssize_t i, len = PyList_GET_SIZE(self->added);
+	Py_ssize_t i, len;
 
-	for (i = start; i < len; i++) {
-		PyObject *tuple = PyList_GET_ITEM(self->added, i);
-		PyObject *node = PyTuple_GET_ITEM(tuple, 7);
+	len = self->length + self->new_length;
+	i = start - self->length;
+	if (i < 0)
+		return;
 
-		nt_delete_node(&self->nt, PyBytes_AS_STRING(node));
-	}
+	for (i = start; i < len; i++)
+		nt_delete_node(&self->nt, index_deref(self, i) + 32);
 
-	if (start == 0)
-		Py_CLEAR(self->added);
+	self->new_length = start - self->length;
 }
 
 /*
@@ -2547,28 +2489,25 @@ static int index_slice_del(indexObject *self, PyObject *item)
 
 				nt_delete_node(&self->nt, node);
 			}
-			if (self->added)
-				index_invalidate_added(self, 0);
+			if (self->new_length)
+				index_invalidate_added(self, self->length);
 			if (self->ntrev > start)
 				self->ntrev = (int)start;
-		} else if (self->added) {
-			Py_CLEAR(self->added);
+		} else if (self->new_length) {
+			self->new_length = 0;
 		}
 
 		self->length = start;
-		if (start < self->raw_length)
-			self->raw_length = start;
 		goto done;
 	}
 
 	if (self->ntinitialized) {
-		index_invalidate_added(self, start - self->length);
+		index_invalidate_added(self, start);
 		if (self->ntrev > start)
 			self->ntrev = (int)start;
+	} else {
+		self->new_length = start - self->length;
 	}
-	if (self->added)
-		ret = PyList_SetSlice(self->added, start - self->length,
-		                      PyList_GET_SIZE(self->added), NULL);
 done:
 	Py_CLEAR(self->headrevs);
 	return ret;
@@ -2647,8 +2586,9 @@ static int index_init(indexObject *self, PyObject *args)
 
 	/* Initialize before argument-checking to avoid index_dealloc() crash.
 	 */
-	self->raw_length = 0;
 	self->added = NULL;
+	self->new_length = 0;
+	self->added_length = 0;
 	self->data = NULL;
 	memset(&self->buf, 0, sizeof(self->buf));
 	self->headrevs = NULL;
@@ -2680,15 +2620,13 @@ static int index_init(indexObject *self, PyObject *args)
 		Py_ssize_t len = inline_scan(self, NULL);
 		if (len == -1)
 			goto bail;
-		self->raw_length = len;
 		self->length = len;
 	} else {
 		if (size % v1_hdrsize) {
 			PyErr_SetString(PyExc_ValueError, "corrupt index file");
 			goto bail;
 		}
-		self->raw_length = size / v1_hdrsize;
-		self->length = self->raw_length;
+		self->length = size / v1_hdrsize;
 	}
 
 	return 0;
@@ -2732,7 +2670,7 @@ static void index_dealloc(indexObject *self)
 		memset(&self->buf, 0, sizeof(self->buf));
 	}
 	Py_XDECREF(self->data);
-	Py_XDECREF(self->added);
+	PyMem_Free(self->added);
 	PyObject_Del(self);
 }
 

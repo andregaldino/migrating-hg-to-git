@@ -94,7 +94,8 @@ class BaseIndexObject(object):
     def append(self, tup):
         if '_nodemap' in vars(self):
             self._nodemap[tup[7]] = len(self)
-        self._extra.append(tup)
+        data = _pack(indexformatng, *tup)
+        self._extra.append(data)
 
     def _check_index(self, i):
         if not isinstance(i, int):
@@ -107,14 +108,13 @@ class BaseIndexObject(object):
             return nullitem
         self._check_index(i)
         if i >= self._lgt:
-            return self._extra[i - self._lgt]
-        index = self._calculate_index(i)
-        r = struct.unpack(indexformatng, self._data[index : index + indexsize])
-        if i == 0:
-            e = list(r)
-            type = gettype(e[0])
-            e[0] = offset_type(0, type)
-            return tuple(e)
+            data = self._extra[i - self._lgt]
+        else:
+            index = self._calculate_index(i)
+            data = self._data[index : index + indexsize]
+        r = _unpack(indexformatng, data)
+        if self._lgt and i == 0:
+            r = (offset_type(0, gettype(r[0])),) + r[1:]
         return r
 
 
