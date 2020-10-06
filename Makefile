@@ -5,7 +5,16 @@
 # % make PREFIX=/opt/ install
 
 export PREFIX=/usr/local
+
+# Default to Python 3.
+#
+# Windows ships Python 3 as `python.exe`.
+ifeq ($(OS),Windows_NT)
 PYTHON?=python
+else
+PYTHON?=python3
+endif
+
 $(eval HGROOT := $(shell pwd))
 HGPYTHONS ?= $(HGROOT)/build/pythons
 PURE=
