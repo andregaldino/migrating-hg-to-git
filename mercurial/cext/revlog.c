@@ -81,7 +81,6 @@ struct indexObjectStruct {
 	    /* Type-specific fields go here. */
 	    PyObject *data;     /* raw bytes of index */
 	Py_buffer buf;          /* buffer of data */
-	PyObject **cache;       /* cached tuples */
 	const char **offsets;   /* populated on demand */
 	Py_ssize_t raw_length;  /* original number of elements */
 	Py_ssize_t length;      /* current number of elements */
@@ -327,7 +326,6 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	const char *c_node_id;
 	const char *data;
 	Py_ssize_t length = index_length(self);
-	PyObject *entry;
 
 	if (pos == nullrev) {
 		Py_INCREF(nullentry);
@@ -344,17 +342,6 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		obj = PyList_GET_ITEM(self->added, pos - self->length);
 		Py_INCREF(obj);
 		return obj;
-	}
-
-	if (self->cache) {
-		if (self->cache[pos]) {
-			Py_INCREF(self->cache[pos]);
-			return self->cache[pos];
-		}
-	} else {
-		self->cache = calloc(self->raw_length, sizeof(PyObject *));
-		if (self->cache == NULL)
-			return PyErr_NoMemory();
 	}
 
 	data = index_deref(self, pos);
@@ -377,18 +364,9 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	parent_2 = getbe32(data + 28);
 	c_node_id = data + 32;
 
-	entry = Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
-	                      base_rev, link_rev, parent_1, parent_2, c_node_id,
-	                      (Py_ssize_t)20);
-
-	if (entry) {
-		PyObject_GC_UnTrack(entry);
-		Py_INCREF(entry);
-	}
-
-	self->cache[pos] = entry;
-
-	return entry;
+	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
+	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
+	                     (Py_ssize_t)20);
 }
 
 /*
@@ -2578,14 +2556,8 @@ static int index_slice_del(indexObject *self, PyObject *item)
 		}
 
 		self->length = start;
-		if (start < self->raw_length) {
-			if (self->cache) {
-				Py_ssize_t i;
-				for (i = start; i < self->raw_length; i++)
-					Py_CLEAR(self->cache[i]);
-			}
+		if (start < self->raw_length)
 			self->raw_length = start;
-		}
 		goto done;
 	}
 
@@ -2677,7 +2649,6 @@ static int index_init(indexObject *self, PyObject *args)
 	 */
 	self->raw_length = 0;
 	self->added = NULL;
-	self->cache = NULL;
 	self->data = NULL;
 	memset(&self->buf, 0, sizeof(self->buf));
 	self->headrevs = NULL;
@@ -2733,14 +2704,6 @@ static PyObject *index_nodemap(indexObject *self)
 
 static void _index_clearcaches(indexObject *self)
 {
-	if (self->cache) {
-		Py_ssize_t i;
-
-		for (i = 0; i < self->raw_length; i++)
-			Py_CLEAR(self->cache[i]);
-		free(self->cache);
-		self->cache = NULL;
-	}
 	if (self->offsets) {
 		PyMem_Free((void *)self->offsets);
 		self->offsets = NULL;
