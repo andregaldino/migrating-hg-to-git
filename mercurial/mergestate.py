@@ -160,6 +160,7 @@ class _mergestate_base(object):
     r: resolved conflict
     pu: unresolved path conflict (file conflicts with directory)
     pr: resolved path conflict
+    o: file was merged in favor of other parent of merge (DEPRECATED)
 
     The resolve command transitions between 'u' and 'r' for conflicts and
     'pu' and 'pr' for path conflicts.
