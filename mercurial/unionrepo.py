@@ -71,11 +71,11 @@ class unionrevlog(revlog.revlog):
             p1node = self.revlog2.node(p1rev)
             p2node = self.revlog2.node(p2rev)
 
-            # TODO: it's probably wrong to set compressed length to None, but
+            # TODO: it's probably wrong to set compressed length to -1, but
             # I have no idea if csize is valid in the base revlog context.
             e = (
                 flags,
-                None,
+                -1,
                 rsize,
                 base,
                 link,
