@@ -489,7 +489,7 @@ def _callcatch(ui, func):
     except error.AmbiguousCommand as inst:
         ui.warn(
             _(b"hg: command '%s' is ambiguous:\n    %s\n")
-            % (inst.args[0], b" ".join(inst.args[1]))
+            % (inst.prefix, b" ".join(inst.matches))
         )
     except error.CommandError as inst:
         if inst.command:

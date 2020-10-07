@@ -117,6 +117,11 @@ class UnknownCommand(Exception):
 class AmbiguousCommand(Exception):
     """Exception raised if command shortcut matches more than one command."""
 
+    def __init__(self, prefix, matches):
+        self.prefix = prefix
+        self.matches = matches
+        super(AmbiguousCommand, self).__init__()
+
     __bytes__ = _tobytes
 
 

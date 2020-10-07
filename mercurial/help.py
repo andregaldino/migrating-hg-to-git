@@ -713,7 +713,7 @@ def help_(
         except error.AmbiguousCommand as inst:
             # py3 fix: except vars can't be used outside the scope of the
             # except block, nor can be used inside a lambda. python issue4617
-            prefix = inst.args[0]
+            prefix = inst.prefix
             select = lambda c: cmdutil.parsealiases(c)[0].startswith(prefix)
             rst = helplist(select)
             return rst
