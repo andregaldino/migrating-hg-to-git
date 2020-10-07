@@ -25,7 +25,7 @@ Specifying a revset that evaluates to null will abort
   pushing to ../a
   abort: specified revisions evaluate to an empty set
   (use different revision arguments)
-  [255]
+  [10]
 
   $ hg push ../a
   pushing to ../a

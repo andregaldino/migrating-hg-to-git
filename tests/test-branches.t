@@ -75,12 +75,12 @@ trailing or leading spaces should be stripped before testing duplicates
   $ hg branch 'b '
   abort: a branch of the same name already exists
   (use 'hg update' to switch to it)
-  [255]
+  [10]
 
   $ hg branch ' b'
   abort: a branch of the same name already exists
   (use 'hg update' to switch to it)
-  [255]
+  [10]
 
 verify update will accept invalid legacy branch names
 
@@ -281,7 +281,7 @@ verify update will accept invalid legacy branch names
   $ hg commit -d '9 0' --close-branch -m 'close this part branch too'
   $ hg commit -d '9 0' --close-branch -m 're-closing this branch'
   abort: current revision is already a branch closing head
-  [255]
+  [10]
 
   $ hg log -r tip --debug
   changeset:   12:e3d49c0575d8fc2cb1cd6859c747c14f5f6d499f
@@ -959,7 +959,7 @@ it should abort:
   $ hg ci -m "closing branch" --close-branch
   abort: can only close branch heads
   (use --force-close-branch to close branch from a non-head changeset)
-  [255]
+  [10]
 
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -984,7 +984,7 @@ Test --force-close-branch to close a branch from a non-head changeset:
   $ hg ci -m "branch closed" --close-branch
   abort: can only close branch heads
   (use --force-close-branch to close branch from a non-head changeset)
-  [255]
+  [10]
 
   $ hg ci -m "branch closed" --force-close-branch
   created new head

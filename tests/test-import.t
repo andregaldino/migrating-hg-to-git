@@ -14,7 +14,7 @@ import with no args:
 
   $ hg --cwd a import
   abort: need at least one patch to import
-  [255]
+  [10]
 
 generate patches for the test
 
@@ -127,7 +127,7 @@ the commit message, regardless of '--edit')
   HG: branch 'default'
   HG: changed a
   abort: empty commit message
-  [255]
+  [10]
 
 Test avoiding editor invocation at applying the patch with --exact,
 even if commit message is empty
@@ -374,7 +374,7 @@ plain diff in email, no subject, no message body, should fail
   $ egrep -v '^(Subject|email)' msg.patch | hg --cwd b import -
   applying patch from stdin
   abort: empty commit message
-  [255]
+  [10]
   $ rm -r b
 
 
@@ -445,7 +445,7 @@ hg import --secret
   $ hg clone -r0 a b -q
   $ hg --cwd b import --no-commit --secret ../exported-tip.patch
   abort: cannot specify both --no-commit and --secret
-  [255]
+  [10]
   $ hg --cwd b import --secret ../exported-tip.patch
   applying ../exported-tip.patch
   $ hg --cwd b diff -c . --nodates
@@ -1172,7 +1172,7 @@ that dirstate is *not* updated when import crashes)
   transaction abort!
   rollback completed
   abort: empty.patch: no diffs found
-  [255]
+  [10]
   $ hg tip --template '{rev}  {desc|firstline}\n'
   0  commit
   $ hg -q status

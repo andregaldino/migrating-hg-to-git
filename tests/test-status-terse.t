@@ -24,7 +24,7 @@
   ? x/bb.o
   $ hg status --terse f
   abort: 'f' not recognized
-  [255]
+  [10]
 
 Add a .hgignore so that we can also have ignored files
 
@@ -224,7 +224,7 @@ Trying with --rev
 
   $ hg status --terse marduic --rev 0 --rev 1
   abort: cannot use --terse with --rev
-  [255]
+  [10]
 
 Config item to set the default terseness
   $ cat <<EOF >> $HGRCPATH

@@ -52,6 +52,6 @@
 
   $ hg merge 'wdir()'
   abort: merging with the working copy has no effect
-  [255]
+  [10]
 
   $ cd ..

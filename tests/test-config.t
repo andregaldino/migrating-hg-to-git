@@ -331,7 +331,7 @@ edit failure
 
   $ HGEDITOR=false hg config --edit
   abort: edit failed: false exited with status 1
-  [255]
+  [10]
 
 config affected by environment variables
 

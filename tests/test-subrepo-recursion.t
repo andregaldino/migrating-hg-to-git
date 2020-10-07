@@ -682,7 +682,7 @@ Test incoming:
 
   $ hg incoming -S --bundle incoming.hg
   abort: cannot specify both --subrepos and --bundle
-  [255]
+  [10]
 
 Test missing subrepo:
 

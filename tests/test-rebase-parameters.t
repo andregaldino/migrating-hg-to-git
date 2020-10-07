@@ -62,7 +62,7 @@ These fail:
 
   $ hg rebase --continue --abort
   abort: cannot specify both --abort and --continue
-  [255]
+  [10]
 
   $ hg rebase --continue --collapse
   abort: cannot use collapse with continue or abort
@@ -70,18 +70,18 @@ These fail:
 
   $ hg rebase --continue --dest 4
   abort: cannot specify both --continue and --dest
-  [255]
+  [10]
 
   $ hg rebase --base 5 --source 4
   abort: cannot specify both --source and --base
-  [255]
+  [10]
 
   $ hg rebase --rev 5 --source 4
   abort: cannot specify both --rev and --source
-  [255]
+  [10]
   $ hg rebase --base 5 --rev 4
   abort: cannot specify both --rev and --base
-  [255]
+  [10]
 
   $ hg rebase --base 6
   abort: branch 'default' has 3 heads - please rebase to an explicit rev

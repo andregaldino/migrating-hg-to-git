@@ -43,4 +43,4 @@ some capability (because it's running an older hg version, usually).
   $ hg pull ssh://user@dummy/repo1 -r tip -B a
   pulling from ssh://user@dummy/repo1
   abort: remote bookmark a not found!
-  [255]
+  [10]

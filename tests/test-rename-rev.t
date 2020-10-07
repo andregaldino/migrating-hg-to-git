@@ -23,16 +23,16 @@ Test single file
 # Errors out without --after for now
   $ hg cp --at-rev . d1/b d1/d
   abort: --at-rev requires --after
-  [255]
+  [10]
 # Errors out with non-existent source
   $ hg cp -A --at-rev . d1/non-existent d1/d
   d1/non-existent: no such file in rev 55d1fd85ef0a
   abort: no files to copy
-  [255]
+  [10]
 # Errors out with non-existent destination
   $ hg cp -A --at-rev . d1/b d1/non-existent
   abort: d1/non-existent: copy destination does not exist in 8a9d70fa20c9
-  [255]
+  [10]
 # Successful invocation
   $ hg cp -A --at-rev . d1/b d1/d
   saved backup bundle to $TESTTMP/.hg/strip-backup/8a9d70fa20c9-973ae357-copy.hg
@@ -103,5 +103,5 @@ Test using directory as destination
   created new head
   $ hg cp -A --at-rev . d1 d3
   abort: d3: --at-rev does not support a directory as destination
-  [255]
+  [10]
 

@@ -77,7 +77,7 @@ Select no files
   diff --git a/empty-rw b/empty-rw
   new file mode 100644
   abort: empty commit message
-  [255]
+  [10]
 
   $ hg tip -p
   changeset:   -1:000000000000

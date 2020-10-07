@@ -34,7 +34,7 @@ Try without passing a new branch name
 
   $ hg branch -r .
   abort: no branch name specified for the revisions
-  [255]
+  [10]
 
 Setting an invalid branch name
 
@@ -52,7 +52,7 @@ Change on non-linear set of commits
 
   $ hg branch -r 2 -r 4 foo
   abort: cannot change branch of non-linear revisions
-  [255]
+  [10]
 
 Change in middle of the stack (linear commits)
 
@@ -74,7 +74,7 @@ Change on empty revision set
 
   $ hg branch -r 'draft() - all()' foo
   abort: empty revision set
-  [255]
+  [10]
 
 Changing branch on linear set of commits from head
 
@@ -123,7 +123,7 @@ Change branch name to an existing branch
 
   $ hg branch -r . default
   abort: a branch of the same name already exists
-  [255]
+  [10]
 
 Changing on a branch head which is not topological head
 
@@ -149,7 +149,7 @@ Changing branch of an obsoleted changeset
 
   $ hg branch -r 4 --hidden foobar
   abort: cannot change branch of a obsolete changeset
-  [255]
+  [10]
 
 Make sure bookmark movement is correct
 
@@ -353,7 +353,7 @@ Changing branch of a merge commit
   changed branch on 1 changesets
   $ hg branch -r . stable
   abort: a branch of the same name already exists
-  [255]
+  [10]
 
   $ hg branch -r . stable --force
   changed branch on 1 changesets

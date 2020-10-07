@@ -191,7 +191,7 @@ resolve without arguments should suggest --all
   $ hg resolve
   abort: no files or directories specified
   (use --all to re-merge all unresolved files)
-  [255]
+  [10]
 
 resolve --all should re-merge all unresolved files
   $ hg resolve --all
@@ -406,7 +406,7 @@ Testing the --re-merge flag
   R file2
   $ hg resolve --mark --re-merge
   abort: too many actions specified
-  [255]
+  [10]
   $ hg resolve --re-merge --all
   merging file1
   warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
@@ -416,7 +416,7 @@ Explicit re-merge
   $ hg resolve --config commands.resolve.explicit-re-merge=1 --all
   abort: no action specified
   (use --mark, --unmark, --list or --re-merge)
-  [255]
+  [10]
   $ hg resolve --config commands.resolve.explicit-re-merge=1 --re-merge --all
   merging file1
   warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
@@ -489,7 +489,7 @@ Test when config option is set:
   $ hg resolve
   abort: no files or directories specified
   (use --all to re-merge all unresolved files)
-  [255]
+  [10]
   $ hg resolve --all << EOF
   > n
   > EOF

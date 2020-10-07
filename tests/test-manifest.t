@@ -92,7 +92,7 @@ The next two calls are expected to abort:
 
   $ hg manifest -r tip tip
   abort: please specify just one revision
-  [255]
+  [10]
 
 Testing the manifest full text cache utility
 --------------------------------------------

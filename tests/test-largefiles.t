@@ -1077,7 +1077,7 @@ Ensure base clone command argument validation
 
   $ hg clone -U -u 0 a a-clone-failure
   abort: cannot specify both --noupdate and --updaterev
-  [255]
+  [10]
 
   $ hg clone --all-largefiles a ssh://localhost/a
   abort: --all-largefiles is incompatible with non-local destination ssh://localhost/a

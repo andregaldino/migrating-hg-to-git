@@ -20,14 +20,14 @@ Select no files
   [255]
   $ hg commit -i --config ui.interactive=false
   abort: running non-interactively
-  [255]
+  [10]
   $ hg commit -i empty-rw<<EOF
   > n
   > EOF
   diff --git a/empty-rw b/empty-rw
   new file mode 100644
   abort: empty commit message
-  [255]
+  [10]
 
   $ hg tip -p
   changeset:   -1:000000000000
@@ -46,7 +46,7 @@ Select files but no hunks
   diff --git a/empty-rw b/empty-rw
   new file mode 100644
   abort: empty commit message
-  [255]
+  [10]
 
   $ hg tip -p
   changeset:   -1:000000000000
@@ -1350,7 +1350,7 @@ Abort early when a merge is in progress
 
   $ hg commit -i -m'will abort'
   abort: cannot partially commit a merge (use "hg commit" instead)
-  [255]
+  [10]
 
   $ hg up -C
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -1494,7 +1494,7 @@ Invalid patch
   Hunk #1 FAILED at 0
   1 out of 1 hunks FAILED -- saving rejects to file editedfile.rej
   abort: patch failed to apply
-  [255]
+  [10]
   $ cat editedfile
   This change will not be committed
   This is the second line
@@ -1540,7 +1540,7 @@ Malformed patch - error handling
   (enter ? for help) [Ynesfdaq?] e
   
   abort: error parsing patch: unhandled transition: range -> range
-  [255]
+  [10]
 
 Exiting editor with status 1, ignores the edit but does not stop the recording
 session
@@ -1600,7 +1600,7 @@ random text in random positions is still an error
   (enter ? for help) [Ynesfdaq?] e
   
   abort: error parsing patch: unhandled transition: file -> other
-  [255]
+  [10]
 
   $ hg up -C
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

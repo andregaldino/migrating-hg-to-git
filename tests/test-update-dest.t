@@ -11,7 +11,7 @@ Test update.requiredest
   $ hg up
   abort: you must specify a destination
   (for example: hg update ".::")
-  [255]
+  [10]
   $ hg up .
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ HGPLAIN=1 hg up
@@ -32,7 +32,7 @@ Check update.requiredest interaction with pull --update
   $ hg pull --update
   abort: update destination required by configuration
   (use hg pull followed by hg update DEST)
-  [255]
+  [10]
 
   $ cd ..
 

@@ -55,7 +55,7 @@ update to rev 0 with a date
 
   $ hg upd -d foo 0
   abort: you can't specify a revision and a date
-  [255]
+  [10]
 
 update by date
 
@@ -71,7 +71,7 @@ update by date
 
   $ hg update -d '>1970-01-01 00:00:02 +0000'
   abort: revision matching date not found
-  [255]
+  [10]
   $ hg update -d '>1970-01-01 00:00:01 +0000'
   found revision 1 from Thu Jan 01 00:00:01 1970 +0000
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

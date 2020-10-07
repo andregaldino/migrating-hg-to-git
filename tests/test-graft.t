@@ -92,7 +92,7 @@ Need to specify a rev:
 
   $ hg graft
   abort: no revisions specified
-  [255]
+  [10]
 
 Can't graft ancestor:
 
@@ -119,10 +119,10 @@ Conflicting date/user options:
   $ hg up -q 0
   $ hg graft -U --user foo 2
   abort: cannot specify both --user and --currentuser
-  [255]
+  [10]
   $ hg graft -D --date '0 0' 2
   abort: cannot specify both --date and --currentdate
-  [255]
+  [10]
 
 Can't graft with dirty wd:
 
@@ -337,11 +337,11 @@ Continue with a revision should fail:
 
   $ hg graft -c 6
   abort: can't specify --continue and revisions
-  [255]
+  [10]
 
   $ hg graft -c -r 6
   abort: can't specify --continue and revisions
-  [255]
+  [10]
 
 Continue for real, clobber usernames
 

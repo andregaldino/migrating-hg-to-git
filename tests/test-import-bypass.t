@@ -27,7 +27,7 @@ and '--edit')
 
   $ hg import --bypass --exact --edit ../test.diff
   abort: cannot specify both --exact and --edit
-  [255]
+  [10]
   $ hg import --bypass --exact ../test.diff
   applying ../test.diff
   $ shortlog
@@ -189,13 +189,13 @@ Test unsupported combinations
 
   $ hg import --bypass --no-commit ../test.diff
   abort: cannot specify both --no-commit and --bypass
-  [255]
+  [10]
   $ hg import --bypass --similarity 50 ../test.diff
   abort: cannot use --similarity with --bypass
-  [255]
+  [10]
   $ hg import --exact --prefix dir/ ../test.diff
   abort: cannot specify both --exact and --prefix
-  [255]
+  [10]
 
 Test commit editor
 (this also tests that editor is invoked, if the patch doesn't contain
@@ -221,7 +221,7 @@ the commit message, regardless of '--edit')
   HG: branch 'default'
   HG: changed a
   abort: empty commit message
-  [255]
+  [10]
 
 Test patch.eol is handled
 (this also tests that editor is not invoked for '--bypass', if the

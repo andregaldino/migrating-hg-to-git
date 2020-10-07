@@ -153,7 +153,7 @@ Amend with editor
   $ echo FOO > $TESTTMP/msg
   $ hg amend -l $TESTTMP/msg -m BAR
   abort: cannot specify both --message and --logfile
-  [255]
+  [10]
   $ hg amend -l $TESTTMP/msg
   saved backup bundle to $TESTTMP/repo1/.hg/strip-backup/974f07f28537-edb6470a-amend.hg (obsstore-off !)
   $ hg log -r . -T '{node|short} {desc}\n'
@@ -226,7 +226,7 @@ Checking the note stored in the obsmarker
   $ hg add bar
   $ hg amend --note 'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy'
   abort: cannot store a note of more than 255 bytes
-  [255]
+  [10]
   $ hg amend --note "adding bar"
   $ hg debugobsolete -r .
   112478962961147124edd43549aedd1a335e44bf be169c7e8dbe21cd10b3d79691cbe7f241e3c21c 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
@@ -471,7 +471,7 @@ Bad combination of date options:
 
   $ hg amend -D --date '0 0'
   abort: cannot specify both --date and --currentdate
-  [255]
+  [10]
 
 Close branch
 

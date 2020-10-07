@@ -505,7 +505,7 @@ Remove nonexistent tag:
 
   $ hg tag --remove foobar
   abort: tag 'foobar' does not exist
-  [255]
+  [10]
   $ hg tip
   changeset:   5:5f6e8655b1c7
   tag:         tip
@@ -555,7 +555,7 @@ Don't allow moving tag without -f:
 
   $ hg tag -r 3 bar
   abort: tag 'bar' already exists (use -f to force)
-  [255]
+  [10]
   $ hg tags
   tip                                6:735c3ca72986
   bar                                0:bbd179dfa0a7
@@ -622,12 +622,12 @@ to remove a tag of type X which actually only exists as a type Y:
   $ hg tag -r 0 -l localtag
   $ hg tag --remove localtag
   abort: tag 'localtag' is not a global tag
-  [255]
+  [10]
   $ 
   $ hg tag -r 0 globaltag
   $ hg tag --remove -l globaltag
   abort: tag 'globaltag' is not a local tag
-  [255]
+  [10]
   $ hg tags -v
   tip                                1:a0b6fe111088
   localtag                           0:bbd179dfa0a7 local
@@ -824,7 +824,7 @@ Avoid writing logs on trying to delete an already deleted tag
   
   $ hg tag --remove a
   abort: tag 'a' is already removed
-  [255]
+  [10]
   $ hg log
   changeset:   2:e7feacc7ec9e
   tag:         tip

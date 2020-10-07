@@ -286,7 +286,7 @@ test --interactive mode in forget
   $ hg commit -qAm "bar"
   $ hg forget foo --dry-run -i
   abort: cannot specify both --dry-run and --interactive
-  [255]
+  [10]
 
   $ hg forget foo --config ui.interactive=True -i << EOF
   > ?

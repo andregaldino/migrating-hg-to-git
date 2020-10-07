@@ -373,7 +373,7 @@ Catch exporting unknown revisions (especially empty revsets, see issue3353)
   [255]
   $ hg export "not all()"
   abort: export requires at least one changeset
-  [255]
+  [10]
 
 Check for color output
   $ cat <<EOF >> $HGRCPATH

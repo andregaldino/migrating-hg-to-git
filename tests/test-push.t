@@ -365,7 +365,7 @@ Test `commands.push.require-revs`
   pushing to $TESTTMP/test-require-revs-dest
   abort: no revisions specified to push
   (did you mean "hg push -r ."?)
-  [255]
+  [10]
   $ hg push -r 0
   pushing to $TESTTMP/test-require-revs-dest
   searching for changes
@@ -394,7 +394,7 @@ showing the error)
   pushing to $TESTTMP/test-require-revs-dest
   abort: no revisions specified to push
   (did you mean "hg push -r ."?)
-  [255]
+  [10]
   $ hg push --config paths.default:pushrev=0
   pushing to $TESTTMP/test-require-revs-dest
   searching for changes

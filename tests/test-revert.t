@@ -11,7 +11,7 @@ nothing changed
   $ hg revert
   abort: no files or directories specified
   (use --all to revert all files)
-  [255]
+  [10]
   $ hg revert --all
 
 Introduce some changes and revert them
@@ -250,7 +250,7 @@ call `hg revert` with no file specified
   $ hg revert -rtip
   abort: no files or directories specified
   (use --all to revert all files, or 'hg update 1' to update)
-  [255]
+  [10]
 
 call `hg revert` with -I
 ---------------------------

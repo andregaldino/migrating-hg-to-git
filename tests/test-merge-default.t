@@ -69,7 +69,7 @@ succeeded without this):
 
   $ hg merge --config commands.merge.require-rev=True
   abort: configuration requires specifying revision to merge with
-  [255]
+  [10]
 
 Should succeed - 2 heads:
 
@@ -101,7 +101,7 @@ failed without this due to being on tip, but this check comes first):
 
   $ hg merge --config commands.merge.require-rev=True
   abort: configuration requires specifying revision to merge with
-  [255]
+  [10]
 
 Should fail because at tip:
 

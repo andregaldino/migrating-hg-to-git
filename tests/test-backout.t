@@ -5,10 +5,10 @@ should complain
 
   $ hg backout
   abort: please specify a revision to backout
-  [255]
+  [10]
   $ hg backout -r 0 0
   abort: please specify just one revision
-  [255]
+  [10]
 
 basic operation
 (this also tests that editor is invoked if the commit message is not
@@ -210,7 +210,7 @@ should fail
 
   $ hg backout 1
   abort: cannot backout change that is not an ancestor
-  [255]
+  [10]
   $ echo c > c
   $ hg ci -Am2
   adding c
@@ -227,7 +227,7 @@ should fail
 
   $ hg backout 1
   abort: cannot backout change that is not an ancestor
-  [255]
+  [10]
   $ hg summary
   parent: 2:db815d6d32e6 tip
    2
@@ -464,19 +464,19 @@ backout of merge should fail
 
   $ hg backout 4
   abort: cannot backout a merge changeset
-  [255]
+  [10]
 
 backout of merge with bad parent should fail
 
   $ hg backout --parent 0 4
   abort: cb9a9f314b8b is not a parent of b2f3bb92043e
-  [255]
+  [10]
 
 backout of non-merge with parent should fail
 
   $ hg backout --parent 0 3
   abort: cannot use --parent on non-merge changeset
-  [255]
+  [10]
 
 backout with valid parent should be ok
 
@@ -805,7 +805,7 @@ Test usage of `hg resolve` in case of conflict
 
   $ hg backout --merge --no-commit 2
   abort: cannot specify both --no-commit and --merge
-  [255]
+  [10]
 
 Ensure that backout out the same changeset twice performs correctly:
 

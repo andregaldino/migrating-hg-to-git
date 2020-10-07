@@ -32,7 +32,7 @@ Branch shadowing:
   $ hg branch default
   abort: a branch of the same name already exists
   (use 'hg update' to switch to it)
-  [255]
+  [10]
 
   $ hg branch -f default
   marked working directory as branch default
@@ -61,7 +61,7 @@ Merging and branches
   $ hg branch bar
   abort: a branch of the same name already exists
   (use 'hg update' to switch to it)
-  [255]
+  [10]
 
   $ hg branch -f bar
   marked working directory as branch bar
@@ -84,7 +84,7 @@ Merging and branches
   $ hg branch bar
   abort: a branch of the same name already exists
   (use 'hg update' to switch to it)
-  [255]
+  [10]
 
  set (other) parent branch as branch name
 

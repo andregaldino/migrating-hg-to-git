@@ -714,7 +714,7 @@ start without repository:
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
   *** runcommand id
   abort: there is no Mercurial repository here (.hg not found)
-   [255]
+   [10]
 
   >>> from hgclient import check, readchannel, runcommand
   >>> @check

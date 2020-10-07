@@ -19,10 +19,10 @@
   [255]
   $ hg transplant --continue --all
   abort: cannot specify both --continue and --all
-  [255]
+  [10]
   $ hg transplant --stop --all
   abort: cannot specify both --stop and --all
-  [255]
+  [10]
   $ hg transplant --all tip
   abort: --all requires a branch revision
   [255]

@@ -288,7 +288,7 @@ Cannot produce streaming clone bundles with "hg bundle"
   $ hg -R test bundle -t packed1 packed.hg
   abort: packed bundles cannot be produced by "hg bundle"
   (use 'hg debugcreatestreamclonebundle')
-  [255]
+  [10]
 
 packed1 is produced properly
 
@@ -349,7 +349,7 @@ Unpacking packed1 bundles with "hg unbundle" isn't allowed
   $ hg -R packed unbundle packed.hg
   abort: packed bundles cannot be applied with "hg unbundle"
   (use "hg debugapplystreamclonebundle")
-  [255]
+  [10]
 
 packed1 can be consumed from debug command
 
@@ -844,7 +844,7 @@ bundle single branch
 
   $ hg bundle -r 'public()' no-output.hg
   abort: no commits to bundle
-  [255]
+  [10]
 
   $ cd ..
 

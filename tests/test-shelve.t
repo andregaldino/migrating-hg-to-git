@@ -209,7 +209,7 @@ ensure that our shelved changes exist
 
   $ hg shelve --list --addremove
   abort: options '--list' and '--addremove' may not be used together
-  [255]
+  [10]
 
 delete our older shelved change
 
@@ -648,13 +648,13 @@ test keep and cleanup
 
   $ hg shelve --cleanup --delete
   abort: options '--cleanup' and '--delete' may not be used together
-  [255]
+  [10]
   $ hg shelve --cleanup --patch
   abort: options '--cleanup' and '--patch' may not be used together
-  [255]
+  [10]
   $ hg shelve --cleanup --message MESSAGE
   abort: options '--cleanup' and '--message' may not be used together
-  [255]
+  [10]
 
 test bookmarks
 
@@ -737,10 +737,10 @@ is a no-op), works (issue4398)
 
   $ hg shelve --delete --stat
   abort: options '--delete' and '--stat' may not be used together
-  [255]
+  [10]
   $ hg shelve --delete --name NAME
   abort: options '--delete' and '--name' may not be used together
-  [255]
+  [10]
 
 Test interactive shelve
   $ cat <<EOF >> $HGRCPATH
@@ -767,7 +767,7 @@ Test interactive shelve
   a
   $ hg shelve --interactive --config ui.interactive=false
   abort: running non-interactively
-  [255]
+  [10]
   $ hg shelve --interactive << EOF
   > y
   > y
@@ -954,13 +954,13 @@ Test shelve --keep
   unshelving change 'default'
   $ hg shelve --keep --list
   abort: options '--list' and '--keep' may not be used together
-  [255]
+  [10]
   $ hg shelve --keep --patch
   abort: options '--patch' and '--keep' may not be used together
-  [255]
+  [10]
   $ hg shelve --keep --delete
   abort: options '--delete' and '--keep' may not be used together
-  [255]
+  [10]
   $ hg shelve --keep
   shelved as default
   $ hg diff

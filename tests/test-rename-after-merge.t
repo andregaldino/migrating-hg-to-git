@@ -124,10 +124,10 @@ Test marking/unmarking copies in merge commit
 
   $ hg copy --forget --at-rev . b2
   abort: cannot mark/unmark copy in merge commit
-  [255]
+  [10]
 
   $ hg copy --after --at-rev . b1 b2
   abort: cannot mark/unmark copy in merge commit
-  [255]
+  [10]
 
   $ cd ..

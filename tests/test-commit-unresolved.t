@@ -58,10 +58,10 @@ Testing the abort functionality first in case of conflicts
 
   $ hg merge --abort e4501
   abort: cannot specify a node with --abort
-  [255]
+  [10]
   $ hg merge --abort --rev e4501
   abort: cannot specify both --abort and --rev
-  [255]
+  [10]
 
 #if abortcommand
 when in dry-run mode
@@ -145,7 +145,7 @@ Testing the abort functionality in case of no conflicts
 
   $ hg merge --preview --abort
   abort: cannot specify both --abort and --preview
-  [255]
+  [10]
 
   $ hg abort
   aborting the merge, updating back to 68352a18a7c4

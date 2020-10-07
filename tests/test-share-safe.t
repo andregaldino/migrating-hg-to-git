@@ -36,7 +36,7 @@ prepare source repo
 
   $ HGEDITOR=cat hg config --shared
   abort: repository is not shared; can't use --shared
-  [255]
+  [10]
   $ cd ..
 
 Create a shared repo and check the requirements are shared and read correctly

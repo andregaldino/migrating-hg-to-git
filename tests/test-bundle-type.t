@@ -34,12 +34,12 @@ Unknown compression type is rejected
   $ hg bundle -a -t unknown out.hg
   abort: unknown is not a recognized bundle specification
   (see 'hg help bundlespec' for supported values for --type)
-  [255]
+  [10]
 
   $ hg bundle -a -t unknown-v2 out.hg
   abort: unknown compression is not supported
   (see 'hg help bundlespec' for supported values for --type)
-  [255]
+  [10]
 
   $ cd ..
 
@@ -199,7 +199,7 @@ zstd-v1 always fails
   $ hg -R tzstd bundle -a -t zstd-v1 zstd-v1
   abort: compression engine zstd is not supported on v1 bundles
   (see 'hg help bundlespec' for supported values for --type)
-  [255]
+  [10]
 
 #else
 
@@ -228,5 +228,5 @@ test invalid bundle type
   $ hg bundle -a -t garbage ../bgarbage
   abort: garbage is not a recognized bundle specification
   (see 'hg help bundlespec' for supported values for --type)
-  [255]
+  [10]
   $ cd ..

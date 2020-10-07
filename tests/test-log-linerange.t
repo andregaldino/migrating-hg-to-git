@@ -363,7 +363,7 @@ Regular file patterns are not allowed.
 
   $ hg log -f -L foo,5:7 -p bar
   abort: FILE arguments are not compatible with --line-range option
-  [255]
+  [10]
 
 Option --rev acts as a restriction.
 
@@ -1135,7 +1135,7 @@ Option --follow is required.
 
   $ hg log -L foo,5:7
   abort: --line-range requires --follow
-  [255]
+  [10]
 
 Non-exact pattern kinds are not allowed.
 

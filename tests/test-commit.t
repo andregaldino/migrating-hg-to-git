@@ -11,7 +11,7 @@ commit date test
   $ HGEDITOR="sh $TESTTMP/checkeditform.sh" hg commit -m ""
   HGEDITFORM=commit.normal.normal
   abort: empty commit message
-  [255]
+  [10]
   $ hg commit -d '0 0' -m commit-1
   $ echo foo >> foo
   $ hg commit -d '1 4444444' -m commit-3
@@ -370,7 +370,7 @@ test commit message content
   HG: changed changed
   HG: removed removed
   abort: empty commit message
-  [255]
+  [10]
 
 test saving last-message.txt
 
@@ -456,7 +456,7 @@ specific template keywords work well
   HG: subrepo 'sub' is changed
   HG: subrepo 'sub2' is changed
   abort: empty commit message
-  [255]
+  [10]
 
   $ cat >> .hg/hgrc <<EOF
   > [committemplate]
@@ -471,7 +471,7 @@ specific template keywords work well
   HG: Leave message empty to abort commit.
   HG: no bookmark is activated
   abort: empty commit message
-  [255]
+  [10]
 
   $ cat >> .hg/hgrc <<EOF
   > [committemplate]
@@ -484,7 +484,7 @@ specific template keywords work well
   HG: Leave message empty to abort commit.
   HG: no bookmark is activated
   abort: empty commit message
-  [255]
+  [10]
 
   $ cat >> .hg/hgrc <<EOF
   > [committemplate]
@@ -734,7 +734,7 @@ verify pathauditor blocks evil filepaths
   $ hg add foo2
   $ HGEDITOR="sh $TESTTMP/notouching.sh" hg commit
   abort: commit message unchanged
-  [255]
+  [10]
 
   $ cd ..
 
@@ -762,7 +762,7 @@ test that text below the --- >8 --- special string is ignored
   $ hg add foo2
   $ HGEDITOR="sh $TESTTMP/notouching.sh" hg ci
   abort: commit message unchanged
-  [255]
+  [10]
   $ HGEDITOR="sh $TESTTMP/lowercaseline.sh" hg ci
   first line
   HG: this is customized commit template

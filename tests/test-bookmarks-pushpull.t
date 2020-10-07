@@ -386,7 +386,7 @@ push/pull name that doesn't exist
   $ hg pull -B anotherbadname ../a
   pulling from ../a
   abort: remote bookmark anotherbadname not found!
-  [255]
+  [10]
 
 divergent bookmarks
 
@@ -1382,10 +1382,10 @@ Test pushing all bookmarks
   [1]
   $ hg push --all-bookmarks -r 1 ../ab2
   abort: cannot specify both --all-bookmarks and --rev
-  [255]
+  [10]
   $ hg push --all-bookmarks -B A ../ab2
   abort: cannot specify both --all-bookmarks and --bookmark
-  [255]
+  [10]
   $ hg push --all-bookmarks ../ab2
   pushing to ../ab2
   searching for changes

@@ -125,10 +125,10 @@ Base commit
   $ hg commit -m aaa
   $ hg qrecord --config ui.interactive=false patch
   abort: running non-interactively, use qnew instead
-  [255]
+  [10]
   $ hg qnew -i --config ui.interactive=false patch
   abort: running non-interactively
-  [255]
+  [10]
   $ hg qnew -d '0 0' patch
 
 Changing files
@@ -179,7 +179,7 @@ partial qrefresh
 
   $ hg qrefresh -i --config ui.interactive=false
   abort: running non-interactively
-  [255]
+  [10]
   $ hg qrefresh -i -d '0 0' <<EOF
   > y
   > y

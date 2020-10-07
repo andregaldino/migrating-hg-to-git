@@ -254,7 +254,7 @@ Testing --noupdate with --updaterev (must abort):
 
   $ hg clone --noupdate --updaterev 1 a ua
   abort: cannot specify both --noupdate and --updaterev
-  [255]
+  [10]
 
 
 Testing clone -u:

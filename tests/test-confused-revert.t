@@ -61,7 +61,7 @@ Revert should fail:
   $ hg revert
   abort: uncommitted merge with no revision specified
   (use 'hg update' or see 'hg help revert')
-  [255]
+  [10]
 
 Revert should be ok now:
 

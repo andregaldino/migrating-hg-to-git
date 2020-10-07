@@ -560,7 +560,7 @@ empty repo
   $ cd ../empty
   $ hg archive ../test-empty
   abort: no working directory: please specify a revision
-  [255]
+  [10]
 
 old file -- date clamped to 1980
 

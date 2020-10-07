@@ -167,7 +167,7 @@ Interrupted commit should not change state or run commit hook
 
   $ hg --debug commit
   abort: empty commit message
-  [255]
+  [10]
   $ hg status
   A a
   A b
@@ -816,7 +816,7 @@ Interrupted commit should not change state
 
   $ hg commit
   abort: empty commit message
-  [255]
+  [10]
   $ hg status
   M a
   ? c

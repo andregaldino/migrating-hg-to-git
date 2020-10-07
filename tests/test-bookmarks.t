@@ -82,10 +82,10 @@ list bookmarks
   [255]
   $ hg bookmarks -l -r0
   abort: cannot specify both --list and --rev
-  [255]
+  [10]
   $ hg bookmarks -l --inactive
   abort: cannot specify both --inactive and --list
-  [255]
+  [10]
 
   $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
   0 X
@@ -327,16 +327,16 @@ rename without new name or multiple names
 
   $ hg bookmark -m Y
   abort: new bookmark name required
-  [255]
+  [10]
   $ hg bookmark -m Y Y2 Y3
   abort: only one new bookmark name allowed
-  [255]
+  [10]
 
 delete without name
 
   $ hg bookmark -d
   abort: bookmark name required
-  [255]
+  [10]
 
 delete nonexistent bookmark
 
@@ -348,7 +348,7 @@ delete with --inactive
 
   $ hg bookmark -d --inactive Y
   abort: cannot specify both --inactive and --delete
-  [255]
+  [10]
 
 bookmark name with spaces should be stripped
 
@@ -476,15 +476,15 @@ incompatible options
 
   $ hg bookmark -m Y -d Z
   abort: cannot specify both --delete and --rename
-  [255]
+  [10]
 
   $ hg bookmark -r 1 -d Z
   abort: cannot specify both --delete and --rev
-  [255]
+  [10]
 
   $ hg bookmark -r 1 -m Z Y
   abort: cannot specify both --rename and --rev
-  [255]
+  [10]
 
 force bookmark with existing name
 
@@ -522,7 +522,7 @@ revision but no bookmark name
 
   $ hg bookmark -r .
   abort: bookmark name required
-  [255]
+  [10]
 
 bookmark name with whitespace only
 
@@ -793,7 +793,7 @@ pull --update works the same as pull && update
 
   $ hg -R ../cloned-bookmarks-manual-update update -d 1986
   abort: revision matching date not found
-  [255]
+  [10]
   $ hg -R ../cloned-bookmarks-manual-update update
   updating to active bookmark Y
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

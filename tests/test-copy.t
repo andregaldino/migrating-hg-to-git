@@ -115,7 +115,7 @@ should fail - foo is not managed
   $ hg mv foo bar
   foo: not copying - file is not managed
   abort: no files to copy
-  [255]
+  [10]
   $ hg st -A
   ? foo
 respects ui.relative-paths
@@ -124,15 +124,15 @@ respects ui.relative-paths
   $ hg mv ../foo ../bar
   ../foo: not copying - file is not managed
   abort: no files to copy
-  [255]
+  [10]
   $ hg mv ../foo ../bar --config ui.relative-paths=yes
   ../foo: not copying - file is not managed
   abort: no files to copy
-  [255]
+  [10]
   $ hg mv ../foo ../bar --config ui.relative-paths=no
   foo: not copying - file is not managed
   abort: no files to copy
-  [255]
+  [10]
   $ cd ..
   $ rmdir dir
   $ hg add foo

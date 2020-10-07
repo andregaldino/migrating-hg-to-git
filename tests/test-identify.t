@@ -6,7 +6,7 @@ no repo
 
   $ hg id
   abort: there is no Mercurial repository here (.hg not found)
-  [255]
+  [10]
 
 #endif
 
@@ -115,19 +115,19 @@ remote with rev number?
 
   $ hg id -n http://localhost:$HGPORT1/
   abort: can't query remote revision number, branch, or tags
-  [255]
+  [10]
 
 remote with tags?
 
   $ hg id -t http://localhost:$HGPORT1/
   abort: can't query remote revision number, branch, or tags
-  [255]
+  [10]
 
 remote with branch?
 
   $ hg id -b http://localhost:$HGPORT1/
   abort: can't query remote revision number, branch, or tags
-  [255]
+  [10]
 
 test bookmark support
 

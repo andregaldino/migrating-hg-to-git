@@ -488,7 +488,7 @@ Test that rewriting leaving instability behind is allowed
   $ cd stabilize
   $ hg rebase --auto-orphans '0::' -d 10
   abort: cannot specify both --auto-orphans and --dest
-  [255]
+  [10]
   $ hg rebase --auto-orphans '0::'
   rebasing 9:cf44d2f5a9f4 "D"
   $ hg log -G
@@ -2053,7 +2053,7 @@ Test --stop raise errors with conflicting options:
   [240]
   $ hg rebase --stop --dry-run
   abort: cannot specify both --stop and --dry-run
-  [255]
+  [10]
 
   $ hg rebase -s 3 -d 5
   abort: rebase in progress
@@ -2061,7 +2061,7 @@ Test --stop raise errors with conflicting options:
   [255]
   $ hg rebase --stop --continue
   abort: cannot specify both --stop and --continue
-  [255]
+  [10]
 
 Test --stop moves bookmarks of original revisions to new rebased nodes:
 ======================================================================

@@ -9,7 +9,7 @@ Try to import an empty patch
   > EOF
   applying patch from stdin
   abort: stdin: no diffs found
-  [255]
+  [10]
 
 No dirstate backups are left behind
 

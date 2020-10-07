@@ -181,6 +181,13 @@ class Abort(Hint, Exception):
             return pycompat.sysstr(self.__bytes__())
 
 
+class InputError(Abort):
+    """Indicates that the user made an error in their input.
+
+    Examples: Invalid command, invalid flags, invalid revision.
+    """
+
+
 class HookLoadError(Abort):
     """raised when loading a hook fails, aborting an operation
 
