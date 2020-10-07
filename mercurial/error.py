@@ -100,6 +100,11 @@ class ManifestLookupError(LookupError):
 class CommandError(Exception):
     """Exception raised on errors in parsing the command line."""
 
+    def __init__(self, command, message):
+        self.command = command
+        self.message = message
+        super(CommandError, self).__init__()
+
     __bytes__ = _tobytes
 
 

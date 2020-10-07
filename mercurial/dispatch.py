@@ -492,13 +492,13 @@ def _callcatch(ui, func):
             % (inst.args[0], b" ".join(inst.args[1]))
         )
     except error.CommandError as inst:
-        if inst.args[0]:
+        if inst.command:
             ui.pager(b'help')
-            msgbytes = pycompat.bytestr(inst.args[1])
-            ui.warn(_(b"hg %s: %s\n") % (inst.args[0], msgbytes))
-            commands.help_(ui, inst.args[0], full=False, command=True)
+            msgbytes = pycompat.bytestr(inst.message)
+            ui.warn(_(b"hg %s: %s\n") % (inst.command, msgbytes))
+            commands.help_(ui, inst.command, full=False, command=True)
         else:
-            ui.warn(_(b"hg: %s\n") % inst.args[1])
+            ui.warn(_(b"hg: %s\n") % inst.message)
             ui.warn(_(b"(use 'hg help -v' for a list of global options)\n"))
     except error.ParseError as inst:
         _formatparse(ui.warn, inst)
