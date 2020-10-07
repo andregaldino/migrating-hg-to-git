@@ -111,6 +111,11 @@ class CommandError(Exception):
 class UnknownCommand(Exception):
     """Exception raised if command is not in the command table."""
 
+    def __init__(self, command, all_commands=None):
+        self.command = command
+        self.all_commands = all_commands
+        super(UnknownCommand, self).__init__()
+
     __bytes__ = _tobytes
 
 

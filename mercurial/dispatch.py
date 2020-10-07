@@ -504,19 +504,19 @@ def _callcatch(ui, func):
         _formatparse(ui.warn, inst)
         return -1
     except error.UnknownCommand as inst:
-        nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.args[0]
+        nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.command
         try:
             # check if the command is in a disabled extension
             # (but don't check for extensions themselves)
             formatted = help.formattedhelp(
-                ui, commands, inst.args[0], unknowncmd=True
+                ui, commands, inst.command, unknowncmd=True
             )
             ui.warn(nocmdmsg)
             ui.write(formatted)
         except (error.UnknownCommand, error.Abort):
             suggested = False
-            if len(inst.args) == 2:
-                sim = _getsimilar(inst.args[1], inst.args[0])
+            if inst.all_commands:
+                sim = _getsimilar(inst.all_commands, inst.command)
                 if sim:
                     ui.warn(nocmdmsg)
                     _reportsimilar(ui.warn, sim)
