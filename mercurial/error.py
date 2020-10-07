@@ -103,6 +103,18 @@ class CommandError(Exception):
     __bytes__ = _tobytes
 
 
+class UnknownCommand(Exception):
+    """Exception raised if command is not in the command table."""
+
+    __bytes__ = _tobytes
+
+
+class AmbiguousCommand(Exception):
+    """Exception raised if command shortcut matches more than one command."""
+
+    __bytes__ = _tobytes
+
+
 class InterventionRequired(Hint, Exception):
     """Exception raised when a command requires human intervention."""
 
@@ -286,18 +298,6 @@ class LockInheritanceContractViolation(RuntimeError):
 
 class ResponseError(Exception):
     """Raised to print an error with part of output and exit."""
-
-    __bytes__ = _tobytes
-
-
-class UnknownCommand(Exception):
-    """Exception raised if command is not in the command table."""
-
-    __bytes__ = _tobytes
-
-
-class AmbiguousCommand(Exception):
-    """Exception raised if command shortcut matches more than one command."""
 
     __bytes__ = _tobytes
 
