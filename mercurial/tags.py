@@ -759,7 +759,7 @@ class hgtagsfnodescache(object):
         properprefix = node[0:4]
 
         # Validate and return existing entry.
-        if record != _fnodesmissingrec:
+        if record != _fnodesmissingrec and len(record) == _fnodesrecsize:
             fileprefix = record[0:4]
 
             if fileprefix == properprefix:
