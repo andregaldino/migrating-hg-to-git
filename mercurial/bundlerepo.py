@@ -63,11 +63,14 @@ class bundlerevlog(revlog.revlog):
             size = len(delta)
             start = cgunpacker.tell() - size
 
-            link = linkmapper(cs)
             if self.index.has_node(node):
                 # this can happen if two branches make the same change
                 self.bundlerevs.add(self.index.rev(node))
                 continue
+            if cs == node:
+                linkrev = nullrev
+            else:
+                linkrev = linkmapper(cs)
 
             for p in (p1, p2):
                 if not self.index.has_node(p):
@@ -87,7 +90,7 @@ class bundlerevlog(revlog.revlog):
                 size,
                 -1,
                 baserev,
-                link,
+                linkrev,
                 self.rev(p1),
                 self.rev(p2),
                 node,
