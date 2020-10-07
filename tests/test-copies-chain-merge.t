@@ -327,10 +327,6 @@ Merge:
 - one with change to an unrelated file
 - one deleting and recreating the change
 
-Note:
-| In this case, one of the merge wrongly record a merge while there is none.
-| This lead to bad copy tracing information to be dug up.
-
   $ hg up 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("d-2")'
@@ -383,11 +379,6 @@ The bugs makes recorded copy is different depending of where we started the merg
   $ hg manifest --debug --rev 'desc("mDBm-0")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
 
-The 0bb5445dc4d02f4e0d86cf16f9f3a411d0f17744 entry is wrong, since the file was
-deleted on one side (then recreate) and untouched on the other side, no "merge"
-has happened. The resulting `d` file is the untouched version from branch `D`,
-not a merge.
-
   $ hg manifest --debug --rev 'desc("d-2")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
   $ hg manifest --debug --rev 'desc("b-1")' | grep '644   d'
@@ -397,14 +388,12 @@ not a merge.
        0       2 01c2f5eabdc4 000000000000 000000000000
        1       8 b004912a8510 000000000000 000000000000
 
-(This `hg log` output if wrong, since no merge actually happened).
+Log output should not include a merge commit as it did not happen
 
   $ hg log -Gfr 'desc("mBDm-0")' d
   o  8 d-2 re-add d
   |
   ~
-
-This `hg log` output is correct
 
   $ hg log -Gfr 'desc("mDBm-0")' d
   o  8 d-2 re-add d
@@ -588,13 +577,10 @@ Merge:
   |
   o  0 i-0 initial commit: a b h
   
-The overwriting should take over. However, the behavior is currently buggy
-
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBFm-0")'
   M b
   A d
     h
-    h (false !)
   R a
   R h
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFBm-0")'
@@ -626,8 +612,6 @@ The overwriting should take over. However, the behavior is currently buggy
     i (no-filelog !)
   R i
 
-The following graphlog is wrong, the "a -> c -> d" chain was overwritten and should not appear.
-
   $ hg log -Gfr 'desc("mBFm-0")' d
   o  22 f-2: rename i -> d
   |
@@ -635,8 +619,6 @@ The following graphlog is wrong, the "a -> c -> d" chain was overwritten and sho
   :
   o  0 i-0 initial commit: a b h
   
-
-The following output is correct.
 
   $ hg log -Gfr 'desc("mFBm-0")' d
   o  22 f-2: rename i -> d
