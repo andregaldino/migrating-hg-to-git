@@ -207,7 +207,9 @@ def tolocal(s):
                 # can't round-trip
                 return u.encode(_sysstr(encoding), "replace")
     except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
+        raise error.Abort(
+            pycompat.bytestr(k), hint=b"please check your locale settings"
+        )
 
 
 def fromlocal(s):

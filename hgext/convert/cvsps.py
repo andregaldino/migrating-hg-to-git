@@ -559,7 +559,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
                     pass  # try next encoding
                 except LookupError as inst:  # unknown encoding, maybe
                     raise error.Abort(
-                        inst,
+                        pycompat.bytestr(inst),
                         hint=_(
                             b'check convert.cvsps.logencoding configuration'
                         ),

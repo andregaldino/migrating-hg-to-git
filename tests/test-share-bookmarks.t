@@ -230,7 +230,7 @@ verify that bookmarks are not written on failed transaction
   > )
   > def _pullbookmarks(orig, pullop):
   >     orig(pullop)
-  >     raise error.HookAbort('forced failure by extension')
+  >     raise error.HookAbort(b'forced failure by extension')
   > def extsetup(ui):
   >     extensions.wrapfunction(exchange, '_pullbookmarks', _pullbookmarks)
   > EOF

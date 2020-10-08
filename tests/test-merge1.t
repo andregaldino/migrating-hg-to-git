@@ -360,7 +360,7 @@ isn't changed on the filesystem (see also issue4583).
   > )
   > def applyupdates(orig, *args, **kwargs):
   >     orig(*args, **kwargs)
-  >     raise error.Abort('intentional aborting')
+  >     raise error.Abort(b'intentional aborting')
   > def extsetup(ui):
   >     extensions.wrapfunction(merge, "applyupdates", applyupdates)
   > EOF

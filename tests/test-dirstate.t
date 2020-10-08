@@ -74,7 +74,7 @@ coherent (issue4353)
   > )
   > 
   > def wraprecordupdates(*args):
-  >     raise error.Abort("simulated error while recording dirstateupdates")
+  >     raise error.Abort(b"simulated error while recording dirstateupdates")
   > 
   > def reposetup(ui, repo):
   >     extensions.wrapfunction(mergestatemod, 'recordupdates',

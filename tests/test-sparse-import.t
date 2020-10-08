@@ -153,7 +153,7 @@ If importing results in no new rules being added, no refresh should take place!
   > from mercurial import error, sparse
   > def extsetup(ui):
   >     def abort_refresh(*args, **kwargs):
-  >         raise error.Abort('sparse._refresh called!')
+  >         raise error.Abort(b'sparse._refresh called!')
   >     sparse.refreshwdir = abort_refresh
   > EOF
   $ cat >> $HGRCPATH <<EOF

@@ -1720,7 +1720,7 @@ def add_confirm_callback(repo, pullop):
         repo = reporef()
         cm = _(b'accept incoming changes (yn)?$$ &Yes $$ &No')
         if repo.ui.promptchoice(cm):
-            raise error.Abort("user aborted")
+            raise error.Abort(b"user aborted")
 
     tr.addvalidator(b'900-pull-prompt', prompt)
 
