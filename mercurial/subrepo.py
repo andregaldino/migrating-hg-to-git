@@ -39,7 +39,6 @@ from .utils import (
     dateutil,
     hashutil,
     procutil,
-    stringutil,
 )
 
 hg = None
@@ -84,9 +83,7 @@ def annotatesubrepoerror(func):
         except error.Abort as ex:
             subrepo = subrelpath(self)
             errormsg = (
-                stringutil.forcebytestr(ex)
-                + b' '
-                + _(b'(in subrepository "%s")') % subrepo
+                ex.message + b' ' + _(b'(in subrepository "%s")') % subrepo
             )
             # avoid handling this exception by raising a SubrepoAbort exception
             raise SubrepoAbort(

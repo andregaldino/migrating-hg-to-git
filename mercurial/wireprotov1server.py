@@ -497,11 +497,11 @@ def getbundle(repo, proto, others):
         # cleanly forward Abort error to the client
         if not exchange.bundle2requested(opts.get(b'bundlecaps')):
             if proto.name == b'http-v1':
-                return wireprototypes.ooberror(pycompat.bytestr(exc) + b'\n')
+                return wireprototypes.ooberror(exc.message + b'\n')
             raise  # cannot do better for bundle1 + ssh
         # bundle2 request expect a bundle2 reply
         bundler = bundle2.bundle20(repo.ui)
-        manargs = [(b'message', pycompat.bytestr(exc))]
+        manargs = [(b'message', exc.message)]
         advargs = []
         if exc.hint is not None:
             advargs.append((b'hint', exc.hint))
@@ -684,7 +684,7 @@ def unbundle(repo, proto, heads):
                     # We did not change it to minimise code change.
                     # This need to be moved to something proper.
                     # Feel free to do it.
-                    procutil.stderr.write(b"abort: %s\n" % exc)
+                    procutil.stderr.write(b"abort: %s\n" % exc.message)
                     if exc.hint is not None:
                         procutil.stderr.write(b"(%s)\n" % exc.hint)
                     procutil.stderr.flush()
@@ -733,7 +733,7 @@ def unbundle(repo, proto, heads):
                 if exc.params:
                     errpart.addparam(b'params', b'\0'.join(exc.params))
             except error.Abort as exc:
-                manargs = [(b'message', stringutil.forcebytestr(exc))]
+                manargs = [(b'message', exc.message)]
                 advargs = []
                 if exc.hint is not None:
                     advargs.append((b'hint', exc.hint))

@@ -493,7 +493,7 @@ class hgweb(object):
         except error.Abort as e:
             res.status = b'403 Forbidden'
             res.headers[b'Content-Type'] = ctype
-            return rctx.sendtemplate(b'error', error=pycompat.bytestr(e))
+            return rctx.sendtemplate(b'error', error=e.message)
         except ErrorResponse as e:
             for k, v in e.headers:
                 res.headers[k] = v

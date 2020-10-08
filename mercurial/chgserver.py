@@ -502,7 +502,7 @@ class chgcmdserver(commandserver.server):
             self.cresult.write(b'exit 255')
             return
         except error.Abort as inst:
-            self.ui.error(_(b"abort: %s\n") % inst)
+            self.ui.error(_(b"abort: %s\n") % inst.message)
             if inst.hint:
                 self.ui.error(_(b"(%s)\n") % inst.hint)
             self.ui.flush()

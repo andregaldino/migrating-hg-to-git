@@ -1770,7 +1770,7 @@ def debuginstall(ui, **opts):
     try:
         username = ui.username()
     except error.Abort as e:
-        err = stringutil.forcebytestr(e)
+        err = e.message
         problems += 1
 
     fm.condwrite(

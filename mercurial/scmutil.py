@@ -216,7 +216,7 @@ def callcatch(ui, func):
     except error.WdirUnsupported:
         ui.error(_(b"abort: working directory revision cannot be specified\n"))
     except error.Abort as inst:
-        ui.error(_(b"abort: %s\n") % inst)
+        ui.error(_(b"abort: %s\n") % inst.message)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)
     except ImportError as inst:

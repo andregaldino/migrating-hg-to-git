@@ -52,7 +52,7 @@ def debugbruterebase(ui, repo, source, dest):
             try:
                 rebase.rebase(ui, repo, dest=dest, rev=[spec])
             except error.Abort as ex:
-                summary = b'ABORT: %s' % ex
+                summary = b'ABORT: %s' % ex.message
             except Exception as ex:
                 summary = b'CRASH: %s' % ex
             else:

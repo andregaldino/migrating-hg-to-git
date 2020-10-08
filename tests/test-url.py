@@ -392,7 +392,7 @@ def test_url():
     >>> try:
     ...   u = url(b'file://mercurial-scm.org/foo')
     ... except error.Abort as e:
-    ...   forcebytestr(e)
+    ...   e.message
     'file:// URLs can only refer to localhost'
 
     Empty URL:

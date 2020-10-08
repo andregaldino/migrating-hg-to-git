@@ -155,7 +155,15 @@ class ConflictResolutionRequired(InterventionRequired):
 class Abort(Hint, Exception):
     """Raised if a command needs to print an error and exit."""
 
-    __bytes__ = _tobytes
+    def __init__(self, message, hint=None):
+        self.message = message
+        self.hint = hint
+        # Pass the message into the Exception constructor to help extensions
+        # that look for exc.args[0].
+        Exception.__init__(self, message)
+
+    def __bytes__(self):
+        return self.message
 
     if pycompat.ispy3:
 

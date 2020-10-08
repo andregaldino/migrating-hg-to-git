@@ -2089,7 +2089,7 @@ def handleremotechangegroup(op, inpart):
     except error.Abort as e:
         raise error.Abort(
             _(b'bundle at %s is corrupted:\n%s')
-            % (util.hidepassword(raw_url), bytes(e))
+            % (util.hidepassword(raw_url), e.message)
         )
     assert not inpart.read()
 

@@ -500,7 +500,7 @@ def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
         # handle exceptions that may be raised by command server. most of
         # known exceptions are caught by dispatch.
         except error.Abort as inst:
-            ui.error(_(b'abort: %s\n') % inst)
+            ui.error(_(b'abort: %s\n') % inst.message)
         except IOError as inst:
             if inst.errno != errno.EPIPE:
                 raise
