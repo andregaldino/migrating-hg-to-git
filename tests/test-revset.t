@@ -2885,7 +2885,7 @@ test sorting by multiple keys including variable-length strings
   3 b112 m111 u11  120 0
   0 b12  m111 u112 111 10800
 
-  $ hg log -r 'sort(all(), "-desc -date")'
+  $ hg log -r 'sort(all(), "-desc -node")'
   1 b11  m12  u111 112 7200
   4 b111 m112 u111 110 14400
   3 b112 m111 u11  120 0

@@ -2293,6 +2293,7 @@ _sortkeyfuncs = {
     b'user': lambda c: c.user(),
     b'author': lambda c: c.user(),
     b'date': lambda c: c.date()[0],
+    b'node': lambda c: c.node(),
 }
 
 
@@ -2356,6 +2357,7 @@ def sort(repo, subset, x, order):
     - ``user`` for user name (``author`` can be used as an alias),
     - ``date`` for the commit date
     - ``topo`` for a reverse topographical sort
+    - ``node`` the nodeid of the revision
 
     The ``topo`` sort order cannot be combined with other sort keys. This sort
     takes one optional argument, ``topo.firstbranch``, which takes a revset that
