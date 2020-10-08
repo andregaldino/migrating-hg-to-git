@@ -463,6 +463,53 @@ Try merging the other direction too
   x -> z
 
 
+Create x and y, then rename x to z on one side of merge, and rename y to z and
+then delete z on the other side.
+  $ newrepo
+  $ echo x > x
+  $ echo y > y
+  $ hg ci -Aqm 'add x and y'
+  $ hg mv x z
+  $ hg ci -qm 'rename x to z'
+  $ hg co -q 0
+  $ hg mv y z
+  $ hg ci -qm 'rename y to z'
+  $ hg rm z
+  $ hg ci -m 'delete z'
+  $ hg merge -q 1
+  $ echo z > z
+  $ hg ci -m 'merge 1 into 3'
+Try merging the other direction too
+  $ hg co -q 1
+  $ hg merge -q 3
+  $ echo z > z
+  $ hg ci -m 'merge 3 into 1'
+  created new head
+  $ hg l
+  @    5 merge 3 into 1
+  |\   z
+  +---o  4 merge 1 into 3
+  | |/   z
+  | o  3 delete z
+  | |  z
+  | o  2 rename y to z
+  | |  y z
+  o |  1 rename x to z
+  |/   x z
+  o  0 add x and y
+     x y
+  $ hg debugpathcopies 1 4
+  $ hg debugpathcopies 2 4
+  x -> z (no-filelog !)
+  $ hg debugpathcopies 0 4
+  x -> z (filelog !)
+  $ hg debugpathcopies 1 5
+  $ hg debugpathcopies 2 5
+  x -> z (no-filelog !)
+  $ hg debugpathcopies 0 5
+  x -> z
+
+
 Test for a case in fullcopytracing algorithm where neither of the merging csets
 is a descendant of the merge base. This test reflects that the algorithm
 correctly finds the copies:
