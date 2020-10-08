@@ -37,7 +37,7 @@ use std::path::PathBuf;
 /// Only the first two items in this list are implemented as of this commit.
 ///
 /// [1]: https://www.mercurial-scm.org/wiki/DirsCachePlan
-///       
+///
 ///
 /// # Structure
 ///
