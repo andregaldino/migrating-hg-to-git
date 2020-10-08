@@ -743,7 +743,10 @@ def getsidedatacompanion(srcrepo, dstrepo):
 
 
 def matchrevlog(revlogfilter, entry):
-    """check is a revlog is selected for cloning
+    """check if a revlog is selected for cloning.
+
+    In other words, are there any updates which need to be done on revlog
+    or it can be blindly copied.
 
     The store entry is checked against the passed filter"""
     if entry.endswith(b'00changelog.i'):
