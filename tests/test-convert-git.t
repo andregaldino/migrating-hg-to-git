@@ -1,11 +1,7 @@
 #require git
 
-  $ echo "[init]" >> $HOME/.gitconfig
-  $ echo "defaultBranch = master" >> $HOME/.gitconfig
-  $ echo "[core]" >> $HOME/.gitconfig
-  $ echo "autocrlf = false" >> $HOME/.gitconfig
-  $ echo "[core]" >> $HOME/.gitconfig
-  $ echo "autocrlf = false" >> $HOME/.gitconfig
+  $ git config -f $HOME/.gitconfig init.defaultBranch master
+  $ git config -f $HOME/.gitconfig core.autocrlf false
   $ echo "[extensions]" >> $HGRCPATH
   $ echo "convert=" >> $HGRCPATH
   $ cat >> $HGRCPATH <<EOF
