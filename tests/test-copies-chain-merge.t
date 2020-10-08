@@ -1,4 +1,4 @@
-#testcases filelog compatibility sidedata
+#testcases filelog compatibility changeset sidedata
 
 =====================================================
 Test Copy tracing for chain of copies involving merge
@@ -25,6 +25,14 @@ use git diff to see rename
   $ cat >> $HGRCPATH << EOF
   > [experimental]
   > copies.read-from = compatibility
+  > EOF
+#endif
+
+#if changeset
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > copies.read-from = changeset-only
+  > copies.write-to = changeset-only
   > EOF
 #endif
 
@@ -384,23 +392,39 @@ The bugs makes recorded copy is different depending of where we started the merg
   $ hg manifest --debug --rev 'desc("d-2")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
   $ hg manifest --debug --rev 'desc("b-1")' | grep '644   d'
-  169be882533bc917905d46c0c951aa9a1e288dcf 644   d
+  169be882533bc917905d46c0c951aa9a1e288dcf 644   d (no-changeset !)
+  b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 644   d (changeset !)
   $ hg debugindex d
      rev linkrev nodeid       p1           p2
-       0       2 169be882533b 000000000000 000000000000
+       0       2 169be882533b 000000000000 000000000000 (no-changeset !)
+       0       2 b789fdd96dc2 000000000000 000000000000 (changeset !)
        1       8 b004912a8510 000000000000 000000000000
 
 Log output should not include a merge commit as it did not happen
 
+#if no-changeset
   $ hg log -Gfr 'desc("mBDm-0")' d
   o  8 d-2 re-add d
   |
   ~
+#else
+  $ hg log -Gfr 'desc("mBDm-0")' d
+  o  8 d-2 re-add d
+  |
+  ~
+#endif
 
+#if no-changeset
   $ hg log -Gfr 'desc("mDBm-0")' d
   o  8 d-2 re-add d
   |
   ~
+#else
+  $ hg log -Gfr 'desc("mDBm-0")' d
+  o  8 d-2 re-add d
+  |
+  ~
+#endif
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBDm-0")'
   M b
@@ -452,6 +476,7 @@ Comparing with a merge with colliding rename
   |
   o  0 i-0 initial commit: a b h
   
+#if no-changeset
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
   c39c6083dad048d5138618a46f123e2f397f4f18 644   f
   $ hg manifest --debug --rev 'desc("mEAm-0")' | grep '644   f'
@@ -466,6 +491,22 @@ Comparing with a merge with colliding rename
        1      10 71b9b7e73d97 000000000000 000000000000
        2      19 c39c6083dad0 263ea25e220a 71b9b7e73d97
        3      20 a9a8bc3860c9 71b9b7e73d97 263ea25e220a
+#else
+  $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
+  498e8799f49f9da1ca06bb2d6d4accf165c5b572 644   f
+  $ hg manifest --debug --rev 'desc("mEAm-0")' | grep '644   f'
+  c5b506a7118667a38a9c9348a1f63b679e382f57 644   f
+  $ hg manifest --debug --rev 'desc("a-2")' | grep '644   f'
+  b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 644   f
+  $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
+  1e88685f5ddec574a34c70af492f95b6debc8741 644   f
+  $ hg debugindex f
+     rev linkrev nodeid       p1           p2
+       0       4 b789fdd96dc2 000000000000 000000000000
+       1      10 1e88685f5dde 000000000000 000000000000
+       2      19 498e8799f49f b789fdd96dc2 1e88685f5dde
+       3      20 c5b506a71186 1e88685f5dde b789fdd96dc2
+#endif
 
 # Here the filelog based implementation is not looking at the rename
 # information (because the file exist on both side). However the changelog
@@ -549,9 +590,11 @@ Merge:
   $ hg commit -m "f-2: rename i -> d"
   $ hg debugindex d
      rev linkrev nodeid       p1           p2
-       0       2 169be882533b 000000000000 000000000000
+       0       2 169be882533b 000000000000 000000000000 (no-changeset !)
+       0       2 b789fdd96dc2 000000000000 000000000000 (changeset !)
        1       8 b004912a8510 000000000000 000000000000
-       2      22 4a067cf8965d 000000000000 000000000000
+       2      22 4a067cf8965d 000000000000 000000000000 (no-changeset !)
+       2      22 fe6f8b4f507f 000000000000 000000000000 (changeset !)
   $ hg up 'desc("b-1")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("f-2")'
@@ -617,6 +660,7 @@ Merge:
     i (no-filelog !)
   R i
 
+#if no-changeset
   $ hg log -Gfr 'desc("mBFm-0")' d
   o  22 f-2: rename i -> d
   |
@@ -624,7 +668,14 @@ Merge:
   :
   o  0 i-0 initial commit: a b h
   
+#else
+  $ hg log -Gfr 'desc("mBFm-0")' d
+  o  22 f-2: rename i -> d
+  |
+  ~
+#endif
 
+#if no-changeset
   $ hg log -Gfr 'desc("mFBm-0")' d
   o  22 f-2: rename i -> d
   |
@@ -632,6 +683,12 @@ Merge:
   :
   o  0 i-0 initial commit: a b h
   
+#else
+  $ hg log -Gfr 'desc("mFBm-0")' d
+  o  22 f-2: rename i -> d
+  |
+  ~
+#endif
 
 
 Merge:
@@ -701,6 +758,7 @@ revision numbers)
   $ hg status --copies --rev 'desc("g-1")' --rev 'desc("mGDm-0")'
   M d
 
+#if no-changeset
   $ hg log -Gfr 'desc("mDGm-0")' d
   o    26 mDGm-0 simple merge - one way
   |\
@@ -714,8 +772,21 @@ revision numbers)
   |
   o  0 i-0 initial commit: a b h
   
+#else
+  $ hg log -Gfr 'desc("mDGm-0")' d
+  o    26 mDGm-0 simple merge - one way
+  |\
+  | o  25 g-1: update d
+  | |
+  o |  8 d-2 re-add d
+  |/
+  o  2 i-2: c -move-> d
+  |
+  ~
+#endif
 
 
+#if no-changeset
   $ hg log -Gfr 'desc("mDGm-0")' d
   o    26 mDGm-0 simple merge - one way
   |\
@@ -729,6 +800,18 @@ revision numbers)
   |
   o  0 i-0 initial commit: a b h
   
+#else
+  $ hg log -Gfr 'desc("mDGm-0")' d
+  o    26 mDGm-0 simple merge - one way
+  |\
+  | o  25 g-1: update d
+  | |
+  o |  8 d-2 re-add d
+  |/
+  o  2 i-2: c -move-> d
+  |
+  ~
+#endif
 
 
 Merge:
@@ -809,6 +892,7 @@ Note:
     h (no-filelog !)
   R h
 
+#if no-changeset
   $ hg log -Gfr 'desc("mFGm-0")' d
   o    28 mFGm-0 simple merge - one way
   |\
@@ -824,7 +908,20 @@ Note:
   |
   o  0 i-0 initial commit: a b h
   
+#else
+  $ hg log -Gfr 'desc("mFGm-0")' d
+  o    28 mFGm-0 simple merge - one way
+  |\
+  | o  25 g-1: update d
+  | |
+  o |  22 f-2: rename i -> d
+  |/
+  o  2 i-2: c -move-> d
+  |
+  ~
+#endif
 
+#if no-changeset
   $ hg log -Gfr 'desc("mGFm-0")' d
   @    29 mGFm-0 simple merge - the other way
   |\
@@ -840,6 +937,18 @@ Note:
   |
   o  0 i-0 initial commit: a b h
   
+#else
+  $ hg log -Gfr 'desc("mGFm-0")' d
+  @    29 mGFm-0 simple merge - the other way
+  |\
+  | o  25 g-1: update d
+  | |
+  o |  22 f-2: rename i -> d
+  |/
+  o  2 i-2: c -move-> d
+  |
+  ~
+#endif
 
 
 Comparing with merging with a deletion (and keeping the file)
@@ -901,11 +1010,11 @@ copy tracing chain.
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCGm-0")'
   A d
-    a (no-compatibility !)
+    a (no-compatibility no-changeset !)
   R a
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGCm-0")'
   A d
-    a (no-compatibility !)
+    a (no-compatibility no-changeset !)
   R a
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCGm-0")'
   A d
@@ -965,12 +1074,12 @@ copy tracing chain.
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB-revert-m-0")'
   M b
   A d
-    a (no-compatibility !)
+    a (no-compatibility no-changeset !)
   R a
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-revert-m-0")'
   M b
   A d
-    a (no-compatibility !)
+    a (no-compatibility no-changeset !)
   R a
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCB-revert-m-0")'
   M b
@@ -1018,7 +1127,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 #endif
 
 
-#if no-compatibility
+#if no-compatibility no-changeset
 
   $ for rev in `hg log --rev 'all()' -T '{rev}\n'`; do
   >     echo "##### revision $rev #####"
