@@ -32,7 +32,7 @@
   > }
   $ mkdir git-repo
   $ cd git-repo
-  $ git init-db >/dev/null 2>/dev/null
+  $ git init >/dev/null 2>/dev/null
   $ echo a > a
   $ mkdir d
   $ echo b > d/b
@@ -123,7 +123,7 @@ Remove the directory, then try to replace it with a file (issue754)
   $ count=10
   $ mkdir git-repo2
   $ cd git-repo2
-  $ git init-db >/dev/null 2>/dev/null
+  $ git init >/dev/null 2>/dev/null
   $ echo foo > foo
   $ git add foo
   $ commit -a -m 'add foo'
@@ -421,7 +421,7 @@ test binary conversion (issue1359)
   $ count=19
   $ mkdir git-repo3
   $ cd git-repo3
-  $ git init-db >/dev/null 2>/dev/null
+  $ git init >/dev/null 2>/dev/null
   $ "$PYTHON" -c 'import struct; open("b", "wb").write(b"".join([struct.Struct(">B").pack(i) for i in range(256)])*16)'
   $ git add b
   $ commit -a -m addbinary
@@ -447,7 +447,7 @@ test author vs committer
 
   $ mkdir git-repo4
   $ cd git-repo4
-  $ git init-db >/dev/null 2>/dev/null
+  $ git init >/dev/null 2>/dev/null
   $ echo >> foo
   $ git add foo
   $ commit -a -m addfoo
@@ -715,7 +715,7 @@ test sub modules
 
   $ mkdir git-repo5
   $ cd git-repo5
-  $ git init-db >/dev/null 2>/dev/null
+  $ git init >/dev/null 2>/dev/null
   $ echo 'sub' >> foo
   $ git add foo
   $ commit -a -m 'addfoo'
@@ -723,7 +723,7 @@ test sub modules
   $ cd ..
   $ mkdir git-repo6
   $ cd git-repo6
-  $ git init-db >/dev/null 2>/dev/null
+  $ git init >/dev/null 2>/dev/null
   $ git submodule add ${BASE} >/dev/null 2>/dev/null
   $ commit -a -m 'addsubmodule' >/dev/null 2>/dev/null
 
