@@ -158,7 +158,7 @@ def build_all_windows_packages(
 
         windows.synchronize_hg(SOURCE_ROOT, revision, instance)
 
-        for py_version in ("2.7", "3.7", "3.8"):
+        for py_version in ("2.7", "3.7", "3.8", "3.9"):
             for arch in ("x86", "x64"):
                 windows.purge_hg(winrm_client)
                 windows.build_wheel(
@@ -364,7 +364,7 @@ def get_parser():
     sp.add_argument(
         '--python-version',
         help='Python version to build for',
-        choices={'2.7', '3.7', '3.8'},
+        choices={'2.7', '3.7', '3.8', '3.9'},
         nargs='*',
         default=['3.8'],
     )
@@ -476,7 +476,7 @@ def get_parser():
     sp.add_argument(
         '--python-version',
         help='Python version to use',
-        choices={'2.7', '3.5', '3.6', '3.7', '3.8'},
+        choices={'2.7', '3.5', '3.6', '3.7', '3.8', '3.9'},
         default='2.7',
     )
     sp.add_argument(
