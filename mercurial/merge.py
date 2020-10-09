@@ -1309,7 +1309,8 @@ def batchremove(repo, wctx, actions):
             wctx[f].remove(ignoremissing=True)
         except OSError as inst:
             repo.ui.warn(
-                _(b"update failed to remove %s: %s!\n") % (f, inst.strerror)
+                _(b"update failed to remove %s: %s!\n")
+                % (f, pycompat.bytestr(inst.strerror))
             )
         if i == 100:
             yield i, f
