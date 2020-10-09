@@ -27,16 +27,6 @@ $PYTHON27_x64_SHA256 = "b74a3afa1e0bf2a6fc566a7b70d15c9bfabba3756fb077797d16fffa
 $PYTHON27_X86_URL = "https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi"
 $PYTHON27_X86_SHA256 = "d901802e90026e9bad76b8a81f8dd7e43c7d7e8269d9281c9e9df7a9c40480a9"
 
-$PYTHON35_x86_URL = "https://www.python.org/ftp/python/3.5.4/python-3.5.4.exe"
-$PYTHON35_x86_SHA256 = "F27C2D67FD9688E4970F3BFF799BB9D722A0D6C2C13B04848E1F7D620B524B0E"
-$PYTHON35_x64_URL = "https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe"
-$PYTHON35_x64_SHA256 = "9B7741CC32357573A77D2EE64987717E527628C38FD7EAF3E2AACA853D45A1EE"
-
-$PYTHON36_x86_URL = "https://www.python.org/ftp/python/3.6.8/python-3.6.8.exe"
-$PYTHON36_x86_SHA256 = "89871D432BC06E4630D7B64CB1A8451E53C80E68DE29029976B12AAD7DBFA5A0"
-$PYTHON36_x64_URL = "https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe"
-$PYTHON36_x64_SHA256 = "96088A58B7C43BC83B84E6B67F15E8706C614023DD64F9A5A14E81FF824ADADC"
-
 $PYTHON37_x86_URL = "https://www.python.org/ftp/python/3.7.9/python-3.7.9.exe"
 $PYTHON37_x86_SHA256 = "769bb7c74ad1df6d7d74071cc16a984ff6182e4016e11b8949b93db487977220"
 $PYTHON37_X64_URL = "https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe"
@@ -143,10 +133,6 @@ function Install-Dependencies($prefix) {
     Secure-Download $VC9_PYTHON_URL ${prefix}\assets\VCForPython27.msi $VC9_PYTHON_SHA256
     Secure-Download $PYTHON27_x86_URL ${prefix}\assets\python27-x86.msi $PYTHON27_x86_SHA256
     Secure-Download $PYTHON27_x64_URL ${prefix}\assets\python27-x64.msi $PYTHON27_x64_SHA256
-    Secure-Download $PYTHON35_x86_URL ${prefix}\assets\python35-x86.exe $PYTHON35_x86_SHA256
-    Secure-Download $PYTHON35_x64_URL ${prefix}\assets\python35-x64.exe $PYTHON35_x64_SHA256
-    Secure-Download $PYTHON36_x86_URL ${prefix}\assets\python36-x86.exe $PYTHON36_x86_SHA256
-    Secure-Download $PYTHON36_x64_URL ${prefix}\assets\python36-x64.exe $PYTHON36_x64_SHA256
     Secure-Download $PYTHON37_x86_URL ${prefix}\assets\python37-x86.exe $PYTHON37_x86_SHA256
     Secure-Download $PYTHON37_x64_URL ${prefix}\assets\python37-x64.exe $PYTHON37_x64_SHA256
     Secure-Download $PYTHON38_x86_URL ${prefix}\assets\python38-x86.exe $PYTHON38_x86_SHA256
@@ -169,10 +155,6 @@ function Install-Dependencies($prefix) {
     Invoke-Process ${prefix}\python27-x64\python.exe ${prefix}\assets\get-pip.py
     Invoke-Process ${prefix}\python27-x64\Scripts\pip.exe "install ${prefix}\assets\virtualenv.tar.gz"
 
-    Install-Python3 "Python 3.5 32-bit" ${prefix}\assets\python35-x86.exe ${prefix}\python35-x86 ${pip}
-    Install-Python3 "Python 3.5 64-bit" ${prefix}\assets\python35-x64.exe ${prefix}\python35-x64 ${pip}
-    Install-Python3 "Python 3.6 32-bit" ${prefix}\assets\python36-x86.exe ${prefix}\python36-x86 ${pip}
-    Install-Python3 "Python 3.6 64-bit" ${prefix}\assets\python36-x64.exe ${prefix}\python36-x64 ${pip}
     Install-Python3 "Python 3.7 32-bit" ${prefix}\assets\python37-x86.exe ${prefix}\python37-x86 ${pip}
     Install-Python3 "Python 3.7 64-bit" ${prefix}\assets\python37-x64.exe ${prefix}\python37-x64 ${pip}
     Install-Python3 "Python 3.8 32-bit" ${prefix}\assets\python38-x86.exe ${prefix}\python38-x86 ${pip}
