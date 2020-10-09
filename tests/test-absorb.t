@@ -603,21 +603,21 @@ This should move us to the non-obsolete ancestor.
   $ hg commit -m a -A a b
   $ hg branch foo -q
   $ echo b > b
-  $ hg commit -m foo  # will become empty
+  $ hg commit -m 'foo (child of 0cde1ae39321)'  # will become empty
   $ hg branch bar -q
-  $ hg commit -m bar  # is already empty
+  $ hg commit -m 'bar (child of e969dc86aefc)'  # is already empty
   $ echo a2 > a
   $ printf '' > b
   $ hg absorb --apply-changes --verbose | grep became
   0:0cde1ae39321: 1 file(s) changed, became 3:fc7fcdd90fdb
-  1:795dfb1adcef: 2 file(s) changed, became 4:a8740537aa53
-  2:b02935f68891: 2 file(s) changed, became 5:59533e01c707
-  $ hg log -T '{rev} (branch: {branch}) {desc}\n' -G --stat
-  @  5 (branch: bar) bar
+  1:e969dc86aefc: 2 file(s) changed, became 4:8fc6b2cb43a5
+  2:0298954ced32: 2 file(s) changed, became 5:ca8386dc4e2c
+  $ hg log -T '{rev}:{node|short} (branch: {branch}) {desc}\n' -G --stat
+  @  5:ca8386dc4e2c (branch: bar) bar (child of 8fc6b2cb43a5)
   |
-  o  4 (branch: foo) foo
+  o  4:8fc6b2cb43a5 (branch: foo) foo (child of fc7fcdd90fdb)
   |
-  o  3 (branch: default) a
+  o  3:fc7fcdd90fdb (branch: default) a
       a |  1 +
       b |  0
       2 files changed, 1 insertions(+), 0 deletions(-)
