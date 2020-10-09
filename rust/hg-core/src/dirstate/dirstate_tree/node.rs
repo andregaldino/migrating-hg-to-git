@@ -60,43 +60,46 @@ impl Node {
         // Are we're modifying the current file ? Is the the end of the path ?
         let is_current_file = tail.is_empty() && head.is_empty();
 
-        if let NodeKind::File(file) = &mut self.kind {
-            if is_current_file {
-                let new = Self {
-                    kind: NodeKind::File(File {
-                        entry: new_entry,
-                        ..file.clone()
-                    }),
-                };
-                return InsertResult {
-                    did_insert: false,
-                    old_entry: Some(std::mem::replace(self, new)),
-                };
-            } else {
-                match file.entry.state {
-                    // Only replace the current file with a directory if it's
-                    // marked as `Removed`
-                    EntryState::Removed => {
-                        self.kind = NodeKind::Directory(Directory {
-                            was_file: Some(Box::from(file.clone())),
-                            children: Default::default(),
-                        })
-                    }
-                    _ => {
-                        return Node::insert_in_file(
-                            file, new_entry, head, tail,
-                        )
-                    }
+        // Potentially Replace the current file with a directory if it's marked
+        // as `Removed`
+        if !is_current_file {
+            if let NodeKind::File(file) = &mut self.kind {
+                if file.entry.state == EntryState::Removed {
+                    self.kind = NodeKind::Directory(Directory {
+                        was_file: Some(Box::from(file.clone())),
+                        children: Default::default(),
+                    })
                 }
             }
         }
-
         match &mut self.kind {
             NodeKind::Directory(directory) => {
                 Node::insert_in_directory(directory, new_entry, head, tail)
             }
-            NodeKind::File(_) => {
-                unreachable!("The file case has already been handled")
+            NodeKind::File(file) => {
+                if is_current_file {
+                    let new = Self {
+                        kind: NodeKind::File(File {
+                            entry: new_entry,
+                            ..file.clone()
+                        }),
+                    };
+                    InsertResult {
+                        did_insert: false,
+                        old_entry: Some(std::mem::replace(self, new)),
+                    }
+                } else {
+                    match file.entry.state {
+                        EntryState::Removed => {
+                            unreachable!("Removed file turning into a directory was dealt with earlier")
+                        }
+                        _ => {
+                            Node::insert_in_file(
+                                file, new_entry, head, tail,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
