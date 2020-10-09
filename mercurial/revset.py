@@ -2287,13 +2287,13 @@ def roots(repo, subset, x):
 
 
 _sortkeyfuncs = {
-    b'rev': lambda c: c.rev(),
+    b'rev': scmutil.intrev,
     b'branch': lambda c: c.branch(),
     b'desc': lambda c: c.description(),
     b'user': lambda c: c.user(),
     b'author': lambda c: c.user(),
     b'date': lambda c: c.date()[0],
-    b'node': lambda c: c.node(),
+    b'node': scmutil.binnode,
 }
 
 

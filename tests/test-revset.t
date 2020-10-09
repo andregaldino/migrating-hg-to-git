@@ -2899,6 +2899,29 @@ test sorting by multiple keys including variable-length strings
   0 b12  m111 u112 111 10800
   2 b111 m11  u12  111 3600
 
+ sort including wdir (rev/-rev has fast path):
+
+  $ hg log -r 'sort(. + wdir(), rev)' -T '{rev}\n'
+  4
+  2147483647
+  $ hg log -r 'sort(. + wdir(), -rev)' -T '{rev}\n'
+  2147483647
+  4
+
+  $ hg log -r 'sort(. + wdir(), "branch rev")' -T '{rev}\n'
+  4
+  2147483647
+  $ hg log -r 'sort(. + wdir(), "branch -rev")' -T '{rev}\n'
+  2147483647
+  4
+
+  $ hg log -r 'sort(. + wdir(), node)' -T '{node}\n'
+  ec7c1c90b589ade8603d5fb619dc6c25173a723f
+  ffffffffffffffffffffffffffffffffffffffff
+  $ hg log -r 'sort(. + wdir(), -node)' -T '{node}\n'
+  ffffffffffffffffffffffffffffffffffffffff
+  ec7c1c90b589ade8603d5fb619dc6c25173a723f
+
  toposort prioritises graph branches
 
   $ hg up 2
