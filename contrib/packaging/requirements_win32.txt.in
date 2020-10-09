@@ -1,5 +1,6 @@
 docutils
-dulwich
+# Pinned to an old version because 0.20 drops Python 3 compatibility.
+dulwich < 0.20
 keyring
 pygments
 # Need to list explicitly so dependency gets pulled in when
