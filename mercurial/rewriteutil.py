@@ -111,8 +111,18 @@ def update_hash_refs(repo, commitmsg, pending=None):
         # We can't make any assumptions about how to update the hash if the
         # cset in question was split or diverged.
         if len(successors) == 1 and len(successors[0]) == 1:
-            newhash = node.hex(successors[0][0])
-            commitmsg = commitmsg.replace(h, newhash[: len(h)])
+            successor = successors[0][0]
+            if successor is not None:
+                newhash = node.hex(successor)
+                commitmsg = commitmsg.replace(h, newhash[: len(h)])
+            else:
+                repo.ui.note(
+                    _(
+                        b'The stale commit message reference to %s could '
+                        b'not be updated\n(The referenced commit was dropped)\n'
+                    )
+                    % h
+                )
         else:
             repo.ui.note(
                 _(
