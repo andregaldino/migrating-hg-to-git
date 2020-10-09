@@ -1,5 +1,7 @@
 #require git
 
+  $ echo "[init]" >> $HOME/.gitconfig
+  $ echo "defaultBranch = master" >> $HOME/.gitconfig
   $ echo "[core]" >> $HOME/.gitconfig
   $ echo "autocrlf = false" >> $HOME/.gitconfig
   $ echo "[core]" >> $HOME/.gitconfig
