@@ -815,8 +815,14 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         if copysource:
             wctx.markcopied(path, copysource)
 
+    desc = rewriteutil.update_hash_refs(
+        repo,
+        ctx.description(),
+        {oldnode: [newnode] for oldnode, newnode in replacements.items()},
+    )
+
     memctx = wctx.tomemctx(
-        text=ctx.description(),
+        text=desc,
         branch=ctx.branch(),
         extra=extra,
         date=ctx.date(),
