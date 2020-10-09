@@ -57,9 +57,11 @@ impl Node {
         let head = split.next().unwrap_or(b"");
         let tail = split.next().unwrap_or(b"");
 
+        // Are we're modifying the current file ? Is the the end of the path ?
+        let is_current_file = tail.is_empty() && head.is_empty();
+
         if let NodeKind::File(file) = &mut self.kind {
-            if tail.is_empty() && head.is_empty() {
-                // We're modifying the current file
+            if is_current_file {
                 let new = Self {
                     kind: NodeKind::File(File {
                         entry: new_entry,
