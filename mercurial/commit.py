@@ -114,6 +114,8 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     p1 = ctx.p1()
 
     writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
+    ms = mergestate.mergestate.read(repo)
+    salvaged = _get_salvaged(repo, ms, ctx)
 
     if ctx.manifestnode():
         # reuse an existing manifest revision
@@ -140,8 +142,6 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         files.update_copies_from_p1(ctx.p1copies())
         files.update_copies_from_p2(ctx.p2copies())
 
-    ms = mergestate.mergestate.read(repo)
-    salvaged = _get_salvaged(ctx.repo(), ms, ctx)
     for s in salvaged:
         files.mark_salvaged(s)
 
