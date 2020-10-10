@@ -114,14 +114,16 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     p1 = ctx.p1()
 
     writechangesetcopy, writefilecopymeta = _write_copy_meta(repo)
+    files = metadata.ChangingFiles()
     ms = mergestate.mergestate.read(repo)
     salvaged = _get_salvaged(repo, ms, ctx)
+    for s in salvaged:
+        files.mark_salvaged(s)
 
     if ctx.manifestnode():
         # reuse an existing manifest revision
         repo.ui.debug(b'reusing known manifest\n')
         mn = ctx.manifestnode()
-        files = metadata.ChangingFiles()
         files.update_touched(ctx.files())
         if writechangesetcopy:
             files.update_added(ctx.filesadded())
@@ -129,9 +131,8 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     elif not ctx.files():
         repo.ui.debug(b'reusing manifest from p1 (no file change)\n')
         mn = p1.manifestnode()
-        files = metadata.ChangingFiles()
     else:
-        mn, files = _process_files(tr, ctx, ms, error=error)
+        mn = _process_files(tr, ctx, ms, files, error=error)
 
     if origctx and origctx.manifestnode() == mn:
         origfiles = origctx.files()
@@ -141,9 +142,6 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     if writechangesetcopy:
         files.update_copies_from_p1(ctx.p1copies())
         files.update_copies_from_p2(ctx.p2copies())
-
-    for s in salvaged:
-        files.mark_salvaged(s)
 
     return mn, files
 
@@ -165,7 +163,7 @@ def _get_salvaged(repo, ms, ctx):
     return salvaged
 
 
-def _process_files(tr, ctx, ms, error=False):
+def _process_files(tr, ctx, ms, files, error=False):
     repo = ctx.repo()
     p1 = ctx.p1()
     p2 = ctx.p2()
@@ -179,8 +177,6 @@ def _process_files(tr, ctx, ms, error=False):
     m = mctx.read()
     m1 = m1ctx.read()
     m2 = m2ctx.read()
-
-    files = metadata.ChangingFiles()
 
     # check in files
     added = []
@@ -231,7 +227,7 @@ def _process_files(tr, ctx, ms, error=False):
 
     mn = _commit_manifest(tr, linkrev, ctx, mctx, m, files.touched, added, drop)
 
-    return mn, files
+    return mn
 
 
 def _filecommit(
