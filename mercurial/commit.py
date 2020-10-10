@@ -131,7 +131,7 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         mn = p1.manifestnode()
         files = metadata.ChangingFiles()
     else:
-        mn, files = _process_files(tr, ctx, error=error)
+        mn, files = _process_files(tr, ctx, ms, error=error)
 
     if origctx and origctx.manifestnode() == mn:
         origfiles = origctx.files()
@@ -165,7 +165,7 @@ def _get_salvaged(repo, ms, ctx):
     return salvaged
 
 
-def _process_files(tr, ctx, error=False):
+def _process_files(tr, ctx, ms, error=False):
     repo = ctx.repo()
     p1 = ctx.p1()
     p2 = ctx.p2()
@@ -179,7 +179,6 @@ def _process_files(tr, ctx, error=False):
     m = mctx.read()
     m1 = m1ctx.read()
     m2 = m2ctx.read()
-    ms = mergestate.mergestate.read(repo)
 
     files = metadata.ChangingFiles()
 
