@@ -140,20 +140,29 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         files.update_copies_from_p1(ctx.p1copies())
         files.update_copies_from_p2(ctx.p2copies())
 
-    copy_sd = ctx.repo().filecopiesmode == b'changeset-sidedata'
+    ms = mergestate.mergestate.read(repo)
+    salvaged = _get_salvaged(ctx.repo(), ms, ctx)
+    for s in salvaged:
+        files.mark_salvaged(s)
+
+    return mn, files
+
+
+def _get_salvaged(repo, ms, ctx):
+    """ returns a list of salvaged files
+
+    returns empty list if config option which process salvaged files are
+    not enabled """
+    salvaged = []
+    copy_sd = repo.filecopiesmode == b'changeset-sidedata'
     if copy_sd and len(ctx.parents()) > 1:
-        # XXX this `mergestate.read` could be duplicated with a the merge state
-        # reading in _process_files So we could refactor further to reuse it in
-        # some cases.
-        ms = mergestate.mergestate.read(repo)
         if ms.active():
             for fname in sorted(ms._stateextras.keys()):
                 might_removed = ms.extras(fname).get(b'merge-removal-candidate')
                 if might_removed == b'yes':
                     if fname in ctx:
-                        files.mark_salvaged(fname)
-
-    return mn, files
+                        salvaged.append(fname)
+    return salvaged
 
 
 def _process_files(tr, ctx, error=False):
