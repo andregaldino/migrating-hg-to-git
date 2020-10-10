@@ -2107,7 +2107,7 @@ def debugmergestate(ui, repo, *args, **opts):
     fm_files.end()
 
     fm_extras = fm.nested(b'extras')
-    for f, d in sorted(pycompat.iteritems(ms._stateextras)):
+    for f, d in sorted(pycompat.iteritems(ms.allextras())):
         if f in ms:
             # If file is in mergestate, we have already processed it's extras
             continue

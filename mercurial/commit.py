@@ -155,7 +155,7 @@ def _get_salvaged(repo, ms, ctx):
     copy_sd = repo.filecopiesmode == b'changeset-sidedata'
     if copy_sd and len(ctx.parents()) > 1:
         if ms.active():
-            for fname in sorted(ms._stateextras.keys()):
+            for fname in sorted(ms.allextras().keys()):
                 might_removed = ms.extras(fname).get(b'merge-removal-candidate')
                 if might_removed == b'yes':
                     if fname in ctx:
