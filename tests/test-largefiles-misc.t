@@ -125,7 +125,7 @@ TODO: Ideally, this should mention the largefile, not the standin
   $ hg clone -q . ../fetch
   $ hg --config extensions.fetch= fetch ../fetch
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg up -qC
   $ cd ..
 

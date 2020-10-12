@@ -442,7 +442,7 @@ ensure that we have a merge with unresolved conflicts
   $ hg shelve
   abort: unshelve already in progress
   (use 'hg unshelve --continue' or 'hg unshelve --abort')
-  [255]
+  [20]
 
 abort the unshelve and be happy
 
@@ -474,7 +474,7 @@ try to continue with no unshelve underway
 
   $ hg unshelve -c
   abort: no unshelve in progress
-  [255]
+  [20]
   $ hg status
   A foo/foo
   ? a/a.orig
@@ -501,12 +501,12 @@ attempt to continue
   $ hg commit -m 'commit while unshelve in progress'
   abort: unshelve already in progress
   (use 'hg unshelve --continue' or 'hg unshelve --abort')
-  [255]
+  [20]
 
   $ hg graft --continue
   abort: no graft in progress
   (continue: hg unshelve --continue)
-  [255]
+  [20]
   $ hg unshelve -c
   unshelve of 'default' complete
 
@@ -1184,7 +1184,7 @@ Abort unshelve while merging (issue5123)
   $ hg unshelve
   abort: outstanding uncommitted merge
   (use 'hg commit' or 'hg merge --abort')
-  [255]
+  [20]
 
   $ cd ..
 
@@ -1483,7 +1483,7 @@ Abort unshelve while merging (issue5123)
 
   $ hg unshelve --continue
   abort: no unshelve in progress
-  [255]
+  [20]
 
   $ hg shelve --list
   default-01      (*)* changes to: add A to bars (glob)

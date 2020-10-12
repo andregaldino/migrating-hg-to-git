@@ -129,7 +129,7 @@ Update - local renamed file conflicts with remote directory
   R base
   $ hg up --check dir
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg up dir
   a: path conflict - a file or link has the same name as a directory
   the local file has been renamed to a~d20a80d4def3
@@ -154,7 +154,7 @@ Update clean - local directory conflicts with changed remote file
   $ echo 9 > a/b/c
   $ hg up file2 --check --config merge.checkunknown=warn
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg up file2 --clean
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (activating bookmark file2)

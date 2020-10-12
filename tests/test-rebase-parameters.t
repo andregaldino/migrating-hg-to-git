@@ -500,7 +500,7 @@ Test --tool parameter:
   $ hg graft --continue
   abort: no graft in progress
   (continue: hg rebase --continue)
-  [255]
+  [20]
   $ hg rebase -c --tool internal:fail
   rebasing 2:e4e3f3546619 tip "c2b"
   note: not rebasing 2:e4e3f3546619 tip "c2b", its destination already has all its changes

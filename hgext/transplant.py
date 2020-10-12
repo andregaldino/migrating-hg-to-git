@@ -804,10 +804,10 @@ def _dotransplant(ui, repo, *revs, **opts):
         raise error.Abort(_(b'no revision checked out'))
     if opts.get(b'continue'):
         if not tp.canresume():
-            raise error.Abort(_(b'no transplant to continue'))
+            raise error.StateError(_(b'no transplant to continue'))
     elif opts.get(b'stop'):
         if not tp.canresume():
-            raise error.Abort(_(b'no interrupted transplant found'))
+            raise error.StateError(_(b'no interrupted transplant found'))
         return tp.stop(ui, repo)
     else:
         cmdutil.checkunfinished(repo)

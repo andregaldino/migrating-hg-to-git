@@ -492,11 +492,11 @@ tagging on an uncommitted merge (issue2542)
 
   $ hg tag t1
   abort: uncommitted merge
-  [255]
+  [20]
   $ hg status
   $ hg tag --rev 1 t2
   abort: uncommitted merge
-  [255]
+  [20]
   $ hg tag --rev 1 --local t3
   $ hg tags -v
   tip                                2:2a156e8887cc

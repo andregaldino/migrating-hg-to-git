@@ -317,7 +317,7 @@ before strip of merge parent
   $ hg strip 4
   abort: outstanding uncommitted merge
   (use 'hg commit' or 'hg merge --abort')
-  [255]
+  [20]
 ##strip allowed --force with merge in progress
   $ hg strip 4 --force
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -606,7 +606,7 @@ Verify strip protects against stripping wc parent when there are uncommitted mod
   $ echo c > b
   $ hg strip tip
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg strip tip --keep
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
   $ hg log --graph
@@ -758,7 +758,7 @@ test hg strip -B bookmark
   $ hg add a
   $ hg strip -B B
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg bookmarks
    * B                         6:ff43616e5d0f
 

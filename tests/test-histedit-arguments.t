@@ -55,11 +55,11 @@ histedit --continue/--abort with no existing state
 
   $ hg histedit --continue
   abort: no histedit in progress
-  [255]
+  [20]
   $ hg abort
   abort: no histedit in progress (abortflag !)
   abort: no operation in progress (abortcommand !)
-  [255]
+  [20]
 
 Run a dummy edit to make sure we get tip^^ correctly via revsingle.
 --------------------------------------------------------------------
@@ -156,7 +156,7 @@ temporarily.
   $ hg graft --continue
   abort: no graft in progress
   (continue: hg histedit --continue)
-  [255]
+  [20]
 
   $ mv .hg/histedit-state .hg/histedit-state.back
   $ hg update --quiet --clean 2
@@ -505,7 +505,7 @@ in which case this test should be revisited.
   $ hg commit --amend -m 'reject this fold'
   abort: histedit in progress
   (use 'hg histedit --continue' or 'hg histedit --abort')
-  [255]
+  [20]
 
 With markers enabled, histedit does not get confused, and
 amend should not be blocked by the ongoing histedit.

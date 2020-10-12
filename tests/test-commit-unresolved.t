@@ -47,7 +47,7 @@ Testing the abort functionality first in case of conflicts
   $ hg abort
   abort: no merge in progress (abortflag !)
   abort: no operation in progress (abortcommand !)
-  [255]
+  [20]
 
   $ hg merge
   merging A

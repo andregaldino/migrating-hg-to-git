@@ -53,12 +53,12 @@
   $ hg transplant 1
   abort: outstanding uncommitted merge
   (use 'hg commit' or 'hg merge --abort')
-  [255]
+  [20]
   $ hg up -qC tip
   $ echo b0 > b1
   $ hg transplant 1
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg up -qC tip
   $ echo b2 > b2
   $ hg ci -Amb2 -d '1 0'
@@ -513,10 +513,10 @@ transplant -c shouldn't use an old changeset
   $ hg continue
   abort: no transplant to continue (continueflag !)
   abort: no operation in progress (no-continueflag !)
-  [255]
+  [20]
   $ hg transplant --stop
   abort: no interrupted transplant found
-  [255]
+  [20]
   $ hg transplant 1
   applying 46ae92138f3c
   patching file foo
@@ -571,7 +571,7 @@ test multiple revisions, --continue and hg status --verbose
   $ hg transplant 1:3
   abort: transplant in progress
   (use 'hg transplant --continue' or 'hg transplant --stop')
-  [255]
+  [20]
   $ hg status -v
   A bar
   ? added.rej

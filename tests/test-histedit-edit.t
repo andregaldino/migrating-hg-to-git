@@ -63,7 +63,7 @@ dirty a file
   $ hg histedit 177f92b77385 --commands - 2>&1 << EOF
   > EOF
   abort: uncommitted changes
-  [255]
+  [20]
   $ echo g > g
 
 edit the history
@@ -82,7 +82,7 @@ try to update and get an error
   $ hg update tip
   abort: histedit in progress
   (use 'hg histedit --continue' or 'hg histedit --abort')
-  [255]
+  [20]
 
 edit the plan via the editor
   $ cat >> $TESTTMP/editplan.sh <<EOF
@@ -136,7 +136,7 @@ Go at a random point and try to continue
   $ hg up 0
   abort: histedit in progress
   (use 'hg histedit --continue' or 'hg histedit --abort')
-  [255]
+  [20]
 
 Try to delete necessary commit
   $ hg strip -r 652413b
@@ -153,7 +153,7 @@ qnew should fail while we're in the middle of the edit step
   $ hg --config extensions.mq= qnew please-fail
   abort: histedit in progress
   (use 'hg histedit --continue' or 'hg histedit --abort')
-  [255]
+  [20]
   $ HGEDITOR='echo foobaz > ' hg histedit --continue 2>&1 | fixbundle
 
   $ hg log --graph

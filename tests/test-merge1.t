@@ -36,7 +36,7 @@ of the files in a commit we're updating to
   $ hg ci
   abort: last update was interrupted
   (use 'hg update' to get a consistent checkout)
-  [255]
+  [20]
   $ hg sum
   parent: 0:538afb845929 
    commit #0

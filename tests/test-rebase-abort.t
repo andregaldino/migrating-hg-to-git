@@ -328,7 +328,7 @@ user has somehow managed to update to a different revision (issue4009)
   $ hg up 1               # user gets an error saying to run hg rebase --abort
   abort: rebase in progress
   (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
-  [255]
+  [20]
 
   $ cat a
   new
@@ -398,20 +398,20 @@ New operations are blocked with the correct state message
   $ hg rebase -s 3 -d tip
   abort: rebase in progress
   (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
-  [255]
+  [20]
   $ hg up .
   abort: rebase in progress
   (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
-  [255]
+  [20]
   $ hg up -C .
   abort: rebase in progress
   (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
-  [255]
+  [20]
 
   $ hg graft 3
   abort: rebase in progress
   (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
-  [255]
+  [20]
 
   $ hg abort
   saved backup bundle to $TESTTMP/interrupted/.hg/strip-backup/3d8812cf300d-93041a90-backup.hg

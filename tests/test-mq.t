@@ -812,7 +812,7 @@ strip with local changes, should complain
   $ hg add y
   $ hg strip tip
   abort: uncommitted changes
-  [255]
+  [20]
 
 --force strip with local changes
 

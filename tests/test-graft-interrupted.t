@@ -238,7 +238,7 @@ Testing the --stop flag of `hg graft` which stops the interrupted graft
 
   $ hg graft --stop
   abort: no interrupted graft found
-  [255]
+  [20]
 
   $ hg graft -r 3
   grafting 3:9150fe93bec6 "added d"
@@ -342,7 +342,7 @@ before the graft
   $ hg abort
   abort: no interrupted graft to abort (abortflag !)
   abort: no operation in progress (abortcommand !)
-  [255]
+  [20]
 
 when stripping is required
   $ hg graft -r 4 -r 5

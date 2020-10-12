@@ -80,7 +80,7 @@ Abort pull early if working dir is not clean:
   $ hg pull --rebase
   abort: uncommitted changes
   (cannot pull with rebase: please commit or shelve your changes first)
-  [255]
+  [20]
   $ hg update --clean --quiet
 
 Abort pull early if another operation (histedit) is in progress:
@@ -94,7 +94,7 @@ Abort pull early if another operation (histedit) is in progress:
   $ hg pull --rebase
   abort: histedit in progress
   (use 'hg histedit --continue' or 'hg histedit --abort')
-  [255]
+  [20]
   $ hg histedit --abort --quiet
 
 Abort pull early with pending uncommitted merge:
@@ -117,7 +117,7 @@ Abort pull early with pending uncommitted merge:
   $ hg pull --rebase
   abort: outstanding uncommitted merge
   (cannot pull with rebase: please commit or shelve your changes first)
-  [255]
+  [20]
   $ hg update --clean --quiet
 
 Abort pull early with unclean subrepo:

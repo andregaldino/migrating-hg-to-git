@@ -57,7 +57,7 @@ Try to call --continue:
 
   $ hg rebase --continue
   abort: no rebase in progress
-  [255]
+  [20]
 
 Conflicting rebase:
 

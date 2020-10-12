@@ -46,7 +46,7 @@ noticed by `update --check` in the top level repo.
 
   $ hg up --check -r '.^'
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg st -S
   ! a
   $ hg up -Cq .

@@ -65,7 +65,7 @@ Change with dirty working directory
   $ echo bar > a
   $ hg branch -r . foo
   abort: uncommitted changes
-  [255]
+  [20]
 
   $ hg revert --all
   reverting a
@@ -331,7 +331,7 @@ Changing branch of a merge commit
   (branch merge, don't forget to commit)
   $ hg branch -r . abcd
   abort: outstanding uncommitted merge
-  [255]
+  [20]
 
   $ hg ci -m "Merge commit"
   $ hg glog -r 'parents(.)::'

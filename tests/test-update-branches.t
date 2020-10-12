@@ -701,6 +701,6 @@ Test that boolean flags allow --no-flag specification to override [defaults]
   > EOF
   $ hg co 2
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg co --no-check 2
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved

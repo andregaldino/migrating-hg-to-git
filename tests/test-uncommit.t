@@ -168,11 +168,11 @@ Uncommit with dirty state
   $ hg uncommit
   abort: uncommitted changes
   (requires --allow-dirty-working-copy to uncommit)
-  [255]
+  [20]
   $ hg uncommit files
   abort: uncommitted changes
   (requires --allow-dirty-working-copy to uncommit)
-  [255]
+  [20]
   $ cat files
   abcde
   foo
@@ -184,7 +184,7 @@ Testing the 'experimental.uncommitondirtywdir' config
   $ hg uncommit
   abort: uncommitted changes
   (requires --allow-dirty-working-copy to uncommit)
-  [255]
+  [20]
   $ hg uncommit --config experimental.uncommitondirtywdir=True
   $ hg commit -m "files abcde + foo"
 
@@ -407,7 +407,7 @@ Add and expect uncommit to fail on both merge working dir and merge changeset
   $ hg uncommit
   abort: outstanding uncommitted merge
   (requires --allow-dirty-working-copy to uncommit)
-  [255]
+  [20]
 
   $ hg uncommit --config experimental.uncommitondirtywdir=True
   abort: cannot uncommit while merging
@@ -507,7 +507,7 @@ Copy a->b1 and a->b2, then rename b1->c in working copy. Result should copy a->b
   $ hg uncommit b
   abort: uncommitted changes
   (requires --allow-dirty-working-copy to uncommit)
-  [255]
+  [20]
   $ hg uncommit --allow-dirty-working-copy b
   $ hg log
   changeset:   3:30fa958635b2

@@ -224,6 +224,8 @@ def callcatch(ui, func):
     except error.Abort as inst:
         if isinstance(inst, error.InputError):
             detailed_exit_code = 10
+        elif isinstance(inst, error.StateError):
+            detailed_exit_code = 20
         ui.error(_(b"abort: %s\n") % inst.message)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)

@@ -89,7 +89,7 @@ Cannot split while working directory is dirty
   $ hg add dirty
   $ hg split .
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg forget dirty
   $ rm dirty
 

@@ -157,7 +157,7 @@ should abort, because i is modified
 
   $ hg --cwd i fetch ../h
   abort: uncommitted changes
-  [255]
+  [20]
 
 test fetch with named branches
 

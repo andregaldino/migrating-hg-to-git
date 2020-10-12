@@ -132,13 +132,13 @@ resolve --all should abort when no merge in progress
 
   $ hg resolve --all
   abort: resolve command not applicable when not merging
-  [255]
+  [20]
 
 resolve -m should abort when no merge in progress
 
   $ hg resolve -m
   abort: resolve command not applicable when not merging
-  [255]
+  [20]
 
 can not update or merge when there are unresolved conflicts
 
@@ -332,7 +332,7 @@ resolve -m can be configured to look for remaining conflict markers
     file2
   abort: conflict markers detected
   (use --all to mark anyway)
-  [255]
+  [20]
   $ hg resolve -l
   U file1
   U file2

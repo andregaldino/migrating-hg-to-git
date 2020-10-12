@@ -29,7 +29,7 @@ Should respect config to disable dirty update
   new changesets 107cefe13e42
   1 local changesets published
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg --config extensions.strip= strip --no-backup tip
   $ hg co -qC tip
 

@@ -2058,7 +2058,7 @@ Test --stop raise errors with conflicting options:
   $ hg rebase -s 3 -d 5
   abort: rebase in progress
   (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
-  [255]
+  [20]
   $ hg rebase --stop --continue
   abort: cannot specify both --stop and --continue
   [10]

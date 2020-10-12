@@ -16,7 +16,7 @@
   $ rm b
   $ hg update -c 2
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg revert b
   $ hg update -c 2
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved

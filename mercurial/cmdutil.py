@@ -1087,10 +1087,10 @@ def bailifchanged(repo, merge=True, hint=None):
     """
 
     if merge and repo.dirstate.p2() != nullid:
-        raise error.Abort(_(b'outstanding uncommitted merge'), hint=hint)
+        raise error.StateError(_(b'outstanding uncommitted merge'), hint=hint)
     st = repo.status()
     if st.modified or st.added or st.removed or st.deleted:
-        raise error.Abort(_(b'uncommitted changes'), hint=hint)
+        raise error.StateError(_(b'uncommitted changes'), hint=hint)
     ctx = repo[None]
     for s in sorted(ctx.substate):
         ctx.sub(s).bailifchanged(hint=hint)
@@ -3738,7 +3738,7 @@ def checkunfinished(repo, commit=False, skipmerge=False):
         ):
             continue
         if state.isunfinished(repo):
-            raise error.Abort(state.msg(), hint=state.hint())
+            raise error.StateError(state.msg(), hint=state.hint())
 
     for s in statemod._unfinishedstates:
         if (
@@ -3749,7 +3749,7 @@ def checkunfinished(repo, commit=False, skipmerge=False):
         ):
             continue
         if s.isunfinished(repo):
-            raise error.Abort(s.msg(), hint=s.hint())
+            raise error.StateError(s.msg(), hint=s.hint())
 
 
 def clearunfinished(repo):
@@ -3760,7 +3760,7 @@ def clearunfinished(repo):
         if state._reportonly:
             continue
         if not state._clearable and state.isunfinished(repo):
-            raise error.Abort(state.msg(), hint=state.hint())
+            raise error.StateError(state.msg(), hint=state.hint())
 
     for s in statemod._unfinishedstates:
         if s._opname == b'merge' or state._reportonly:
@@ -3829,14 +3829,14 @@ def wrongtooltocontinue(repo, task):
     hint = None
     if after[1]:
         hint = after[0]
-    raise error.Abort(_(b'no %s in progress') % task, hint=hint)
+    raise error.StateError(_(b'no %s in progress') % task, hint=hint)
 
 
 def abortgraft(ui, repo, graftstate):
     """abort the interrupted graft and rollbacks to the state before interrupted
     graft"""
     if not graftstate.exists():
-        raise error.Abort(_(b"no interrupted graft to abort"))
+        raise error.StateError(_(b"no interrupted graft to abort"))
     statedata = readgraftstate(repo, graftstate)
     newnodes = statedata.get(b'newnodes')
     if newnodes is None:

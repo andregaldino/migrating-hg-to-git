@@ -737,7 +737,7 @@ progress
 #if abortflag
   $ hg unshelve --abort
   abort: no unshelve in progress
-  [255]
+  [20]
 #else
   $ hg abort
   aborting the merge, updating back to 9451eaa6eee3
@@ -912,7 +912,7 @@ Block merge abort when unshelve in progress(issue6160)
   $ hg merge --abort
   abort: cannot abort merge with unshelve in progress
   (use 'hg unshelve --continue' or 'hg unshelve --abort')
-  [255]
+  [20]
 
   $ hg unshelve --abort
   unshelve of 'default' aborted

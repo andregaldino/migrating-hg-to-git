@@ -484,7 +484,7 @@ Retrying without in-memory merge won't lose working copy changes
   transaction abort!
   rollback completed
   abort: uncommitted changes
-  [255]
+  [20]
   $ cat a
   dirty
 
@@ -503,7 +503,7 @@ Retrying without in-memory merge won't lose merge state
   $ hg rebase -s 2 -d 7
   abort: outstanding uncommitted merge
   (use 'hg commit' or 'hg merge --abort')
-  [255]
+  [20]
   $ hg resolve -l
   U e
 
@@ -893,7 +893,7 @@ Test rebasing when we're in the middle of a rebase already
   $ hg rebase -r 3 -d 1 -t:merge3
   abort: rebase in progress
   (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
-  [255]
+  [20]
   $ hg resolve --list
   U foo
   $ hg resolve --all --re-merge -t:other

@@ -85,7 +85,7 @@ Can't continue without starting:
   $ hg rm -q e
   $ hg graft --continue
   abort: no graft in progress
-  [255]
+  [20]
   $ hg revert -r . -q e
 
 Need to specify a rev:
@@ -130,7 +130,7 @@ Can't graft with dirty wd:
   $ echo foo > a
   $ hg graft 1
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg revert a
 
 Graft a rename:
@@ -292,7 +292,7 @@ Commit while interrupted should fail:
   $ hg ci -m 'commit interrupted graft'
   abort: graft in progress
   (use 'hg graft --continue' or 'hg graft --stop' to stop)
-  [255]
+  [20]
 
 Abort the graft and try committing:
 

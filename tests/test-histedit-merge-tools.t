@@ -60,7 +60,7 @@ Invert the order of the commits, and pretend the merge succeeded.
   7181f42b8fca: skipping changeset (no changes)
   $ hg histedit --abort
   abort: no histedit in progress
-  [255]
+  [20]
   $ cd ..
 
 Test legacy config name

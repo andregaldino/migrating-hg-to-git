@@ -470,4 +470,4 @@ qrecord should throw an error when histedit in process
   > EOF
   abort: histedit in progress
   (use 'hg histedit --continue' or 'hg histedit --abort')
-  [255]
+  [20]

@@ -392,7 +392,7 @@ mangling the working directory...
   $ hg rebase -s 5 -d 4 --dry-run
   starting dry-run rebase; repository will not be changed
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg diff
   diff -r 2b586e70108d A
   --- a/A	Thu Jan 01 00:00:00 1970 +0000
@@ -406,7 +406,7 @@ mangling the working directory...
   $ echo n | hg rebase -s 5 -d 4 --confirm --config ui.interactive=True
   starting in-memory rebase
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg diff
   diff -r 2b586e70108d A
   --- a/A	Thu Jan 01 00:00:00 1970 +0000
@@ -417,7 +417,7 @@ mangling the working directory...
   $ hg rebase -s 5 -d 4 --confirm
   starting in-memory rebase
   abort: uncommitted changes
-  [255]
+  [20]
   $ hg diff
   diff -r 2b586e70108d A
   --- a/A	Thu Jan 01 00:00:00 1970 +0000

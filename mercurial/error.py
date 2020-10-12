@@ -188,6 +188,13 @@ class InputError(Abort):
     """
 
 
+class StateError(Abort):
+    """Indicates that the operation might work if retried in a different state.
+
+    Examples: Unresolved merge conflicts, unfinished operations.
+    """
+
+
 class HookLoadError(Abort):
     """raised when loading a hook fails, aborting an operation
 

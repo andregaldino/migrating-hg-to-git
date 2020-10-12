@@ -187,7 +187,7 @@ def abort(ui, repo, **opts):
     dryrun = opts.get('dry_run')
     abortstate = cmdutil.getunfinishedstate(repo)
     if not abortstate:
-        raise error.Abort(_(b'no operation in progress'))
+        raise error.StateError(_(b'no operation in progress'))
     if not abortstate.abortfunc:
         raise error.InputError(
             (
@@ -1065,7 +1065,7 @@ def bisect(
             try:
                 node = state[b'current'][0]
             except LookupError:
-                raise error.Abort(
+                raise error.StateError(
                     _(
                         b'current bisect revision is unknown - '
                         b'start a new bisect to fix'
@@ -1074,7 +1074,7 @@ def bisect(
         else:
             node, p2 = repo.dirstate.parents()
             if p2 != nullid:
-                raise error.Abort(_(b'current bisect revision is a merge'))
+                raise error.StateError(_(b'current bisect revision is a merge'))
         if rev:
             node = repo[scmutil.revsingle(repo, rev, node)].node()
         with hbisect.restore_state(repo, state, node):
@@ -1127,7 +1127,7 @@ def bisect(
                 state[b'current'] = [extendnode.node()]
                 hbisect.save_state(repo, state)
                 return mayupdate(repo, extendnode.node())
-        raise error.Abort(_(b"nothing to extend"))
+        raise error.StateError(_(b"nothing to extend"))
 
     if changesets == 0:
         hbisect.printresult(ui, repo, state, displayer, nodes, good)
@@ -2335,9 +2335,9 @@ def continuecmd(ui, repo, **opts):
     dryrun = opts.get('dry_run')
     contstate = cmdutil.getunfinishedstate(repo)
     if not contstate:
-        raise error.Abort(_(b'no operation in progress'))
+        raise error.StateError(_(b'no operation in progress'))
     if not contstate.continuefunc:
-        raise error.Abort(
+        raise error.StateError(
             (
                 _(b"%s in progress but does not support 'hg continue'")
                 % (contstate._opname)
@@ -3270,7 +3270,7 @@ def _dograft(ui, repo, *revs, **opts):
 def _stopgraft(ui, repo, graftstate):
     """stop the interrupted graft"""
     if not graftstate.exists():
-        raise error.Abort(_(b"no interrupted graft found"))
+        raise error.StateError(_(b"no interrupted graft found"))
     pctx = repo[b'.']
     mergemod.clean_update(pctx)
     graftstate.delete()
@@ -4767,7 +4767,7 @@ def merge(ui, repo, node=None, **opts):
     if abort:
         state = cmdutil.getunfinishedstate(repo)
         if state and state._opname != b'merge':
-            raise error.Abort(
+            raise error.StateError(
                 _(b'cannot abort merge with %s in progress') % (state._opname),
                 hint=state.hint(),
             )
@@ -5893,7 +5893,7 @@ def resolve(ui, repo, *pats, **opts):
         ms = mergestatemod.mergestate.read(repo)
 
         if not (ms.active() or repo.dirstate.p2() != nullid):
-            raise error.Abort(
+            raise error.StateError(
                 _(b'resolve command not applicable when not merging')
             )
 
@@ -5985,7 +5985,7 @@ def resolve(ui, repo, *pats, **opts):
                 )
             )
             if markcheck == b'abort' and not all and not pats:
-                raise error.Abort(
+                raise error.StateError(
                     _(b'conflict markers detected'),
                     hint=_(b'use --all to mark anyway'),
                 )
@@ -7185,7 +7185,7 @@ def tag(ui, repo, name1, *names, **opts):
         if not opts.get(b'local'):
             p1, p2 = repo.dirstate.parents()
             if p2 != nullid:
-                raise error.Abort(_(b'uncommitted merge'))
+                raise error.StateError(_(b'uncommitted merge'))
             bheads = repo.branchheads()
             if not opts.get(b'force') and bheads and p1 not in bheads:
                 raise error.InputError(
