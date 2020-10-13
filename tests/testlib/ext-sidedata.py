@@ -70,7 +70,7 @@ def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
             # and sha2 hashes
             sha256 = hashlib.sha256(text).digest()
             update[sidedata.SD_TEST2] = struct.pack('>32s', sha256)
-            return False, (), update
+            return False, (), update, 0, 0
 
     return sidedatacompanion
 

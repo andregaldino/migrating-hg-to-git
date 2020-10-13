@@ -732,8 +732,8 @@ def getsidedatacompanion(srcrepo, dstrepo):
         def sidedatacompanion(rl, rev):
             rl = getattr(rl, '_revlog', rl)
             if rl.flags(rev) & revlog.REVIDX_SIDEDATA:
-                return True, (), {}
-            return False, (), {}
+                return True, (), {}, 0, 0
+            return False, (), {}, 0, 0
 
     elif requirements.COPIESSDC_REQUIREMENT in addedreqs:
         sidedatacompanion = metadata.getsidedataadder(srcrepo, dstrepo)

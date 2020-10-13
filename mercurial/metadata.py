@@ -893,8 +893,11 @@ def _get_worker_sidedata_adder(srcrepo, destrepo):
                     staging[r] = data
                     r, sidedata = sidedataq.get()
             tokens.release()
-        sidedataq, has_copies_info = data
-        return False, (), sidedata
+        sidedata, has_copies_info = data
+        new_flag = 0
+        if has_copies_info:
+            new_flag = sidedataflag.REVIDX_HASCOPIESINFO
+        return False, (), sidedata, new_flag, 0
 
     return sidedata_companion
 
@@ -905,10 +908,14 @@ def _get_simple_sidedata_adder(srcrepo, destrepo):
     It just compute it in the same thread on request"""
 
     def sidedatacompanion(revlog, rev):
-        sidedata = {}
+        sidedata, has_copies_info = {}, False
         if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
             sidedata, has_copies_info = _getsidedata(srcrepo, rev)
-        return False, (), sidedata
+        new_flag = 0
+        if has_copies_info:
+            new_flag = sidedataflag.REVIDX_HASCOPIESINFO
+
+        return False, (), sidedata, new_flag, 0
 
     return sidedatacompanion
 
@@ -924,6 +931,6 @@ def getsidedataremover(srcrepo, destrepo):
                     sidedatamod.SD_FILESADDED,
                     sidedatamod.SD_FILESREMOVED,
                 )
-        return False, f, {}
+        return False, f, {}, 0, sidedataflag.REVIDX_HASCOPIESINFO
 
     return sidedatacompanion

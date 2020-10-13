@@ -1,4 +1,4 @@
-#testcases filelog compatibility changeset sidedata
+#testcases filelog compatibility changeset sidedata upgraded
 
 =====================================================
 Test Copy tracing for chain of copies involving merge
@@ -594,7 +594,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
  commit time.
 
 
-#if filelog
+#if upgraded
   $ cat >> $HGRCPATH << EOF
   > [format]
   > exp-use-side-data = yes
@@ -622,7 +622,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 #endif
 
 
-#if no-compatibility no-changeset
+#if no-compatibility no-filelog no-changeset
 
   $ for rev in `hg log --rev 'all()' -T '{rev}\n'`; do
   >     echo "##### revision $rev #####"
@@ -804,35 +804,6 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 
 #endif
 
-Downgrade to keep testing the filelog algorithm
-(This can be removed once we have an explicite "upgrade" tests case_
-
-#if filelog
-  $ cat >> $HGRCPATH << EOF
-  > [format]
-  > exp-use-side-data = no
-  > exp-use-copies-side-data-changeset = no
-  > EOF
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  sparserevlog:       yes    yes     yes
-  sidedata:           yes     no      no
-  persistent-nodemap:  no     no      no
-  copies-sdc:         yes     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        * (glob)
-  compression-level:  default default default
-  $ hg debugupgraderepo --run --quiet
-  upgrade will perform the following actions:
-  
-  requirements
-     preserved: * (glob)
-     removed: exp-copies-sidedata-changeset, exp-sidedata-flag
-  
-#endif
 
 Test copy information chaining
 ==============================
