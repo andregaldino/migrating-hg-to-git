@@ -803,7 +803,7 @@ def decode_files_sidedata(sidedata):
 def _getsidedata(srcrepo, rev):
     ctx = srcrepo[rev]
     files = compute_all_files_changes(ctx)
-    return encode_files_sidedata(files)
+    return encode_files_sidedata(files), files.has_copies_info
 
 
 def getsidedataadder(srcrepo, destrepo):
@@ -881,18 +881,19 @@ def _get_worker_sidedata_adder(srcrepo, destrepo):
     staging = {}
 
     def sidedata_companion(revlog, rev):
-        sidedata = {}
+        data = {}, False
         if util.safehasattr(revlog, b'filteredrevs'):  # this is a changelog
             # Is the data previously shelved ?
             sidedata = staging.pop(rev, None)
             if sidedata is None:
                 # look at the queued result until we find the one we are lookig
                 # for (shelve the other ones)
-                r, sidedata = sidedataq.get()
+                r, data = sidedataq.get()
                 while r != rev:
-                    staging[r] = sidedata
+                    staging[r] = data
                     r, sidedata = sidedataq.get()
             tokens.release()
+        sidedataq, has_copies_info = data
         return False, (), sidedata
 
     return sidedata_companion
@@ -906,7 +907,7 @@ def _get_simple_sidedata_adder(srcrepo, destrepo):
     def sidedatacompanion(revlog, rev):
         sidedata = {}
         if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
-            sidedata = _getsidedata(srcrepo, rev)
+            sidedata, has_copies_info = _getsidedata(srcrepo, rev)
         return False, (), sidedata
 
     return sidedatacompanion
