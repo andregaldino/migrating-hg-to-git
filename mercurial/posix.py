@@ -764,10 +764,14 @@ def bindunixsocket(sock, path):
     # platforms (see sys/un.h)
     dirname, basename = os.path.split(path)
     bakwdfd = None
-    if dirname:
-        bakwdfd = os.open(b'.', os.O_DIRECTORY)
-        os.chdir(dirname)
-    sock.bind(basename)
-    if bakwdfd:
-        os.fchdir(bakwdfd)
-        os.close(bakwdfd)
+
+    try:
+        if dirname:
+            bakwdfd = os.open(b'.', os.O_DIRECTORY)
+            os.chdir(dirname)
+        sock.bind(basename)
+        if bakwdfd:
+            os.fchdir(bakwdfd)
+    finally:
+        if bakwdfd:
+            os.close(bakwdfd)
