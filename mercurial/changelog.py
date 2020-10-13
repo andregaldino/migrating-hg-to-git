@@ -583,13 +583,7 @@ class changelog(revlog.revlog):
         flags = 0
         sidedata = None
         if self._copiesstorage == b'changeset-sidedata':
-            if (
-                files.removed
-                or files.merged
-                or files.salvaged
-                or files.copied_from_p1
-                or files.copied_from_p2
-            ):
+            if files.has_copies_info:
                 flags |= flagutil.REVIDX_HASCOPIESINFO
             sidedata = metadata.encode_files_sidedata(files)
 

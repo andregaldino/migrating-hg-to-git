@@ -75,6 +75,16 @@ class ChangingFiles(object):
             and self.copied_from_p2 == other.copied_from_p2
         )
 
+    @property
+    def has_copies_info(self):
+        return bool(
+            self.removed
+            or self.merged
+            or self.salvaged
+            or self.copied_from_p1
+            or self.copied_from_p2
+        )
+
     @util.propertycache
     def added(self):
         """files actively added in the changeset
