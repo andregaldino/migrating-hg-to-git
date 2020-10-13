@@ -585,6 +585,255 @@ copy tracing chain.
 
   $ hg up null --quiet
 
+
+Test that sidedata computations during upgrades are correct
+===========================================================
+
+We upgrade a repository that is not using sidedata (the filelog case) and
+ check that the same side data have been generated as if they were computed at
+ commit time.
+
+
+#if filelog
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = yes
+  > exp-use-copies-side-data-changeset = yes
+  > EOF
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:            no    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no    yes      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        * (glob)
+  compression-level:  default default default
+  $ hg debugupgraderepo --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     added: exp-copies-sidedata-changeset, exp-sidedata-flag
+  
+#endif
+
+
+#if no-compatibility no-changeset
+
+  $ for rev in `hg log --rev 'all()' -T '{rev}\n'`; do
+  >     echo "##### revision $rev #####"
+  >     hg debugsidedata -c -v -- $rev
+  >     hg debugchangedfiles $rev
+  > done
+  ##### revision 0 #####
+  1 sidedata entries
+   entry-0014 size 34
+    '\x00\x00\x00\x03\x04\x00\x00\x00\x01\x00\x00\x00\x00\x04\x00\x00\x00\x02\x00\x00\x00\x00\x04\x00\x00\x00\x03\x00\x00\x00\x00abh'
+  added      : a, ;
+  added      : b, ;
+  added      : h, ;
+  ##### revision 1 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ac'
+  removed    : a, ;
+  added    p1: c, a;
+  ##### revision 2 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00cd'
+  removed    : c, ;
+  added    p1: d, c;
+  ##### revision 3 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00de'
+  removed    : d, ;
+  added    p1: e, d;
+  ##### revision 4 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ef'
+  removed    : e, ;
+  added    p1: f, e;
+  ##### revision 5 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00b'
+  touched    : b, ;
+  ##### revision 6 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x0c\x00\x00\x00\x01\x00\x00\x00\x00d'
+  removed    : d, ;
+  ##### revision 7 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x0c\x00\x00\x00\x01\x00\x00\x00\x00d'
+  removed    : d, ;
+  ##### revision 8 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
+  added      : d, ;
+  ##### revision 9 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00bg'
+  removed    : b, ;
+  added    p1: g, b;
+  ##### revision 10 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x06\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00fg'
+  added    p1: f, g;
+  removed    : g, ;
+  ##### revision 11 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 12 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 13 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 14 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
+  added      : d, ;
+  ##### revision 15 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 16 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
+  added      : d, ;
+  ##### revision 17 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 18 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 19 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
+  merged     : f, ;
+  ##### revision 20 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
+  merged     : f, ;
+  ##### revision 21 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00hi'
+  removed    : h, ;
+  added    p1: i, h;
+  ##### revision 22 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x16\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00di'
+  touched  p1: d, i;
+  removed    : i, ;
+  ##### revision 23 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 24 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 25 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d'
+  touched    : d, ;
+  ##### revision 26 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  merged     : d, ;
+  ##### revision 27 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  merged     : d, ;
+  ##### revision 28 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  merged     : d, ;
+  ##### revision 29 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
+  merged     : d, ;
+  ##### revision 30 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
+  ##### revision 31 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
+  ##### revision 32 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
+  ##### revision 33 #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
+
+#endif
+
+Downgrade to keep testing the filelog algorithm
+(This can be removed once we have an explicite "upgrade" tests case_
+
+#if filelog
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = no
+  > exp-use-copies-side-data-changeset = no
+  > EOF
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  sparserevlog:       yes    yes     yes
+  sidedata:           yes     no      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:         yes     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        * (glob)
+  compression-level:  default default default
+  $ hg debugupgraderepo --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     removed: exp-copies-sidedata-changeset, exp-sidedata-flag
+  
+#endif
+
 Test copy information chaining
 ==============================
 
@@ -1346,222 +1595,3 @@ copy tracing chain.
   A d
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mCB-revert-m-0")'
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBC-revert-m-0")'
-
-
-Test that sidedata computations during upgrades ares correct
-============================================================
-
-We upgrade a repository that is not using sidedata (the filelog case) and
- check that the same side data have been generated as if they were computed at
- commit time.
-
-
-#if filelog
-  $ cat >> $HGRCPATH << EOF
-  > [format]
-  > exp-use-side-data = yes
-  > exp-use-copies-side-data-changeset = yes
-  > EOF
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  sparserevlog:       yes    yes     yes
-  sidedata:            no    yes      no
-  persistent-nodemap:  no     no      no
-  copies-sdc:          no    yes      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        * (glob)
-  compression-level:  default default default
-  $ hg debugupgraderepo --run --quiet
-  upgrade will perform the following actions:
-  
-  requirements
-     preserved: * (glob)
-     added: exp-copies-sidedata-changeset, exp-sidedata-flag
-  
-#endif
-
-
-#if no-compatibility no-changeset
-
-  $ for rev in `hg log --rev 'all()' -T '{rev}\n'`; do
-  >     echo "##### revision $rev #####"
-  >     hg debugsidedata -c -v -- $rev
-  >     hg debugchangedfiles $rev
-  > done
-  ##### revision 0 #####
-  1 sidedata entries
-   entry-0014 size 34
-    '\x00\x00\x00\x03\x04\x00\x00\x00\x01\x00\x00\x00\x00\x04\x00\x00\x00\x02\x00\x00\x00\x00\x04\x00\x00\x00\x03\x00\x00\x00\x00abh'
-  added      : a, ;
-  added      : b, ;
-  added      : h, ;
-  ##### revision 1 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ac'
-  removed    : a, ;
-  added    p1: c, a;
-  ##### revision 2 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00cd'
-  removed    : c, ;
-  added    p1: d, c;
-  ##### revision 3 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00de'
-  removed    : d, ;
-  added    p1: e, d;
-  ##### revision 4 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ef'
-  removed    : e, ;
-  added    p1: f, e;
-  ##### revision 5 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00b'
-  touched    : b, ;
-  ##### revision 6 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x0c\x00\x00\x00\x01\x00\x00\x00\x00d'
-  removed    : d, ;
-  ##### revision 7 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x0c\x00\x00\x00\x01\x00\x00\x00\x00d'
-  removed    : d, ;
-  ##### revision 8 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
-  added      : d, ;
-  ##### revision 9 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00bg'
-  removed    : b, ;
-  added    p1: g, b;
-  ##### revision 10 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x06\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00fg'
-  added    p1: f, g;
-  removed    : g, ;
-  ##### revision 11 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 12 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 13 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 14 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
-  added      : d, ;
-  ##### revision 15 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 16 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x04\x00\x00\x00\x01\x00\x00\x00\x00d'
-  added      : d, ;
-  ##### revision 17 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 18 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 19 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
-  merged     : f, ;
-  ##### revision 20 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
-  merged     : f, ;
-  ##### revision 21 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00hi'
-  removed    : h, ;
-  added    p1: i, h;
-  ##### revision 22 #####
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x16\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00di'
-  touched  p1: d, i;
-  removed    : i, ;
-  ##### revision 23 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 24 #####
-  1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
-  ##### revision 25 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d'
-  touched    : d, ;
-  ##### revision 26 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
-  merged     : d, ;
-  ##### revision 27 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
-  merged     : d, ;
-  ##### revision 28 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
-  merged     : d, ;
-  ##### revision 29 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d'
-  merged     : d, ;
-  ##### revision 30 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
-  salvaged   : d, ;
-  ##### revision 31 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
-  salvaged   : d, ;
-  ##### revision 32 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
-  salvaged   : d, ;
-  ##### revision 33 #####
-  1 sidedata entries
-   entry-0014 size 14
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
-  salvaged   : d, ;
-
-#endif
