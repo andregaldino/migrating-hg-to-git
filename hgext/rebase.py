@@ -515,6 +515,21 @@ class rebaseruntime(object):
         ctx = repo[rev]
         if commitmsg is None:
             commitmsg = ctx.description()
+
+        # Skip replacement if collapsing, as that degenerates to p1 for all
+        # nodes.
+        if not self.collapsef:
+            cl = repo.changelog
+            commitmsg = rewriteutil.update_hash_refs(
+                repo,
+                commitmsg,
+                {
+                    cl.node(oldrev): [cl.node(newrev)]
+                    for oldrev, newrev in self.state.items()
+                    if newrev != revtodo
+                },
+            )
+
         date = self.date
         if date is None:
             date = ctx.date()
