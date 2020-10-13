@@ -400,7 +400,10 @@ def _merge_copies_dict(minor, major, isancestor, changes):
             elif changes is not None and dest in changes.merged:
                 minor[dest] = value
             elif not isancestor(new_tt, other_tt):
-                minor[dest] = value
+                if value[1] is not None:
+                    minor[dest] = value
+                elif isancestor(other_tt, new_tt):
+                    minor[dest] = value
 
 
 def _revinfo_getter_extra(repo):

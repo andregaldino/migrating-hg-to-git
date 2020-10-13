@@ -585,6 +585,50 @@ copy tracing chain.
 
   $ hg up null --quiet
 
+Merging a branch where a rename was deleted with a branch where the same file was renamed
+------------------------------------------------------------------------------------------
+
+Create a "conflicting" merge where `d` get removed on one branch before its
+rename information actually conflict with the other branch.
+
+(the copy information from the branch that was not deleted should win).
+
+  $ hg up 'desc("i-0")'
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg mv b d
+  $ hg ci -m "h-1: b -(move)-> d"
+  created new head
+
+  $ hg up 'desc("c-1")'
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg merge 'desc("h-1")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mCH-delete-before-conflict-m-0"
+
+  $ hg up 'desc("h-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("c-1")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mHC-delete-before-conflict-m-0"
+  created new head
+  $ hg log -G --rev '::(desc("mCH-delete-before-conflict-m")+desc("mHC-delete-before-conflict-m"))'
+  @    36 mHC-delete-before-conflict-m-0
+  |\
+  +---o  35 mCH-delete-before-conflict-m-0
+  | |/
+  | o  34 h-1: b -(move)-> d
+  | |
+  o |  6 c-1 delete d
+  | |
+  o |  2 i-2: c -move-> d
+  | |
+  o |  1 i-1: a -move-> c
+  |/
+  o  0 i-0 initial commit: a b h
+  
+
 
 Test that sidedata computations during upgrades are correct
 ===========================================================
@@ -801,6 +845,20 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 14
     '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
   salvaged   : d, ;
+  ##### revision 34 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00bd'
+  removed    : b, ;
+  added    p1: d, b;
+  ##### revision 35 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 36 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
 
 #endif
 
@@ -1558,3 +1616,51 @@ copy tracing chain.
   A d
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mCB-revert-m-0")'
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBC-revert-m-0")'
+
+
+Merging a branch where a rename was deleted with a branch where the same file was renamed
+------------------------------------------------------------------------------------------
+
+Create a "conflicting" merge where `d` get removed on one branch before its
+rename information actually conflict with the other branch.
+
+(the copy information from the branch that was not deleted should win).
+
+  $ hg log -G --rev '::(desc("mCH-delete-before-conflict-m")+desc("mHC-delete-before-conflict-m"))'
+  @    36 mHC-delete-before-conflict-m-0
+  |\
+  +---o  35 mCH-delete-before-conflict-m-0
+  | |/
+  | o  34 h-1: b -(move)-> d
+  | |
+  o |  6 c-1 delete d
+  | |
+  o |  2 i-2: c -move-> d
+  | |
+  o |  1 i-1: a -move-> c
+  |/
+  o  0 i-0 initial commit: a b h
+  
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCH-delete-before-conflict-m")'
+  A d
+    b (no-compatibility no-changeset !)
+  R a
+  R b
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mHC-delete-before-conflict-m")'
+  A d
+    b
+  R a
+  R b
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCH-delete-before-conflict-m")'
+  A d
+    b
+  R b
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mHC-delete-before-conflict-m")'
+  A d
+    b
+  R b
+  $ hg status --copies --rev 'desc("h-1")' --rev 'desc("mCH-delete-before-conflict-m")'
+  R a
+  $ hg status --copies --rev 'desc("h-1")' --rev 'desc("mHC-delete-before-conflict-m")'
+  R a
