@@ -16,6 +16,8 @@ from .utils import stringutil
 
 urlreq = util.urlreq
 
+CB_MANIFEST_FILE = b'clonebundles.manifest'
+
 
 @attr.s
 class bundlespec(object):

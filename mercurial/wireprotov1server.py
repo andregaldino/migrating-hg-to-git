@@ -273,7 +273,7 @@ def clonebundles(repo, proto):
     data center given the client's IP address.
     """
     return wireprototypes.bytesresponse(
-        repo.vfs.tryread(b'clonebundles.manifest')
+        repo.vfs.tryread(bundlecaches.CB_MANIFEST_FILE)
     )
 
 

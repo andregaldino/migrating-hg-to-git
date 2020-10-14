@@ -31,6 +31,7 @@ from . import (
     bookmarks,
     branchmap,
     bundle2,
+    bundlecaches,
     changegroup,
     color,
     commit,
@@ -299,7 +300,7 @@ class localpeer(repository.peer):
         return self._caps
 
     def clonebundles(self):
-        return self._repo.tryread(b'clonebundles.manifest')
+        return self._repo.tryread(bundlecaches.CB_MANIFEST_FILE)
 
     def debugwireargs(self, one, two, three=None, four=None, five=None):
         """Used to test argument passing over the wire"""

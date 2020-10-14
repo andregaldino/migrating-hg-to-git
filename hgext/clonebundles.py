@@ -205,6 +205,7 @@ Mercurial server when the bundle hosting service fails.
 from __future__ import absolute_import
 
 from mercurial import (
+    bundlecaches,
     extensions,
     wireprotov1server,
 )
@@ -218,7 +219,7 @@ def capabilities(orig, repo, proto):
     # Only advertise if a manifest exists. This does add some I/O to requests.
     # But this should be cheaper than a wasted network round trip due to
     # missing file.
-    if repo.vfs.exists(b'clonebundles.manifest'):
+    if repo.vfs.exists(bundlecaches.CB_MANIFEST_FILE):
         caps.append(b'clonebundles')
 
     return caps
