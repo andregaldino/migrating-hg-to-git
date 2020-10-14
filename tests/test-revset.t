@@ -1448,6 +1448,9 @@ test author
     (string '('))
   hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \),.*) (re)
   [255]
+  $ log 'desc("re:(")'
+  hg: parse error: invalid regular expression: (unbalanced parenthesis|missing \),.*) (re)
+  [255]
   $ try 'grep("\bissue\d+")'
   (func
     (symbol 'grep')

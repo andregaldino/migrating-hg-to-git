@@ -361,7 +361,9 @@ def stringmatcher(pattern, casesensitive=True):
                 flags = remod.I
             regex = remod.compile(pattern, flags)
         except remod.error as e:
-            raise error.ParseError(_(b'invalid regular expression: %s') % e)
+            raise error.ParseError(
+                _(b'invalid regular expression: %s') % forcebytestr(e)
+            )
         return kind, pattern, regex.search
     elif kind == b'literal':
         if casesensitive:
