@@ -635,21 +635,35 @@ if pycompat.iswindows:
         stderr=None,
         ensurestart=True,
         record_wait=None,
+        stdin_bytes=None,
     ):
         '''Spawn a command without waiting for it to finish.'''
         # we can't use close_fds *and* redirect stdin. I'm not sure that we
         # need to because the detached process has no console connection.
-        p = subprocess.Popen(
-            tonativestr(script),
-            shell=shell,
-            env=tonativeenv(env),
-            close_fds=True,
-            creationflags=_creationflags,
-            stdout=stdout,
-            stderr=stderr,
-        )
-        if record_wait is not None:
-            record_wait(p.wait)
+
+        try:
+            stdin = None
+            if stdin_bytes is not None:
+                stdin = pycompat.unnamedtempfile()
+                stdin.write(stdin_bytes)
+                stdin.flush()
+                stdin.seek(0)
+
+            p = subprocess.Popen(
+                tonativestr(script),
+                shell=shell,
+                env=tonativeenv(env),
+                close_fds=True,
+                creationflags=_creationflags,
+                stdin=stdin,
+                stdout=stdout,
+                stderr=stderr,
+            )
+            if record_wait is not None:
+                record_wait(p.wait)
+        finally:
+            if stdin is not None:
+                stdin.close()
 
 
 else:
@@ -662,6 +676,7 @@ else:
         stderr=None,
         ensurestart=True,
         record_wait=None,
+        stdin_bytes=None,
     ):
         '''Spawn a command without waiting for it to finish.
 
@@ -722,15 +737,21 @@ else:
             if record_wait is None:
                 # Start a new session
                 os.setsid()
+            # connect stdin to devnull to make sure the subprocess can't
+            # muck up that stream for mercurial.
+            if stdin_bytes is None:
+                stdin = open(os.devnull, b'r')
+            else:
+                stdin = pycompat.unnamedtempfile()
+                stdin.write(stdin_bytes)
+                stdin.flush()
+                stdin.seek(0)
 
-            stdin = open(os.devnull, b'r')
             if stdout is None:
                 stdout = open(os.devnull, b'w')
             if stderr is None:
                 stderr = open(os.devnull, b'w')
 
-            # connect stdin to devnull to make sure the subprocess can't
-            # muck up that stream for mercurial.
             p = subprocess.Popen(
                 cmd,
                 shell=shell,
@@ -754,5 +775,6 @@ else:
         finally:
             # mission accomplished, this child needs to exit and not
             # continue the hg process here.
+            stdin.close()
             if record_wait is None:
                 os._exit(returncode)
