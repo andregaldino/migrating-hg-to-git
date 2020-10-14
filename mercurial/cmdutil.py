@@ -558,7 +558,7 @@ def dorecord(
             # backup continues
             for f in tobackup:
                 fd, tmpname = pycompat.mkstemp(
-                    prefix=f.replace(b'/', b'_') + b'.', dir=backupdir
+                    prefix=os.path.basename(f) + b'.', dir=backupdir
                 )
                 os.close(fd)
                 ui.debug(b'backup %r as %r\n' % (f, tmpname))
