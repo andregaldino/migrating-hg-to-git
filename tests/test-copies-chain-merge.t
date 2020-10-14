@@ -1003,29 +1003,15 @@ The bugs makes recorded copy is different depending of where we started the merg
 
 Log output should not include a merge commit as it did not happen
 
-#if no-changeset
   $ hg log -Gfr 'desc("mBDm-0")' d
   o  8 d-2 re-add d
   |
   ~
-#else
-  $ hg log -Gfr 'desc("mBDm-0")' d
-  o  8 d-2 re-add d
-  |
-  ~
-#endif
 
-#if no-changeset
   $ hg log -Gfr 'desc("mDBm-0")' d
   o  8 d-2 re-add d
   |
   ~
-#else
-  $ hg log -Gfr 'desc("mDBm-0")' d
-  o  8 d-2 re-add d
-  |
-  ~
-#endif
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBDm-0")'
   M b
@@ -1228,6 +1214,7 @@ Merge:
   o  0 i-0 initial commit: a b h
   
 #else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mBFm-0")' d
   o  22 f-2: rename i -> d
   |
@@ -1243,6 +1230,7 @@ Merge:
   o  0 i-0 initial commit: a b h
   
 #else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mFBm-0")' d
   o  22 f-2: rename i -> d
   |
@@ -1312,6 +1300,7 @@ revision numbers)
   o  0 i-0 initial commit: a b h
   
 #else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mDGm-0")' d
   o    26 mDGm-0 simple merge - one way
   |\
@@ -1340,6 +1329,7 @@ revision numbers)
   o  0 i-0 initial commit: a b h
   
 #else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mDGm-0")' d
   o    26 mDGm-0 simple merge - one way
   |\
@@ -1432,6 +1422,7 @@ Note:
   o  0 i-0 initial commit: a b h
   
 #else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mFGm-0")' d
   o    28 mFGm-0 simple merge - one way
   |\
@@ -1461,6 +1452,7 @@ Note:
   o  0 i-0 initial commit: a b h
   
 #else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mGFm-0")' d
   o    29 mGFm-0 simple merge - the other way
   |\
