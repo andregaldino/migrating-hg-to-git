@@ -506,7 +506,8 @@ def mkstemp(suffix=b'', prefix=b'tmp', dir=None):
     return tempfile.mkstemp(suffix, prefix, dir)
 
 
-# mode must include 'b'ytes as encoding= is not supported
+# NamedTemporaryFile does not support an "encoding=" argument on python2.
+# This wrapper file are always open in byte mode.
 def namedtempfile(
     mode=b'w+b', bufsize=-1, suffix=b'', prefix=b'tmp', dir=None, delete=True
 ):
