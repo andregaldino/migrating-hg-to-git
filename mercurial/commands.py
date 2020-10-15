@@ -26,6 +26,7 @@ from . import (
     archival,
     bookmarks,
     bundle2,
+    bundlecaches,
     changegroup,
     cmdutil,
     copies,
@@ -1544,7 +1545,9 @@ def bundle(ui, repo, fname, dest=None, **opts):
 
     bundletype = opts.get(b'type', b'bzip2').lower()
     try:
-        bundlespec = exchange.parsebundlespec(repo, bundletype, strict=False)
+        bundlespec = bundlecaches.parsebundlespec(
+            repo, bundletype, strict=False
+        )
     except error.UnsupportedBundleSpecification as e:
         raise error.Abort(
             pycompat.bytestr(e),

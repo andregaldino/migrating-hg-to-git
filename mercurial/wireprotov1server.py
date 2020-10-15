@@ -19,6 +19,7 @@ from .pycompat import getattr
 
 from . import (
     bundle2,
+    bundlecaches,
     changegroup as changegroupmod,
     discovery,
     encoding,
@@ -387,8 +388,8 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
     manifest = repo.vfs.tryread(b'pullbundles.manifest')
     if not manifest:
         return None
-    res = exchange.parseclonebundlesmanifest(repo, manifest)
-    res = exchange.filterclonebundleentries(repo, res)
+    res = bundlecaches.parseclonebundlesmanifest(repo, manifest)
+    res = bundlecaches.filterclonebundleentries(repo, res)
     if not res:
         return None
     cl = repo.unfiltered().changelog
