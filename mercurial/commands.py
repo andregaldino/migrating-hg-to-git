@@ -769,11 +769,8 @@ def backout(ui, repo, node=None, rev=None, **opts):
 
 
 def _dobackout(ui, repo, node=None, rev=None, **opts):
+    cmdutil.check_incompatible_arguments(opts, 'no_commit', ['commit', 'merge'])
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'commit') and opts.get(b'no_commit'):
-        raise error.Abort(_(b"cannot use --commit with --no-commit"))
-    if opts.get(b'merge') and opts.get(b'no_commit'):
-        raise error.Abort(_(b"cannot use --merge with --no-commit"))
 
     if rev and node:
         raise error.Abort(_(b"please specify just one revision"))
