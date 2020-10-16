@@ -246,15 +246,15 @@ There is no default behavior in the absence of --rev and --working-dir.
 
   $ hg fix
   abort: no changesets specified
-  (use --rev or --working-dir)
+  (use --source or --working-dir)
   [255]
   $ hg fix --whole
   abort: no changesets specified
-  (use --rev or --working-dir)
+  (use --source or --working-dir)
   [255]
   $ hg fix --base 0
   abort: no changesets specified
-  (use --rev or --working-dir)
+  (use --source or --working-dir)
   [255]
 
 Fixing a public revision isn't allowed. It should abort early enough that

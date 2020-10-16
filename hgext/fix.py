@@ -439,7 +439,7 @@ def getrevstofix(ui, repo, opts):
         raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
     if not revs:
         raise error.Abort(
-            b'no changesets specified', hint=b'use --rev or --working-dir'
+            b'no changesets specified', hint=b'use --source or --working-dir'
         )
     return revs
 
