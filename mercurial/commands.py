@@ -6317,9 +6317,8 @@ def serve(ui, repo, **opts):
     Returns 0 on success.
     """
 
+    cmdutil.check_incompatible_arguments(opts, 'stdio', ['cmdserver'])
     opts = pycompat.byteskwargs(opts)
-    if opts[b"stdio"] and opts[b"cmdserver"]:
-        raise error.Abort(_(b"cannot use --stdio with --cmdserver"))
     if opts[b"print_url"] and ui.verbose:
         raise error.Abort(_(b"cannot use --print-url with --verbose"))
 
