@@ -4041,6 +4041,10 @@ def import_(ui, repo, patch1=None, *patches, **opts):
     Returns 0 on success, 1 on partial success (see --partial).
     """
 
+    cmdutil.check_incompatible_arguments(
+        opts, 'no_commit', ['bypass', 'secret']
+    )
+    cmdutil.check_incompatible_arguments(opts, 'exact', ['edit', 'prefix'])
     opts = pycompat.byteskwargs(opts)
     if not patch1:
         raise error.Abort(_(b'need at least one patch to import'))
@@ -4053,10 +4057,6 @@ def import_(ui, repo, patch1=None, *patches, **opts):
 
     exact = opts.get(b'exact')
     update = not opts.get(b'bypass')
-    if not update and opts.get(b'no_commit'):
-        raise error.Abort(_(b'cannot use --no-commit with --bypass'))
-    if opts.get(b'secret') and opts.get(b'no_commit'):
-        raise error.Abort(_(b'cannot use --no-commit with --secret'))
     try:
         sim = float(opts.get(b'similarity') or 0)
     except ValueError:
@@ -4065,11 +4065,6 @@ def import_(ui, repo, patch1=None, *patches, **opts):
         raise error.Abort(_(b'similarity must be between 0 and 100'))
     if sim and not update:
         raise error.Abort(_(b'cannot use --similarity with --bypass'))
-    if exact:
-        if opts.get(b'edit'):
-            raise error.Abort(_(b'cannot use --exact with --edit'))
-        if opts.get(b'prefix'):
-            raise error.Abort(_(b'cannot use --exact with --prefix'))
 
     base = opts[b"base"]
     msgs = []

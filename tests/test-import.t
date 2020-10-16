@@ -444,7 +444,7 @@ hg import --secret
 
   $ hg clone -r0 a b -q
   $ hg --cwd b import --no-commit --secret ../exported-tip.patch
-  abort: cannot use --no-commit with --secret
+  abort: cannot specify both --no-commit and --secret
   [255]
   $ hg --cwd b import --secret ../exported-tip.patch
   applying ../exported-tip.patch
