@@ -3365,11 +3365,10 @@ def grep(ui, repo, pattern, *pats, **opts):
     Returns 0 if a match is found, 1 otherwise.
 
     """
+    cmdutil.check_incompatible_arguments(opts, 'all_files', ['all', 'diff'])
     opts = pycompat.byteskwargs(opts)
     diff = opts.get(b'all') or opts.get(b'diff')
     follow = opts.get(b'follow')
-    if diff and opts.get(b'all_files'):
-        raise error.Abort(_(b'--diff and --all-files are mutually exclusive'))
     if opts.get(b'all_files') is None and not diff:
         opts[b'all_files'] = True
     plaingrep = (
