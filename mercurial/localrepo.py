@@ -558,6 +558,16 @@ def makelocalrepository(baseui, path, intents=None):
     # is present. We never write SHARESAFE_REQUIREMENT for a repo if store
     # is not present, refer checkrequirementscompat() for that
     if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
+
+        if (
+            shared
+            and requirementsmod.SHARESAFE_REQUIREMENT
+            not in _readrequires(sharedvfs, True)
+        ):
+            raise error.Abort(
+                _(b"share source does not support exp-sharesafe requirement")
+            )
+
         if shared:
             # This is a shared repo
             storevfs = vfsmod.vfs(sharedvfs.join(b'store'))

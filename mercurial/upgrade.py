@@ -80,6 +80,7 @@ def supportremovedrequirements(repo):
         requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
+        requirements.SHARESAFE_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -1468,5 +1469,13 @@ def upgraderepo(
                         b' shares will still work in old non-safe mode. '
                         b'Re-share existing shares to use them in safe mode'
                         b' New shares will be created in safe mode.\n'
+                    )
+                )
+            if sharedsafe.name in removedreqs:
+                ui.warn(
+                    _(
+                        b'repository downgraded to not use share safe mode, '
+                        b'existing shares will not work and needs to'
+                        b' be reshared.\n'
                     )
                 )

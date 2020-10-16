@@ -377,4 +377,79 @@ Make sure existing shares still works
   |
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
+
+
+Create a safe share from upgrade one
+
+  $ cd ..
+  $ hg share non-share-safe ss-share
+  updating working directory
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd ss-share
+  $ hg log -GT "{node}: {desc}\n"
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+  $ cd ../non-share-safe
+
+Test that downgrading works too
+
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > share =
+  > [format]
+  > exp-share-safe = False
+  > EOF
+
+  $ hg debugupgraderepo -q
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     removed: exp-sharesafe
+  
+  $ hg debugupgraderepo -q --run
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     removed: exp-sharesafe
+  
+  repository downgraded to not use share safe mode, existing shares will not work and needs to be reshared.
+
+  $ hg debugrequirements
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+
+  $ test -f .hg/store/requires
+  [1]
+
+  $ hg log -GT "{node}: {desc}\n"
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
+Make sure existing shares still works
+
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
   $ hg unshare -R ../nss-share
+
+  $ hg log -GT "{node}: {desc}\n" -R ../ss-share
+  abort: share source does not support exp-sharesafe requirement
+  [255]
