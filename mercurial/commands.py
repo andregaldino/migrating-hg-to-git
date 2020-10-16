@@ -2015,8 +2015,7 @@ def _docommit(ui, repo, *pats, **opts):
 
     opts = pycompat.byteskwargs(opts)
     if opts.get(b'subrepos'):
-        if opts.get(b'amend'):
-            raise error.Abort(_(b'cannot amend with --subrepos'))
+        cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'amend'])
         # Let --subrepos on the command line override config setting.
         ui.setconfig(b'ui', b'commitsubrepos', True, b'commit')
 
