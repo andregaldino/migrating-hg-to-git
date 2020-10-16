@@ -427,8 +427,8 @@ def getrevstofix(ui, repo, opts):
         revs = set(scmutil.revrange(repo, opts[b'rev']))
         if opts.get(b'working_dir'):
             revs.add(wdirrev)
-    for rev in revs:
-        checkfixablectx(ui, repo, repo[rev])
+        for rev in revs:
+            checkfixablectx(ui, repo, repo[rev])
     # Allow fixing only wdir() even if there's an unfinished operation
     if not (len(revs) == 1 and wdirrev in revs):
         cmdutil.checkunfinished(repo)
