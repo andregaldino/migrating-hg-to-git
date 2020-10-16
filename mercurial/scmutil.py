@@ -1580,6 +1580,9 @@ def writereporequirements(repo, requirements=None):
         writerequires(repo.vfs, wcreq)
     if storereq is not None:
         writerequires(repo.svfs, storereq)
+    elif repo.ui.configbool(b'format', b'usestore'):
+        # only remove store requires if we are using store
+        repo.svfs.tryunlink(b'requires')
 
 
 def writerequires(opener, requirements):
