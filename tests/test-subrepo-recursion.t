@@ -681,7 +681,7 @@ Test incoming:
   no changes found
 
   $ hg incoming -S --bundle incoming.hg
-  abort: cannot combine --bundle and --subrepos
+  abort: cannot specify both --subrepos and --bundle
   [255]
 
 Test missing subrepo:

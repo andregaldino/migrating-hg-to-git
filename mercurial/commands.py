@@ -4227,8 +4227,7 @@ def incoming(ui, repo, source=b"default", **opts):
         hg._incoming(display, lambda: 1, ui, repo, source, opts, buffered=True)
         return 0
 
-    if opts.get(b'bundle') and opts.get(b'subrepos'):
-        raise error.Abort(_(b'cannot combine --bundle and --subrepos'))
+    cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'bundle'])
 
     if opts.get(b'bookmarks'):
         source, branches = hg.parseurl(
