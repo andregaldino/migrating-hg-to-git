@@ -6057,8 +6057,7 @@ def revert(ui, repo, *pats, **opts):
 
     opts = pycompat.byteskwargs(opts)
     if opts.get(b"date"):
-        if opts.get(b"rev"):
-            raise error.Abort(_(b"you can't specify a revision and a date"))
+        cmdutil.check_incompatible_arguments(opts, b'date', [b'rev'])
         opts[b"rev"] = cmdutil.finddate(ui, repo, opts[b"date"])
 
     parent, p2 = repo.dirstate.parents()
