@@ -7088,6 +7088,7 @@ def tag(ui, repo, name1, *names, **opts):
 
     Returns 0 on success.
     """
+    cmdutil.check_incompatible_arguments(opts, 'remove', ['rev'])
     opts = pycompat.byteskwargs(opts)
     with repo.wlock(), repo.lock():
         rev_ = b"."
@@ -7100,8 +7101,6 @@ def tag(ui, repo, name1, *names, **opts):
                 raise error.Abort(
                     _(b'tag names cannot consist entirely of whitespace')
                 )
-        if opts.get(b'rev') and opts.get(b'remove'):
-            raise error.Abort(_(b"--rev and --remove are incompatible"))
         if opts.get(b'rev'):
             rev_ = opts[b'rev']
         message = opts.get(b'message')
