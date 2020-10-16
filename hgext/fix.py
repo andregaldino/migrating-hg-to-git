@@ -417,7 +417,7 @@ def getrevstofix(ui, repo, opts):
         revs = repo.revs(b'(not public() and not obsolete()) or wdir()')
     elif opts[b'source']:
         source_revs = scmutil.revrange(repo, opts[b'source'])
-        revs = set(repo.revs(b'%ld::', source_revs))
+        revs = set(repo.revs(b'(%ld::) - obsolete()', source_revs))
         if wdirrev in source_revs:
             # `wdir()::` is currently empty, so manually add wdir
             revs.add(wdirrev)

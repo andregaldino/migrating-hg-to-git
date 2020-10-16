@@ -390,14 +390,11 @@ Test passing multiple revisions to --source
   o  0 A
   
   $ hg fix -s A
-  abort: fixing obsolete revision could cause divergence
-  [255]
   $ hg fix -s B
-  abort: fixing obsolete revision could cause divergence
+  abort: no changesets specified
+  (use --source or --working-dir)
   [255]
   $ hg fix -s D
-  abort: fixing obsolete revision could cause divergence
-  [255]
   $ hg fix -s E
   $ cd ..
 
