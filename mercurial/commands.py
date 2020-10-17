@@ -2351,7 +2351,7 @@ def continuecmd(ui, repo, **opts):
     ]
     + walkopts
     + dryrunopts,
-    _(b'[OPTION]... SOURCE... DEST'),
+    _(b'[OPTION]... (SOURCE... DEST | --forget DEST...)'),
     helpcategory=command.CATEGORY_FILE_CONTENTS,
 )
 def copy(ui, repo, *pats, **opts):
