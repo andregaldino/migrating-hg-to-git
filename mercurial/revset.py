@@ -994,24 +994,27 @@ def destination(repo, subset, x):
     )
 
 
-@predicate(b'diff(pattern)', weight=110)
-def diff(repo, subset, x):
+@predicate(b'diffcontains(pattern)', weight=110)
+def diffcontains(repo, subset, x):
     """Search revision differences for when the pattern was added or removed.
 
     The pattern may be a substring literal or a regular expression. See
     :hg:`help revisions.patterns`.
     """
-    args = getargsdict(x, b'diff', b'pattern')
+    args = getargsdict(x, b'diffcontains', b'pattern')
     if b'pattern' not in args:
-        # i18n: "diff" is a keyword
-        raise error.ParseError(_(b'diff takes at least 1 argument'))
+        # i18n: "diffcontains" is a keyword
+        raise error.ParseError(_(b'diffcontains takes at least 1 argument'))
 
-    pattern = getstring(args[b'pattern'], _(b'diff requires a string pattern'))
+    pattern = getstring(
+        args[b'pattern'], _(b'diffcontains requires a string pattern')
+    )
     regexp = stringutil.substringregexp(pattern, re.M)
 
     # TODO: add support for file pattern and --follow. For example,
-    # diff(pattern[, set]) where set may be file(pattern) or follow(pattern),
-    # and we'll eventually add a support for narrowing files by revset?
+    # diffcontains(pattern[, set]) where set may be file(pattern) or
+    # follow(pattern), and we'll eventually add a support for narrowing
+    # files by revset?
     fmatch = matchmod.always()
 
     def makefilematcher(ctx):
@@ -1030,7 +1033,7 @@ def diff(repo, subset, x):
                 found = True
         return found
 
-    return subset.filter(testdiff, condrepr=(b'<diff %r>', pattern))
+    return subset.filter(testdiff, condrepr=(b'<diffcontains %r>', pattern))
 
 
 @predicate(b'contentdivergent()', safe=True)
