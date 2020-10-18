@@ -316,20 +316,29 @@ class cg1unpacker(object):
             self.callback = progress.increment
 
             efilesset = set()
+            cgnodes = []
 
             def onchangelog(cl, node):
                 efilesset.update(cl.readfiles(node))
+                cgnodes.append(node)
+
+            def ondupchangelog(cl, node):
+                cgnodes.append(node)
 
             self.changelogheader()
             deltas = self.deltaiter()
-            cgnodes = cl.addgroup(deltas, csmap, trp, addrevisioncb=onchangelog)
-            efiles = len(efilesset)
-
-            if not cgnodes:
+            if not cl.addgroup(
+                deltas,
+                csmap,
+                trp,
+                addrevisioncb=onchangelog,
+                duplicaterevisioncb=ondupchangelog,
+            ):
                 repo.ui.develwarn(
                     b'applied empty changelog from changegroup',
                     config=b'warn-empty-changegroup',
                 )
+            efiles = len(efilesset)
             clend = len(cl)
             changesets = clend - clstart
             progress.complete()

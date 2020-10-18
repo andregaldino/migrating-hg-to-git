@@ -756,6 +756,7 @@ class ifilemutation(interfaceutil.Interface):
         linkmapper,
         transaction,
         addrevisioncb=None,
+        duplicaterevisioncb=None,
         maybemissingparents=False,
     ):
         """Process a series of deltas for storage.
@@ -1247,7 +1248,13 @@ class imanifeststorage(interfaceutil.Interface):
         See the documentation for ``ifiledata`` for more.
         """
 
-    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(
+        deltas,
+        linkmapper,
+        transaction,
+        addrevisioncb=None,
+        duplicaterevisioncb=None,
+    ):
         """Process a series of deltas for storage.
 
         See the documentation in ``ifilemutation`` for more.

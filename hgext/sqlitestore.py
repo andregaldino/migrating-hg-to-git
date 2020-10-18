@@ -674,9 +674,10 @@ class sqlitefilestore(object):
         linkmapper,
         transaction,
         addrevisioncb=None,
+        duplicaterevisioncb=None,
         maybemissingparents=False,
     ):
-        nodes = []
+        empty = True
 
         for node, p1, p2, linknode, deltabase, delta, wireflags in deltas:
             storeflags = 0
@@ -715,8 +716,6 @@ class sqlitefilestore(object):
 
             linkrev = linkmapper(linknode)
 
-            nodes.append(node)
-
             if node in self._revisions:
                 # Possibly reset parents to make them proper.
                 entry = self._revisions[node]
@@ -741,6 +740,9 @@ class sqlitefilestore(object):
                         (self._nodetorev[p1], entry.flags, entry.rid),
                     )
 
+                if duplicaterevisioncb:
+                    duplicaterevisioncb(self, node)
+                empty = False
                 continue
 
             if deltabase == nullid:
@@ -763,8 +765,9 @@ class sqlitefilestore(object):
 
             if addrevisioncb:
                 addrevisioncb(self, node)
+            empty = False
 
-        return nodes
+        return not empty
 
     def censorrevision(self, tr, censornode, tombstone=b''):
         tombstone = storageutil.packmeta({b'censored': tombstone}, b'')

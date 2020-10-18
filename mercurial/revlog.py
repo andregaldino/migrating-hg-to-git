@@ -2368,7 +2368,14 @@ class revlog(object):
             self._enforceinlinesize(transaction, ifh)
         nodemaputil.setup_persistent_nodemap(transaction, self)
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(
+        self,
+        deltas,
+        linkmapper,
+        transaction,
+        addrevisioncb=None,
+        duplicaterevisioncb=None,
+    ):
         """
         add a delta group
 
@@ -2382,8 +2389,6 @@ class revlog(object):
 
         if self._writinghandles:
             raise error.ProgrammingError(b'cannot nest addgroup() calls')
-
-        nodes = []
 
         r = len(self)
         end = 0
@@ -2405,6 +2410,7 @@ class revlog(object):
             ifh.flush()
 
         self._writinghandles = (ifh, dfh)
+        empty = True
 
         try:
             deltacomputer = deltautil.deltacomputer(self)
@@ -2414,11 +2420,12 @@ class revlog(object):
                 link = linkmapper(linknode)
                 flags = flags or REVIDX_DEFAULT_FLAGS
 
-                nodes.append(node)
-
                 if self.index.has_node(node):
-                    self._nodeduplicatecallback(transaction, node)
                     # this can happen if two branches make the same change
+                    self._nodeduplicatecallback(transaction, node)
+                    if duplicaterevisioncb:
+                        duplicaterevisioncb(self, node)
+                    empty = False
                     continue
 
                 for p in (p1, p2):
@@ -2472,6 +2479,7 @@ class revlog(object):
 
                 if addrevisioncb:
                     addrevisioncb(self, node)
+                empty = False
 
                 if not dfh and not self._inline:
                     # addrevision switched from inline to conventional
@@ -2486,8 +2494,7 @@ class revlog(object):
             if dfh:
                 dfh.close()
             ifh.close()
-
-        return nodes
+        return not empty
 
     def iscensored(self, rev):
         """Check if a file revision is censored."""

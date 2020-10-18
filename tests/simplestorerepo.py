@@ -532,6 +532,7 @@ class filestorage(object):
         linkmapper,
         transaction,
         addrevisioncb=None,
+        duplicaterevisioncb=None,
         maybemissingparents=False,
     ):
         if maybemissingparents:
@@ -539,7 +540,7 @@ class filestorage(object):
                 _('simple store does not support missing parents ' 'write mode')
             )
 
-        nodes = []
+        empty = True
 
         transaction.addbackup(self._indexpath)
 
@@ -547,9 +548,10 @@ class filestorage(object):
             linkrev = linkmapper(linknode)
             flags = flags or revlog.REVIDX_DEFAULT_FLAGS
 
-            nodes.append(node)
-
             if node in self._indexbynode:
+                if duplicaterevisioncb:
+                    duplicaterevisioncb(self, node)
+                empty = False
                 continue
 
             # Need to resolve the fulltext from the delta base.
@@ -564,7 +566,8 @@ class filestorage(object):
 
             if addrevisioncb:
                 addrevisioncb(self, node)
-        return nodes
+            empty = False
+        return not empty
 
     def _headrevs(self):
         # Assume all revisions are heads by default.

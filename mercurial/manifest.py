@@ -1832,9 +1832,20 @@ class manifestrevlog(object):
             deltamode=deltamode,
         )
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(
+        self,
+        deltas,
+        linkmapper,
+        transaction,
+        addrevisioncb=None,
+        duplicaterevisioncb=None,
+    ):
         return self._revlog.addgroup(
-            deltas, linkmapper, transaction, addrevisioncb=addrevisioncb
+            deltas,
+            linkmapper,
+            transaction,
+            addrevisioncb=addrevisioncb,
+            duplicaterevisioncb=duplicaterevisioncb,
         )
 
     def rawsize(self, rev):

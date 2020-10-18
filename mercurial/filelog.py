@@ -139,6 +139,7 @@ class filelog(object):
         linkmapper,
         transaction,
         addrevisioncb=None,
+        duplicaterevisioncb=None,
         maybemissingparents=False,
     ):
         if maybemissingparents:
@@ -150,7 +151,11 @@ class filelog(object):
             )
 
         return self._revlog.addgroup(
-            deltas, linkmapper, transaction, addrevisioncb=addrevisioncb
+            deltas,
+            linkmapper,
+            transaction,
+            addrevisioncb=addrevisioncb,
+            duplicaterevisioncb=duplicaterevisioncb,
         )
 
     def getstrippoint(self, minlink):

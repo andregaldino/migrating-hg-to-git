@@ -129,6 +129,7 @@ class unionrevlog(revlog.revlog):
         linkmapper,
         transaction,
         addrevisioncb=None,
+        duplicaterevisioncb=None,
         maybemissingparents=False,
     ):
         raise NotImplementedError
