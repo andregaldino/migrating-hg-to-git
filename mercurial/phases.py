@@ -510,21 +510,25 @@ class phasecache(object):
         tr.addfilegenerator(b'phase', (b'phaseroots',), self._write)
         tr.hookargs[b'phases_moved'] = b'1'
 
-    def registernew(self, repo, tr, targetphase, nodes):
+    def registernew(self, repo, tr, targetphase, nodes, revs=None):
+        if revs is None:
+            revs = []
         repo = repo.unfiltered()
-        self._retractboundary(repo, tr, targetphase, nodes)
+        self._retractboundary(repo, tr, targetphase, nodes, revs=revs)
         if tr is not None and b'phases' in tr.changes:
             phasetracking = tr.changes[b'phases']
             torev = repo.changelog.rev
             phase = self.phase
-            revs = [torev(node) for node in nodes]
+            revs = [torev(node) for node in nodes] + sorted(revs)
             revs.sort()
             for rev in revs:
                 revphase = phase(repo, rev)
                 _trackphasechange(phasetracking, rev, None, revphase)
         repo.invalidatevolatilesets()
 
-    def advanceboundary(self, repo, tr, targetphase, nodes, dryrun=None):
+    def advanceboundary(
+        self, repo, tr, targetphase, nodes, revs=None, dryrun=None
+    ):
         """Set all 'nodes' to phase 'targetphase'
 
         Nodes with a phase lower than 'targetphase' are not affected.
@@ -535,26 +539,27 @@ class phasecache(object):
         """
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
+        if revs is None:
+            revs = []
         if tr is None:
             phasetracking = None
         else:
             phasetracking = tr.changes.get(b'phases')
 
         repo = repo.unfiltered()
+        revs = [repo[n].rev() for n in nodes] + [r for r in revs]
 
         changes = set()  # set of revisions to be changed
         delroots = []  # set of root deleted by this path
         for phase in (phase for phase in allphases if phase > targetphase):
             # filter nodes that are not in a compatible phase already
-            nodes = [
-                n for n in nodes if self.phase(repo, repo[n].rev()) >= phase
-            ]
-            if not nodes:
+            revs = [rev for rev in revs if self.phase(repo, rev) >= phase]
+            if not revs:
                 break  # no roots to move anymore
 
             olds = self.phaseroots[phase]
 
-            affected = repo.revs(b'%ln::%ln', olds, nodes)
+            affected = repo.revs(b'%ln::%ld', olds, revs)
             changes.update(affected)
             if dryrun:
                 continue
@@ -611,9 +616,11 @@ class phasecache(object):
                     _trackphasechange(phasetracking, r, phase, targetphase)
         repo.invalidatevolatilesets()
 
-    def _retractboundary(self, repo, tr, targetphase, nodes):
+    def _retractboundary(self, repo, tr, targetphase, nodes, revs=None):
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
+        if revs is None:
+            revs = []
         if targetphase in (archived, internal) and not supportinternal(repo):
             name = phasenames[targetphase]
             msg = b'this repository does not support the %s phase' % name
@@ -624,7 +631,7 @@ class phasecache(object):
         tonode = repo.changelog.node
         currentroots = {torev(node) for node in self.phaseroots[targetphase]}
         finalroots = oldroots = set(currentroots)
-        newroots = [torev(node) for node in nodes]
+        newroots = [torev(node) for node in nodes] + [r for r in revs]
         newroots = [
             rev for rev in newroots if self.phase(repo, rev) < targetphase
         ]
@@ -679,7 +686,7 @@ class phasecache(object):
         self.invalidate()
 
 
-def advanceboundary(repo, tr, targetphase, nodes, dryrun=None):
+def advanceboundary(repo, tr, targetphase, nodes, revs=None, dryrun=None):
     """Add nodes to a phase changing other nodes phases if necessary.
 
     This function move boundary *forward* this means that all nodes
@@ -691,9 +698,11 @@ def advanceboundary(repo, tr, targetphase, nodes, dryrun=None):
 
     Returns a set of revs whose phase is changed or should be changed
     """
+    if revs is None:
+        revs = []
     phcache = repo._phasecache.copy()
     changes = phcache.advanceboundary(
-        repo, tr, targetphase, nodes, dryrun=dryrun
+        repo, tr, targetphase, nodes, revs=revs, dryrun=dryrun
     )
     if not dryrun:
         repo._phasecache.replace(phcache)
@@ -713,14 +722,16 @@ def retractboundary(repo, tr, targetphase, nodes):
     repo._phasecache.replace(phcache)
 
 
-def registernew(repo, tr, targetphase, nodes):
+def registernew(repo, tr, targetphase, nodes, revs=None):
     """register a new revision and its phase
 
     Code adding revisions to the repository should use this function to
     set new changeset in their target phase (or higher).
     """
+    if revs is None:
+        revs = []
     phcache = repo._phasecache.copy()
-    phcache.registernew(repo, tr, targetphase, nodes)
+    phcache.registernew(repo, tr, targetphase, nodes, revs=revs)
     repo._phasecache.replace(phcache)
 
 
