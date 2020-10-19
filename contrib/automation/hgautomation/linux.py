@@ -75,7 +75,7 @@ sudo -H -u hg -g hg ./rustup-init -y
 sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.31.1 1.46.0
 sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup component add clippy
 
-sudo -H -u hg -g hg /home/hg/.cargo/bin/cargo install --git https://github.com/indygreg/PyOxidizer.git --rev 4697fb25918dfad6dc73288daeea501063963a08 pyoxidizer
+sudo -H -u hg -g hg /home/hg/.cargo/bin/cargo install --version 0.9.0 pyoxidizer
 '''
 
 
