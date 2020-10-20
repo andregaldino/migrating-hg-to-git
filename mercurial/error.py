@@ -48,7 +48,7 @@ class StorageError(Hint, Exception):
 
 
 class RevlogError(StorageError):
-    __bytes__ = _tobytes
+    pass
 
 
 class SidedataHashError(RevlogError):
