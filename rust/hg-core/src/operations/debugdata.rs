@@ -92,18 +92,22 @@ impl<'a> DebugData<'a> {
     }
 
     pub fn run(&mut self) -> Result<Vec<u8>, DebugDataError> {
-        let rev = self
-            .rev
-            .parse::<Revision>()
-            .or(Err(DebugDataErrorKind::InvalidRevision))?;
-
         let root = find_root::FindRoot::new().run()?;
         let index_file = match self.kind {
             DebugDataKind::Changelog => root.join(".hg/store/00changelog.i"),
             DebugDataKind::Manifest => root.join(".hg/store/00manifest.i"),
         };
         let revlog = Revlog::open(&index_file, None)?;
-        let data = revlog.get_rev_data(rev)?;
+
+        let data = match self.rev.parse::<Revision>() {
+            Ok(rev) => revlog.get_rev_data(rev)?,
+            _ => {
+                let node = hex::decode(&self.rev)
+                    .map_err(|_| DebugDataErrorKind::InvalidRevision)?;
+                let rev = revlog.get_node_rev(&node)?;
+                revlog.get_rev_data(rev)?
+            }
+        };
 
         Ok(data)
     }

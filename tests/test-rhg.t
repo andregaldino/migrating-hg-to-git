@@ -91,6 +91,15 @@ Debuging data in inline index
   file2\x005d9299349fc01ddd25d0070d149b124d8f10411e (esc)
   file3\x002661d26c649684b482d10f91960cc3db683c38b4 (esc)
 
+Debuging with full node id
+  $ rhg debugdata -c `hg log -r 0 -T '{node}'`
+  c8e64718e1ca0312eeee0f59d37f8dc612793856
+  test
+  0 0
+  file1
+  
+  commit 1 (no-eol)
+
 Cat files
   $ cd $TESTTMP
   $ rm -rf repository
