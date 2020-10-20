@@ -668,7 +668,7 @@ class revlog(object):
         if not self._chunkcache:
             self._chunkclear()
         # revnum -> (chain-length, sum-delta-length)
-        self._chaininfocache = {}
+        self._chaininfocache = util.lrucachedict(500)
         # revlog header -> revlog compressor
         self._decompressors = {}
 
@@ -2550,7 +2550,7 @@ class revlog(object):
 
         # then reset internal state in memory to forget those revisions
         self._revisioncache = None
-        self._chaininfocache = {}
+        self._chaininfocache = util.lrucachedict(500)
         self._chunkclear()
 
         del self.index[rev:-1]
