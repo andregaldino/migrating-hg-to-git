@@ -4903,7 +4903,7 @@ def outgoing(ui, repo, dest=None, **opts):
     # style URLs, so don't overwrite dest.
     path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
     if not path:
-        raise error.Abort(
+        raise error.ConfigError(
             _(b'default repository not configured!'),
             hint=_(b"see 'hg help config.paths'"),
         )
@@ -5524,7 +5524,7 @@ def push(ui, repo, dest=None, **opts):
 
     path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
     if not path:
-        raise error.Abort(
+        raise error.ConfigError(
             _(b'default repository not configured!'),
             hint=_(b"see 'hg help config.paths'"),
         )
