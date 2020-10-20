@@ -13,7 +13,11 @@ path = "src/main.rs"
 
 [dependencies]
 jemallocator-global = { version = "0.3", optional = true }
-pyembed = { git = "https://github.com/indygreg/PyOxidizer.git", rev = "c772a1379c3026314eda1c8ea244b86c0658951d", default-features=false }
+
+[dependencies.pyembed]
+git = "https://github.com/indygreg/PyOxidizer.git"
+rev = "4697fb25918dfad6dc73288daeea501063963a08"
+default-features = false
 
 [features]
 default = ["build-mode-pyoxidizer-exe"]

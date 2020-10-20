@@ -87,64 +87,6 @@ cleanup
   $ cd ..
   $ rmdir nested
 
-don't allow marking or unmarking driver-resolved files
-
-  $ cat > $TESTTMP/markdriver.py << EOF
-  > '''mark and unmark files as driver-resolved'''
-  > from mercurial import (
-  >    mergestate,
-  >    pycompat,
-  >    registrar,
-  >    scmutil,
-  > )
-  > cmdtable = {}
-  > command = registrar.command(cmdtable)
-  > @command(b'markdriver',
-  >   [(b'u', b'unmark', None, b'')],
-  >   b'FILE...')
-  > def markdriver(ui, repo, *pats, **opts):
-  >     wlock = repo.wlock()
-  >     opts = pycompat.byteskwargs(opts)
-  >     try:
-  >         ms = mergestate.mergestate.read(repo)
-  >         m = scmutil.match(repo[None], pats, opts)
-  >         for f in ms:
-  >             if not m(f):
-  >                 continue
-  >             if not opts[b'unmark']:
-  >                 ms.mark(f, b'd')
-  >             else:
-  >                 ms.mark(f, b'u')
-  >         ms.commit()
-  >     finally:
-  >         wlock.release()
-  > EOF
-  $ hg --config extensions.markdriver=$TESTTMP/markdriver.py markdriver file1
-  $ hg resolve --list
-  D file1
-  U file2
-  $ hg resolve --mark file1
-  not marking file1 as it is driver-resolved
-this should not print out file1
-  $ hg resolve --mark --all
-  (no more unresolved files -- run "hg resolve --all" to conclude)
-  $ hg resolve --mark 'glob:file*'
-  (no more unresolved files -- run "hg resolve --all" to conclude)
-  $ hg resolve --list
-  D file1
-  R file2
-  $ hg resolve --unmark file1
-  not unmarking file1 as it is driver-resolved
-  (no more unresolved files -- run "hg resolve --all" to conclude)
-  $ hg resolve --unmark --all
-  $ hg resolve --list
-  D file1
-  U file2
-  $ hg --config extensions.markdriver=$TESTTMP/markdriver.py markdriver --unmark file1
-  $ hg resolve --list
-  U file1
-  U file2
-
 resolve the failure
 
   $ echo resolved > file1
@@ -328,6 +270,7 @@ test json output
   [
    {
     "commits": [{"label": "working copy", "name": "local", "node": "57653b9f834a4493f7240b0681efcb9ae7cab745"}, {"label": "merge rev", "name": "other", "node": "dc77451844e37f03f5c559e3b8529b2b48d381d1"}],
+    "extras": [],
     "files": [{"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file1", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}], "local_flags": "", "local_key": "60b27f004e454aca81b0480209cce5081ec52390", "local_path": "file1", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file1", "path": "file1", "state": "r"}, {"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file2", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}], "local_flags": "", "local_key": "cb99b709a1978bd205ab9dfd4c5aaa1fc91c7523", "local_path": "file2", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file2", "path": "file2", "state": "u"}]
    }
   ]

@@ -40,6 +40,8 @@ REVIDX_ELLIPSIS = repository.REVISION_FLAG_ELLIPSIS
 REVIDX_EXTSTORED = repository.REVISION_FLAG_EXTSTORED
 # revision data contains extra metadata not part of the official digest
 REVIDX_SIDEDATA = repository.REVISION_FLAG_SIDEDATA
+# revision changes files in a way that could affect copy tracing.
+REVIDX_HASCOPIESINFO = repository.REVISION_FLAG_HASCOPIESINFO
 REVIDX_DEFAULT_FLAGS = 0
 # stable order in which flags need to be processed and their processors applied
 REVIDX_FLAGS_ORDER = [
@@ -47,6 +49,7 @@ REVIDX_FLAGS_ORDER = [
     REVIDX_ELLIPSIS,
     REVIDX_EXTSTORED,
     REVIDX_SIDEDATA,
+    REVIDX_HASCOPIESINFO,
 ]
 
 # bitmark for flags that could cause rawdata content change

@@ -217,7 +217,9 @@ class gittreemanifest(object):
             return b''
 
     def copy(self):
-        pass
+        return gittreemanifest(
+            self._git_repo, self._tree, dict(self._pending_changes)
+        )
 
     def items(self):
         for f in self:
@@ -320,7 +322,8 @@ class memgittreemanifestctx(object):
             for part in comps:
                 parent = trees[full]
                 try:
-                    new = self._repo[parent[pycompat.fsdecode(part)]]
+                    parent_tree_id = parent[pycompat.fsdecode(part)].id
+                    new = self._repo[parent_tree_id]
                 except KeyError:
                     # new directory
                     new = None

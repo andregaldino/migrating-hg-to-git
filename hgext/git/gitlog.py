@@ -96,6 +96,10 @@ class baselogindex(object):
 
 # TODO: an interface for the changelog type?
 class changelog(baselog):
+    # TODO: this appears to be an enumerated type, and should probably
+    # be part of the public changelog interface
+    _copiesstorage = b'extra'
+
     def __contains__(self, rev):
         try:
             self.node(rev)
@@ -385,8 +389,8 @@ class changelog(baselog):
         sig = pygit2.Signature(
             encoding.unifromlocal(stringutil.person(user)),
             encoding.unifromlocal(stringutil.email(user)),
-            timestamp,
-            -(tz // 60),
+            int(timestamp),
+            -int(tz // 60),
         )
         oid = self.gitrepo.create_commit(
             None, sig, sig, desc, gitutil.togitnode(manifest), parents

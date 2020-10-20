@@ -13,8 +13,6 @@ import os
 from .i18n import _
 
 
-from .revlogutils.flagutil import REVIDX_SIDEDATA
-
 from . import (
     match as matchmod,
     node,
@@ -25,6 +23,8 @@ from . import (
 
 
 from .utils import stringutil
+
+from .revlogutils import flagutil
 
 
 def _filter(src, dst, t):
@@ -172,102 +172,60 @@ def _committedforwardcopies(a, b, base, match):
     return cm
 
 
-def _revinfogetter(repo):
-    """return a function that return multiple data given a <rev>"i
+def _revinfo_getter(repo):
+    """returns a function that returns the following data given a <rev>"
 
     * p1: revision number of first parent
     * p2: revision number of first parent
-    * p1copies: mapping of copies from p1
-    * p2copies: mapping of copies from p2
-    * removed: a list of removed files
-    * ismerged: a callback to know if file was merged in that revision
+    * changes: a ChangingFiles object
     """
     cl = repo.changelog
     parents = cl.parentrevs
+    flags = cl.flags
 
-    def get_ismerged(rev):
-        ctx = repo[rev]
+    HASCOPIESINFO = flagutil.REVIDX_HASCOPIESINFO
 
-        def ismerged(path):
-            if path not in ctx.files():
-                return False
-            fctx = ctx[path]
-            parents = fctx._filelog.parents(fctx._filenode)
-            nb_parents = 0
-            for n in parents:
-                if n != node.nullid:
-                    nb_parents += 1
-            return nb_parents >= 2
+    changelogrevision = cl.changelogrevision
 
-        return ismerged
+    # A small cache to avoid doing the work twice for merges
+    #
+    # In the vast majority of cases, if we ask information for a revision
+    # about 1 parent, we'll later ask it for the other. So it make sense to
+    # keep the information around when reaching the first parent of a merge
+    # and dropping it after it was provided for the second parents.
+    #
+    # It exists cases were only one parent of the merge will be walked. It
+    # happens when the "destination" the copy tracing is descendant from a
+    # new root, not common with the "source". In that case, we will only walk
+    # through merge parents that are descendant of changesets common
+    # between "source" and "destination".
+    #
+    # With the current case implementation if such changesets have a copy
+    # information, we'll keep them in memory until the end of
+    # _changesetforwardcopies. We don't expect the case to be frequent
+    # enough to matters.
+    #
+    # In addition, it would be possible to reach pathological case, were
+    # many first parent are met before any second parent is reached. In
+    # that case the cache could grow. If this even become an issue one can
+    # safely introduce a maximum cache size. This would trade extra CPU/IO
+    # time to save memory.
+    merge_caches = {}
 
-    if repo.filecopiesmode == b'changeset-sidedata':
-        changelogrevision = cl.changelogrevision
-        flags = cl.flags
-
-        # A small cache to avoid doing the work twice for merges
-        #
-        # In the vast majority of cases, if we ask information for a revision
-        # about 1 parent, we'll later ask it for the other. So it make sense to
-        # keep the information around when reaching the first parent of a merge
-        # and dropping it after it was provided for the second parents.
-        #
-        # It exists cases were only one parent of the merge will be walked. It
-        # happens when the "destination" the copy tracing is descendant from a
-        # new root, not common with the "source". In that case, we will only walk
-        # through merge parents that are descendant of changesets common
-        # between "source" and "destination".
-        #
-        # With the current case implementation if such changesets have a copy
-        # information, we'll keep them in memory until the end of
-        # _changesetforwardcopies. We don't expect the case to be frequent
-        # enough to matters.
-        #
-        # In addition, it would be possible to reach pathological case, were
-        # many first parent are met before any second parent is reached. In
-        # that case the cache could grow. If this even become an issue one can
-        # safely introduce a maximum cache size. This would trade extra CPU/IO
-        # time to save memory.
-        merge_caches = {}
-
-        def revinfo(rev):
-            p1, p2 = parents(rev)
-            value = None
-            if flags(rev) & REVIDX_SIDEDATA:
-                e = merge_caches.pop(rev, None)
-                if e is not None:
-                    return e
-                c = changelogrevision(rev)
-                p1copies = c.p1copies
-                p2copies = c.p2copies
-                removed = c.filesremoved
-                if p1 != node.nullrev and p2 != node.nullrev:
-                    # XXX some case we over cache, IGNORE
-                    value = merge_caches[rev] = (
-                        p1,
-                        p2,
-                        p1copies,
-                        p2copies,
-                        removed,
-                        get_ismerged(rev),
-                    )
-            else:
-                p1copies = {}
-                p2copies = {}
-                removed = []
-
-            if value is None:
-                value = (p1, p2, p1copies, p2copies, removed, get_ismerged(rev))
-            return value
-
-    else:
-
-        def revinfo(rev):
-            p1, p2 = parents(rev)
-            ctx = repo[rev]
-            p1copies, p2copies = ctx._copies
-            removed = ctx.filesremoved()
-            return p1, p2, p1copies, p2copies, removed, get_ismerged(rev)
+    def revinfo(rev):
+        p1, p2 = parents(rev)
+        value = None
+        e = merge_caches.pop(rev, None)
+        if e is not None:
+            return e
+        changes = None
+        if flags(rev) & HASCOPIESINFO:
+            changes = changelogrevision(rev).changes
+        value = (p1, p2, changes)
+        if p1 != node.nullrev and p2 != node.nullrev:
+            # XXX some case we over cache, IGNORE
+            merge_caches[rev] = value
+        return value
 
     return revinfo
 
@@ -278,7 +236,6 @@ def _changesetforwardcopies(a, b, match):
 
     repo = a.repo().unfiltered()
     children = {}
-    revinfo = _revinfogetter(repo)
 
     cl = repo.changelog
     isancestor = cl.isancestorrev  # XXX we should had chaching to this.
@@ -309,12 +266,20 @@ def _changesetforwardcopies(a, b, match):
     iterrevs.update(roots)
     iterrevs.remove(b.rev())
     revs = sorted(iterrevs)
-    return _combinechangesetcopies(
-        revs, children, b.rev(), revinfo, match, isancestor
-    )
+
+    if repo.filecopiesmode == b'changeset-sidedata':
+        revinfo = _revinfo_getter(repo)
+        return _combine_changeset_copies(
+            revs, children, b.rev(), revinfo, match, isancestor
+        )
+    else:
+        revinfo = _revinfo_getter_extra(repo)
+        return _combine_changeset_copies_extra(
+            revs, children, b.rev(), revinfo, match, isancestor
+        )
 
 
-def _combinechangesetcopies(
+def _combine_changeset_copies(
     revs, children, targetrev, revinfo, match, isancestor
 ):
     """combine the copies information for each item of iterrevs
@@ -327,6 +292,161 @@ def _combinechangesetcopies(
 
     It returns the aggregated copies information for `targetrev`.
     """
+    all_copies = {}
+    alwaysmatch = match.always()
+    for r in revs:
+        copies = all_copies.pop(r, None)
+        if copies is None:
+            # this is a root
+            copies = {}
+        for i, c in enumerate(children[r]):
+            p1, p2, changes = revinfo(c)
+            childcopies = {}
+            if r == p1:
+                parent = 1
+                if changes is not None:
+                    childcopies = changes.copied_from_p1
+            else:
+                assert r == p2
+                parent = 2
+                if changes is not None:
+                    childcopies = changes.copied_from_p2
+            if not alwaysmatch:
+                childcopies = {
+                    dst: src for dst, src in childcopies.items() if match(dst)
+                }
+            newcopies = copies
+            if childcopies:
+                newcopies = copies.copy()
+                for dest, source in pycompat.iteritems(childcopies):
+                    prev = copies.get(source)
+                    if prev is not None and prev[1] is not None:
+                        source = prev[1]
+                    newcopies[dest] = (c, source)
+                assert newcopies is not copies
+            if changes is not None:
+                for f in changes.removed:
+                    if f in newcopies:
+                        if newcopies is copies:
+                            # copy on write to avoid affecting potential other
+                            # branches.  when there are no other branches, this
+                            # could be avoided.
+                            newcopies = copies.copy()
+                        newcopies[f] = (c, None)
+            othercopies = all_copies.get(c)
+            if othercopies is None:
+                all_copies[c] = newcopies
+            else:
+                # we are the second parent to work on c, we need to merge our
+                # work with the other.
+                #
+                # In case of conflict, parent 1 take precedence over parent 2.
+                # This is an arbitrary choice made anew when implementing
+                # changeset based copies. It was made without regards with
+                # potential filelog related behavior.
+                if parent == 1:
+                    _merge_copies_dict(
+                        othercopies, newcopies, isancestor, changes
+                    )
+                else:
+                    _merge_copies_dict(
+                        newcopies, othercopies, isancestor, changes
+                    )
+                    all_copies[c] = newcopies
+
+    final_copies = {}
+    for dest, (tt, source) in all_copies[targetrev].items():
+        if source is not None:
+            final_copies[dest] = source
+    return final_copies
+
+
+def _merge_copies_dict(minor, major, isancestor, changes):
+    """merge two copies-mapping together, minor and major
+
+    In case of conflict, value from "major" will be picked.
+
+    - `isancestors(low_rev, high_rev)`: callable return True if `low_rev` is an
+                                        ancestors of `high_rev`,
+
+    - `ismerged(path)`: callable return True if `path` have been merged in the
+                        current revision,
+    """
+    for dest, value in major.items():
+        other = minor.get(dest)
+        if other is None:
+            minor[dest] = value
+        else:
+            new_tt = value[0]
+            other_tt = other[0]
+            if value[1] == other[1]:
+                continue
+            # content from "major" wins, unless it is older
+            # than the branch point or there is a merge
+            if new_tt == other_tt:
+                minor[dest] = value
+            elif (
+                changes is not None
+                and value[1] is None
+                and dest in changes.salvaged
+            ):
+                pass
+            elif (
+                changes is not None
+                and other[1] is None
+                and dest in changes.salvaged
+            ):
+                minor[dest] = value
+            elif changes is not None and dest in changes.merged:
+                minor[dest] = value
+            elif not isancestor(new_tt, other_tt):
+                minor[dest] = value
+
+
+def _revinfo_getter_extra(repo):
+    """return a function that return multiple data given a <rev>"i
+
+    * p1: revision number of first parent
+    * p2: revision number of first parent
+    * p1copies: mapping of copies from p1
+    * p2copies: mapping of copies from p2
+    * removed: a list of removed files
+    * ismerged: a callback to know if file was merged in that revision
+    """
+    cl = repo.changelog
+    parents = cl.parentrevs
+
+    def get_ismerged(rev):
+        ctx = repo[rev]
+
+        def ismerged(path):
+            if path not in ctx.files():
+                return False
+            fctx = ctx[path]
+            parents = fctx._filelog.parents(fctx._filenode)
+            nb_parents = 0
+            for n in parents:
+                if n != node.nullid:
+                    nb_parents += 1
+            return nb_parents >= 2
+
+        return ismerged
+
+    def revinfo(rev):
+        p1, p2 = parents(rev)
+        ctx = repo[rev]
+        p1copies, p2copies = ctx._copies
+        removed = ctx.filesremoved()
+        return p1, p2, p1copies, p2copies, removed, get_ismerged(rev)
+
+    return revinfo
+
+
+def _combine_changeset_copies_extra(
+    revs, children, targetrev, revinfo, match, isancestor
+):
+    """version of `_combine_changeset_copies` that works with the Google
+    specific "extra" based storage for copy information"""
     all_copies = {}
     alwaysmatch = match.always()
     for r in revs:
@@ -376,11 +496,11 @@ def _combinechangesetcopies(
                 # changeset based copies. It was made without regards with
                 # potential filelog related behavior.
                 if parent == 1:
-                    _merge_copies_dict(
+                    _merge_copies_dict_extra(
                         othercopies, newcopies, isancestor, ismerged
                     )
                 else:
-                    _merge_copies_dict(
+                    _merge_copies_dict_extra(
                         newcopies, othercopies, isancestor, ismerged
                     )
                     all_copies[c] = newcopies
@@ -392,17 +512,9 @@ def _combinechangesetcopies(
     return final_copies
 
 
-def _merge_copies_dict(minor, major, isancestor, ismerged):
-    """merge two copies-mapping together, minor and major
-
-    In case of conflict, value from "major" will be picked.
-
-    - `isancestors(low_rev, high_rev)`: callable return True if `low_rev` is an
-                                        ancestors of `high_rev`,
-
-    - `ismerged(path)`: callable return True if `path` have been merged in the
-                        current revision,
-    """
+def _merge_copies_dict_extra(minor, major, isancestor, ismerged):
+    """version of `_merge_copies_dict` that works with the Google
+    specific "extra" based storage for copy information"""
     for dest, value in major.items():
         other = minor.get(dest)
         if other is None:

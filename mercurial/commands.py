@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import difflib
 import errno
 import os
 import re
@@ -41,6 +40,7 @@ from . import (
     filemerge,
     formatter,
     graphmod,
+    grep as grepmod,
     hbisect,
     help,
     hg,
@@ -55,6 +55,7 @@ from . import (
     pycompat,
     rcutil,
     registrar,
+    requirements,
     revsetlang,
     rewriteutil,
     scmutil,
@@ -66,6 +67,7 @@ from . import (
     ui as uimod,
     util,
     verify as verifymod,
+    vfs as vfsmod,
     wireprotoserver,
 )
 from .utils import (
@@ -767,11 +769,8 @@ def backout(ui, repo, node=None, rev=None, **opts):
 
 
 def _dobackout(ui, repo, node=None, rev=None, **opts):
+    cmdutil.check_incompatible_arguments(opts, 'no_commit', ['commit', 'merge'])
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'commit') and opts.get(b'no_commit'):
-        raise error.Abort(_(b"cannot use --commit with --no-commit"))
-    if opts.get(b'merge') and opts.get(b'no_commit'):
-        raise error.Abort(_(b"cannot use --merge with --no-commit"))
 
     if rev and node:
         raise error.Abort(_(b"please specify just one revision"))
@@ -788,7 +787,8 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
 
     cmdutil.checkunfinished(repo)
     cmdutil.bailifchanged(repo)
-    node = scmutil.revsingle(repo, rev).node()
+    ctx = scmutil.revsingle(repo, rev)
+    node = ctx.node()
 
     op1, op2 = repo.dirstate.parents()
     if not repo.changelog.isancestor(node, op1):
@@ -819,14 +819,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         with dirstateguard.dirstateguard(repo, b'backout'):
             overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
             with ui.configoverride(overrides, b'backout'):
-                stats = mergemod.update(
-                    repo,
-                    parent,
-                    branchmerge=True,
-                    force=True,
-                    ancestor=node,
-                    mergeancestor=False,
-                )
+                stats = mergemod.back_out(ctx, parent=repo[parent])
             repo.setparents(op1, op2)
         hg._showstats(repo, stats)
         if stats.unresolvedcount:
@@ -837,7 +830,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
     else:
         hg.clean(repo, node, show_stats=False)
         repo.dirstate.setbranch(branch)
-        cmdutil.revert(ui, repo, rctx, repo.dirstate.parents())
+        cmdutil.revert(ui, repo, rctx)
 
     if opts.get(b'no_commit'):
         msg = _(b"changeset %s backed out, don't forget to commit.\n")
@@ -2141,6 +2134,12 @@ def _docommit(ui, repo, *pats, **opts):
         (b'u', b'untrusted', None, _(b'show untrusted configuration options')),
         (b'e', b'edit', None, _(b'edit user config')),
         (b'l', b'local', None, _(b'edit repository config')),
+        (
+            b'',
+            b'shared',
+            None,
+            _(b'edit shared source repository config (EXPERIMENTAL)'),
+        ),
         (b'g', b'global', None, _(b'edit global config')),
     ]
     + formatteropts,
@@ -2179,22 +2178,37 @@ def config(ui, repo, *values, **opts):
       :source:  String. Filename and line number where the item is defined.
       :value:   String. Config value.
 
+      The --shared flag can be used to edit the config file of shared source
+      repository. It only works when you have shared using the experimental
+      share safe feature.
+
     Returns 0 on success, 1 if NAME does not exist.
 
     """
 
     opts = pycompat.byteskwargs(opts)
-    editopts = (b'edit', b'local', b'global')
+    editopts = (b'edit', b'local', b'global', b'shared')
     if any(opts.get(o) for o in editopts):
-        if opts.get(b'local') and opts.get(b'global'):
-            raise error.Abort(_(b"can't use --local and --global together"))
-
+        cmdutil.check_at_most_one_arg(opts, *editopts[1:])
         if opts.get(b'local'):
             if not repo:
                 raise error.Abort(_(b"can't use --local outside a repository"))
             paths = [repo.vfs.join(b'hgrc')]
         elif opts.get(b'global'):
             paths = rcutil.systemrcpath()
+        elif opts.get(b'shared'):
+            if not repo.shared():
+                raise error.Abort(
+                    _(b"repository is not shared; can't use --shared")
+                )
+                if requirements.SHARESAFE_REQUIREMENT not in repo.requirements:
+                    raise error.Abort(
+                        _(
+                            b"share safe feature not unabled; "
+                            b"unable to edit shared source repository config"
+                        )
+                    )
+            paths = [vfsmod.vfs(repo.sharedpath).join(b'hgrc')]
         else:
             paths = rcutil.userrcpath()
 
@@ -2311,7 +2325,7 @@ def continuecmd(ui, repo, **opts):
 @command(
     b'copy|cp',
     [
-        (b'', b'forget', None, _(b'unmark a file as copied')),
+        (b'', b'forget', None, _(b'unmark a destination file as copied')),
         (b'A', b'after', None, _(b'record a copy that has already occurred')),
         (
             b'',
@@ -2343,9 +2357,9 @@ def copy(ui, repo, *pats, **opts):
     exist in the working directory. If invoked with -A/--after, the
     operation is recorded, but no copying is performed.
 
-    To undo marking a file as copied, use --forget. With that option,
-    all given (positional) arguments are unmarked as copies. The destination
-    file(s) will be left in place (still tracked).
+    To undo marking a destination file as copied, use --forget. With that
+    option, all given (positional) arguments are unmarked as copies. The
+    destination file(s) will be left in place (still tracked).
 
     This command takes effect with the next commit by default.
 
@@ -3230,7 +3244,7 @@ def _stopgraft(ui, repo, graftstate):
     if not graftstate.exists():
         raise error.Abort(_(b"no interrupted graft found"))
     pctx = repo[b'.']
-    hg.updaterepo(repo, pctx.node(), overwrite=True)
+    mergemod.clean_update(pctx)
     graftstate.delete()
     ui.status(_(b"stopped the interrupted graft\n"))
     ui.status(_(b"working directory is now at %s\n") % pctx.hex()[:12])
@@ -3252,7 +3266,7 @@ statemod.addunfinished(
     b'grep',
     [
         (b'0', b'print0', None, _(b'end fields with NUL')),
-        (b'', b'all', None, _(b'print all revisions that match (DEPRECATED) ')),
+        (b'', b'all', None, _(b'an alias to --diff (DEPRECATED)')),
         (
             b'',
             b'diff',
@@ -3351,13 +3365,17 @@ def grep(ui, repo, pattern, *pats, **opts):
     Returns 0 if a match is found, 1 otherwise.
 
     """
+    cmdutil.check_incompatible_arguments(opts, 'all_files', ['all', 'diff'])
     opts = pycompat.byteskwargs(opts)
     diff = opts.get(b'all') or opts.get(b'diff')
-    if diff and opts.get(b'all_files'):
-        raise error.Abort(_(b'--diff and --all-files are mutually exclusive'))
+    follow = opts.get(b'follow')
     if opts.get(b'all_files') is None and not diff:
         opts[b'all_files'] = True
-    plaingrep = opts.get(b'all_files') and not opts.get(b'rev')
+    plaingrep = (
+        opts.get(b'all_files')
+        and not opts.get(b'rev')
+        and not opts.get(b'follow')
+    )
     all_files = opts.get(b'all_files')
     if plaingrep:
         opts[b'rev'] = [b'wdir()']
@@ -3376,76 +3394,11 @@ def grep(ui, repo, pattern, *pats, **opts):
     if opts.get(b'print0'):
         sep = eol = b'\0'
 
-    getfile = util.lrucachefunc(repo.file)
+    searcher = grepmod.grepsearcher(
+        ui, repo, regexp, all_files=all_files, diff=diff, follow=follow
+    )
 
-    def matchlines(body):
-        begin = 0
-        linenum = 0
-        while begin < len(body):
-            match = regexp.search(body, begin)
-            if not match:
-                break
-            mstart, mend = match.span()
-            linenum += body.count(b'\n', begin, mstart) + 1
-            lstart = body.rfind(b'\n', begin, mstart) + 1 or begin
-            begin = body.find(b'\n', mend) + 1 or len(body) + 1
-            lend = begin - 1
-            yield linenum, mstart - lstart, mend - lstart, body[lstart:lend]
-
-    class linestate(object):
-        def __init__(self, line, linenum, colstart, colend):
-            self.line = line
-            self.linenum = linenum
-            self.colstart = colstart
-            self.colend = colend
-
-        def __hash__(self):
-            return hash((self.linenum, self.line))
-
-        def __eq__(self, other):
-            return self.line == other.line
-
-        def findpos(self):
-            """Iterate all (start, end) indices of matches"""
-            yield self.colstart, self.colend
-            p = self.colend
-            while p < len(self.line):
-                m = regexp.search(self.line, p)
-                if not m:
-                    break
-                if m.end() == p:
-                    p += 1
-                else:
-                    yield m.span()
-                    p = m.end()
-
-    matches = {}
-    copies = {}
-
-    def grepbody(fn, rev, body):
-        matches[rev].setdefault(fn, [])
-        m = matches[rev][fn]
-        if body is None:
-            return
-
-        for lnum, cstart, cend, line in matchlines(body):
-            s = linestate(line, lnum, cstart, cend)
-            m.append(s)
-
-    def difflinestates(a, b):
-        sm = difflib.SequenceMatcher(None, a, b)
-        for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag == 'insert':
-                for i in pycompat.xrange(blo, bhi):
-                    yield (b'+', b[i])
-            elif tag == 'delete':
-                for i in pycompat.xrange(alo, ahi):
-                    yield (b'-', a[i])
-            elif tag == 'replace':
-                for i in pycompat.xrange(alo, ahi):
-                    yield (b'-', a[i])
-                for i in pycompat.xrange(blo, bhi):
-                    yield (b'+', b[i])
+    getfile = searcher._getfile
 
     uipathfn = scmutil.getuipathfn(repo)
 
@@ -3471,7 +3424,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
         fieldnamemap = {b'linenumber': b'lineno'}
         if diff:
-            iter = difflinestates(pstates, states)
+            iter = grepmod.difflinestates(pstates, states)
         else:
             iter = [(b'', l) for l in states]
         for change, l in iter:
@@ -3540,7 +3493,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     def displaymatches(fm, l):
         p = 0
-        for s, e in l.findpos():
+        for s, e in l.findpos(regexp):
             if p < s:
                 fm.startitem()
                 fm.write(b'text', b'%s', l.line[p:s])
@@ -3555,102 +3508,27 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.data(matched=False)
         fm.end()
 
-    skip = set()
-    revfiles = {}
-    match = scmutil.match(repo[None], pats, opts)
     found = False
-    follow = opts.get(b'follow')
 
-    getrenamed = scmutil.getrenamedfn(repo)
-
-    def readfile(ctx, fn):
-        rev = ctx.rev()
-        if rev is None:
-            fctx = ctx[fn]
-            try:
-                return fctx.data()
-            except IOError as e:
-                if e.errno != errno.ENOENT:
-                    raise
-        else:
-            flog = getfile(fn)
-            fnode = ctx.filenode(fn)
-            try:
-                return flog.read(fnode)
-            except error.CensoredNodeError:
-                ui.warn(
-                    _(
-                        b'cannot search in censored file: %(filename)s:%(revnum)s\n'
-                    )
-                    % {b'filename': fn, b'revnum': pycompat.bytestr(rev),}
-                )
-
-    def prep(ctx, fns):
-        rev = ctx.rev()
-        pctx = ctx.p1()
-        matches.setdefault(rev, {})
-        if diff:
-            parent = pctx.rev()
-            matches.setdefault(parent, {})
-        files = revfiles.setdefault(rev, [])
-        if rev is None:
-            # in `hg grep pattern`, 2/3 of the time is spent is spent in
-            # pathauditor checks without this in mozilla-central
-            contextmanager = repo.wvfs.audit.cached
-        else:
-            contextmanager = util.nullcontextmanager
-        with contextmanager():
-            for fn in fns:
-                # fn might not exist in the revision (could be a file removed by
-                # the revision). We could check `fn not in ctx` even when rev is
-                # None, but it's less racy to protect againt that in readfile.
-                if rev is not None and fn not in ctx:
-                    continue
-
-                copy = None
-                if follow:
-                    copy = getrenamed(fn, rev)
-                    if copy:
-                        copies.setdefault(rev, {})[fn] = copy
-                        if fn in skip:
-                            skip.add(copy)
-                if fn in skip:
-                    continue
-                files.append(fn)
-
-                if fn not in matches[rev]:
-                    grepbody(fn, rev, readfile(ctx, fn))
-
-                if diff:
-                    pfn = copy or fn
-                    if pfn not in matches[parent] and pfn in pctx:
-                        grepbody(pfn, parent, readfile(pctx, pfn))
+    wopts = logcmdutil.walkopts(
+        pats=pats,
+        opts=opts,
+        revspec=opts[b'rev'],
+        include_pats=opts[b'include'],
+        exclude_pats=opts[b'exclude'],
+        follow=follow,
+        force_changelog_traversal=all_files,
+        filter_revisions_by_pats=not all_files,
+    )
+    revs, makefilematcher = logcmdutil.makewalker(repo, wopts)
 
     ui.pager(b'grep')
     fm = ui.formatter(b'grep', opts)
-    for ctx in cmdutil.walkchangerevs(repo, match, opts, prep):
-        rev = ctx.rev()
-        parent = ctx.p1().rev()
-        for fn in sorted(revfiles.get(rev, [])):
-            states = matches[rev][fn]
-            copy = copies.get(rev, {}).get(fn)
-            if fn in skip:
-                if copy:
-                    skip.add(copy)
-                continue
-            pstates = matches.get(parent, {}).get(copy or fn, [])
-            if pstates or states:
-                r = display(fm, fn, ctx, pstates, states)
-                found = found or r
-                if r and not diff and not all_files:
-                    skip.add(fn)
-                    if copy:
-                        skip.add(copy)
-        del revfiles[rev]
-        # We will keep the matches dict for the duration of the window
-        # clear the matches dict once the window is over
-        if not revfiles:
-            matches.clear()
+    for fn, ctx, pstates, states in searcher.searchfiles(revs, makefilematcher):
+        r = display(fm, fn, ctx, pstates, states)
+        found = found or r
+        if r and not diff and not all_files:
+            searcher.skipfile(fn, ctx.rev())
     fm.end()
 
     return not found
@@ -4162,6 +4040,10 @@ def import_(ui, repo, patch1=None, *patches, **opts):
     Returns 0 on success, 1 on partial success (see --partial).
     """
 
+    cmdutil.check_incompatible_arguments(
+        opts, 'no_commit', ['bypass', 'secret']
+    )
+    cmdutil.check_incompatible_arguments(opts, 'exact', ['edit', 'prefix'])
     opts = pycompat.byteskwargs(opts)
     if not patch1:
         raise error.Abort(_(b'need at least one patch to import'))
@@ -4174,10 +4056,6 @@ def import_(ui, repo, patch1=None, *patches, **opts):
 
     exact = opts.get(b'exact')
     update = not opts.get(b'bypass')
-    if not update and opts.get(b'no_commit'):
-        raise error.Abort(_(b'cannot use --no-commit with --bypass'))
-    if opts.get(b'secret') and opts.get(b'no_commit'):
-        raise error.Abort(_(b'cannot use --no-commit with --secret'))
     try:
         sim = float(opts.get(b'similarity') or 0)
     except ValueError:
@@ -4186,11 +4064,6 @@ def import_(ui, repo, patch1=None, *patches, **opts):
         raise error.Abort(_(b'similarity must be between 0 and 100'))
     if sim and not update:
         raise error.Abort(_(b'cannot use --similarity with --bypass'))
-    if exact:
-        if opts.get(b'edit'):
-            raise error.Abort(_(b'cannot use --exact with --edit'))
-        if opts.get(b'prefix'):
-            raise error.Abort(_(b'cannot use --exact with --prefix'))
 
     base = opts[b"base"]
     msgs = []
@@ -4354,8 +4227,7 @@ def incoming(ui, repo, source=b"default", **opts):
         hg._incoming(display, lambda: 1, ui, repo, source, opts, buffered=True)
         return 0
 
-    if opts.get(b'bundle') and opts.get(b'subrepos'):
-        raise error.Abort(_(b'cannot combine --bundle and --subrepos'))
+    cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'bundle'])
 
     if opts.get(b'bookmarks'):
         source, branches = hg.parseurl(
@@ -4713,7 +4585,9 @@ def log(ui, repo, *pats, **opts):
         )
 
     repo = scmutil.unhidehashlikerevs(repo, opts.get(b'rev'), b'nowarn')
-    revs, differ = logcmdutil.getrevs(repo, pats, opts)
+    revs, differ = logcmdutil.getrevs(
+        repo, logcmdutil.parseopts(ui, pats, opts)
+    )
     if linerange:
         # TODO: should follow file history from logcmdutil._initialrevs(),
         # then filter the result by logcmdutil._makerevset() and --limit
@@ -5781,6 +5655,13 @@ def remove(ui, repo, *pats, **opts):
     [
         (b'A', b'after', None, _(b'record a rename that has already occurred')),
         (
+            b'',
+            b'at-rev',
+            b'',
+            _(b'(un)mark renames in the given revision (EXPERIMENTAL)'),
+            _(b'REV'),
+        ),
+        (
             b'f',
             b'force',
             None,
@@ -5952,18 +5833,12 @@ def resolve(ui, repo, *pats, **opts):
                 b'resolve.resolved',
                 b'R',
             ),
-            mergestatemod.MERGE_RECORD_DRIVER_RESOLVED: (
-                b'resolve.driverresolved',
-                b'D',
-            ),
         }
 
         for f in ms:
             if not m(f):
                 continue
 
-            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
-                continue
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
             fm.context(ctx=wctx)
@@ -5982,21 +5857,9 @@ def resolve(ui, repo, *pats, **opts):
             )
 
         wctx = repo[None]
-
-        if (
-            ms.mergedriver
-            and ms.mdstate() == mergestatemod.MERGE_DRIVER_STATE_UNMARKED
-        ):
-            proceed = mergemod.driverpreprocess(repo, ms, wctx)
-            ms.commit()
-            # allow mark and unmark to go through
-            if not mark and not unmark and not proceed:
-                return 1
-
         m = scmutil.match(wctx, pats, opts)
         ret = 0
         didwork = False
-        runconclude = False
 
         tocomplete = []
         hasconflictmarkers = []
@@ -6010,29 +5873,6 @@ def resolve(ui, repo, *pats, **opts):
                 continue
 
             didwork = True
-
-            if ms[f] == mergestatemod.MERGE_RECORD_MERGED_OTHER:
-                continue
-
-            # don't let driver-resolved files be marked, and run the conclude
-            # step if asked to resolve
-            if ms[f] == mergestatemod.MERGE_RECORD_DRIVER_RESOLVED:
-                exact = m.exact(f)
-                if mark:
-                    if exact:
-                        ui.warn(
-                            _(b'not marking %s as it is driver-resolved\n')
-                            % uipathfn(f)
-                        )
-                elif unmark:
-                    if exact:
-                        ui.warn(
-                            _(b'not unmarking %s as it is driver-resolved\n')
-                            % uipathfn(f)
-                        )
-                else:
-                    runconclude = True
-                continue
 
             # path conflicts must be resolved manually
             if ms[f] in (
@@ -6155,32 +5995,11 @@ def resolve(ui, repo, *pats, **opts):
             ui.warn(_(b"arguments do not match paths that need resolving\n"))
             if hint:
                 ui.warn(hint)
-        elif ms.mergedriver and ms.mdstate() != b's':
-            # run conclude step when either a driver-resolved file is requested
-            # or there are no driver-resolved files
-            # we can't use 'ret' to determine whether any files are unresolved
-            # because we might not have tried to resolve some
-            if (runconclude or not list(ms.driverresolved())) and not list(
-                ms.unresolved()
-            ):
-                proceed = mergemod.driverconclude(repo, ms, wctx)
-                ms.commit()
-                if not proceed:
-                    return 1
 
-    # Nudge users into finishing an unfinished operation
     unresolvedf = list(ms.unresolved())
-    driverresolvedf = list(ms.driverresolved())
-    if not unresolvedf and not driverresolvedf:
+    if not unresolvedf:
         ui.status(_(b'(no more unresolved files)\n'))
         cmdutil.checkafterresolved(repo)
-    elif not unresolvedf:
-        ui.status(
-            _(
-                b'(no more unresolved files -- '
-                b'run "hg resolve --all" to conclude)\n'
-            )
-        )
 
     return ret
 
@@ -6238,8 +6057,7 @@ def revert(ui, repo, *pats, **opts):
 
     opts = pycompat.byteskwargs(opts)
     if opts.get(b"date"):
-        if opts.get(b"rev"):
-            raise error.Abort(_(b"you can't specify a revision and a date"))
+        cmdutil.check_incompatible_arguments(opts, b'date', [b'rev'])
         opts[b"rev"] = cmdutil.finddate(ui, repo, opts[b"date"])
 
     parent, p2 = repo.dirstate.parents()
@@ -6294,9 +6112,7 @@ def revert(ui, repo, *pats, **opts):
             hint = _(b"use --all to revert all files")
         raise error.Abort(msg, hint=hint)
 
-    return cmdutil.revert(
-        ui, repo, ctx, (parent, p2), *pats, **pycompat.strkwargs(opts)
-    )
+    return cmdutil.revert(ui, repo, ctx, *pats, **pycompat.strkwargs(opts))
 
 
 @command(
@@ -6501,9 +6317,8 @@ def serve(ui, repo, **opts):
     Returns 0 on success.
     """
 
+    cmdutil.check_incompatible_arguments(opts, 'stdio', ['cmdserver'])
     opts = pycompat.byteskwargs(opts)
-    if opts[b"stdio"] and opts[b"cmdserver"]:
-        raise error.Abort(_(b"cannot use --stdio with --cmdserver"))
     if opts[b"print_url"] and ui.verbose:
         raise error.Abort(_(b"cannot use --print-url with --verbose"))
 
@@ -7273,6 +7088,7 @@ def tag(ui, repo, name1, *names, **opts):
 
     Returns 0 on success.
     """
+    cmdutil.check_incompatible_arguments(opts, 'remove', ['rev'])
     opts = pycompat.byteskwargs(opts)
     with repo.wlock(), repo.lock():
         rev_ = b"."
@@ -7285,8 +7101,6 @@ def tag(ui, repo, name1, *names, **opts):
                 raise error.Abort(
                     _(b'tag names cannot consist entirely of whitespace')
                 )
-        if opts.get(b'rev') and opts.get(b'remove'):
-            raise error.Abort(_(b"--rev and --remove are incompatible"))
         if opts.get(b'rev'):
             rev_ = opts[b'rev']
         message = opts.get(b'message')

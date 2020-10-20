@@ -1268,6 +1268,7 @@ packages = [
     'mercurial.hgweb',
     'mercurial.interfaces',
     'mercurial.pure',
+    'mercurial.templates',
     'mercurial.thirdparty',
     'mercurial.thirdparty.attr',
     'mercurial.thirdparty.zope',
@@ -1292,6 +1293,13 @@ packages = [
     'hgext3rd',
     'hgdemandimport',
 ]
+
+for name in os.listdir(os.path.join('mercurial', 'templates')):
+    if name != '__pycache__' and os.path.isdir(
+        os.path.join('mercurial', 'templates', name)
+    ):
+        packages.append('mercurial.templates.%s' % name)
+
 if sys.version_info[0] == 2:
     packages.extend(
         [
@@ -1614,11 +1622,8 @@ if os.name == 'nt':
     msvccompiler.MSVCCompiler = HackedMSVCCompiler
 
 packagedata = {
-    'mercurial': [
-        'locale/*/LC_MESSAGES/hg.mo',
-        'defaultrc/*.rc',
-        'dummycert.pem',
-    ],
+    'mercurial': ['locale/*/LC_MESSAGES/hg.mo', 'dummycert.pem',],
+    'mercurial.defaultrc': ['*.rc',],
     'mercurial.helptext': ['*.txt',],
     'mercurial.helptext.internals': ['*.txt',],
 }
@@ -1630,11 +1635,8 @@ def ordinarypath(p):
 
 for root in ('templates',):
     for curdir, dirs, files in os.walk(os.path.join('mercurial', root)):
-        curdir = curdir.split(os.sep, 1)[1]
-        dirs[:] = filter(ordinarypath, dirs)
-        for f in filter(ordinarypath, files):
-            f = os.path.join(curdir, f)
-            packagedata['mercurial'].append(f)
+        packagename = curdir.replace(os.sep, '.')
+        packagedata[packagename] = list(filter(ordinarypath, files))
 
 datafiles = []
 

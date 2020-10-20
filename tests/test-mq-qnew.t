@@ -256,7 +256,7 @@ Test saving last-message.txt
   > def reposetup(ui, repo):
   >     class commitfailure(repo.__class__):
   >         def commit(self, *args, **kwargs):
-  >             raise error.Abort('emulating unexpected abort')
+  >             raise error.Abort(b'emulating unexpected abort')
   >     repo.__class__ = commitfailure
   > EOF
   $ cat >> .hg/hgrc <<EOF

@@ -485,19 +485,14 @@ def cachelfiles(ui, repo, node, filelist=None):
     return ([], [])
 
 
-def downloadlfiles(ui, repo, rev=None):
-    match = scmutil.match(repo[None], [repo.wjoin(lfutil.shortname)], {})
-
-    def prepare(ctx, fns):
-        pass
-
+def downloadlfiles(ui, repo):
+    tonode = repo.changelog.node
     totalsuccess = 0
     totalmissing = 0
-    if rev != []:  # walkchangerevs on empty list would return all revs
-        for ctx in cmdutil.walkchangerevs(repo, match, {b'rev': rev}, prepare):
-            success, missing = cachelfiles(ui, repo, ctx.node())
-            totalsuccess += len(success)
-            totalmissing += len(missing)
+    for rev in repo.revs(b'file(%s)', b'path:' + lfutil.shortname):
+        success, missing = cachelfiles(ui, repo, tonode(rev))
+        totalsuccess += len(success)
+        totalmissing += len(missing)
     ui.status(_(b"%d additional largefiles cached\n") % totalsuccess)
     if totalmissing > 0:
         ui.status(_(b"%d largefiles failed to download\n") % totalmissing)

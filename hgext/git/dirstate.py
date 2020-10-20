@@ -129,6 +129,7 @@ class gitdirstate(object):
             return False
 
     def status(self, match, subrepos, ignored, clean, unknown):
+        listclean = clean
         # TODO handling of clean files - can we get that from git.status()?
         modified, added, removed, deleted, unknown, ignored, clean = (
             [],
@@ -142,6 +143,8 @@ class gitdirstate(object):
         gstatus = self.git.status()
         for path, status in gstatus.items():
             path = pycompat.fsencode(path)
+            if not match(path):
+                continue
             if status == pygit2.GIT_STATUS_IGNORED:
                 if path.endswith(b'/'):
                     continue
@@ -165,6 +168,22 @@ class gitdirstate(object):
                 raise error.Abort(
                     b'unhandled case: status for %r is %r' % (path, status)
                 )
+
+        if listclean:
+            observed = set(
+                modified + added + removed + deleted + unknown + ignored
+            )
+            index = self.git.index
+            index.read()
+            for entry in index:
+                path = pycompat.fsencode(entry.path)
+                if not match(path):
+                    continue
+                if path in observed:
+                    continue  # already in some other set
+                if path[-1] == b'/':
+                    continue  # directory
+                clean.append(path)
 
         # TODO are we really always sure of status here?
         return (
@@ -276,13 +295,24 @@ class gitdirstate(object):
         pass
 
     def add(self, f):
-        self.git.index.add(pycompat.fsdecode(f))
+        index = self.git.index
+        index.read()
+        index.add(pycompat.fsdecode(f))
+        index.write()
 
     def drop(self, f):
-        self.git.index.remove(pycompat.fsdecode(f))
+        index = self.git.index
+        index.read()
+        fs = pycompat.fsdecode(f)
+        if fs in index:
+            index.remove(fs)
+            index.write()
 
     def remove(self, f):
-        self.git.index.remove(pycompat.fsdecode(f))
+        index = self.git.index
+        index.read()
+        index.remove(pycompat.fsdecode(f))
+        index.write()
 
     def copied(self, path):
         # TODO: track copies?

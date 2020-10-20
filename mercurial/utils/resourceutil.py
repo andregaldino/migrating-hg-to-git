@@ -55,6 +55,8 @@ else:
 
 
 try:
+    # importlib.resources exists from Python 3.7; see fallback in except clause
+    # further down
     from importlib import resources
 
     from .. import encoding
@@ -78,6 +80,8 @@ try:
 
 
 except (ImportError, AttributeError):
+    # importlib.resources was not found (almost definitely because we're on a
+    # Python version before 3.7)
 
     def open_resource(package, name):
         path = os.path.join(_package_path(package), name)

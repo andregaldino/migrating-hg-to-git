@@ -32,6 +32,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    requirements,
     scmutil,
     sslutil,
     streamclone,
@@ -39,7 +40,6 @@ from . import (
     util,
     wireprototypes,
 )
-from .interfaces import repository
 from .utils import (
     hashutil,
     stringutil,
@@ -1068,7 +1068,7 @@ def _pushb2ctx(pushop, bundler):
     cgpart = bundler.newpart(b'changegroup', data=cgstream)
     if cgversions:
         cgpart.addparam(b'version', version)
-    if b'treemanifest' in pushop.repo.requirements:
+    if scmutil.istreemanifest(pushop.repo):
         cgpart.addparam(b'treemanifest', b'1')
     if b'exp-sidedata-flag' in pushop.repo.requirements:
         cgpart.addparam(b'exp-sidedata', b'1')
@@ -1691,7 +1691,7 @@ def _fullpullbundle2(repo, pullop):
         old_heads = unficl.heads()
         clstart = len(unficl)
         _pullbundle2(pullop)
-        if repository.NARROW_REQUIREMENT in repo.requirements:
+        if requirements.NARROW_REQUIREMENT in repo.requirements:
             # XXX narrow clones filter the heads on the server side during
             # XXX getbundle and result in partial replies as well.
             # XXX Disable pull bundles in this case as band aid to avoid
@@ -1720,7 +1720,7 @@ def add_confirm_callback(repo, pullop):
         repo = reporef()
         cm = _(b'accept incoming changes (yn)?$$ &Yes $$ &No')
         if repo.ui.promptchoice(cm):
-            raise error.Abort("user aborted")
+            raise error.Abort(b"user aborted")
 
     tr.addvalidator(b'900-pull-prompt', prompt)
 
@@ -2557,7 +2557,7 @@ def _getbundlechangegrouppart(
 
     part.addparam(b'nbchanges', b'%d' % len(outgoing.missing), mandatory=False)
 
-    if b'treemanifest' in repo.requirements:
+    if scmutil.istreemanifest(repo):
         part.addparam(b'treemanifest', b'1')
 
     if b'exp-sidedata-flag' in repo.requirements:

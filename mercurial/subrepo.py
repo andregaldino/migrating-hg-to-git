@@ -25,6 +25,7 @@ from . import (
     exchange,
     logcmdutil,
     match as matchmod,
+    merge as merge,
     node,
     pathutil,
     phases,
@@ -38,7 +39,6 @@ from .utils import (
     dateutil,
     hashutil,
     procutil,
-    stringutil,
 )
 
 hg = None
@@ -83,9 +83,7 @@ def annotatesubrepoerror(func):
         except error.Abort as ex:
             subrepo = subrelpath(self)
             errormsg = (
-                stringutil.forcebytestr(ex)
-                + b' '
-                + _(b'(in subrepository "%s")') % subrepo
+                ex.message + b' ' + _(b'(in subrepository "%s")') % subrepo
             )
             # avoid handling this exception by raising a SubrepoAbort exception
             raise SubrepoAbort(
@@ -783,7 +781,10 @@ class hgsubrepo(abstractsubrepo):
                     % (revision[0:12], self._path)
                 )
                 repo = urepo
-        hg.updaterepo(repo, revision, overwrite)
+        if overwrite:
+            merge.clean_update(repo[revision])
+        else:
+            merge.update(repo[revision])
 
     @annotatesubrepoerror
     def merge(self, state):
@@ -986,12 +987,11 @@ class hgsubrepo(abstractsubrepo):
 
     def filerevert(self, *pats, **opts):
         ctx = self._repo[opts['rev']]
-        parents = self._repo.dirstate.parents()
         if opts.get('all'):
             pats = [b'set:modified()']
         else:
             pats = []
-        cmdutil.revert(self.ui, self._repo, ctx, parents, *pats, **opts)
+        cmdutil.revert(self.ui, self._repo, ctx, *pats, **opts)
 
     def shortid(self, revid):
         return revid[:12]

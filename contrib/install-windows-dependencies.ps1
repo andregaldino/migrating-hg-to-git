@@ -27,25 +27,20 @@ $PYTHON27_x64_SHA256 = "b74a3afa1e0bf2a6fc566a7b70d15c9bfabba3756fb077797d16fffa
 $PYTHON27_X86_URL = "https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi"
 $PYTHON27_X86_SHA256 = "d901802e90026e9bad76b8a81f8dd7e43c7d7e8269d9281c9e9df7a9c40480a9"
 
-$PYTHON35_x86_URL = "https://www.python.org/ftp/python/3.5.4/python-3.5.4.exe"
-$PYTHON35_x86_SHA256 = "F27C2D67FD9688E4970F3BFF799BB9D722A0D6C2C13B04848E1F7D620B524B0E"
-$PYTHON35_x64_URL = "https://www.python.org/ftp/python/3.5.4/python-3.5.4-amd64.exe"
-$PYTHON35_x64_SHA256 = "9B7741CC32357573A77D2EE64987717E527628C38FD7EAF3E2AACA853D45A1EE"
+$PYTHON37_x86_URL = "https://www.python.org/ftp/python/3.7.9/python-3.7.9.exe"
+$PYTHON37_x86_SHA256 = "769bb7c74ad1df6d7d74071cc16a984ff6182e4016e11b8949b93db487977220"
+$PYTHON37_X64_URL = "https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe"
+$PYTHON37_x64_SHA256 = "e69ed52afb5a722e5c56f6c21d594e85c17cb29f12f18bb69751cf1714e0f987"
 
-$PYTHON36_x86_URL = "https://www.python.org/ftp/python/3.6.8/python-3.6.8.exe"
-$PYTHON36_x86_SHA256 = "89871D432BC06E4630D7B64CB1A8451E53C80E68DE29029976B12AAD7DBFA5A0"
-$PYTHON36_x64_URL = "https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe"
-$PYTHON36_x64_SHA256 = "96088A58B7C43BC83B84E6B67F15E8706C614023DD64F9A5A14E81FF824ADADC"
+$PYTHON38_x86_URL = "https://www.python.org/ftp/python/3.8.6/python-3.8.6.exe"
+$PYTHON38_x86_SHA256 = "287d5df01ff22ff09e6a487ae018603ee19eade71d462ec703850c96f1d5e8a0"
+$PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.6/python-3.8.6-amd64.exe"
+$PYTHON38_x64_SHA256 = "328a257f189cb500606bb26ab0fbdd298ed0e05d8c36540a322a1744f489a0a0"
 
-$PYTHON37_x86_URL = "https://www.python.org/ftp/python/3.7.7/python-3.7.7.exe"
-$PYTHON37_x86_SHA256 = "27fbffcd342d5055acc64050db4c35d0025661521e642b59c381dcba2e162c6a"
-$PYTHON37_X64_URL = "https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe"
-$PYTHON37_x64_SHA256 = "1a0368663ceff999d865de955992b6ea3cb0c8cb15a1a296a8eb7df19cc59e69"
-
-$PYTHON38_x86_URL = "https://www.python.org/ftp/python/3.8.2/python-3.8.2.exe"
-$PYTHON38_x86_SHA256 = "03ac5754a69c9c11c08d1f4d694c14625a4d27348ad4dd2d1253e2547819db2c"
-$PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.2/python-3.8.2-amd64.exe"
-$PYTHON38_x64_SHA256 = "8e400e3f32cdcb746e62e0db4d3ae4cba1f927141ebc4d0d5a4006b0daee8921"
+$PYTHON39_x86_URL = "https://www.python.org/ftp/python/3.9.0/python-3.9.0.exe"
+$PYTHON39_x86_SHA256 = "a4c65917f4225d1543959342f0615c813a4e9e7ff1137c4394ff6a5290ac1913"
+$PYTHON39_x64_URL = "https://www.python.org/ftp/python/3.9.0/python-3.9.0-amd64.exe"
+$PYTHON39_x64_SHA256 = "fd2e2c6612d43bb6b213b72fc53f07d73d99059fa72c96e44bde12e7815073ae"
 
 # PIP 19.2.3.
 $PIP_URL = "https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py"
@@ -126,11 +121,11 @@ function Install-Rust($prefix) {
 
     Invoke-Process "${prefix}\assets\rustup-init.exe" "-y --default-host x86_64-pc-windows-msvc"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "target add i686-pc-windows-msvc"
-    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.42.0"
+    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.46.0"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "component add clippy"
 
     # Install PyOxidizer for packaging.
-    Invoke-Process "${prefix}\cargo\bin\cargo.exe" "install --version 0.7.0 pyoxidizer"
+    Invoke-Process "${prefix}\cargo\bin\cargo.exe" "install --git https://github.com/indygreg/PyOxidizer.git --rev 4697fb25918dfad6dc73288daeea501063963a08 pyoxidizer"
 }
 
 function Install-Dependencies($prefix) {
@@ -143,14 +138,12 @@ function Install-Dependencies($prefix) {
     Secure-Download $VC9_PYTHON_URL ${prefix}\assets\VCForPython27.msi $VC9_PYTHON_SHA256
     Secure-Download $PYTHON27_x86_URL ${prefix}\assets\python27-x86.msi $PYTHON27_x86_SHA256
     Secure-Download $PYTHON27_x64_URL ${prefix}\assets\python27-x64.msi $PYTHON27_x64_SHA256
-    Secure-Download $PYTHON35_x86_URL ${prefix}\assets\python35-x86.exe $PYTHON35_x86_SHA256
-    Secure-Download $PYTHON35_x64_URL ${prefix}\assets\python35-x64.exe $PYTHON35_x64_SHA256
-    Secure-Download $PYTHON36_x86_URL ${prefix}\assets\python36-x86.exe $PYTHON36_x86_SHA256
-    Secure-Download $PYTHON36_x64_URL ${prefix}\assets\python36-x64.exe $PYTHON36_x64_SHA256
     Secure-Download $PYTHON37_x86_URL ${prefix}\assets\python37-x86.exe $PYTHON37_x86_SHA256
     Secure-Download $PYTHON37_x64_URL ${prefix}\assets\python37-x64.exe $PYTHON37_x64_SHA256
     Secure-Download $PYTHON38_x86_URL ${prefix}\assets\python38-x86.exe $PYTHON38_x86_SHA256
     Secure-Download $PYTHON38_x64_URL ${prefix}\assets\python38-x64.exe $PYTHON38_x64_SHA256
+    Secure-Download $PYTHON39_x86_URL ${prefix}\assets\python39-x86.exe $PYTHON39_x86_SHA256
+    Secure-Download $PYTHON39_x64_URL ${prefix}\assets\python39-x64.exe $PYTHON39_x64_SHA256
     Secure-Download $PIP_URL ${pip} $PIP_SHA256
     Secure-Download $VIRTUALENV_URL ${prefix}\assets\virtualenv.tar.gz $VIRTUALENV_SHA256
     Secure-Download $VS_BUILD_TOOLS_URL ${prefix}\assets\vs_buildtools.exe $VS_BUILD_TOOLS_SHA256
@@ -169,14 +162,12 @@ function Install-Dependencies($prefix) {
     Invoke-Process ${prefix}\python27-x64\python.exe ${prefix}\assets\get-pip.py
     Invoke-Process ${prefix}\python27-x64\Scripts\pip.exe "install ${prefix}\assets\virtualenv.tar.gz"
 
-    Install-Python3 "Python 3.5 32-bit" ${prefix}\assets\python35-x86.exe ${prefix}\python35-x86 ${pip}
-    Install-Python3 "Python 3.5 64-bit" ${prefix}\assets\python35-x64.exe ${prefix}\python35-x64 ${pip}
-    Install-Python3 "Python 3.6 32-bit" ${prefix}\assets\python36-x86.exe ${prefix}\python36-x86 ${pip}
-    Install-Python3 "Python 3.6 64-bit" ${prefix}\assets\python36-x64.exe ${prefix}\python36-x64 ${pip}
     Install-Python3 "Python 3.7 32-bit" ${prefix}\assets\python37-x86.exe ${prefix}\python37-x86 ${pip}
     Install-Python3 "Python 3.7 64-bit" ${prefix}\assets\python37-x64.exe ${prefix}\python37-x64 ${pip}
     Install-Python3 "Python 3.8 32-bit" ${prefix}\assets\python38-x86.exe ${prefix}\python38-x86 ${pip}
     Install-Python3 "Python 3.8 64-bit" ${prefix}\assets\python38-x64.exe ${prefix}\python38-x64 ${pip}
+    Install-Python3 "Python 3.9 32-bit" ${prefix}\assets\python39-x86.exe ${prefix}\python39-x86 ${pip}
+    Install-Python3 "Python 3.9 64-bit" ${prefix}\assets\python39-x64.exe ${prefix}\python39-x64 ${pip}
 
     Write-Output "installing Visual Studio 2017 Build Tools and SDKs"
     Invoke-Process ${prefix}\assets\vs_buildtools.exe "--quiet --wait --norestart --nocache --channelUri https://aka.ms/vs/15/release/channel --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Component.Windows10SDK.17763 --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows10SDK --add Microsoft.VisualStudio.Component.VC.140"

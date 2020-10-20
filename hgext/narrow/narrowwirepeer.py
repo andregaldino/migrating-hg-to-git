@@ -13,7 +13,6 @@ from mercurial import (
     extensions,
     hg,
     narrowspec,
-    pycompat,
     wireprototypes,
     wireprotov1peer,
     wireprotov1server,
@@ -125,7 +124,7 @@ def narrow_widen(
             )
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)
-        manargs = [(b'message', pycompat.bytestr(exc))]
+        manargs = [(b'message', exc.message)]
         advargs = []
         if exc.hint is not None:
             advargs.append((b'hint', exc.hint))

@@ -255,7 +255,6 @@ def _runperfilediff(
     tmproot,
     dir1a,
     dir1b,
-    dir2root,
     dir2,
     rev1a,
     rev1b,
@@ -267,7 +266,7 @@ def _runperfilediff(
     waitprocs = []
     totalfiles = len(commonfiles)
     for idx, commonfile in enumerate(sorted(commonfiles)):
-        path1a = os.path.join(tmproot, dir1a, commonfile)
+        path1a = os.path.join(dir1a, commonfile)
         label1a = commonfile + rev1a
         if not os.path.isfile(path1a):
             path1a = pycompat.osdevnull
@@ -275,12 +274,12 @@ def _runperfilediff(
         path1b = b''
         label1b = b''
         if do3way:
-            path1b = os.path.join(tmproot, dir1b, commonfile)
+            path1b = os.path.join(dir1b, commonfile)
             label1b = commonfile + rev1b
             if not os.path.isfile(path1b):
                 path1b = pycompat.osdevnull
 
-        path2 = os.path.join(dir2root, dir2, commonfile)
+        path2 = os.path.join(dir2, commonfile)
         label2 = commonfile + rev2
 
         if confirm:
@@ -457,23 +456,23 @@ def diffrevs(
     label1b = rev1b
     label2 = rev2
 
-    # If only one change, diff the files instead of the directories
-    # Handle bogus modifies correctly by checking if the files exist
-    if len(common) == 1:
-        common_file = util.localpath(common.pop())
-        dir1a = os.path.join(tmproot, dir1a, common_file)
-        label1a = common_file + rev1a
-        if not os.path.isfile(dir1a):
-            dir1a = pycompat.osdevnull
-        if do3way:
-            dir1b = os.path.join(tmproot, dir1b, common_file)
-            label1b = common_file + rev1b
-            if not os.path.isfile(dir1b):
-                dir1b = pycompat.osdevnull
-        dir2 = os.path.join(dir2root, dir2, common_file)
-        label2 = common_file + rev2
-
     if not opts.get(b'per_file'):
+        # If only one change, diff the files instead of the directories
+        # Handle bogus modifies correctly by checking if the files exist
+        if len(common) == 1:
+            common_file = util.localpath(common.pop())
+            dir1a = os.path.join(tmproot, dir1a, common_file)
+            label1a = common_file + rev1a
+            if not os.path.isfile(dir1a):
+                dir1a = pycompat.osdevnull
+            if do3way:
+                dir1b = os.path.join(tmproot, dir1b, common_file)
+                label1b = common_file + rev1b
+                if not os.path.isfile(dir1b):
+                    dir1b = pycompat.osdevnull
+            dir2 = os.path.join(dir2root, dir2, common_file)
+            label2 = common_file + rev2
+
         # Run the external tool on the 2 temp directories or the patches
         cmdline = formatcmdline(
             cmdline,
@@ -499,10 +498,9 @@ def diffrevs(
             confirm=opts.get(b'confirm'),
             commonfiles=common,
             tmproot=tmproot,
-            dir1a=dir1a,
-            dir1b=dir1b,
-            dir2root=dir2root,
-            dir2=dir2,
+            dir1a=os.path.join(tmproot, dir1a),
+            dir1b=os.path.join(tmproot, dir1b) if do3way else None,
+            dir2=os.path.join(dir2root, dir2),
             rev1a=rev1a,
             rev1b=rev1b,
             rev2=rev2,
@@ -711,45 +709,67 @@ class savedcmd(object):
         )
 
 
+def _gettooldetails(ui, cmd, path):
+    """
+    returns following things for a
+    ```
+    [extdiff]
+    <cmd> = <path>
+    ```
+    entry:
+
+    cmd: command/tool name
+    path: path to the tool
+    cmdline: the command which should be run
+    isgui: whether the tool uses GUI or not
+
+    Reads all external tools related configs, whether it be extdiff section,
+    diff-tools or merge-tools section, or its specified in an old format or
+    the latest format.
+    """
+    path = util.expandpath(path)
+    if cmd.startswith(b'cmd.'):
+        cmd = cmd[4:]
+        if not path:
+            path = procutil.findexe(cmd)
+            if path is None:
+                path = filemerge.findexternaltool(ui, cmd) or cmd
+        diffopts = ui.config(b'extdiff', b'opts.' + cmd)
+        cmdline = procutil.shellquote(path)
+        if diffopts:
+            cmdline += b' ' + diffopts
+        isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
+    else:
+        if path:
+            # case "cmd = path opts"
+            cmdline = path
+            diffopts = len(pycompat.shlexsplit(cmdline)) > 1
+        else:
+            # case "cmd ="
+            path = procutil.findexe(cmd)
+            if path is None:
+                path = filemerge.findexternaltool(ui, cmd) or cmd
+            cmdline = procutil.shellquote(path)
+            diffopts = False
+        isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
+    # look for diff arguments in [diff-tools] then [merge-tools]
+    if not diffopts:
+        key = cmd + b'.diffargs'
+        for section in (b'diff-tools', b'merge-tools'):
+            args = ui.config(section, key)
+            if args:
+                cmdline += b' ' + args
+                if isgui is None:
+                    isgui = ui.configbool(section, cmd + b'.gui') or False
+                break
+    return cmd, path, cmdline, isgui
+
+
 def uisetup(ui):
     for cmd, path in ui.configitems(b'extdiff'):
-        path = util.expandpath(path)
-        if cmd.startswith(b'cmd.'):
-            cmd = cmd[4:]
-            if not path:
-                path = procutil.findexe(cmd)
-                if path is None:
-                    path = filemerge.findexternaltool(ui, cmd) or cmd
-            diffopts = ui.config(b'extdiff', b'opts.' + cmd)
-            cmdline = procutil.shellquote(path)
-            if diffopts:
-                cmdline += b' ' + diffopts
-            isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
-        elif cmd.startswith(b'opts.') or cmd.startswith(b'gui.'):
+        if cmd.startswith(b'opts.') or cmd.startswith(b'gui.'):
             continue
-        else:
-            if path:
-                # case "cmd = path opts"
-                cmdline = path
-                diffopts = len(pycompat.shlexsplit(cmdline)) > 1
-            else:
-                # case "cmd ="
-                path = procutil.findexe(cmd)
-                if path is None:
-                    path = filemerge.findexternaltool(ui, cmd) or cmd
-                cmdline = procutil.shellquote(path)
-                diffopts = False
-            isgui = ui.configbool(b'extdiff', b'gui.' + cmd)
-        # look for diff arguments in [diff-tools] then [merge-tools]
-        if not diffopts:
-            key = cmd + b'.diffargs'
-            for section in (b'diff-tools', b'merge-tools'):
-                args = ui.config(section, key)
-                if args:
-                    cmdline += b' ' + args
-                    if isgui is None:
-                        isgui = ui.configbool(section, cmd + b'.gui') or False
-                    break
+        cmd, path, cmdline, isgui = _gettooldetails(ui, cmd, path)
         command(
             cmd,
             extdiffopts[:],

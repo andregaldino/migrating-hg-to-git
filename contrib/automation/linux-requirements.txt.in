@@ -1,9 +1,12 @@
 # black pulls in typed-ast, which doesn't install on PyPy.
-black ; python_version >= '3.6' and platform_python_implementation != 'PyPy'
+black==19.10b0 ; python_version >= '3.6' and platform_python_implementation != 'PyPy'
 # Bazaar doesn't work with Python 3 nor PyPy.
 bzr ; python_version <= '2.7' and platform_python_implementation == 'CPython'
 docutils
 fuzzywuzzy
+# isort 5.0 drops support for Python 3.5. We can remove this line when we
+# drop support for 3.5.
+isort < 5.0
 pyflakes
 pygments
 pylint

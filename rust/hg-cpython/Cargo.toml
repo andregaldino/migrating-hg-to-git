@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 
 [features]
 default = ["python27"]
+dirstate-tree = ["hg-core/dirstate-tree"]
 
 # Features to build an extension module:
 python27 = ["cpython/python27-sys", "cpython/extension-module-2-7"]
@@ -24,7 +25,7 @@ python3-bin = ["cpython/python3-sys"]
 hg-core = { path = "../hg-core"}
 libc = '*'
 log = "0.4.8"
-simple_logger = "1.6.0"
+env_logger = "0.7.1"
 
 [dependencies.cpython]
 version = "0.4.1"

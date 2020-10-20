@@ -38,6 +38,7 @@ from . import (
     node,
     phases,
     pycompat,
+    requirements,
     scmutil,
     sshpeer,
     statichttprepo,
@@ -49,7 +50,6 @@ from . import (
     vfs as vfsmod,
 )
 from .utils import hashutil
-from .interfaces import repository as repositorymod
 
 release = lock.release
 
@@ -332,6 +332,28 @@ def share(
     return r
 
 
+def _prependsourcehgrc(repo):
+    """ copies the source repo config and prepend it in current repo .hg/hgrc
+    on unshare. This is only done if the share was perfomed using share safe
+    method where we share config of source in shares"""
+    srcvfs = vfsmod.vfs(repo.sharedpath)
+    dstvfs = vfsmod.vfs(repo.path)
+
+    if not srcvfs.exists(b'hgrc'):
+        return
+
+    currentconfig = b''
+    if dstvfs.exists(b'hgrc'):
+        currentconfig = dstvfs.read(b'hgrc')
+
+    with dstvfs(b'hgrc', b'wb') as fp:
+        sourceconfig = srcvfs.read(b'hgrc')
+        fp.write(b"# Config copied from shared source\n")
+        fp.write(sourceconfig)
+        fp.write(b'\n')
+        fp.write(currentconfig)
+
+
 def unshare(ui, repo):
     """convert a shared repository to a normal one
 
@@ -350,12 +372,17 @@ def unshare(ui, repo):
         # fail
         destlock = copystore(ui, repo, repo.path)
         with destlock or util.nullcontextmanager():
+            if requirements.SHARESAFE_REQUIREMENT in repo.requirements:
+                # we were sharing .hg/hgrc of the share source with the current
+                # repo. We need to copy that while unsharing otherwise it can
+                # disable hooks and other checks
+                _prependsourcehgrc(repo)
 
             sharefile = repo.vfs.join(b'sharedpath')
             util.rename(sharefile, sharefile + b'.old')
 
-            repo.requirements.discard(b'shared')
-            repo.requirements.discard(b'relshared')
+            repo.requirements.discard(requirements.SHARED_REQUIREMENT)
+            repo.requirements.discard(requirements.RELATIVE_SHARED_REQUIREMENT)
             scmutil.writereporequirements(repo)
 
     # Removing share changes some fundamental properties of the repo instance.
@@ -388,7 +415,7 @@ def postshare(sourcerepo, destrepo, defaultpath=None):
     if default:
         template = b'[paths]\ndefault = %s\n'
         destrepo.vfs.write(b'hgrc', util.tonativeeol(template % default))
-    if repositorymod.NARROW_REQUIREMENT in sourcerepo.requirements:
+    if requirements.NARROW_REQUIREMENT in sourcerepo.requirements:
         with destrepo.wlock():
             narrowspec.copytoworkingcopy(destrepo)
 
@@ -1022,7 +1049,11 @@ def updaterepo(repo, node, overwrite, updatecheck=None):
     When overwrite is set, changes are clobbered, merged else
 
     returns stats (see pydoc mercurial.merge.applyupdates)"""
-    return mergemod.update(
+    repo.ui.deprecwarn(
+        b'prefer merge.update() or merge.clean_update() over hg.updaterepo()',
+        b'5.7',
+    )
+    return mergemod._update(
         repo,
         node,
         branchmerge=False,
@@ -1034,7 +1065,7 @@ def updaterepo(repo, node, overwrite, updatecheck=None):
 
 def update(repo, node, quietempty=False, updatecheck=None):
     """update the working directory to node"""
-    stats = updaterepo(repo, node, False, updatecheck=updatecheck)
+    stats = mergemod.update(repo[node], updatecheck=updatecheck)
     _showstats(repo, stats, quietempty)
     if stats.unresolvedcount:
         repo.ui.status(_(b"use 'hg resolve' to retry unresolved file merges\n"))
@@ -1047,7 +1078,7 @@ _update = update
 
 def clean(repo, node, show_stats=True, quietempty=False):
     """forcibly switch the working directory to node, clobbering changes"""
-    stats = updaterepo(repo, node, True)
+    stats = mergemod.clean_update(repo[node])
     assert stats.unresolvedcount == 0
     if show_stats:
         _showstats(repo, stats, quietempty)

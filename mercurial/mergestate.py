@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import collections
 import errno
 import shutil
 import struct
@@ -11,7 +12,6 @@ from .node import (
     nullhex,
     nullid,
 )
-from .pycompat import delattr
 from . import (
     error,
     filemerge,
@@ -48,8 +48,6 @@ RECORD_LOCAL = b'L'
 RECORD_OTHER = b'O'
 # record merge labels
 RECORD_LABELS = b'l'
-# store info about merge driver used and it's state
-RECORD_MERGE_DRIVER_STATE = b'm'
 
 #####
 # record extra information about files, with one entry containing info about one
@@ -65,7 +63,6 @@ RECORD_FILE_VALUES = b'f'
 #####
 RECORD_MERGED = b'F'
 RECORD_CHANGEDELETE_CONFLICT = b'C'
-RECORD_MERGE_DRIVER_MERGE = b'D'
 # the path was dir on one side of merge and file on another
 RECORD_PATH_CONFLICT = b'P'
 
@@ -77,9 +74,10 @@ MERGE_RECORD_UNRESOLVED = b'u'
 MERGE_RECORD_RESOLVED = b'r'
 MERGE_RECORD_UNRESOLVED_PATH = b'pu'
 MERGE_RECORD_RESOLVED_PATH = b'pr'
-MERGE_RECORD_DRIVER_RESOLVED = b'd'
 # represents that the file was automatically merged in favor
 # of other version. This info is used on commit.
+# This is now deprecated and commit related information is now
+# stored in RECORD_FILE_VALUES
 MERGE_RECORD_MERGED_OTHER = b'o'
 
 #####
@@ -89,18 +87,16 @@ MERGE_RECORD_MERGED_OTHER = b'o'
 RECORD_OVERRIDE = b't'
 
 #####
-# possible states which a merge driver can have. These are stored inside a
-# RECORD_MERGE_DRIVER_STATE entry
-#####
-MERGE_DRIVER_STATE_UNMARKED = b'u'
-MERGE_DRIVER_STATE_MARKED = b'm'
-MERGE_DRIVER_STATE_SUCCESS = b's'
-
-#####
 # legacy records which are no longer used but kept to prevent breaking BC
 #####
 # This record was release in 5.4 and usage was removed in 5.5
 LEGACY_RECORD_RESOLVED_OTHER = b'R'
+# This record was release in 3.7 and usage was removed in 5.6
+LEGACY_RECORD_DRIVER_RESOLVED = b'd'
+# This record was release in 3.7 and usage was removed in 5.6
+LEGACY_MERGE_DRIVER_STATE = b'm'
+# This record was release in 3.7 and usage was removed in 5.6
+LEGACY_MERGE_DRIVER_MERGE = b'D'
 
 
 ACTION_FORGET = b'f'
@@ -117,13 +113,25 @@ ACTION_MERGE = b'm'
 ACTION_LOCAL_DIR_RENAME_GET = b'dg'
 ACTION_DIR_RENAME_MOVE_LOCAL = b'dm'
 ACTION_KEEP = b'k'
+# the file was absent on local side before merge and we should
+# keep it absent (absent means file not present, it can be a result
+# of file deletion, rename etc.)
+ACTION_KEEP_ABSENT = b'ka'
+# the file is absent on the ancestor and remote side of the merge
+# hence this file is new and we should keep it
+ACTION_KEEP_NEW = b'kn'
 ACTION_EXEC = b'e'
 ACTION_CREATED_MERGE = b'cm'
-# GET the other/remote side and store this info in mergestate
-ACTION_GET_OTHER_AND_STORE = b'gs'
+
+# actions which are no op
+NO_OP_ACTIONS = (
+    ACTION_KEEP,
+    ACTION_KEEP_ABSENT,
+    ACTION_KEEP_NEW,
+)
 
 
-class mergestate(object):
+class _mergestate_base(object):
     '''track 3-way merge state of individual files
 
     The merge state is stored on disk when needed. Two files are used: one with
@@ -143,40 +151,321 @@ class mergestate(object):
     O: the node of the "other" part of the merge (hexified version)
     F: a file to be merged entry
     C: a change/delete or delete/change conflict
-    D: a file that the external merge driver will merge internally
-       (experimental)
     P: a path conflict (file vs directory)
-    m: the external merge driver defined for this merge plus its run state
-       (experimental)
     f: a (filename, dictionary) tuple of optional values for a given file
     l: the labels for the parts of the merge.
-
-    Merge driver run states (experimental):
-    u: driver-resolved files unmarked -- needs to be run next time we're about
-       to resolve or commit
-    m: driver-resolved files marked -- only needs to be run before commit
-    s: success/skipped -- does not need to be run any more
 
     Merge record states (stored in self._state, indexed by filename):
     u: unresolved conflict
     r: resolved conflict
     pu: unresolved path conflict (file conflicts with directory)
     pr: resolved path conflict
-    d: driver-resolved conflict
+    o: file was merged in favor of other parent of merge (DEPRECATED)
 
     The resolve command transitions between 'u' and 'r' for conflicts and
     'pu' and 'pr' for path conflicts.
     '''
 
+    def __init__(self, repo):
+        """Initialize the merge state.
+
+        Do not use this directly! Instead call read() or clean()."""
+        self._repo = repo
+        self._state = {}
+        self._stateextras = collections.defaultdict(dict)
+        self._local = None
+        self._other = None
+        self._labels = None
+        # contains a mapping of form:
+        # {filename : (merge_return_value, action_to_be_performed}
+        # these are results of re-running merge process
+        # this dict is used to perform actions on dirstate caused by re-running
+        # the merge
+        self._results = {}
+        self._dirty = False
+
+    def reset(self):
+        pass
+
+    def start(self, node, other, labels=None):
+        self._local = node
+        self._other = other
+        self._labels = labels
+
+    @util.propertycache
+    def local(self):
+        if self._local is None:
+            msg = b"local accessed but self._local isn't set"
+            raise error.ProgrammingError(msg)
+        return self._local
+
+    @util.propertycache
+    def localctx(self):
+        return self._repo[self.local]
+
+    @util.propertycache
+    def other(self):
+        if self._other is None:
+            msg = b"other accessed but self._other isn't set"
+            raise error.ProgrammingError(msg)
+        return self._other
+
+    @util.propertycache
+    def otherctx(self):
+        return self._repo[self.other]
+
+    def active(self):
+        """Whether mergestate is active.
+
+        Returns True if there appears to be mergestate. This is a rough proxy
+        for "is a merge in progress."
+        """
+        return bool(self._local) or bool(self._state)
+
+    def commit(self):
+        """Write current state on disk (if necessary)"""
+
+    @staticmethod
+    def getlocalkey(path):
+        """hash the path of a local file context for storage in the .hg/merge
+        directory."""
+
+        return hex(hashutil.sha1(path).digest())
+
+    def _make_backup(self, fctx, localkey):
+        raise NotImplementedError()
+
+    def _restore_backup(self, fctx, localkey, flags):
+        raise NotImplementedError()
+
+    def add(self, fcl, fco, fca, fd):
+        """add a new (potentially?) conflicting file the merge state
+        fcl: file context for local,
+        fco: file context for remote,
+        fca: file context for ancestors,
+        fd:  file path of the resulting merge.
+
+        note: also write the local version to the `.hg/merge` directory.
+        """
+        if fcl.isabsent():
+            localkey = nullhex
+        else:
+            localkey = mergestate.getlocalkey(fcl.path())
+            self._make_backup(fcl, localkey)
+        self._state[fd] = [
+            MERGE_RECORD_UNRESOLVED,
+            localkey,
+            fcl.path(),
+            fca.path(),
+            hex(fca.filenode()),
+            fco.path(),
+            hex(fco.filenode()),
+            fcl.flags(),
+        ]
+        self._stateextras[fd][b'ancestorlinknode'] = hex(fca.node())
+        self._dirty = True
+
+    def addpathconflict(self, path, frename, forigin):
+        """add a new conflicting path to the merge state
+        path:    the path that conflicts
+        frename: the filename the conflicting file was renamed to
+        forigin: origin of the file ('l' or 'r' for local/remote)
+        """
+        self._state[path] = [MERGE_RECORD_UNRESOLVED_PATH, frename, forigin]
+        self._dirty = True
+
+    def addcommitinfo(self, path, data):
+        """ stores information which is required at commit
+        into _stateextras """
+        self._stateextras[path].update(data)
+        self._dirty = True
+
+    def __contains__(self, dfile):
+        return dfile in self._state
+
+    def __getitem__(self, dfile):
+        return self._state[dfile][0]
+
+    def __iter__(self):
+        return iter(sorted(self._state))
+
+    def files(self):
+        return self._state.keys()
+
+    def mark(self, dfile, state):
+        self._state[dfile][0] = state
+        self._dirty = True
+
+    def unresolved(self):
+        """Obtain the paths of unresolved files."""
+
+        for f, entry in pycompat.iteritems(self._state):
+            if entry[0] in (
+                MERGE_RECORD_UNRESOLVED,
+                MERGE_RECORD_UNRESOLVED_PATH,
+            ):
+                yield f
+
+    def allextras(self):
+        """ return all extras information stored with the mergestate """
+        return self._stateextras
+
+    def extras(self, filename):
+        """ return extras stored with the mergestate for the given filename """
+        return self._stateextras[filename]
+
+    def _resolve(self, preresolve, dfile, wctx):
+        """rerun merge process for file path `dfile`.
+        Returns whether the merge was completed and the return value of merge
+        obtained from filemerge._filemerge().
+        """
+        if self[dfile] in (
+            MERGE_RECORD_RESOLVED,
+            LEGACY_RECORD_DRIVER_RESOLVED,
+        ):
+            return True, 0
+        stateentry = self._state[dfile]
+        state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
+        octx = self._repo[self._other]
+        extras = self.extras(dfile)
+        anccommitnode = extras.get(b'ancestorlinknode')
+        if anccommitnode:
+            actx = self._repo[anccommitnode]
+        else:
+            actx = None
+        fcd = _filectxorabsent(localkey, wctx, dfile)
+        fco = _filectxorabsent(onode, octx, ofile)
+        # TODO: move this to filectxorabsent
+        fca = self._repo.filectx(afile, fileid=anode, changectx=actx)
+        # "premerge" x flags
+        flo = fco.flags()
+        fla = fca.flags()
+        if b'x' in flags + flo + fla and b'l' not in flags + flo + fla:
+            if fca.node() == nullid and flags != flo:
+                if preresolve:
+                    self._repo.ui.warn(
+                        _(
+                            b'warning: cannot merge flags for %s '
+                            b'without common ancestor - keeping local flags\n'
+                        )
+                        % afile
+                    )
+            elif flags == fla:
+                flags = flo
+        if preresolve:
+            # restore local
+            if localkey != nullhex:
+                self._restore_backup(wctx[dfile], localkey, flags)
+            else:
+                wctx[dfile].remove(ignoremissing=True)
+            complete, merge_ret, deleted = filemerge.premerge(
+                self._repo,
+                wctx,
+                self._local,
+                lfile,
+                fcd,
+                fco,
+                fca,
+                labels=self._labels,
+            )
+        else:
+            complete, merge_ret, deleted = filemerge.filemerge(
+                self._repo,
+                wctx,
+                self._local,
+                lfile,
+                fcd,
+                fco,
+                fca,
+                labels=self._labels,
+            )
+        if merge_ret is None:
+            # If return value of merge is None, then there are no real conflict
+            del self._state[dfile]
+            self._stateextras.pop(dfile, None)
+            self._dirty = True
+        elif not merge_ret:
+            self.mark(dfile, MERGE_RECORD_RESOLVED)
+
+        if complete:
+            action = None
+            if deleted:
+                if fcd.isabsent():
+                    # dc: local picked. Need to drop if present, which may
+                    # happen on re-resolves.
+                    action = ACTION_FORGET
+                else:
+                    # cd: remote picked (or otherwise deleted)
+                    action = ACTION_REMOVE
+            else:
+                if fcd.isabsent():  # dc: remote picked
+                    action = ACTION_GET
+                elif fco.isabsent():  # cd: local picked
+                    if dfile in self.localctx:
+                        action = ACTION_ADD_MODIFIED
+                    else:
+                        action = ACTION_ADD
+                # else: regular merges (no action necessary)
+            self._results[dfile] = merge_ret, action
+
+        return complete, merge_ret
+
+    def preresolve(self, dfile, wctx):
+        """run premerge process for dfile
+
+        Returns whether the merge is complete, and the exit code."""
+        return self._resolve(True, dfile, wctx)
+
+    def resolve(self, dfile, wctx):
+        """run merge process (assuming premerge was run) for dfile
+
+        Returns the exit code of the merge."""
+        return self._resolve(False, dfile, wctx)[1]
+
+    def counts(self):
+        """return counts for updated, merged and removed files in this
+        session"""
+        updated, merged, removed = 0, 0, 0
+        for r, action in pycompat.itervalues(self._results):
+            if r is None:
+                updated += 1
+            elif r == 0:
+                if action == ACTION_REMOVE:
+                    removed += 1
+                else:
+                    merged += 1
+        return updated, merged, removed
+
+    def unresolvedcount(self):
+        """get unresolved count for this merge (persistent)"""
+        return len(list(self.unresolved()))
+
+    def actions(self):
+        """return lists of actions to perform on the dirstate"""
+        actions = {
+            ACTION_REMOVE: [],
+            ACTION_FORGET: [],
+            ACTION_ADD: [],
+            ACTION_ADD_MODIFIED: [],
+            ACTION_GET: [],
+        }
+        for f, (r, action) in pycompat.iteritems(self._results):
+            if action is not None:
+                actions[action].append((f, None, b"merge result"))
+        return actions
+
+
+class mergestate(_mergestate_base):
+
     statepathv1 = b'merge/state'
     statepathv2 = b'merge/state2'
 
     @staticmethod
-    def clean(repo, node=None, other=None, labels=None):
+    def clean(repo):
         """Initialize a brand new merge state, removing any existing state on
         disk."""
         ms = mergestate(repo)
-        ms.reset(node, other, labels)
+        ms.reset()
         return ms
 
     @staticmethod
@@ -186,50 +475,12 @@ class mergestate(object):
         ms._read()
         return ms
 
-    def __init__(self, repo):
-        """Initialize the merge state.
-
-        Do not use this directly! Instead call read() or clean()."""
-        self._repo = repo
-        self._dirty = False
-        self._labels = None
-
-    def reset(self, node=None, other=None, labels=None):
-        self._state = {}
-        self._stateextras = {}
-        self._local = None
-        self._other = None
-        self._labels = labels
-        for var in ('localctx', 'otherctx'):
-            if var in vars(self):
-                delattr(self, var)
-        if node:
-            self._local = node
-            self._other = other
-        self._readmergedriver = None
-        if self.mergedriver:
-            self._mdstate = MERGE_DRIVER_STATE_SUCCESS
-        else:
-            self._mdstate = MERGE_DRIVER_STATE_UNMARKED
-        shutil.rmtree(self._repo.vfs.join(b'merge'), True)
-        self._results = {}
-        self._dirty = False
-
     def _read(self):
         """Analyse each record content to restore a serialized state from disk
 
         This function process "record" entry produced by the de-serialization
         of on disk file.
         """
-        self._state = {}
-        self._stateextras = {}
-        self._local = None
-        self._other = None
-        for var in ('localctx', 'otherctx'):
-            if var in vars(self):
-                delattr(self, var)
-        self._readmergedriver = None
-        self._mdstate = MERGE_DRIVER_STATE_SUCCESS
         unsupported = set()
         records = self._readrecords()
         for rtype, record in records:
@@ -237,28 +488,23 @@ class mergestate(object):
                 self._local = bin(record)
             elif rtype == RECORD_OTHER:
                 self._other = bin(record)
-            elif rtype == RECORD_MERGE_DRIVER_STATE:
-                bits = record.split(b'\0', 1)
-                mdstate = bits[1]
-                if len(mdstate) != 1 or mdstate not in (
-                    MERGE_DRIVER_STATE_UNMARKED,
-                    MERGE_DRIVER_STATE_MARKED,
-                    MERGE_DRIVER_STATE_SUCCESS,
-                ):
-                    # the merge driver should be idempotent, so just rerun it
-                    mdstate = MERGE_DRIVER_STATE_UNMARKED
-
-                self._readmergedriver = bits[0]
-                self._mdstate = mdstate
+            elif rtype == LEGACY_MERGE_DRIVER_STATE:
+                pass
             elif rtype in (
                 RECORD_MERGED,
                 RECORD_CHANGEDELETE_CONFLICT,
                 RECORD_PATH_CONFLICT,
-                RECORD_MERGE_DRIVER_MERGE,
+                LEGACY_MERGE_DRIVER_MERGE,
                 LEGACY_RECORD_RESOLVED_OTHER,
             ):
                 bits = record.split(b'\0')
-                self._state[bits[0]] = bits[1:]
+                # merge entry type MERGE_RECORD_MERGED_OTHER is deprecated
+                # and we now store related information in _stateextras, so
+                # lets write to _stateextras directly
+                if bits[1] == MERGE_RECORD_MERGED_OTHER:
+                    self._stateextras[bits[0]][b'filenode-source'] = b'other'
+                else:
+                    self._state[bits[0]] = bits[1:]
             elif rtype == RECORD_FILE_VALUES:
                 filename, rawextras = record.split(b'\0', 1)
                 extraparts = rawextras.split(b'\0')
@@ -274,13 +520,6 @@ class mergestate(object):
                 self._labels = [l for l in labels if len(l) > 0]
             elif not rtype.islower():
                 unsupported.add(rtype)
-        # contains a mapping of form:
-        # {filename : (merge_return_value, action_to_be_performed}
-        # these are results of re-running merge process
-        # this dict is used to perform actions on dirstate caused by re-running
-        # the merge
-        self._results = {}
-        self._dirty = False
 
         if unsupported:
             raise error.UnsupportedMergeRecords(unsupported)
@@ -395,62 +634,7 @@ class mergestate(object):
                 raise
         return records
 
-    @util.propertycache
-    def mergedriver(self):
-        # protect against the following:
-        # - A configures a malicious merge driver in their hgrc, then
-        #   pauses the merge
-        # - A edits their hgrc to remove references to the merge driver
-        # - A gives a copy of their entire repo, including .hg, to B
-        # - B inspects .hgrc and finds it to be clean
-        # - B then continues the merge and the malicious merge driver
-        #  gets invoked
-        configmergedriver = self._repo.ui.config(
-            b'experimental', b'mergedriver'
-        )
-        if (
-            self._readmergedriver is not None
-            and self._readmergedriver != configmergedriver
-        ):
-            raise error.ConfigError(
-                _(b"merge driver changed since merge started"),
-                hint=_(b"revert merge driver change or abort merge"),
-            )
-
-        return configmergedriver
-
-    @util.propertycache
-    def local(self):
-        if self._local is None:
-            msg = b"local accessed but self._local isn't set"
-            raise error.ProgrammingError(msg)
-        return self._local
-
-    @util.propertycache
-    def localctx(self):
-        return self._repo[self.local]
-
-    @util.propertycache
-    def other(self):
-        if self._other is None:
-            msg = b"other accessed but self._other isn't set"
-            raise error.ProgrammingError(msg)
-        return self._other
-
-    @util.propertycache
-    def otherctx(self):
-        return self._repo[self.other]
-
-    def active(self):
-        """Whether mergestate is active.
-
-        Returns True if there appears to be mergestate. This is a rough proxy
-        for "is a merge in progress."
-        """
-        return bool(self._local) or bool(self._state)
-
     def commit(self):
-        """Write current state on disk (if necessary)"""
         if self._dirty:
             records = self._makerecords()
             self._writerecords(records)
@@ -460,25 +644,13 @@ class mergestate(object):
         records = []
         records.append((RECORD_LOCAL, hex(self._local)))
         records.append((RECORD_OTHER, hex(self._other)))
-        if self.mergedriver:
-            records.append(
-                (
-                    RECORD_MERGE_DRIVER_STATE,
-                    b'\0'.join([self.mergedriver, self._mdstate]),
-                )
-            )
         # Write out state items. In all cases, the value of the state map entry
         # is written as the contents of the record. The record type depends on
         # the type of state that is stored, and capital-letter records are used
         # to prevent older versions of Mercurial that do not support the feature
         # from loading them.
         for filename, v in pycompat.iteritems(self._state):
-            if v[0] == MERGE_RECORD_DRIVER_RESOLVED:
-                # Driver-resolved merge. These are stored in 'D' records.
-                records.append(
-                    (RECORD_MERGE_DRIVER_MERGE, b'\0'.join([filename] + v))
-                )
-            elif v[0] in (
+            if v[0] in (
                 MERGE_RECORD_UNRESOLVED_PATH,
                 MERGE_RECORD_RESOLVED_PATH,
             ):
@@ -487,8 +659,6 @@ class mergestate(object):
                 records.append(
                     (RECORD_PATH_CONFLICT, b'\0'.join([filename] + v))
                 )
-            elif v[0] == MERGE_RECORD_MERGED_OTHER:
-                records.append((RECORD_MERGED, b'\0'.join([filename] + v)))
             elif v[1] == nullhex or v[6] == nullhex:
                 # Change/Delete or Delete/Change conflicts. These are stored in
                 # 'C' records. v[1] is the local file, and is nullhex when the
@@ -544,250 +714,27 @@ class mergestate(object):
             f.write(_pack(format, key, len(data), data))
         f.close()
 
-    @staticmethod
-    def getlocalkey(path):
-        """hash the path of a local file context for storage in the .hg/merge
-        directory."""
+    def _make_backup(self, fctx, localkey):
+        self._repo.vfs.write(b'merge/' + localkey, fctx.data())
 
-        return hex(hashutil.sha1(path).digest())
+    def _restore_backup(self, fctx, localkey, flags):
+        with self._repo.vfs(b'merge/' + localkey) as f:
+            fctx.write(f.read(), flags)
 
-    def add(self, fcl, fco, fca, fd):
-        """add a new (potentially?) conflicting file the merge state
-        fcl: file context for local,
-        fco: file context for remote,
-        fca: file context for ancestors,
-        fd:  file path of the resulting merge.
+    def reset(self):
+        shutil.rmtree(self._repo.vfs.join(b'merge'), True)
 
-        note: also write the local version to the `.hg/merge` directory.
-        """
-        if fcl.isabsent():
-            localkey = nullhex
-        else:
-            localkey = mergestate.getlocalkey(fcl.path())
-            self._repo.vfs.write(b'merge/' + localkey, fcl.data())
-        self._state[fd] = [
-            MERGE_RECORD_UNRESOLVED,
-            localkey,
-            fcl.path(),
-            fca.path(),
-            hex(fca.filenode()),
-            fco.path(),
-            hex(fco.filenode()),
-            fcl.flags(),
-        ]
-        self._stateextras[fd] = {b'ancestorlinknode': hex(fca.node())}
-        self._dirty = True
 
-    def addpathconflict(self, path, frename, forigin):
-        """add a new conflicting path to the merge state
-        path:    the path that conflicts
-        frename: the filename the conflicting file was renamed to
-        forigin: origin of the file ('l' or 'r' for local/remote)
-        """
-        self._state[path] = [MERGE_RECORD_UNRESOLVED_PATH, frename, forigin]
-        self._dirty = True
+class memmergestate(_mergestate_base):
+    def __init__(self, repo):
+        super(memmergestate, self).__init__(repo)
+        self._backups = {}
 
-    def addmergedother(self, path):
-        self._state[path] = [MERGE_RECORD_MERGED_OTHER, nullhex, nullhex]
-        self._dirty = True
+    def _make_backup(self, fctx, localkey):
+        self._backups[localkey] = fctx.data()
 
-    def __contains__(self, dfile):
-        return dfile in self._state
-
-    def __getitem__(self, dfile):
-        return self._state[dfile][0]
-
-    def __iter__(self):
-        return iter(sorted(self._state))
-
-    def files(self):
-        return self._state.keys()
-
-    def mark(self, dfile, state):
-        self._state[dfile][0] = state
-        self._dirty = True
-
-    def mdstate(self):
-        return self._mdstate
-
-    def unresolved(self):
-        """Obtain the paths of unresolved files."""
-
-        for f, entry in pycompat.iteritems(self._state):
-            if entry[0] in (
-                MERGE_RECORD_UNRESOLVED,
-                MERGE_RECORD_UNRESOLVED_PATH,
-            ):
-                yield f
-
-    def driverresolved(self):
-        """Obtain the paths of driver-resolved files."""
-
-        for f, entry in self._state.items():
-            if entry[0] == MERGE_RECORD_DRIVER_RESOLVED:
-                yield f
-
-    def extras(self, filename):
-        return self._stateextras.setdefault(filename, {})
-
-    def _resolve(self, preresolve, dfile, wctx):
-        """rerun merge process for file path `dfile`.
-        Returns whether the merge was completed and the return value of merge
-        obtained from filemerge._filemerge().
-        """
-        if self[dfile] in (MERGE_RECORD_RESOLVED, MERGE_RECORD_DRIVER_RESOLVED):
-            return True, 0
-        if self._state[dfile][0] == MERGE_RECORD_MERGED_OTHER:
-            return True, 0
-        stateentry = self._state[dfile]
-        state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
-        octx = self._repo[self._other]
-        extras = self.extras(dfile)
-        anccommitnode = extras.get(b'ancestorlinknode')
-        if anccommitnode:
-            actx = self._repo[anccommitnode]
-        else:
-            actx = None
-        fcd = _filectxorabsent(localkey, wctx, dfile)
-        fco = _filectxorabsent(onode, octx, ofile)
-        # TODO: move this to filectxorabsent
-        fca = self._repo.filectx(afile, fileid=anode, changectx=actx)
-        # "premerge" x flags
-        flo = fco.flags()
-        fla = fca.flags()
-        if b'x' in flags + flo + fla and b'l' not in flags + flo + fla:
-            if fca.node() == nullid and flags != flo:
-                if preresolve:
-                    self._repo.ui.warn(
-                        _(
-                            b'warning: cannot merge flags for %s '
-                            b'without common ancestor - keeping local flags\n'
-                        )
-                        % afile
-                    )
-            elif flags == fla:
-                flags = flo
-        if preresolve:
-            # restore local
-            if localkey != nullhex:
-                f = self._repo.vfs(b'merge/' + localkey)
-                wctx[dfile].write(f.read(), flags)
-                f.close()
-            else:
-                wctx[dfile].remove(ignoremissing=True)
-            complete, merge_ret, deleted = filemerge.premerge(
-                self._repo,
-                wctx,
-                self._local,
-                lfile,
-                fcd,
-                fco,
-                fca,
-                labels=self._labels,
-            )
-        else:
-            complete, merge_ret, deleted = filemerge.filemerge(
-                self._repo,
-                wctx,
-                self._local,
-                lfile,
-                fcd,
-                fco,
-                fca,
-                labels=self._labels,
-            )
-        if merge_ret is None:
-            # If return value of merge is None, then there are no real conflict
-            del self._state[dfile]
-            self._stateextras.pop(dfile, None)
-            self._dirty = True
-        elif not merge_ret:
-            self.mark(dfile, MERGE_RECORD_RESOLVED)
-
-        if complete:
-            action = None
-            if deleted:
-                if fcd.isabsent():
-                    # dc: local picked. Need to drop if present, which may
-                    # happen on re-resolves.
-                    action = ACTION_FORGET
-                else:
-                    # cd: remote picked (or otherwise deleted)
-                    action = ACTION_REMOVE
-            else:
-                if fcd.isabsent():  # dc: remote picked
-                    action = ACTION_GET
-                elif fco.isabsent():  # cd: local picked
-                    if dfile in self.localctx:
-                        action = ACTION_ADD_MODIFIED
-                    else:
-                        action = ACTION_ADD
-                # else: regular merges (no action necessary)
-            self._results[dfile] = merge_ret, action
-
-        return complete, merge_ret
-
-    def preresolve(self, dfile, wctx):
-        """run premerge process for dfile
-
-        Returns whether the merge is complete, and the exit code."""
-        return self._resolve(True, dfile, wctx)
-
-    def resolve(self, dfile, wctx):
-        """run merge process (assuming premerge was run) for dfile
-
-        Returns the exit code of the merge."""
-        return self._resolve(False, dfile, wctx)[1]
-
-    def counts(self):
-        """return counts for updated, merged and removed files in this
-        session"""
-        updated, merged, removed = 0, 0, 0
-        for r, action in pycompat.itervalues(self._results):
-            if r is None:
-                updated += 1
-            elif r == 0:
-                if action == ACTION_REMOVE:
-                    removed += 1
-                else:
-                    merged += 1
-        return updated, merged, removed
-
-    def unresolvedcount(self):
-        """get unresolved count for this merge (persistent)"""
-        return len(list(self.unresolved()))
-
-    def actions(self):
-        """return lists of actions to perform on the dirstate"""
-        actions = {
-            ACTION_REMOVE: [],
-            ACTION_FORGET: [],
-            ACTION_ADD: [],
-            ACTION_ADD_MODIFIED: [],
-            ACTION_GET: [],
-        }
-        for f, (r, action) in pycompat.iteritems(self._results):
-            if action is not None:
-                actions[action].append((f, None, b"merge result"))
-        return actions
-
-    def queueremove(self, f):
-        """queues a file to be removed from the dirstate
-
-        Meant for use by custom merge drivers."""
-        self._results[f] = 0, ACTION_REMOVE
-
-    def queueadd(self, f):
-        """queues a file to be added to the dirstate
-
-        Meant for use by custom merge drivers."""
-        self._results[f] = 0, ACTION_ADD
-
-    def queueget(self, f):
-        """queues a file to be marked modified in the dirstate
-
-        Meant for use by custom merge drivers."""
-        self._results[f] = 0, ACTION_GET
+    def _restore_backup(self, fctx, localkey, flags):
+        fctx.write(self._backups[localkey], flags)
 
 
 def recordupdates(repo, actions, branchmerge, getfiledata):
@@ -830,6 +777,14 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
 
     # keep
     for f, args, msg in actions.get(ACTION_KEEP, []):
+        pass
+
+    # keep deleted
+    for f, args, msg in actions.get(ACTION_KEEP_ABSENT, []):
+        pass
+
+    # keep new
+    for f, args, msg in actions.get(ACTION_KEEP_NEW, []):
         pass
 
     # get

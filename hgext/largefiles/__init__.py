@@ -195,7 +195,9 @@ def _uisetup(ui):
     for name, module in extensions.extensions():
         if name == b'rebase':
             # TODO: teach exthelper to handle this
-            extensions.wrapfunction(module, b'rebase', overrides.overriderebase)
+            extensions.wrapfunction(
+                module, b'rebase', overrides.overriderebasecmd
+            )
 
 
 revsetpredicate = eh.revsetpredicate

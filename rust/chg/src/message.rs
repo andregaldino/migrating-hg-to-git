@@ -32,11 +32,16 @@ pub struct CommandSpec {
 }
 
 /// Parses "S" channel request into command type and spec.
-pub fn parse_command_spec(data: Bytes) -> io::Result<(CommandType, CommandSpec)> {
+pub fn parse_command_spec(
+    data: Bytes,
+) -> io::Result<(CommandType, CommandSpec)> {
     let mut split = data.split(|&c| c == b'\0');
-    let ctype = parse_command_type(split.next().ok_or(new_parse_error("missing type"))?)?;
+    let ctype = parse_command_type(
+        split.next().ok_or(new_parse_error("missing type"))?,
+    )?;
     let command = split.next().ok_or(new_parse_error("missing command"))?;
-    let current_dir = split.next().ok_or(new_parse_error("missing current dir"))?;
+    let current_dir =
+        split.next().ok_or(new_parse_error("missing current dir"))?;
 
     let mut envs = Vec::new();
     for l in split {
@@ -89,14 +94,21 @@ pub fn parse_instructions(data: Bytes) -> io::Result<Vec<Instruction>> {
             (b"exit", Some(arg)) => decode_latin1(arg)
                 .parse()
                 .map(Instruction::Exit)
-                .map_err(|_| new_parse_error(format!("invalid exit code: {:?}", arg)))?,
+                .map_err(|_| {
+                    new_parse_error(format!("invalid exit code: {:?}", arg))
+                })?,
             (b"reconnect", None) => Instruction::Reconnect,
             (b"redirect", Some(arg)) => {
                 Instruction::Redirect(OsStr::from_bytes(arg).to_owned().into())
             }
-            (b"unlink", Some(arg)) => Instruction::Unlink(OsStr::from_bytes(arg).to_owned().into()),
+            (b"unlink", Some(arg)) => {
+                Instruction::Unlink(OsStr::from_bytes(arg).to_owned().into())
+            }
             _ => {
-                return Err(new_parse_error(format!("unknown command: {:?}", l)));
+                return Err(new_parse_error(format!(
+                    "unknown command: {:?}",
+                    l
+                )));
             }
         };
         instructions.push(inst);
@@ -118,7 +130,8 @@ pub fn pack_env_vars_os(
 ) -> Bytes {
     let mut vars_iter = vars.into_iter();
     if let Some((k, v)) = vars_iter.next() {
-        let mut dst = BytesMut::with_capacity(INITIAL_PACKED_ENV_VARS_CAPACITY);
+        let mut dst =
+            BytesMut::with_capacity(INITIAL_PACKED_ENV_VARS_CAPACITY);
         pack_env_into(&mut dst, k.as_ref(), v.as_ref());
         for (k, v) in vars_iter {
             dst.reserve(1);
@@ -145,7 +158,9 @@ fn decode_latin1(s: impl AsRef<[u8]>) -> String {
     s.as_ref().iter().map(|&c| c as char).collect()
 }
 
-fn new_parse_error(error: impl Into<Box<dyn error::Error + Send + Sync>>) -> io::Error {
+fn new_parse_error(
+    error: impl Into<Box<dyn error::Error + Send + Sync>>,
+) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error)
 }
 
@@ -183,17 +198,24 @@ mod tests {
     fn parse_command_spec_too_short() {
         assert!(parse_command_spec(Bytes::from_static(b"")).is_err());
         assert!(parse_command_spec(Bytes::from_static(b"pager")).is_err());
-        assert!(parse_command_spec(Bytes::from_static(b"pager\0less")).is_err());
+        assert!(
+            parse_command_spec(Bytes::from_static(b"pager\0less")).is_err()
+        );
     }
 
     #[test]
     fn parse_command_spec_malformed_env() {
-        assert!(parse_command_spec(Bytes::from_static(b"pager\0less\0/tmp\0HOME")).is_err());
+        assert!(parse_command_spec(Bytes::from_static(
+            b"pager\0less\0/tmp\0HOME"
+        ))
+        .is_err());
     }
 
     #[test]
     fn parse_command_spec_unknown_type() {
-        assert!(parse_command_spec(Bytes::from_static(b"paper\0less")).is_err());
+        assert!(
+            parse_command_spec(Bytes::from_static(b"paper\0less")).is_err()
+        );
     }
 
     #[test]

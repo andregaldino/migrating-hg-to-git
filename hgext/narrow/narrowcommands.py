@@ -27,11 +27,11 @@ from mercurial import (
     registrar,
     repair,
     repoview,
+    requirements,
     sparse,
     util,
     wireprototypes,
 )
-from mercurial.interfaces import repository
 
 table = {}
 command = registrar.command(table)
@@ -133,7 +133,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
 def pullnarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps pull command to allow modifying narrow spec."""
     wrappedextraprepare = util.nullcontextmanager()
-    if repository.NARROW_REQUIREMENT in repo.requirements:
+    if requirements.NARROW_REQUIREMENT in repo.requirements:
 
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             orig(pullop, kwargs)
@@ -150,7 +150,7 @@ def pullnarrowcmd(orig, ui, repo, *args, **opts):
 
 def archivenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps archive command to narrow the default includes."""
-    if repository.NARROW_REQUIREMENT in repo.requirements:
+    if requirements.NARROW_REQUIREMENT in repo.requirements:
         repo_includes, repo_excludes = repo.narrowpats
         includes = set(opts.get('include', []))
         excludes = set(opts.get('exclude', []))
@@ -166,7 +166,7 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
 
 def pullbundle2extraprepare(orig, pullop, kwargs):
     repo = pullop.repo
-    if repository.NARROW_REQUIREMENT not in repo.requirements:
+    if requirements.NARROW_REQUIREMENT not in repo.requirements:
         return orig(pullop, kwargs)
 
     if wireprototypes.NARROWCAP not in pullop.remote.capabilities():
@@ -482,7 +482,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     exclude switches, the changes are applied immediately.
     """
     opts = pycompat.byteskwargs(opts)
-    if repository.NARROW_REQUIREMENT not in repo.requirements:
+    if requirements.NARROW_REQUIREMENT not in repo.requirements:
         raise error.Abort(
             _(
                 b'the tracked command is only supported on '

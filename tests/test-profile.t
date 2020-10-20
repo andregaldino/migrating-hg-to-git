@@ -87,7 +87,7 @@ statistical profiler works
 Various statprof formatters work
 
   $ hg --profile --config profiling.statformat=byline sleep 2>../out || cat ../out
-  $ head -n 3 ../out
+  $ grep -v _path_stat ../out | head -n 3
     %   cumulative      self          
    time    seconds   seconds  name    
   * sleepext.py:*:sleep (glob)

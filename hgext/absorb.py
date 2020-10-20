@@ -244,7 +244,7 @@ class overlaystore(patch.filestore):
         return content, mode, copy
 
 
-def overlaycontext(memworkingcopy, ctx, parents=None, extra=None):
+def overlaycontext(memworkingcopy, ctx, parents=None, extra=None, desc=None):
     """({path: content}, ctx, (p1node, p2node)?, {}?) -> memctx
     memworkingcopy overrides file contents.
     """
@@ -253,8 +253,9 @@ def overlaycontext(memworkingcopy, ctx, parents=None, extra=None):
         parents = ctx.repo().changelog.parents(ctx.node())
     if extra is None:
         extra = ctx.extra()
+    if desc is None:
+        desc = ctx.description()
     date = ctx.date()
-    desc = ctx.description()
     user = ctx.user()
     files = set(ctx.files()).union(memworkingcopy)
     store = overlaystore(ctx, memworkingcopy)
@@ -923,7 +924,18 @@ class fixupstate(object):
         extra = ctx.extra()
         if self._useobsolete and self.ui.configbool(b'absorb', b'add-noise'):
             extra[b'absorb_source'] = ctx.hex()
-        mctx = overlaycontext(memworkingcopy, ctx, parents, extra=extra)
+
+        desc = rewriteutil.update_hash_refs(
+            ctx.repo(),
+            ctx.description(),
+            {
+                oldnode: [newnode]
+                for oldnode, newnode in self.replacemap.items()
+            },
+        )
+        mctx = overlaycontext(
+            memworkingcopy, ctx, parents, extra=extra, desc=desc
+        )
         return mctx.commit()
 
     @util.propertycache

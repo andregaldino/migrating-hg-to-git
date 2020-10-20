@@ -1,3 +1,15 @@
+#testcases newfilenode old
+
+#if newfilenode
+Enable the config option
+------------------------
+
+  $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > merge-track-salvaged = True
+  > EOF
+#endif
+
 Tests for change/delete conflicts, including:
 b5605d88dc27: Make ui.prompt repeat on "unrecognized response" again
  (issue897)
@@ -83,11 +95,13 @@ Non-interactive merge:
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "u")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -148,11 +162,13 @@ Interactive merge:
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "r")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -226,11 +242,13 @@ Interactive merge with bad input:
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "r")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -288,11 +306,13 @@ Interactive merge with not enough input:
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "u")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -337,11 +357,13 @@ Choose local versions of files
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "r")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "r")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -382,11 +404,13 @@ Choose other versions of files
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "r")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "r")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -428,11 +452,13 @@ Fail
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "u")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -485,11 +511,13 @@ Force prompts with no input (should be similar to :fail)
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "u")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -544,11 +572,13 @@ Force prompts
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "u")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)
@@ -600,11 +630,13 @@ Choose to merge all files
     ancestor path: file1 (node b8e02f6433738021a065f94175c7cd23db5f05be)
     other path: file1 (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file2 (state "u")
     local path: file2 (hash 0000000000000000000000000000000000000000, flags "")
     ancestor path: file2 (node 5d9299349fc01ddd25d0070d149b124d8f10411e)
     other path: file2 (node e7c1328648519852e723de86c0c0525acd779257)
     extra: ancestorlinknode = ab57bf49aa276a22d35a473592d4c34b5abc3eff
+    extra: merge-removal-candidate = yes
   file: file3 (state "u")
     local path: file3 (hash d5b0a58bc47161b1b8a831084b366f757c4f0b11, flags "")
     ancestor path: file3 (node 2661d26c649684b482d10f91960cc3db683c38b4)

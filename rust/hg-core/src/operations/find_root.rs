@@ -1,4 +1,3 @@
-use super::Operation;
 use std::fmt;
 use std::path::{Path, PathBuf};
 
@@ -45,12 +44,8 @@ impl<'a> FindRoot<'a> {
             current_dir: Some(current_dir),
         }
     }
-}
 
-impl<'a> Operation<PathBuf> for FindRoot<'a> {
-    type Error = FindRootError;
-
-    fn run(&self) -> Result<PathBuf, Self::Error> {
+    pub fn run(&self) -> Result<PathBuf, FindRootError> {
         let current_dir = match self.current_dir {
             None => std::env::current_dir().or_else(|e| {
                 Err(FindRootError {
@@ -61,10 +56,10 @@ impl<'a> Operation<PathBuf> for FindRoot<'a> {
         };
 
         if current_dir.join(".hg").exists() {
-            return Ok(current_dir.into());
+            return Ok(current_dir);
         }
-        let mut ancestors = current_dir.ancestors();
-        while let Some(parent) = ancestors.next() {
+        let ancestors = current_dir.ancestors();
+        for parent in ancestors {
             if parent.join(".hg").exists() {
                 return Ok(parent.into());
             }

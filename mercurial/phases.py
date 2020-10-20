@@ -121,6 +121,7 @@ from .pycompat import (
 from . import (
     error,
     pycompat,
+    requirements,
     smartset,
     txnutil,
     util,
@@ -154,7 +155,7 @@ localhiddenphases = (internal, archived)
 
 def supportinternal(repo):
     """True if the internal phase can be used on a repository"""
-    return b'internal-phase' in repo.requirements
+    return requirements.INTERNAL_PHASE_REQUIREMENT in repo.requirements
 
 
 def _readroots(repo, phasedefaults=None):
@@ -281,26 +282,28 @@ def _trackphasechange(data, rev, old, new):
     while low < high:
         mid = (low + high) // 2
         revs = data[mid][0]
+        revs_low = revs[0]
+        revs_high = revs[-1]
 
-        if rev in revs:
+        if rev >= revs_low and rev <= revs_high:
             _sortedrange_split(data, mid, rev, t)
             return
 
-        if revs[0] == rev + 1:
+        if revs_low == rev + 1:
             if mid and data[mid - 1][0][-1] == rev:
                 _sortedrange_split(data, mid - 1, rev, t)
             else:
                 _sortedrange_insert(data, mid, rev, t)
             return
 
-        if revs[-1] == rev - 1:
+        if revs_high == rev - 1:
             if mid + 1 < len(data) and data[mid + 1][0][0] == rev:
                 _sortedrange_split(data, mid + 1, rev, t)
             else:
                 _sortedrange_insert(data, mid + 1, rev, t)
             return
 
-        if revs[0] > rev:
+        if revs_low > rev:
             high = mid
         else:
             low = mid + 1

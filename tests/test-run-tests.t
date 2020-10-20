@@ -497,7 +497,7 @@ test for --retest
 ====================
 
   $ rt --retest
-  running 2 tests using 1 parallel processes 
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -512,7 +512,7 @@ test for --retest
   ERROR: test-failure.t output changed
   !
   Failed test-failure.t: output changed
-  # Ran 2 tests, 1 skipped, 1 failed.
+  # Ran 1 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
 
@@ -521,7 +521,7 @@ test for --retest
   $ mkdir output
   $ mv test-failure.t.err output
   $ rt --retest --outputdir output
-  running 2 tests using 1 parallel processes 
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/output/test-failure.t.err
@@ -536,7 +536,7 @@ test for --retest
   ERROR: test-failure.t output changed
   !
   Failed test-failure.t: output changed
-  # Ran 2 tests, 1 skipped, 1 failed.
+  # Ran 1 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
 
@@ -844,6 +844,8 @@ Accept the fix
     $ echo 'saved backup bundle to $TESTTMP/foo.hg'
     saved backup bundle to $TESTTMP/*.hg (glob)<
 
+  $ rm test-failure.t
+
 Race condition - test file was modified when test is running
 
   $ TESTRACEDIR=`pwd`
@@ -972,6 +974,25 @@ When using multiple dimensions of "#testcases" in .t files
   python hash seed: * (glob)
   [1]
 
+  $ rt --retest
+  running 1 tests using 1 parallel processes 
+  
+  --- $TESTTMP/test-cases.t
+  +++ $TESTTMP/test-cases.t#b#c.err
+  @@ -6,5 +6,5 @@
+   #endif
+   #if b c
+     $ echo yes
+  -  no
+  +  yes
+   #endif
+  
+  ERROR: test-cases.t#b#c output changed
+  !
+  Failed test-cases.t#b#c: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
   $ rm test-cases.t#b#c.err
   $ rm test-cases.t
 

@@ -198,9 +198,7 @@ class transplanter(object):
                     if pulls:
                         if source != repo:
                             exchange.pull(repo, source.peer(), heads=pulls)
-                        merge.update(
-                            repo, pulls[-1], branchmerge=False, force=False
-                        )
+                        merge.update(repo[pulls[-1]])
                         p1 = repo.dirstate.p1()
                         pulls = []
 
@@ -275,7 +273,7 @@ class transplanter(object):
             tr.close()
             if pulls:
                 exchange.pull(repo, source.peer(), heads=pulls)
-                merge.update(repo, pulls[-1], branchmerge=False, force=False)
+                merge.update(repo[pulls[-1]])
         finally:
             self.saveseries(revmap, merges)
             self.transplants.write()
@@ -476,7 +474,7 @@ class transplanter(object):
         """logic to stop an interrupted transplant"""
         if self.canresume():
             startctx = repo[b'.']
-            hg.updaterepo(repo, startctx.node(), overwrite=True)
+            merge.clean_update(startctx)
             ui.status(_(b"stopped the interrupted transplant\n"))
             ui.status(
                 _(b"working directory is now at %s\n") % startctx.hex()[:12]

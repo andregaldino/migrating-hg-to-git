@@ -166,6 +166,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    requirements,
     scmutil,
     streamclone,
     tags,
@@ -1963,10 +1964,7 @@ def handlechangegroup(op, inpart):
     nbchangesets = None
     if b'nbchanges' in inpart.params:
         nbchangesets = int(inpart.params.get(b'nbchanges'))
-    if (
-        b'treemanifest' in inpart.params
-        and b'treemanifest' not in op.repo.requirements
-    ):
+    if b'treemanifest' in inpart.params and not scmutil.istreemanifest(op.repo):
         if len(op.repo.changelog) != 0:
             raise error.Abort(
                 _(
@@ -1974,7 +1972,7 @@ def handlechangegroup(op, inpart):
                     b"non-empty and does not use tree manifests"
                 )
             )
-        op.repo.requirements.add(b'treemanifest')
+        op.repo.requirements.add(requirements.TREEMANIFEST_REQUIREMENT)
         op.repo.svfs.options = localrepo.resolvestorevfsoptions(
             op.repo.ui, op.repo.requirements, op.repo.features
         )
@@ -2091,7 +2089,7 @@ def handleremotechangegroup(op, inpart):
     except error.Abort as e:
         raise error.Abort(
             _(b'bundle at %s is corrupted:\n%s')
-            % (util.hidepassword(raw_url), bytes(e))
+            % (util.hidepassword(raw_url), e.message)
         )
     assert not inpart.read()
 
@@ -2576,7 +2574,7 @@ def widen_bundle(
 
         part = bundler.newpart(b'changegroup', data=cgdata)
         part.addparam(b'version', cgversion)
-        if b'treemanifest' in repo.requirements:
+        if scmutil.istreemanifest(repo):
             part.addparam(b'treemanifest', b'1')
         if b'exp-sidedata-flag' in repo.requirements:
             part.addparam(b'exp-sidedata', b'1')

@@ -800,10 +800,10 @@ class engine(object):
 
 
 def stylelist():
-    paths = templatepaths()
-    if not paths:
+    path = templatedir()
+    if not path:
         return _(b'no templates found, try `hg debuginstall` for more info')
-    dirlist = os.listdir(paths[0])
+    dirlist = os.listdir(path)
     stylelist = []
     for file in dirlist:
         split = file.split(b".")
@@ -814,17 +814,46 @@ def stylelist():
     return b", ".join(sorted(stylelist))
 
 
-def _readmapfile(mapfile):
-    """Load template elements from the given map file"""
-    if not os.path.exists(mapfile):
-        raise error.Abort(
-            _(b"style '%s' not found") % mapfile,
-            hint=_(b"available styles: %s") % stylelist(),
-        )
+def _open_mapfile(mapfile):
+    if os.path.exists(mapfile):
+        return util.posixfile(mapfile, b'rb')
+    raise error.Abort(
+        _(b"style '%s' not found") % mapfile,
+        hint=_(b"available styles: %s") % stylelist(),
+    )
 
+
+def _readmapfile(fp, mapfile):
+    """Load template elements from the given map file"""
     base = os.path.dirname(mapfile)
-    conf = config.config(includepaths=templatepaths())
-    conf.read(mapfile, remap={b'': b'templates'})
+    conf = config.config()
+
+    def include(rel, remap, sections):
+        subresource = None
+        if base:
+            abs = os.path.normpath(os.path.join(base, rel))
+            if os.path.isfile(abs):
+                subresource = util.posixfile(abs, b'rb')
+        if not subresource:
+            if pycompat.ossep not in rel:
+                abs = rel
+                subresource = resourceutil.open_resource(
+                    b'mercurial.templates', rel
+                )
+            else:
+                dir = templatedir()
+                if dir:
+                    abs = os.path.normpath(os.path.join(dir, rel))
+                    if os.path.isfile(abs):
+                        subresource = util.posixfile(abs, b'rb')
+        if subresource:
+            data = subresource.read()
+            conf.parse(
+                abs, data, sections=sections, remap=remap, include=include,
+            )
+
+    data = fp.read()
+    conf.parse(mapfile, data, remap={b'': b'templates'}, include=include)
 
     cache = {}
     tmap = {}
@@ -833,21 +862,22 @@ def _readmapfile(mapfile):
     val = conf.get(b'templates', b'__base__')
     if val and val[0] not in b"'\"":
         # treat as a pointer to a base class for this style
-        path = util.normpath(os.path.join(base, val))
+        path = os.path.normpath(os.path.join(base, val))
 
         # fallback check in template paths
         if not os.path.exists(path):
-            for p in templatepaths():
-                p2 = util.normpath(os.path.join(p, val))
+            dir = templatedir()
+            if dir is not None:
+                p2 = os.path.normpath(os.path.join(dir, val))
                 if os.path.isfile(p2):
                     path = p2
-                    break
-                p3 = util.normpath(os.path.join(p2, b"map"))
-                if os.path.isfile(p3):
-                    path = p3
-                    break
+                else:
+                    p3 = os.path.normpath(os.path.join(p2, b"map"))
+                    if os.path.isfile(p3):
+                        path = p3
 
-        cache, tmap, aliases = _readmapfile(path)
+        fp = _open_mapfile(path)
+        cache, tmap, aliases = _readmapfile(fp, path)
 
     for key, val in conf[b'templates'].items():
         if not val:
@@ -883,7 +913,8 @@ class loader(object):
         """Get parsed tree for the given template name. Use a local cache."""
         if t not in self.cache:
             try:
-                self.cache[t] = util.readfile(self._map[t])
+                mapfile, fp = open_template(self._map[t])
+                self.cache[t] = fp.read()
             except KeyError as inst:
                 raise templateutil.TemplateNotFound(
                     _(b'"%s" not in template map') % inst.args[0]
@@ -975,6 +1006,7 @@ class templater(object):
     def frommapfile(
         cls,
         mapfile,
+        fp=None,
         filters=None,
         defaults=None,
         resources=None,
@@ -984,7 +1016,9 @@ class templater(object):
     ):
         """Create templater from the specified map file"""
         t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
-        cache, tmap, aliases = _readmapfile(mapfile)
+        if not fp:
+            fp = _open_mapfile(mapfile)
+        cache, tmap, aliases = _readmapfile(fp, mapfile)
         t._loader.cache.update(cache)
         t._loader._map = tmap
         t._loader._aliasmap = _aliasrules.buildmap(aliases)
@@ -1045,59 +1079,42 @@ class templater(object):
         return stream
 
 
-def templatepaths():
-    '''return locations used for template files.'''
-    pathsrel = [b'templates']
-    paths = [
-        os.path.normpath(os.path.join(resourceutil.datapath, f))
-        for f in pathsrel
-    ]
-    return [p for p in paths if os.path.isdir(p)]
+def templatedir():
+    '''return the directory used for template files, or None.'''
+    path = os.path.normpath(os.path.join(resourceutil.datapath, b'templates'))
+    return path if os.path.isdir(path) else None
 
 
-def templatepath(name):
-    '''return location of template file. returns None if not found.'''
-    for p in templatepaths():
-        f = os.path.join(p, name)
-        if os.path.exists(f):
-            return f
-    return None
+def open_template(name, templatepath=None):
+    '''returns a file-like object for the given template, and its full path
+
+    If the name is a relative path and we're in a frozen binary, the template
+    will be read from the mercurial.templates package instead. The returned path
+    will then be the relative path.
+    '''
+    # Does the name point directly to a map file?
+    if os.path.isfile(name) or os.path.isabs(name):
+        return name, open(name, mode='rb')
+
+    # Does the name point to a template in the provided templatepath, or
+    # in mercurial/templates/ if no path was provided?
+    if templatepath is None:
+        templatepath = templatedir()
+    if templatepath is not None:
+        f = os.path.join(templatepath, name)
+        return f, open(f, mode='rb')
+
+    # Otherwise try to read it using the resources API
+    name_parts = name.split(b'/')
+    package_name = b'.'.join([b'mercurial', b'templates'] + name_parts[:-1])
+    return (
+        name,
+        resourceutil.open_resource(package_name, name_parts[-1]),
+    )
 
 
-def stylemap(styles, paths=None):
-    """Return path to mapfile for a given style.
-
-    Searches mapfile in the following locations:
-    1. templatepath/style/map
-    2. templatepath/map-style
-    3. templatepath/map
-    """
-
-    if paths is None:
-        paths = templatepaths()
-    elif isinstance(paths, bytes):
-        paths = [paths]
-
-    if isinstance(styles, bytes):
-        styles = [styles]
-
-    for style in styles:
-        # only plain name is allowed to honor template paths
-        if (
-            not style
-            or style in (pycompat.oscurdir, pycompat.ospardir)
-            or pycompat.ossep in style
-            or pycompat.osaltsep
-            and pycompat.osaltsep in style
-        ):
-            continue
-        locations = [os.path.join(style, b'map'), b'map-' + style]
-        locations.append(b'map')
-
-        for path in paths:
-            for location in locations:
-                mapfile = os.path.join(path, location)
-                if os.path.isfile(mapfile):
-                    return style, mapfile
-
-    raise RuntimeError(b"No hgweb templates found in %r" % paths)
+def try_open_template(name, templatepath=None):
+    try:
+        return open_template(name, templatepath)
+    except (EnvironmentError, ImportError):
+        return None, None

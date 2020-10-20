@@ -57,6 +57,7 @@ pub type FastHashMap<K, V> = HashMap<K, V, RandomXxHashBuilder64>;
 pub enum DirstateParseError {
     TooLittleData,
     Overflow,
+    // TODO refactor to use bytes instead of String
     CorruptedEntry(String),
     Damaged,
 }

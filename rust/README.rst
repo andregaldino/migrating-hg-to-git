@@ -34,6 +34,15 @@ extension will be used by default unless ``--no-rust``.
 One day we may use this environment variable to switch to new experimental
 binding crates like a hypothetical ``HGWITHRUSTEXT=hpy``.
 
+Special features
+================
+
+You might want to check the `features` section in ``hg-cpython/Cargo.toml``.
+It may contain features that might be interesting to try out.
+
+To use features from the Makefile, use the `HG_RUST_FEATURES` environment 
+variable: for instance `HG_RUST_FEATURES="some-feature other-feature"`
+
 Profiling
 =========
 
@@ -52,8 +61,8 @@ time to the python interpreter instead of python functions).
 Developing Rust
 ===============
 
-The current version of Rust in use is ``1.34.2``, because it's what Debian
-stable has. You can use ``rustup override set 1.34.2`` at the root of the repo
+The current version of Rust in use is ``1.41.1``, because it's what Debian
+stable has. You can use ``rustup override set 1.41.1`` at the root of the repo
 to make it easier on you.
 
 Go to the ``hg-cpython`` folder::

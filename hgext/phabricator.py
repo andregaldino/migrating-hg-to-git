@@ -76,6 +76,7 @@ from mercurial import (
     patch,
     phases,
     pycompat,
+    rewriteutil,
     scmutil,
     smartset,
     tags,
@@ -166,7 +167,7 @@ _VCR_FLAGS = [
 
 
 @eh.wrapfunction(localrepo, "loadhgrc")
-def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements):
+def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements, *args, **opts):
     """Load ``.arcconfig`` content into a ui instance on repository open.
     """
     result = False
@@ -200,7 +201,9 @@ def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements):
     if cfg:
         ui.applyconfig(cfg, source=wdirvfs.join(b".arcconfig"))
 
-    return orig(ui, wdirvfs, hgvfs, requirements) or result  # Load .hg/hgrc
+    return (
+        orig(ui, wdirvfs, hgvfs, requirements, *args, **opts) or result
+    )  # Load .hg/hgrc
 
 
 def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
@@ -238,8 +241,9 @@ def vcrcommand(name, flags, spec, helpcategory=None, optionalrepo=False):
 
     def decorate(fn):
         def inner(*args, **kwargs):
-            if kwargs.get('test_vcr'):
-                cassette = pycompat.fsdecode(kwargs.pop('test_vcr'))
+            vcr = kwargs.pop('test_vcr')
+            if vcr:
+                cassette = pycompat.fsdecode(vcr)
                 import hgdemandimport
 
                 with hgdemandimport.deactivated():
@@ -1510,6 +1514,9 @@ def phabsend(ui, repo, *revs, **opts):
                         mapping.get(old.p1().node(), (old.p1(),))[0],
                         mapping.get(old.p2().node(), (old.p2(),))[0],
                     ]
+                    newdesc = rewriteutil.update_hash_refs(
+                        repo, newdesc, mapping,
+                    )
                     new = context.metadataonlyctx(
                         repo,
                         old,
@@ -1587,7 +1594,9 @@ def phabsend(ui, repo, *revs, **opts):
                     repo,
                     old,
                     parents=parents,
-                    text=old.description(),
+                    text=rewriteutil.update_hash_refs(
+                        repo, old.description(), mapping
+                    ),
                     user=old.user(),
                     date=old.date(),
                     extra=old.extra(),

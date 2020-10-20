@@ -100,6 +100,33 @@ class ManifestLookupError(LookupError):
 class CommandError(Exception):
     """Exception raised on errors in parsing the command line."""
 
+    def __init__(self, command, message):
+        self.command = command
+        self.message = message
+        super(CommandError, self).__init__()
+
+    __bytes__ = _tobytes
+
+
+class UnknownCommand(Exception):
+    """Exception raised if command is not in the command table."""
+
+    def __init__(self, command, all_commands=None):
+        self.command = command
+        self.all_commands = all_commands
+        super(UnknownCommand, self).__init__()
+
+    __bytes__ = _tobytes
+
+
+class AmbiguousCommand(Exception):
+    """Exception raised if command shortcut matches more than one command."""
+
+    def __init__(self, prefix, matches):
+        self.prefix = prefix
+        self.matches = matches
+        super(AmbiguousCommand, self).__init__()
+
     __bytes__ = _tobytes
 
 
@@ -128,7 +155,15 @@ class ConflictResolutionRequired(InterventionRequired):
 class Abort(Hint, Exception):
     """Raised if a command needs to print an error and exit."""
 
-    __bytes__ = _tobytes
+    def __init__(self, message, hint=None):
+        self.message = message
+        self.hint = hint
+        # Pass the message into the Exception constructor to help extensions
+        # that look for exc.args[0].
+        Exception.__init__(self, message)
+
+    def __bytes__(self):
+        return self.message
 
     if pycompat.ispy3:
 
@@ -286,18 +321,6 @@ class LockInheritanceContractViolation(RuntimeError):
 
 class ResponseError(Exception):
     """Raised to print an error with part of output and exit."""
-
-    __bytes__ = _tobytes
-
-
-class UnknownCommand(Exception):
-    """Exception raised if command is not in the command table."""
-
-    __bytes__ = _tobytes
-
-
-class AmbiguousCommand(Exception):
-    """Exception raised if command shortcut matches more than one command."""
 
     __bytes__ = _tobytes
 

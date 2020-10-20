@@ -107,7 +107,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     let dotted_name = &format!("{}.dirstate", package);
     let m = PyModule::new(py, dotted_name)?;
 
-    simple_logger::init_by_env();
+    env_logger::init();
 
     m.add(py, "__package__", package)?;
     m.add(py, "__doc__", "Dirstate - Rust implementation")?;

@@ -136,7 +136,6 @@ from mercurial.pycompat import open
 from mercurial import (
     changegroup,
     changelog,
-    cmdutil,
     commands,
     configitems,
     context,
@@ -150,6 +149,7 @@ from mercurial import (
     localrepo,
     match as matchmod,
     merge,
+    mergestate as mergestatemod,
     node as nodemod,
     patch,
     pycompat,
@@ -340,7 +340,6 @@ def uisetup(ui):
     extensions.wrapfunction(scmutil, b'getrenamedfn', getrenamedfn)
     extensions.wrapfunction(revset, b'filelog', filelogrevset)
     revset.symbols[b'filelog'] = revset.filelog
-    extensions.wrapfunction(cmdutil, b'walkfilerevs', walkfilerevs)
 
 
 def cloneshallow(orig, ui, repo, *args, **opts):
@@ -361,7 +360,10 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                         self.unfiltered().__class__,
                     )
                 self.requirements.add(constants.SHALLOWREPO_REQUIREMENT)
-                scmutil.writereporequirements(self)
+                with self.lock():
+                    # acquire store lock before writing requirements as some
+                    # requirements might be written to .hg/store/requires
+                    scmutil.writereporequirements(self)
 
                 # Since setupclient hadn't been called, exchange.pull was not
                 # wrapped. So we need to manually invoke our version of it.
@@ -479,36 +481,38 @@ def storewrapper(orig, requirements, path, vfstype):
 
 # prefetch files before update
 def applyupdates(
-    orig, repo, actions, wctx, mctx, overwrite, wantfiledata, labels=None
+    orig, repo, mresult, wctx, mctx, overwrite, wantfiledata, **opts
 ):
     if isenabled(repo):
         manifest = mctx.manifest()
         files = []
-        for f, args, msg in actions[b'g']:
+        for f, args, msg in mresult.getactions([mergestatemod.ACTION_GET]):
             files.append((f, hex(manifest[f])))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
-    return orig(
-        repo, actions, wctx, mctx, overwrite, wantfiledata, labels=labels
-    )
+    return orig(repo, mresult, wctx, mctx, overwrite, wantfiledata, **opts)
 
 
 # Prefetch merge checkunknownfiles
-def checkunknownfiles(orig, repo, wctx, mctx, force, actions, *args, **kwargs):
+def checkunknownfiles(orig, repo, wctx, mctx, force, mresult, *args, **kwargs):
     if isenabled(repo):
         files = []
         sparsematch = repo.maybesparsematch(mctx.rev())
-        for f, (m, actionargs, msg) in pycompat.iteritems(actions):
+        for f, (m, actionargs, msg) in mresult.filemap():
             if sparsematch and not sparsematch(f):
                 continue
-            if m in (b'c', b'dc', b'cm'):
+            if m in (
+                mergestatemod.ACTION_CREATED,
+                mergestatemod.ACTION_DELETED_CHANGED,
+                mergestatemod.ACTION_CREATED_MERGE,
+            ):
                 files.append((f, hex(mctx.filenode(f))))
-            elif m == b'dg':
+            elif m == mergestatemod.ACTION_LOCAL_DIR_RENAME_GET:
                 f2 = actionargs[0]
                 files.append((f2, hex(mctx.filenode(f2))))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(files)
-    return orig(repo, wctx, mctx, force, actions, *args, **kwargs)
+    return orig(repo, wctx, mctx, force, mresult, *args, **kwargs)
 
 
 # Prefetch files before status attempts to look at their size and contents
@@ -774,40 +778,6 @@ def getrenamedfn(orig, repo, endrev=None):
             return None
 
     return getrenamed
-
-
-def walkfilerevs(orig, repo, match, follow, revs, fncache):
-    if not isenabled(repo):
-        return orig(repo, match, follow, revs, fncache)
-
-    # remotefilelog's can't be walked in rev order, so throw.
-    # The caller will see the exception and walk the commit tree instead.
-    if not follow:
-        raise cmdutil.FileWalkError(b"Cannot walk via filelog")
-
-    wanted = set()
-    minrev, maxrev = min(revs), max(revs)
-
-    pctx = repo[b'.']
-    for filename in match.files():
-        if filename not in pctx:
-            raise error.Abort(
-                _(b'cannot follow file not in parent revision: "%s"') % filename
-            )
-        fctx = pctx[filename]
-
-        linkrev = fctx.linkrev()
-        if linkrev >= minrev and linkrev <= maxrev:
-            fncache.setdefault(linkrev, []).append(filename)
-            wanted.add(linkrev)
-
-        for ancestor in fctx.ancestors():
-            linkrev = ancestor.linkrev()
-            if linkrev >= minrev and linkrev <= maxrev:
-                fncache.setdefault(linkrev, []).append(ancestor.path())
-                wanted.add(linkrev)
-
-    return wanted
 
 
 def filelogrevset(orig, repo, subset, x):

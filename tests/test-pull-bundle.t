@@ -52,7 +52,7 @@ Test pullbundle functionality
   > 1.hg BUNDLESPEC=bzip2-v2 heads=ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
   > 0.hg BUNDLESPEC=gzip-v2 heads=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
   > EOF
-  $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid
+  $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid -E ../error.txt
   listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)
   $ cat ../repo.pid >> $DAEMON_PIDS
   $ cd ..
@@ -64,6 +64,7 @@ Test pullbundle functionality
   new changesets bbd179dfa0a7 (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat error.txt
   $ cd repo.pullbundle
   $ hg pull -r 1
   pulling from http://localhost:$HGPORT2/

@@ -307,6 +307,14 @@ def binary(s):
     return bool(s and b'\0' in s)
 
 
+def _splitpattern(pattern):
+    if pattern.startswith(b're:'):
+        return b're', pattern[3:]
+    elif pattern.startswith(b'literal:'):
+        return b'literal', pattern[8:]
+    return b'literal', pattern
+
+
 def stringmatcher(pattern, casesensitive=True):
     """
     accepts a string, possibly starting with 're:' or 'literal:' prefix.
@@ -345,25 +353,79 @@ def stringmatcher(pattern, casesensitive=True):
     >>> itest(b'ABCDEFG', b'abc', b'def', b'abcdefg')
     ('literal', 'ABCDEFG', [False, False, True])
     """
-    if pattern.startswith(b're:'):
-        pattern = pattern[3:]
+    kind, pattern = _splitpattern(pattern)
+    if kind == b're':
         try:
             flags = 0
             if not casesensitive:
                 flags = remod.I
             regex = remod.compile(pattern, flags)
         except remod.error as e:
-            raise error.ParseError(_(b'invalid regular expression: %s') % e)
-        return b're', pattern, regex.search
-    elif pattern.startswith(b'literal:'):
-        pattern = pattern[8:]
+            raise error.ParseError(
+                _(b'invalid regular expression: %s') % forcebytestr(e)
+            )
+        return kind, pattern, regex.search
+    elif kind == b'literal':
+        if casesensitive:
+            match = pattern.__eq__
+        else:
+            ipat = encoding.lower(pattern)
+            match = lambda s: ipat == encoding.lower(s)
+        return kind, pattern, match
 
-    match = pattern.__eq__
+    raise error.ProgrammingError(b'unhandled pattern kind: %s' % kind)
 
-    if not casesensitive:
-        ipat = encoding.lower(pattern)
-        match = lambda s: ipat == encoding.lower(s)
-    return b'literal', pattern, match
+
+def substringregexp(pattern, flags=0):
+    """Build a regexp object from a string pattern possibly starting with
+    're:' or 'literal:' prefix.
+
+    helper for tests:
+    >>> def test(pattern, *tests):
+    ...     regexp = substringregexp(pattern)
+    ...     return [bool(regexp.search(t)) for t in tests]
+    >>> def itest(pattern, *tests):
+    ...     regexp = substringregexp(pattern, remod.I)
+    ...     return [bool(regexp.search(t)) for t in tests]
+
+    substring matching (no prefix):
+    >>> test(b'bcde', b'abc', b'def', b'abcdefg')
+    [False, False, True]
+
+    substring pattern should be escaped:
+    >>> substringregexp(b'.bc').pattern
+    '\\\\.bc'
+    >>> test(b'.bc', b'abc', b'def', b'abcdefg')
+    [False, False, False]
+
+    regex matching ('re:' prefix)
+    >>> test(b're:a.+b', b'nomatch', b'fooadef', b'fooadefbar')
+    [False, False, True]
+
+    force substring matches ('literal:' prefix)
+    >>> test(b'literal:re:foobar', b'foobar', b're:foobar')
+    [False, True]
+
+    case insensitive literal matches
+    >>> itest(b'BCDE', b'abc', b'def', b'abcdefg')
+    [False, False, True]
+
+    case insensitive regex matches
+    >>> itest(b're:A.+b', b'nomatch', b'fooadef', b'fooadefBar')
+    [False, False, True]
+    """
+    kind, pattern = _splitpattern(pattern)
+    if kind == b're':
+        try:
+            return remod.compile(pattern, flags)
+        except remod.error as e:
+            raise error.ParseError(
+                _(b'invalid regular expression: %s') % forcebytestr(e)
+            )
+    elif kind == b'literal':
+        return remod.compile(remod.escape(pattern), flags)
+
+    raise error.ProgrammingError(b'unhandled pattern kind: %s' % kind)
 
 
 def shortuser(user):

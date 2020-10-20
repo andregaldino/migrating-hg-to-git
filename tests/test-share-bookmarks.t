@@ -1,4 +1,10 @@
 #testcases vfs svfs
+#testcases safe normal
+
+#if safe
+  $ echo "[format]"         >> $HGRCPATH
+  $ echo "exp-share-safe = True" >> $HGRCPATH
+#endif
 
   $ echo "[extensions]"      >> $HGRCPATH
   $ echo "share = "          >> $HGRCPATH
@@ -224,7 +230,7 @@ verify that bookmarks are not written on failed transaction
   > )
   > def _pullbookmarks(orig, pullop):
   >     orig(pullop)
-  >     raise error.HookAbort('forced failure by extension')
+  >     raise error.HookAbort(b'forced failure by extension')
   > def extsetup(ui):
   >     extensions.wrapfunction(exchange, '_pullbookmarks', _pullbookmarks)
   > EOF
@@ -279,3 +285,9 @@ verify bookmark behavior after unshare
      bm3                       4:62f4ded848e4
      bm4                       5:92793bfc8cad
   $ cd ..
+
+Test that if store is disabled, we drop the bookmarksinstore requirement
+
+  $ hg init brokenrepo --config format.bookmarks-in-store=True --config format.usestore=false
+  ignoring enabled 'format.bookmarks-in-store' config beacuse it is incompatible with disabled 'format.usestore' config
+  ignoring enabled 'format.exp-share-safe' config because it is incompatible with disabled 'format.usestore' config (safe !)

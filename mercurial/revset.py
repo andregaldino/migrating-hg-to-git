@@ -17,6 +17,7 @@ from . import (
     diffutil,
     encoding,
     error,
+    grep as grepmod,
     hbisect,
     match as matchmod,
     node,
@@ -411,7 +412,7 @@ def adds(repo, subset, x):
     """
     # i18n: "adds" is a keyword
     pat = getstring(x, _(b"adds requires a pattern"))
-    return checkstatus(repo, subset, pat, 1)
+    return checkstatus(repo, subset, pat, 'added')
 
 
 @predicate(b'ancestor(*changeset)', safe=True, weight=0.5)
@@ -681,12 +682,8 @@ def bundle(repo, subset, x):
 
 def checkstatus(repo, subset, pat, field):
     """Helper for status-related revsets (adds, removes, modifies).
-    The field parameter says which kind is desired:
-    0: modified
-    1: added
-    2: removed
+    The field parameter says which kind is desired.
     """
-    label = {0: 'modified', 1: 'added', 2: 'removed'}[field]
     hasset = matchmod.patkind(pat) == b'set'
 
     mcache = [None]
@@ -707,7 +704,7 @@ def checkstatus(repo, subset, pat, field):
         else:
             if not any(m(f) for f in c.files()):
                 return False
-        files = getattr(repo.status(c.p1().node(), c.node()), label)
+        files = getattr(repo.status(c.p1().node(), c.node()), field)
         if fname is not None:
             if fname in files:
                 return True
@@ -715,7 +712,9 @@ def checkstatus(repo, subset, pat, field):
             if any(m(f) for f in files):
                 return True
 
-    return subset.filter(matches, condrepr=(b'<status[%r] %r>', field, pat))
+    return subset.filter(
+        matches, condrepr=(b'<status.%s %r>', pycompat.sysbytes(field), pat)
+    )
 
 
 def _children(repo, subset, parentset):
@@ -993,6 +992,45 @@ def destination(repo, subset, x):
         dests.__contains__,
         condrepr=lambda: b'<destination %r>' % _sortedb(dests),
     )
+
+
+@predicate(b'diff(pattern)', weight=110)
+def diff(repo, subset, x):
+    """Search revision differences for when the pattern was added or removed.
+
+    The pattern may be a substring literal or a regular expression. See
+    :hg:`help revisions.patterns`.
+    """
+    args = getargsdict(x, b'diff', b'pattern')
+    if b'pattern' not in args:
+        # i18n: "diff" is a keyword
+        raise error.ParseError(_(b'diff takes at least 1 argument'))
+
+    pattern = getstring(args[b'pattern'], _(b'diff requires a string pattern'))
+    regexp = stringutil.substringregexp(pattern, re.M)
+
+    # TODO: add support for file pattern and --follow. For example,
+    # diff(pattern[, set]) where set may be file(pattern) or follow(pattern),
+    # and we'll eventually add a support for narrowing files by revset?
+    fmatch = matchmod.always()
+
+    def makefilematcher(ctx):
+        return fmatch
+
+    # TODO: search in a windowed way
+    searcher = grepmod.grepsearcher(repo.ui, repo, regexp, diff=True)
+
+    def testdiff(rev):
+        # consume the generator to discard revfiles/matches cache
+        found = False
+        for fn, ctx, pstates, states in searcher.searchfiles(
+            baseset([rev]), makefilematcher
+        ):
+            if next(grepmod.difflinestates(pstates, states), None):
+                found = True
+        return found
+
+    return subset.filter(testdiff, condrepr=(b'<diff %r>', pattern))
 
 
 @predicate(b'contentdivergent()', safe=True)
@@ -1631,7 +1669,7 @@ def modifies(repo, subset, x):
     """
     # i18n: "modifies" is a keyword
     pat = getstring(x, _(b"modifies requires a pattern"))
-    return checkstatus(repo, subset, pat, 0)
+    return checkstatus(repo, subset, pat, 'modified')
 
 
 @predicate(b'named(namespace)')
@@ -2090,7 +2128,7 @@ def removes(repo, subset, x):
     """
     # i18n: "removes" is a keyword
     pat = getstring(x, _(b"removes requires a pattern"))
-    return checkstatus(repo, subset, pat, 2)
+    return checkstatus(repo, subset, pat, 'removed')
 
 
 @predicate(b'rev(number)', safe=True)
@@ -2289,12 +2327,13 @@ def roots(repo, subset, x):
 
 
 _sortkeyfuncs = {
-    b'rev': lambda c: c.rev(),
+    b'rev': scmutil.intrev,
     b'branch': lambda c: c.branch(),
     b'desc': lambda c: c.description(),
     b'user': lambda c: c.user(),
     b'author': lambda c: c.user(),
     b'date': lambda c: c.date()[0],
+    b'node': scmutil.binnode,
 }
 
 
@@ -2358,6 +2397,7 @@ def sort(repo, subset, x, order):
     - ``user`` for user name (``author`` can be used as an alias),
     - ``date`` for the commit date
     - ``topo`` for a reverse topographical sort
+    - ``node`` the nodeid of the revision
 
     The ``topo`` sort order cannot be combined with other sort keys. This sort
     takes one optional argument, ``topo.firstbranch``, which takes a revset that

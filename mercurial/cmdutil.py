@@ -16,7 +16,6 @@ from .i18n import _
 from .node import (
     hex,
     nullid,
-    nullrev,
     short,
 )
 from .pycompat import (
@@ -49,7 +48,6 @@ from . import (
     revlog,
     rewriteutil,
     scmutil,
-    smartset,
     state as statemod,
     subrepoutil,
     templatekw,
@@ -560,7 +558,7 @@ def dorecord(
             # backup continues
             for f in tobackup:
                 fd, tmpname = pycompat.mkstemp(
-                    prefix=f.replace(b'/', b'_') + b'.', dir=backupdir
+                    prefix=os.path.basename(f) + b'.', dir=backupdir
                 )
                 os.close(fd)
                 ui.debug(b'backup %r as %r\n' % (f, tmpname))
@@ -1358,7 +1356,7 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
         if cl:
             r = repo.unfiltered().changelog
         elif dir:
-            if b'treemanifest' not in repo.requirements:
+            if not scmutil.istreemanifest(repo):
                 raise error.Abort(
                     _(
                         b"--dir can only be used on repos with "
@@ -2229,356 +2227,17 @@ def showmarker(fm, marker, index=None):
 
 def finddate(ui, repo, date):
     """Find the tipmost changeset that matches the given date spec"""
+    mrevs = repo.revs(b'date(%s)', date)
+    try:
+        rev = mrevs.max()
+    except ValueError:
+        raise error.Abort(_(b"revision matching date not found"))
 
-    df = dateutil.matchdate(date)
-    m = scmutil.matchall(repo)
-    results = {}
-
-    def prep(ctx, fns):
-        d = ctx.date()
-        if df(d[0]):
-            results[ctx.rev()] = d
-
-    for ctx in walkchangerevs(repo, m, {b'rev': None}, prep):
-        rev = ctx.rev()
-        if rev in results:
-            ui.status(
-                _(b"found revision %d from %s\n")
-                % (rev, dateutil.datestr(results[rev]))
-            )
-            return b'%d' % rev
-
-    raise error.Abort(_(b"revision matching date not found"))
-
-
-def increasingwindows(windowsize=8, sizelimit=512):
-    while True:
-        yield windowsize
-        if windowsize < sizelimit:
-            windowsize *= 2
-
-
-def _walkrevs(repo, opts):
-    # Default --rev value depends on --follow but --follow behavior
-    # depends on revisions resolved from --rev...
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
-    if opts.get(b'rev'):
-        revs = scmutil.revrange(repo, opts[b'rev'])
-    elif follow and repo.dirstate.p1() == nullid:
-        revs = smartset.baseset()
-    elif follow:
-        revs = repo.revs(b'reverse(:.)')
-    else:
-        revs = smartset.spanset(repo)
-        revs.reverse()
-    return revs
-
-
-class FileWalkError(Exception):
-    pass
-
-
-def walkfilerevs(repo, match, follow, revs, fncache):
-    '''Walks the file history for the matched files.
-
-    Returns the changeset revs that are involved in the file history.
-
-    Throws FileWalkError if the file history can't be walked using
-    filelogs alone.
-    '''
-    wanted = set()
-    copies = []
-    minrev, maxrev = min(revs), max(revs)
-
-    def filerevs(filelog, last):
-        """
-        Only files, no patterns.  Check the history of each file.
-
-        Examines filelog entries within minrev, maxrev linkrev range
-        Returns an iterator yielding (linkrev, parentlinkrevs, copied)
-        tuples in backwards order
-        """
-        cl_count = len(repo)
-        revs = []
-        for j in pycompat.xrange(0, last + 1):
-            linkrev = filelog.linkrev(j)
-            if linkrev < minrev:
-                continue
-            # only yield rev for which we have the changelog, it can
-            # happen while doing "hg log" during a pull or commit
-            if linkrev >= cl_count:
-                break
-
-            parentlinkrevs = []
-            for p in filelog.parentrevs(j):
-                if p != nullrev:
-                    parentlinkrevs.append(filelog.linkrev(p))
-            n = filelog.node(j)
-            revs.append(
-                (linkrev, parentlinkrevs, follow and filelog.renamed(n))
-            )
-
-        return reversed(revs)
-
-    def iterfiles():
-        pctx = repo[b'.']
-        for filename in match.files():
-            if follow:
-                if filename not in pctx:
-                    raise error.Abort(
-                        _(
-                            b'cannot follow file not in parent '
-                            b'revision: "%s"'
-                        )
-                        % filename
-                    )
-                yield filename, pctx[filename].filenode()
-            else:
-                yield filename, None
-        for filename_node in copies:
-            yield filename_node
-
-    for file_, node in iterfiles():
-        filelog = repo.file(file_)
-        if not len(filelog):
-            if node is None:
-                # A zero count may be a directory or deleted file, so
-                # try to find matching entries on the slow path.
-                if follow:
-                    raise error.Abort(
-                        _(b'cannot follow nonexistent file: "%s"') % file_
-                    )
-                raise FileWalkError(b"Cannot walk via filelog")
-            else:
-                continue
-
-        if node is None:
-            last = len(filelog) - 1
-        else:
-            last = filelog.rev(node)
-
-        # keep track of all ancestors of the file
-        ancestors = {filelog.linkrev(last)}
-
-        # iterate from latest to oldest revision
-        for rev, flparentlinkrevs, copied in filerevs(filelog, last):
-            if not follow:
-                if rev > maxrev:
-                    continue
-            else:
-                # Note that last might not be the first interesting
-                # rev to us:
-                # if the file has been changed after maxrev, we'll
-                # have linkrev(last) > maxrev, and we still need
-                # to explore the file graph
-                if rev not in ancestors:
-                    continue
-                # XXX insert 1327 fix here
-                if flparentlinkrevs:
-                    ancestors.update(flparentlinkrevs)
-
-            fncache.setdefault(rev, []).append(file_)
-            wanted.add(rev)
-            if copied:
-                copies.append(copied)
-
-    return wanted
-
-
-class _followfilter(object):
-    def __init__(self, repo, onlyfirst=False):
-        self.repo = repo
-        self.startrev = nullrev
-        self.roots = set()
-        self.onlyfirst = onlyfirst
-
-    def match(self, rev):
-        def realparents(rev):
-            if self.onlyfirst:
-                return self.repo.changelog.parentrevs(rev)[0:1]
-            else:
-                return filter(
-                    lambda x: x != nullrev, self.repo.changelog.parentrevs(rev)
-                )
-
-        if self.startrev == nullrev:
-            self.startrev = rev
-            return True
-
-        if rev > self.startrev:
-            # forward: all descendants
-            if not self.roots:
-                self.roots.add(self.startrev)
-            for parent in realparents(rev):
-                if parent in self.roots:
-                    self.roots.add(rev)
-                    return True
-        else:
-            # backwards: all parents
-            if not self.roots:
-                self.roots.update(realparents(self.startrev))
-            if rev in self.roots:
-                self.roots.remove(rev)
-                self.roots.update(realparents(rev))
-                return True
-
-        return False
-
-
-def walkchangerevs(repo, match, opts, prepare):
-    '''Iterate over files and the revs in which they changed.
-
-    Callers most commonly need to iterate backwards over the history
-    in which they are interested. Doing so has awful (quadratic-looking)
-    performance, so we use iterators in a "windowed" way.
-
-    We walk a window of revisions in the desired order.  Within the
-    window, we first walk forwards to gather data, then in the desired
-    order (usually backwards) to display it.
-
-    This function returns an iterator yielding contexts. Before
-    yielding each context, the iterator will first call the prepare
-    function on each context in the window in forward order.'''
-
-    allfiles = opts.get(b'all_files')
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
-    revs = _walkrevs(repo, opts)
-    if not revs:
-        return []
-    wanted = set()
-    slowpath = match.anypats() or (not match.always() and opts.get(b'removed'))
-    fncache = {}
-    change = repo.__getitem__
-
-    # First step is to fill wanted, the set of revisions that we want to yield.
-    # When it does not induce extra cost, we also fill fncache for revisions in
-    # wanted: a cache of filenames that were changed (ctx.files()) and that
-    # match the file filtering conditions.
-
-    if match.always() or allfiles:
-        # No files, no patterns.  Display all revs.
-        wanted = revs
-    elif not slowpath:
-        # We only have to read through the filelog to find wanted revisions
-
-        try:
-            wanted = walkfilerevs(repo, match, follow, revs, fncache)
-        except FileWalkError:
-            slowpath = True
-
-            # We decided to fall back to the slowpath because at least one
-            # of the paths was not a file. Check to see if at least one of them
-            # existed in history, otherwise simply return
-            for path in match.files():
-                if path == b'.' or path in repo.store:
-                    break
-            else:
-                return []
-
-    if slowpath:
-        # We have to read the changelog to match filenames against
-        # changed files
-
-        if follow:
-            raise error.Abort(
-                _(b'can only follow copies/renames for explicit filenames')
-            )
-
-        # The slow path checks files modified in every changeset.
-        # This is really slow on large repos, so compute the set lazily.
-        class lazywantedset(object):
-            def __init__(self):
-                self.set = set()
-                self.revs = set(revs)
-
-            # No need to worry about locality here because it will be accessed
-            # in the same order as the increasing window below.
-            def __contains__(self, value):
-                if value in self.set:
-                    return True
-                elif not value in self.revs:
-                    return False
-                else:
-                    self.revs.discard(value)
-                    ctx = change(value)
-                    if allfiles:
-                        matches = list(ctx.manifest().walk(match))
-                    else:
-                        matches = [f for f in ctx.files() if match(f)]
-                    if matches:
-                        fncache[value] = matches
-                        self.set.add(value)
-                        return True
-                    return False
-
-            def discard(self, value):
-                self.revs.discard(value)
-                self.set.discard(value)
-
-        wanted = lazywantedset()
-
-    # it might be worthwhile to do this in the iterator if the rev range
-    # is descending and the prune args are all within that range
-    for rev in opts.get(b'prune', ()):
-        rev = repo[rev].rev()
-        ff = _followfilter(repo)
-        stop = min(revs[0], revs[-1])
-        for x in pycompat.xrange(rev, stop - 1, -1):
-            if ff.match(x):
-                wanted = wanted - [x]
-
-    # Now that wanted is correctly initialized, we can iterate over the
-    # revision range, yielding only revisions in wanted.
-    def iterate():
-        if follow and match.always():
-            ff = _followfilter(repo, onlyfirst=opts.get(b'follow_first'))
-
-            def want(rev):
-                return ff.match(rev) and rev in wanted
-
-        else:
-
-            def want(rev):
-                return rev in wanted
-
-        it = iter(revs)
-        stopiteration = False
-        for windowsize in increasingwindows():
-            nrevs = []
-            for i in pycompat.xrange(windowsize):
-                rev = next(it, None)
-                if rev is None:
-                    stopiteration = True
-                    break
-                elif want(rev):
-                    nrevs.append(rev)
-            for rev in sorted(nrevs):
-                fns = fncache.get(rev)
-                ctx = change(rev)
-                if not fns:
-
-                    def fns_generator():
-                        if allfiles:
-
-                            def bad(f, msg):
-                                pass
-
-                            for f in ctx.matches(matchmod.badmatch(match, bad)):
-                                yield f
-                        else:
-                            for f in ctx.files():
-                                if match(f):
-                                    yield f
-
-                    fns = fns_generator()
-                prepare(ctx, fns)
-            for rev in nrevs:
-                yield change(rev)
-
-            if stopiteration:
-                break
-
-    return iterate()
+    ui.status(
+        _(b"found revision %d from %s\n")
+        % (rev, dateutil.datestr(repo[rev].date()))
+    )
+    return b'%d' % rev
 
 
 def add(ui, repo, match, prefix, uipathfn, explicitonly, **opts):
@@ -3258,6 +2917,7 @@ def amend(ui, repo, old, extra, pats, opts):
         if opts.get(b'secret'):
             commitphase = phases.secret
         newid = repo.commitctx(new)
+        ms.reset()
 
         # Reroute the working copy parent to the new changeset
         repo.setparents(newid, nullid)
@@ -3375,7 +3035,7 @@ def commitforceeditor(
 
 def buildcommittemplate(repo, ctx, subs, extramsg, ref):
     ui = repo.ui
-    spec = formatter.templatespec(ref, None, None)
+    spec = formatter.reference_templatespec(ref)
     t = logcmdutil.changesettemplater(ui, repo, spec)
     t.t.cache.update(
         (k, templater.unquotestring(v))
@@ -3492,9 +3152,9 @@ def postcommitstatus(repo, pats, opts):
     return repo.status(match=scmutil.match(repo[None], pats, opts))
 
 
-def revert(ui, repo, ctx, parents, *pats, **opts):
+def revert(ui, repo, ctx, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
-    parent, p2 = parents
+    parent, p2 = repo.dirstate.parents()
     node = ctx.node()
 
     mf = ctx.manifest()
@@ -3780,7 +3440,6 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             match = scmutil.match(repo[None], pats)
             _performrevert(
                 repo,
-                parents,
                 ctx,
                 names,
                 uipathfn,
@@ -3806,7 +3465,6 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
 
 def _performrevert(
     repo,
-    parents,
     ctx,
     names,
     uipathfn,
@@ -3822,7 +3480,7 @@ def _performrevert(
 
     Make sure you have the working directory locked when calling this function.
     """
-    parent, p2 = parents
+    parent, p2 = repo.dirstate.parents()
     node = ctx.node()
     excluded_files = []
 
@@ -4152,7 +3810,6 @@ def abortgraft(ui, repo, graftstate):
         startctx = repo[b'.']
     # whether to strip or not
     cleanup = False
-    from . import hg
 
     if newnodes:
         newnodes = [repo[r].rev() for r in newnodes]
@@ -4180,7 +3837,7 @@ def abortgraft(ui, repo, graftstate):
 
         if cleanup:
             with repo.wlock(), repo.lock():
-                hg.updaterepo(repo, startctx.node(), overwrite=True)
+                mergemod.clean_update(startctx)
                 # stripping the new nodes created
                 strippoints = [
                     c.node() for c in repo.set(b"roots(%ld)", newnodes)
@@ -4190,7 +3847,7 @@ def abortgraft(ui, repo, graftstate):
     if not cleanup:
         # we don't update to the startnode if we can't strip
         startctx = repo[b'.']
-        hg.updaterepo(repo, startctx.node(), overwrite=True)
+        mergemod.clean_update(startctx)
 
     ui.status(_(b"graft aborted\n"))
     ui.status(_(b"working directory is now at %s\n") % startctx.hex()[:12])

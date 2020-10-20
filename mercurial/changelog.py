@@ -26,8 +26,7 @@ from .utils import (
     dateutil,
     stringutil,
 )
-
-from .revlogutils import sidedata as sidedatamod
+from .revlogutils import flagutil
 
 _defaultextra = {b'branch': b'default'}
 
@@ -216,6 +215,7 @@ class changelogrevision(object):
         '_text',
         '_sidedata',
         '_cpsd',
+        '_changes',
     )
 
     def __new__(cls, text, sidedata, cpsd):
@@ -252,6 +252,7 @@ class changelogrevision(object):
         self._text = text
         self._sidedata = sidedata
         self._cpsd = cpsd
+        self._changes = None
 
         return self
 
@@ -301,7 +302,26 @@ class changelogrevision(object):
         return decodeextra(raw)
 
     @property
+    def changes(self):
+        if self._changes is not None:
+            return self._changes
+        if self._cpsd:
+            changes = metadata.decode_files_sidedata(self._sidedata)
+        else:
+            changes = metadata.ChangingFiles(
+                touched=self.files or (),
+                added=self.filesadded or (),
+                removed=self.filesremoved or (),
+                p1_copies=self.p1copies or {},
+                p2_copies=self.p2copies or {},
+            )
+        self._changes = changes
+        return changes
+
+    @property
     def files(self):
+        if self._cpsd:
+            return sorted(self.changes.touched)
         off = self._offsets
         if off[2] == off[3]:
             return []
@@ -311,9 +331,7 @@ class changelogrevision(object):
     @property
     def filesadded(self):
         if self._cpsd:
-            rawindices = self._sidedata.get(sidedatamod.SD_FILESADDED)
-            if not rawindices:
-                return []
+            return self.changes.added
         else:
             rawindices = self.extra.get(b'filesadded')
         if rawindices is None:
@@ -323,9 +341,7 @@ class changelogrevision(object):
     @property
     def filesremoved(self):
         if self._cpsd:
-            rawindices = self._sidedata.get(sidedatamod.SD_FILESREMOVED)
-            if not rawindices:
-                return []
+            return self.changes.removed
         else:
             rawindices = self.extra.get(b'filesremoved')
         if rawindices is None:
@@ -335,9 +351,7 @@ class changelogrevision(object):
     @property
     def p1copies(self):
         if self._cpsd:
-            rawcopies = self._sidedata.get(sidedatamod.SD_P1COPIES)
-            if not rawcopies:
-                return {}
+            return self.changes.copied_from_p1
         else:
             rawcopies = self.extra.get(b'p1copies')
         if rawcopies is None:
@@ -347,9 +361,7 @@ class changelogrevision(object):
     @property
     def p2copies(self):
         if self._cpsd:
-            rawcopies = self._sidedata.get(sidedatamod.SD_P2COPIES)
-            if not rawcopies:
-                return {}
+            return self.changes.copied_from_p2
         else:
             rawcopies = self.extra.get(b'p2copies')
         if rawcopies is None:
@@ -403,8 +415,20 @@ class changelog(revlog.revlog):
         self._delayed = False
         self._delaybuf = None
         self._divert = False
-        self.filteredrevs = frozenset()
+        self._filteredrevs = frozenset()
+        self._filteredrevs_hashcache = {}
         self._copiesstorage = opener.options.get(b'copies-storage')
+
+    @property
+    def filteredrevs(self):
+        return self._filteredrevs
+
+    @filteredrevs.setter
+    def filteredrevs(self, val):
+        # Ensure all updates go through this function
+        assert isinstance(val, frozenset)
+        self._filteredrevs = val
+        self._filteredrevs_hashcache = {}
 
     def delayupdate(self, tr):
         """delay visibility of index updates to other readers"""
@@ -524,10 +548,6 @@ class changelog(revlog.revlog):
         user,
         date=None,
         extra=None,
-        p1copies=None,
-        p2copies=None,
-        filesadded=None,
-        filesremoved=None,
     ):
         # Convert to UTF-8 encoded bytestrings as the very first
         # thing: calling any method on a localstr object will turn it
@@ -559,48 +579,13 @@ class changelog(revlog.revlog):
                 raise error.StorageError(
                     _(b'the name \'%s\' is reserved') % branch
                 )
-        sortedfiles = sorted(files)
+        sortedfiles = sorted(files.touched)
+        flags = 0
         sidedata = None
-        if extra is not None:
-            for name in (
-                b'p1copies',
-                b'p2copies',
-                b'filesadded',
-                b'filesremoved',
-            ):
-                extra.pop(name, None)
-        if p1copies is not None:
-            p1copies = metadata.encodecopies(sortedfiles, p1copies)
-        if p2copies is not None:
-            p2copies = metadata.encodecopies(sortedfiles, p2copies)
-        if filesadded is not None:
-            filesadded = metadata.encodefileindices(sortedfiles, filesadded)
-        if filesremoved is not None:
-            filesremoved = metadata.encodefileindices(sortedfiles, filesremoved)
-        if self._copiesstorage == b'extra':
-            extrasentries = p1copies, p2copies, filesadded, filesremoved
-            if extra is None and any(x is not None for x in extrasentries):
-                extra = {}
-            if p1copies is not None:
-                extra[b'p1copies'] = p1copies
-            if p2copies is not None:
-                extra[b'p2copies'] = p2copies
-            if filesadded is not None:
-                extra[b'filesadded'] = filesadded
-            if filesremoved is not None:
-                extra[b'filesremoved'] = filesremoved
-        elif self._copiesstorage == b'changeset-sidedata':
-            sidedata = {}
-            if p1copies:
-                sidedata[sidedatamod.SD_P1COPIES] = p1copies
-            if p2copies:
-                sidedata[sidedatamod.SD_P2COPIES] = p2copies
-            if filesadded:
-                sidedata[sidedatamod.SD_FILESADDED] = filesadded
-            if filesremoved:
-                sidedata[sidedatamod.SD_FILESREMOVED] = filesremoved
-            if not sidedata:
-                sidedata = None
+        if self._copiesstorage == b'changeset-sidedata':
+            if files.has_copies_info:
+                flags |= flagutil.REVIDX_HASCOPIESINFO
+            sidedata = metadata.encode_files_sidedata(files)
 
         if extra:
             extra = encodeextra(extra)
@@ -608,7 +593,7 @@ class changelog(revlog.revlog):
         l = [hex(manifest), user, parseddate] + sortedfiles + [b"", desc]
         text = b"\n".join(l)
         return self.addrevision(
-            text, transaction, len(self), p1, p2, sidedata=sidedata
+            text, transaction, len(self), p1, p2, sidedata=sidedata, flags=flags
         )
 
     def branchinfo(self, rev):

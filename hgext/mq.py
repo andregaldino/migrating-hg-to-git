@@ -1717,11 +1717,7 @@ class queue(object):
             except:  # re-raises
                 self.ui.warn(_(b'cleaning up working directory...\n'))
                 cmdutil.revert(
-                    self.ui,
-                    repo,
-                    repo[b'.'],
-                    repo.dirstate.parents(),
-                    no_backup=True,
+                    self.ui, repo, repo[b'.'], no_backup=True,
                 )
                 # only remove unknown files that we know we touched or
                 # created while patching

@@ -26,7 +26,7 @@ Test importing an existing revision
 and '--edit')
 
   $ hg import --bypass --exact --edit ../test.diff
-  abort: cannot use --exact with --edit
+  abort: cannot specify both --exact and --edit
   [255]
   $ hg import --bypass --exact ../test.diff
   applying ../test.diff
@@ -188,13 +188,13 @@ Test --strip with --bypass
 Test unsupported combinations
 
   $ hg import --bypass --no-commit ../test.diff
-  abort: cannot use --no-commit with --bypass
+  abort: cannot specify both --no-commit and --bypass
   [255]
   $ hg import --bypass --similarity 50 ../test.diff
   abort: cannot use --similarity with --bypass
   [255]
   $ hg import --exact --prefix dir/ ../test.diff
-  abort: cannot use --exact with --prefix
+  abort: cannot specify both --exact and --prefix
   [255]
 
 Test commit editor

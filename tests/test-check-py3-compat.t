@@ -1,4 +1,4 @@
-#require test-repo
+#require test-repo pure
 
   $ . "$TESTDIR/helpers-testrepo.sh"
   $ cd "$TESTDIR"/..

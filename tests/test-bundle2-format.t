@@ -22,6 +22,7 @@ Create an extension to test bundle2 API
   > from mercurial import changegroup
   > from mercurial import error
   > from mercurial import obsolete
+  > from mercurial import pycompat
   > from mercurial import registrar
   > from mercurial.utils import procutil
   > 
@@ -169,7 +170,7 @@ Create an extension to test bundle2 API
   >         for chunk in bundler.getchunks():
   >             file.write(chunk)
   >     except RuntimeError as exc:
-  >         raise error.Abort(exc)
+  >         raise error.Abort(pycompat.bytestr(exc))
   >     finally:
   >         file.flush()
   > 

@@ -26,11 +26,11 @@ DISTROS = {
 
 INSTALL_PYTHONS = r'''
 PYENV2_VERSIONS="2.7.17 pypy2.7-7.2.0"
-PYENV3_VERSIONS="3.5.9 3.6.10 3.7.7 3.8.2 pypy3.5-7.0.0 pypy3.6-7.3.0"
+PYENV3_VERSIONS="3.5.10 3.6.12 3.7.9 3.8.6 3.9.0 pypy3.5-7.0.0 pypy3.6-7.3.0"
 
 git clone https://github.com/pyenv/pyenv.git /hgdev/pyenv
 pushd /hgdev/pyenv
-git checkout 3005c4664372ae13fbe376be699313eb428c8bdd
+git checkout 8ac91b4fd678a8c04356f5ec85cfcd565c265e9a
 popd
 
 export PYENV_ROOT="/hgdev/pyenv"
@@ -72,10 +72,10 @@ echo "${RUSTUP_INIT_SHA256} rustup-init" | sha256sum --check -
 
 chmod +x rustup-init
 sudo -H -u hg -g hg ./rustup-init -y
-sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.31.1 1.42.0
+sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.31.1 1.46.0
 sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup component add clippy
 
-sudo -H -u hg -g hg /home/hg/.cargo/bin/cargo install --version 0.7.0 pyoxidizer
+sudo -H -u hg -g hg /home/hg/.cargo/bin/cargo install --git https://github.com/indygreg/PyOxidizer.git --rev 4697fb25918dfad6dc73288daeea501063963a08 pyoxidizer
 '''
 
 

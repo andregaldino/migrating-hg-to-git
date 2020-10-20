@@ -21,6 +21,18 @@ pattern error
   grep: invalid match pattern: nothing to repeat* (glob)
   [1]
 
+invalid revset syntax
+
+  $ hg log -r 'diff()'
+  hg: parse error: diff takes at least 1 argument
+  [255]
+  $ hg log -r 'diff(:)'
+  hg: parse error: diff requires a string pattern
+  [255]
+  $ hg log -r 'diff("re:**test**")'
+  hg: parse error: invalid regular expression: nothing to repeat* (glob)
+  [255]
+
 simple
 
   $ hg grep -r tip:0 '.*'
@@ -321,14 +333,61 @@ simple JSON without matching lines
    }
   ]
 
+diff of each revision for reference
+
+  $ hg log -p -T'== rev: {rev} ==\n'
+  == rev: 4 ==
+  diff -r 95040cfd017d -r 914fa752cdea port
+  --- a/port	Thu Jan 01 00:00:03 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:04 1970 +0000
+  @@ -1,4 +1,3 @@
+   export
+   vaportight
+   import/export
+  -import/export
+  
+  == rev: 3 ==
+  diff -r 3b325e3481a1 -r 95040cfd017d port
+  --- a/port	Thu Jan 01 00:00:02 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:03 1970 +0000
+  @@ -1,3 +1,4 @@
+   export
+   vaportight
+   import/export
+  +import/export
+  
+  == rev: 2 ==
+  diff -r 8b20f75c1585 -r 3b325e3481a1 port
+  --- a/port	Thu Jan 01 00:00:01 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:02 1970 +0000
+  @@ -1,2 +1,3 @@
+  -import
+   export
+  +vaportight
+  +import/export
+  
+  == rev: 1 ==
+  diff -r f31323c92170 -r 8b20f75c1585 port
+  --- a/port	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:01 1970 +0000
+  @@ -1,1 +1,2 @@
+   import
+  +export
+  
+  == rev: 0 ==
+  diff -r 000000000000 -r f31323c92170 port
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/port	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +import
+  
+
 all
 
   $ hg grep --traceback --all -nu port port
   port:4:4:-:spam:import/export
   port:3:4:+:eggs:import/export
   port:2:1:-:spam:import
-  port:2:2:-:spam:export
-  port:2:1:+:spam:export
   port:2:2:+:spam:vaportight
   port:2:3:+:spam:import/export
   port:1:2:+:eggs:export
@@ -366,26 +425,6 @@ all JSON
     "path": "port",
     "rev": 2,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}],
-    "user": "spam"
-   },
-   {
-    "change": "-",
-    "date": [2, 0],
-    "lineno": 2,
-    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
-    "path": "port",
-    "rev": 2,
-    "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
-    "user": "spam"
-   },
-   {
-    "change": "+",
-    "date": [2, 0],
-    "lineno": 1,
-    "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
-    "path": "port",
-    "rev": 2,
-    "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
    },
    {
@@ -460,8 +499,6 @@ follow
   port:4:4:-:spam:import/export
   port:3:4:+:eggs:import/export
   port:2:1:-:spam:import
-  port:2:2:-:spam:export
-  port:2:1:+:spam:export
   port:2:2:+:spam:vaportight
   port:2:3:+:spam:import/export
   port:1:2:+:eggs:export
@@ -527,6 +564,18 @@ Test wdir
   color:3:+:orange
   color:2:-:orange
   color:1:+:orange
+
+revset predicate for "grep --diff"
+
+  $ hg log -qr 'diff("re:^bl...$")'
+  0:203191eb5e21
+  $ hg log -qr 'diff("orange")'
+  1:7c585a21e0d1
+  2:11bd8bc8d653
+  3:e0116d3829f8
+  $ hg log -qr '2:0 & diff("orange")'
+  2:11bd8bc8d653
+  1:7c585a21e0d1
 
 test substring match: '^' should only match at the beginning
 
@@ -640,6 +689,49 @@ revisions printed, just their order.
 
   $ cd ..
 
+Moved line may not be collected by "grep --diff" since it first filters
+the contents to be diffed by the pattern. (i.e.
+"diff <(grep pat a) <(grep pat b)", not "diff a b | grep pat".)
+This is much faster than generating full diff per revision.
+
+  $ hg init moved-line
+  $ cd moved-line
+  $ cat <<'EOF' > a
+  > foo
+  > bar
+  > baz
+  > EOF
+  $ hg ci -Am initial
+  adding a
+  $ cat <<'EOF' > a
+  > bar
+  > baz
+  > foo
+  > EOF
+  $ hg ci -m reorder
+
+  $ hg diff -c 1
+  diff -r a593cc55e81b -r 69789a3b6e80 a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,3 +1,3 @@
+  -foo
+   bar
+   baz
+  +foo
+
+ can't find the move of "foo" at the revision 1:
+
+  $ hg grep --diff foo -r1
+  [1]
+
+ "bar" isn't moved at the revisoin 1:
+
+  $ hg grep --diff bar -r1
+  [1]
+
+  $ cd ..
+
 Test for showing working of allfiles flag
 
   $ hg init sng
@@ -745,3 +837,628 @@ test -rMULTIREV
   um:1:unmod
   $ cd ..
 
+--follow with/without --diff and/or paths
+-----------------------------------------
+
+For each test case, we compare the history traversal of "hg log",
+"hg grep --diff", and "hg grep" (--all-files).
+
+"hg grep --diff" should traverse the log in the same way as "hg log".
+"hg grep" (--all-files) is slightly different in that it includes
+unmodified changes.
+
+  $ hg init follow
+  $ cd follow
+
+  $ cat <<'EOF' >> .hg/hgrc
+  > [ui]
+  > logtemplate = '{rev}: {join(files % "{status} {path}", ", ")}\n'
+  > EOF
+
+  $ for f in add0 add0-mod1 add0-rm1 add0-mod2 add0-rm2 add0-mod3 add0-mod4 add0-rm4; do
+  > echo data0 >> $f
+  > done
+  $ hg ci -qAm0
+
+  $ hg cp add0 add0-cp1
+  $ hg cp add0 add0-cp1-mod1
+  $ hg cp add0 add0-cp1-mod1-rm3
+  $ hg rm add0-rm1
+  $ for f in *mod1*; do
+  > echo data1 >> $f
+  > done
+  $ hg ci -qAm1
+
+  $ hg update -q 0
+  $ hg cp add0 add0-cp2
+  $ hg cp add0 add0-cp2-mod2
+  $ hg rm add0-rm2
+  $ for f in *mod2*; do
+  > echo data2 >> $f
+  > done
+  $ hg ci -qAm2
+
+  $ hg update -q 1
+  $ hg cp add0-cp1 add0-cp1-cp3
+  $ hg cp add0-cp1-mod1 add0-cp1-mod1-cp3-mod3
+  $ hg rm add0-cp1-mod1-rm3
+  $ for f in *mod3*; do
+  > echo data3 >> $f
+  > done
+  $ hg ci -qAm3
+
+  $ hg cp add0 add0-cp4
+  $ hg cp add0 add0-cp4-mod4
+  $ hg rm add0-rm4
+  $ for f in *mod4*; do
+  > echo data4 >> $f
+  > done
+
+  $ hg log -Gr':wdir()'
+  o  2147483647: A add0-cp4, A add0-cp4-mod4, M add0-mod4, R add0-rm4
+  |
+  @  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  |
+  | o  2: A add0-cp2, A add0-cp2-mod2, M add0-mod2, R add0-rm2
+  | |
+  o |  1: A add0-cp1, A add0-cp1-mod1, A add0-cp1-mod1-rm3, M add0-mod1, R add0-rm1
+  |/
+  o  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+  
+
+follow revision history from wdir parent:
+
+  $ hg log -f
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  1: A add0-cp1, A add0-cp1-mod1, A add0-cp1-mod1-rm3, M add0-mod1, R add0-rm1
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -f data
+  add0-cp1-mod1-cp3-mod3:3:+:data3
+  add0-mod3:3:+:data3
+  add0-cp1-mod1:1:+:data1
+  add0-cp1-mod1-rm3:1:+:data1
+  add0-mod1:1:+:data1
+  add0:0:+:data0
+  add0-mod1:0:+:data0
+  add0-mod2:0:+:data0
+  add0-mod3:0:+:data0
+  add0-mod4:0:+:data0
+  add0-rm1:0:+:data0
+  add0-rm2:0:+:data0
+  add0-rm4:0:+:data0
+
+  $ hg grep -f data
+  add0:3:data0
+  add0-cp1:3:data0
+  add0-cp1-cp3:3:data0
+  add0-cp1-mod1:3:data0
+  add0-cp1-mod1:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data0
+  add0-cp1-mod1-cp3-mod3:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data3
+  add0-mod1:3:data0
+  add0-mod1:3:data1
+  add0-mod2:3:data0
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod4:3:data0
+  add0-rm2:3:data0
+  add0-rm4:3:data0
+  add0:1:data0
+  add0-cp1:1:data0
+  add0-cp1-mod1:1:data0
+  add0-cp1-mod1:1:data1
+  add0-cp1-mod1-rm3:1:data0
+  add0-cp1-mod1-rm3:1:data1
+  add0-mod1:1:data0
+  add0-mod1:1:data1
+  add0-mod2:1:data0
+  add0-mod3:1:data0
+  add0-mod4:1:data0
+  add0-rm2:1:data0
+  add0-rm4:1:data0
+  add0:0:data0
+  add0-mod1:0:data0
+  add0-mod2:0:data0
+  add0-mod3:0:data0
+  add0-mod4:0:data0
+  add0-rm1:0:data0
+  add0-rm2:0:data0
+  add0-rm4:0:data0
+
+follow revision history from specified revision:
+
+  $ hg log -fr2
+  2: A add0-cp2, A add0-cp2-mod2, M add0-mod2, R add0-rm2
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr2 data
+  add0-cp2-mod2:2:+:data2
+  add0-mod2:2:+:data2
+  add0:0:+:data0
+  add0-mod1:0:+:data0
+  add0-mod2:0:+:data0
+  add0-mod3:0:+:data0
+  add0-mod4:0:+:data0
+  add0-rm1:0:+:data0
+  add0-rm2:0:+:data0
+  add0-rm4:0:+:data0
+
+  $ hg grep -fr2 data
+  add0:2:data0
+  add0-cp2:2:data0
+  add0-cp2-mod2:2:data0
+  add0-cp2-mod2:2:data2
+  add0-mod1:2:data0
+  add0-mod2:2:data0
+  add0-mod2:2:data2
+  add0-mod3:2:data0
+  add0-mod4:2:data0
+  add0-rm1:2:data0
+  add0-rm4:2:data0
+  add0:0:data0
+  add0-mod1:0:data0
+  add0-mod2:0:data0
+  add0-mod3:0:data0
+  add0-mod4:0:data0
+  add0-rm1:0:data0
+  add0-rm2:0:data0
+  add0-rm4:0:data0
+
+follow revision history from wdir:
+
+  $ hg log -fr'wdir()'
+  2147483647: A add0-cp4, A add0-cp4-mod4, M add0-mod4, R add0-rm4
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  1: A add0-cp1, A add0-cp1-mod1, A add0-cp1-mod1-rm3, M add0-mod1, R add0-rm1
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+ BROKEN: should not abort because of removed file
+  $ hg grep --diff -fr'wdir()' data
+  add0-cp4-mod4:2147483647:+:data4
+  add0-mod4:2147483647:+:data4
+  add0-rm4:2147483647:-:abort: add0-rm4@None: not found in manifest!
+  [255]
+
+  $ hg grep -fr'wdir()' data
+  add0:2147483647:data0
+  add0-cp1:2147483647:data0
+  add0-cp1-cp3:2147483647:data0
+  add0-cp1-mod1:2147483647:data0
+  add0-cp1-mod1:2147483647:data1
+  add0-cp1-mod1-cp3-mod3:2147483647:data0
+  add0-cp1-mod1-cp3-mod3:2147483647:data1
+  add0-cp1-mod1-cp3-mod3:2147483647:data3
+  add0-cp4:2147483647:data0
+  add0-cp4-mod4:2147483647:data0
+  add0-cp4-mod4:2147483647:data4
+  add0-mod1:2147483647:data0
+  add0-mod1:2147483647:data1
+  add0-mod2:2147483647:data0
+  add0-mod3:2147483647:data0
+  add0-mod3:2147483647:data3
+  add0-mod4:2147483647:data0
+  add0-mod4:2147483647:data4
+  add0-rm2:2147483647:data0
+  add0:3:data0
+  add0-cp1:3:data0
+  add0-cp1-cp3:3:data0
+  add0-cp1-mod1:3:data0
+  add0-cp1-mod1:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data0
+  add0-cp1-mod1-cp3-mod3:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data3
+  add0-mod1:3:data0
+  add0-mod1:3:data1
+  add0-mod2:3:data0
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod4:3:data0
+  add0-rm2:3:data0
+  add0-rm4:3:data0
+  add0:1:data0
+  add0-cp1:1:data0
+  add0-cp1-mod1:1:data0
+  add0-cp1-mod1:1:data1
+  add0-cp1-mod1-rm3:1:data0
+  add0-cp1-mod1-rm3:1:data1
+  add0-mod1:1:data0
+  add0-mod1:1:data1
+  add0-mod2:1:data0
+  add0-mod3:1:data0
+  add0-mod4:1:data0
+  add0-rm2:1:data0
+  add0-rm4:1:data0
+  add0:0:data0
+  add0-mod1:0:data0
+  add0-mod2:0:data0
+  add0-mod3:0:data0
+  add0-mod4:0:data0
+  add0-rm1:0:data0
+  add0-rm2:0:data0
+  add0-rm4:0:data0
+
+follow revision history from multiple revisions:
+
+  $ hg log -fr'1+2'
+  2: A add0-cp2, A add0-cp2-mod2, M add0-mod2, R add0-rm2
+  1: A add0-cp1, A add0-cp1-mod1, A add0-cp1-mod1-rm3, M add0-mod1, R add0-rm1
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr'1+2' data
+  add0-cp2-mod2:2:+:data2
+  add0-mod2:2:+:data2
+  add0-cp1-mod1:1:+:data1
+  add0-cp1-mod1-rm3:1:+:data1
+  add0-mod1:1:+:data1
+  add0:0:+:data0
+  add0-mod1:0:+:data0
+  add0-mod2:0:+:data0
+  add0-mod3:0:+:data0
+  add0-mod4:0:+:data0
+  add0-rm1:0:+:data0
+  add0-rm2:0:+:data0
+  add0-rm4:0:+:data0
+
+  $ hg grep -fr'1+2' data
+  add0:2:data0
+  add0-cp2:2:data0
+  add0-cp2-mod2:2:data0
+  add0-cp2-mod2:2:data2
+  add0-mod1:2:data0
+  add0-mod2:2:data0
+  add0-mod2:2:data2
+  add0-mod3:2:data0
+  add0-mod4:2:data0
+  add0-rm1:2:data0
+  add0-rm4:2:data0
+  add0:1:data0
+  add0-cp1:1:data0
+  add0-cp1-mod1:1:data0
+  add0-cp1-mod1:1:data1
+  add0-cp1-mod1-rm3:1:data0
+  add0-cp1-mod1-rm3:1:data1
+  add0-mod1:1:data0
+  add0-mod1:1:data1
+  add0-mod2:1:data0
+  add0-mod3:1:data0
+  add0-mod4:1:data0
+  add0-rm2:1:data0
+  add0-rm4:1:data0
+  add0:0:data0
+  add0-mod1:0:data0
+  add0-mod2:0:data0
+  add0-mod3:0:data0
+  add0-mod4:0:data0
+  add0-rm1:0:data0
+  add0-rm2:0:data0
+  add0-rm4:0:data0
+
+follow file history from wdir parent, unmodified in wdir:
+
+  $ hg log -f add0-mod3
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -f data add0-mod3
+  add0-mod3:3:+:data3
+  add0-mod3:0:+:data0
+
+  $ hg grep -f data add0-mod3
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod3:1:data0
+  add0-mod3:0:data0
+
+follow file history from wdir parent, modified in wdir:
+
+  $ hg log -f add0-mod4
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -f data add0-mod4
+  add0-mod4:0:+:data0
+
+  $ hg grep -f data add0-mod4
+  add0-mod4:3:data0
+  add0-mod4:1:data0
+  add0-mod4:0:data0
+
+follow file history from wdir parent, copied but unmodified:
+
+  $ hg log -f add0-cp1-cp3
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  1: A add0-cp1, A add0-cp1-mod1, A add0-cp1-mod1-rm3, M add0-mod1, R add0-rm1
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -f data add0-cp1-cp3
+  add0:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -f data add0-cp1-cp3
+  add0-cp1-cp3:3:data0
+
+follow file history from wdir parent, copied and modified:
+
+  $ hg log -f add0-cp1-mod1-cp3-mod3
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  1: A add0-cp1, A add0-cp1-mod1, A add0-cp1-mod1-rm3, M add0-mod1, R add0-rm1
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -f data add0-cp1-mod1-cp3-mod3
+  add0-cp1-mod1-cp3-mod3:3:+:data3
+  add0-cp1-mod1:1:+:data1
+  add0:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -f data add0-cp1-mod1-cp3-mod3
+  add0-cp1-mod1-cp3-mod3:3:data0
+  add0-cp1-mod1-cp3-mod3:3:data1
+  add0-cp1-mod1-cp3-mod3:3:data3
+
+follow file history from wdir parent, copied in wdir:
+
+  $ hg log -f add0-cp4
+  abort: cannot follow nonexistent file: "add0-cp4"
+  [255]
+
+  $ hg grep --diff -f data add0-cp4
+  abort: cannot follow nonexistent file: "add0-cp4"
+  [255]
+
+ BROKEN: maybe better to abort
+  $ hg grep -f data add0-cp4
+  [1]
+
+follow file history from wdir parent, removed:
+
+  $ hg log -f add0-cp1-mod1-rm3
+  abort: cannot follow file not in parent revision: "add0-cp1-mod1-rm3"
+  [255]
+
+  $ hg grep --diff -f data add0-cp1-mod1-rm3
+  abort: cannot follow file not in parent revision: "add0-cp1-mod1-rm3"
+  [255]
+
+ BROKEN: maybe better to abort
+  $ hg grep -f data add0-cp1-mod1-rm3
+  add0-cp1-mod1-rm3:1:data0
+  add0-cp1-mod1-rm3:1:data1
+
+follow file history from wdir parent (explicit), removed:
+
+  $ hg log -fr. add0-cp1-mod1-rm3
+  abort: cannot follow file not in any of the specified revisions: "add0-cp1-mod1-rm3"
+  [255]
+
+  $ hg grep --diff -fr. data add0-cp1-mod1-rm3
+  abort: cannot follow file not in any of the specified revisions: "add0-cp1-mod1-rm3"
+  [255]
+
+ BROKEN: should abort
+  $ hg grep -fr. data add0-cp1-mod1-rm3
+  add0-cp1-mod1-rm3:1:data0
+  add0-cp1-mod1-rm3:1:data1
+
+follow file history from wdir parent, removed in wdir:
+
+  $ hg log -f add0-rm4
+  abort: cannot follow file not in parent revision: "add0-rm4"
+  [255]
+
+  $ hg grep --diff -f data add0-rm4
+  abort: cannot follow file not in parent revision: "add0-rm4"
+  [255]
+
+ BROKEN: should abort
+  $ hg grep -f data add0-rm4
+  add0-rm4:3:data0
+  add0-rm4:1:data0
+  add0-rm4:0:data0
+
+follow file history from wdir parent (explicit), removed in wdir:
+
+  $ hg log -fr. add0-rm4
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr. data add0-rm4
+  add0-rm4:0:+:data0
+
+  $ hg grep -fr. data add0-rm4
+  add0-rm4:3:data0
+  add0-rm4:1:data0
+  add0-rm4:0:data0
+
+follow file history from wdir parent, multiple files:
+
+  $ hg log -f add0-mod3 add0-cp1-mod1
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  1: A add0-cp1, A add0-cp1-mod1, A add0-cp1-mod1-rm3, M add0-mod1, R add0-rm1
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -f data add0-mod3 add0-cp1-mod1
+  add0-mod3:3:+:data3
+  add0-cp1-mod1:1:+:data1
+  add0:0:+:data0
+  add0-mod3:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -f data add0-mod3 add0-cp1-mod1
+  add0-cp1-mod1:3:data0
+  add0-cp1-mod1:3:data1
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-cp1-mod1:1:data0
+  add0-cp1-mod1:1:data1
+  add0-mod3:1:data0
+  add0-mod3:0:data0
+
+follow file history from specified revision, modified:
+
+  $ hg log -fr2 add0-mod2
+  2: A add0-cp2, A add0-cp2-mod2, M add0-mod2, R add0-rm2
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr2 data add0-mod2
+  add0-mod2:2:+:data2
+  add0-mod2:0:+:data0
+
+  $ hg grep -fr2 data add0-mod2
+  add0-mod2:2:data0
+  add0-mod2:2:data2
+  add0-mod2:0:data0
+
+follow file history from specified revision, copied but unmodified:
+
+  $ hg log -fr2 add0-cp2
+  2: A add0-cp2, A add0-cp2-mod2, M add0-mod2, R add0-rm2
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr2 data add0-cp2
+  add0:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -fr2 data add0-cp2
+  add0-cp2:2:data0
+
+follow file history from specified revision, copied and modified:
+
+  $ hg log -fr2 add0-cp2-mod2
+  2: A add0-cp2, A add0-cp2-mod2, M add0-mod2, R add0-rm2
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr2 data add0-cp2-mod2
+  add0-cp2-mod2:2:+:data2
+  add0:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -fr2 data add0-cp2-mod2
+  add0-cp2-mod2:2:data0
+  add0-cp2-mod2:2:data2
+
+follow file history from specified revision, removed:
+
+  $ hg log -fr2 add0-rm2
+  abort: cannot follow file not in any of the specified revisions: "add0-rm2"
+  [255]
+
+  $ hg grep --diff -fr2 data add0-rm2
+  abort: cannot follow file not in any of the specified revisions: "add0-rm2"
+  [255]
+
+ BROKEN: should abort
+  $ hg grep -fr2 data add0-rm2
+  add0-rm2:0:data0
+
+follow file history from specified revision, multiple files:
+
+  $ hg log -fr2 add0-cp2 add0-mod2
+  2: A add0-cp2, A add0-cp2-mod2, M add0-mod2, R add0-rm2
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr2 data add0-cp2 add0-mod2
+  add0-mod2:2:+:data2
+  add0:0:+:data0
+  add0-mod2:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -fr2 data add0-cp2 add0-mod2
+  add0-cp2:2:data0
+  add0-mod2:2:data0
+  add0-mod2:2:data2
+  add0-mod2:0:data0
+
+follow file history from wdir, unmodified:
+
+  $ hg log -fr'wdir()' add0-mod3
+  2147483647: A add0-cp4, A add0-cp4-mod4, M add0-mod4, R add0-rm4
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr'wdir()' data add0-mod3
+  add0-mod3:3:+:data3
+  add0-mod3:0:+:data0
+
+  $ hg grep -fr'wdir()' data add0-mod3
+  add0-mod3:2147483647:data0
+  add0-mod3:2147483647:data3
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod3:1:data0
+  add0-mod3:0:data0
+
+follow file history from wdir, modified:
+
+  $ hg log -fr'wdir()' add0-mod4
+  2147483647: A add0-cp4, A add0-cp4-mod4, M add0-mod4, R add0-rm4
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr'wdir()' data add0-mod4
+  add0-mod4:2147483647:+:data4
+  add0-mod4:0:+:data0
+
+  $ hg grep -fr'wdir()' data add0-mod4
+  add0-mod4:2147483647:data0
+  add0-mod4:2147483647:data4
+  add0-mod4:3:data0
+  add0-mod4:1:data0
+  add0-mod4:0:data0
+
+follow file history from wdir, copied but unmodified:
+
+  $ hg log -fr'wdir()' add0-cp4
+  2147483647: A add0-cp4, A add0-cp4-mod4, M add0-mod4, R add0-rm4
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr'wdir()' data add0-cp4
+  add0:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -fr'wdir()' data add0-cp4
+  add0-cp4:2147483647:data0
+
+follow file history from wdir, copied and modified:
+
+  $ hg log -fr'wdir()' add0-cp4-mod4
+  2147483647: A add0-cp4, A add0-cp4-mod4, M add0-mod4, R add0-rm4
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr'wdir()' data add0-cp4-mod4
+  add0-cp4-mod4:2147483647:+:data4
+  add0:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -fr'wdir()' data add0-cp4-mod4
+  add0-cp4-mod4:2147483647:data0
+  add0-cp4-mod4:2147483647:data4
+
+follow file history from wdir, multiple files:
+
+  $ hg log -fr'wdir()' add0-cp4 add0-mod4 add0-mod3
+  2147483647: A add0-cp4, A add0-cp4-mod4, M add0-mod4, R add0-rm4
+  3: A add0-cp1-cp3, A add0-cp1-mod1-cp3-mod3, R add0-cp1-mod1-rm3, M add0-mod3
+  0: A add0, A add0-mod1, A add0-mod2, A add0-mod3, A add0-mod4, A add0-rm1, A add0-rm2, A add0-rm4
+
+  $ hg grep --diff -fr'wdir()' data add0-cp4 add0-mod4 add0-mod3
+  add0-mod4:2147483647:+:data4
+  add0-mod3:3:+:data3
+  add0:0:+:data0
+  add0-mod3:0:+:data0
+  add0-mod4:0:+:data0
+
+ BROKEN: should follow history across renames
+  $ hg grep -fr'wdir()' data add0-cp4 add0-mod4 add0-mod3
+  add0-cp4:2147483647:data0
+  add0-mod3:2147483647:data0
+  add0-mod3:2147483647:data3
+  add0-mod4:2147483647:data0
+  add0-mod4:2147483647:data4
+  add0-mod3:3:data0
+  add0-mod3:3:data3
+  add0-mod4:3:data0
+  add0-mod3:1:data0
+  add0-mod4:1:data0
+  add0-mod3:0:data0
+  add0-mod4:0:data0
+
+  $ cd ..

@@ -328,7 +328,7 @@ def _fm0decodemeta(data):
 #
 # - remaining bytes: the metadata, each (key, value) pair after the other.
 _fm1version = 1
-_fm1fixed = b'>IdhHBBB20s'
+_fm1fixed = b'>IdhHBBB'
 _fm1nodesha1 = b'20s'
 _fm1nodesha256 = b'32s'
 _fm1nodesha1size = _calcsize(_fm1nodesha1)
@@ -360,48 +360,36 @@ def _fm1purereadmarkers(data, off, stop):
     while off < stop:
         # read fixed part
         o1 = off + fsize
-        t, secs, tz, flags, numsuc, numpar, nummeta, prec = ufixed(data[off:o1])
+        t, secs, tz, flags, numsuc, numpar, nummeta = ufixed(data[off:o1])
 
         if flags & sha2flag:
-            # FIXME: prec was read as a SHA1, needs to be amended
-
-            # read 0 or more successors
-            if numsuc == 1:
-                o2 = o1 + sha2size
-                sucs = (data[o1:o2],)
-            else:
-                o2 = o1 + sha2size * numsuc
-                sucs = unpack(sha2fmt * numsuc, data[o1:o2])
-
-            # read parents
-            if numpar == noneflag:
-                o3 = o2
-                parents = None
-            elif numpar == 1:
-                o3 = o2 + sha2size
-                parents = (data[o2:o3],)
-            else:
-                o3 = o2 + sha2size * numpar
-                parents = unpack(sha2fmt * numpar, data[o2:o3])
+            nodefmt = sha2fmt
+            nodesize = sha2size
         else:
-            # read 0 or more successors
-            if numsuc == 1:
-                o2 = o1 + sha1size
-                sucs = (data[o1:o2],)
-            else:
-                o2 = o1 + sha1size * numsuc
-                sucs = unpack(sha1fmt * numsuc, data[o1:o2])
+            nodefmt = sha1fmt
+            nodesize = sha1size
 
-            # read parents
-            if numpar == noneflag:
-                o3 = o2
-                parents = None
-            elif numpar == 1:
-                o3 = o2 + sha1size
-                parents = (data[o2:o3],)
-            else:
-                o3 = o2 + sha1size * numpar
-                parents = unpack(sha1fmt * numpar, data[o2:o3])
+        (prec,) = unpack(nodefmt, data[o1 : o1 + nodesize])
+        o1 += nodesize
+
+        # read 0 or more successors
+        if numsuc == 1:
+            o2 = o1 + nodesize
+            sucs = (data[o1:o2],)
+        else:
+            o2 = o1 + nodesize * numsuc
+            sucs = unpack(nodefmt * numsuc, data[o1:o2])
+
+        # read parents
+        if numpar == noneflag:
+            o3 = o2
+            parents = None
+        elif numpar == 1:
+            o3 = o2 + nodesize
+            parents = (data[o2:o3],)
+        else:
+            o3 = o2 + nodesize * numpar
+            parents = unpack(nodefmt * numpar, data[o2:o3])
 
         # read metadata
         off = o3 + metasize * nummeta
@@ -423,7 +411,7 @@ def _fm1encodeonemarker(marker):
     if flags & usingsha256:
         _fm1node = _fm1nodesha256
     numsuc = len(sucs)
-    numextranodes = numsuc
+    numextranodes = 1 + numsuc
     if parents is None:
         numpar = _fm1parentnone
     else:
@@ -624,6 +612,7 @@ class obsstore(object):
         return True if a new marker have been added, False if the markers
         already existed (no op).
         """
+        flag = int(flag)
         if metadata is None:
             metadata = {}
         if date is None:
@@ -636,11 +625,18 @@ class obsstore(object):
                     date = dateutil.makedate()
             else:
                 date = dateutil.makedate()
-        if len(prec) != 20:
-            raise ValueError(prec)
-        for succ in succs:
-            if len(succ) != 20:
-                raise ValueError(succ)
+        if flag & usingsha256:
+            if len(prec) != 32:
+                raise ValueError(prec)
+            for succ in succs:
+                if len(succ) != 32:
+                    raise ValueError(succ)
+        else:
+            if len(prec) != 20:
+                raise ValueError(prec)
+            for succ in succs:
+                if len(succ) != 20:
+                    raise ValueError(succ)
         if prec in succs:
             raise ValueError(
                 'in-marker cycle with %s' % pycompat.sysstr(node.hex(prec))
@@ -659,7 +655,7 @@ class obsstore(object):
                     % (pycompat.bytestr(k), pycompat.bytestr(v))
                 )
 
-        marker = (bytes(prec), tuple(succs), int(flag), metadata, date, parents)
+        marker = (bytes(prec), tuple(succs), flag, metadata, date, parents)
         return bool(self.add(transaction, [marker]))
 
     def add(self, transaction, markers):

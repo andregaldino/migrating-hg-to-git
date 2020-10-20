@@ -80,6 +80,7 @@ Show debug commands if there are no other candidates
   debugbuilddag
   debugbundle
   debugcapabilities
+  debugchangedfiles
   debugcheckstate
   debugcolor
   debugcommands
@@ -258,7 +259,7 @@ Show all commands + options
   cat: output, rev, decode, include, exclude, template
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, stream, ssh, remotecmd, insecure
   commit: addremove, close-branch, amend, secret, edit, force-close-branch, interactive, include, exclude, message, logfile, date, user, subrepos
-  config: untrusted, edit, local, global, template
+  config: untrusted, edit, local, shared, global, template
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
   debugancestor: 
@@ -268,6 +269,7 @@ Show all commands + options
   debugbuilddag: mergeable-file, overwritten-file, new-file
   debugbundle: all, part-type, spec
   debugcapabilities: 
+  debugchangedfiles: 
   debugcheckstate: 
   debugcolor: style
   debugcommands: 
@@ -353,7 +355,7 @@ Show all commands + options
   push: force, rev, bookmark, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
   recover: verify
   remove: after, force, subrepos, include, exclude, dry-run
-  rename: after, force, include, exclude, dry-run
+  rename: after, at-rev, force, include, exclude, dry-run
   resolve: all, list, mark, unmark, no-status, re-merge, tool, include, exclude, template
   revert: all, date, rev, no-backup, interactive, include, exclude, dry-run
   rollback: dry-run, force

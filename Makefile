@@ -133,7 +133,7 @@ rust-tests: py_feature = $(shell $(PYTHON) -c \
 rust-tests:
 	cd $(HGROOT)/rust/hg-cpython \
 		&& $(CARGO) test --quiet --all \
-			--no-default-features --features "$(py_feature)"
+			--no-default-features --features "$(py_feature) $(HG_RUST_FEATURES)"
 
 check-code:
 	hg manifest | xargs python contrib/check-code.py
@@ -234,7 +234,6 @@ osx:
 	make -C contrib/chg \
 	  HGPATH=/usr/local/bin/hg \
 	  PYTHON=/usr/bin/python2.7 \
-	  HGEXTDIR=/Library/Python/2.7/site-packages/hgext \
 	  DESTDIR=../../build/mercurial \
 	  PREFIX=/usr/local \
 	  clean install

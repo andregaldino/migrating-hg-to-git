@@ -26,6 +26,8 @@ from . import (
     mdiff,
     phases,
     pycompat,
+    requirements,
+    scmutil,
     util,
 )
 
@@ -331,6 +333,10 @@ class cg1unpacker(object):
             clend = len(cl)
             changesets = clend - clstart
             progress.complete()
+            del deltas
+            # TODO Python 2.7 removal
+            # del efilesset
+            efilesset = None
             self.callback = None
 
             # pull off the manifest group
@@ -948,9 +954,7 @@ class cgpacker(object):
         # Treemanifests don't work correctly with fastpathlinkrev
         # either, because we don't discover which directory nodes to
         # send along with files. This could probably be fixed.
-        fastpathlinkrev = fastpathlinkrev and (
-            b'treemanifest' not in repo.requirements
-        )
+        fastpathlinkrev = fastpathlinkrev and not scmutil.istreemanifest(repo)
 
         fnodes = {}  # needed file nodes
 
@@ -1467,7 +1471,7 @@ def allsupportedversions(repo):
     if (
         repo.ui.configbool(b'experimental', b'changegroup3')
         or repo.ui.configbool(b'experimental', b'treemanifest')
-        or b'treemanifest' in repo.requirements
+        or scmutil.istreemanifest(repo)
     ):
         # we keep version 03 because we need to to exchange treemanifest data
         #
@@ -1495,7 +1499,7 @@ def supportedincomingversions(repo):
 # Changegroup versions that can be created from the repo
 def supportedoutgoingversions(repo):
     versions = allsupportedversions(repo)
-    if b'treemanifest' in repo.requirements:
+    if scmutil.istreemanifest(repo):
         # Versions 01 and 02 support only flat manifests and it's just too
         # expensive to convert between the flat manifest and tree manifest on
         # the fly. Since tree manifests are hashed differently, all of history
@@ -1503,7 +1507,7 @@ def supportedoutgoingversions(repo):
         # support versions 01 and 02.
         versions.discard(b'01')
         versions.discard(b'02')
-    if repository.NARROW_REQUIREMENT in repo.requirements:
+    if requirements.NARROW_REQUIREMENT in repo.requirements:
         # Versions 01 and 02 don't support revlog flags, and we need to
         # support that for stripping and unbundling to work.
         versions.discard(b'01')

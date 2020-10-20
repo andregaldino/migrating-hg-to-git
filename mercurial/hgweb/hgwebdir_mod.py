@@ -413,13 +413,7 @@ class hgwebdir(object):
                 else:
                     fname = req.qsparams[b'static']
                 static = self.ui.config(b"web", b"static", untrusted=False)
-                if not static:
-                    tp = self.templatepath or templater.templatepaths()
-                    if isinstance(tp, bytes):
-                        tp = [tp]
-                    static = [os.path.join(p, b'static') for p in tp]
-
-                staticfile(static, fname, res)
+                staticfile(self.templatepath, static, fname, res)
                 return res.sendresponse()
 
             # top-level index
@@ -538,11 +532,12 @@ class hgwebdir(object):
         return res.sendresponse()
 
     def templater(self, req, nonce):
-        def config(section, name, default=uimod._unset, untrusted=True):
-            return self.ui.config(section, name, default, untrusted)
+        def config(*args, **kwargs):
+            kwargs.setdefault('untrusted', True)
+            return self.ui.config(*args, **kwargs)
 
         vars = {}
-        styles, (style, mapfile) = hgweb_mod.getstyle(
+        styles, (style, mapfile, fp) = hgweb_mod.getstyle(
             req, config, self.templatepath
         )
         if style == styles[0]:
@@ -577,5 +572,6 @@ class hgwebdir(object):
             else:
                 yield config(b'web', b'motd')
 
-        tmpl = templater.templater.frommapfile(mapfile, defaults=defaults)
-        return tmpl
+        return templater.templater.frommapfile(
+            mapfile, fp=fp, defaults=defaults
+        )

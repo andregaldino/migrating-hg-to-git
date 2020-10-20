@@ -38,6 +38,7 @@ from . import (
     phases,
     policy,
     pycompat,
+    requirements as requirementsmod,
     revsetlang,
     similar,
     smartset,
@@ -215,7 +216,7 @@ def callcatch(ui, func):
     except error.WdirUnsupported:
         ui.error(_(b"abort: working directory revision cannot be specified\n"))
     except error.Abort as inst:
-        ui.error(_(b"abort: %s\n") % inst)
+        ui.error(_(b"abort: %s\n") % inst.message)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)
     except ImportError as inst:
@@ -363,13 +364,15 @@ def filteredhash(repo, maxrev):
     cl = repo.changelog
     if not cl.filteredrevs:
         return None
-    key = None
-    revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
-    if revs:
-        s = hashutil.sha1()
-        for rev in revs:
-            s.update(b'%d;' % rev)
-        key = s.digest()
+    key = cl._filteredrevs_hashcache.get(maxrev)
+    if not key:
+        revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
+        if revs:
+            s = hashutil.sha1()
+            for rev in revs:
+                s.update(b'%d;' % rev)
+            key = s.digest()
+            cl._filteredrevs_hashcache[maxrev] = key
     return key
 
 
@@ -755,6 +758,55 @@ def revrange(repo, specs, localalias=None):
             spec = revsetlang.formatspec(b'%d', spec)
         allspecs.append(spec)
     return repo.anyrevs(allspecs, user=True, localalias=localalias)
+
+
+def increasingwindows(windowsize=8, sizelimit=512):
+    while True:
+        yield windowsize
+        if windowsize < sizelimit:
+            windowsize *= 2
+
+
+def walkchangerevs(repo, revs, makefilematcher, prepare):
+    '''Iterate over files and the revs in a "windowed" way.
+
+    Callers most commonly need to iterate backwards over the history
+    in which they are interested. Doing so has awful (quadratic-looking)
+    performance, so we use iterators in a "windowed" way.
+
+    We walk a window of revisions in the desired order.  Within the
+    window, we first walk forwards to gather data, then in the desired
+    order (usually backwards) to display it.
+
+    This function returns an iterator yielding contexts. Before
+    yielding each context, the iterator will first call the prepare
+    function on each context in the window in forward order.'''
+
+    if not revs:
+        return []
+    change = repo.__getitem__
+
+    def iterate():
+        it = iter(revs)
+        stopiteration = False
+        for windowsize in increasingwindows():
+            nrevs = []
+            for i in pycompat.xrange(windowsize):
+                rev = next(it, None)
+                if rev is None:
+                    stopiteration = True
+                    break
+                nrevs.append(rev)
+            for rev in sorted(nrevs):
+                ctx = change(rev)
+                prepare(ctx, makefilematcher(ctx))
+            for rev in nrevs:
+                yield change(rev)
+
+            if stopiteration:
+                break
+
+    return iterate()
 
 
 def meaningfulparents(repo, ctx):
@@ -1470,11 +1522,39 @@ def movedirstate(repo, newctx, match=None):
     repo._quick_access_changeid_invalidate()
 
 
+def filterrequirements(requirements):
+    """ filters the requirements into two sets:
+
+    wcreq: requirements which should be written in .hg/requires
+    storereq: which should be written in .hg/store/requires
+
+    Returns (wcreq, storereq)
+    """
+    if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
+        wc, store = set(), set()
+        for r in requirements:
+            if r in requirementsmod.WORKING_DIR_REQUIREMENTS:
+                wc.add(r)
+            else:
+                store.add(r)
+        return wc, store
+    return requirements, None
+
+
+def istreemanifest(repo):
+    """ returns whether the repository is using treemanifest or not """
+    return requirementsmod.TREEMANIFEST_REQUIREMENT in repo.requirements
+
+
 def writereporequirements(repo, requirements=None):
     """ writes requirements for the repo to .hg/requires """
     if requirements:
         repo.requirements = requirements
-    writerequires(repo.vfs, repo.requirements)
+    wcreq, storereq = filterrequirements(repo.requirements)
+    if wcreq is not None:
+        writerequires(repo.vfs, wcreq)
+    if storereq is not None:
+        writerequires(repo.svfs, storereq)
 
 
 def writerequires(opener, requirements):
@@ -1709,29 +1789,6 @@ def extdatasource(repo, source):
         )
 
     return data
-
-
-def _locksub(repo, lock, envvar, cmd, environ=None, *args, **kwargs):
-    if lock is None:
-        raise error.LockInheritanceContractViolation(
-            b'lock can only be inherited while held'
-        )
-    if environ is None:
-        environ = {}
-    with lock.inherit() as locker:
-        environ[envvar] = locker
-        return repo.ui.system(cmd, environ=environ, *args, **kwargs)
-
-
-def wlocksub(repo, cmd, *args, **kwargs):
-    """run cmd as a subprocess that allows inheriting repo's wlock
-
-    This can only be called while the wlock is held. This takes all the
-    arguments that ui.system does, and returns the exit code of the
-    subprocess."""
-    return _locksub(
-        repo, repo.currentwlock(), b'HG_WLOCK_LOCKER', cmd, *args, **kwargs
-    )
 
 
 class progress(object):

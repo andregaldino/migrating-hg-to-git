@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::revlog::node::NULL_NODE_ID;
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState, SIZE_FROM_OTHER_PARENT},
     pack_dirstate, parse_dirstate,
@@ -15,7 +16,7 @@ use crate::{
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
     DirstateParents, DirstateParseError, FastHashMap, StateMap,
 };
-use core::borrow::Borrow;
+use micro_timer::timed;
 use std::collections::HashSet;
 use std::convert::TryInto;
 use std::iter::FromIterator;
@@ -24,7 +25,6 @@ use std::time::Duration;
 
 pub type FileFoldMap = FastHashMap<HgPathBuf, HgPathBuf>;
 
-const NULL_ID: [u8; 20] = [0; 20];
 const MTIME_UNSET: i32 = -1;
 
 #[derive(Default)]
@@ -66,14 +66,14 @@ impl DirstateMap {
     }
 
     pub fn clear(&mut self) {
-        self.state_map.clear();
+        self.state_map = StateMap::default();
         self.copy_map.clear();
         self.file_fold_map = None;
         self.non_normal_set = None;
         self.other_parent_set = None;
         self.set_parents(&DirstateParents {
-            p1: NULL_ID,
-            p2: NULL_ID,
+            p1: NULL_NODE_ID,
+            p2: NULL_NODE_ID,
         })
     }
 
@@ -188,18 +188,15 @@ impl DirstateMap {
     ) {
         for filename in filenames {
             let mut changed = false;
-            self.state_map
-                .entry(filename.to_owned())
-                .and_modify(|entry| {
-                    if entry.state == EntryState::Normal && entry.mtime == now
-                    {
-                        changed = true;
-                        *entry = DirstateEntry {
-                            mtime: MTIME_UNSET,
-                            ..*entry
-                        };
-                    }
-                });
+            if let Some(entry) = self.state_map.get_mut(&filename) {
+                if entry.state == EntryState::Normal && entry.mtime == now {
+                    changed = true;
+                    *entry = DirstateEntry {
+                        mtime: MTIME_UNSET,
+                        ..*entry
+                    };
+                }
+            }
             if changed {
                 self.get_non_normal_other_parent_entries()
                     .0
@@ -256,6 +253,7 @@ impl DirstateMap {
         )
     }
 
+    #[cfg(not(feature = "dirstate-tree"))]
     pub fn set_non_normal_other_parent_entries(&mut self, force: bool) {
         if !force
             && self.non_normal_set.is_some()
@@ -278,6 +276,34 @@ impl DirstateMap {
             }
             if *state == EntryState::Normal && *size == SIZE_FROM_OTHER_PARENT
             {
+                other_parent.insert(filename.to_owned());
+            }
+        }
+        self.non_normal_set = Some(non_normal);
+        self.other_parent_set = Some(other_parent);
+    }
+    #[cfg(feature = "dirstate-tree")]
+    pub fn set_non_normal_other_parent_entries(&mut self, force: bool) {
+        if !force
+            && self.non_normal_set.is_some()
+            && self.other_parent_set.is_some()
+        {
+            return;
+        }
+        let mut non_normal = HashSet::new();
+        let mut other_parent = HashSet::new();
+
+        for (
+            filename,
+            DirstateEntry {
+                state, size, mtime, ..
+            },
+        ) in self.state_map.iter()
+        {
+            if state != EntryState::Normal || mtime == MTIME_UNSET {
+                non_normal.insert(filename.to_owned());
+            }
+            if state == EntryState::Normal && size == SIZE_FROM_OTHER_PARENT {
                 other_parent.insert(filename.to_owned());
             }
         }
@@ -340,8 +366,8 @@ impl DirstateMap {
             };
         } else if file_contents.is_empty() {
             parents = DirstateParents {
-                p1: NULL_ID,
-                p2: NULL_ID,
+                p1: NULL_NODE_ID,
+                p2: NULL_NODE_ID,
             };
         } else {
             return Err(DirstateError::Parse(DirstateParseError::Damaged));
@@ -356,6 +382,7 @@ impl DirstateMap {
         self.dirty_parents = true;
     }
 
+    #[timed]
     pub fn read(
         &mut self,
         file_contents: &[u8],
@@ -364,11 +391,17 @@ impl DirstateMap {
             return Ok(None);
         }
 
-        let parents = parse_dirstate(
-            &mut self.state_map,
-            &mut self.copy_map,
-            file_contents,
-        )?;
+        let (parents, entries, copies) = parse_dirstate(file_contents)?;
+        self.state_map.extend(
+            entries
+                .into_iter()
+                .map(|(path, entry)| (path.to_owned(), entry)),
+        );
+        self.copy_map.extend(
+            copies
+                .into_iter()
+                .map(|(path, copy)| (path.to_owned(), copy.to_owned())),
+        );
 
         if !self.dirty_parents {
             self.set_parents(&parents);
@@ -390,17 +423,33 @@ impl DirstateMap {
         self.set_non_normal_other_parent_entries(true);
         Ok(packed)
     }
-
+    #[cfg(not(feature = "dirstate-tree"))]
     pub fn build_file_fold_map(&mut self) -> &FileFoldMap {
         if let Some(ref file_fold_map) = self.file_fold_map {
             return file_fold_map;
         }
         let mut new_file_fold_map = FileFoldMap::default();
-        for (filename, DirstateEntry { state, .. }) in self.state_map.borrow()
-        {
+
+        for (filename, DirstateEntry { state, .. }) in self.state_map.iter() {
             if *state == EntryState::Removed {
                 new_file_fold_map
-                    .insert(normalize_case(filename), filename.to_owned());
+                    .insert(normalize_case(&filename), filename.to_owned());
+            }
+        }
+        self.file_fold_map = Some(new_file_fold_map);
+        self.file_fold_map.as_ref().unwrap()
+    }
+    #[cfg(feature = "dirstate-tree")]
+    pub fn build_file_fold_map(&mut self) -> &FileFoldMap {
+        if let Some(ref file_fold_map) = self.file_fold_map {
+            return file_fold_map;
+        }
+        let mut new_file_fold_map = FileFoldMap::default();
+
+        for (filename, DirstateEntry { state, .. }) in self.state_map.iter() {
+            if state == EntryState::Removed {
+                new_file_fold_map
+                    .insert(normalize_case(&filename), filename.to_owned());
             }
         }
         self.file_fold_map = Some(new_file_fold_map);

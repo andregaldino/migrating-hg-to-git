@@ -231,7 +231,7 @@ if safehasattr(registrar, 'command'):
     command = registrar.command(cmdtable)
 elif safehasattr(cmdutil, 'command'):
     command = cmdutil.command(cmdtable)
-    if b'norepo' not in getargspec(command).args:
+    if 'norepo' not in getargspec(command).args:
         # for "historical portability":
         # wrap original cmdutil.command, because "norepo" option has
         # been available since 3.1 (or 75a96326cecb)
@@ -805,7 +805,7 @@ def perfaddremove(ui, repo, **opts):
         repo.ui.quiet = True
         matcher = scmutil.match(repo[None])
         opts[b'dry_run'] = True
-        if b'uipathfn' in getargspec(scmutil.addremove).args:
+        if 'uipathfn' in getargspec(scmutil.addremove).args:
             uipathfn = scmutil.getuipathfn(repo)
             timer(lambda: scmutil.addremove(repo, matcher, b"", uipathfn, opts))
         else:

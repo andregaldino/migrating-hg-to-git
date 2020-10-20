@@ -34,7 +34,6 @@ from mercurial import (
     dirstateguard,
     error,
     extensions,
-    hg,
     merge as mergemod,
     mergestate as mergestatemod,
     mergeutil,
@@ -166,7 +165,7 @@ def _ctxdesc(ctx):
 class rebaseruntime(object):
     """This class is a container for rebase runtime state"""
 
-    def __init__(self, repo, ui, inmemory=False, opts=None):
+    def __init__(self, repo, ui, inmemory=False, dryrun=False, opts=None):
         if opts is None:
             opts = {}
 
@@ -212,6 +211,7 @@ class rebaseruntime(object):
         self.obsoletenotrebased = {}
         self.obsoletewithoutsuccessorindestination = set()
         self.inmemory = inmemory
+        self.dryrun = dryrun
         self.stateobj = statemod.cmdstate(repo, b'rebasestate')
 
     @property
@@ -448,7 +448,7 @@ class rebaseruntime(object):
             from mercurial.context import overlayworkingctx
 
             self.wctx = overlayworkingctx(self.repo)
-            self.repo.ui.debug(b"rebasing in-memory\n")
+            self.repo.ui.debug(b"rebasing in memory\n")
         else:
             self.wctx = self.repo[None]
             self.repo.ui.debug(b"rebasing on disk\n")
@@ -517,7 +517,7 @@ class rebaseruntime(object):
         p.complete()
         ui.note(_(b'rebase merging completed\n'))
 
-    def _concludenode(self, rev, p1, editor, commitmsg=None):
+    def _concludenode(self, rev, editor, commitmsg=None):
         '''Commit the wd changes with parents p1 and p2.
 
         Reuse commit info from rev but also store useful information in extra.
@@ -548,7 +548,6 @@ class rebaseruntime(object):
                     user=ctx.user(),
                     date=date,
                 )
-                mergestatemod.mergestate.clean(repo)
             else:
                 newnode = commitnode(
                     repo,
@@ -563,7 +562,6 @@ class rebaseruntime(object):
 
     def _rebasenode(self, tr, rev, allowdivergence, progressfn):
         repo, ui, opts = self.repo, self.ui, self.opts
-        dest = self.destmap[rev]
         ctx = repo[rev]
         desc = _ctxdesc(ctx)
         if self.state[rev] == rev:
@@ -616,21 +614,43 @@ class rebaseruntime(object):
             else:
                 overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
                 with ui.configoverride(overrides, b'rebase'):
-                    stats = rebasenode(
-                        repo,
-                        rev,
-                        p1,
-                        p2,
-                        base,
-                        self.collapsef,
-                        dest,
-                        wctx=self.wctx,
-                    )
-                    if stats.unresolvedcount > 0:
-                        if self.inmemory:
-                            raise error.InMemoryMergeConflictsError()
-                        else:
+                    try:
+                        rebasenode(
+                            repo,
+                            rev,
+                            p1,
+                            p2,
+                            base,
+                            self.collapsef,
+                            wctx=self.wctx,
+                        )
+                    except error.InMemoryMergeConflictsError:
+                        if self.dryrun:
                             raise error.ConflictResolutionRequired(b'rebase')
+                        if self.collapsef:
+                            # TODO: Make the overlayworkingctx reflected
+                            # in the working copy here instead of re-raising
+                            # so the entire rebase operation is retried.
+                            raise
+                        ui.status(
+                            _(
+                                b"hit merge conflicts; rebasing that "
+                                b"commit again in the working copy\n"
+                            )
+                        )
+                        cmdutil.bailifchanged(repo)
+                        self.inmemory = False
+                        self._assignworkingcopy()
+                        mergemod.update(repo[p1], wc=self.wctx)
+                        rebasenode(
+                            repo,
+                            rev,
+                            p1,
+                            p2,
+                            base,
+                            self.collapsef,
+                            wctx=self.wctx,
+                        )
             if not self.collapsef:
                 merging = p2 != nullrev
                 editform = cmdutil.mergeeditform(merging, b'rebase')
@@ -643,7 +663,7 @@ class rebaseruntime(object):
                 # parents, and we don't want to create a merge commit here (unless
                 # we're rebasing a merge commit).
                 self.wctx.setparents(repo[p1].node(), repo[p2].node())
-                newnode = self._concludenode(rev, p1, editor)
+                newnode = self._concludenode(rev, editor)
             else:
                 # Skip commit if we are collapsing
                 newnode = None
@@ -710,7 +730,7 @@ class rebaseruntime(object):
 
             self.wctx.setparents(repo[p1].node(), repo[self.external].node())
             newnode = self._concludenode(
-                revtoreuse, p1, editor, commitmsg=commitmsg
+                revtoreuse, editor, commitmsg=commitmsg
             )
 
             if newnode is not None:
@@ -729,7 +749,7 @@ class rebaseruntime(object):
             newwd = self.originalwd
         if newwd not in [c.rev() for c in repo[None].parents()]:
             ui.note(_(b"update back to initial working directory parent\n"))
-            hg.updaterepo(repo, newwd, overwrite=False)
+            mergemod.update(repo[newwd])
 
         collapsedas = None
         if self.collapsef and not self.keepf:
@@ -1072,7 +1092,7 @@ def rebase(ui, repo, **opts):
                 )
             # update to the current working revision
             # to clear interrupted merge
-            hg.updaterepo(repo, rbsrt.originalwd, overwrite=True)
+            mergemod.clean_update(repo[rbsrt.originalwd])
             rbsrt._finishrebase()
             return 0
     elif inmemory:
@@ -1089,9 +1109,6 @@ def rebase(ui, repo, **opts):
                     b' merge\n'
                 )
             )
-            # TODO: Make in-memory merge not use the on-disk merge state, so
-            # we don't have to clean it here
-            mergestatemod.mergestate.clean(repo)
             clearstatus(repo)
             clearcollapsemsg(repo)
             return _dorebase(ui, repo, action, opts, inmemory=False)
@@ -1100,7 +1117,7 @@ def rebase(ui, repo, **opts):
 
 
 def _dryrunrebase(ui, repo, action, opts):
-    rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
+    rbsrt = rebaseruntime(repo, ui, inmemory=True, dryrun=True, opts=opts)
     confirm = opts.get(b'confirm')
     if confirm:
         ui.status(_(b'starting in-memory rebase\n'))
@@ -1114,15 +1131,9 @@ def _dryrunrebase(ui, repo, action, opts):
             overrides = {(b'rebase', b'singletransaction'): True}
             with ui.configoverride(overrides, b'rebase'):
                 _origrebase(
-                    ui,
-                    repo,
-                    action,
-                    opts,
-                    rbsrt,
-                    inmemory=True,
-                    leaveunfinished=True,
+                    ui, repo, action, opts, rbsrt,
                 )
-        except error.InMemoryMergeConflictsError:
+        except error.ConflictResolutionRequired:
             ui.status(_(b'hit a merge conflict\n'))
             return 1
         except error.Abort:
@@ -1162,13 +1173,11 @@ def _dryrunrebase(ui, repo, action, opts):
 
 
 def _dorebase(ui, repo, action, opts, inmemory=False):
-    rbsrt = rebaseruntime(repo, ui, inmemory, opts)
-    return _origrebase(ui, repo, action, opts, rbsrt, inmemory=inmemory)
+    rbsrt = rebaseruntime(repo, ui, inmemory, opts=opts)
+    return _origrebase(ui, repo, action, opts, rbsrt)
 
 
-def _origrebase(
-    ui, repo, action, opts, rbsrt, inmemory=False, leaveunfinished=False
-):
+def _origrebase(ui, repo, action, opts, rbsrt):
     assert action != b'stop'
     with repo.wlock(), repo.lock():
         if opts.get(b'interactive'):
@@ -1213,7 +1222,7 @@ def _origrebase(
             destmap = _definedestmap(
                 ui,
                 repo,
-                inmemory,
+                rbsrt.inmemory,
                 opts.get(b'dest', None),
                 opts.get(b'source', []),
                 opts.get(b'base', []),
@@ -1238,11 +1247,11 @@ def _origrebase(
             # Same logic for the dirstate guard, except we don't create one when
             # rebasing in-memory (it's not needed).
             dsguard = None
-            if singletr and not inmemory:
+            if singletr and not rbsrt.inmemory:
                 dsguard = dirstateguard.dirstateguard(repo, b'rebase')
             with util.acceptintervention(dsguard):
                 rbsrt._performrebase(tr)
-                if not leaveunfinished:
+                if not rbsrt.dryrun:
                     rbsrt._finishrebase()
 
 
@@ -1477,7 +1486,7 @@ def commitnode(repo, editor, extra, user, date, commitmsg):
         return newnode
 
 
-def rebasenode(repo, rev, p1, p2, base, collapse, dest, wctx):
+def rebasenode(repo, rev, p1, p2, base, collapse, wctx):
     """Rebase a single revision rev on top of p1 using base as merge ancestor"""
     # Merge phase
     # Update to destination and merge it with local
@@ -1501,7 +1510,7 @@ def rebasenode(repo, rev, p1, p2, base, collapse, dest, wctx):
 
     # See explanation in merge.graft()
     mergeancestor = repo.changelog.isancestor(p1ctx.node(), ctx.node())
-    stats = mergemod.update(
+    stats = mergemod._update(
         repo,
         rev,
         branchmerge=True,
@@ -1513,13 +1522,18 @@ def rebasenode(repo, rev, p1, p2, base, collapse, dest, wctx):
     )
     wctx.setparents(p1ctx.node(), repo[p2].node())
     if collapse:
-        copies.graftcopies(wctx, ctx, repo[dest])
+        copies.graftcopies(wctx, ctx, p1ctx)
     else:
         # If we're not using --collapse, we need to
         # duplicate copies between the revision we're
         # rebasing and its first parent.
         copies.graftcopies(wctx, ctx, ctx.p1())
-    return stats
+
+    if stats.unresolvedcount > 0:
+        if wctx.isinmemory():
+            raise error.InMemoryMergeConflictsError()
+        else:
+            raise error.ConflictResolutionRequired(b'rebase')
 
 
 def adjustdest(repo, rev, destmap, state, skipped):

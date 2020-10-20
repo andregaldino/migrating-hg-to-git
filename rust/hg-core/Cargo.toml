@@ -23,9 +23,24 @@ same-file = "1.0.6"
 crossbeam = "0.7.3"
 micro-timer = "0.3.0"
 log = "0.4.8"
+memmap = "0.7.0"
+zstd = "0.5.3"
+rust-crypto = "0.2.36"
+
+# We don't use the `miniz-oxide` backend to not change rhg benchmarks and until
+# we have a clearer view of which backend is the fastest.
+[dependencies.flate2]
+version = "1.0.16"
+features = ["zlib"]
+default-features = false
 
 [dev-dependencies]
 clap = "*"
-memmap = "0.7.0"
 pretty_assertions = "0.6.1"
 tempfile = "3.1.0"
+
+[features]
+# Use a (still unoptimized) tree for the dirstate instead of the current flat
+# dirstate. This is not yet recommended for performance reasons. A future
+# version might make it the default, or make it a runtime option.
+dirstate-tree = []

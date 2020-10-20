@@ -19,17 +19,21 @@ pub const PARENT_SIZE: usize = 20;
 /// Dirstate entries have a static part of 8 + 32 + 32 + 32 + 32 bits.
 const MIN_ENTRY_SIZE: usize = 17;
 
-// TODO parse/pack: is mutate-on-loop better for performance?
+type ParseResult<'a> = (
+    DirstateParents,
+    Vec<(&'a HgPath, DirstateEntry)>,
+    Vec<(&'a HgPath, &'a HgPath)>,
+);
 
 #[timed]
 pub fn parse_dirstate(
-    state_map: &mut StateMap,
-    copy_map: &mut CopyMap,
     contents: &[u8],
-) -> Result<DirstateParents, DirstateParseError> {
+) -> Result<ParseResult, DirstateParseError> {
     if contents.len() < PARENT_SIZE * 2 {
         return Err(DirstateParseError::TooLittleData);
     }
+    let mut copies = vec![];
+    let mut entries = vec![];
 
     let mut curr_pos = PARENT_SIZE * 2;
     let parents = DirstateParents {
@@ -63,27 +67,24 @@ pub fn parse_dirstate(
         };
 
         if let Some(copy_path) = copy {
-            copy_map.insert(
-                HgPath::new(path).to_owned(),
-                HgPath::new(copy_path).to_owned(),
-            );
+            copies.push((HgPath::new(path), HgPath::new(copy_path)));
         };
-        state_map.insert(
-            HgPath::new(path).to_owned(),
+        entries.push((
+            HgPath::new(path),
             DirstateEntry {
                 state,
                 mode,
                 size,
                 mtime,
             },
-        );
+        ));
         curr_pos = curr_pos + MIN_ENTRY_SIZE + (path_len);
     }
-
-    Ok(parents)
+    Ok((parents, entries, copies))
 }
 
 /// `now` is the duration in seconds since the Unix epoch
+#[cfg(not(feature = "dirstate-tree"))]
 pub fn pack_dirstate(
     state_map: &mut StateMap,
     copy_map: &CopyMap,
@@ -98,6 +99,73 @@ pub fn pack_dirstate(
         .map(|(filename, _)| {
             let mut length = MIN_ENTRY_SIZE + filename.len();
             if let Some(copy) = copy_map.get(filename) {
+                length += copy.len() + 1;
+            }
+            length
+        })
+        .sum();
+    let expected_size = expected_size + PARENT_SIZE * 2;
+
+    let mut packed = Vec::with_capacity(expected_size);
+
+    packed.extend(&parents.p1);
+    packed.extend(&parents.p2);
+
+    for (filename, entry) in state_map.iter_mut() {
+        let new_filename = filename.to_owned();
+        let mut new_mtime: i32 = entry.mtime;
+        if entry.state == EntryState::Normal && entry.mtime == now {
+            // The file was last modified "simultaneously" with the current
+            // write to dirstate (i.e. within the same second for file-
+            // systems with a granularity of 1 sec). This commonly happens
+            // for at least a couple of files on 'update'.
+            // The user could change the file without changing its size
+            // within the same second. Invalidate the file's mtime in
+            // dirstate, forcing future 'status' calls to compare the
+            // contents of the file if the size is the same. This prevents
+            // mistakenly treating such files as clean.
+            new_mtime = -1;
+            *entry = DirstateEntry {
+                mtime: new_mtime,
+                ..*entry
+            };
+        }
+        let mut new_filename = new_filename.into_vec();
+        if let Some(copy) = copy_map.get(filename) {
+            new_filename.push(b'\0');
+            new_filename.extend(copy.bytes());
+        }
+
+        packed.write_u8(entry.state.into())?;
+        packed.write_i32::<BigEndian>(entry.mode)?;
+        packed.write_i32::<BigEndian>(entry.size)?;
+        packed.write_i32::<BigEndian>(new_mtime)?;
+        packed.write_i32::<BigEndian>(new_filename.len() as i32)?;
+        packed.extend(new_filename)
+    }
+
+    if packed.len() != expected_size {
+        return Err(DirstatePackError::BadSize(expected_size, packed.len()));
+    }
+
+    Ok(packed)
+}
+/// `now` is the duration in seconds since the Unix epoch
+#[cfg(feature = "dirstate-tree")]
+pub fn pack_dirstate(
+    state_map: &mut StateMap,
+    copy_map: &CopyMap,
+    parents: DirstateParents,
+    now: Duration,
+) -> Result<Vec<u8>, DirstatePackError> {
+    // TODO move away from i32 before 2038.
+    let now: i32 = now.as_secs().try_into().expect("time overflow");
+
+    let expected_size: usize = state_map
+        .iter()
+        .map(|(filename, _)| {
+            let mut length = MIN_ENTRY_SIZE + filename.len();
+            if let Some(copy) = copy_map.get(&filename) {
                 length += copy.len() + 1;
             }
             length
@@ -129,12 +197,12 @@ pub fn pack_dirstate(
                 filename.to_owned(),
                 DirstateEntry {
                     mtime: new_mtime,
-                    ..*entry
+                    ..entry
                 },
             ));
         }
         let mut new_filename = new_filename.into_vec();
-        if let Some(copy) = copy_map.get(filename) {
+        if let Some(copy) = copy_map.get(&filename) {
             new_filename.push(b'\0');
             new_filename.extend(copy.bytes());
         }
@@ -160,10 +228,11 @@ pub fn pack_dirstate(
 mod tests {
     use super::*;
     use crate::{utils::hg_path::HgPathBuf, FastHashMap};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_pack_dirstate_empty() {
-        let mut state_map: StateMap = FastHashMap::default();
+        let mut state_map = StateMap::default();
         let copymap = FastHashMap::default();
         let parents = DirstateParents {
             p1: *b"12345678910111213141",
@@ -285,14 +354,17 @@ mod tests {
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
 
-        let mut new_state_map: StateMap = FastHashMap::default();
-        let mut new_copy_map: CopyMap = FastHashMap::default();
-        let new_parents = parse_dirstate(
-            &mut new_state_map,
-            &mut new_copy_map,
-            result.as_slice(),
-        )
-        .unwrap();
+        let (new_parents, entries, copies) =
+            parse_dirstate(result.as_slice()).unwrap();
+        let new_state_map: StateMap = entries
+            .into_iter()
+            .map(|(path, entry)| (path.to_owned(), entry))
+            .collect();
+        let new_copy_map: CopyMap = copies
+            .into_iter()
+            .map(|(path, copy)| (path.to_owned(), copy.to_owned()))
+            .collect();
+
         assert_eq!(
             (parents, state_map, copymap),
             (new_parents, new_state_map, new_copy_map)
@@ -360,14 +432,17 @@ mod tests {
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
 
-        let mut new_state_map: StateMap = FastHashMap::default();
-        let mut new_copy_map: CopyMap = FastHashMap::default();
-        let new_parents = parse_dirstate(
-            &mut new_state_map,
-            &mut new_copy_map,
-            result.as_slice(),
-        )
-        .unwrap();
+        let (new_parents, entries, copies) =
+            parse_dirstate(result.as_slice()).unwrap();
+        let new_state_map: StateMap = entries
+            .into_iter()
+            .map(|(path, entry)| (path.to_owned(), entry))
+            .collect();
+        let new_copy_map: CopyMap = copies
+            .into_iter()
+            .map(|(path, copy)| (path.to_owned(), copy.to_owned()))
+            .collect();
+
         assert_eq!(
             (parents, state_map, copymap),
             (new_parents, new_state_map, new_copy_map)
@@ -403,14 +478,16 @@ mod tests {
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
 
-        let mut new_state_map: StateMap = FastHashMap::default();
-        let mut new_copy_map: CopyMap = FastHashMap::default();
-        let new_parents = parse_dirstate(
-            &mut new_state_map,
-            &mut new_copy_map,
-            result.as_slice(),
-        )
-        .unwrap();
+        let (new_parents, entries, copies) =
+            parse_dirstate(result.as_slice()).unwrap();
+        let new_state_map: StateMap = entries
+            .into_iter()
+            .map(|(path, entry)| (path.to_owned(), entry))
+            .collect();
+        let new_copy_map: CopyMap = copies
+            .into_iter()
+            .map(|(path, copy)| (path.to_owned(), copy.to_owned()))
+            .collect();
 
         assert_eq!(
             (

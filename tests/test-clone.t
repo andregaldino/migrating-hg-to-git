@@ -1241,6 +1241,7 @@ Lower the warning threshold to simulate a large repo
   $ cat >> $HGRCPATH << EOF
   > [fsmonitor]
   > warn_update_file_count = 2
+  > warn_update_file_count_rust = 2
   > EOF
 
 We should see a warning about no fsmonitor on supported platforms

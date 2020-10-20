@@ -590,6 +590,11 @@ coreconfigitem(
 coreconfigitem(
     b'experimental', b'maxdeltachainspan', default=-1,
 )
+# tracks files which were undeleted (merge might delete them but we explicitly
+# kept/undeleted them) and creates new filenodes for them
+coreconfigitem(
+    b'experimental', b'merge-track-salvaged', default=False,
+)
 coreconfigitem(
     b'experimental', b'mergetempdirprefix', default=None,
 )
@@ -634,9 +639,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental', b'httppostargs', default=False,
-)
-coreconfigitem(
-    b'experimental', b'mergedriver', default=None,
 )
 coreconfigitem(b'experimental', b'nointerrupt', default=False)
 coreconfigitem(b'experimental', b'nointerrupt-interactiveonly', default=True)
@@ -784,6 +786,9 @@ coreconfigitem(
     b'format', b'exp-use-side-data', default=False, experimental=True,
 )
 coreconfigitem(
+    b'format', b'exp-share-safe', default=False, experimental=True,
+)
+coreconfigitem(
     b'format', b'internal-phase', default=False, experimental=True,
 )
 coreconfigitem(
@@ -791,6 +796,9 @@ coreconfigitem(
 )
 coreconfigitem(
     b'fsmonitor', b'warn_update_file_count', default=50000,
+)
+coreconfigitem(
+    b'fsmonitor', b'warn_update_file_count_rust', default=400000,
 )
 coreconfigitem(
     b'help', br'hidden-command\..*', default=False, generic=True,

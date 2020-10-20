@@ -21,10 +21,12 @@ from . import (
     mergestate as mergestatemod,
     pathutil,
     pycompat,
+    requirements,
     scmutil,
     util,
 )
 from .utils import hashutil
+
 
 # Whether sparse features are enabled. This variable is intended to be
 # temporary to facilitate porting sparse to core. It should eventually be
@@ -269,19 +271,17 @@ def prunetemporaryincludes(repo):
 
     sparsematch = matcher(repo, includetemp=False)
     dirstate = repo.dirstate
-    actions = []
+    mresult = mergemod.mergeresult()
     dropped = []
     tempincludes = readtemporaryincludes(repo)
     for file in tempincludes:
         if file in dirstate and not sparsematch(file):
             message = _(b'dropping temporarily included sparse files')
-            actions.append((file, None, message))
+            mresult.addfile(file, mergestatemod.ACTION_REMOVE, None, message)
             dropped.append(file)
 
-    typeactions = mergemod.emptyactions()
-    typeactions[b'r'] = actions
     mergemod.applyupdates(
-        repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+        repo, mresult, repo[None], repo[b'.'], False, wantfiledata=False
     )
 
     # Fix dirstate
@@ -366,16 +366,16 @@ def matcher(repo, revs=None, includetemp=True):
     return result
 
 
-def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
+def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
     """Filter updates to only lay out files that match the sparse rules."""
     if not enabled:
-        return actions
+        return
 
     oldrevs = [pctx.rev() for pctx in wctx.parents()]
     oldsparsematch = matcher(repo, oldrevs)
 
     if oldsparsematch.always():
-        return actions
+        return
 
     files = set()
     prunedactions = {}
@@ -390,23 +390,29 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         sparsematch = matcher(repo, [mctx.rev()])
 
     temporaryfiles = []
-    for file, action in pycompat.iteritems(actions):
+    for file, action in mresult.filemap():
         type, args, msg = action
         files.add(file)
         if sparsematch(file):
             prunedactions[file] = action
-        elif type == b'm':
+        elif type == mergestatemod.ACTION_MERGE:
             temporaryfiles.append(file)
             prunedactions[file] = action
         elif branchmerge:
-            if type != b'k':
+            if type not in mergestatemod.NO_OP_ACTIONS:
                 temporaryfiles.append(file)
                 prunedactions[file] = action
-        elif type == b'f':
+        elif type == mergestatemod.ACTION_FORGET:
             prunedactions[file] = action
         elif file in wctx:
-            prunedactions[file] = (b'r', args, msg)
+            prunedactions[file] = (mergestatemod.ACTION_REMOVE, args, msg)
 
+        # in case or rename on one side, it is possible that f1 might not
+        # be present in sparse checkout we should include it
+        # TODO: should we do the same for f2?
+        # exists as a separate check because file can be in sparse and hence
+        # if we try to club this condition in above `elif type == ACTION_MERGE`
+        # it won't be triggered
         if branchmerge and type == mergestatemod.ACTION_MERGE:
             f1, f2, fa, move, anc = args
             if not sparsematch(f1):
@@ -423,22 +429,25 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         addtemporaryincludes(repo, temporaryfiles)
 
         # Add the new files to the working copy so they can be merged, etc
-        actions = []
+        tmresult = mergemod.mergeresult()
         message = b'temporarily adding to sparse checkout'
         wctxmanifest = repo[None].manifest()
         for file in temporaryfiles:
             if file in wctxmanifest:
                 fctx = repo[None][file]
-                actions.append((file, (fctx.flags(), False), message))
+                tmresult.addfile(
+                    file,
+                    mergestatemod.ACTION_GET,
+                    (fctx.flags(), False),
+                    message,
+                )
 
-        typeactions = mergemod.emptyactions()
-        typeactions[b'g'] = actions
         mergemod.applyupdates(
-            repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+            repo, tmresult, repo[None], repo[b'.'], False, wantfiledata=False
         )
 
         dirstate = repo.dirstate
-        for file, flags, msg in actions:
+        for file, flags, msg in tmresult.getactions([mergestatemod.ACTION_GET]):
             dirstate.normal(file)
 
     profiles = activeconfig(repo)[2]
@@ -453,11 +462,15 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
             new = sparsematch(file)
             if not old and new:
                 flags = mf.flags(file)
-                prunedactions[file] = (b'g', (flags, False), b'')
+                prunedactions[file] = (
+                    mergestatemod.ACTION_GET,
+                    (flags, False),
+                    b'',
+                )
             elif old and not new:
-                prunedactions[file] = (b'r', [], b'')
+                prunedactions[file] = (mergestatemod.ACTION_REMOVE, [], b'')
 
-    return prunedactions
+    mresult.setactions(prunedactions)
 
 
 def refreshwdir(repo, origstatus, origsparsematch, force=False):
@@ -487,7 +500,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
             _(b'could not update sparseness due to pending changes')
         )
 
-    # Calculate actions
+    # Calculate merge result
     dirstate = repo.dirstate
     ctx = repo[b'.']
     added = []
@@ -495,8 +508,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
     dropped = []
     mf = ctx.manifest()
     files = set(mf)
-
-    actions = {}
+    mresult = mergemod.mergeresult()
 
     for file in files:
         old = origsparsematch(file)
@@ -506,17 +518,19 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
         if (new and not old) or (old and new and not file in dirstate):
             fl = mf.flags(file)
             if repo.wvfs.exists(file):
-                actions[file] = (b'e', (fl,), b'')
+                mresult.addfile(file, mergestatemod.ACTION_EXEC, (fl,), b'')
                 lookup.append(file)
             else:
-                actions[file] = (b'g', (fl, False), b'')
+                mresult.addfile(
+                    file, mergestatemod.ACTION_GET, (fl, False), b''
+                )
                 added.append(file)
         # Drop files that are newly excluded, or that still exist in
         # the dirstate.
         elif (old and not new) or (not old and not new and file in dirstate):
             dropped.append(file)
             if file not in pending:
-                actions[file] = (b'r', [], b'')
+                mresult.addfile(file, mergestatemod.ACTION_REMOVE, [], b'')
 
     # Verify there are no pending changes in newly included files
     abort = False
@@ -540,13 +554,8 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
             if old and not new:
                 dropped.append(file)
 
-    # Apply changes to disk
-    typeactions = mergemod.emptyactions()
-    for f, (m, args, msg) in pycompat.iteritems(actions):
-        typeactions[m].append((f, args, msg))
-
     mergemod.applyupdates(
-        repo, typeactions, repo[None], repo[b'.'], False, wantfiledata=False
+        repo, mresult, repo[None], repo[b'.'], False, wantfiledata=False
     )
 
     # Fix dirstate
@@ -599,11 +608,11 @@ def _updateconfigandrefreshwdir(
     # updated. But this requires massive rework to matcher() and its
     # consumers.
 
-    if b'exp-sparse' in oldrequires and removing:
-        repo.requirements.discard(b'exp-sparse')
+    if requirements.SPARSE_REQUIREMENT in oldrequires and removing:
+        repo.requirements.discard(requirements.SPARSE_REQUIREMENT)
         scmutil.writereporequirements(repo)
-    elif b'exp-sparse' not in oldrequires:
-        repo.requirements.add(b'exp-sparse')
+    elif requirements.SPARSE_REQUIREMENT not in oldrequires:
+        repo.requirements.add(requirements.SPARSE_REQUIREMENT)
         scmutil.writereporequirements(repo)
 
     try:

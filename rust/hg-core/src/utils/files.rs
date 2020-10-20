@@ -16,7 +16,7 @@ use crate::utils::{
 };
 use lazy_static::lazy_static;
 use same_file::is_same_file;
-use std::borrow::ToOwned;
+use std::borrow::{Cow, ToOwned};
 use std::fs::Metadata;
 use std::iter::FusedIterator;
 use std::ops::Deref;
@@ -245,6 +245,66 @@ pub fn canonical_path(
             path: original_name.to_owned(),
             root: root.to_owned(),
         })
+    }
+}
+
+/// Returns the representation of the path relative to the current working
+/// directory for display purposes.
+///
+/// `cwd` is a `HgPath`, so it is considered relative to the root directory
+/// of the repository.
+///
+/// # Examples
+///
+/// ```
+/// use hg::utils::hg_path::HgPath;
+/// use hg::utils::files::relativize_path;
+/// use std::borrow::Cow;
+///
+/// let file = HgPath::new(b"nested/file");
+/// let cwd = HgPath::new(b"");
+/// assert_eq!(relativize_path(file, cwd), Cow::Borrowed(b"nested/file"));
+///
+/// let cwd = HgPath::new(b"nested");
+/// assert_eq!(relativize_path(file, cwd), Cow::Borrowed(b"file"));
+///
+/// let cwd = HgPath::new(b"other");
+/// assert_eq!(relativize_path(file, cwd), Cow::Borrowed(b"../nested/file"));
+/// ```
+pub fn relativize_path(path: &HgPath, cwd: impl AsRef<HgPath>) -> Cow<[u8]> {
+    if cwd.as_ref().is_empty() {
+        Cow::Borrowed(path.as_bytes())
+    } else {
+        let mut res: Vec<u8> = Vec::new();
+        let mut path_iter = path.as_bytes().split(|b| *b == b'/').peekable();
+        let mut cwd_iter =
+            cwd.as_ref().as_bytes().split(|b| *b == b'/').peekable();
+        loop {
+            match (path_iter.peek(), cwd_iter.peek()) {
+                (Some(a), Some(b)) if a == b => (),
+                _ => break,
+            }
+            path_iter.next();
+            cwd_iter.next();
+        }
+        let mut need_sep = false;
+        for _ in cwd_iter {
+            if need_sep {
+                res.extend(b"/")
+            } else {
+                need_sep = true
+            };
+            res.extend(b"..");
+        }
+        for c in path_iter {
+            if need_sep {
+                res.extend(b"/")
+            } else {
+                need_sep = true
+            };
+            res.extend(c);
+        }
+        Cow::Owned(res)
     }
 }
 

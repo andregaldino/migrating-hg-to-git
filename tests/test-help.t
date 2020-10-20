@@ -983,6 +983,8 @@ Test list of internal help commands
    debugbundle   lists the contents of a bundle
    debugcapabilities
                  lists the capabilities of a remote peer
+   debugchangedfiles
+                 list the stored files changes for a revision
    debugcheckstate
                  validate the correctness of the current dirstate
    debugcolor    show available color, effects or style

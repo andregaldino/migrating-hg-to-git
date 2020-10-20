@@ -73,6 +73,8 @@ beneficial to performance but isn't enabled.
 
     [fsmonitor]
     warn_update_file_count = (integer)
+    # or when mercurial is built with rust support
+    warn_update_file_count_rust = (integer)
 
 If ``warn_when_unused`` is set and fsmonitor isn't enabled, a warning will
 be printed during working directory updates if this many files will be
@@ -725,7 +727,7 @@ def extsetup(ui):
         # An assist for avoiding the dangling-symlink fsevents bug
         extensions.wrapfunction(os, b'symlink', wrapsymlink)
 
-    extensions.wrapfunction(merge, b'update', wrapupdate)
+    extensions.wrapfunction(merge, b'_update', wrapupdate)
 
 
 def wrapsymlink(orig, source, link_name):

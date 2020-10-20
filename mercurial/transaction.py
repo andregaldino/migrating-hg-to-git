@@ -38,10 +38,8 @@ GEN_GROUP_POST_FINALIZE = b'postfinalize'
 def active(func):
     def _active(self, *args, **kwds):
         if self._count == 0:
-            raise error.Abort(
-                _(
-                    b'cannot use transaction when it is already committed/aborted'
-                )
+            raise error.ProgrammingError(
+                b'cannot use transaction when it is already committed/aborted'
             )
         return func(self, *args, **kwds)
 

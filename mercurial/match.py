@@ -355,7 +355,10 @@ def _donormalize(patterns, default, root, cwd, auditor=None, warn=None):
             except error.Abort as inst:
                 raise error.Abort(
                     b'%s: %s'
-                    % (pat, inst[0])  # pytype: disable=unsupported-operands
+                    % (
+                        pat,
+                        inst.message,
+                    )  # pytype: disable=unsupported-operands
                 )
             except IOError as inst:
                 if warn:

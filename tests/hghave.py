@@ -886,8 +886,11 @@ def has_ensurepip():
         return False
 
 
-@check("virtualenv", "Python virtualenv support")
-def has_virtualenv():
+@check("py2virtualenv", "Python2 virtualenv support")
+def has_py2virtualenv():
+    if sys.version_info[0] != 2:
+        return False
+
     try:
         import virtualenv
 
@@ -1061,6 +1064,11 @@ def has_rustfmt():
     return matchoutput(
         '`rustup which --toolchain nightly rustfmt` --version', b'rustfmt'
     )
+
+
+@check("cargo", "cargo tool")
+def has_cargo():
+    return matchoutput('`rustup which cargo` --version', b'cargo')
 
 
 @check("lzma", "python lzma module")

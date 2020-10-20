@@ -80,9 +80,9 @@ from mercurial import (
     dirstate,
     error,
     extensions,
-    hg,
     logcmdutil,
     match as matchmod,
+    merge as mergemod,
     pycompat,
     registrar,
     sparse,
@@ -137,9 +137,9 @@ def _setuplog(ui):
         )
     )
 
-    def _initialrevs(orig, repo, opts):
-        revs = orig(repo, opts)
-        if opts.get(b'sparse'):
+    def _initialrevs(orig, repo, wopts):
+        revs = orig(repo, wopts)
+        if wopts.opts.get(b'sparse'):
             sparsematch = sparse.matcher(repo)
 
             def ctxmatch(rev):
@@ -173,9 +173,9 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
     # clone
     if not narrow_pat and (include or exclude or enableprofile):
 
-        def clonesparse(orig, self, node, overwrite, *args, **kwargs):
+        def clonesparse(orig, ctx, *args, **kwargs):
             sparse.updateconfig(
-                self.unfiltered(),
+                ctx.repo().unfiltered(),
                 pat,
                 {},
                 include=include,
@@ -183,9 +183,9 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
                 enableprofile=enableprofile,
                 usereporootpaths=True,
             )
-            return orig(self, node, overwrite, *args, **kwargs)
+            return orig(ctx, *args, **kwargs)
 
-        extensions.wrapfunction(hg, b'updaterepo', clonesparse)
+        extensions.wrapfunction(mergemod, b'update', clonesparse)
     return orig(ui, repo, *args, **opts)
 
 

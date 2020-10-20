@@ -7,7 +7,13 @@
 
 pub mod node;
 pub mod nodemap;
+pub mod path_encode;
 pub use node::{Node, NodeError, NodePrefix, NodePrefixRef};
+pub mod changelog;
+pub mod index;
+pub mod manifest;
+pub mod patch;
+pub mod revlog;
 
 /// Mercurial revision numbers
 ///

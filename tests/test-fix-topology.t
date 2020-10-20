@@ -85,7 +85,7 @@ The computation of changed lines is orthogonal and tested separately.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ printf "hhhh\n" > h
-  $ hg commit -Am "change H"
+  $ hg commit -Am "change H (child of b53d63e816fb and 0e49f92ee6e9)"
   adding h
   $ hg merge -r 4
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -96,7 +96,7 @@ The computation of changed lines is orthogonal and tested separately.
   $ hg checkout 2
   0 files updated, 0 files merged, 6 files removed, 0 files unresolved
   $ printf "jjjj\n" > j
-  $ hg commit -Am "change J"
+  $ hg commit -Am "change J (child of 7f371349286e)"
   adding j
   created new head
   $ hg checkout 7
@@ -105,26 +105,26 @@ The computation of changed lines is orthogonal and tested separately.
   $ hg add
   adding k
 
-  $ hg log --graph --template '{rev} {desc}\n'
-  o  9 change J
+  $ hg log --graph --template '{rev}:{node|short} {desc}\n'
+  o  9:884041ccc490 change J (child of 7f371349286e)
   |
-  | o    8 change I
+  | o    8:b7c772105fd2 change I
   | |\
-  | | @    7 change H
+  | | @    7:4e7b9312dad2 change H (child of b53d63e816fb and 0e49f92ee6e9)
   | | |\
-  | | | o  6 change G
+  | | | o  6:0e49f92ee6e9 change G
   | | | |
-  | | o |  5 change F
+  | | o |  5:b53d63e816fb change F
   | | |/
-  | o |  4 change E
+  | o |  4:ddad58af5e51 change E
   |/| |
-  | o |  3 change D
+  | o |  3:c015ebfd2bfe change D
   | |/
-  o |  2 change C
+  o |  2:7f371349286e change C
   | |
-  o |  1 change B
+  o |  1:388fdd33fea0 change B
   |/
-  o  0 change A
+  o  0:a55a84d97a24 change A
   
 
 Fix all but the root revision and its four children.
@@ -137,26 +137,26 @@ parent pointers have been accurately set to reproduce the previous topology
 (though it is rendered in a slightly different order now).
 
 #if obsstore-on
-  $ hg log --graph --template '{rev} {desc}\n'
-  o  14 change J
+  $ hg log --graph --template '{rev}:{node|short} {desc}\n'
+  o  14:d8d0e7974598 change J (child of 89de0da1d5da)
   |
-  | o    13 change I
+  | o    13:4fc0b354461e change I
   | |\
-  | | @    12 change H
+  | | @    12:1c45f3923443 change H (child of b53d63e816fb and 0e49f92ee6e9)
   | | |\
-  | o | |  11 change E
+  | o | |  11:d75754455722 change E
   |/| | |
-  o | | |  10 change C
+  o | | |  10:89de0da1d5da change C
   | | | |
-  | | | o  6 change G
+  | | | o  6:0e49f92ee6e9 change G
   | | | |
-  | | o |  5 change F
+  | | o |  5:b53d63e816fb change F
   | | |/
-  | o /  3 change D
+  | o /  3:c015ebfd2bfe change D
   | |/
-  o /  1 change B
+  o /  1:388fdd33fea0 change B
   |/
-  o  0 change A
+  o  0:a55a84d97a24 change A
   
   $ C=10
   $ E=11
@@ -164,26 +164,26 @@ parent pointers have been accurately set to reproduce the previous topology
   $ I=13
   $ J=14
 #else
-  $ hg log --graph --template '{rev} {desc}\n'
-  o  9 change J
+  $ hg log --graph --template '{rev}:{node|short} {desc}\n'
+  o  9:d8d0e7974598 change J (child of 89de0da1d5da)
   |
-  | o    8 change I
+  | o    8:4fc0b354461e change I
   | |\
-  | | @    7 change H
+  | | @    7:1c45f3923443 change H (child of b53d63e816fb and 0e49f92ee6e9)
   | | |\
-  | o | |  6 change E
+  | o | |  6:d75754455722 change E
   |/| | |
-  o | | |  5 change C
+  o | | |  5:89de0da1d5da change C
   | | | |
-  | | | o  4 change G
+  | | | o  4:0e49f92ee6e9 change G
   | | | |
-  | | o |  3 change F
+  | | o |  3:b53d63e816fb change F
   | | |/
-  | o /  2 change D
+  | o /  2:c015ebfd2bfe change D
   | |/
-  o /  1 change B
+  o /  1:388fdd33fea0 change B
   |/
-  o  0 change A
+  o  0:a55a84d97a24 change A
   
   $ C=5
   $ E=6

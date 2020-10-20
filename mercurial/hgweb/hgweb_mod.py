@@ -53,7 +53,36 @@ def getstyle(req, configfn, templatepath):
         configfn(b'web', b'style'),
         b'paper',
     )
-    return styles, templater.stylemap(styles, templatepath)
+    return styles, _stylemap(styles, templatepath)
+
+
+def _stylemap(styles, path=None):
+    """Return path to mapfile for a given style.
+
+    Searches mapfile in the following locations:
+    1. templatepath/style/map
+    2. templatepath/map-style
+    3. templatepath/map
+    """
+
+    for style in styles:
+        # only plain name is allowed to honor template paths
+        if (
+            not style
+            or style in (pycompat.oscurdir, pycompat.ospardir)
+            or pycompat.ossep in style
+            or pycompat.osaltsep
+            and pycompat.osaltsep in style
+        ):
+            continue
+        locations = (os.path.join(style, b'map'), b'map-' + style, b'map')
+
+        for location in locations:
+            mapfile, fp = templater.try_open_template(location, path)
+            if mapfile:
+                return style, mapfile, fp
+
+    raise RuntimeError(b"No hgweb templates found in %r" % path)
 
 
 def makebreadcrumb(url, prefix=b''):
@@ -117,23 +146,21 @@ class requestcontext(object):
         self.csp, self.nonce = cspvalues(self.repo.ui)
 
     # Trust the settings from the .hg/hgrc files by default.
-    def config(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.config(section, name, default, untrusted=untrusted)
+    def config(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.config(*args, **kwargs)
 
-    def configbool(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configbool(
-            section, name, default, untrusted=untrusted
-        )
+    def configbool(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.configbool(*args, **kwargs)
 
-    def configint(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configint(
-            section, name, default, untrusted=untrusted
-        )
+    def configint(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.configint(*args, **kwargs)
 
-    def configlist(self, section, name, default=uimod._unset, untrusted=True):
-        return self.repo.ui.configlist(
-            section, name, default, untrusted=untrusted
-        )
+    def configlist(self, *args, **kwargs):
+        kwargs.setdefault('untrusted', True)
+        return self.repo.ui.configlist(*args, **kwargs)
 
     def archivelist(self, nodeid):
         return webutil.archivelist(self.repo.ui, nodeid)
@@ -153,7 +180,9 @@ class requestcontext(object):
         # figure out which style to use
 
         vars = {}
-        styles, (style, mapfile) = getstyle(req, self.config, self.templatepath)
+        styles, (style, mapfile, fp) = getstyle(
+            req, self.config, self.templatepath
+        )
         if style == styles[0]:
             vars[b'style'] = style
 
@@ -196,10 +225,9 @@ class requestcontext(object):
             yield self.config(b'web', b'motd')
 
         tres = formatter.templateresources(self.repo.ui, self.repo)
-        tmpl = templater.templater.frommapfile(
-            mapfile, filters=filters, defaults=defaults, resources=tres
+        return templater.templater.frommapfile(
+            mapfile, fp=fp, filters=filters, defaults=defaults, resources=tres
         )
-        return tmpl
 
     def sendtemplate(self, name, **kwargs):
         """Helper function to send a response generated from a template."""
@@ -465,7 +493,7 @@ class hgweb(object):
         except error.Abort as e:
             res.status = b'403 Forbidden'
             res.headers[b'Content-Type'] = ctype
-            return rctx.sendtemplate(b'error', error=pycompat.bytestr(e))
+            return rctx.sendtemplate(b'error', error=e.message)
         except ErrorResponse as e:
             for k, v in e.headers:
                 res.headers[k] = v

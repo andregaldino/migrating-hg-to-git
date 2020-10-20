@@ -635,12 +635,11 @@ def commitfuncfor(repo, src):
 
 def applychanges(ui, repo, ctx, opts):
     """Merge changeset from ctx (only) in the current working directory"""
-    wcpar = repo.dirstate.p1()
-    if ctx.p1().node() == wcpar:
+    if ctx.p1().node() == repo.dirstate.p1():
         # edits are "in place" we do not need to make any merge,
         # just applies changes on parent for editing
         ui.pushbuffer()
-        cmdutil.revert(ui, repo, ctx, (wcpar, node.nullid), all=True)
+        cmdutil.revert(ui, repo, ctx, all=True)
         stats = mergemod.updateresult(0, 0, 0, 0)
         ui.popbuffer()
     else:
@@ -882,8 +881,7 @@ class fold(histeditaction):
         return False
 
     def finishfold(self, ui, repo, ctx, oldctx, newnode, internalchanges):
-        parent = ctx.p1().node()
-        hg.updaterepo(repo, parent, overwrite=False)
+        mergemod.update(ctx.p1())
         ### prepare new commit data
         commitopts = {}
         commitopts[b'user'] = ctx.user()
@@ -927,7 +925,7 @@ class fold(histeditaction):
             )
         if n is None:
             return ctx, []
-        hg.updaterepo(repo, n, overwrite=False)
+        mergemod.update(repo[n])
         replacements = [
             (oldctx.node(), (newnode,)),
             (ctx.node(), (n,)),
@@ -1152,7 +1150,7 @@ class histeditrule(object):
             h,
         )
 
-    @property
+    @util.propertycache
     def desc(self):
         summary = (
             cmdutil.rendertemplate(
@@ -2051,7 +2049,7 @@ def _continuehistedit(ui, repo, state):
 
 def _finishhistedit(ui, repo, state, fm):
     """This action runs when histedit is finishing its session"""
-    hg.updaterepo(repo, state.parentctxnode, overwrite=False)
+    mergemod.update(repo[state.parentctxnode])
 
     mapping, tmpnodes, created, ntm = processreplacement(state)
     if mapping:

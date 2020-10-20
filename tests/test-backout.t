@@ -804,5 +804,5 @@ Test usage of `hg resolve` in case of conflict
 --no-commit can't be used with --merge
 
   $ hg backout --merge --no-commit 2
-  abort: cannot use --merge with --no-commit
+  abort: cannot specify both --no-commit and --merge
   [255]

@@ -44,7 +44,8 @@ pub fn set_blocking_fd(fd: RawFd) -> io::Result<()> {
     if flags < 0 {
         return Err(io::Error::last_os_error());
     }
-    let r = unsafe { libc::fcntl(fd, libc::F_SETFL, flags & !libc::O_NONBLOCK) };
+    let r =
+        unsafe { libc::fcntl(fd, libc::F_SETFL, flags & !libc::O_NONBLOCK) };
     if r < 0 {
         return Err(io::Error::last_os_error());
     }
@@ -69,7 +70,10 @@ static RESTORE_SIGNAL_HANDLER: sync::Once = sync::Once::new();
 ///
 /// This touches global states, and thus synchronized as a one-time
 /// initialization function.
-pub fn setup_signal_handler_once(pid: u32, pgid: Option<u32>) -> io::Result<()> {
+pub fn setup_signal_handler_once(
+    pid: u32,
+    pgid: Option<u32>,
+) -> io::Result<()> {
     let pid_signed = pid as i32;
     let pgid_signed = pgid.map(|n| n as i32).unwrap_or(0);
     let mut r = 0;

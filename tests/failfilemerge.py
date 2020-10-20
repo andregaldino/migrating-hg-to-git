@@ -12,7 +12,7 @@ from mercurial import (
 def failfilemerge(
     filemergefn, premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None
 ):
-    raise error.Abort("^C")
+    raise error.Abort(b"^C")
     return filemergefn(premerge, repo, mynode, orig, fcd, fco, fca, labels)
 
 

@@ -540,6 +540,25 @@ class templatespec(object):
     tmpl = attr.ib()
     mapfile = attr.ib()
     refargs = attr.ib(default=None)
+    fp = attr.ib(default=None)
+
+
+def empty_templatespec():
+    return templatespec(None, None, None)
+
+
+def reference_templatespec(ref, refargs=None):
+    return templatespec(ref, None, None, refargs)
+
+
+def literal_templatespec(tmpl):
+    if pycompat.ispy3:
+        assert not isinstance(tmpl, str), b'tmpl must not be a str'
+    return templatespec(b'', tmpl, None)
+
+
+def mapfile_templatespec(topic, mapfile, fp=None):
+    return templatespec(topic, None, mapfile, fp=fp)
 
 
 def lookuptemplate(ui, topic, tmpl):
@@ -563,33 +582,33 @@ def lookuptemplate(ui, topic, tmpl):
     """
 
     if not tmpl:
-        return templatespec(None, None, None)
+        return empty_templatespec()
 
     # looks like a literal template?
     if b'{' in tmpl:
-        return templatespec(b'', tmpl, None)
+        return literal_templatespec(tmpl)
 
     # a reference to built-in (formatter) template
     if tmpl in {b'cbor', b'json', b'pickle', b'debug'}:
-        return templatespec(tmpl, None, None)
+        return reference_templatespec(tmpl)
 
     # a function-style reference to built-in template
     func, fsep, ftail = tmpl.partition(b'(')
     if func in {b'cbor', b'json'} and fsep and ftail.endswith(b')'):
         templater.parseexpr(tmpl)  # make sure syntax errors are confined
-        return templatespec(func, None, None, refargs=ftail[:-1])
+        return reference_templatespec(func, refargs=ftail[:-1])
 
     # perhaps a stock style?
     if not os.path.split(tmpl)[0]:
-        mapname = templater.templatepath(
+        (mapname, fp) = templater.try_open_template(
             b'map-cmdline.' + tmpl
-        ) or templater.templatepath(tmpl)
-        if mapname and os.path.isfile(mapname):
-            return templatespec(topic, None, mapname)
+        ) or templater.try_open_template(tmpl)
+        if mapname:
+            return mapfile_templatespec(topic, mapname, fp)
 
     # perhaps it's a reference to [templates]
     if ui.config(b'templates', tmpl):
-        return templatespec(tmpl, None, None)
+        return reference_templatespec(tmpl)
 
     if tmpl == b'list':
         ui.write(_(b"available styles: %s\n") % templater.stylelist())
@@ -599,13 +618,13 @@ def lookuptemplate(ui, topic, tmpl):
     if (b'/' in tmpl or b'\\' in tmpl) and os.path.isfile(tmpl):
         # is it a mapfile for a style?
         if os.path.basename(tmpl).startswith(b"map-"):
-            return templatespec(topic, None, os.path.realpath(tmpl))
+            return mapfile_templatespec(topic, os.path.realpath(tmpl))
         with util.posixfile(tmpl, b'rb') as f:
             tmpl = f.read()
-        return templatespec(b'', tmpl, None)
+        return literal_templatespec(tmpl)
 
     # constant string?
-    return templatespec(b'', tmpl, None)
+    return literal_templatespec(tmpl)
 
 
 def templatepartsmap(spec, t, partnames):
@@ -626,9 +645,12 @@ def loadtemplater(ui, spec, defaults=None, resources=None, cache=None):
     a map file"""
     assert not (spec.tmpl and spec.mapfile)
     if spec.mapfile:
-        frommapfile = templater.templater.frommapfile
-        return frommapfile(
-            spec.mapfile, defaults=defaults, resources=resources, cache=cache
+        return templater.templater.frommapfile(
+            spec.mapfile,
+            spec.fp,
+            defaults=defaults,
+            resources=resources,
+            cache=cache,
         )
     return maketemplater(
         ui, spec.tmpl, defaults=defaults, resources=resources, cache=cache

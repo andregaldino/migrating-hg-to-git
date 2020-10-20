@@ -297,6 +297,10 @@ def reposetup(ui, repo):
 
             def commit(self, *args, **kwargs):
                 ret = orig.commit(self, *args, **kwargs)
+                if ret is None:
+                    # there was nothing to commit, so we should skip
+                    # the index fixup logic we'd otherwise do.
+                    return None
                 tid = self.store.git[gitutil.togitnode(ret)].tree.id
                 # DANGER! This will flush any writes staged to the
                 # index in Git, but we're sidestepping the index in a

@@ -1448,6 +1448,9 @@ test author
     (string '('))
   hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \),.*) (re)
   [255]
+  $ log 'desc("re:(")'
+  hg: parse error: invalid regular expression: (unbalanced parenthesis|missing \),.*) (re)
+  [255]
   $ try 'grep("\bissue\d+")'
   (func
     (symbol 'grep')
@@ -2885,7 +2888,7 @@ test sorting by multiple keys including variable-length strings
   3 b112 m111 u11  120 0
   0 b12  m111 u112 111 10800
 
-  $ hg log -r 'sort(all(), "-desc -date")'
+  $ hg log -r 'sort(all(), "-desc -node")'
   1 b11  m12  u111 112 7200
   4 b111 m112 u111 110 14400
   3 b112 m111 u11  120 0
@@ -2898,6 +2901,29 @@ test sorting by multiple keys including variable-length strings
   1 b11  m12  u111 112 7200
   0 b12  m111 u112 111 10800
   2 b111 m11  u12  111 3600
+
+ sort including wdir (rev/-rev has fast path):
+
+  $ hg log -r 'sort(. + wdir(), rev)' -T '{rev}\n'
+  4
+  2147483647
+  $ hg log -r 'sort(. + wdir(), -rev)' -T '{rev}\n'
+  2147483647
+  4
+
+  $ hg log -r 'sort(. + wdir(), "branch rev")' -T '{rev}\n'
+  4
+  2147483647
+  $ hg log -r 'sort(. + wdir(), "branch -rev")' -T '{rev}\n'
+  2147483647
+  4
+
+  $ hg log -r 'sort(. + wdir(), node)' -T '{node}\n'
+  ec7c1c90b589ade8603d5fb619dc6c25173a723f
+  ffffffffffffffffffffffffffffffffffffffff
+  $ hg log -r 'sort(. + wdir(), -node)' -T '{node}\n'
+  ffffffffffffffffffffffffffffffffffffffff
+  ec7c1c90b589ade8603d5fb619dc6c25173a723f
 
  toposort prioritises graph branches
 

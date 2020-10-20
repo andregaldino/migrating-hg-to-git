@@ -18,6 +18,8 @@ from .node import (
     wdirrev,
 )
 
+from .thirdparty import attr
+
 from . import (
     dagop,
     error,
@@ -45,11 +47,14 @@ from .utils import (
 if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
+        Callable,
+        Dict,
+        List,
         Optional,
         Tuple,
     )
 
-    for t in (Any, Optional, Tuple):
+    for t in (Any, Callable, Dict, List, Optional, Tuple):
         assert t
 
 
@@ -603,12 +608,11 @@ class changesettemplater(changesetprinter):
 
 
 def templatespec(tmpl, mapfile):
-    if pycompat.ispy3:
-        assert not isinstance(tmpl, str), b'tmpl must not be a str'
+    assert not (tmpl and mapfile)
     if mapfile:
-        return formatter.templatespec(b'changeset', tmpl, mapfile)
+        return formatter.mapfile_templatespec(b'changeset', mapfile)
     else:
-        return formatter.templatespec(b'', tmpl, None)
+        return formatter.literal_templatespec(tmpl)
 
 
 def _lookuptemplate(ui, tmpl, style):
@@ -621,19 +625,20 @@ def _lookuptemplate(ui, tmpl, style):
     if not tmpl and not style:  # template are stronger than style
         tmpl = ui.config(b'ui', b'logtemplate')
         if tmpl:
-            return templatespec(templater.unquotestring(tmpl), None)
+            return formatter.literal_templatespec(templater.unquotestring(tmpl))
         else:
             style = util.expandpath(ui.config(b'ui', b'style'))
 
     if not tmpl and style:
         mapfile = style
+        fp = None
         if not os.path.split(mapfile)[0]:
-            mapname = templater.templatepath(
+            (mapname, fp) = templater.try_open_template(
                 b'map-cmdline.' + mapfile
-            ) or templater.templatepath(mapfile)
+            ) or templater.try_open_template(mapfile)
             if mapname:
                 mapfile = mapname
-        return templatespec(None, mapfile)
+        return formatter.mapfile_templatespec(b'changeset', mapfile, fp)
 
     return formatter.lookuptemplate(ui, b'changeset', tmpl)
 
@@ -641,7 +646,7 @@ def _lookuptemplate(ui, tmpl, style):
 def maketemplater(ui, repo, tmpl, buffered=False):
     """Create a changesettemplater from a literal template 'tmpl'
     byte-string."""
-    spec = templatespec(tmpl, None)
+    spec = formatter.literal_templatespec(tmpl)
     return changesettemplater(ui, repo, spec, buffered=buffered)
 
 
@@ -672,7 +677,95 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     return changesettemplater(ui, repo, spec, *postargs)
 
 
-def _makematcher(repo, revs, pats, opts):
+@attr.s
+class walkopts(object):
+    """Options to configure a set of revisions and file matcher factory
+    to scan revision/file history
+    """
+
+    # raw command-line parameters, which a matcher will be built from
+    pats = attr.ib()  # type: List[bytes]
+    opts = attr.ib()  # type: Dict[bytes, Any]
+
+    # a list of revset expressions to be traversed; if follow, it specifies
+    # the start revisions
+    revspec = attr.ib()  # type: List[bytes]
+
+    # miscellaneous queries to filter revisions (see "hg help log" for details)
+    branches = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    date = attr.ib(default=None)  # type: Optional[bytes]
+    keywords = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    no_merges = attr.ib(default=False)  # type: bool
+    only_merges = attr.ib(default=False)  # type: bool
+    prune_ancestors = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    users = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+
+    # miscellaneous matcher arguments
+    include_pats = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    exclude_pats = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+
+    # 0: no follow, 1: follow first, 2: follow both parents
+    follow = attr.ib(default=0)  # type: int
+
+    # do not attempt filelog-based traversal, which may be fast but cannot
+    # include revisions where files were removed
+    force_changelog_traversal = attr.ib(default=False)  # type: bool
+
+    # filter revisions by file patterns, which should be disabled only if
+    # you want to include revisions where files were unmodified
+    filter_revisions_by_pats = attr.ib(default=True)  # type: bool
+
+    # sort revisions prior to traversal: 'desc', 'topo', or None
+    sort_revisions = attr.ib(default=None)  # type: Optional[bytes]
+
+    # limit number of changes displayed; None means unlimited
+    limit = attr.ib(default=None)  # type: Optional[int]
+
+
+def parseopts(ui, pats, opts):
+    # type: (Any, List[bytes], Dict[bytes, Any]) -> walkopts
+    """Parse log command options into walkopts
+
+    The returned walkopts will be passed in to getrevs() or makewalker().
+    """
+    if opts.get(b'follow_first'):
+        follow = 1
+    elif opts.get(b'follow'):
+        follow = 2
+    else:
+        follow = 0
+
+    if opts.get(b'graph'):
+        if ui.configbool(b'experimental', b'log.topo'):
+            sort_revisions = b'topo'
+        else:
+            sort_revisions = b'desc'
+    else:
+        sort_revisions = None
+
+    return walkopts(
+        pats=pats,
+        opts=opts,
+        revspec=opts.get(b'rev', []),
+        # branch and only_branch are really aliases and must be handled at
+        # the same time
+        branches=opts.get(b'branch', []) + opts.get(b'only_branch', []),
+        date=opts.get(b'date'),
+        keywords=opts.get(b'keyword', []),
+        no_merges=bool(opts.get(b'no_merges')),
+        only_merges=bool(opts.get(b'only_merges')),
+        prune_ancestors=opts.get(b'prune', []),
+        users=opts.get(b'user', []),
+        include_pats=opts.get(b'include', []),
+        exclude_pats=opts.get(b'exclude', []),
+        follow=follow,
+        force_changelog_traversal=bool(opts.get(b'removed')),
+        sort_revisions=sort_revisions,
+        limit=getlimit(opts),
+    )
+
+
+def _makematcher(repo, revs, wopts):
     """Build matcher and expanded patterns from log options
 
     If --follow, revs are the revisions to follow from.
@@ -683,47 +776,67 @@ def _makematcher(repo, revs, pats, opts):
     - slowpath: True if patterns aren't as simple as scanning filelogs
     """
     # pats/include/exclude are passed to match.match() directly in
-    # _matchfiles() revset but walkchangerevs() builds its matcher with
-    # scmutil.match(). The difference is input pats are globbed on
+    # _matchfiles() revset, but a log-like command should build its matcher
+    # with scmutil.match(). The difference is input pats are globbed on
     # platforms without shell expansion (windows).
     wctx = repo[None]
-    match, pats = scmutil.matchandpats(wctx, pats, opts)
-    slowpath = match.anypats() or (not match.always() and opts.get(b'removed'))
+    match, pats = scmutil.matchandpats(wctx, wopts.pats, wopts.opts)
+    slowpath = match.anypats() or (
+        not match.always() and wopts.force_changelog_traversal
+    )
     if not slowpath:
-        follow = opts.get(b'follow') or opts.get(b'follow_first')
-        startctxs = []
-        if follow and opts.get(b'rev'):
+        if wopts.follow and wopts.revspec:
+            # There may be the case that a path doesn't exist in some (but
+            # not all) of the specified start revisions, but let's consider
+            # the path is valid. Missing files will be warned by the matcher.
             startctxs = [repo[r] for r in revs]
-        for f in match.files():
-            if follow and startctxs:
-                # No idea if the path was a directory at that revision, so
-                # take the slow path.
-                if any(f not in c for c in startctxs):
-                    slowpath = True
-                    continue
-            elif follow and f not in wctx:
-                # If the file exists, it may be a directory, so let it
-                # take the slow path.
-                if os.path.exists(repo.wjoin(f)):
-                    slowpath = True
-                    continue
-                else:
+            for f in match.files():
+                found = False
+                for c in startctxs:
+                    if f in c:
+                        found = True
+                    elif c.hasdir(f):
+                        # If a directory exists in any of the start revisions,
+                        # take the slow path.
+                        found = slowpath = True
+                if not found:
                     raise error.Abort(
                         _(
-                            b'cannot follow file not in parent '
-                            b'revision: "%s"'
+                            b'cannot follow file not in any of the specified '
+                            b'revisions: "%s"'
                         )
                         % f
                     )
-            filelog = repo.file(f)
-            if not filelog:
-                # A zero count may be a directory or deleted file, so
-                # try to find matching entries on the slow path.
-                if follow:
+        elif wopts.follow:
+            for f in match.files():
+                if f not in wctx:
+                    # If the file exists, it may be a directory, so let it
+                    # take the slow path.
+                    if os.path.exists(repo.wjoin(f)):
+                        slowpath = True
+                        continue
+                    else:
+                        raise error.Abort(
+                            _(
+                                b'cannot follow file not in parent '
+                                b'revision: "%s"'
+                            )
+                            % f
+                        )
+                filelog = repo.file(f)
+                if not filelog:
+                    # A file exists in wdir but not in history, which means
+                    # the file isn't committed yet.
                     raise error.Abort(
                         _(b'cannot follow nonexistent file: "%s"') % f
                     )
-                slowpath = True
+        else:
+            for f in match.files():
+                filelog = repo.file(f)
+                if not filelog:
+                    # A zero count may be a directory or deleted file, so
+                    # try to find matching entries on the slow path.
+                    slowpath = True
 
         # We decided to fall back to the slowpath because at least one
         # of the paths was not a file. Check to see if at least one of them
@@ -781,20 +894,19 @@ _opt2logrevset = {
 }
 
 
-def _makerevset(repo, match, pats, slowpath, opts):
+def _makerevset(repo, wopts, slowpath):
     """Return a revset string built from log options and file patterns"""
-    opts = dict(opts)
-    # follow or not follow?
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
+    opts = {
+        b'branch': [repo.lookupbranch(b) for b in wopts.branches],
+        b'date': wopts.date,
+        b'keyword': wopts.keywords,
+        b'no_merges': wopts.no_merges,
+        b'only_merges': wopts.only_merges,
+        b'prune': wopts.prune_ancestors,
+        b'user': wopts.users,
+    }
 
-    # branch and only_branch are really aliases and must be handled at
-    # the same time
-    opts[b'branch'] = opts.get(b'branch', []) + opts.get(b'only_branch', [])
-    opts[b'branch'] = [repo.lookupbranch(b) for b in opts[b'branch']]
-
-    if slowpath:
-        # See walkchangerevs() slow path.
-        #
+    if wopts.filter_revisions_by_pats and slowpath:
         # pats/include/exclude cannot be represented as separate
         # revset expressions as their filtering logic applies at file
         # level. For instance "-I a -X b" matches a revision touching
@@ -802,21 +914,19 @@ def _makerevset(repo, match, pats, slowpath, opts):
         # not. Besides, filesets are evaluated against the working
         # directory.
         matchargs = [b'r:', b'd:relpath']
-        for p in pats:
+        for p in wopts.pats:
             matchargs.append(b'p:' + p)
-        for p in opts.get(b'include', []):
+        for p in wopts.include_pats:
             matchargs.append(b'i:' + p)
-        for p in opts.get(b'exclude', []):
+        for p in wopts.exclude_pats:
             matchargs.append(b'x:' + p)
         opts[b'_matchfiles'] = matchargs
-    elif not follow:
-        opts[b'_patslog'] = list(pats)
+    elif wopts.filter_revisions_by_pats and not wopts.follow:
+        opts[b'_patslog'] = list(wopts.pats)
 
     expr = []
     for op, val in sorted(pycompat.iteritems(opts)):
         if not val:
-            continue
-        if op not in _opt2logrevset:
             continue
         revop, listop = _opt2logrevset[op]
         if revop and b'%' not in revop:
@@ -835,14 +945,13 @@ def _makerevset(repo, match, pats, slowpath, opts):
     return expr
 
 
-def _initialrevs(repo, opts):
+def _initialrevs(repo, wopts):
     """Return the initial set of revisions to be filtered or followed"""
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
-    if opts.get(b'rev'):
-        revs = scmutil.revrange(repo, opts[b'rev'])
-    elif follow and repo.dirstate.p1() == nullid:
+    if wopts.revspec:
+        revs = scmutil.revrange(repo, wopts.revspec)
+    elif wopts.follow and repo.dirstate.p1() == nullid:
         revs = smartset.baseset()
-    elif follow:
+    elif wopts.follow:
         revs = repo.revs(b'.')
     else:
         revs = smartset.spanset(repo)
@@ -850,50 +959,66 @@ def _initialrevs(repo, opts):
     return revs
 
 
-def getrevs(repo, pats, opts):
-    # type: (Any, Any, Any) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
-    """Return (revs, differ) where revs is a smartset
+def makewalker(repo, wopts):
+    # type: (Any, walkopts) -> Tuple[smartset.abstractsmartset, Optional[Callable[[Any], matchmod.basematcher]]]
+    """Build (revs, makefilematcher) to scan revision/file history
 
-    differ is a changesetdiffer with pre-configured file matcher.
+    - revs is the smartset to be traversed.
+    - makefilematcher is a function to map ctx to a matcher for that revision
     """
-    follow = opts.get(b'follow') or opts.get(b'follow_first')
-    followfirst = opts.get(b'follow_first')
-    limit = getlimit(opts)
-    revs = _initialrevs(repo, opts)
+    revs = _initialrevs(repo, wopts)
     if not revs:
         return smartset.baseset(), None
-    match, pats, slowpath = _makematcher(repo, revs, pats, opts)
+    # TODO: might want to merge slowpath with wopts.force_changelog_traversal
+    match, pats, slowpath = _makematcher(repo, revs, wopts)
+    wopts = attr.evolve(wopts, pats=pats)
+
     filematcher = None
-    if follow:
+    if wopts.follow:
         if slowpath or match.always():
-            revs = dagop.revancestors(repo, revs, followfirst=followfirst)
+            revs = dagop.revancestors(repo, revs, followfirst=wopts.follow == 1)
         else:
-            revs, filematcher = _fileancestors(repo, revs, match, followfirst)
+            assert not wopts.force_changelog_traversal
+            revs, filematcher = _fileancestors(
+                repo, revs, match, followfirst=wopts.follow == 1
+            )
         revs.reverse()
     if filematcher is None:
-        filematcher = _makenofollowfilematcher(repo, pats, opts)
+        filematcher = _makenofollowfilematcher(repo, wopts.pats, wopts.opts)
     if filematcher is None:
 
         def filematcher(ctx):
             return match
 
-    expr = _makerevset(repo, match, pats, slowpath, opts)
-    if opts.get(b'graph'):
-        # User-specified revs might be unsorted, but don't sort before
-        # _makerevset because it might depend on the order of revs
-        if repo.ui.configbool(b'experimental', b'log.topo'):
+    expr = _makerevset(repo, wopts, slowpath)
+    if wopts.sort_revisions:
+        assert wopts.sort_revisions in {b'topo', b'desc'}
+        if wopts.sort_revisions == b'topo':
             if not revs.istopo():
                 revs = dagop.toposort(revs, repo.changelog.parentrevs)
                 # TODO: try to iterate the set lazily
                 revs = revset.baseset(list(revs), istopo=True)
         elif not (revs.isdescending() or revs.istopo()):
+            # User-specified revs might be unsorted
             revs.sort(reverse=True)
     if expr:
         matcher = revset.match(None, expr)
         revs = matcher(repo, revs)
-    if limit is not None:
-        revs = revs.slice(0, limit)
+    if wopts.limit is not None:
+        revs = revs.slice(0, wopts.limit)
 
+    return revs, filematcher
+
+
+def getrevs(repo, wopts):
+    # type: (Any, walkopts) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
+    """Return (revs, differ) where revs is a smartset
+
+    differ is a changesetdiffer with pre-configured file matcher.
+    """
+    revs, filematcher = makewalker(repo, wopts)
+    if not revs:
+        return revs, None
     differ = changesetdiffer()
     differ._makefilematcher = filematcher
     return revs, differ

@@ -238,7 +238,7 @@ Aborting lock does not prevent fncache writes
   > def lockexception(orig, vfs, lockname, wait, releasefn, *args, **kwargs):
   >     def releasewrap():
   >         l.held = False # ensure __del__ is a noop
-  >         raise error.Abort("forced lock failure")
+  >         raise error.Abort(b"forced lock failure")
   >     l = orig(vfs, lockname, wait, releasewrap, *args, **kwargs)
   >     return l
   > 

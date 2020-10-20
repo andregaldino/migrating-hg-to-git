@@ -11,10 +11,6 @@ from ..i18n import _
 from .. import error
 from . import util as interfaceutil
 
-# When narrowing is finalized and no longer subject to format changes,
-# we should move this to just "narrow" or similar.
-NARROW_REQUIREMENT = b'narrowhg-experimental'
-
 # Local repository feature string.
 
 # Revlogs are being used for file storage.
@@ -32,12 +28,14 @@ REVISION_FLAG_CENSORED = 1 << 15
 REVISION_FLAG_ELLIPSIS = 1 << 14
 REVISION_FLAG_EXTSTORED = 1 << 13
 REVISION_FLAG_SIDEDATA = 1 << 12
+REVISION_FLAG_HASCOPIESINFO = 1 << 11
 
 REVISION_FLAGS_KNOWN = (
     REVISION_FLAG_CENSORED
     | REVISION_FLAG_ELLIPSIS
     | REVISION_FLAG_EXTSTORED
     | REVISION_FLAG_SIDEDATA
+    | REVISION_FLAG_HASCOPIESINFO
 )
 
 CG_DELTAMODE_STD = b'default'

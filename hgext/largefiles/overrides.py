@@ -52,6 +52,8 @@ eh = exthelper.exthelper()
 
 lfstatus = lfutil.lfstatus
 
+MERGE_ACTION_LARGEFILE_MARK_REMOVED = b'lfmr'
+
 # -- Utility functions: commonly/repeatedly needed functionality ---------------
 
 
@@ -543,16 +545,16 @@ def overridecalculateupdates(
     origfn, repo, p1, p2, pas, branchmerge, force, acceptremote, *args, **kwargs
 ):
     overwrite = force and not branchmerge
-    actions, diverge, renamedelete = origfn(
+    mresult = origfn(
         repo, p1, p2, pas, branchmerge, force, acceptremote, *args, **kwargs
     )
 
     if overwrite:
-        return actions, diverge, renamedelete
+        return mresult
 
     # Convert to dictionary with filename as key and action as value.
     lfiles = set()
-    for f in actions:
+    for f in mresult.files():
         splitstandin = lfutil.splitstandin(f)
         if splitstandin is not None and splitstandin in p1:
             lfiles.add(splitstandin)
@@ -561,8 +563,8 @@ def overridecalculateupdates(
 
     for lfile in sorted(lfiles):
         standin = lfutil.standin(lfile)
-        (lm, largs, lmsg) = actions.get(lfile, (None, None, None))
-        (sm, sargs, smsg) = actions.get(standin, (None, None, None))
+        (lm, largs, lmsg) = mresult.getfile(lfile, (None, None, None))
+        (sm, sargs, smsg) = mresult.getfile(standin, (None, None, None))
         if sm in (b'g', b'dc') and lm != b'r':
             if sm == b'dc':
                 f1, f2, fa, move, anc = sargs
@@ -578,14 +580,18 @@ def overridecalculateupdates(
                 % lfile
             )
             if repo.ui.promptchoice(usermsg, 0) == 0:  # pick remote largefile
-                actions[lfile] = (b'r', None, b'replaced by standin')
-                actions[standin] = (b'g', sargs, b'replaces standin')
+                mresult.addfile(lfile, b'r', None, b'replaced by standin')
+                mresult.addfile(standin, b'g', sargs, b'replaces standin')
             else:  # keep local normal file
-                actions[lfile] = (b'k', None, b'replaces standin')
+                mresult.addfile(lfile, b'k', None, b'replaces standin')
                 if branchmerge:
-                    actions[standin] = (b'k', None, b'replaced by non-standin')
+                    mresult.addfile(
+                        standin, b'k', None, b'replaced by non-standin',
+                    )
                 else:
-                    actions[standin] = (b'r', None, b'replaced by non-standin')
+                    mresult.addfile(
+                        standin, b'r', None, b'replaced by non-standin',
+                    )
         elif lm in (b'g', b'dc') and sm != b'r':
             if lm == b'dc':
                 f1, f2, fa, move, anc = largs
@@ -603,31 +609,36 @@ def overridecalculateupdates(
             if repo.ui.promptchoice(usermsg, 0) == 0:  # keep local largefile
                 if branchmerge:
                     # largefile can be restored from standin safely
-                    actions[lfile] = (b'k', None, b'replaced by standin')
-                    actions[standin] = (b'k', None, b'replaces standin')
+                    mresult.addfile(
+                        lfile, b'k', None, b'replaced by standin',
+                    )
+                    mresult.addfile(standin, b'k', None, b'replaces standin')
                 else:
                     # "lfile" should be marked as "removed" without
                     # removal of itself
-                    actions[lfile] = (
-                        b'lfmr',
+                    mresult.addfile(
+                        lfile,
+                        MERGE_ACTION_LARGEFILE_MARK_REMOVED,
                         None,
                         b'forget non-standin largefile',
                     )
 
                     # linear-merge should treat this largefile as 're-added'
-                    actions[standin] = (b'a', None, b'keep standin')
+                    mresult.addfile(standin, b'a', None, b'keep standin')
             else:  # pick remote normal file
-                actions[lfile] = (b'g', largs, b'replaces standin')
-                actions[standin] = (b'r', None, b'replaced by non-standin')
+                mresult.addfile(lfile, b'g', largs, b'replaces standin')
+                mresult.addfile(
+                    standin, b'r', None, b'replaced by non-standin',
+                )
 
-    return actions, diverge, renamedelete
+    return mresult
 
 
 @eh.wrapfunction(mergestatemod, b'recordupdates')
 def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
-    if b'lfmr' in actions:
+    if MERGE_ACTION_LARGEFILE_MARK_REMOVED in actions:
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-        for lfile, args, msg in actions[b'lfmr']:
+        for lfile, args, msg in actions[MERGE_ACTION_LARGEFILE_MARK_REMOVED]:
             # this should be executed before 'orig', to execute 'remove'
             # before all other actions
             repo.dirstate.remove(lfile)
@@ -723,7 +734,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
         try:
             result = orig(ui, repo, pats, opts, rename)
         except error.Abort as e:
-            if pycompat.bytestr(e) != _(b'no files to copy'):
+            if e.message != _(b'no files to copy'):
                 raise e
             else:
                 nonormalfiles = True
@@ -840,7 +851,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                 lfdirstate.add(destlfile)
         lfdirstate.write()
     except error.Abort as e:
-        if pycompat.bytestr(e) != _(b'no files to copy'):
+        if e.message != _(b'no files to copy'):
             raise e
         else:
             nolfiles = True
@@ -863,7 +874,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
 # the matcher to hit standins instead of largefiles. Based on the
 # resulting standins update the largefiles.
 @eh.wrapfunction(cmdutil, b'revert')
-def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
+def overriderevert(orig, ui, repo, ctx, *pats, **opts):
     # Because we put the standins in a bad state (by updating them)
     # and then return them to a correct state we need to lock to
     # prevent others from changing them in their incorrect state.
@@ -926,7 +937,7 @@ def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
             return m
 
         with extensions.wrappedfunction(scmutil, b'match', overridematch):
-            orig(ui, repo, ctx, parents, *pats, **opts)
+            orig(ui, repo, ctx, *pats, **opts)
 
         newstandins = lfutil.getstandinsstate(repo)
         filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
@@ -1083,7 +1094,7 @@ def hgclone(orig, ui, opts, *args, **kwargs):
         # truncated at that point.  The user may expect a download count with
         # this option, so attempt whether or not this is a largefile repo.
         if opts.get(b'all_largefiles'):
-            success, missing = lfcommands.downloadlfiles(ui, repo, None)
+            success, missing = lfcommands.downloadlfiles(ui, repo)
 
             if missing != 0:
                 return None
@@ -1092,7 +1103,7 @@ def hgclone(orig, ui, opts, *args, **kwargs):
 
 
 @eh.wrapcommand(b'rebase', extension=b'rebase')
-def overriderebase(orig, ui, repo, **opts):
+def overriderebasecmd(orig, ui, repo, **opts):
     if not util.safehasattr(repo, b'_largefilesenabled'):
         return orig(ui, repo, **opts)
 
@@ -1100,10 +1111,28 @@ def overriderebase(orig, ui, repo, **opts):
     repo._lfcommithooks.append(lfutil.automatedcommithook(resuming))
     repo._lfstatuswriters.append(lambda *msg, **opts: None)
     try:
-        return orig(ui, repo, **opts)
+        with ui.configoverride(
+            {(b'rebase', b'experimental.inmemory'): False}, b"largefiles"
+        ):
+            return orig(ui, repo, **opts)
     finally:
         repo._lfstatuswriters.pop()
         repo._lfcommithooks.pop()
+
+
+@eh.extsetup
+def overriderebase(ui):
+    try:
+        rebase = extensions.find(b'rebase')
+    except KeyError:
+        pass
+    else:
+
+        def _dorebase(orig, *args, **kwargs):
+            kwargs['inmemory'] = False
+            return orig(*args, **kwargs)
+
+        extensions.wrapfunction(rebase, b'_dorebase', _dorebase)
 
 
 @eh.wrapcommand(b'archive')
@@ -1688,7 +1717,7 @@ def overridecat(orig, ui, repo, file1, *pats, **opts):
     return err
 
 
-@eh.wrapfunction(merge, b'update')
+@eh.wrapfunction(merge, b'_update')
 def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
     matcher = kwargs.get('matcher', None)
     # note if this is a partial update
@@ -1747,10 +1776,13 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
         lfdirstate.write()
 
         oldstandins = lfutil.getstandinsstate(repo)
-        # Make sure the merge runs on disk, not in-memory. largefiles is not a
-        # good candidate for in-memory merge (large files, custom dirstate,
-        # matcher usage).
-        kwargs['wc'] = repo[None]
+        wc = kwargs.get('wc')
+        if wc and wc.isinmemory():
+            # largefiles is not a good candidate for in-memory merge (large
+            # files, custom dirstate, matcher usage).
+            raise error.ProgrammingError(
+                b'largefiles is not compatible with in-memory merge'
+            )
         result = orig(repo, node, branchmerge, force, *args, **kwargs)
 
         newstandins = lfutil.getstandinsstate(repo)

@@ -271,7 +271,7 @@ class basectx(object):
                 return self._manifest.find(path)
             except KeyError:
                 raise error.ManifestLookupError(
-                    self._node, path, _(b'not found in manifest')
+                    self._node or b'None', path, _(b'not found in manifest')
                 )
         if '_manifestdelta' in self.__dict__ or path in self.files():
             if path in self._manifestdelta:
@@ -284,7 +284,7 @@ class basectx(object):
             node, flag = mfl[self._changeset.manifest].find(path)
         except KeyError:
             raise error.ManifestLookupError(
-                self._node, path, _(b'not found in manifest')
+                self._node or b'None', path, _(b'not found in manifest')
             )
 
         return node, flag
@@ -2528,6 +2528,7 @@ class overlayworkingctx(committablectx):
         return path in self._cache
 
     def clean(self):
+        self._mergestate = None
         self._cache = {}
 
     def _compact(self):
@@ -2591,6 +2592,11 @@ class overlayworkingctx(committablectx):
         return overlayworkingfilectx(
             self._repo, path, parent=self, filelog=filelog
         )
+
+    def mergestate(self, clean=False):
+        if clean or self._mergestate is None:
+            self._mergestate = mergestatemod.memmergestate(self._repo)
+        return self._mergestate
 
 
 class overlayworkingfilectx(committablefilectx):

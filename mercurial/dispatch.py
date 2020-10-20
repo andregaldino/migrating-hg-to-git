@@ -288,7 +288,7 @@ def dispatch(req):
             if req.fmsg:
                 req.ui.fmsg = req.fmsg
         except error.Abort as inst:
-            ferr.write(_(b"abort: %s\n") % inst)
+            ferr.write(_(b"abort: %s\n") % inst.message)
             if inst.hint:
                 ferr.write(_(b"(%s)\n") % inst.hint)
             return -1
@@ -489,34 +489,34 @@ def _callcatch(ui, func):
     except error.AmbiguousCommand as inst:
         ui.warn(
             _(b"hg: command '%s' is ambiguous:\n    %s\n")
-            % (inst.args[0], b" ".join(inst.args[1]))
+            % (inst.prefix, b" ".join(inst.matches))
         )
     except error.CommandError as inst:
-        if inst.args[0]:
+        if inst.command:
             ui.pager(b'help')
-            msgbytes = pycompat.bytestr(inst.args[1])
-            ui.warn(_(b"hg %s: %s\n") % (inst.args[0], msgbytes))
-            commands.help_(ui, inst.args[0], full=False, command=True)
+            msgbytes = pycompat.bytestr(inst.message)
+            ui.warn(_(b"hg %s: %s\n") % (inst.command, msgbytes))
+            commands.help_(ui, inst.command, full=False, command=True)
         else:
-            ui.warn(_(b"hg: %s\n") % inst.args[1])
+            ui.warn(_(b"hg: %s\n") % inst.message)
             ui.warn(_(b"(use 'hg help -v' for a list of global options)\n"))
     except error.ParseError as inst:
         _formatparse(ui.warn, inst)
         return -1
     except error.UnknownCommand as inst:
-        nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.args[0]
+        nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.command
         try:
             # check if the command is in a disabled extension
             # (but don't check for extensions themselves)
             formatted = help.formattedhelp(
-                ui, commands, inst.args[0], unknowncmd=True
+                ui, commands, inst.command, unknowncmd=True
             )
             ui.warn(nocmdmsg)
             ui.write(formatted)
         except (error.UnknownCommand, error.Abort):
             suggested = False
-            if len(inst.args) == 2:
-                sim = _getsimilar(inst.args[1], inst.args[0])
+            if inst.all_commands:
+                sim = _getsimilar(inst.all_commands, inst.command)
                 if sim:
                     ui.warn(nocmdmsg)
                     _reportsimilar(ui.warn, sim)

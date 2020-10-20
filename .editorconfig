@@ -6,13 +6,16 @@ root = true
 indent_size = 4
 indent_style = space
 trim_trailing_whitespace = true
+end_of_line = lf
 
 [*.{c,h}]
 indent_size = 8
 indent_style = tab
 trim_trailing_whitespace = true
+end_of_line = lf
 
 [*.t]
 indent_size = 2
 indent_style = space
 trim_trailing_whitespace = false
+end_of_line = lf

@@ -26,6 +26,8 @@ from . import (
     pathutil,
     phases,
     pycompat,
+    requirements,
+    scmutil,
     util,
 )
 from .utils import (
@@ -418,7 +420,7 @@ def stripmanifest(repo, striprev, tr, files):
 
 def manifestrevlogs(repo):
     yield repo.manifestlog.getstorage(b'')
-    if b'treemanifest' in repo.requirements:
+    if scmutil.istreemanifest(repo):
         # This logic is safe if treemanifest isn't enabled, but also
         # pointless, so we skip it if treemanifest isn't enabled.
         for unencoded, encoded, size in repo.store.datafiles():
@@ -476,7 +478,7 @@ def rebuildfncache(ui, repo):
 
         progress.complete()
 
-        if b'treemanifest' in repo.requirements:
+        if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
             # This logic is safe if treemanifest isn't enabled, but also
             # pointless, so we skip it if treemanifest isn't enabled.
             for dir in pathutil.dirs(seenfiles):

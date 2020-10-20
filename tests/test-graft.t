@@ -247,9 +247,9 @@ Graft out of order, skipping a merge and a duplicate
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 4c60f11aa304, local: 1905859650ec+, remote: 9c233e8e184d
-   preserving e for resolve of e
    d: remote is newer -> g
   getting d
+   preserving e for resolve of e
    e: versions differ -> m (premerge)
   picked tool ':merge' for e (binary False symlink False changedelete False)
   merging e

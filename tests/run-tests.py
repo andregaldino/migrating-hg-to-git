@@ -967,6 +967,7 @@ class Test(unittest.TestCase):
         if slowtimeout is None:
             slowtimeout = defaults['slowtimeout']
         self.path = path
+        self.relpath = os.path.relpath(path)
         self.bname = os.path.basename(path)
         self.name = _bytes2sys(self.bname)
         self._testdir = os.path.dirname(path)
@@ -2336,7 +2337,6 @@ class TestSuite(unittest.TestSuite):
         jobs=1,
         whitelist=None,
         blacklist=None,
-        retest=False,
         keywords=None,
         loop=False,
         runs_per_test=1,
@@ -2364,9 +2364,6 @@ class TestSuite(unittest.TestSuite):
         backwards compatible behavior which reports skipped tests as part
         of the results.
 
-        retest denotes whether to retest failed tests. This arguably belongs
-        outside of TestSuite.
-
         keywords denotes key words that will be used to filter which tests
         to execute. This arguably belongs outside of TestSuite.
 
@@ -2377,7 +2374,6 @@ class TestSuite(unittest.TestSuite):
         self._jobs = jobs
         self._whitelist = whitelist
         self._blacklist = blacklist
-        self._retest = retest
         self._keywords = keywords
         self._loop = loop
         self._runs_per_test = runs_per_test
@@ -2402,15 +2398,17 @@ class TestSuite(unittest.TestSuite):
                 result.addSkip(test, "Doesn't exist")
                 continue
 
-            if not (self._whitelist and test.bname in self._whitelist):
-                if self._blacklist and test.bname in self._blacklist:
+            is_whitelisted = self._whitelist and (
+                test.relpath in self._whitelist or test.bname in self._whitelist
+            )
+            if not is_whitelisted:
+                is_blacklisted = self._blacklist and (
+                    test.relpath in self._blacklist
+                    or test.bname in self._blacklist
+                )
+                if is_blacklisted:
                     result.addSkip(test, 'blacklisted')
                     continue
-
-                if self._retest and not os.path.exists(test.errpath):
-                    result.addIgnore(test, 'not retesting')
-                    continue
-
                 if self._keywords:
                     with open(test.path, 'rb') as f:
                         t = f.read().lower() + test.bname.lower()
@@ -3253,6 +3251,14 @@ class TestRunner(object):
                     tests.append({'path': t})
             else:
                 tests.append({'path': t})
+
+        if self.options.retest:
+            retest_args = []
+            for test in tests:
+                errpath = self._geterrpath(test)
+                if os.path.exists(errpath):
+                    retest_args.append(test)
+            tests = retest_args
         return tests
 
     def _runtests(self, testdescs):
@@ -3269,13 +3275,7 @@ class TestRunner(object):
                 orig = list(testdescs)
                 while testdescs:
                     desc = testdescs[0]
-                    # desc['path'] is a relative path
-                    if 'case' in desc:
-                        casestr = b'#'.join(desc['case'])
-                        errpath = b'%s#%s.err' % (desc['path'], casestr)
-                    else:
-                        errpath = b'%s.err' % desc['path']
-                    errpath = os.path.join(self._outputdir, errpath)
+                    errpath = self._geterrpath(desc)
                     if os.path.exists(errpath):
                         break
                     testdescs.pop(0)
@@ -3298,7 +3298,6 @@ class TestRunner(object):
                 jobs=jobs,
                 whitelist=self.options.whitelisted,
                 blacklist=self.options.blacklist,
-                retest=self.options.retest,
                 keywords=kws,
                 loop=self.options.loop,
                 runs_per_test=self.options.runs_per_test,
@@ -3345,6 +3344,19 @@ class TestRunner(object):
 
         if failed:
             return 1
+
+    def _geterrpath(self, test):
+        # test['path'] is a relative path
+        if 'case' in test:
+            # for multiple dimensions test cases
+            casestr = b'#'.join(test['case'])
+            errpath = b'%s#%s.err' % (test['path'], casestr)
+        else:
+            errpath = b'%s.err' % test['path']
+        if self.options.outputdir:
+            self._outputdir = canonpath(_sys2bytes(self.options.outputdir))
+            errpath = os.path.join(self._outputdir, errpath)
+        return errpath
 
     def _getport(self, count):
         port = self._ports.get(count)  # do we have a cached entry?

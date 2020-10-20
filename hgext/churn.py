@@ -25,7 +25,6 @@ from mercurial import (
     registrar,
     scmutil,
 )
-from mercurial.utils import dateutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -36,9 +35,8 @@ command = registrar.command(cmdtable)
 testedwith = b'ships-with-hg-core'
 
 
-def changedlines(ui, repo, ctx1, ctx2, fns):
+def changedlines(ui, repo, ctx1, ctx2, fmatch):
     added, removed = 0, 0
-    fmatch = scmutil.matchfiles(repo, fns)
     diff = b''.join(patch.diff(repo, ctx1.node(), ctx2.node(), fmatch))
     for l in diff.split(b'\n'):
         if l.startswith(b"+") and not l.startswith(b"+++ "):
@@ -73,17 +71,9 @@ def countrate(ui, repo, amap, *pats, **opts):
         _(b'analyzing'), unit=_(b'revisions'), total=len(repo)
     )
     rate = {}
-    df = False
-    if opts.get(b'date'):
-        df = dateutil.matchdate(opts[b'date'])
 
-    m = scmutil.match(repo[None], pats, opts)
-
-    def prep(ctx, fns):
+    def prep(ctx, fmatch):
         rev = ctx.rev()
-        if df and not df(ctx.date()[0]):  # doesn't match date format
-            return
-
         key = getkey(ctx).strip()
         key = amap.get(key, key)  # alias remap
         if opts.get(b'changesets'):
@@ -95,12 +85,21 @@ def countrate(ui, repo, amap, *pats, **opts):
                 return
 
             ctx1 = parents[0]
-            lines = changedlines(ui, repo, ctx1, ctx, fns)
+            lines = changedlines(ui, repo, ctx1, ctx, fmatch)
             rate[key] = [r + l for r, l in zip(rate.get(key, (0, 0)), lines)]
 
         progress.increment()
 
-    for ctx in cmdutil.walkchangerevs(repo, m, opts, prep):
+    wopts = logcmdutil.walkopts(
+        pats=pats,
+        opts=opts,
+        revspec=opts[b'rev'],
+        date=opts[b'date'],
+        include_pats=opts[b'include'],
+        exclude_pats=opts[b'exclude'],
+    )
+    revs, makefilematcher = logcmdutil.makewalker(repo, wopts)
+    for ctx in scmutil.walkchangerevs(repo, revs, makefilematcher, prep):
         continue
 
     progress.complete()
@@ -182,6 +181,9 @@ def churn(ui, repo, *pats, **opts):
 
       # display count of lines changed in every year
       hg churn -f "%Y" -s
+
+      # display count of lines changed in a time range
+      hg churn -d "2020-04 to 2020-09"
 
     It is possible to map alternate email addresses to a main address
     by providing a file using the following format::

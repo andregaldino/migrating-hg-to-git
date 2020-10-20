@@ -155,3 +155,22 @@ Support for this requirement was added in Mercurial 5.5 (released August 2020).
 Note that as of 5.5, only installations compiled with the Rust extension will
 benefit from a speedup. The other installations will do the necessary work to
 keep the index up to date, but will suffer a slowdown.
+
+exp-sharesafe
+=============
+
+NOTE: This requirement is for internal development only. The semantics are not
+frozed yet, the feature is experimental. It's not advised to use it for any
+production repository yet.
+
+Represents that the repository can be shared safely. Requirements and config of
+the source repository will be shared.
+Requirements are stored in ``.hg/store`` instead of directly in ``.hg/`` where
+they used to be stored. Some working copy related requirements are still stored
+in ``.hg/``.
+Shares read the ``.hg/hgrc`` of the source repository.
+
+Support for this requirement was added in Mercurial 5.6 (released
+November 2020). The requirement will only be present on repositories that have
+opted in to this format (by having ``format.exp-share-safe=true`` set when
+they were created).

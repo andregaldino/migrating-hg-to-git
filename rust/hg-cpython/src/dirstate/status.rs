@@ -159,7 +159,7 @@ pub fn status_wrapper(
                 .collect();
 
             let files = files?;
-            let matcher = FileMatcher::new(&files)
+            let matcher = FileMatcher::new(files.as_ref())
                 .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
             let ((lookup, status_res), warnings) = status(
                 &dmap,

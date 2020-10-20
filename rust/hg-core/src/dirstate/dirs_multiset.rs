@@ -14,7 +14,7 @@ use crate::{
         files,
         hg_path::{HgPath, HgPathBuf, HgPathError},
     },
-    DirstateEntry, DirstateMapError, FastHashMap,
+    DirstateEntry, DirstateMapError, FastHashMap, StateMap,
 };
 use std::collections::{hash_map, hash_map::Entry, HashMap, HashSet};
 
@@ -30,18 +30,42 @@ impl DirsMultiset {
     /// Initializes the multiset from a dirstate.
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
+    #[cfg(not(feature = "dirstate-tree"))]
     pub fn from_dirstate(
-        dirstate: &FastHashMap<HgPathBuf, DirstateEntry>,
+        dirstate: &StateMap,
         skip_state: Option<EntryState>,
     ) -> Result<Self, DirstateMapError> {
         let mut multiset = DirsMultiset {
             inner: FastHashMap::default(),
         };
-
-        for (filename, DirstateEntry { state, .. }) in dirstate {
+        for (filename, DirstateEntry { state, .. }) in dirstate.iter() {
             // This `if` is optimized out of the loop
             if let Some(skip) = skip_state {
                 if skip != *state {
+                    multiset.add_path(filename)?;
+                }
+            } else {
+                multiset.add_path(filename)?;
+            }
+        }
+
+        Ok(multiset)
+    }
+    /// Initializes the multiset from a dirstate.
+    ///
+    /// If `skip_state` is provided, skips dirstate entries with equal state.
+    #[cfg(feature = "dirstate-tree")]
+    pub fn from_dirstate(
+        dirstate: &StateMap,
+        skip_state: Option<EntryState>,
+    ) -> Result<Self, DirstateMapError> {
+        let mut multiset = DirsMultiset {
+            inner: FastHashMap::default(),
+        };
+        for (filename, DirstateEntry { state, .. }) in dirstate.iter() {
+            // This `if` is optimized out of the loop
+            if let Some(skip) = skip_state {
+                if skip != state {
                     multiset.add_path(filename)?;
                 }
             } else {
@@ -332,8 +356,8 @@ mod tests {
         };
         assert_eq!(expected, new);
 
-        let new = DirsMultiset::from_dirstate(&FastHashMap::default(), None)
-            .unwrap();
+        let new =
+            DirsMultiset::from_dirstate(&StateMap::default(), None).unwrap();
         let expected = DirsMultiset {
             inner: FastHashMap::default(),
         };
@@ -357,7 +381,7 @@ mod tests {
         };
         assert_eq!(expected, new);
 
-        let input_map = ["a/", "b/", "a/c", "a/d/"]
+        let input_map = ["b/x", "a/c", "a/d/x"]
             .iter()
             .map(|f| {
                 (
@@ -371,7 +395,7 @@ mod tests {
                 )
             })
             .collect();
-        let expected_inner = [("", 2), ("a", 3), ("b", 1), ("a/d", 1)]
+        let expected_inner = [("", 2), ("a", 2), ("b", 1), ("a/d", 1)]
             .iter()
             .map(|(k, v)| (HgPathBuf::from_bytes(k.as_bytes()), *v))
             .collect();
@@ -387,9 +411,9 @@ mod tests {
     fn test_dirsmultiset_new_skip() {
         let input_map = [
             ("a/", EntryState::Normal),
-            ("a/b/", EntryState::Normal),
+            ("a/b", EntryState::Normal),
             ("a/c", EntryState::Removed),
-            ("a/d/", EntryState::Merged),
+            ("a/d", EntryState::Merged),
         ]
         .iter()
         .map(|(f, state)| {
@@ -406,7 +430,7 @@ mod tests {
         .collect();
 
         // "a" incremented with "a/c" and "a/d/"
-        let expected_inner = [("", 1), ("a", 2), ("a/d", 1)]
+        let expected_inner = [("", 1), ("a", 2)]
             .iter()
             .map(|(k, v)| (HgPathBuf::from_bytes(k.as_bytes()), *v))
             .collect();

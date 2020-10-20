@@ -40,10 +40,10 @@
   note: possible conflict - a2 was renamed multiple times to:
    b2
    c2
-   preserving a for resolve of b
-  removing a
    b2: remote created -> g
   getting b2
+   preserving a for resolve of b
+  removing a
    b: remote moved from a -> m (premerge)
   picked tool ':merge' for b (binary False symlink False changedelete False)
   merging a and b to b

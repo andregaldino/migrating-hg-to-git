@@ -21,6 +21,7 @@ from ..pycompat import (
 from .. import (
     encoding,
     pycompat,
+    templater,
     util,
 )
 
@@ -178,7 +179,7 @@ def ispathsafe(path):
     return True
 
 
-def staticfile(directory, fname, res):
+def staticfile(templatepath, directory, fname, res):
     """return a file inside directory with guessed Content-Type header
 
     fname always uses '/' as directory separator and isn't allowed to
@@ -190,24 +191,20 @@ def staticfile(directory, fname, res):
     if not ispathsafe(fname):
         return
 
+    if not directory:
+        tp = templatepath or templater.templatedir()
+        if tp is not None:
+            directory = os.path.join(tp, b'static')
+
     fpath = os.path.join(*fname.split(b'/'))
-    if isinstance(directory, bytes):
-        directory = [directory]
-    for d in directory:
-        path = os.path.join(d, fpath)
-        if os.path.exists(path):
-            break
+    ct = pycompat.sysbytes(
+        mimetypes.guess_type(pycompat.fsdecode(fpath))[0] or r"text/plain"
+    )
+    path = os.path.join(directory, fpath)
     try:
         os.stat(path)
-        ct = pycompat.sysbytes(
-            mimetypes.guess_type(pycompat.fsdecode(path))[0] or r"text/plain"
-        )
         with open(path, b'rb') as fh:
             data = fh.read()
-
-        res.headers[b'Content-Type'] = ct
-        res.setbodybytes(data)
-        return res
     except TypeError:
         raise ErrorResponse(HTTP_SERVER_ERROR, b'illegal filename')
     except OSError as err:
@@ -217,6 +214,10 @@ def staticfile(directory, fname, res):
             raise ErrorResponse(
                 HTTP_SERVER_ERROR, encoding.strtolocal(err.strerror)
             )
+
+    res.headers[b'Content-Type'] = ct
+    res.setbodybytes(data)
+    return res
 
 
 def paritygen(stripecount, offset=0):

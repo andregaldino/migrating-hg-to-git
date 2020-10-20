@@ -41,7 +41,7 @@ Rebase a simple DAG:
   $ hg cat -r 2 b
   b (no-eol)
   $ hg rebase --debug -r b -d c | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 2:db0e82a16a62 "b" (b)
   $ hg tglog
   o  3: ca58782ad1e4 'b'
@@ -101,7 +101,7 @@ Write files to the working copy, and ensure they're still there after the rebase
   $ hg cat -r 3 e
   somefile (no-eol)
   $ hg rebase --debug -s b -d a | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 2:db0e82a16a62 "b" (b)
   $ hg tglog
   o  3: fc055c3b4d33 'b'
@@ -117,7 +117,7 @@ Write files to the working copy, and ensure they're still there after the rebase
   $ hg cat -r 3 b
   b (no-eol)
   $ hg rebase --debug -s 1 -d 3 | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 1:02952614a83d "d" (d)
   rebasing 2:f56b71190a8f "c"
   $ hg tglog
@@ -148,7 +148,7 @@ Rebase the working copy parent
   $ hg up -C 3
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg rebase -r 3 -d 0 --debug | grep rebasing
-  rebasing in-memory
+  rebasing in memory
   rebasing 3:753feb6fd12a "c" (tip)
   $ hg tglog
   @  3: 844a7de3e617 'c'
@@ -415,8 +415,6 @@ Make a conflict:
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   merging e
-  transaction abort!
-  rollback completed
   hit a merge conflict
   [1]
   $ hg diff
@@ -463,12 +461,7 @@ In-memory rebase that fails due to merge conflicts
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   merging e
-  transaction abort!
-  rollback completed
-  hit merge conflicts; re-running rebase without in-memory merge
-  rebasing 2:177f92b77385 "c"
-  rebasing 3:055a42cdd887 "d"
-  rebasing 4:e860deea161a "e"
+  hit merge conflicts; rebasing that commit again in the working copy
   merging e
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -487,9 +480,9 @@ Retrying without in-memory merge won't lose working copy changes
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   merging e
+  hit merge conflicts; rebasing that commit again in the working copy
   transaction abort!
   rollback completed
-  hit merge conflicts; re-running rebase without in-memory merge
   abort: uncommitted changes
   [255]
   $ cat a
@@ -859,8 +852,7 @@ Test rebasing when the file we are merging in destination is empty
   $ hg rebase -r . -d 1 --config ui.merge=internal:merge3
   rebasing 2:fb62b706688e "add b to foo" (tip)
   merging foo
-  hit merge conflicts; re-running rebase without in-memory merge
-  rebasing 2:fb62b706688e "add b to foo" (tip)
+  hit merge conflicts; rebasing that commit again in the working copy
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -893,15 +885,14 @@ Test rebasing when we're in the middle of a rebase already
   $ hg rebase -r 2 -d 1 -t:merge3
   rebasing 2:b4d249fbf8dd "bye from foo"
   merging foo
-  hit merge conflicts; re-running rebase without in-memory merge
-  rebasing 2:b4d249fbf8dd "bye from foo"
+  hit merge conflicts; rebasing that commit again in the working copy
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
   $ hg rebase -r 3 -d 1 -t:merge3
   abort: rebase in progress
-  (use 'hg rebase --continue' or 'hg rebase --abort')
+  (use 'hg rebase --continue', 'hg rebase --abort', or 'hg rebase --stop')
   [255]
   $ hg resolve --list
   U foo
