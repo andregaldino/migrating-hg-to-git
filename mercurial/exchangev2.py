@@ -79,7 +79,9 @@ def pull(pullop):
     # Ensure all new changesets are draft by default. If the repo is
     # publishing, the phase will be adjusted by the loop below.
     if csetres[b'added']:
-        phases.registernew(repo, tr, phases.draft, csetres[b'added'])
+        phases.registernew(
+            repo, tr, phases.draft, [repo[n].rev() for n in csetres[b'added']]
+        )
 
     # And adjust the phase of all changesets accordingly.
     for phasenumber, phase in phases.phasenames.items():

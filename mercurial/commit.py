@@ -105,7 +105,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
             # be compliant anyway
             #
             # if minimal phase was 0 we don't need to retract anything
-            phases.registernew(repo, tr, targetphase, [n])
+            phases.registernew(repo, tr, targetphase, [repo[n].rev()])
         return n
 
 

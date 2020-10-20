@@ -443,7 +443,7 @@ class cg1unpacker(object):
                     # ignored.
                     targetphase = phaseall = phases.draft
             if added:
-                phases.registernew(repo, tr, targetphase, [], revs=added)
+                phases.registernew(repo, tr, targetphase, added)
             if phaseall is not None:
                 phases.advanceboundary(repo, tr, phaseall, cgnodes, revs=added)
                 cgnodes = []

@@ -398,7 +398,7 @@ class mercurial_sink(common.converter_sink):
                     ctx = self.repo[node]
                     if ctx.phase() < phases.draft:
                         phases.registernew(
-                            self.repo, tr, phases.draft, [ctx.node()]
+                            self.repo, tr, phases.draft, [ctx.rev()]
                         )
 
             text = b"(octopus merge fixup)\n"
