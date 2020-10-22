@@ -45,7 +45,7 @@ should fail
   $ echo foo > con.xml
   $ hg --config ui.portablefilenames=jump add con.xml
   abort: ui.portablefilenames value is invalid ('jump')
-  [255]
+  [30]
   $ hg --config ui.portablefilenames=abort add con.xml
   abort: filename contains 'con', which is reserved on Windows: con.xml
   [255]

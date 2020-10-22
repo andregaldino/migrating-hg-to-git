@@ -513,7 +513,7 @@ test invalid phase name
   transaction abort!
   rollback completed
   abort: phases.new-commit: not a valid phase name ('babar')
-  [255]
+  [30]
 Test phase command
 ===================
 

@@ -131,7 +131,7 @@ Test error cases
   $ commitone zlib-level-invalid
   abort: storage.revlog.zlib.level is not a valid integer ('foobar')
   abort: storage.revlog.zlib.level is not a valid integer ('foobar')
-  [255]
+  [30]
 
   $ hg init zlib-level-out-of-range
   $ cat << EOF >> zlib-level-out-of-range/.hg/hgrc
@@ -188,7 +188,7 @@ Test error cases
   $ commitone zstd-level-invalid
   abort: storage.revlog.zstd.level is not a valid integer ('foobar')
   abort: storage.revlog.zstd.level is not a valid integer ('foobar')
-  [255]
+  [30]
 
   $ hg init zstd-level-out-of-range --config format.revlog-compression=zstd
   $ cat << EOF >> zstd-level-out-of-range/.hg/hgrc

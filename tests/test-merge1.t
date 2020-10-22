@@ -139,7 +139,7 @@ symlinks shouldn't be followed
 bad config
   $ hg merge 1 --config merge.checkunknown=x
   abort: merge.checkunknown not valid ('x' is none of 'abort', 'ignore', 'warn')
-  [255]
+  [30]
 this merge should fail
   $ hg merge 1 --config merge.checkunknown=abort
   b: untracked file differs
