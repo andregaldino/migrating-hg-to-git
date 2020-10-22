@@ -110,7 +110,7 @@ are also available as siblings of 'main'.
   updating to branch default
   cloning subrepo sub1 from http://localhost:$HGPORT/../sub1
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
 
   $ cat access.log
   * "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)

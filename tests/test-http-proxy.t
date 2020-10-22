@@ -91,7 +91,7 @@ misconfigured hosts)
 
   $ http_proxy=localhost:$HGPORT2 hg clone --config http_proxy.always=True http://localhost:$HGPORT/ f
   abort: error: (Connection refused|Protocol not supported|.* actively refused it|\$EADDRNOTAVAIL\$|No route to host) (re)
-  [255]
+  [100]
 
 do not use the proxy if it is in the no list
 

@@ -113,7 +113,7 @@ we don't fix up relative file URLs, but we do run shell commands in repo root
   $ cd sub
   $ hg log -qr "extdata(filedata)"
   abort: error: $ENOENT$
-  [255]
+  [100]
   $ hg log -qr "extdata(shelldata)"
   2:f6ed99a58333
 

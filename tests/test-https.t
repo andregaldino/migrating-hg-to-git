@@ -59,7 +59,7 @@ we are able to load CA certs.
   $ hg clone https://localhost:$HGPORT/ copy-pull
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
 #endif
 
 Specifying a per-host certificate file that doesn't exist will abort.  The full
@@ -84,7 +84,7 @@ A per-host certificate mismatching the server will fail verification
   (an attempt was made to load CA certificates but none were loaded; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error)
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
 
 A per-host certificate matching the server's cert will be accepted
 
@@ -238,7 +238,7 @@ cacert mismatch
   pulling from https://localhost:$HGPORT/
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub-other.pem" \
   > --insecure
   pulling from https://localhost:$HGPORT/
@@ -255,7 +255,7 @@ Test server cert which isn't valid yet
   pulling from https://localhost:$HGPORT1/
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
 
 Test server cert which no longer is valid
 
@@ -266,7 +266,7 @@ Test server cert which no longer is valid
   pulling from https://localhost:$HGPORT2/
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
 
 Setting ciphers to an invalid value aborts
   $ P="$CERTSDIR" hg --config hostsecurity.ciphers=invalid -R copy-pull id https://localhost:$HGPORT/
@@ -375,26 +375,26 @@ Clients requiring newer TLS version than what server supports fail
   (consider contacting the operator of this server and ask them to support modern TLS protocol versions; or, set hostsecurity.localhost:minimumprotocol=tls1.0 to allow use of legacy, less secure protocols when communicating with this server)
   (see https://mercurial-scm.org/wiki/SecureConnections for more info)
   abort: error: .*(unsupported protocol|wrong ssl version).* (re)
-  [255]
+  [100]
 
   $ P="$CERTSDIR" hg --config hostsecurity.minimumprotocol=tls1.1 id https://localhost:$HGPORT/
   (could not negotiate a common security protocol (tls1.1+) with localhost; the likely cause is Mercurial is configured to be more secure than the server can support)
   (consider contacting the operator of this server and ask them to support modern TLS protocol versions; or, set hostsecurity.localhost:minimumprotocol=tls1.0 to allow use of legacy, less secure protocols when communicating with this server)
   (see https://mercurial-scm.org/wiki/SecureConnections for more info)
   abort: error: .*(unsupported protocol|wrong ssl version).* (re)
-  [255]
+  [100]
   $ P="$CERTSDIR" hg --config hostsecurity.minimumprotocol=tls1.2 id https://localhost:$HGPORT/
   (could not negotiate a common security protocol (tls1.2+) with localhost; the likely cause is Mercurial is configured to be more secure than the server can support)
   (consider contacting the operator of this server and ask them to support modern TLS protocol versions; or, set hostsecurity.localhost:minimumprotocol=tls1.0 to allow use of legacy, less secure protocols when communicating with this server)
   (see https://mercurial-scm.org/wiki/SecureConnections for more info)
   abort: error: .*(unsupported protocol|wrong ssl version).* (re)
-  [255]
+  [100]
   $ P="$CERTSDIR" hg --config hostsecurity.minimumprotocol=tls1.2 id https://localhost:$HGPORT1/
   (could not negotiate a common security protocol (tls1.2+) with localhost; the likely cause is Mercurial is configured to be more secure than the server can support)
   (consider contacting the operator of this server and ask them to support modern TLS protocol versions; or, set hostsecurity.localhost:minimumprotocol=tls1.0 to allow use of legacy, less secure protocols when communicating with this server)
   (see https://mercurial-scm.org/wiki/SecureConnections for more info)
   abort: error: .*(unsupported protocol|wrong ssl version).* (re)
-  [255]
+  [100]
 
 --insecure will allow TLS 1.0 connections and override configs
 
@@ -417,7 +417,7 @@ The per-host config option by itself works
   (consider contacting the operator of this server and ask them to support modern TLS protocol versions; or, set hostsecurity.localhost:minimumprotocol=tls1.0 to allow use of legacy, less secure protocols when communicating with this server)
   (see https://mercurial-scm.org/wiki/SecureConnections for more info)
   abort: error: .*(unsupported protocol|wrong ssl version).* (re)
-  [255]
+  [100]
 
 .hg/hgrc file [hostsecurity] settings are applied to remote ui instances (issue5305)
 
@@ -430,7 +430,7 @@ The per-host config option by itself works
   (consider contacting the operator of this server and ask them to support modern TLS protocol versions; or, set hostsecurity.localhost:minimumprotocol=tls1.0 to allow use of legacy, less secure protocols when communicating with this server)
   (see https://mercurial-scm.org/wiki/SecureConnections for more info)
   abort: error: .*(unsupported protocol|wrong ssl version).* (re)
-  [255]
+  [100]
 
   $ killdaemons.py hg0.pid
   $ killdaemons.py hg1.pid
@@ -482,13 +482,13 @@ Test https with cert problems through proxy
   pulling from https://localhost:$HGPORT/
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
   $ http_proxy=http://localhost:$HGPORT1/ hg -R copy-pull pull \
   > --config web.cacerts="$CERTSDIR/pub-expired.pem" https://localhost:$HGPORT2/
   pulling from https://localhost:$HGPORT2/
   (the full certificate chain may not be available locally; see "hg help debugssl") (windows !)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
 
 
   $ killdaemons.py hg0.pid
@@ -518,7 +518,7 @@ without client certificate:
 
   $ P="$CERTSDIR" hg id https://localhost:$HGPORT/
   abort: error: .*(\$ECONNRESET\$|certificate required|handshake failure).* (re)
-  [255]
+  [100]
 
 with client certificate:
 
@@ -539,7 +539,7 @@ with client certificate:
 
   $ env P="$CERTSDIR" hg id https://localhost:$HGPORT/
   abort: error: * (glob)
-  [255]
+  [100]
 
 Missing certficate and key files result in error
 

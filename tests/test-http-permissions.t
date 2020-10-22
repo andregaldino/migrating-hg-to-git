@@ -874,13 +874,13 @@ Reset server to remove REQUEST_METHOD hack to test hg client
   searching for changes
   no changes found
   abort: HTTP Error 403: ssl required
-  [255]
+  [100]
 
   $ hg --cwd ../test2 push http://localhost:$HGPORT/
   pushing to http://localhost:$HGPORT/
   searching for changes
   abort: HTTP Error 403: ssl required
-  [255]
+  [100]
 
   $ killdaemons.py
 

@@ -41,7 +41,7 @@ expect ssl error
   searching for changes
   abort: HTTP Error 403: ssl required
   % serve errors
-  [255]
+  [100]
 
 expect authorization error
 

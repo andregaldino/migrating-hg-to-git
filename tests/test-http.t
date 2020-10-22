@@ -167,7 +167,7 @@ clone from invalid URL
 
   $ hg clone http://localhost:$HGPORT/bad
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
 
 test http authentication
 + use the same server to test server side streaming preference
@@ -283,7 +283,7 @@ test http authentication
   [255]
   $ hg id http://user:pass2@localhost:$HGPORT2/
   abort: HTTP Error 403: no
-  [255]
+  [100]
 
   $ hg -R dest-pull tag -r tip top
   $ hg -R dest-pull push http://user:pass@localhost:$HGPORT2/
@@ -475,7 +475,7 @@ clone of serve with repo in root and unserved subrepo (issue2970)
   updating to branch default
   cloning subrepo sub from http://localhost:$HGPORT/sub
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
   $ hg clone http://localhost:$HGPORT/ slash-clone
   requesting all changes
   adding changesets
@@ -486,7 +486,7 @@ clone of serve with repo in root and unserved subrepo (issue2970)
   updating to branch default
   cloning subrepo sub from http://localhost:$HGPORT/sub
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
 
 check error log
 
@@ -588,7 +588,7 @@ Request without cookie sent should fail due to lack of cookie
 
   $ hg id http://localhost:$HGPORT
   abort: HTTP Error 500: no-cookie
-  [255]
+  [100]
 
 Populate a cookies file
 
@@ -602,7 +602,7 @@ Should not send a cookie for another domain
 
   $ hg --config auth.cookiefile=cookies.txt id http://localhost:$HGPORT/
   abort: HTTP Error 500: no-cookie
-  [255]
+  [100]
 
 Add a cookie entry for our test server and verify it is sent
 
@@ -612,4 +612,4 @@ Add a cookie entry for our test server and verify it is sent
 
   $ hg --config auth.cookiefile=cookies.txt id http://localhost:$HGPORT/
   abort: HTTP Error 500: Cookie: hgkey=localhostvalue
-  [255]
+  [100]

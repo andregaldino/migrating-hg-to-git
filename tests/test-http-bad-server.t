@@ -41,7 +41,7 @@ Failure to accept() socket should result in connection related error message
 
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: (\$ECONNRESET\$|\$EADDRNOTAVAIL\$) (re)
-  [255]
+  [100]
 
 (The server exits on its own, but there is a race between that and starting a new server.
 So ensure the process is dead.)
@@ -63,7 +63,7 @@ The flakiness in this output was observable easily with
 --runs-per-test=20 on macOS 10.12 during the freeze for 4.2.
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: * (glob)
-  [255]
+  [100]
 
   $ killdaemons.py $DAEMON_PIDS
 
@@ -74,7 +74,7 @@ Failure to read all bytes in initial HTTP request should yield connection relate
 
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
-  [255]
+  [100]
 
   $ killdaemons.py $DAEMON_PIDS
 
@@ -90,7 +90,7 @@ Same failure, but server reads full HTTP request line
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
-  [255]
+  [100]
 
   $ killdaemons.py $DAEMON_PIDS
 
@@ -107,7 +107,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
-  [255]
+  [100]
 
   $ killdaemons.py $DAEMON_PIDS
 
@@ -150,7 +150,7 @@ Failure to read getbundle HTTP request
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
   abort: error: bad HTTP status line: * (glob)
-  [255]
+  [100]
 
   $ killdaemons.py $DAEMON_PIDS
 
@@ -217,7 +217,7 @@ Now do a variation using POST to send arguments
 
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
-  [255]
+  [100]
 
   $ killdaemons.py $DAEMON_PIDS
 
@@ -277,7 +277,7 @@ Server sends a single character from the HTTP response line
 
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: H
-  [255]
+  [100]
 
   $ killdaemons.py $DAEMON_PIDS
 

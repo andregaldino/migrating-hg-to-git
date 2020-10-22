@@ -182,6 +182,7 @@ def callcatch(ui, func):
             )
         )
     except error.OutOfBandError as inst:
+        detailed_exit_code = 100
         if inst.args:
             msg = _(b"abort: remote error:\n")
         else:
@@ -237,8 +238,10 @@ def callcatch(ui, func):
         elif m in b"zlib".split():
             ui.error(_(b"(is your Python install correct?)\n"))
     except util.urlerr.httperror as inst:
+        detailed_exit_code = 100
         ui.error(_(b"abort: %s\n") % stringutil.forcebytestr(inst))
     except util.urlerr.urlerror as inst:
+        detailed_exit_code = 100
         try:  # usually it is in the form (errno, strerror)
             reason = inst.reason.args[1]
         except (AttributeError, IndexError):

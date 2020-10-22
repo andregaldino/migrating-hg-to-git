@@ -618,7 +618,7 @@ Invalid URL
 
   $ hg clone http://invalid:url/a b
   abort: error: nonnumeric port: 'url'
-  [255]
+  [100]
 
 No remote source
 
@@ -629,7 +629,7 @@ No remote source
 #else
   $ hg clone http://$LOCALIP:3121/a b
   abort: error: *refused* (glob)
-  [255]
+  [100]
 #endif
   $ rm -rf b # work around bug with http clone
 

@@ -117,7 +117,7 @@ exit code with nothing outgoing (issue3611)
   This repository uses the largefiles extension.
   
   Please enable it in your Mercurial config file.
-  [255]
+  [100]
 
 used all HGPORTs, kill all daemons
   $ killdaemons.py
@@ -133,7 +133,7 @@ vanilla clients locked out from largefiles ssh repos
   remote: -
   abort: remote error
   (check previous remote output)
-  [255]
+  [100]
 
 #if serve
 

@@ -2,7 +2,7 @@
 
   $ hg clone http://localhost:$HGPORT/ copy
   abort: * (glob)
-  [255]
+  [100]
 
   $ test -d copy
   [1]
@@ -11,5 +11,5 @@
   $ cat dumb.pid >> $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/foo copy2
   abort: HTTP Error 404: * (glob)
-  [255]
+  [100]
   $ killdaemons.py

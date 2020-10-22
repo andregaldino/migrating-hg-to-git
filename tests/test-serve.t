@@ -90,10 +90,10 @@ With out of bounds accesses
 
   $ hg id http://localhost:$HGPORT/some/dir7
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
   $ hg id http://localhost:$HGPORT/some
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
 
   $ cat access.log errors.log
   $LOCALIP - - [$LOGDATE$] "GET /some/dir7?cmd=capabilities HTTP/1.1" 404 - (glob)

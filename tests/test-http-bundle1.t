@@ -178,7 +178,7 @@ clone from invalid URL
 
   $ hg clone http://localhost:$HGPORT/bad
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
 
 test http authentication
 + use the same server to test server side streaming preference
@@ -250,7 +250,7 @@ test http authentication
   [255]
   $ hg id http://user:pass2@localhost:$HGPORT2/
   abort: HTTP Error 403: no
-  [255]
+  [100]
 
   $ hg -R dest-pull tag -r tip top
   $ hg -R dest-pull push http://user:pass@localhost:$HGPORT2/
@@ -338,7 +338,7 @@ clone of serve with repo in root and unserved subrepo (issue2970)
   updating to branch default
   cloning subrepo sub from http://localhost:$HGPORT/sub
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
   $ hg clone http://localhost:$HGPORT/ slash-clone
   requesting all changes
   adding changesets
@@ -349,7 +349,7 @@ clone of serve with repo in root and unserved subrepo (issue2970)
   updating to branch default
   cloning subrepo sub from http://localhost:$HGPORT/sub
   abort: HTTP Error 404: Not Found
-  [255]
+  [100]
 
 check error log
 
@@ -364,7 +364,7 @@ Check error reporting while pulling/cloning
   requesting all changes
   abort: remote error:
   this is an exercise
-  [255]
+  [100]
   $ cat error.log
 
 disable pull-based clones
@@ -375,7 +375,7 @@ disable pull-based clones
   requesting all changes
   abort: remote error:
   server has pull-based clones disabled
-  [255]
+  [100]
 
 #if no-reposimplestore
 ... but keep stream clones working

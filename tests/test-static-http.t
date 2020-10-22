@@ -2,7 +2,7 @@
 
   $ hg clone http://localhost:$HGPORT/ copy
   abort: * (glob)
-  [255]
+  [100]
   $ test -d copy
   [1]
 
