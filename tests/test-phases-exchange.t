@@ -1327,7 +1327,7 @@ error, but EEXIST)
   waiting for lock on repository $TESTTMP/Upsilon held by ''
   abort: repository $TESTTMP/Upsilon: timed out waiting for lock held by ''
   (lock might be very busy)
-  [255]
+  [20]
   $ rm .hg/store/lock
 
   $ cd ..

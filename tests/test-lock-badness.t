@@ -136,6 +136,6 @@ Pushing to a local read-only repo that can't be locked
   pushing to a
   searching for changes
   abort: could not lock repository a: Permission denied
-  [255]
+  [20]
 
   $ chmod 700 a/.hg/store

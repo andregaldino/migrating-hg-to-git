@@ -159,6 +159,7 @@ def callcatch(ui, func):
     # Global exception handling, alphabetically
     # Mercurial-specific first, followed by built-in and library exceptions
     except error.LockHeld as inst:
+        detailed_exit_code = 20
         if inst.errno == errno.ETIMEDOUT:
             reason = _(b'timed out waiting for lock held by %r') % (
                 pycompat.bytestr(inst.locker)
@@ -172,6 +173,7 @@ def callcatch(ui, func):
         if not inst.locker:
             ui.error(_(b"(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
+        detailed_exit_code = 20
         ui.error(
             _(b"abort: could not lock %s: %s\n")
             % (
