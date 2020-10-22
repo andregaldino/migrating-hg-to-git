@@ -5,7 +5,7 @@ the remote hg is able to successfully roll back the transaction.
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" -q ssh://user@dummy/`pwd`/remote local
 
   $ check_for_abandoned_transaction() {
-  >     [[ -f $TESTTMP/remote/.hg/store/journal ]] && echo "Abandoned transaction!"
+  >     [ -f $TESTTMP/remote/.hg/store/journal ] && echo "Abandoned transaction!"
   > }
 
   $ pidfile=`pwd`/pidfile
@@ -55,12 +55,7 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
 
   $ cd local
   $ echo foo > foo ; hg commit -qAm "commit"
-  $ hg push -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd $remotecmd 2>&1 | grep -v $killable_pipe
-  pushing to ssh://user@dummy/$TESTTMP/remote
-  searching for changes
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
+  $ hg push -q -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd $remotecmd 2>&1 | grep -v $killable_pipe
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
 
   $ check_for_abandoned_transaction
