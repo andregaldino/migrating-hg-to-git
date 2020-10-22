@@ -408,10 +408,10 @@ def matchtree(pattern, tree, placeholder=None, incompletenodes=()):
 def parseerrordetail(inst):
     """Compose error message from specified ParseError object
     """
-    if len(inst.args) > 1:
-        return _(b'at %d: %s') % (inst.args[1], inst.args[0])
+    if inst.location is not None:
+        return _(b'at %d: %s') % (inst.location, inst.message)
     else:
-        return inst.args[0]
+        return inst.message
 
 
 class alias(object):

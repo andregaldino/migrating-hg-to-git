@@ -312,9 +312,9 @@ def _scantemplate(tmpl, start, stop, quote=b'', raw=False):
 
 
 def _addparseerrorhint(inst, tmpl):
-    if len(inst.args) <= 1:
-        return  # no location
-    loc = inst.args[1]
+    if inst.location is None:
+        return
+    loc = inst.location
     # Offset the caret location by the number of newlines before the
     # location of the error, since we will replace one-char newlines
     # with the two-char literal r'\n'.

@@ -280,7 +280,7 @@ def parseeol(ui, repo, nodes):
                 b"warning: ignoring .hgeol file due to parse error "
                 b"at %s: %s\n"
             )
-            % (inst.args[1], inst.args[0])
+            % (inst.location, inst.message)
         )
     return None
 

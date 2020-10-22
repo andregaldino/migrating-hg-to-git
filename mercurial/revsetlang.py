@@ -642,8 +642,8 @@ def parse(spec, lookup=None):
     try:
         return _parsewith(spec, lookup=lookup)
     except error.ParseError as inst:
-        if len(inst.args) > 1:  # has location
-            loc = inst.args[1]
+        if inst.location is not None:
+            loc = inst.location
             # Remove newlines -- spaces are equivalent whitespace.
             spec = spec.replace(b'\n', b' ')
             # We want the caret to point to the place in the template that

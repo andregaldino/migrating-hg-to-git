@@ -243,15 +243,15 @@ def _formatparse(write, inst):
     if isinstance(inst, error.UnknownIdentifier):
         # make sure to check fileset first, as revset can invoke fileset
         similar = _getsimilar(inst.symbols, inst.function)
-    if len(inst.args) > 1:
+    if inst.location is not None:
         write(
             _(b"hg: parse error at %s: %s\n")
-            % (pycompat.bytestr(inst.args[1]), inst.args[0])
+            % (pycompat.bytestr(inst.location), inst.message)
         )
-        if inst.args[0].startswith(b' '):
+        if inst.message.startswith(b' '):
             write(_(b"unexpected leading whitespace\n"))
     else:
-        write(_(b"hg: parse error: %s\n") % inst.args[0])
+        write(_(b"hg: parse error: %s\n") % inst.message)
         _reportsimilar(write, similar)
     if inst.hint:
         write(_(b"(%s)\n") % inst.hint)
