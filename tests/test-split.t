@@ -159,7 +159,7 @@ was always recording three commits, one for each diff hunk, in reverse order
   transaction abort!
   rollback completed
   abort: edit failed: false exited with status 1
-  [255]
+  [250]
   $ hg status
 
   $ HGEDITOR="\"$PYTHON\" $TESTTMP/editor.py"

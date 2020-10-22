@@ -760,7 +760,7 @@ Test aborted editor on final message
   already rebased 1:f899f3910ce7 B "B" as 82b8abf9c185
   rebasing 3:63668d570d21 C tip "C"
   abort: edit failed: false exited with status 1
-  [255]
+  [250]
   $ hg tglog
   o  3: 63668d570d21 'C'
   |

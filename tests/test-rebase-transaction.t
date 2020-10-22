@@ -171,7 +171,7 @@ rebase can then be continued
   transaction abort!
   rollback completed
   abort: edit failed: false exited with status 1
-  [255]
+  [250]
   $ hg tglog
   o  5: D
   |

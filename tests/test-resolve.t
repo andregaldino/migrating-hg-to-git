@@ -495,7 +495,7 @@ Test when config option is set:
   > EOF
   re-merge all unresolved files (yn)? n
   abort: user quit
-  [255]
+  [250]
 
   $ hg resolve --all << EOF
   > y
@@ -523,7 +523,7 @@ Test that commands.resolve.confirm respect --mark option (only when no patterns 
   > EOF
   mark all unresolved files as resolved (yn)? n
   abort: user quit
-  [255]
+  [250]
 
   $ hg resolve -m << EOF
   > y
@@ -551,7 +551,7 @@ Test that commands.resolve.confirm respect --unmark option (only when no pattern
   > EOF
   mark all resolved files as unresolved (yn)? n
   abort: user quit
-  [255]
+  [250]
 
   $ hg resolve -m << EOF
   > y

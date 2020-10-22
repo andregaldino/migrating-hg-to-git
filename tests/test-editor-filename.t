@@ -17,7 +17,7 @@ Verify that the path for a commit editor has the expected suffix.
   $ hg commit
   *.commit.hg.txt (glob)
   abort: edit failed: sh exited with status 1
-  [255]
+  [250]
 
 Verify that the path for a histedit editor has the expected suffix.
 
@@ -30,7 +30,7 @@ Verify that the path for a histedit editor has the expected suffix.
   $ hg histedit
   *.histedit.hg.txt (glob)
   abort: edit failed: sh exited with status 1
-  [255]
+  [250]
 
 Verify that when performing an action that has the side-effect of creating an
 editor for a diff, the file ends in .diff.
@@ -61,4 +61,4 @@ editor for a diff, the file ends in .diff.
   (enter ? for help) [Ynesfdaq?] q
   
   abort: user quit
-  [255]
+  [250]

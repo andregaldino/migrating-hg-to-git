@@ -195,6 +195,13 @@ class StateError(Abort):
     """
 
 
+class CanceledError(Abort):
+    """Indicates that the user canceled the operation.
+
+    Examples: Close commit editor with error status, quit chistedit.
+    """
+
+
 class HookLoadError(Abort):
     """raised when loading a hook fails, aborting an operation
 

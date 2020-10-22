@@ -1272,7 +1272,7 @@ the hunk is left unchanged.
             elif r == 6:  # all
                 ret = skipall = True
             elif r == 7:  # quit
-                raise error.Abort(_(b'user quit'))
+                raise error.CanceledError(_(b'user quit'))
             return ret, skipfile, skipall, newpatches
 
     seen = set()

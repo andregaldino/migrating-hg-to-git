@@ -153,7 +153,7 @@ Test that --interactive lift the need for --all
   (enter ? for help) [Ynesfdaq?] q
   
   abort: user quit
-  [255]
+  [250]
   $ ls folder1/
   g
 

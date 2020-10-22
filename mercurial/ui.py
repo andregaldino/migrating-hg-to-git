@@ -1852,7 +1852,7 @@ class ui(object):
             self.system(
                 b"%s \"%s\"" % (editor, name),
                 environ=environ,
-                onerr=error.Abort,
+                onerr=error.CanceledError,
                 errprefix=_(b"edit failed"),
                 blockedtag=b'editor',
             )

@@ -155,7 +155,7 @@ Failed commit with --addremove should not update dirstate
   $ HGEDITOR=false hg ci --addremove
   adding newfile
   abort: edit failed: false exited with status 1
-  [255]
+  [250]
   $ hg status
   ? newfile
 

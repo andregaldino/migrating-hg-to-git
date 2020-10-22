@@ -885,7 +885,7 @@ Help, quit
   (enter ? for help) [Ynesfdaq?] q
   
   abort: user quit
-  [255]
+  [250]
 
 Patterns
 
@@ -1014,7 +1014,7 @@ f, quit
   (enter ? for help) [Ynesfdaq?] q
   
   abort: user quit
-  [255]
+  [250]
 
 s, all
 
@@ -1419,7 +1419,7 @@ Trying to edit patch for whole file
   (enter ? for help) [Ynesfdaq?] q
   
   abort: user quit
-  [255]
+  [250]
   $ hg revert editedfile
 
 Removing changes from patch

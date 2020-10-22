@@ -1076,7 +1076,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
                 b"apply changes (y/N)? $$ &Yes $$ &No", default=1
             )
         ):
-            raise error.Abort(_(b'absorb cancelled\n'))
+            raise error.CanceledError(_(b'absorb cancelled\n'))
 
         state.apply()
         if state.commit():

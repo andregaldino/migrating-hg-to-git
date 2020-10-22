@@ -5830,7 +5830,7 @@ def resolve(ui, repo, *pats, **opts):
             if ui.promptchoice(
                 _(b're-merge all unresolved files (yn)?$$ &Yes $$ &No')
             ):
-                raise error.Abort(_(b'user quit'))
+                raise error.CanceledError(_(b'user quit'))
         if mark and not pats:
             if ui.promptchoice(
                 _(
@@ -5838,7 +5838,7 @@ def resolve(ui, repo, *pats, **opts):
                     b'$$ &Yes $$ &No'
                 )
             ):
-                raise error.Abort(_(b'user quit'))
+                raise error.CanceledError(_(b'user quit'))
         if unmark and not pats:
             if ui.promptchoice(
                 _(
@@ -5846,7 +5846,7 @@ def resolve(ui, repo, *pats, **opts):
                     b'$$ &Yes $$ &No'
                 )
             ):
-                raise error.Abort(_(b'user quit'))
+                raise error.CanceledError(_(b'user quit'))
 
     uipathfn = scmutil.getuipathfn(repo)
 

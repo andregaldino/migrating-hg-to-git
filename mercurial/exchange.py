@@ -193,7 +193,7 @@ def _checkpublish(pushop):
                 _(b'push and publish %i changesets (yn)?$$ &Yes $$ &No')
                 % len(published)
             ):
-                raise error.Abort(_(b'user quit'))
+                raise error.CanceledError(_(b'user quit'))
         elif behavior == b'abort':
             msg = _(b'push would publish %i changesets') % len(published)
             hint = _(
