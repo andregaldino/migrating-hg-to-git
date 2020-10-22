@@ -219,7 +219,7 @@ unshelve and conflicts with tracked and untracked files
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
 
 #if phasebased
   $ hg log -G --template '{rev}  {desc|firstline}  {author}  {date|isodate}'
@@ -290,7 +290,7 @@ unshelve and conflicts with tracked and untracked files
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ hg st
   M f
   ? f.orig
@@ -345,7 +345,7 @@ test .orig files go where the user wants them to
   $ hg unshelve -q --config 'ui.origbackuppath=.hg/origbackups'
   warning: conflicts while merging root! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ ls .hg/origbackups
   root
   $ rm -rf .hg/origbackups
@@ -563,7 +563,7 @@ will be preserved.
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ echo "aaabbbccc" > a
   $ rm a.orig
   $ hg resolve --mark a
@@ -637,7 +637,7 @@ shelve on new branch, conflict with previous shelvedstate
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
 
 Removing restore branch information from shelvedstate file(making it looks like
 in previous versions) and running unshelve --continue
@@ -715,7 +715,7 @@ Prepare unshelve with a corrupted shelvedstate
   merging file
   warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ echo somethingsomething > .hg/shelvedstate
 
 Unshelve --continue fails with appropriate message if shelvedstate is corrupted
@@ -762,7 +762,7 @@ Unshelve respects --keep even if user intervention is needed
   merging file
   warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ hg resolve --mark file
   (no more unresolved files)
   continue: hg unshelve --continue
@@ -819,7 +819,7 @@ New versions of Mercurial know how to read onld shelvedstate files
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
 putting v1 shelvedstate file in place of a created v2
   $ cat << EOF > .hg/shelvedstate
   > 1
@@ -860,7 +860,7 @@ Test with the `.shelve` missing, but the changeset still in the repo (non-natura
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ hg abort
   unshelve of 'default' aborted
 
@@ -877,7 +877,7 @@ Unshelve without .shelve metadata (can happen when upgrading a repository with o
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ cat .hg/shelved/default.shelve
   node=82e0cb9893247d12667017593ce1e5655860f1ac
   $ hg abort
@@ -905,7 +905,7 @@ Block merge abort when unshelve in progress(issue6160)
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
 
   $ hg log --template '{desc|firstline}  {author}  {date|isodate} \n' -r .
   pending changes temporary commit  shelve@localhost  1970-01-01 00:00 +0000 
@@ -934,7 +934,7 @@ Demonstrate that the labels are correct in the merge conflict
   $ hg unshelve -q
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ cat foo
   r0
   <<<<<<< working-copy: 0b2fcf2a90e9 - shelve: pending changes temporary commit

@@ -21,7 +21,7 @@ Abort absorb if there is an unfinished operation.
   merging foo.whole
   warning: conflicts while merging foo.whole! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg --config extensions.rebase= absorb
   abort: rebase in progress

@@ -173,7 +173,7 @@ rebase --continue with bookmarks present (issue3802)
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ echo 'c' > c
   $ hg resolve --mark c
   (no more unresolved files)

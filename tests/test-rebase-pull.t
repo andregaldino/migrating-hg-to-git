@@ -90,7 +90,7 @@ Abort pull early if another operation (histedit) is in progress:
   > EOF
   Editing (d80cc2da061e), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ hg pull --rebase
   abort: histedit in progress
   (use 'hg histedit --continue' or 'hg histedit --abort')

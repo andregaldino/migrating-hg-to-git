@@ -62,7 +62,7 @@ Rebasing B onto E:
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Force a commit on C during the interruption:
 
@@ -99,7 +99,7 @@ Resume the rebasing:
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Solve the conflict and go on:
 
@@ -158,7 +158,7 @@ Rebasing B onto E:
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Force a commit on B' during the interruption:
 
@@ -230,7 +230,7 @@ Rebasing B onto E:
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Change phase on B and B'
 
@@ -303,7 +303,7 @@ Continue rebase after upgrading from an hg version before 9c9cfecd4600:
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg tglog
   @  5: 45396c49d53b 'B'
   |
@@ -506,7 +506,7 @@ Make sure merge state is cleaned up after a no-op rebase merge (issue5494)
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ echo a > a
   $ echo c >> a
   $ hg resolve --mark a
@@ -526,7 +526,7 @@ Now try again with --collapse
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ echo a > a
   $ echo c >> a
   $ hg resolve --mark a

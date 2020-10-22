@@ -201,7 +201,7 @@ Verify rebase conflicts pulls in the conflicting changes
   warning: conflicts while merging backend.sparse! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging data.py! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ rm *.orig
   $ ls -A
   .hg

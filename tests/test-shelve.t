@@ -366,7 +366,7 @@ force a conflicted merge to occur
   merging a/a
   warning: conflicts while merging a/a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ hg status -v
   M a/a
   M b.rename/b
@@ -484,7 +484,7 @@ redo the unshelve to get a conflict
   $ hg unshelve -q
   warning: conflicts while merging a/a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
 
 attempt to continue
 
@@ -705,7 +705,7 @@ Recreate some conflict again
   merging a/a
   warning: conflicts while merging a/a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
   $ hg bookmark
      test                      (4|13):33f7f61e6c5e (re)
 
@@ -1387,7 +1387,7 @@ Abort unshelve while merging (issue5123)
   warning: conflicts while merging bar1! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging bar2! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+  [240]
 
   $ cat > bar1 <<EOF
   > A

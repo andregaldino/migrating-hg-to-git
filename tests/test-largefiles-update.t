@@ -594,7 +594,7 @@ it is aborted by conflict.
   merging normal1
   warning: conflicts while merging normal1! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ cat .hglf/large1
   58e24f733a964da346e2407a2bee99d9001184f5
   $ cat large1
@@ -762,7 +762,7 @@ added:
   > hgext.largefiles.lfutil.getlfilestoupdate = getlfilestoupdate
   > EOF
   $ hg up -Cr "8" --config extensions.crashupdatelfiles=../crashupdatelfiles.py
-  [7]
+  [254]
 Check large1 content and status ... and that update will undo modifications:
   $ cat large1
   large1 in #3

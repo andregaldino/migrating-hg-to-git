@@ -1307,6 +1307,9 @@ coreconfigitem(
     b'ui', b'editor', default=dynamicdefault,
 )
 coreconfigitem(
+    b'ui', b'detailed-exit-code', default=False, experimental=True,
+)
+coreconfigitem(
     b'ui', b'fallbackencoding', default=None,
 )
 coreconfigitem(

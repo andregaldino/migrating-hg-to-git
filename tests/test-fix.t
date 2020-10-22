@@ -869,7 +869,7 @@ fixing the working directory if there are unresolved merge conflicts.
   merging foo.whole
   warning: conflicts while merging foo.whole! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg --config extensions.rebase= fix --working-dir
   abort: unresolved conflicts

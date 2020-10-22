@@ -108,7 +108,7 @@ continued
   merging conflict
   warning: conflicts while merging conflict! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg tglog
   o  5: D
   |

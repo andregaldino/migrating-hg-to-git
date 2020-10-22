@@ -201,7 +201,7 @@ Verify rebase temporarily includes excluded files
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg debugsparse
   [exclude]

@@ -437,7 +437,7 @@ rollback should not work after a histedit
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   Editing (cb9a9f314b8b), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ HGEDITOR=true hg histedit --continue
   saved backup bundle to $TESTTMP/r0/.hg/strip-backup/cb9a9f314b8b-cc5ccb0b-histedit.hg
 

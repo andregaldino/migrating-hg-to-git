@@ -92,7 +92,7 @@ Make sure filename heuristics do not when they are not related
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ cd ..
   $ rm -rf repo
@@ -249,7 +249,7 @@ With small limit
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg rebase --abort
   rebase aborted
@@ -711,7 +711,7 @@ When the sourcecommitlimit is small and we have more drafts, we use heuristics o
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 But when we have "sourcecommitlimit > (no. of drafts from base to c1)", we do
 fullcopytracing

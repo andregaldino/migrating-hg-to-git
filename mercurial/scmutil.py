@@ -148,6 +148,8 @@ def callcatch(ui, func):
     return func() if no exception happens. otherwise do some error handling
     and return an exit code accordingly. does not handle all exceptions.
     """
+    coarse_exit_code = -1
+    detailed_exit_code = -1
     try:
         try:
             return func()
@@ -212,7 +214,8 @@ def callcatch(ui, func):
         ui.error(b"%s\n" % inst)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)
-        return 1
+        detailed_exit_code = 240
+        coarse_exit_code = 1
     except error.WdirUnsupported:
         ui.error(_(b"abort: working directory revision cannot be specified\n"))
     except error.Abort as inst:
@@ -266,9 +269,13 @@ def callcatch(ui, func):
     except SystemExit as inst:
         # Commands shouldn't sys.exit directly, but give a return code.
         # Just in case catch this and and pass exit code to caller.
-        return inst.code
+        detailed_exit_code = 254
+        coarse_exit_code = inst.code
 
-    return -1
+    if ui.configbool(b'ui', b'detailed-exit-code'):
+        return detailed_exit_code
+    else:
+        return coarse_exit_code
 
 
 def checknewlabel(repo, lbl, kind):

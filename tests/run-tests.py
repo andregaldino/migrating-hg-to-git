@@ -1439,6 +1439,7 @@ class Test(unittest.TestCase):
             hgrc.write(b'[ui]\n')
             hgrc.write(b'slash = True\n')
             hgrc.write(b'interactive = False\n')
+            hgrc.write(b'detailed-exit-code = True\n')
             hgrc.write(b'merge = internal:merge\n')
             hgrc.write(b'mergemarkers = detailed\n')
             hgrc.write(b'promptecho = True\n')

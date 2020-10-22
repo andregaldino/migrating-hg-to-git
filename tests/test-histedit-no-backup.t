@@ -52,7 +52,7 @@ Test when `backup-bundle` config option is enabled:
   merging file
   Editing (7d5187087c79), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ hg abort
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/foo/.hg/strip-backup/1d8f701c7b35-cf7be322-backup.hg
@@ -74,7 +74,7 @@ Enable config option:
   merging file
   Editing (7d5187087c79), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
 
   $ hg abort
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

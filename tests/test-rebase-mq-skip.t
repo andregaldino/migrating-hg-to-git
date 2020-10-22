@@ -156,7 +156,7 @@ already has one local mq patch
   note: not rebasing 3:6ff5b8feed8e r3 "r3", its destination already has all its changes
   rebasing 4:094320fec554 r4 "r4"
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ HGMERGE=internal:local hg resolve --all
   (no more unresolved files)

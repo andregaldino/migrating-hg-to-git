@@ -70,7 +70,7 @@ Rebasing B onto E - check keep: and phases
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Solve the conflict and go on:
 
@@ -127,7 +127,7 @@ Rebase F onto E - check keepbranches:
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Solve the conflict and go on:
 

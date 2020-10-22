@@ -28,7 +28,7 @@ Testing on-failure=continue
   merging a failed!
   merging b failed!
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg resolve --list
   U a
@@ -45,7 +45,7 @@ Testing on-failure=halt
   merging b
   merging a failed!
   merge halted after failed merge (see hg resolve)
-  [1]
+  [240]
 
   $ hg resolve --list
   U a
@@ -73,7 +73,7 @@ Testing on-failure=prompt
   merging b failed!
   continue merge operation (yn)? n
   merge halted after failed merge (see hg resolve)
-  [1]
+  [240]
 
   $ hg resolve --list
   U a
@@ -102,7 +102,7 @@ Check that successful tool with failed post-check halts the merge
   merging b failed!
   continue merge operation (yn)? n
   merge halted after failed merge (see hg resolve)
-  [1]
+  [240]
 
   $ hg resolve --list
   R a
@@ -125,7 +125,7 @@ Check that conflicts with conflict check also halts the merge
   merging b
   merging a failed!
   merge halted after failed merge (see hg resolve)
-  [1]
+  [240]
 
   $ hg resolve --list
   U a
@@ -146,7 +146,7 @@ Check that always-prompt also can halt the merge
   was merge of 'b' successful (yn)? n
   merging b failed!
   merge halted after failed merge (see hg resolve)
-  [1]
+  [240]
 
   $ hg resolve --list
   R a

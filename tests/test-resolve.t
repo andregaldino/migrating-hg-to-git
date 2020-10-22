@@ -464,7 +464,7 @@ Test 'hg resolve' confirm config option functionality |
   warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Test when commands.resolve.confirm config option is not set:
 ===========================================================

@@ -101,7 +101,7 @@ Test extension of unfinished states support.
   merging file1
   warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg chainify --continue')
-  [1]
+  [240]
   $ hg status --config commands.status.verbose=True
   M file1
   ? file1.orig

@@ -82,7 +82,7 @@ Conflicting rebase:
   merging common
   warning: conflicts while merging common! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
 Insert unsupported advisory merge record:
 
@@ -149,7 +149,7 @@ earlier than 2.7 by renaming ".hg/rebasestate" temporarily.
   merging common
   warning: conflicts while merging common! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ mv .hg/rebasestate .hg/rebasestate.back
   $ hg update --quiet --clean 2
@@ -219,7 +219,7 @@ Rebase and abort without generating new changesets:
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg tglog
   %  4:draft 'C1'
@@ -278,7 +278,7 @@ rebase abort should not leave working copy in a merge state if tip-1 is public
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg abort
   rebase aborted
   $ hg log -G --template "{rev} {desc} {bookmarks}"
@@ -316,7 +316,7 @@ user has somehow managed to update to a different revision (issue4009)
   $ hg rebase -d @ -b foo --tool=internal:fail
   rebasing 2:070cf4580bb5 foo tip "b2"
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ mv .hg/rebasestate ./ # so we're allowed to hg up like in mercurial <2.6.3
   $ hg up -C 0            # user does other stuff in the repo
@@ -463,7 +463,7 @@ during a rebase (issue4661)
   $ hg rebase -d 1 --tool 'internal:fail'
   rebasing 2:e4ea5cdc9789 "conflicting 1"
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg abort
   rebase aborted
   $ hg summary
@@ -504,7 +504,7 @@ commit will cause merge conflict on rebase
   note: not rebasing 3:0682fd3dabf5 "disappear draft", its destination already has all its changes
   warning: conflicts while merging root! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg abort
   rebase aborted
   $ cd ..

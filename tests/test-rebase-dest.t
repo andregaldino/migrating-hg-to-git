@@ -49,7 +49,7 @@ Requiring dest should not break continue or other rebase options
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ echo d > c
   $ hg resolve --mark --all
   (no more unresolved files)

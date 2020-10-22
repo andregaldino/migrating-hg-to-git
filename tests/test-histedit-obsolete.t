@@ -45,7 +45,7 @@ Test that histedit learns about obsolescence not stored in histedit state
   $ hg histedit -r 'all()' --commands plan
   Editing (1b2d564fad96), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ hg st
   A b
   A c
@@ -72,7 +72,7 @@ With some node gone missing during the edit.
   $ hg histedit -r 'all()' --commands plan
   Editing (49d44ab2be1b), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ hg st
   A b
   A d
@@ -227,7 +227,7 @@ Test that rewriting leaving instability behind is allowed
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   Editing (b346ab9a313d), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ echo c >> c
   $ hg histedit --continue
   1 new orphan changesets
@@ -361,7 +361,7 @@ New-commit as draft (default)
   0 files updated, 0 files merged, 6 files removed, 0 files unresolved
   Editing (b449568bf7fc), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ echo f >> f
   $ hg histedit --continue
   $ hg log -G
@@ -403,7 +403,7 @@ New-commit as secret (config)
   0 files updated, 0 files merged, 6 files removed, 0 files unresolved
   Editing (b449568bf7fc), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ echo f >> f
   $ hg histedit --continue
   $ hg log -G
@@ -529,7 +529,7 @@ attempted later.
   > EOF
   Editing (ee118ab9fa44), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
 
 #if abortcommand
 when in dry-run mode
@@ -568,7 +568,7 @@ when in dry-run mode
   > EOF
   Editing (ee118ab9fa44), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ hg histedit --continue --config experimental.evolution.track-operation=1
   $ hg log -G
   @  23:175d6b286a22 (secret) k

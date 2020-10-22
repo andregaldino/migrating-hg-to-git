@@ -67,7 +67,7 @@ Conflicting rebase:
   merging common
   warning: conflicts while merging common! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg status --config commands.status.verbose=1
   M common
@@ -345,7 +345,7 @@ Test minimization of merge conflicts
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg diff
   diff -r 328e4ab1f7cc a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
@@ -365,7 +365,7 @@ Test minimization of merge conflicts
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg diff
   diff -r 328e4ab1f7cc a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
@@ -403,7 +403,7 @@ Test rebase with obsstore turned on and off (issue5606)
   merging B
   warning: conflicts while merging B! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ echo 4 > B
   $ hg resolve -m
@@ -455,7 +455,7 @@ Test where the conflict happens when rebasing a merge commit
   merging conflict
   warning: conflicts while merging conflict! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg tglog
   @  8:draft 'E'
   |

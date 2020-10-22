@@ -292,7 +292,7 @@ Preserves external parent
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ echo F > E
   $ hg resolve -m
@@ -659,7 +659,7 @@ running into merge conflict and invoking rebase --continue.
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ rm A.orig
   $ hg resolve --mark A
   (no more unresolved files)
@@ -706,7 +706,7 @@ Test aborted editor on final message
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg tglog
   o  3: 63668d570d21 'C'
   |
@@ -734,7 +734,7 @@ Test aborted editor on final message
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg tglog
   %  3: 63668d570d21 'C'
   |

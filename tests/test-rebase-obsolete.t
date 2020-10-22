@@ -1033,7 +1033,7 @@ Create the changes that we will rebase
   merging willconflict
   warning: conflicts while merging willconflict! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ hg resolve --mark willconflict
   (no more unresolved files)
@@ -1788,7 +1788,7 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
   merging D
   warning: conflicts while merging D! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
 
   $ cp -R . $TESTTMP/hidden-state2
 
@@ -1875,7 +1875,7 @@ Test --stop option |
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg rebase --stop
   1 new orphan changesets
   $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
@@ -1937,7 +1937,7 @@ Test it aborts if unstable csets is not allowed:
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg rebase --stop
   abort: cannot remove original changesets with unrebased descendants
   (either enable obsmarkers to allow unstable revisions or use --keep to keep original changesets)
@@ -1955,7 +1955,7 @@ Test --stop when --keep is passed:
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg rebase --stop
   $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
   o  7:7fffad344617 test
@@ -2017,7 +2017,7 @@ Test --stop aborts when --collapse was passed:
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg rebase --stop
   abort: cannot stop in --collapse session
   [255]
@@ -2050,7 +2050,7 @@ Test --stop raise errors with conflicting options:
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg rebase --stop --dry-run
   abort: cannot specify both --stop and --dry-run
   [255]
@@ -2118,7 +2118,7 @@ Test --stop moves bookmarks of original revisions to new rebased nodes:
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
-  [1]
+  [240]
   $ hg rebase --stop
   1 new orphan changesets
   $ hg log -GT "{rev}: {node|short} '{desc}' bookmarks: {bookmarks}\n"

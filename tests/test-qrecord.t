@@ -458,7 +458,7 @@ qrecord should throw an error when histedit in process
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   Editing (ea55e2ae468f), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ echo 'foo bar' > a
   $ hg qrecord -d '0 0' -m aaa a.patch <<EOF
   > y

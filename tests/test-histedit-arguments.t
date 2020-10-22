@@ -151,7 +151,7 @@ temporarily.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   Editing (08d98a8350f3), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
 
   $ hg graft --continue
   abort: no graft in progress
@@ -337,7 +337,7 @@ Test --continue with --keep
   > EOF
   Editing (eb57da33312f), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ echo edit >> alpha
   $ hg histedit -q --continue
   $ hg log -G -T '{rev}:{node|short} {desc}'
@@ -364,7 +364,7 @@ Test that abort fails gracefully on exception
   > EOF
   Editing (8fda0c726bf2), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
 Corrupt histedit state file
   $ sed 's/8fda0c726bf2/123456789012/' .hg/histedit-state > ../corrupt-histedit
   $ mv ../corrupt-histedit .hg/histedit-state
@@ -489,7 +489,7 @@ in which case this test should be revisited.
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   Fix up the change (pick 8cde254db839)
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ hg resolve -m --all
   (no more unresolved files)
   continue: hg histedit --continue
@@ -498,7 +498,7 @@ in which case this test should be revisited.
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   Editing (6f2f0241f119), you may commit or record as needed now.
   (hg histedit --continue to resume)
-  [1]
+  [240]
   $ hg resolve -m --all
   (no more unresolved files)
   continue: hg histedit --continue
