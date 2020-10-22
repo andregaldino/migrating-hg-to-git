@@ -319,7 +319,7 @@ def build_installer_py2exe(
     hg_build_dir = source_dir / 'build'
 
     requirements_txt = (
-        source_dir / 'contrib' / 'packaging' / 'requirements_win32.txt'
+        source_dir / 'contrib' / 'packaging' / 'requirements-windows-py2.txt'
     )
 
     build_py2exe(
