@@ -248,8 +248,6 @@ def _formatparse(write, inst):
             _(b"hg: parse error at %s: %s\n")
             % (pycompat.bytestr(inst.location), inst.message)
         )
-        if inst.message.startswith(b' '):
-            write(_(b"unexpected leading whitespace\n"))
     else:
         write(_(b"hg: parse error: %s\n") % inst.message)
         _reportsimilar(write, similar)

@@ -68,8 +68,7 @@ issue1829: wrong indentation
   $ echo '[foo]' > $HGRC
   $ echo '  x = y' >> $HGRC
   $ hg version
-  hg: parse error at $TESTTMP/hgrc:2:   x = y
-  unexpected leading whitespace
+  hg: parse error at $TESTTMP/hgrc:2: unexpected leading whitespace:   x = y
   [255]
 
   $ "$PYTHON" -c "from __future__ import print_function; print('[foo]\nbar = a\n b\n c \n  de\n fg \nbaz = bif cb \n')" \

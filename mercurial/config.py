@@ -200,7 +200,10 @@ class config(object):
                 self._unset.append((section, name))
                 continue
 
-            raise error.ParseError(l.rstrip(), (b"%s:%d" % (src, line)))
+            message = l.rstrip()
+            if l.startswith(b' '):
+                message = b"unexpected leading whitespace: %s" % message
+            raise error.ParseError(message, (b"%s:%d" % (src, line)))
 
     def read(self, path, fp=None, sections=None, remap=None):
         if not fp:

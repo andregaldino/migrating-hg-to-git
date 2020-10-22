@@ -25,8 +25,7 @@ Test hint about invalid syntax from leading white space
   >  key=value
   > EOF
   $ hg showconfig
-  hg: parse error at $TESTTMP/.hg/hgrc:1:  key=value
-  unexpected leading whitespace
+  hg: parse error at $TESTTMP/.hg/hgrc:1: unexpected leading whitespace:  key=value
   [255]
 
   $ cat > .hg/hgrc << EOF
@@ -34,8 +33,7 @@ Test hint about invalid syntax from leading white space
   > key=value
   > EOF
   $ hg showconfig
-  hg: parse error at $TESTTMP/.hg/hgrc:1:  [section]
-  unexpected leading whitespace
+  hg: parse error at $TESTTMP/.hg/hgrc:1: unexpected leading whitespace:  [section]
   [255]
 
 Reset hgrc
