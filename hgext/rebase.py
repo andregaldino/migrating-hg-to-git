@@ -34,6 +34,7 @@ from mercurial import (
     dirstateguard,
     error,
     extensions,
+    formatter,
     merge as mergemod,
     mergestate as mergestatemod,
     mergeutil,
@@ -51,6 +52,7 @@ from mercurial import (
     scmutil,
     smartset,
     state as statemod,
+    templatekw,
     util,
 )
 
@@ -146,20 +148,12 @@ def _revsetdestautoorphanrebase(repo, subset, x):
 
 def _ctxdesc(ctx):
     """short description for a context"""
-    desc = b'%d:%s "%s"' % (
-        ctx.rev(),
-        ctx,
-        ctx.description().split(b'\n', 1)[0],
+    labels_spec = b'join(filter(namespaces % "{ifeq(namespace, "branches", "", join(names, " "))}"), " ")'
+    spec = b'{rev}:{node|short} "{desc|firstline}"{if(%s, " ({%s})")}' % (
+        labels_spec,
+        labels_spec,
     )
-    repo = ctx.repo()
-    names = []
-    for nsname, ns in pycompat.iteritems(repo.names):
-        if nsname == b'branches':
-            continue
-        names.extend(ns.names(repo, ctx.node()))
-    if names:
-        desc += b' (%s)' % b' '.join(names)
-    return desc
+    return cmdutil.rendertemplate(ctx, spec)
 
 
 class rebaseruntime(object):
