@@ -1111,7 +1111,7 @@ def getlinerangerevs(repo, userrevs, opts):
 
 
 def _graphnodeformatter(ui, displayer):
-    spec = ui.config(b'ui', b'graphnodetemplate')
+    spec = ui.config(b'command-templates', b'graphnode')
     if not spec:
         return templatekw.getgraphnode  # fast path for "{graphnode}"
 

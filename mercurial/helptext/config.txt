@@ -2334,8 +2334,7 @@ User interface controls.
     UTF-8. (default: ISO-8859-1)
 
 ``graphnodetemplate``
-    The template used to print changeset nodes in an ASCII revision graph.
-    (default: ``{graphnode}``)
+    (DEPRECATED) Use ``command-templates.graphnode`` instead.
 
 ``ignore``
     A file to read per-user ignore patterns from. This file should be
@@ -2565,6 +2564,10 @@ User interface controls.
 ---------------------
 
 Templates used for customizing the output of commands.
+
+``graphnode``
+    The template used to print changeset nodes in an ASCII revision graph.
+    (default: ``{graphnode}``)
 
 ``log``
     Template string for commands that print changesets.

@@ -2384,6 +2384,18 @@ working-directory revision
 
 node template with changesetprinter:
 
+  $ hg log -Gqr 5:7 --config command-templates.graphnode='"{rev}"'
+  7  7:9febbb9c8b2e
+  |
+  6    6:9feeac35a70a
+  |\
+  | ~
+  5  5:99b31f1c2782
+  |
+  ~
+
+node template with changesetprinter (legacy config):
+
   $ hg log -Gqr 5:7 --config ui.graphnodetemplate='"{rev}"'
   7  7:9febbb9c8b2e
   |
@@ -2397,7 +2409,7 @@ node template with changesetprinter:
 node template with changesettemplater (shared cache variable):
 
   $ hg log -Gr 5:7 -T '{latesttag % "{rev} {tag}+{distance}"}\n' \
-  > --config ui.graphnodetemplate='{ifeq(latesttagdistance, 0, "#", graphnode)}'
+  > --config command-templates.graphnode='{ifeq(latesttagdistance, 0, "#", graphnode)}'
   o  7 foo-bar+1
   |
   #    6 foo-bar+0
@@ -2410,7 +2422,7 @@ node template with changesettemplater (shared cache variable):
 label() should just work in node template:
 
   $ hg log -Gqr 7 --config extensions.color= --color=debug \
-  > --config ui.graphnodetemplate='{label("branch.{branch}", rev)}'
+  > --config command-templates.graphnode='{label("branch.{branch}", rev)}'
   [branch.default|7]  [log.node|7:9febbb9c8b2e]
   |
   ~

@@ -224,6 +224,12 @@ coreconfigitem(
     b'color', b'pagermode', default=dynamicdefault,
 )
 coreconfigitem(
+    b'command-templates',
+    b'graphnode',
+    default=None,
+    alias=[(b'ui', b'graphnodetemplate')],
+)
+coreconfigitem(
     b'command-templates', b'log', default=None, alias=[(b'ui', b'logtemplate')],
 )
 _registerdiffopts(section=b'commands', configprefix=b'commit.interactive.')
@@ -1289,9 +1295,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'ui', b'formatted', default=None,
-)
-coreconfigitem(
-    b'ui', b'graphnodetemplate', default=None,
 )
 coreconfigitem(
     b'ui', b'interactive', default=None,
