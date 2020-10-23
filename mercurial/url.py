@@ -96,6 +96,13 @@ class passwordmgr(object):
             if not passwd:
                 passwd = self.ui.getpass()
 
+        # As of Python 3.8, the default implementation of
+        # AbstractBasicAuthHandler.retry_http_basic_auth() assumes the user
+        # is set if pw is not None. This means (None, str) is not a valid
+        # return type of find_user_password().
+        if user is None:
+            return None, None
+
         self.passwddb.add_password(realm, authuri, user, passwd)
         self._writedebug(user, passwd)
         return (pycompat.strurl(user), pycompat.strurl(passwd))
