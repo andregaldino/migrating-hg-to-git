@@ -525,11 +525,8 @@ class histeditaction(object):
         """
         ctx = self.repo[self.node]
         ui = self.repo.ui
-        summary = (
-            cmdutil.rendertemplate(
-                ctx, ui.config(b'histedit', b'summary-template')
-            )
-            or b''
+        summary = cmdutil.rendertemplate(
+            ctx, ui.config(b'histedit', b'summary-template')
         )
         summary = summary.splitlines()[0]
         line = b'%s %s %s' % (self.verb, ctx, summary)
@@ -1152,11 +1149,8 @@ class histeditrule(object):
 
     @util.propertycache
     def desc(self):
-        summary = (
-            cmdutil.rendertemplate(
-                self.ctx, self.ui.config(b'histedit', b'summary-template')
-            )
-            or b''
+        summary = cmdutil.rendertemplate(
+            self.ctx, self.ui.config(b'histedit', b'summary-template')
         )
         if summary:
             return summary
