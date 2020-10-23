@@ -251,6 +251,15 @@ coreconfigitem(
     default=None,
     alias=[(b'ui', b'pre-merge-tool-output-template')],
 )
+coreconfigitem(
+    b'command-templates', b'oneline-summary', default=None,
+)
+coreconfigitem(
+    b'command-templates',
+    b'oneline-summary.*',
+    default=dynamicdefault,
+    generic=True,
+)
 _registerdiffopts(section=b'commands', configprefix=b'commit.interactive.')
 coreconfigitem(
     b'commands', b'commit.post-status', default=False,

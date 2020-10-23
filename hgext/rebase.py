@@ -34,7 +34,6 @@ from mercurial import (
     dirstateguard,
     error,
     extensions,
-    formatter,
     merge as mergemod,
     mergestate as mergestatemod,
     mergeutil,
@@ -52,7 +51,6 @@ from mercurial import (
     scmutil,
     smartset,
     state as statemod,
-    templatekw,
     util,
 )
 
@@ -153,7 +151,9 @@ def _ctxdesc(ctx):
         labels_spec,
         labels_spec,
     )
-    return cmdutil.rendertemplate(ctx, spec)
+    return cmdutil.format_changeset_summary(
+        ctx.repo().ui, ctx, command=b'rebase', default_spec=spec
+    )
 
 
 class rebaseruntime(object):

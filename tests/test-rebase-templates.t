@@ -82,3 +82,21 @@ Getting the JSON output for nodechanges
   o  0:18d04c59bb5d Added a
   
 
+Respects command-templates.oneline-summary
+
+  $ hg rebase -r 7 -d 8 -n --config command-templates.oneline-summary='rev: {rev}'
+  starting dry-run rebase; repository will not be changed
+  rebasing rev: 7
+  note: not rebasing rev: 7, its destination already has all its changes
+  dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase
+
+
+command-templates.oneline-summary.rebase overrides
+
+  $ hg rebase -r 7 -d 8 -n \
+  > --config command-templates.oneline-summary='global: {rev}' \
+  > --config command-templates.oneline-summary.rebase='override: {rev}'
+  starting dry-run rebase; repository will not be changed
+  rebasing override: 7
+  note: not rebasing override: 7, its destination already has all its changes
+  dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase

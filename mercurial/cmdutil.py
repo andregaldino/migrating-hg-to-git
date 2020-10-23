@@ -1210,6 +1210,24 @@ def rendertemplate(ctx, tmpl, props=None):
     return t.renderdefault(mapping)
 
 
+def format_changeset_summary(ui, ctx, command=None, default_spec=None):
+    """Format a changeset summary (one line)."""
+    spec = None
+    if command:
+        spec = ui.config(
+            b'command-templates', b'oneline-summary.%s' % command, None
+        )
+    if not spec:
+        spec = ui.config(b'command-templates', b'oneline-summary')
+    if not spec:
+        spec = default_spec
+    if not spec:
+        # TODO: Pick a default we can agree on. This isn't used yet.
+        raise error.ProgrammingError(b"no default one-line summary defined yet")
+    text = rendertemplate(ctx, spec)
+    return text.split(b'\n')[0]
+
+
 def _buildfntemplate(pat, total=None, seqno=None, revwidth=None, pathname=None):
     r"""Convert old-style filename format string to template string
 
