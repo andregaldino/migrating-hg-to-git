@@ -3,8 +3,8 @@ Check that obsolete properly strip heads
   > [phases]
   > # public changeset are not obsolete
   > publish=false
-  > [ui]
-  > logtemplate='{node|short} ({phase}) {desc|firstline}\n'
+  > [command-templates]
+  > log='{node|short} ({phase}) {desc|firstline}\n'
   > [experimental]
   > evolution.createmarkers=True
   > EOF

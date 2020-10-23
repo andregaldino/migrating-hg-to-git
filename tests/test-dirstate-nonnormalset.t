@@ -1,6 +1,6 @@
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > logtemplate="{rev}:{node|short} ({phase}) [{tags} {bookmarks}] {desc|firstline}\n"
+  > [command-templates]
+  > log="{rev}:{node|short} ({phase}) [{tags} {bookmarks}] {desc|firstline}\n"
   > [extensions]
   > dirstateparanoidcheck = $TESTDIR/../contrib/dirstatenonnormalcheck.py
   > [experimental]

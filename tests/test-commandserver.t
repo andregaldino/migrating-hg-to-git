@@ -982,8 +982,8 @@ cases.
   $ cd repo3
 
   $ cat <<EOF >> $HGRCPATH
-  > [ui]
-  > logtemplate = {rev} {desc|firstline} ({files})\n
+  > [command-templates]
+  > log = {rev} {desc|firstline} ({files})\n
   > 
   > [extensions]
   > failafterfinalize = $TESTTMP/failafterfinalize.py

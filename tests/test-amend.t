@@ -403,10 +403,10 @@ Test update-timestamp config option|
   $ hg init $TESTTMP/repo5
   $ cd $TESTTMP/repo5
   $ cat <<'EOF' >> .hg/hgrc
-  > [ui]
-  > logtemplate = 'user:        {user}
-  >                date:        {date|date}
-  >                summary:     {desc|firstline}\n'
+  > [command-templates]
+  > log = 'user:        {user}
+  >        date:        {date|date}
+  >        summary:     {desc|firstline}\n'
   > EOF
 
   $ echo a>a

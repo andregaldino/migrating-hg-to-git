@@ -48,8 +48,9 @@ Second branch starting at nullrev:
 
 Make sure user/global hgrc does not affect tests
 
+  $ echo '[command-templates]' > .hg/hgrc
+  $ echo 'log =' >> .hg/hgrc
   $ echo '[ui]' > .hg/hgrc
-  $ echo 'logtemplate =' >> .hg/hgrc
   $ echo 'style =' >> .hg/hgrc
 
 Add some simple styles to settings

@@ -122,7 +122,7 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
 
-  $ hg log -G --config ui.logtemplate=
+  $ hg log -G --config command-templates.log=
   o  changeset:   3:d004c8f274b9
   |  tag:         tip
   |  parent:      0:ea207398892e

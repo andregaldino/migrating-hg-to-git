@@ -3,8 +3,8 @@ Tests discovery against servers without getbundle support:
   $ CAP="getbundle bundle2"
   $ . "$TESTDIR/notcapable"
   $ cat >> $HGRCPATH <<EOF
-  > [ui]
-  > logtemplate="{rev} {node|short}: {desc} {branches}\n"
+  > [command-templates]
+  > log="{rev} {node|short}: {desc} {branches}\n"
   > EOF
 
 Setup HTTP server control:

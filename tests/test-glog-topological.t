@@ -1,8 +1,8 @@
 This test file aims at test topological iteration and the various configuration it can has.
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > logtemplate={rev}\n
+  > [command-templates]
+  > log={rev}\n
   > EOF
 
 On this simple example, all topological branch are displayed in turn until we

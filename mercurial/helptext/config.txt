@@ -2363,7 +2363,7 @@ User interface controls.
     (default: 10000000)
 
 ``logtemplate``
-    Template string for commands that print changesets.
+    (DEPRECATED) Use ``command-templates.log`` instead.
 
 ``merge``
     The conflict resolution program to use during a manual merge.
@@ -2559,6 +2559,15 @@ User interface controls.
 
 ``verbose``
     Increase the amount of output printed. (default: False)
+
+
+``command-templates``
+---------------------
+
+Templates used for customizing the output of commands.
+
+``log``
+    Template string for commands that print changesets.
 
 
 ``web``

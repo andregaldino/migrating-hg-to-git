@@ -9,9 +9,9 @@ Config setup
 ------------
 
   $ cat >> $HGRCPATH <<EOF
-  > [ui]
+  > [command-templates]
   > # simpler log output
-  > logtemplate = "{node|short}: {desc}\n"
+  > log = "{node|short}: {desc}\n"
   > 
   > [experimental]
   > # enable evolution

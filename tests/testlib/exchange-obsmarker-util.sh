@@ -14,9 +14,9 @@ cat >> $HGRCPATH <<EOF
 push_ssl = false
 allow_push = *
 
-[ui]
+[command-templates]
 # simpler log output
-logtemplate ="{node|short} ({phase}): {desc}\n"
+log ="{node|short} ({phase}): {desc}\n"
 
 [phases]
 # non publishing server

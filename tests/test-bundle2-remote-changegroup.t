@@ -96,7 +96,8 @@ Start a simple HTTP server to serve bundles
   $ cat >> $HGRCPATH << EOF
   > [ui]
   > ssh="$PYTHON" "$TESTDIR/dummyssh"
-  > logtemplate={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
+  > [command-templates]
+  > log={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > EOF
 
   $ hg init repo

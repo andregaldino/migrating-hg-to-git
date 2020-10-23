@@ -1,7 +1,7 @@
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > logtemplate="{rev}:{node|short} {desc} [{tags}]\n"
+  > [command-templates]
+  > log="{rev}:{node|short} {desc} [{tags}]\n"
   > EOF
 
   $ hg init legacy-lookup

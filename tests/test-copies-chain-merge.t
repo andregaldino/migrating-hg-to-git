@@ -17,8 +17,8 @@ use git diff to see rename
   $ cat << EOF >> $HGRCPATH
   > [diff]
   > git=yes
-  > [ui]
-  > logtemplate={rev} {desc}\n
+  > [command-templates]
+  > log={rev} {desc}\n
   > EOF
 
 #if compatibility

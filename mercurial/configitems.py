@@ -223,6 +223,9 @@ coreconfigitem(
 coreconfigitem(
     b'color', b'pagermode', default=dynamicdefault,
 )
+coreconfigitem(
+    b'command-templates', b'log', default=None, alias=[(b'ui', b'logtemplate')],
+)
 _registerdiffopts(section=b'commands', configprefix=b'commit.interactive.')
 coreconfigitem(
     b'commands', b'commit.post-status', default=False,
@@ -1304,9 +1307,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'ui', b'logblockedtimes', default=False,
-)
-coreconfigitem(
-    b'ui', b'logtemplate', default=None,
 )
 coreconfigitem(
     b'ui', b'merge', default=None,

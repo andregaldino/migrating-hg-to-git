@@ -4566,7 +4566,7 @@ def log(ui, repo, *pats, **opts):
 
     See :hg:`help templates` for more about pre-packaged styles and
     specifying custom templates. The default template used by the log
-    command can be customized via the ``ui.logtemplate`` configuration
+    command can be customized via the ``command-templates.log`` configuration
     setting.
 
     Returns 0 on success.

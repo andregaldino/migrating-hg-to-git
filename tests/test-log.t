@@ -450,6 +450,16 @@ log -vf dir/b
   a
   
   
+Respects ui.logtemplate and command-templates.log configs (the latter takes
+precedence)
+
+  $ hg log -r 0 --config ui.logtemplate="foo {rev}\n"
+  foo 0
+  $ hg log -r 0 --config command-templates.log="bar {rev}\n"
+  bar 0
+  $ hg log -r 0 --config ui.logtemplate="foo {rev}\n" \
+  > --config command-templates.log="bar {rev}\n"
+  bar 0
 
 
 -f and multiple filelog heads
@@ -1122,8 +1132,8 @@ log --follow --patch FILE in repository where linkrev isn't trustworthy
   $ hg init follow-dup
   $ cd follow-dup
   $ cat <<EOF >> .hg/hgrc
-  > [ui]
-  > logtemplate = '=== {rev}: {desc}\n'
+  > [command-templates]
+  > log = '=== {rev}: {desc}\n'
   > [diff]
   > nodates = True
   > EOF

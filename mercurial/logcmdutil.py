@@ -623,7 +623,7 @@ def _lookuptemplate(ui, tmpl, style):
 
     # ui settings
     if not tmpl and not style:  # template are stronger than style
-        tmpl = ui.config(b'ui', b'logtemplate')
+        tmpl = ui.config(b'command-templates', b'log')
         if tmpl:
             return formatter.literal_templatespec(templater.unquotestring(tmpl))
         else:
@@ -656,7 +656,7 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     Display format will be the first non-empty hit of:
     1. option 'template'
     2. option 'style'
-    3. [ui] setting 'logtemplate'
+    3. [command-templates] setting 'log'
     4. [ui] setting 'style'
     If all of these values are either the unset or the empty string,
     regular display via changesetprinter() is done.

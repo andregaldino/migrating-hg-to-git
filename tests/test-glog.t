@@ -3420,8 +3420,8 @@ Multiple roots (issue5440):
   $ hg init multiroots
   $ cd multiroots
   $ cat <<EOF > .hg/hgrc
-  > [ui]
-  > logtemplate = '{rev} {desc}\n\n'
+  > [command-templates]
+  > log = '{rev} {desc}\n\n'
   > EOF
 
   $ touch foo

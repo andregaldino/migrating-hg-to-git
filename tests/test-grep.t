@@ -851,8 +851,8 @@ unmodified changes.
   $ cd follow
 
   $ cat <<'EOF' >> .hg/hgrc
-  > [ui]
-  > logtemplate = '{rev}: {join(files % "{status} {path}", ", ")}\n'
+  > [command-templates]
+  > log = '{rev}: {join(files % "{status} {path}", ", ")}\n'
   > EOF
 
   $ for f in add0 add0-mod1 add0-rm1 add0-mod2 add0-rm2 add0-mod3 add0-mod4 add0-rm4; do

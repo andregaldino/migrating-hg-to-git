@@ -16,8 +16,8 @@ to happen in the local case but can easily happen in the distributed case.
   > evolution = all
   > [phases]
   > publish = False
-  > [ui]
-  > logtemplate= {rev}:{node|short} {desc}{if(obsfate, " [{join(obsfate, "; ")}]")}\n
+  > [command-templates]
+  > log = {rev}:{node|short} {desc}{if(obsfate, " [{join(obsfate, "; ")}]")}\n
   > EOF
 
 Check distributed chain building

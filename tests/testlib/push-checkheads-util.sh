@@ -1,9 +1,9 @@
 # setup config and various utility to test new heads checks on push
 
 cat >> $HGRCPATH <<EOF
-[ui]
+[command-templates]
 # simpler log output
-logtemplate ="{node|short} ({phase}): {desc}\n"
+log ="{node|short} ({phase}): {desc}\n"
 
 [phases]
 # non publishing server

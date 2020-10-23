@@ -34,8 +34,8 @@ Create an extension to test bundle2 with multiple changegroups
   > EOF
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > logtemplate={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
+  > [command-templates]
+  > log={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > EOF
 
 Start with a simple repository with a single commit

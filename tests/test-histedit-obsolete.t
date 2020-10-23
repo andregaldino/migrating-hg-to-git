@@ -293,8 +293,8 @@ Check that histedit respect immutability
 -------------------------------------------
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > logtemplate= {rev}:{node|short} ({phase}) {desc|firstline}\n
+  > [command-templates]
+  > log = {rev}:{node|short} ({phase}) {desc|firstline}\n
   > EOF
 
   $ hg ph -pv '.^'

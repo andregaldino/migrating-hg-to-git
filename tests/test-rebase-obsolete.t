@@ -5,8 +5,8 @@ Test rebase with obsolete
 Enable obsolete
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > logtemplate= {rev}:{node|short} {desc|firstline}{if(obsolete,' ({obsfate})')}
+  > [command-templates]
+  > log= {rev}:{node|short} {desc|firstline}{if(obsolete,' ({obsfate})')}
   > [experimental]
   > evolution.createmarkers=True
   > evolution.allowunstable=True

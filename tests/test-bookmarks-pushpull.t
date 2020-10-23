@@ -10,8 +10,8 @@
 #require serve
 
   $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > logtemplate={rev}:{node|short} {desc|firstline}
+  > [command-templates]
+  > log={rev}:{node|short} {desc|firstline}
   > [phases]
   > publish=False
   > [experimental]
