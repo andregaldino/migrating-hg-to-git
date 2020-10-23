@@ -102,6 +102,35 @@ Verify custom conflict markers
 
   $ hg up -q --clean .
   $ cat <<EOF >> .hg/hgrc
+  > [command-templates]
+  > mergemarker = '{author} {rev}'
+  > EOF
+
+  $ hg merge 1
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+
+  $ cat a
+  Small Mathematical Series.
+  1
+  2
+  3
+  <<<<<<< working copy: test 2
+  6
+  8
+  =======
+  4
+  5
+  >>>>>>> merge rev:    test 1
+  Hop we are done.
+
+Verify custom conflict markers with legacy config name
+
+  $ hg up -q --clean .
+  $ cat <<EOF >> .hg/hgrc
   > [ui]
   > mergemarkertemplate = '{author} {rev}'
   > EOF
@@ -131,8 +160,8 @@ Verify line splitting of custom conflict marker which causes multiple lines
 
   $ hg up -q --clean .
   $ cat >> .hg/hgrc <<EOF
-  > [ui]
-  > mergemarkertemplate={author} {rev}\nfoo\nbar\nbaz
+  > [command-templates]
+  > mergemarker={author} {rev}\nfoo\nbar\nbaz
   > EOF
 
   $ hg -q merge 1
@@ -170,8 +199,8 @@ Verify line trimming of custom conflict marker using multi-byte characters
   $ hg --encoding utf-8 commit --logfile logfile
 
   $ cat >> .hg/hgrc <<EOF
-  > [ui]
-  > mergemarkertemplate={desc|firstline}
+  > [command-templates]
+  > mergemarker={desc|firstline}
   > EOF
 
   $ hg -q --encoding utf-8 merge 1

@@ -232,6 +232,19 @@ coreconfigitem(
 coreconfigitem(
     b'command-templates', b'log', default=None, alias=[(b'ui', b'logtemplate')],
 )
+coreconfigitem(
+    b'command-templates',
+    b'mergemarker',
+    default=(
+        b'{node|short} '
+        b'{ifeq(tags, "tip", "", '
+        b'ifeq(tags, "", "", "{tags} "))}'
+        b'{if(bookmarks, "{bookmarks} ")}'
+        b'{ifeq(branch, "default", "", "{branch} ")}'
+        b'- {author|user}: {desc|firstline}'
+    ),
+    alias=[(b'ui', b'mergemarkertemplate')],
+)
 _registerdiffopts(section=b'commands', configprefix=b'commit.interactive.')
 coreconfigitem(
     b'commands', b'commit.post-status', default=False,
@@ -948,7 +961,7 @@ coreconfigitem(
 coreconfigitem(
     b'merge-tools',
     br'.*\.mergemarkertemplate$',
-    default=dynamicdefault,  # take from ui.mergemarkertemplate
+    default=dynamicdefault,  # take from command-templates.mergemarker
     generic=True,
     priority=-1,
 )
@@ -1316,18 +1329,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'ui', b'mergemarkers', default=b'basic',
-)
-coreconfigitem(
-    b'ui',
-    b'mergemarkertemplate',
-    default=(
-        b'{node|short} '
-        b'{ifeq(tags, "tip", "", '
-        b'ifeq(tags, "", "", "{tags} "))}'
-        b'{if(bookmarks, "{bookmarks} ")}'
-        b'{ifeq(branch, "default", "", "{branch} ")}'
-        b'- {author|user}: {desc|firstline}'
-    ),
 )
 coreconfigitem(
     b'ui', b'message-output', default=b'stdio',

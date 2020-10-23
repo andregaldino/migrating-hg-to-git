@@ -1549,11 +1549,11 @@ Supported arguments:
   (default: ``basic``)
 
 ``mergemarkertemplate``
-  This setting can be used to override ``mergemarkertemplate`` from the ``[ui]``
-  section on a per-tool basis; this applies to the ``$label``-prefixed variables
-  and to the conflict markers that are generated if ``premerge`` is ``keep` or
-  ``keep-merge3``. See the corresponding variable in ``[ui]`` for more
-  information.
+  This setting can be used to override ``mergemarker`` from the
+  ``[command-templates]`` section on a per-tool basis; this applies to the
+  ``$label``-prefixed variables and to the conflict markers that are generated
+  if ``premerge`` is ``keep` or ``keep-merge3``. See the corresponding variable
+  in ``[ui]`` for more information.
 
 .. container:: windows
 
@@ -2370,29 +2370,14 @@ User interface controls.
     For configuring merge tools see the ``[merge-tools]`` section.
 
 ``mergemarkers``
-    Sets the merge conflict marker label styling. The ``detailed``
-    style uses the ``mergemarkertemplate`` setting to style the labels.
+    Sets the merge conflict marker label styling. The ``detailed`` style
+    uses the ``command-templates.mergemarker`` setting to style the labels.
     The ``basic`` style just uses 'local' and 'other' as the marker label.
     One of ``basic`` or ``detailed``.
     (default: ``basic``)
 
 ``mergemarkertemplate``
-    The template used to print the commit description next to each conflict
-    marker during merge conflicts. See :hg:`help templates` for the template
-    format.
-
-    Defaults to showing the hash, tags, branches, bookmarks, author, and
-    the first line of the commit description.
-
-    If you use non-ASCII characters in names for tags, branches, bookmarks,
-    authors, and/or commit descriptions, you must pay attention to encodings of
-    managed files. At template expansion, non-ASCII characters use the encoding
-    specified by the ``--encoding`` global option, ``HGENCODING`` or other
-    environment variables that govern your locale. If the encoding of the merge
-    markers is different from the encoding of the merged files,
-    serious problems may occur.
-
-    Can be overridden per-merge-tool, see the ``[merge-tools]`` section.
+    (DEPRECATED) Use ``command-templates.mergemarker`` instead.
 
 ``message-output``
     Where to write status and error messages. (default: ``stdio``)
@@ -2571,6 +2556,24 @@ Templates used for customizing the output of commands.
 
 ``log``
     Template string for commands that print changesets.
+
+``mergemarker``
+    The template used to print the commit description next to each conflict
+    marker during merge conflicts. See :hg:`help templates` for the template
+    format.
+
+    Defaults to showing the hash, tags, branches, bookmarks, author, and
+    the first line of the commit description.
+
+    If you use non-ASCII characters in names for tags, branches, bookmarks,
+    authors, and/or commit descriptions, you must pay attention to encodings of
+    managed files. At template expansion, non-ASCII characters use the encoding
+    specified by the ``--encoding`` global option, ``HGENCODING`` or other
+    environment variables that govern your locale. If the encoding of the merge
+    markers is different from the encoding of the merged files,
+    serious problems may occur.
+
+    Can be overridden per-merge-tool, see the ``[merge-tools]`` section.
 
 
 ``web``

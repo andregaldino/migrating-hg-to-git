@@ -831,7 +831,7 @@ def _formatlabels(repo, fcd, fco, fca, labels, tool=None):
     ca = fca.changectx()
 
     ui = repo.ui
-    template = ui.config(b'ui', b'mergemarkertemplate')
+    template = ui.config(b'command-templates', b'mergemarker')
     if tool is not None:
         template = _toolstr(ui, tool, b'mergemarkertemplate', template)
     template = templater.unquotestring(template)
@@ -1100,7 +1100,7 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             labeltool = None
             if markerstyle != b'basic':
                 # respect 'tool's mergemarkertemplate (which defaults to
-                # ui.mergemarkertemplate)
+                # command-templates.mergemarker)
                 labeltool = tool
             if internalmarkerstyle != b'basic' or markerstyle != b'basic':
                 premergelabels = _formatlabels(
