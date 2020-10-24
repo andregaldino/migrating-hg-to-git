@@ -69,7 +69,7 @@ def pinnedrevs(repo):
     from . import mergestate
 
     ms = mergestate.mergestate.read(repo)
-    if ms.active():
+    if ms.active() and ms.unresolvedcount():
         for node in (ms.local, ms.other):
             rev = cl.index.get_rev(node)
             if rev is not None:
