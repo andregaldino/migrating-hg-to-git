@@ -352,7 +352,7 @@ Show all commands + options
   paths: template
   phase: public, draft, secret, force, rev
   pull: update, force, confirm, rev, bookmark, branch, ssh, remotecmd, insecure
-  push: force, rev, bookmark, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
+  push: force, rev, bookmark, all-bookmarks, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
   recover: verify
   remove: after, force, subrepos, include, exclude, dry-run
   rename: after, at-rev, force, include, exclude, dry-run

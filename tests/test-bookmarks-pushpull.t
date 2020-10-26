@@ -1364,3 +1364,33 @@ Pushing the bookmark "foo" now fails as it contains a secret changeset
   no changes found (ignored 1 secret changesets)
   abort: cannot push bookmark foo as it points to a secret changeset
   [255]
+
+Test pushing all bookmarks
+
+  $ hg init $TESTTMP/ab1
+  $ cd $TESTTMP/ab1
+  $ "$PYTHON" $TESTDIR/seq.py 1 5 | while read i; do
+  > echo $i > test && hg ci -Am test
+  > done
+  adding test
+  $ hg clone -U . ../ab2
+  $ hg book -r 1 A; hg book -r 2 B; hg book -r 3 C
+  $ hg push ../ab2
+  pushing to ../ab2
+  searching for changes
+  no changes found
+  [1]
+  $ hg push --all-bookmarks -r 1 ../ab2
+  abort: cannot specify both --all-bookmarks and --rev
+  [255]
+  $ hg push --all-bookmarks -B A ../ab2
+  abort: cannot specify both --all-bookmarks and --bookmark
+  [255]
+  $ hg push --all-bookmarks ../ab2
+  pushing to ../ab2
+  searching for changes
+  no changes found
+  exporting bookmark A
+  exporting bookmark B
+  exporting bookmark C
+  [1]

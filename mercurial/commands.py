@@ -5391,6 +5391,7 @@ def pull(ui, repo, source=b"default", **opts):
             _(b'REV'),
         ),
         (b'B', b'bookmark', [], _(b"bookmark to push"), _(b'BOOKMARK')),
+        (b'', b'all-bookmarks', None, _(b"push all bookmarks (EXPERIMENTAL)")),
         (
             b'b',
             b'branch',
@@ -5447,7 +5448,8 @@ def push(ui, repo, dest=None, **opts):
     If -B/--bookmark is used, the specified bookmarked revision, its
     ancestors, and the bookmark will be pushed to the remote
     repository. Specifying ``.`` is equivalent to specifying the active
-    bookmark's name.
+    bookmark's name. Use the --all-bookmarks option for pushing all
+    current bookmarks.
 
     Please see :hg:`help urls` for important details about ``ssh://``
     URLs. If DESTINATION is omitted, a default path will be used.
@@ -5475,6 +5477,13 @@ def push(ui, repo, dest=None, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
+
+    if opts.get(b'all_bookmarks'):
+        cmdutil.check_incompatible_arguments(
+            opts, b'all_bookmarks', [b'bookmark', b'rev'],
+        )
+        opts[b'bookmark'] = list(repo._bookmarks)
+
     if opts.get(b'bookmark'):
         ui.setconfig(b'bookmarks', b'pushing', opts[b'bookmark'], b'push')
         for b in opts[b'bookmark']:
