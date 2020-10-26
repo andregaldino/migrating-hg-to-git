@@ -245,6 +245,12 @@ coreconfigitem(
     ),
     alias=[(b'ui', b'mergemarkertemplate')],
 )
+coreconfigitem(
+    b'command-templates',
+    b'pre-merge-tool-output',
+    default=None,
+    alias=[(b'ui', b'pre-merge-tool-output-template')],
+)
 _registerdiffopts(section=b'commands', configprefix=b'commit.interactive.')
 coreconfigitem(
     b'commands', b'commit.post-status', default=False,
@@ -1344,9 +1350,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'ui', b'patch', default=None,
-)
-coreconfigitem(
-    b'ui', b'pre-merge-tool-output-template', default=None,
 )
 coreconfigitem(
     b'ui', b'portablefilenames', default=b'warn',

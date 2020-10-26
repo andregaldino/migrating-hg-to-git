@@ -643,7 +643,7 @@ def _xmergeimm(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
 
 
 def _describemerge(ui, repo, mynode, fcl, fcb, fco, env, toolpath, args):
-    tmpl = ui.config(b'ui', b'pre-merge-tool-output-template')
+    tmpl = ui.config(b'command-templates', b'pre-merge-tool-output')
     if not tmpl:
         return
 
