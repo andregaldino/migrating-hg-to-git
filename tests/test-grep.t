@@ -23,13 +23,13 @@ pattern error
 
 invalid revset syntax
 
-  $ hg log -r 'diff()'
-  hg: parse error: diff takes at least 1 argument
+  $ hg log -r 'diffcontains()'
+  hg: parse error: diffcontains takes at least 1 argument
   [255]
-  $ hg log -r 'diff(:)'
-  hg: parse error: diff requires a string pattern
+  $ hg log -r 'diffcontains(:)'
+  hg: parse error: diffcontains requires a string pattern
   [255]
-  $ hg log -r 'diff("re:**test**")'
+  $ hg log -r 'diffcontains("re:**test**")'
   hg: parse error: invalid regular expression: nothing to repeat* (glob)
   [255]
 
@@ -567,13 +567,13 @@ Test wdir
 
 revset predicate for "grep --diff"
 
-  $ hg log -qr 'diff("re:^bl...$")'
+  $ hg log -qr 'diffcontains("re:^bl...$")'
   0:203191eb5e21
-  $ hg log -qr 'diff("orange")'
+  $ hg log -qr 'diffcontains("orange")'
   1:7c585a21e0d1
   2:11bd8bc8d653
   3:e0116d3829f8
-  $ hg log -qr '2:0 & diff("orange")'
+  $ hg log -qr '2:0 & diffcontains("orange")'
   2:11bd8bc8d653
   1:7c585a21e0d1
 

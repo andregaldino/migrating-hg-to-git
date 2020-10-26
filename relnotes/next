@@ -5,6 +5,9 @@
    source whether or not the source still exists (but the source must
    exist in the parent revision).
 
+ * New revset predicate `diffcontains(pattern)` for filtering revisions
+   in the same way as `hg grep --diff pattern`.
+
 
 == New Experimental Features ==
 

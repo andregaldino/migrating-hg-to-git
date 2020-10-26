@@ -39,18 +39,18 @@ def make_exe(dist):
     # Extension may depend on any Python functionality. Include all
     # extensions.
     packaging_policy.extension_module_filter = "all"
-    packaging_policy.resources_policy = "prefer-in-memory-fallback-filesystem-relative:lib"
+    packaging_policy.resources_location = "in-memory"
+    packaging_policy.resources_location_fallback = "filesystem-relative:lib"
     packaging_policy.register_resource_callback(resource_callback)
 
-    config = PythonInterpreterConfig(
-        raw_allocator = "system",
-        run_eval = RUN_CODE,
-        # We want to let the user load extensions from the file system
-        filesystem_importer = True,
-        # We need this to make resourceutil happy, since it looks for sys.frozen.
-        sys_frozen = True,
-        legacy_windows_stdio = True,
-    )
+    config = dist.make_python_interpreter_config()
+    config.raw_allocator = "system"
+    config.run_mode = "eval:%s" % RUN_CODE
+    # We want to let the user load extensions from the file system
+    config.filesystem_importer = True
+    # We need this to make resourceutil happy, since it looks for sys.frozen.
+    config.sys_frozen = True
+    config.legacy_windows_stdio = True
 
     exe = dist.to_python_executable(
         name = "hg",
@@ -64,7 +64,7 @@ def make_exe(dist):
     # On Windows, we install extra packages for convenience.
     if IS_WINDOWS:
         exe.add_python_resources(
-            exe.pip_install(["-r", ROOT + "/contrib/packaging/requirements_win32.txt"]),
+            exe.pip_install(["-r", ROOT + "/contrib/packaging/requirements-windows-py2.txt"]),
         )
 
     return exe
@@ -104,5 +104,5 @@ resolve_targets()
 # Everything below this is typically managed by PyOxidizer and doesn't need
 # to be updated by people.
 
-PYOXIDIZER_VERSION = "0.8.0-pre"
-PYOXIDIZER_COMMIT = "4697fb25918dfad6dc73288daeea501063963a08"
+PYOXIDIZER_VERSION = "0.9.0"
+PYOXIDIZER_COMMIT = "1fbc264cc004226cd76ee452e0a386ffca6ccfb1"

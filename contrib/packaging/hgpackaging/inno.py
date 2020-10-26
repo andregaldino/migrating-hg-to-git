@@ -66,7 +66,7 @@ def build_with_py2exe(
     staging_dir = inno_build_dir / 'stage'
 
     requirements_txt = (
-        source_dir / 'contrib' / 'packaging' / 'requirements_win32.txt'
+        source_dir / 'contrib' / 'packaging' / 'requirements-windows-py2.txt'
     )
 
     inno_build_dir.mkdir(parents=True, exist_ok=True)

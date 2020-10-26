@@ -114,7 +114,7 @@ class LazyFinder(object):
         if (
             spec is not None
             and spec.loader is not None
-            and getattr(spec.loader, "exec_module")
+            and getattr(spec.loader, "exec_module", None)
         ):
             spec.loader = _lazyloaderex(spec.loader)
 
