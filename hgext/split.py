@@ -143,8 +143,8 @@ def dosplit(ui, repo, tr, ctx, opts):
                 b'HG: Splitting %s. So far it has been split into:\n'
             ) % short(ctx.node())
             for c in committed:
-                firstline = c.description().split(b'\n', 1)[0]
-                header += _(b'HG: - %s: %s\n') % (short(c.node()), firstline)
+                summary = cmdutil.format_changeset_summary(ui, c, b'split')
+                header += _(b'HG: - %s\n') % summary
             header += _(
                 b'HG: Write commit message for the next split changeset.\n'
             )

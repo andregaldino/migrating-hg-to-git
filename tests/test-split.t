@@ -216,7 +216,7 @@ was always recording three commits, one for each diff hunk, in reverse order
   (enter ? for help) [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. So far it has been split into:
-  EDITOR: HG: - e704349bd21b: split 1
+  EDITOR: HG: - 2:e704349bd21b tip "split 1"
   EDITOR: HG: Write commit message for the next split changeset.
   EDITOR: a2
   EDITOR: 
@@ -239,8 +239,8 @@ was always recording three commits, one for each diff hunk, in reverse order
   (enter ? for help) [Ynesfdaq?] y
   
   EDITOR: HG: Splitting 1df0d5c5a3ab. So far it has been split into:
-  EDITOR: HG: - e704349bd21b: split 1
-  EDITOR: HG: - a09ad58faae3: split 2
+  EDITOR: HG: - 2:e704349bd21b tip "split 1"
+  EDITOR: HG: - 3:a09ad58faae3 "split 2"
   EDITOR: HG: Write commit message for the next split changeset.
   EDITOR: a2
   EDITOR: 
@@ -661,7 +661,7 @@ Do not move things to secret even if phases.new-commit=secret
   (enter ? for help) [Ynesfdaq?] f
   
   EDITOR: HG: Splitting dd3c45017cbf. So far it has been split into:
-  EDITOR: HG: - f205aea1c624: split 1
+  EDITOR: HG: - 2:f205aea1c624 tip "split 1"
   EDITOR: HG: Write commit message for the next split changeset.
   EDITOR: splitme
   EDITOR: 
@@ -718,7 +718,7 @@ the ignoreblanklines thing isn't somehow position dependent.
   (enter ? for help) [Ynesfdaq?] f
   
   EDITOR: HG: Splitting 904c80b40a4a. So far it has been split into:
-  EDITOR: HG: - ffecf40fa954: split 1
+  EDITOR: HG: - 2:ffecf40fa954 tip "split 1"
   EDITOR: HG: Write commit message for the next split changeset.
   EDITOR: splitme
   EDITOR: 
@@ -843,7 +843,7 @@ Test that splitting moves works properly (issue5723)
   (enter ? for help) [Ynesfdaq?] a
   
   EDITOR: HG: Splitting 8c42fa635116. So far it has been split into:
-  EDITOR: HG: - 478be2a70c27: split1, keeping only the numbered lines
+  EDITOR: HG: - 2:478be2a70c27 tip "split1, keeping only the numbered lines"
   EDITOR: HG: Write commit message for the next split changeset.
   EDITOR: move and modify
   EDITOR: 
@@ -941,7 +941,7 @@ accidentally.
   (enter ? for help) [Ynesfdaq?] a
   
   EDITOR: HG: Splitting 41c861dfa61e. So far it has been split into:
-  EDITOR: HG: - 4b19e06610eb: split1, keeping "file" and only the numbered lines in file2
+  EDITOR: HG: - 2:4b19e06610eb tip "split1, keeping "file" and only the numbered lines in file2"
   EDITOR: HG: Write commit message for the next split changeset.
   EDITOR: copy file->file2, modify both
   EDITOR: 
