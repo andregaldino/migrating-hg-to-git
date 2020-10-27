@@ -141,9 +141,7 @@ colortable = {
     b'phabricator.action.created': b'green',
     b'phabricator.action.skipped': b'magenta',
     b'phabricator.action.updated': b'magenta',
-    b'phabricator.desc': b'',
     b'phabricator.drev': b'bold',
-    b'phabricator.node': b'',
     b'phabricator.status.abandoned': b'magenta dim',
     b'phabricator.status.accepted': b'green bold',
     b'phabricator.status.closed': b'green',
@@ -1220,9 +1218,8 @@ def _print_phabsend_action(ui, ctx, newrevid, action):
         b'phabricator.action.%s' % action,
     )
     drevdesc = ui.label(b'D%d' % newrevid, b'phabricator.drev')
-    nodedesc = ui.label(bytes(ctx), b'phabricator.node')
-    desc = ui.label(ctx.description().split(b'\n')[0], b'phabricator.desc')
-    ui.write(_(b'%s - %s - %s: %s\n') % (drevdesc, actiondesc, nodedesc, desc))
+    summary = cmdutil.format_changeset_summary(ui, ctx, b'phabsend')
+    ui.write(_(b'%s - %s - %s\n') % (drevdesc, actiondesc, summary))
 
 
 def _amend_diff_properties(unfi, drevid, newnodes, diff):
@@ -1642,7 +1639,6 @@ def _confirmbeforesend(repo, revs, oldmap):
     ui = repo.ui
     for rev in revs:
         ctx = repo[rev]
-        desc = ctx.description().splitlines()[0]
         oldnode, olddiff, drevid = oldmap.get(ctx.node(), (None, None, None))
         if drevid:
             drevdesc = ui.label(b'D%d' % drevid, b'phabricator.drev')
@@ -1650,11 +1646,10 @@ def _confirmbeforesend(repo, revs, oldmap):
             drevdesc = ui.label(_(b'NEW'), b'phabricator.drev')
 
         ui.write(
-            _(b'%s - %s: %s\n')
+            _(b'%s - %s\n')
             % (
                 drevdesc,
-                ui.label(bytes(ctx), b'phabricator.node'),
-                ui.label(desc, b'phabricator.desc'),
+                cmdutil.format_changeset_summary(ui, ctx, b'phabsend'),
             )
         )
 

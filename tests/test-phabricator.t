@@ -101,7 +101,7 @@ Create a differential diff:
   $ hg ci --addremove -m 'create alpha for phabricator test €'
   adding alpha
   $ hg phabsend -r . --test-vcr "$VCR/phabsend-create-alpha.json"
-  D7915 - created - d386117f30e6: create alpha for phabricator test \xe2\x82\xac (esc)
+  D7915 - created - 0:d386117f30e6 tip "create alpha for phabricator test \xe2\x82\xac" (esc)
   new commits: ['347bf67801e5']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d386117f30e6-24ffe649-phabsend.hg
   $ echo more >> alpha
@@ -112,8 +112,8 @@ Create a differential diff:
   adding beta
   $ hg phabsend -r ".^::" --test-vcr "$VCR/phabsend-update-alpha-create-beta.json"
   c44b38f24a45 mapped to old nodes []
-  D7915 - updated - c44b38f24a45: create alpha for phabricator test \xe2\x82\xac (esc)
-  D7916 - created - 9e6901f21d5b: create beta for phabricator test
+  D7915 - updated - 0:c44b38f24a45 "create alpha for phabricator test \xe2\x82\xac" (esc)
+  D7916 - created - 1:9e6901f21d5b tip "create beta for phabricator test"
   new commits: ['a692622e6937']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/9e6901f21d5b-1fcd4f0e-phabsend.hg
   $ unset HGENCODING
@@ -127,8 +127,8 @@ behind to identify it.
   $ echo 'draft change' > alpha
   $ hg ci -m 'create draft change for phabricator testing'
   $ hg phabsend --amend -r '.^::' --test-vcr "$VCR/phabsend-create-public.json"
-  D7917 - created - 7b4185ab5d16: create public change for phabricator testing
-  D7918 - created - 251c1c333fc6: create draft change for phabricator testing
+  D7917 - created - 2:7b4185ab5d16 "create public change for phabricator testing"
+  D7918 - created - 3:251c1c333fc6 tip "create draft change for phabricator testing"
   warning: not updating public commit 2:7b4185ab5d16
   new commits: ['3244dc4a3334']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/251c1c333fc6-41cb7c3b-phabsend.hg
@@ -175,7 +175,7 @@ Commenting when phabsending:
   $ hg ci --addremove -m "create comment for phabricator test"
   adding comment
   $ hg phabsend -r . -m "For default branch" --test-vcr "$VCR/phabsend-comment-created.json"
-  D7919 - created - d5dddca9023d: create comment for phabricator test
+  D7919 - created - 4:d5dddca9023d tip "create comment for phabricator test"
   new commits: ['f7db812bbe1d']
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d5dddca9023d-adf673ba-phabsend.hg
   $ echo comment2 >> comment
@@ -183,12 +183,12 @@ Commenting when phabsending:
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/f7db812bbe1d-8fcded77-amend.hg
   $ hg phabsend -r . -m "Address review comments" --test-vcr "$VCR/phabsend-comment-updated.json"
   1849d7828727 mapped to old nodes []
-  D7919 - updated - 1849d7828727: create comment for phabricator test
+  D7919 - updated - 4:1849d7828727 tip "create comment for phabricator test"
 
 Phabsending a skipped commit:
   $ hg phabsend --no-amend -r . --test-vcr "$VCR/phabsend-skipped.json"
   1849d7828727 mapped to old nodes ['1849d7828727']
-  D7919 - skipped - 1849d7828727: create comment for phabricator test
+  D7919 - skipped - 4:1849d7828727 tip "create comment for phabricator test"
 
 Phabsend doesn't create an instability when restacking existing revisions on top
 of new revisions.
@@ -210,7 +210,7 @@ of new revisions.
   $ echo "mod2" > file1.txt
   $ hg ci -m 'modified 2'
   $ hg phabsend -r . --test-vcr "$VCR/phabsend-add-parent-setup.json"
-  D8433 - created - 5d3959e20d1d: modified 2
+  D8433 - created - 2:5d3959e20d1d tip "modified 2"
   new commits: ['2b4aa8a88d61']
   $ hg log -G -T compact
   @  3[tip]:1   2b4aa8a88d61   1970-01-01 00:00 +0000   test
@@ -231,8 +231,8 @@ Also check that it doesn't create more orphans outside of the stack
   $ hg up -q 3
   $ hg phabsend -r ".^ + ." --test-vcr "$VCR/phabsend-add-parent.json"
   2b4aa8a88d61 mapped to old nodes ['2b4aa8a88d61']
-  D8434 - created - d549263bcb2d: modified 1
-  D8433 - updated - 2b4aa8a88d61: modified 2
+  D8434 - created - 1:d549263bcb2d "modified 1"
+  D8433 - updated - 3:2b4aa8a88d61 "modified 2"
   new commits: ['876a60d024de']
   new commits: ['0c6523cb1d0f']
   restabilizing 1eda4bf55021 as d2c78c3a3e01
@@ -313,9 +313,9 @@ Don't restack existing orphans
   $ hg phabsend -r 5::tip --test-vcr "$VCR/phabsend-no-restack-orphan.json"
   876a60d024de mapped to old nodes ['876a60d024de']
   0c6523cb1d0f mapped to old nodes ['0c6523cb1d0f']
-  D8434 - updated - 876a60d024de: modified 1
-  D8433 - updated - 0c6523cb1d0f: modified 2
-  D8435 - created - 082be6c94150: modified A
+  D8434 - updated - 5:876a60d024de "modified 1"
+  D8433 - updated - 6:0c6523cb1d0f "modified 2"
+  D8435 - created - 10:082be6c94150 tip "modified A"
   new commits: ['b5913193c805']
   not restabilizing unchanged d2c78c3a3e01
   $ hg log -G
@@ -374,10 +374,10 @@ Phabesending a new binary, a modified binary, and a removed binary
   $ hg ci -m 'remove binary'
   $ hg phabsend -r .~2:: --test-vcr "$VCR/phabsend-binary.json"
   uploading bin@aa24a81f55de
-  D8007 - created - aa24a81f55de: add binary
+  D8007 - created - 5:aa24a81f55de "add binary"
   uploading bin@d8d62a881b54
-  D8008 - created - d8d62a881b54: modify binary
-  D8009 - created - af55645b2e29: remove binary
+  D8008 - created - 6:d8d62a881b54 "modify binary"
+  D8009 - created - 7:af55645b2e29 tip "remove binary"
   new commits: ['b8139fbb4a57']
   new commits: ['c88ce4c2d2ad']
   new commits: ['75dbbc901145']
@@ -421,14 +421,14 @@ viewable on each side.
 
   $ hg phabsend -r .~4:: --test-vcr "$VCR/phabsend-binary-renames.json"
   uploading bin2@f42f9195e00c
-  D8128 - created - f42f9195e00c: add another binary
-  D8129 - created - 834ab31d80ae: moved binary
-  D8130 - created - 494b750e5194: copied binary
+  D8128 - created - 8:f42f9195e00c "add another binary"
+  D8129 - created - 9:834ab31d80ae "moved binary"
+  D8130 - created - 10:494b750e5194 "copied binary"
   uploading bin2_moved_again@25f766b50cc2
-  D8131 - created - 25f766b50cc2: move+mod copied binary
+  D8131 - created - 11:25f766b50cc2 "move+mod copied binary"
   uploading bin2_moved_copied@1b87b363a5e4
   uploading bin2_moved@1b87b363a5e4
-  D8132 - created - 1b87b363a5e4: copy+mod moved binary
+  D8132 - created - 12:1b87b363a5e4 tip "copy+mod moved binary"
   new commits: ['90437c20312a']
   new commits: ['f391f4da4c61']
   new commits: ['da86a9f3268c']
@@ -662,9 +662,9 @@ The folding of immutable commits works...
 
   $ hg phase -r tip --public
   $ hg phabsend --fold -r 1:: --test-vcr "$VCR/phabsend-fold-immutable.json"
-  D8386 - created - a959a3f69d8d: one: first commit to review
-  D8386 - created - 24a4438154ba: two: second commit to review
-  D8386 - created - d235829e802c: 3: a commit with no detailed message
+  D8386 - created - 1:a959a3f69d8d "one: first commit to review"
+  D8386 - created - 2:24a4438154ba "two: second commit to review"
+  D8386 - created - 3:d235829e802c tip "3: a commit with no detailed message"
   warning: not updating public commit 1:a959a3f69d8d
   warning: not updating public commit 2:24a4438154ba
   warning: not updating public commit 3:d235829e802c
@@ -676,13 +676,13 @@ The folding of immutable commits works...
 
   $ echo y | hg phabsend --fold --confirm -r 1:: \
   >          --test-vcr "$VCR/phabsend-fold-initial.json"
-  NEW - a959a3f69d8d: one: first commit to review
-  NEW - 24a4438154ba: two: second commit to review
-  NEW - d235829e802c: 3: a commit with no detailed message
+  NEW - 1:a959a3f69d8d "one: first commit to review"
+  NEW - 2:24a4438154ba "two: second commit to review"
+  NEW - 3:d235829e802c tip "3: a commit with no detailed message"
   Send the above changes to https://phab.mercurial-scm.org/ (Y/n)? y
-  D8387 - created - a959a3f69d8d: one: first commit to review
-  D8387 - created - 24a4438154ba: two: second commit to review
-  D8387 - created - d235829e802c: 3: a commit with no detailed message
+  D8387 - created - 1:a959a3f69d8d "one: first commit to review"
+  D8387 - created - 2:24a4438154ba "two: second commit to review"
+  D8387 - created - 3:d235829e802c tip "3: a commit with no detailed message"
   updating local commit list for D8387
   new commits: ['602c4e738243', '832553266fe8', '921f8265efbd']
   saved backup bundle to $TESTTMP/folded/.hg/strip-backup/a959a3f69d8d-a4a24136-phabsend.hg
@@ -728,7 +728,7 @@ getoldnodedrevmap() in later phabsends.
   obsolete feature not enabled but 1 markers found!
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg rebase --config experimental.evolution=all --config extensions.rebase=
-  note: not rebasing 2:832553266fe8 "two: second commit to review", already in destination as 4:0124e5474c88 "two: second commit to review" (tip)
+  note: not rebasing 2:832553266fe8 "two: second commit to review", already in destination as 4:0124e5474c88 tip "two: second commit to review"
   rebasing 3:921f8265efbd "3: a commit with no detailed message"
 
 When commits have changed locally, the local commit list on Phabricator is
@@ -740,13 +740,13 @@ updated.
   602c4e738243 mapped to old nodes ['602c4e738243']
   0124e5474c88 mapped to old nodes ['832553266fe8']
   e4edb1fe3565 mapped to old nodes ['921f8265efbd']
-  D8387 - 602c4e738243: one: first commit to review
-  D8387 - 0124e5474c88: two: second commit to review
-  D8387 - e4edb1fe3565: 3: a commit with no detailed message
+  D8387 - 1:602c4e738243 "one: first commit to review"
+  D8387 - 4:0124e5474c88 "two: second commit to review"
+  D8387 - 5:e4edb1fe3565 tip "3: a commit with no detailed message"
   Send the above changes to https://phab.mercurial-scm.org/ (Y/n)? y
-  D8387 - updated - 602c4e738243: one: first commit to review
-  D8387 - updated - 0124e5474c88: two: second commit to review
-  D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message
+  D8387 - updated - 1:602c4e738243 "one: first commit to review"
+  D8387 - updated - 4:0124e5474c88 "two: second commit to review"
+  D8387 - updated - 5:e4edb1fe3565 tip "3: a commit with no detailed message"
   obsolete feature not enabled but 2 markers found! (?)
   updating local commit list for D8387
   new commits: ['602c4e738243', '0124e5474c88', 'e4edb1fe3565']
@@ -772,9 +772,9 @@ updated, and nothing is changed locally afterward.
   602c4e738243 mapped to old nodes ['602c4e738243']
   0124e5474c88 mapped to old nodes ['0124e5474c88']
   e4edb1fe3565 mapped to old nodes ['e4edb1fe3565']
-  D8387 - updated - 602c4e738243: one: first commit to review
-  D8387 - updated - 0124e5474c88: two: second commit to review
-  D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message
+  D8387 - updated - 1:602c4e738243 "one: first commit to review"
+  D8387 - updated - 4:0124e5474c88 "two: second commit to review"
+  D8387 - updated - 5:e4edb1fe3565 tip "3: a commit with no detailed message"
   obsolete feature not enabled but 2 markers found! (?)
   local commit list for D8387 is already up-to-date
   $ hg log -Tcompact
@@ -801,10 +801,10 @@ Fold will accept new revisions at the end...
   602c4e738243 mapped to old nodes ['602c4e738243']
   0124e5474c88 mapped to old nodes ['0124e5474c88']
   e4edb1fe3565 mapped to old nodes ['e4edb1fe3565']
-  D8387 - updated - 602c4e738243: one: first commit to review
-  D8387 - updated - 0124e5474c88: two: second commit to review
-  D8387 - updated - e4edb1fe3565: 3: a commit with no detailed message
-  D8387 - created - 94aaae213b23: four: extend the fold range
+  D8387 - updated - 1:602c4e738243 "one: first commit to review"
+  D8387 - updated - 4:0124e5474c88 "two: second commit to review"
+  D8387 - updated - 5:e4edb1fe3565 "3: a commit with no detailed message"
+  D8387 - created - 6:94aaae213b23 tip "four: extend the fold range"
   updating local commit list for D8387
   new commits: ['602c4e738243', '0124e5474c88', 'e4edb1fe3565', '51a04fea8707']
   $ hg log -r . -T '{desc}\n'
@@ -832,11 +832,11 @@ TODO: See if it can reuse the existing Differential.
   0124e5474c88 mapped to old nodes ['0124e5474c88']
   e4edb1fe3565 mapped to old nodes ['e4edb1fe3565']
   51a04fea8707 mapped to old nodes ['51a04fea8707']
-  D8388 - created - 98d480e0d494: added file
-  D8388 - updated - 602c4e738243: one: first commit to review
-  D8388 - updated - 0124e5474c88: two: second commit to review
-  D8388 - updated - e4edb1fe3565: 3: a commit with no detailed message
-  D8388 - updated - 51a04fea8707: four: extend the fold range
+  D8388 - created - 0:98d480e0d494 "added file"
+  D8388 - updated - 1:602c4e738243 "one: first commit to review"
+  D8388 - updated - 4:0124e5474c88 "two: second commit to review"
+  D8388 - updated - 5:e4edb1fe3565 "3: a commit with no detailed message"
+  D8388 - updated - 7:51a04fea8707 tip "four: extend the fold range"
   updating local commit list for D8388
   new commits: ['15e9b14b4b4c', '6320b7d714cf', '3ee132d41dbc', '30682b960804', 'ac7db67f0991']
 
@@ -925,12 +925,12 @@ Test phabsend --fold with an `hg split` at the end of the range
   30682b960804 mapped to old nodes ['30682b960804']
   6bc15dc99efd mapped to old nodes ['ac7db67f0991']
   b50946d5e490 mapped to old nodes ['ac7db67f0991']
-  D8388 - updated - 15e9b14b4b4c: added file
-  D8388 - updated - 6320b7d714cf: one: first commit to review
-  D8388 - updated - 3ee132d41dbc: two: second commit to review
-  D8388 - updated - 30682b960804: 3: a commit with no detailed message
-  D8388 - updated - 6bc15dc99efd: four: extend the fold range
-  D8388 - updated - b50946d5e490: four: extend the fold range
+  D8388 - updated - 8:15e9b14b4b4c "added file"
+  D8388 - updated - 9:6320b7d714cf "one: first commit to review"
+  D8388 - updated - 10:3ee132d41dbc "two: second commit to review"
+  D8388 - updated - 11:30682b960804 "3: a commit with no detailed message"
+  D8388 - updated - 14:6bc15dc99efd "four: extend the fold range"
+  D8388 - updated - 15:b50946d5e490 tip "four: extend the fold range"
   updating local commit list for D8388
   new commits: ['15e9b14b4b4c', '6320b7d714cf', '3ee132d41dbc', '30682b960804', '6bc15dc99efd', 'b50946d5e490']
 
@@ -939,7 +939,7 @@ Test phabsend --fold with an `hg fold` at the end of the range
   $ hg --config experimental.evolution=all --config extensions.rebase= \
   >    rebase -r '.^' -r . -d '.^^' --collapse -l log.txt
   rebasing 14:6bc15dc99efd "four: extend the fold range"
-  rebasing 15:b50946d5e490 "four: extend the fold range" (tip)
+  rebasing 15:b50946d5e490 tip "four: extend the fold range"
 
   $ hg phabsend --fold -r 8:: --test-vcr "$VCR/phabsend-fold-fold-end.json" \
   >             --config experimental.evolution=all
@@ -948,11 +948,11 @@ Test phabsend --fold with an `hg fold` at the end of the range
   3ee132d41dbc mapped to old nodes ['3ee132d41dbc']
   30682b960804 mapped to old nodes ['30682b960804']
   e919cdf3d4fe mapped to old nodes ['6bc15dc99efd', 'b50946d5e490']
-  D8388 - updated - 15e9b14b4b4c: added file
-  D8388 - updated - 6320b7d714cf: one: first commit to review
-  D8388 - updated - 3ee132d41dbc: two: second commit to review
-  D8388 - updated - 30682b960804: 3: a commit with no detailed message
-  D8388 - updated - e919cdf3d4fe: four: extend the fold range
+  D8388 - updated - 8:15e9b14b4b4c "added file"
+  D8388 - updated - 9:6320b7d714cf "one: first commit to review"
+  D8388 - updated - 10:3ee132d41dbc "two: second commit to review"
+  D8388 - updated - 11:30682b960804 "3: a commit with no detailed message"
+  D8388 - updated - 16:e919cdf3d4fe tip "four: extend the fold range"
   updating local commit list for D8388
   new commits: ['15e9b14b4b4c', '6320b7d714cf', '3ee132d41dbc', '30682b960804', 'e919cdf3d4fe']
 
@@ -987,8 +987,8 @@ restacked.
   $ hg ci -m 'c2874a398f7e is my parent (generate test for phabsend)'
 
   $ hg phabsend -r 17::18  --test-vcr "$VCR/phabsend-hash-fixes.json"
-  D8945 - created - 133c1c6c6449: base review (generate test for phabsend)
-  D8946 - created - c2874a398f7e: 133c1c6c6449 is my parent (generate test for phabsend)
+  D8945 - created - 17:133c1c6c6449 "base review (generate test for phabsend)"
+  D8946 - created - 18:c2874a398f7e "133c1c6c6449 is my parent (generate test for phabsend)"
   new commits: ['f444f060f4d6']
   new commits: ['9c9290f945b1']
   restabilizing 1528c12fa2e4 as b28b20212bd4
