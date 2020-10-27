@@ -32,7 +32,7 @@
   b292c1e3311f
 
   $ hg rebase -d 1
-  rebasing 2:0632994590a8 "xx" (tip)
+  rebasing 2:0632994590a8 tip "xx"
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/0632994590a8-0bc786d8-rebase.hg (glob)
   $ hg log -f x --template "{node|short}\n"
   81deab2073bc
@@ -41,14 +41,14 @@
 # Rebase back, log -f still works
 
   $ hg rebase -d 0 -r 2
-  rebasing 2:81deab2073bc "xx" (tip)
+  rebasing 2:81deab2073bc tip "xx"
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/81deab2073bc-80cb4fda-rebase.hg (glob)
   $ hg log -f x --template "{node|short}\n"
   b3fca10fb42d
   b292c1e3311f
 
   $ hg rebase -d 1 -r 2
-  rebasing 2:b3fca10fb42d "xx" (tip)
+  rebasing 2:b3fca10fb42d tip "xx"
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/b3fca10fb42d-da73a0c7-rebase.hg (glob)
 
   $ cd ..

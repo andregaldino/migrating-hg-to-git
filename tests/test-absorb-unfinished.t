@@ -17,7 +17,7 @@ Abort absorb if there is an unfinished operation.
   $ hg commit -Aqm "foo 2"
 
   $ hg --config extensions.rebase= rebase -r 1 -d 0
-  rebasing 1:c3b6dc0e177a "foo 2" (tip)
+  rebasing 1:c3b6dc0e177a tip "foo 2"
   merging foo.whole
   warning: conflicts while merging foo.whole! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')

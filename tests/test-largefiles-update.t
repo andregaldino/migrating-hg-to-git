@@ -307,7 +307,7 @@ automated commit like rebase/transplant
 
   $ hg rebase -s 1 -d 2 --keep
   rebasing 1:72518492caa6 "#1"
-  rebasing 4:07d6153b5c04 "#4" (tip)
+  rebasing 4:07d6153b5c04 tip "#4"
 
   $ hg status -A large1
   large1: $ENOENT$

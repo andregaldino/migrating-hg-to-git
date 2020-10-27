@@ -137,7 +137,7 @@ first verify copy metadata was kept
 
   $ hg up -qC 2
   $ hg rebase --keep -d 1 -b 2 --config extensions.rebase=
-  rebasing 2:add3f11052fa "other" (tip)
+  rebasing 2:add3f11052fa tip "other"
   merging b and a to b
   merging c and a to c
 
@@ -156,7 +156,7 @@ first verify copy metadata was kept
   $ hg rebase --keep -d 1 -b 2 --config extensions.rebase= --config experimental.copytrace=off --config ui.interactive=True << EOF
   > c
   > EOF
-  rebasing 2:add3f11052fa "other" (tip)
+  rebasing 2:add3f11052fa tip "other"
   file 'a' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? c
@@ -238,7 +238,7 @@ A file is copied on one side and has been moved twice on the other side. the
 file is copied from `0:a`, so the file history of the `3:b` should trace directly to `0:a`.
 
   $ hg rebase -d 2 -s 3 --config extensions.rebase= --config experimental.copytrace=off
-  rebasing 3:47e1a9e6273b "copy a->b (2)" (tip)
+  rebasing 3:47e1a9e6273b tip "copy a->b (2)"
   saved backup bundle to $TESTTMP/copydisable3/.hg/strip-backup/47e1a9e6273b-2d099c59-rebase.hg
 
   $ hg log -G -f b

@@ -54,7 +54,7 @@ shelve should leave dirstate clean (issue4055)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg rebase -d 6c103be8f4e4 --config extensions.rebase=
-  rebasing 2:323bfa07f744 "xyz"( \(tip\))? (re)
+  rebasing 2:323bfa07f744( tip)? "xyz" (re)
   merging x
   saved backup bundle to \$TESTTMP/shelverebase/.hg/strip-backup/323bfa07f744-(78114325|7ae538ef)-rebase.hg (re)
   $ hg unshelve

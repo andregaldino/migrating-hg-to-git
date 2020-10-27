@@ -78,7 +78,7 @@ Conflicting rebase:
 
   $ hg rebase -s 3 -d 2
   rebasing 3:3163e20567cc "L1"
-  rebasing 4:46f0b057b5c0 "L2" (tip)
+  rebasing 4:46f0b057b5c0 tip "L2"
   merging common
   warning: conflicts while merging common! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -145,7 +145,7 @@ earlier than 2.7 by renaming ".hg/rebasestate" temporarily.
 
   $ hg rebase -s 3 -d 2
   rebasing 3:3163e20567cc "L1"
-  rebasing 4:46f0b057b5c0 "L2" (tip)
+  rebasing 4:46f0b057b5c0 tip "L2"
   merging common
   warning: conflicts while merging common! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -215,7 +215,7 @@ Rebase and abort without generating new changesets:
   $ hg rebase -b 4 -d 2
   rebasing 3:a6484957d6b9 "B bis"
   note: not rebasing 3:a6484957d6b9 "B bis", its destination already has all its changes
-  rebasing 4:145842775fec "C1" (tip)
+  rebasing 4:145842775fec tip "C1"
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -274,7 +274,7 @@ rebase abort should not leave working copy in a merge state if tip-1 is public
   
 
   $ hg rebase -d master -r foo
-  rebasing 3:6c0f977a22d8 "C" (foo tip)
+  rebasing 3:6c0f977a22d8 tip foo "C"
   merging c
   warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -314,7 +314,7 @@ user has somehow managed to update to a different revision (issue4009)
   created new head
 
   $ hg rebase -d @ -b foo --tool=internal:fail
-  rebasing 2:070cf4580bb5 "b2" (foo tip)
+  rebasing 2:070cf4580bb5 tip foo "b2"
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 

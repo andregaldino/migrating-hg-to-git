@@ -356,7 +356,7 @@ enabling obsmarkers and rebase extension
 
   $ hg phase -r . --draft --force
   $ hg rebase -r 6 -d 3
-  rebasing 6:9b42578d4447 "added f" (tip)
+  rebasing 6:9b42578d4447 tip "added f"
 
   $ hg glog
   @  7:99949238d9ac added f

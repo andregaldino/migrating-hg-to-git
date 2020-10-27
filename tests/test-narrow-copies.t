@@ -70,5 +70,5 @@ create full repo
   $ echo new > inside/f5
   $ hg ci -Aqm 'add inside/f5'
   $ hg --config extensions.rebase= rebase -d 'public()' -r .
-  rebasing 6:610b60178c28 "add inside/f5" (tip)
+  rebasing 6:610b60178c28 tip "add inside/f5"
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/610b60178c28-65716a78-rebase.hg

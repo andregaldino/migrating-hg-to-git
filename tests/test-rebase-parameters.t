@@ -451,8 +451,8 @@ Test --tool parameter:
   $ cd b1
 
   $ hg rebase -s 2 -d 1 --tool internal:local
-  rebasing 2:e4e3f3546619 "c2b" (tip)
-  note: not rebasing 2:e4e3f3546619 "c2b" (tip), its destination already has all its changes
+  rebasing 2:e4e3f3546619 tip "c2b"
+  note: not rebasing 2:e4e3f3546619 tip "c2b", its destination already has all its changes
   saved backup bundle to $TESTTMP/b1/.hg/strip-backup/e4e3f3546619-b0841178-rebase.hg
 
   $ hg cat c2
@@ -465,7 +465,7 @@ Test --tool parameter:
   $ cd b2
 
   $ hg rebase -s 2 -d 1 --tool internal:other
-  rebasing 2:e4e3f3546619 "c2b" (tip)
+  rebasing 2:e4e3f3546619 tip "c2b"
   saved backup bundle to $TESTTMP/b2/.hg/strip-backup/e4e3f3546619-b0841178-rebase.hg
 
   $ hg cat c2
@@ -478,7 +478,7 @@ Test --tool parameter:
   $ cd b3
 
   $ hg rebase -s 2 -d 1 --tool internal:fail
-  rebasing 2:e4e3f3546619 "c2b" (tip)
+  rebasing 2:e4e3f3546619 tip "c2b"
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
@@ -502,8 +502,8 @@ Test --tool parameter:
   (continue: hg rebase --continue)
   [255]
   $ hg rebase -c --tool internal:fail
-  rebasing 2:e4e3f3546619 "c2b" (tip)
-  note: not rebasing 2:e4e3f3546619 "c2b" (tip), its destination already has all its changes
+  rebasing 2:e4e3f3546619 tip "c2b"
+  note: not rebasing 2:e4e3f3546619 tip "c2b", its destination already has all its changes
   saved backup bundle to $TESTTMP/b3/.hg/strip-backup/e4e3f3546619-b0841178-rebase.hg
 
   $ hg rebase -i

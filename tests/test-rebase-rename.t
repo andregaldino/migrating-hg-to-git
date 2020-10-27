@@ -60,7 +60,7 @@ Rename is tracked:
 Rebase the revision containing the rename:
 
   $ hg rebase -s 3 -d 2
-  rebasing 3:73a3ee40125d "rename A" (tip)
+  rebasing 3:73a3ee40125d tip "rename A"
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/73a3ee40125d-1d78ebcf-rebase.hg
 
   $ hg tglog
@@ -134,8 +134,8 @@ Rebased revision does not contain information about b (issue3739)
   o  0: 1994f17a630e 'A'
   
   $ hg rebase -s 5 -d 4
-  rebasing 5:af8ad1f97097 "E" (tip)
-  note: not rebasing 5:af8ad1f97097 "E" (tip), its destination already has all its changes
+  rebasing 5:af8ad1f97097 tip "E"
+  note: not rebasing 5:af8ad1f97097 tip "E", its destination already has all its changes
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/af8ad1f97097-c3e90708-rebase.hg
   $ hg tglog
   @  4: 60f545c27784 'E'
@@ -207,7 +207,7 @@ Copy is tracked:
 Rebase the revision containing the copy:
 
   $ hg rebase -s 3 -d 2
-  rebasing 3:0a8162ff18a8 "copy A" (tip)
+  rebasing 3:0a8162ff18a8 tip "copy A"
   saved backup bundle to $TESTTMP/b/.hg/strip-backup/0a8162ff18a8-dd06302a-rebase.hg
 
   $ hg tglog
@@ -291,7 +291,7 @@ Test rebase across repeating renames:
   
 
   $ hg rebase -s 4 -d 3
-  rebasing 4:b918d683b091 "Another unrelated change" (tip)
+  rebasing 4:b918d683b091 tip "Another unrelated change"
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/b918d683b091-3024bc57-rebase.hg
 
   $ hg diff --stat -c .

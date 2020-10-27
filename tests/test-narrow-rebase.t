@@ -61,7 +61,7 @@ Can rebase onto commit where no files outside narrow spec are involved
   $ echo modified > inside/f2
   $ hg ci -qm 'modify inside/f2'
   $ hg rebase -d 'desc("modify inside/f1")'
-  rebasing 5:c2f36d04e05d "modify inside/f2" (tip)
+  rebasing 5:c2f36d04e05d tip "modify inside/f2"
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-rebase.hg (glob)
 
 Can rebase onto conflicting changes inside narrow spec
@@ -70,14 +70,14 @@ Can rebase onto conflicting changes inside narrow spec
   $ echo conflicting > inside/f1
   $ hg ci -qm 'conflicting inside/f1'
   $ hg rebase -d 'desc("modify inside/f1")' 2>&1 | egrep -v '(warning:|incomplete!)'
-  rebasing 6:cdce97fbf653 "conflicting inside/f1" (tip)
+  rebasing 6:cdce97fbf653 tip "conflicting inside/f1"
   merging inside/f1
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   $ echo modified3 > inside/f1
   $ hg resolve -m 2>&1 | grep -v continue:
   (no more unresolved files)
   $ hg continue
-  rebasing 6:cdce97fbf653 "conflicting inside/f1" (tip)
+  rebasing 6:cdce97fbf653 tip "conflicting inside/f1"
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-rebase.hg (glob)
 
 Can rebase onto non-conflicting changes outside narrow spec
@@ -86,7 +86,7 @@ Can rebase onto non-conflicting changes outside narrow spec
   $ echo modified > inside/f2
   $ hg ci -qm 'modify inside/f2'
   $ hg rebase -d 'desc("modify outside/f1")'
-  rebasing 7:c2f36d04e05d "modify inside/f2" (tip)
+  rebasing 7:c2f36d04e05d tip "modify inside/f2"
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-rebase.hg (glob)
 
 Rebase interrupts on conflicting changes outside narrow spec

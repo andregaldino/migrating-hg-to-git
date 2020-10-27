@@ -76,7 +76,7 @@ rebase (parents change)
   $ mkcommit C0
   $ mkcommit D0
   $ hg rebase -r . -d 'desc(B0)'
-  rebasing 10:c85eff83a034 "D0" (tip)
+  rebasing 10:c85eff83a034 tip "D0"
 
 check result
 

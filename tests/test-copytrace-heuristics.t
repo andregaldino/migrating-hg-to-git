@@ -54,7 +54,7 @@ Check filename heuristics (same dirname and same basename)
      desc: initial
 
   $ hg rebase -s . -d 1
-  rebasing 2:557f403c0afd "mod a, mod dir/file.txt" (tip)
+  rebasing 2:557f403c0afd tip "mod a, mod dir/file.txt"
   merging b and a to b
   merging dir2/file.txt and dir/file.txt to dir2/file.txt
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/557f403c0afd-9926eeff-rebase.hg
@@ -87,7 +87,7 @@ Make sure filename heuristics do not when they are not related
      desc: initial
 
   $ hg rebase -s . -d 1
-  rebasing 2:d526312210b9 "mode a" (tip)
+  rebasing 2:d526312210b9 tip "mode a"
   file 'a' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -126,7 +126,7 @@ Test when lca didn't modified the file that was moved
      desc: initial
 
   $ hg rebase -s . -d 2
-  rebasing 3:9d5cf99c3d9f "mod a" (tip)
+  rebasing 3:9d5cf99c3d9f tip "mod a"
   merging b and a to b
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/9d5cf99c3d9f-f02358cc-rebase.hg
   $ cd ..
@@ -161,7 +161,7 @@ Rebase "backwards"
      desc: initial
 
   $ hg rebase -s . -d 0
-  rebasing 3:fbe97126b396 "mod b" (tip)
+  rebasing 3:fbe97126b396 tip "mod b"
   merging a and b to a
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/fbe97126b396-cf5452a1-rebase.hg
   $ cd ..
@@ -198,7 +198,7 @@ Check a few potential move candidates
      desc: initial
 
   $ hg rebase -s . -d 2
-  rebasing 3:6b2f4cece40f "mod dir/a" (tip)
+  rebasing 3:6b2f4cece40f tip "mod dir/a"
   merging dir/b and dir/a to dir/b
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/6b2f4cece40f-503efe60-rebase.hg
   $ cd ..
@@ -243,7 +243,7 @@ Test the copytrace.movecandidateslimit with many move candidates
 With small limit
 
   $ hg rebase -s 2 -d 1 --config experimental.copytrace.movecandidateslimit=0
-  rebasing 2:ef716627c70b "mod a" (tip)
+  rebasing 2:ef716627c70b tip "mod a"
   skipping copytracing for 'a', more candidates than the limit: 7
   file 'a' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
@@ -257,7 +257,7 @@ With small limit
 With default limit which is 100
 
   $ hg rebase -s 2 -d 1
-  rebasing 2:ef716627c70b "mod a" (tip)
+  rebasing 2:ef716627c70b tip "mod a"
   merging foo and a to foo
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/ef716627c70b-24681561-rebase.hg
 
@@ -323,7 +323,7 @@ Move a directory in draft branch
      desc: initial
 
   $ hg rebase -s . -d 1
-  rebasing 2:a33d80b6e352 "mv dir/ dir2/" (tip)
+  rebasing 2:a33d80b6e352 tip "mv dir/ dir2/"
   merging dir/a and dir2/a to dir2/a
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/a33d80b6e352-fecb9ada-rebase.hg
   $ cd ..
@@ -358,7 +358,7 @@ Move file twice and rebase mod on top of moves
   o  rev: 0
      desc: initial
   $ hg rebase -s . -d 2
-  rebasing 3:d41316942216 "mod a" (tip)
+  rebasing 3:d41316942216 tip "mod a"
   merging c and a to c
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/d41316942216-2b5949bc-rebase.hg
 
@@ -431,7 +431,7 @@ Move one file and add another file in the same folder in one branch, modify file
      desc: initial
 
   $ hg rebase -s . -d 2
-  rebasing 3:ef716627c70b "mod a" (tip)
+  rebasing 3:ef716627c70b tip "mod a"
   merging b and a to b
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/ef716627c70b-24681561-rebase.hg
   $ ls -A
@@ -504,7 +504,7 @@ Copy and move file
      desc: initial
 
   $ hg rebase -s . -d 1
-  rebasing 2:ef716627c70b "mod a" (tip)
+  rebasing 2:ef716627c70b tip "mod a"
   merging b and a to b
   merging c and a to c
   saved backup bundle to $TESTTMP/repo/repo/.hg/strip-backup/ef716627c70b-24681561-rebase.hg
@@ -631,7 +631,7 @@ File directory and base name changed in same move
      desc: initial
 
   $ hg rebase -s . -d 1 --config experimental.copytrace.sourcecommitlimit=100
-  rebasing 2:6207d2d318e7 "mod a" (tip)
+  rebasing 2:6207d2d318e7 tip "mod a"
   merging dir2/b and dir1/a to dir2/b
   saved backup bundle to $TESTTMP/repo/repo/.hg/strip-backup/6207d2d318e7-1c9779ad-rebase.hg
   $ cat dir2/b
@@ -669,7 +669,7 @@ in other merge parent. File moved on rebase.
      desc: initial
 
   $ hg rebase -s . -d 1 --config experimental.copytrace.sourcecommitlimit=100
-  rebasing 2:e8919e7df8d0 "mv dir1 dir2" (tip)
+  rebasing 2:e8919e7df8d0 tip "mv dir1 dir2"
   saved backup bundle to $TESTTMP/repo/repo/.hg/strip-backup/e8919e7df8d0-f62fab62-rebase.hg
   $ ls dir2
   a

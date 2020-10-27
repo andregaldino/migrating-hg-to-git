@@ -251,7 +251,7 @@ rebase of merge of ancestors
   $ echo 'other change while merging future "rebase ancestors"' > other
   $ hg ci -Aqm 'merge rebase ancestors'
   $ hg rebase -d 5 -v
-  rebasing 6:4c5f12f25ebe "merge rebase ancestors" (tip)
+  rebasing 6:4c5f12f25ebe tip "merge rebase ancestors"
   resolving manifests
   removing other
   resolving manifests
@@ -310,9 +310,9 @@ may include unwanted content:
   > R
   > EOS
   $ hg rebase -r D+E+F -d Z
-  rebasing 5:5f2c926dfecf "D" (D)
-  rebasing 6:b296604d9846 "E" (E)
-  rebasing 7:caa9781e507d "F" (F tip)
+  rebasing 5:5f2c926dfecf D "D"
+  rebasing 6:b296604d9846 E "E"
+  rebasing 7:caa9781e507d F tip "F"
   abort: rebasing 7:caa9781e507d will include unwanted changes from 4:d6003a550c2c or 3:c1e6b162678d
   [255]
 
@@ -330,9 +330,9 @@ The warning does not get printed if there is no unwanted change detected:
   > R
   > EOS
   $ hg rebase -r B+C+D -d Z
-  rebasing 3:c1e6b162678d "B" (B)
-  rebasing 4:d6003a550c2c "C" (C)
-  rebasing 5:c8f78076273e "D" (D tip)
+  rebasing 3:c1e6b162678d B "B"
+  rebasing 4:d6003a550c2c C "C"
+  rebasing 5:c8f78076273e D tip "D"
   saved backup bundle to $TESTTMP/dual-merge-base2/.hg/strip-backup/d6003a550c2c-6f1424b6-rebase.hg
   $ hg manifest -r 'desc(D)'
   B
@@ -352,8 +352,8 @@ The merge base could be different from old p1 (changed parent becomes new p1):
   > B C Z
   > EOS
   $ hg rebase -r D+F -d Z
-  rebasing 3:004dc1679908 "D" (D)
-  rebasing 5:4be4cbf6f206 "F" (F tip)
+  rebasing 3:004dc1679908 D "D"
+  rebasing 5:4be4cbf6f206 F tip "F"
   saved backup bundle to $TESTTMP/chosen-merge-base1/.hg/strip-backup/004dc1679908-06a66a3c-rebase.hg
   $ hg manifest -r 'desc(F)'
   C
@@ -373,8 +373,8 @@ The merge base could be different from old p1 (changed parent becomes new p1):
   > B C Z
   > EOS
   $ hg rebase -r E+F -d Z
-  rebasing 4:974e4943c210 "E" (E)
-  rebasing 5:4be4cbf6f206 "F" (F tip)
+  rebasing 4:974e4943c210 E "E"
+  rebasing 5:4be4cbf6f206 F tip "F"
   saved backup bundle to $TESTTMP/chosen-merge-base2/.hg/strip-backup/974e4943c210-b2874da5-rebase.hg
   $ hg manifest -r 'desc(F)'
   B

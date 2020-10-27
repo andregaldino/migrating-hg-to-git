@@ -123,7 +123,7 @@ Rebase F onto E - check keepbranches:
   o  0:draft 'A'
   
   $ hg rebase -s 5 -d 4 --keepbranches
-  rebasing 5:01e6ebbd8272 "F" (tip)
+  rebasing 5:01e6ebbd8272 tip "F"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -137,7 +137,7 @@ Solve the conflict and go on:
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase --continue
-  rebasing 5:01e6ebbd8272 "F" (tip)
+  rebasing 5:01e6ebbd8272 tip "F"
   saved backup bundle to $TESTTMP/a2/.hg/strip-backup/01e6ebbd8272-6fd3a015-rebase.hg
 
   $ hg tglog

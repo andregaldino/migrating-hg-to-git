@@ -348,7 +348,7 @@ two dirstate parents. We should not get a merge commit when we continue.
   $ hg rebase --source 2 --dest 5 --tool internal:other --config 'hooks.precommit=hg status | grep "M A"'
   rebasing 2:965c486023db "C"
   M A
-  rebasing 6:a0b2430ebfb8 "F" (tip)
+  rebasing 6:a0b2430ebfb8 tip "F"
   abort: precommit hook exited with status 1
   [255]
   $ hg tglogp
@@ -397,7 +397,7 @@ two dirstate parents. We should not get a merge commit when we continue.
   >     --config 'hooks.tonative.pretxncommit=True' --config 'hooks.pretxncommit=hg log -r $HG_NODE | grep "summary:     C"'
   rebasing 2:965c486023db "C"
   summary:     C
-  rebasing 6:a0b2430ebfb8 "F" (tip)
+  rebasing 6:a0b2430ebfb8 tip "F"
   transaction abort!
   rollback completed
   abort: pretxncommit hook exited with status 1
@@ -447,7 +447,7 @@ two dirstate parents. We should not get a merge commit when we continue.
   $ hg rebase --source 2 --dest 5 --tool internal:other --config 'hooks.pretxnclose=hg log -r tip | grep "summary:     C"'
   rebasing 2:965c486023db "C"
   summary:     C
-  rebasing 6:a0b2430ebfb8 "F" (tip)
+  rebasing 6:a0b2430ebfb8 tip "F"
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
@@ -522,7 +522,7 @@ Make sure merge state is cleaned up after a no-op rebase merge (issue5494)
 Now try again with --collapse
   $ hg unbundle -q .hg/strip-backup/fdaca8533b86-7fd70513-rebase.hg
   $ hg rebase -s 2 -d 1 --noninteractive --collapse
-  rebasing 2:fdaca8533b86 "b" (tip)
+  rebasing 2:fdaca8533b86 tip "b"
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -533,7 +533,7 @@ Now try again with --collapse
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase --continue
-  rebasing 2:fdaca8533b86 "b" (tip)
+  rebasing 2:fdaca8533b86 tip "b"
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/fdaca8533b86-7fd70513-rebase.hg
   $ hg resolve --list
   $ test -d .hg/merge

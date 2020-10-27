@@ -72,7 +72,7 @@ Branch name containing a dash (issue3181)
   rebasing 5:24b6387c8c8c "F"
   rebasing 6:eea13746799a "G"
   rebasing 7:02de42196ebe "H"
-  rebasing 9:cb039b7cae8e "dev-two named branch" (tip)
+  rebasing 9:cb039b7cae8e tip "dev-two named branch"
   saved backup bundle to $TESTTMP/a1/.hg/strip-backup/24b6387c8c8c-24cb8001-rebase.hg
 
   $ hg tglog
@@ -101,7 +101,7 @@ Branch name containing a dash (issue3181)
   rebasing 6:24de4aff8e28 "F"
   rebasing 7:4b988a958030 "G"
   rebasing 8:31d0e4ba75e6 "H"
-  rebasing 9:9e70cd31750f "dev-two named branch" (tip)
+  rebasing 9:9e70cd31750f tip "dev-two named branch"
   saved backup bundle to $TESTTMP/a1/.hg/strip-backup/643fc9128048-c4ee9ef5-rebase.hg
 
   $ hg tglog
@@ -190,7 +190,7 @@ Branch name containing a dash (issue3181)
   rebasing 6:679f28760620 "F"
   rebasing 7:549f007a9f5f "G"
   rebasing 8:12b2bc666e20 "H"
-  rebasing 9:71325f8bc082 "dev-two named branch" (tip)
+  rebasing 9:71325f8bc082 tip "dev-two named branch"
   saved backup bundle to $TESTTMP/a1/.hg/strip-backup/643fc9128048-6cdd1a52-rebase.hg
 
   $ hg tglog
@@ -253,7 +253,7 @@ Rebasing descendant onto ancestor across different named branches
   rebasing 6:3944801ae4ea "dev-two named branch"
   rebasing 7:3bdb949809d9 "B"
   rebasing 8:a0d543090fa4 "C"
-  rebasing 9:e9f862ce8bad "D" (tip)
+  rebasing 9:e9f862ce8bad tip "D"
   saved backup bundle to $TESTTMP/a1/.hg/strip-backup/3944801ae4ea-fb46ed74-rebase.hg
 
   $ hg tglog
@@ -344,7 +344,7 @@ source or destination.
 
   $ hg rebase -s tip -d 4 --dry-run
   starting dry-run rebase; repository will not be changed
-  rebasing 11:be1dea60f2a6 "D" (tip)
+  rebasing 11:be1dea60f2a6 tip "D"
   dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase
   $ hg diff
   diff -r 2b586e70108d A
@@ -360,7 +360,7 @@ unrelated to the source or destination.
   $ echo A-mod > A
   $ echo n | hg rebase -s tip -d 4 --confirm --config ui.interactive=True
   starting in-memory rebase
-  rebasing 11:be1dea60f2a6 "D" (tip)
+  rebasing 11:be1dea60f2a6 tip "D"
   rebase completed successfully
   apply changes (yn)? n
   $ hg diff
@@ -374,7 +374,7 @@ unrelated to the source or destination.
   $ echo A-mod > A
   $ hg rebase -s tip -d 4 --confirm
   starting in-memory rebase
-  rebasing 11:be1dea60f2a6 "D" (tip)
+  rebasing 11:be1dea60f2a6 tip "D"
   rebase completed successfully
   apply changes (yn)? y
   saved backup bundle to $TESTTMP/a1/.hg/strip-backup/be1dea60f2a6-ca6d2dac-rebase.hg
@@ -527,8 +527,8 @@ rebase 'c1' to the branch head 'c2' that is closed
   marked working directory as branch x
   $ hg rebase -r 3:: -d .
   rebasing 3:76abc1c6f8c7 "b1"
-  rebasing 4:8427af5d86f2 "c2 closed" (tip)
-  note: not rebasing 4:8427af5d86f2 "c2 closed" (tip), its destination already has all its changes
+  rebasing 4:8427af5d86f2 tip "c2 closed"
+  note: not rebasing 4:8427af5d86f2 tip "c2 closed", its destination already has all its changes
   saved backup bundle to $TESTTMP/case2/.hg/strip-backup/76abc1c6f8c7-cd698d13-rebase.hg
   $ hg tglog
   o  3: 117b0ed08075 'b1' x

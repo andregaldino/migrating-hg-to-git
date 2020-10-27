@@ -196,7 +196,7 @@ For now, manually remove the files
 Verify rebase temporarily includes excluded files
 
   $ hg rebase -d 1 -r 2 --config extensions.rebase=
-  rebasing 2:b91df4f39e75 "edit hide" (tip)
+  rebasing 2:b91df4f39e75 tip "edit hide"
   temporarily included 2 file(s) in the sparse checkout for merging
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
@@ -279,7 +279,7 @@ Verify rebase succeeds if all changed files are in sparse checkout
 
   $ hg commit -Aqm "add show2"
   $ hg rebase -d 1 --config extensions.rebase=
-  rebasing 2:bdde55290160 "add show2" (tip)
+  rebasing 2:bdde55290160 tip "add show2"
   saved backup bundle to $TESTTMP/myrepo/.hg/strip-backup/bdde55290160-216ed9c6-rebase.hg
 
 Verify log --sparse only shows commits that affect the sparse checkout

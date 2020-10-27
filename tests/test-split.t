@@ -368,9 +368,9 @@ Split a non-head
   $ cp -R . ../d
 
   $ runsplit -r 1 | grep rebasing
-  rebasing 2:b5c5ea414030 "d1" (d1)
-  rebasing 3:f4a0a8d004cc "d2" (d2)
-  rebasing 4:777940761eba "d3" (d3)
+  rebasing 2:b5c5ea414030 d1 "d1"
+  rebasing 3:f4a0a8d004cc d2 "d2"
+  rebasing 4:777940761eba d3 "d3"
 #if obsstore-off
   $ hg bookmark
      d1                        4:c4b449ef030e

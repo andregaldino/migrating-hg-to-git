@@ -210,7 +210,7 @@ More complex case where part of the rebase set were already rebased
   
   $ hg rebase --source 'desc(B)' --dest 'tip' --config experimental.rebaseskipobsolete=True
   rebasing 8:8877864f1edb "B"
-  note: not rebasing 9:08483444fef9 "D", already in destination as 11:4596109a6a43 "D" (tip)
+  note: not rebasing 9:08483444fef9 "D", already in destination as 11:4596109a6a43 tip "D"
   rebasing 10:5ae4c968c6ac "C"
   $ hg debugobsolete
   42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 0 {cd010b8cd998f3981a5a8115f94f8da4ab506089} (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '0', 'operation': 'rebase', 'user': 'test'}
@@ -258,7 +258,7 @@ More complex case where part of the rebase set were already rebased
   grafting 11:4596109a6a43 "D"
   $ hg up -qr 'desc(E)'
   $ hg rebase -s tip -d .
-  rebasing 14:9e36056a46e3 "D" (tip)
+  rebasing 14:9e36056a46e3 tip "D"
   $ hg log --style default --debug -r tip
   changeset:   15:627d4614809036ba22b9e7cb31638ddc06ab99ab
   tag:         tip
@@ -518,7 +518,7 @@ Test multiple root handling
   $ hg rebase --dest 4 --rev '7+11+9'
   rebasing 9:cf44d2f5a9f4 "D"
   rebasing 7:02de42196ebe "H"
-  rebasing 11:0d8f238b634c "C" (tip)
+  rebasing 11:0d8f238b634c tip "C"
   $ hg log -G
   o  14:1e8370e38cca C
   |
@@ -556,9 +556,9 @@ Detach both parents
   > EOF
 
   $ hg rebase -d G -r 'B + D + F'
-  rebasing 1:112478962961 "B" (B)
-  rebasing 2:b18e25de2cf5 "D" (D)
-  rebasing 6:f15c3adaf214 "F" (F tip)
+  rebasing 1:112478962961 B "B"
+  rebasing 2:b18e25de2cf5 D "D"
+  rebasing 6:f15c3adaf214 F tip "F"
   abort: cannot rebase 6:f15c3adaf214 without moving at least one of its parents
   [255]
 
@@ -612,7 +612,7 @@ test on rebase dropping a merge
   $ hg rebase --dest 6 --rev '((desc(H) + desc(D))::) - desc(M)'
   rebasing 3:32af7686d403 "D"
   rebasing 7:02de42196ebe "H"
-  rebasing 9:4bde274eefcf "I" (tip)
+  rebasing 9:4bde274eefcf tip "I"
   1 new orphan changesets
   $ hg log -G
   @  12:acd174b7ab39 I
@@ -656,7 +656,7 @@ Test hidden changesets in the rebase set (issue4504)
 
   $ hg rebase --rev .~1::. --dest 'max(desc(D))' --traceback --config experimental.rebaseskipobsolete=off
   rebasing 9:4bde274eefcf "I"
-  rebasing 13:06edfc82198f "J" (tip)
+  rebasing 13:06edfc82198f tip "J"
   2 new content-divergent changesets
   $ hg log -G
   @  15:5ae8a643467b J
@@ -787,7 +787,7 @@ Rebase finds its way in a chain of marker
 
   $ hg rebase -d 'desc(B2)'
   note: not rebasing 1:a8b11f55fb19 "B0", already in destination as 3:261e70097290 "B2"
-  rebasing 4:212cb178bcbb "C" (tip)
+  rebasing 4:212cb178bcbb tip "C"
 
 Even when the chain include missing node
 
@@ -816,7 +816,7 @@ Even when the chain include missing node
 
   $ hg rebase -d 'desc(B2)'
   note: not rebasing 1:a8b11f55fb19 "B0", already in destination as 2:261e70097290 "B2"
-  rebasing 5:1a79b7535141 "D" (tip)
+  rebasing 5:1a79b7535141 tip "D"
   $ hg up 4
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ echo "O" > O
@@ -845,7 +845,7 @@ Even when the chain include missing node
   $ hg rebase -d 6 -r "4::"
   rebasing 4:ff2c4d47b71d "C"
   note: not rebasing 7:360bbaa7d3ce "O", it has no successor
-  rebasing 8:8d47583e023f "P" (tip)
+  rebasing 8:8d47583e023f tip "P"
 
 If all the changeset to be rebased are obsolete and present in the destination, we
 should display a friendly error message
@@ -885,7 +885,7 @@ should display a friendly error message
   o  0:4a2df7238c3b A
   
   $ hg rebase -r . -d 10
-  note: not rebasing 11:f44da1f4954c "nonrelevant" (tip), it has no successor
+  note: not rebasing 11:f44da1f4954c tip "nonrelevant", it has no successor
 
 If a rebase is going to create divergence, it should abort
 
@@ -970,7 +970,7 @@ With experimental.evolution.allowdivergence=True, rebase can create divergence
 
   $ hg rebase -s 10 -d 12 --config experimental.evolution.allowdivergence=True
   rebasing 10:121d9e3bc4c6 "P"
-  rebasing 14:73568ab6879d "bar foo" (tip)
+  rebasing 14:73568ab6879d tip "bar foo"
   2 new content-divergent changesets
   $ hg summary
   parent: 16:61bd55f69bc4 tip
@@ -1041,7 +1041,7 @@ Create the changes that we will rebase
   $ hg rebase --continue
   rebasing 19:b82fb57ea638 "willconflict second version"
   note: not rebasing 20:8b31da3c4919 "dummy change", already in destination as 18:601db7a18f51 "dummy change successor"
-  rebasing 21:7bdc8a87673d "dummy change" (tip)
+  rebasing 21:7bdc8a87673d tip "dummy change"
   $ cd ..
 
 Divergence cases due to obsolete changesets
@@ -1096,11 +1096,11 @@ would occur because the successor of d (d') is also in rebaseset. As a
 consequence f (descendant of d) is left behind.
 
   $ hg rebase -b 'e' -d 'x'
-  rebasing 1:488e1b7e7341 "b" (b)
-  rebasing 3:a82ac2b38757 "c" (c)
-  rebasing 5:027ad6c5830d "d'" (d')
-  rebasing 6:d60ebfa0f1cb "e" (e)
-  note: not rebasing 4:76be324c128b "d" (d) and its descendants as this would cause divergence
+  rebasing 1:488e1b7e7341 b "b"
+  rebasing 3:a82ac2b38757 c "c"
+  rebasing 5:027ad6c5830d d' "d'"
+  rebasing 6:d60ebfa0f1cb e "e"
+  note: not rebasing 4:76be324c128b d "d" and its descendants as this would cause divergence
   $ hg log -G -r 'a'::
   o  11:eb6d63fc4ed5 e
   |
@@ -1154,9 +1154,9 @@ By allowing divergence, we can perform the rebase.
   (to force the rebase please set experimental.evolution.allowdivergence=True)
   [255]
   $ hg rebase --config experimental.evolution.allowdivergence=true -r 'c'::'f' -d 'x'
-  rebasing 3:a82ac2b38757 "c" (c)
-  rebasing 4:76be324c128b "d" (d)
-  rebasing 7:1143e9adc121 "f" (f tip)
+  rebasing 3:a82ac2b38757 c "c"
+  rebasing 4:76be324c128b d "d"
+  rebasing 7:1143e9adc121 f tip "f"
   1 new orphan changesets
   2 new content-divergent changesets
   $ hg log -G -r 'a':: -T instabilities
@@ -1187,9 +1187,9 @@ By allowing divergence, we can perform the rebase.
 (Not skipping obsoletes means that divergence is allowed.)
 
   $ hg rebase --config experimental.rebaseskipobsolete=false -r 'c'::'f' -d 'x'
-  rebasing 3:a82ac2b38757 "c" (c)
-  rebasing 4:76be324c128b "d" (d)
-  rebasing 7:1143e9adc121 "f" (f tip)
+  rebasing 3:a82ac2b38757 c "c"
+  rebasing 4:76be324c128b d "d"
+  rebasing 7:1143e9adc121 f tip "f"
   1 new orphan changesets
   2 new content-divergent changesets
 
@@ -1231,12 +1231,12 @@ Similar test on a more complex graph
   o  0:b173517d0057 a
   
   $ hg rebase -b 'f' -d 'x'
-  rebasing 1:488e1b7e7341 "b" (b)
-  rebasing 3:a82ac2b38757 "c" (c)
-  rebasing 5:63324dc512ea "e'" (e')
-  rebasing 7:3ffec603ab53 "f" (f)
-  rebasing 4:76be324c128b "d" (d)
-  note: not rebasing 6:e36fae928aec "e" (e) and its descendants as this would cause divergence
+  rebasing 1:488e1b7e7341 b "b"
+  rebasing 3:a82ac2b38757 c "c"
+  rebasing 5:63324dc512ea e' "e'"
+  rebasing 7:3ffec603ab53 f "f"
+  rebasing 4:76be324c128b d "d"
+  note: not rebasing 6:e36fae928aec e "e" and its descendants as this would cause divergence
   $ hg log -G -r 'a':
   o  13:a1707a5b7c2c d
   |
@@ -1294,7 +1294,7 @@ issue5782
   o  0:b173517d0057 a
   
   $ hg rebase -d 0 -r 2
-  rebasing 2:a82ac2b38757 "c" (c)
+  rebasing 2:a82ac2b38757 c "c"
   $ hg log -G -r 'a': --hidden
   o  5:69ad416a4a26 c
   |
@@ -1325,8 +1325,8 @@ Rebase merge where successor of one parent is equal to destination (issue5198)
   1 new orphan changesets
 
   $ hg rebase -d B -s D
-  note: not rebasing 2:b18e25de2cf5 "D" (D), already in destination as 1:112478962961 "B" (B)
-  rebasing 4:66f1a38021c9 "F" (F tip)
+  note: not rebasing 2:b18e25de2cf5 D "D", already in destination as 1:112478962961 B "B"
+  rebasing 4:66f1a38021c9 F tip "F"
   $ hg log -G
   o    5:50e9d60b99c6 F
   |\
@@ -1357,8 +1357,8 @@ Rebase merge where successor of other parent is equal to destination
   1 new orphan changesets
 
   $ hg rebase -d B -s E
-  note: not rebasing 3:7fb047a69f22 "E" (E), already in destination as 1:112478962961 "B" (B)
-  rebasing 4:66f1a38021c9 "F" (F tip)
+  note: not rebasing 3:7fb047a69f22 E "E", already in destination as 1:112478962961 B "B"
+  rebasing 4:66f1a38021c9 F tip "F"
   $ hg log -G
   o    5:aae1787dacee F
   |\
@@ -1389,8 +1389,8 @@ Rebase merge where successor of one parent is ancestor of destination
   1 new orphan changesets
 
   $ hg rebase -d C -s D
-  note: not rebasing 2:b18e25de2cf5 "D" (D), already in destination as 1:112478962961 "B" (B)
-  rebasing 5:66f1a38021c9 "F" (F tip)
+  note: not rebasing 2:b18e25de2cf5 D "D", already in destination as 1:112478962961 B "B"
+  rebasing 5:66f1a38021c9 F tip "F"
 
   $ hg log -G
   o    6:0913febf6439 F
@@ -1424,8 +1424,8 @@ Rebase merge where successor of other parent is ancestor of destination
   1 new orphan changesets
 
   $ hg rebase -d C -s E
-  note: not rebasing 3:7fb047a69f22 "E" (E), already in destination as 1:112478962961 "B" (B)
-  rebasing 5:66f1a38021c9 "F" (F tip)
+  note: not rebasing 3:7fb047a69f22 E "E", already in destination as 1:112478962961 B "B"
+  rebasing 5:66f1a38021c9 F tip "F"
   $ hg log -G
   o    6:c6ab0cc6d220 F
   |\
@@ -1458,10 +1458,10 @@ Rebase merge where successor of one parent is ancestor of destination
   1 new orphan changesets
 
   $ hg rebase -d C -b F
-  rebasing 2:b18e25de2cf5 "D" (D)
-  note: not rebasing 3:7fb047a69f22 "E" (E), already in destination as 1:112478962961 "B" (B)
-  rebasing 5:66f1a38021c9 "F" (F tip)
-  note: not rebasing 5:66f1a38021c9 "F" (F tip), its destination already has all its changes
+  rebasing 2:b18e25de2cf5 D "D"
+  note: not rebasing 3:7fb047a69f22 E "E", already in destination as 1:112478962961 B "B"
+  rebasing 5:66f1a38021c9 F tip "F"
+  note: not rebasing 5:66f1a38021c9 F tip "F", its destination already has all its changes
   $ hg log -G
   o  6:8f47515dda15 D
   |
@@ -1494,10 +1494,10 @@ Rebase merge where successor of other parent is ancestor of destination
   1 new orphan changesets
 
   $ hg rebase -d C -b F
-  note: not rebasing 2:b18e25de2cf5 "D" (D), already in destination as 1:112478962961 "B" (B)
-  rebasing 3:7fb047a69f22 "E" (E)
-  rebasing 5:66f1a38021c9 "F" (F tip)
-  note: not rebasing 5:66f1a38021c9 "F" (F tip), its destination already has all its changes
+  note: not rebasing 2:b18e25de2cf5 D "D", already in destination as 1:112478962961 B "B"
+  rebasing 3:7fb047a69f22 E "E"
+  rebasing 5:66f1a38021c9 F tip "F"
+  note: not rebasing 5:66f1a38021c9 F tip "F", its destination already has all its changes
 
   $ hg log -G
   o  6:533690786a86 E
@@ -1531,8 +1531,8 @@ destination
   > EOF
 
   $ hg rebase -d D -s B
-  rebasing 1:112478962961 "B" (B)
-  note: not rebasing 3:26805aba1e60 "C" (C) and its descendants as this would cause divergence
+  rebasing 1:112478962961 B "B"
+  note: not rebasing 3:26805aba1e60 C "C" and its descendants as this would cause divergence
 
   $ cd ..
 
@@ -1581,9 +1581,9 @@ Rebase merge where both parents have successors in destination
   > EOS
   1 new orphan changesets
   $ hg rebase -r A+B+E -d F
-  note: not rebasing 4:a3d17304151f "A" (A), already in destination as 0:96cc3511f894 "C" (C)
-  note: not rebasing 5:b23a2cc00842 "B" (B), already in destination as 1:058c1e1fb10a "D" (D)
-  rebasing 7:dac5d11c5a7d "E" (E tip)
+  note: not rebasing 4:a3d17304151f A "A", already in destination as 0:96cc3511f894 C "C"
+  note: not rebasing 5:b23a2cc00842 B "B", already in destination as 1:058c1e1fb10a D "D"
+  rebasing 7:dac5d11c5a7d E tip "E"
   abort: rebasing 7:dac5d11c5a7d will include unwanted changes from 3:59c792af609c, 5:b23a2cc00842 or 2:ba2b7fa7166d, 4:a3d17304151f
   [255]
   $ cd ..
@@ -1600,9 +1600,9 @@ parent moves as requested.
   > EOS
   1 new orphan changesets
   $ hg rebase -r A+B+D -d Z
-  note: not rebasing 0:426bada5c675 "A" (A), already in destination as 2:96cc3511f894 "C" (C)
-  rebasing 1:fc2b737bb2e5 "B" (B)
-  rebasing 3:b8ed089c80ad "D" (D)
+  note: not rebasing 0:426bada5c675 A "A", already in destination as 2:96cc3511f894 C "C"
+  rebasing 1:fc2b737bb2e5 B "B"
+  rebasing 3:b8ed089c80ad D "D"
 
   $ rm .hg/localtags
   $ hg log -G
@@ -1631,9 +1631,9 @@ parent moves as requested.
   > EOS
   1 new orphan changesets
   $ hg rebase -r B+A+D -d Z
-  rebasing 0:426bada5c675 "A" (A)
-  note: not rebasing 1:fc2b737bb2e5 "B" (B), already in destination as 2:96cc3511f894 "C" (C)
-  rebasing 3:b8ed089c80ad "D" (D)
+  rebasing 0:426bada5c675 A "A"
+  note: not rebasing 1:fc2b737bb2e5 B "B", already in destination as 2:96cc3511f894 C "C"
+  rebasing 3:b8ed089c80ad D "D"
 
   $ rm .hg/localtags
   $ hg log -G
@@ -1669,7 +1669,7 @@ equivalents in destination
   adding b
   created new head
   $ hg rebase -r 2 -d 1
-  rebasing 2:1e9a3c00cbe9 "b" (tip)
+  rebasing 2:1e9a3c00cbe9 tip "b"
   $ hg log -r .  # working dir is at rev 3 (successor of 2)
   3:be1832deae9a b (no-eol)
   $ hg book -r 2 mybook --hidden  # rev 2 has a bookmark on it now
@@ -1679,7 +1679,7 @@ equivalents in destination
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   2:1e9a3c00cbe9 b (rewritten using rebase as 3:be1832deae9a) (no-eol)
   $ hg rebase -r 2 -d 3 --config experimental.evolution.track-operation=1
-  note: not rebasing 2:1e9a3c00cbe9 "b" (mybook), already in destination as 3:be1832deae9a "b" (tip)
+  note: not rebasing 2:1e9a3c00cbe9 mybook "b", already in destination as 3:be1832deae9a tip "b"
 Check that working directory and bookmark was updated to rev 3 although rev 2
 was skipped
   $ hg log -r .
@@ -1706,8 +1706,8 @@ parent gets moved:
   $ hg update D1 -q
   $ hg bookmark book -i
   $ hg rebase -r B+D1 -d E
-  rebasing 1:112478962961 "B" (B)
-  note: not rebasing 5:15ecf15e0114 "D1" (book D1 tip), already in destination as 2:0807738e0be9 "D2" (D2)
+  rebasing 1:112478962961 B "B"
+  note: not rebasing 5:15ecf15e0114 D1 tip book "D1", already in destination as 2:0807738e0be9 D2 "D2"
   1 new orphan changesets
   $ hg log -G -T '{desc} {bookmarks}'
   @  B book
@@ -1819,7 +1819,7 @@ Also test --continue for the above case
   continue: hg rebase --continue
   $ hg rebase --continue
   rebasing 1:2ec65233581b "B"
-  rebasing 3:7829726be4dc "C" (tip)
+  rebasing 3:7829726be4dc tip "C"
   $ hg log -G
   @  5:1964d5d5b547 C
   |
@@ -2112,9 +2112,9 @@ Test --stop moves bookmarks of original revisions to new rebased nodes:
   o  0: 1994f17a630e 'A' bookmarks:
   
   $ hg rebase -s 1 -d 5
-  rebasing 1:6c81ed0049f8 "B" (X)
-  rebasing 2:49cb3485fa0c "C" (Y)
-  rebasing 3:67a385d4e6f2 "D" (Z)
+  rebasing 1:6c81ed0049f8 X "B"
+  rebasing 2:49cb3485fa0c Y "C"
+  rebasing 3:67a385d4e6f2 Z "D"
   merging d
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')

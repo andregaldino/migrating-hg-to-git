@@ -625,8 +625,8 @@ merging csets is a descendant of the base.
      a
 
   $ hg rebase -r . -d 2 -t :other
-  rebasing 5:5018b1509e94 "added willconflict and d" (tip) (no-changeset !)
-  rebasing 5:af8d273bf580 "added willconflict and d" (tip) (changeset !)
+  rebasing 5:5018b1509e94 tip "added willconflict and d" (no-changeset !)
+  rebasing 5:af8d273bf580 tip "added willconflict and d" (changeset !)
 
   $ hg up 3 -q
   $ hg l --hidden

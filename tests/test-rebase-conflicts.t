@@ -100,7 +100,7 @@ Conclude rebase:
   $ hg rebase --continue
   already rebased 3:3163e20567cc "L1" as 3e046f2ecedb
   rebasing 4:46f0b057b5c0 "L2"
-  rebasing 5:8029388f38dc "L3" (mybook)
+  rebasing 5:8029388f38dc mybook "L3"
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/3163e20567cc-5ca4656e-rebase.hg
 
   $ hg tglog
@@ -261,7 +261,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   updating the branch cache
   rebased as 19c888675e13
   rebase status stored
-  rebasing 10:2f2496ddf49d "merge" (tip)
+  rebasing 10:2f2496ddf49d tip "merge"
    future parents are 11 and 7
    already in destination
    merge against 10:2f2496ddf49d
@@ -341,7 +341,7 @@ Test minimization of merge conflicts
   $ echo c >> a
   $ hg commit -q -m 'abc'
   $ hg rebase -s 7bc217434fc1 -d ab --keep
-  rebasing 13:7bc217434fc1 "abc" (tip)
+  rebasing 13:7bc217434fc1 tip "abc"
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -361,7 +361,7 @@ Test minimization of merge conflicts
   rebase aborted
   $ hg up -q -C 7bc217434fc1
   $ hg rebase -s . -d ab --keep -t internal:merge3
-  rebasing 13:7bc217434fc1 "abc" (tip)
+  rebasing 13:7bc217434fc1 tip "abc"
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -399,7 +399,7 @@ Test rebase with obsstore turned on and off (issue5606)
   $ echo 3 > B
   $ hg commit --amend -m E -A B -q
   $ hg rebase -r B+D -d . --config experimental.evolution=true
-  rebasing 1:112478962961 "B" (B)
+  rebasing 1:112478962961 B "B"
   merging B
   warning: conflicts while merging B! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -410,8 +410,8 @@ Test rebase with obsstore turned on and off (issue5606)
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase --continue --config experimental.evolution=none
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:f585351a92f8 "D" (D)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:f585351a92f8 D "D"
   warning: orphaned descendants detected, not stripping 112478962961
   saved backup bundle to $TESTTMP/b/.hg/strip-backup/f585351a92f8-e536a9e4-rebase.hg
 
@@ -448,10 +448,10 @@ Test where the conflict happens when rebasing a merge commit
   $ hg co F
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg rebase -d B
-  rebasing 2:dc0947a82db8 "C" (C)
-  rebasing 3:e7b3f00ed42e "D" (D)
-  rebasing 4:03ca77807e91 "E" (E)
-  rebasing 5:9a6b91dc2044 "F" (F tip)
+  rebasing 2:dc0947a82db8 C "C"
+  rebasing 3:e7b3f00ed42e D "D"
+  rebasing 4:03ca77807e91 E "E"
+  rebasing 5:9a6b91dc2044 F tip "F"
   merging conflict
   warning: conflicts while merging conflict! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -480,10 +480,10 @@ Test where the conflict happens when rebasing a merge commit
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase -c
-  already rebased 2:dc0947a82db8 "C" (C) as 0199610c343e
-  already rebased 3:e7b3f00ed42e "D" (D) as f0dd538aaa63
-  already rebased 4:03ca77807e91 "E" (E) as cbf25af8347d
-  rebasing 5:9a6b91dc2044 "F" (F)
+  already rebased 2:dc0947a82db8 C "C" as 0199610c343e
+  already rebased 3:e7b3f00ed42e D "D" as f0dd538aaa63
+  already rebased 4:03ca77807e91 E "E" as cbf25af8347d
+  rebasing 5:9a6b91dc2044 F "F"
   saved backup bundle to $TESTTMP/conflict-in-merge/.hg/strip-backup/dc0947a82db8-ca7e7d5b-rebase.hg
   $ hg tglog
   @    5:draft 'F'

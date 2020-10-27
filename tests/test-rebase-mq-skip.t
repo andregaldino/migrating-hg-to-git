@@ -57,7 +57,7 @@ already has one local mq patch
   $ hg up -q -C qtip
 
   $ hg rebase -v
-  rebasing 2:13a46ce44f60 "P0" (p0.patch qbase)
+  rebasing 2:13a46ce44f60 p0.patch qbase "P0"
   resolving manifests
   removing p0
   getting r1
@@ -67,9 +67,9 @@ already has one local mq patch
   p0
   committing manifest
   committing changelog
-  rebasing 3:148775c71080 "P1" (p1.patch qtip)
+  rebasing 3:148775c71080 p1.patch qtip "P1"
   resolving manifests
-  note: not rebasing 3:148775c71080 "P1" (p1.patch qtip), its destination already has all its changes
+  note: not rebasing 3:148775c71080 p1.patch qtip "P1", its destination already has all its changes
   rebase merging completed
   updating mq patch p0.patch to 5:9ecc820b1737
   $TESTTMP/a/.hg/patches/p0.patch
@@ -149,12 +149,12 @@ already has one local mq patch
   $ hg up -q qtip
 
   $ HGMERGE=internal:fail hg rebase
-  rebasing 1:b4bffa6e4776 "r1" (qbase r1)
-  note: not rebasing 1:b4bffa6e4776 "r1" (qbase r1), its destination already has all its changes
-  rebasing 2:c0fd129beb01 "r2" (r2)
-  rebasing 3:6ff5b8feed8e "r3" (r3)
-  note: not rebasing 3:6ff5b8feed8e "r3" (r3), its destination already has all its changes
-  rebasing 4:094320fec554 "r4" (r4)
+  rebasing 1:b4bffa6e4776 qbase r1 "r1"
+  note: not rebasing 1:b4bffa6e4776 qbase r1 "r1", its destination already has all its changes
+  rebasing 2:c0fd129beb01 r2 "r2"
+  rebasing 3:6ff5b8feed8e r3 "r3"
+  note: not rebasing 3:6ff5b8feed8e r3 "r3", its destination already has all its changes
+  rebasing 4:094320fec554 r4 "r4"
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [1]
 
@@ -163,14 +163,14 @@ already has one local mq patch
   continue: hg rebase --continue
 
   $ hg continue
-  already rebased 1:b4bffa6e4776 "r1" (qbase r1) as 057f55ff8f44
-  already rebased 2:c0fd129beb01 "r2" (r2) as 1660ab13ce9a
-  already rebased 3:6ff5b8feed8e "r3" (r3) as 1660ab13ce9a
-  rebasing 4:094320fec554 "r4" (r4)
-  note: not rebasing 4:094320fec554 "r4" (r4), its destination already has all its changes
-  rebasing 5:681a378595ba "r5" (r5)
-  rebasing 6:512a1f24768b "r6" (qtip r6)
-  note: not rebasing 6:512a1f24768b "r6" (qtip r6), its destination already has all its changes
+  already rebased 1:b4bffa6e4776 qbase r1 "r1" as 057f55ff8f44
+  already rebased 2:c0fd129beb01 r2 "r2" as 1660ab13ce9a
+  already rebased 3:6ff5b8feed8e r3 "r3" as 1660ab13ce9a
+  rebasing 4:094320fec554 r4 "r4"
+  note: not rebasing 4:094320fec554 r4 "r4", its destination already has all its changes
+  rebasing 5:681a378595ba r5 "r5"
+  rebasing 6:512a1f24768b qtip r6 "r6"
+  note: not rebasing 6:512a1f24768b qtip r6 "r6", its destination already has all its changes
   saved backup bundle to $TESTTMP/b/.hg/strip-backup/b4bffa6e4776-b9bfb84d-rebase.hg
 
   $ hg tglog

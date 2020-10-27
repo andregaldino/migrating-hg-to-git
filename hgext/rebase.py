@@ -146,13 +146,8 @@ def _revsetdestautoorphanrebase(repo, subset, x):
 
 def _ctxdesc(ctx):
     """short description for a context"""
-    labels_spec = b'join(filter(namespaces % "{ifeq(namespace, "branches", "", join(names, " "))}"), " ")'
-    spec = b'{rev}:{node|short} "{desc|firstline}"{if(%s, " ({%s})")}' % (
-        labels_spec,
-        labels_spec,
-    )
     return cmdutil.format_changeset_summary(
-        ctx.repo().ui, ctx, command=b'rebase', default_spec=spec
+        ctx.repo().ui, ctx, command=b'rebase'
     )
 
 

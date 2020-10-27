@@ -177,7 +177,7 @@ and the rebase should fail (issue5628)
 
   $ hg up -qC 2
   $ hg rebase -s 2 -d 1 --config extensions.rebase=
-  rebasing 2:e73c21d6b244 "file a/poisoned" (tip)
+  rebasing 2:e73c21d6b244 tip "file a/poisoned"
   abort: path 'a/poisoned' traverses symbolic link 'a'
   [255]
   $ ls ../merge-symlink-out

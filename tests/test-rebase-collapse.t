@@ -35,9 +35,9 @@ Highest phase of source commits is used:
   > echo "edited manually" >> \$1
   > EOF
   $ HGEDITOR="sh $TESTTMP/editor.sh" hg rebase --collapse --keepbranches -e --source B --dest F
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:26805aba1e60 "C" (C)
-  rebasing 5:f585351a92f8 "D" (D tip)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:26805aba1e60 C "C"
+  rebasing 5:f585351a92f8 D tip "D"
   ==== before editing
   Collapsed revision
   * B
@@ -96,8 +96,8 @@ Merge gets linearized:
 
   $ hg phase --force --secret D
   $ hg rebase --source B --collapse --dest F
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:4e4f9194f9f1 "D" (D)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:4e4f9194f9f1 D "D"
   saved backup bundle to $TESTTMP/linearized-merge/.hg/strip-backup/112478962961-e389075b-rebase.hg
 
   $ hg tglog
@@ -141,8 +141,8 @@ Custom message:
   > true
   > EOF
   $ HGEDITOR="sh $TESTTMP/checkeditform.sh" hg rebase --source B --collapse -m 'custom message' -e --dest D
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:26805aba1e60 "C" (C tip)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:26805aba1e60 C tip "C"
   HGEDITFORM=rebase.collapse
   saved backup bundle to $TESTTMP/message/.hg/strip-backup/112478962961-f4131707-rebase.hg
 
@@ -185,9 +185,9 @@ Rebase and collapse - more than one external (fail):
 Rebase and collapse - E onto H:
 
   $ hg rebase -s E --dest H --collapse # root (E) is not a merge
-  rebasing 5:49cb92066bfd "E" (E)
-  rebasing 6:11abe3fb10b8 "F" (F)
-  rebasing 7:64e264db77f0 "G" (G tip)
+  rebasing 5:49cb92066bfd E "E"
+  rebasing 6:11abe3fb10b8 F "F"
+  rebasing 7:64e264db77f0 G tip "G"
   saved backup bundle to $TESTTMP/multiple-external-parents/.hg/strip-backup/49cb92066bfd-ee8a8a79-rebase.hg
 
   $ hg tglog
@@ -287,7 +287,7 @@ Preserves external parent
   > EOF
 
   $ hg rebase -s F --dest I --collapse # root (F) is not a merge
-  rebasing 6:c82b08f646f1 "F" (F)
+  rebasing 6:c82b08f646f1 F "F"
   file 'E' was deleted in local [dest] but was modified in other [source].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -299,9 +299,9 @@ Preserves external parent
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase -c
-  rebasing 6:c82b08f646f1 "F" (F)
-  rebasing 7:a6db7fa104e1 "G" (G)
-  rebasing 8:e1d201b72d91 "H" (H tip)
+  rebasing 6:c82b08f646f1 F "F"
+  rebasing 7:a6db7fa104e1 G "G"
+  rebasing 8:e1d201b72d91 H tip "H"
   saved backup bundle to $TESTTMP/external-parent/.hg/strip-backup/c82b08f646f1-f2721fbf-rebase.hg
 
   $ hg tglog
@@ -347,8 +347,8 @@ Rebasing from multiple bases:
   > A
   > EOF
   $ hg rebase --collapse -r 'B+C' -d D
-  rebasing 1:fc2b737bb2e5 "B" (B)
-  rebasing 2:dc0947a82db8 "C" (C)
+  rebasing 1:fc2b737bb2e5 B "B"
+  rebasing 2:dc0947a82db8 C "C"
   saved backup bundle to $TESTTMP/multiple-bases/.hg/strip-backup/dc0947a82db8-b0c1a7ea-rebase.hg
   $ hg tglog
   o  2: 2127ae44d291 'Collapsed revision
@@ -424,10 +424,10 @@ With internal merge:
 
 
   $ hg rebase -s B --collapse --dest F
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:26805aba1e60 "C" (C)
-  rebasing 4:be0ef73c17ad "D" (D)
-  rebasing 5:02c4367d6973 "E" (E tip)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:26805aba1e60 C "C"
+  rebasing 4:be0ef73c17ad D "D"
+  rebasing 5:02c4367d6973 E tip "E"
   saved backup bundle to $TESTTMP/internal-merge/.hg/strip-backup/112478962961-1dfb057b-rebase.hg
 
   $ hg tglog
@@ -514,7 +514,7 @@ Rebase, collapse and copies
   merging a and d to d
   merging b and e to e
   merging c and f to f
-  rebasing 3:338e84e2e558 "move2" (tip)
+  rebasing 3:338e84e2e558 tip "move2"
   merging f and c to c
   merging e and g to g
   saved backup bundle to $TESTTMP/copies/.hg/strip-backup/6e7340ee38c0-ef8ef003-rebase.hg
@@ -557,7 +557,7 @@ Test collapsing in place
 
   $ hg rebase --collapse -b . -d 0
   rebasing 1:1352765a01d4 "change"
-  rebasing 2:64b456429f67 "Collapsed revision" (tip)
+  rebasing 2:64b456429f67 tip "Collapsed revision"
   saved backup bundle to $TESTTMP/copies/.hg/strip-backup/1352765a01d4-45a352ea-rebase.hg
   $ hg st --change tip --copies
   M a
@@ -631,7 +631,7 @@ Test collapsing changes that add then remove a file
   $ hg book foo
   $ hg rebase -d 0 -r "1::2" --collapse -m collapsed
   rebasing 1:6d8d9f24eec3 "a"
-  rebasing 2:1cc73eca5ecc "b" (foo tip)
+  rebasing 2:1cc73eca5ecc tip foo "b"
   saved backup bundle to $TESTTMP/collapseaddremove/.hg/strip-backup/6d8d9f24eec3-77d3b6e2-rebase.hg
   $ hg log -G --template "{rev}: '{desc}' {bookmarks}"
   @  1: 'collapsed' foo
@@ -655,7 +655,7 @@ running into merge conflict and invoking rebase --continue.
   > A
   > EOF
   $ hg rebase --collapse -m "new message" -b B -d C
-  rebasing 1:81e5401e4d37 "B" (B)
+  rebasing 1:81e5401e4d37 B "B"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -665,7 +665,7 @@ running into merge conflict and invoking rebase --continue.
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase --continue
-  rebasing 1:81e5401e4d37 "B" (B)
+  rebasing 1:81e5401e4d37 B "B"
   saved backup bundle to $TESTTMP/collapse_remember_message/.hg/strip-backup/81e5401e4d37-96c3dd30-rebase.hg
   $ hg log
   changeset:   2:17186933e123
@@ -702,7 +702,7 @@ Test aborted editor on final message
   > A
   > EOF
   $ hg rebase --collapse -t internal:merge3 -s B -d D
-  rebasing 1:f899f3910ce7 "B" (B)
+  rebasing 1:f899f3910ce7 B "B"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -729,8 +729,8 @@ Test aborted editor on final message
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase --continue
-  rebasing 1:f899f3910ce7 "B" (B)
-  rebasing 3:63668d570d21 "C" (C tip)
+  rebasing 1:f899f3910ce7 B "B"
+  rebasing 3:63668d570d21 C tip "C"
   merging A
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -757,8 +757,8 @@ Test aborted editor on final message
   (no more unresolved files)
   continue: hg rebase --continue
   $ HGEDITOR=false hg rebase --continue --config ui.interactive=1
-  already rebased 1:f899f3910ce7 "B" (B) as 82b8abf9c185
-  rebasing 3:63668d570d21 "C" (C tip)
+  already rebased 1:f899f3910ce7 B "B" as 82b8abf9c185
+  rebasing 3:63668d570d21 C tip "C"
   abort: edit failed: false exited with status 1
   [255]
   $ hg tglog
@@ -771,6 +771,6 @@ Test aborted editor on final message
   o  0: 4a2df7238c3b 'A'
   
   $ hg rebase --continue
-  already rebased 1:f899f3910ce7 "B" (B) as 82b8abf9c185
-  already rebased 3:63668d570d21 "C" (C tip) as 82b8abf9c185
+  already rebased 1:f899f3910ce7 B "B" as 82b8abf9c185
+  already rebased 3:63668d570d21 C tip "C" as 82b8abf9c185
   saved backup bundle to $TESTTMP/aborted-editor/.hg/strip-backup/f899f3910ce7-7cab5e15-rebase.hg

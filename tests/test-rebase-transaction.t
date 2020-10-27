@@ -103,8 +103,8 @@ continued
   >   A
   > EOF
   $ hg rebase --collapse -b D -d Z
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:c26739dbe603 "C" (C)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:c26739dbe603 C "C"
   merging conflict
   warning: conflicts while merging conflict! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -132,9 +132,9 @@ continued
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg continue
-  already rebased 1:112478962961 "B" (B) as 79bc8f4973ce
-  rebasing 3:c26739dbe603 "C" (C)
-  rebasing 5:d24bb333861c "D" (D tip)
+  already rebased 1:112478962961 B "B" as 79bc8f4973ce
+  rebasing 3:c26739dbe603 C "C"
+  rebasing 5:d24bb333861c D tip "D"
   saved backup bundle to $TESTTMP/collapse-conflict/.hg/strip-backup/112478962961-b5b34645-rebase.hg
   $ hg tglog
   o  3: Collapsed revision
@@ -165,9 +165,9 @@ rebase can then be continued
   >   A
   > EOF
   $ HGEDITOR=false hg --config ui.interactive=1 rebase --collapse -b D -d Z
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:26805aba1e60 "C" (C)
-  rebasing 5:f585351a92f8 "D" (D tip)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:26805aba1e60 C "C"
+  rebasing 5:f585351a92f8 D tip "D"
   transaction abort!
   rollback completed
   abort: edit failed: false exited with status 1
@@ -186,9 +186,9 @@ rebase can then be continued
   o  0: A
   
   $ hg continue
-  rebasing 1:112478962961 "B" (B)
-  rebasing 3:26805aba1e60 "C" (C)
-  rebasing 5:f585351a92f8 "D" (D tip)
+  rebasing 1:112478962961 B "B"
+  rebasing 3:26805aba1e60 C "C"
+  rebasing 5:f585351a92f8 D tip "D"
   saved backup bundle to $TESTTMP/collapse-cancel-editor/.hg/strip-backup/112478962961-cb2a9b47-rebase.hg
   $ hg tglog
   o  3: Collapsed revision

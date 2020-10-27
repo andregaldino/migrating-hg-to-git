@@ -59,7 +59,7 @@ Rebase - same thing, but mq patch is default dest:
 Rebase - generate a conflict:
 
   $ hg rebase -s 2 -d 1
-  rebasing 2:3504f44bffc0 "P0" (f.patch qbase)
+  rebasing 2:3504f44bffc0 f.patch qbase "P0"
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -72,8 +72,8 @@ Fix the 1st conflict:
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase -c
-  rebasing 2:3504f44bffc0 "P0" (f.patch qbase)
-  rebasing 3:929394423cd3 "P1" (f2.patch qtip tip)
+  rebasing 2:3504f44bffc0 f.patch qbase "P0"
+  rebasing 3:929394423cd3 f2.patch qtip tip "P1"
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -86,8 +86,8 @@ Fix the 2nd conflict:
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase -c
-  already rebased 2:3504f44bffc0 "P0" (f.patch qbase) as ebe9914c0d1c
-  rebasing 3:929394423cd3 "P1" (f2.patch qtip)
+  already rebased 2:3504f44bffc0 f.patch qbase "P0" as ebe9914c0d1c
+  rebasing 3:929394423cd3 f2.patch qtip "P1"
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/3504f44bffc0-30595b40-rebase.hg
 
   $ hg tglog
@@ -203,8 +203,8 @@ Adding one git-style patch and one normal:
 Rebase the applied mq patches:
 
   $ hg rebase -s 2 -d 1
-  rebasing 2:0c587ffcb480 "P0 (git)" (f_git.patch qbase)
-  rebasing 3:c7f18665e4bc "P1" (f.patch qtip tip)
+  rebasing 2:0c587ffcb480 f_git.patch qbase "P0 (git)"
+  rebasing 3:c7f18665e4bc f.patch qtip tip "P1"
   saved backup bundle to $TESTTMP/a/.hg/strip-backup/0c587ffcb480-0ea5695f-rebase.hg
 
   $ hg qci -m 'save patch state'
@@ -337,7 +337,7 @@ removed from the series):
   foo
   $ [ -f .hg/patches/empty-important ]
   $ hg -q rebase -d 2
-  note: not rebasing 1:0aaf4c3af7eb "important commit message" (empty-important qbase), its destination already has all its changes
+  note: not rebasing 1:0aaf4c3af7eb empty-important qbase "important commit message", its destination already has all its changes
   $ hg qseries
   guarded
   bar

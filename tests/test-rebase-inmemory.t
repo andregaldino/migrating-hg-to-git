@@ -42,7 +42,7 @@ Rebase a simple DAG:
   b (no-eol)
   $ hg rebase --debug -r b -d c | grep rebasing
   rebasing in memory
-  rebasing 2:db0e82a16a62 "b" (b)
+  rebasing 2:db0e82a16a62 b "b"
   $ hg tglog
   o  3: ca58782ad1e4 'b'
   |
@@ -102,7 +102,7 @@ Write files to the working copy, and ensure they're still there after the rebase
   somefile (no-eol)
   $ hg rebase --debug -s b -d a | grep rebasing
   rebasing in memory
-  rebasing 2:db0e82a16a62 "b" (b)
+  rebasing 2:db0e82a16a62 b "b"
   $ hg tglog
   o  3: fc055c3b4d33 'b'
   |
@@ -118,7 +118,7 @@ Write files to the working copy, and ensure they're still there after the rebase
   b (no-eol)
   $ hg rebase --debug -s 1 -d 3 | grep rebasing
   rebasing in memory
-  rebasing 1:02952614a83d "d" (d)
+  rebasing 1:02952614a83d d "d"
   rebasing 2:f56b71190a8f "c"
   $ hg tglog
   o  3: 753feb6fd12a 'c'
@@ -149,7 +149,7 @@ Rebase the working copy parent
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg rebase -r 3 -d 0 --debug | grep rebasing
   rebasing in memory
-  rebasing 3:753feb6fd12a "c" (tip)
+  rebasing 3:753feb6fd12a tip "c"
   $ hg tglog
   @  3: 844a7de3e617 'c'
   |
@@ -179,7 +179,7 @@ Test reporting of path conflicts
   o  0: b173517d0057 'a'
   
   $ hg rebase -r . -d 2
-  rebasing 4:daf7dfc139cb "a/a" (tip)
+  rebasing 4:daf7dfc139cb tip "a/a"
   saved backup bundle to $TESTTMP/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
 
   $ hg tglog
@@ -220,7 +220,7 @@ Test reporting of path conflicts
   o  0: b173517d0057 'a'
   
   $ hg rebase -r . -d 5
-  rebasing 7:855e9797387e "added a back!" (tip)
+  rebasing 7:855e9797387e tip "added a back!"
   saved backup bundle to $TESTTMP/repo2/.hg/strip-backup/855e9797387e-81ee4c5d-rebase.hg
 
   $ hg tglog
@@ -246,7 +246,7 @@ Test reporting of path conflicts
   $ hg ci -m 'c/subdir/file.txt'
   $ hg rebase -r . -d 3 -n
   starting dry-run rebase; repository will not be changed
-  rebasing 8:e147e6e3c490 "c/subdir/file.txt" (tip)
+  rebasing 8:e147e6e3c490 tip "c/subdir/file.txt"
   abort: error: 'c/subdir/file.txt' conflicts with file 'c' in 3.
   [255]
 FIXME: shouldn't need this, but when we hit path conflicts in dryrun mode, we
@@ -709,7 +709,7 @@ Test a metadata-only in-memory merge
   $ hg ci -qAm 'add +x to foo.txt'
 issue5960: this was raising an AttributeError exception
   $ hg rebase -r . -d 1
-  rebasing 2:539b93e77479 "add +x to foo.txt" (tip)
+  rebasing 2:539b93e77479 tip "add +x to foo.txt"
   saved backup bundle to $TESTTMP/no_exception/.hg/strip-backup/*.hg (glob)
   $ hg diff -c tip
   diff --git a/foo.txt b/foo.txt
@@ -772,7 +772,7 @@ Test rebasing a commit with copy information
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
   $ hg rebase -d 1
-  rebasing 2:b977edf6f839 "rename a to b" (tip)
+  rebasing 2:b977edf6f839 tip "rename a to b"
   merging a and b to b
   saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/b977edf6f839-0864f570-rebase.hg
   $ hg st --copies --change .
@@ -793,7 +793,7 @@ Test rebasing a commit with copy information, where the target is empty
   $ hg mv a b
   $ hg ci -qm 'rename a to b'
   $ hg rebase -d 1
-  rebasing 2:b977edf6f839 "rename a to b" (tip)
+  rebasing 2:b977edf6f839 tip "rename a to b"
   merging a and b to b
   saved backup bundle to $TESTTMP/rebase-rename-empty/.hg/strip-backup/b977edf6f839-0864f570-rebase.hg
   $ hg st --copies --change .
@@ -813,7 +813,7 @@ Rebase across a copy with --collapse
   $ echo a2 > a
   $ hg ci -qm 'modify a'
   $ hg rebase -r . -d 1 --collapse
-  rebasing 2:41c4ea50d4cf "modify a" (tip)
+  rebasing 2:41c4ea50d4cf tip "modify a"
   merging b and a to b
   saved backup bundle to $TESTTMP/rebase-rename-collapse/.hg/strip-backup/41c4ea50d4cf-b90b7994-rebase.hg
   $ cd ..
@@ -850,7 +850,7 @@ Test rebasing when the file we are merging in destination is empty
   created new head
 
   $ hg rebase -r . -d 1 --config ui.merge=internal:merge3
-  rebasing 2:fb62b706688e "add b to foo" (tip)
+  rebasing 2:fb62b706688e tip "add b to foo"
   merging foo
   hit merge conflicts; rebasing that commit again in the working copy
   merging foo
@@ -943,7 +943,7 @@ definition.
   $ hg rebase -s 2 -d 3
   rebasing 2:0194f1db184a "b"
   note: not rebasing 2:0194f1db184a "b", its destination already has all its changes
-  rebasing 4:59c8292117b1 "merge" (tip)
+  rebasing 4:59c8292117b1 tip "merge"
   saved backup bundle to $TESTTMP/keep_merge/.hg/strip-backup/0194f1db184a-aee31d03-rebase.hg
   $ hg tglog
   o    3: 506e2454484b 'merge'
@@ -969,6 +969,6 @@ changed although the file contents were the same as in the parent.
   $ echo bar > test; hg add test; hg ci -m c
   created new head
   $ hg rebase -d 2 -d 1 --tool :local
-  rebasing 2:ca2749322ee5 "c" (tip)
-  note: not rebasing 2:ca2749322ee5 "c" (tip), its destination already has all its changes
+  rebasing 2:ca2749322ee5 tip "c"
+  note: not rebasing 2:ca2749322ee5 tip "c", its destination already has all its changes
   saved backup bundle to $TESTTMP/nofilechanges/.hg/strip-backup/ca2749322ee5-6dc7e94b-rebase.hg

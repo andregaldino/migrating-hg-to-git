@@ -1222,8 +1222,16 @@ def format_changeset_summary(ui, ctx, command=None, default_spec=None):
     if not spec:
         spec = default_spec
     if not spec:
-        # TODO: Pick a default we can agree on. This isn't used yet.
-        raise error.ProgrammingError(b"no default one-line summary defined yet")
+        spec = (
+            b'{separate(" ", '
+            b'label("log.changeset", "{rev}:{node|short}")'
+            b', '
+            b'label("log.tag", tags)'
+            b', '
+            b'label("log.bookmark", bookmarks)'
+            b')} '
+            b'"{label("log.desc", desc|firstline)}"'
+        )
     text = rendertemplate(ctx, spec)
     return text.split(b'\n')[0]
 
