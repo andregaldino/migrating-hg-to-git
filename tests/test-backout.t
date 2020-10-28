@@ -806,3 +806,18 @@ Test usage of `hg resolve` in case of conflict
   $ hg backout --merge --no-commit 2
   abort: cannot specify both --no-commit and --merge
   [255]
+
+Ensure that backout out the same changeset twice performs correctly:
+
+  $ hg backout 2
+  removing 3
+  changeset 3:8f188de730d9 backs out changeset 2:cccc23d9d68f
+  $ echo 4 > 4
+  $ hg ci -A -m 4
+  adding 4
+  $ hg up 2
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg backout 2
+  removing 3
+  created new head
+  changeset 3:8f188de730d9 backs out changeset 2:cccc23d9d68f
