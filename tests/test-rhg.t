@@ -90,3 +90,19 @@ Debuging data in inline index
   file1\x00b8e02f6433738021a065f94175c7cd23db5f05be (esc)
   file2\x005d9299349fc01ddd25d0070d149b124d8f10411e (esc)
   file3\x002661d26c649684b482d10f91960cc3db683c38b4 (esc)
+
+Cat files
+  $ cd $TESTTMP
+  $ rm -rf repository
+  $ hg init repository
+  $ cd repository
+  $ echo "original content" > original
+  $ hg add original
+  $ hg commit -m "add original" original
+  $ rhg cat -r 0 original
+  original content
+Cat copied file should not display copy metadata
+  $ hg copy original copy_of_original
+  $ hg commit -m "add copy of original"
+  $ rhg cat -r 1 copy_of_original
+  original content

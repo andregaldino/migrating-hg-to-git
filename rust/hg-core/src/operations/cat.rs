@@ -16,6 +16,8 @@ use crate::revlog::revlog::RevlogError;
 use crate::revlog::Revision;
 use crate::utils::hg_path::HgPathBuf;
 
+const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
+
 /// Kind of error encountered by `CatRev`
 #[derive(Debug)]
 pub enum CatRevErrorKind {
@@ -132,7 +134,18 @@ impl<'a> CatRev<'a> {
                             .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
                         let file_rev = file_log.get_node_rev(&file_node)?;
                         let data = file_log.get_rev_data(file_rev)?;
-                        bytes.extend(data);
+                        if data.starts_with(&METADATA_DELIMITER) {
+                            let end_delimiter_position = data
+                                [METADATA_DELIMITER.len()..]
+                                .windows(METADATA_DELIMITER.len())
+                                .position(|bytes| bytes == METADATA_DELIMITER);
+                            if let Some(position) = end_delimiter_position {
+                                let offset = METADATA_DELIMITER.len() * 2;
+                                bytes.extend(data[position + offset..].iter());
+                            }
+                        } else {
+                            bytes.extend(data);
+                        }
                     }
                 }
             }
