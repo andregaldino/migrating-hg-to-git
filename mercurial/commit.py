@@ -79,6 +79,9 @@ def commitctx(repo, ctx, error=False, origctx=None):
         if repo.changelog._copiesstorage == b'extra':
             extra = _extra_with_copies(repo, extra, files)
 
+        # save the tip to check whether we actually committed anything
+        oldtip = repo.changelog.tiprev()
+
         # update changelog
         repo.ui.note(_(b"committing changelog\n"))
         repo.changelog.delayupdate(tr)
@@ -99,7 +102,11 @@ def commitctx(repo, ctx, error=False, origctx=None):
         )
         # set the new commit is proper phase
         targetphase = subrepoutil.newcommitphase(repo.ui, ctx)
-        if targetphase:
+
+        # prevent unmarking changesets as public on recommit
+        waspublic = oldtip == repo.changelog.tiprev() and not repo[n].phase()
+
+        if targetphase and not waspublic:
             # retract boundary do not alter parent changeset.
             # if a parent have higher the resulting phase will
             # be compliant anyway

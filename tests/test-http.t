@@ -192,6 +192,34 @@ test http authentication
   $ hg id http://localhost:$HGPORT2/
   abort: http authorization required for http://localhost:$HGPORT2/
   [255]
+  $ hg id --config ui.interactive=true --debug http://localhost:$HGPORT2/
+  using http://localhost:$HGPORT2/
+  sending capabilities command
+  http authorization required for http://localhost:$HGPORT2/
+  realm: mercurial
+  user: abort: response expected
+  [255]
+  $ cat <<'EOF' | hg id --config ui.interactive=true --config ui.nontty=true --debug http://localhost:$HGPORT2/
+  > 
+  > EOF
+  using http://localhost:$HGPORT2/
+  sending capabilities command
+  http authorization required for http://localhost:$HGPORT2/
+  realm: mercurial
+  user: 
+  password: abort: response expected
+  [255]
+  $ cat <<'EOF' | hg id --config ui.interactive=true --config ui.nontty=true --debug http://localhost:$HGPORT2/
+  > 
+  > 
+  > EOF
+  using http://localhost:$HGPORT2/
+  sending capabilities command
+  http authorization required for http://localhost:$HGPORT2/
+  realm: mercurial
+  user: 
+  password: abort: authorization failed
+  [255]
   $ hg id --config ui.interactive=true --config extensions.getpass=get_pass.py http://user@localhost:$HGPORT2/
   http authorization required for http://localhost:$HGPORT2/
   realm: mercurial
@@ -357,6 +385,9 @@ test http authentication
   $ hg rollback -q
 
   $ sed 's/.*] "/"/' < ../access.log
+  "GET /?cmd=capabilities HTTP/1.1" 401 -
+  "GET /?cmd=capabilities HTTP/1.1" 401 -
+  "GET /?cmd=capabilities HTTP/1.1" 401 -
   "GET /?cmd=capabilities HTTP/1.1" 401 -
   "GET /?cmd=capabilities HTTP/1.1" 401 -
   "GET /?cmd=capabilities HTTP/1.1" 401 -

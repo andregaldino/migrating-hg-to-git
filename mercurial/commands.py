@@ -862,13 +862,11 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
 
     ui.status(
         _(b'changeset %s backs out changeset %s\n')
-        % (nice(repo.changelog.tip()), nice(node))
+        % (nice(newnode), nice(node))
     )
     if opts.get(b'merge') and op1 != node:
         hg.clean(repo, op1, show_stats=False)
-        ui.status(
-            _(b'merging with changeset %s\n') % nice(repo.changelog.tip())
-        )
+        ui.status(_(b'merging with changeset %s\n') % nice(newnode))
         overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
         with ui.configoverride(overrides, b'backout'):
             return hg.merge(repo[b'tip'])

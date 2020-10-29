@@ -1661,7 +1661,9 @@ class ui(object):
             if not r:
                 r = default
             if self.configbool(b'ui', b'promptecho'):
-                self._writemsg(self._fmsgout, r, b"\n", type=b'promptecho')
+                self._writemsg(
+                    self._fmsgout, r or b'', b"\n", type=b'promptecho'
+                )
             return r
         except EOFError:
             raise error.ResponseExpected()

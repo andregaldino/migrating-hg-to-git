@@ -176,6 +176,48 @@ is filtered and requires --hidden.
   warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   [1]
 
+An unresolved conflict will pin the obsolete revision
+
+  $ hg log -G -Tcompact
+  %  5[tip]   071d07019675   1970-01-01 00:00 +0000   test
+  |    F
+  |
+  o  4   ae36e8e3dfd7   1970-01-01 00:00 +0000   test
+  |    E
+  |
+  o  3:0   46b37eabc604   1970-01-01 00:00 +0000   test
+  |    D
+  |
+  | @  2   965c486023db   1970-01-01 00:00 +0000   test
+  | |    C
+  | |
+  | o  1   27547f69f254   1970-01-01 00:00 +0000   test
+  |/     B
+  |
+  o  0   4a2df7238c3b   1970-01-01 00:00 +0000   test
+       A
+  
+
+But resolving the conflicts will unpin it
+
+  $ hg resolve -m A
+  (no more unresolved files)
+  $ hg log -G -Tcompact
+  o  4[tip]   ae36e8e3dfd7   1970-01-01 00:00 +0000   test
+  |    E
+  |
+  o  3:0   46b37eabc604   1970-01-01 00:00 +0000   test
+  |    D
+  |
+  | @  2   965c486023db   1970-01-01 00:00 +0000   test
+  | |    C
+  | |
+  | o  1   27547f69f254   1970-01-01 00:00 +0000   test
+  |/     B
+  |
+  o  0   4a2df7238c3b   1970-01-01 00:00 +0000   test
+       A
+  
   $ hg up -C -q .
 
   $ cd ..
