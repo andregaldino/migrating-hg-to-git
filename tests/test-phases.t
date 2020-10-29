@@ -1010,7 +1010,7 @@ draft:
   $ hg up -C 1
   0 files updated, 0 files merged, 4 files removed, 0 files unresolved
   $ mkcommit C
-  created new head
+  warning: commit already existed in the repository!
   $ hg phase -r 2
   2: public
 
@@ -1027,6 +1027,7 @@ Same, but for secret:
   7: draft
   $ mkcommit F
   test-debug-phase: new rev 8:  x -> 2
+  warning: commit already existed in the repository!
   test-hook-close-phase: de414268ec5ce2330c590b942fbb5ff0b0ca1a0a:   -> secret
   $ hg phase -r tip
   8: secret
@@ -1037,7 +1038,7 @@ But what about obsoleted changesets?
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ mkcommit H
   test-debug-phase: new rev 5:  x -> 2
-  created new head
+  warning: commit already existed in the repository!
   test-hook-close-phase: a030c6be5127abc010fcbff1851536552e6951a8:   -> secret
   $ hg phase -r 5
   5: secret

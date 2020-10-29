@@ -851,11 +851,14 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
             message, opts.get(b'user'), opts.get(b'date'), match, editor=e
         )
 
+    # save to detect changes
+    tip = repo.changelog.tip()
+
     newnode = cmdutil.commit(ui, repo, commitfunc, [], opts)
     if not newnode:
         ui.status(_(b"nothing changed\n"))
         return 1
-    cmdutil.commitstatus(repo, newnode, branch, bheads)
+    cmdutil.commitstatus(repo, newnode, branch, bheads, tip)
 
     def nice(node):
         return b'%d:%s' % (repo.changelog.rev(node), short(node))
@@ -2024,6 +2027,7 @@ def _docommit(ui, repo, *pats, **opts):
 
     branch = repo[None].branch()
     bheads = repo.branchheads(branch)
+    tip = repo.changelog.tip()
 
     extra = {}
     if opts.get(b'close_branch') or opts.get(b'force_close_branch'):
@@ -2113,7 +2117,7 @@ def _docommit(ui, repo, *pats, **opts):
                 ui.status(_(b"nothing changed\n"))
             return 1
 
-    cmdutil.commitstatus(repo, node, branch, bheads, opts)
+    cmdutil.commitstatus(repo, node, branch, bheads, tip, opts)
 
     if not ui.quiet and ui.configbool(b'commands', b'commit.post-status'):
         status(

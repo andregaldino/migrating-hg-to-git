@@ -405,8 +405,10 @@ Rename a->b, then amend b->c, and working copy change c->d. After unamend, shoul
   $ hg co -q 0
   $ hg mv a b
   $ hg ci -qm 'move to a b'
+  warning: commit already existed in the repository!
   $ hg mv b c
   $ hg amend
+  warning: commit already existed in the repository!
   $ hg mv c d
   $ hg unamend
   $ hg st --copies --change .

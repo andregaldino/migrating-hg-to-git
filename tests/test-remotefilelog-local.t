@@ -204,5 +204,6 @@
   $ hg update -r '.^' -q
   $ echo 1 > A
   $ hg commit -m foo -A A
+  warning: commit already existed in the repository!
   $ hg log -r . -T '{node}\n'
   383ce605500277f879b7460a16ba620eb6930b7f

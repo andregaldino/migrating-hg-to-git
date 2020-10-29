@@ -1868,6 +1868,7 @@ Verify naming of temporary files and that extension is preserved
   $ hg update -q -C 1
   $ hg mv f f.txt
   $ hg ci -qm "f.txt"
+  warning: commit already existed in the repository!
   $ hg update -q -C 2
   $ hg merge -y -r tip --tool echo \
   >    --config merge-tools.echo.args='$base $local $other $output' \

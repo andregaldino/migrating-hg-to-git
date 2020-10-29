@@ -3113,13 +3113,18 @@ def buildcommittext(repo, ctx, subs, extramsg):
     return b"\n".join(edittext)
 
 
-def commitstatus(repo, node, branch, bheads=None, opts=None):
+def commitstatus(repo, node, branch, bheads=None, tip=None, opts=None):
     if opts is None:
         opts = {}
     ctx = repo[node]
     parents = ctx.parents()
 
-    if (
+    if tip is not None and repo.changelog.tip() == tip:
+        # avoid reporting something like "committed new head" when
+        # recommitting old changesets, and issue a helpful warning
+        # for most instances
+        repo.ui.warn(_("warning: commit already existed in the repository!\n"))
+    elif (
         not opts.get(b'amend')
         and bheads
         and node not in bheads
