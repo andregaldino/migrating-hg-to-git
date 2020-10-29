@@ -229,7 +229,7 @@
 .. flaky, the core the test is checked when checking the cache dir, so
 .. hopefully this flakyness is not hiding any actual bug.
   $ hg rebase -s temporary -d foo
-  rebasing 3:d9cf06e3b5b6 tip temporary "b"
+  rebasing 3:d9cf06e3b5b6 temporary tip "b"
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/d9cf06e3b5b6-e5c3dc63-rebase.hg
   ? files fetched over ? fetches - (? misses, 0.00% hit ratio) over *s (glob)
   $ find $CACHEDIR -type f | sort

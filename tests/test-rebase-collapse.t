@@ -631,7 +631,7 @@ Test collapsing changes that add then remove a file
   $ hg book foo
   $ hg rebase -d 0 -r "1::2" --collapse -m collapsed
   rebasing 1:6d8d9f24eec3 "a"
-  rebasing 2:1cc73eca5ecc tip foo "b"
+  rebasing 2:1cc73eca5ecc foo tip "b"
   saved backup bundle to $TESTTMP/collapseaddremove/.hg/strip-backup/6d8d9f24eec3-77d3b6e2-rebase.hg
   $ hg log -G --template "{rev}: '{desc}' {bookmarks}"
   @  1: 'collapsed' foo

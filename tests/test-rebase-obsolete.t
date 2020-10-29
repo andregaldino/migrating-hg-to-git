@@ -1707,7 +1707,7 @@ parent gets moved:
   $ hg bookmark book -i
   $ hg rebase -r B+D1 -d E
   rebasing 1:112478962961 B "B"
-  note: not rebasing 5:15ecf15e0114 D1 tip book "D1", already in destination as 2:0807738e0be9 D2 "D2"
+  note: not rebasing 5:15ecf15e0114 book D1 tip "D1", already in destination as 2:0807738e0be9 D2 "D2"
   1 new orphan changesets
   $ hg log -G -T '{desc} {bookmarks}'
   @  B book

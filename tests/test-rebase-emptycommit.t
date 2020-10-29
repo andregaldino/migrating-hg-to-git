@@ -82,12 +82,12 @@ still introduced by an ancestor of changeset on B-NEW. In the below case,
 "BOOK-D", and "BOOK-E" include changes introduced by "C".
 
   $ hg rebase -s 2 -d E
-  rebasing 2:dc0947a82db8 C BOOK-C "C"
+  rebasing 2:dc0947a82db8 BOOK-C C "C"
   rebasing 3:e7b3f00ed42e BOOK-D "D"
   note: not rebasing 3:e7b3f00ed42e BOOK-D "D", its destination already has all its changes
   rebasing 4:69a34c08022a BOOK-E "E"
   note: not rebasing 4:69a34c08022a BOOK-E "E", its destination already has all its changes
-  rebasing 5:6b2aeab91270 F BOOK-F "F"
+  rebasing 5:6b2aeab91270 BOOK-F F "F"
   saved backup bundle to $TESTTMP/non-merge/.hg/strip-backup/dc0947a82db8-52bb4973-rebase.hg
   $ hg log -G -T '{rev} {desc} {bookmarks}'
   o  5 F BOOK-F
@@ -143,8 +143,8 @@ assumed branch name change.
   note: not rebasing 2:dc0947a82db8 BOOK-C "C", its destination already has all its changes
   rebasing 3:b18e25de2cf5 BOOK-D "D"
   note: not rebasing 3:b18e25de2cf5 BOOK-D "D", its destination already has all its changes
-  rebasing 4:86a1f6686812 E BOOK-E "E"
-  note: not rebasing 4:86a1f6686812 E BOOK-E "E", its destination already has all its changes
+  rebasing 4:86a1f6686812 BOOK-E E "E"
+  note: not rebasing 4:86a1f6686812 BOOK-E E "E", its destination already has all its changes
   saved backup bundle to $TESTTMP/merge1/.hg/strip-backup/b18e25de2cf5-1fd0a4ba-rebase.hg
   $ hg update null -q
 
@@ -191,11 +191,11 @@ Part of ancestors of a merge become empty
   $ hg rebase -r '(A::)-(B::)-A' -d H
   rebasing 2:dc0947a82db8 BOOK-C "C"
   note: not rebasing 2:dc0947a82db8 BOOK-C "C", its destination already has all its changes
-  rebasing 3:b18e25de2cf5 D BOOK-D "D"
-  rebasing 4:03ca77807e91 E BOOK-E "E"
+  rebasing 3:b18e25de2cf5 BOOK-D D "D"
+  rebasing 4:03ca77807e91 BOOK-E E "E"
   rebasing 5:ad6717a6a58e BOOK-F "F"
   note: not rebasing 5:ad6717a6a58e BOOK-F "F", its destination already has all its changes
-  rebasing 6:c58e8bdac1f4 G BOOK-G "G"
+  rebasing 6:c58e8bdac1f4 BOOK-G G "G"
   saved backup bundle to $TESTTMP/merge2/.hg/strip-backup/b18e25de2cf5-2d487005-rebase.hg
 
   $ hg log -G -T '{rev} {desc} {bookmarks}'

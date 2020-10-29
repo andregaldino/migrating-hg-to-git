@@ -1224,13 +1224,11 @@ def format_changeset_summary(ui, ctx, command=None, default_spec=None):
     if not spec:
         spec = (
             b'{separate(" ", '
-            b'label("log.changeset", "{rev}:{node|short}")'
+            b'label("oneline-summary.changeset", "{rev}:{node|short}")'
             b', '
-            b'label("log.tag", tags)'
-            b', '
-            b'label("log.bookmark", bookmarks)'
+            b'join(filter(namespaces % "{ifeq(namespace, "branches", "", join(names % "{label("oneline-summary.{namespace}", name)}", " "))}"), " ")'
             b')} '
-            b'"{label("log.desc", desc|firstline)}"'
+            b'"{label("oneline-summary.desc", desc|firstline)}"'
         )
     text = rendertemplate(ctx, spec)
     return text.split(b'\n')[0]
