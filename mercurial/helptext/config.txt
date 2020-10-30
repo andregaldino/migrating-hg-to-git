@@ -2568,6 +2568,14 @@ Templates used for customizing the output of commands.
 
     Can be overridden per-merge-tool, see the ``[merge-tools]`` section.
 
+``oneline-summary``
+    A template used by `hg rebase` and other commands for showing a one-line
+    summary of a commit. If the template configured here is longer than one
+    line, then only the first line is used.
+
+    The template can be overridden per command by defining a template in
+    `oneline-summary.<command>`, where `<command>` can be e.g. "rebase".
+
 ``pre-merge-tool-output``
     A template that is printed before executing an external merge tool. This can
     be used to print out additional context that might be useful to have during
