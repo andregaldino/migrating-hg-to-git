@@ -321,42 +321,48 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                     // We cannot get copy information for both p1 and p2 in the
                     // same rev. So this is the same value.
                     unreachable!();
-                } else if src_major.path.is_none()
-                    && changes.salvaged.contains(dest)
-                {
-                    // If the file is "deleted" in the major side but was
-                    // salvaged by the merge, we keep the minor side alive
-                    pick_minor();
-                } else if src_minor.path.is_none()
-                    && changes.salvaged.contains(dest)
-                {
-                    // If the file is "deleted" in the minor side but was
-                    // salvaged by the merge, unconditionnaly preserve the
-                    // major side.
-                    pick_major();
-                } else if changes.merged.contains(dest) {
-                    // If the file was actively merged, copy information from
-                    // each side might conflict.  The major side will win such
-                    // conflict.
-                    pick_major();
-                } else if oracle.is_ancestor(src_major.rev, src_minor.rev) {
-                    // If the minor side is strictly newer than the major side,
-                    // it should be kept.
-                    pick_minor();
-                } else if src_major.path.is_some() {
-                    // without any special case, the "major" value win other
-                    // the "minor" one.
-                    pick_major();
-                } else if oracle.is_ancestor(src_minor.rev, src_major.rev) {
-                    // the "major" rev is a direct ancestors of "minor", any
-                    // different value should overwrite
-                    pick_major();
                 } else {
-                    // major version is None (so the file was deleted on that
-                    // branch) and that branch is independant (neither minor
-                    // nor major is an ancestors of the other one.) We preserve
-                    // the new information about the new file.
-                    pick_minor();
+                    if src_major.path.is_none()
+                        && changes.salvaged.contains(dest)
+                    {
+                        // If the file is "deleted" in the major side but was
+                        // salvaged by the merge, we keep the minor side alive
+                        pick_minor();
+                    } else if src_minor.path.is_none()
+                        && changes.salvaged.contains(dest)
+                    {
+                        // If the file is "deleted" in the minor side but was
+                        // salvaged by the merge, unconditionnaly preserve the
+                        // major side.
+                        pick_major();
+                    } else if changes.merged.contains(dest) {
+                        // If the file was actively merged, copy information
+                        // from each side might conflict.  The major side will
+                        // win such conflict.
+                        pick_major();
+                    } else if oracle.is_ancestor(src_major.rev, src_minor.rev)
+                    {
+                        // If the minor side is strictly newer than the major
+                        // side, it should be kept.
+                        pick_minor();
+                    } else if src_major.path.is_some() {
+                        // without any special case, the "major" value win
+                        // other the "minor" one.
+                        pick_major();
+                    } else if oracle.is_ancestor(src_minor.rev, src_major.rev)
+                    {
+                        // the "major" rev is a direct ancestors of "minor",
+                        // any different value should
+                        // overwrite
+                        pick_major();
+                    } else {
+                        // major version is None (so the file was deleted on
+                        // that branch) and that branch is independant (neither
+                        // minor nor major is an ancestors of the other one.)
+                        // We preserve the new
+                        // information about the new file.
+                        pick_minor();
+                    }
                 }
             }
         };
