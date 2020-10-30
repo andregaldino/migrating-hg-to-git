@@ -1,5 +1,21 @@
 == New Features ==
 
+ * There is a new config section for templates used by hg commands. It
+   is called `[command-templates]`. Some existing config options have
+   been deprecated in favor of config options in the new
+   section. These are: `ui.logtemplate` to `command-templates.log`,
+   `ui.graphnodetemplate` to `command-templates.graphnode`,
+   `ui.mergemarkertemplate` to `command-templates.mergemarker`,
+   `ui.pre-merge-tool-output-template` to
+   `command-templates.pre-merge-tool-output`.
+
+ * There is a new set of config options for the template used for the
+   one-line commit summary displayed by various commands, such as `hg
+   rebase`. The main one is `command-templates.oneline-summary`. That
+   can be overridden per command with
+   `command-templates.oneline-summary.<command>`, where `<command>`
+   can be e.g. `rebase`. As part of this effort, the default format
+   from `hg rebase` was reorganized a bit.
 
 
  * `hg strip`, from the strip extension, is now a core command, `hg
