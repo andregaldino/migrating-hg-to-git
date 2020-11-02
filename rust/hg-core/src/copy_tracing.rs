@@ -203,54 +203,59 @@ fn merge_copies_dict(
     for (dest, src_major) in major {
         let overwrite;
         if let Some(src_minor) = minor.get(&dest) {
-            if src_major.path == src_minor.path {
-                // we have the same value, but from other source;
-                if src_major.rev == src_minor.rev {
-                    // If the two entry are identical, no need to do anything
+            {
+                if src_major.path == src_minor.path {
+                    // we have the same value, no need to battle;
+                    if src_major.rev == src_minor.rev {
+                        // If the two entry are identical, no need to do
+                        // anything
+                        overwrite = false;
+                    } else if is_ancestor(src_major.rev, src_minor.rev) {
+                        overwrite = false;
+                    } else {
+                        overwrite = true;
+                    }
+                } else if src_major.rev == src_minor.rev {
+                    // We cannot get copy information for both p1 and p2 in the
+                    // same rev. So this is the same value.
                     overwrite = false;
-                } else if is_ancestor(src_major.rev, src_minor.rev) {
+                } else if src_major.path.is_none()
+                    && changes.salvaged.contains(&dest)
+                {
+                    // If the file is "deleted" in the major side but was
+                    // salvaged by the merge, we keep the minor side alive
                     overwrite = false;
-                } else {
+                } else if src_minor.path.is_none()
+                    && changes.salvaged.contains(&dest)
+                {
+                    // If the file is "deleted" in the minor side but was
+                    // salvaged by the merge, unconditionnaly preserve the
+                    // major side.
                     overwrite = true;
+                } else if changes.merged.contains(&dest) {
+                    // If the file was actively merged, copy information from
+                    // each side might conflict.  The major side will win such
+                    // conflict.
+                    overwrite = true;
+                } else if is_ancestor(src_major.rev, src_minor.rev) {
+                    // If the minor side is strictly newer than the major side,
+                    // it should be kept.
+                    overwrite = false;
+                } else if src_major.path.is_some() {
+                    // without any special case, the "major" value win other
+                    // the "minor" one.
+                    overwrite = true;
+                } else if is_ancestor(src_minor.rev, src_major.rev) {
+                    // the "major" rev is a direct ancestors of "minor", any
+                    // different value should overwrite
+                    overwrite = true;
+                } else {
+                    // major version is None (so the file was deleted on that
+                    // branch) and that branch is independant (neither minor
+                    // nor major is an ancestors of the other one.) We preserve
+                    // the new information about the new file.
+                    overwrite = false;
                 }
-            } else if src_major.rev == src_minor.rev {
-                // We cannot get copy information for both p1 and p2 in the
-                // same rev. So this is the same value.
-                overwrite = false;
-            } else if src_major.path.is_none()
-                && changes.salvaged.contains(&dest)
-            {
-                // If the file is "deleted" in the major side but was salvaged
-                // by the merge, we keep the minor side alive
-                overwrite = false;
-            } else if src_minor.path.is_none()
-                && changes.salvaged.contains(&dest)
-            {
-                // If the file is "deleted" in the minor side but was salvaged
-                // by the merge, unconditionnaly preserve the major side.
-                overwrite = true;
-            } else if changes.merged.contains(&dest) {
-                // If the file was actively merged, copy information from each
-                // side might conflict. The major side will win such conflict.
-                overwrite = true;
-            } else if is_ancestor(src_major.rev, src_minor.rev) {
-                // If the minor side is strictly newer than the major side, it
-                // should be kept.
-                overwrite = false;
-            } else if src_major.path.is_some() {
-                // without any special case, the "major" value win other the
-                // "minor" one.
-                overwrite = true;
-            } else if is_ancestor(src_minor.rev, src_major.rev) {
-                // the "major" rev is a direct ancestors of "minor", any
-                // different value should overwrite
-                overwrite = true;
-            } else {
-                // major version is None (so the file was deleted on that
-                // branch) annd that branch is independant (neither minor nor
-                // major is an ancestors of the other one.) We preserve the new
-                // information about the new file.
-                overwrite = false;
             }
         } else {
             // minor had no value
