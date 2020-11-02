@@ -230,6 +230,24 @@ def _revinfo_getter(repo):
     return revinfo
 
 
+def cached_is_ancestor(is_ancestor):
+    """return a cached version of is_ancestor"""
+    cache = {}
+
+    def _is_ancestor(anc, desc):
+        if anc > desc:
+            return False
+        elif anc == desc:
+            return True
+        key = (anc, desc)
+        ret = cache.get(key)
+        if ret is None:
+            ret = cache[key] = is_ancestor(anc, desc)
+        return ret
+
+    return _is_ancestor
+
+
 def _changesetforwardcopies(a, b, match):
     if a.rev() in (node.nullrev, b.rev()):
         return {}
@@ -238,7 +256,7 @@ def _changesetforwardcopies(a, b, match):
     children = {}
 
     cl = repo.changelog
-    isancestor = cl.isancestorrev  # XXX we should had chaching to this.
+    isancestor = cached_is_ancestor(cl.isancestorrev)
     missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     mrset = set(missingrevs)
     roots = set()
