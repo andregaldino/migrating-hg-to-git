@@ -1,4 +1,4 @@
-# coding: utf8
+# coding: utf-8
 # metadata.py -- code related to various metadata computation and access.
 #
 # Copyright 2019 Google, Inc <martinvonz@google.com>
