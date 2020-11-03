@@ -283,13 +283,17 @@ static void execcmdserver(const struct cmdserveropts *opts)
 				continue;
 			}
 			if (errno == ERANGE) {
-				debugmsg("tried to parse %s, but range error occurred", de->d_name);
+				debugmsg("tried to parse %s, but range error "
+				         "occurred",
+				         de->d_name);
 				continue;
 			}
 			if (fd_value > STDERR_FILENO) {
 				int res = close(fd_value);
 				if (res) {
-					debugmsg("tried to close fd %ld: %d (errno: %d)", fd_value, res, errno);
+					debugmsg("tried to close fd %ld: %d "
+					         "(errno: %d)",
+					         fd_value, res, errno);
 				}
 			}
 		}
