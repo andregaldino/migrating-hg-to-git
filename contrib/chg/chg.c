@@ -288,7 +288,7 @@ static void execcmdserver(const struct cmdserveropts *opts)
 				         de->d_name);
 				continue;
 			}
-			if (fd_value > STDERR_FILENO) {
+			if (fd_value > STDERR_FILENO && fd_value != dirfd(dp)) {
 				debugmsg("closing fd %ld", fd_value);
 				int res = close(fd_value);
 				if (res) {
@@ -298,6 +298,7 @@ static void execcmdserver(const struct cmdserveropts *opts)
 				}
 			}
 		}
+		closedir(dp);
 	}
 
 	if (putenv("CHGINTERNALMARK=") != 0)
