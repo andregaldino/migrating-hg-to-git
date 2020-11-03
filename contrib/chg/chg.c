@@ -276,6 +276,7 @@ static void execcmdserver(const struct cmdserveropts *opts)
 		debugmsg("closing files based on /proc contents");
 		struct dirent *de;
 		while ((de = readdir(dp))) {
+			errno = 0;
 			char *end;
 			long fd_value = strtol(de->d_name, &end, 10);
 			if (end == de->d_name) {
