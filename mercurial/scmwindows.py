@@ -31,7 +31,7 @@ def systemrcpath():
 
     def _processdir(progrcd):
         if os.path.isdir(progrcd):
-            for f, kind in util.listdir(progrcd):
+            for f, kind in sorted(util.listdir(progrcd)):
                 if f.endswith(b'.rc'):
                     rcpath.append(os.path.join(progrcd, f))
 

@@ -27,7 +27,7 @@ def _rcfiles(path):
         rcs.extend(
             [
                 os.path.join(rcdir, f)
-                for f, kind in util.listdir(rcdir)
+                for f, kind in sorted(util.listdir(rcdir))
                 if f.endswith(b".rc")
             ]
         )
