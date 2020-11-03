@@ -14,6 +14,9 @@ def make_distribution_windows():
     return default_python_distribution(flavor = "standalone_dynamic")
 
 def resource_callback(policy, resource):
+    if not IS_WINDOWS:
+        resource.add_location = "in-memory"
+        return
     # We use a custom resource routing policy to influence where things are loaded
     # from.
     #
@@ -40,7 +43,8 @@ def make_exe(dist):
     # extensions.
     packaging_policy.extension_module_filter = "all"
     packaging_policy.resources_location = "in-memory"
-    packaging_policy.resources_location_fallback = "filesystem-relative:lib"
+    if IS_WINDOWS:
+        packaging_policy.resources_location_fallback = "filesystem-relative:lib"
     packaging_policy.register_resource_callback(resource_callback)
 
     config = dist.make_python_interpreter_config()
