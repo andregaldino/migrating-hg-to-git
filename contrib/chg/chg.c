@@ -289,6 +289,7 @@ static void execcmdserver(const struct cmdserveropts *opts)
 				continue;
 			}
 			if (fd_value > STDERR_FILENO) {
+				debugmsg("closing fd %ld", fd_value);
 				int res = close(fd_value);
 				if (res) {
 					debugmsg("tried to close fd %ld: %d "
