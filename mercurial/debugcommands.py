@@ -3376,7 +3376,6 @@ def debugserve(ui, repo, **opts):
 
     s = wireprotoserver.sshserver(ui, repo, logfh=logfh)
     s.serve_forever()
-    sys.exit(0)
 
 
 @command(b'debugsetparents', [], _(b'REV1 [REV2]'))
