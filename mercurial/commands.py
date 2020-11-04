@@ -6348,6 +6348,7 @@ def serve(ui, repo, **opts):
             )
         s = wireprotoserver.sshserver(ui, repo)
         s.serve_forever()
+        sys.exit(0)
 
     service = server.createservice(ui, repo, opts)
     return server.runservice(opts, initfn=service.init, runfn=service.run)

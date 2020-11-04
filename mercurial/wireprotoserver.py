@@ -8,7 +8,6 @@ from __future__ import absolute_import
 
 import contextlib
 import struct
-import sys
 import threading
 
 from .i18n import _
@@ -851,7 +850,6 @@ class sshserver(object):
     def serve_forever(self):
         self.serveuntil(threading.Event())
         self._ui.restorefinout(self._fin, self._fout)
-        sys.exit(0)
 
     def serveuntil(self, ev):
         """Serve until a threading.Event is set."""

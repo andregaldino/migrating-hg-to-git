@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import os
+import sys
 
 from ..i18n import _
 
@@ -111,6 +112,7 @@ class httpservice(object):
 
     def run(self):
         self.httpd.serve_forever()
+        sys.exit(0)
 
 
 def createapp(baseui, repo, webconf):
