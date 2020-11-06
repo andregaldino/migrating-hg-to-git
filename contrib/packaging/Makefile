@@ -14,14 +14,12 @@ UBUNTU_CODENAMES := \
 FEDORA_RELEASE := 31
 
 CENTOS_RELEASES := \
-  5 \
-  6 \
   7 \
   8
 
 # Build a Python for these CentOS releases.
-CENTOS_WITH_PYTHON_RELEASES := 5 6
-CENTOS_WITH_NONVERSIONED_PYTHON := 5 6 7
+CENTOS_WITH_PYTHON_RELEASES :=
+CENTOS_WITH_NONVERSIONED_PYTHON :=
 
 help:
 	@echo 'Packaging Make Targets'

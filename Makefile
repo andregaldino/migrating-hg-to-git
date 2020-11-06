@@ -192,13 +192,9 @@ i18n/hg.pot: $(PYFILES) $(DOCFILES) i18n/posplit i18n/hggettext
 # Packaging targets
 
 packaging_targets := \
-  centos5 \
-  centos6 \
   centos7 \
   centos8 \
   deb \
-  docker-centos5 \
-  docker-centos6 \
   docker-centos7 \
   docker-centos8 \
   docker-debian-bullseye \
