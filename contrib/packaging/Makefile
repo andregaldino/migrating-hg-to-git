@@ -20,6 +20,7 @@ CENTOS_RELEASES := \
 # Build a Python for these CentOS releases.
 CENTOS_WITH_PYTHON_RELEASES :=
 CENTOS_WITH_NONVERSIONED_PYTHON :=
+CENTOS_WITH_36_DOCUTILS := 7
 
 help:
 	@echo 'Packaging Make Targets'
@@ -110,13 +111,13 @@ define centos_targets
 .PHONY: centos$(1)
 centos$(1):
 	mkdir -p $$(HGROOT)/packages/centos$(1)
-	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))
+	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))$$(if $$(filter $(1),$$(CENTOS_WITH_36_DOCUTILS)), --docutilspackage python36-docutils,)
 	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/centos$(1)
 	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/centos$(1)
 
 .PHONY: docker-centos$(1)
 docker-centos$(1):
-	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))
+	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))$$(if $$(filter $(1),$$(CENTOS_WITH_36_DOCUTILS)), --docutilspackage python36-docutils,)
 
 endef
 

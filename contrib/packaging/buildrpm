@@ -7,6 +7,7 @@
 BUILD=1
 RPMBUILDDIR="$PWD/rpmbuild"
 PYTHONEXE=python3
+DOCUTILSPACKAGE=python3-docutils
 
 while [ "$1" ]; do
     case "$1" in
@@ -24,6 +25,11 @@ while [ "$1" ]; do
         PYTHONVER=2.7.16
         PYTHONMD5=f1a2ace631068444831d01485466ece0
         PYTHONEXE=python
+        ;;
+    --docutilspackage)
+        shift
+        DOCUTILSPACKAGE="$1"
+        shift
         ;;
     --rpmbuilddir )
         shift
@@ -148,6 +154,9 @@ fi
 
 sed -i \
     -e "s/^%define withpython.*$/%define withpython $RPMPYTHONVER/" \
+    $rpmspec
+sed -i \
+    -e "s/^%global pythondocutils.*$/%global pythondocutils $DOCUTILSPACKAGE/" \
     $rpmspec
 
 if [ "$BUILD" ]; then

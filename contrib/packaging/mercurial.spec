@@ -3,6 +3,7 @@
 %define withpython %{nil}
 
 %global pythonexe python3
+%global pythondocutils python3-docutils
 
 %if "%{?withpython}"
 
@@ -39,7 +40,7 @@ BuildRequires: make, gcc, gettext
 %if "%{?withpython}"
 BuildRequires: readline-devel, openssl-devel, ncurses-devel, zlib-devel, bzip2-devel
 %else
-BuildRequires: %{pythonexe} >= %{pythonver}, %{pythonexe}-devel, %{pythonexe}-docutils >= 0.5
+BuildRequires: %{pythonexe} >= %{pythonver}, %{pythonexe}-devel, %{pythondocutils}
 Requires: %{pythonexe} >= %{pythonver}
 %endif
 # The hgk extension uses the wish tcl interpreter, but we don't enforce it
