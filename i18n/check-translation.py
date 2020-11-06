@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # check-translation.py - check Mercurial specific translation problems
 from __future__ import absolute_import

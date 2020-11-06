@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # check-perf-code - (historical) portability checker for contrib/perf.py
 

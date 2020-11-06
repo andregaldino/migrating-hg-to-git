@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # like ls -l, but do not print date, user, or non-common mode bit, to avoid
 # using globs in tests.

@@ -1412,7 +1412,7 @@ running is placed.
   > This should print the start of check-code. If this passes but the
   > previous check failed, that means we found a copy of check-code at whatever
   > RUNTESTSDIR ended up containing, even though it doesn't match TESTDIR.
-  >   $ head -n 3 "\$RUNTESTDIR"/../contrib/check-code.py | sed 's@.!.*python@#!USRBINENVPY@'
+  >   $ head -n 3 "\$RUNTESTDIR"/../contrib/check-code.py | sed 's@.!.*python3@#!USRBINENVPY@'
   >   #!USRBINENVPY
   >   #
   >   # check-code - a style and portability checker for Mercurial

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Measure the performance of a list of revsets against multiple revisions
 # defined by parameter. Checkout one by one and run perfrevset with every

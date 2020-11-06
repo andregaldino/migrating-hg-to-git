@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # check-py3-compat - check Python 3 compatibility of Mercurial files
 #

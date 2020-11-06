@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2010 Intevation GmbH
 # Author(s):
 # Thomas Arendsen Hein <thomas@intevation.de>

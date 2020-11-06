@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # run-tests.py - Run a set of tests on Mercurial
 #
@@ -3434,7 +3434,7 @@ class TestRunner(object):
     def _usecorrectpython(self):
         """Configure the environment to use the appropriate Python in tests."""
         # Tests must use the same interpreter as us or bad things will happen.
-        pyexename = sys.platform == 'win32' and b'python.exe' or b'python'
+        pyexename = sys.platform == 'win32' and b'python.exe' or b'python3'
 
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.

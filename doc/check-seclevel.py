@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # checkseclevel - checking section title levels in each online help document
 

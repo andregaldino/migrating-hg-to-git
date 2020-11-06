@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # fsmonitor-run-tests.py - Run Mercurial tests with fsmonitor enabled
 #

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # An example FastCGI script for use with flup, edit as necessary
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Based on python's Tools/scripts/md5sum.py
 #
