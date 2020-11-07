@@ -159,6 +159,7 @@ class transaction(util.transactional):
         self._vfsmap = vfsmap
         self._after = after
         self._offsetmap = {}
+        self._newfiles = set()
         self._journal = journalname
         self._undoname = undoname
         self._queue = []
@@ -248,7 +249,11 @@ class transaction(util.transactional):
     @active
     def add(self, file, offset):
         """record the state of an append-only file before update"""
-        if file in self._offsetmap or file in self._backupmap:
+        if (
+            file in self._newfiles
+            or file in self._offsetmap
+            or file in self._backupmap
+        ):
             return
         if self._queue:
             self._queue[-1].append((file, offset))
@@ -258,9 +263,16 @@ class transaction(util.transactional):
 
     def _addentry(self, file, offset):
         """add a append-only entry to memory and on-disk state"""
-        if file in self._offsetmap or file in self._backupmap:
+        if (
+            file in self._newfiles
+            or file in self._offsetmap
+            or file in self._backupmap
+        ):
             return
-        self._offsetmap[file] = offset
+        if offset:
+            self._offsetmap[file] = offset
+        else:
+            self._newfiles.add(file)
         # add enough data to the journal to do the truncate
         self._file.write(b"%s\0%d\n" % (file, offset))
         self._file.flush()
@@ -280,7 +292,11 @@ class transaction(util.transactional):
             msg = b'cannot use transaction.addbackup inside "group"'
             raise error.ProgrammingError(msg)
 
-        if file in self._offsetmap or file in self._backupmap:
+        if (
+            file in self._newfiles
+            or file in self._offsetmap
+            or file in self._backupmap
+        ):
             return
         vfs = self._vfsmap[location]
         dirname, filename = vfs.split(file)
@@ -394,6 +410,8 @@ class transaction(util.transactional):
 
     @active
     def findoffset(self, file):
+        if file in self._newfiles:
+            return 0
         return self._offsetmap.get(file)
 
     @active
@@ -411,10 +429,19 @@ class transaction(util.transactional):
         replace can only replace already committed entries
         that are not pending in the queue
         '''
-
-        if file not in self._offsetmap:
+        if file in self._newfiles:
+            if not offset:
+                return
+            self._newfiles.remove(file)
+            self._offsetmap[file] = offset
+        elif file in self._offsetmap:
+            if not offset:
+                del self._offsetmap[file]
+                self._newfiles.add(file)
+            else:
+                self._offsetmap[file] = offset
+        else:
             raise KeyError(file)
-        self._offsetmap[file] = offset
         self._file.write(b"%s\0%d\n" % (file, offset))
         self._file.flush()
 
@@ -555,6 +582,7 @@ class transaction(util.transactional):
                         b"couldn't remove %s: %s\n" % (vfs.join(b), inst)
                     )
         self._offsetmap = {}
+        self._newfiles = set()
         self._writeundo()
         if self._after:
             self._after()
@@ -638,7 +666,7 @@ class transaction(util.transactional):
         self._backupsfile.close()
 
         try:
-            if not self._offsetmap and not self._backupentries:
+            if not entries and not self._backupentries:
                 if self._backupjournal:
                     self._opener.unlink(self._backupjournal)
                 if self._journal:

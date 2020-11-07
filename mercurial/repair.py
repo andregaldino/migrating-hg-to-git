@@ -210,6 +210,7 @@ def strip(ui, repo, nodelist, backup=True, topic=b'backup'):
                 # using append-only files. We'll need some kind of storage
                 # API to handle stripping for us.
                 oldfiles = set(tr._offsetmap.keys())
+                oldfiles.update(tr._newfiles)
 
                 tr.startgroup()
                 cl.strip(striprev, tr)
