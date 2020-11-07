@@ -8,6 +8,7 @@
  */
 
 #include <assert.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -266,6 +267,31 @@ static void execcmdserver(const struct cmdserveropts *opts)
 	} else {
 		if (setenv("CHGORIG_LC_CTYPE", lc_ctype_env, 1) != 0) {
 			abortmsgerrno("failed to setenv CHGORIG_LC_CTYPE");
+		}
+	}
+
+	/* close any open files to avoid hanging locks */
+	DIR *dp = opendir("/proc/self/fd");
+	if (dp != NULL) {
+		debugmsg("closing files based on /proc contents");
+		struct dirent *de;
+		while ((de = readdir(dp))) {
+			char *end;
+			long fd_value = strtol(de->d_name, &end, 10);
+			if (end == de->d_name) {
+				/* unable to convert to int (. or ..) */
+				continue;
+			}
+			if (errno == ERANGE) {
+				debugmsg("tried to parse %s, but range error occurred", de->d_name);
+				continue;
+			}
+			if (fd_value > STDERR_FILENO) {
+				int res = close(fd_value);
+				if (res) {
+					debugmsg("tried to close fd %ld: %d (errno: %d)", fd_value, res, errno);
+				}
+			}
 		}
 	}
 
