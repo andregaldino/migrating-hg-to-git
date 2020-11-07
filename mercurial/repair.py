@@ -220,7 +220,7 @@ def strip(ui, repo, nodelist, backup=True, topic=b'backup'):
                 tr.endgroup()
 
                 for i in pycompat.xrange(offset, len(tr._entries)):
-                    file, troffset, ignore = tr._entries[i]
+                    file, troffset = tr._entries[i]
                     with repo.svfs(file, b'a', checkambig=True) as fp:
                         fp.truncate(troffset)
                     if troffset == 0:

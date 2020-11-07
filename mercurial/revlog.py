@@ -2005,16 +2005,9 @@ class revlog(object):
             raise error.RevlogError(
                 _(b"%s not found in the transaction") % self.indexfile
             )
-
-        trindex = trinfo[2]
-        if trindex is not None:
-            dataoff = self.start(trindex)
-        else:
-            # revlog was stripped at start of transaction, use all leftover data
-            trindex = len(self) - 1
-            dataoff = self.end(tiprev)
-
-        tr.add(self.datafile, dataoff)
+        troffset = trinfo[1]
+        trindex = 0
+        tr.add(self.datafile, 0)
 
         if fp:
             fp.flush()
@@ -2026,6 +2019,8 @@ class revlog(object):
         with self._indexfp(b'r') as ifh, self._datafp(b'w') as dfh:
             for r in self:
                 dfh.write(self._getsegmentforrevs(r, r, df=ifh)[1])
+                if troffset <= self.start(r):
+                    trindex = r
 
         with self._indexfp(b'w') as fp:
             self.version &= ~FLAG_INLINE_DATA
@@ -2361,7 +2356,7 @@ class revlog(object):
             ifh.write(entry)
         else:
             offset += curr * self._io.size
-            transaction.add(self.indexfile, offset, curr)
+            transaction.add(self.indexfile, offset)
             ifh.write(entry)
             ifh.write(data[0])
             ifh.write(data[1])
@@ -2397,10 +2392,10 @@ class revlog(object):
         ifh = self._indexfp(b"a+")
         isize = r * self._io.size
         if self._inline:
-            transaction.add(self.indexfile, end + isize, r)
+            transaction.add(self.indexfile, end + isize)
             dfh = None
         else:
-            transaction.add(self.indexfile, isize, r)
+            transaction.add(self.indexfile, isize)
             transaction.add(self.datafile, end)
             dfh = self._datafp(b"a+")
 

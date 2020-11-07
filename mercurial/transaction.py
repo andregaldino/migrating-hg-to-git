@@ -56,7 +56,7 @@ def _playback(
     unlink=True,
     checkambigfiles=None,
 ):
-    for f, o, _ignore in entries:
+    for f, o in entries:
         if o or not unlink:
             checkambig = checkambigfiles and (f, b'') in checkambigfiles
             try:
@@ -243,25 +243,25 @@ class transaction(util.transactional):
         This is used by strip to delay vision of strip offset. The transaction
         sees either none or all of the strip actions to be done."""
         q = self._queue.pop()
-        for f, o, data in q:
-            self._addentry(f, o, data)
+        for f, o in q:
+            self._addentry(f, o)
 
     @active
-    def add(self, file, offset, data=None):
+    def add(self, file, offset):
         """record the state of an append-only file before update"""
         if file in self._map or file in self._backupmap:
             return
         if self._queue:
-            self._queue[-1].append((file, offset, data))
+            self._queue[-1].append((file, offset))
             return
 
-        self._addentry(file, offset, data)
+        self._addentry(file, offset)
 
-    def _addentry(self, file, offset, data):
+    def _addentry(self, file, offset):
         """add a append-only entry to memory and on-disk state"""
         if file in self._map or file in self._backupmap:
             return
-        self._entries.append((file, offset, data))
+        self._entries.append((file, offset))
         self._map[file] = len(self._entries) - 1
         # add enough data to the journal to do the truncate
         self._file.write(b"%s\0%d\n" % (file, offset))
@@ -403,7 +403,7 @@ class transaction(util.transactional):
         return None
 
     @active
-    def replace(self, file, offset, data=None):
+    def replace(self, file, offset):
         '''
         replace can only replace already committed entries
         that are not pending in the queue
@@ -412,7 +412,7 @@ class transaction(util.transactional):
         if file not in self._map:
             raise KeyError(file)
         index = self._map[file]
-        self._entries[index] = (file, offset, data)
+        self._entries[index] = (file, offset)
         self._file.write(b"%s\0%d\n" % (file, offset))
         self._file.flush()
 
@@ -696,7 +696,7 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     for l in lines:
         try:
             f, o = l.split(b'\0')
-            entries.append((f, int(o), None))
+            entries.append((f, int(o)))
         except ValueError:
             report(
                 _(b"couldn't read journal entry %r!\n") % pycompat.bytestr(l)

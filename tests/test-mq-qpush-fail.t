@@ -45,7 +45,7 @@ test qpush on empty series
   >     # Touching files truncated at "transaction.abort" causes
   >     # forcible re-loading invalidated filecache properties
   >     # (including repo.changelog)
-  >     for f, o, _ignore in entries:
+  >     for f, o in entries:
   >         if o or not unlink:
   >             os.utime(opener.join(f), (0.0, 0.0))
   > def extsetup(ui):
