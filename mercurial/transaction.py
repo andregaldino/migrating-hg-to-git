@@ -158,8 +158,7 @@ class transaction(util.transactional):
         vfsmap[b''] = opener  # set default value
         self._vfsmap = vfsmap
         self._after = after
-        self._entries = []
-        self._map = {}
+        self._offsetmap = {}
         self._journal = journalname
         self._undoname = undoname
         self._queue = []
@@ -180,7 +179,7 @@ class transaction(util.transactional):
 
         # a dict of arguments to be passed to hooks
         self.hookargs = {}
-        self._file = opener.open(self._journal, b"w")
+        self._file = opener.open(self._journal, b"w+")
 
         # a list of ('location', 'path', 'backuppath', cache) entries.
         # - if 'backuppath' is empty, no file existed at backup time
@@ -249,7 +248,7 @@ class transaction(util.transactional):
     @active
     def add(self, file, offset):
         """record the state of an append-only file before update"""
-        if file in self._map or file in self._backupmap:
+        if file in self._offsetmap or file in self._backupmap:
             return
         if self._queue:
             self._queue[-1].append((file, offset))
@@ -259,10 +258,9 @@ class transaction(util.transactional):
 
     def _addentry(self, file, offset):
         """add a append-only entry to memory and on-disk state"""
-        if file in self._map or file in self._backupmap:
+        if file in self._offsetmap or file in self._backupmap:
             return
-        self._entries.append((file, offset))
-        self._map[file] = len(self._entries) - 1
+        self._offsetmap[file] = offset
         # add enough data to the journal to do the truncate
         self._file.write(b"%s\0%d\n" % (file, offset))
         self._file.flush()
@@ -282,7 +280,7 @@ class transaction(util.transactional):
             msg = b'cannot use transaction.addbackup inside "group"'
             raise error.ProgrammingError(msg)
 
-        if file in self._map or file in self._backupmap:
+        if file in self._offsetmap or file in self._backupmap:
             return
         vfs = self._vfsmap[location]
         dirname, filename = vfs.split(file)
@@ -396,9 +394,16 @@ class transaction(util.transactional):
 
     @active
     def findoffset(self, file):
-        if file in self._map:
-            return self._entries[self._map[file]][1]
-        return None
+        return self._offsetmap.get(file)
+
+    @active
+    def readjournal(self):
+        self._file.seek(0)
+        entries = []
+        for l in self._file:
+            file, troffset = l.split(b'\0')
+            entries.append((file, int(troffset)))
+        return entries
 
     @active
     def replace(self, file, offset):
@@ -407,10 +412,9 @@ class transaction(util.transactional):
         that are not pending in the queue
         '''
 
-        if file not in self._map:
+        if file not in self._offsetmap:
             raise KeyError(file)
-        index = self._map[file]
-        self._entries[index] = (file, offset)
+        self._offsetmap[file] = offset
         self._file.write(b"%s\0%d\n" % (file, offset))
         self._file.flush()
 
@@ -550,7 +554,7 @@ class transaction(util.transactional):
                     self._report(
                         b"couldn't remove %s: %s\n" % (vfs.join(b), inst)
                     )
-        self._entries = []
+        self._offsetmap = {}
         self._writeundo()
         if self._after:
             self._after()
@@ -627,13 +631,14 @@ class transaction(util.transactional):
         undobackupfile.close()
 
     def _abort(self):
+        entries = self.readjournal()
         self._count = 0
         self._usages = 0
         self._file.close()
         self._backupsfile.close()
 
         try:
-            if not self._entries and not self._backupentries:
+            if not self._offsetmap and not self._backupentries:
                 if self._backupjournal:
                     self._opener.unlink(self._backupjournal)
                 if self._journal:
@@ -652,7 +657,7 @@ class transaction(util.transactional):
                     self._report,
                     self._opener,
                     self._vfsmap,
-                    self._entries,
+                    entries,
                     self._backupentries,
                     False,
                     checkambigfiles=self._checkambigfiles,
