@@ -2000,12 +2000,11 @@ class revlog(object):
         ):
             return
 
-        trinfo = tr.find(self.indexfile)
-        if trinfo is None:
+        troffset = tr.findoffset(self.indexfile)
+        if troffset is None:
             raise error.RevlogError(
                 _(b"%s not found in the transaction") % self.indexfile
             )
-        troffset = trinfo[1]
         trindex = 0
         tr.add(self.datafile, 0)
 

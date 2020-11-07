@@ -395,11 +395,9 @@ class transaction(util.transactional):
         return any
 
     @active
-    def find(self, file):
+    def findoffset(self, file):
         if file in self._map:
-            return self._entries[self._map[file]]
-        if file in self._backupmap:
-            return self._backupentries[self._backupmap[file]]
+            return self._entries[self._map[file]][1]
         return None
 
     @active
