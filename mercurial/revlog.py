@@ -1819,7 +1819,7 @@ class revlog(object):
         elif operation == b'read':
             return flagutil.processflagsread(self, text, flags)
         else:  # write operation
-            return flagutil.processflagswrite(self, text, flags)
+            return flagutil.processflagswrite(self, text, flags, None)
 
     def revision(self, nodeorrev, _df=None, raw=False):
         """return an uncompressed revision of a given node or revision
