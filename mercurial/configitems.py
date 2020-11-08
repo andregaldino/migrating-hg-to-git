@@ -866,6 +866,31 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'bundlecompthreads',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.bzip2',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.gzip',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.none',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.zstd',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
     b'changegroup3',
     default=False,
 )

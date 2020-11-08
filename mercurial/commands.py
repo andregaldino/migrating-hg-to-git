@@ -1648,6 +1648,14 @@ def bundle(ui, repo, fname, dest=None, **opts):
     if complevel is not None:
         compopts[b'level'] = complevel
 
+    compthreads = ui.configint(
+        b'experimental', b'bundlecompthreads.' + bundlespec.compression
+    )
+    if compthreads is None:
+        compthreads = ui.configint(b'experimental', b'bundlecompthreads')
+    if compthreads is not None:
+        compopts[b'threads'] = compthreads
+
     # Bundling of obsmarker and phases is optional as not all clients
     # support the necessary features.
     cfg = ui.configbool

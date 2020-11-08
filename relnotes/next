@@ -5,6 +5,11 @@
  * The `rev-branch-cache` is now updated incrementally whenever changesets
    are added.
 
+ * The new options `experimental.bundlecompthreads` and
+   `experimental.bundlecompthreads.<engine>` can be used to instruct
+   the compression engines for bundle operations to use multiple threads
+   for compression. The default is single threaded operation. Currently
+   only supported for zstd.
 
 == New Experimental Features ==
 
