@@ -300,7 +300,7 @@ def _posixworker(ui, func, staticargs, args, hasretval):
     if status:
         if status < 0:
             os.kill(os.getpid(), -status)
-        sys.exit(status)
+        raise error.WorkerError(status)
     if hasretval:
         yield True, retval
 

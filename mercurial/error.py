@@ -130,6 +130,13 @@ class AmbiguousCommand(Exception):
     __bytes__ = _tobytes
 
 
+class WorkerError(Exception):
+    """Exception raised when a worker process dies."""
+
+    def __init__(self, status_code):
+        self.status_code = status_code
+
+
 class InterventionRequired(Hint, Exception):
     """Exception raised when a command requires human intervention."""
 

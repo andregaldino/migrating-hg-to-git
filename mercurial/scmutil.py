@@ -219,6 +219,9 @@ def callcatch(ui, func):
         ui.error(_(b"abort: %s\n") % inst.message)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)
+    except error.WorkerError as inst:
+        # Don't print a message -- the worker already should have
+        return inst.status_code
     except ImportError as inst:
         ui.error(_(b"abort: %s!\n") % stringutil.forcebytestr(inst))
         m = stringutil.forcebytestr(inst).split()[-1]
