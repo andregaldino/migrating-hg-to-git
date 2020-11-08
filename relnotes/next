@@ -2,6 +2,9 @@
 
 
 
+ * `hg strip`, from the strip extension, is now a core command, `hg
+   debugstrip`. The extension remains for compatibility.
+
 == New Experimental Features ==
 
 

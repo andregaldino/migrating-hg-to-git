@@ -100,6 +100,7 @@ from mercurial import (
     revsetlang,
     scmutil,
     smartset,
+    strip,
     subrepoutil,
     util,
     vfs as vfsmod,
@@ -138,7 +139,7 @@ configitem(
 
 # force load strip extension formerly included in mq and import some utility
 try:
-    stripext = extensions.find(b'strip')
+    extensions.find(b'strip')
 except KeyError:
     # note: load is lazy so we could avoid the try-except,
     # but I (marmoute) prefer this explicit code.
@@ -149,9 +150,9 @@ except KeyError:
         def log(self, event, msgfmt, *msgargs, **opts):
             pass
 
-    stripext = extensions.load(dummyui(), b'strip', b'')
+    extensions.load(dummyui(), b'strip', b'')
 
-strip = stripext.strip
+strip = strip.strip
 
 
 def checksubstate(repo, baserev=None):

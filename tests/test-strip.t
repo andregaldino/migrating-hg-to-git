@@ -10,7 +10,7 @@
   >     hg up -C $1
   >     echo % before update $1, strip $2
   >     hg log -G -T '{rev}:{node}'
-  >     hg --traceback strip $2
+  >     hg --traceback debugstrip $2
   >     echo % after update $1, strip $2
   >     hg log -G -T '{rev}:{node}'
   >     restore
@@ -765,12 +765,10 @@ test hg strip -B bookmark
 Make sure no one adds back a -b option:
 
   $ hg strip -b tip
-  hg strip: option -b not recognized
-  hg strip [-k] [-f] [-B bookmark] [-r] REV...
+  hg debugstrip: option -b not recognized
+  hg debugstrip [-k] [-f] [-B bookmark] [-r] REV...
   
   strip changesets and all their descendants from the repository
-  
-  (use 'hg help -e strip' to show help for the strip extension)
   
   options ([+] can be repeated):
   
@@ -783,7 +781,7 @@ Make sure no one adds back a -b option:
    -B --bookmark BOOKMARK [+] remove revs only reachable from given bookmark
       --mq                    operate on patch repository
   
-  (use 'hg strip -h' to show more help)
+  (use 'hg debugstrip -h' to show more help)
   [255]
 
   $ cd ..

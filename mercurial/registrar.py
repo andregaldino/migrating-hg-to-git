@@ -234,6 +234,12 @@ class command(_funcregistrarbase):
             self._table[name] = func, list(options)
         return func
 
+    def rename(self, old, new):
+        """rename a command. Used to add aliases, debugstrip ->
+        debugstrip|strip
+        """
+        self._table[new] = self._table.pop(old)
+
 
 INTENT_READONLY = b'readonly'
 

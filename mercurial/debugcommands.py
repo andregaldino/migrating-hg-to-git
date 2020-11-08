@@ -78,6 +78,7 @@ from . import (
     sshpeer,
     sslutil,
     streamclone,
+    strip,
     tags as tagsmod,
     templater,
     treediscovery,
@@ -105,7 +106,9 @@ from .revlogutils import (
 
 release = lockmod.release
 
-command = registrar.command()
+table = {}
+table.update(strip.command._table)
+command = registrar.command(table)
 
 
 @command(b'debugancestor', [], _(b'[INDEX] REV1 REV2'), optionalrepo=True)

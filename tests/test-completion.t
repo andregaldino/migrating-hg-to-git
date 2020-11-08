@@ -131,6 +131,7 @@ Show debug commands if there are no other candidates
   debugsetparents
   debugsidedata
   debugssl
+  debugstrip
   debugsub
   debugsuccessorssets
   debugtagscache
@@ -319,6 +320,7 @@ Show all commands + options
   debugsetparents: 
   debugsidedata: changelog, manifest, dir
   debugssl: 
+  debugstrip: rev, force, no-backup, nobackup, , keep, bookmark, soft
   debugsub: rev
   debugsuccessorssets: closest
   debugtagscache: 
