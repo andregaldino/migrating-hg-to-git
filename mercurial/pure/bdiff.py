@@ -51,7 +51,10 @@ def _normalizeblocks(a, b, blocks):
                 shift += 1
         r.append((a1, b1, l1 + shift))
         prev = a2 + shift, b2 + shift, l2 - shift
-    r.append(prev)
+
+    if prev is not None:
+        r.append(prev)
+
     return r
 
 
