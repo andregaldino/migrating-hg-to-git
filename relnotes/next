@@ -1,9 +1,6 @@
 == New Features ==
 
 
- * The memory footprint per changeset and per file during pull/unbundle
-   operations has been significantly reduced.
-
 
 == New Experimental Features ==
 
@@ -20,15 +17,3 @@
 == Internal API Changes ==
 
 
- * `phases.registernew` now takes a set of revisions instead of a list
-   of nodes. `phases.advanceboundary` takes an optional set of revisions
-   in addition to the list of nodes. The corresponeding members of the
-   `phasecache` class follow this change.
-
- * The `addgroup` member of `revlog` classes no longer keeps a list of
-   all found nodes. It now returns True iff a node was found in the group.
-   An optional callback for duplicated nodes can be used by callers to keep
-   track of all nodes themselve.
-
- * The `_chaininfocache` of `revlog` classes has been changed from a dict
-   to a LRU cache.
