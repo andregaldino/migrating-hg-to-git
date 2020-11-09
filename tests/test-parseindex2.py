@@ -5,6 +5,7 @@ It also checks certain aspects of the parsers module as a whole.
 
 from __future__ import absolute_import, print_function
 
+import os
 import struct
 import subprocess
 import sys
@@ -129,7 +130,7 @@ def importparsers(hexversion):
         "import sys; sys.hexversion=%s; "
         "import mercurial.cext.parsers" % hexversion
     )
-    cmd = "python -c \"%s\"" % code
+    cmd = "\"%s\" -c \"%s\"" % (os.environ['PYTHON'], code)
     # We need to do these tests inside a subprocess because parser.c's
     # version-checking code happens inside the module init function, and
     # when using reload() to reimport an extension module, "The init function
