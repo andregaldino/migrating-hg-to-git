@@ -405,7 +405,7 @@ def desthistedit(ui, repo):
     elif default:
         revs = scmutil.revrange(repo, [default])
     else:
-        raise error.Abort(
+        raise error.ConfigError(
             _(b"config option histedit.defaultrev can't be empty")
         )
 
