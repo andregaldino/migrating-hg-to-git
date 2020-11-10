@@ -49,7 +49,7 @@ def make_exe(dist):
 
     config = dist.make_python_interpreter_config()
     config.raw_allocator = "system"
-    config.run_mode = "eval:%s" % RUN_CODE
+    config.run_command = RUN_CODE
     # We want to let the user load extensions from the file system
     config.filesystem_importer = True
     # We need this to make resourceutil happy, since it looks for sys.frozen.
