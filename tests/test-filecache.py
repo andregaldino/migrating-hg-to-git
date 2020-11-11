@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 if subprocess.call(
-    ['python', '%s/hghave' % os.environ['TESTDIR'], 'cacheable']
+    [sys.executable, '%s/hghave' % os.environ['TESTDIR'], 'cacheable']
 ):
     sys.exit(80)
 
