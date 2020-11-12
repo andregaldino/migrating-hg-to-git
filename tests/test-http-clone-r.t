@@ -217,6 +217,6 @@ no default destination if url has no path:
 
   $ hg clone http://localhost:$HGPORT/
   abort: empty destination path is not valid
-  [255]
+  [10]
 
   $ cat error.log

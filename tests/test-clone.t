@@ -73,7 +73,7 @@ Invalid dest '' must abort:
 
   $ hg clone . ''
   abort: empty destination path is not valid
-  [255]
+  [10]
 
 No update, with debug option:
 
@@ -189,7 +189,7 @@ Invalid dest '' with --pull must abort (issue2528):
 
   $ hg clone --pull a ''
   abort: empty destination path is not valid
-  [255]
+  [10]
 
 Clone to '.':
 
@@ -676,7 +676,7 @@ Default destination, same directory
   $ hg clone q
   destination directory: q
   abort: destination 'q' is not empty
-  [255]
+  [10]
 
 destination directory not empty
 
@@ -684,7 +684,7 @@ destination directory not empty
   $ echo stuff > a/a
   $ hg clone q a
   abort: destination 'a' is not empty
-  [255]
+  [10]
 
 
 #if unix-permissions no-root

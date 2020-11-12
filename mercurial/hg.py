@@ -683,14 +683,14 @@ def clone(
     source = util.urllocalpath(source)
 
     if not dest:
-        raise error.Abort(_(b"empty destination path is not valid"))
+        raise error.InputError(_(b"empty destination path is not valid"))
 
     destvfs = vfsmod.vfs(dest, expandpath=True)
     if destvfs.lexists():
         if not destvfs.isdir():
-            raise error.Abort(_(b"destination '%s' already exists") % dest)
+            raise error.InputError(_(b"destination '%s' already exists") % dest)
         elif destvfs.listdir():
-            raise error.Abort(_(b"destination '%s' is not empty") % dest)
+            raise error.InputError(_(b"destination '%s' is not empty") % dest)
 
     createopts = {}
     narrow = False

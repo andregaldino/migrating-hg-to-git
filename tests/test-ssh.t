@@ -387,7 +387,7 @@ Test (non-)escaping of remote paths with spaces when cloning (issue3145):
   $ hg clone --ssh "\"$PYTHON\" \"$TESTDIR/dummyssh\"" "ssh://user@dummy/a repo"
   destination directory: a repo
   abort: destination 'a repo' is not empty
-  [255]
+  [10]
 
 Make sure hg is really paranoid in serve --stdio mode. It used to be
 possible to get a debugger REPL by specifying a repo named --debugger.

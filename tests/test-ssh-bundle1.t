@@ -367,7 +367,7 @@ Test (non-)escaping of remote paths with spaces when cloning (issue3145):
   $ hg clone --ssh "\"$PYTHON\" \"$TESTDIR/dummyssh\"" "ssh://user@dummy/a repo"
   destination directory: a repo
   abort: destination 'a repo' is not empty
-  [255]
+  [10]
 
 Test hg-ssh using a helper script that will restore PYTHONPATH (which might
 have been cleared by a hg.exe wrapper) and invoke hg-ssh with the right

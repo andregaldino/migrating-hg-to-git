@@ -601,7 +601,7 @@ recurse infinitely (issue2528)
 
   $ hg clone full.hg ''
   abort: empty destination path is not valid
-  [255]
+  [10]
 
 test for https://bz.mercurial-scm.org/216
 
