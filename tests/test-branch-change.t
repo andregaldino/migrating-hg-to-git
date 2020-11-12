@@ -40,13 +40,13 @@ Setting an invalid branch name
 
   $ hg branch -r . a:b
   abort: ':' cannot be used in a name
-  [255]
+  [10]
   $ hg branch -r . tip
   abort: the name 'tip' is reserved
-  [255]
+  [10]
   $ hg branch -r . 1234
   abort: cannot use an integer as a name
-  [255]
+  [10]
 
 Change on non-linear set of commits
 

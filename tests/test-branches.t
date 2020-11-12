@@ -51,24 +51,24 @@ reserved names
 
   $ hg branch tip
   abort: the name 'tip' is reserved
-  [255]
+  [10]
   $ hg branch null
   abort: the name 'null' is reserved
-  [255]
+  [10]
   $ hg branch .
   abort: the name '.' is reserved
-  [255]
+  [10]
 
 invalid characters
 
   $ hg branch 'foo:bar'
   abort: ':' cannot be used in a name
-  [255]
+  [10]
 
   $ hg branch 'foo
   > bar'
   abort: '\n' cannot be used in a name
-  [255]
+  [10]
 
 trailing or leading spaces should be stripped before testing duplicates
 

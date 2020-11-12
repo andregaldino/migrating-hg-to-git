@@ -293,19 +293,21 @@ def checknewlabel(repo, lbl, kind):
     # Do not use the "kind" parameter in ui output.
     # It makes strings difficult to translate.
     if lbl in [b'tip', b'.', b'null']:
-        raise error.Abort(_(b"the name '%s' is reserved") % lbl)
+        raise error.InputError(_(b"the name '%s' is reserved") % lbl)
     for c in (b':', b'\0', b'\n', b'\r'):
         if c in lbl:
-            raise error.Abort(
+            raise error.InputError(
                 _(b"%r cannot be used in a name") % pycompat.bytestr(c)
             )
     try:
         int(lbl)
-        raise error.Abort(_(b"cannot use an integer as a name"))
+        raise error.InputError(_(b"cannot use an integer as a name"))
     except ValueError:
         pass
     if lbl.strip() != lbl:
-        raise error.Abort(_(b"leading or trailing whitespace in name %r") % lbl)
+        raise error.InputError(
+            _(b"leading or trailing whitespace in name %r") % lbl
+        )
 
 
 def checkfilename(f):

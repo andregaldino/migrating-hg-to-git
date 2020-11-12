@@ -396,15 +396,15 @@ bookmark with reserved name
 
   $ hg bookmark tip
   abort: the name 'tip' is reserved
-  [255]
+  [10]
 
   $ hg bookmark .
   abort: the name '.' is reserved
-  [255]
+  [10]
 
   $ hg bookmark null
   abort: the name 'null' is reserved
-  [255]
+  [10]
 
 
 bookmark with existing name
@@ -431,7 +431,7 @@ bookmark with integer name
 
   $ hg bookmark 10
   abort: cannot use an integer as a name
-  [255]
+  [10]
 
 bookmark with a name that matches a node id
   $ hg bookmark 925d80f479bb db815d6d32e6 --config "$TESTHOOK"
@@ -538,12 +538,12 @@ invalid bookmark
 
   $ hg bookmark 'foo:bar'
   abort: ':' cannot be used in a name
-  [255]
+  [10]
 
   $ hg bookmark 'foo
   > bar'
   abort: '\n' cannot be used in a name
-  [255]
+  [10]
 
 the bookmark extension should be ignored now that it is part of core
 
