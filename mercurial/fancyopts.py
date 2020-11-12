@@ -380,7 +380,7 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
         else:
 
             def abort(s):
-                raise error.Abort(
+                raise error.InputError(
                     _(b'invalid value %r for option %s, %s')
                     % (pycompat.maybebytestr(val), opt, s)
                 )
