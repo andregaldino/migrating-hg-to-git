@@ -48,7 +48,7 @@ should fail
   [30]
   $ hg --config ui.portablefilenames=abort add con.xml
   abort: filename contains 'con', which is reserved on Windows: con.xml
-  [255]
+  [10]
   $ hg st
   A a
   A b
@@ -68,7 +68,7 @@ should fail
   $ hg --config ui.portablefilenames=abort add
   adding hello:world
   abort: filename contains ':', which is reserved on Windows: 'hello:world'
-  [255]
+  [10]
   $ hg st
   A a
   A b

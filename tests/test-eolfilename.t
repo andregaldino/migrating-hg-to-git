@@ -12,12 +12,12 @@ test issue352
   adding he\r (no-eol) (esc)
   llo
   abort: '\n' and '\r' disallowed in filenames: 'he\rllo'
-  [255]
+  [10]
   $ hg ci -A -m m
   adding he\r (no-eol) (esc)
   llo
   abort: '\n' and '\r' disallowed in filenames: 'he\rllo'
-  [255]
+  [10]
   $ rm "$A"
   $ echo foo > "hell
   > o"
@@ -25,12 +25,12 @@ test issue352
   adding hell
   o
   abort: '\n' and '\r' disallowed in filenames: 'hell\no'
-  [255]
+  [10]
   $ hg ci -A -m m
   adding hell
   o
   abort: '\n' and '\r' disallowed in filenames: 'hell\no'
-  [255]
+  [10]
   $ echo foo > "$A"
   $ hg debugwalk -v
   * matcher:
@@ -48,10 +48,10 @@ test issue352
   $ A=`printf 'quick\rfox'`
   $ hg cp quickfox "$A"
   abort: '\n' and '\r' disallowed in filenames: 'quick\rfox'
-  [255]
+  [10]
   $ hg mv quickfox "$A"
   abort: '\n' and '\r' disallowed in filenames: 'quick\rfox'
-  [255]
+  [10]
 
 https://bz.mercurial-scm.org/2036
 

@@ -9,7 +9,7 @@
   $ hg copy a b
   $ hg --config ui.portablefilenames=abort copy a con.xml
   abort: filename contains 'con', which is reserved on Windows: con.xml
-  [255]
+  [10]
   $ hg status
   A b
   $ hg sum

@@ -311,7 +311,7 @@ def checknewlabel(repo, lbl, kind):
 def checkfilename(f):
     '''Check that the filename f is an acceptable filename for a tracked file'''
     if b'\r' in f or b'\n' in f:
-        raise error.Abort(
+        raise error.InputError(
             _(b"'\\n' and '\\r' disallowed in filenames: %r")
             % pycompat.bytestr(f)
         )
@@ -326,7 +326,7 @@ def checkportable(ui, f):
         if msg:
             msg = b"%s: %s" % (msg, procutil.shellquote(f))
             if abort:
-                raise error.Abort(msg)
+                raise error.InputError(msg)
             ui.warn(_(b"warning: %s\n") % msg)
 
 
