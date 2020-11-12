@@ -114,6 +114,30 @@ Check that {phase} works correctly on parents:
   |
   o  0 (public): -1 (public) -1 (public)
   
+Test {onelinesummary}
+
+  $ hg log -G -T '{onelinesummary}'
+  @  8:95c24699272e tip "third"
+  |
+  o  7:29114dbae42b "second"
+  
+  o    6:d41e714fe50d "merge"
+  |\
+  | o  5:13207e5a10d9 "new head"
+  | |
+  o |  4:bbe44766e73d "new branch"
+  |/
+  o  3:10e46f2dcbf4 "no user, no domain"
+  |
+  o  2:97054abb4ab8 "no person"
+  |
+  o  1:b608e9d1a3f0 "other 1"
+  |
+  o  0:1e4e1b8f71e0 "line 1"
+  
+  $ hg log -T '{onelinesummary}' -r 0 \
+  > --config command-templates.oneline-summary='{rev} - {desc}'
+  0 - line 1 (no-eol)
 
 Keys work:
 

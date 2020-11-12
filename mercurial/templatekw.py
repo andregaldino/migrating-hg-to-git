@@ -634,6 +634,19 @@ def showobsolete(context, mapping):
     return b''
 
 
+@templatekeyword(b'onelinesummary', requires={b'ui', b'ctx'})
+def showonelinesummary(context, mapping):
+    """String. A one-line summary for the ctx (not including trailing newline).
+    The default template be overridden in command-templates.oneline-summary."""
+    # Avoid cycle:
+    # mercurial.cmdutil -> mercurial.templatekw -> mercurial.cmdutil
+    from . import cmdutil
+
+    ui = context.resource(mapping, b'ui')
+    ctx = context.resource(mapping, b'ctx')
+    return cmdutil.format_changeset_summary(ui, ctx)
+
+
 @templatekeyword(b'path', requires={b'fctx'})
 def showpath(context, mapping):
     """String. Repository-absolute path of the current file. (EXPERIMENTAL)"""
