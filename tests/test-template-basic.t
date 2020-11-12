@@ -265,7 +265,7 @@ Check that recursive reference does not fall into RuntimeError (issue4758):
   > EOF
   $ hg log --style ./issue4758
   abort: recursive reference 'changeset' in template
-  [255]
+  [10]
 
  not a recursion if a keyword of the same name exists:
 

@@ -451,7 +451,7 @@ def gettemplate(exp, context):
 
 
 def _runrecursivesymbol(context, mapping, key):
-    raise error.Abort(_(b"recursive reference '%s' in template") % key)
+    raise error.InputError(_(b"recursive reference '%s' in template") % key)
 
 
 def buildtemplate(exp, context):
