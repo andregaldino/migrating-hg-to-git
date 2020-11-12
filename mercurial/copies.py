@@ -25,7 +25,10 @@ from . import (
 
 from .utils import stringutil
 
-from .revlogutils import flagutil
+from .revlogutils import (
+    flagutil,
+    sidedata as sidedatamod,
+)
 
 rustmod = policy.importrust("copy_tracing")
 
@@ -175,7 +178,7 @@ def _committedforwardcopies(a, b, base, match):
     return cm
 
 
-def _revinfo_getter(repo):
+def _revinfo_getter(repo, match):
     """returns a function that returns the following data given a <rev>"
 
     * p1: revision number of first parent
@@ -215,20 +218,42 @@ def _revinfo_getter(repo):
     # time to save memory.
     merge_caches = {}
 
-    def revinfo(rev):
-        p1, p2 = parents(rev)
-        value = None
-        e = merge_caches.pop(rev, None)
-        if e is not None:
-            return e
-        changes = None
-        if flags(rev) & HASCOPIESINFO:
-            changes = changelogrevision(rev).changes
-        value = (p1, p2, changes)
-        if p1 != node.nullrev and p2 != node.nullrev:
-            # XXX some case we over cache, IGNORE
-            merge_caches[rev] = value
-        return value
+    alwaysmatch = match.always()
+
+    if rustmod is not None and alwaysmatch:
+
+        def revinfo(rev):
+            p1, p2 = parents(rev)
+            value = None
+            e = merge_caches.pop(rev, None)
+            if e is not None:
+                return e
+            if flags(rev) & HASCOPIESINFO:
+                raw = changelogrevision(rev)._sidedata.get(sidedatamod.SD_FILES)
+            else:
+                raw = None
+            value = (p1, p2, raw)
+            if p1 != node.nullrev and p2 != node.nullrev:
+                # XXX some case we over cache, IGNORE
+                merge_caches[rev] = value
+            return value
+
+    else:
+
+        def revinfo(rev):
+            p1, p2 = parents(rev)
+            value = None
+            e = merge_caches.pop(rev, None)
+            if e is not None:
+                return e
+            changes = None
+            if flags(rev) & HASCOPIESINFO:
+                changes = changelogrevision(rev).changes
+            value = (p1, p2, changes)
+            if p1 != node.nullrev and p2 != node.nullrev:
+                # XXX some case we over cache, IGNORE
+                merge_caches[rev] = value
+            return value
 
     return revinfo
 
@@ -289,7 +314,7 @@ def _changesetforwardcopies(a, b, match):
     revs = sorted(iterrevs)
 
     if repo.filecopiesmode == b'changeset-sidedata':
-        revinfo = _revinfo_getter(repo)
+        revinfo = _revinfo_getter(repo, match)
         return _combine_changeset_copies(
             revs, children, b.rev(), revinfo, match, isancestor
         )

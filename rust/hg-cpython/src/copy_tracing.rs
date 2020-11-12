@@ -11,8 +11,9 @@ use cpython::Python;
 
 use hg::copy_tracing::combine_changeset_copies;
 use hg::copy_tracing::ChangedFiles;
+use hg::copy_tracing::DataHolder;
 use hg::copy_tracing::RevInfo;
-use hg::utils::hg_path::HgPathBuf;
+use hg::copy_tracing::RevInfoMaker;
 use hg::Revision;
 
 /// Combines copies information contained into revision `revs` to build a copy
@@ -57,184 +58,41 @@ pub fn combine_changeset_copies_wrapper(
     // happens in case of programing error or severe data corruption. Such
     // errors will raise panic and the rust-cpython harness will turn them into
     // Python exception.
-    let rev_info_maker = |rev: Revision| -> RevInfo {
-        let res: PyTuple = rev_info
-            .call(py, (rev,), None)
-            .expect("rust-copy-tracing: python call to `rev_info` failed")
-            .cast_into(py)
-            .expect(
-                "rust-copy_tracing: python call to `rev_info` returned \
-                unexpected non-Tuple value",
-            );
-        let p1 = res.get_item(py, 0).extract(py).expect(
-            "rust-copy-tracing: \
-            rev_info return is invalid, first item is a not a revision",
-        );
-        let p2 = res.get_item(py, 1).extract(py).expect(
-            "rust-copy-tracing: \
-            rev_info return is invalid, second item is a not a revision",
-        );
-
-        let changes = res.get_item(py, 2);
-
-        let files;
-        if !changes
-            .hasattr(py, "copied_from_p1")
-            .expect("rust-copy-tracing: python call to `hasattr` failed")
-        {
-            files = ChangedFiles::new_empty();
-        } else {
-            let p1_copies: PyDict = changes
-                .getattr(py, "copied_from_p1")
-                .expect(
-                    "rust-copy-tracing: retrieval of python attribute \
-                    `copied_from_p1` failed",
-                )
+    let rev_info_maker: RevInfoMaker<PyBytes> =
+        Box::new(|rev: Revision, d: &mut DataHolder<PyBytes>| -> RevInfo {
+            let res: PyTuple = rev_info
+                .call(py, (rev,), None)
+                .expect("rust-copy-tracing: python call to `rev_info` failed")
                 .cast_into(py)
                 .expect(
-                    "rust-copy-tracing: failed to convert `copied_from_p1` \
-                    to PyDict",
+                    "rust-copy_tracing: python call to `rev_info` returned \
+                    unexpected non-Tuple value",
                 );
-            let p1_copies: PyResult<_> = p1_copies
-                .items(py)
-                .iter()
-                .map(|(key, value)| {
-                    let key = key.extract::<PyBytes>(py).expect(
-                        "rust-copy-tracing: conversion of copy destination to\
-                        PyBytes failed",
-                    );
-                    let key = key.data(py);
-                    let value = value.extract::<PyBytes>(py).expect(
-                        "rust-copy-tracing: conversion of copy source to \
-                        PyBytes failed",
-                    );
-                    let value = value.data(py);
-                    Ok((
-                        HgPathBuf::from_bytes(key),
-                        HgPathBuf::from_bytes(value),
-                    ))
-                })
-                .collect();
-
-            let p2_copies: PyDict = changes
-                .getattr(py, "copied_from_p2")
-                .expect(
-                    "rust-copy-tracing: retrieval of python attribute \
-                    `copied_from_p2` failed",
-                )
-                .cast_into(py)
-                .expect(
-                    "rust-copy-tracing: failed to convert `copied_from_p2` \
-                    to PyDict",
-                );
-            let p2_copies: PyResult<_> = p2_copies
-                .items(py)
-                .iter()
-                .map(|(key, value)| {
-                    let key = key.extract::<PyBytes>(py).expect(
-                        "rust-copy-tracing: conversion of copy destination to \
-                        PyBytes failed");
-                    let key = key.data(py);
-                    let value = value.extract::<PyBytes>(py).expect(
-                        "rust-copy-tracing: conversion of copy source to \
-                        PyBytes failed",
-                    );
-                    let value = value.data(py);
-                    Ok((
-                        HgPathBuf::from_bytes(key),
-                        HgPathBuf::from_bytes(value),
-                    ))
-                })
-                .collect();
-
-            let removed: PyObject = changes.getattr(py, "removed").expect(
-                "rust-copy-tracing: retrieval of python attribute \
-                    `removed` failed",
+            let p1 = res.get_item(py, 0).extract(py).expect(
+                "rust-copy-tracing: rev_info return is invalid, first item \
+                is a not a revision",
             );
-            let removed: PyResult<_> = removed
-                .iter(py)
-                .expect(
-                    "rust-copy-tracing: getting a python iterator over the \
-                    `removed` set failed",
-                )
-                .map(|filename| {
-                    let filename = filename
-                        .expect(
-                            "rust-copy-tracing: python iteration over the \
-                            `removed` set failed",
-                        )
-                        .extract::<PyBytes>(py)
-                        .expect(
-                            "rust-copy-tracing: \
-                            conversion of `removed` item to PyBytes failed",
-                        );
-                    let filename = filename.data(py);
-                    Ok(HgPathBuf::from_bytes(filename))
-                })
-                .collect();
-
-            let merged: PyObject = changes.getattr(py, "merged").expect(
-                "rust-copy-tracing: retrieval of python attribute \
-                    `merged` failed",
+            let p2 = res.get_item(py, 1).extract(py).expect(
+                "rust-copy-tracing: rev_info return is invalid, first item \
+                is a not a revision",
             );
-            let merged: PyResult<_> = merged
-                .iter(py)
-                .expect(
-                    "rust-copy-tracing: getting a python iterator over the \
-                    `merged` set failed",
-                )
-                .map(|filename| {
-                    let filename = filename
-                        .expect(
-                            "rust-copy-tracing: python iteration over the \
-                            `merged` set failed",
-                        )
-                        .extract::<PyBytes>(py)
-                        .expect(
-                            "rust-copy-tracing: \
-                            conversion of `merged` item to PyBytes failed",
-                        );
-                    let filename = filename.data(py);
-                    Ok(HgPathBuf::from_bytes(filename))
-                })
-                .collect();
 
-            let salvaged: PyObject = changes.getattr(py, "salvaged").expect(
-                "rust-copy-tracing: retrieval of python attribute \
-                    `salvaged` failed",
-            );
-            let salvaged: PyResult<_> = salvaged
-                .iter(py)
-                .expect(
-                    "rust-copy-tracing: getting a python iterator over the \
-                    `salvaged` set failed",
-                )
-                .map(|filename| {
-                    let filename = filename
-                        .expect(
-                            "rust-copy-tracing: python iteration over the \
-                            `salvaged` set failed",
-                        )
-                        .extract::<PyBytes>(py)
-                        .expect(
-                            "rust-copy-tracing: \
-                            conversion of `salvaged` item to PyBytes failed",
-                        );
-                    let filename = filename.data(py);
-                    Ok(HgPathBuf::from_bytes(filename))
-                })
-                .collect();
-            files = ChangedFiles::new(
-                removed.unwrap(),
-                merged.unwrap(),
-                salvaged.unwrap(),
-                p1_copies.unwrap(),
-                p2_copies.unwrap(),
-            );
-        }
+            let files = match res.get_item(py, 2).extract::<PyBytes>(py) {
+                Ok(raw) => {
+                    // Give responsability for the raw bytes lifetime to
+                    // hg-core
+                    d.data = Some(raw);
+                    let addrs = d.data.as_ref().expect(
+                        "rust-copy-tracing: failed to get a reference to the \
+                        raw bytes for copy data").data(py);
+                    ChangedFiles::new(addrs)
+                }
+                // value was presumably None, meaning they was no copy data.
+                Err(_) => ChangedFiles::new_empty(),
+            };
 
-        (p1, p2, files)
-    };
+            (p1, p2, files)
+        });
     let children: PyResult<_> = children
         .items(py)
         .iter()
@@ -250,7 +108,7 @@ pub fn combine_changeset_copies_wrapper(
         revs?,
         children?,
         target_rev,
-        &rev_info_maker,
+        rev_info_maker,
         &is_ancestor_wrap,
     );
     let out = PyDict::new(py);

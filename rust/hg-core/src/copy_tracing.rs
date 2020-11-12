@@ -5,8 +5,9 @@ use crate::Revision;
 use im_rc::ordmap::DiffItem;
 use im_rc::ordmap::OrdMap;
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::collections::HashSet;
+use std::convert::TryInto;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
@@ -23,18 +24,18 @@ struct TimeStampedPathCopy {
 type TimeStampedPathCopies = OrdMap<HgPathBuf, TimeStampedPathCopy>;
 
 /// hold parent 1, parent 2 and relevant files actions.
-pub type RevInfo = (Revision, Revision, ChangedFiles);
+pub type RevInfo<'a> = (Revision, Revision, ChangedFiles<'a>);
 
 /// represent the files affected by a changesets
 ///
 /// This hold a subset of mercurial.metadata.ChangingFiles as we do not need
 /// all the data categories tracked by it.
-pub struct ChangedFiles {
-    removed: HashSet<HgPathBuf>,
-    merged: HashSet<HgPathBuf>,
-    salvaged: HashSet<HgPathBuf>,
-    copied_from_p1: PathCopies,
-    copied_from_p2: PathCopies,
+/// This hold a subset of mercurial.metadata.ChangingFiles as we do not need
+/// all the data categories tracked by it.
+pub struct ChangedFiles<'a> {
+    nb_items: u32,
+    index: &'a [u8],
+    data: &'a [u8],
 }
 
 /// Represent active changes that affect the copy tracing.
@@ -62,55 +63,161 @@ enum MergeCase {
     Normal,
 }
 
-impl ChangedFiles {
-    pub fn new(
-        removed: HashSet<HgPathBuf>,
-        merged: HashSet<HgPathBuf>,
-        salvaged: HashSet<HgPathBuf>,
-        copied_from_p1: PathCopies,
-        copied_from_p2: PathCopies,
-    ) -> Self {
-        ChangedFiles {
-            removed,
-            merged,
-            salvaged,
-            copied_from_p1,
-            copied_from_p2,
-        }
+type FileChange<'a> = (u8, &'a HgPath, &'a HgPath);
+
+const EMPTY: &[u8] = b"";
+const COPY_MASK: u8 = 3;
+const P1_COPY: u8 = 2;
+const P2_COPY: u8 = 3;
+const ACTION_MASK: u8 = 28;
+const REMOVED: u8 = 12;
+const MERGED: u8 = 8;
+const SALVAGED: u8 = 16;
+
+impl<'a> ChangedFiles<'a> {
+    const INDEX_START: usize = 4;
+    const ENTRY_SIZE: u32 = 9;
+    const FILENAME_START: u32 = 1;
+    const COPY_SOURCE_START: u32 = 5;
+
+    pub fn new(data: &'a [u8]) -> Self {
+        assert!(
+            data.len() >= 4,
+            "data size ({}) is too small to contain the header (4)",
+            data.len()
+        );
+        let nb_items_raw: [u8; 4] = (&data[0..=3])
+            .try_into()
+            .expect("failed to turn 4 bytes into 4 bytes");
+        let nb_items = u32::from_be_bytes(nb_items_raw);
+
+        let index_size = (nb_items * Self::ENTRY_SIZE) as usize;
+        let index_end = Self::INDEX_START + index_size;
+
+        assert!(
+            data.len() >= index_end,
+            "data size ({}) is too small to fit the index_data ({})",
+            data.len(),
+            index_end
+        );
+
+        let ret = ChangedFiles {
+            nb_items,
+            index: &data[Self::INDEX_START..index_end],
+            data: &data[index_end..],
+        };
+        let max_data = ret.filename_end(nb_items - 1) as usize;
+        assert!(
+            ret.data.len() >= max_data,
+            "data size ({}) is too small to fit all data ({})",
+            data.len(),
+            index_end + max_data
+        );
+        ret
     }
 
     pub fn new_empty() -> Self {
         ChangedFiles {
-            removed: HashSet::new(),
-            merged: HashSet::new(),
-            salvaged: HashSet::new(),
-            copied_from_p1: PathCopies::new(),
-            copied_from_p2: PathCopies::new(),
+            nb_items: 0,
+            index: EMPTY,
+            data: EMPTY,
         }
     }
 
+    /// internal function to return an individual entry at a given index
+    fn entry(&'a self, idx: u32) -> FileChange<'a> {
+        if idx >= self.nb_items {
+            panic!(
+                "index for entry is higher that the number of file {} >= {}",
+                idx, self.nb_items
+            )
+        }
+        let flags = self.flags(idx);
+        let filename = self.filename(idx);
+        let copy_idx = self.copy_idx(idx);
+        let copy_source = self.filename(copy_idx);
+        (flags, filename, copy_source)
+    }
+
+    /// internal function to return the filename of the entry at a given index
+    fn filename(&self, idx: u32) -> &HgPath {
+        let filename_start;
+        if idx == 0 {
+            filename_start = 0;
+        } else {
+            filename_start = self.filename_end(idx - 1)
+        }
+        let filename_end = self.filename_end(idx);
+        let filename_start = filename_start as usize;
+        let filename_end = filename_end as usize;
+        HgPath::new(&self.data[filename_start..filename_end])
+    }
+
+    /// internal function to return the flag field of the entry at a given
+    /// index
+    fn flags(&self, idx: u32) -> u8 {
+        let idx = idx as usize;
+        self.index[idx * (Self::ENTRY_SIZE as usize)]
+    }
+
+    /// internal function to return the end of a filename part at a given index
+    fn filename_end(&self, idx: u32) -> u32 {
+        let start = (idx * Self::ENTRY_SIZE) + Self::FILENAME_START;
+        let end = (idx * Self::ENTRY_SIZE) + Self::COPY_SOURCE_START;
+        let start = start as usize;
+        let end = end as usize;
+        let raw = (&self.index[start..end])
+            .try_into()
+            .expect("failed to turn 4 bytes into 4 bytes");
+        u32::from_be_bytes(raw)
+    }
+
+    /// internal function to return index of the copy source of the entry at a
+    /// given index
+    fn copy_idx(&self, idx: u32) -> u32 {
+        let start = (idx * Self::ENTRY_SIZE) + Self::COPY_SOURCE_START;
+        let end = (idx + 1) * Self::ENTRY_SIZE;
+        let start = start as usize;
+        let end = end as usize;
+        let raw = (&self.index[start..end])
+            .try_into()
+            .expect("failed to turn 4 bytes into 4 bytes");
+        u32::from_be_bytes(raw)
+    }
+
     /// Return an iterator over all the `Action` in this instance.
-    fn iter_actions(&self, parent: usize) -> impl Iterator<Item = Action> {
-        let copies_iter = match parent {
-            1 => self.copied_from_p1.iter(),
-            2 => self.copied_from_p2.iter(),
-            _ => unreachable!(),
-        };
-        let remove_iter = self.removed.iter();
-        let copies_iter = copies_iter.map(|(x, y)| Action::Copied(x, y));
-        let remove_iter = remove_iter.map(|x| Action::Removed(x));
-        copies_iter.chain(remove_iter)
+    fn iter_actions(&self, parent: usize) -> ActionsIterator {
+        ActionsIterator {
+            changes: &self,
+            parent: parent,
+            current: 0,
+        }
     }
 
     /// return the MergeCase value associated with a filename
     fn get_merge_case(&self, path: &HgPath) -> MergeCase {
-        if self.salvaged.contains(path) {
-            return MergeCase::Salvaged;
-        } else if self.merged.contains(path) {
-            return MergeCase::Merged;
-        } else {
+        if self.nb_items == 0 {
             return MergeCase::Normal;
         }
+        let mut low_part = 0;
+        let mut high_part = self.nb_items;
+
+        while low_part < high_part {
+            let cursor = (low_part + high_part - 1) / 2;
+            let (flags, filename, _source) = self.entry(cursor);
+            match path.cmp(filename) {
+                Ordering::Less => low_part = cursor + 1,
+                Ordering::Greater => high_part = cursor,
+                Ordering::Equal => {
+                    return match flags & ACTION_MASK {
+                        MERGED => MergeCase::Merged,
+                        SALVAGED => MergeCase::Salvaged,
+                        _ => MergeCase::Normal,
+                    };
+                }
+            }
+        }
+        MergeCase::Normal
     }
 }
 
@@ -150,6 +257,50 @@ impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
     }
 }
 
+struct ActionsIterator<'a> {
+    changes: &'a ChangedFiles<'a>,
+    parent: usize,
+    current: u32,
+}
+
+impl<'a> Iterator for ActionsIterator<'a> {
+    type Item = Action<'a>;
+
+    fn next(&mut self) -> Option<Action<'a>> {
+        while self.current < self.changes.nb_items {
+            let (flags, file, source) = self.changes.entry(self.current);
+            self.current += 1;
+            if (flags & ACTION_MASK) == REMOVED {
+                return Some(Action::Removed(file));
+            }
+            let copy = flags & COPY_MASK;
+            if self.parent == 1 && copy == P1_COPY {
+                return Some(Action::Copied(file, source));
+            }
+            if self.parent == 2 && copy == P2_COPY {
+                return Some(Action::Copied(file, source));
+            }
+        }
+        return None;
+    }
+}
+
+/// A small struct whose purpose is to ensure lifetime of bytes referenced in
+/// ChangedFiles
+///
+/// It is passed to the RevInfoMaker callback who can assign any necessary
+/// content to the `data` attribute. The copy tracing code is responsible for
+/// keeping the DataHolder alive at least as long as the ChangedFiles object.
+pub struct DataHolder<D> {
+    /// RevInfoMaker callback should assign data referenced by the
+    /// ChangedFiles struct it return to this attribute. The DataHolder
+    /// lifetime will be at least as long as the ChangedFiles one.
+    pub data: Option<D>,
+}
+
+pub type RevInfoMaker<'a, D> =
+    Box<dyn for<'r> Fn(Revision, &'r mut DataHolder<D>) -> RevInfo<'r> + 'a>;
+
 /// Same as mercurial.copies._combine_changeset_copies, but in Rust.
 ///
 /// Arguments are:
@@ -163,11 +314,11 @@ impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
 ///   * ChangedFiles
 /// isancestors(low_rev, high_rev): callback to check if a revision is an
 ///                                 ancestor of another
-pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool>(
+pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
     revs: Vec<Revision>,
     children: HashMap<Revision, Vec<Revision>>,
     target_rev: Revision,
-    rev_info: &impl Fn(Revision) -> RevInfo,
+    rev_info: RevInfoMaker<D>,
     is_ancestor: &A,
 ) -> PathCopies {
     let mut all_copies = HashMap::new();
@@ -189,8 +340,9 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool>(
         for child in current_children {
             // We will chain the copies information accumulated for `rev` with
             // the individual copies information for each of its children.
-            // Creating a new PathCopies for each `rev` ? `children` vertex.
-            let (p1, p2, changes) = rev_info(*child);
+            // Creating a new PathCopies for each `rev` → `children` vertex.
+            let mut d: DataHolder<D> = DataHolder { data: None };
+            let (p1, p2, changes) = rev_info(*child, &mut d);
 
             let parent = if rev == p1 {
                 1
