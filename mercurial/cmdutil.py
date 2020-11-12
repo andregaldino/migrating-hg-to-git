@@ -459,7 +459,7 @@ def dorecord(
             )
 
         def fail(f, msg):
-            raise error.Abort(b'%s: %s' % (f, msg))
+            raise error.InputError(b'%s: %s' % (f, msg))
 
         force = opts.get(b'force')
         if not force:

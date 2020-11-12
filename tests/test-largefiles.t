@@ -412,7 +412,7 @@ Committing directories containing only largefiles.
   $ hg revert --quiet z
   $ hg commit -m "Empty subdir" z
   abort: z: no match under directory!
-  [255]
+  [10]
   $ rm -rf z
   $ hg ci -m "standin" .hglf
   abort: file ".hglf" is a largefile standin

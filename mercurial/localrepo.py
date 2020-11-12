@@ -2845,7 +2845,7 @@ class localrepository(object):
             extra = {}
 
         def fail(f, msg):
-            raise error.Abort(b'%s: %s' % (f, msg))
+            raise error.InputError(b'%s: %s' % (f, msg))
 
         if not match:
             match = matchmod.always()

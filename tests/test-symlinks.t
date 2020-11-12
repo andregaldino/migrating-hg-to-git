@@ -198,7 +198,7 @@ commit and update back
   $ ln -s nothing dangling
   $ hg commit -m 'commit symlink without adding' dangling
   abort: dangling: file not tracked!
-  [255]
+  [10]
   $ hg add dangling
   $ hg commit -m 'add symlink'
 

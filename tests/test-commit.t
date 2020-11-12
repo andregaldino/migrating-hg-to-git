@@ -54,7 +54,7 @@ commit added file that has been deleted
   [1]
   $ hg commit -m commit-8-2 bar
   abort: bar: file not found!
-  [255]
+  [10]
 
   $ hg -q revert -a --no-backup
 
@@ -74,7 +74,7 @@ commit added file that has been deleted
   adding dir.file
   $ hg commit -m commit-10 dir dir.file
   abort: dir: no match under directory!
-  [255]
+  [10]
 
   $ echo >> dir/file
   $ mkdir bleh
@@ -82,10 +82,10 @@ commit added file that has been deleted
   $ cd bleh
   $ hg commit -m commit-11 .
   abort: bleh: no match under directory!
-  [255]
+  [10]
   $ hg commit -m commit-12 ../dir ../dir2
   abort: dir2: no match under directory!
-  [255]
+  [10]
   $ hg -v commit -m commit-13 ../dir
   committing files:
   dir/file
@@ -96,20 +96,20 @@ commit added file that has been deleted
 
   $ hg commit -m commit-14 does-not-exist
   abort: does-not-exist: * (glob)
-  [255]
+  [10]
 
 #if symlink
   $ ln -s foo baz
   $ hg commit -m commit-15 baz
   abort: baz: file not tracked!
-  [255]
+  [10]
   $ rm baz
 #endif
 
   $ touch quux
   $ hg commit -m commit-16 quux
   abort: quux: file not tracked!
-  [255]
+  [10]
   $ echo >> dir/file
   $ hg -v commit -m commit-17 dir/file
   committing files:

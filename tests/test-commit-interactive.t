@@ -61,7 +61,7 @@ Abort for untracked
   $ touch untracked
   $ hg commit -i -m should-fail empty-rw untracked
   abort: untracked: file not tracked!
-  [255]
+  [10]
   $ rm untracked
 
 Record empty file
