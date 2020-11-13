@@ -1031,7 +1031,7 @@ Test that color codes don't end up in the commit message template
   (enter ? for help) [Ynesfdaq?]] [ ui.promptecho|a]
   
   EDITOR: HG: Splitting 6432c65c3078. So far it has been split into:
-  EDITOR: HG: - [rev|2] split2, modifying file2
+  EDITOR: HG: - 2 split2, modifying file2
   EDITOR: HG: Write commit message for the next split changeset.
   EDITOR: split1, modifying file1
   EDITOR: 
