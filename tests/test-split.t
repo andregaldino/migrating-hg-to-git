@@ -976,3 +976,73 @@ accidentally.
   2
   3
   4
+
+Test that color codes don't end up in the commit message template
+----------------------------------------------------
+
+  $ hg init $TESTTMP/colorless
+  $ cd $TESTTMP/colorless
+  $ echo 1 > file1
+  $ echo 1 > file2
+  $ hg ci -qAm initial
+  $ echo 2 > file1
+  $ echo 2 > file2
+  $ cat > $TESTTMP/messages <<EOF
+  > split1, modifying file1
+  > --
+  > split2, modifying file2
+  > EOF
+  $ hg ci
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed file1
+  EDITOR: HG: changed file2
+  $ printf 'f\nn\na\n' | hg split --color=debug \
+  > --config command-templates.oneline-summary='{label("rev", rev)} {desc}'
+  [diff.diffline|diff --git a/file1 b/file1]
+  1 hunks, 1 lines changed
+  [ ui.prompt|examine changes to 'file1'?
+  (enter ? for help) [Ynesfdaq?]] [ ui.promptecho|f]
+  
+  [diff.diffline|diff --git a/file2 b/file2]
+  1 hunks, 1 lines changed
+  [ ui.prompt|examine changes to 'file2'?
+  (enter ? for help) [Ynesfdaq?]] [ ui.promptecho|n]
+  
+  EDITOR: HG: Splitting 6432c65c3078. Write commit message for the first split changeset.
+  EDITOR: split1, modifying file1
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed file1
+  [ ui.status|created new head]
+  [diff.diffline|diff --git a/file2 b/file2]
+  1 hunks, 1 lines changed
+  [ ui.prompt|examine changes to 'file2'?
+  (enter ? for help) [Ynesfdaq?]] [ ui.promptecho|a]
+  
+  EDITOR: HG: Splitting 6432c65c3078. So far it has been split into:
+  EDITOR: HG: - [rev|2] split2, modifying file2
+  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: split1, modifying file1
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: changed file2
+  [ ui.warning|transaction abort!]
+  [ ui.warning|rollback completed]
+  [ ui.error|abort: empty commit message]
+  [10]
