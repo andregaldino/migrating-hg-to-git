@@ -236,20 +236,20 @@ def callcatch(ui, func):
             ui.error(_(b"(did you forget to compile extensions?)\n"))
         elif m in b"zlib".split():
             ui.error(_(b"(is your Python install correct?)\n"))
+    except util.urlerr.httperror as inst:
+        ui.error(_(b"abort: %s\n") % stringutil.forcebytestr(inst))
+    except util.urlerr.urlerror as inst:
+        try:  # usually it is in the form (errno, strerror)
+            reason = inst.reason.args[1]
+        except (AttributeError, IndexError):
+            # it might be anything, for example a string
+            reason = inst.reason
+        if isinstance(reason, pycompat.unicode):
+            # SSLError of Python 2.7.9 contains a unicode
+            reason = encoding.unitolocal(reason)
+        ui.error(_(b"abort: error: %s\n") % stringutil.forcebytestr(reason))
     except (IOError, OSError) as inst:
-        if util.safehasattr(inst, b"code"):  # HTTPError
-            ui.error(_(b"abort: %s\n") % stringutil.forcebytestr(inst))
-        elif util.safehasattr(inst, b"reason"):  # URLError or SSLError
-            try:  # usually it is in the form (errno, strerror)
-                reason = inst.reason.args[1]
-            except (AttributeError, IndexError):
-                # it might be anything, for example a string
-                reason = inst.reason
-            if isinstance(reason, pycompat.unicode):
-                # SSLError of Python 2.7.9 contains a unicode
-                reason = encoding.unitolocal(reason)
-            ui.error(_(b"abort: error: %s\n") % stringutil.forcebytestr(reason))
-        elif (
+        if (
             util.safehasattr(inst, b"args")
             and inst.args
             and inst.args[0] == errno.EPIPE
