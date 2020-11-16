@@ -533,7 +533,8 @@ class histeditaction(object):
             summary = cmdutil.rendertemplate(
                 ctx, ui.config(b'histedit', b'summary-template')
             )
-        summary = summary.splitlines()[0]
+        # Handle the fact that `''.splitlines() => []`
+        summary = summary.splitlines()[0] if summary else b''
         line = b'%s %s %s' % (self.verb, ctx, summary)
         # trim to 75 columns by default so it's not stupidly wide in my editor
         # (the 5 more are left for verb)
