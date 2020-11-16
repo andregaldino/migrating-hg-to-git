@@ -525,7 +525,11 @@ class histeditaction(object):
         """
         ctx = self.repo[self.node]
         ui = self.repo.ui
-        with ui.configoverride({}, b'histedit'):
+        # We don't want color codes in the commit message template, so
+        # disable the label() template function while we render it.
+        with ui.configoverride(
+            {(b'templatealias', b'label(l,x)'): b"x"}, b'histedit'
+        ):
             summary = cmdutil.rendertemplate(
                 ctx, ui.config(b'histedit', b'summary-template')
             )

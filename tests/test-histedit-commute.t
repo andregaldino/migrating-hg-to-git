@@ -107,10 +107,10 @@ test customization of revision summary
 colors in the custom template don't show up in the editor
   $ HGEDITOR=cat hg histedit 177f92b77385 --color=debug \
   >  --config histedit.summary-template='I am rev {label("rev", rev)}'
-  pick 177f92b77385 I am rev [rev|2]
-  pick 055a42cdd887 I am rev [rev|3]
-  pick e860deea161a I am rev [rev|4]
-  pick 652413bf663e I am rev [rev|5]
+  pick 177f92b77385 I am rev 2
+  pick 055a42cdd887 I am rev 3
+  pick e860deea161a I am rev 4
+  pick 652413bf663e I am rev 5
   
   # Edit history between 177f92b77385 and 652413bf663e
   #
