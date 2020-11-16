@@ -12,7 +12,7 @@ Refuse to amend public csets:
   $ hg ci --amend
   abort: cannot amend public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
   $ hg phase -r . -f -d
 
   $ echo a >> a
@@ -407,7 +407,7 @@ Refuse to amend during a merge:
   (branch merge, don't forget to commit)
   $ hg ci --amend
   abort: cannot amend while merging
-  [255]
+  [20]
   $ hg ci -m 'merge'
 
 Refuse to amend if there is a merge conflict (issue5805):

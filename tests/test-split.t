@@ -79,7 +79,7 @@ Cannot split a public changeset
   $ hg split .
   abort: cannot split public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
 
   $ hg phase --draft -f -r 'all()'
 
@@ -467,7 +467,7 @@ Split a non-head without rebase
 #if obsstore-off
   $ runsplit -r 1 --no-rebase
   abort: cannot split changeset with children
-  [255]
+  [10]
 #else
   $ runsplit -r 1 --no-rebase >/dev/null
   3 new orphan changesets
@@ -518,7 +518,7 @@ Split a non-head with obsoleted descendants
   $ rm .hg/localtags
   $ hg split $B --config experimental.evolution=createmarkers
   abort: cannot split changeset with children
-  [255]
+  [10]
   $ cat > $TESTTMP/messages <<EOF
   > Split B
   > EOF

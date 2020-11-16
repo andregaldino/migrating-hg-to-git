@@ -197,7 +197,7 @@ Amend in the middle of a stack
   $ echo 2 >> B
   $ hg amend
   abort: cannot amend changeset with children
-  [255]
+  [10]
 
 #if obsstore-on
 
@@ -240,7 +240,7 @@ Cannot amend public changeset
   $ hg amend -m AMEND
   abort: cannot amend public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
 
 Amend a merge changeset
 

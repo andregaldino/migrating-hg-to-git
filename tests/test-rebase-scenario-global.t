@@ -327,15 +327,15 @@ Check rebasing public changeset
   $ hg rebase -d 0 -b 6
   abort: cannot rebase public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
   $ hg rebase -d 5 -b 6
   abort: cannot rebase public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
   $ hg rebase -d 5 -r '1 + (6::)'
   abort: cannot rebase public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
 
   $ hg rebase -d 5 -b 6 --keep
   rebasing 6:e1c4361dd923 "C"
@@ -455,7 +455,7 @@ Source on have two descendant heads but ask for one
   $ hg rebase -r '2::8' -d 1
   abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
-  [255]
+  [10]
   $ hg rebase -r '2::8' -d 1 -k
   rebasing 2:c9e50f6cdc55 "C"
   rebasing 3:ffd453c31098 "D"
@@ -501,7 +501,7 @@ Base on have one descendant heads we ask for but common ancestor have two
   $ hg rebase -r '3::8' -d 1
   abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
-  [255]
+  [10]
   $ hg rebase -r '3::8' -d 1 --keep
   rebasing 3:ffd453c31098 "D"
   rebasing 6:3d8a618087a7 "G"
@@ -544,7 +544,7 @@ rebase subset
   $ hg rebase -r '3::7' -d 1
   abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
-  [255]
+  [10]
   $ hg rebase -r '3::7' -d 1 --keep
   rebasing 3:ffd453c31098 "D"
   rebasing 6:3d8a618087a7 "G"
@@ -584,7 +584,7 @@ rebase subset with multiple head
   $ hg rebase -r '3::(7+5)' -d 1
   abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
-  [255]
+  [10]
   $ hg rebase -r '3::(7+5)' -d 1 --keep
   rebasing 3:ffd453c31098 "D"
   rebasing 4:c01897464e7f "E"

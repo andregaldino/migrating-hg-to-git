@@ -309,7 +309,7 @@ Check that histedit respect immutability
   $ hg histedit -r '.~2'
   abort: cannot edit public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
 
 
 Prepare further testing

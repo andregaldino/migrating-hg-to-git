@@ -33,20 +33,20 @@ def precheck(repo, revs, action=b'rewrite'):
     if node.nullrev in revs:
         msg = _(b"cannot %s null changeset") % action
         hint = _(b"no changeset checked out")
-        raise error.Abort(msg, hint=hint)
+        raise error.InputError(msg, hint=hint)
 
     if len(repo[None].parents()) > 1:
-        raise error.Abort(_(b"cannot %s while merging") % action)
+        raise error.StateError(_(b"cannot %s while merging") % action)
 
     publicrevs = repo.revs(b'%ld and public()', revs)
     if publicrevs:
         msg = _(b"cannot %s public changesets") % action
         hint = _(b"see 'hg help phases' for details")
-        raise error.Abort(msg, hint=hint)
+        raise error.InputError(msg, hint=hint)
 
     newunstable = disallowednewunstable(repo, revs)
     if newunstable:
-        raise error.Abort(_(b"cannot %s changeset with children") % action)
+        raise error.InputError(_(b"cannot %s changeset with children") % action)
 
 
 def disallowednewunstable(repo, revs):

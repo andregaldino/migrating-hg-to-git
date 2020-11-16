@@ -53,7 +53,7 @@ Uncommit with no commits should fail
   $ hg uncommit
   abort: cannot uncommit null changeset
   (no changeset checked out)
-  [255]
+  [10]
 
 Create some commits
 
@@ -411,7 +411,7 @@ Add and expect uncommit to fail on both merge working dir and merge changeset
 
   $ hg uncommit --config experimental.uncommitondirtywdir=True
   abort: cannot uncommit while merging
-  [255]
+  [20]
 
   $ hg status
   M a

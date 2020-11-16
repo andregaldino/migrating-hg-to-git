@@ -284,7 +284,7 @@ Unamending in middle of a stack
 
   $ hg --config experimental.evolution=createmarkers unamend
   abort: cannot unamend changeset with children
-  [255]
+  [10]
 
   $ hg unamend
   3 new orphan changesets
@@ -298,7 +298,7 @@ Trying to unamend a public changeset
   $ hg unamend
   abort: cannot unamend public changesets
   (see 'hg help phases' for details)
-  [255]
+  [10]
 
 Testing whether unamend retains copies or not
 

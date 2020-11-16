@@ -551,7 +551,7 @@ Test collapsing a middle revision in-place
   $ hg rebase --collapse -r 1 -d 0
   abort: cannot rebase changeset with children
   (use --keep to keep original changesets)
-  [255]
+  [10]
 
 Test collapsing in place
 
