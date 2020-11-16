@@ -104,6 +104,32 @@ test customization of revision summary
   #
 
 
+colors in the custom template don't show up in the editor
+  $ HGEDITOR=cat hg histedit 177f92b77385 --color=debug \
+  >  --config histedit.summary-template='I am rev {label("rev", rev)}'
+  pick 177f92b77385 I am rev [rev|2]
+  pick 055a42cdd887 I am rev [rev|3]
+  pick e860deea161a I am rev [rev|4]
+  pick 652413bf663e I am rev [rev|5]
+  
+  # Edit history between 177f92b77385 and 652413bf663e
+  #
+  # Commits are listed from least to most recent
+  #
+  # You can reorder changesets by reordering the lines
+  #
+  # Commands:
+  #
+  #  e, edit = use commit, but stop for amending
+  #  m, mess = edit commit message without changing commit content
+  #  p, pick = use commit
+  #  b, base = checkout changeset and apply further changesets from there
+  #  d, drop = remove commit from history
+  #  f, fold = use commit, but combine it with the one above
+  #  r, roll = like fold, but discard this commit's description and date
+  #
+
+
 edit the history
 (use a hacky editor to check histedit-last-edit.txt backup)
 

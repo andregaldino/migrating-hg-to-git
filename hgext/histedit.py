@@ -525,9 +525,10 @@ class histeditaction(object):
         """
         ctx = self.repo[self.node]
         ui = self.repo.ui
-        summary = cmdutil.rendertemplate(
-            ctx, ui.config(b'histedit', b'summary-template')
-        )
+        with ui.configoverride({}, b'histedit'):
+            summary = cmdutil.rendertemplate(
+                ctx, ui.config(b'histedit', b'summary-template')
+            )
         summary = summary.splitlines()[0]
         line = b'%s %s %s' % (self.verb, ctx, summary)
         # trim to 75 columns by default so it's not stupidly wide in my editor
