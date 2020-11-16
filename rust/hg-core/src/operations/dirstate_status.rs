@@ -56,7 +56,7 @@ impl<'a, M: Matcher + Sync> Status<'a, M> {
                                     .expect("old results should exist"),
                                 &mut results,
                                 traversed_sender.clone(),
-                            )?;
+                            );
                         }
                     }
                     _ => {
@@ -104,7 +104,7 @@ impl<'a, M: Matcher + Sync> Status<'a, M> {
                                 &old_results,
                                 &mut results,
                                 traversed_sender.clone(),
-                            )?;
+                            );
                         }
                     }
                     _ => {
@@ -116,7 +116,7 @@ impl<'a, M: Matcher + Sync> Status<'a, M> {
 
         if !self.matcher.is_exact() {
             if self.options.list_unknown {
-                self.handle_unknowns(&mut results)?;
+                self.handle_unknowns(&mut results);
             } else {
                 // TODO this is incorrect, see issue6335
                 // This requires a fix in both Python and Rust that can happen

@@ -109,6 +109,10 @@ pub type HgPathCow<'a> = Cow<'a, HgPath>;
 /// A path with its computed ``Dispatch`` information
 type DispatchedPath<'a> = (HgPathCow<'a>, Dispatch);
 
+/// The conversion from `HgPath` to a real fs path failed.
+/// `22` is the error code for "Invalid argument"
+const INVALID_PATH_DISPATCH: Dispatch = Dispatch::Bad(BadMatch::OsError(22));
+
 /// Dates and times that are outside the 31-bit signed range are compared
 /// modulo 2^31. This should prevent hg from behaving badly with very large
 /// files or corrupt dates while still having a high probability of detecting
@@ -215,6 +219,12 @@ fn dispatch_missing(state: EntryState) -> Dispatch {
         // File is unknown to Mercurial, everything is normal
         EntryState::Unknown => Dispatch::Unknown,
     }
+}
+
+fn dispatch_os_error(e: &std::io::Error) -> Dispatch {
+    Dispatch::Bad(BadMatch::OsError(
+        e.raw_os_error().expect("expected real OS error"),
+    ))
 }
 
 lazy_static! {
@@ -372,13 +382,18 @@ where
             .file_set()
             .unwrap_or(&DEFAULT_WORK)
             .par_iter()
-            .map(|&filename| -> Option<IoResult<_>> {
+            .flat_map(|&filename| -> Option<_> {
                 // TODO normalization
                 let normalized = filename;
 
                 let buf = match hg_path_to_path_buf(normalized) {
                     Ok(x) => x,
-                    Err(e) => return Some(Err(e.into())),
+                    Err(_) => {
+                        return Some((
+                            Cow::Borrowed(normalized),
+                            INVALID_PATH_DISPATCH,
+                        ))
+                    }
                 };
                 let target = self.root_dir.join(buf);
                 let st = target.symlink_metadata();
@@ -389,7 +404,7 @@ where
                         return if file_type.is_file() || file_type.is_symlink()
                         {
                             if let Some(entry) = in_dmap {
-                                return Some(Ok((
+                                return Some((
                                     Cow::Borrowed(normalized),
                                     dispatch_found(
                                         &normalized,
@@ -398,26 +413,26 @@ where
                                         &self.dmap.copy_map,
                                         self.options,
                                     ),
-                                )));
+                                ));
                             }
-                            Some(Ok((
+                            Some((
                                 Cow::Borrowed(normalized),
                                 Dispatch::Unknown,
-                            )))
+                            ))
                         } else if file_type.is_dir() {
                             if self.options.collect_traversed_dirs {
                                 traversed_sender
                                     .send(normalized.to_owned())
                                     .expect("receiver should outlive sender");
                             }
-                            Some(Ok((
+                            Some((
                                 Cow::Borrowed(normalized),
                                 Dispatch::Directory {
                                     was_file: in_dmap.is_some(),
                                 },
-                            )))
+                            ))
                         } else {
-                            Some(Ok((
+                            Some((
                                 Cow::Borrowed(normalized),
                                 Dispatch::Bad(BadMatch::BadType(
                                     // TODO do more than unknown
@@ -428,22 +443,20 @@ where
                                     // users.
                                     BadType::Unknown,
                                 )),
-                            )))
+                            ))
                         };
                     }
                     Err(_) => {
                         if let Some(entry) = in_dmap {
-                            return Some(Ok((
+                            return Some((
                                 Cow::Borrowed(normalized),
                                 dispatch_missing(entry.state),
-                            )));
+                            ));
                         }
                     }
                 };
                 None
             })
-            .flatten()
-            .filter_map(Result::ok)
             .partition(|(_, dispatch)| match dispatch {
                 Dispatch::Directory { .. } => true,
                 _ => false,
@@ -462,7 +475,7 @@ where
         old_results: &FastHashMap<HgPathCow<'a>, Dispatch>,
         results: &mut Vec<DispatchedPath<'a>>,
         traversed_sender: crossbeam::Sender<HgPathBuf>,
-    ) -> IoResult<()> {
+    ) {
         // The traversal is done in parallel, so use a channel to gather
         // entries. `crossbeam::Sender` is `Sync`, while `mpsc::Sender`
         // is not.
@@ -474,25 +487,17 @@ where
             path,
             &old_results,
             traversed_sender,
-        )?;
+        );
 
         // Disconnect the channel so the receiver stops waiting
         drop(files_transmitter);
 
-        // TODO don't collect. Find a way of replicating the behavior of
-        // `itertools::process_results`, but for `rayon::ParallelIterator`
-        let new_results: IoResult<Vec<(Cow<HgPath>, Dispatch)>> =
-            files_receiver
-                .into_iter()
-                .map(|item| {
-                    let (f, d) = item?;
-                    Ok((Cow::Owned(f), d))
-                })
-                .collect();
+        let new_results = files_receiver
+            .into_iter()
+            .par_bridge()
+            .map(|(f, d)| (Cow::Owned(f), d));
 
-        results.par_extend(new_results?);
-
-        Ok(())
+        results.par_extend(new_results);
     }
 
     /// Dispatch a single entry (file, folder, symlink...) found during
@@ -501,7 +506,7 @@ where
     fn handle_traversed_entry<'b>(
         &'a self,
         scope: &rayon::Scope<'b>,
-        files_sender: &'b crossbeam::Sender<IoResult<(HgPathBuf, Dispatch)>>,
+        files_sender: &'b crossbeam::Sender<(HgPathBuf, Dispatch)>,
         old_results: &'a FastHashMap<Cow<HgPath>, Dispatch>,
         filename: HgPathBuf,
         dir_entry: DirEntry,
@@ -534,7 +539,7 @@ where
                 {
                     let metadata = dir_entry.metadata()?;
                     files_sender
-                        .send(Ok((
+                        .send((
                             filename.to_owned(),
                             dispatch_found(
                                 &filename,
@@ -543,7 +548,7 @@ where
                                 &self.dmap.copy_map,
                                 self.options,
                             ),
-                        )))
+                        ))
                         .unwrap();
                 }
             } else if (self.matcher.matches_everything()
@@ -556,17 +561,17 @@ where
                 {
                     if self.options.list_ignored {
                         files_sender
-                            .send(Ok((filename.to_owned(), Dispatch::Ignored)))
+                            .send((filename.to_owned(), Dispatch::Ignored))
                             .unwrap();
                     }
                 } else if self.options.list_unknown {
                     files_sender
-                        .send(Ok((filename.to_owned(), Dispatch::Unknown)))
+                        .send((filename.to_owned(), Dispatch::Unknown))
                         .unwrap();
                 }
             } else if self.is_ignored(&filename) && self.options.list_ignored {
                 files_sender
-                    .send(Ok((filename.to_owned(), Dispatch::Ignored)))
+                    .send((filename.to_owned(), Dispatch::Ignored))
                     .unwrap();
             }
         } else if let Some(entry) = entry_option {
@@ -575,10 +580,7 @@ where
                 || self.matcher.matches(&filename)
             {
                 files_sender
-                    .send(Ok((
-                        filename.to_owned(),
-                        dispatch_missing(entry.state),
-                    )))
+                    .send((filename.to_owned(), dispatch_missing(entry.state)))
                     .unwrap();
             }
         }
@@ -590,7 +592,7 @@ where
     fn handle_traversed_dir<'b>(
         &'a self,
         scope: &rayon::Scope<'b>,
-        files_sender: &'b crossbeam::Sender<IoResult<(HgPathBuf, Dispatch)>>,
+        files_sender: &'b crossbeam::Sender<(HgPathBuf, Dispatch)>,
         old_results: &'a FastHashMap<Cow<HgPath>, Dispatch>,
         entry_option: Option<&'a DirstateEntry>,
         directory: HgPathBuf,
@@ -606,10 +608,10 @@ where
                     || self.matcher.matches(&directory)
                 {
                     files_sender
-                        .send(Ok((
+                        .send((
                             directory.to_owned(),
                             dispatch_missing(entry.state),
-                        )))
+                        ))
                         .unwrap();
                 }
             }
@@ -621,7 +623,6 @@ where
                     &old_results,
                     traversed_sender,
                 )
-                .unwrap_or_else(|e| files_sender.send(Err(e)).unwrap())
             }
         });
     }
@@ -630,11 +631,11 @@ where
     /// entries in a separate thread.
     fn traverse_dir(
         &self,
-        files_sender: &crossbeam::Sender<IoResult<(HgPathBuf, Dispatch)>>,
+        files_sender: &crossbeam::Sender<(HgPathBuf, Dispatch)>,
         directory: impl AsRef<HgPath>,
         old_results: &FastHashMap<Cow<HgPath>, Dispatch>,
         traversed_sender: crossbeam::Sender<HgPathBuf>,
-    ) -> IoResult<()> {
+    ) {
         let directory = directory.as_ref();
 
         if self.options.collect_traversed_dirs {
@@ -644,38 +645,33 @@ where
         }
 
         let visit_entries = match self.matcher.visit_children_set(directory) {
-            VisitChildrenSet::Empty => return Ok(()),
+            VisitChildrenSet::Empty => return,
             VisitChildrenSet::This | VisitChildrenSet::Recursive => None,
             VisitChildrenSet::Set(set) => Some(set),
         };
-        let buf = hg_path_to_path_buf(directory)?;
+        let buf = match hg_path_to_path_buf(directory) {
+            Ok(b) => b,
+            Err(_) => {
+                files_sender
+                    .send((directory.to_owned(), INVALID_PATH_DISPATCH))
+                    .expect("receiver should outlive sender");
+                return;
+            }
+        };
         let dir_path = self.root_dir.join(buf);
 
         let skip_dot_hg = !directory.as_bytes().is_empty();
         let entries = match list_directory(dir_path, skip_dot_hg) {
             Err(e) => {
-                return match e.kind() {
-                    ErrorKind::NotFound | ErrorKind::PermissionDenied => {
-                        files_sender
-                            .send(Ok((
-                                directory.to_owned(),
-                                Dispatch::Bad(BadMatch::OsError(
-                                    // Unwrapping here is OK because the error
-                                    // always is a
-                                    // real os error
-                                    e.raw_os_error().unwrap(),
-                                )),
-                            )))
-                            .expect("receiver should outlive sender");
-                        Ok(())
-                    }
-                    _ => Err(e),
-                };
+                files_sender
+                    .send((directory.to_owned(), dispatch_os_error(&e)))
+                    .expect("receiver should outlive sender");
+                return;
             }
             Ok(entries) => entries,
         };
 
-        rayon::scope(|scope| -> IoResult<()> {
+        rayon::scope(|scope| {
             for (filename, dir_entry) in entries {
                 if let Some(ref set) = visit_entries {
                     if !set.contains(filename.deref()) {
@@ -690,17 +686,26 @@ where
                 };
 
                 if !old_results.contains_key(filename.deref()) {
-                    self.handle_traversed_entry(
+                    match self.handle_traversed_entry(
                         scope,
                         files_sender,
                         old_results,
                         filename,
                         dir_entry,
                         traversed_sender.clone(),
-                    )?;
+                    ) {
+                        Err(e) => {
+                            files_sender
+                                .send((
+                                    directory.to_owned(),
+                                    dispatch_os_error(&e),
+                                ))
+                                .expect("receiver should outlive sender");
+                        }
+                        Ok(_) => {}
+                    }
                 }
             }
-            Ok(())
         })
     }
 
@@ -716,14 +721,23 @@ where
                 .fs_iter(self.root_dir.clone())
                 .par_bridge()
                 .filter(|(path, _)| self.matcher.matches(path))
-                .flat_map(move |(filename, shortcut)| {
+                .map(move |(filename, shortcut)| {
                     let entry = match shortcut {
                         StatusShortcut::Entry(e) => e,
                         StatusShortcut::Dispatch(d) => {
-                            return Ok((Cow::Owned(filename), d))
+                            return (Cow::Owned(filename), d)
                         }
                     };
-                    let filename_as_path = hg_path_to_path_buf(&filename)?;
+                    let filename_as_path = match hg_path_to_path_buf(&filename)
+                    {
+                        Ok(f) => f,
+                        Err(_) => {
+                            return (
+                                Cow::Owned(filename),
+                                INVALID_PATH_DISPATCH,
+                            )
+                        }
+                    };
                     let meta = self
                         .root_dir
                         .join(filename_as_path)
@@ -734,10 +748,10 @@ where
                             if !(m.file_type().is_file()
                                 || m.file_type().is_symlink()) =>
                         {
-                            Ok((
+                            (
                                 Cow::Owned(filename),
                                 dispatch_missing(entry.state),
-                            ))
+                            )
                         }
                         Ok(m) => {
                             let dispatch = dispatch_found(
@@ -747,7 +761,7 @@ where
                                 &self.dmap.copy_map,
                                 self.options,
                             );
-                            Ok((Cow::Owned(filename), dispatch))
+                            (Cow::Owned(filename), dispatch)
                         }
                         Err(e)
                             if e.kind() == ErrorKind::NotFound
@@ -758,12 +772,14 @@ where
                             // It happens if the dirstate contains `foo/bar`
                             // and foo is not a
                             // directory
-                            Ok((
+                            (
                                 Cow::Owned(filename),
                                 dispatch_missing(entry.state),
-                            ))
+                            )
                         }
-                        Err(e) => Err(e),
+                        Err(e) => {
+                            (Cow::Owned(filename), dispatch_os_error(&e))
+                        }
                     }
                 }),
         );
@@ -776,10 +792,18 @@ where
     #[cfg(not(feature = "dirstate-tree"))]
     #[timed]
     pub fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
-        results.par_extend(self.dmap.par_iter().flat_map(
+        results.par_extend(self.dmap.par_iter().map(
             move |(filename, entry)| {
                 let filename: &HgPath = filename;
-                let filename_as_path = hg_path_to_path_buf(filename)?;
+                let filename_as_path = match hg_path_to_path_buf(filename) {
+                    Ok(f) => f,
+                    Err(_) => {
+                        return (
+                            Cow::Borrowed(filename),
+                            INVALID_PATH_DISPATCH,
+                        )
+                    }
+                };
                 let meta =
                     self.root_dir.join(filename_as_path).symlink_metadata();
                 match meta {
@@ -787,12 +811,12 @@ where
                         if !(m.file_type().is_file()
                             || m.file_type().is_symlink()) =>
                     {
-                        Ok((
+                        (
                             Cow::Borrowed(filename),
                             dispatch_missing(entry.state),
-                        ))
+                        )
                     }
-                    Ok(m) => Ok((
+                    Ok(m) => (
                         Cow::Borrowed(filename),
                         dispatch_found(
                             filename,
@@ -801,7 +825,7 @@ where
                             &self.dmap.copy_map,
                             self.options,
                         ),
-                    )),
+                    ),
                     Err(e)
                         if e.kind() == ErrorKind::NotFound
                             || e.raw_os_error() == Some(20) =>
@@ -811,12 +835,12 @@ where
                         // It happens if the dirstate contains `foo/bar`
                         // and foo is not a
                         // directory
-                        Ok((
+                        (
                             Cow::Borrowed(filename),
                             dispatch_missing(entry.state),
-                        ))
+                        )
                     }
-                    Err(e) => Err(e),
+                    Err(e) => (Cow::Borrowed(filename), dispatch_os_error(&e)),
                 }
             },
         ));
@@ -830,10 +854,7 @@ where
     /// `extend` in timings
     #[cfg(not(feature = "dirstate-tree"))]
     #[timed]
-    pub fn handle_unknowns(
-        &self,
-        results: &mut Vec<DispatchedPath<'a>>,
-    ) -> IoResult<()> {
+    pub fn handle_unknowns(&self, results: &mut Vec<DispatchedPath<'a>>) {
         let to_visit: Vec<(&HgPath, &DirstateEntry)> =
             if results.is_empty() && self.matcher.matches_everything() {
                 self.dmap.iter().map(|(f, e)| (f.deref(), e)).collect()
@@ -857,21 +878,23 @@ where
 
         let path_auditor = PathAuditor::new(&self.root_dir);
 
-        // TODO don't collect. Find a way of replicating the behavior of
-        // `itertools::process_results`, but for `rayon::ParallelIterator`
-        let new_results: IoResult<Vec<_>> = to_visit
-            .into_par_iter()
-            .filter_map(|(filename, entry)| -> Option<IoResult<_>> {
+        let new_results = to_visit.into_par_iter().filter_map(
+            |(filename, entry)| -> Option<_> {
                 // Report ignored items in the dmap as long as they are not
                 // under a symlink directory.
                 if path_auditor.check(filename) {
                     // TODO normalize for case-insensitive filesystems
                     let buf = match hg_path_to_path_buf(filename) {
                         Ok(x) => x,
-                        Err(e) => return Some(Err(e.into())),
+                        Err(_) => {
+                            return Some((
+                                Cow::Owned(filename.to_owned()),
+                                INVALID_PATH_DISPATCH,
+                            ));
+                        }
                     };
-                    Some(Ok((
-                        Cow::Borrowed(filename),
+                    Some((
+                        Cow::Owned(filename.to_owned()),
                         match self.root_dir.join(&buf).symlink_metadata() {
                             // File was just ignored, no links, and exists
                             Ok(meta) => {
@@ -887,21 +910,19 @@ where
                             // File doesn't exist
                             Err(_) => dispatch_missing(entry.state),
                         },
-                    )))
+                    ))
                 } else {
                     // It's either missing or under a symlink directory which
                     // we, in this case, report as missing.
-                    Some(Ok((
-                        Cow::Borrowed(filename),
+                    Some((
+                        Cow::Owned(filename.to_owned()),
                         dispatch_missing(entry.state),
-                    )))
+                    ))
                 }
-            })
-            .collect();
+            },
+        );
 
-        results.par_extend(new_results?);
-
-        Ok(())
+        results.par_extend(new_results);
     }
 }
 
