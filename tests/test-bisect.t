@@ -364,7 +364,7 @@ test no action
   $ hg bisect -r
   $ hg bisect
   abort: cannot bisect (no known good revisions)
-  [255]
+  [20]
 
 
 reproduce AssertionError, issue1445
@@ -475,7 +475,7 @@ test bisecting command
   $ hg bisect --command "\"$PYTHON\" \"$TESTTMP/script.py\" and some parameters"
   changeset 31:58c80a7c8a40: good
   abort: cannot bisect (no known bad revisions)
-  [255]
+  [20]
   $ hg up -qr 0
   $ hg bisect --command "\"$PYTHON\" \"$TESTTMP/script.py\" and some parameters"
   changeset 0:b99c7b9c8e11: bad
@@ -545,7 +545,7 @@ test the same case, this time with updating
   $ hg bisect --command "sh \"$TESTTMP/script.sh\" and some params"
   changeset 31:58c80a7c8a40: good
   abort: cannot bisect (no known bad revisions)
-  [255]
+  [20]
   $ hg up -qr 0
   $ hg bisect --command "sh \"$TESTTMP/script.sh\" and some params"
   changeset 0:b99c7b9c8e11: bad

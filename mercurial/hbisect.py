@@ -172,13 +172,13 @@ def resetstate(repo):
 def checkstate(state):
     """check we have both 'good' and 'bad' to define a range
 
-    Raise Abort exception otherwise."""
+    Raise StateError exception otherwise."""
     if state[b'good'] and state[b'bad']:
         return True
     if not state[b'good']:
-        raise error.Abort(_(b'cannot bisect (no known good revisions)'))
+        raise error.StateError(_(b'cannot bisect (no known good revisions)'))
     else:
-        raise error.Abort(_(b'cannot bisect (no known bad revisions)'))
+        raise error.StateError(_(b'cannot bisect (no known bad revisions)'))
 
 
 @contextlib.contextmanager
