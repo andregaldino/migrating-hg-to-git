@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import difflib
 import errno
 import glob
 import os
@@ -140,6 +141,38 @@ def nochangesfound(ui, repo, excluded=None):
         )
     else:
         ui.status(_(b"no changes found\n"))
+
+
+def getsimilar(symbols, value):
+    sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()
+    # The cutoff for similarity here is pretty arbitrary. It should
+    # probably be investigated and tweaked.
+    return [s for s in symbols if sim(s) > 0.6]
+
+
+def reportsimilar(write, similar):
+    if len(similar) == 1:
+        write(_(b"(did you mean %s?)\n") % similar[0])
+    elif similar:
+        ss = b", ".join(sorted(similar))
+        write(_(b"(did you mean one of %s?)\n") % ss)
+
+
+def formatparse(write, inst):
+    similar = []
+    if isinstance(inst, error.UnknownIdentifier):
+        # make sure to check fileset first, as revset can invoke fileset
+        similar = getsimilar(inst.symbols, inst.function)
+    if inst.location is not None:
+        write(
+            _(b"hg: parse error at %s: %s\n")
+            % (pycompat.bytestr(inst.location), inst.message)
+        )
+    else:
+        write(_(b"hg: parse error: %s\n") % inst.message)
+        reportsimilar(write, similar)
+    if inst.hint:
+        write(_(b"(%s)\n") % inst.hint)
 
 
 def callcatch(ui, func):

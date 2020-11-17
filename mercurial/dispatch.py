@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import, print_function
 
-import difflib
 import errno
 import getopt
 import io
@@ -226,38 +225,6 @@ else:
         pass
 
 
-def _getsimilar(symbols, value):
-    sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()
-    # The cutoff for similarity here is pretty arbitrary. It should
-    # probably be investigated and tweaked.
-    return [s for s in symbols if sim(s) > 0.6]
-
-
-def _reportsimilar(write, similar):
-    if len(similar) == 1:
-        write(_(b"(did you mean %s?)\n") % similar[0])
-    elif similar:
-        ss = b", ".join(sorted(similar))
-        write(_(b"(did you mean one of %s?)\n") % ss)
-
-
-def _formatparse(write, inst):
-    similar = []
-    if isinstance(inst, error.UnknownIdentifier):
-        # make sure to check fileset first, as revset can invoke fileset
-        similar = _getsimilar(inst.symbols, inst.function)
-    if inst.location is not None:
-        write(
-            _(b"hg: parse error at %s: %s\n")
-            % (pycompat.bytestr(inst.location), inst.message)
-        )
-    else:
-        write(_(b"hg: parse error: %s\n") % inst.message)
-        _reportsimilar(write, similar)
-    if inst.hint:
-        write(_(b"(%s)\n") % inst.hint)
-
-
 def _formatargs(args):
     return b' '.join(procutil.shellquote(a) for a in args)
 
@@ -294,7 +261,7 @@ def dispatch(req):
                 ferr.write(_(b"(%s)\n") % inst.hint)
             return -1
         except error.ParseError as inst:
-            _formatparse(ferr.write, inst)
+            scmutil.formatparse(ferr.write, inst)
             return -1
 
         msg = _formatargs(req.args)
@@ -502,7 +469,7 @@ def _callcatch(ui, func):
             ui.warn(_(b"hg: %s\n") % inst.message)
             ui.warn(_(b"(use 'hg help -v' for a list of global options)\n"))
     except error.ParseError as inst:
-        _formatparse(ui.warn, inst)
+        scmutil.formatparse(ui.warn, inst)
         return -1
     except error.UnknownCommand as inst:
         nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.command
@@ -517,10 +484,10 @@ def _callcatch(ui, func):
         except (error.UnknownCommand, error.Abort):
             suggested = False
             if inst.all_commands:
-                sim = _getsimilar(inst.all_commands, inst.command)
+                sim = scmutil.getsimilar(inst.all_commands, inst.command)
                 if sim:
                     ui.warn(nocmdmsg)
-                    _reportsimilar(ui.warn, sim)
+                    scmutil.reportsimilar(ui.warn, sim)
                     suggested = True
             if not suggested:
                 ui.warn(nocmdmsg)

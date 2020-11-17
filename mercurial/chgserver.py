@@ -62,6 +62,7 @@ from . import (
     extensions,
     node,
     pycompat,
+    scmutil,
     util,
 )
 
@@ -503,13 +504,11 @@ class chgcmdserver(commandserver.server):
         list, the client can continue with this server after completing all
         the instructions.
         """
-        from . import dispatch  # avoid cycle
-
         args = self._readlist()
         try:
             self.ui, lui = _loadnewui(self.ui, args, self.cdebug)
         except error.ParseError as inst:
-            dispatch._formatparse(self.ui.warn, inst)
+            scmutil.formatparse(self.ui.warn, inst)
             self.ui.flush()
             self.cresult.write(b'exit 255')
             return
