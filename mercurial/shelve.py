@@ -564,6 +564,10 @@ def _docreatecmd(ui, repo, pats, opts):
                 scmutil.movedirstate(repo, parent, match)
         else:
             hg.update(repo, parent.node())
+            ms = mergestatemod.mergestate.read(repo)
+            if not ms.unresolvedcount():
+                ms.reset()
+
         if origbranch != repo[b'.'].branch() and not _isbareshelve(pats, opts):
             repo.dirstate.setbranch(origbranch)
 
