@@ -960,7 +960,7 @@ check error cases
   [255]
   $ hg log -r 'followlines(baz, 2:40)'
   abort: line range exceeds file size
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, 2:4, startrev=20, descend=[1])'
   hg: parse error at 43: not a prefix: [
   (followlines(baz, 2:4, startrev=20, descend=[1])

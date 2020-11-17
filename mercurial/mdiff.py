@@ -199,7 +199,7 @@ def blocksinrange(blocks, rangeb):
         if hunkinrange((b1, (b2 - b1)), rangeb):
             filteredblocks.append(block)
     if lba is None or uba is None or uba < lba:
-        raise error.Abort(_(b'line range exceeds file size'))
+        raise error.InputError(_(b'line range exceeds file size'))
     return filteredblocks, (lba, uba)
 
 
