@@ -409,14 +409,23 @@ class chgcmdserver(commandserver.server):
             # be unbuffered no matter if it is a tty or not.
             if fn == b'ferr':
                 newfp = fp
+            elif pycompat.ispy3:
+                # On Python 3, the standard library doesn't offer line-buffered
+                # binary streams, so wrap/unwrap it.
+                if fp.isatty():
+                    newfp = procutil.make_line_buffered(fp)
+                else:
+                    newfp = procutil.unwrap_line_buffered(fp)
             else:
-                # make it line buffered explicitly because the default is
-                # decided on first write(), where fout could be a pager.
+                # Python 2 uses the I/O streams provided by the C library, so
+                # make it line-buffered explicitly. Otherwise the default would
+                # be decided on first write(), where fout could be a pager.
                 if fp.isatty():
                     bufsize = 1  # line buffered
                 else:
                     bufsize = -1  # system default
                 newfp = os.fdopen(fp.fileno(), mode, bufsize)
+            if newfp is not fp:
                 setattr(ui, fn, newfp)
             setattr(self, cn, newfp)
 
@@ -440,13 +449,16 @@ class chgcmdserver(commandserver.server):
         ui = self.ui
         for (ch, fp, fd), (cn, fn, mode) in zip(self._oldios, _iochannels):
             newfp = getattr(ui, fn)
-            # close newfp while it's associated with client; otherwise it
-            # would be closed when newfp is deleted
-            if newfp is not fp:
+            # On Python 2, newfp and fp may be separate file objects associated
+            # with the same fd, so we must close newfp while it's associated
+            # with the client. Otherwise the new associated fd would be closed
+            # when newfp gets deleted. On Python 3, newfp is just a wrapper
+            # around fp even if newfp is not fp, so deleting newfp is safe.
+            if not (pycompat.ispy3 or newfp is fp):
                 newfp.close()
             # restore original fd: fp is open again
             try:
-                if newfp is fp and 'w' in mode:
+                if (pycompat.ispy3 or newfp is fp) and 'w' in mode:
                     # Discard buffered data which couldn't be flushed because
                     # of EPIPE. The data should belong to the current session
                     # and should never persist.

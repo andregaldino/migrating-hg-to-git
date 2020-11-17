@@ -80,6 +80,13 @@ def make_line_buffered(stream):
     return LineBufferedWrapper(stream)
 
 
+def unwrap_line_buffered(stream):
+    if isinstance(stream, LineBufferedWrapper):
+        assert not isinstance(stream.orig, LineBufferedWrapper)
+        return stream.orig
+    return stream
+
+
 class WriteAllWrapper(object):
     def __init__(self, orig):
         self.orig = orig
