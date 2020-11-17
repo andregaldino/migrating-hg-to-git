@@ -47,10 +47,10 @@ Killing a single changeset without replacement
 
   $ hg debugobsolete 0
   abort: changeset references must be full hexadecimal node identifiers
-  [255]
+  [10]
   $ hg debugobsolete '00'
   abort: changeset references must be full hexadecimal node identifiers
-  [255]
+  [10]
   $ hg debugobsolete -d '0 0' `getid kill_me` -u babar
   1 new obsolescence markers
   obsoleted 1 changesets

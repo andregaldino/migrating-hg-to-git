@@ -2253,7 +2253,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
                 raise TypeError()
             return n
         except TypeError:
-            raise error.Abort(
+            raise error.InputError(
                 b'changeset references must be full hexadecimal '
                 b'node identifiers'
             )
@@ -2264,7 +2264,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             try:
                 indices.append(int(v))
             except ValueError:
-                raise error.Abort(
+                raise error.InputError(
                     _(b'invalid index value: %r') % v,
                     hint=_(b'use integers for indices'),
                 )
@@ -2282,7 +2282,9 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
 
     if precursor is not None:
         if opts[b'rev']:
-            raise error.Abort(b'cannot select revision when creating marker')
+            raise error.InputError(
+                b'cannot select revision when creating marker'
+            )
         metadata = {}
         metadata[b'user'] = encoding.fromlocal(opts[b'user'] or ui.username())
         succs = tuple(parsenodeid(succ) for succ in successors)
