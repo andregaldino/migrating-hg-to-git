@@ -810,6 +810,9 @@ Test interactive shelve
   ? foo/foo
   $ hg bookmark
    \* test                      (4|13):33f7f61e6c5e (re)
+BROKEN: there shouldn't be a merge state
+  $ hg resolve -l
+  R a/a
   $ hg unshelve
   unshelving change 'test'
   temporarily committing pending changes (restore with 'hg unshelve --abort')
