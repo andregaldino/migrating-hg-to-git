@@ -70,7 +70,7 @@
   $ hg --config lfs.track='"size(\">1000B\")"' commit -Aqm "add small file"
   hg: parse error: unsupported file pattern: size(">1000B")
   (paths must be prefixed with "path:")
-  [255]
+  [10]
   $ hg --config lfs.track='size(">1000B")' commit -Aqm "add small file"
 
 # Commit large file

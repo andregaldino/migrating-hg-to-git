@@ -240,7 +240,7 @@ commondir() filter:
   $ hg log -r null -T '{rev|commondir}'
   hg: parse error: argument is not a list of text
   (template filter 'commondir' is not compatible with keyword 'rev')
-  [255]
+  [10]
 
 Add a dummy commit to make up for the instability of the above:
 
@@ -283,7 +283,7 @@ Count filter:
   $ hg log -l1 -T '{termwidth|count}\n'
   hg: parse error: not countable
   (template filter 'count' is not compatible with keyword 'termwidth')
-  [255]
+  [10]
 
 Upper/lower filters:
 
@@ -478,25 +478,25 @@ Test filter() unsupported arguments:
 
   $ hg log -R a -r 0 -T '{filter()}\n'
   hg: parse error: filter expects one or two arguments
-  [255]
+  [10]
   $ hg log -R a -r 0 -T '{filter(date)}\n'
   hg: parse error: date is not iterable
-  [255]
+  [10]
   $ hg log -R a -r 0 -T '{filter(rev)}\n'
   hg: parse error: 0 is not iterable
-  [255]
+  [10]
   $ hg log -R a -r 0 -T '{filter(desc|firstline)}\n'
   hg: parse error: 'line 1' is not filterable
-  [255]
+  [10]
   $ hg log -R a -r 0 -T '{filter(manifest)}\n'
   hg: parse error: '0:a0c8bcbbb45c' is not filterable
-  [255]
+  [10]
   $ hg log -R a -r 0 -T '{filter(succsandmarkers)}\n'
   hg: parse error: not filterable without template
-  [255]
+  [10]
   $ hg log -R a -r 0 -T '{filter(desc|splitlines % "{line}", "")}\n'
   hg: parse error: not filterable by expression
-  [255]
+  [10]
 
 Test manifest/get() can be join()-ed as string, though it's silly:
 
@@ -514,7 +514,7 @@ Test join() over uniterable
 
   $ hg log -R latesttag -r tip -T '{join(rev, "")}\n'
   hg: parse error: 11 is not iterable
-  [255]
+  [10]
 
 Test min/max of integers
 
@@ -542,47 +542,47 @@ Test min/max of non-iterable:
   $ hg debugtemplate '{min(1)}'
   hg: parse error: 1 is not iterable
   (min first argument should be an iterable)
-  [255]
+  [10]
   $ hg debugtemplate '{max(2)}'
   hg: parse error: 2 is not iterable
   (max first argument should be an iterable)
-  [255]
+  [10]
 
   $ hg log -R latesttag -l1 -T '{min(date)}'
   hg: parse error: date is not iterable
   (min first argument should be an iterable)
-  [255]
+  [10]
   $ hg log -R latesttag -l1 -T '{max(date)}'
   hg: parse error: date is not iterable
   (max first argument should be an iterable)
-  [255]
+  [10]
 
 Test min/max of empty sequence:
 
   $ hg debugtemplate '{min("")}'
   hg: parse error: empty string
   (min first argument should be an iterable)
-  [255]
+  [10]
   $ hg debugtemplate '{max("")}'
   hg: parse error: empty string
   (max first argument should be an iterable)
-  [255]
+  [10]
   $ hg debugtemplate '{min(dict())}'
   hg: parse error: empty sequence
   (min first argument should be an iterable)
-  [255]
+  [10]
   $ hg debugtemplate '{max(dict())}'
   hg: parse error: empty sequence
   (max first argument should be an iterable)
-  [255]
+  [10]
   $ hg debugtemplate '{min(dict() % "")}'
   hg: parse error: empty sequence
   (min first argument should be an iterable)
-  [255]
+  [10]
   $ hg debugtemplate '{max(dict() % "")}'
   hg: parse error: empty sequence
   (max first argument should be an iterable)
-  [255]
+  [10]
 
 Test min/max of if() result
 
@@ -606,7 +606,7 @@ Test laziness of if() then/else clause
   $ hg debugtemplate '{count(0)}'
   hg: parse error: not countable
   (incompatible use of template filter 'count')
-  [255]
+  [10]
   $ hg debugtemplate '{if(true, "", count(0))}'
   $ hg debugtemplate '{if(false, count(0), "")}'
   $ hg debugtemplate '{ifcontains("a", "aa", "", count(0))}'
@@ -654,10 +654,10 @@ Test search() function:
 
   $ hg log -R a -r2 -T '{search(r"(?P<0>.)", desc) % "{0}"}\n'
   hg: parse error: search got an invalid pattern: (?P<0>.)
-  [255]
+  [10]
   $ hg log -R a -r2 -T '{search(r"(?P<repo>.)", desc) % "{repo}"}\n'
   hg: parse error: invalid group 'repo' in search pattern: (?P<repo>.)
-  [255]
+  [10]
 
 Test the sub function of templating for expansion:
 
@@ -666,10 +666,10 @@ Test the sub function of templating for expansion:
 
   $ hg log -R latesttag -r 10 -T '{sub("[", "x", rev)}\n'
   hg: parse error: sub got an invalid pattern: [
-  [255]
+  [10]
   $ hg log -R latesttag -r 10 -T '{sub("[0-9]", r"\1", rev)}\n'
   hg: parse error: sub got an invalid replacement: \1
-  [255]
+  [10]
 
 Test the strip function with chars specified:
 
@@ -721,7 +721,7 @@ Test invalid date:
 
   $ hg log -R latesttag -T '{date(rev)}\n'
   hg: parse error: date expects a date information
-  [255]
+  [10]
 
 Set up repository containing template fragments in commit metadata:
 
@@ -789,17 +789,17 @@ Test dict constructor:
 
   $ hg log -r 0 -T '{dict(rev, rev=rev)}\n'
   hg: parse error: duplicated dict key 'rev' inferred
-  [255]
+  [10]
   $ hg log -r 0 -T '{dict(node, node|short)}\n'
   hg: parse error: duplicated dict key 'node' inferred
-  [255]
+  [10]
   $ hg log -r 0 -T '{dict(1 + 2)}'
   hg: parse error: dict key cannot be inferred
-  [255]
+  [10]
 
   $ hg log -r 0 -T '{dict(x=rev, x=node)}'
   hg: parse error: dict got multiple values for keyword argument 'x'
-  [255]
+  [10]
 
 Test get function:
 
@@ -810,7 +810,7 @@ Test get function:
   $ hg log -r 0 --template '{get(files, "should_fail")}\n'
   hg: parse error: not a dictionary
   (get() expects a dict as first argument)
-  [255]
+  [10]
 
 Test json filter applied to wrapped object:
 
@@ -836,7 +836,7 @@ Test localdate(date, tz) function:
   1970-01-01 00:00 +0000
   $ TZ=JST-09 hg log -r0 -T '{localdate(date, "blahUTC")|isodate}\n'
   hg: parse error: localdate expects a timezone
-  [255]
+  [10]
   $ TZ=JST-09 hg log -r0 -T '{localdate(date, "+0200")|isodate}\n'
   1970-01-01 02:00 +0200
   $ TZ=JST-09 hg log -r0 -T '{localdate(date, "0")|isodate}\n'
@@ -845,10 +845,10 @@ Test localdate(date, tz) function:
   1970-01-01 00:00 +0000
   $ hg log -r0 -T '{localdate(date, "invalid")|isodate}\n'
   hg: parse error: localdate expects a timezone
-  [255]
+  [10]
   $ hg log -r0 -T '{localdate(date, date)|isodate}\n'
   hg: parse error: localdate expects a timezone
-  [255]
+  [10]
 
 Test shortest(node) function:
 
@@ -871,7 +871,7 @@ Test shortest(node) function:
   f7769ec2ab
   $ hg log -r 0 -T '{shortest(node, "not an int")}\n'
   hg: parse error: shortest() expects an integer minlength
-  [255]
+  [10]
 
   $ hg log -r 'wdir()' -T '{node|shortest}\n'
   ffff
@@ -1070,16 +1070,16 @@ Test width argument passed to pad function
   0          test
   $ hg log -r 0 -T '{pad(rev, "not an int")}\n'
   hg: parse error: pad() expects an integer width
-  [255]
+  [10]
 
 Test invalid fillchar passed to pad function
 
   $ hg log -r 0 -T '{pad(rev, 10, "")}\n'
   hg: parse error: pad() expects a single fill character
-  [255]
+  [10]
   $ hg log -r 0 -T '{pad(rev, 10, "--")}\n'
   hg: parse error: pad() expects a single fill character
-  [255]
+  [10]
 
 Test boolean argument passed to pad function
 
@@ -1304,50 +1304,50 @@ Invalid arguments passed to revset()
 
   $ hg log -T '{revset("%whatever", 0)}\n'
   hg: parse error: unexpected revspec format character w
-  [255]
+  [10]
   $ hg log -T '{revset("%lwhatever", files)}\n'
   hg: parse error: unexpected revspec format character w
-  [255]
+  [10]
   $ hg log -T '{revset("%s %s", 0)}\n'
   hg: parse error: missing argument for revspec
-  [255]
+  [10]
   $ hg log -T '{revset("", 0)}\n'
   hg: parse error: too many revspec arguments specified
-  [255]
+  [10]
   $ hg log -T '{revset("%s", 0, 1)}\n'
   hg: parse error: too many revspec arguments specified
-  [255]
+  [10]
   $ hg log -T '{revset("%", 0)}\n'
   hg: parse error: incomplete revspec format character
-  [255]
+  [10]
   $ hg log -T '{revset("%l", 0)}\n'
   hg: parse error: incomplete revspec format character
-  [255]
+  [10]
   $ hg log -T '{revset("%d", 'foo')}\n'
   hg: parse error: invalid argument for revspec
-  [255]
+  [10]
   $ hg log -T '{revset("%ld", files)}\n'
   hg: parse error: invalid argument for revspec
-  [255]
+  [10]
   $ hg log -T '{revset("%ls", 0)}\n'
   hg: parse error: invalid argument for revspec
-  [255]
+  [10]
   $ hg log -T '{revset("%b", 'foo')}\n'
   hg: parse error: invalid argument for revspec
-  [255]
+  [10]
   $ hg log -T '{revset("%lb", files)}\n'
   hg: parse error: invalid argument for revspec
-  [255]
+  [10]
   $ hg log -T '{revset("%r", 0)}\n'
   hg: parse error: invalid argument for revspec
-  [255]
+  [10]
 
 Invalid operation on revset()
 
   $ hg log -T '{get(revset(":"), "foo")}\n'
   hg: parse error: not a dictionary
   (get() expects a dict as first argument)
-  [255]
+  [10]
 
 Test files function
 
@@ -1432,7 +1432,7 @@ Test splitlines
 Test startswith
   $ hg log -Gv -R a --template "{startswith(desc)}"
   hg: parse error: startswith expects two arguments
-  [255]
+  [10]
 
   $ hg log -Gv -R a --template "{startswith('line', desc)}"
   @
@@ -1514,11 +1514,11 @@ Test word error messages for not enough and too many arguments
 
   $ hg log -Gv -R a --template "{word('0')}"
   hg: parse error: word expects two or three arguments, got 1
-  [255]
+  [10]
 
   $ hg log -Gv -R a --template "{word('0', desc, 'o', 'h', 'b', 'o', 'y')}"
   hg: parse error: word expects two or three arguments, got 7
-  [255]
+  [10]
 
 Test word for integer literal
 
@@ -1529,7 +1529,7 @@ Test word for invalid numbers
 
   $ hg log -Gv -R a --template "{word('a', desc)}"
   hg: parse error: word expects an integer index
-  [255]
+  [10]
 
 Test word for out of range
 

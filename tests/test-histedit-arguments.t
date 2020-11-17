@@ -187,7 +187,7 @@ Test that missing revisions are detected
   > EOF
   hg: parse error: missing rules for changeset c8e68270e35a
   (use "drop c8e68270e35a" to discard, see also: 'hg help -e histedit.config')
-  [255]
+  [10]
 
 Test that extra revisions are detected
 ---------------------------------------
@@ -199,7 +199,7 @@ Test that extra revisions are detected
   > EOF
   hg: parse error: pick "6058cbb6cfd7" changeset was not a candidate
   (only use listed changesets)
-  [255]
+  [10]
 
 Test malformed line
 ---------------------------------------
@@ -210,7 +210,7 @@ Test malformed line
   > pick 08d98a8350f3 4 five
   > EOF
   hg: parse error: malformed line "pickeb57da33312f2three"
-  [255]
+  [10]
 
 Test unknown changeset
 ---------------------------------------
@@ -221,7 +221,7 @@ Test unknown changeset
   > pick 08d98a8350f3 4 five
   > EOF
   hg: parse error: unknown changeset 0123456789ab listed
-  [255]
+  [10]
 
 Test unknown command
 ---------------------------------------
@@ -232,7 +232,7 @@ Test unknown command
   > pick 08d98a8350f3 4 five
   > EOF
   hg: parse error: unknown action "coin"
-  [255]
+  [10]
 
 Test duplicated changeset
 ---------------------------------------
@@ -245,7 +245,7 @@ So one is missing and one appear twice.
   > pick 08d98a8350f3 4 five
   > EOF
   hg: parse error: duplicated command for changeset eb57da33312f
-  [255]
+  [10]
 
 Test bogus rev
 ---------------------------------------
@@ -256,7 +256,7 @@ Test bogus rev
   > pick 08d98a8350f3 4 five
   > EOF
   hg: parse error: invalid changeset 0u98
-  [255]
+  [10]
 
 Test short version of command
 ---------------------------------------

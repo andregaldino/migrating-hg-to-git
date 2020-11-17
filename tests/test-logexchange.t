@@ -500,15 +500,15 @@ Testing for multiple names, which is not supported.
 
   $ hg log -r 'remotenames("re:default", "re:server2")' -GT "{rev}:{node|short} {remotenames}\n"
   hg: parse error: only one argument accepted
-  [255]
+  [10]
 
   $ hg log -r 'remotebranches("default/wat", "server2/wat")' -GT "{rev}:{node|short} {remotebranches}\n"
   hg: parse error: only one argument accepted
-  [255]
+  [10]
 
   $ hg log -r 'remotebookmarks("default/foo", "server2/foo")' -GT "{rev}:{node|short} {remotebookmarks}\n"
   hg: parse error: only one argument accepted
-  [255]
+  [10]
 
 Testing pattern matching
 

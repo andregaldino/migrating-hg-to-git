@@ -588,7 +588,7 @@ Test rolling into a commit with multiple children (issue5498)
   > r 5db65b93a12b
   > EOF
   hg: parse error: first changeset cannot use verb "roll"
-  [255]
+  [10]
   $ hg log -G -T '{node|short} {desc}'
   @  5db65b93a12b cc
   |

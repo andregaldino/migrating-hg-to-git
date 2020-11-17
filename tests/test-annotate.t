@@ -930,34 +930,34 @@ check error cases
   $ hg up 24 --quiet
   $ hg log -r 'followlines()'
   hg: parse error: followlines takes at least 1 positional arguments
-  [255]
+  [10]
   $ hg log -r 'followlines(baz)'
   hg: parse error: followlines requires a line range
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, x)'
   hg: parse error: followlines expects a line number or a range
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, 1:2, startrev=desc("b"))'
   hg: parse error: followlines expects exactly one revision
-  [255]
+  [10]
   $ hg log -r 'followlines("glob:*", 1:2)'
   hg: parse error: followlines expects exactly one file
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, 1:)'
   hg: parse error: line range bounds must be integers
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, :1)'
   hg: parse error: line range bounds must be integers
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, x:4)'
   hg: parse error: line range bounds must be integers
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, 5:4)'
   hg: parse error: line range must be positive
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, 0:4)'
   hg: parse error: fromline must be strictly positive
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, 2:40)'
   abort: line range exceeds file size
   [10]
@@ -965,10 +965,10 @@ check error cases
   hg: parse error at 43: not a prefix: [
   (followlines(baz, 2:4, startrev=20, descend=[1])
                                               ^ here)
-  [255]
+  [10]
   $ hg log -r 'followlines(baz, 2:4, startrev=20, descend=a)'
   hg: parse error: descend argument must be a boolean
-  [255]
+  [10]
 
 Test empty annotate output
 

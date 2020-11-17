@@ -1242,7 +1242,7 @@ Unparsable function-style references:
   hg: parse error at 6: not a prefix: )
   (json(-)
          ^ here)
-  [255]
+  [10]
 
 For backward compatibility, the following examples are not parsed as
 function-style references:
@@ -1301,7 +1301,7 @@ Error if style missing value:
   $ echo 'changeset =' > t
   $ hg log --style t
   hg: parse error at t:1: missing value
-  [255]
+  [10]
 
 Error if include fails:
 

@@ -1142,7 +1142,7 @@ Non-exact pattern kinds are not allowed.
   $ cd ..
   $ hg log -f -L glob:*a*,1:2
   hg: parse error: line range pattern 'glob:*a*' must match exactly one file
-  [255]
+  [10]
 
 We get an error for removed files.
 

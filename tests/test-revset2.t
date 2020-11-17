@@ -346,7 +346,7 @@ test ',' in `_list`
   $ log '0,1'
   hg: parse error: can't use a list in this context
   (see 'hg help "revsets.x or y"')
-  [255]
+  [10]
   $ try '0,1,2'
   (list
     (symbol '0')
@@ -354,7 +354,7 @@ test ',' in `_list`
     (symbol '2'))
   hg: parse error: can't use a list in this context
   (see 'hg help "revsets.x or y"')
-  [255]
+  [10]
 
 test that chained `or` operations make balanced addsets
 
@@ -407,7 +407,7 @@ no crash by empty group "()" while optimizing `or` operations
       (symbol '0')
       None))
   hg: parse error: missing argument
-  [255]
+  [10]
 
 test that chained `or` operations never eat up stack (issue4624)
 (uses `0:1` instead of `0` to avoid future optimization of trivial revisions)
@@ -510,7 +510,7 @@ no crash by empty group "()" while optimizing to "only()"
       (symbol '1'))
     None)
   hg: parse error: missing argument
-  [255]
+  [10]
 
 optimization to only() works only if ancestors() takes only one argument
 
@@ -568,20 +568,20 @@ invalid function call should not be optimized to only()
 
   $ log '"ancestors"(6) and not ancestors(4)'
   hg: parse error: not a symbol
-  [255]
+  [10]
 
   $ log 'ancestors(6) and not "ancestors"(4)'
   hg: parse error: not a symbol
-  [255]
+  [10]
 
 test empty string
 
   $ log ''
   hg: parse error: empty query
-  [255]
+  [10]
   $ log 'parents("")'
   hg: parse error: empty string is not a valid revision
-  [255]
+  [10]
 
 test empty revset
   $ hg log 'none()'
@@ -701,7 +701,7 @@ issue2654: report a parse error if the revset was not completely parsed
   hg: parse error at 2: invalid token
   (1 OR 2
      ^ here)
-  [255]
+  [10]
 
 or operator should preserve ordering:
   $ log 'reverse(2::4) or tip'
@@ -755,7 +755,7 @@ parentrevspec
 
   $ log 'tip^foo'
   hg: parse error: ^ expects a number 0, 1, or 2
-  [255]
+  [10]
 
   $ log 'branchpoint()~-1'
   abort: revision in set has more than one child!
@@ -765,29 +765,29 @@ Bogus function gets suggestions
   $ log 'add()'
   hg: parse error: unknown identifier: add
   (did you mean adds?)
-  [255]
+  [10]
   $ log 'added()'
   hg: parse error: unknown identifier: added
   (did you mean adds?)
-  [255]
+  [10]
   $ log 'remo()'
   hg: parse error: unknown identifier: remo
   (did you mean one of remote, removes?)
-  [255]
+  [10]
   $ log 'babar()'
   hg: parse error: unknown identifier: babar
-  [255]
+  [10]
 
 Bogus function with a similar internal name doesn't suggest the internal name
   $ log 'matches()'
   hg: parse error: unknown identifier: matches
   (did you mean matching?)
-  [255]
+  [10]
 
 Undocumented functions aren't suggested as similar either
   $ log 'tagged2()'
   hg: parse error: unknown identifier: tagged2
-  [255]
+  [10]
 
 multiple revspecs
 
@@ -949,7 +949,7 @@ test infinite recursion
   $ try recurse1
   (symbol 'recurse1')
   hg: parse error: infinite expansion of revset alias "recurse1" detected
-  [255]
+  [10]
 
   $ echo 'level1($1, $2) = $1 or $2' >> .hg/hgrc
   $ echo 'level2($1, $2) = level1($2, $1)' >> .hg/hgrc
@@ -1185,13 +1185,13 @@ test unknown reference:
     (symbol 'rs')
     None)
   hg: parse error: invalid number of arguments: 0
-  [255]
+  [10]
   $ try 'rs(2)'
   (func
     (symbol 'rs')
     (symbol '2'))
   hg: parse error: invalid number of arguments: 1
-  [255]
+  [10]
   $ try 'rs(2, data, 7)'
   (func
     (symbol 'rs')
@@ -1200,7 +1200,7 @@ test unknown reference:
       (symbol 'data')
       (symbol '7')))
   hg: parse error: invalid number of arguments: 3
-  [255]
+  [10]
   $ try 'rs4(2 or 3, x, x, date)'
   (func
     (symbol 'rs4')
@@ -1575,7 +1575,7 @@ test error message of bad revset
   hg: parse error at 3: syntax error in revset 'foo\\'
   (foo\\
       ^ here)
-  [255]
+  [10]
 
   $ cd ..
 
@@ -1603,7 +1603,7 @@ loading it
   $ hg debugrevspec "custom1()"
   *** failed to import extension custompredicate from $TESTTMP/custompredicate.py: intentional failure of loading extension
   hg: parse error: unknown identifier: custom1
-  [255]
+  [10]
 
 Test repo.anyrevs with customized revset overrides
 

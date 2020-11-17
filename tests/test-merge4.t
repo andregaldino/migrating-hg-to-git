@@ -29,10 +29,10 @@ Test conflict*() revsets
 # Bad usage
   $ hg log -r 'conflictlocal(foo)'
   hg: parse error: conflictlocal takes no arguments
-  [255]
+  [10]
   $ hg log -r 'conflictother(foo)'
   hg: parse error: conflictother takes no arguments
-  [255]
+  [10]
   $ hg co -C .
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 # No merge parents when not merging

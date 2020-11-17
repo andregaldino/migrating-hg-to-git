@@ -139,7 +139,7 @@ But negate binds closer still:
   * keywords: 
   * functions: stringify
   hg: parse error: arithmetic only defined on integers
-  [255]
+  [10]
   $ hg debugtemplate -r0 -v '{-3|stringify}\n'
   (template
     (|
@@ -179,7 +179,7 @@ Keyword arguments:
   * keywords: bar, foo
   * functions: baz
   hg: parse error: can't use a key-value pair in this context
-  [255]
+  [10]
 
   $ hg debugtemplate '{pad("foo", width=10, left=true)}\n'
          foo
@@ -190,7 +190,7 @@ Call function which takes named arguments by filter syntax:
   $ hg debugtemplate '{("not", "an", "argument", "list")|separate}'
   hg: parse error: can't use a list in this context
   (check place of comma and parens)
-  [255]
+  [10]
 
 Second branch starting at nullrev:
 
@@ -307,34 +307,34 @@ Error on syntax:
   $ echo 'style = t' >> .hg/hgrc
   $ hg log
   hg: parse error at t:3: unmatched quotes
-  [255]
+  [10]
 
   $ hg log -T '{date'
   hg: parse error at 1: unterminated template expansion
   ({date
     ^ here)
-  [255]
+  [10]
   $ hg log -T '{date(}'
   hg: parse error at 6: not a prefix: end
   ({date(}
          ^ here)
-  [255]
+  [10]
   $ hg log -T '{date)}'
   hg: parse error at 5: invalid token
   ({date)}
         ^ here)
-  [255]
+  [10]
   $ hg log -T '{date date}'
   hg: parse error at 6: invalid token
   ({date date}
          ^ here)
-  [255]
+  [10]
 
   $ hg log -T '{}'
   hg: parse error at 1: not a prefix: end
   ({}
     ^ here)
-  [255]
+  [10]
   $ hg debugtemplate -v '{()}'
   (template
     (group
@@ -342,7 +342,7 @@ Error on syntax:
   * keywords: 
   * functions: 
   hg: parse error: missing argument
-  [255]
+  [10]
 
 Behind the scenes, this would throw TypeError without intype=bytes
 
@@ -356,7 +356,7 @@ Behind the scenes, this will throw a ValueError
   $ hg log -l 3 --template 'line: {desc|shortdate}\n'
   hg: parse error: invalid date: 'Modify, add, remove, rename'
   (template filter 'shortdate' is not compatible with keyword 'desc')
-  [255]
+  [10]
 
 Behind the scenes, this would throw AttributeError without intype=bytes
 
@@ -367,23 +367,23 @@ Behind the scenes, this would throw AttributeError without intype=bytes
 
   $ hg log -l 3 --template 'line: {extras|localdate}\n'
   hg: parse error: localdate expects a date information
-  [255]
+  [10]
 
 Behind the scenes, this will throw ValueError
 
   $ hg tip --template '{author|email|date}\n'
   hg: parse error: date expects a date information
-  [255]
+  [10]
 
   $ hg tip -T '{author|email|shortdate}\n'
   hg: parse error: invalid date: 'test'
   (template filter 'shortdate' is not compatible with keyword 'author')
-  [255]
+  [10]
 
   $ hg tip -T '{get(extras, "branch")|shortdate}\n'
   hg: parse error: invalid date: 'default'
   (incompatible use of template filter 'shortdate')
-  [255]
+  [10]
 
 Error in nested template:
 
@@ -391,19 +391,19 @@ Error in nested template:
   hg: parse error at 2: unterminated string
   ({"date
      ^ here)
-  [255]
+  [10]
 
   $ hg log -T '{"foo{date|?}"}'
   hg: parse error at 11: syntax error
   ({"foo{date|?}"}
               ^ here)
-  [255]
+  [10]
 
 Thrown an error if a template function doesn't exist
 
   $ hg tip --template '{foo()}\n'
   hg: parse error: unknown function 'foo'
-  [255]
+  [10]
 
   $ cd ..
 
@@ -453,13 +453,13 @@ Test new-style inline templating:
   $ hg log -R latesttag -r tip -T '{rev % "a"}\n'
   hg: parse error: 11 is not iterable of mappings
   (keyword 'rev' does not support map operation)
-  [255]
+  [10]
   $ hg log -R latesttag -r tip -T '{get(extras, "unknown") % "a"}\n'
   hg: parse error: None is not iterable of mappings
-  [255]
+  [10]
   $ hg log -R latesttag -r tip -T '{extras % "{key}\n" % "{key}\n"}'
   hg: parse error: list of strings is not mappable
-  [255]
+  [10]
 
 Test new-style inline templating of non-list/dict type:
 
@@ -474,7 +474,7 @@ Test new-style inline templating of non-list/dict type:
   branch: default
   $ hg log -R latesttag -r tip -T '{get(extras, "unknown") % "{key}\n"}'
   hg: parse error: None is not iterable of mappings
-  [255]
+  [10]
   $ hg log -R latesttag -r tip -T '{min(extras) % "{key}: {value}\n"}'
   branch: default
   $ hg log -R latesttag -l1 -T '{min(revset("0:9")) % "{rev}:{node|short}\n"}'
@@ -506,7 +506,7 @@ Test dot operator precedence:
         (symbol 'bar')
         (symbol 'baz')))
     (string '\n'))
-  [255]
+  [10]
   $ hg debugtemplate -R latesttag -r0 -v '{foo.bar()}\n' 2> /dev/null
   (template
     (.
@@ -517,7 +517,7 @@ Test dot operator precedence:
     (string '\n'))
   * keywords: foo
   * functions: bar
-  [255]
+  [10]
 
 Test evaluation of dot operator:
 
@@ -531,10 +531,10 @@ Test evaluation of dot operator:
   $ hg log -R latesttag -l1 -T '{author.invalid}\n'
   hg: parse error: 'test' is not a dictionary
   (keyword 'author' does not support member operation)
-  [255]
+  [10]
   $ hg log -R latesttag -l1 -T '{min("abc").invalid}\n'
   hg: parse error: 'a' is not a dictionary
-  [255]
+  [10]
 
 Test integer literal:
 
@@ -567,10 +567,10 @@ Test integer literal:
   hg: parse error at 3: not a prefix: )
   ({(-)}\n
       ^ here)
-  [255]
+  [10]
   $ hg debugtemplate '{(-a)}\n'
   hg: parse error: negation needs an integer argument
-  [255]
+  [10]
 
 top-level integer literal is interpreted as symbol (i.e. variable name):
 
@@ -607,10 +607,10 @@ unless explicit symbol is expected:
 
   $ hg log -Ra -r0 -T '{desc|1}\n'
   hg: parse error: expected a symbol, got 'integer'
-  [255]
+  [10]
   $ hg log -Ra -r0 -T '{1()}\n'
   hg: parse error: expected a symbol, got 'integer'
-  [255]
+  [10]
 
 Test string literal:
 
@@ -748,13 +748,13 @@ escaped single quotes and errors:
   hg: parse error at 21: unterminated string
   ({if(rev, "{if(rev, \")}")}\n
                         ^ here)
-  [255]
+  [10]
   $ hg log -r 2 -T '{if(rev, \"\\"")}\n'
   hg: parse error: trailing \ in string
-  [255]
+  [10]
   $ hg log -r 2 -T '{if(rev, r\"\\"")}\n'
   hg: parse error: trailing \ in string
-  [255]
+  [10]
 
   $ cd ..
 
@@ -900,7 +900,7 @@ Test recursive evaluation:
   text.1:wrapped (no-eol)
   $ hg log -l1 -T '{fill(desc, date, "", "")}\n'
   hg: parse error: fill expects an integer width
-  [255]
+  [10]
 
   $ hg log -l 1 --template '{sub(r"[0-9]", "-", author)}'
   {node|short} (no-eol)
@@ -926,16 +926,16 @@ Test bad template with better error message
 
   $ hg log -Gv -R a --template '{desc|user()}'
   hg: parse error: expected a symbol, got 'func'
-  [255]
+  [10]
 
 Test broken string escapes:
 
   $ hg log -T "bogus\\" -R a
   hg: parse error: trailing \ in string
-  [255]
+  [10]
   $ hg log -T "\\xy" -R a
   hg: parse error: invalid \x escape* (glob)
-  [255]
+  [10]
 
 Templater supports aliases of symbol and func() styles:
 

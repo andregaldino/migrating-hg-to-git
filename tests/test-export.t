@@ -337,7 +337,7 @@ Invalid pattern in file name:
   hg: parse error at 3: unterminated template expansion
   (%m{
       ^ here)
-  [255]
+  [10]
   $ hg export -o '%\' tip
   abort: invalid format spec '%\' in output filename
   [255]
@@ -367,7 +367,7 @@ Catch exporting unknown revisions (especially empty revsets, see issue3353)
 
   $ hg export ""
   hg: parse error: empty query
-  [255]
+  [10]
   $ hg export 999
   abort: unknown revision '999'!
   [255]

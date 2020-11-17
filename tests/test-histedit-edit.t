@@ -463,7 +463,7 @@ Attempting to fold a change into a public change should not work:
   $ HGEDITOR="sh ../edit.sh" hg histedit 2
   warning: histedit rules saved to: .hg/histedit-last-edit.txt
   hg: parse error: first changeset cannot use verb "fold"
-  [255]
+  [10]
   $ cat .hg/histedit-last-edit.txt
   fold 0012be4a27ea 2 extend a
   

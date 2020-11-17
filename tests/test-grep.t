@@ -25,13 +25,13 @@ invalid revset syntax
 
   $ hg log -r 'diffcontains()'
   hg: parse error: diffcontains takes at least 1 argument
-  [255]
+  [10]
   $ hg log -r 'diffcontains(:)'
   hg: parse error: diffcontains requires a string pattern
-  [255]
+  [10]
   $ hg log -r 'diffcontains("re:**test**")'
   hg: parse error: invalid regular expression: nothing to repeat* (glob)
-  [255]
+  [10]
 
 simple
 

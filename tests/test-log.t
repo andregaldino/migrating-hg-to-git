@@ -1063,7 +1063,7 @@ log -r ""
 
   $ hg log -r ''
   hg: parse error: empty query
-  [255]
+  [10]
 
 log -r <some unknown node id>
 
@@ -2435,7 +2435,7 @@ simple error
   hg: parse error at 14: unexpected token: end
   ({shortest(node}
                  ^ here)
-  [255]
+  [10]
 
 multi-line template with error
   $ hg log -r . -T 'line 1
@@ -2445,7 +2445,7 @@ multi-line template with error
   hg: parse error at 27: unexpected token: end
   (line 1\nline2\n{shortest(node}\nline4\nline5
                                 ^ here)
-  [255]
+  [10]
 
   $ cd ..
 

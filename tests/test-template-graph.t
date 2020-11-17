@@ -381,13 +381,13 @@ Invalid arguments:
 
   $ hg log -T '{subsetparents()}\n'
   hg: parse error: subsetparents expects two arguments
-  [255]
+  [10]
   $ hg log -T '{subsetparents("a")}\n'
   hg: parse error: subsetparents expects two arguments
-  [255]
+  [10]
   $ hg log -T '{subsetparents(rev, extras)}\n'
   hg: parse error: subsetparents expects a queried revset
-  [255]
+  [10]
 
   $ cd ..
 

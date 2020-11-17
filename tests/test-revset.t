@@ -401,10 +401,10 @@ quoting needed
   hg: parse error at 10: unexpected token: symbol
   (date(this is a test)
              ^ here)
-  [255]
+  [10]
   $ log 'date()'
   hg: parse error: date requires a string
-  [255]
+  [10]
   $ log 'date'
   abort: unknown revision 'date'!
   [255]
@@ -412,13 +412,13 @@ quoting needed
   hg: parse error at 5: not a prefix: end
   (date(
         ^ here)
-  [255]
+  [10]
   $ log 'date("\xy")'
   hg: parse error: invalid \x escape* (glob)
-  [255]
+  [10]
   $ log 'date(tip)'
   hg: parse error: invalid date: 'tip'
-  [255]
+  [10]
   $ log '0:date'
   abort: unknown revision 'date'!
   [255]
@@ -450,7 +450,7 @@ function name should be a symbol
 
   $ log '"date"(2005)'
   hg: parse error: not a symbol
-  [255]
+  [10]
 
 keyword arguments
 
@@ -459,25 +459,25 @@ keyword arguments
 
   $ log 'extra(branch, a, b)'
   hg: parse error: extra takes at most 2 positional arguments
-  [255]
+  [10]
   $ log 'extra(a, label=b)'
   hg: parse error: extra got multiple values for keyword argument 'label'
-  [255]
+  [10]
   $ log 'extra(label=branch, default)'
   hg: parse error: extra got an invalid argument
-  [255]
+  [10]
   $ log 'extra(branch, foo+bar=baz)'
   hg: parse error: extra got an invalid argument
-  [255]
+  [10]
   $ log 'extra(unknown=branch)'
   hg: parse error: extra got an unexpected keyword argument 'unknown'
-  [255]
+  [10]
   $ log 'extra((), x)'
   hg: parse error: first argument to extra must be a string
-  [255]
+  [10]
   $ log 'extra(label=x, ())'
   hg: parse error: extra got an invalid argument
-  [255]
+  [10]
 
   $ try 'foo=bar|baz'
   (keyvalue
@@ -487,7 +487,7 @@ keyword arguments
         (symbol 'bar')
         (symbol 'baz'))))
   hg: parse error: can't use a key-value pair in this context
-  [255]
+  [10]
 
  right-hand side should be optimized recursively
 
@@ -506,7 +506,7 @@ keyword arguments
       (symbol '_notpublic')
       None))
   hg: parse error: can't use a key-value pair in this context
-  [255]
+  [10]
 
 relation-subscript operator has the highest binding strength (as function call):
 
@@ -565,7 +565,7 @@ resolution of subscript and relation-subscript ternary operators:
     (symbol 'tip')
     (symbol '0'))
   hg: parse error: can't use a subscript in this context
-  [255]
+  [10]
 
   $ hg debugrevspec -p analyzed 'tip#rel[0]'
   * analyzed:
@@ -574,7 +574,7 @@ resolution of subscript and relation-subscript ternary operators:
     (symbol 'rel')
     (symbol '0'))
   hg: parse error: unknown identifier: rel
-  [255]
+  [10]
 
   $ hg debugrevspec -p analyzed '(tip#rel)[0]'
   * analyzed:
@@ -584,7 +584,7 @@ resolution of subscript and relation-subscript ternary operators:
       (symbol 'rel'))
     (symbol '0'))
   hg: parse error: can't use a subscript in this context
-  [255]
+  [10]
 
   $ hg debugrevspec -p analyzed 'tip#rel[0][1]'
   * analyzed:
@@ -595,7 +595,7 @@ resolution of subscript and relation-subscript ternary operators:
       (symbol '0'))
     (symbol '1'))
   hg: parse error: can't use a subscript in this context
-  [255]
+  [10]
 
   $ hg debugrevspec -p analyzed 'tip#rel0#rel1[1]'
   * analyzed:
@@ -606,7 +606,7 @@ resolution of subscript and relation-subscript ternary operators:
     (symbol 'rel1')
     (symbol '1'))
   hg: parse error: unknown identifier: rel1
-  [255]
+  [10]
 
   $ hg debugrevspec -p analyzed 'tip#rel0[0]#rel1[1]'
   * analyzed:
@@ -618,7 +618,7 @@ resolution of subscript and relation-subscript ternary operators:
     (symbol 'rel1')
     (symbol '1'))
   hg: parse error: unknown identifier: rel1
-  [255]
+  [10]
 
 parse errors of relation, subscript and relation-subscript operators:
 
@@ -626,48 +626,48 @@ parse errors of relation, subscript and relation-subscript operators:
   hg: parse error at 0: not a prefix: [
   ([0]
    ^ here)
-  [255]
+  [10]
   $ hg debugrevspec '.#'
   hg: parse error at 2: not a prefix: end
   (.#
      ^ here)
-  [255]
+  [10]
   $ hg debugrevspec '#rel'
   hg: parse error at 0: not a prefix: #
   (#rel
    ^ here)
-  [255]
+  [10]
   $ hg debugrevspec '.#rel[0'
   hg: parse error at 7: unexpected token: end
   (.#rel[0
           ^ here)
-  [255]
+  [10]
   $ hg debugrevspec '.]'
   hg: parse error at 1: invalid token
   (.]
     ^ here)
-  [255]
+  [10]
 
   $ hg debugrevspec '.#generations[a]'
   hg: parse error: relation subscript must be an integer or a range
-  [255]
+  [10]
   $ hg debugrevspec '.#generations[1-2]'
   hg: parse error: relation subscript must be an integer or a range
-  [255]
+  [10]
   $ hg debugrevspec '.#generations[foo:bar]'
   hg: parse error: relation subscript bounds must be integers
-  [255]
+  [10]
 
 suggested relations
 
   $ hg debugrevspec '.#generafions[0]'
   hg: parse error: unknown identifier: generafions
   (did you mean generations?)
-  [255]
+  [10]
 
   $ hg debugrevspec '.#f[0]'
   hg: parse error: unknown identifier: f
-  [255]
+  [10]
 
 parsed tree at stages:
 
@@ -686,7 +686,7 @@ parsed tree at stages:
   * optimized:
   None
   hg: parse error: missing argument
-  [255]
+  [10]
 
   $ hg debugrevspec --no-optimized -p all '()'
   * parsed:
@@ -701,7 +701,7 @@ parsed tree at stages:
   * analyzed:
   None
   hg: parse error: missing argument
-  [255]
+  [10]
 
   $ hg debugrevspec -p parsed -p analyzed -p optimized '(0|1)-1'
   * parsed:
@@ -899,7 +899,7 @@ infix/suffix resolution of ^ operator (issue2884, issue5764):
       (rangepre
         (symbol '2'))))
   hg: parse error: ^ expects a number 0, 1, or 2
-  [255]
+  [10]
 
  x^:y should be resolved recursively
 
@@ -1005,7 +1005,7 @@ infix/suffix resolution of ^ operator (issue2884, issue5764):
     (rangepre
       (symbol '2')))
   hg: parse error: ^ expects a number 0, 1, or 2
-  [255]
+  [10]
 
 '::' itself isn't a valid expression
 
@@ -1013,7 +1013,7 @@ infix/suffix resolution of ^ operator (issue2884, issue5764):
   (dagrangeall
     None)
   hg: parse error: can't use '::' in this context
-  [255]
+  [10]
 
 ancestor can accept 0 or more arguments
 
@@ -1170,10 +1170,10 @@ test bad arguments passed to ancestors()
 
   $ log 'ancestors(., depth=-1)'
   hg: parse error: negative depth
-  [255]
+  [10]
   $ log 'ancestors(., depth=foo)'
   hg: parse error: ancestors expects an integer depth
-  [255]
+  [10]
 
 test descendants
 
@@ -1447,10 +1447,10 @@ test author
     (symbol 'grep')
     (string '('))
   hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \),.*) (re)
-  [255]
+  [10]
   $ log 'desc("re:(")'
   hg: parse error: invalid regular expression: (unbalanced parenthesis|missing \),.*) (re)
-  [255]
+  [10]
   $ try 'grep("\bissue\d+")'
   (func
     (symbol 'grep')
@@ -1472,7 +1472,7 @@ test author
   hg: parse error at 7: unterminated string
   (grep(r"\")
           ^ here)
-  [255]
+  [10]
   $ log 'head()'
   0
   1
@@ -1530,15 +1530,15 @@ Test first (=limit) and last
   $ log 'limit(author("re:bob|test"), offset=10)'
   $ log 'limit(all(), 1, -1)'
   hg: parse error: negative offset
-  [255]
+  [10]
   $ log 'limit(all(), -1)'
   hg: parse error: negative number to select
-  [255]
+  [10]
   $ log 'limit(all(), 0)'
 
   $ log 'last(all(), -1)'
   hg: parse error: negative number to select
-  [255]
+  [10]
   $ log 'last(all(), 0)'
   $ log 'last(all(), 1)'
   9
@@ -1861,7 +1861,7 @@ Test explicit numeric revision
   $ log 'rev(10)'
   $ log 'rev(tip)'
   hg: parse error: rev expects a number
-  [255]
+  [10]
 
 Test hexadecimal revision
   $ log 'id(2)'
@@ -1965,7 +1965,7 @@ Test working-directory revision
   $ hg debugrevspec 'wdir()^2'
   $ hg debugrevspec 'wdir()^3'
   hg: parse error: ^ expects a number 0, 1, or 2
-  [255]
+  [10]
 For tests consistency
   $ hg up 9
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -2532,10 +2532,10 @@ ordering defined by it.
 
   $ log '0:2 & sort()'
   hg: parse error: sort requires one or two arguments
-  [255]
+  [10]
   $ log '0:2 & sort(all(), -invalid)'
   hg: parse error: unknown sort key '-invalid'
-  [255]
+  [10]
 
  for 'A & f(B)', 'B' should not be affected by the order of 'A':
 
@@ -2762,7 +2762,7 @@ test invalid sort keys
 
   $ log 'sort(all(), -invalid)'
   hg: parse error: unknown sort key '-invalid'
-  [255]
+  [10]
 
   $ cd ..
 
@@ -2980,11 +2980,11 @@ use the topo.firstbranch option when topo sort is not active:
 
   $ hg log -r 'sort(all(), "topo user")'
   hg: parse error: topo sort order cannot be combined with other sort keys
-  [255]
+  [10]
 
   $ hg log -r 'sort(all(), user, topo.firstbranch=book1)'
   hg: parse error: topo.firstbranch can only be used when using the topo sort key
-  [255]
+  [10]
 
 topo.firstbranch should accept any kind of expressions:
 
@@ -3003,7 +3003,7 @@ test multiline revset with errors
   hg: parse error at 9: not a prefix: end
   ( . + .^ +
             ^ here)
-  [255]
+  [10]
   $ hg debugrevspec -v 'revset(first(rev(0)))' -p all
   * parsed:
   (func
@@ -3052,10 +3052,10 @@ test multiline revset with errors
 abort if the revset doesn't expect given size
   $ log 'expectsize()'
   hg: parse error: invalid set of arguments
-  [255]
+  [10]
   $ log 'expectsize(0:2, a)'
   hg: parse error: expectsize requires a size range or a positive integer
-  [255]
+  [10]
   $ log 'expectsize(0:2, 3)'
   0
   1
@@ -3070,7 +3070,7 @@ abort if the revset doesn't expect given size
   [255]
   $ log 'expectsize(0:4, -1)'
   hg: parse error: negative size
-  [255]
+  [10]
   $ log 'expectsize(0:2, 2:4)'
   0
   1
@@ -3080,16 +3080,16 @@ abort if the revset doesn't expect given size
   [255]
   $ log 'expectsize(0:1, -1:2)'
   hg: parse error: negative size
-  [255]
+  [10]
   $ log 'expectsize(0:1, 1:-2)'
   hg: parse error: negative size
-  [255]
+  [10]
   $ log 'expectsize(0:2, a:4)'
   hg: parse error: size range bounds must be integers
-  [255]
+  [10]
   $ log 'expectsize(0:2, 2:b)'
   hg: parse error: size range bounds must be integers
-  [255]
+  [10]
   $ log 'expectsize(0:2, 2:)'
   0
   1

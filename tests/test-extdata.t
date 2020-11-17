@@ -54,7 +54,7 @@ test bad extdata() revset source
 
   $ hg log -qr "extdata()"
   hg: parse error: extdata takes at least 1 string argument
-  [255]
+  [10]
   $ hg log -qr "extdata(unknown)"
   abort: unknown extdata source 'unknown'
   [255]
@@ -73,7 +73,7 @@ that we don't crash before we can print the parse error.
   hg: parse error at 0: not a prefix: +
   (+---------------------------------------+
    ^ here)
-  [255]
+  [10]
 
 test template support:
 
@@ -95,17 +95,17 @@ test bad extdata() template source
 
   $ hg log -T "{extdata()}\n"
   hg: parse error: extdata expects one argument
-  [255]
+  [10]
   $ hg log -T "{extdata('unknown')}\n"
   abort: unknown extdata source 'unknown'
   [255]
   $ hg log -T "{extdata(unknown)}\n"
   hg: parse error: empty data source specified
   (did you mean extdata('unknown')?)
-  [255]
+  [10]
   $ hg log -T "{extdata('{unknown}')}\n"
   hg: parse error: empty data source specified
-  [255]
+  [10]
 
 we don't fix up relative file URLs, but we do run shell commands in repo root
 

@@ -34,10 +34,10 @@
 
   $ hg diff -r ""
   hg: parse error: empty query
-  [255]
+  [10]
   $ hg diff -r tip -r ""
   hg: parse error: empty query
-  [255]
+  [10]
 
 Remove a file that was added via merge. Since the file is not in parent 1,
 it should not be in the diff.

@@ -18,13 +18,13 @@ This runs with TZ="GMT"
   $ echo "fail" >> a
   $ hg ci -d "should fail" -m "fail"
   hg: parse error: invalid date: 'should fail'
-  [255]
+  [10]
   $ hg ci -d "100000000000000000 1400" -m "fail"
   hg: parse error: date exceeds 32 bits: 100000000000000000
-  [255]
+  [10]
   $ hg ci -d "100000 1400000" -m "fail"
   hg: parse error: impossible time zone offset: 1400000
-  [255]
+  [10]
 
 Check with local timezone other than GMT and with DST
 

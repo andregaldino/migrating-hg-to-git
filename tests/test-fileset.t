@@ -81,7 +81,7 @@ Test operators and basic patterns
   $ fileset 'a_b'
   $ fileset '"\xy"'
   hg: parse error: invalid \x escape* (glob)
-  [255]
+  [10]
 
 Test invalid syntax
 
@@ -90,25 +90,25 @@ Test invalid syntax
     (string 'added')
     None)
   hg: parse error: not a symbol
-  [255]
+  [10]
   $ fileset -v '()()'
   (func
     (group
       None)
     None)
   hg: parse error: not a symbol
-  [255]
+  [10]
   $ fileset -v -- '-x'
   (negate
     (symbol 'x'))
   hg: parse error: can't use negate operator in this context
-  [255]
+  [10]
   $ fileset -v -- '-()'
   (negate
     (group
       None))
   hg: parse error: can't use negate operator in this context
-  [255]
+  [10]
   $ fileset -p parsed 'a, b, c'
   * parsed:
   (list
@@ -117,23 +117,23 @@ Test invalid syntax
     (symbol 'c'))
   hg: parse error: can't use a list in this context
   (see 'hg help "filesets.x or y"')
-  [255]
+  [10]
 
   $ fileset '"path":.'
   hg: parse error: not a symbol
-  [255]
+  [10]
   $ fileset 'path:foo bar'
   hg: parse error at 9: invalid token
-  [255]
+  [10]
   $ fileset 'foo:bar:baz'
   hg: parse error: not a symbol
-  [255]
+  [10]
   $ fileset 'foo:bar()'
   hg: parse error: pattern must be a string
-  [255]
+  [10]
   $ fileset 'foo:bar'
   hg: parse error: invalid pattern kind: foo
-  [255]
+  [10]
 
 Show parsed tree at stages:
 
@@ -562,7 +562,7 @@ Test files properties
   c1
   $ fileset 'grep("missingparens(")'
   hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \)).* (re)
-  [255]
+  [10]
 
 #if execbit
   $ chmod +x b2
@@ -589,11 +589,11 @@ Test files properties
   $ hg add 1k 2k
   $ fileset 'size("bar")'
   hg: parse error: couldn't parse size: bar
-  [255]
+  [10]
   $ fileset '(1k, 2k)'
   hg: parse error: can't use a list in this context
   (see 'hg help "filesets.x or y"')
-  [255]
+  [10]
   $ fileset 'size(1k)'
   1k
   $ fileset '(1k or 2k) and size("< 2k")'
@@ -1018,10 +1018,10 @@ Fully empty revset
 
   $ fileset "status('', '4', added())"
   hg: parse error: first argument to status must be a revision
-  [255]
+  [10]
   $ fileset "status('2', '', added())"
   hg: parse error: second argument to status must be a revision
-  [255]
+  [10]
 
 Empty revset will error at the revset layer
 
@@ -1029,9 +1029,9 @@ Empty revset will error at the revset layer
   hg: parse error at 1: not a prefix: end
   ( 
     ^ here)
-  [255]
+  [10]
   $ fileset "status('2', ' ', added())"
   hg: parse error at 1: not a prefix: end
   ( 
     ^ here)
-  [255]
+  [10]

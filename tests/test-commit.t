@@ -16,20 +16,20 @@ commit date test
   $ echo foo >> foo
   $ hg commit -d '1 4444444' -m commit-3
   hg: parse error: impossible time zone offset: 4444444
-  [255]
+  [10]
   $ hg commit -d '1	15.1' -m commit-4
   hg: parse error: invalid date: '1\t15.1'
-  [255]
+  [10]
   $ hg commit -d 'foo bar' -m commit-5
   hg: parse error: invalid date: 'foo bar'
-  [255]
+  [10]
   $ hg commit -d ' 1 4444' -m commit-6
   $ hg commit -d '111111111111 0' -m commit-7
   hg: parse error: date exceeds 32 bits: 111111111111
-  [255]
+  [10]
   $ hg commit -d '-111111111111 0' -m commit-7
   hg: parse error: date exceeds 32 bits: -111111111111
-  [255]
+  [10]
   $ echo foo >> foo
   $ hg commit -d '1901-12-13 20:45:52 +0000' -m commit-7-2
   $ echo foo >> foo
@@ -39,10 +39,10 @@ commit date test
   2 1901-12-13 20:45:52 +0000
   $ hg commit -d '1901-12-13 20:45:51 +0000' -m commit-7
   hg: parse error: date exceeds 32 bits: -2147483649
-  [255]
+  [10]
   $ hg commit -d '-2147483649 0' -m commit-7
   hg: parse error: date exceeds 32 bits: -2147483649
-  [255]
+  [10]
 
 commit added file that has been deleted
 
