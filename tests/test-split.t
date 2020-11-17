@@ -51,7 +51,7 @@ Nothing to split
   $ hg commit -m empty --config ui.allowemptycommit=1
   $ hg split
   abort: cannot split an empty revision
-  [255]
+  [10]
 
   $ rm -rf .hg
   $ hg init
@@ -60,7 +60,7 @@ Cannot split working directory
 
   $ hg split -r 'wdir()'
   abort: cannot split working directory
-  [255]
+  [10]
 
 Generate some content.  The sed filter drop CR on Windows, which is dropped in
 the a > b line.
@@ -103,7 +103,7 @@ Split a head
 
   $ hg split 'all()'
   abort: cannot split multiple revisions
-  [255]
+  [10]
 
 This function splits a bit strangely primarily to avoid changing the behavior of
 the test after a bug was fixed with how split/commit --interactive handled
