@@ -346,7 +346,7 @@ Show all commands + options
   incoming: force, newest-first, bundle, rev, bookmarks, branch, patch, git, limit, no-merges, stat, graph, style, template, ssh, remotecmd, insecure, subrepos
   init: ssh, remotecmd, insecure
   locate: rev, print0, fullpath, include, exclude
-  log: follow, follow-first, date, copies, keyword, rev, line-range, removed, only-merges, user, only-branch, branch, prune, patch, git, limit, no-merges, stat, graph, style, template, include, exclude
+  log: follow, follow-first, date, copies, keyword, rev, line-range, removed, only-merges, user, only-branch, branch, bookmark, prune, patch, git, limit, no-merges, stat, graph, style, template, include, exclude
   manifest: rev, all, template
   merge: force, rev, preview, abort, tool
   outgoing: force, rev, newest-first, bookmarks, branch, patch, git, limit, no-merges, stat, graph, style, template, ssh, remotecmd, insecure, subrepos

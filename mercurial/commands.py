@@ -4456,6 +4456,13 @@ def locate(ui, repo, *pats, **opts):
             _(b'BRANCH'),
         ),
         (
+            b'B',
+            b'bookmark',
+            [],
+            _(b"show changesets within the given bookmark"),
+            _(b'BOOKMARK'),
+        ),
+        (
             b'P',
             b'prune',
             [],
@@ -4613,13 +4620,18 @@ def log(ui, repo, *pats, **opts):
         )
 
     repo = scmutil.unhidehashlikerevs(repo, opts.get(b'rev'), b'nowarn')
-    revs, differ = logcmdutil.getrevs(
-        repo, logcmdutil.parseopts(ui, pats, opts)
-    )
+    walk_opts = logcmdutil.parseopts(ui, pats, opts)
+    revs, differ = logcmdutil.getrevs(repo, walk_opts)
     if linerange:
         # TODO: should follow file history from logcmdutil._initialrevs(),
         # then filter the result by logcmdutil._makerevset() and --limit
         revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
+
+    if opts.get(b'bookmark'):
+        cmdutil.check_at_most_one_arg(opts, b'rev', b'bookmark')
+        bookmarks = opts.get(b'bookmark')
+        bookmark = bookmarks[0]
+        revs, differ = logcmdutil.get_bookmark_revs(repo, bookmark, walk_opts)
 
     getcopies = None
     if opts.get(b'copies'):

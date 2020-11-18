@@ -1024,6 +1024,26 @@ def getrevs(repo, wopts):
     return revs, differ
 
 
+def get_bookmark_revs(repo, bookmark, walk_opts):
+    # type: (Any, bookmark, walk_opts) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
+    """Return (revs, differ) where revs is a smartset
+
+    differ is a changesetdiffer with pre-configured file matcher.
+    """
+    revs, filematcher = makewalker(repo, walk_opts)
+    if not revs:
+        return revs, None
+    differ = changesetdiffer()
+    differ._makefilematcher = filematcher
+
+    if bookmark:
+        if bookmark not in repo._bookmarks:
+            raise error.Abort(_(b"bookmark '%s' not found") % bookmark)
+        revs = scmutil.bookmarkrevs(repo, bookmark)
+
+    return revs, differ
+
+
 def _parselinerangeopt(repo, opts):
     """Parse --line-range log option and return a list of tuples (filename,
     (fromline, toline)).
