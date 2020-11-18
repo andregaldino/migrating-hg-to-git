@@ -79,7 +79,7 @@ list bookmarks
    * X2                        0:f7b1eb17ad24
   $ hg bookmarks -l X A Y
   abort: bookmark 'A' does not exist
-  [255]
+  [10]
   $ hg bookmarks -l -r0
   abort: cannot specify both --list and --rev
   [10]
@@ -245,7 +245,7 @@ rename nonexistent bookmark
 
   $ hg bookmark -m A B
   abort: bookmark 'A' does not exist
-  [255]
+  [10]
 
 rename to existent bookmark
 
@@ -342,7 +342,7 @@ delete nonexistent bookmark
 
   $ hg bookmark -d A
   abort: bookmark 'A' does not exist
-  [255]
+  [10]
 
 delete with --inactive
 
@@ -385,12 +385,12 @@ reject bookmark name with newline
   $ hg bookmark '
   > '
   abort: bookmark names cannot consist entirely of whitespace
-  [255]
+  [10]
 
   $ hg bookmark -m Z '
   > '
   abort: bookmark names cannot consist entirely of whitespace
-  [255]
+  [10]
 
 bookmark with reserved name
 
@@ -528,11 +528,11 @@ bookmark name with whitespace only
 
   $ hg bookmark ' '
   abort: bookmark names cannot consist entirely of whitespace
-  [255]
+  [10]
 
   $ hg bookmark -m Y ' '
   abort: bookmark names cannot consist entirely of whitespace
-  [255]
+  [10]
 
 invalid bookmark
 

@@ -901,7 +901,7 @@ def checkformat(repo, mark):
     """
     mark = mark.strip()
     if not mark:
-        raise error.Abort(
+        raise error.InputError(
             _(b"bookmark names cannot consist entirely of whitespace")
         )
     scmutil.checknewlabel(repo, mark, b'bookmark')
@@ -917,7 +917,7 @@ def delete(repo, tr, names):
     changes = []
     for mark in names:
         if mark not in marks:
-            raise error.Abort(_(b"bookmark '%s' does not exist") % mark)
+            raise error.InputError(_(b"bookmark '%s' does not exist") % mark)
         if mark == repo._activebookmark:
             deactivate(repo)
         changes.append((mark, None))
@@ -937,7 +937,7 @@ def rename(repo, tr, old, new, force=False, inactive=False):
     marks = repo._bookmarks
     mark = checkformat(repo, new)
     if old not in marks:
-        raise error.Abort(_(b"bookmark '%s' does not exist") % old)
+        raise error.InputError(_(b"bookmark '%s' does not exist") % old)
     changes = []
     for bm in marks.checkconflict(mark, force):
         changes.append((bm, None))
@@ -1041,7 +1041,7 @@ def printbookmarks(ui, repo, fm, names=None):
     bmarks = {}
     for bmark in names or marks:
         if bmark not in marks:
-            raise error.Abort(_(b"bookmark '%s' does not exist") % bmark)
+            raise error.InputError(_(b"bookmark '%s' does not exist") % bmark)
         active = repo._activebookmark
         if bmark == active:
             prefix, label = b'*', activebookmarklabel

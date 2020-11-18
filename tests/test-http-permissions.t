@@ -765,7 +765,7 @@ Attempting a write command with HTTP GET fails
   no bookmarks set
   $ hg bookmark -d bm
   abort: bookmark 'bm' does not exist
-  [255]
+  [10]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
   405 push requires POST request
@@ -806,7 +806,7 @@ Attempting a write command with an unknown HTTP verb fails
   no bookmarks set
   $ hg bookmark -d bm
   abort: bookmark 'bm' does not exist
-  [255]
+  [10]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
   405 push requires POST request
