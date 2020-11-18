@@ -19,7 +19,7 @@ Do not crash with empty repo:
 
   $ hg absorb
   abort: no mutable changeset to change
-  [255]
+  [10]
 
 Make some commits:
 
@@ -229,7 +229,7 @@ Public commits will not be changed:
   $ sedi 's/Insert/insert/' a
   $ hg absorb --apply-changes
   abort: no mutable changeset to change
-  [255]
+  [10]
 
 Make working copy clean:
 
@@ -267,7 +267,7 @@ Merge commit will not be changed:
   $ echo 2 >> m2
   $ hg absorb --apply-changes
   abort: cannot absorb into a merge
-  [255]
+  [10]
   $ hg revert -q -C m1 m2
 
 Use a new repo:

@@ -511,7 +511,7 @@ class filefixupstate(object):
         # run editor
         editedtext = self.ui.edit(editortext, b'', action=b'absorb')
         if not editedtext:
-            raise error.Abort(_(b'empty editor text'))
+            raise error.InputError(_(b'empty editor text'))
         # parse edited result
         contents = [b''] * len(self.fctxs)
         leftpadpos = 4
@@ -520,7 +520,7 @@ class filefixupstate(object):
             if l.startswith(b'HG:'):
                 continue
             if l[colonpos - 1 : colonpos + 2] != b' : ':
-                raise error.Abort(_(b'malformed line: %s') % l)
+                raise error.InputError(_(b'malformed line: %s') % l)
             linecontent = l[colonpos + 2 :]
             for i, ch in enumerate(
                 pycompat.bytestr(l[leftpadpos : colonpos - 1])
@@ -1018,7 +1018,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
         limit = ui.configint(b'absorb', b'max-stack-size')
         headctx = repo[b'.']
         if len(headctx.parents()) > 1:
-            raise error.Abort(_(b'cannot absorb into a merge'))
+            raise error.InputError(_(b'cannot absorb into a merge'))
         stack = getdraftstack(headctx, limit)
         if limit and len(stack) >= limit:
             ui.warn(
@@ -1029,7 +1029,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
                 % limit
             )
     if not stack:
-        raise error.Abort(_(b'no mutable changeset to change'))
+        raise error.InputError(_(b'no mutable changeset to change'))
     if targetctx is None:  # default to working copy
         targetctx = repo[None]
     if pats is None:
