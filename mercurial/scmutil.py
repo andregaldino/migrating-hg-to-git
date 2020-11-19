@@ -159,10 +159,6 @@ def reportsimilar(write, similar):
 
 
 def formatparse(write, inst):
-    similar = []
-    if isinstance(inst, error.UnknownIdentifier):
-        # make sure to check fileset first, as revset can invoke fileset
-        similar = getsimilar(inst.symbols, inst.function)
     if inst.location is not None:
         write(
             _(b"hg: parse error at %s: %s\n")
@@ -170,8 +166,11 @@ def formatparse(write, inst):
         )
     else:
         write(_(b"hg: parse error: %s\n") % inst.message)
+    if isinstance(inst, error.UnknownIdentifier):
+        # make sure to check fileset first, as revset can invoke fileset
+        similar = getsimilar(inst.symbols, inst.function)
         reportsimilar(write, similar)
-    if inst.hint:
+    elif inst.hint:
         write(_(b"(%s)\n") % inst.hint)
 
 
