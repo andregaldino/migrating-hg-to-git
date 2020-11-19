@@ -487,7 +487,7 @@ def _callcatch(ui, func):
                 sim = scmutil.getsimilar(inst.all_commands, inst.command)
                 if sim:
                     ui.warn(nocmdmsg)
-                    scmutil.reportsimilar(ui.warn, sim)
+                    ui.warn(b"(%s)\n" % scmutil.similarity_hint(sim))
                     suggested = True
             if not suggested:
                 ui.warn(nocmdmsg)

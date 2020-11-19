@@ -150,12 +150,14 @@ def getsimilar(symbols, value):
     return [s for s in symbols if sim(s) > 0.6]
 
 
-def reportsimilar(write, similar):
+def similarity_hint(similar):
     if len(similar) == 1:
-        write(_(b"(did you mean %s?)\n") % similar[0])
+        return _(b"did you mean %s?") % similar[0]
     elif similar:
         ss = b", ".join(sorted(similar))
-        write(_(b"(did you mean one of %s?)\n") % ss)
+        return _(b"did you mean one of %s?") % ss
+    else:
+        return None
 
 
 def formatparse(write, inst):
@@ -169,7 +171,9 @@ def formatparse(write, inst):
     if isinstance(inst, error.UnknownIdentifier):
         # make sure to check fileset first, as revset can invoke fileset
         similar = getsimilar(inst.symbols, inst.function)
-        reportsimilar(write, similar)
+        hint = similarity_hint(similar)
+        if hint:
+            write(b"(%s)\n" % hint)
     elif inst.hint:
         write(_(b"(%s)\n") % inst.hint)
 
