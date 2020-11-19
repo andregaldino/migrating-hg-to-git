@@ -259,13 +259,12 @@ class OutOfBandError(Hint, Exception):
     __bytes__ = _tobytes
 
 
-class ParseError(Hint, Exception):
+class ParseError(Abort):
     """Raised when parsing config files and {rev,file}sets (msg[, pos])"""
 
     def __init__(self, message, location=None, hint=None):
-        self.message = message
+        super(ParseError, self).__init__(message, hint=hint)
         self.location = location
-        self.hint = hint
         # Pass the message and possibly location into the Exception constructor
         # to help code that looks for exc.args.
         if location is not None:

@@ -258,9 +258,6 @@ def dispatch(req):
         except error.Abort as inst:
             ferr.write(inst.format())
             return -1
-        except error.ParseError as inst:
-            ferr.write(inst.format())
-            return -1
 
         msg = _formatargs(req.args)
         starttime = util.timer()
@@ -466,9 +463,6 @@ def _callcatch(ui, func):
         else:
             ui.warn(_(b"hg: %s\n") % inst.message)
             ui.warn(_(b"(use 'hg help -v' for a list of global options)\n"))
-    except error.ParseError as inst:
-        ui.warn(inst.format())
-        return -1
     except error.UnknownCommand as inst:
         nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.command
         try:

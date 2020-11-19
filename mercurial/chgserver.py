@@ -506,11 +506,6 @@ class chgcmdserver(commandserver.server):
         args = self._readlist()
         try:
             self.ui, lui = _loadnewui(self.ui, args, self.cdebug)
-        except error.ParseError as inst:
-            self.ui.warn(inst.format())
-            self.ui.flush()
-            self.cresult.write(b'exit 255')
-            return
         except error.Abort as inst:
             self.ui.error(inst.format())
             self.ui.flush()
