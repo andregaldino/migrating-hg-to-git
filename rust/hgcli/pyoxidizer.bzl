@@ -17,6 +17,7 @@ def resource_callback(policy, resource):
     if not IS_WINDOWS:
         resource.add_location = "in-memory"
         return
+
     # We use a custom resource routing policy to influence where things are loaded
     # from.
     #
@@ -39,6 +40,7 @@ def resource_callback(policy, resource):
 def make_exe(dist):
     """Builds a Rust-wrapped Mercurial binary."""
     packaging_policy = dist.make_python_packaging_policy()
+
     # Extension may depend on any Python functionality. Include all
     # extensions.
     packaging_policy.extension_module_filter = "all"
@@ -50,8 +52,10 @@ def make_exe(dist):
     config = dist.make_python_interpreter_config()
     config.raw_allocator = "system"
     config.run_command = RUN_CODE
+
     # We want to let the user load extensions from the file system
     config.filesystem_importer = True
+
     # We need this to make resourceutil happy, since it looks for sys.frozen.
     config.sys_frozen = True
     config.legacy_windows_stdio = True
