@@ -13,6 +13,8 @@ imports.
 
 from __future__ import absolute_import
 
+import difflib
+
 # Do not import anything but pycompat here, please
 from . import pycompat
 
@@ -268,6 +270,25 @@ class ParseError(Hint, Exception):
 
 class PatchError(Exception):
     __bytes__ = _tobytes
+
+
+def getsimilar(symbols, value):
+    sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()
+    # The cutoff for similarity here is pretty arbitrary. It should
+    # probably be investigated and tweaked.
+    return [s for s in symbols if sim(s) > 0.6]
+
+
+def similarity_hint(similar):
+    from .i18n import _
+
+    if len(similar) == 1:
+        return _(b"did you mean %s?") % similar[0]
+    elif similar:
+        ss = b", ".join(sorted(similar))
+        return _(b"did you mean one of %s?") % ss
+    else:
+        return None
 
 
 class UnknownIdentifier(ParseError):

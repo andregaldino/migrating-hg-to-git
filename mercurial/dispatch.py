@@ -484,10 +484,10 @@ def _callcatch(ui, func):
         except (error.UnknownCommand, error.Abort):
             suggested = False
             if inst.all_commands:
-                sim = scmutil.getsimilar(inst.all_commands, inst.command)
+                sim = error.getsimilar(inst.all_commands, inst.command)
                 if sim:
                     ui.warn(nocmdmsg)
-                    ui.warn(b"(%s)\n" % scmutil.similarity_hint(sim))
+                    ui.warn(b"(%s)\n" % error.similarity_hint(sim))
                     suggested = True
             if not suggested:
                 ui.warn(nocmdmsg)

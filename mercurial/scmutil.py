@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import difflib
 import errno
 import glob
 import os
@@ -143,23 +142,6 @@ def nochangesfound(ui, repo, excluded=None):
         ui.status(_(b"no changes found\n"))
 
 
-def getsimilar(symbols, value):
-    sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()
-    # The cutoff for similarity here is pretty arbitrary. It should
-    # probably be investigated and tweaked.
-    return [s for s in symbols if sim(s) > 0.6]
-
-
-def similarity_hint(similar):
-    if len(similar) == 1:
-        return _(b"did you mean %s?") % similar[0]
-    elif similar:
-        ss = b", ".join(sorted(similar))
-        return _(b"did you mean one of %s?") % ss
-    else:
-        return None
-
-
 def formatparse(write, inst):
     if inst.location is not None:
         write(
@@ -170,8 +152,8 @@ def formatparse(write, inst):
         write(_(b"hg: parse error: %s\n") % inst.message)
     if isinstance(inst, error.UnknownIdentifier):
         # make sure to check fileset first, as revset can invoke fileset
-        similar = getsimilar(inst.symbols, inst.function)
-        hint = similarity_hint(similar)
+        similar = error.getsimilar(inst.symbols, inst.function)
+        hint = error.similarity_hint(similar)
         if hint:
             write(b"(%s)\n" % hint)
     elif inst.hint:
