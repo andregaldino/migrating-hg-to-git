@@ -254,8 +254,8 @@ Testing the --narrowspec flag to clone
 
   $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
   reading narrowspec from '$TESTTMP/narrowspecs'
-  abort: cannot specify other files using '%include' in narrowspec
-  [255]
+  config error: cannot specify other files using '%include' in narrowspec
+  [30]
 
   $ cat > narrowspecs <<EOF
   > [include]

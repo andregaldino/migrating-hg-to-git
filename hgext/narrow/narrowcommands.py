@@ -103,7 +103,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
 
         includes, excludes, profiles = sparse.parseconfig(ui, fdata, b'narrow')
         if profiles:
-            raise error.Abort(
+            raise error.ConfigError(
                 _(
                     b"cannot specify other files using '%include' in"
                     b" narrowspec"
@@ -252,7 +252,7 @@ def _narrow(
                 % (len(visibletostrip) - maxnodes)
             )
         if not force:
-            raise error.Abort(
+            raise error.StateError(
                 _(b'local changes found'),
                 hint=_(b'use --force-delete-local-changes to ignore'),
             )
@@ -487,7 +487,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     if requirements.NARROW_REQUIREMENT not in repo.requirements:
-        raise error.Abort(
+        raise error.InputError(
             _(
                 b'the tracked command is only supported on '
                 b'repositories cloned with --narrow'
@@ -497,7 +497,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     # Before supporting, decide whether it "hg tracked --clear" should mean
     # tracking no paths or all paths.
     if opts[b'clear']:
-        raise error.Abort(_(b'the --clear option is not yet supported'))
+        raise error.InputError(_(b'the --clear option is not yet supported'))
 
     # import rules from a file
     newrules = opts.get(b'import_rules')
@@ -506,7 +506,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             filepath = os.path.join(encoding.getcwd(), newrules)
             fdata = util.readfile(filepath)
         except IOError as inst:
-            raise error.Abort(
+            raise error.StorageError(
                 _(b"cannot read narrowspecs from '%s': %s")
                 % (filepath, encoding.strtolocal(inst.strerror))
             )
@@ -514,7 +514,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             ui, fdata, b'narrow'
         )
         if profiles:
-            raise error.Abort(
+            raise error.InputError(
                 _(
                     b"including other spec files using '%include' "
                     b"is not supported in narrowspec"

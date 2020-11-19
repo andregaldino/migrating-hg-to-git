@@ -98,7 +98,7 @@ Test repo with local changes
   * (glob)
   abort: local changes found
   (use --force-delete-local-changes to ignore)
-  [255]
+  [20]
 Check that nothing was removed by the failed attempts
   $ hg tracked
   I path:d0
@@ -422,7 +422,7 @@ produces more sensible diffs)
   ...and 5 more, use --verbose to list all
   abort: local changes found
   (use --force-delete-local-changes to ignore)
-  [255]
+  [20]
 Now test it *with* verbose.
   $ hg tracked --removeinclude d9 --verbose
   comparing with ssh://user@dummy/master
@@ -446,7 +446,7 @@ Now test it *with* verbose.
   ^[0-9a-f]{12}$ (re)
   abort: local changes found
   (use --force-delete-local-changes to ignore)
-  [255]
+  [20]
   $ cd ..
 
 Test --auto-remove-includes

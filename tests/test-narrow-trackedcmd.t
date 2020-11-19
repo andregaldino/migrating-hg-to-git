@@ -121,7 +121,7 @@ Testing the --import-rules flag of `hg tracked` command
   [255]
   $ hg tracked --import-rules doesnotexist
   abort: cannot read narrowspecs from '$TESTTMP/narrow/doesnotexist': $ENOENT$
-  [255]
+  [50]
 
   $ cat > specs <<EOF
   > %include foo
@@ -133,7 +133,7 @@ Testing the --import-rules flag of `hg tracked` command
 
   $ hg tracked --import-rules specs
   abort: including other spec files using '%include' is not supported in narrowspec
-  [255]
+  [10]
 
   $ cat > specs <<EOF
   > [include]
@@ -198,7 +198,7 @@ Testing the --import-rules flag with --addinclude and --addexclude
 
   $ hg tracked --import-rules specs --clear
   abort: the --clear option is not yet supported
-  [255]
+  [10]
 
 Testing with passing a out of wdir file
 
@@ -224,4 +224,4 @@ Testing tracked command on a non-narrow repo
   $ cd non-narrow
   $ hg tracked --addinclude foobar
   abort: the tracked command is only supported on repositories cloned with --narrow
-  [255]
+  [10]
