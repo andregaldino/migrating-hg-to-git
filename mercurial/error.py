@@ -297,9 +297,12 @@ class UnknownIdentifier(ParseError):
     def __init__(self, function, symbols):
         from .i18n import _
 
-        ParseError.__init__(self, _(b"unknown identifier: %s") % function)
-        self.function = function
-        self.symbols = symbols
+        similar = getsimilar(symbols, function)
+        hint = similarity_hint(similar)
+
+        ParseError.__init__(
+            self, _(b"unknown identifier: %s") % function, hint=hint
+        )
 
 
 class RepoError(Hint, Exception):

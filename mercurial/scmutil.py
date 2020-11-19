@@ -150,13 +150,7 @@ def formatparse(write, inst):
         )
     else:
         write(_(b"hg: parse error: %s\n") % inst.message)
-    if isinstance(inst, error.UnknownIdentifier):
-        # make sure to check fileset first, as revset can invoke fileset
-        similar = error.getsimilar(inst.symbols, inst.function)
-        hint = error.similarity_hint(similar)
-        if hint:
-            write(b"(%s)\n" % hint)
-    elif inst.hint:
+    if inst.hint:
         write(_(b"(%s)\n") % inst.hint)
 
 
