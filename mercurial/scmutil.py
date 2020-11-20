@@ -142,18 +142,6 @@ def nochangesfound(ui, repo, excluded=None):
         ui.status(_(b"no changes found\n"))
 
 
-def formatparse(write, inst):
-    if inst.location is not None:
-        write(
-            _(b"hg: parse error at %s: %s\n")
-            % (pycompat.bytestr(inst.location), inst.message)
-        )
-    else:
-        write(_(b"hg: parse error: %s\n") % inst.message)
-    if inst.hint:
-        write(_(b"(%s)\n") % inst.hint)
-
-
 def callcatch(ui, func):
     """call func() with global exception handling
 

@@ -62,7 +62,6 @@ from . import (
     extensions,
     node,
     pycompat,
-    scmutil,
     util,
 )
 
@@ -508,7 +507,7 @@ class chgcmdserver(commandserver.server):
         try:
             self.ui, lui = _loadnewui(self.ui, args, self.cdebug)
         except error.ParseError as inst:
-            scmutil.formatparse(self.ui.warn, inst)
+            self.ui.warn(inst.format())
             self.ui.flush()
             self.cresult.write(b'exit 255')
             return

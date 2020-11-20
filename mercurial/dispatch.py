@@ -261,7 +261,7 @@ def dispatch(req):
                 ferr.write(_(b"(%s)\n") % inst.hint)
             return -1
         except error.ParseError as inst:
-            scmutil.formatparse(ferr.write, inst)
+            ferr.write(inst.format())
             return -1
 
         msg = _formatargs(req.args)
@@ -469,7 +469,7 @@ def _callcatch(ui, func):
             ui.warn(_(b"hg: %s\n") % inst.message)
             ui.warn(_(b"(use 'hg help -v' for a list of global options)\n"))
     except error.ParseError as inst:
-        scmutil.formatparse(ui.warn, inst)
+        ui.warn(inst.format())
         return -1
     except error.UnknownCommand as inst:
         nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.command

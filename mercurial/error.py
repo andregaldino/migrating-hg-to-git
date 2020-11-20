@@ -267,6 +267,20 @@ class ParseError(Hint, Exception):
 
     __bytes__ = _tobytes
 
+    def format(self):
+        from .i18n import _
+
+        if self.location is not None:
+            message = _(b"hg: parse error at %s: %s\n") % (
+                pycompat.bytestr(self.location),
+                self.message,
+            )
+        else:
+            message = _(b"hg: parse error: %s\n") % self.message
+        if self.hint:
+            message += _(b"(%s)\n") % self.hint
+        return message
+
 
 class PatchError(Exception):
     __bytes__ = _tobytes
