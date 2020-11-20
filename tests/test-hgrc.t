@@ -16,7 +16,7 @@ Basic syntax error
 
   $ echo "invalid" > $HGRC
   $ hg version
-  hg: parse error at $TESTTMP/hgrc:1: invalid
+  config error at $TESTTMP/hgrc:1: invalid
   [255]
   $ echo "" > $HGRC
 
@@ -59,7 +59,7 @@ Check %include
 #if unix-permissions no-root
   $ chmod u-r $TESTTMP/included
   $ hg showconfig section
-  hg: parse error at $TESTTMP/hgrc:2: cannot include $TESTTMP/included (Permission denied)
+  config error at $TESTTMP/hgrc:2: cannot include $TESTTMP/included (Permission denied)
   [255]
 #endif
 
@@ -68,7 +68,7 @@ issue1829: wrong indentation
   $ echo '[foo]' > $HGRC
   $ echo '  x = y' >> $HGRC
   $ hg version
-  hg: parse error at $TESTTMP/hgrc:2: unexpected leading whitespace:   x = y
+  config error at $TESTTMP/hgrc:2: unexpected leading whitespace:   x = y
   [255]
 
   $ "$PYTHON" -c "from __future__ import print_function; print('[foo]\nbar = a\n b\n c \n  de\n fg \nbaz = bif cb \n')" \
@@ -275,7 +275,7 @@ Test we can skip the user configuration
   > EOF
 
   $ hg path
-  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  config error at $TESTTMP/.hg/hgrc:3: [broken
   [255]
   $ HGRCSKIPREPO=1 hg path
   foo = $TESTTMP/bar
@@ -283,7 +283,7 @@ Test we can skip the user configuration
 Check that hgweb respect HGRCSKIPREPO=1
 
   $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
-  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  config error at $TESTTMP/.hg/hgrc:3: [broken
   [255]
   $ test -f hg.pid && (cat hg.pid >> $DAEMON_PIDS)
   [1]
@@ -302,7 +302,7 @@ Check that hgweb respect HGRCSKIPREPO=1
 Check that zeroconf respect HGRCSKIPREPO=1
 
   $ hg paths --config extensions.zeroconf=
-  hg: parse error at $TESTTMP/.hg/hgrc:3: [broken
+  config error at $TESTTMP/.hg/hgrc:3: [broken
   [255]
   $ HGRCSKIPREPO=1 hg paths --config extensions.zeroconf=
   foo = $TESTTMP/bar

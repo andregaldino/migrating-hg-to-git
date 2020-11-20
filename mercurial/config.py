@@ -165,7 +165,7 @@ class config(object):
                     include(expanded, remap=remap, sections=sections)
                 except IOError as inst:
                     if inst.errno != errno.ENOENT:
-                        raise error.ParseError(
+                        raise error.ConfigError(
                             _(b"cannot include %s (%s)")
                             % (expanded, encoding.strtolocal(inst.strerror)),
                             b"%s:%d" % (src, line),
@@ -203,7 +203,7 @@ class config(object):
             message = l.rstrip()
             if l.startswith(b' '):
                 message = b"unexpected leading whitespace: %s" % message
-            raise error.ParseError(message, (b"%s:%d" % (src, line)))
+            raise error.ConfigError(message, (b"%s:%d" % (src, line)))
 
     def read(self, path, fp=None, sections=None, remap=None):
         if not fp:

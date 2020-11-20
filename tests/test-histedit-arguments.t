@@ -126,7 +126,7 @@ Test invalid config default
 ---------------------------
 
   $ hg histedit --config "histedit.defaultrev="
-  abort: config option histedit.defaultrev can't be empty
+  config error: config option histedit.defaultrev can't be empty
   [30]
 
 Run on a revision not descendants of the initial parent

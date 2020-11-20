@@ -256,12 +256,12 @@ f.close()
 
 try:
     testui(user=b'abc', group=b'def', silent=True)
-except error.ParseError as inst:
+except error.ConfigError as inst:
     bprint(inst.format())
 
 try:
     testui(debug=True, silent=True)
-except error.ParseError as inst:
+except error.ConfigError as inst:
     bprint(inst.format())
 
 print()

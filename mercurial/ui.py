@@ -466,7 +466,7 @@ class ui(object):
 
             try:
                 cfg.read(filename, fp, sections=sections, remap=remap)
-            except error.ParseError as inst:
+            except error.ConfigError as inst:
                 if trusted:
                     raise
                 self.warn(

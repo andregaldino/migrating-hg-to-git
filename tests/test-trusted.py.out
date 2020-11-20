@@ -176,7 +176,7 @@ quux
 not trusting file .hg/hgrc from untrusted user abc, group def
 ignored .hg/hgrc:1: foo
 # same user, same group
-hg: parse error at .hg/hgrc:1: foo
+config error at .hg/hgrc:1: foo
 
 
 # access typed information

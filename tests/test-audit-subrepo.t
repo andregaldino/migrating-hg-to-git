@@ -120,8 +120,8 @@ on commit:
   $ hg init sub
   $ echo '= sub' >> .hgsub
   $ hg ci -qAm 'add subrepo ""'
-  hg: parse error at .hgsub:1: = sub
-  [255]
+  config error at .hgsub:1: = sub
+  [30]
 
 prepare tampered repo (including the commit above):
 
@@ -144,8 +144,8 @@ prepare tampered repo (including the commit above):
 on clone (and update):
 
   $ hg clone -q emptypath emptypath2
-  hg: parse error at .hgsub:1: = sub
-  [255]
+  config error at .hgsub:1: = sub
+  [30]
 
 Test current path
 -----------------

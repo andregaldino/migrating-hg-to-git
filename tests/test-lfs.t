@@ -1118,8 +1118,8 @@ Bad .hglfs files will block the commit with a useful message
 
   $ echo x > file.txt
   $ hg ci -Aqm 'should fail'
-  hg: parse error at .hglfs:3: bad file ... no commit
-  [255]
+  config error at .hglfs:3: bad file ... no commit
+  [30]
 
   $ cat > .hglfs << EOF
   > [track]

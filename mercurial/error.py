@@ -227,6 +227,24 @@ class HookAbort(Abort):
 class ConfigError(Abort):
     """Exception raised when parsing config files"""
 
+    def __init__(self, message, location=None, hint=None):
+        super(ConfigError, self).__init__(message, hint=hint)
+        self.location = location
+
+    def format(self):
+        from .i18n import _
+
+        if self.location is not None:
+            message = _(b"config error at %s: %s\n") % (
+                pycompat.bytestr(self.location),
+                self.message,
+            )
+        else:
+            message = _(b"config error: %s\n") % self.message
+        if self.hint:
+            message += _(b"(%s)\n") % self.hint
+        return message
+
 
 class UpdateAbort(Abort):
     """Raised when an update is aborted for destination issue"""

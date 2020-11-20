@@ -512,7 +512,7 @@ test invalid phase name
   $ mkcommit I --config phases.new-commit='babar'
   transaction abort!
   rollback completed
-  abort: phases.new-commit: not a valid phase name ('babar')
+  config error: phases.new-commit: not a valid phase name ('babar')
   [30]
 Test phase command
 ===================
