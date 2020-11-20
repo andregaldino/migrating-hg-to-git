@@ -1,4 +1,4 @@
-image: octobus/ci-mercurial-core
+image: registry.heptapod.net/mercurial/ci-images/mercurial-core
 
 # The runner made a clone as root.
 # We make a new clone owned by user used to run the step.
