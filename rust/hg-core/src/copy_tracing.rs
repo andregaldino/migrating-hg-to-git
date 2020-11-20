@@ -186,7 +186,7 @@ impl<'a> ChangedFiles<'a> {
     }
 
     /// Return an iterator over all the `Action` in this instance.
-    fn iter_actions(&self, parent: usize) -> ActionsIterator {
+    fn iter_actions(&self, parent: Parent) -> ActionsIterator {
         ActionsIterator {
             changes: &self,
             parent: parent,
@@ -259,7 +259,7 @@ impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
 
 struct ActionsIterator<'a> {
     changes: &'a ChangedFiles<'a>,
-    parent: usize,
+    parent: Parent,
     current: u32,
 }
 
@@ -267,6 +267,10 @@ impl<'a> Iterator for ActionsIterator<'a> {
     type Item = Action<'a>;
 
     fn next(&mut self) -> Option<Action<'a>> {
+        let copy_flag = match self.parent {
+            Parent::FirstParent => P1_COPY,
+            Parent::SecondParent => P2_COPY,
+        };
         while self.current < self.changes.nb_items {
             let (flags, file, source) = self.changes.entry(self.current);
             self.current += 1;
@@ -274,10 +278,7 @@ impl<'a> Iterator for ActionsIterator<'a> {
                 return Some(Action::Removed(file));
             }
             let copy = flags & COPY_MASK;
-            if self.parent == 1 && copy == P1_COPY {
-                return Some(Action::Copied(file, source));
-            }
-            if self.parent == 2 && copy == P2_COPY {
+            if copy == copy_flag {
                 return Some(Action::Copied(file, source));
             }
         }
@@ -300,6 +301,15 @@ pub struct DataHolder<D> {
 
 pub type RevInfoMaker<'a, D> =
     Box<dyn for<'r> Fn(Revision, &'r mut DataHolder<D>) -> RevInfo<'r> + 'a>;
+
+/// enum used to carry information about the parent → child currently processed
+#[derive(Copy, Clone, Debug)]
+enum Parent {
+    /// The `p1(x) → x` edge
+    FirstParent,
+    /// The `p2(x) → x` edge
+    SecondParent,
+}
 
 /// Same as mercurial.copies._combine_changeset_copies, but in Rust.
 ///
@@ -345,10 +355,10 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
             let (p1, p2, changes) = rev_info(*child, &mut d);
 
             let parent = if rev == p1 {
-                1
+                Parent::FirstParent
             } else {
                 assert_eq!(rev, p2);
-                2
+                Parent::SecondParent
             };
             let mut new_copies = copies.clone();
 
@@ -406,9 +416,8 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                 }
                 Some(other_copies) => {
                     let (minor, major) = match parent {
-                        1 => (other_copies, new_copies),
-                        2 => (new_copies, other_copies),
-                        _ => unreachable!(),
+                        Parent::FirstParent => (other_copies, new_copies),
+                        Parent::SecondParent => (new_copies, other_copies),
                     };
                     let merged_copies =
                         merge_copies_dict(minor, major, &changes, &mut oracle);
