@@ -360,46 +360,8 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                 assert_eq!(rev, p2);
                 Parent::SecondParent
             };
-            let mut new_copies = copies.clone();
-
-            for action in changes.iter_actions(parent) {
-                match action {
-                    Action::Copied(dest, source) => {
-                        let entry;
-                        if let Some(v) = copies.get(source) {
-                            entry = match &v.path {
-                                Some(path) => Some((*(path)).to_owned()),
-                                None => Some(source.to_owned()),
-                            }
-                        } else {
-                            entry = Some(source.to_owned());
-                        }
-                        // Each new entry is introduced by the children, we
-                        // record this information as we will need it to take
-                        // the right decision when merging conflicting copy
-                        // information. See merge_copies_dict for details.
-                        let ttpc = TimeStampedPathCopy {
-                            rev: *child,
-                            path: entry,
-                        };
-                        new_copies.insert(dest.to_owned(), ttpc);
-                    }
-                    Action::Removed(f) => {
-                        // We must drop copy information for removed file.
-                        //
-                        // We need to explicitly record them as dropped to
-                        // propagate this information when merging two
-                        // TimeStampedPathCopies object.
-                        if new_copies.contains_key(f.as_ref()) {
-                            let ttpc = TimeStampedPathCopy {
-                                rev: *child,
-                                path: None,
-                            };
-                            new_copies.insert(f.to_owned(), ttpc);
-                        }
-                    }
-                }
-            }
+            let new_copies =
+                add_from_changes(&copies, &changes, parent, *child);
 
             // Merge has two parents needs to combines their copy information.
             //
@@ -439,6 +401,56 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
         }
     }
     result
+}
+
+/// Combine ChangedFiles with some existing PathCopies information and return
+/// the result
+fn add_from_changes(
+    base_copies: &TimeStampedPathCopies,
+    changes: &ChangedFiles,
+    parent: Parent,
+    current_rev: Revision,
+) -> TimeStampedPathCopies {
+    let mut copies = base_copies.clone();
+    for action in changes.iter_actions(parent) {
+        match action {
+            Action::Copied(dest, source) => {
+                let entry;
+                if let Some(v) = base_copies.get(source) {
+                    entry = match &v.path {
+                        Some(path) => Some((*(path)).to_owned()),
+                        None => Some(source.to_owned()),
+                    }
+                } else {
+                    entry = Some(source.to_owned());
+                }
+                // Each new entry is introduced by the children, we
+                // record this information as we will need it to take
+                // the right decision when merging conflicting copy
+                // information. See merge_copies_dict for details.
+                let ttpc = TimeStampedPathCopy {
+                    rev: current_rev,
+                    path: entry,
+                };
+                copies.insert(dest.to_owned(), ttpc);
+            }
+            Action::Removed(f) => {
+                // We must drop copy information for removed file.
+                //
+                // We need to explicitly record them as dropped to
+                // propagate this information when merging two
+                // TimeStampedPathCopies object.
+                if copies.contains_key(f.as_ref()) {
+                    let ttpc = TimeStampedPathCopy {
+                        rev: current_rev,
+                        path: None,
+                    };
+                    copies.insert(f.to_owned(), ttpc);
+                }
+            }
+        }
+    }
+    copies
 }
 
 /// merge two copies-mapping together, minor and major
