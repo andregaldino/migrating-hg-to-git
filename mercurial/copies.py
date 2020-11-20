@@ -196,67 +196,27 @@ def _revinfo_getter(repo, match):
 
     changelogrevision = cl.changelogrevision
 
-    # A small cache to avoid doing the work twice for merges
-    #
-    # In the vast majority of cases, if we ask information for a revision
-    # about 1 parent, we'll later ask it for the other. So it make sense to
-    # keep the information around when reaching the first parent of a merge
-    # and dropping it after it was provided for the second parents.
-    #
-    # It exists cases were only one parent of the merge will be walked. It
-    # happens when the "destination" the copy tracing is descendant from a
-    # new root, not common with the "source". In that case, we will only walk
-    # through merge parents that are descendant of changesets common
-    # between "source" and "destination".
-    #
-    # With the current case implementation if such changesets have a copy
-    # information, we'll keep them in memory until the end of
-    # _changesetforwardcopies. We don't expect the case to be frequent
-    # enough to matters.
-    #
-    # In addition, it would be possible to reach pathological case, were
-    # many first parent are met before any second parent is reached. In
-    # that case the cache could grow. If this even become an issue one can
-    # safely introduce a maximum cache size. This would trade extra CPU/IO
-    # time to save memory.
-    merge_caches = {}
-
     alwaysmatch = match.always()
 
     if rustmod is not None and alwaysmatch:
 
         def revinfo(rev):
             p1, p2 = parents(rev)
-            value = None
-            e = merge_caches.pop(rev, None)
-            if e is not None:
-                return e
             if flags(rev) & HASCOPIESINFO:
                 raw = changelogrevision(rev)._sidedata.get(sidedatamod.SD_FILES)
             else:
                 raw = None
-            value = (p1, p2, raw)
-            if p1 != nullrev and p2 != nullrev:
-                # XXX some case we over cache, IGNORE
-                merge_caches[rev] = value
-            return value
+            return (p1, p2, raw)
 
     else:
 
         def revinfo(rev):
             p1, p2 = parents(rev)
-            value = None
-            e = merge_caches.pop(rev, None)
-            if e is not None:
-                return e
-            changes = None
             if flags(rev) & HASCOPIESINFO:
                 changes = changelogrevision(rev).changes
-            value = (p1, p2, changes)
-            if p1 != nullrev and p2 != nullrev:
-                # XXX some case we over cache, IGNORE
-                merge_caches[rev] = value
-            return value
+            else:
+                changes = None
+            return (p1, p2, changes)
 
     return revinfo
 
