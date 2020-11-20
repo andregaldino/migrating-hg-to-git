@@ -398,7 +398,17 @@ class basectx(object):
 
         If other is None, compare this node with working directory.
 
-        returns (modified, added, removed, deleted, unknown, ignored, clean)
+        ctx1.status(ctx2) returns the status of change from ctx1 to ctx2
+
+        Returns a mercurial.scmutils.status object.
+
+        Data can be accessed using either tuple notation:
+
+            (modified, added, removed, deleted, unknown, ignored, clean)
+
+        or direct attribute access:
+
+            s.modified, s.added, ...
         """
 
         ctx1 = self
