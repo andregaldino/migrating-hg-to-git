@@ -359,7 +359,17 @@ def newandmodified(chunks, originalchunks):
 
 
 def parsealiases(cmd):
-    return cmd.split(b"|")
+    base_aliases = cmd.split(b"|")
+    all_aliases = set(base_aliases)
+    extra_aliases = []
+    for alias in base_aliases:
+        if b'-' in alias:
+            folded_alias = alias.replace(b'-', b'')
+            if folded_alias not in all_aliases:
+                all_aliases.add(folded_alias)
+                extra_aliases.append(folded_alias)
+    base_aliases.extend(extra_aliases)
+    return base_aliases
 
 
 def setupwrapcolorwrite(ui):
