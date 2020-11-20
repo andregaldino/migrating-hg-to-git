@@ -380,9 +380,14 @@ def _combine_changeset_copies(
                 # changeset based copies. It was made without regards with
                 # potential filelog related behavior.
                 if parent == 1:
+                    if newcopies is copies:
+                        newcopies = copies.copy()
                     minor, major = othercopies, newcopies
                 else:
-                    minor, major = newcopies, othercopies
+                    # we do not know if the other dict is a copy or not, so we
+                    # need to blindly copy it. Future change should make this
+                    # unnecessary.
+                    minor, major = newcopies, othercopies.copy()
                 copies = _merge_copies_dict(minor, major, isancestor, changes)
                 all_copies[c] = copies
 
