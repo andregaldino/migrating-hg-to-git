@@ -376,14 +376,22 @@ def parseexpr(expr):
     ('string', 'foo')
     >>> parseexpr(b'foo(bar)')
     ('func', ('symbol', 'foo'), ('symbol', 'bar'))
-    >>> parseexpr(b'foo(')
-    Traceback (most recent call last):
-      ...
-    ParseError: ('not a prefix: end', 4)
-    >>> parseexpr(b'"foo" "bar"')
-    Traceback (most recent call last):
-      ...
-    ParseError: ('invalid token', 7)
+    >>> from . import error
+    >>> from . import pycompat
+    >>> try:
+    ...   parseexpr(b'foo(')
+    ... except error.ParseError as e:
+    ...   pycompat.sysstr(e.message)
+    ...   e.location
+    'not a prefix: end'
+    4
+    >>> try:
+    ...   parseexpr(b'"foo" "bar"')
+    ... except error.ParseError as e:
+    ...   pycompat.sysstr(e.message)
+    ...   e.location
+    'invalid token'
+    7
     """
     try:
         return _parseexpr(expr)

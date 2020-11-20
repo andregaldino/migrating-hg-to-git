@@ -558,14 +558,22 @@ def _parsewith(spec, lookup=None, syminitletters=None):
 
     >>> _parsewith(b'foo($1)', syminitletters=_aliassyminitletters)
     ('func', ('symbol', 'foo'), ('symbol', '$1'))
-    >>> _parsewith(b'$1')
-    Traceback (most recent call last):
-      ...
-    ParseError: ("syntax error in revset '$1'", 0)
-    >>> _parsewith(b'foo bar')
-    Traceback (most recent call last):
-      ...
-    ParseError: ('invalid token', 4)
+    >>> from . import error
+    >>> from . import pycompat
+    >>> try:
+    ...   _parsewith(b'$1')
+    ... except error.ParseError as e:
+    ...   pycompat.sysstr(e.message)
+    ...   e.location
+    "syntax error in revset '$1'"
+    0
+    >>> try:
+    ...   _parsewith(b'foo bar')
+    ... except error.ParseError as e:
+    ...   pycompat.sysstr(e.message)
+    ...   e.location
+    'invalid token'
+    4
     """
     if lookup and spec.startswith(b'revset(') and spec.endswith(b')'):
         lookup = None
