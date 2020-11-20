@@ -256,9 +256,7 @@ def dispatch(req):
             if req.fmsg:
                 req.ui.fmsg = req.fmsg
         except error.Abort as inst:
-            ferr.write(_(b"abort: %s\n") % inst.message)
-            if inst.hint:
-                ferr.write(_(b"(%s)\n") % inst.hint)
+            ferr.write(inst.format())
             return -1
         except error.ParseError as inst:
             ferr.write(inst.format())

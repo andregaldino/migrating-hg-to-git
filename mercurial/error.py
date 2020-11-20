@@ -182,6 +182,14 @@ class Abort(Hint, Exception):
             # may raise another exception.
             return pycompat.sysstr(self.__bytes__())
 
+    def format(self):
+        from .i18n import _
+
+        message = _(b"abort: %s\n") % self.message
+        if self.hint:
+            message += _(b"(%s)\n") % self.hint
+        return message
+
 
 class InputError(Abort):
     """Indicates that the user made an error in their input.

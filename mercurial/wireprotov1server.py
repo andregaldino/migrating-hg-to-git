@@ -685,9 +685,7 @@ def unbundle(repo, proto, heads):
                     # We did not change it to minimise code change.
                     # This need to be moved to something proper.
                     # Feel free to do it.
-                    procutil.stderr.write(b"abort: %s\n" % exc.message)
-                    if exc.hint is not None:
-                        procutil.stderr.write(b"(%s)\n" % exc.hint)
+                    procutil.stderr.write(exc.format())
                     procutil.stderr.flush()
                     return wireprototypes.pushres(
                         0, output.getvalue() if output else b''
