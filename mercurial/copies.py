@@ -354,7 +354,9 @@ def _combine_changeset_copies(
                         source = prev[1]
                     newcopies[dest] = (c, source)
                 assert newcopies is not copies
-            if changes is not None:
+            if changes is not None and changes.removed:
+                if newcopies is copies:
+                    newcopies = copies.copy()
                 for f in changes.removed:
                     if f in newcopies:
                         if newcopies is copies:
