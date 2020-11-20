@@ -366,6 +366,9 @@ def _combine_changeset_copies(
             othercopies = all_copies.get(c)
             if othercopies is None:
                 all_copies[c] = newcopies
+            elif newcopies is othercopies:
+                # nothing to merge:
+                pass
             else:
                 # we are the second parent to work on c, we need to merge our
                 # work with the other.
