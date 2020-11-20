@@ -272,8 +272,6 @@ class ParseError(Abort):
         else:
             Exception.__init__(self, message)
 
-    __bytes__ = _tobytes
-
     def format(self):
         from .i18n import _
 
