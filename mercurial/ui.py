@@ -469,7 +469,9 @@ class ui(object):
             except error.ParseError as inst:
                 if trusted:
                     raise
-                self.warn(_(b'ignored: %s\n') % stringutil.forcebytestr(inst))
+                self.warn(
+                    _(b'ignored %s: %s\n') % (inst.location, inst.message)
+                )
 
         self._applyconfig(cfg, trusted, root)
 
