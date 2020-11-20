@@ -378,14 +378,11 @@ def _combine_changeset_copies(
                 # changeset based copies. It was made without regards with
                 # potential filelog related behavior.
                 if parent == 1:
-                    _merge_copies_dict(
-                        othercopies, newcopies, isancestor, changes
-                    )
+                    minor, major = othercopies, newcopies
                 else:
-                    _merge_copies_dict(
-                        newcopies, othercopies, isancestor, changes
-                    )
-                    all_copies[c] = newcopies
+                    minor, major = newcopies, othercopies
+                _merge_copies_dict(minor, major, isancestor, changes)
+                all_copies[c] = minor
 
     final_copies = {}
     for dest, (tt, source) in all_copies[targetrev].items():
