@@ -265,12 +265,6 @@ class ParseError(Abort):
     def __init__(self, message, location=None, hint=None):
         super(ParseError, self).__init__(message, hint=hint)
         self.location = location
-        # Pass the message and possibly location into the Exception constructor
-        # to help code that looks for exc.args.
-        if location is not None:
-            Exception.__init__(self, message, location)
-        else:
-            Exception.__init__(self, message)
 
     def format(self):
         from .i18n import _
