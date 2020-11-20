@@ -254,26 +254,15 @@ f = open(b'.hg/hgrc', 'wb')
 f.write(b'foo')
 f.close()
 
-# This is a hack to remove b'' prefixes from ParseError.__bytes__ on
-# Python 3.
-def normalizeparseerror(e):
-    if pycompat.ispy3:
-        args = [a.decode('utf-8') for a in e.args]
-    else:
-        args = e.args
-
-    return error.ParseError(*args)
-
-
 try:
     testui(user=b'abc', group=b'def', silent=True)
 except error.ParseError as inst:
-    bprint(normalizeparseerror(inst))
+    bprint(inst.format())
 
 try:
     testui(debug=True, silent=True)
 except error.ParseError as inst:
-    bprint(normalizeparseerror(inst))
+    bprint(inst.format())
 
 print()
 bprint(b'# access typed information')

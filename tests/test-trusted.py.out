@@ -176,7 +176,8 @@ quux
 not trusting file .hg/hgrc from untrusted user abc, group def
 ignored: ('foo', '.hg/hgrc:1')
 # same user, same group
-ParseError('foo', '.hg/hgrc:1')
+hg: parse error at .hg/hgrc:1: foo
+
 
 # access typed information
 # different user, different group
