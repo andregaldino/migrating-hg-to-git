@@ -383,8 +383,8 @@ def _combine_changeset_copies(
                     minor, major = othercopies, newcopies
                 else:
                     minor, major = newcopies, othercopies
-                _merge_copies_dict(minor, major, isancestor, changes)
-                all_copies[c] = minor
+                copies = _merge_copies_dict(minor, major, isancestor, changes)
+                all_copies[c] = copies
 
     final_copies = {}
     for dest, (tt, source) in all_copies[targetrev].items():
@@ -403,6 +403,8 @@ def _merge_copies_dict(minor, major, isancestor, changes):
 
     - `ismerged(path)`: callable return True if `path` have been merged in the
                         current revision,
+
+    return the resulting dict (in practice, the "minor" object, updated)
     """
     for dest, value in major.items():
         other = minor.get(dest)
@@ -436,6 +438,7 @@ def _merge_copies_dict(minor, major, isancestor, changes):
                     minor[dest] = value
                 elif isancestor(other_tt, new_tt):
                     minor[dest] = value
+    return minor
 
 
 def _revinfo_getter_extra(repo):
