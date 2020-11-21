@@ -2235,8 +2235,9 @@ def phabimport(ui, repo, *specs, **opts):
         (b'', b'resign', False, _(b'resign as a reviewer from revisions')),
         (b'', b'commandeer', False, _(b'commandeer revisions')),
         (b'm', b'comment', b'', _(b'comment on the last revision')),
+        (b'r', b'rev', b'', _(b'local revision to update'), _(b'REV')),
     ],
-    _(b'DREVSPEC... [OPTIONS]'),
+    _(b'[DREVSPEC...| -r REV...] [OPTIONS]'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
     optionalrepo=True,
 )
@@ -2265,6 +2266,28 @@ def phabupdate(ui, repo, *specs, **opts):
     actions = []
     for f in flags:
         actions.append({b'type': f, b'value': True})
+
+    revs = opts.get(b'rev')
+    if revs:
+        if not repo:
+            raise error.InputError(_(b'--rev requires a repository'))
+
+        if specs:
+            raise error.InputError(_(b'cannot specify both DREVSPEC and --rev'))
+
+        drevmap = getdrevmap(repo, scmutil.revrange(repo, [revs]))
+        specs = []
+        unknown = []
+        for r, d in pycompat.iteritems(drevmap):
+            if d is None:
+                unknown.append(repo[r])
+            else:
+                specs.append(b'D%d' % d)
+        if unknown:
+            raise error.InputError(
+                _(b'selected revisions without a Differential: %s')
+                % scmutil.nodesummaries(repo, unknown)
+            )
 
     drevs = _getdrevs(ui, opts.get(b'stack'), specs)
     for i, drev in enumerate(drevs):

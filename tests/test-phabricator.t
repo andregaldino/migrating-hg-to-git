@@ -590,6 +590,14 @@ Phabimport can create secret commits
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     create beta for phabricator test
   
+phabupdate can convert from local revisions
+
+  $ hg phabupdate --reclaim D7917 -r '.: and not public()'
+  abort: cannot specify both DREVSPEC and --rev
+  [10]
+
+  $ hg phabupdate --reclaim -r '.: and not public()' --test-vcr "$VCR/phabupdate-revs.json"
+
 Phabimport accepts multiple DREVSPECs
 
   $ hg rollback --config ui.rollback=True
