@@ -458,8 +458,8 @@ fn add_from_changes(
 /// In case of conflict, value from "major" will be picked, unless in some
 /// cases. See inline documentation for details.
 fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
-    minor: TimeStampedPathCopies,
-    major: TimeStampedPathCopies,
+    mut minor: TimeStampedPathCopies,
+    mut major: TimeStampedPathCopies,
     changes: &ChangedFiles,
     oracle: &mut AncestorOracle<A>,
 ) -> TimeStampedPathCopies {
@@ -475,6 +475,51 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     if minor.is_empty() {
         major
     } else if major.is_empty() {
+        minor
+    } else if minor.len() * 2 < major.len() {
+        // Lets says we are merging two TimeStampedPathCopies instance A and B.
+        //
+        // If A contains N items, the merge result will never contains more
+        // than N values differents than the one in A
+        //
+        // If B contains M items, with M > N, the merge result will always
+        // result in a minimum of M - N value differents than the on in
+        // A
+        //
+        // As a result, if N < (M-N), we know that simply iterating over A will
+        // yield less difference than iterating over the difference
+        // between A and B.
+        //
+        // This help performance a lot in case were a tiny
+        // TimeStampedPathCopies is merged with a much larger one.
+        for (dest, src_minor) in minor {
+            let src_major = major.get(&dest);
+            match src_major {
+                None => major.insert(dest, src_minor),
+                Some(src_major) => {
+                    match cmp_value(&dest, &src_minor, src_major) {
+                        MergePick::Any | MergePick::Major => None,
+                        MergePick::Minor => major.insert(dest, src_minor),
+                    }
+                }
+            };
+        }
+        major
+    } else if major.len() * 2 < minor.len() {
+        // This use the same rational than the previous block.
+        // (Check previous block documentation for details.)
+        for (dest, src_major) in major {
+            let src_minor = minor.get(&dest);
+            match src_minor {
+                None => minor.insert(dest, src_major),
+                Some(src_minor) => {
+                    match cmp_value(&dest, src_minor, &src_major) {
+                        MergePick::Any | MergePick::Minor => None,
+                        MergePick::Major => minor.insert(dest, src_major),
+                    }
+                }
+            };
+        }
         minor
     } else {
         let mut override_minor = Vec::new();
