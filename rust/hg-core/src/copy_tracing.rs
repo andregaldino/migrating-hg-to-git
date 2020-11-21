@@ -457,7 +457,6 @@ fn add_from_changes(
 ///
 /// In case of conflict, value from "major" will be picked, unless in some
 /// cases. See inline documentation for details.
-#[allow(clippy::if_same_then_else)]
 fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     minor: TimeStampedPathCopies,
     major: TimeStampedPathCopies,
@@ -500,67 +499,14 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
             DiffItem::Update { old, new } => {
                 let (dest, src_major) = new;
                 let (_, src_minor) = old;
-                let mut pick_minor = || (to_major(dest, src_minor));
-                let mut pick_major = || (to_minor(dest, src_major));
-                if src_major.path == src_minor.path {
-                    // we have the same value, but from other source;
-                    if src_major.rev == src_minor.rev {
-                        // If the two entry are identical, no need to do
-                        // anything (but diff should not have yield them)
-                        unreachable!();
-                    } else if oracle.is_ancestor(src_major.rev, src_minor.rev)
-                    {
-                        pick_minor();
-                    } else {
-                        pick_major();
-                    }
-                } else if src_major.rev == src_minor.rev {
-                    // We cannot get copy information for both p1 and p2 in the
-                    // same rev. So this is the same value.
-                    unreachable!();
-                } else {
-                    let action = changes.get_merge_case(&dest);
-                    if src_major.path.is_none()
-                        && action == MergeCase::Salvaged
-                    {
-                        // If the file is "deleted" in the major side but was
-                        // salvaged by the merge, we keep the minor side alive
-                        pick_minor();
-                    } else if src_minor.path.is_none()
-                        && action == MergeCase::Salvaged
-                    {
-                        // If the file is "deleted" in the minor side but was
-                        // salvaged by the merge, unconditionnaly preserve the
-                        // major side.
-                        pick_major();
-                    } else if action == MergeCase::Merged {
-                        // If the file was actively merged, copy information
-                        // from each side might conflict.  The major side will
-                        // win such conflict.
-                        pick_major();
-                    } else if oracle.is_ancestor(src_major.rev, src_minor.rev)
-                    {
-                        // If the minor side is strictly newer than the major
-                        // side, it should be kept.
-                        pick_minor();
-                    } else if src_major.path.is_some() {
-                        // without any special case, the "major" value win
-                        // other the "minor" one.
-                        pick_major();
-                    } else if oracle.is_ancestor(src_minor.rev, src_major.rev)
-                    {
-                        // the "major" rev is a direct ancestors of "minor",
-                        // any different value should
-                        // overwrite
-                        pick_major();
-                    } else {
-                        // major version is None (so the file was deleted on
-                        // that branch) and that branch is independant (neither
-                        // minor nor major is an ancestors of the other one.)
-                        // We preserve the new
-                        // information about the new file.
-                        pick_minor();
-                    }
+                match compare_value(
+                    changes, oracle, dest, src_minor, src_major,
+                ) {
+                    MergePick::Major => to_minor(dest, src_major),
+                    MergePick::Minor => to_major(dest, src_minor),
+                    // If the two entry are identical, no need to do
+                    // anything (but diff should not have yield them)
+                    MergePick::Any => unreachable!(),
                 }
             }
         };
@@ -585,4 +531,80 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
         }
     }
     result
+}
+
+/// represent the side that should prevail when merging two
+/// TimeStampedPathCopies
+enum MergePick {
+    /// The "major" (p1) side prevails
+    Major,
+    /// The "minor" (p2) side prevails
+    Minor,
+    /// Any side could be used (because they are the same)
+    Any,
+}
+
+/// decide which side prevails in case of conflicting values
+#[allow(clippy::if_same_then_else)]
+fn compare_value<A: Fn(Revision, Revision) -> bool>(
+    changes: &ChangedFiles,
+    oracle: &mut AncestorOracle<A>,
+    dest: &HgPathBuf,
+    src_minor: &TimeStampedPathCopy,
+    src_major: &TimeStampedPathCopy,
+) -> MergePick {
+    if src_major.path == src_minor.path {
+        // we have the same value, but from other source;
+        if src_major.rev == src_minor.rev {
+            // If the two entry are identical, they are both valid
+            MergePick::Any
+        } else if oracle.is_ancestor(src_major.rev, src_minor.rev) {
+            MergePick::Minor
+        } else {
+            MergePick::Major
+        }
+    } else if src_major.rev == src_minor.rev {
+        // We cannot get copy information for both p1 and p2 in the
+        // same rev. So this is the same value.
+        unreachable!(
+            "conflict information from p1 and p2 in the same revision"
+        );
+    } else {
+        let action = changes.get_merge_case(&dest);
+        if src_major.path.is_none() && action == MergeCase::Salvaged {
+            // If the file is "deleted" in the major side but was
+            // salvaged by the merge, we keep the minor side alive
+            MergePick::Minor
+        } else if src_minor.path.is_none() && action == MergeCase::Salvaged {
+            // If the file is "deleted" in the minor side but was
+            // salvaged by the merge, unconditionnaly preserve the
+            // major side.
+            MergePick::Major
+        } else if action == MergeCase::Merged {
+            // If the file was actively merged, copy information
+            // from each side might conflict.  The major side will
+            // win such conflict.
+            MergePick::Major
+        } else if oracle.is_ancestor(src_major.rev, src_minor.rev) {
+            // If the minor side is strictly newer than the major
+            // side, it should be kept.
+            MergePick::Minor
+        } else if src_major.path.is_some() {
+            // without any special case, the "major" value win
+            // other the "minor" one.
+            MergePick::Major
+        } else if oracle.is_ancestor(src_minor.rev, src_major.rev) {
+            // the "major" rev is a direct ancestors of "minor",
+            // any different value should
+            // overwrite
+            MergePick::Major
+        } else {
+            // major version is None (so the file was deleted on
+            // that branch) and that branch is independant (neither
+            // minor nor major is an ancestors of the other one.)
+            // We preserve the new
+            // information about the new file.
+            MergePick::Minor
+        }
+    }
 }
