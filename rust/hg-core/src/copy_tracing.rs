@@ -464,73 +464,74 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     oracle: &mut AncestorOracle<A>,
 ) -> TimeStampedPathCopies {
     if minor.is_empty() {
-        return major;
+        major
     } else if major.is_empty() {
-        return minor;
-    }
-    let mut override_minor = Vec::new();
-    let mut override_major = Vec::new();
-
-    let mut to_major = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
-        override_major.push((k.clone(), v.clone()))
-    };
-    let mut to_minor = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
-        override_minor.push((k.clone(), v.clone()))
-    };
-
-    // The diff function leverage detection of the identical subpart if minor
-    // and major has some common ancestors. This make it very fast is most
-    // case.
-    //
-    // In case where the two map are vastly different in size, the current
-    // approach is still slowish because the iteration will iterate over
-    // all the "exclusive" content of the larger on. This situation can be
-    // frequent when the subgraph of revision we are processing has a lot
-    // of roots. Each roots adding they own fully new map to the mix (and
-    // likely a small map, if the path from the root to the "main path" is
-    // small.
-    //
-    // We could do better by detecting such situation and processing them
-    // differently.
-    for d in minor.diff(&major) {
-        match d {
-            DiffItem::Add(k, v) => to_minor(k, v),
-            DiffItem::Remove(k, v) => to_major(k, v),
-            DiffItem::Update { old, new } => {
-                let (dest, src_major) = new;
-                let (_, src_minor) = old;
-                match compare_value(
-                    changes, oracle, dest, src_minor, src_major,
-                ) {
-                    MergePick::Major => to_minor(dest, src_major),
-                    MergePick::Minor => to_major(dest, src_minor),
-                    // If the two entry are identical, no need to do
-                    // anything (but diff should not have yield them)
-                    MergePick::Any => unreachable!(),
-                }
-            }
-        };
-    }
-
-    let updates;
-    let mut result;
-    if override_major.is_empty() {
-        result = major
-    } else if override_minor.is_empty() {
-        result = minor
+        minor
     } else {
-        if override_minor.len() < override_major.len() {
-            updates = override_minor;
-            result = minor;
+        let mut override_minor = Vec::new();
+        let mut override_major = Vec::new();
+
+        let mut to_major = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
+            override_major.push((k.clone(), v.clone()))
+        };
+        let mut to_minor = |k: &HgPathBuf, v: &TimeStampedPathCopy| {
+            override_minor.push((k.clone(), v.clone()))
+        };
+
+        // The diff function leverage detection of the identical subpart if
+        // minor and major has some common ancestors. This make it very
+        // fast is most case.
+        //
+        // In case where the two map are vastly different in size, the current
+        // approach is still slowish because the iteration will iterate over
+        // all the "exclusive" content of the larger on. This situation can be
+        // frequent when the subgraph of revision we are processing has a lot
+        // of roots. Each roots adding they own fully new map to the mix (and
+        // likely a small map, if the path from the root to the "main path" is
+        // small.
+        //
+        // We could do better by detecting such situation and processing them
+        // differently.
+        for d in minor.diff(&major) {
+            match d {
+                DiffItem::Add(k, v) => to_minor(k, v),
+                DiffItem::Remove(k, v) => to_major(k, v),
+                DiffItem::Update { old, new } => {
+                    let (dest, src_major) = new;
+                    let (_, src_minor) = old;
+                    match compare_value(
+                        changes, oracle, dest, src_minor, src_major,
+                    ) {
+                        MergePick::Major => to_minor(dest, src_major),
+                        MergePick::Minor => to_major(dest, src_minor),
+                        // If the two entry are identical, no need to do
+                        // anything (but diff should not have yield them)
+                        MergePick::Any => unreachable!(),
+                    }
+                }
+            };
+        }
+
+        let updates;
+        let mut result;
+        if override_major.is_empty() {
+            result = major
+        } else if override_minor.is_empty() {
+            result = minor
         } else {
-            updates = override_major;
-            result = major;
+            if override_minor.len() < override_major.len() {
+                updates = override_minor;
+                result = minor;
+            } else {
+                updates = override_major;
+                result = major;
+            }
+            for (k, v) in updates {
+                result.insert(k, v);
+            }
         }
-        for (k, v) in updates {
-            result.insert(k, v);
-        }
+        result
     }
-    result
 }
 
 /// represent the side that should prevail when merging two
