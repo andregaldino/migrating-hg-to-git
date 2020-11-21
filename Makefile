@@ -8,9 +8,9 @@ export PREFIX=/usr/local
 
 # Default to Python 3.
 #
-# Windows ships Python 3 as `python.exe`.
+# Windows ships Python 3 as `python.exe`, which may not be on PATH.  py.exe is.
 ifeq ($(OS),Windows_NT)
-PYTHON?=python
+PYTHON?=py -3
 else
 PYTHON?=python3
 endif
