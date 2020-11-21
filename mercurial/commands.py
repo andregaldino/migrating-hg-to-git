@@ -2227,13 +2227,13 @@ def config(ui, repo, *values, **opts):
                 raise error.InputError(
                     _(b"repository is not shared; can't use --shared")
                 )
-                if requirements.SHARESAFE_REQUIREMENT not in repo.requirements:
-                    raise error.InputError(
-                        _(
-                            b"share safe feature not unabled; "
-                            b"unable to edit shared source repository config"
-                        )
+            if requirements.SHARESAFE_REQUIREMENT not in repo.requirements:
+                raise error.InputError(
+                    _(
+                        b"share safe feature not enabled; "
+                        b"unable to edit shared source repository config"
                     )
+                )
             paths = [vfsmod.vfs(repo.sharedpath).join(b'hgrc')]
         elif opts.get(b'non_shared'):
             paths = [repo.vfs.join(b'hgrc-not-shared')]
