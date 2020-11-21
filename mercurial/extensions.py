@@ -222,13 +222,16 @@ def load(ui, name, path, loadingtime=None):
     # extensions short circuit when loaded with a known incompatible version
     # of Mercurial.
     minver = getattr(mod, 'minimumhgversion', None)
-    if minver and util.versiontuple(minver, 2) > util.versiontuple(n=2):
-        msg = _(
-            b'(third party extension %s requires version %s or newer '
-            b'of Mercurial (current: %s); disabling)\n'
-        )
-        ui.warn(msg % (shortname, minver, util.version()))
-        return
+    if minver:
+        curver = util.versiontuple(n=2)
+
+        if None in curver or util.versiontuple(minver, 2) > curver:
+            msg = _(
+                b'(third party extension %s requires version %s or newer '
+                b'of Mercurial (current: %s); disabling)\n'
+            )
+            ui.warn(msg % (shortname, minver, util.version()))
+            return
     ui.log(b'extension', b'    - validating extension tables: %s\n', shortname)
     _validatetables(ui, mod)
 
