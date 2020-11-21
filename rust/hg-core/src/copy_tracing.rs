@@ -463,6 +463,15 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     changes: &ChangedFiles,
     oracle: &mut AncestorOracle<A>,
 ) -> TimeStampedPathCopies {
+    // This closure exist as temporary help while multiple developper are
+    // actively working on this code. Feel free to re-inline it once this
+    // code is more settled.
+    let mut cmp_value =
+        |dest: &HgPathBuf,
+         src_minor: &TimeStampedPathCopy,
+         src_major: &TimeStampedPathCopy| {
+            compare_value(changes, oracle, dest, src_minor, src_major)
+        };
     if minor.is_empty() {
         major
     } else if major.is_empty() {
@@ -499,9 +508,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                 DiffItem::Update { old, new } => {
                     let (dest, src_major) = new;
                     let (_, src_minor) = old;
-                    match compare_value(
-                        changes, oracle, dest, src_minor, src_major,
-                    ) {
+                    match cmp_value(dest, src_minor, src_major) {
                         MergePick::Major => to_minor(dest, src_major),
                         MergePick::Minor => to_major(dest, src_minor),
                         // If the two entry are identical, no need to do
