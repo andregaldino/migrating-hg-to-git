@@ -243,6 +243,10 @@ impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
         }
     }
 
+    fn record_overwrite(&mut self, anc: Revision, desc: Revision) {
+        self.pairs.insert((anc, desc), true);
+    }
+
     /// returns `true` if `anc` is an ancestors of `desc`, `false` otherwise
     fn is_overwrite(&mut self, anc: Revision, desc: Revision) -> bool {
         if anc > desc {
@@ -390,6 +394,7 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                 // combine it with data for that revision
                 let vertex_copies = add_from_changes(
                     &mut path_map,
+                    &mut oracle,
                     &parent_copies,
                     &changes,
                     Parent::FirstParent,
@@ -410,6 +415,7 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                 // combine it with data for that revision
                 let vertex_copies = add_from_changes(
                     &mut path_map,
+                    &mut oracle,
                     &parent_copies,
                     &changes,
                     Parent::SecondParent,
@@ -485,8 +491,9 @@ fn get_and_clean_parent_copies(
 
 /// Combine ChangedFiles with some existing PathCopies information and return
 /// the result
-fn add_from_changes(
+fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
     path_map: &mut TwoWayPathMap,
+    oracle: &mut AncestorOracle<A>,
     base_copies: &TimeStampedPathCopies,
     changes: &ChangedFiles,
     parent: Parent,
@@ -521,6 +528,7 @@ fn add_from_changes(
                     }
                     Entry::Occupied(mut slot) => {
                         let mut ttpc = slot.get_mut();
+                        oracle.record_overwrite(ttpc.rev, current_rev);
                         ttpc.rev = current_rev;
                         ttpc.path = entry;
                     }
@@ -534,6 +542,7 @@ fn add_from_changes(
                 // TimeStampedPathCopies object.
                 let deleted = path_map.tokenize(deleted_path);
                 copies.entry(deleted).and_modify(|old| {
+                    oracle.record_overwrite(old.rev, current_rev);
                     old.rev = current_rev;
                     old.path = None;
                 });
