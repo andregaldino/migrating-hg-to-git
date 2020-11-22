@@ -90,6 +90,6 @@ Keep python3 tests sorted:
 
 Keep Windows line endings in check
 
-  $ hg files 'set:eol(dos)'
+  $ testrepohg files 'set:eol(dos)'
   contrib/win32/hg.bat
   contrib/win32/mercurial.ini
