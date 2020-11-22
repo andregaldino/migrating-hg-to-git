@@ -24,7 +24,8 @@ Command table
 
 To write your own extension, your python module can provide an optional dict
 named ``cmdtable`` with entries describing each command. A command should be
-registered to the ``cmdtable`` by ``@command`` decorator.
+registered to the ``cmdtable`` by ``@command`` decorator. All string-like
+values must be the ``bytes`` type, and are thus prefixed with ``b``.
 
 Example using ``@command`` decorator (requires Mercurial 1.9)::
 
@@ -39,10 +40,10 @@ Example using ``@command`` decorator (requires Mercurial 1.9)::
         from mercurial import cmdutil
         command = cmdutil.command(cmdtable)
 
-    @command('print-parents',
-        [('s', 'short', None, _('print short form')),
-         ('l', 'long', None, _('print long form'))],
-        _('[options] node'))
+    @command(b'print-parents',
+        [(b's', b'short', None, _(b'print short form')),
+         (b'l', b'long', None, _(b'print long form'))],
+        _(b'[options] node'))
     def printparents(ui, repo, node, **opts):
         ...
 
@@ -84,7 +85,7 @@ If there is no repo to be associated with the command and consequently no
 ``repo`` passed, then ``norepo=True`` should be passed to the ``@command``
 decorator::
 
-    @command('mycommand', [], norepo=True)
+    @command(b'mycommand', [], norepo=True)
     def mycommand(ui, **opts):
         ...
 
@@ -140,7 +141,7 @@ Communicating with the user
 ===========================
 
 Besides the ``ui`` methods, like ``ui.write(*msg)`` or
-``ui.prompt(msg, default="y")``, an extension can add help text for each
+``ui.prompt(msg, default=b"y")``, an extension can add help text for each
 of its commands and the extension itself.
 
 The module docstring will be used as help string when ``hg help extensionname``
@@ -248,7 +249,7 @@ For example::
         class echologui(ui.__class__):
             def log(self, service, *msg, **opts):
                 if msg:
-                    self.write('%s: %s\n' % (service, msg[0] % msg[1:]))
+                    self.write(b'%s: %s\n' % (service, msg[0] % msg[1:]))
                 super(echologui, self).log(service, *msg, **opts)
 
         ui.__class__ = echologui
@@ -259,7 +260,7 @@ Configuring Hooks
 Some extensions must use hooks to do their work. These required hooks can
 be configured manually by the user by modifying the ``[hook]`` section of
 their hgrc, but they can also be configured automatically by calling the
-``ui.setconfig('hooks', ...)`` function in one of the setup functions
+``ui.setconfig(b'hooks', ...)`` function in one of the setup functions
 described above.
 
 The main difference between manually modifying the hooks section in the hgrc
@@ -273,21 +274,21 @@ For example::
 
     # Define hooks -- note that the actual function name it irrelevant.
     def preupdatehook(ui, repo, **kwargs):
-        ui.write("Pre-update hook triggered\n")
+        ui.write(b"Pre-update hook triggered\n")
 
     def updatehook(ui, repo, **kwargs):
-        ui.write("Update hook triggered\n")
+        ui.write(b"Update hook triggered\n")
 
     def uisetup(ui):
         # When pre-<cmd> and post-<cmd> hooks are configured by means of
         # the ui.setconfig() function, you must use the ui object passed
         # to uisetup or extsetup.
-        ui.setconfig("hooks", "pre-update.myextension", preupdatehook)
+        ui.setconfig(b"hooks", b"pre-update.myextension", preupdatehook)
 
     def reposetup(ui, repo):
         # Repository-specific hooks can be configured here. These include
         # the update hook.
-        ui.setconfig("hooks", "update.myextension", updatehook)
+        ui.setconfig(b"hooks", b"update.myextension", updatehook)
 
 Note how different hooks may need to be configured in different setup
 functions. In the example you can see that the ``update`` hook must be
@@ -301,7 +302,7 @@ Every extension should use the ``testedwith`` variable to specify Mercurial
 releases it's known to be compatible with. This helps us and users diagnose
 where problems are coming from::
 
-    testedwith = '2.0 2.0.1 2.1 2.1.1 2.1.2'
+    testedwith = b'2.0 2.0.1 2.1 2.1.1 2.1.2'
 
 Do not use the ``internal`` marker in third-party extensions; we will
 immediately drop all bug reports mentioning your extension if we catch you
@@ -311,12 +312,12 @@ Similarly, an extension can use the ``buglink`` variable to specify how users
 should report issues with the extension.  This link will be included in the
 error message if the extension produces errors::
 
-    buglink = 'https://bitbucket.org/USER/REPO/issues'
+    buglink = b'https://bitbucket.org/USER/REPO/issues'
 
 If an extension requires a minimum version of Mercurial, it can be declared
 with the ``minimumhgversion`` variable::
 
-    minimumhgversion = '4.6'
+    minimumhgversion = b'4.6'
 
 Older clients will print a warning that the extension requires a new version,
 instead of attempting to load it.
@@ -347,7 +348,7 @@ uisetup
 extsetup
 --------
 
-* Changes depending on the status of other extensions. (``if extensions.find('mq')``)
+* Changes depending on the status of other extensions. (``if extensions.find(b'mq')``)
 * Add a global option to all commands
 * Extend revsets
 
