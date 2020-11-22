@@ -53,29 +53,29 @@ class exthelper(object):
         revsetpredicate = eh.revsetpredicate
         templatekeyword = eh.templatekeyword
 
-        @eh.command('mynewcommand',
-            [('r', 'rev', [], _('operate on these revisions'))],
-            _('-r REV...'),
+        @eh.command(b'mynewcommand',
+            [(b'r', b'rev', [], _(b'operate on these revisions'))],
+            _(b'-r REV...'),
             helpcategory=command.CATEGORY_XXX)
         def newcommand(ui, repo, *revs, **opts):
             # implementation goes here
 
-        eh.configitem('experimental', 'foo',
+        eh.configitem(b'experimental', b'foo',
             default=False,
         )
 
-        @eh.filesetpredicate('lfs()')
+        @eh.filesetpredicate(b'lfs()')
         def filesetbabar(mctx, x):
             return mctx.predicate(...)
 
-        @eh.revsetpredicate('hidden')
+        @eh.revsetpredicate(b'hidden')
         def revsetbabar(repo, subset, x):
-            args = revset.getargs(x, 0, 0, 'babar accept no argument')
-            return [r for r in subset if 'babar' in repo[r].description()]
+            args = revset.getargs(x, 0, 0, b'babar accept no argument')
+            return [r for r in subset if b'babar' in repo[r].description()]
 
-        @eh.templatekeyword('babar')
+        @eh.templatekeyword(b'babar')
         def kwbabar(ctx):
-            return 'babar'
+            return b'babar'
     """
 
     def __init__(self):
@@ -160,7 +160,7 @@ class exthelper(object):
         The following operations belong here:
 
         - Changes depending on the status of other extensions. (if
-          extensions.find('mq'))
+          extensions.find(b'mq'))
         - Add a global option to all commands
         """
         knownexts = {}
@@ -203,7 +203,7 @@ class exthelper(object):
 
             @eh.uisetup
             def setupbabar(ui):
-                print 'this is uisetup!'
+                print('this is uisetup!')
         """
         self._uicallables.append(call)
         return call
@@ -215,7 +215,7 @@ class exthelper(object):
 
             @eh.uipopulate
             def setupfoo(ui):
-                print 'this is uipopulate!'
+                print('this is uipopulate!')
         """
         self._uipopulatecallables.append(call)
         return call
@@ -227,7 +227,7 @@ class exthelper(object):
 
             @eh.extsetup
             def setupcelestine(ui):
-                print 'this is extsetup!'
+                print('this is extsetup!')
         """
         self._extcallables.append(call)
         return call
@@ -239,7 +239,7 @@ class exthelper(object):
 
             @eh.reposetup
             def setupzephir(ui, repo):
-                print 'this is reposetup!'
+                print('this is reposetup!')
         """
         self._repocallables.append(call)
         return call
@@ -258,9 +258,9 @@ class exthelper(object):
 
         example::
 
-            @eh.wrapcommand('summary')
+            @eh.wrapcommand(b'summary')
             def wrapsummary(orig, ui, repo, *args, **kwargs):
-                ui.note('Barry!')
+                ui.note(b'Barry!')
                 return orig(ui, repo, *args, **kwargs)
 
         The `opts` argument allows specifying a list of tuples for additional
@@ -298,9 +298,9 @@ class exthelper(object):
 
         example::
 
-            @eh.function(discovery, 'checkheads')
+            @eh.function(discovery, b'checkheads')
             def wrapfunction(orig, *args, **kwargs):
-                ui.note('His head smashed in and his heart cut out')
+                ui.note(b'His head smashed in and his heart cut out')
                 return orig(*args, **kwargs)
         """
 
