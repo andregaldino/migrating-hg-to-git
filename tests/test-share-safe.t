@@ -373,6 +373,7 @@ Upgrade
 Make sure existing shares still works
 
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share
+  warning: source repository supports share-safe functionality. Reshare to upgrade.
   @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
   |
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo

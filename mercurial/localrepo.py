@@ -557,6 +557,11 @@ def makelocalrepository(baseui, path, intents=None):
     # NOTE: presence of SHARESAFE_REQUIREMENT imply that store requirement
     # is present. We never write SHARESAFE_REQUIREMENT for a repo if store
     # is not present, refer checkrequirementscompat() for that
+    #
+    # However, if SHARESAFE_REQUIREMENT is not present, it means that the
+    # repository was shared the old way. We check the share source .hg/requires
+    # for SHARESAFE_REQUIREMENT to detect whether the current repository needs
+    # to be reshared
     if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
 
         if (
@@ -575,6 +580,15 @@ def makelocalrepository(baseui, path, intents=None):
             storevfs = vfsmod.vfs(hgvfs.join(b'store'))
 
         requirements |= _readrequires(storevfs, False)
+    elif shared:
+        sourcerequires = _readrequires(sharedvfs, False)
+        if requirementsmod.SHARESAFE_REQUIREMENT in sourcerequires:
+            ui.warn(
+                _(
+                    b'warning: source repository supports share-safe functionality.'
+                    b' Reshare to upgrade.\n'
+                )
+            )
 
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
