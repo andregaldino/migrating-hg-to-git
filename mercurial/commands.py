@@ -999,7 +999,7 @@ def bisect(
     Returns 0 on success.
     """
     # backward compatibility
-    if rev in b"good bad reset init".split():
+    if rev in (b"good", b"bad", b"reset", b"init"):
         ui.warn(_(b"(use of 'hg bisect <cmd>' is deprecated)\n"))
         cmd, rev, extra = rev, extra, None
         if cmd == b"good":
