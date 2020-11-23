@@ -49,6 +49,7 @@ mercurial.egg-info
 .DS_Store
 tags
 cscope.*
+.vscode/*
 .idea/*
 .asv/*
 .pytype/*
