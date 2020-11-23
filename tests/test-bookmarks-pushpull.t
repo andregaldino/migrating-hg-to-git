@@ -740,7 +740,7 @@ diverging a remote bookmark fails
   $ hg push http://localhost:$HGPORT2/
   pushing to http://localhost:$HGPORT2/
   searching for changes
-  abort: push creates new remote head c922c0139ca0 with bookmark 'Y'!
+  abort: push creates new remote head c922c0139ca0 with bookmark 'Y'
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
   $ hg -R ../a book
@@ -757,7 +757,7 @@ Unrelated marker does not alter the decision
   $ hg push http://localhost:$HGPORT2/
   pushing to http://localhost:$HGPORT2/
   searching for changes
-  abort: push creates new remote head c922c0139ca0 with bookmark 'Y'!
+  abort: push creates new remote head c922c0139ca0 with bookmark 'Y'
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
   $ hg -R ../a book
@@ -1053,7 +1053,7 @@ pushing an existing but divergent bookmark with -B still requires -f
   pushing to $TESTTMP/addmarks
   searching for changes
   remote has heads on branch 'default' that are not known locally: a2a606d9ff1b
-  abort: push creates new remote head 54694f811df9 with bookmark 'X'!
+  abort: push creates new remote head 54694f811df9 with bookmark 'X'
   (pull and merge or see 'hg help push' for details about pushing new heads)
   [255]
   $ cd ../addmarks

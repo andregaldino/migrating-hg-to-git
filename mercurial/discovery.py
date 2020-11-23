@@ -399,12 +399,12 @@ def checkheads(pushop):
                 closedbranches.add(tag)
         closedbranches = closedbranches & set(newbranches)
         if closedbranches:
-            errmsg = _(b"push creates new remote branches: %s (%d closed)!") % (
+            errmsg = _(b"push creates new remote branches: %s (%d closed)") % (
                 branchnames,
                 len(closedbranches),
             )
         else:
-            errmsg = _(b"push creates new remote branches: %s!") % branchnames
+            errmsg = _(b"push creates new remote branches: %s") % branchnames
         hint = _(b"use 'hg push --new-branch' to create new remote branches")
         raise error.Abort(errmsg, hint=hint)
 
@@ -469,15 +469,15 @@ def checkheads(pushop):
             if errormsg is None:
                 if branch not in (b'default', None):
                     errormsg = _(
-                        b"push creates new remote head %s on branch '%s'!"
+                        b"push creates new remote head %s on branch '%s'"
                     ) % (short(dhs[0]), branch,)
                 elif repo[dhs[0]].bookmarks():
                     errormsg = _(
                         b"push creates new remote head %s "
-                        b"with bookmark '%s'!"
+                        b"with bookmark '%s'"
                     ) % (short(dhs[0]), repo[dhs[0]].bookmarks()[0])
                 else:
-                    errormsg = _(b"push creates new remote head %s!") % short(
+                    errormsg = _(b"push creates new remote head %s") % short(
                         dhs[0]
                     )
                 if unsyncedheads:

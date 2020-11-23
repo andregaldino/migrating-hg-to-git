@@ -571,7 +571,7 @@ push -f
   no changes made to subrepo s/ss since last push to $TESTTMP/t/s/ss
   pushing subrepo s to $TESTTMP/t/s
   searching for changes
-  abort: push creates new remote head 12a213df6fa9! (in subrepository "s")
+  abort: push creates new remote head 12a213df6fa9 (in subrepository "s")
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
   $ hg push -f
@@ -1013,7 +1013,7 @@ Issue1977: multirepo push should fail if subrepo push fails
   created new head
   $ hg -R repo2 ci -m3
   $ hg -q -R repo2 push
-  abort: push creates new remote head cc505f09a8b2! (in subrepository "s")
+  abort: push creates new remote head cc505f09a8b2 (in subrepository "s")
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
   $ hg -R repo update

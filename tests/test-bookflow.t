@@ -140,7 +140,7 @@ the bookmark should not move if it diverged from remote
   $ cd ../b
   $ # make sure we cannot push after bookmarks diverged
   $ hg push -B X | grep abort
-  abort: push creates new remote head * with bookmark 'X'! (glob)
+  abort: push creates new remote head * with bookmark 'X' (glob)
   (pull and merge or see 'hg help push' for details about pushing new heads)
   [1]
   $ hg pull -u | grep divergent

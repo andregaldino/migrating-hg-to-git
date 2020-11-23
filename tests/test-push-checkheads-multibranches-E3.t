@@ -87,7 +87,7 @@ Actual testing
   $ hg push -r 'desc("C1")'
   pushing to $TESTTMP/E1/server
   searching for changes
-  abort: push creates new remote head dc44c53142f0!
+  abort: push creates new remote head dc44c53142f0
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
 

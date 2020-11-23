@@ -1015,7 +1015,7 @@ appear on the remote side.
   $ hg push -r 435b5d83910c ../mu
   pushing to ../mu
   searching for changes
-  abort: push creates new remote head 435b5d83910c!
+  abort: push creates new remote head 435b5d83910c
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
   $ hg push -fr 435b5d83910c ../mu # because the push will create new visible head

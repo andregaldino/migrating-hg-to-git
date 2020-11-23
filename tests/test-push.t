@@ -385,7 +385,7 @@ Test `commands.push.require-revs`
   $ hg push -b default
   pushing to $TESTTMP/test-require-revs-dest
   searching for changes
-  abort: push creates new remote head [0-9a-f]+! (re)
+  abort: push creates new remote head [0-9a-f]+ (re)
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
 (demonstrate that even though we don't have anything to exchange, we're still
