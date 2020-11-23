@@ -355,15 +355,15 @@ class pushoperation(object):
 bookmsgmap = {
     b'update': (
         _(b"updating bookmark %s\n"),
-        _(b'updating bookmark %s failed!\n'),
+        _(b'updating bookmark %s failed\n'),
     ),
     b'export': (
         _(b"exporting bookmark %s\n"),
-        _(b'exporting bookmark %s failed!\n'),
+        _(b'exporting bookmark %s failed\n'),
     ),
     b'delete': (
         _(b"deleting remote bookmark %s\n"),
-        _(b'deleting remote bookmark %s failed!\n'),
+        _(b'deleting remote bookmark %s failed\n'),
     ),
 }
 

@@ -1166,7 +1166,7 @@ Local push
   searching for changes
   no changes found
   pushkey-abort: prepushkey hook exited with status 1
-  abort: exporting bookmark @ failed!
+  abort: exporting bookmark @ failed
   [255]
 
 #endif
@@ -1194,7 +1194,7 @@ Using ssh
   searching for changes
   no changes found
   remote: pushkey-abort: prepushkey hook exited with status 1
-  abort: exporting bookmark @ failed!
+  abort: exporting bookmark @ failed
   [255]
 
   $ hg -R ../issue4455-dest/ bookmarks
@@ -1205,7 +1205,7 @@ Using ssh
   searching for changes
   no changes found
   remote: pushkey-abort: prepushkey hook exited with status 1
-  exporting bookmark @ failed!
+  exporting bookmark @ failed
   [1]
 
 #endif
@@ -1233,7 +1233,7 @@ Using http
   searching for changes
   no changes found
   remote: pushkey-abort: prepushkey hook exited with status 1
-  abort: exporting bookmark @ failed!
+  abort: exporting bookmark @ failed
   [255]
 
   $ hg -R ../issue4455-dest/ bookmarks
@@ -1244,7 +1244,7 @@ Using http
   searching for changes
   no changes found
   remote: pushkey-abort: prepushkey hook exited with status 1
-  exporting bookmark @ failed!
+  exporting bookmark @ failed
   [1]
 
 #endif
@@ -1324,7 +1324,7 @@ attempt to move the bookmark is rejected
   searching for changes
   no changes found
   remote: pushkey-abort: prepushkey.no-bm-move hook exited with status 1
-  abort: updating bookmark foo failed!
+  abort: updating bookmark foo failed
   [255]
 #endif
 #if b2-binary
