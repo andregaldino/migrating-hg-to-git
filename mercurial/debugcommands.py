@@ -3787,6 +3787,10 @@ def debugtemplate(ui, repo, tmpl, **opts):
 def debuguigetpass(ui, prompt=b''):
     """show prompt to type password"""
     r = ui.getpass(prompt)
+    if r is not None:
+        r = encoding.strtolocal(r)
+    else:
+        r = b"<default response>"
     ui.writenoi18n(b'response: %s\n' % r)
 
 

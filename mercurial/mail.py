@@ -157,6 +157,8 @@ def _smtp(ui):
             password = encoding.strfromlocal(password)
         else:
             password = ui.getpass()
+            if password is not None:
+                password = encoding.strfromlocal(password)
     if username and password:
         ui.note(_(b'(authenticating to mail server as %s)\n') % username)
         username = encoding.strfromlocal(username)
