@@ -217,19 +217,19 @@ Testing --config:
   quuxfoo
   $ hg --cwd c --config '' tip -q
   abort: malformed --config option: '' (use --config section.name=value)
-  [255]
+  [10]
   $ hg --cwd c --config a.b tip -q
   abort: malformed --config option: 'a.b' (use --config section.name=value)
-  [255]
+  [10]
   $ hg --cwd c --config a tip -q
   abort: malformed --config option: 'a' (use --config section.name=value)
-  [255]
+  [10]
   $ hg --cwd c --config a.= tip -q
   abort: malformed --config option: 'a.=' (use --config section.name=value)
-  [255]
+  [10]
   $ hg --cwd c --config .b= tip -q
   abort: malformed --config option: '.b=' (use --config section.name=value)
-  [255]
+  [10]
 
 Testing --debug:
 

@@ -849,7 +849,7 @@ def _parseconfig(ui, config):
             ui.setconfig(section, name, value, b'--config')
             configs.append((section, name, value))
         except (IndexError, ValueError):
-            raise error.Abort(
+            raise error.InputError(
                 _(
                     b'malformed --config option: %r '
                     b'(use --config section.name=value)'
