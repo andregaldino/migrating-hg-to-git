@@ -694,7 +694,7 @@ class cmdalias(object):
                     hint = _(b"'%s' is provided by '%s' extension") % (cmd, ext)
                 except error.UnknownCommand:
                     pass
-            raise error.Abort(self.badalias, hint=hint)
+            raise error.ConfigError(self.badalias, hint=hint)
         if self.shadows:
             ui.debug(
                 b"alias '%s' shadows command '%s'\n" % (self.name, self.cmdname)
