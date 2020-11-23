@@ -53,7 +53,7 @@ hg parents c, single revision
   
 
   $ hg parents -r 3 c
-  abort: 'c' not found in manifest!
+  abort: 'c' not found in manifest
   [10]
 
   $ hg parents -r 2

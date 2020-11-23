@@ -5011,7 +5011,7 @@ def parents(ui, repo, file_=None, **opts):
             except error.LookupError:
                 pass
         if not filenodes:
-            raise error.InputError(_(b"'%s' not found in manifest!") % file_)
+            raise error.InputError(_(b"'%s' not found in manifest") % file_)
         p = []
         for fn in filenodes:
             fctx = repo.filectx(file_, fileid=fn)

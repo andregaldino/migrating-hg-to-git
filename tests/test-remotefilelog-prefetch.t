@@ -239,7 +239,7 @@
 .. hopefully this flakyness is not hiding any actual bug.
   $ hg revert -a -r 1 || true
   ? files fetched over 1 fetches - (? misses, 0.00% hit ratio) over * (glob)
-  abort: z2@109c3a557a73: not found in manifest! (?)
+  abort: z2@109c3a557a73: not found in manifest (?)
   $ find $CACHEDIR -type f | sort
   $TESTTMP/hgcache/master/11/f6ad8ec52a2984abaafd7c3b516503785c2072/ef95c5376f34698742fe34f315fd82136f8f68c0
   $TESTTMP/hgcache/master/39/5df8f7c51f007019cb30201c49e884b46b92fa/69a1b67522704ec122181c0890bd16e9d3e7516a
