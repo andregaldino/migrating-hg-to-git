@@ -90,7 +90,8 @@ Known exception should be caught, but printed if --traceback is enabled
   mercurial.error.Abort: known exception (py3 !)
   Abort: known exception (no-py3 !)
       raise error.WorkerError(status)
-  mercurial.error.WorkerError: 255
+  WorkerError: 255 (no-py3 !)
+  mercurial.error.WorkerError: 255 (py3 !)
 
 Traceback must be printed for unknown exceptions
 

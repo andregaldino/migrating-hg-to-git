@@ -137,6 +137,10 @@ class WorkerError(Exception):
 
     def __init__(self, status_code):
         self.status_code = status_code
+        # Pass status code to superclass just so it becomes part of __bytes__
+        super(WorkerError, self).__init__(status_code)
+
+    __bytes__ = _tobytes
 
 
 class InterventionRequired(Hint, Exception):
