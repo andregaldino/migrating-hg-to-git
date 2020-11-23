@@ -351,7 +351,7 @@ TODO this output is horrible
   ---%<--- (applicat)
   
   ---%<---
-  !
+  
   [255]
 
   $ killdaemons.py $DAEMON_PIDS
@@ -474,7 +474,7 @@ TODO this output is terrible
   ---%<--- (application/mercuri)
   
   ---%<---
-  !
+  
   [255]
 
   $ killdaemons.py $DAEMON_PIDS

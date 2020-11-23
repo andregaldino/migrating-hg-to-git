@@ -5,16 +5,16 @@
   $ hg commit -m test
   $ rm .hg/requires
   $ hg tip
-  abort: unknown version (2) in revlog 00changelog.i!
+  abort: unknown version (2) in revlog 00changelog.i
   [255]
   $ echo indoor-pool > .hg/requires
   $ hg tip
-  abort: repository requires features unknown to this Mercurial: indoor-pool!
+  abort: repository requires features unknown to this Mercurial: indoor-pool
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
   $ echo outdoor-pool >> .hg/requires
   $ hg tip
-  abort: repository requires features unknown to this Mercurial: indoor-pool outdoor-pool!
+  abort: repository requires features unknown to this Mercurial: indoor-pool outdoor-pool
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
   $ cd ..
@@ -71,7 +71,7 @@ another repository of push/pull/clone on localhost:
   [255]
 
   $ hg clone supported clone-dst
-  abort: repository requires features unknown to this Mercurial: featuresetup-test!
+  abort: repository requires features unknown to this Mercurial: featuresetup-test
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
   $ hg clone --pull supported clone-dst

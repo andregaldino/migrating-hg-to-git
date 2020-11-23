@@ -1070,7 +1070,7 @@ Show computed destination directory:
 Clone URL without path:
 
   $ hg clone file://
-  abort: repository / not found!
+  abort: repository / not found
   [255]
 
 Ensure base clone command argument validation

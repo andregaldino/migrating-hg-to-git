@@ -1602,9 +1602,9 @@ glog always reorders nodes which explains the difference with log
         <fullreposet+ 0:37>,
         <user 'not-a-user'>>>>
   $ testlog -b not-a-branch
-  abort: unknown revision 'not-a-branch'!
-  abort: unknown revision 'not-a-branch'!
-  abort: unknown revision 'not-a-branch'!
+  abort: unknown revision 'not-a-branch'
+  abort: unknown revision 'not-a-branch'
+  abort: unknown revision 'not-a-branch'
   $ testlog -b 35 -b 36 --only-branch branch
   []
   (or

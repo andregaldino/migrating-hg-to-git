@@ -340,11 +340,11 @@ SEC: check for unsafe ssh url
   [255]
   $ hg -R test-revflag push 'ssh://fakehost|touch${IFS}owned/path'
   pushing to ssh://fakehost%7Ctouch%24%7BIFS%7Downed/path
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
   $ hg -R test-revflag push 'ssh://fakehost%7Ctouch%20owned/path'
   pushing to ssh://fakehost%7Ctouch%20owned/path
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 
   $ [ ! -f owned ] || echo 'you got owned'

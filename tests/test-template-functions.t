@@ -1294,10 +1294,10 @@ but a filtered one doesn't
   $ hg log -T '{revset("%d", rev)}\n' -r'null'
   -1
   $ hg log -T '{revset("%d", rev + 1)}\n' -r'tip'
-  abort: unknown revision '3'!
+  abort: unknown revision '3'
   [255]
   $ hg log -T '{revset("%d", rev - 1)}\n' -r'null'
-  abort: unknown revision '-2'!
+  abort: unknown revision '-2'
   [255]
 
 Invalid arguments passed to revset()

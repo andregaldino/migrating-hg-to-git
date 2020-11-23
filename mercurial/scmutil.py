@@ -193,7 +193,7 @@ def callcatch(ui, func):
         if inst.hint:
             ui.error(b'(%s)\n' % inst.hint)
     except error.RepoError as inst:
-        ui.error(_(b"abort: %s!\n") % inst)
+        ui.error(_(b"abort: %s\n") % inst)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)
     except error.ResponseError as inst:
@@ -208,9 +208,9 @@ def callcatch(ui, func):
         else:
             ui.error(b"\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
-        ui.error(_(b"abort: file censored %s!\n") % inst)
+        ui.error(_(b"abort: file censored %s\n") % inst)
     except error.StorageError as inst:
-        ui.error(_(b"abort: %s!\n") % inst)
+        ui.error(_(b"abort: %s\n") % inst)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)
     except error.InterventionRequired as inst:
@@ -235,7 +235,7 @@ def callcatch(ui, func):
         # Don't print a message -- the worker already should have
         return inst.status_code
     except ImportError as inst:
-        ui.error(_(b"abort: %s!\n") % stringutil.forcebytestr(inst))
+        ui.error(_(b"abort: %s\n") % stringutil.forcebytestr(inst))
         m = stringutil.forcebytestr(inst).split()[-1]
         if m in b"mpatch bdiff".split():
             ui.error(_(b"(did you forget to compile extensions?)\n"))

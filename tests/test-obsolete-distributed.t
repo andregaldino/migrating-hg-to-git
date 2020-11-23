@@ -544,7 +544,7 @@ With --update
   adding file changes
   added 2 changesets with 0 changes to 2 files (+1 heads)
   (2 other changesets obsolete on arrival)
-  abort: cannot update to target: filtered revision '6'!
+  abort: cannot update to target: filtered revision '6'
   [255]
 
   $ cd ..

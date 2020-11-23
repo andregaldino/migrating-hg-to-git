@@ -90,7 +90,7 @@ typical client does not want echo-back messages, so test without it:
   *** runcommand id
   000000000000 tip
   *** runcommand id -runknown
-  abort: unknown revision 'unknown'!
+  abort: unknown revision 'unknown'
    [255]
 
   >>> from hgclient import bprint, check, readchannel
@@ -148,7 +148,7 @@ check strict parsing of early options:
   ...     runcommand(server, [b'log', b'-b', b'--config=alias.log=!echo pwned',
   ...                         b'default'])
   *** runcommand log -b --config=alias.log=!echo pwned default
-  abort: unknown revision '--config=alias.log=!echo pwned'!
+  abort: unknown revision '--config=alias.log=!echo pwned'
    [255]
 
 check that "histedit --commands=-" can read rules from the input channel:
@@ -731,7 +731,7 @@ don't fall back to cwd if invalid -R path is specified (issue4805):
 
   $ cd repo
   $ hg serve --cmdserver pipe -R ../nonexistent
-  abort: repository ../nonexistent not found!
+  abort: repository ../nonexistent not found
   [255]
   $ cd ..
 

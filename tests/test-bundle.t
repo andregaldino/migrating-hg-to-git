@@ -697,13 +697,13 @@ test bundle with # in the filename (issue2154):
   $ cd orig
   $ hg incoming '../test#bundle.hg'
   comparing with ../test
-  abort: unknown revision 'bundle.hg'!
+  abort: unknown revision 'bundle.hg'
   [255]
 
 note that percent encoding is not handled:
 
   $ hg incoming ../test%23bundle.hg
-  abort: repository ../test%23bundle.hg not found!
+  abort: repository ../test%23bundle.hg not found
   [255]
   $ cd ..
 
@@ -733,7 +733,7 @@ test that verify bundle does not traceback
 partial history bundle, fails w/ unknown parent
 
   $ hg -R bundle.hg verify
-  abort: 00changelog.i@bbd179dfa0a7: unknown parent!
+  abort: 00changelog.i@bbd179dfa0a7: unknown parent
   [255]
 
 full history bundle, refuses to verify non-local repo

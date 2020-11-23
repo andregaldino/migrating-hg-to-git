@@ -51,7 +51,7 @@ Test setup
 Actual test
 -----------
   $ hg update 471f378eab4c
-  abort: hidden revision '471f378eab4c' was rewritten as: 4ae3a4151de9!
+  abort: hidden revision '471f378eab4c' was rewritten as: 4ae3a4151de9
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden "desc(A0)"
@@ -115,7 +115,7 @@ Actual test
   $ hg up 1
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg up 0dec01379d3b
-  abort: hidden revision '0dec01379d3b' is pruned!
+  abort: hidden revision '0dec01379d3b' is pruned
   (use --hidden to access hidden revisions)
   [255]
   $ hg up --hidden -r 'desc(B0)'
@@ -193,7 +193,7 @@ Test setup
 Actual test
 -----------
   $ hg update 471597cad322
-  abort: hidden revision '471597cad322' was split as: 337fec4d2edc, f257fde29c7a!
+  abort: hidden revision '471597cad322' was split as: 337fec4d2edc, f257fde29c7a
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'min(desc(A0))'
@@ -293,7 +293,7 @@ Test setup
 Actual test
 -----------
   $ hg update de7290d8b885
-  abort: hidden revision 'de7290d8b885' was split as: 337fec4d2edc, f257fde29c7a and 2 more!
+  abort: hidden revision 'de7290d8b885' was split as: 337fec4d2edc, f257fde29c7a and 2 more
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'min(desc(A0))'
@@ -374,7 +374,7 @@ Test setup
  Actual test
  -----------
   $ hg update 471f378eab4c
-  abort: hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192!
+  abort: hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(A0)'
@@ -382,7 +382,7 @@ Test setup
   updated to hidden changeset 471f378eab4c
   (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   $ hg update 0dec01379d3b
-  abort: hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192!
+  abort: hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(B0)'
@@ -457,7 +457,7 @@ Test setup
 Actual test
 -----------
   $ hg update 471f378eab4c
-  abort: hidden revision '471f378eab4c' has diverged!
+  abort: hidden revision '471f378eab4c' has diverged
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(A0)'
@@ -554,7 +554,7 @@ Test setup
  Actual test
  -----------
   $ hg update 471f378eab4c
-  abort: hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192!
+  abort: hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(A0)'

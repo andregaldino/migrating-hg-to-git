@@ -31,7 +31,7 @@ Missing requirement argument results in error
   > EOF
   creating http peer for wire protocol version 2
   sending rawstorefiledata command
-  abort: missing required arguments: files!
+  abort: missing required arguments: files
   [255]
 
 Unknown files value results in error
@@ -42,7 +42,7 @@ Unknown files value results in error
   > EOF
   creating http peer for wire protocol version 2
   sending rawstorefiledata command
-  abort: unknown file type: unknown!
+  abort: unknown file type: unknown
   [255]
 
 Requesting just changelog works

@@ -305,7 +305,7 @@ names that should be caught by fallback mechanism
       (symbol 'c'))
     (negate
       (symbol 'a')))
-  abort: unknown revision '-a'!
+  abort: unknown revision '-a'
   [255]
   $ try é
   (symbol '\xc3\xa9')
@@ -406,7 +406,7 @@ quoting needed
   hg: parse error: date requires a string
   [10]
   $ log 'date'
-  abort: unknown revision 'date'!
+  abort: unknown revision 'date'
   [255]
   $ log 'date('
   hg: parse error at 5: not a prefix: end
@@ -420,10 +420,10 @@ quoting needed
   hg: parse error: invalid date: 'tip'
   [10]
   $ log '0:date'
-  abort: unknown revision 'date'!
+  abort: unknown revision 'date'
   [255]
   $ log '::"date"'
-  abort: unknown revision 'date'!
+  abort: unknown revision 'date'
   [255]
   $ hg book date -r 4
   $ log '0:date'
@@ -1873,7 +1873,7 @@ Test hexadecimal revision
   3
   $ hg log --template '{rev}\n' -r 'id(x)'
   $ hg log --template '{rev}\n' -r 'x'
-  abort: 00changelog.i@: ambiguous identifier!
+  abort: 00changelog.i@: ambiguous identifier
   [255]
   $ log 'id(23268)'
   4
@@ -2040,13 +2040,13 @@ Test short 'ff...' hash collision
   obsoleted 1 changesets
 
   $ hg debugrevspec 'fff'
-  abort: 00changelog.i@fff: ambiguous identifier!
+  abort: 00changelog.i@fff: ambiguous identifier
   [255]
   $ hg debugrevspec 'ffff'
-  abort: 00changelog.i@ffff: ambiguous identifier!
+  abort: 00changelog.i@ffff: ambiguous identifier
   [255]
   $ hg debugrevspec 'fffb'
-  abort: 00changelog.i@fffb: ambiguous identifier!
+  abort: 00changelog.i@fffb: ambiguous identifier
   [255]
 BROKEN should be '2' (node lookup uses unfiltered repo)
   $ hg debugrevspec 'id(fffb)'
@@ -3066,7 +3066,7 @@ abort if the revset doesn't expect given size
   1
   0
   $ log 'expectsize(0:1, 1)'
-  abort: revset size mismatch. expected 1, got 2!
+  abort: revset size mismatch. expected 1, got 2
   [255]
   $ log 'expectsize(0:4, -1)'
   hg: parse error: negative size
@@ -3076,7 +3076,7 @@ abort if the revset doesn't expect given size
   1
   2
   $ log 'expectsize(0:1, 3:5)'
-  abort: revset size mismatch. expected between 3 and 5, got 2!
+  abort: revset size mismatch. expected between 3 and 5, got 2
   [255]
   $ log 'expectsize(0:1, -1:2)'
   hg: parse error: negative size
@@ -3103,8 +3103,8 @@ abort if the revset doesn't expect given size
   1
   2
   $ log 'expectsize(0:2, 4:)'
-  abort: revset size mismatch. expected between 4 and 11, got 3!
+  abort: revset size mismatch. expected between 4 and 11, got 3
   [255]
   $ log 'expectsize(0:2, :2)'
-  abort: revset size mismatch. expected between 0 and 2, got 3!
+  abort: revset size mismatch. expected between 0 and 2, got 3
   [255]

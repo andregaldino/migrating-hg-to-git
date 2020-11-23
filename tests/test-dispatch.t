@@ -41,10 +41,10 @@ Missing parameter for early option:
 "--" may be an option value:
 
   $ hg -R -- log
-  abort: repository -- not found!
+  abort: repository -- not found
   [255]
   $ hg log -R --
-  abort: repository -- not found!
+  abort: repository -- not found
   [255]
   $ hg log -T --
   -- (no-eol)
@@ -126,20 +126,20 @@ Early options must come first if HGPLAIN=+strictflags is specified:
 
 #if no-chg
   $ HGPLAIN=+strictflags hg log -b --config='hooks.pre-log=false' default
-  abort: unknown revision '--config=hooks.pre-log=false'!
+  abort: unknown revision '--config=hooks.pre-log=false'
   [255]
   $ HGPLAIN=+strictflags hg log -b -R. default
-  abort: unknown revision '-R.'!
+  abort: unknown revision '-R.'
   [255]
   $ HGPLAIN=+strictflags hg log -b --cwd=. default
-  abort: unknown revision '--cwd=.'!
+  abort: unknown revision '--cwd=.'
   [255]
 #endif
   $ HGPLAIN=+strictflags hg log -b --debugger default
-  abort: unknown revision '--debugger'!
+  abort: unknown revision '--debugger'
   [255]
   $ HGPLAIN=+strictflags hg log -b --config='alias.log=!echo pwned' default
-  abort: unknown revision '--config=alias.log=!echo pwned'!
+  abort: unknown revision '--config=alias.log=!echo pwned'
   [255]
 
   $ HGPLAIN=+strictflags hg log --config='hooks.pre-log=false' -b default
@@ -197,7 +197,7 @@ specified" should include filename even when it is empty
 No repo:
 
   $ hg cat
-  abort: no repository found in '$TESTTMP' (.hg not found)!
+  abort: no repository found in '$TESTTMP' (.hg not found)
   [255]
 
 #endif

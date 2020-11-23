@@ -155,21 +155,21 @@ test remote identify with bookmarks
 test invalid lookup
 
   $ hg id -r noNoNO http://localhost:$HGPORT1/
-  abort: unknown revision 'noNoNO'!
+  abort: unknown revision 'noNoNO'
   [255]
 
 Make sure we do not obscure unknown requires file entries (issue2649)
 
   $ echo fake >> .hg/requires
   $ hg id
-  abort: repository requires features unknown to this Mercurial: fake!
+  abort: repository requires features unknown to this Mercurial: fake
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
 
   $ cd ..
 #if no-outer-repo
   $ hg id test
-  abort: repository requires features unknown to this Mercurial: fake!
+  abort: repository requires features unknown to this Mercurial: fake
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
 #endif

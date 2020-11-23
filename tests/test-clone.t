@@ -611,7 +611,7 @@ Testing failures:
 No local source
 
   $ hg clone a b
-  abort: repository a not found!
+  abort: repository a not found
   [255]
 
 Invalid URL
@@ -1106,7 +1106,7 @@ Test that auto sharing doesn't cause failure of "hg clone local remote"
   $ hg -R a id -r 0
   acb14030fe0a
   $ hg id -R remote -r 0
-  abort: repository remote not found!
+  abort: repository remote not found
   [255]
   $ hg --config share.pool=share -q clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" a ssh://user@dummy/remote
   $ hg -R remote id -r 0
@@ -1176,10 +1176,10 @@ SEC: check for unsafe ssh url
   abort: potentially unsafe url: 'ssh://-oProxyCommand=touch${IFS}owned/path'
   [255]
   $ hg clone 'ssh://fakehost|touch%20owned/path'
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
   $ hg clone 'ssh://fakehost%7Ctouch%20owned/path'
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 
   $ hg clone 'ssh://-oProxyCommand=touch owned%20foo@example.com/nonexistent/path'
@@ -1207,14 +1207,14 @@ SEC: check for unsafe ssh url
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
   $ hg clone "ssh://example.com:%3btouch%20owned%20/" --debug
   running sh -c "read l; read l; read l" -p ';touch owned ' example.com 'hg -R . serve --stdio'
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 #endif
 
@@ -1223,7 +1223,7 @@ SEC: check for unsafe ssh url
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 
 We should not have created a file named owned - if it exists, the

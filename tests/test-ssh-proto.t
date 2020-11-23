@@ -270,7 +270,7 @@ servers.
   sending between command
   remote: 0
   remote: 1
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 
 Sending an unknown command to the server results in an empty response to that command

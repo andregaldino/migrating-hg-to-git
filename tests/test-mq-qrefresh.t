@@ -504,7 +504,7 @@ but only after writing the bad name into the patch.
   transaction abort!
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
-  abort: username 'foo\nbar' contains a newline!
+  abort: username 'foo\nbar' contains a newline
   [255]
   $ rm a
   $ cat .hg/patches/a
@@ -520,7 +520,7 @@ but only after writing the bad name into the patch.
   transaction abort!
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
-  abort: empty username!
+  abort: empty username
   [255]
   $ cat .hg/patches/a
   # HG changeset patch

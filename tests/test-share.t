@@ -211,7 +211,7 @@ renames and changes of PWD
   $TESTTMP/thisdir/rel
   $ mv thisdir thatdir
   $ hg -R thatdir/abs root
-  abort: .hg/sharedpath points to nonexistent directory $TESTTMP/thisdir/orig/.hg!
+  abort: .hg/sharedpath points to nonexistent directory $TESTTMP/thisdir/orig/.hg
   [255]
   $ hg -R thatdir/rel root
   $TESTTMP/thatdir/rel
@@ -247,7 +247,7 @@ See comment in localrepo.py:makelocalrepository() for more.
 We cannot open the repo with the unknown requirement
 
   $ hg -R sharenewrequires status
-  abort: repository requires features unknown to this Mercurial: missing-requirement!
+  abort: repository requires features unknown to this Mercurial: missing-requirement
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
 

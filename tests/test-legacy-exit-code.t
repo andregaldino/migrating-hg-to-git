@@ -12,7 +12,7 @@ Expect exit code 0 on success
   $ hg ci -Aqm initial
 
   $ hg co nonexistent
-  abort: unknown revision 'nonexistent'!
+  abort: unknown revision 'nonexistent'
   [255]
 
   $ hg co 'none()'

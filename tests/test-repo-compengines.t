@@ -37,7 +37,7 @@ A requirement specifying an unknown compression engine results in bail
   $ cd unknownrequirement
   $ echo exp-compression-unknown >> .hg/requires
   $ hg log
-  abort: repository requires features unknown to this Mercurial: exp-compression-unknown!
+  abort: repository requires features unknown to this Mercurial: exp-compression-unknown
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
 

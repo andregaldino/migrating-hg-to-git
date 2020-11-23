@@ -40,7 +40,7 @@ Testing read only commands on the hidden revision
 Testing with rev number
 
   $ hg exp 2 --config experimental.directaccess.revnums=False
-  abort: hidden revision '2' was rewritten as: 2443a0e66469!
+  abort: hidden revision '2' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
   [255]
 
@@ -73,7 +73,7 @@ Testing with rev number
   A c
 
   $ hg status --change 2 --config experimental.directaccess.revnums=False
-  abort: hidden revision '2' was rewritten as: 2443a0e66469!
+  abort: hidden revision '2' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
   [255]
 
@@ -195,12 +195,12 @@ Test special hash/rev
 Commands with undefined intent should not work right now
 
   $ hg phase -r 28ad74
-  abort: hidden revision '28ad74' was rewritten as: 2443a0e66469!
+  abort: hidden revision '28ad74' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
   [255]
 
   $ hg phase -r 2
-  abort: hidden revision '2' was rewritten as: 2443a0e66469!
+  abort: hidden revision '2' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
   [255]
 

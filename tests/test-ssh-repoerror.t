@@ -17,7 +17,7 @@ repository itself is non-readable
 
   $ hg id ssh://user@dummy/no-read
   remote: abort: Permission denied: *$TESTTMP/no-read/.hg* (glob)
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 
 special case files are visible, but unreadable
@@ -35,7 +35,7 @@ seems an unexpected case in real life, but we test it anyway.
 
   $ hg id ssh://user@dummy/other
   remote: abort: Permission denied: '$TESTTMP/other/.hg/requires'
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 
 directory toward the repository is read only
@@ -51,7 +51,7 @@ directory toward the repository is read only
 
   $ hg id ssh://user@dummy/deep/nested
   remote: abort: Permission denied: *$TESTTMP/deep/nested/.hg* (glob)
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 
 repository has wrong requirement
@@ -62,7 +62,7 @@ repository has wrong requirement
   000000000000
   $ echo flying-car >> repo-future/.hg/requires
   $ hg id ssh://user@dummy/repo-future
-  remote: abort: repository requires features unknown to this Mercurial: flying-car!
+  remote: abort: repository requires features unknown to this Mercurial: flying-car
   remote: (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]

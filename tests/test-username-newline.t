@@ -22,6 +22,6 @@
   adding a
   transaction abort!
   rollback completed
-  abort: username 'foo\nbar3' contains a newline!
+  abort: username 'foo\nbar3' contains a newline
   [255]
 

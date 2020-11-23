@@ -71,7 +71,7 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filesdata command
-  abort: missing required arguments: revisions!
+  abort: missing required arguments: revisions
   [255]
 
 Bad pattern to pathfilter is rejected
@@ -87,7 +87,7 @@ Bad pattern to pathfilter is rejected
   > EOF
   creating http peer for wire protocol version 2
   sending filesdata command
-  abort: include pattern must begin with `path:` or `rootfilesin:`; got bad:foo!
+  abort: include pattern must begin with `path:` or `rootfilesin:`; got bad:foo
   [255]
 
   $ sendhttpv2peer << EOF
@@ -101,7 +101,7 @@ Bad pattern to pathfilter is rejected
   > EOF
   creating http peer for wire protocol version 2
   sending filesdata command
-  abort: exclude pattern must begin with `path:` or `rootfilesin:`; got glob:foo!
+  abort: exclude pattern must begin with `path:` or `rootfilesin:`; got glob:foo
   [255]
 
 Fetching a single changeset without parents fetches all files

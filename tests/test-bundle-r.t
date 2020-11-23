@@ -177,7 +177,7 @@ should fail
   abort: --all is incompatible with specifying a destination
   [10]
   $ hg -R test bundle -r tip test-bundle-branch1.hg
-  abort: repository default-push not found!
+  abort: repository default-push not found
   [255]
 
   $ hg -R test bundle --base 2 -r tip test-bundle-branch1.hg
@@ -223,7 +223,7 @@ revision 2
   adding changesets
   transaction abort!
   rollback completed
-  abort: 00changelog.i@93ee6ab32777: unknown parent!
+  abort: 00changelog.i@93ee6ab32777: unknown parent
   [255]
 
 revision 2

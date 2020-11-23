@@ -22,7 +22,7 @@
   > EOF
 
   $ hg config extensions
-  abort: repository requires features unknown to this Mercurial: lfs!
+  abort: repository requires features unknown to this Mercurial: lfs
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
 
@@ -41,7 +41,7 @@
 
   $ hg config extensions
   \*\*\* failed to import extension lfs from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
-  abort: repository requires features unknown to this Mercurial: lfs!
+  abort: repository requires features unknown to this Mercurial: lfs
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
 
@@ -985,7 +985,7 @@ avoids the corrupt lfs object in the original remote.)
 Accessing a corrupt file will complain
 
   $ hg --cwd fromcorrupt2 cat -r 0 large
-  abort: integrity check failed on data/large.i:0!
+  abort: integrity check failed on data/large.i:0
   [255]
 
 lfs -> normal -> lfs round trip conversions are possible.  The 'none()'

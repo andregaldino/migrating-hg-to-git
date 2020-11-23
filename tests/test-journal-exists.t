@@ -9,7 +9,7 @@
 
   $ echo foo > a
   $ hg ci -Am0
-  abort: abandoned transaction found!
+  abort: abandoned transaction found
   (run 'hg recover' to clean up transaction)
   [255]
 
@@ -21,7 +21,7 @@ recover, explicit verify
 
   $ touch .hg/store/journal
   $ hg ci -Am0
-  abort: abandoned transaction found!
+  abort: abandoned transaction found
   (run 'hg recover' to clean up transaction)
   [255]
   $ hg recover --verify
@@ -36,7 +36,7 @@ recover, no verify
 
   $ touch .hg/store/journal
   $ hg ci -Am0
-  abort: abandoned transaction found!
+  abort: abandoned transaction found
   (run 'hg recover' to clean up transaction)
   [255]
   $ hg recover --no-verify

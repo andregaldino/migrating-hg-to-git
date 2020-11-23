@@ -87,7 +87,7 @@ The next call is expected to return nothing:
 The next two calls are expected to abort:
 
   $ hg manifest -r 2
-  abort: unknown revision '2'!
+  abort: unknown revision '2'
   [255]
 
   $ hg manifest -r tip tip

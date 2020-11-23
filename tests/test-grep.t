@@ -1018,7 +1018,7 @@ follow revision history from wdir:
   $ hg grep --diff -fr'wdir()' data
   add0-cp4-mod4:2147483647:+:data4
   add0-mod4:2147483647:+:data4
-  add0-rm4:2147483647:-:abort: add0-rm4@None: not found in manifest!
+  add0-rm4:2147483647:-:abort: add0-rm4@None: not found in manifest
   [255]
 
   $ hg grep -fr'wdir()' data

@@ -68,17 +68,17 @@ not are encoded like a node:
 
   $ hg pull -r 'xxxxxxxxxxxxxxxxxxxy'
   pulling from http://foo@localhost:$HGPORT/
-  abort: unknown revision 'xxxxxxxxxxxxxxxxxxxy'!
+  abort: unknown revision 'xxxxxxxxxxxxxxxxxxxy'
   [255]
   $ hg pull -r 'xxxxxxxxxxxxxxxxxx y'
   pulling from http://foo@localhost:$HGPORT/
-  abort: unknown revision 'xxxxxxxxxxxxxxxxxx y'!
+  abort: unknown revision 'xxxxxxxxxxxxxxxxxx y'
   [255]
 
 Test pull of working copy revision
   $ hg pull -r 'ffffffffffff'
   pulling from http://foo@localhost:$HGPORT/
-  abort: unknown revision 'ffffffffffff'!
+  abort: unknown revision 'ffffffffffff'
   [255]
 
 Issue622: hg init && hg pull -u URL doesn't checkout default branch
@@ -140,11 +140,11 @@ SEC: check for unsafe ssh url
   [255]
   $ hg pull 'ssh://fakehost|touch${IFS}owned/path'
   pulling from ssh://fakehost%7Ctouch%24%7BIFS%7Downed/path
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
   $ hg --config ui.timestamp-output=true pull 'ssh://fakehost%7Ctouch%20owned/path'
   \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] pulling from ssh://fakehost%7Ctouch%20owned/path (re)
-  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] abort: no suitable response from remote hg! (re)
+  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] abort: no suitable response from remote hg (re)
   [255]
 
   $ [ ! -f owned ] || echo 'you got owned'

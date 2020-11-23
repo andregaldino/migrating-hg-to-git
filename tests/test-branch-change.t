@@ -143,7 +143,7 @@ which is not a topological head
 Changing branch of an obsoleted changeset
 
   $ hg branch -r 4 foobar
-  abort: hidden revision '4' was rewritten as: 7c1991464886!
+  abort: hidden revision '4' was rewritten as: 7c1991464886
   (use --hidden to access hidden revisions)
   [255]
 

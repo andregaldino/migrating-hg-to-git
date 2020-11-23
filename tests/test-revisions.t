@@ -36,7 +36,7 @@
   1:9
 7 was ambiguous and still is
   $ hg l -r 7
-  abort: 00changelog.i@7: ambiguous identifier!
+  abort: 00changelog.i@7: ambiguous identifier
   [255]
 7b is no longer ambiguous
   $ hg l -r 7b

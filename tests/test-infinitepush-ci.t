@@ -205,7 +205,7 @@ client side wrapping
 
   $ hg pull -r b4e4bce660512ad3e71189e14588a70ac8e31fef
   pulling from $TESTTMP/repo
-  abort: unknown revision 'b4e4bce660512ad3e71189e14588a70ac8e31fef'!
+  abort: unknown revision 'b4e4bce660512ad3e71189e14588a70ac8e31fef'
   [255]
   $ hg glog
   o  1:6cb0989601f1 added a
@@ -242,7 +242,7 @@ Trying to specify short hash
 XXX: we should support this
   $ hg pull -r b4e4bce660512
   pulling from ssh://user@dummy/repo
-  abort: unknown revision 'b4e4bce660512'!
+  abort: unknown revision 'b4e4bce660512'
   [255]
 
 XXX: we should show better message when the pull is happening from bundlestore

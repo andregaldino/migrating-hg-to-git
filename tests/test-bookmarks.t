@@ -184,22 +184,22 @@ bookmarks revset
 but "literal:." is not since "." seems not a literal bookmark:
 
   $ hg log -r 'bookmark("literal:.")'
-  abort: bookmark '.' does not exist!
+  abort: bookmark '.' does not exist
   [255]
 
 "." should fail if there's no active bookmark:
 
   $ hg bookmark --inactive
   $ hg log -r 'bookmark(.)'
-  abort: no active bookmark!
+  abort: no active bookmark
   [255]
   $ hg log -r 'present(bookmark(.))'
 
   $ hg log -r 'bookmark(unknown)'
-  abort: bookmark 'unknown' does not exist!
+  abort: bookmark 'unknown' does not exist
   [255]
   $ hg log -r 'bookmark("literal:unknown")'
-  abort: bookmark 'unknown' does not exist!
+  abort: bookmark 'unknown' does not exist
   [255]
   $ hg log -r 'bookmark("re:unknown")'
   $ hg log -r 'present(bookmark("literal:unknown"))'
@@ -277,7 +277,7 @@ rename bookmark using . with no active bookmark
   $ hg book rename-me
   $ hg book -i rename-me
   $ hg book -m . renamed
-  abort: no active bookmark!
+  abort: no active bookmark
   [255]
   $ hg up -q Y
   $ hg book -d rename-me
@@ -297,7 +297,7 @@ delete bookmark using . with no active bookmark
   $ hg book delete-me
   $ hg book -i delete-me
   $ hg book -d .
-  abort: no active bookmark!
+  abort: no active bookmark
   [255]
   $ hg up -q Y
   $ hg book -d delete-me

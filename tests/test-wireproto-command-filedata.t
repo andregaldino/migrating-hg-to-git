@@ -78,7 +78,7 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  abort: missing required arguments: nodes, path!
+  abort: missing required arguments: nodes, path
   [255]
 
   $ sendhttpv2peer << EOF
@@ -87,7 +87,7 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  abort: missing required arguments: path!
+  abort: missing required arguments: path
   [255]
 
 Unknown node is an error
@@ -99,7 +99,7 @@ Unknown node is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  abort: unknown file node: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!
+  abort: unknown file node: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
   [255]
 
 Fetching a single revision returns just metadata by default

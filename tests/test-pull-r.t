@@ -111,7 +111,7 @@ pull--confirm config option should be ignored if HGPLAIN is set
 Pull a missing revision:
 
   $ hg pull -qr missing ../repo
-  abort: unknown revision 'missing'!
+  abort: unknown revision 'missing'
   [255]
 
 Pull multiple revisions with update:

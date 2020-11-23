@@ -6,7 +6,7 @@ A repo with unknown revlogv2 requirement string cannot be opened
   $ cd invalidreq
   $ echo exp-revlogv2.unknown >> .hg/requires
   $ hg log
-  abort: repository requires features unknown to this Mercurial: exp-revlogv2.unknown!
+  abort: repository requires features unknown to this Mercurial: exp-revlogv2.unknown
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
   $ cd ..
@@ -35,7 +35,7 @@ Unknown flags to revlog are rejected
   ...     fh.write(b'\xff\x00\xde\xad') and None
 
   $ hg log
-  abort: unknown flags (0xff00) in version 57005 revlog 00changelog.i!
+  abort: unknown flags (0xff00) in version 57005 revlog 00changelog.i
   [255]
 
   $ cd ..

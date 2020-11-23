@@ -180,7 +180,7 @@ Test recovery from misconfigured server sending no new data
   adding manifests
   adding file changes
   added 0 changesets with 0 changes to 1 files
-  abort: 00changelog.i@ed1b79f46b9a: no node!
+  abort: 00changelog.i@ed1b79f46b9a: no node
   [255]
   $ cd ..
   $ killdaemons.py

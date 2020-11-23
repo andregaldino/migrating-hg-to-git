@@ -94,7 +94,7 @@ trying clone -r
 
   $ cd ..
   $ hg clone -r doesnotexist static-http://localhost:$HGPORT/remote local0
-  abort: unknown revision 'doesnotexist'!
+  abort: unknown revision 'doesnotexist'
   [255]
   $ hg clone -r 0 static-http://localhost:$HGPORT/remote local0
   adding changesets
@@ -169,7 +169,7 @@ test with non-repo
   $ cd ..
   $ mkdir notarepo
   $ hg clone static-http://localhost:$HGPORT/notarepo local3
-  abort: 'http://localhost:$HGPORT/notarepo' does not appear to be an hg repository!
+  abort: 'http://localhost:$HGPORT/notarepo' does not appear to be an hg repository
   [255]
 
 Clone with tags and branches works

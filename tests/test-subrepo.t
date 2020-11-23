@@ -1280,7 +1280,7 @@ Check that share works with subrepo
   ../shared/subrepo-2/.hg/wcache/manifestfulltextcache (reporevlogstore !)
   ../shared/subrepo-2/file
   $ hg -R ../shared in
-  abort: repository default not found!
+  abort: repository default not found
   [255]
   $ hg -R ../shared/subrepo-2 showconfig paths
   paths.default=$TESTTMP/subrepo-status/subrepo-2
@@ -1964,7 +1964,7 @@ also check for a pipe
   $ hg clone malicious-proxycommand malicious-proxycommand-clone
   updating to branch default
   cloning subrepo s from ssh://fakehost%7Ctouch%24%7BIFS%7Downed/path
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
   $ [ ! -f owned ] || echo 'you got owned'
 
@@ -1978,7 +1978,7 @@ also check that a percent encoded '|' (%7C) doesn't work
   $ hg clone malicious-proxycommand malicious-proxycommand-clone
   updating to branch default
   cloning subrepo s from ssh://fakehost%7Ctouch%20owned/path
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
   $ [ ! -f owned ] || echo 'you got owned'
 

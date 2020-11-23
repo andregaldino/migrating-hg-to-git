@@ -32,10 +32,10 @@ creating 'local'
 test custom revlog chunk cache sizes
 
   $ hg --config format.chunkcachesize=0 log -R local -pv
-  abort: revlog chunk cache size 0 is not greater than 0!
+  abort: revlog chunk cache size 0 is not greater than 0
   [255]
   $ hg --config format.chunkcachesize=1023 log -R local -pv
-  abort: revlog chunk cache size 1023 is not a power of 2!
+  abort: revlog chunk cache size 1023 is not a power of 2
   [255]
   $ hg --config format.chunkcachesize=1024 log -R local -pv
   changeset:   0:08b9e9f63b32
@@ -103,7 +103,7 @@ creating repo with format.dotencode=false
 test failure
 
   $ hg init local
-  abort: repository local already exists!
+  abort: repository local already exists
   [255]
 
 init+push to remote2
@@ -148,15 +148,15 @@ The largefiles extension doesn't crash
 init to existing repo
 
   $ hg init -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote1
-  abort: repository remote1 already exists!
-  abort: could not create remote repo!
+  abort: repository remote1 already exists
+  abort: could not create remote repo
   [255]
 
 clone to existing repo
 
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" local ssh://user@dummy/remote1
-  abort: repository remote1 already exists!
-  abort: could not create remote repo!
+  abort: repository remote1 already exists
+  abort: could not create remote repo
   [255]
 
 output of dummyssh

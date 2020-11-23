@@ -44,7 +44,7 @@ No arguments is an invalid request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: missing required arguments: revisions!
+  abort: missing required arguments: revisions
   [255]
 
 Missing nodes for changesetexplicit results in error
@@ -55,7 +55,7 @@ Missing nodes for changesetexplicit results in error
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: nodes key not present in changesetexplicit revision specifier!
+  abort: nodes key not present in changesetexplicit revision specifier
   [255]
 
 changesetexplicitdepth requires nodes and depth keys
@@ -66,7 +66,7 @@ changesetexplicitdepth requires nodes and depth keys
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: nodes key not present in changesetexplicitdepth revision specifier!
+  abort: nodes key not present in changesetexplicitdepth revision specifier
   [255]
 
   $ sendhttpv2peer << EOF
@@ -75,7 +75,7 @@ changesetexplicitdepth requires nodes and depth keys
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: depth key not present in changesetexplicitdepth revision specifier!
+  abort: depth key not present in changesetexplicitdepth revision specifier
   [255]
 
   $ sendhttpv2peer << EOF
@@ -84,7 +84,7 @@ changesetexplicitdepth requires nodes and depth keys
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: nodes key not present in changesetexplicitdepth revision specifier!
+  abort: nodes key not present in changesetexplicitdepth revision specifier
   [255]
 
 changesetdagrange requires roots and heads keys
@@ -95,7 +95,7 @@ changesetdagrange requires roots and heads keys
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: roots key not present in changesetdagrange revision specifier!
+  abort: roots key not present in changesetdagrange revision specifier
   [255]
 
   $ sendhttpv2peer << EOF
@@ -104,7 +104,7 @@ changesetdagrange requires roots and heads keys
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: heads key not present in changesetdagrange revision specifier!
+  abort: heads key not present in changesetdagrange revision specifier
   [255]
 
   $ sendhttpv2peer << EOF
@@ -113,7 +113,7 @@ changesetdagrange requires roots and heads keys
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: roots key not present in changesetdagrange revision specifier!
+  abort: roots key not present in changesetdagrange revision specifier
   [255]
 
 Empty changesetdagrange heads results in an error
@@ -124,7 +124,7 @@ Empty changesetdagrange heads results in an error
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: heads key in changesetdagrange cannot be empty!
+  abort: heads key in changesetdagrange cannot be empty
   [255]
 
 Sending just dagrange heads sends all revisions

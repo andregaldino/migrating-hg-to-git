@@ -708,7 +708,7 @@ test hg strip -B bookmark
   saved backup bundle to $TESTTMP/bookmarks/.hg/strip-backup/*-backup.hg (glob)
   bookmark 'todelete' deleted
   $ hg id -ir dcbb326fdec2
-  abort: unknown revision 'dcbb326fdec2'!
+  abort: unknown revision 'dcbb326fdec2'
   [255]
   $ hg id -ir d62d843c9a01
   d62d843c9a01
@@ -724,17 +724,17 @@ test hg strip -B bookmark
   bookmark 'multipledelete1' deleted
   bookmark 'multipledelete2' deleted
   $ hg id -ir e46a4836065c
-  abort: unknown revision 'e46a4836065c'!
+  abort: unknown revision 'e46a4836065c'
   [255]
   $ hg id -ir b4594d867745
-  abort: unknown revision 'b4594d867745'!
+  abort: unknown revision 'b4594d867745'
   [255]
   $ hg strip -B singlenode1 -B singlenode2
   saved backup bundle to $TESTTMP/bookmarks/.hg/strip-backup/43227190fef8-8da858f2-backup.hg
   bookmark 'singlenode1' deleted
   bookmark 'singlenode2' deleted
   $ hg id -ir 43227190fef8
-  abort: unknown revision '43227190fef8'!
+  abort: unknown revision '43227190fef8'
   [255]
   $ hg strip -B unknownbookmark
   abort: bookmark 'unknownbookmark' not found
@@ -749,7 +749,7 @@ test hg strip -B bookmark
   saved backup bundle to $TESTTMP/bookmarks/.hg/strip-backup/*-backup.hg (glob)
   bookmark 'delete' deleted
   $ hg id -ir 6:2702dd0c91e7
-  abort: unknown revision '2702dd0c91e7'!
+  abort: unknown revision '2702dd0c91e7'
   [255]
   $ hg update B
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved

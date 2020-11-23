@@ -171,7 +171,7 @@ qinit -c should create both files if they don't exist
   guards
   $ cat .hg/patches/series
   $ hg qinit -c
-  abort: repository $TESTTMP/d/.hg/patches already exists!
+  abort: repository $TESTTMP/d/.hg/patches already exists
   [255]
   $ cd ..
 
@@ -253,7 +253,7 @@ init --mq with repo path
 init --mq with nonexistent directory
 
   $ hg init --mq nonexistentdir
-  abort: repository nonexistentdir not found!
+  abort: repository nonexistentdir not found
   [255]
 
 

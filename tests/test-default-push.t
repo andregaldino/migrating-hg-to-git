@@ -75,7 +75,7 @@ Push should push to 'default-push' when 'default' is not set
 Pushing to a path that isn't defined should not fall back to default
 
   $ hg --cwd b push doesnotexist
-  abort: repository doesnotexist does not exist!
+  abort: repository doesnotexist does not exist
   [255]
 
 :pushurl is used when defined

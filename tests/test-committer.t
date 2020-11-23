@@ -102,7 +102,7 @@
   $ hg commit -u ' ' -m commit-1
   transaction abort!
   rollback completed
-  abort: empty username!
+  abort: empty username
   [255]
 
 # don't add tests here, previous test is unstable

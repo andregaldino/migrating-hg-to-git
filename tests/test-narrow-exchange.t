@@ -105,8 +105,8 @@ TODO: this should be successful
   remote: adding file changes
   remote: transaction abort!
   remote: rollback completed
-  remote: abort: data/inside2/f.i@4a1aa07735e6: unknown parent! (reporevlogstore !)
-  remote: abort: data/inside2/f/index@4a1aa07735e6: no node! (reposimplestore !)
+  remote: abort: data/inside2/f.i@4a1aa07735e6: unknown parent (reporevlogstore !)
+  remote: abort: data/inside2/f/index@4a1aa07735e6: no node (reposimplestore !)
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
   [255]
 
@@ -221,5 +221,5 @@ TODO: lfs shouldn't abort like this
   remote: error: pretxnchangegroup.lfs hook raised an exception: data/inside2/f.i@f59b4e021835: no match found (lfs-on !)
   remote: transaction abort! (lfs-on !)
   remote: rollback completed (lfs-on !)
-  remote: abort: data/inside2/f.i@f59b4e021835: no match found! (lfs-on !)
+  remote: abort: data/inside2/f.i@f59b4e021835: no match found (lfs-on !)
   abort: stream ended unexpectedly (got 0 bytes, expected 4) (lfs-on !)

@@ -496,13 +496,13 @@ shell aliases with global options
   $ hg init sub
   $ cd sub
   $ hg count 'branch(default)'
-  abort: unknown revision 'default'!
+  abort: unknown revision 'default'
   0
   $ hg -v count 'branch(default)'
-  abort: unknown revision 'default'!
+  abort: unknown revision 'default'
   0
   $ hg -R .. count 'branch(default)'
-  abort: unknown revision 'default'!
+  abort: unknown revision 'default'
   0
   $ hg --cwd .. count 'branch(default)'
   2
@@ -714,9 +714,9 @@ return code of command and shell aliases:
 
 #if no-outer-repo
   $ hg root
-  abort: no repository found in '$TESTTMP' (.hg not found)!
+  abort: no repository found in '$TESTTMP' (.hg not found)
   [255]
   $ hg --config alias.hgroot='!hg root' hgroot
-  abort: no repository found in '$TESTTMP' (.hg not found)!
+  abort: no repository found in '$TESTTMP' (.hg not found)
   [255]
 #endif

@@ -46,7 +46,7 @@ Requirement for sparse added when sparse is enabled
 Client without sparse enabled reacts properly
 
   $ hg files
-  abort: repository is using sparse feature but sparse is not enabled; enable the "sparse" extensions to access!
+  abort: repository is using sparse feature but sparse is not enabled; enable the "sparse" extensions to access
   [255]
 
 Requirement for sparse is removed when sparse is disabled

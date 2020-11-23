@@ -105,11 +105,11 @@
   green = ../a#default
 
   $ hg tout green
-  abort: repository green does not exist!
+  abort: repository green does not exist
   [255]
 
   $ hg tlog -r 'outgoing("green")'
-  abort: repository green does not exist!
+  abort: repository green does not exist
   [255]
 
   $ cd ..

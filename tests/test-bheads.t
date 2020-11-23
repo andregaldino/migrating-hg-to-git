@@ -251,7 +251,7 @@
   -------
   7: Adding c branch (c)
   -------
-  abort: unknown revision 'z'!
+  abort: unknown revision 'z'
   -------
 
 =======

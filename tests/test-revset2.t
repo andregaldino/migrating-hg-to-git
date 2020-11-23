@@ -319,7 +319,7 @@ test that `_list` should remove duplicates
 test unknown revision in `_list`
 
   $ log '0|unknown'
-  abort: unknown revision 'unknown'!
+  abort: unknown revision 'unknown'
   [255]
 
 test integer range in `_list`
@@ -329,11 +329,11 @@ test integer range in `_list`
   0
 
   $ log '-10|-11'
-  abort: unknown revision '-11'!
+  abort: unknown revision '-11'
   [255]
 
   $ log '9|10'
-  abort: unknown revision '10'!
+  abort: unknown revision '10'
   [255]
 
 test '0000' != '0' in `_list`
@@ -589,7 +589,7 @@ test empty revset
 we can use patterns when searching for tags
 
   $ log 'tag("1..*")'
-  abort: tag '1..*' does not exist!
+  abort: tag '1..*' does not exist
   [255]
   $ log 'tag("re:1..*")'
   6
@@ -600,16 +600,16 @@ we can use patterns when searching for tags
   $ log 'tag("re:0..*")'
 
   $ log 'tag(unknown)'
-  abort: tag 'unknown' does not exist!
+  abort: tag 'unknown' does not exist
   [255]
   $ log 'tag("re:unknown")'
   $ log 'present(tag("unknown"))'
   $ log 'present(tag("re:unknown"))'
   $ log 'branch(unknown)'
-  abort: unknown revision 'unknown'!
+  abort: unknown revision 'unknown'
   [255]
   $ log 'branch("literal:unknown")'
-  abort: branch 'unknown' does not exist!
+  abort: branch 'unknown' does not exist
   [255]
   $ log 'branch("re:unknown")'
   $ log 'present(branch("unknown"))'
@@ -665,7 +665,7 @@ matching() should preserve the order of the input set:
   1
 
   $ log 'named("unknown")'
-  abort: namespace 'unknown' does not exist!
+  abort: namespace 'unknown' does not exist
   [255]
   $ log 'named("re:unknown")'
   $ log 'present(named("unknown"))'
@@ -758,7 +758,7 @@ parentrevspec
   [10]
 
   $ log 'branchpoint()~-1'
-  abort: revision in set has more than one child!
+  abort: revision in set has more than one child
   [255]
 
 Bogus function gets suggestions
@@ -869,7 +869,7 @@ aliases:
   $ export HGPLAIN
   $ try m
   (symbol 'm')
-  abort: unknown revision 'm'!
+  abort: unknown revision 'm'
   [255]
 
   $ HGPLAINEXCEPT=revsetalias
@@ -1060,7 +1060,7 @@ far away.
     (func
       (symbol 'max')
       (string '$1')))
-  abort: unknown revision '$1'!
+  abort: unknown revision '$1'
   [255]
 
 test scope of alias expansion: 'universe' is expanded prior to 'shadowall(0)',
