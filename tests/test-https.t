@@ -52,7 +52,7 @@ we are able to load CA certs.
   $ hg clone https://localhost:$HGPORT/ copy-pull
   (an attempt was made to load CA certificates but none were loaded; see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error)
   abort: error: *certificate verify failed* (glob)
-  [255]
+  [100]
 #endif
 
 #if defaultcacertsloaded
