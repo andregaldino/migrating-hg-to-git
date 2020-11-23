@@ -134,22 +134,22 @@ earlygetopt short option without following space:
 earlygetopt with illegal abbreviations:
 
   $ hg --confi "foo.bar=baz"
-  abort: option --config may not be abbreviated!
+  abort: option --config may not be abbreviated
   [255]
   $ hg --cw a tip
-  abort: option --cwd may not be abbreviated!
+  abort: option --cwd may not be abbreviated
   [255]
   $ hg --rep a tip
-  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo!
+  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
   [255]
   $ hg --repositor a tip
-  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo!
+  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
   [255]
   $ hg -qR a tip
-  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo!
+  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
   [255]
   $ hg -qRa tip
-  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo!
+  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
   [255]
 
 Testing --cwd:

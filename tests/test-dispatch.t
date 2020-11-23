@@ -62,20 +62,20 @@ Parsing of early options should stop at "--":
 Unparsable form of early options:
 
   $ hg cat --debugg
-  abort: option --debugger may not be abbreviated!
+  abort: option --debugger may not be abbreviated
   [255]
 
 Parsing failure of early options should be detected before executing the
 command:
 
   $ hg log -b '--config=hooks.pre-log=false' default
-  abort: option --config may not be abbreviated!
+  abort: option --config may not be abbreviated
   [255]
   $ hg log -b -R. default
-  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo!
+  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
   [255]
   $ hg log --cwd .. -b --cwd=. default
-  abort: option --cwd may not be abbreviated!
+  abort: option --cwd may not be abbreviated
   [255]
 
 However, we can't prevent it from loading extensions and configs:
@@ -85,7 +85,7 @@ However, we can't prevent it from loading extensions and configs:
   > EOF
   $ hg log -b '--config=extensions.bad=bad.py' default
   *** failed to import extension bad from bad.py: bad
-  abort: option --config may not be abbreviated!
+  abort: option --config may not be abbreviated
   [255]
 
   $ mkdir -p badrepo/.hg
@@ -113,7 +113,7 @@ applied before the command name is resolved:
   [255]
 
   $ hg log -b '--config=defaults.log=--config=hooks.pre-log=false'
-  abort: option --config may not be abbreviated!
+  abort: option --config may not be abbreviated
   [255]
 
 Shell aliases bypass any command parsing rules but for the early one:
@@ -143,13 +143,13 @@ Early options must come first if HGPLAIN=+strictflags is specified:
   [255]
 
   $ HGPLAIN=+strictflags hg log --config='hooks.pre-log=false' -b default
-  abort: option --config may not be abbreviated!
+  abort: option --config may not be abbreviated
   [255]
   $ HGPLAIN=+strictflags hg log -q --cwd=.. -b default
-  abort: option --cwd may not be abbreviated!
+  abort: option --cwd may not be abbreviated
   [255]
   $ HGPLAIN=+strictflags hg log -q -R . -b default
-  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo!
+  abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
   [255]
 
   $ HGPLAIN=+strictflags hg --config='hooks.pre-log=false' log -b default
