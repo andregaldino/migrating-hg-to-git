@@ -1741,7 +1741,7 @@ class ui(object):
                         raise EOFError
                     return l.rstrip(b'\n')
                 else:
-                    return getpass.getpass('')
+                    return encoding.strtolocal(getpass.getpass(''))
         except EOFError:
             raise error.ResponseExpected()
 
