@@ -1058,18 +1058,20 @@ def _dispatch(req):
         req.canonical_command = cmd
 
         if options[b"config"] != req.earlyoptions[b"config"]:
-            raise error.Abort(_(b"option --config may not be abbreviated"))
+            raise error.InputError(_(b"option --config may not be abbreviated"))
         if options[b"cwd"] != req.earlyoptions[b"cwd"]:
-            raise error.Abort(_(b"option --cwd may not be abbreviated"))
+            raise error.InputError(_(b"option --cwd may not be abbreviated"))
         if options[b"repository"] != req.earlyoptions[b"repository"]:
-            raise error.Abort(
+            raise error.InputError(
                 _(
                     b"option -R has to be separated from other options (e.g. not "
                     b"-qR) and --repository may only be abbreviated as --repo"
                 )
             )
         if options[b"debugger"] != req.earlyoptions[b"debugger"]:
-            raise error.Abort(_(b"option --debugger may not be abbreviated"))
+            raise error.InputError(
+                _(b"option --debugger may not be abbreviated")
+            )
         # don't validate --profile/--traceback, which can be enabled from now
 
         if options[b"encoding"]:

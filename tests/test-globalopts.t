@@ -135,22 +135,22 @@ earlygetopt with illegal abbreviations:
 
   $ hg --confi "foo.bar=baz"
   abort: option --config may not be abbreviated
-  [255]
+  [10]
   $ hg --cw a tip
   abort: option --cwd may not be abbreviated
-  [255]
+  [10]
   $ hg --rep a tip
   abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
-  [255]
+  [10]
   $ hg --repositor a tip
   abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
-  [255]
+  [10]
   $ hg -qR a tip
   abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
-  [255]
+  [10]
   $ hg -qRa tip
   abort: option -R has to be separated from other options (e.g. not -qR) and --repository may only be abbreviated as --repo
-  [255]
+  [10]
 
 Testing --cwd:
 
