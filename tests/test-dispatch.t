@@ -198,7 +198,7 @@ No repo:
 
   $ hg cat
   abort: no repository found in '$TESTTMP' (.hg not found)
-  [255]
+  [10]
 
 #endif
 

@@ -58,7 +58,7 @@ Make sure update doesn't assume b1 is a repository if invoked from outside:
   $ cd ..
   $ hg update b1
   abort: no repository found in '$TESTTMP' (.hg not found)
-  [255]
+  [10]
   $ cd b1
 
 Test helper functions:

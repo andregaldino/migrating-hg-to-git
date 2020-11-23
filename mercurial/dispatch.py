@@ -1174,7 +1174,7 @@ def _dispatch(req):
                         intents=func.intents,
                     )
                     if not repo.local():
-                        raise error.Abort(
+                        raise error.InputError(
                             _(b"repository '%s' is not local") % path
                         )
                     repo.ui.setconfig(
@@ -1195,7 +1195,7 @@ def _dispatch(req):
                                 req.earlyoptions[b'repository'] = guess
                                 return _dispatch(req)
                         if not path:
-                            raise error.RepoError(
+                            raise error.InputError(
                                 _(
                                     b"no repository found in"
                                     b" '%s' (.hg not found)"
