@@ -907,8 +907,8 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
 def bisect(
     ui,
     repo,
-    rev=None,
-    extra=None,
+    positional_1=None,
+    positional_2=None,
     command=None,
     reset=None,
     good=None,
@@ -998,18 +998,22 @@ def bisect(
 
     Returns 0 on success.
     """
+    rev = []
     # backward compatibility
-    if rev in (b"good", b"bad", b"reset", b"init"):
+    if positional_1 in (b"good", b"bad", b"reset", b"init"):
         ui.warn(_(b"(use of 'hg bisect <cmd>' is deprecated)\n"))
-        cmd, rev, extra = rev, extra, None
+        cmd = positional_1
+        rev.append(positional_2)
         if cmd == b"good":
             good = True
         elif cmd == b"bad":
             bad = True
         else:
             reset = True
-    elif extra:
+    elif positional_2:
         raise error.InputError(_(b'incompatible arguments'))
+    elif positional_1 is not None:
+        rev.append(positional_1)
 
     incompatibles = {
         b'--bad': bad,
@@ -1033,12 +1037,13 @@ def bisect(
 
     state = hbisect.load_state(repo)
 
+    if rev:
+        nodes = [repo[i].node() for i in scmutil.revrange(repo, rev)]
+    else:
+        nodes = [repo.lookup(b'.')]
+
     # update state
     if good or bad or skip:
-        if rev:
-            nodes = [repo[i].node() for i in scmutil.revrange(repo, [rev])]
-        else:
-            nodes = [repo.lookup(b'.')]
         if good:
             state[b'good'] += nodes
         elif bad:
@@ -1076,7 +1081,9 @@ def bisect(
             if p2 != nullid:
                 raise error.StateError(_(b'current bisect revision is a merge'))
         if rev:
-            node = repo[scmutil.revsingle(repo, rev, node)].node()
+            if not nodes:
+                raise error.Abort(_(b'empty revision set'))
+            node = repo[nodes.last()].node()
         with hbisect.restore_state(repo, state, node):
             while changesets:
                 # update state
