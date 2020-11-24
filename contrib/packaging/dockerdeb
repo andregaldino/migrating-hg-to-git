@@ -25,7 +25,11 @@ $BUILDDIR/hg-docker build \
 # container and hope it's writable. Whee.
 dn=$(basename $ROOTDIR)
 
-DBUILDUSER=build
+if [[ -z "${HG_DOCKER_OWN_USER:-}" ]]; then
+    DBUILDUSER=build
+else
+    DBUILDUSER="$(id -u):$(id -g)"
+fi
 
 if [ $(uname) = "Darwin" ] ; then
     $DOCKER run -u $DBUILDUSER --rm -v $PWD/..:/mnt $CONTAINER \
