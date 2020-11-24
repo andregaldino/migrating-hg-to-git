@@ -357,10 +357,10 @@ positional arguments
 
   $ hg positional
   abort: too few arguments for command alias
-  [255]
+  [10]
   $ hg positional a
   abort: too few arguments for command alias
-  [255]
+  [10]
   $ hg positional 'node|short' rev
   0 e63c23eaa88a | 1970-01-01 00:00 +0000
 
