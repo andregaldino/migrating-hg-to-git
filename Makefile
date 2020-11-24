@@ -201,12 +201,8 @@ packaging_targets := \
   docker-debian-buster \
   docker-debian-stretch \
   docker-fedora \
-  docker-ubuntu-trusty \
-  docker-ubuntu-trusty-ppa \
   docker-ubuntu-xenial \
   docker-ubuntu-xenial-ppa \
-  docker-ubuntu-artful \
-  docker-ubuntu-artful-ppa \
   docker-ubuntu-bionic \
   docker-ubuntu-bionic-ppa \
   fedora \
