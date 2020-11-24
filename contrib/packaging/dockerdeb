@@ -12,10 +12,12 @@ shift; shift # extra params are passed to build process
 
 OUTPUTDIR=${OUTPUTDIR:=$ROOTDIR/packages/$PLATFORM}
 CONTAINER=hg-docker-$PLATFORM
+TZ=`ls -la /etc/localtime | cut -d/ -f7-9`
 
 DOCKER=$($BUILDDIR/hg-docker docker-path)
 
 $BUILDDIR/hg-docker build \
+    --build-arg TZ=$TZ \
     --build-arg CODENAME=$CODENAME \
     $BUILDDIR/docker/$DISTID.template \
     $CONTAINER

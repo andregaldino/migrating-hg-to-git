@@ -205,6 +205,8 @@ packaging_targets := \
   docker-ubuntu-xenial-ppa \
   docker-ubuntu-bionic \
   docker-ubuntu-bionic-ppa \
+  docker-ubuntu-focal \
+  docker-ubuntu-focal-ppa \
   fedora \
   linux-wheels \
   linux-wheels-x86_64 \

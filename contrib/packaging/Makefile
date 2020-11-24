@@ -9,7 +9,7 @@ UBUNTU_CODENAMES := \
   xenial \
   bionic \
   cosmic \
-  disco
+  focal
 
 FEDORA_RELEASE := 31
 
