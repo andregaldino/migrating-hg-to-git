@@ -8,6 +8,7 @@ pub mod dagops;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
 mod dirstate;
 pub mod discovery;
+pub mod requirements;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
     dirs_multiset::{DirsMultiset, DirsMultisetIter},

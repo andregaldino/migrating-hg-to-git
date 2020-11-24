@@ -1,6 +1,7 @@
 use crate::exitcode;
 use crate::ui::UiError;
 use hg::operations::{FindRootError, FindRootErrorKind};
+use hg::requirements::RequirementsError;
 use hg::utils::files::get_bytes_from_path;
 use std::convert::From;
 use std::path::PathBuf;
@@ -12,9 +13,8 @@ pub enum CommandErrorKind {
     RootNotFound(PathBuf),
     /// The current directory cannot be found
     CurrentDirNotFound(std::io::Error),
-    /// Error while reading or writing a file
-    // TODO: add the file name/path?
-    FileError(std::io::Error),
+    /// `.hg/requires`
+    RequirementsError(RequirementsError),
     /// The standard output stream cannot be written to
     StdoutError,
     /// The standard error stream cannot be written to
@@ -30,7 +30,7 @@ impl CommandErrorKind {
         match self {
             CommandErrorKind::RootNotFound(_) => exitcode::ABORT,
             CommandErrorKind::CurrentDirNotFound(_) => exitcode::ABORT,
-            CommandErrorKind::FileError(_) => exitcode::ABORT,
+            CommandErrorKind::RequirementsError(_) => exitcode::ABORT,
             CommandErrorKind::StdoutError => exitcode::ABORT,
             CommandErrorKind::StderrError => exitcode::ABORT,
             CommandErrorKind::Abort(_) => exitcode::ABORT,
@@ -61,6 +61,11 @@ impl CommandErrorKind {
                     b"\n",
                 ]
                 .concat(),
+            ),
+            CommandErrorKind::RequirementsError(
+                RequirementsError::Corrupted,
+            ) => Some(
+                "abort: .hg/requires is corrupted\n".as_bytes().to_owned(),
             ),
             CommandErrorKind::Abort(message) => message.to_owned(),
             _ => None,
@@ -112,6 +117,14 @@ impl From<FindRootError> for CommandError {
             FindRootErrorKind::GetCurrentDirError(e) => CommandError {
                 kind: CommandErrorKind::CurrentDirNotFound(e),
             },
+        }
+    }
+}
+
+impl From<RequirementsError> for CommandError {
+    fn from(err: RequirementsError) -> Self {
+        CommandError {
+            kind: CommandErrorKind::RequirementsError(err),
         }
     }
 }
