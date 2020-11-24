@@ -4,6 +4,7 @@ use crate::ui::utf8_to_local;
 use crate::ui::Ui;
 use hg::operations::FindRoot;
 use hg::operations::{CatRev, CatRevError, CatRevErrorKind};
+use hg::requirements;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
 use std::convert::TryFrom;
@@ -32,6 +33,7 @@ impl<'a> Command for CatCommand<'a> {
     #[timed]
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let root = FindRoot::new().run()?;
+        requirements::check(&root)?;
         let cwd = std::env::current_dir()
             .or_else(|e| Err(CommandErrorKind::CurrentDirNotFound(e)))?;
 

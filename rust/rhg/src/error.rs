@@ -30,6 +30,9 @@ impl CommandErrorKind {
         match self {
             CommandErrorKind::RootNotFound(_) => exitcode::ABORT,
             CommandErrorKind::CurrentDirNotFound(_) => exitcode::ABORT,
+            CommandErrorKind::RequirementsError(
+                RequirementsError::Unsupported { .. },
+            ) => exitcode::UNIMPLEMENTED_COMMAND,
             CommandErrorKind::RequirementsError(_) => exitcode::ABORT,
             CommandErrorKind::StdoutError => exitcode::ABORT,
             CommandErrorKind::StderrError => exitcode::ABORT,

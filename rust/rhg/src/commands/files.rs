@@ -11,6 +11,7 @@ use hg::operations::{
     ListRevTrackedFiles, ListRevTrackedFilesError,
     ListRevTrackedFilesErrorKind,
 };
+use hg::requirements;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
 use hg::utils::hg_path::{HgPath, HgPathBuf};
 use std::path::PathBuf;
@@ -57,6 +58,7 @@ impl<'a> FilesCommand<'a> {
 impl<'a> Command for FilesCommand<'a> {
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let root = FindRoot::new().run()?;
+        requirements::check(&root)?;
         if let Some(rev) = self.rev {
             let mut operation = ListRevTrackedFiles::new(&root, rev)
                 .map_err(|e| map_rev_error(rev, e))?;

@@ -51,3 +51,22 @@ pub fn load(repo_root: &Path) -> Result<Vec<String>, RequirementsError> {
         Err(error) => Err(RequirementsError::Io(error))?,
     }
 }
+
+pub fn check(repo_root: &Path) -> Result<(), RequirementsError> {
+    for feature in load(repo_root)? {
+        if !SUPPORTED.contains(&&*feature) {
+            return Err(RequirementsError::Unsupported { feature })
+        }
+    }
+    Ok(())
+}
+
+// TODO: set this to actually-supported features
+const SUPPORTED: &[&str] = &[
+    "dotencode",
+    "fncache",
+    "generaldelta",
+    "revlogv1",
+    "sparserevlog",
+    "store",
+];

@@ -124,3 +124,19 @@ Requirements
   revlogv1
   sparserevlog
   store
+
+  $ echo indoor-pool >> .hg/requires
+  $ rhg files
+  [252]
+
+  $ rhg cat -r 1 copy_of_original
+  [252]
+
+  $ rhg debugrequirements
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+  indoor-pool
