@@ -228,6 +228,8 @@ def callcatch(ui, func):
             detailed_exit_code = 20
         elif isinstance(inst, error.ConfigError):
             detailed_exit_code = 30
+        elif isinstance(inst, error.SecurityError):
+            detailed_exit_code = 150
         elif isinstance(inst, error.CanceledError):
             detailed_exit_code = 250
         ui.error(inst.format())

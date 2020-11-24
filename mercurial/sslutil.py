@@ -470,7 +470,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
     # closed
     # - see http://bugs.python.org/issue13721
     if not sslsocket.cipher():
-        raise error.Abort(_(b'ssl connection failed'))
+        raise error.SecurityError(_(b'ssl connection failed'))
 
     sslsocket._hgstate = {
         b'caloaded': caloaded,
@@ -736,10 +736,10 @@ def validatesocket(sock):
         peercert = sock.getpeercert(True)
         peercert2 = sock.getpeercert()
     except AttributeError:
-        raise error.Abort(_(b'%s ssl connection error') % host)
+        raise error.SecurityError(_(b'%s ssl connection error') % host)
 
     if not peercert:
-        raise error.Abort(
+        raise error.SecurityError(
             _(b'%s certificate error: no certificate received') % host
         )
 
@@ -801,7 +801,7 @@ def validatesocket(sock):
         else:
             section = b'hostsecurity'
             nice = b'%s:%s' % (hash, fmtfingerprint(peerfingerprints[hash]))
-        raise error.Abort(
+        raise error.SecurityError(
             _(b'certificate for %s has unexpected fingerprint %s')
             % (host, nice),
             hint=_(b'check %s configuration') % section,
@@ -810,7 +810,7 @@ def validatesocket(sock):
     # Security is enabled but no CAs are loaded. We can't establish trust
     # for the cert so abort.
     if not sock._hgstate[b'caloaded']:
-        raise error.Abort(
+        raise error.SecurityError(
             _(
                 b'unable to verify security of %s (no loaded CA certificates); '
                 b'refusing to connect'
@@ -826,7 +826,7 @@ def validatesocket(sock):
 
     msg = _verifycert(peercert2, shost)
     if msg:
-        raise error.Abort(
+        raise error.SecurityError(
             _(b'%s certificate error: %s') % (host, msg),
             hint=_(
                 b'set hostsecurity.%s:certfingerprints=%s '

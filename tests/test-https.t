@@ -125,7 +125,7 @@ Inability to verify peer certificate will result in abort
   $ hg clone https://localhost:$HGPORT/ copy-pull $DISABLECACERTS
   abort: unable to verify security of localhost (no loaded CA certificates); refusing to connect
   (see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error or set hostsecurity.localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e to trust this server)
-  [255]
+  [150]
 
   $ hg clone --insecure https://localhost:$HGPORT/ copy-pull
   warning: connection security to localhost is disabled per current settings; communication is susceptible to eavesdropping and tampering
@@ -160,7 +160,7 @@ pull without cacert
   pulling from https://localhost:$HGPORT/
   abort: unable to verify security of localhost (no loaded CA certificates); refusing to connect
   (see https://mercurial-scm.org/wiki/SecureConnections for how to configure Mercurial to avoid this error or set hostsecurity.localhost:fingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e to trust this server)
-  [255]
+  [150]
 
   $ hg pull --insecure
   pulling from https://localhost:$HGPORT/
@@ -227,7 +227,7 @@ cacert mismatch
   pulling from https://*:$HGPORT/ (glob)
   abort: $LOCALIP certificate error: certificate is for localhost (glob)
   (set hostsecurity.$LOCALIP:certfingerprints=sha256:20:de:b3:ad:b4:cd:a5:42:f0:74:41:1c:a2:70:1e:da:6e:c0:5c:16:9e:e7:22:0f:f1:b7:e5:6e:e4:92:af:7e config setting or use --insecure to connect insecurely)
-  [255]
+  [150]
   $ hg -R copy-pull pull --config web.cacerts="$CERTSDIR/pub.pem" \
   > https://$LOCALIP:$HGPORT/ --insecure
   pulling from https://*:$HGPORT/ (glob)
@@ -319,18 +319,18 @@ Fingerprints
   $ hg --config 'hostfingerprints.localhost=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef, aeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' -R copy-pull id https://localhost:$HGPORT/ --insecure
   abort: certificate for localhost has unexpected fingerprint ec:d8:7c:d6:b3:86:d0:4f:c1:b8:b4:1c:9d:8f:5e:16:8e:ef:1c:03
   (check hostfingerprint configuration)
-  [255]
+  [150]
 
   $ hg --config 'hostsecurity.localhost:fingerprints=sha1:deadbeefdeadbeefdeadbeefdeadbeefdeadbeef, sha1:aeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' -R copy-pull id https://localhost:$HGPORT/
   abort: certificate for localhost has unexpected fingerprint sha1:ec:d8:7c:d6:b3:86:d0:4f:c1:b8:b4:1c:9d:8f:5e:16:8e:ef:1c:03
   (check hostsecurity configuration)
-  [255]
+  [150]
 
 - fails when cert doesn't match hostname (port is ignored)
   $ hg -R copy-pull id https://localhost:$HGPORT1/ --config hostfingerprints.localhost=ecd87cd6b386d04fc1b8b41c9d8f5e168eef1c03
   abort: certificate for localhost has unexpected fingerprint f4:2f:5a:0c:3e:52:5b:db:e7:24:a8:32:1d:18:97:6d:69:b5:87:84
   (check hostfingerprint configuration)
-  [255]
+  [150]
 
 
 - ignores that certificate doesn't match hostname

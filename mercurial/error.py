@@ -216,6 +216,14 @@ class CanceledError(Abort):
     """
 
 
+class SecurityError(Abort):
+    """Indicates that some aspect of security failed.
+
+    Examples: Bad server credentials, expired local credentials for network
+    filesystem, mismatched GPG signature, DoS protection.
+    """
+
+
 class HookLoadError(Abort):
     """raised when loading a hook fails, aborting an operation
 
