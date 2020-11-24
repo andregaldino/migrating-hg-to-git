@@ -14,6 +14,6 @@ from . import error
 
 def checkunresolved(ms):
     if list(ms.unresolved()):
-        raise error.Abort(
+        raise error.StateError(
             _(b"unresolved merge conflicts (see 'hg help resolve')")
         )

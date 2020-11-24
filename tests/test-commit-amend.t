@@ -423,7 +423,7 @@ Refuse to amend if there is a merge conflict (issue5805):
 
   $ hg ci --amend
   abort: unresolved merge conflicts (see 'hg help resolve')
-  [255]
+  [20]
 
   $ hg up -qC .
 

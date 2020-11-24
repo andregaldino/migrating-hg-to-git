@@ -348,7 +348,7 @@ Try to make empty commit while there are conflicts
   $ rm a.orig
   $ hg ci -m empty
   abort: unresolved merge conflicts (see 'hg help resolve')
-  [255]
+  [20]
   $ hg resolve -m a
   (no more unresolved files)
   $ hg resolve -l

@@ -324,7 +324,7 @@ Continue without resolve should fail:
   $ hg graft -c
   grafting 4:9c233e8e184d "4"
   abort: unresolved merge conflicts (see 'hg help resolve')
-  [255]
+  [20]
 
 Fix up:
 

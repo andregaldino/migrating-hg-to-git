@@ -89,7 +89,7 @@ Try to continue without solving the conflict:
 
   $ hg rebase --continue
   abort: unresolved merge conflicts (see 'hg help resolve')
-  [255]
+  [20]
 
 Conclude rebase:
 
