@@ -287,7 +287,7 @@ Local is superset:
   searching for changes
   abort: push creates new remote branches: both, name1
   (use 'hg push --new-branch' to create new remote branches)
-  [255]
+  [20]
   $ hg push $remote --new-branch
   pushing to http://localhost:$HGPORT/
   searching for changes

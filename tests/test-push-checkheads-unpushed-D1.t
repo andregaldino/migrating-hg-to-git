@@ -73,7 +73,7 @@ Actual testing
   searching for changes
   abort: push creates new remote head 74ff5441d343
   (merge or see 'hg help push' for details about pushing new heads)
-  [255]
+  [20]
 
   $ cd ../..
 

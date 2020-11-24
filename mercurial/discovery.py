@@ -362,7 +362,7 @@ def _nowarnheads(pushop):
 def checkheads(pushop):
     """Check that a push won't add any outgoing head
 
-    raise Abort error and display ui message as needed.
+    raise StateError error and display ui message as needed.
     """
 
     repo = pushop.repo.unfiltered()
@@ -409,7 +409,7 @@ def checkheads(pushop):
         else:
             errmsg = _(b"push creates new remote branches: %s") % branchnames
         hint = _(b"use 'hg push --new-branch' to create new remote branches")
-        raise error.Abort(errmsg, hint=hint)
+        raise error.StateError(errmsg, hint=hint)
 
     # 2. Find heads that we need not warn about
     nowarnheads = _nowarnheads(pushop)
@@ -505,7 +505,7 @@ def checkheads(pushop):
             for h in dhs:
                 repo.ui.note(b" %s\n" % short(h))
     if errormsg:
-        raise error.Abort(errormsg, hint=hint)
+        raise error.StateError(errormsg, hint=hint)
 
 
 def _postprocessobsolete(pushop, futurecommon, candidate_newhs):

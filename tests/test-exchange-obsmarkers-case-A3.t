@@ -201,7 +201,7 @@ check it complains about multiple heads
   searching for changes
   abort: push creates new remote head e5ea8f9c7314
   (merge or see 'hg help push' for details about pushing new heads)
-  [255]
+  [20]
   $ cd ..
 
 test obsmarkers exchange.

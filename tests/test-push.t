@@ -387,7 +387,7 @@ Test `commands.push.require-revs`
   searching for changes
   abort: push creates new remote head [0-9a-f]+ (re)
   (merge or see 'hg help push' for details about pushing new heads)
-  [255]
+  [20]
 (demonstrate that even though we don't have anything to exchange, we're still
 showing the error)
   $ hg push
