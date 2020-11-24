@@ -12,6 +12,9 @@ pub enum CommandErrorKind {
     RootNotFound(PathBuf),
     /// The current directory cannot be found
     CurrentDirNotFound(std::io::Error),
+    /// Error while reading or writing a file
+    // TODO: add the file name/path?
+    FileError(std::io::Error),
     /// The standard output stream cannot be written to
     StdoutError,
     /// The standard error stream cannot be written to
@@ -27,6 +30,7 @@ impl CommandErrorKind {
         match self {
             CommandErrorKind::RootNotFound(_) => exitcode::ABORT,
             CommandErrorKind::CurrentDirNotFound(_) => exitcode::ABORT,
+            CommandErrorKind::FileError(_) => exitcode::ABORT,
             CommandErrorKind::StdoutError => exitcode::ABORT,
             CommandErrorKind::StderrError => exitcode::ABORT,
             CommandErrorKind::Abort(_) => exitcode::ABORT,

@@ -115,3 +115,12 @@ Cat copied file should not display copy metadata
   $ hg commit -m "add copy of original"
   $ rhg cat -r 1 copy_of_original
   original content
+
+Requirements
+  $ rhg debugrequirements
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store

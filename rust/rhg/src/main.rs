@@ -83,6 +83,10 @@ fn main() {
                         .required(true)
                         .value_name("REV"),
                 ),
+        )
+        .subcommand(
+            SubCommand::with_name("debugrequirements")
+                .about(commands::debugrequirements::HELP_TEXT),
         );
 
     let matches = app.clone().get_matches_safe().unwrap_or_else(|err| {
@@ -123,6 +127,10 @@ fn match_subcommand(
         }
         ("debugdata", Some(matches)) => {
             commands::debugdata::DebugDataCommand::try_from(matches)?.run(&ui)
+        }
+        ("debugrequirements", _) => {
+            commands::debugrequirements::DebugRequirementsCommand::new()
+                .run(&ui)
         }
         _ => unreachable!(), // Because of AppSettings::SubcommandRequired,
     }
