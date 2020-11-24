@@ -282,7 +282,7 @@ merge fails
   $ hg merge 2
   abort: uncommitted changes
   (use 'hg status' to list changes)
-  [255]
+  [20]
 merge expected!
   $ hg merge -f 2
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -319,7 +319,7 @@ merge of b should fail
   $ hg merge 2
   abort: uncommitted changes
   (use 'hg status' to list changes)
-  [255]
+  [20]
 merge of b expected
   $ hg merge -f 2
   merging b

@@ -1912,7 +1912,7 @@ def _update(
                         hint=_(b"use 'hg update' or check 'hg heads'"),
                     )
             if not force and (wc.files() or wc.deleted()):
-                raise error.Abort(
+                raise error.StateError(
                     _(b"uncommitted changes"),
                     hint=_(b"use 'hg status' to list changes"),
                 )
