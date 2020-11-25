@@ -24,7 +24,7 @@ fn parse(bytes: &[u8]) -> Result<Vec<String>, ()> {
         .map(|line| {
             // Python uses Unicode `str.isalnum` but feature names are all
             // ASCII
-            if line[0].is_ascii_alphanumeric() {
+            if line[0].is_ascii_alphanumeric() && line.is_ascii() {
                 Ok(String::from_utf8(line.into()).unwrap())
             } else {
                 Err(())

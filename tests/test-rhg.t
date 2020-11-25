@@ -140,3 +140,8 @@ Requirements
   sparserevlog
   store
   indoor-pool
+
+  $ echo -e '\xFF' >> .hg/requires
+  $ rhg debugrequirements
+  abort: .hg/requires is corrupted
+  [255]
