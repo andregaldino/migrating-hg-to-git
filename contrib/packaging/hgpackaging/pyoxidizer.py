@@ -127,6 +127,7 @@ def run_pyoxidizer(
 
         # Write out a default editor.rc file to configure notepad as the
         # default editor.
+        os.makedirs(out_dir / "defaultrc", exist_ok=True)
         with (out_dir / "defaultrc" / "editor.rc").open(
             "w", encoding="utf-8"
         ) as fh:
