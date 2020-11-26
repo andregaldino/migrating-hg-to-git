@@ -148,6 +148,14 @@ class changelog(baselog):
         )
         return (int(r[0]) for r in t)
 
+    def tiprev(self):
+        t = self._db.execute(
+            'SELECT rev FROM changelog '
+            'ORDER BY REV DESC '
+            'LIMIT 1'
+        )
+        return next(t)
+
     def _partialmatch(self, id):
         if nodemod.wdirhex.startswith(id):
             raise error.WdirUnsupported
