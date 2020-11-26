@@ -72,7 +72,7 @@ def make_exe(dist):
     # On Windows, we install extra packages for convenience.
     if IS_WINDOWS:
         exe.add_python_resources(
-            exe.pip_install(["-r", ROOT + "/contrib/packaging/requirements-windows-py2.txt"]),
+            exe.pip_install(["-r", ROOT + "/contrib/packaging/requirements-windows-py3.txt"]),
         )
 
     return exe
