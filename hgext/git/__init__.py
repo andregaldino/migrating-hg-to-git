@@ -44,6 +44,9 @@ configitem(
     default=False,
 )
 
+getversion = gitutil.pygit2_version
+
+
 # TODO: extract an interface for this in core
 class gitstore(object):  # store.basicstore):
     def __init__(self, path, vfstype):

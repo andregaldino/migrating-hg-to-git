@@ -20,6 +20,19 @@ def get_pygit2():
     return pygit2_module
 
 
+def pygit2_version():
+    mod = get_pygit2()
+    v = "N/A"
+
+    if mod:
+        try:
+            v = mod.__version__
+        except AttributeError:
+            pass
+
+    return b"(pygit2 %s)" % v.encode("utf-8")
+
+
 def togitnode(n):
     """Wrapper to convert a Mercurial binary node to a unicode hexlified node.
 

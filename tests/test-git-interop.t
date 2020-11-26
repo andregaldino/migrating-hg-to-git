@@ -16,6 +16,10 @@ Setup:
   >  }
 
 
+  $ hg version -v --config extensions.git= | grep '^[E ]'
+  Enabled extensions:
+    git  internal  (pygit2 *) (glob)
+
 Test auto-loading extension works:
   $ mkdir nogit
   $ cd nogit
