@@ -12,6 +12,55 @@ use hg::copy_tracing::ChangedFiles;
 use hg::copy_tracing::CombineChangesetCopies;
 use hg::Revision;
 
+use self::pybytes_with_data::PyBytesWithData;
+
+// Module to encapsulate private fields
+mod pybytes_with_data {
+    use cpython::{PyBytes, Python};
+
+    /// Safe abstraction over a `PyBytes` together with the `&[u8]` slice
+    /// that borrows it.
+    ///
+    /// Calling `PyBytes::data` requires a GIL marker but we want to access the
+    /// data in a thread that (ideally) does not need to acquire the GIL.
+    /// This type allows separating the call an the use.
+    pub(super) struct PyBytesWithData {
+        #[allow(unused)]
+        keep_alive: PyBytes,
+
+        /// Borrows the buffer inside `self.keep_alive`,
+        /// but the borrow-checker cannot express self-referential structs.
+        data: *const [u8],
+    }
+
+    fn require_send<T: Send>() {}
+
+    #[allow(unused)]
+    fn static_assert_pybytes_is_send() {
+        require_send::<PyBytes>;
+    }
+
+    // Safety: PyBytes is Send. Raw pointers are not by default,
+    // but here sending one to another thread is fine since we ensure it stays
+    // valid.
+    unsafe impl Send for PyBytesWithData {}
+
+    impl PyBytesWithData {
+        pub fn new(py: Python, bytes: PyBytes) -> Self {
+            Self {
+                data: bytes.data(py),
+                keep_alive: bytes,
+            }
+        }
+
+        pub fn data(&self) -> &[u8] {
+            // Safety: the raw pointer is valid as long as the PyBytes is still
+            // alive, and the returned slice borrows `self`.
+            unsafe { &*self.data }
+        }
+    }
+}
+
 /// Combines copies information contained into revision `revs` to build a copy
 /// map.
 ///
@@ -31,17 +80,18 @@ pub fn combine_changeset_copies_wrapper(
         .collect::<PyResult<_>>()?;
 
     /// (Revision number, parent 1, parent 2, copy data for this revision)
-    type RevInfo = (Revision, Revision, Revision, Option<PyBytes>);
+    type RevInfo<Bytes> = (Revision, Revision, Revision, Option<Bytes>);
 
-    let revs_info = revs.iter(py).map(|rev_py| -> PyResult<RevInfo> {
-        let rev = rev_py.extract(py)?;
-        let tuple: PyTuple =
-            rev_info.call(py, (rev_py,), None)?.cast_into(py)?;
-        let p1 = tuple.get_item(py, 0).extract(py)?;
-        let p2 = tuple.get_item(py, 1).extract(py)?;
-        let opt_bytes = tuple.get_item(py, 2).extract(py)?;
-        Ok((rev, p1, p2, opt_bytes))
-    });
+    let revs_info =
+        revs.iter(py).map(|rev_py| -> PyResult<RevInfo<PyBytes>> {
+            let rev = rev_py.extract(py)?;
+            let tuple: PyTuple =
+                rev_info.call(py, (rev_py,), None)?.cast_into(py)?;
+            let p1 = tuple.get_item(py, 0).extract(py)?;
+            let p2 = tuple.get_item(py, 1).extract(py)?;
+            let opt_bytes = tuple.get_item(py, 2).extract(py)?;
+            Ok((rev, p1, p2, opt_bytes))
+        });
 
     let path_copies = if !multi_thread {
         let mut combine_changeset_copies =
@@ -67,7 +117,7 @@ pub fn combine_changeset_copies_wrapper(
         //
         // TODO: tweak the bound?
         let (rev_info_sender, rev_info_receiver) =
-            crossbeam_channel::bounded::<RevInfo>(1000);
+            crossbeam_channel::bounded::<RevInfo<PyBytesWithData>>(1000);
 
         // Start a thread that does CPU-heavy processing in parallel with the
         // loop below.
@@ -79,15 +129,16 @@ pub fn combine_changeset_copies_wrapper(
             let mut combine_changeset_copies =
                 CombineChangesetCopies::new(children_count);
             for (rev, p1, p2, opt_bytes) in rev_info_receiver {
-                let gil = Python::acquire_gil();
-                let py = gil.python();
                 let files = match &opt_bytes {
-                    Some(raw) => ChangedFiles::new(raw.data(py)),
+                    Some(raw) => ChangedFiles::new(raw.data()),
                     // Python None was extracted to Option::None,
                     // meaning there was no copy data.
                     None => ChangedFiles::new_empty(),
                 };
                 combine_changeset_copies.add_revision(rev, p1, p2, files)
+
+                // The GIL is (still) implicitly acquired here through
+                // `impl Drop for PyBytes`.
             }
 
             combine_changeset_copies.finish(target_rev)
@@ -95,6 +146,7 @@ pub fn combine_changeset_copies_wrapper(
 
         for rev_info in revs_info {
             let (rev, p1, p2, opt_bytes) = rev_info?;
+            let opt_bytes = opt_bytes.map(|b| PyBytesWithData::new(py, b));
 
             // We’d prefer to avoid the child thread calling into Python code,
             // but this avoids a potential deadlock on the GIL if it does:
