@@ -67,8 +67,8 @@ Ignore the .hg directory within git:
 
 Without creating the .hg, hg status fails:
   $ hg status
-  abort: no repository found in '$TESTTMP/foo' (.hg not found)!
-  [255]
+  abort: no repository found in '$TESTTMP/foo' (.hg not found)
+  [10]
 But if you run hg init --git, it works:
   $ hg init --git
   $ hg id --traceback
@@ -304,14 +304,10 @@ Status should be consistent for both systems
   $ hg status
   heads mismatch, rebuilding dagcache
   M beta
-  $ git status
+  $ git status | egrep -v '^$|^  \(use '
   On branch master
   Changes not staged for commit:
-    (use "git add <file>..." to update what will be committed)
-    (use "git checkout -- <file>..." to discard changes in working directory)
-  
   	modified:   beta
-  
   no changes added to commit (use "git add" and/or "git commit -a")
 
 Contents of each commit should be the same
