@@ -1,7 +1,10 @@
 [package]
 name = "rhg"
 version = "0.1.0"
-authors = ["Antoine Cezar <antoine.cezar@octobus.net>"]
+authors = [
+    "Antoine Cezar <antoine.cezar@octobus.net>",
+    "Raphaël Gomès <raphael.gomes@octobus.net>",
+]
 edition = "2018"
 
 [dependencies]
@@ -10,3 +13,4 @@ clap = "2.33.1"
 log = "0.4.11"
 micro-timer = "0.3.1"
 env_logger = "0.7.1"
+format-bytes = "0.1.3"

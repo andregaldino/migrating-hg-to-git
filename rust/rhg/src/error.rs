@@ -1,5 +1,6 @@
 use crate::exitcode;
 use crate::ui::UiError;
+use format_bytes::format_bytes;
 use hg::operations::{FindRootError, FindRootErrorKind};
 use hg::requirements::RequirementsError;
 use hg::utils::files::get_bytes_from_path;
@@ -44,27 +45,17 @@ impl CommandErrorKind {
     /// Return the message corresponding to the error kind if any
     pub fn get_error_message_bytes(&self) -> Option<Vec<u8>> {
         match self {
-            // TODO use formating macro
             CommandErrorKind::RootNotFound(path) => {
                 let bytes = get_bytes_from_path(path);
-                Some(
-                    [
-                        b"abort: no repository found in '",
-                        bytes.as_slice(),
-                        b"' (.hg not found)!\n",
-                    ]
-                    .concat(),
-                )
+                Some(format_bytes!(
+                    b"abort: no repository found in '{}' (.hg not found)!\n",
+                    bytes.as_slice()
+                ))
             }
-            // TODO use formating macro
-            CommandErrorKind::CurrentDirNotFound(e) => Some(
-                [
-                    b"abort: error getting current working directory: ",
-                    e.to_string().as_bytes(),
-                    b"\n",
-                ]
-                .concat(),
-            ),
+            CommandErrorKind::CurrentDirNotFound(e) => Some(format_bytes!(
+                b"abort: error getting current working directory: {}\n",
+                e.to_string().as_bytes(),
+            )),
             CommandErrorKind::RequirementsError(
                 RequirementsError::Corrupted,
             ) => Some(

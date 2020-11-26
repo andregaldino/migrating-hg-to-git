@@ -1,3 +1,4 @@
+use format_bytes::format_bytes;
 use std::borrow::Cow;
 use std::io;
 use std::io::{ErrorKind, Write};
@@ -87,7 +88,10 @@ fn handle_stdout_error(error: io::Error) -> Result<(), UiError> {
     let mut stderr = io::stderr();
 
     stderr
-        .write_all(&[b"abort: ", error.to_string().as_bytes(), b"\n"].concat())
+        .write_all(&format_bytes!(
+            b"abort: {}\n",
+            error.to_string().as_bytes()
+        ))
         .map_err(UiError::StderrError)?;
 
     stderr.flush().map_err(UiError::StderrError)?;

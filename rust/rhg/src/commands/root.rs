@@ -1,6 +1,7 @@
 use crate::commands::Command;
 use crate::error::CommandError;
 use crate::ui::Ui;
+use format_bytes::format_bytes;
 use hg::operations::FindRoot;
 use hg::utils::files::get_bytes_from_path;
 
@@ -24,8 +25,7 @@ impl Command for RootCommand {
 
         let bytes = get_bytes_from_path(path_buf);
 
-        // TODO use formating macro
-        ui.write_stdout(&[bytes.as_slice(), b"\n"].concat())?;
+        ui.write_stdout(&format_bytes!(b"{}\n", bytes.as_slice()))?;
 
         Ok(())
     }
