@@ -1289,9 +1289,9 @@ def _exceptionwarning(ui):
         extver = version or _(b"(version N/A)")
         warning = _(
             b'** Unknown exception encountered with '
-            b'possibly-broken third-party extension %s %s\n'
+            b'possibly-broken third-party extension "%s" %s\n'
             b'** which supports versions %s of Mercurial.\n'
-            b'** Please disable %s and try your action again.\n'
+            b'** Please disable "%s" and try your action again.\n'
             b'** If that fixes the bug please report it to %s\n'
         ) % (name, extver, testedwith, name, stringutil.forcebytestr(report))
     else:
