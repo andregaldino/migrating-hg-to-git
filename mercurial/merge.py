@@ -544,10 +544,10 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
 
 
 class mergeresult(object):
-    ''''An object representing result of merging manifests.
+    '''An object representing result of merging manifests.
 
     It has information about what actions need to be performed on dirstate
-    mapping of divergent renames and other such cases. '''
+    mapping of divergent renames and other such cases.'''
 
     def __init__(self):
         """
