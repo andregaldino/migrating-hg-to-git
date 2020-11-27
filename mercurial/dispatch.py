@@ -1312,7 +1312,7 @@ def _exceptionwarning(ui):
         + (_(b"** Mercurial Distributed SCM (version %s)\n") % util.version())
         + (
             _(b"** Extensions loaded: %s\n")
-            % b", ".join([x[0] for x in extensions.extensions()])
+            % b", ".join([x[0] for x in sorted(extensions.extensions())])
         )
     )
     return warning

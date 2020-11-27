@@ -1464,7 +1464,7 @@ If the extensions declare outdated versions, accuse the older extension first:
   ** If that fixes the bug please report it to the extension author.
   ** Python * (glob)
   ** Mercurial Distributed SCM (version 2.2)
-  ** Extensions loaded: throw, older
+  ** Extensions loaded: older, throw
 
 One extension only tested with older, one only with newer versions:
   $ echo "util.version = lambda:b'2.1'" >> older.py
@@ -1478,7 +1478,7 @@ One extension only tested with older, one only with newer versions:
   ** If that fixes the bug please report it to the extension author.
   ** Python * (glob)
   ** Mercurial Distributed SCM (version 2.1)
-  ** Extensions loaded: throw, older
+  ** Extensions loaded: older, throw
 
 Older extension is tested with current version, the other only with newer:
   $ echo "util.version = lambda:b'1.9.3'" >> older.py
@@ -1492,7 +1492,7 @@ Older extension is tested with current version, the other only with newer:
   ** If that fixes the bug please report it to http://example.com/bts
   ** Python * (glob)
   ** Mercurial Distributed SCM (version 1.9.3)
-  ** Extensions loaded: throw, older
+  ** Extensions loaded: older, throw
 
 Ability to point to a different point
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
@@ -1501,7 +1501,7 @@ Ability to point to a different point
   ** Your Local Goat Lenders
   ** Python * (glob)
   ** Mercurial Distributed SCM (*) (glob)
-  ** Extensions loaded: throw, older
+  ** Extensions loaded: older, throw
 
 Declare the version as supporting this hg version, show regular bts link:
   $ hgver=`hg debuginstall -T '{hgver}'`
