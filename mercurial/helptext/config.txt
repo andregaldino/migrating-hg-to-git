@@ -147,6 +147,15 @@ be overridden in other configuration files. So far the directory only contains
 merge tool configuration but packagers can also put other default configuration
 there.
 
+.. container:: verbose
+
+    On versions 5.7 and later, if share-safe functionality is enabled,
+    shares will read config file of share source too.
+    `<share-source/.hg/hgrc>` is read before reading `<repo/.hg/hgrc>`.
+
+    For configs which should not be shared, `<repo/.hg/hgrc-not-shared>`
+    should be used.
+
 Syntax
 ======
 
