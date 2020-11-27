@@ -54,6 +54,7 @@ ones.
 
   On Unix, the following files are consulted:
 
+  - ``<repo>/.hg/hgrc-not-shared`` (per-repository)
   - ``<repo>/.hg/hgrc`` (per-repository)
   - ``$HOME/.hgrc`` (per-user)
   - ``${XDG_CONFIG_HOME:-$HOME/.config}/hg/hgrc`` (per-user)
@@ -67,6 +68,7 @@ ones.
 
   On Windows, the following files are consulted:
 
+  - ``<repo>/.hg/hgrc-not-shared`` (per-repository)
   - ``<repo>/.hg/hgrc`` (per-repository)
   - ``%USERPROFILE%\.hgrc`` (per-user)
   - ``%USERPROFILE%\Mercurial.ini`` (per-user)
@@ -89,6 +91,7 @@ ones.
 
   On Plan9, the following files are consulted:
 
+  - ``<repo>/.hg/hgrc-not-shared`` (per-repository)
   - ``<repo>/.hg/hgrc`` (per-repository)
   - ``$home/lib/hgrc`` (per-user)
   - ``<install-root>/lib/mercurial/hgrc`` (per-installation)
