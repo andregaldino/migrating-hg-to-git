@@ -1421,7 +1421,7 @@ No declared supported version, extension complains:
   ** If that fixes the bug please report it to the extension author.
   ** Python * (glob)
   ** Mercurial Distributed SCM * (glob)
-  ** Extensions loaded: throw
+  ** Extensions loaded: throw 1.0.0
 
 empty declaration of supported version, extension complains (but doesn't choke if
 the value is improperly a str instead of bytes):
@@ -1433,7 +1433,7 @@ the value is improperly a str instead of bytes):
   ** If that fixes the bug please report it to the extension author.
   ** Python * (glob)
   ** Mercurial Distributed SCM (*) (glob)
-  ** Extensions loaded: throw
+  ** Extensions loaded: throw 1.0.0
 
 If the extension specifies a buglink, show that (but don't choke if the value is
 improperly a str instead of bytes):
@@ -1447,7 +1447,7 @@ improperly a str instead of bytes):
   ** If that fixes the bug please report it to http://example.com/bts
   ** Python * (glob)
   ** Mercurial Distributed SCM (*) (glob)
-  ** Extensions loaded: throw
+  ** Extensions loaded: throw 1.0.0
 
 If the extensions declare outdated versions, accuse the older extension first:
   $ echo "from mercurial import util" >> older.py
@@ -1464,7 +1464,7 @@ If the extensions declare outdated versions, accuse the older extension first:
   ** If that fixes the bug please report it to the extension author.
   ** Python * (glob)
   ** Mercurial Distributed SCM (version 2.2)
-  ** Extensions loaded: older, throw
+  ** Extensions loaded: older, throw 1.0.0
 
 One extension only tested with older, one only with newer versions:
   $ echo "util.version = lambda:b'2.1'" >> older.py
@@ -1478,7 +1478,7 @@ One extension only tested with older, one only with newer versions:
   ** If that fixes the bug please report it to the extension author.
   ** Python * (glob)
   ** Mercurial Distributed SCM (version 2.1)
-  ** Extensions loaded: older, throw
+  ** Extensions loaded: older, throw 1.0.0
 
 Older extension is tested with current version, the other only with newer:
   $ echo "util.version = lambda:b'1.9.3'" >> older.py
@@ -1492,7 +1492,7 @@ Older extension is tested with current version, the other only with newer:
   ** If that fixes the bug please report it to http://example.com/bts
   ** Python * (glob)
   ** Mercurial Distributed SCM (version 1.9.3)
-  ** Extensions loaded: older, throw
+  ** Extensions loaded: older, throw 1.0.0
 
 Ability to point to a different point
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
@@ -1501,7 +1501,7 @@ Ability to point to a different point
   ** Your Local Goat Lenders
   ** Python * (glob)
   ** Mercurial Distributed SCM (*) (glob)
-  ** Extensions loaded: older, throw
+  ** Extensions loaded: older, throw 1.0.0
 
 Declare the version as supporting this hg version, show regular bts link:
   $ hgver=`hg debuginstall -T '{hgver}'`
@@ -1516,7 +1516,7 @@ Declare the version as supporting this hg version, show regular bts link:
   ** https://mercurial-scm.org/wiki/BugTracker
   ** Python * (glob)
   ** Mercurial Distributed SCM (*) (glob)
-  ** Extensions loaded: throw
+  ** Extensions loaded: throw 1.0.0
 
 Patch version is ignored during compatibility check
   $ echo "testedwith = b'3.2'" >> throw.py
@@ -1528,7 +1528,7 @@ Patch version is ignored during compatibility check
   ** https://mercurial-scm.org/wiki/BugTracker
   ** Python * (glob)
   ** Mercurial Distributed SCM (*) (glob)
-  ** Extensions loaded: throw
+  ** Extensions loaded: throw 1.0.0
 
 Test version number support in 'hg version':
   $ echo '__version__ = (1, 2, 3)' >> throw.py

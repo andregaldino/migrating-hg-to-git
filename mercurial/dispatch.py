@@ -1307,12 +1307,22 @@ def _exceptionwarning(ui):
             + b'\n'
         )
     sysversion = pycompat.sysbytes(sys.version).replace(b'\n', b'')
+
+    def ext_with_ver(x):
+        ext = x[0]
+        ver = extensions.moduleversion(x[1])
+        if ver:
+            ext += b' ' + ver
+        return ext
+
     warning += (
         (_(b"** Python %s\n") % sysversion)
         + (_(b"** Mercurial Distributed SCM (version %s)\n") % util.version())
         + (
             _(b"** Extensions loaded: %s\n")
-            % b", ".join([x[0] for x in sorted(extensions.extensions())])
+            % b", ".join(
+                [ext_with_ver(x) for x in sorted(extensions.extensions())]
+            )
         )
     )
     return warning
