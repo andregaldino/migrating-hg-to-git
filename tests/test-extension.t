@@ -1399,11 +1399,19 @@ Broken disabled extension and command:
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > class Bogon(Exception): pass
+  > # NB: version should be bytes; simulating extension not ported to py3
+  > __version__ = '1.0.0'
   > @command(b'throw', [], b'hg throw', norepo=True)
   > def throw(ui, **opts):
   >     """throws an exception"""
   >     raise Bogon()
   > EOF
+
+Test extension without proper byteification of key attributes doesn't crash when
+accessed.
+
+  $ hg version -v --config extensions.throw=throw.py | grep '^ '
+    throw  external  1.0.0
 
 No declared supported version, extension complains:
   $ hg --config extensions.throw=throw.py throw 2>&1 | egrep '^\*\*'
