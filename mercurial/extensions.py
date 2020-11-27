@@ -936,6 +936,10 @@ def moduleversion(module):
         version = b''
     if isinstance(version, (list, tuple)):
         version = b'.'.join(pycompat.bytestr(o) for o in version)
+    else:
+        # version data should be bytes, but not all extensions are ported
+        # to py3.
+        version = stringutil.forcebytestr(version)
     return version
 
 
