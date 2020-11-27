@@ -816,8 +816,7 @@ class buildhgexe(build_ext):
                 if sys.version_info[0] >= 3:
                     fsdecode = os.fsdecode
                 dest = os.path.join(
-                    os.path.dirname(self.hgtarget),
-                    fsdecode(dllbasename),
+                    os.path.dirname(self.hgtarget), fsdecode(dllbasename),
                 )
 
                 if not os.path.exists(dest):

@@ -150,9 +150,7 @@ class changelog(baselog):
 
     def tiprev(self):
         t = self._db.execute(
-            'SELECT rev FROM changelog '
-            'ORDER BY REV DESC '
-            'LIMIT 1'
+            'SELECT rev FROM changelog ' 'ORDER BY REV DESC ' 'LIMIT 1'
         )
         return next(t)
 
