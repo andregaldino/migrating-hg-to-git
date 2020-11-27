@@ -44,6 +44,26 @@ The following ``share.`` config options influence this feature:
     that was cloned before.
 
     The default naming mode is "identity".
+
+.. container:: verbose
+
+    Sharing requirements and configs of source repository with shares
+    -----------------------------------------------------------------
+
+    By default creating a shared repository only enables sharing a common
+    history and does not share requirements and configs between them. This
+    may lead to problems in some cases, for example when you upgrade the
+    storage format from one repository but does not set related configs
+    in the shares.
+
+    Setting `format.exp-share-safe = True` enables sharing configs and
+    requirements. This only applies to shares which are done after enabling
+    the config option.
+
+    For enabling this in existing shares, enable the config option and reshare.
+
+    For resharing existing shares, make sure your working directory is clean
+    and there are no untracked files, delete that share and create a new share.
 '''
 
 from __future__ import absolute_import
