@@ -29,6 +29,12 @@ from . import (
     index,
 )
 
+# Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
+# extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
+# be specifying the version(s) of Mercurial they are tested with, or
+# leave the attribute unspecified.
+testedwith = b'ships-with-hg-core'
+
 configtable = {}
 configitem = registrar.configitem(configtable)
 # git.log-index-cache-miss: internal knob for testing
