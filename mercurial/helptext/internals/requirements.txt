@@ -170,7 +170,7 @@ they used to be stored. Some working copy related requirements are still stored
 in ``.hg/``.
 Shares read the ``.hg/hgrc`` of the source repository.
 
-Support for this requirement was added in Mercurial 5.6 (released
-November 2020). The requirement will only be present on repositories that have
+Support for this requirement was added in Mercurial 5.7 (released
+February 2021). The requirement will only be present on repositories that have
 opted in to this format (by having ``format.exp-share-safe=true`` set when
 they were created).
