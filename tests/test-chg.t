@@ -29,7 +29,7 @@ ill-formed config
   $ chg status
   $ echo '=brokenconfig' >> $HGRCPATH
   $ chg status
-  hg: parse error at * (glob)
+  config error at * =brokenconfig (glob)
   [255]
 
   $ cp $HGRCPATH.orig $HGRCPATH
