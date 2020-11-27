@@ -21,17 +21,17 @@ def isasciistr(s):
 
 
 def asciilower(s):
-    '''convert a string to lowercase if ASCII
+    """convert a string to lowercase if ASCII
 
-    Raises UnicodeDecodeError if non-ASCII characters are found.'''
+    Raises UnicodeDecodeError if non-ASCII characters are found."""
     s.decode('ascii')
     return s.lower()
 
 
 def asciiupper(s):
-    '''convert a string to uppercase if ASCII
+    """convert a string to uppercase if ASCII
 
-    Raises UnicodeDecodeError if non-ASCII characters are found.'''
+    Raises UnicodeDecodeError if non-ASCII characters are found."""
     s.decode('ascii')
     return s.upper()
 

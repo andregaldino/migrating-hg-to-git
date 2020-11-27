@@ -83,10 +83,22 @@ if pycompat.ispy3:
     )
     import urllib.response
 
-    urlreq._registeraliases(urllib.response, (b"addclosehook", b"addinfourl",))
+    urlreq._registeraliases(
+        urllib.response,
+        (
+            b"addclosehook",
+            b"addinfourl",
+        ),
+    )
     import urllib.error
 
-    urlerr._registeraliases(urllib.error, (b"HTTPError", b"URLError",))
+    urlerr._registeraliases(
+        urllib.error,
+        (
+            b"HTTPError",
+            b"URLError",
+        ),
+    )
     import http.server
 
     httpserver._registeraliases(
@@ -179,12 +191,28 @@ else:
             b"urlopen",
         ),
     )
-    urlreq._registeraliases(urlparse, (b"urlparse", b"urlunparse",))
+    urlreq._registeraliases(
+        urlparse,
+        (
+            b"urlparse",
+            b"urlunparse",
+        ),
+    )
     urlreq._registeralias(urlparse, b"parse_qs", b"parseqs")
     urlreq._registeralias(urlparse, b"parse_qsl", b"parseqsl")
-    urlerr._registeraliases(urllib2, (b"HTTPError", b"URLError",))
+    urlerr._registeraliases(
+        urllib2,
+        (
+            b"HTTPError",
+            b"URLError",
+        ),
+    )
     httpserver._registeraliases(
-        BaseHTTPServer, (b"HTTPServer", b"BaseHTTPRequestHandler",)
+        BaseHTTPServer,
+        (
+            b"HTTPServer",
+            b"BaseHTTPRequestHandler",
+        ),
     )
     httpserver._registeraliases(
         SimpleHTTPServer, (b"SimpleHTTPRequestHandler",)

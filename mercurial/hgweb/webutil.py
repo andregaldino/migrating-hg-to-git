@@ -491,11 +491,11 @@ def commonentry(repo, ctx):
 
 
 def changelistentry(web, ctx):
-    '''Obtain a dictionary to be used for entries in a changelist.
+    """Obtain a dictionary to be used for entries in a changelist.
 
     This function is called when producing items for the "entries" list passed
     to the "shortlog" and "changelog" templates.
-    '''
+    """
     repo = web.repo
     rev = ctx.rev()
     n = scmutil.binnode(ctx)

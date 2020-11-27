@@ -17,8 +17,8 @@ from . import lfutil
 
 
 class StoreError(Exception):
-    '''Raised when there is a problem getting files from or putting
-    files to a central store.'''
+    """Raised when there is a problem getting files from or putting
+    files to a central store."""
 
     def __init__(self, filename, hash, url, detail):
         self.filename = filename
@@ -49,19 +49,19 @@ class basestore(object):
         raise NotImplementedError(b'abstract method')
 
     def exists(self, hashes):
-        '''Check to see if the store contains the given hashes. Given an
-        iterable of hashes it returns a mapping from hash to bool.'''
+        """Check to see if the store contains the given hashes. Given an
+        iterable of hashes it returns a mapping from hash to bool."""
         raise NotImplementedError(b'abstract method')
 
     def get(self, files):
-        '''Get the specified largefiles from the store and write to local
+        """Get the specified largefiles from the store and write to local
         files under repo.root.  files is a list of (filename, hash)
         tuples.  Return (success, missing), lists of files successfully
         downloaded and those not found in the store.  success is a list
         of (filename, hash) tuples; missing is a list of filenames that
         we could not get.  (The detailed error message will already have
         been presented to the user, so missing is just supplied as a
-        summary.)'''
+        summary.)"""
         success = []
         missing = []
         ui = self.ui
@@ -123,9 +123,9 @@ class basestore(object):
         return True
 
     def verify(self, revs, contents=False):
-        '''Verify the existence (and, optionally, contents) of every big
+        """Verify the existence (and, optionally, contents) of every big
         file revision referenced by every changeset in revs.
-        Return 0 if all is well, non-zero on any errors.'''
+        Return 0 if all is well, non-zero on any errors."""
 
         self.ui.status(
             _(b'searching %d changesets for largefiles\n') % len(revs)
@@ -163,17 +163,17 @@ class basestore(object):
         return int(failed)
 
     def _getfile(self, tmpfile, filename, hash):
-        '''Fetch one revision of one file from the store and write it
+        """Fetch one revision of one file from the store and write it
         to tmpfile.  Compute the hash of the file on-the-fly as it
         downloads and return the hash.  Close tmpfile.  Raise
         StoreError if unable to download the file (e.g. it does not
-        exist in the store).'''
+        exist in the store)."""
         raise NotImplementedError(b'abstract method')
 
     def _verifyfiles(self, contents, filestocheck):
-        '''Perform the actual verification of files in the store.
+        """Perform the actual verification of files in the store.
         'contents' controls verification of content hash.
         'filestocheck' is list of files to check.
         Returns _true_ if any problems are found!
-        '''
+        """
         raise NotImplementedError(b'abstract method')

@@ -78,7 +78,14 @@ def getbundlechangegrouppart_narrow(
 
 
 def generateellipsesbundle2(
-    bundler, repo, include, exclude, version, common, heads, depth,
+    bundler,
+    repo,
+    include,
+    exclude,
+    version,
+    common,
+    heads,
+    depth,
 ):
     match = narrowspec.match(repo.root, include=include, exclude=exclude)
     if depth is not None:
@@ -113,7 +120,13 @@ def generateellipsesbundle2(
 
 
 def generate_ellipses_bundle2_for_widening(
-    bundler, repo, oldmatch, newmatch, version, common, known,
+    bundler,
+    repo,
+    oldmatch,
+    newmatch,
+    version,
+    common,
+    known,
 ):
     common = set(common or [nullid])
     # Steps:

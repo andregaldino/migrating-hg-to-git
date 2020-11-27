@@ -1264,7 +1264,7 @@ class cow(object):
 
 
 class sortdict(collections.OrderedDict):
-    '''a simple sorted dictionary
+    """a simple sorted dictionary
 
     >>> d1 = sortdict([(b'a', 0), (b'b', 1)])
     >>> d2 = d1.copy()
@@ -1276,7 +1276,7 @@ class sortdict(collections.OrderedDict):
     >>> d1.insert(1, b'a.5', 0.5)
     >>> d1
     sortdict([('a', 0), ('a.5', 0.5), ('b', 1)])
-    '''
+    """
 
     def __setitem__(self, key, value):
         if key in self:
@@ -1761,8 +1761,8 @@ def clearcachedproperty(obj, prop):
 
 
 def increasingchunks(source, min=1024, max=65536):
-    '''return no less than min bytes per chunk while data remains,
-    doubling min after each chunk until it reaches max'''
+    """return no less than min bytes per chunk while data remains,
+    doubling min after each chunk until it reaches max"""
 
     def log2(x):
         if not x:
@@ -1833,7 +1833,7 @@ if pycompat.ispypy:
 
 
 def pathto(root, n1, n2):
-    '''return the relative path from one place to another.
+    """return the relative path from one place to another.
     root should use os.sep to separate directories
     n1 should use os.sep to separate directories
     n2 should use "/" to separate directories
@@ -1842,7 +1842,7 @@ def pathto(root, n1, n2):
     If n1 is a relative path, it's assumed it's
     relative to root.
     n2 should always be relative to root.
-    '''
+    """
     if not n1:
         return localpath(n2)
     if os.path.isabs(n1):
@@ -1892,7 +1892,7 @@ _hardlinkfswhitelist = {
 
 
 def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
-    '''copy a file, preserving mode and optionally other stat info like
+    """copy a file, preserving mode and optionally other stat info like
     atime/mtime
 
     checkambig argument is used with filestat, and is useful only if
@@ -1900,7 +1900,7 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
     repo.wlock).
 
     copystat and checkambig should be exclusive.
-    '''
+    """
     assert not (copystat and checkambig)
     oldstat = None
     if os.path.lexists(dest):
@@ -2017,7 +2017,7 @@ _winreservedchars = b':*?"<>|'
 
 
 def checkwinfilename(path):
-    r'''Check that the base-relative path is a valid filename on Windows.
+    r"""Check that the base-relative path is a valid filename on Windows.
     Returns None if the path is ok, or a UI string describing the problem.
 
     >>> checkwinfilename(b"just/a/normal/path")
@@ -2039,7 +2039,7 @@ def checkwinfilename(path):
     "filename ends with '\\', which is invalid on Windows"
     >>> checkwinfilename(b"foo\\/bar")
     "directory name ends with '\\', which is invalid on Windows"
-    '''
+    """
     if path.endswith(b'\\'):
         return _(b"filename ends with '\\', which is invalid on Windows")
     if b'\\/' in path:
@@ -2175,11 +2175,11 @@ class _re(object):
             _re2 = False
 
     def compile(self, pat, flags=0):
-        '''Compile a regular expression, using re2 if possible
+        """Compile a regular expression, using re2 if possible
 
         For best performance, use only re2-compatible regexp features. The
         only flags from the re module that are re2-compatible are
-        IGNORECASE and MULTILINE.'''
+        IGNORECASE and MULTILINE."""
         if _re2 is None:
             self._checkre2()
         if _re2 and (flags & ~(remod.IGNORECASE | remod.MULTILINE)) == 0:
@@ -2195,11 +2195,11 @@ class _re(object):
 
     @propertycache
     def escape(self):
-        '''Return the version of escape corresponding to self.compile.
+        """Return the version of escape corresponding to self.compile.
 
         This is imperfect because whether re2 or re is used for a particular
         function depends on the flags, etc, but it's the best we can do.
-        '''
+        """
         global _re2
         if _re2 is None:
             self._checkre2()
@@ -2215,7 +2215,7 @@ _fspathcache = {}
 
 
 def fspath(name, root):
-    '''Get name in the case stored in the filesystem
+    """Get name in the case stored in the filesystem
 
     The name should be relative to root, and be normcase-ed for efficiency.
 
@@ -2223,7 +2223,7 @@ def fspath(name, root):
     called, for case-sensitive filesystems (simply because it's expensive).
 
     The root should be normcase-ed, too.
-    '''
+    """
 
     def _makefspathcacheentry(dir):
         return {normcase(n): n for n in os.listdir(dir)}
@@ -2301,11 +2301,11 @@ def endswithsep(path):
 
 
 def splitpath(path):
-    '''Split path by os.sep.
+    """Split path by os.sep.
     Note that this function does not use os.altsep because this is
     an alternative of simple "xxx.split(os.sep)".
     It is recommended to use os.path.normpath() before using this
-    function if need.'''
+    function if need."""
     return path.split(pycompat.ossep)
 
 
@@ -2459,7 +2459,7 @@ class filestat(object):
 
 
 class atomictempfile(object):
-    '''writable file object that atomically updates a file
+    """writable file object that atomically updates a file
 
     All writes will go to a temporary copy of the original file. Call
     close() when you are done writing, and atomictempfile will rename
@@ -2470,7 +2470,7 @@ class atomictempfile(object):
     checkambig argument of constructor is used with filestat, and is
     useful only if target file is guarded by any lock (e.g. repo.lock
     or repo.wlock).
-    '''
+    """
 
     def __init__(self, name, mode=b'w+b', createmode=None, checkambig=False):
         self.__name = name  # permanent name
@@ -3365,7 +3365,7 @@ timedcm._nested = 0
 
 
 def timed(func):
-    '''Report the execution time of a function call to stderr.
+    """Report the execution time of a function call to stderr.
 
     During development, use as a decorator when you need to measure
     the cost of a function, e.g. as follows:
@@ -3373,7 +3373,7 @@ def timed(func):
     @util.timed
     def foo(a, b, c):
         pass
-    '''
+    """
 
     def wrapper(*args, **kwargs):
         with timedcm(pycompat.bytestr(func.__name__)) as time_stats:
@@ -3404,7 +3404,7 @@ _sizeunits = (
 
 
 def sizetoint(s):
-    '''Convert a space specifier to a byte count.
+    """Convert a space specifier to a byte count.
 
     >>> sizetoint(b'30')
     30
@@ -3412,7 +3412,7 @@ def sizetoint(s):
     2252
     >>> sizetoint(b'6M')
     6291456
-    '''
+    """
     t = s.strip().lower()
     try:
         for k, u in _sizeunits:
@@ -3424,9 +3424,9 @@ def sizetoint(s):
 
 
 class hooks(object):
-    '''A collection of hook functions that can be used to extend a
+    """A collection of hook functions that can be used to extend a
     function's behavior. Hooks are called in lexicographic order,
-    based on the names of their sources.'''
+    based on the names of their sources."""
 
     def __init__(self):
         self._hooks = []
@@ -3443,7 +3443,7 @@ class hooks(object):
 
 
 def getstackframes(skip=0, line=b' %-*s in %s\n', fileline=b'%s:%d', depth=0):
-    '''Yields lines for a nicely formatted stacktrace.
+    """Yields lines for a nicely formatted stacktrace.
     Skips the 'skip' last entries, then return the last 'depth' entries.
     Each file+linenumber is formatted according to fileline.
     Each line is formatted according to line.
@@ -3453,7 +3453,7 @@ def getstackframes(skip=0, line=b' %-*s in %s\n', fileline=b'%s:%d', depth=0):
       function
 
     Not be used in production code but very convenient while developing.
-    '''
+    """
     entries = [
         (fileline % (pycompat.sysbytes(fn), ln), pycompat.sysbytes(func))
         for fn, ln, func, _text in traceback.extract_stack()[: -skip - 1]
@@ -3475,12 +3475,12 @@ def debugstacktrace(
     depth=0,
     prefix=b'',
 ):
-    '''Writes a message to f (stderr) with a nicely formatted stacktrace.
+    """Writes a message to f (stderr) with a nicely formatted stacktrace.
     Skips the 'skip' entries closest to the call, then show 'depth' entries.
     By default it will flush stdout first.
     It can be used everywhere and intentionally does not require an ui object.
     Not be used in production code but very convenient while developing.
-    '''
+    """
     if otherf:
         otherf.flush()
     f.write(b'%s%s at:\n' % (prefix, msg.rstrip()))

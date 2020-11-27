@@ -19,14 +19,14 @@ SKIPREV = common.SKIPREV
 
 
 def rpairs(path):
-    '''Yield tuples with path split at '/', starting with the full path.
+    """Yield tuples with path split at '/', starting with the full path.
     No leading, trailing or double '/', please.
     >>> for x in rpairs(b'foo/bar/baz'): print(x)
     ('foo/bar/baz', '')
     ('foo/bar', 'baz')
     ('foo', 'bar/baz')
     ('.', 'foo/bar/baz')
-    '''
+    """
     i = len(path)
     while i != -1:
         yield path[:i], path[i + 1 :]
@@ -35,17 +35,17 @@ def rpairs(path):
 
 
 def normalize(path):
-    ''' We use posixpath.normpath to support cross-platform path format.
-    However, it doesn't handle None input. So we wrap it up. '''
+    """We use posixpath.normpath to support cross-platform path format.
+    However, it doesn't handle None input. So we wrap it up."""
     if path is None:
         return None
     return posixpath.normpath(path)
 
 
 class filemapper(object):
-    '''Map and filter filenames when importing.
+    """Map and filter filenames when importing.
     A name can be mapped to itself, a new name, or None (omit from new
-    repository).'''
+    repository)."""
 
     def __init__(self, ui, path=None):
         self.ui = ui

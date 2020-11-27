@@ -161,11 +161,11 @@ def wraprepo(repo):
             return path
 
         def maybesparsematch(self, *revs, **kwargs):
-            '''
+            """
             A wrapper that allows the remotefilelog to invoke sparsematch() if
             this is a sparse repository, or returns None if this is not a
             sparse repository.
-            '''
+            """
             if revs:
                 ret = sparse.matcher(repo, revs=revs)
             else:
@@ -217,8 +217,7 @@ def wraprepo(repo):
         def backgroundprefetch(
             self, revs, base=None, repack=False, pats=None, opts=None
         ):
-            """Runs prefetch in background with optional repack
-            """
+            """Runs prefetch in background with optional repack"""
             cmd = [procutil.hgexecutable(), b'-R', repo.origroot, b'prefetch']
             if repack:
                 cmd.append(b'--repack')

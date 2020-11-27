@@ -43,10 +43,14 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'experimental', b'uncommitondirtywdir', default=False,
+    b'experimental',
+    b'uncommitondirtywdir',
+    default=False,
 )
 configitem(
-    b'experimental', b'uncommit.keep', default=False,
+    b'experimental',
+    b'uncommit.keep',
+    default=False,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for

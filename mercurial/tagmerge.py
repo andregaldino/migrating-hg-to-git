@@ -87,12 +87,12 @@ hexnullid = hex(nullid)
 
 
 def readtagsformerge(ui, repo, lines, fn=b'', keeplinenums=False):
-    '''read the .hgtags file into a structure that is suitable for merging
+    """read the .hgtags file into a structure that is suitable for merging
 
     Depending on the keeplinenums flag, clear the line numbers associated
     with each tag. This is done because only the line numbers of the first
     parent are useful for merging.
-    '''
+    """
     filetags = tagsmod._readtaghist(
         ui, repo, lines, fn=fn, recode=None, calcnodelines=True
     )[1]
@@ -104,7 +104,7 @@ def readtagsformerge(ui, repo, lines, fn=b'', keeplinenums=False):
 
 
 def grouptagnodesbyline(tagnodes):
-    '''
+    """
     Group nearby nodes (i.e. those that must be written next to each other)
 
     The input is a list of [node, position] pairs, corresponding to a given tag
@@ -118,7 +118,7 @@ def grouptagnodesbyline(tagnodes):
     position is None).
 
     The result is a list of [position, [consecutive node list]]
-    '''
+    """
     firstlinenum = None
     for hexnode, linenum in tagnodes:
         firstlinenum = linenum
@@ -139,14 +139,14 @@ def grouptagnodesbyline(tagnodes):
 
 
 def writemergedtags(fcd, mergedtags):
-    '''
+    """
     write the merged tags while trying to minimize the diff to the first parent
 
     This function uses the ordering info stored on the merged tags dict to
     generate an .hgtags file which is correct (in the sense that its contents
     correspond to the result of the tag merge) while also being as close as
     possible to the first parent's .hgtags file.
-    '''
+    """
     # group the node-tag pairs that must be written next to each other
     for tname, taglist in list(mergedtags.items()):
         mergedtags[tname] = grouptagnodesbyline(taglist)
@@ -175,12 +175,12 @@ def writemergedtags(fcd, mergedtags):
 
 
 def singletagmerge(p1nodes, p2nodes):
-    '''
+    """
     merge the nodes corresponding to a single tag
 
     Note that the inputs are lists of node-linenum pairs (i.e. not just lists
     of nodes)
-    '''
+    """
     if not p2nodes:
         return p1nodes
     if not p1nodes:
@@ -221,10 +221,10 @@ def singletagmerge(p1nodes, p2nodes):
 
 
 def merge(repo, fcd, fco, fca):
-    '''
+    """
     Merge the tags of two revisions, taking into account the base tags
     Try to minimize the diff between the merged tags and the first parent tags
-    '''
+    """
     ui = repo.ui
     # read the p1, p2 and base tags
     # only keep the line numbers for the p1 tags

@@ -91,7 +91,9 @@ class PatternMatcherTests(unittest.TestCase):
 
     def testVisitdirRootfilesin(self):
         m = matchmod.match(
-            util.localpath(b'/repo'), b'', patterns=[b'rootfilesin:dir/subdir'],
+            util.localpath(b'/repo'),
+            b'',
+            patterns=[b'rootfilesin:dir/subdir'],
         )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertFalse(m.visitdir(b'dir/subdir/x'))
@@ -103,7 +105,9 @@ class PatternMatcherTests(unittest.TestCase):
 
     def testVisitchildrensetRootfilesin(self):
         m = matchmod.match(
-            util.localpath(b'/repo'), b'', patterns=[b'rootfilesin:dir/subdir'],
+            util.localpath(b'/repo'),
+            b'',
+            patterns=[b'rootfilesin:dir/subdir'],
         )
         assert isinstance(m, matchmod.patternmatcher)
         self.assertEqual(m.visitchildrenset(b'dir/subdir/x'), set())

@@ -302,8 +302,7 @@ def _getfiles_threaded(
 
 
 class fileserverclient(object):
-    """A client for requesting files from the remote file server.
-    """
+    """A client for requesting files from the remote file server."""
 
     def __init__(self, repo):
         ui = repo.ui
@@ -568,8 +567,7 @@ class fileserverclient(object):
     def prefetch(
         self, fileids, force=False, fetchdata=True, fetchhistory=False
     ):
-        """downloads the given file versions to the cache
-        """
+        """downloads the given file versions to the cache"""
         repo = self.repo
         idstocheck = []
         for file, id in fileids:

@@ -39,13 +39,13 @@ def _expandrcpath(path):
 
 
 def envrcitems(env=None):
-    '''Return [(section, name, value, source)] config items.
+    """Return [(section, name, value, source)] config items.
 
     The config items are extracted from environment variables specified by env,
     used to override systemrc, but not userrc.
 
     If env is not provided, encoding.environ will be used.
-    '''
+    """
     if env is None:
         env = encoding.environ
     checklist = [
@@ -73,7 +73,7 @@ def default_rc_resources():
 
 
 def rccomponents():
-    '''return an ordered [(type, obj)] about where to load configs.
+    """return an ordered [(type, obj)] about where to load configs.
 
     respect $HGRCPATH. if $HGRCPATH is empty, only .hg/hgrc of current repo is
     used. if $HGRCPATH is not set, the platform default will be used.
@@ -84,7 +84,7 @@ def rccomponents():
     obj is a string, and is the config file path. if type is 'items', obj is a
     list of (section, name, value, source) that should fill the config directly.
     If type is 'resource', obj is a tuple of (package name, resource name).
-    '''
+    """
     envrc = (b'items', envrcitems())
 
     if b'HGRCPATH' in encoding.environ:
@@ -108,9 +108,9 @@ def rccomponents():
 
 
 def defaultpagerenv():
-    '''return a dict of default environment variables and their values,
+    """return a dict of default environment variables and their values,
     intended to be set before starting a pager.
-    '''
+    """
     return {b'LESS': b'FRX', b'LV': b'-c'}
 
 

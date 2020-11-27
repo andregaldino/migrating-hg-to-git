@@ -98,7 +98,11 @@ def commitctx(repo, ctx, error=False, origctx=None):
         )
         xp1, xp2 = p1.hex(), p2 and p2.hex() or b''
         repo.hook(
-            b'pretxncommit', throw=True, node=hex(n), parent1=xp1, parent2=xp2,
+            b'pretxncommit',
+            throw=True,
+            node=hex(n),
+            parent1=xp1,
+            parent2=xp2,
         )
         # set the new commit is proper phase
         targetphase = subrepoutil.newcommitphase(repo.ui, ctx)
@@ -154,10 +158,10 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
 
 
 def _get_salvaged(repo, ms, ctx):
-    """ returns a list of salvaged files
+    """returns a list of salvaged files
 
     returns empty list if config option which process salvaged files are
-    not enabled """
+    not enabled"""
     salvaged = []
     copy_sd = repo.filecopiesmode == b'changeset-sidedata'
     if copy_sd and len(ctx.parents()) > 1:
@@ -238,7 +242,14 @@ def _process_files(tr, ctx, ms, files, error=False):
 
 
 def _filecommit(
-    repo, fctx, manifest1, manifest2, linkrev, tr, includecopymeta, ms,
+    repo,
+    fctx,
+    manifest1,
+    manifest2,
+    linkrev,
+    tr,
+    includecopymeta,
+    ms,
 ):
     """
     commit an individual file as part of a larger transaction

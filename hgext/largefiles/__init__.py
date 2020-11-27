@@ -136,13 +136,19 @@ eh.merge(overrides.eh)
 eh.merge(proto.eh)
 
 eh.configitem(
-    b'largefiles', b'minsize', default=eh.configitem.dynamicdefault,
+    b'largefiles',
+    b'minsize',
+    default=eh.configitem.dynamicdefault,
 )
 eh.configitem(
-    b'largefiles', b'patterns', default=list,
+    b'largefiles',
+    b'patterns',
+    default=list,
 )
 eh.configitem(
-    b'largefiles', b'usercache', default=None,
+    b'largefiles',
+    b'usercache',
+    default=None,
 )
 
 cmdtable = eh.cmdtable

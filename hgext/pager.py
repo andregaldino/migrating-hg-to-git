@@ -41,7 +41,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'pager', b'attend', default=lambda: attended,
+    b'pager',
+    b'attend',
+    default=lambda: attended,
 )
 
 

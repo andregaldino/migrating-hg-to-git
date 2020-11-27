@@ -33,14 +33,23 @@ SUPPORTED_ELLIPSESCAP = (ELLIPSESCAP1, ELLIPSESCAP)
 
 # All available wire protocol transports.
 TRANSPORTS = {
-    SSHV1: {b'transport': b'ssh', b'version': 1,},
+    SSHV1: {
+        b'transport': b'ssh',
+        b'version': 1,
+    },
     SSHV2: {
         b'transport': b'ssh',
         # TODO mark as version 2 once all commands are implemented.
         b'version': 1,
     },
-    b'http-v1': {b'transport': b'http', b'version': 1,},
-    HTTP_WIREPROTO_V2: {b'transport': b'http', b'version': 2,},
+    b'http-v1': {
+        b'transport': b'http',
+        b'version': 1,
+    },
+    HTTP_WIREPROTO_V2: {
+        b'transport': b'http',
+        b'version': 2,
+    },
 }
 
 

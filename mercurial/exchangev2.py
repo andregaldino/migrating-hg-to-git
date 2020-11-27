@@ -89,7 +89,10 @@ def pull(pullop):
             continue
 
         phases.advanceboundary(
-            repo, tr, phasenumber, csetres[b'nodesbyphase'][phase],
+            repo,
+            tr,
+            phasenumber,
+            csetres[b'nodesbyphase'][phase],
         )
 
     # Write bookmark updates.
@@ -189,7 +192,10 @@ def _checkuserawstorefiledata(pullop):
 def _fetchrawstorefiles(repo, remote):
     with remote.commandexecutor() as e:
         objs = e.callcommand(
-            b'rawstorefiledata', {b'files': [b'changelog', b'manifestlog'],}
+            b'rawstorefiledata',
+            {
+                b'files': [b'changelog', b'manifestlog'],
+            },
         ).result()
 
         # First object is a summary of files data that follows.
@@ -746,7 +752,10 @@ def _fetchfilesfromcsets(
         with remote.commandexecutor() as e:
             args = {
                 b'revisions': [
-                    {b'type': b'changesetexplicit', b'nodes': batch,}
+                    {
+                        b'type': b'changesetexplicit',
+                        b'nodes': batch,
+                    }
                 ],
                 b'fields': fields,
                 b'haveparents': haveparents,

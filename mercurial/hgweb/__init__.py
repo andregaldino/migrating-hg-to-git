@@ -27,7 +27,7 @@ from . import (
 
 
 def hgweb(config, name=None, baseui=None):
-    '''create an hgweb wsgi object
+    """create an hgweb wsgi object
 
     config can be one of:
     - repo object (single repo view)
@@ -35,7 +35,7 @@ def hgweb(config, name=None, baseui=None):
     - path to config file (multi-repo view)
     - dict of virtual:real pairs (multi-repo view)
     - list of virtual:real tuples (multi-repo view)
-    '''
+    """
 
     if isinstance(config, pycompat.unicode):
         raise error.ProgrammingError(

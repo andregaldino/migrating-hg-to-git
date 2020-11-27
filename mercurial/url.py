@@ -35,13 +35,13 @@ urlreq = util.urlreq
 
 
 def escape(s, quote=None):
-    '''Replace special characters "&", "<" and ">" to HTML-safe sequences.
+    """Replace special characters "&", "<" and ">" to HTML-safe sequences.
     If the optional flag quote is true, the quotation mark character (")
     is also translated.
 
     This is the same as cgi.escape in Python, but always operates on
     bytes, whereas cgi.escape in Python 3 only works on unicodes.
-    '''
+    """
     s = s.replace(b"&", b"&amp;")
     s = s.replace(b"<", b"&lt;")
     s = s.replace(b">", b"&gt;")
@@ -586,7 +586,7 @@ def opener(
     loggingopts=None,
     sendaccept=True,
 ):
-    '''
+    """
     construct an opener suitable for urllib2
     authinfo will be added to the password manager
 
@@ -600,7 +600,7 @@ def opener(
 
     ``sendaccept`` allows controlling whether the ``Accept`` request header
     is sent. The header is sent by default.
-    '''
+    """
     timeout = ui.configwith(float, b'http', b'timeout')
     handlers = []
 

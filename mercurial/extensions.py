@@ -457,7 +457,7 @@ def _loadextra(ui, newindex, extraloaders):
 
 
 def afterloaded(extension, callback):
-    '''Run the specified function after a named extension is loaded.
+    """Run the specified function after a named extension is loaded.
 
     If the named extension is already loaded, the callback will be called
     immediately.
@@ -467,7 +467,7 @@ def afterloaded(extension, callback):
 
     The callback receives the named argument ``loaded``, which is a boolean
     indicating whether the dependent extension actually loaded.
-    '''
+    """
 
     if extension in _extensions:
         # Report loaded as False if the extension is disabled
@@ -500,12 +500,12 @@ def populateui(ui):
 
 
 def bind(func, *args):
-    '''Partial function application
+    """Partial function application
 
-      Returns a new function that is the partial application of args and kwargs
-      to func.  For example,
+    Returns a new function that is the partial application of args and kwargs
+    to func.  For example,
 
-          f(1, 2, bar=3) === bind(f, 1)(2, bar=3)'''
+        f(1, 2, bar=3) === bind(f, 1)(2, bar=3)"""
     assert callable(func)
 
     def closure(*a, **kw):
@@ -618,7 +618,7 @@ class wrappedfunction(object):
 
 
 def wrapfunction(container, funcname, wrapper):
-    '''Wrap the function named funcname in container
+    """Wrap the function named funcname in container
 
     Replace the funcname member in the given container with the specified
     wrapper. The container is typically a module, class, or instance.
@@ -649,7 +649,7 @@ def wrapfunction(container, funcname, wrapper):
     work. Since you cannot control what other extensions are loaded by
     your end users, you should play nicely with others by using the
     subclass trick.
-    '''
+    """
     assert callable(wrapper)
 
     origfn = getattr(container, funcname)
@@ -668,7 +668,7 @@ def wrapfunction(container, funcname, wrapper):
 
 
 def unwrapfunction(container, funcname, wrapper=None):
-    '''undo wrapfunction
+    """undo wrapfunction
 
     If wrappers is None, undo the last wrap. Otherwise removes the wrapper
     from the chain of wrappers.
@@ -676,7 +676,7 @@ def unwrapfunction(container, funcname, wrapper=None):
     Return the removed wrapper.
     Raise IndexError if wrapper is None and nothing to unwrap; ValueError if
     wrapper is not None but is not found in the wrapper chain.
-    '''
+    """
     chain = getwrapperchain(container, funcname)
     origfn = chain.pop()
     if wrapper is None:
@@ -689,13 +689,13 @@ def unwrapfunction(container, funcname, wrapper=None):
 
 
 def getwrapperchain(container, funcname):
-    '''get a chain of wrappers of a function
+    """get a chain of wrappers of a function
 
     Return a list of functions: [newest wrapper, ..., oldest wrapper, origfunc]
 
     The wrapper functions are the ones passed to wrapfunction, whose first
     argument is origfunc.
-    '''
+    """
     result = []
     fn = getattr(container, funcname)
     while fn:
@@ -744,11 +744,11 @@ def _disabledpaths():
 
 
 def _moduledoc(file):
-    '''return the top-level python documentation for the given file
+    """return the top-level python documentation for the given file
 
     Loosely inspired by pydoc.source_synopsis(), but rewritten to
     handle triple quotes and to return the whole text instead of just
-    the synopsis'''
+    the synopsis"""
     result = []
 
     line = file.readline()
@@ -883,8 +883,8 @@ def _finddisabledcmd(ui, cmd, name, path, strict):
 
 
 def disabledcmd(ui, cmd, strict=False):
-    '''find cmd from disabled extensions without importing.
-    returns (cmdname, extname, doc)'''
+    """find cmd from disabled extensions without importing.
+    returns (cmdname, extname, doc)"""
 
     paths = _disabledpaths()
     if not paths:

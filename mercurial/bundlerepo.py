@@ -328,8 +328,7 @@ class bundlerepository(object):
         self._cgunpacker = changegroup.getunbundler(version, cgstream, b'UN')
 
     def _writetempbundle(self, readfn, suffix, header=b''):
-        """Write a temporary file to disk
-        """
+        """Write a temporary file to disk"""
         fdtemp, temp = self.vfs.mkstemp(prefix=b"hg-bundle-", suffix=suffix)
         self.tempfile = temp
 
@@ -530,7 +529,7 @@ class bundletransactionmanager(object):
 def getremotechanges(
     ui, repo, peer, onlyheads=None, bundlename=None, force=False
 ):
-    '''obtains a bundle of changes incoming from peer
+    """obtains a bundle of changes incoming from peer
 
     "onlyheads" restricts the returned changes to those reachable from the
       specified heads.
@@ -548,7 +547,7 @@ def getremotechanges(
     "cleanupfn" must be called without arguments when you're done processing
       the changes; it closes both the original "peer" and the one returned
       here.
-    '''
+    """
     tmp = discovery.findcommonincoming(repo, peer, heads=onlyheads, force=force)
     common, incoming, rheads = tmp
     if not incoming:
@@ -611,7 +610,10 @@ def getremotechanges(
                 with peer.commandexecutor() as e:
                     cg = e.callcommand(
                         b'changegroup',
-                        {b'nodes': incoming, b'source': b'incoming',},
+                        {
+                            b'nodes': incoming,
+                            b'source': b'incoming',
+                        },
                     ).result()
 
                 rheads = None
@@ -655,7 +657,10 @@ def getremotechanges(
 
         with peer.commandexecutor() as e:
             remotephases = e.callcommand(
-                b'listkeys', {b'namespace': b'phases',}
+                b'listkeys',
+                {
+                    b'namespace': b'phases',
+                },
             ).result()
 
         pullop = exchange.pulloperation(bundlerepo, peer, heads=reponodes)

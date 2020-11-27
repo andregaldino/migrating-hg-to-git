@@ -536,7 +536,7 @@ def debugsvnlog(ui, **opts):
     norepo=True,
 )
 def debugcvsps(ui, *args, **opts):
-    '''create changeset information from CVS
+    """create changeset information from CVS
 
     This command is intended as a debugging tool for the CVS to
     Mercurial converter, and can be used as a direct replacement for
@@ -545,7 +545,7 @@ def debugcvsps(ui, *args, **opts):
     Hg debugcvsps reads the CVS rlog for current directory (or any
     named directory) in the CVS repository, and converts the log to a
     series of changesets based on matching commit log entries and
-    dates.'''
+    dates."""
     return cvsps.debugcvsps(ui, *args, **opts)
 
 

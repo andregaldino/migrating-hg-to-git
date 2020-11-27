@@ -54,8 +54,8 @@ def casecombinations(names):
 
 
 def buildprobtable(fp, cmd='hg manifest tip'):
-    '''Construct and print a table of probabilities for path name
-    components.  The numbers are percentages.'''
+    """Construct and print a table of probabilities for path name
+    components.  The numbers are percentages."""
 
     counts = collections.defaultdict(lambda: 0)
     for line in os.popen(cmd).read().splitlines():

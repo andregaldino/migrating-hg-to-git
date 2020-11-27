@@ -698,10 +698,10 @@ def help_(
     fullname=None,
     **opts
 ):
-    '''
+    """
     Generate the help for 'name' as unformatted restructured text. If
     'name' is None, describe the commands available.
-    '''
+    """
 
     opts = pycompat.byteskwargs(opts)
 

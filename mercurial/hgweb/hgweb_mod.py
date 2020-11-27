@@ -86,12 +86,12 @@ def _stylemap(styles, path=None):
 
 
 def makebreadcrumb(url, prefix=b''):
-    '''Return a 'URL breadcrumb' list
+    """Return a 'URL breadcrumb' list
 
     A 'URL breadcrumb' is a list of URL-name pairs,
     corresponding to each of the path items on a URL.
     This can be used to create path navigation entries.
-    '''
+    """
     if url.endswith(b'/'):
         url = url[:-1]
     if prefix:

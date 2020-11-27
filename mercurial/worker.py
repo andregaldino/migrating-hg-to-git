@@ -116,8 +116,8 @@ else:
 
 
 def worthwhile(ui, costperop, nops, threadsafe=True):
-    '''try to determine whether the benefit of multiple processes can
-    outweigh the cost of starting them'''
+    """try to determine whether the benefit of multiple processes can
+    outweigh the cost of starting them"""
 
     if not threadsafe and _DISALLOW_THREAD_UNSAFE:
         return False
@@ -131,7 +131,7 @@ def worthwhile(ui, costperop, nops, threadsafe=True):
 def worker(
     ui, costperarg, func, staticargs, args, hasretval=False, threadsafe=True
 ):
-    '''run a function, possibly in parallel in multiple worker
+    """run a function, possibly in parallel in multiple worker
     processes.
 
     returns a progress iterator
@@ -153,7 +153,7 @@ def worker(
     threadsafe - whether work items are thread safe and can be executed using
     a thread-based worker. Should be disabled for CPU heavy tasks that don't
     release the GIL.
-    '''
+    """
     enabled = ui.configbool(b'worker', b'enabled')
     if enabled and worthwhile(ui, costperarg, len(args), threadsafe=threadsafe):
         return _platformworker(ui, func, staticargs, args, hasretval)
@@ -306,10 +306,10 @@ def _posixworker(ui, func, staticargs, args, hasretval):
 
 
 def _posixexitstatus(code):
-    '''convert a posix exit status into the same form returned by
+    """convert a posix exit status into the same form returned by
     os.spawnv
 
-    returns None if the process was stopped instead of exiting'''
+    returns None if the process was stopped instead of exiting"""
     if os.WIFEXITED(code):
         return os.WEXITSTATUS(code)
     elif os.WIFSIGNALED(code):
@@ -423,7 +423,7 @@ else:
 
 
 def partition(lst, nslices):
-    '''partition a list into N slices of roughly equal size
+    """partition a list into N slices of roughly equal size
 
     The current strategy takes every Nth element from the input. If
     we ever write workers that need to preserve grouping in input
@@ -450,6 +450,6 @@ def partition(lst, nslices):
         What we should really be doing is have workers read filenames from a
         ordered queue. This preserves locality and also keeps any worker from
         getting more than one file out of balance.
-    '''
+    """
     for i in range(nslices):
         yield lst[i::nslices]

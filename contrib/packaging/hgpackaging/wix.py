@@ -517,7 +517,10 @@ def run_wix_packaging(
         args.append(str(build_dir / ('%s.wixobj' % source[:-4])))
 
     args.extend(
-        [str(build_dir / 'stage.wixobj'), str(build_dir / 'mercurial.wixobj'),]
+        [
+            str(build_dir / 'stage.wixobj'),
+            str(build_dir / 'mercurial.wixobj'),
+        ]
     )
 
     subprocess.run(args, cwd=str(source_dir), check=True)

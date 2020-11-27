@@ -75,7 +75,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
 
 
 class outgoing(object):
-    '''Represents the result of a findcommonoutgoing() call.
+    """Represents the result of a findcommonoutgoing() call.
 
     Members:
 
@@ -94,7 +94,7 @@ class outgoing(object):
       remotely.
 
     Some members are computed on demand from the heads, unless provided upfront
-    by discovery.'''
+    by discovery."""
 
     def __init__(
         self, repo, commonheads=None, ancestorsof=None, missingroots=None
@@ -157,7 +157,7 @@ class outgoing(object):
 def findcommonoutgoing(
     repo, other, onlyheads=None, force=False, commoninc=None, portable=False
 ):
-    '''Return an outgoing instance to identify the nodes present in repo but
+    """Return an outgoing instance to identify the nodes present in repo but
     not in other.
 
     If onlyheads is given, only nodes ancestral to nodes in onlyheads
@@ -168,7 +168,7 @@ def findcommonoutgoing(
     findcommonincoming(repo, other, force) to avoid recomputing it here.
 
     If portable is given, compute more conservative common and ancestorsof,
-    to make bundles created from the instance more portable.'''
+    to make bundles created from the instance more portable."""
     # declare an empty outgoing object to be filled later
     og = outgoing(repo, None, None)
 
@@ -332,7 +332,10 @@ def _nowarnheads(pushop):
 
     with remote.commandexecutor() as e:
         remotebookmarks = e.callcommand(
-            b'listkeys', {b'namespace': b'bookmarks',}
+            b'listkeys',
+            {
+                b'namespace': b'bookmarks',
+            },
         ).result()
 
     bookmarkedheads = set()
@@ -470,7 +473,10 @@ def checkheads(pushop):
                 if branch not in (b'default', None):
                     errormsg = _(
                         b"push creates new remote head %s on branch '%s'"
-                    ) % (short(dhs[0]), branch,)
+                    ) % (
+                        short(dhs[0]),
+                        branch,
+                    )
                 elif repo[dhs[0]].bookmarks():
                     errormsg = _(
                         b"push creates new remote head %s "

@@ -243,7 +243,7 @@ def peer(uiorrepo, opts, path, create=False, intents=None, createopts=None):
 
 
 def defaultdest(source):
-    '''return default destination of clone if none is given
+    """return default destination of clone if none is given
 
     >>> defaultdest(b'foo')
     'foo'
@@ -257,7 +257,7 @@ def defaultdest(source):
     ''
     >>> defaultdest(b'http://example.org/foo/')
     'foo'
-    '''
+    """
     path = util.url(source).path
     if not path:
         return b''
@@ -333,7 +333,7 @@ def share(
 
 
 def _prependsourcehgrc(repo):
-    """ copies the source repo config and prepend it in current repo .hg/hgrc
+    """copies the source repo config and prepend it in current repo .hg/hgrc
     on unshare. This is only done if the share was perfomed using share safe
     method where we share config of source in shares"""
     srcvfs = vfsmod.vfs(repo.sharedpath)
@@ -443,10 +443,10 @@ def _postshareupdate(repo, update, checkout=None):
 
 
 def copystore(ui, srcrepo, destpath):
-    '''copy files from store of srcrepo in destpath
+    """copy files from store of srcrepo in destpath
 
     returns destlock
-    '''
+    """
     destlock = None
     try:
         hardlink = None
@@ -517,7 +517,12 @@ def clonewithshare(
         for r in rev:
             with srcpeer.commandexecutor() as e:
                 remoterevs.append(
-                    e.callcommand(b'lookup', {b'key': r,}).result()
+                    e.callcommand(
+                        b'lookup',
+                        {
+                            b'key': r,
+                        },
+                    ).result()
                 )
         revs = remoterevs
 
@@ -751,7 +756,10 @@ def clone(
             try:
                 with srcpeer.commandexecutor() as e:
                     rootnode = e.callcommand(
-                        b'lookup', {b'key': b'0',}
+                        b'lookup',
+                        {
+                            b'key': b'0',
+                        },
                     ).result()
 
                 if rootnode != node.nullid:
@@ -900,7 +908,12 @@ def clone(
                 for rev in revs:
                     with srcpeer.commandexecutor() as e:
                         remoterevs.append(
-                            e.callcommand(b'lookup', {b'key': rev,}).result()
+                            e.callcommand(
+                                b'lookup',
+                                {
+                                    b'key': rev,
+                                },
+                            ).result()
                         )
                 revs = remoterevs
 
@@ -974,7 +987,10 @@ def clone(
                 if update is not True:
                     with srcpeer.commandexecutor() as e:
                         checkout = e.callcommand(
-                            b'lookup', {b'key': update,}
+                            b'lookup',
+                            {
+                                b'key': update,
+                            },
                         ).result()
 
                 uprev = None
@@ -1176,7 +1192,10 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
 
 
 def merge(
-    ctx, force=False, remind=True, labels=None,
+    ctx,
+    force=False,
+    remind=True,
+    labels=None,
 ):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""

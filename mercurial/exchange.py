@@ -378,14 +378,14 @@ def push(
     publish=False,
     opargs=None,
 ):
-    '''Push outgoing changesets (limited by revs) from a local
+    """Push outgoing changesets (limited by revs) from a local
     repository to remote. Return an integer:
       - None means nothing to push
       - 0 means HTTP error
       - 1 means we pushed and remote head count is unchanged *or*
         we have outgoing changesets but refused to push
       - other values as described by addchangegroup()
-    '''
+    """
     if opargs is None:
         opargs = {}
     pushop = pushoperation(
@@ -1510,8 +1510,8 @@ def _fullpullbundle2(repo, pullop):
 
 
 def add_confirm_callback(repo, pullop):
-    """ adds a finalize callback to transaction which can be used to show stats
-    to user and confirm the pull before committing transaction """
+    """adds a finalize callback to transaction which can be used to show stats
+    to user and confirm the pull before committing transaction"""
 
     tr = pullop.trmanager.transaction()
     scmutil.registersummarycallback(
@@ -1892,7 +1892,11 @@ def _pullchangeset(pullop):
     elif pullop.heads is None:
         with pullop.remote.commandexecutor() as e:
             cg = e.callcommand(
-                b'changegroup', {b'nodes': pullop.fetch, b'source': b'pull',}
+                b'changegroup',
+                {
+                    b'nodes': pullop.fetch,
+                    b'source': b'pull',
+                },
             ).result()
 
     elif not pullop.remote.capable(b'changegroupsubset'):

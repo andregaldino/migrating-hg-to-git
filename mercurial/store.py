@@ -52,7 +52,7 @@ def _matchtrackedpath(path, matcher):
 # This avoids a collision between a file named foo and a dir named
 # foo.i or foo.d
 def _encodedir(path):
-    '''
+    """
     >>> _encodedir(b'data/foo.i')
     'data/foo.i'
     >>> _encodedir(b'data/foo.i/bla.i')
@@ -61,7 +61,7 @@ def _encodedir(path):
     'data/foo.i.hg.hg/bla.i'
     >>> _encodedir(b'data/foo.i\\ndata/foo.i/bla.i\\ndata/foo.i.hg/bla.i\\n')
     'data/foo.i\\ndata/foo.i.hg/bla.i\\ndata/foo.i.hg.hg/bla.i\\n'
-    '''
+    """
     return (
         path.replace(b".hg/", b".hg.hg/")
         .replace(b".i/", b".i.hg/")
@@ -73,14 +73,14 @@ encodedir = getattr(parsers, 'encodedir', _encodedir)
 
 
 def decodedir(path):
-    '''
+    """
     >>> decodedir(b'data/foo.i')
     'data/foo.i'
     >>> decodedir(b'data/foo.i.hg/bla.i')
     'data/foo.i/bla.i'
     >>> decodedir(b'data/foo.i.hg.hg/bla.i')
     'data/foo.i.hg/bla.i'
-    '''
+    """
     if b".hg/" not in path:
         return path
     return (
@@ -91,14 +91,14 @@ def decodedir(path):
 
 
 def _reserved():
-    ''' characters that are problematic for filesystems
+    """characters that are problematic for filesystems
 
     * ascii escapes (0..31)
     * ascii hi (126..255)
     * windows specials
 
     these characters will be escaped by encodefunctions
-    '''
+    """
     winreserved = [ord(x) for x in u'\\:*?"<>|']
     for x in range(32):
         yield x
@@ -109,7 +109,7 @@ def _reserved():
 
 
 def _buildencodefun():
-    '''
+    """
     >>> enc, dec = _buildencodefun()
 
     >>> enc(b'nothing/special.txt')
@@ -131,7 +131,7 @@ def _buildencodefun():
     'the~07quick~adshot'
     >>> dec(b'the~07quick~adshot')
     'the\\x07quick\\xadshot'
-    '''
+    """
     e = b'_'
     xchr = pycompat.bytechr
     asciistr = list(map(xchr, range(127)))
@@ -172,23 +172,23 @@ _encodefname, _decodefname = _buildencodefun()
 
 
 def encodefilename(s):
-    '''
+    """
     >>> encodefilename(b'foo.i/bar.d/bla.hg/hi:world?/HELLO')
     'foo.i.hg/bar.d.hg/bla.hg.hg/hi~3aworld~3f/_h_e_l_l_o'
-    '''
+    """
     return _encodefname(encodedir(s))
 
 
 def decodefilename(s):
-    '''
+    """
     >>> decodefilename(b'foo.i.hg/bar.d.hg/bla.hg.hg/hi~3aworld~3f/_h_e_l_l_o')
     'foo.i/bar.d/bla.hg/hi:world?/HELLO'
-    '''
+    """
     return decodedir(_decodefname(s))
 
 
 def _buildlowerencodefun():
-    '''
+    """
     >>> f = _buildlowerencodefun()
     >>> f(b'nothing/special.txt')
     'nothing/special.txt'
@@ -198,7 +198,7 @@ def _buildlowerencodefun():
     'hello~3aworld~3f'
     >>> f(b'the\\x07quick\\xADshot')
     'the~07quick~adshot'
-    '''
+    """
     xchr = pycompat.bytechr
     cmap = {xchr(x): xchr(x) for x in pycompat.xrange(127)}
     for x in _reserved():
@@ -220,7 +220,7 @@ _winres4 = (b'com', b'lpt')  # length 4 (with trailing 1..9)
 
 
 def _auxencode(path, dotencode):
-    '''
+    """
     Encodes filenames containing names reserved by Windows or which end in
     period or space. Does not touch other single reserved characters c.
     Specifically, c in '\\:*?"<>|' or ord(c) <= 31 are *not* encoded here.
@@ -240,7 +240,7 @@ def _auxencode(path, dotencode):
     ['foo.~20']
     >>> _auxencode([b' .foo'], True)
     ['~20.foo']
-    '''
+    """
     for i, n in enumerate(path):
         if not n:
             continue
@@ -305,7 +305,7 @@ def _hashencode(path, dotencode):
 
 
 def _hybridencode(path, dotencode):
-    '''encodes path with a length limit
+    """encodes path with a length limit
 
     Encodes all paths that begin with 'data/', according to the following.
 
@@ -334,7 +334,7 @@ def _hybridencode(path, dotencode):
 
     The string 'data/' at the beginning is replaced with 'dh/', if the hashed
     encoding was used.
-    '''
+    """
     path = encodedir(path)
     ef = _encodefname(path).split(b'/')
     res = b'/'.join(_auxencode(ef, dotencode))
@@ -444,11 +444,11 @@ class basicstore(object):
         return reversed(self._walk(b'', False))
 
     def walk(self, matcher=None):
-        '''yields (unencoded, encoded, size)
+        """yields (unencoded, encoded, size)
 
         if a matcher is passed, storage files of only those tracked paths
         are passed with matches the matcher
-        '''
+        """
         # yield data files first
         for x in self.datafiles(matcher):
             yield x
@@ -517,10 +517,10 @@ class fncache(object):
         self.addls = set()
 
     def ensureloaded(self, warn=None):
-        '''read the fncache file if not already read.
+        """read the fncache file if not already read.
 
         If the file on disk is corrupted, raise. If warn is provided,
-        warn and keep going instead.'''
+        warn and keep going instead."""
         if self.entries is None:
             self._load(warn)
 

@@ -519,10 +519,10 @@ def aliasargs(fn, givenargs):
 
 
 def aliasinterpolate(name, args, cmd):
-    '''interpolate args into cmd for shell aliases
+    """interpolate args into cmd for shell aliases
 
     This also handles $0, $@ and "$@".
-    '''
+    """
     # util.interpolate can't deal with "$@" (with quotes) because it's only
     # built to match prefix + patterns.
     replacemap = {b'$%d' % (i + 1): arg for i, arg in enumerate(args)}
@@ -630,12 +630,18 @@ class cmdalias(object):
         except error.UnknownCommand:
             self.badalias = _(
                 b"alias '%s' resolves to unknown command '%s'"
-            ) % (self.name, cmd,)
+            ) % (
+                self.name,
+                cmd,
+            )
             self.unknowncmd = True
         except error.AmbiguousCommand:
             self.badalias = _(
                 b"alias '%s' resolves to ambiguous command '%s'"
-            ) % (self.name, cmd,)
+            ) % (
+                self.name,
+                cmd,
+            )
 
     def _populatehelp(self, ui, name, cmd, fn, defaulthelp=None):
         # confine strings to be passed to i18n.gettext()

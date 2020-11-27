@@ -33,7 +33,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 # git.log-index-cache-miss: internal knob for testing
 configitem(
-    b"git", b"log-index-cache-miss", default=False,
+    b"git",
+    b"log-index-cache-miss",
+    default=False,
 )
 
 # TODO: extract an interface for this in core
@@ -224,8 +226,7 @@ class gitbmstore(object):
         return bname
 
     def applychanges(self, repo, tr, changes):
-        """Apply a list of changes to bookmarks
-        """
+        """Apply a list of changes to bookmarks"""
         # TODO: this should respect transactions, but that's going to
         # require enlarging the gitbmstore to know how to do in-memory
         # temporary writes and read those back prior to transaction

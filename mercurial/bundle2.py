@@ -489,7 +489,12 @@ def processparts(repo, op, unbundler):
 
 def _processchangegroup(op, cg, tr, source, url, **kwargs):
     ret = cg.apply(op.repo, tr, source, url, **kwargs)
-    op.records.add(b'changegroup', {b'return': ret,})
+    op.records.add(
+        b'changegroup',
+        {
+            b'return': ret,
+        },
+    )
     return ret
 
 
@@ -1647,8 +1652,7 @@ def bundle2caps(remote):
 
 
 def obsmarkersversion(caps):
-    """extract the list of supported obsmarkers versions from a bundle2caps dict
-    """
+    """extract the list of supported obsmarkers versions from a bundle2caps dict"""
     obscaps = caps.get(b'obsmarkers', ())
     return [int(c[1:]) for c in obscaps if c.startswith(b'V')]
 

@@ -87,10 +87,10 @@ def newrevlog(name=b'_testrevlog.i', recreate=False):
 
 
 def appendrev(rlog, text, tr, isext=False, isdelta=True):
-    '''Append a revision. If isext is True, set the EXTSTORED flag so flag
+    """Append a revision. If isext is True, set the EXTSTORED flag so flag
     processor will be used (and rawtext is different from text). If isdelta is
     True, force the revision to be a delta, otherwise it's full text.
-    '''
+    """
     nextrev = len(rlog)
     p1 = rlog.node(nextrev - 1)
     p2 = node.nullid
@@ -111,7 +111,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
 
 
 def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
-    '''Copy revlog to destname using revlog.addgroup. Return the copied revlog.
+    """Copy revlog to destname using revlog.addgroup. Return the copied revlog.
 
     This emulates push or pull. They use changegroup. Changegroup requires
     repo to work. We don't have a repo, so a dummy changegroup is used.
@@ -122,7 +122,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
 
     This exercises some revlog.addgroup (and revlog._addrevision(text=None))
     code path, which is not covered by "appendrev" alone.
-    '''
+    """
 
     class dummychangegroup(object):
         @staticmethod
@@ -174,10 +174,10 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
 
 
 def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
-    '''Like addgroupcopy, but use the low level revlog._addrevision directly.
+    """Like addgroupcopy, but use the low level revlog._addrevision directly.
 
     It exercises some code paths that are hard to reach easily otherwise.
-    '''
+    """
     dlog = newrevlog(destname, recreate=True)
     for r in rlog:
         p1 = rlog.node(r - 1)
@@ -218,13 +218,13 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
 
 
 def genbits(n):
-    '''Given a number n, generate (2 ** (n * 2) + 1) numbers in range(2 ** n).
+    """Given a number n, generate (2 ** (n * 2) + 1) numbers in range(2 ** n).
     i.e. the generated numbers have a width of n bits.
 
     The combination of two adjacent numbers will cover all possible cases.
     That is to say, given any x, y where both x, and y are in range(2 ** n),
     there is an x followed immediately by y in the generated sequence.
-    '''
+    """
     m = 2 ** n
 
     # Gray Code. See https://en.wikipedia.org/wiki/Gray_code
@@ -255,7 +255,7 @@ def gentext(rev):
 
 
 def writecases(rlog, tr):
-    '''Write some revisions interested to the test.
+    """Write some revisions interested to the test.
 
     The test is interested in 3 properties of a revision:
 
@@ -281,7 +281,7 @@ def writecases(rlog, tr):
     mentioned above.
 
     Return expected [(text, rawtext)].
-    '''
+    """
     result = []
     for i, x in enumerate(genbits(3)):
         isdelta, isext, isempty = bool(x & 1), bool(x & 2), bool(x & 4)

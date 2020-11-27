@@ -49,9 +49,9 @@ propertycache = util.propertycache
 
 
 def _expandedabspath(path):
-    '''
+    """
     get a path or url and if it is a path expand it and return an absolute path
-    '''
+    """
     expandedpath = util.urllocalpath(util.expandpath(path))
     u = util.url(expandedpath)
     if not u.scheme:
@@ -268,8 +268,7 @@ class abstractsubrepo(object):
             )
 
     def bailifchanged(self, ignoreupdate=False, hint=None):
-        """raise Abort if subrepository is ``dirty()``
-        """
+        """raise Abort if subrepository is ``dirty()``"""
         dirtyreason = self.dirtyreason(ignoreupdate=ignoreupdate, missing=True)
         if dirtyreason:
             raise error.Abort(dirtyreason, hint=hint)
@@ -291,8 +290,7 @@ class abstractsubrepo(object):
         raise NotImplementedError
 
     def phase(self, state):
-        """returns phase of specified state in the subrepository.
-        """
+        """returns phase of specified state in the subrepository."""
         return phases.public
 
     def remove(self):
@@ -384,10 +382,10 @@ class abstractsubrepo(object):
         return total
 
     def walk(self, match):
-        '''
+        """
         walk recursively through the directory tree, finding all files
         matched by the match function
-        '''
+        """
 
     def forget(self, match, prefix, uipathfn, dryrun, interactive):
         return ([], [])
@@ -423,9 +421,9 @@ class abstractsubrepo(object):
         return revid
 
     def unshare(self):
-        '''
+        """
         convert this repository from shared to normal storage.
-        '''
+        """
 
     def verify(self, onpush=False):
         """verify the revision of this repository that is held in `_state` is
@@ -437,14 +435,12 @@ class abstractsubrepo(object):
 
     @propertycache
     def wvfs(self):
-        """return vfs to access the working directory of this subrepository
-        """
+        """return vfs to access the working directory of this subrepository"""
         return vfsmod.vfs(self._ctx.repo().wvfs.join(self._path))
 
     @propertycache
     def _relpath(self):
-        """return path to this subrepository as seen from outermost repository
-        """
+        """return path to this subrepository as seen from outermost repository"""
         return self.wvfs.reljoin(reporelpath(self._ctx.repo()), self._path)
 
 
@@ -503,10 +499,10 @@ class hgsubrepo(abstractsubrepo):
         return clean
 
     def _calcstorehash(self, remotepath):
-        '''calculate a unique "store hash"
+        """calculate a unique "store hash"
 
         This method is used to to detect when there are changes that may
-        require a push to a given remote path.'''
+        require a push to a given remote path."""
         # sort the files that will be hashed in increasing (likely) file size
         filelist = (b'bookmarks', b'store/phaseroots', b'store/00changelog.i')
         yield b'# %s\n' % _expandedabspath(remotepath)
@@ -525,11 +521,11 @@ class hgsubrepo(abstractsubrepo):
         return self._cachestorehashvfs.tryreadlines(cachefile, b'r')
 
     def _cachestorehash(self, remotepath):
-        '''cache the current store hash
+        """cache the current store hash
 
         Each remote repo requires its own store hash cache, because a subrepo
         store may be "clean" versus a given remote repo, but not versus another
-        '''
+        """
         cachefile = _getstorehashcachename(remotepath)
         with self._repo.lock():
             storehash = list(self._calcstorehash(remotepath))
@@ -537,8 +533,7 @@ class hgsubrepo(abstractsubrepo):
             vfs.writelines(cachefile, storehash, mode=b'wb', notindexed=True)
 
     def _getctx(self):
-        '''fetch the context for this subrepo revision, possibly a workingctx
-        '''
+        """fetch the context for this subrepo revision, possibly a workingctx"""
         if self._ctx.rev() is None:
             return self._repo[None]  # workingctx if parent is workingctx
         else:
@@ -1048,14 +1043,12 @@ class hgsubrepo(abstractsubrepo):
 
     @propertycache
     def wvfs(self):
-        """return own wvfs for efficiency and consistency
-        """
+        """return own wvfs for efficiency and consistency"""
         return self._repo.wvfs
 
     @propertycache
     def _relpath(self):
-        """return path to this subrepository as seen from outermost repository
-        """
+        """return path to this subrepository as seen from outermost repository"""
         # Keep consistent dir separators by avoiding vfs.join(self._path)
         return reporelpath(self._repo)
 
@@ -1170,12 +1163,16 @@ class svnsubrepo(abstractsubrepo):
                 externals.append(path)
             elif item == 'missing':
                 missing.append(path)
-            if item not in (
-                '',
-                'normal',
-                'unversioned',
-                'external',
-            ) or props not in ('', 'none', 'normal'):
+            if (
+                item
+                not in (
+                    '',
+                    'normal',
+                    'unversioned',
+                    'external',
+                )
+                or props not in ('', 'none', 'normal')
+            ):
                 changes.append(path)
         for path in changes:
             for ext in externals:
@@ -1384,7 +1381,7 @@ class gitsubrepo(abstractsubrepo):
 
     @staticmethod
     def _checkversion(out):
-        '''ensure git version is new enough
+        """ensure git version is new enough
 
         >>> _checkversion = gitsubrepo._checkversion
         >>> _checkversion(b'git version 1.6.0')
@@ -1405,7 +1402,7 @@ class gitsubrepo(abstractsubrepo):
         'unknown'
         >>> _checkversion(b'no')
         'unknown'
-        '''
+        """
         version = gitsubrepo._gitversion(out)
         # git 1.4.0 can't work at all, but 1.5.X can in at least some cases,
         # despite the docstring comment.  For now, error on 1.4.0, warn on
@@ -1516,9 +1513,9 @@ class gitsubrepo(abstractsubrepo):
         self._gitcommand([b'update-index', b'-q', b'--refresh'])
 
     def _gitbranchmap(self):
-        '''returns 2 things:
+        """returns 2 things:
         a map from git branch to revision
-        a map from revision to branches'''
+        a map from revision to branches"""
         branch2rev = {}
         rev2branch = {}
 

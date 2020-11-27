@@ -456,7 +456,10 @@ def createcommandresponseeosframes(
 def createalternatelocationresponseframe(stream, requestid, location):
     data = {
         b'status': b'redirect',
-        b'location': {b'url': location.url, b'mediatype': location.mediatype,},
+        b'location': {
+            b'url': location.url,
+            b'mediatype': location.mediatype,
+        },
     }
 
     for a in (
@@ -490,7 +493,12 @@ def createalternatelocationresponseframe(stream, requestid, location):
 def createcommanderrorresponse(stream, requestid, message, args=None):
     # TODO should this be using a list of {'msg': ..., 'args': {}} so atom
     # formatting works consistently?
-    m = {b'status': b'error', b'error': {b'message': message,}}
+    m = {
+        b'status': b'error',
+        b'error': {
+            b'message': message,
+        },
+    }
 
     if args:
         m[b'error'][b'args'] = args
@@ -510,7 +518,12 @@ def createerrorframe(stream, requestid, msg, errtype):
     assert len(msg) <= DEFAULT_MAX_FRAME_SIZE
 
     payload = b''.join(
-        cborutil.streamencode({b'type': errtype, b'message': [{b'msg': msg}],})
+        cborutil.streamencode(
+            {
+                b'type': errtype,
+                b'message': [{b'msg': msg}],
+            }
+        )
     )
 
     yield stream.makeframe(
@@ -1292,14 +1305,18 @@ class serverreactor(object):
                 for frame in gen:
                     yield frame
 
-        return b'sendframes', {b'framegen': makegen(),}
+        return b'sendframes', {
+            b'framegen': makegen(),
+        }
 
     def _handlesendframes(self, framegen):
         if self._deferoutput:
             self._bufferedframegens.append(framegen)
             return b'noop', {}
         else:
-            return b'sendframes', {b'framegen': framegen,}
+            return b'sendframes', {
+                b'framegen': framegen,
+            }
 
     def onservererror(self, stream, requestid, msg):
         ensureserverstream(stream)
@@ -1351,7 +1368,9 @@ class serverreactor(object):
         return s
 
     def _makeerrorresult(self, msg):
-        return b'error', {b'message': msg,}
+        return b'error', {
+            b'message': msg,
+        }
 
     def _makeruncommandresult(self, requestid):
         entry = self._receivingcommands[requestid]
@@ -1397,7 +1416,9 @@ class serverreactor(object):
         )
 
     def _makewantframeresult(self):
-        return b'wantframe', {b'state': self._state,}
+        return b'wantframe', {
+            b'state': self._state,
+        }
 
     def _validatecommandrequestframe(self, frame):
         new = frame.flags & FLAG_COMMAND_REQUEST_NEW
@@ -1802,7 +1823,9 @@ class clientreactor(object):
             return (
                 request,
                 b'sendframes',
-                {b'framegen': self._makecommandframes(request),},
+                {
+                    b'framegen': self._makecommandframes(request),
+                },
             )
 
     def flushcommands(self):
@@ -1835,7 +1858,9 @@ class clientreactor(object):
                 for frame in self._makecommandframes(request):
                     yield frame
 
-        return b'sendframes', {b'framegen': makeframes(),}
+        return b'sendframes', {
+            b'framegen': makeframes(),
+        }
 
     def _makecommandframes(self, request):
         """Emit frames to issue a command request.
@@ -1851,7 +1876,9 @@ class clientreactor(object):
 
             payload = b''.join(
                 cborutil.streamencode(
-                    {b'contentencodings': self._clientcontentencoders,}
+                    {
+                        b'contentencodings': self._clientcontentencoders,
+                    }
                 )
             )
 

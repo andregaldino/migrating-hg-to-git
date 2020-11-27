@@ -30,14 +30,14 @@ from .utils import (
 
 
 def pythonhook(ui, repo, htype, hname, funcname, args, throw):
-    '''call python hook. hook is callable object, looked up as
+    """call python hook. hook is callable object, looked up as
     name in python module. if callable returns "true", hook
     fails, else passes. if hook raises exception, treated as
     hook failure. exception propagates if throw is "true".
 
     reason for "true" meaning "hook failed" is so that
     unmodified commands (e.g. mercurial.commands.update) can
-    be run as hooks without wrappers to convert return values.'''
+    be run as hooks without wrappers to convert return values."""
 
     if callable(funcname):
         obj = funcname

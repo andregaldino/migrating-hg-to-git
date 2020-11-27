@@ -192,7 +192,12 @@ class FrameTests(unittest.TestCase):
         stream = framing.stream(1)
         val = list(
             framing.createtextoutputframe(
-                stream, 1, [(b'foo', [], []), (b'bar', [], []),]
+                stream,
+                1,
+                [
+                    (b'foo', [], []),
+                    (b'bar', [], []),
+                ],
             )
         )
 
@@ -210,7 +215,11 @@ class FrameTests(unittest.TestCase):
         stream = framing.stream(1)
         val = list(
             framing.createtextoutputframe(
-                stream, 1, [(b'foo %s', [b'val1'], []),]
+                stream,
+                1,
+                [
+                    (b'foo %s', [b'val1'], []),
+                ],
             )
         )
 
@@ -228,7 +237,11 @@ class FrameTests(unittest.TestCase):
         stream = framing.stream(1)
         val = list(
             framing.createtextoutputframe(
-                stream, 1, [(b'foo %s %s', [b'val', b'value'], []),]
+                stream,
+                1,
+                [
+                    (b'foo %s %s', [b'val', b'value'], []),
+                ],
             )
         )
 
@@ -246,7 +259,11 @@ class FrameTests(unittest.TestCase):
         stream = framing.stream(1)
         val = list(
             framing.createtextoutputframe(
-                stream, 1, [(b'foo', [], [b'label']),]
+                stream,
+                1,
+                [
+                    (b'foo', [], [b'label']),
+                ],
             )
         )
 
@@ -264,7 +281,11 @@ class FrameTests(unittest.TestCase):
         stream = framing.stream(1)
         val = list(
             framing.createtextoutputframe(
-                stream, 1, [(b'foo %s', [b'arg'], [b'label']),]
+                stream,
+                1,
+                [
+                    (b'foo %s', [b'arg'], [b'label']),
+                ],
             )
         )
 

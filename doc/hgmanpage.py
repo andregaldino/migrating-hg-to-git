@@ -822,7 +822,10 @@ class Translator(nodes.NodeVisitor):
         # man 7 man argues to use ".IP" instead of ".TP"
         self.body.append(
             '.IP %s %d\n'
-            % (next(self._list_char[-1]), self._list_char[-1].get_width(),)
+            % (
+                next(self._list_char[-1]),
+                self._list_char[-1].get_width(),
+            )
         )
 
     def depart_list_item(self, node):

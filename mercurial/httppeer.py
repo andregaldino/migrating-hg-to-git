@@ -766,7 +766,10 @@ class httpv2executor(object):
                 % _(b', ').join(sorted(permissions))
             )
 
-        permission = {b'push': b'rw', b'pull': b'ro',}[permissions.pop()]
+        permission = {
+            b'push': b'rw',
+            b'pull': b'ro',
+        }[permissions.pop()]
 
         handler, resp = sendv2request(
             self._ui,
@@ -942,7 +945,10 @@ class httpv2peer(object):
 #    Integer priority for the service. If we could choose from multiple
 #    services, we choose the one with the highest priority.
 API_PEERS = {
-    wireprototypes.HTTP_WIREPROTO_V2: {b'init': httpv2peer, b'priority': 50,},
+    wireprototypes.HTTP_WIREPROTO_V2: {
+        b'init': httpv2peer,
+        b'priority': 50,
+    },
 }
 
 

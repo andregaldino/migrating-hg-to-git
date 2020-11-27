@@ -381,7 +381,7 @@ METABLACKLIST = [
 
 
 def metanotblacklisted(metaitem):
-    """ Check that the key of a meta item (extrakey, extravalue) does not
+    """Check that the key of a meta item (extrakey, extravalue) does not
     match at least one of the blacklist pattern
     """
     metakey = metaitem[0]
@@ -439,7 +439,7 @@ def _cmpdiff(leftctx, rightctx):
 
 
 def geteffectflag(source, successors):
-    """ From an obs-marker relation, compute what changed between the
+    """From an obs-marker relation, compute what changed between the
     predecessor and the successor.
     """
     effects = 0
@@ -816,7 +816,7 @@ def successorsandmarkers(repo, ctx):
 
 
 def _getobsfate(successorssets):
-    """ Compute a changeset obsolescence fate based on its successorssets.
+    """Compute a changeset obsolescence fate based on its successorssets.
     Successors can be the tipmost ones or the immediate ones. This function
     return values are not meant to be shown directly to users, it is meant to
     be used by internal functions only.
@@ -843,7 +843,7 @@ def _getobsfate(successorssets):
 
 
 def obsfateverb(successorset, markers):
-    """ Return the verb summarizing the successorset and potentially using
+    """Return the verb summarizing the successorset and potentially using
     information from the markers
     """
     if not successorset:
@@ -856,14 +856,12 @@ def obsfateverb(successorset, markers):
 
 
 def markersdates(markers):
-    """returns the list of dates for a list of markers
-    """
+    """returns the list of dates for a list of markers"""
     return [m[4] for m in markers]
 
 
 def markersusers(markers):
-    """ Returns a sorted list of markers users without duplicates
-    """
+    """Returns a sorted list of markers users without duplicates"""
     markersmeta = [dict(m[3]) for m in markers]
     users = {
         encoding.tolocal(meta[b'user'])
@@ -875,8 +873,7 @@ def markersusers(markers):
 
 
 def markersoperations(markers):
-    """ Returns a sorted list of markers operations without duplicates
-    """
+    """Returns a sorted list of markers operations without duplicates"""
     markersmeta = [dict(m[3]) for m in markers]
     operations = {
         meta.get(b'operation') for meta in markersmeta if meta.get(b'operation')
@@ -886,7 +883,7 @@ def markersoperations(markers):
 
 
 def obsfateprinter(ui, repo, successors, markers, formatctx):
-    """ Build a obsfate string for a single successorset using all obsfate
+    """Build a obsfate string for a single successorset using all obsfate
     related function defined in obsutil
     """
     quiet = ui.quiet
@@ -950,8 +947,7 @@ filteredmsgtable = {
 
 
 def _getfilteredreason(repo, changeid, ctx):
-    """return a human-friendly string on why a obsolete changeset is hidden
-    """
+    """return a human-friendly string on why a obsolete changeset is hidden"""
     successors = successorssets(repo, ctx.node())
     fate = _getobsfate(successors)
 

@@ -47,8 +47,7 @@ class indexapi(object):
         raise NotImplementedError()
 
     def deletebookmarks(self, patterns):
-        """Accepts list of bookmarks and deletes them.
-        """
+        """Accepts list of bookmarks and deletes them."""
         raise NotImplementedError()
 
     def getbundle(self, node):

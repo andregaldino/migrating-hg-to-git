@@ -118,13 +118,19 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'eol', b'fix-trailing-newline', default=False,
+    b'eol',
+    b'fix-trailing-newline',
+    default=False,
 )
 configitem(
-    b'eol', b'native', default=pycompat.oslinesep,
+    b'eol',
+    b'native',
+    default=pycompat.oslinesep,
 )
 configitem(
-    b'eol', b'only-consistent', default=True,
+    b'eol',
+    b'only-consistent',
+    default=True,
 )
 
 # Matches a lone LF, i.e., one that is not part of CRLF.

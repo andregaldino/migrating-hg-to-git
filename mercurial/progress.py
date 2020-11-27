@@ -251,7 +251,7 @@ class progbar(object):
             return False
 
     def _calibrateestimate(self, topic, now, pos):
-        '''Adjust starttimes and startvals for topic so ETA works better
+        """Adjust starttimes and startvals for topic so ETA works better
 
         If progress is non-linear (ex. get much slower in the last minute),
         it's more friendly to only use a recent time span for ETA and speed
@@ -260,7 +260,7 @@ class progbar(object):
             [======================================>       ]
                                              ^^^^^^^
                            estimateinterval, only use this for estimation
-        '''
+        """
         interval = self.estimateinterval
         if interval <= 0:
             return

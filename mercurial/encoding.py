@@ -113,8 +113,8 @@ fallbackencoding = b'ISO-8859-1'
 
 
 class localstr(bytes):
-    '''This class allows strings that are unmodified to be
-    round-tripped to the local encoding and back'''
+    """This class allows strings that are unmodified to be
+    round-tripped to the local encoding and back"""
 
     def __new__(cls, u, l):
         s = bytes.__new__(cls, l)
@@ -329,8 +329,8 @@ def ucolwidth(d):
 
 def getcols(s, start, c):
     # type: (bytes, int, int) -> bytes
-    '''Use colwidth to find a c-column substring of s starting at byte
-    index start'''
+    """Use colwidth to find a c-column substring of s starting at byte
+    index start"""
     for x in pycompat.xrange(start + c, len(s)):
         t = s[start:x]
         if colwidth(t) == c:
@@ -487,7 +487,7 @@ def upperfallback(s):
 
 
 class normcasespecs(object):
-    '''what a platform's normcase does to ASCII strings
+    """what a platform's normcase does to ASCII strings
 
     This is specified per platform, and should be consistent with what normcase
     on that platform actually does.
@@ -496,7 +496,7 @@ class normcasespecs(object):
     upper: normcase uppercases ASCII strings
     other: the fallback function should always be called
 
-    This should be kept in sync with normcase_spec in util.h.'''
+    This should be kept in sync with normcase_spec in util.h."""
 
     lower = -1
     upper = 1
@@ -505,7 +505,7 @@ class normcasespecs(object):
 
 def jsonescape(s, paranoid=False):
     # type: (Any, Any) -> Any
-    '''returns a string suitable for JSON
+    """returns a string suitable for JSON
 
     JSON is problematic for us because it doesn't support non-Unicode
     bytes. To deal with this, we take the following approach:
@@ -547,7 +547,7 @@ def jsonescape(s, paranoid=False):
     'non-BMP: \\\\ud834\\\\udd1e'
     >>> jsonescape(b'<foo@example.org>', paranoid=True)
     '\\\\u003cfoo@example.org\\\\u003e'
-    '''
+    """
 
     u8chars = toutf8b(s)
     try:
@@ -569,11 +569,11 @@ _utf8len = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4]
 
 def getutf8char(s, pos):
     # type: (bytes, int) -> bytes
-    '''get the next full utf-8 character in the given string, starting at pos
+    """get the next full utf-8 character in the given string, starting at pos
 
     Raises a UnicodeError if the given location does not start a valid
     utf-8 character.
-    '''
+    """
 
     # find how many bytes to attempt decoding from first nibble
     l = _utf8len[ord(s[pos : pos + 1]) >> 4]
@@ -588,7 +588,7 @@ def getutf8char(s, pos):
 
 def toutf8b(s):
     # type: (bytes) -> bytes
-    '''convert a local, possibly-binary string into UTF-8b
+    """convert a local, possibly-binary string into UTF-8b
 
     This is intended as a generic method to preserve data when working
     with schemes like JSON and XML that have no provision for
@@ -616,7 +616,7 @@ def toutf8b(s):
     arbitrary bytes into an internal Unicode format that can be
     re-encoded back into the original. Here we are exposing the
     internal surrogate encoding as a UTF-8 string.)
-    '''
+    """
 
     if isinstance(s, localstr):
         # assume that the original UTF-8 sequence would never contain
@@ -657,7 +657,7 @@ def toutf8b(s):
 
 def fromutf8b(s):
     # type: (bytes) -> bytes
-    '''Given a UTF-8b string, return a local, possibly-binary string.
+    """Given a UTF-8b string, return a local, possibly-binary string.
 
     return the original binary string. This
     is a round-trip process for strings like filenames, but metadata
@@ -677,7 +677,7 @@ def fromutf8b(s):
     True
     >>> roundtrip(b"\\xf1\\x80\\x80\\x80\\x80")
     True
-    '''
+    """
 
     if isasciistr(s):
         return s

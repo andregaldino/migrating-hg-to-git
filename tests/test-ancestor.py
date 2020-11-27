@@ -24,13 +24,13 @@ if pycompat.ispy3:
 
 
 def buildgraph(rng, nodes=100, rootprob=0.05, mergeprob=0.2, prevprob=0.7):
-    '''nodes: total number of nodes in the graph
+    """nodes: total number of nodes in the graph
     rootprob: probability that a new node (not 0) will be a root
     mergeprob: probability that, excluding a root a node will be a merge
     prevprob: probability that p1 will be the previous node
 
     return value is a graph represented as an adjacency list.
-    '''
+    """
     graph = [None] * nodes
     for i in xrange(nodes):
         if i == 0 or rng.random() < rootprob:
@@ -228,7 +228,11 @@ def test_missingancestors_explicit():
         print("remaining (sorted): %s" % sorted(list(revs)))
 
     for i, (bases, revs) in enumerate(
-        (({10}, {11}), ({11}, {10}), ({7}, {9, 11}),)
+        (
+            ({10}, {11}),
+            ({11}, {10}),
+            ({7}, {9, 11}),
+        )
     ):
         print("%% missingancestors(), example %d" % (i + 1))
         missanc = ancestor.incrementalmissingancestors(graph.get, bases)

@@ -66,7 +66,7 @@ eh = exthelper.exthelper()
     inferrepo=True,
 )
 def lfconvert(ui, src, dest, *pats, **opts):
-    '''convert a normal repository to a largefiles repository
+    """convert a normal repository to a largefiles repository
 
     Convert repository SOURCE to a new repository DEST, identical to
     SOURCE except that certain files will be converted as largefiles:
@@ -82,7 +82,7 @@ def lfconvert(ui, src, dest, *pats, **opts):
     repository.
 
     Use --to-normal to convert largefiles back to normal files; after
-    this, the DEST repository can be used without largefiles at all.'''
+    this, the DEST repository can be used without largefiles at all."""
 
     opts = pycompat.byteskwargs(opts)
     if opts[b'to_normal']:
@@ -393,8 +393,8 @@ def _converttags(ui, revmap, data):
 
 
 def _islfile(file, ctx, matcher, size):
-    '''Return true if file should be considered a largefile, i.e.
-    matcher matches it or it is larger than size.'''
+    """Return true if file should be considered a largefile, i.e.
+    matcher matches it or it is larger than size."""
     # never store special .hg* files as largefiles
     if file == b'.hgtags' or file == b'.hgignore' or file == b'.hgsigs':
         return False
@@ -440,11 +440,11 @@ def uploadlfiles(ui, rsrc, rdst, files):
 
 
 def verifylfiles(ui, repo, all=False, contents=False):
-    '''Verify that every largefile revision in the current changeset
+    """Verify that every largefile revision in the current changeset
     exists in the central store.  With --contents, also verify that
     the contents of each local largefile file revision are correct (SHA-1 hash
     matches the revision ID).  With --all, check every changeset in
-    this repository.'''
+    this repository."""
     if all:
         revs = repo.revs(b'all()')
     else:
@@ -455,12 +455,12 @@ def verifylfiles(ui, repo, all=False, contents=False):
 
 
 def cachelfiles(ui, repo, node, filelist=None):
-    '''cachelfiles ensures that all largefiles needed by the specified revision
+    """cachelfiles ensures that all largefiles needed by the specified revision
     are present in the repository's largefile cache.
 
     returns a tuple (cached, missing).  cached is the list of files downloaded
     by this operation; missing is the list of files that were needed but could
-    not be found.'''
+    not be found."""
     lfiles = lfutil.listlfiles(repo, node)
     if filelist:
         lfiles = set(lfiles) & set(filelist)
@@ -502,11 +502,11 @@ def downloadlfiles(ui, repo):
 def updatelfiles(
     ui, repo, filelist=None, printmessage=None, normallookup=False
 ):
-    '''Update largefiles according to standins in the working directory
+    """Update largefiles according to standins in the working directory
 
     If ``printmessage`` is other than ``None``, it means "print (or
     ignore, for false) message forcibly".
-    '''
+    """
     statuswriter = lfutil.getstatuswriter(ui, repo, printmessage)
     with repo.wlock():
         lfdirstate = lfutil.openlfdirstate(ui, repo)

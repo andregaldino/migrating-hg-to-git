@@ -86,8 +86,7 @@ def setup_persistent_nodemap(tr, revlog):
 
 
 class _NoTransaction(object):
-    """transaction like object to update the nodemap outside a transaction
-    """
+    """transaction like object to update the nodemap outside a transaction"""
 
     def __init__(self):
         self._postclose = {}
@@ -129,8 +128,7 @@ def update_persistent_nodemap(revlog):
 
 
 def _persist_nodemap(tr, revlog, pending=False):
-    """Write nodemap data on disk for a given revlog
-    """
+    """Write nodemap data on disk for a given revlog"""
     if getattr(revlog, 'filteredrevs', ()):
         raise error.ProgrammingError(
             "cannot persist nodemap of a filtered changelog"
@@ -400,15 +398,13 @@ def _other_rawdata_filepath(revlog, docket):
 
 
 def persistent_data(index):
-    """return the persistent binary form for a nodemap for a given index
-    """
+    """return the persistent binary form for a nodemap for a given index"""
     trie = _build_trie(index)
     return _persist_trie(trie)
 
 
 def update_persistent_data(index, root, max_idx, last_rev):
-    """return the incremental update for persistent nodemap from a given index
-    """
+    """return the incremental update for persistent nodemap from a given index"""
     changed_block, trie = _update_trie(index, root, last_rev)
     return (
         changed_block * S_BLOCK.size,

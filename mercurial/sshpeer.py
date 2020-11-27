@@ -121,8 +121,7 @@ class doublepipe(object):
         return self._call(b'readline')
 
     def _call(self, methname, data=None):
-        """call <methname> on "main", forward output of "side" while blocking
-        """
+        """call <methname> on "main", forward output of "side" while blocking"""
         # data can be '' or 0
         if (data is not None and not data) or self._main.closed:
             _forwardoutput(self._ui, self._side)

@@ -76,7 +76,9 @@ if not os.path.isdir(os.path.join(cwd, ".hg")):
     sys.exit(0)
 
 files = subprocess.check_output(
-    "hg files --print0 \"%s\"" % fileset, shell=True, cwd=cwd,
+    "hg files --print0 \"%s\"" % fileset,
+    shell=True,
+    cwd=cwd,
 ).split(b'\0')
 
 if sys.version_info[0] >= 3:

@@ -39,7 +39,7 @@ splitnewlines = bdiff.splitnewlines
 
 # TODO: this looks like it could be an attrs, which might help pytype
 class diffopts(object):
-    '''context is the number of context lines
+    """context is the number of context lines
     text treats all files as text
     showfunc enables diff -p output
     git enables the git extended patch format
@@ -50,7 +50,7 @@ class diffopts(object):
     ignorewsamount ignores changes in the amount of whitespace
     ignoreblanklines ignores changes whose lines are all blank
     upgrade generates git diffs to avoid data loss
-    '''
+    """
 
     _HAS_DYNAMIC_ATTRIBUTES = True
 

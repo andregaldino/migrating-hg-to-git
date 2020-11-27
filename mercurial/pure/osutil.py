@@ -39,7 +39,7 @@ def _mode_to_kind(mode):
 
 
 def listdir(path, stat=False, skip=None):
-    '''listdir(path, stat=False) -> list_of_tuples
+    """listdir(path, stat=False) -> list_of_tuples
 
     Return a sorted list containing information about the entries
     in the directory.
@@ -51,7 +51,7 @@ def listdir(path, stat=False, skip=None):
     Otherwise, each element is a 2-tuple:
 
       (name, type)
-    '''
+    """
     result = []
     prefix = path
     if not prefix.endswith(pycompat.ossep):
@@ -222,7 +222,7 @@ else:
         )
 
     class posixfile(object):
-        '''a file object aiming for POSIX-like semantics
+        """a file object aiming for POSIX-like semantics
 
         CPython's open() returns a file that was opened *without* setting the
         _FILE_SHARE_DELETE flag, which causes rename and unlink to abort.
@@ -231,7 +231,7 @@ else:
         renamed and deleted while they are held open.
         Note that if a file opened with posixfile is unlinked, the file
         remains but cannot be opened again or be recreated under the same name,
-        until all reading processes have closed the file.'''
+        until all reading processes have closed the file."""
 
         def __init__(self, name, mode=b'r', bufsize=-1):
             if b'b' in mode:
@@ -290,11 +290,11 @@ else:
             return getattr(self._file, name)
 
         def __setattr__(self, name, value):
-            '''mimics the read-only attributes of Python file objects
+            """mimics the read-only attributes of Python file objects
             by raising 'TypeError: readonly attribute' if someone tries:
               f = posixfile('foo.txt')
               f.name = 'bla'
-            '''
+            """
             return self._file.__setattr__(name, value)
 
         def __enter__(self):

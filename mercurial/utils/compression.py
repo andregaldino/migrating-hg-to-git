@@ -29,7 +29,8 @@ SERVERROLE = b'server'
 CLIENTROLE = b'client'
 
 compewireprotosupport = collections.namedtuple(
-    'compenginewireprotosupport', ('name', 'serverpriority', 'clientpriority'),
+    'compenginewireprotosupport',
+    ('name', 'serverpriority', 'clientpriority'),
 )
 
 

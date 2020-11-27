@@ -57,8 +57,7 @@ def intersect(ra, rb):
 
 
 def compare_range(a, astart, aend, b, bstart, bend):
-    """Compare a[astart:aend] == b[bstart:bend], without slicing.
-    """
+    """Compare a[astart:aend] == b[bstart:bend], without slicing."""
     if (aend - astart) != (bend - bstart):
         return False
     for ia, ib in zip(
@@ -102,8 +101,7 @@ class Merge3Text(object):
         localorother=None,
         minimize=False,
     ):
-        """Return merge in cvs-like form.
-        """
+        """Return merge in cvs-like form."""
         self.conflicts = False
         newline = b'\n'
         if len(self.a) > 0:

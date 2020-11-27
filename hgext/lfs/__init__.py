@@ -172,33 +172,51 @@ reposetup = eh.finalreposetup
 templatekeyword = eh.templatekeyword
 
 eh.configitem(
-    b'experimental', b'lfs.serve', default=True,
+    b'experimental',
+    b'lfs.serve',
+    default=True,
 )
 eh.configitem(
-    b'experimental', b'lfs.user-agent', default=None,
+    b'experimental',
+    b'lfs.user-agent',
+    default=None,
 )
 eh.configitem(
-    b'experimental', b'lfs.disableusercache', default=False,
+    b'experimental',
+    b'lfs.disableusercache',
+    default=False,
 )
 eh.configitem(
-    b'experimental', b'lfs.worker-enable', default=True,
+    b'experimental',
+    b'lfs.worker-enable',
+    default=True,
 )
 
 eh.configitem(
-    b'lfs', b'url', default=None,
+    b'lfs',
+    b'url',
+    default=None,
 )
 eh.configitem(
-    b'lfs', b'usercache', default=None,
+    b'lfs',
+    b'usercache',
+    default=None,
 )
 # Deprecated
 eh.configitem(
-    b'lfs', b'threshold', default=None,
+    b'lfs',
+    b'threshold',
+    default=None,
 )
 eh.configitem(
-    b'lfs', b'track', default=b'none()',
+    b'lfs',
+    b'track',
+    default=b'none()',
 )
 eh.configitem(
-    b'lfs', b'retry', default=5,
+    b'lfs',
+    b'retry',
+    default=5,
 )
 
 lfsprocessor = (

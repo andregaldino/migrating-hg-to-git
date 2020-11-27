@@ -411,11 +411,11 @@ def load_data(path):
 
 
 def reset(frequency=None):
-    '''Clear out the state of the profiler.  Do not call while the
+    """Clear out the state of the profiler.  Do not call while the
     profiler is running.
 
     The optional frequency argument specifies the number of samples to
-    collect per second.'''
+    collect per second."""
     assert state.profile_level == 0, b"Can't reset() while statprof is running"
     CodeSite.cache.clear()
     state.reset(frequency)
@@ -525,8 +525,8 @@ def display(fp=None, format=3, data=None, **kwargs):
 
 
 def display_by_line(data, fp):
-    '''Print the profiler data with each sample line represented
-    as one row in a table.  Sorted by self-time per line.'''
+    """Print the profiler data with each sample line represented
+    as one row in a table.  Sorted by self-time per line."""
     stats = SiteStats.buildstats(data.samples)
     stats.sort(reverse=True, key=lambda x: x.selfseconds())
 
@@ -554,9 +554,9 @@ def display_by_line(data, fp):
 
 
 def display_by_method(data, fp):
-    '''Print the profiler data with each sample function represented
+    """Print the profiler data with each sample function represented
     as one row in a table.  Important lines within that function are
-    output as nested rows.  Sorted by self-time per line.'''
+    output as nested rows.  Sorted by self-time per line."""
     fp.write(
         b'%5.5s %10.10s   %7.7s  %-8.8s\n'
         % (b'%  ', b'cumulative', b'self', b'')
@@ -835,9 +835,9 @@ _pathcache = {}
 
 
 def simplifypath(path):
-    '''Attempt to make the path to a Python module easier to read by
+    """Attempt to make the path to a Python module easier to read by
     removing whatever part of the Python search path it was found
-    on.'''
+    on."""
 
     if path in _pathcache:
         return _pathcache[path]

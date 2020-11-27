@@ -21,7 +21,11 @@ from . import common
 
 # these do not work with demandimport, blacklist
 demandimport.IGNORES.update(
-    [b'bzrlib.transactions', b'bzrlib.urlutils', b'ElementPath',]
+    [
+        b'bzrlib.transactions',
+        b'bzrlib.urlutils',
+        b'ElementPath',
+    ]
 )
 
 try:

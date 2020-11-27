@@ -118,19 +118,29 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'extdiff', br'opts\..*', default=b'', generic=True,
+    b'extdiff',
+    br'opts\..*',
+    default=b'',
+    generic=True,
 )
 
 configitem(
-    b'extdiff', br'gui\..*', generic=True,
+    b'extdiff',
+    br'gui\..*',
+    generic=True,
 )
 
 configitem(
-    b'diff-tools', br'.*\.diffargs$', default=None, generic=True,
+    b'diff-tools',
+    br'.*\.diffargs$',
+    default=None,
+    generic=True,
 )
 
 configitem(
-    b'diff-tools', br'.*\.gui$', generic=True,
+    b'diff-tools',
+    br'.*\.gui$',
+    generic=True,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -141,9 +151,9 @@ testedwith = b'ships-with-hg-core'
 
 
 def snapshot(ui, repo, files, node, tmproot, listsubrepos):
-    '''snapshot files as of some revision
+    """snapshot files as of some revision
     if not using snapshot, -I/-X does not work and recursive diff
-    in tools like kdiff3 and meld displays too many files.'''
+    in tools like kdiff3 and meld displays too many files."""
     dirname = os.path.basename(repo.root)
     if dirname == b"":
         dirname = b"root"
@@ -230,9 +240,9 @@ def formatcmdline(
 
 
 def _systembackground(cmd, environ=None, cwd=None):
-    ''' like 'procutil.system', but returns the Popen object directly
-        so we don't have to wait on it.
-    '''
+    """like 'procutil.system', but returns the Popen object directly
+    so we don't have to wait on it.
+    """
     env = procutil.shellenviron(environ)
     proc = subprocess.Popen(
         procutil.tonativestr(cmd),
@@ -530,13 +540,13 @@ def diffrevs(
 
 
 def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
-    '''Do the actual diff:
+    """Do the actual diff:
 
     - copy to a temp structure if diffing 2 internal revisions
     - copy to a temp structure if diffing working revision with
       another one and more than 1 file is changed
     - just invoke the diff for a single file in the working dir
-    '''
+    """
 
     cmdutil.check_at_most_one_arg(opts, b'rev', b'change')
     revs = opts.get(b'rev')
@@ -628,14 +638,16 @@ extdiffopts = (
 
 @command(
     b'extdiff',
-    [(b'p', b'program', b'', _(b'comparison program to run'), _(b'CMD')),]
+    [
+        (b'p', b'program', b'', _(b'comparison program to run'), _(b'CMD')),
+    ]
     + extdiffopts,
     _(b'hg extdiff [OPT]... [FILE]...'),
     helpcategory=command.CATEGORY_FILE_CONTENTS,
     inferrepo=True,
 )
 def extdiff(ui, repo, *pats, **opts):
-    '''use external program to diff repository (or selected files)
+    """use external program to diff repository (or selected files)
 
     Show differences between revisions for the specified files, using
     an external program. The default program used is diff, with
@@ -664,7 +676,7 @@ def extdiff(ui, repo, *pats, **opts):
 
     The --confirm option will prompt the user before each invocation of
     the external program. It is ignored if --per-file isn't specified.
-    '''
+    """
     opts = pycompat.byteskwargs(opts)
     program = opts.get(b'program')
     option = opts.get(b'option')

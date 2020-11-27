@@ -48,8 +48,7 @@ def hideablerevs(repo):
 
 
 def pinnedrevs(repo):
-    """revisions blocking hidden changesets from being filtered
-    """
+    """revisions blocking hidden changesets from being filtered"""
 
     cl = repo.changelog
     pinned = set()

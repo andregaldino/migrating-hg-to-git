@@ -66,11 +66,11 @@ termsize = scmplatform.termsize
 
 @attr.s(slots=True, repr=False)
 class status(object):
-    '''Struct with a list of files per status.
+    """Struct with a list of files per status.
 
     The 'deleted', 'unknown' and 'ignored' properties are only
     relevant to the working copy.
-    '''
+    """
 
     modified = attr.ib(default=attr.Factory(list))
     added = attr.ib(default=attr.Factory(list))
@@ -123,9 +123,9 @@ def itersubrepos(ctx1, ctx2):
 
 
 def nochangesfound(ui, repo, excluded=None):
-    '''Report no changes for push/pull, excluded is None or a list of
+    """Report no changes for push/pull, excluded is None or a list of
     nodes excluded from the push/pull.
-    '''
+    """
     secretlist = []
     if excluded:
         for n in excluded:
@@ -335,8 +335,8 @@ def checkportable(ui, f):
 
 
 def checkportabilityalert(ui):
-    '''check if the user's config requests nothing, a warning, or abort for
-    non-portable filenames'''
+    """check if the user's config requests nothing, a warning, or abort for
+    non-portable filenames"""
     val = ui.config(b'ui', b'portablefilenames')
     lval = val.lower()
     bval = stringutil.parsebool(val)
@@ -402,8 +402,8 @@ def filteredhash(repo, maxrev):
 
 
 def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
-    '''yield every hg repository under path, always recursively.
-    The recurse flag will only control recursion into repo working dirs'''
+    """yield every hg repository under path, always recursively.
+    The recurse flag will only control recursion into repo working dirs"""
 
     def errhandler(err):
         if err.filename == path:
@@ -793,7 +793,7 @@ def increasingwindows(windowsize=8, sizelimit=512):
 
 
 def walkchangerevs(repo, revs, makefilematcher, prepare):
-    '''Iterate over files and the revs in a "windowed" way.
+    """Iterate over files and the revs in a "windowed" way.
 
     Callers most commonly need to iterate backwards over the history
     in which they are interested. Doing so has awful (quadratic-looking)
@@ -805,7 +805,7 @@ def walkchangerevs(repo, revs, makefilematcher, prepare):
 
     This function returns an iterator yielding contexts. Before
     yielding each context, the iterator will first call the prepare
-    function on each context in the window in forward order.'''
+    function on each context in the window in forward order."""
 
     if not revs:
         return []
@@ -897,17 +897,17 @@ def subdiruipathfn(subpath, uipathfn):
 
 
 def anypats(pats, opts):
-    '''Checks if any patterns, including --include and --exclude were given.
+    """Checks if any patterns, including --include and --exclude were given.
 
     Some commands (e.g. addremove) use this condition for deciding whether to
     print absolute or relative paths.
-    '''
+    """
     return bool(pats or opts.get(b'include') or opts.get(b'exclude'))
 
 
 def expandpats(pats):
-    '''Expand bare globs when running on windows.
-    On posix we assume it already has already been done by sh.'''
+    """Expand bare globs when running on windows.
+    On posix we assume it already has already been done by sh."""
     if not util.expandglobs:
         return list(pats)
     ret = []
@@ -928,9 +928,9 @@ def expandpats(pats):
 def matchandpats(
     ctx, pats=(), opts=None, globbed=False, default=b'relpath', badfn=None
 ):
-    '''Return a matcher and the patterns that were used.
+    """Return a matcher and the patterns that were used.
     The matcher will warn about bad matches, unless an alternate badfn callback
-    is provided.'''
+    is provided."""
     if opts is None:
         opts = {}
     if not globbed and default == b'relpath':
@@ -1001,7 +1001,7 @@ def getorigvfs(ui, repo):
 
 
 def backuppath(ui, repo, filepath):
-    '''customize where working copy backup files (.orig files) are created
+    """customize where working copy backup files (.orig files) are created
 
     Fetch user defined path from config file: [ui] origbackuppath = <path>
     Fall back to default (filepath with .orig suffix) if not specified
@@ -1009,7 +1009,7 @@ def backuppath(ui, repo, filepath):
     filepath is repo-relative
 
     Returns an absolute path
-    '''
+    """
     origvfs = getorigvfs(ui, repo)
     if origvfs is None:
         return repo.wjoin(filepath + b".orig")
@@ -1300,8 +1300,8 @@ def addremove(repo, matcher, prefix, uipathfn, opts=None):
 
 
 def marktouched(repo, files, similarity=0.0):
-    '''Assert that files have somehow been operated upon. files are relative to
-    the repo root.'''
+    """Assert that files have somehow been operated upon. files are relative to
+    the repo root."""
     m = matchfiles(repo, files, badfn=lambda x, y: rejected.append(x))
     rejected = []
 
@@ -1335,11 +1335,11 @@ def marktouched(repo, files, similarity=0.0):
 
 
 def _interestingfiles(repo, matcher):
-    '''Walk dirstate with matcher, looking for files that addremove would care
+    """Walk dirstate with matcher, looking for files that addremove would care
     about.
 
     This is different from dirstate.status because it doesn't care about
-    whether files are modified or clean.'''
+    whether files are modified or clean."""
     added, unknown, deleted, removed, forgotten = [], [], [], [], []
     audit_path = pathutil.pathauditor(repo.root, cached=True)
 
@@ -1394,8 +1394,8 @@ def _findrenames(repo, matcher, added, removed, similarity, uipathfn):
 
 
 def _markchanges(repo, unknown, deleted, renames):
-    '''Marks the files in unknown as added, the files in deleted as removed,
-    and the files in renames as copied.'''
+    """Marks the files in unknown as added, the files in deleted as removed,
+    and the files in renames as copied."""
     wctx = repo[None]
     with repo.wlock():
         wctx.forget(deleted)
@@ -1424,10 +1424,10 @@ def getrenamedfn(repo, endrev=None):
         endrev = len(repo)
 
     def getrenamed(fn, rev):
-        '''looks up all renames for a file (up to endrev) the first
+        """looks up all renames for a file (up to endrev) the first
         time the file is given. It indexes on the changerev and only
         parses the manifest if linkrev != changerev.
-        Returns rename info for fn at changerev rev.'''
+        Returns rename info for fn at changerev rev."""
         if fn not in rcache:
             rcache[fn] = {}
             fl = repo.file(fn)
@@ -1548,7 +1548,7 @@ def movedirstate(repo, newctx, match=None):
 
 
 def filterrequirements(requirements):
-    """ filters the requirements into two sets:
+    """filters the requirements into two sets:
 
     wcreq: requirements which should be written in .hg/requires
     storereq: which should be written in .hg/store/requires
@@ -1871,8 +1871,7 @@ class progress(object):
 
 
 def gdinitconfig(ui):
-    """helper function to know if a repo should be created as general delta
-    """
+    """helper function to know if a repo should be created as general delta"""
     # experimental config: format.generaldelta
     return ui.configbool(b'format', b'generaldelta') or ui.configbool(
         b'format', b'usegeneraldelta'
@@ -1880,8 +1879,7 @@ def gdinitconfig(ui):
 
 
 def gddeltaconfig(ui):
-    """helper function to know if incoming delta should be optimised
-    """
+    """helper function to know if incoming delta should be optimised"""
     # experimental config: format.generaldelta
     return ui.configbool(b'format', b'generaldelta')
 

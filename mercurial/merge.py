@@ -217,7 +217,10 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
                 if config == b'warn':
                     warnconflicts.add(f)
                 mresult.addfile(
-                    f, mergestatemod.ACTION_GET, (fl2, True), b'remote created',
+                    f,
+                    mergestatemod.ACTION_GET,
+                    (fl2, True),
+                    b'remote created',
                 )
 
     for f in sorted(abortconflicts):
@@ -281,7 +284,10 @@ def _forgetremoved(wctx, mctx, branchmerge, mresult):
         for f in wctx.removed():
             if f not in mctx:
                 mresult.addfile(
-                    f, mergestatemod.ACTION_FORGET, None, b"forget removed",
+                    f,
+                    mergestatemod.ACTION_FORGET,
+                    None,
+                    b"forget removed",
                 )
 
 
@@ -544,10 +550,10 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
 
 
 class mergeresult(object):
-    '''An object representing result of merging manifests.
+    """An object representing result of merging manifests.
 
     It has information about what actions need to be performed on dirstate
-    mapping of divergent renames and other such cases.'''
+    mapping of divergent renames and other such cases."""
 
     def __init__(self):
         """
@@ -572,7 +578,7 @@ class mergeresult(object):
         self._renamedelete = renamedelete
 
     def addfile(self, filename, action, data, message):
-        """ adds a new file to the mergeresult object
+        """adds a new file to the mergeresult object
 
         filename: file which we are adding
         action: one of mergestatemod.ACTION_*
@@ -589,15 +595,15 @@ class mergeresult(object):
         self._actionmapping[action][filename] = (data, message)
 
     def getfile(self, filename, default_return=None):
-        """ returns (action, args, msg) about this file
+        """returns (action, args, msg) about this file
 
-        returns default_return if the file is not present """
+        returns default_return if the file is not present"""
         if filename in self._filemapping:
             return self._filemapping[filename]
         return default_return
 
     def files(self, actions=None):
-        """ returns files on which provided action needs to perfromed
+        """returns files on which provided action needs to perfromed
 
         If actions is None, all files are returned
         """
@@ -613,14 +619,14 @@ class mergeresult(object):
                     yield f
 
     def removefile(self, filename):
-        """ removes a file from the mergeresult object as the file might
-        not merging anymore """
+        """removes a file from the mergeresult object as the file might
+        not merging anymore"""
         action, data, message = self._filemapping[filename]
         del self._filemapping[filename]
         del self._actionmapping[action][filename]
 
     def getactions(self, actions, sort=False):
-        """ get list of files which are marked with these actions
+        """get list of files which are marked with these actions
         if sort is true, files for each action is sorted and then added
 
         Returns a list of tuple of form (filename, data, message)
@@ -637,10 +643,10 @@ class mergeresult(object):
                     yield f, args, msg
 
     def len(self, actions=None):
-        """ returns number of files which needs actions
+        """returns number of files which needs actions
 
         if actions is passed, total of number of files in that action
-        only is returned """
+        only is returned"""
 
         if actions is None:
             return len(self._filemapping)
@@ -656,8 +662,8 @@ class mergeresult(object):
                 yield key, val
 
     def addcommitinfo(self, filename, key, value):
-        """ adds key-value information about filename which will be required
-        while committing this merge """
+        """adds key-value information about filename which will be required
+        while committing this merge"""
         self._commitinfo[filename][key] = value
 
     @property
@@ -674,8 +680,8 @@ class mergeresult(object):
 
     @property
     def actionsdict(self):
-        """ returns a dictionary of actions to be perfomed with action as key
-        and a list of files and related arguments as values """
+        """returns a dictionary of actions to be perfomed with action as key
+        and a list of files and related arguments as values"""
         res = collections.defaultdict(list)
         for a, d in pycompat.iteritems(self._actionmapping):
             for f, (args, msg) in pycompat.iteritems(d):
@@ -689,8 +695,8 @@ class mergeresult(object):
             self._actionmapping[act][f] = data, msg
 
     def hasconflicts(self):
-        """ tells whether this merge resulted in some actions which can
-        result in conflicts or not """
+        """tells whether this merge resulted in some actions which can
+        result in conflicts or not"""
         for a in self._actionmapping.keys():
             if (
                 a
@@ -839,7 +845,10 @@ def manifestmerge(
                 nol = b'l' not in fl1 + fl2 + fla
                 if n2 == a and fl2 == fla:
                     mresult.addfile(
-                        f, mergestatemod.ACTION_KEEP, (), b'remote unchanged',
+                        f,
+                        mergestatemod.ACTION_KEEP,
+                        (),
+                        b'remote unchanged',
                     )
                 elif n1 == a and fl1 == fla:  # local unchanged - use remote
                     if n1 == n2:  # optimization: keep local content
@@ -936,11 +945,17 @@ def manifestmerge(
                     # This file was locally added. We should forget it instead of
                     # deleting it.
                     mresult.addfile(
-                        f, mergestatemod.ACTION_FORGET, None, b'remote deleted',
+                        f,
+                        mergestatemod.ACTION_FORGET,
+                        None,
+                        b'remote deleted',
                     )
                 else:
                     mresult.addfile(
-                        f, mergestatemod.ACTION_REMOVE, None, b'other deleted',
+                        f,
+                        mergestatemod.ACTION_REMOVE,
+                        None,
+                        b'other deleted',
                     )
                     if branchmerge:
                         # the file must be absent after merging,
@@ -1086,7 +1101,7 @@ def manifestmerge(
 
 def _resolvetrivial(repo, wctx, mctx, ancestor, mresult):
     """Resolves false conflicts where the nodeid changed but the content
-       remained the same."""
+    remained the same."""
     # We force a copy of actions.items() because we're going to mutate
     # actions as we resolve trivial conflicts.
     for f in list(mresult.files((mergestatemod.ACTION_CHANGED_DELETED,))):
@@ -1423,7 +1438,13 @@ def _prefetchfiles(repo, ctx, mresult):
     prefetch = scmutil.prefetchfiles
     matchfiles = scmutil.matchfiles
     prefetch(
-        repo, [(ctx.rev(), matchfiles(repo, files),)],
+        repo,
+        [
+            (
+                ctx.rev(),
+                matchfiles(repo, files),
+            )
+        ],
     )
 
 
@@ -1444,7 +1465,13 @@ class updateresult(object):
 
 
 def applyupdates(
-    repo, mresult, wctx, mctx, overwrite, wantfiledata, labels=None,
+    repo,
+    mresult,
+    wctx,
+    mctx,
+    overwrite,
+    wantfiledata,
+    labels=None,
 ):
     """apply the merge action list to the working directory
 
@@ -1734,7 +1761,8 @@ def _advertisefsmonitor(repo, num_gets, p1node):
     if dirstate.rustmod is not None:
         # When using rust status, fsmonitor becomes necessary at higher sizes
         fsmonitorthreshold = repo.ui.configint(
-            b'fsmonitor', b'warn_update_file_count_rust',
+            b'fsmonitor',
+            b'warn_update_file_count_rust',
         )
 
     try:
@@ -2001,7 +2029,10 @@ def _update(
                     0,
                 ):
                     mresult.addfile(
-                        f, mergestatemod.ACTION_REMOVE, None, b'prompt delete',
+                        f,
+                        mergestatemod.ACTION_REMOVE,
+                        None,
+                        b'prompt delete',
                     )
                 elif f in p1:
                     mresult.addfile(
@@ -2012,7 +2043,10 @@ def _update(
                     )
                 else:
                     mresult.addfile(
-                        f, mergestatemod.ACTION_ADD, None, b'prompt keep',
+                        f,
+                        mergestatemod.ACTION_ADD,
+                        None,
+                        b'prompt keep',
                     )
             elif m == mergestatemod.ACTION_DELETED_CHANGED:
                 f1, f2, fa, move, anc = args
@@ -2089,7 +2123,13 @@ def _update(
 
         wantfiledata = updatedirstate and not branchmerge
         stats, getfiledata = applyupdates(
-            repo, mresult, wc, p2, overwrite, wantfiledata, labels=labels,
+            repo,
+            mresult,
+            wc,
+            p2,
+            overwrite,
+            wantfiledata,
+            labels=labels,
         )
 
         if updatedirstate:

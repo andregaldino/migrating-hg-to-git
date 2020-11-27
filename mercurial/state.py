@@ -55,7 +55,7 @@ class cmdstate(object):
     """
 
     def __init__(self, repo, fname):
-        """ repo is the repo object
+        """repo is the repo object
         fname is the file name in which data should be stored in .hg directory
         """
         self._repo = repo
@@ -105,11 +105,11 @@ class cmdstate(object):
 
 class _statecheck(object):
     """a utility class that deals with multistep operations like graft,
-       histedit, bisect, update etc and check whether such commands
-       are in an unfinished conditition or not and return appropriate message
-       and hint.
-       It also has the ability to register and determine the states of any new
-       multistep operation or multistep command extension.
+    histedit, bisect, update etc and check whether such commands
+    are in an unfinished conditition or not and return appropriate message
+    and hint.
+    It also has the ability to register and determine the states of any new
+    multistep operation or multistep command extension.
     """
 
     def __init__(
@@ -173,7 +173,11 @@ class _statecheck(object):
                 return _(
                     b"use 'hg %s --continue', 'hg %s --abort', "
                     b"or 'hg %s --stop'"
-                ) % (self._opname, self._opname, self._opname,)
+                ) % (
+                    self._opname,
+                    self._opname,
+                    self._opname,
+                )
 
         return self._cmdhint
 

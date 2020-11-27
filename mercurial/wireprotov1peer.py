@@ -36,7 +36,7 @@ urlreq = util.urlreq
 
 
 def batchable(f):
-    '''annotation for batchable methods
+    """annotation for batchable methods
 
     Such methods must implement a coroutine as follows:
 
@@ -56,7 +56,7 @@ def batchable(f):
     method, but adds the original method as an attribute called "batchable",
     which is used by remotebatch to split the call into separate encoding and
     decoding phases.
-    '''
+    """
 
     def plain(*args, **opts):
         batchable = f(*args, **opts)
@@ -474,7 +474,7 @@ class wirepeer(repository.peer):
             return changegroupmod.cg1unpacker(f, b'UN')
 
     def unbundle(self, bundle, heads, url):
-        '''Send cg (a readable file-like object representing the
+        """Send cg (a readable file-like object representing the
         changegroup to push, typically a chunkbuffer object) to the
         remote server as a bundle.
 
@@ -485,7 +485,7 @@ class wirepeer(repository.peer):
 
         `url` is the url the client thinks it's pushing to, which is
         visible to hooks.
-        '''
+        """
 
         if heads != [b'force'] and self.capable(b'unbundlehash'):
             heads = wireprototypes.encodelist(
@@ -655,6 +655,5 @@ class wirepeer(repository.peer):
         raise NotImplementedError()
 
     def _abort(self, exception):
-        """clearly abort the wire protocol connection and raise the exception
-        """
+        """clearly abort the wire protocol connection and raise the exception"""
         raise NotImplementedError()

@@ -29,25 +29,25 @@ pickle = util.pickle
 
 
 class logentry(object):
-    '''Class logentry has the following attributes:
-        .author    - author name as CVS knows it
-        .branch    - name of branch this revision is on
-        .branches  - revision tuple of branches starting at this revision
-        .comment   - commit message
-        .commitid  - CVS commitid or None
-        .date      - the commit date as a (time, tz) tuple
-        .dead      - true if file revision is dead
-        .file      - Name of file
-        .lines     - a tuple (+lines, -lines) or None
-        .parent    - Previous revision of this entry
-        .rcs       - name of file as returned from CVS
-        .revision  - revision number as tuple
-        .tags      - list of tags on the file
-        .synthetic - is this a synthetic "file ... added on ..." revision?
-        .mergepoint - the branch that has been merged from (if present in
-                      rlog output) or None
-        .branchpoints - the branches that start at the current entry or empty
-    '''
+    """Class logentry has the following attributes:
+    .author    - author name as CVS knows it
+    .branch    - name of branch this revision is on
+    .branches  - revision tuple of branches starting at this revision
+    .comment   - commit message
+    .commitid  - CVS commitid or None
+    .date      - the commit date as a (time, tz) tuple
+    .dead      - true if file revision is dead
+    .file      - Name of file
+    .lines     - a tuple (+lines, -lines) or None
+    .parent    - Previous revision of this entry
+    .rcs       - name of file as returned from CVS
+    .revision  - revision number as tuple
+    .tags      - list of tags on the file
+    .synthetic - is this a synthetic "file ... added on ..." revision?
+    .mergepoint - the branch that has been merged from (if present in
+                  rlog output) or None
+    .branchpoints - the branches that start at the current entry or empty
+    """
 
     def __init__(self, **entries):
         self.synthetic = False
@@ -580,20 +580,20 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
 
 
 class changeset(object):
-    '''Class changeset has the following attributes:
-        .id        - integer identifying this changeset (list index)
-        .author    - author name as CVS knows it
-        .branch    - name of branch this changeset is on, or None
-        .comment   - commit message
-        .commitid  - CVS commitid or None
-        .date      - the commit date as a (time,tz) tuple
-        .entries   - list of logentry objects in this changeset
-        .parents   - list of one or two parent changesets
-        .tags      - list of tags on this changeset
-        .synthetic - from synthetic revision "file ... added on branch ..."
-        .mergepoint- the branch that has been merged from or None
-        .branchpoints- the branches that start at the current entry or empty
-    '''
+    """Class changeset has the following attributes:
+    .id        - integer identifying this changeset (list index)
+    .author    - author name as CVS knows it
+    .branch    - name of branch this changeset is on, or None
+    .comment   - commit message
+    .commitid  - CVS commitid or None
+    .date      - the commit date as a (time,tz) tuple
+    .entries   - list of logentry objects in this changeset
+    .parents   - list of one or two parent changesets
+    .tags      - list of tags on this changeset
+    .synthetic - from synthetic revision "file ... added on branch ..."
+    .mergepoint- the branch that has been merged from or None
+    .branchpoints- the branches that start at the current entry or empty
+    """
 
     def __init__(self, **entries):
         self.id = None
@@ -945,10 +945,10 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
 
 
 def debugcvsps(ui, *args, **opts):
-    '''Read CVS rlog for current directory or named path in
+    """Read CVS rlog for current directory or named path in
     repository, and convert the log to changesets based on matching
     commit log entries and dates.
-    '''
+    """
     opts = pycompat.byteskwargs(opts)
     if opts[b"new_cache"]:
         cache = b"write"

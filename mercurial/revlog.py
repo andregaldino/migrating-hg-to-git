@@ -1491,8 +1491,8 @@ class revlog(object):
 
     def lookup(self, id):
         """locate a node based on:
-            - revision number or str(revision number)
-            - nodeid or subset of hex nodeid
+        - revision number or str(revision number)
+        - nodeid or subset of hex nodeid
         """
         n = self._match(id)
         if n is not None:
@@ -1771,8 +1771,7 @@ class revlog(object):
             return rev - 1
 
     def issnapshot(self, rev):
-        """tells whether rev is a snapshot
-        """
+        """tells whether rev is a snapshot"""
         if not self._sparserevlog:
             return self.deltaparent(rev) == nullrev
         elif util.safehasattr(self.index, b'issnapshot'):
@@ -2037,8 +2036,7 @@ class revlog(object):
         self._chunkclear()
 
     def _nodeduplicatecallback(self, transaction, node):
-        """called when trying to add a node already stored.
-        """
+        """called when trying to add a node already stored."""
 
     def addrevision(
         self,

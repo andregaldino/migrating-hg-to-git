@@ -208,9 +208,11 @@ class config(object):
     def read(self, path, fp=None, sections=None, remap=None):
         if not fp:
             fp = util.posixfile(path, b'rb')
-        assert getattr(fp, 'mode', 'rb') == 'rb', (
-            b'config files must be opened in binary mode, got fp=%r mode=%r'
-            % (fp, fp.mode,)
+        assert (
+            getattr(fp, 'mode', 'rb') == 'rb'
+        ), b'config files must be opened in binary mode, got fp=%r mode=%r' % (
+            fp,
+            fp.mode,
         )
 
         dir = os.path.dirname(path)

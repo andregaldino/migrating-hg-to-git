@@ -1021,7 +1021,12 @@ class ifiledatatests(basetestcase):
     def testcensored(self):
         f = self._makefilefn()
 
-        stored1 = storageutil.packmeta({b'censored': b'tombstone',}, b'')
+        stored1 = storageutil.packmeta(
+            {
+                b'censored': b'tombstone',
+            },
+            b'',
+        )
 
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
@@ -1050,7 +1055,12 @@ class ifiledatatests(basetestcase):
 
         f = self._makefilefn()
 
-        stored1 = storageutil.packmeta({b'censored': b'tombstone',}, b'')
+        stored1 = storageutil.packmeta(
+            {
+                b'censored': b'tombstone',
+            },
+            b'',
+        )
 
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
@@ -1232,7 +1242,12 @@ class ifilemutationtests(basetestcase):
         # Attempt to apply a delta made against a censored revision.
         f = self._makefilefn()
 
-        stored1 = storageutil.packmeta({b'censored': b'tombstone',}, b'')
+        stored1 = storageutil.packmeta(
+            {
+                b'censored': b'tombstone',
+            },
+            b'',
+        )
 
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo\n' * 30, None, tr, 0, nullid, nullid)

@@ -22,7 +22,12 @@ HASH_3 = b'1234567890abcdef0987654321deadbeef0fcafe'
 BIN_HASH_3 = binascii.unhexlify(HASH_3)
 A_SHORT_MANIFEST = (
     b'bar/baz/qux.py\0%(hash2)s%(flag2)s\n' b'foo\0%(hash1)s%(flag1)s\n'
-) % {b'hash1': HASH_1, b'flag1': b'', b'hash2': HASH_2, b'flag2': b'l',}
+) % {
+    b'hash1': HASH_1,
+    b'flag1': b'',
+    b'hash2': HASH_2,
+    b'flag2': b'l',
+}
 
 A_DEEPER_MANIFEST = (
     b'a/b/c/bar.py\0%(hash3)s%(flag1)s\n'
@@ -265,9 +270,9 @@ class basemanifesttests(object):
         self.assertEqual(len(m), len(list(m)))
 
     def testMatchesMetadata(self):
-        '''Tests matches() for a few specific files to make sure that both
+        """Tests matches() for a few specific files to make sure that both
         the set of files as well as their flags and nodeids are correct in
-        the resulting manifest.'''
+        the resulting manifest."""
         m = self.parsemanifest(A_HUGE_MANIFEST)
 
         match = matchmod.exact([b'file1', b'file200', b'file300'])
@@ -281,9 +286,9 @@ class basemanifesttests(object):
         self.assertEqual(w, m2.text())
 
     def testMatchesNonexistentFile(self):
-        '''Tests matches() for a small set of specific files, including one
+        """Tests matches() for a small set of specific files, including one
         nonexistent file to make sure in only matches against existing files.
-        '''
+        """
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.exact(
@@ -296,8 +301,8 @@ class basemanifesttests(object):
         )
 
     def testMatchesNonexistentDirectory(self):
-        '''Tests matches() for a relpath match on a directory that doesn't
-        actually exist.'''
+        """Tests matches() for a relpath match on a directory that doesn't
+        actually exist."""
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.match(
@@ -308,8 +313,7 @@ class basemanifesttests(object):
         self.assertEqual([], m2.keys())
 
     def testMatchesExactLarge(self):
-        '''Tests matches() for files matching a large list of exact files.
-        '''
+        """Tests matches() for files matching a large list of exact files."""
         m = self.parsemanifest(A_HUGE_MANIFEST)
 
         flist = m.keys()[80:300]
@@ -328,8 +332,8 @@ class basemanifesttests(object):
         self.assertEqual(m.keys(), m2.keys())
 
     def testMatchesDirectory(self):
-        '''Tests matches() on a relpath match on a directory, which should
-        match against all files within said directory.'''
+        """Tests matches() on a relpath match on a directory, which should
+        match against all files within said directory."""
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.match(
@@ -353,9 +357,9 @@ class basemanifesttests(object):
         )
 
     def testMatchesExactPath(self):
-        '''Tests matches() on an exact match on a directory, which should
+        """Tests matches() on an exact match on a directory, which should
         result in an empty manifest because you can't perform an exact match
-        against a directory.'''
+        against a directory."""
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.exact([b'a/b'])
@@ -364,8 +368,8 @@ class basemanifesttests(object):
         self.assertEqual([], m2.keys())
 
     def testMatchesCwd(self):
-        '''Tests matches() on a relpath match with the current directory ('.')
-        when not in the root directory.'''
+        """Tests matches() on a relpath match with the current directory ('.')
+        when not in the root directory."""
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.match(
@@ -389,8 +393,8 @@ class basemanifesttests(object):
         )
 
     def testMatchesWithPattern(self):
-        '''Tests matches() for files matching a pattern that reside
-        deeper than the specified directory.'''
+        """Tests matches() for files matching a pattern that reside
+        deeper than the specified directory."""
         m = self.parsemanifest(A_DEEPER_MANIFEST)
 
         match = matchmod.match(util.localpath(b'/repo'), b'', [b'a/b/*/*.txt'])

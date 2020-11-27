@@ -1232,8 +1232,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
 
 def loadinternalmerge(ui, extname, registrarobj):
-    """Load internal merge tool from specified registrarobj
-    """
+    """Load internal merge tool from specified registrarobj"""
     for name, func in pycompat.iteritems(registrarobj._table):
         fullname = b':' + name
         internals[fullname] = func

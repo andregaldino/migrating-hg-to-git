@@ -156,7 +156,7 @@ def countrate(ui, repo, amap, *pats, **opts):
     inferrepo=True,
 )
 def churn(ui, repo, *pats, **opts):
-    '''histogram of changes to the repository
+    """histogram of changes to the repository
 
     This command will display a histogram representing the number
     of changed lines or revisions, grouped according to the given
@@ -193,7 +193,7 @@ def churn(ui, repo, *pats, **opts):
     Such a file may be specified with the --aliases option, otherwise
     a .hgchurn file will be looked for in the working directory root.
     Aliases will be split from the rightmost "=".
-    '''
+    """
 
     def pad(s, l):
         return s + b" " * (l - encoding.colwidth(s))

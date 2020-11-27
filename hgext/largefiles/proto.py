@@ -39,8 +39,8 @@ httpoldcallstream = None
 
 
 def putlfile(repo, proto, sha):
-    '''Server command for putting a largefile into a repository's local store
-    and into the user cache.'''
+    """Server command for putting a largefile into a repository's local store
+    and into the user cache."""
     with proto.mayberedirectstdio() as output:
         path = lfutil.storepath(repo, sha)
         util.makedirs(os.path.dirname(path))
@@ -69,8 +69,8 @@ def putlfile(repo, proto, sha):
 
 
 def getlfile(repo, proto, sha):
-    '''Server command for retrieving a largefile from the repository-local
-    cache or user cache.'''
+    """Server command for retrieving a largefile from the repository-local
+    cache or user cache."""
     filename = lfutil.findfile(repo, sha)
     if not filename:
         raise error.Abort(
@@ -93,12 +93,12 @@ def getlfile(repo, proto, sha):
 
 
 def statlfile(repo, proto, sha):
-    '''Server command for checking if a largefile is present - returns '2\n' if
+    """Server command for checking if a largefile is present - returns '2\n' if
     the largefile is missing, '0\n' if it seems to be in good condition.
 
     The value 1 is reserved for mismatched checksum, but that is too expensive
     to be verified on every stat and must be caught be running 'hg verify'
-    server side.'''
+    server side."""
     filename = lfutil.findfile(repo, sha)
     if not filename:
         return wireprototypes.bytesresponse(b'2\n')
@@ -194,8 +194,8 @@ def _capabilities(orig, repo, proto):
 
 
 def heads(orig, repo, proto):
-    '''Wrap server command - largefile capable clients will know to call
-    lheads instead'''
+    """Wrap server command - largefile capable clients will know to call
+    lheads instead"""
     if lfutil.islfilesrepo(repo):
         return wireprototypes.ooberror(LARGEFILES_REQUIRED_MSG)
 

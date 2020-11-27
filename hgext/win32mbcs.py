@@ -70,7 +70,9 @@ configitem = registrar.configitem(configtable)
 # Encoding.encoding may be updated by --encoding option.
 # Use a lambda do delay the resolution.
 configitem(
-    b'win32mbcs', b'encoding', default=lambda: encoding.encoding,
+    b'win32mbcs',
+    b'encoding',
+    default=lambda: encoding.encoding,
 )
 
 _encoding = None  # see extsetup

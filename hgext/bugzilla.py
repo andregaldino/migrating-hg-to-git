@@ -325,22 +325,34 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'bugzilla', b'apikey', default=b'',
+    b'bugzilla',
+    b'apikey',
+    default=b'',
 )
 configitem(
-    b'bugzilla', b'bzdir', default=b'/var/www/html/bugzilla',
+    b'bugzilla',
+    b'bzdir',
+    default=b'/var/www/html/bugzilla',
 )
 configitem(
-    b'bugzilla', b'bzemail', default=None,
+    b'bugzilla',
+    b'bzemail',
+    default=None,
 )
 configitem(
-    b'bugzilla', b'bzurl', default=b'http://localhost/bugzilla/',
+    b'bugzilla',
+    b'bzurl',
+    default=b'http://localhost/bugzilla/',
 )
 configitem(
-    b'bugzilla', b'bzuser', default=None,
+    b'bugzilla',
+    b'bzuser',
+    default=None,
 )
 configitem(
-    b'bugzilla', b'db', default=b'bugs',
+    b'bugzilla',
+    b'db',
+    default=b'bugs',
 )
 configitem(
     b'bugzilla',
@@ -353,19 +365,29 @@ configitem(
     ),
 )
 configitem(
-    b'bugzilla', b'fixresolution', default=b'FIXED',
+    b'bugzilla',
+    b'fixresolution',
+    default=b'FIXED',
 )
 configitem(
-    b'bugzilla', b'fixstatus', default=b'RESOLVED',
+    b'bugzilla',
+    b'fixstatus',
+    default=b'RESOLVED',
 )
 configitem(
-    b'bugzilla', b'host', default=b'localhost',
+    b'bugzilla',
+    b'host',
+    default=b'localhost',
 )
 configitem(
-    b'bugzilla', b'notify', default=configitem.dynamicdefault,
+    b'bugzilla',
+    b'notify',
+    default=configitem.dynamicdefault,
 )
 configitem(
-    b'bugzilla', b'password', default=None,
+    b'bugzilla',
+    b'password',
+    default=None,
 )
 configitem(
     b'bugzilla',
@@ -377,25 +399,39 @@ configitem(
     ),
 )
 configitem(
-    b'bugzilla', b'strip', default=0,
+    b'bugzilla',
+    b'strip',
+    default=0,
 )
 configitem(
-    b'bugzilla', b'style', default=None,
+    b'bugzilla',
+    b'style',
+    default=None,
 )
 configitem(
-    b'bugzilla', b'template', default=None,
+    b'bugzilla',
+    b'template',
+    default=None,
 )
 configitem(
-    b'bugzilla', b'timeout', default=5,
+    b'bugzilla',
+    b'timeout',
+    default=5,
 )
 configitem(
-    b'bugzilla', b'user', default=b'bugs',
+    b'bugzilla',
+    b'user',
+    default=b'bugs',
 )
 configitem(
-    b'bugzilla', b'usermap', default=None,
+    b'bugzilla',
+    b'usermap',
+    default=None,
 )
 configitem(
-    b'bugzilla', b'version', default=None,
+    b'bugzilla',
+    b'version',
+    default=None,
 )
 
 
@@ -430,29 +466,29 @@ class bzaccess(object):
         '''remove bug IDs where node occurs in comment text from bugs.'''
 
     def updatebug(self, bugid, newstate, text, committer):
-        '''update the specified bug. Add comment text and set new states.
+        """update the specified bug. Add comment text and set new states.
 
         If possible add the comment as being from the committer of
         the changeset. Otherwise use the default Bugzilla user.
-        '''
+        """
 
     def notify(self, bugs, committer):
-        '''Force sending of Bugzilla notification emails.
+        """Force sending of Bugzilla notification emails.
 
         Only required if the access method does not trigger notification
         emails automatically.
-        '''
+        """
 
 
 # Bugzilla via direct access to MySQL database.
 class bzmysql(bzaccess):
-    '''Support for direct MySQL access to Bugzilla.
+    """Support for direct MySQL access to Bugzilla.
 
     The earliest Bugzilla version this is tested with is version 2.16.
 
     If your Bugzilla is version 3.4 or above, you are strongly
     recommended to use the XMLRPC access method instead.
-    '''
+    """
 
     @staticmethod
     def sql_buglist(ids):
@@ -581,9 +617,9 @@ class bzmysql(bzaccess):
             return userid
 
     def get_bugzilla_user(self, committer):
-        '''See if committer is a registered bugzilla user. Return
+        """See if committer is a registered bugzilla user. Return
         bugzilla username and userid if so. If not, return default
-        bugzilla username and userid.'''
+        bugzilla username and userid."""
         user = self.map_committer(committer)
         try:
             userid = self.get_user_id(user)
@@ -604,10 +640,10 @@ class bzmysql(bzaccess):
         return (user, userid)
 
     def updatebug(self, bugid, newstate, text, committer):
-        '''update bug state with comment text.
+        """update bug state with comment text.
 
         Try adding comment as committer of changeset, otherwise as
-        default bugzilla user.'''
+        default bugzilla user."""
         if len(newstate) > 0:
             self.ui.warn(_(b"Bugzilla/MySQL cannot update bug state\n"))
 
@@ -869,7 +905,7 @@ class bzxmlrpcemail(bzxmlrpc):
             return b"@%s = %s" % (fieldname, pycompat.bytestr(value))
 
     def send_bug_modify_email(self, bugid, commands, comment, committer):
-        '''send modification message to Bugzilla bug via email.
+        """send modification message to Bugzilla bug via email.
 
         The message format is documented in the Bugzilla email_in.pl
         specification. commands is a list of command lines, comment is the
@@ -878,7 +914,7 @@ class bzxmlrpcemail(bzxmlrpc):
         To stop users from crafting commit comments with
         Bugzilla commands, specify the bug ID via the message body, rather
         than the subject line, and leave a blank line after it.
-        '''
+        """
         user = self.map_committer(committer)
         matches = self.bzproxy.User.get(
             {b'match': [user], b'token': self.bztoken}
@@ -1016,11 +1052,11 @@ class bzrestapi(bzaccess):
                 del bugs[bugid]
 
     def updatebug(self, bugid, newstate, text, committer):
-        '''update the specified bug. Add comment text and set new states.
+        """update the specified bug. Add comment text and set new states.
 
         If possible add the comment as being from the committer of
         the changeset. Otherwise use the default Bugzilla user.
-        '''
+        """
         bugmod = {}
         if b'hours' in newstate:
             bugmod[b'work_time'] = newstate[b'hours']
@@ -1050,11 +1086,11 @@ class bzrestapi(bzaccess):
             self.ui.debug(b'added comment to bug %s\n' % bugid)
 
     def notify(self, bugs, committer):
-        '''Force sending of Bugzilla notification emails.
+        """Force sending of Bugzilla notification emails.
 
         Only required if the access method does not trigger notification
         emails automatically.
-        '''
+        """
         pass
 
 
@@ -1092,12 +1128,12 @@ class bugzilla(object):
         self.split_re = re.compile(br'\D+')
 
     def find_bugs(self, ctx):
-        '''return bugs dictionary created from commit comment.
+        """return bugs dictionary created from commit comment.
 
         Extract bug info from changeset comments. Filter out any that are
         not known to Bugzilla, and any that already have a reference to
         the given changeset in their comments.
-        '''
+        """
         start = 0
         bugs = {}
         bugmatch = self.bug_re.search(ctx.description(), start)
@@ -1152,8 +1188,8 @@ class bugzilla(object):
         '''update bugzilla bug with reference to changeset.'''
 
         def webroot(root):
-            '''strip leading prefix of repo root and turn into
-            url-safe path.'''
+            """strip leading prefix of repo root and turn into
+            url-safe path."""
             count = int(self.ui.config(b'bugzilla', b'strip'))
             root = util.pconvert(root)
             while count > 0:
@@ -1195,9 +1231,9 @@ class bugzilla(object):
 
 
 def hook(ui, repo, hooktype, node=None, **kwargs):
-    '''add comment to bugzilla for each changeset that refers to a
+    """add comment to bugzilla for each changeset that refers to a
     bugzilla bug id. only add a comment once per bug, so same change
-    seen multiple times does not fill bug with duplicate data.'''
+    seen multiple times does not fill bug with duplicate data."""
     if node is None:
         raise error.Abort(
             _(b'hook type %s does not pass a changeset id') % hooktype

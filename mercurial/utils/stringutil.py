@@ -494,15 +494,15 @@ def person(author):
 
 @attr.s(hash=True)
 class mailmapping(object):
-    '''Represents a username/email key or value in
-    a mailmap file'''
+    """Represents a username/email key or value in
+    a mailmap file"""
 
     email = attr.ib()
     name = attr.ib(default=None)
 
 
 def _ismailmaplineinvalid(names, emails):
-    '''Returns True if the parsed names and emails
+    """Returns True if the parsed names and emails
     in a mailmap entry are invalid.
 
     >>> # No names or emails fails
@@ -522,7 +522,7 @@ def _ismailmaplineinvalid(names, emails):
     >>> emails = [b'proper@email.com', b'commit@email.com']
     >>> _ismailmaplineinvalid(names, emails)
     False
-    '''
+    """
     return not emails or not names and len(emails) < 2
 
 
@@ -597,11 +597,13 @@ def parsemailmap(mailmapcontent):
             continue
 
         mailmapkey = mailmapping(
-            email=emails[-1], name=names[-1] if len(names) == 2 else None,
+            email=emails[-1],
+            name=names[-1] if len(names) == 2 else None,
         )
 
         mailmap[mailmapkey] = mailmapping(
-            email=emails[0], name=names[0] if names else None,
+            email=emails[0],
+            name=names[0] if names else None,
         )
 
     return mailmap
@@ -659,7 +661,7 @@ _correctauthorformat = remod.compile(br'^[^<]+\s<[^<>]+@[^<>]+>$')
 
 
 def isauthorwellformed(author):
-    '''Return True if the author field is well formed
+    """Return True if the author field is well formed
     (ie "Contributor Name <contrib@email.dom>")
 
     >>> isauthorwellformed(b'Good Author <good@author.com>')
@@ -676,7 +678,7 @@ def isauthorwellformed(author):
     False
     >>> isauthorwellformed(b'Bad Author <author>')
     False
-    '''
+    """
     return _correctauthorformat.match(author) is not None
 
 

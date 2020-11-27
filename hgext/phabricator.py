@@ -108,33 +108,51 @@ uisetup = eh.finaluisetup
 
 # developer config: phabricator.batchsize
 eh.configitem(
-    b'phabricator', b'batchsize', default=12,
+    b'phabricator',
+    b'batchsize',
+    default=12,
 )
 eh.configitem(
-    b'phabricator', b'callsign', default=None,
+    b'phabricator',
+    b'callsign',
+    default=None,
 )
 eh.configitem(
-    b'phabricator', b'curlcmd', default=None,
+    b'phabricator',
+    b'curlcmd',
+    default=None,
 )
 # developer config: phabricator.debug
 eh.configitem(
-    b'phabricator', b'debug', default=False,
+    b'phabricator',
+    b'debug',
+    default=False,
 )
 # developer config: phabricator.repophid
 eh.configitem(
-    b'phabricator', b'repophid', default=None,
+    b'phabricator',
+    b'repophid',
+    default=None,
 )
 eh.configitem(
-    b'phabricator', b'url', default=None,
+    b'phabricator',
+    b'url',
+    default=None,
 )
 eh.configitem(
-    b'phabsend', b'confirm', default=False,
+    b'phabsend',
+    b'confirm',
+    default=False,
 )
 eh.configitem(
-    b'phabimport', b'secret', default=False,
+    b'phabimport',
+    b'secret',
+    default=False,
 )
 eh.configitem(
-    b'phabimport', b'obsolete', default=False,
+    b'phabimport',
+    b'obsolete',
+    default=False,
 )
 
 colortable = {
@@ -166,8 +184,7 @@ _VCR_FLAGS = [
 
 @eh.wrapfunction(localrepo, "loadhgrc")
 def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements, *args, **opts):
-    """Load ``.arcconfig`` content into a ui instance on repository open.
-    """
+    """Load ``.arcconfig`` content into a ui instance on repository open."""
     result = False
     arcconfig = {}
 
@@ -633,8 +650,7 @@ class DiffFileType(object):
 
 @attr.s
 class phabhunk(dict):
-    """Represents a Differential hunk, which is owned by a Differential change
-    """
+    """Represents a Differential hunk, which is owned by a Differential change"""
 
     oldOffset = attr.ib(default=0)  # camelcase-required
     oldLength = attr.ib(default=0)  # camelcase-required
@@ -1512,7 +1528,9 @@ def phabsend(ui, repo, *revs, **opts):
                         mapping.get(old.p2().node(), (old.p2(),))[0],
                     ]
                     newdesc = rewriteutil.update_hash_refs(
-                        repo, newdesc, mapping,
+                        repo,
+                        newdesc,
+                        mapping,
                     )
                     new = context.metadataonlyctx(
                         repo,
@@ -2227,7 +2245,10 @@ def template_review(context, mapping):
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
         return templateutil.hybriddict(
-            {b'url': m.group('url'), b'id': b"D%s" % m.group('id'),}
+            {
+                b'url': m.group('url'),
+                b'id': b"D%s" % m.group('id'),
+            }
         )
     else:
         tags = ctx.repo().nodetags(ctx.node())
@@ -2238,14 +2259,18 @@ def template_review(context, mapping):
                     url += b'/'
                 url += t
 
-                return templateutil.hybriddict({b'url': url, b'id': t,})
+                return templateutil.hybriddict(
+                    {
+                        b'url': url,
+                        b'id': t,
+                    }
+                )
     return None
 
 
 @eh.templatekeyword(b'phabstatus', requires={b'ctx', b'repo', b'ui'})
 def template_status(context, mapping):
-    """:phabstatus: String. Status of Phabricator differential.
-    """
+    """:phabstatus: String. Status of Phabricator differential."""
     ctx = context.resource(mapping, b'ctx')
     repo = context.resource(mapping, b'repo')
     ui = context.resource(mapping, b'ui')
@@ -2259,7 +2284,10 @@ def template_status(context, mapping):
     for drev in drevs:
         if int(drev[b'id']) == drevid:
             return templateutil.hybriddict(
-                {b'url': drev[b'uri'], b'status': drev[b'statusName'],}
+                {
+                    b'url': drev[b'uri'],
+                    b'status': drev[b'statusName'],
+                }
             )
     return None
 

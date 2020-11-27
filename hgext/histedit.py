@@ -247,22 +247,34 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 configitem(
-    b'experimental', b'histedit.autoverb', default=False,
+    b'experimental',
+    b'histedit.autoverb',
+    default=False,
 )
 configitem(
-    b'histedit', b'defaultrev', default=None,
+    b'histedit',
+    b'defaultrev',
+    default=None,
 )
 configitem(
-    b'histedit', b'dropmissing', default=False,
+    b'histedit',
+    b'dropmissing',
+    default=False,
 )
 configitem(
-    b'histedit', b'linelen', default=80,
+    b'histedit',
+    b'linelen',
+    default=80,
 )
 configitem(
-    b'histedit', b'singletransaction', default=False,
+    b'histedit',
+    b'singletransaction',
+    default=False,
 )
 configitem(
-    b'ui', b'interface.histedit', default=None,
+    b'ui',
+    b'interface.histedit',
+    default=None,
 )
 configitem(b'histedit', b'summary-template', default=b'{rev} {desc|firstline}')
 
@@ -280,7 +292,7 @@ internalactions = set()
 
 
 def geteditcomment(ui, first, last):
-    """ construct the editor comment
+    """construct the editor comment
     The comment includes::
      - an intro
      - sorted primary commands
@@ -477,8 +489,7 @@ class histeditaction(object):
 
     @classmethod
     def fromrule(cls, state, rule):
-        """Parses the given rule, returning an instance of the histeditaction.
-        """
+        """Parses the given rule, returning an instance of the histeditaction."""
         ruleid = rule.strip().split(b' ', 1)[0]
         # ruleid can be anything from rev numbers, hashes, "bookmarks" etc
         # Check for validation of rule ids and get the rulehash
@@ -544,7 +555,7 @@ class histeditaction(object):
 
     def tostate(self):
         """Print an action in format used by histedit state files
-           (the first line is a verb, the remainder is the second)
+        (the first line is a verb, the remainder is the second)
         """
         return b"%s\n%s" % (self.verb, node.hex(self.node))
 
@@ -1178,8 +1189,8 @@ class histeditrule(object):
 
 # ============ EVENTS ===============
 def movecursor(state, oldpos, newpos):
-    '''Change the rule/changeset that the cursor is pointing to, regardless of
-    current mode (you can switch between patches from the view patch window).'''
+    """Change the rule/changeset that the cursor is pointing to, regardless of
+    current mode (you can switch between patches from the view patch window)."""
     state[b'pos'] = newpos
 
     mode, _ = state[b'mode']
@@ -1256,8 +1267,8 @@ def cycleaction(state, pos, next=False):
 
 
 def changeview(state, delta, unit):
-    '''Change the region of whatever is being viewed (a patch or the list of
-    changesets). 'delta' is an amount (+/- 1) and 'unit' is 'page' or 'line'.'''
+    """Change the region of whatever is being viewed (a patch or the list of
+    changesets). 'delta' is an amount (+/- 1) and 'unit' is 'page' or 'line'."""
     mode, _ = state[b'mode']
     if mode != MODE_PATCH:
         return
@@ -1582,8 +1593,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         b'mode': (MODE_INIT, MODE_INIT),
         b'page_height': None,
         b'modes': {
-            MODE_RULES: {b'line_offset': 0,},
-            MODE_PATCH: {b'line_offset': 0,},
+            MODE_RULES: {
+                b'line_offset': 0,
+            },
+            MODE_PATCH: {
+                b'line_offset': 0,
+            },
         },
         b'repo': repo,
     }

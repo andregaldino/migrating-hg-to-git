@@ -37,8 +37,8 @@ _UNX_IFLNK = 0xA000
 
 
 def tidyprefix(dest, kind, prefix):
-    '''choose prefix to use for names in archive.  make sure prefix is
-    safe for consumers.'''
+    """choose prefix to use for names in archive.  make sure prefix is
+    safe for consumers."""
 
     if prefix:
         prefix = util.normpath(prefix)
@@ -132,8 +132,8 @@ def buildmetadata(ctx):
 
 
 class tarit(object):
-    '''write archive to tar file or stream.  can write uncompressed,
-    or compress with gzip or bzip2.'''
+    """write archive to tar file or stream.  can write uncompressed,
+    or compress with gzip or bzip2."""
 
     if pycompat.ispy3:
         GzipFileWithTime = gzip.GzipFile  # camelcase-required
@@ -185,8 +185,10 @@ class tarit(object):
                     mtime=mtime,
                 )
                 self.fileobj = gzfileobj
-                return tarfile.TarFile.taropen(  # pytype: disable=attribute-error
-                    name, pycompat.sysstr(mode), gzfileobj
+                return (
+                    tarfile.TarFile.taropen(  # pytype: disable=attribute-error
+                        name, pycompat.sysstr(mode), gzfileobj
+                    )
                 )
             else:
                 try:
@@ -224,8 +226,8 @@ class tarit(object):
 
 
 class zipit(object):
-    '''write archive to zip file or stream.  can write uncompressed,
-    or compressed with deflate.'''
+    """write archive to zip file or stream.  can write uncompressed,
+    or compressed with deflate."""
 
     def __init__(self, dest, mtime, compress=True):
         if isinstance(dest, bytes):
@@ -316,7 +318,7 @@ def archive(
     mtime=None,
     subrepos=False,
 ):
-    '''create archive of repo as it was at node.
+    """create archive of repo as it was at node.
 
     dest can be name of directory, name of archive file, or file
     object to write archive to.
@@ -333,7 +335,7 @@ def archive(
     mtime is the modified time, in seconds, or None to use the changeset time.
 
     subrepos tells whether to include subrepos.
-    '''
+    """
 
     if kind == b'txz' and not pycompat.ispy3:
         raise error.Abort(_(b'xz compression is only available in Python 3'))

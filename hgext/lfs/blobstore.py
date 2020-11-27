@@ -96,8 +96,7 @@ class nullvfs(lfsvfs):
 
 
 class lfsuploadfile(httpconnectionmod.httpsendfile):
-    """a file-like object that supports keepalive.
-    """
+    """a file-like object that supports keepalive."""
 
     def __init__(self, ui, filename):
         super(lfsuploadfile, self).__init__(ui, filename, b'rb')
@@ -258,9 +257,9 @@ class local(object):
 
 
 def _urlerrorreason(urlerror):
-    '''Create a friendly message for the given URLError to be used in an
+    """Create a friendly message for the given URLError to be used in an
     LfsRemoteError message.
-    '''
+    """
     inst = urlerror
 
     if isinstance(urlerror.reason, Exception):
@@ -338,7 +337,10 @@ class _gitlfsremote(object):
         ]
         requestdata = pycompat.bytesurl(
             json.dumps(
-                {'objects': objects, 'operation': pycompat.strurl(action),}
+                {
+                    'objects': objects,
+                    'operation': pycompat.strurl(action),
+                }
             )
         )
         url = b'%s/objects/batch' % self.baseurl

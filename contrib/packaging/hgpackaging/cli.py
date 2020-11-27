@@ -44,7 +44,11 @@ def build_inno(pyoxidizer_target=None, python=None, iscc=None, version=None):
         )
     else:
         inno.build_with_py2exe(
-            SOURCE_DIR, build_dir, pathlib.Path(python), iscc, version=version,
+            SOURCE_DIR,
+            build_dir,
+            pathlib.Path(python),
+            iscc,
+            version=version,
         )
 
 

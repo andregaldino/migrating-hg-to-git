@@ -360,7 +360,7 @@ def reposetup(ui, repo):
         # TODO: _subdirlfs should be moved into "lfutil.py", because
         # it is referred only from "lfutil.updatestandinsbymatch"
         def _subdirlfs(self, files, lfiles):
-            '''
+            """
             Adjust matched file list
             If we pass a directory to commit whose only committable files
             are largefiles, the core commit code aborts before finding
@@ -370,7 +370,7 @@ def reposetup(ui, repo):
             we explicitly add the largefiles to the match list and remove
             the directory.
             In other cases, we leave the match list unmodified.
-            '''
+            """
             actualfiles = []
             dirs = []
             regulars = []

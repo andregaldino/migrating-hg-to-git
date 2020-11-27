@@ -190,64 +190,104 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'notify', b'changegroup', default=None,
+    b'notify',
+    b'changegroup',
+    default=None,
 )
 configitem(
-    b'notify', b'config', default=None,
+    b'notify',
+    b'config',
+    default=None,
 )
 configitem(
-    b'notify', b'diffstat', default=True,
+    b'notify',
+    b'diffstat',
+    default=True,
 )
 configitem(
-    b'notify', b'domain', default=None,
+    b'notify',
+    b'domain',
+    default=None,
 )
 configitem(
-    b'notify', b'messageidseed', default=None,
+    b'notify',
+    b'messageidseed',
+    default=None,
 )
 configitem(
-    b'notify', b'fromauthor', default=None,
+    b'notify',
+    b'fromauthor',
+    default=None,
 )
 configitem(
-    b'notify', b'incoming', default=None,
+    b'notify',
+    b'incoming',
+    default=None,
 )
 configitem(
-    b'notify', b'maxdiff', default=300,
+    b'notify',
+    b'maxdiff',
+    default=300,
 )
 configitem(
-    b'notify', b'maxdiffstat', default=-1,
+    b'notify',
+    b'maxdiffstat',
+    default=-1,
 )
 configitem(
-    b'notify', b'maxsubject', default=67,
+    b'notify',
+    b'maxsubject',
+    default=67,
 )
 configitem(
-    b'notify', b'mbox', default=None,
+    b'notify',
+    b'mbox',
+    default=None,
 )
 configitem(
-    b'notify', b'merge', default=True,
+    b'notify',
+    b'merge',
+    default=True,
 )
 configitem(
-    b'notify', b'outgoing', default=None,
+    b'notify',
+    b'outgoing',
+    default=None,
 )
 configitem(
-    b'notify', b'reply-to-predecessor', default=False,
+    b'notify',
+    b'reply-to-predecessor',
+    default=False,
 )
 configitem(
-    b'notify', b'sources', default=b'serve',
+    b'notify',
+    b'sources',
+    default=b'serve',
 )
 configitem(
-    b'notify', b'showfunc', default=None,
+    b'notify',
+    b'showfunc',
+    default=None,
 )
 configitem(
-    b'notify', b'strip', default=0,
+    b'notify',
+    b'strip',
+    default=0,
 )
 configitem(
-    b'notify', b'style', default=None,
+    b'notify',
+    b'style',
+    default=None,
 )
 configitem(
-    b'notify', b'template', default=None,
+    b'notify',
+    b'template',
+    default=None,
 )
 configitem(
-    b'notify', b'test', default=True,
+    b'notify',
+    b'test',
+    default=True,
 )
 
 # template for single changeset can include email headers.
@@ -539,10 +579,10 @@ class notifier(object):
 
 
 def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
-    '''send email notifications to interested subscribers.
+    """send email notifications to interested subscribers.
 
     if used as changegroup hook, send one email for all changesets in
-    changegroup. else send one email per changeset.'''
+    changegroup. else send one email per changeset."""
 
     n = notifier(ui, repo, hooktype)
     ctx = repo.unfiltered()[node]

@@ -76,8 +76,7 @@ class histpacktests(unittest.TestCase):
         return historypack.historypack(path)
 
     def testAddSingle(self):
-        """Test putting a single entry into a pack and reading it out.
-        """
+        """Test putting a single entry into a pack and reading it out."""
         filename = b"foo"
         node = self.getFakeHash()
         p1 = self.getFakeHash()
@@ -140,8 +139,7 @@ class histpacktests(unittest.TestCase):
             self.assertEqual(acopyfrom, copyfrom)
 
     def testPackMany(self):
-        """Pack many related and unrelated ancestors.
-        """
+        """Pack many related and unrelated ancestors."""
         # Build a random pack file
         allentries = {}
         ancestorcounts = {}
@@ -201,8 +199,7 @@ class histpacktests(unittest.TestCase):
             self.assertEqual(acopyfrom, copyfrom)
 
     def testGetMissing(self):
-        """Test the getmissing() api.
-        """
+        """Test the getmissing() api."""
         revisions = []
         filename = b"foo"
         for i in range(10):

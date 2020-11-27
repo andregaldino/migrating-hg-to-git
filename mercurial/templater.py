@@ -663,7 +663,7 @@ class nullresourcemapper(resourcemapper):
 
 
 class engine(object):
-    '''template expansion engine.
+    """template expansion engine.
 
     template expansion works like this. a map file contains key=value
     pairs. if value is quoted, it is treated as string. otherwise, it
@@ -680,7 +680,7 @@ class engine(object):
     {key%format}.
 
     filter uses function to transform value. syntax is
-    {key|filter1|filter2|...}.'''
+    {key|filter1|filter2|...}."""
 
     def __init__(self, loader, filters=None, defaults=None, resources=None):
         self._loader = loader
@@ -781,9 +781,9 @@ class engine(object):
             return False
 
     def process(self, t, mapping):
-        '''Perform expansion. t is name of map element to expand.
+        """Perform expansion. t is name of map element to expand.
         mapping contains added elements for use during expansion. Is a
-        generator.'''
+        generator."""
         func, data = self._load(t)
         return self._expand(func, data, mapping)
 
@@ -857,7 +857,11 @@ def _readmapfile(fp, mapfile):
         if subresource:
             data = subresource.read()
             conf.parse(
-                abs, data, sections=sections, remap=remap, include=include,
+                abs,
+                data,
+                sections=sections,
+                remap=remap,
+                include=include,
             )
 
     data = fp.read()
@@ -1094,12 +1098,12 @@ def templatedir():
 
 
 def open_template(name, templatepath=None):
-    '''returns a file-like object for the given template, and its full path
+    """returns a file-like object for the given template, and its full path
 
     If the name is a relative path and we're in a frozen binary, the template
     will be read from the mercurial.templates package instead. The returned path
     will then be the relative path.
-    '''
+    """
     # Does the name point directly to a map file?
     if os.path.isfile(name) or os.path.isabs(name):
         return name, open(name, mode='rb')

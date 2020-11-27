@@ -417,8 +417,7 @@ class changesetprinter(object):
                 )
 
     def _exthook(self, ctx):
-        '''empty method used by extension as a hook point
-        '''
+        """empty method used by extension as a hook point"""
 
     def _showpatch(self, ctx, graphwidth=0):
         if self._includestat:
@@ -509,13 +508,13 @@ class changesetformatter(changesetprinter):
 
 
 class changesettemplater(changesetprinter):
-    '''format changeset information.
+    """format changeset information.
 
     Note: there are a variety of convenience functions to build a
     changesettemplater for common cases. See functions such as:
     maketemplater, changesetdisplayer, buildcommittemplate, or other
     functions that use changesest_templater.
-    '''
+    """
 
     # Arguments before "buffered" used to be positional. Consider not
     # adding/removing arguments before "buffered" to not break callers.

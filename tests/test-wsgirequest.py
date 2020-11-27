@@ -49,7 +49,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(len(r.headers), 0)
 
     def testcustomport(self):
-        r = parse(DEFAULT_ENV, extra={'SERVER_PORT': '8000',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'SERVER_PORT': '8000',
+            },
+        )
 
         self.assertEqual(r.url, b'http://testserver:8000')
         self.assertEqual(r.baseurl, b'http://testserver:8000')
@@ -58,7 +63,10 @@ class ParseRequestTests(unittest.TestCase):
 
         r = parse(
             DEFAULT_ENV,
-            extra={'SERVER_PORT': '4000', 'wsgi.url_scheme': 'https',},
+            extra={
+                'SERVER_PORT': '4000',
+                'wsgi.url_scheme': 'https',
+            },
         )
 
         self.assertEqual(r.url, b'https://testserver:4000')
@@ -67,7 +75,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.advertisedbaseurl, b'https://testserver:4000')
 
     def testhttphost(self):
-        r = parse(DEFAULT_ENV, extra={'HTTP_HOST': 'altserver',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'HTTP_HOST': 'altserver',
+            },
+        )
 
         self.assertEqual(r.url, b'http://altserver')
         self.assertEqual(r.baseurl, b'http://altserver')
@@ -75,7 +88,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.advertisedbaseurl, b'http://testserver')
 
     def testscriptname(self):
-        r = parse(DEFAULT_ENV, extra={'SCRIPT_NAME': '',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'SCRIPT_NAME': '',
+            },
+        )
 
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -85,7 +103,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.dispatchparts, [])
         self.assertIsNone(r.dispatchpath)
 
-        r = parse(DEFAULT_ENV, extra={'SCRIPT_NAME': '/script',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'SCRIPT_NAME': '/script',
+            },
+        )
 
         self.assertEqual(r.url, b'http://testserver/script')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -95,7 +118,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.dispatchparts, [])
         self.assertIsNone(r.dispatchpath)
 
-        r = parse(DEFAULT_ENV, extra={'SCRIPT_NAME': '/multiple words',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'SCRIPT_NAME': '/multiple words',
+            },
+        )
 
         self.assertEqual(r.url, b'http://testserver/multiple%20words')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -106,7 +134,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.dispatchpath)
 
     def testpathinfo(self):
-        r = parse(DEFAULT_ENV, extra={'PATH_INFO': '',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'PATH_INFO': '',
+            },
+        )
 
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -116,7 +149,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.dispatchparts, [])
         self.assertEqual(r.dispatchpath, b'')
 
-        r = parse(DEFAULT_ENV, extra={'PATH_INFO': '/pathinfo',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'PATH_INFO': '/pathinfo',
+            },
+        )
 
         self.assertEqual(r.url, b'http://testserver/pathinfo')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -126,7 +164,12 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.dispatchparts, [b'pathinfo'])
         self.assertEqual(r.dispatchpath, b'pathinfo')
 
-        r = parse(DEFAULT_ENV, extra={'PATH_INFO': '/one/two/',})
+        r = parse(
+            DEFAULT_ENV,
+            extra={
+                'PATH_INFO': '/one/two/',
+            },
+        )
 
         self.assertEqual(r.url, b'http://testserver/one/two/')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -139,7 +182,10 @@ class ParseRequestTests(unittest.TestCase):
     def testscriptandpathinfo(self):
         r = parse(
             DEFAULT_ENV,
-            extra={'SCRIPT_NAME': '/script', 'PATH_INFO': '/pathinfo',},
+            extra={
+                'SCRIPT_NAME': '/script',
+                'PATH_INFO': '/pathinfo',
+            },
         )
 
         self.assertEqual(r.url, b'http://testserver/script/pathinfo')
@@ -208,7 +254,9 @@ class ParseRequestTests(unittest.TestCase):
             parse(
                 DEFAULT_ENV,
                 reponame=b'repo',
-                extra={'PATH_INFO': '/pathinfo',},
+                extra={
+                    'PATH_INFO': '/pathinfo',
+                },
             )
 
         with self.assertRaisesRegex(
@@ -217,13 +265,17 @@ class ParseRequestTests(unittest.TestCase):
             parse(
                 DEFAULT_ENV,
                 reponame=b'repo',
-                extra={'PATH_INFO': '/repoextra/path',},
+                extra={
+                    'PATH_INFO': '/repoextra/path',
+                },
             )
 
         r = parse(
             DEFAULT_ENV,
             reponame=b'repo',
-            extra={'PATH_INFO': '/repo/path1/path2',},
+            extra={
+                'PATH_INFO': '/repo/path1/path2',
+            },
         )
 
         self.assertEqual(r.url, b'http://testserver/repo/path1/path2')
@@ -238,7 +290,9 @@ class ParseRequestTests(unittest.TestCase):
         r = parse(
             DEFAULT_ENV,
             reponame=b'prefix/repo',
-            extra={'PATH_INFO': '/prefix/repo/path1/path2',},
+            extra={
+                'PATH_INFO': '/prefix/repo/path1/path2',
+            },
         )
 
         self.assertEqual(r.url, b'http://testserver/prefix/repo/path1/path2')
@@ -307,7 +361,9 @@ class ParseRequestTests(unittest.TestCase):
         r = parse(
             DEFAULT_ENV,
             altbaseurl=b'http://altserver',
-            extra={'PATH_INFO': '/path1/path2',},
+            extra={
+                'PATH_INFO': '/path1/path2',
+            },
         )
         self.assertEqual(r.url, b'http://testserver/path1/path2')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -347,7 +403,9 @@ class ParseRequestTests(unittest.TestCase):
         r = parse(
             DEFAULT_ENV,
             altbaseurl=b'http://altserver/altpath',
-            extra={'PATH_INFO': '/path1/path2',},
+            extra={
+                'PATH_INFO': '/path1/path2',
+            },
         )
         self.assertEqual(r.url, b'http://testserver/path1/path2')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -365,7 +423,9 @@ class ParseRequestTests(unittest.TestCase):
         r = parse(
             DEFAULT_ENV,
             altbaseurl=b'http://altserver/altpath/',
-            extra={'PATH_INFO': '/path1/path2',},
+            extra={
+                'PATH_INFO': '/path1/path2',
+            },
         )
         self.assertEqual(r.url, b'http://testserver/path1/path2')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -383,7 +443,10 @@ class ParseRequestTests(unittest.TestCase):
         r = parse(
             DEFAULT_ENV,
             altbaseurl=b'http://altserver',
-            extra={'SCRIPT_NAME': '/script', 'PATH_INFO': '/path1/path2',},
+            extra={
+                'SCRIPT_NAME': '/script',
+                'PATH_INFO': '/path1/path2',
+            },
         )
         self.assertEqual(r.url, b'http://testserver/script/path1/path2')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -399,7 +462,10 @@ class ParseRequestTests(unittest.TestCase):
         r = parse(
             DEFAULT_ENV,
             altbaseurl=b'http://altserver/altroot',
-            extra={'SCRIPT_NAME': '/script', 'PATH_INFO': '/path1/path2',},
+            extra={
+                'SCRIPT_NAME': '/script',
+                'PATH_INFO': '/path1/path2',
+            },
         )
         self.assertEqual(r.url, b'http://testserver/script/path1/path2')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -418,7 +484,10 @@ class ParseRequestTests(unittest.TestCase):
             DEFAULT_ENV,
             reponame=b'repo',
             altbaseurl=b'http://altserver/altroot',
-            extra={'SCRIPT_NAME': '/script', 'PATH_INFO': '/repo/path1/path2',},
+            extra={
+                'SCRIPT_NAME': '/script',
+                'PATH_INFO': '/repo/path1/path2',
+            },
         )
 
         self.assertEqual(r.url, b'http://testserver/script/repo/path1/path2')

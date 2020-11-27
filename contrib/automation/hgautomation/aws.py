@@ -152,7 +152,11 @@ ASSUME_ROLE_POLICY_DOCUMENT = '''
 
 
 IAM_INSTANCE_PROFILES = {
-    'ephemeral-ec2-1': {'roles': ['ephemeral-ec2-role-1',],}
+    'ephemeral-ec2-1': {
+        'roles': [
+            'ephemeral-ec2-role-1',
+        ],
+    }
 }
 
 
@@ -469,10 +473,22 @@ def find_image(ec2resource, owner_id, name, reverse_sort_field=None):
 
     images = ec2resource.images.filter(
         Filters=[
-            {'Name': 'owner-id', 'Values': [owner_id],},
-            {'Name': 'state', 'Values': ['available'],},
-            {'Name': 'image-type', 'Values': ['machine'],},
-            {'Name': 'name', 'Values': [name],},
+            {
+                'Name': 'owner-id',
+                'Values': [owner_id],
+            },
+            {
+                'Name': 'state',
+                'Values': ['available'],
+            },
+            {
+                'Name': 'image-type',
+                'Values': ['machine'],
+            },
+            {
+                'Name': 'name',
+                'Values': [name],
+            },
         ]
     )
 
@@ -519,10 +535,13 @@ def ensure_security_groups(ec2resource, prefix='hg-'):
         print('adding security group %s' % actual)
 
         group_res = ec2resource.create_security_group(
-            Description=group['description'], GroupName=actual,
+            Description=group['description'],
+            GroupName=actual,
         )
 
-        group_res.authorize_ingress(IpPermissions=group['ingress'],)
+        group_res.authorize_ingress(
+            IpPermissions=group['ingress'],
+        )
 
         security_groups[name] = group_res
 
@@ -614,7 +633,10 @@ def wait_for_ssm(ssmclient, instances):
     while True:
         res = ssmclient.describe_instance_information(
             Filters=[
-                {'Key': 'InstanceIds', 'Values': [i.id for i in instances],},
+                {
+                    'Key': 'InstanceIds',
+                    'Values': [i.id for i in instances],
+                },
             ],
         )
 
@@ -636,7 +658,9 @@ def run_ssm_command(ssmclient, instances, document_name, parameters):
         InstanceIds=[i.id for i in instances],
         DocumentName=document_name,
         Parameters=parameters,
-        CloudWatchOutputConfig={'CloudWatchOutputEnabled': True,},
+        CloudWatchOutputConfig={
+            'CloudWatchOutputEnabled': True,
+        },
     )
 
     command_id = res['Command']['CommandId']
@@ -645,7 +669,8 @@ def run_ssm_command(ssmclient, instances, document_name, parameters):
         while True:
             try:
                 res = ssmclient.get_command_invocation(
-                    CommandId=command_id, InstanceId=instance.id,
+                    CommandId=command_id,
+                    InstanceId=instance.id,
                 )
             except botocore.exceptions.ClientError as e:
                 if e.response['Error']['Code'] == 'InvocationDoesNotExist':
@@ -799,19 +824,32 @@ def create_ami_from_instance(
     instance.stop()
 
     ec2client.get_waiter('instance_stopped').wait(
-        InstanceIds=[instance.id], WaiterConfig={'Delay': 5,}
+        InstanceIds=[instance.id],
+        WaiterConfig={
+            'Delay': 5,
+        },
     )
     print('%s is stopped' % instance.id)
 
-    image = instance.create_image(Name=name, Description=description,)
+    image = instance.create_image(
+        Name=name,
+        Description=description,
+    )
 
     image.create_tags(
-        Tags=[{'Key': 'HGIMAGEFINGERPRINT', 'Value': fingerprint,},]
+        Tags=[
+            {
+                'Key': 'HGIMAGEFINGERPRINT',
+                'Value': fingerprint,
+            },
+        ]
     )
 
     print('waiting for image %s' % image.id)
 
-    ec2client.get_waiter('image_available').wait(ImageIds=[image.id],)
+    ec2client.get_waiter('image_available').wait(
+        ImageIds=[image.id],
+    )
 
     print('image %s available as %s' % (image.id, image.name))
 
@@ -837,7 +875,9 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
         ssh_username = 'admin'
     elif distro == 'debian10':
         image = find_image(
-            ec2resource, DEBIAN_ACCOUNT_ID_2, 'debian-10-amd64-20190909-10',
+            ec2resource,
+            DEBIAN_ACCOUNT_ID_2,
+            'debian-10-amd64-20190909-10',
         )
         ssh_username = 'admin'
     elif distro == 'ubuntu18.04':
@@ -1066,7 +1106,9 @@ def temporary_linux_dev_instances(
 
 
 def ensure_windows_dev_ami(
-    c: AWSConnection, prefix='hg-', base_image_name=WINDOWS_BASE_IMAGE_NAME,
+    c: AWSConnection,
+    prefix='hg-',
+    base_image_name=WINDOWS_BASE_IMAGE_NAME,
 ):
     """Ensure Windows Development AMI is available and up-to-date.
 
@@ -1190,7 +1232,9 @@ def ensure_windows_dev_ami(
             ssmclient,
             [instance],
             'AWS-RunPowerShellScript',
-            {'commands': WINDOWS_BOOTSTRAP_POWERSHELL.split('\n'),},
+            {
+                'commands': WINDOWS_BOOTSTRAP_POWERSHELL.split('\n'),
+            },
         )
 
         # Reboot so all updates are fully applied.
@@ -1202,7 +1246,10 @@ def ensure_windows_dev_ami(
         print('rebooting instance %s' % instance.id)
         instance.stop()
         ec2client.get_waiter('instance_stopped').wait(
-            InstanceIds=[instance.id], WaiterConfig={'Delay': 5,}
+            InstanceIds=[instance.id],
+            WaiterConfig={
+                'Delay': 5,
+            },
         )
 
         instance.start()

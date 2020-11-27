@@ -816,7 +816,8 @@ class buildhgexe(build_ext):
                 if sys.version_info[0] >= 3:
                     fsdecode = os.fsdecode
                 dest = os.path.join(
-                    os.path.dirname(self.hgtarget), fsdecode(dllbasename),
+                    os.path.dirname(self.hgtarget),
+                    fsdecode(dllbasename),
                 )
 
                 if not os.path.exists(dest):
@@ -1066,7 +1067,7 @@ class hginstall(install):
 
 
 class hginstalllib(install_lib):
-    '''
+    """
     This is a specialization of install_lib that replaces the copy_file used
     there so that it supports setting the mode of files after copying them,
     instead of just preserving the mode that the files originally had.  If your
@@ -1075,7 +1076,7 @@ class hginstalllib(install_lib):
 
     Note that just passing keep_permissions=False to copy_file would be
     insufficient, as it might still be applying a umask.
-    '''
+    """
 
     def run(self):
         realcopyfile = file_util.copy_file
@@ -1103,11 +1104,11 @@ class hginstalllib(install_lib):
 
 
 class hginstallscripts(install_scripts):
-    '''
+    """
     This is a specialization of install_scripts that replaces the @LIBDIR@ with
     the configured directory for modules. If possible, the path is made relative
     to the directory for scripts.
-    '''
+    """
 
     def initialize_options(self):
         install_scripts.initialize_options(self)
@@ -1400,8 +1401,7 @@ class RustCompilationError(CCompilerError):
 
 
 class RustExtension(Extension):
-    """Base classes for concrete Rust Extension classes.
-    """
+    """Base classes for concrete Rust Extension classes."""
 
     rusttargetdir = os.path.join('rust', 'target', 'release')
 
@@ -1547,7 +1547,10 @@ extmodules = [
         include_dirs=common_include_dirs,
         extra_compile_args=common_cflags,
         depends=common_depends
-        + ['mercurial/cext/charencode.h', 'mercurial/cext/revlog.h',],
+        + [
+            'mercurial/cext/charencode.h',
+            'mercurial/cext/revlog.h',
+        ],
     ),
     Extension(
         'mercurial.cext.osutil',
@@ -1635,10 +1638,19 @@ if os.name == 'nt':
     msvccompiler.MSVCCompiler = HackedMSVCCompiler
 
 packagedata = {
-    'mercurial': ['locale/*/LC_MESSAGES/hg.mo', 'dummycert.pem',],
-    'mercurial.defaultrc': ['*.rc',],
-    'mercurial.helptext': ['*.txt',],
-    'mercurial.helptext.internals': ['*.txt',],
+    'mercurial': [
+        'locale/*/LC_MESSAGES/hg.mo',
+        'dummycert.pem',
+    ],
+    'mercurial.defaultrc': [
+        '*.rc',
+    ],
+    'mercurial.helptext': [
+        '*.txt',
+    ],
+    'mercurial.helptext.internals': [
+        '*.txt',
+    ],
 }
 
 

@@ -399,7 +399,7 @@ def filterchunks(ui, originalhunks, usecurses, testfile, match, operation=None):
 
 
 def recordfilter(ui, originalhunks, match, operation=None):
-    """ Prompts the user to filter the originalhunks and return a list of
+    """Prompts the user to filter the originalhunks and return a list of
     selected hunks.
     *operation* is used for to build ui messages to indicate the user what
     kind of filtering they are doing: reverting, committing, shelving, etc.
@@ -1078,7 +1078,7 @@ def findrepo(p):
 
 
 def bailifchanged(repo, merge=True, hint=None):
-    """ enforce the precondition that working directory must be clean.
+    """enforce the precondition that working directory must be clean.
 
     'merge' can be set to false if a pending uncommitted merge should be
     ignored (such as when 'update --check' runs).
@@ -2184,7 +2184,7 @@ def export(
     opts=None,
     match=None,
 ):
-    '''export changesets as hg patches
+    """export changesets as hg patches
 
     Args:
       repo: The repository from which we're exporting revisions.
@@ -2205,7 +2205,7 @@ def export(
         fntemplate specified: Each rev is written to a unique file named using
                             the given template.
         Otherwise: All revs will be written to basefm.
-    '''
+    """
     _prefetchchangedfiles(repo, revs, match)
 
     if not fntemplate:
@@ -3476,7 +3476,8 @@ def revert(ui, repo, ctx, *pats, **opts):
                 repo, [f for sublist in oplist for f in sublist]
             )
             prefetch(
-                repo, [(ctx.rev(), matchfiles)],
+                repo,
+                [(ctx.rev(), matchfiles)],
             )
             match = scmutil.match(repo[None], pats)
             _performrevert(
@@ -3724,10 +3725,10 @@ summaryremotehooks = util.hooks()
 
 
 def checkunfinished(repo, commit=False, skipmerge=False):
-    '''Look for an unfinished multistep operation, like graft, and abort
+    """Look for an unfinished multistep operation, like graft, and abort
     if found. It's probably good to check this right before
     bailifchanged().
-    '''
+    """
     # Check for non-clearable states first, so things like rebase will take
     # precedence over update.
     for state in statemod._unfinishedstates:
@@ -3753,9 +3754,9 @@ def checkunfinished(repo, commit=False, skipmerge=False):
 
 
 def clearunfinished(repo):
-    '''Check for unfinished operations (as above), and clear the ones
+    """Check for unfinished operations (as above), and clear the ones
     that are clearable.
-    '''
+    """
     for state in statemod._unfinishedstates:
         if state._reportonly:
             continue
@@ -3770,8 +3771,8 @@ def clearunfinished(repo):
 
 
 def getunfinishedstate(repo):
-    ''' Checks for unfinished operations and returns statecheck object
-        for it'''
+    """Checks for unfinished operations and returns statecheck object
+    for it"""
     for state in statemod._unfinishedstates:
         if state.isunfinished(repo):
             return state
@@ -3779,7 +3780,7 @@ def getunfinishedstate(repo):
 
 
 def howtocontinue(repo):
-    '''Check for an unfinished operation and return the command to finish
+    """Check for an unfinished operation and return the command to finish
     it.
 
     statemod._unfinishedstates list is checked for an unfinished operation
@@ -3788,7 +3789,7 @@ def howtocontinue(repo):
 
     Returns a (msg, warning) tuple. 'msg' is a string and 'warning' is
     a boolean.
-    '''
+    """
     contmsg = _(b"continue: %s")
     for state in statemod._unfinishedstates:
         if not state._continueflag:
@@ -3801,13 +3802,13 @@ def howtocontinue(repo):
 
 
 def checkafterresolved(repo):
-    '''Inform the user about the next action after completing hg resolve
+    """Inform the user about the next action after completing hg resolve
 
     If there's a an unfinished operation that supports continue flag,
     howtocontinue will yield repo.ui.warn as the reporter.
 
     Otherwise, it will yield repo.ui.note.
-    '''
+    """
     msg, warning = howtocontinue(repo)
     if msg is not None:
         if warning:
@@ -3817,14 +3818,14 @@ def checkafterresolved(repo):
 
 
 def wrongtooltocontinue(repo, task):
-    '''Raise an abort suggesting how to properly continue if there is an
+    """Raise an abort suggesting how to properly continue if there is an
     active task.
 
     Uses howtocontinue() to find the active task.
 
     If there's no task (repo.ui.note for 'hg commit'), it does not offer
     a hint.
-    '''
+    """
     after = howtocontinue(repo)
     hint = None
     if after[1]:

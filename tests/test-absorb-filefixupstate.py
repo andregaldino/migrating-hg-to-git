@@ -78,7 +78,13 @@ testfilefixup(case0, b'22', [b'', b'22'])
 testfilefixup(case0, b'222', [b'', b'222'])
 
 # input case 1: 3 lines, each commit adds one line
-case1 = buildcontents([(b'1', [1, 2, 3]), (b'2', [2, 3]), (b'3', [3]),])
+case1 = buildcontents(
+    [
+        (b'1', [1, 2, 3]),
+        (b'2', [2, 3]),
+        (b'3', [3]),
+    ]
+)
 
 # 1:1 line mapping
 testfilefixup(case1, b'123', case1)
@@ -121,7 +127,13 @@ testfilefixup(case1, b'1a23', case1)
 testfilefixup(case1, b'12b3', case1)
 
 # input case 2: delete in the middle
-case2 = buildcontents([(b'11', [1, 2]), (b'22', [1]), (b'33', [1, 2]),])
+case2 = buildcontents(
+    [
+        (b'11', [1, 2]),
+        (b'22', [1]),
+        (b'33', [1, 2]),
+    ]
+)
 
 # deletion (optimize code should make it 2 chunks)
 testfilefixup(
@@ -136,7 +148,13 @@ testfilefixup(case2, b'aaaa', [b'', b'aa22aa', b'aaaa'])
 testfilefixup(case2, b'aaa', case2)
 
 # input case 3: rev 3 reverts rev 2
-case3 = buildcontents([(b'1', [1, 2, 3]), (b'2', [2]), (b'3', [1, 2, 3]),])
+case3 = buildcontents(
+    [
+        (b'1', [1, 2, 3]),
+        (b'2', [2]),
+        (b'3', [1, 2, 3]),
+    ]
+)
 
 # 1:1 line mapping
 testfilefixup(case3, b'13', case3)
@@ -159,7 +177,13 @@ case4 = buildcontents(
     [
         (b'1', [1, 2, 3]),
         (b'2', [2, 3]),
-        (b'3', [1, 2,]),
+        (
+            b'3',
+            [
+                1,
+                2,
+            ],
+        ),
         (b'4', [1, 3]),
         (b'5', [3]),
         (b'6', [2, 3]),
@@ -183,7 +207,13 @@ testfilefixup(case4, b'28', [b'', b'34', b'2378', b'28'])
 testfilefixup(case4, b'', [b'', b'34', b'37', b''])
 
 # input case 5: replace a small chunk which is near a deleted line
-case5 = buildcontents([(b'12', [1, 2]), (b'3', [1]), (b'4', [1, 2]),])
+case5 = buildcontents(
+    [
+        (b'12', [1, 2]),
+        (b'3', [1]),
+        (b'4', [1, 2]),
+    ]
+)
 
 testfilefixup(case5, b'1cd4', [b'', b'1cd34', b'1cd4'])
 

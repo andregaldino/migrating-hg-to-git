@@ -54,7 +54,7 @@ testedwith = b'ships-with-hg-core'
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
 )
 def fetch(ui, repo, source=b'default', **opts):
-    '''pull changes from a remote repository, merge new changes if needed.
+    """pull changes from a remote repository, merge new changes if needed.
 
     This finds all changes from the repository at the specified path
     or URL and adds them to the local repository.
@@ -71,7 +71,7 @@ def fetch(ui, repo, source=b'default', **opts):
     See :hg:`help dates` for a list of formats valid for -d/--date.
 
     Returns 0 on success.
-    '''
+    """
 
     opts = pycompat.byteskwargs(opts)
     date = opts.get(b'date')

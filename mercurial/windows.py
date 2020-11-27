@@ -195,13 +195,13 @@ def _isatty(fp):
 
 
 class winstdout(object):
-    '''Some files on Windows misbehave.
+    """Some files on Windows misbehave.
 
     When writing to a broken pipe, EINVAL instead of EPIPE may be raised.
 
     When writing too many bytes to a console at the same, a "Not enough space"
     error may happen. Python 3 already works around that.
-    '''
+    """
 
     def __init__(self, fp):
         self.fp = fp
@@ -497,11 +497,11 @@ def isowner(st):
 
 
 def findexe(command):
-    '''Find executable for command searching like cmd.exe does.
+    """Find executable for command searching like cmd.exe does.
     If command is a basename then PATH is searched for command.
     PATH isn't searched if command is an absolute or relative path.
     An extension from PATHEXT is found and added if not present.
-    If command isn't found None is returned.'''
+    If command isn't found None is returned."""
     pathext = encoding.environ.get(b'PATHEXT', b'.COM;.EXE;.BAT;.CMD')
     pathexts = [ext for ext in pathext.lower().split(pycompat.ospathsep)]
     if os.path.splitext(command)[1].lower() in pathexts:
@@ -529,10 +529,10 @@ _wantedkinds = {stat.S_IFREG, stat.S_IFLNK}
 
 
 def statfiles(files):
-    '''Stat each file in files. Yield each stat, or None if a file
+    """Stat each file in files. Yield each stat, or None if a file
     does not exist or has a type we don't care about.
 
-    Cluster and cache stat per directory to minimize number of OS stat calls.'''
+    Cluster and cache stat per directory to minimize number of OS stat calls."""
     dircache = {}  # dirname -> filename -> status | None if file does not exist
     getkind = stat.S_IFMT
     for nf in files:
@@ -630,14 +630,14 @@ class cachestat(object):
 
 
 def lookupreg(key, valname=None, scope=None):
-    ''' Look up a key/value name in the Windows registry.
+    """Look up a key/value name in the Windows registry.
 
     valname: value name. If unspecified, the default value for the key
     is used.
     scope: optionally specify scope for registry lookup, this can be
     a sequence of scopes to look up in order. Default (CURRENT_USER,
     LOCAL_MACHINE).
-    '''
+    """
     if scope is None:
         scope = (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE)
     elif not isinstance(scope, (list, tuple)):

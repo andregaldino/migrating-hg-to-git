@@ -998,8 +998,7 @@ def _computephasedivergentset(repo):
 
 @cachefor(b'contentdivergent')
 def _computecontentdivergentset(repo):
-    """the set of rev that compete to be the final successors of some revision.
-    """
+    """the set of rev that compete to be the final successors of some revision."""
     divergent = set()
     obsstore = repo.obsstore
     newermap = {}

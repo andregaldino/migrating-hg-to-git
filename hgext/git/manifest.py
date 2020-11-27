@@ -127,7 +127,7 @@ class gittreemanifest(object):
         return dir in self._dirs
 
     def diff(self, other, match=lambda x: True, clean=False):
-        '''Finds changes between the current manifest and m2.
+        """Finds changes between the current manifest and m2.
 
         The result is returned as a dict with filename as key and
         values of the form ((n1,fl1),(n2,fl2)), where n1/n2 is the
@@ -135,7 +135,7 @@ class gittreemanifest(object):
         in the current/other manifest. Where the file does not exist,
         the nodeid will be None and the flags will be the empty
         string.
-        '''
+        """
         result = {}
 
         def _iterativediff(t1, t2, subdir):

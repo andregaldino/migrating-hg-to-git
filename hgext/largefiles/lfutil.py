@@ -80,10 +80,10 @@ def link(src, dest):
 
 
 def usercachepath(ui, hash):
-    '''Return the correct location in the "global" largefiles cache for a file
+    """Return the correct location in the "global" largefiles cache for a file
     with the given hash.
     This cache is used for sharing of largefiles across repositories - both
-    to preserve download bandwidth and storage space.'''
+    to preserve download bandwidth and storage space."""
     return os.path.join(_usercachedir(ui), hash)
 
 
@@ -143,9 +143,9 @@ def inusercache(ui, hash):
 
 
 def findfile(repo, hash):
-    '''Return store path of the largefile with the specified hash.
+    """Return store path of the largefile with the specified hash.
     As a side effect, the file might be linked from user cache.
-    Return None if the file can't be found locally.'''
+    Return None if the file can't be found locally."""
     path, exists = findstorepath(repo, hash)
     if exists:
         repo.ui.note(_(b'found %s in store\n') % hash)
@@ -191,10 +191,10 @@ class largefilesdirstate(dirstate.dirstate):
 
 
 def openlfdirstate(ui, repo, create=True):
-    '''
+    """
     Return a dirstate object that tracks largefiles: i.e. its root is
     the repo root, but it is saved in .hg/largefiles/dirstate.
-    '''
+    """
     vfs = repo.vfs
     lfstoredir = longname
     opener = vfsmod.vfs(vfs.join(lfstoredir))
@@ -245,8 +245,8 @@ def lfdirstatestatus(lfdirstate, repo):
 
 
 def listlfiles(repo, rev=None, matcher=None):
-    '''return a list of largefiles in the working copy or the
-    specified changeset'''
+    """return a list of largefiles in the working copy or the
+    specified changeset"""
 
     if matcher is None:
         matcher = getstandinmatcher(repo)
@@ -265,18 +265,18 @@ def instore(repo, hash, forcelocal=False):
 
 
 def storepath(repo, hash, forcelocal=False):
-    '''Return the correct location in the repository largefiles store for a
-    file with the given hash.'''
+    """Return the correct location in the repository largefiles store for a
+    file with the given hash."""
     if not forcelocal and repo.shared():
         return repo.vfs.reljoin(repo.sharedpath, longname, hash)
     return repo.vfs.join(longname, hash)
 
 
 def findstorepath(repo, hash):
-    '''Search through the local store path(s) to find the file for the given
+    """Search through the local store path(s) to find the file for the given
     hash.  If the file is not found, its path in the primary store is returned.
     The return value is a tuple of (path, exists(path)).
-    '''
+    """
     # For shared repos, the primary store is in the share source.  But for
     # backward compatibility, force a lookup in the local store if it wasn't
     # found in the share source.
@@ -291,11 +291,11 @@ def findstorepath(repo, hash):
 
 
 def copyfromcache(repo, hash, filename):
-    '''Copy the specified largefile from the repo or system cache to
+    """Copy the specified largefile from the repo or system cache to
     filename in the repository. Return true on success or false if the
     file was not found in either cache (which should not happened:
     this is meant to be called only after ensuring that the needed
-    largefile exists in the cache).'''
+    largefile exists in the cache)."""
     wvfs = repo.wvfs
     path = findfile(repo, hash)
     if path is None:
@@ -354,8 +354,8 @@ def copytostoreabsolute(repo, file, hash):
 
 
 def linktousercache(repo, hash):
-    '''Link / copy the largefile with the specified hash from the store
-    to the cache.'''
+    """Link / copy the largefile with the specified hash from the store
+    to the cache."""
     path = usercachepath(repo.ui, hash)
     link(storepath(repo, hash), path)
 
@@ -380,9 +380,9 @@ def getstandinmatcher(repo, rmatcher=None):
 
 
 def composestandinmatcher(repo, rmatcher):
-    '''Return a matcher that accepts standins corresponding to the
+    """Return a matcher that accepts standins corresponding to the
     files accepted by rmatcher. Pass the list of files in the matcher
-    as the paths specified by the user.'''
+    as the paths specified by the user."""
     smatcher = getstandinmatcher(repo, rmatcher)
     isstandin = smatcher.matchfn
 
@@ -395,8 +395,8 @@ def composestandinmatcher(repo, rmatcher):
 
 
 def standin(filename):
-    '''Return the repo-relative path to the standin for the specified big
-    file.'''
+    """Return the repo-relative path to the standin for the specified big
+    file."""
     # Notes:
     # 1) Some callers want an absolute path, but for instance addlargefiles
     #    needs it repo-relative so it can be passed to repo[None].add().  So
@@ -408,8 +408,8 @@ def standin(filename):
 
 
 def isstandin(filename):
-    '''Return true if filename is a big file standin. filename must be
-    in Mercurial's internal form (slash-separated).'''
+    """Return true if filename is a big file standin. filename must be
+    in Mercurial's internal form (slash-separated)."""
     return filename.startswith(shortnameslash)
 
 
@@ -439,9 +439,9 @@ def updatestandin(repo, lfile, standin):
 
 
 def readasstandin(fctx):
-    '''read hex hash from given filectx of standin file
+    """read hex hash from given filectx of standin file
 
-    This encapsulates how "standin" data is stored into storage layer.'''
+    This encapsulates how "standin" data is stored into storage layer."""
     return fctx.data().strip()
 
 
@@ -451,8 +451,8 @@ def writestandin(repo, standin, hash, executable):
 
 
 def copyandhash(instream, outfile):
-    '''Read bytes from instream (iterable) and write them to outfile,
-    computing the SHA-1 hash of the data along the way. Return the hash.'''
+    """Read bytes from instream (iterable) and write them to outfile,
+    computing the SHA-1 hash of the data along the way. Return the hash."""
     hasher = hashutil.sha1(b'')
     for data in instream:
         hasher.update(data)
@@ -635,11 +635,11 @@ def getlfilestoupload(repo, missing, addfunc):
 
 
 def updatestandinsbymatch(repo, match):
-    '''Update standins in the working directory according to specified match
+    """Update standins in the working directory according to specified match
 
     This returns (possibly modified) ``match`` object to be used for
     subsequent commit process.
-    '''
+    """
 
     ui = repo.ui
 
@@ -741,7 +741,7 @@ def updatestandinsbymatch(repo, match):
 
 
 class automatedcommithook(object):
-    '''Stateful hook to update standins at the 1st commit of resuming
+    """Stateful hook to update standins at the 1st commit of resuming
 
     For efficiency, updating standins in the working directory should
     be avoided while automated committing (like rebase, transplant and
@@ -750,7 +750,7 @@ class automatedcommithook(object):
     But the 1st commit of resuming automated committing (e.g. ``rebase
     --continue``) should update them, because largefiles may be
     modified manually.
-    '''
+    """
 
     def __init__(self, resuming):
         self.resuming = resuming
@@ -764,14 +764,14 @@ class automatedcommithook(object):
 
 
 def getstatuswriter(ui, repo, forcibly=None):
-    '''Return the function to write largefiles specific status out
+    """Return the function to write largefiles specific status out
 
     If ``forcibly`` is ``None``, this returns the last element of
     ``repo._lfstatuswriters`` as "default" writer function.
 
     Otherwise, this returns the function to always write out (or
     ignore if ``not forcibly``) status.
-    '''
+    """
     if forcibly is None and util.safehasattr(repo, b'_largefilesenabled'):
         return repo._lfstatuswriters[-1]
     else:

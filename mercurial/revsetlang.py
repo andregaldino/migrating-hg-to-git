@@ -83,7 +83,7 @@ _symletters = _syminitletters | set(pycompat.iterbytestr(b'-/'))
 
 
 def tokenize(program, lookup=None, syminitletters=None, symletters=None):
-    '''
+    """
     Parse a revset statement into a stream of tokens
 
     ``syminitletters`` is the set of valid characters for the initial
@@ -102,7 +102,7 @@ def tokenize(program, lookup=None, syminitletters=None, symletters=None):
     >>> list(tokenize(b"@::"))
     [('symbol', '@', 0), ('::', None, 1), ('end', None, 3)]
 
-    '''
+    """
     if not isinstance(program, bytes):
         raise error.ProgrammingError(
             b'revset statement must be bytes, got %r' % program
@@ -621,8 +621,7 @@ def expandaliases(tree, aliases, warn=None):
 
 
 def foldconcat(tree):
-    """Fold elements to be concatenated by `##`
-    """
+    """Fold elements to be concatenated by `##`"""
     if not isinstance(tree, tuple) or tree[0] in (
         b'string',
         b'symbol',
@@ -742,7 +741,7 @@ _formatlistfuncs = {
 
 
 def formatspec(expr, *args):
-    '''
+    """
     This is a convenience function for using revsets internally, and
     escapes arguments appropriately. Aliases are intentionally ignored
     so that intended expression behavior isn't accidentally subverted.
@@ -777,7 +776,7 @@ def formatspec(expr, *args):
     "sort((:), 'desc', 'user')"
     >>> formatspec(b'%ls', [b'a', b"'"])
     "_list('a\\\\x00\\\\'')"
-    '''
+    """
     parsed = _parseargs(expr, args)
     ret = []
     for t, arg in parsed:

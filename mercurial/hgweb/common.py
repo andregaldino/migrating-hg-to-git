@@ -51,9 +51,9 @@ def ismember(ui, username, userlist):
 
 
 def checkauthz(hgweb, req, op):
-    '''Check permission for operation based on request data (including
+    """Check permission for operation based on request data (including
     authentication info). Return if op allowed, else raise an ErrorResponse
-    exception.'''
+    exception."""
 
     user = req.remoteuser
 

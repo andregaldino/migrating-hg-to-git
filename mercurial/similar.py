@@ -15,11 +15,11 @@ from . import (
 
 
 def _findexactmatches(repo, added, removed):
-    '''find renamed files that have no changes
+    """find renamed files that have no changes
 
     Takes a list of new filectxs and a list of removed filectxs, and yields
     (before, after) tuples of exact matches.
-    '''
+    """
     # Build table of removed files: {hash(fctx.data()): [fctx, ...]}.
     # We use hash() to discard fctx.data() from memory.
     hashes = {}
@@ -77,11 +77,11 @@ def score(fctx1, fctx2):
 
 
 def _findsimilarmatches(repo, added, removed, threshold):
-    '''find potentially renamed files based on similar file content
+    """find potentially renamed files based on similar file content
 
     Takes a list of new filectxs and a list of removed filectxs, and yields
     (before, after, score) tuples of partial matches.
-    '''
+    """
     copies = {}
     progress = repo.ui.makeprogress(
         _(b'searching for similar files'), unit=_(b'files'), total=len(removed)

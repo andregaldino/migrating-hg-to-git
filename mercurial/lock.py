@@ -175,14 +175,14 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
 
 
 class lock(object):
-    '''An advisory lock held by one process to control access to a set
+    """An advisory lock held by one process to control access to a set
     of files.  Non-cooperating processes or incorrectly written scripts
     can ignore Mercurial's locking scheme and stomp all over the
     repository, so don't do that.
 
     Typically used via localrepository.lock() to lock the repository
     store (.hg/store/) or localrepository.wlock() to lock everything
-    else under .hg/.'''
+    else under .hg/."""
 
     # lock is symlink on platforms that support it, file on others.
 

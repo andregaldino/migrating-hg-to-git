@@ -44,16 +44,24 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'badserver', b'closeafteraccept', default=False,
+    b'badserver',
+    b'closeafteraccept',
+    default=False,
 )
 configitem(
-    b'badserver', b'closeafterrecvbytes', default=b'0',
+    b'badserver',
+    b'closeafterrecvbytes',
+    default=b'0',
 )
 configitem(
-    b'badserver', b'closeaftersendbytes', default=b'0',
+    b'badserver',
+    b'closeaftersendbytes',
+    default=b'0',
 )
 configitem(
-    b'badserver', b'closebeforeaccept', default=False,
+    b'badserver',
+    b'closebeforeaccept',
+    default=False,
 )
 
 # We can't adjust __class__ on a socket instance. So we define a proxy type.

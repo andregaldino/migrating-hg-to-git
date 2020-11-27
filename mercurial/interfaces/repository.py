@@ -617,7 +617,7 @@ class ifiledata(interfaceutil.Interface):
         """
 
     def revision(node, raw=False):
-        """"Obtain fulltext data for a node.
+        """ "Obtain fulltext data for a node.
 
         By default, any storage transformations are applied before the data
         is returned. If ``raw`` is True, non-raw storage transformations
@@ -628,8 +628,7 @@ class ifiledata(interfaceutil.Interface):
         """
 
     def rawdata(node):
-        """Obtain raw data for a node.
-        """
+        """Obtain raw data for a node."""
 
     def read(node):
         """Resolve file fulltext data.

@@ -96,7 +96,7 @@ def recode(s):
 
 
 def mapbranch(branch, branchmap):
-    '''
+    """
     >>> bmap = {b'default': b'branch1'}
     >>> for i in [b'', None]:
     ...     mapbranch(i, bmap)
@@ -115,7 +115,7 @@ def mapbranch(branch, branchmap):
     'branch4'
     'branch4'
     'branch5'
-    '''
+    """
     # If branch is None or empty, this commit is coming from the source
     # repository's default branch and destined for the default branch in the
     # destination repository. For such commits, using a literal "default"
@@ -228,14 +228,14 @@ class converter(object):
         self.branchmap = mapfile(ui, opts.get(b'branchmap'))
 
     def parsesplicemap(self, path):
-        """ check and validate the splicemap format and
-            return a child/parents dictionary.
-            Format checking has two parts.
-            1. generic format which is same across all source types
-            2. specific format checking which may be different for
-               different source type.  This logic is implemented in
-               checkrevformat function in source files like
-               hg.py, subversion.py etc.
+        """check and validate the splicemap format and
+        return a child/parents dictionary.
+        Format checking has two parts.
+        1. generic format which is same across all source types
+        2. specific format checking which may be different for
+           different source type.  This logic is implemented in
+           checkrevformat function in source files like
+           hg.py, subversion.py etc.
         """
 
         if not path:
@@ -275,8 +275,8 @@ class converter(object):
         return m
 
     def walktree(self, heads):
-        '''Return a mapping that identifies the uncommitted parents of every
-        uncommitted changeset.'''
+        """Return a mapping that identifies the uncommitted parents of every
+        uncommitted changeset."""
         visit = list(heads)
         known = set()
         parents = {}
@@ -332,8 +332,8 @@ class converter(object):
             parents[c] = pc
 
     def toposort(self, parents, sortmode):
-        '''Return an ordering such that every uncommitted changeset is
-        preceded by all its uncommitted ancestors.'''
+        """Return an ordering such that every uncommitted changeset is
+        preceded by all its uncommitted ancestors."""
 
         def mapchildren(parents):
             """Return a (children, roots) tuple where 'children' maps parent

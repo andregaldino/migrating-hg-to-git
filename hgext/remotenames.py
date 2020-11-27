@@ -66,13 +66,19 @@ templatekeyword = registrar.templatekeyword()
 revsetpredicate = registrar.revsetpredicate()
 
 configitem(
-    b'remotenames', b'bookmarks', default=True,
+    b'remotenames',
+    b'bookmarks',
+    default=True,
 )
 configitem(
-    b'remotenames', b'branches', default=True,
+    b'remotenames',
+    b'branches',
+    default=True,
 )
 configitem(
-    b'remotenames', b'hoistedpeer', default=b'default',
+    b'remotenames',
+    b'hoistedpeer',
+    default=b'default',
 )
 
 

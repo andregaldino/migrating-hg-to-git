@@ -142,8 +142,7 @@ def extsetup(ui):
 
 @command(b'debugexpandscheme', norepo=True)
 def expandscheme(ui, url, **opts):
-    """given a repo path, provide the scheme-expanded path
-    """
+    """given a repo path, provide the scheme-expanded path"""
     repo = hg._peerlookup(url)
     if isinstance(repo, ShortRepository):
         url = repo.resolve(url)

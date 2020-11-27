@@ -91,8 +91,8 @@ def stripdesc(desc):
 
 
 class appender(object):
-    '''the changelog index must be updated last on disk, so we use this class
-    to delay writes to it'''
+    """the changelog index must be updated last on disk, so we use this class
+    to delay writes to it"""
 
     def __init__(self, vfs, name, mode, buf):
         self.data = buf

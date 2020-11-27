@@ -72,19 +72,29 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'blackbox', b'dirty', default=False,
+    b'blackbox',
+    b'dirty',
+    default=False,
 )
 configitem(
-    b'blackbox', b'maxsize', default=b'1 MB',
+    b'blackbox',
+    b'maxsize',
+    default=b'1 MB',
 )
 configitem(
-    b'blackbox', b'logsource', default=False,
+    b'blackbox',
+    b'logsource',
+    default=False,
 )
 configitem(
-    b'blackbox', b'maxfiles', default=7,
+    b'blackbox',
+    b'maxfiles',
+    default=7,
 )
 configitem(
-    b'blackbox', b'track', default=lambda: [b'*'],
+    b'blackbox',
+    b'track',
+    default=lambda: [b'*'],
 )
 configitem(
     b'blackbox',
@@ -92,7 +102,9 @@ configitem(
     default=lambda: [b'chgserver', b'cmdserver', b'extension'],
 )
 configitem(
-    b'blackbox', b'date-format', default=b'%Y/%m/%d %H:%M:%S',
+    b'blackbox',
+    b'date-format',
+    default=b'%Y/%m/%d %H:%M:%S',
 )
 
 _lastlogger = loggingutil.proxylogger()
@@ -189,14 +201,15 @@ def reposetup(ui, repo):
 
 @command(
     b'blackbox',
-    [(b'l', b'limit', 10, _(b'the number of events to show')),],
+    [
+        (b'l', b'limit', 10, _(b'the number of events to show')),
+    ],
     _(b'hg blackbox [OPTION]...'),
     helpcategory=command.CATEGORY_MAINTENANCE,
     helpbasic=True,
 )
 def blackbox(ui, repo, *revs, **opts):
-    '''view the recent repository events
-    '''
+    """view the recent repository events"""
 
     if not repo.vfs.exists(b'blackbox.log'):
         return

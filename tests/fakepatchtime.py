@@ -14,7 +14,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'fakepatchtime', b'fakenow', default=None,
+    b'fakepatchtime',
+    b'fakenow',
+    default=None,
 )
 
 

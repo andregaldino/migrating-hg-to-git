@@ -9,12 +9,12 @@ from mercurial import (
 
 
 def diffstat(ui, repo, **kwargs):
-    '''Example usage:
+    """Example usage:
 
     [hooks]
     commit.diffstat = python:/path/to/this/file.py:diffstat
     changegroup.diffstat = python:/path/to/this/file.py:diffstat
-    '''
+    """
     if kwargs.get('parent2'):
         return
     node = kwargs['node']

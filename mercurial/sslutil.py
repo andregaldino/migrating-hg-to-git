@@ -227,8 +227,7 @@ def _hostsettings(ui, hostname):
 
 
 def commonssloptions(minimumprotocol):
-    """Return SSLContext options common to servers and clients.
-    """
+    """Return SSLContext options common to servers and clients."""
     if minimumprotocol not in configprotocols:
         raise ValueError(b'protocol value not supported: %s' % minimumprotocol)
 
@@ -617,11 +616,11 @@ def _dnsnamematch(dn, hostname, maxwildcards=1):
 
 
 def _verifycert(cert, hostname):
-    '''Verify that cert (in socket.getpeercert() format) matches hostname.
+    """Verify that cert (in socket.getpeercert() format) matches hostname.
     CRLs is not handled.
 
     Returns error message if any problems are found and None on success.
-    '''
+    """
     if not cert:
         return _(b'no certificate received')
 

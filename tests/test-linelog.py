@@ -69,29 +69,60 @@ class linelogtests(unittest.TestCase):
         ll.replacelines(1, 0, 0, 0, 3)
         self.assertEqual(
             [(l.rev, l.linenum) for l in ll.annotate(1)],
-            [(1, 0), (1, 1), (1, 2),],
+            [
+                (1, 0),
+                (1, 1),
+                (1, 2),
+            ],
         )
         # Replace line 1 with a new line
         ll.replacelines(2, 1, 2, 1, 2)
         self.assertEqual(
             [(l.rev, l.linenum) for l in ll.annotate(2)],
-            [(1, 0), (2, 1), (1, 2),],
+            [
+                (1, 0),
+                (2, 1),
+                (1, 2),
+            ],
         )
         # delete a line out of 2
         ll.replacelines(3, 1, 2, 0, 0)
         self.assertEqual(
-            [(l.rev, l.linenum) for l in ll.annotate(3)], [(1, 0), (1, 2),]
+            [(l.rev, l.linenum) for l in ll.annotate(3)],
+            [
+                (1, 0),
+                (1, 2),
+            ],
         )
         # annotation of 1 is unchanged
         self.assertEqual(
             [(l.rev, l.linenum) for l in ll.annotate(1)],
-            [(1, 0), (1, 1), (1, 2),],
+            [
+                (1, 0),
+                (1, 1),
+                (1, 2),
+            ],
         )
         ll.annotate(3)  # set internal state to revision 3
         start = ll.getoffset(0)
         end = ll.getoffset(1)
-        self.assertEqual(ll.getalllines(start, end), [(1, 0), (2, 1), (1, 1),])
-        self.assertEqual(ll.getalllines(), [(1, 0), (2, 1), (1, 1), (1, 2),])
+        self.assertEqual(
+            ll.getalllines(start, end),
+            [
+                (1, 0),
+                (2, 1),
+                (1, 1),
+            ],
+        )
+        self.assertEqual(
+            ll.getalllines(),
+            [
+                (1, 0),
+                (2, 1),
+                (1, 1),
+                (1, 2),
+            ],
+        )
 
     def testparseclinelogfile(self):
         # This data is what the replacements in testsimpleedits
@@ -116,14 +147,26 @@ class linelogtests(unittest.TestCase):
         llc = linelog.linelog.fromdata(data)
         self.assertEqual(
             [(l.rev, l.linenum) for l in llc.annotate(1)],
-            [(1, 0), (1, 1), (1, 2),],
+            [
+                (1, 0),
+                (1, 1),
+                (1, 2),
+            ],
         )
         self.assertEqual(
             [(l.rev, l.linenum) for l in llc.annotate(2)],
-            [(1, 0), (2, 1), (1, 2),],
+            [
+                (1, 0),
+                (2, 1),
+                (1, 2),
+            ],
         )
         self.assertEqual(
-            [(l.rev, l.linenum) for l in llc.annotate(3)], [(1, 0), (1, 2),]
+            [(l.rev, l.linenum) for l in llc.annotate(3)],
+            [
+                (1, 0),
+                (1, 2),
+            ],
         )
         # Check we emit the same bytecode.
         ll = linelog.linelog()

@@ -30,11 +30,17 @@ class thing(object):
 class localthing(thing):
     def foo(self, one, two=None):
         if one:
-            return b"%s and %s" % (one, two,)
+            return b"%s and %s" % (
+                one,
+                two,
+            )
         return b"Nope"
 
     def bar(self, b, a):
-        return b"%s und %s" % (b, a,)
+        return b"%s und %s" % (
+            b,
+            a,
+        )
 
     def greet(self, name=None):
         return b"Hello, %s" % name
@@ -176,7 +182,15 @@ class remotething(thing):
             args = b','.join(n + b'=' + escapearg(v) for n, v in args)
             req.append(name + b':' + args)
         req = b';'.join(req)
-        res = self._submitone(b'batch', [(b'cmds', req,)])
+        res = self._submitone(
+            b'batch',
+            [
+                (
+                    b'cmds',
+                    req,
+                )
+            ],
+        )
         for r in res.split(b';'):
             yield r
 
@@ -190,7 +204,16 @@ class remotething(thing):
 
     @wireprotov1peer.batchable
     def foo(self, one, two=None):
-        encargs = [(b'one', mangle(one),), (b'two', mangle(two),)]
+        encargs = [
+            (
+                b'one',
+                mangle(one),
+            ),
+            (
+                b'two',
+                mangle(two),
+            ),
+        ]
         encresref = wireprotov1peer.future()
         yield encargs, encresref
         yield unmangle(encresref.value)
@@ -198,14 +221,33 @@ class remotething(thing):
     @wireprotov1peer.batchable
     def bar(self, b, a):
         encresref = wireprotov1peer.future()
-        yield [(b'b', mangle(b),), (b'a', mangle(a),)], encresref
+        yield [
+            (
+                b'b',
+                mangle(b),
+            ),
+            (
+                b'a',
+                mangle(a),
+            ),
+        ], encresref
         yield unmangle(encresref.value)
 
     # greet is coded directly. It therefore does not support batching. If it
     # does appear in a batch, the batch is split around greet, and the call to
     # greet is done in its own roundtrip.
     def greet(self, name=None):
-        return unmangle(self._submitone(b'greet', [(b'name', mangle(name),)]))
+        return unmangle(
+            self._submitone(
+                b'greet',
+                [
+                    (
+                        b'name',
+                        mangle(name),
+                    )
+                ],
+            )
+        )
 
 
 # demo remote usage

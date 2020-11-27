@@ -141,7 +141,10 @@ def pullremotenames(localrepo, remoterepo):
 
     with remoterepo.commandexecutor() as e:
         bookmarks = e.callcommand(
-            b'listkeys', {b'namespace': b'bookmarks',}
+            b'listkeys',
+            {
+                b'namespace': b'bookmarks',
+            },
         ).result()
 
     # on a push, we don't want to keep obsolete heads since

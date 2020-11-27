@@ -120,7 +120,13 @@ def narrow_widen(
             )
         else:
             narrowbundle2.generate_ellipses_bundle2_for_widening(
-                bundler, repo, oldmatch, newmatch, cgversion, common, known,
+                bundler,
+                repo,
+                oldmatch,
+                newmatch,
+                cgversion,
+                common,
+                known,
             )
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)

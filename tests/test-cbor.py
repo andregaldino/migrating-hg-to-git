@@ -690,7 +690,12 @@ class ArrayTests(TestCase):
 
         self.assertEqual(
             list(cborutil.streamencodearrayfromiter(source)),
-            [b'\x9f', b'\x43', b'foo', b'\xff',],
+            [
+                b'\x9f',
+                b'\x43',
+                b'foo',
+                b'\xff',
+            ],
         )
 
         dest = b''.join(cborutil.streamencodearrayfromiter(source))
@@ -799,7 +804,11 @@ class ArrayTests(TestCase):
 class SetTests(TestCase):
     def testempty(self):
         self.assertEqual(
-            list(cborutil.streamencode(set())), [b'\xd9\x01\x02', b'\x80',]
+            list(cborutil.streamencode(set())),
+            [
+                b'\xd9\x01\x02',
+                b'\x80',
+            ],
         )
 
         self.assertEqual(cborutil.decodeall(b'\xd9\x01\x02\x80'), [set()])
@@ -914,14 +923,26 @@ class SetTests(TestCase):
         ):
             cborutil.decodeall(encoded)
 
-        encoded = b''.join([b'\xd9\x01\x02', b'\x81', b'\x80',])  # empty array
+        encoded = b''.join(
+            [
+                b'\xd9\x01\x02',
+                b'\x81',
+                b'\x80',
+            ]
+        )  # empty array
 
         with self.assertRaisesRegex(
             cborutil.CBORDecodeError, 'collections not allowed as set values'
         ):
             cborutil.decodeall(encoded)
 
-        encoded = b''.join([b'\xd9\x01\x02', b'\x81', b'\xa0',])  # empty map
+        encoded = b''.join(
+            [
+                b'\xd9\x01\x02',
+                b'\x81',
+                b'\xa0',
+            ]
+        )  # empty map
 
         with self.assertRaisesRegex(
             cborutil.CBORDecodeError, 'collections not allowed as set values'
@@ -1059,7 +1080,13 @@ class MapTests(TestCase):
         ):
             cborutil.decodeall(encoded)
 
-        encoded = b''.join([b'\xa1', b'\x80', b'\x43foo',])  # empty array
+        encoded = b''.join(
+            [
+                b'\xa1',
+                b'\x80',
+                b'\x43foo',
+            ]
+        )  # empty array
 
         with self.assertRaisesRegex(
             cborutil.CBORDecodeError, 'collections not supported as map keys'
@@ -1260,7 +1287,10 @@ class DecodeallTests(TestCase):
 
     def testpartialinput(self):
         encoded = b''.join(
-            [b'\x82', b'\x01',]  # array of 2 elements  # integer 1
+            [
+                b'\x82',
+                b'\x01',
+            ]  # array of 2 elements  # integer 1
         )
 
         with self.assertRaisesRegex(

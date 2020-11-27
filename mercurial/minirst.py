@@ -52,7 +52,7 @@ def subsubsubsubsection(s):
 
 
 def replace(text, substs):
-    '''
+    """
     Apply a list of (find, replace) pairs to a text.
 
     >>> replace(b"foo bar", [(b'f', b'F'), (b'b', b'B')])
@@ -63,7 +63,7 @@ def replace(text, substs):
     >>> encoding.encoding = b'shiftjis'
     >>> replace(b'\\x81\\\\', [(b'\\\\', b'/')])
     '\\x81\\\\'
-    '''
+    """
 
     # some character encodings (cp932 for Japanese, at least) use
     # ASCII characters other than control/alphabet/digit as a part of
@@ -322,10 +322,10 @@ _sectionre = re.compile(br"""^([-=`:.'"~^_*+#])\1+$""")
 
 
 def findtables(blocks):
-    '''Find simple tables
+    """Find simple tables
 
-       Only simple one-line table elements are supported
-    '''
+    Only simple one-line table elements are supported
+    """
 
     for block in blocks:
         # Searching for a block that looks like this:
@@ -432,7 +432,11 @@ def addmargins(blocks):
     while i < len(blocks):
         if blocks[i][b'type'] == blocks[i - 1][b'type'] and blocks[i][
             b'type'
-        ] in (b'bullet', b'option', b'field',):
+        ] in (
+            b'bullet',
+            b'option',
+            b'field',
+        ):
             i += 1
         elif not blocks[i - 1][b'lines']:
             # no lines in previous block, do not separate

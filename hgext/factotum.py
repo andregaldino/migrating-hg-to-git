@@ -70,13 +70,19 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'factotum', b'executable', default=b'/bin/auth/factotum',
+    b'factotum',
+    b'executable',
+    default=b'/bin/auth/factotum',
 )
 configitem(
-    b'factotum', b'mountpoint', default=b'/mnt/factotum',
+    b'factotum',
+    b'mountpoint',
+    default=b'/mnt/factotum',
 )
 configitem(
-    b'factotum', b'service', default=b'hg',
+    b'factotum',
+    b'service',
+    default=b'hg',
 )
 
 

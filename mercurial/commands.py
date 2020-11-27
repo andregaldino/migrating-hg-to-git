@@ -605,7 +605,7 @@ def annotate(ui, repo, *pats, **opts):
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
 )
 def archive(ui, repo, dest, **opts):
-    '''create an unversioned archive of a repository revision
+    """create an unversioned archive of a repository revision
 
     By default, the revision used is the parent of the working
     directory; use -r/--rev to specify a different revision.
@@ -644,7 +644,7 @@ def archive(ui, repo, dest, **opts):
     removed.
 
     Returns 0 on success.
-    '''
+    """
 
     opts = pycompat.byteskwargs(opts)
     rev = opts.get(b'rev')
@@ -718,7 +718,7 @@ def archive(ui, repo, dest, **opts):
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
 )
 def backout(ui, repo, node=None, rev=None, **opts):
-    '''reverse effect of earlier changeset
+    """reverse effect of earlier changeset
 
     Prepare a new changeset with the effect of REV undone in the
     current working directory. If no conflicts were encountered,
@@ -768,7 +768,7 @@ def backout(ui, repo, node=None, rev=None, **opts):
 
     Returns 0 on success, 1 if nothing to backout or there are unresolved
     files.
-    '''
+    """
     with repo.wlock(), repo.lock():
         return _dobackout(ui, repo, node, rev, **opts)
 
@@ -1166,7 +1166,7 @@ def bisect(
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
 )
 def bookmark(ui, repo, *names, **opts):
-    '''create a new bookmark or list existing bookmarks
+    """create a new bookmark or list existing bookmarks
 
     Bookmarks are labels on changesets to help track lines of development.
     Bookmarks are unversioned and can be moved, renamed and deleted.
@@ -1224,7 +1224,7 @@ def bookmark(ui, repo, *names, **opts):
       - print only the active bookmark name::
 
           hg book -ql .
-    '''
+    """
     opts = pycompat.byteskwargs(opts)
     force = opts.get(b'force')
     rev = opts.get(b'rev')
@@ -2804,7 +2804,9 @@ def files(ui, repo, *pats, **opts):
 
 @command(
     b'forget',
-    [(b'i', b'interactive', None, _(b'use interactive mode')),]
+    [
+        (b'i', b'interactive', None, _(b'use interactive mode')),
+    ]
     + walkopts
     + dryrunopts,
     _(b'[OPTION]... FILE...'),
@@ -2904,7 +2906,7 @@ def forget(ui, repo, *pats, **opts):
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
 )
 def graft(ui, repo, *revs, **opts):
-    '''copy changes from other branches onto the current branch
+    """copy changes from other branches onto the current branch
 
     This command uses Mercurial's merge logic to copy individual
     changes from other branches without merging branches in the
@@ -2997,7 +2999,7 @@ def graft(ui, repo, *revs, **opts):
     See :hg:`help revisions` for more about specifying revisions.
 
     Returns 0 on successful completion, 1 if there are unresolved files.
-    '''
+    """
     with repo.wlock():
         return _dograft(ui, repo, *revs, **opts)
 
@@ -5261,7 +5263,12 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
             None,
             _(b'run even when remote repository is unrelated'),
         ),
-        (b'', b'confirm', None, _(b'confirm pull before applying changes'),),
+        (
+            b'',
+            b'confirm',
+            None,
+            _(b'confirm pull before applying changes'),
+        ),
         (
             b'r',
             b'rev',
@@ -5518,7 +5525,9 @@ def push(ui, repo, dest=None, **opts):
 
     if opts.get(b'all_bookmarks'):
         cmdutil.check_incompatible_arguments(
-            opts, b'all_bookmarks', [b'bookmark', b'rev'],
+            opts,
+            b'all_bookmarks',
+            [b'bookmark', b'rev'],
         )
         opts[b'bookmark'] = list(repo._bookmarks)
 
@@ -5608,7 +5617,9 @@ def push(ui, repo, dest=None, **opts):
 
 @command(
     b'recover',
-    [(b'', b'verify', False, b"run `hg verify` after successful recover"),],
+    [
+        (b'', b'verify', False, b"run `hg verify` after successful recover"),
+    ],
     helpcategory=command.CATEGORY_MAINTENANCE,
 )
 def recover(ui, repo, **opts):
@@ -6448,7 +6459,7 @@ def serve(ui, repo, **opts):
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
 )
 def shelve(ui, repo, *pats, **opts):
-    '''save and set aside changes from the working directory
+    """save and set aside changes from the working directory
 
     Shelving takes files that "hg status" reports as not clean, saves
     the modifications to a bundle (a shelved change), and reverts the
@@ -6479,7 +6490,7 @@ def shelve(ui, repo, *pats, **opts):
 
     To delete specific shelved changes, use ``--delete``. To delete
     all shelved changes, use ``--cleanup``.
-    '''
+    """
     opts = pycompat.byteskwargs(opts)
     allowables = [
         (b'addremove', {b'create'}),  # 'create' is pseudo action
@@ -7707,8 +7718,7 @@ def version_(ui, **opts):
 
 
 def loadcmdtable(ui, name, cmdtable):
-    """Load command functions from specified cmdtable
-    """
+    """Load command functions from specified cmdtable"""
     overrides = [cmd for cmd in cmdtable if cmd in table]
     if overrides:
         ui.warn(

@@ -139,10 +139,20 @@ def extsetup(ui):
 
     # Register flag processors for each extension
     flagutil.addflagprocessor(
-        REVIDX_NOOP, (noopdonothingread, noopdonothing, validatehash,)
+        REVIDX_NOOP,
+        (
+            noopdonothingread,
+            noopdonothing,
+            validatehash,
+        ),
     )
     flagutil.addflagprocessor(
-        REVIDX_BASE64, (b64decode, b64encode, bypass,),
+        REVIDX_BASE64,
+        (
+            b64decode,
+            b64encode,
+            bypass,
+        ),
     )
     flagutil.addflagprocessor(
         REVIDX_GZIP, (gzipdecompress, gzipcompress, bypass)

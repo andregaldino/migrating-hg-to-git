@@ -291,7 +291,9 @@ try:
         experimental=True,
     )
     configitem(
-        b'perf', b'pre-run', default=mercurial.configitems.dynamicdefault,
+        b'perf',
+        b'pre-run',
+        default=mercurial.configitems.dynamicdefault,
     )
     configitem(
         b'perf',
@@ -310,19 +312,29 @@ except TypeError:
     # compatibility fix for a11fd395e83f
     # hg version: 5.2
     configitem(
-        b'perf', b'presleep', default=mercurial.configitems.dynamicdefault,
+        b'perf',
+        b'presleep',
+        default=mercurial.configitems.dynamicdefault,
     )
     configitem(
-        b'perf', b'stub', default=mercurial.configitems.dynamicdefault,
+        b'perf',
+        b'stub',
+        default=mercurial.configitems.dynamicdefault,
     )
     configitem(
-        b'perf', b'parentscount', default=mercurial.configitems.dynamicdefault,
+        b'perf',
+        b'parentscount',
+        default=mercurial.configitems.dynamicdefault,
     )
     configitem(
-        b'perf', b'all-timing', default=mercurial.configitems.dynamicdefault,
+        b'perf',
+        b'all-timing',
+        default=mercurial.configitems.dynamicdefault,
     )
     configitem(
-        b'perf', b'pre-run', default=mercurial.configitems.dynamicdefault,
+        b'perf',
+        b'pre-run',
+        default=mercurial.configitems.dynamicdefault,
     )
     configitem(
         b'perf',
@@ -330,7 +342,9 @@ except TypeError:
         default=mercurial.configitems.dynamicdefault,
     )
     configitem(
-        b'perf', b'run-limits', default=mercurial.configitems.dynamicdefault,
+        b'perf',
+        b'run-limits',
+        default=mercurial.configitems.dynamicdefault,
     )
 
 
@@ -385,8 +399,7 @@ def gettimer(ui, opts=None):
         from mercurial import node
 
         class defaultformatter(object):
-            """Minimized composition of baseformatter and plainformatter
-            """
+            """Minimized composition of baseformatter and plainformatter"""
 
             def __init__(self, ui, topic, opts):
                 self._ui = ui
@@ -658,8 +671,7 @@ def getbranchmapsubsettable():
 
 
 def getsvfs(repo):
-    """Return appropriate object to access files under .hg/store
-    """
+    """Return appropriate object to access files under .hg/store"""
     # for "historical portability":
     # repo.svfs has been available since 2.3 (or 7034365089bf)
     svfs = getattr(repo, 'svfs', None)
@@ -670,8 +682,7 @@ def getsvfs(repo):
 
 
 def getvfs(repo):
-    """Return appropriate object to access files under .hg
-    """
+    """Return appropriate object to access files under .hg"""
     # for "historical portability":
     # repo.vfs has been available since 2.3 (or 7034365089bf)
     vfs = getattr(repo, 'vfs', None)
@@ -682,8 +693,7 @@ def getvfs(repo):
 
 
 def repocleartagscachefunc(repo):
-    """Return the function to clear tags cache according to repo internal API
-    """
+    """Return the function to clear tags cache according to repo internal API"""
     if util.safehasattr(repo, b'_tagscache'):  # since 2.0 (or 9dca7653b525)
         # in this case, setattr(repo, '_tagscache', None) or so isn't
         # correct way to clear tags cache, because existing code paths
@@ -847,7 +857,9 @@ def perfheads(ui, repo, **opts):
 @command(
     b'perftags',
     formatteropts
-    + [(b'', b'clear-revlogs', False, b'refresh changelog and manifest'),],
+    + [
+        (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
+    ],
 )
 def perftags(ui, repo, **opts):
     opts = _byteskwargs(opts)
@@ -900,8 +912,7 @@ def perfancestorset(ui, repo, revset, **opts):
 
 @command(b'perfdiscovery', formatteropts, b'PATH')
 def perfdiscovery(ui, repo, path, **opts):
-    """benchmark discovery between local repo and the peer at given path
-    """
+    """benchmark discovery between local repo and the peer at given path"""
     repos = [repo, None]
     timer, fm = gettimer(ui, opts)
     path = ui.expandpath(path)
@@ -919,7 +930,9 @@ def perfdiscovery(ui, repo, path, **opts):
 @command(
     b'perfbookmarks',
     formatteropts
-    + [(b'', b'clear-revlogs', False, b'refresh changelog and manifest'),],
+    + [
+        (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
+    ],
 )
 def perfbookmarks(ui, repo, **opts):
     """benchmark parsing bookmarks from disk to memory"""
@@ -1184,8 +1197,7 @@ def perfdirstate(ui, repo, **opts):
 
 @command(b'perfdirstatedirs', formatteropts)
 def perfdirstatedirs(ui, repo, **opts):
-    """benchmap a 'dirstate.hasdir' call from an empty `dirs` cache
-    """
+    """benchmap a 'dirstate.hasdir' call from an empty `dirs` cache"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     repo.dirstate.hasdir(b"a")
@@ -1245,8 +1257,7 @@ def perfdirfoldmap(ui, repo, **opts):
 
 @command(b'perfdirstatewrite', formatteropts)
 def perfdirstatewrite(ui, repo, **opts):
-    """benchmap the time it take to write a dirstate on disk
-    """
+    """benchmap the time it take to write a dirstate on disk"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     ds = repo.dirstate
@@ -1359,7 +1370,9 @@ def perfpathcopies(ui, repo, rev1, rev2, **opts):
 
 @command(
     b'perfphases',
-    [(b'', b'full', False, b'include file reading time too'),],
+    [
+        (b'', b'full', False, b'include file reading time too'),
+    ],
     b"",
 )
 def perfphases(ui, repo, **opts):
@@ -1839,7 +1852,10 @@ def perfmoonwalk(ui, repo, **opts):
 
 @command(
     b'perftemplating',
-    [(b'r', b'rev', [], b'revisions to run the template on'),] + formatteropts,
+    [
+        (b'r', b'rev', [], b'revisions to run the template on'),
+    ]
+    + formatteropts,
 )
 def perftemplating(ui, repo, testedtemplate=None, **opts):
     """test the rendering time of a given template"""
@@ -2193,10 +2209,18 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                 }
                 if dostats:
                     alldata['nbrevs'].append(
-                        (data['nbrevs'], base.hex(), parent.hex(),)
+                        (
+                            data['nbrevs'],
+                            base.hex(),
+                            parent.hex(),
+                        )
                     )
                     alldata['nbmissingfiles'].append(
-                        (data['nbmissingfiles'], base.hex(), parent.hex(),)
+                        (
+                            data['nbmissingfiles'],
+                            base.hex(),
+                            parent.hex(),
+                        )
                     )
                 if dotiming:
                     begin = util.timer()
@@ -2207,10 +2231,18 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
                     data['nbrenamedfiles'] = len(renames)
                     if dostats:
                         alldata['time'].append(
-                            (data['time'], base.hex(), parent.hex(),)
+                            (
+                                data['time'],
+                                base.hex(),
+                                parent.hex(),
+                            )
                         )
                         alldata['nbrenames'].append(
-                            (data['nbrenamedfiles'], base.hex(), parent.hex(),)
+                            (
+                                data['nbrenamedfiles'],
+                                base.hex(),
+                                parent.hex(),
+                            )
                         )
                 fm.startitem()
                 fm.data(**data)
@@ -3321,7 +3353,9 @@ def perfrevset(ui, repo, expr, clear=False, contexts=False, **opts):
 
 @command(
     b'perfvolatilesets',
-    [(b'', b'clear-obsstore', False, b'drop obsstore between each call.'),]
+    [
+        (b'', b'clear-obsstore', False, b'drop obsstore between each call.'),
+    ]
     + formatteropts,
 )
 def perfvolatilesets(ui, repo, *names, **opts):
@@ -3807,8 +3841,7 @@ def perflrucache(
     ],
 )
 def perfwrite(ui, repo, **opts):
-    """microbenchmark ui.write (and others)
-    """
+    """microbenchmark ui.write (and others)"""
     opts = _byteskwargs(opts)
 
     write = getattr(ui, _sysstr(opts[b'write_method']))

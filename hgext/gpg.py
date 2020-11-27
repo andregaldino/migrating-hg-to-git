@@ -37,13 +37,20 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'gpg', b'cmd', default=b'gpg',
+    b'gpg',
+    b'cmd',
+    default=b'gpg',
 )
 configitem(
-    b'gpg', b'key', default=None,
+    b'gpg',
+    b'key',
+    default=None,
 )
 configitem(
-    b'gpg', b'.*', default=None, generic=True,
+    b'gpg',
+    b'.*',
+    default=None,
+    generic=True,
 )
 
 # Custom help category
@@ -78,7 +85,11 @@ class gpg(object):
             fp.close()
             gpgcmd = (
                 b"%s --logger-fd 1 --status-fd 1 --verify \"%s\" \"%s\""
-                % (self.path, sigfile, datafile,)
+                % (
+                    self.path,
+                    sigfile,
+                    datafile,
+                )
             )
             ret = procutil.filter(b"", gpgcmd)
         finally:

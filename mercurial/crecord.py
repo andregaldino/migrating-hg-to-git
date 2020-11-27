@@ -1000,7 +1000,7 @@ class curseschunkselector(object):
 
     def toggleallbetween(self):
         """toggle applied on or off for all items in range [lastapplied,
-        current]. """
+        current]."""
         if (
             not self.lastapplieditem
             or self.currentselecteditem == self.lastapplieditem

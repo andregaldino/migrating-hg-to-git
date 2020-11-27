@@ -17,7 +17,7 @@ from . import (
 
 
 class dirstateguard(util.transactional):
-    '''Restore dirstate at unexpected failure.
+    """Restore dirstate at unexpected failure.
 
     At the construction, this class does:
 
@@ -28,7 +28,7 @@ class dirstateguard(util.transactional):
     is invoked before ``close()``.
 
     This just removes the backup file at ``close()`` before ``release()``.
-    '''
+    """
 
     def __init__(self, repo, name):
         self._repo = repo

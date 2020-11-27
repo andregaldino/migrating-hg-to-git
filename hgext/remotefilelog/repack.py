@@ -54,8 +54,7 @@ def backgroundrepack(repo, incremental=True, packsonly=False):
 
 
 def fullrepack(repo, options=None):
-    """If ``packsonly`` is True, stores creating only loose objects are skipped.
-    """
+    """If ``packsonly`` is True, stores creating only loose objects are skipped."""
     if util.safehasattr(repo, 'shareddatastores'):
         datasource = contentstore.unioncontentstore(*repo.shareddatastores)
         historysource = metadatastore.unionmetadatastore(
@@ -874,8 +873,7 @@ class repackledger(object):
 
 
 class repackentry(object):
-    """Simple class representing a single revision entry in the repackledger.
-    """
+    """Simple class representing a single revision entry in the repackledger."""
 
     __slots__ = (
         'filename',

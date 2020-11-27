@@ -198,7 +198,11 @@ def build_installer(
     except jinja2.TemplateSyntaxError as e:
         raise Exception(
             'template syntax error at %s:%d: %s'
-            % (e.name, e.lineno, e.message,)
+            % (
+                e.name,
+                e.lineno,
+                e.message,
+            )
         )
 
     content = template.render(package_files=package_files)

@@ -239,25 +239,44 @@ configitem = registrar.configitem(configtable)
 
 # deprecated config: acl.config
 configitem(
-    b'acl', b'config', default=None,
+    b'acl',
+    b'config',
+    default=None,
 )
 configitem(
-    b'acl.groups', b'.*', default=None, generic=True,
+    b'acl.groups',
+    b'.*',
+    default=None,
+    generic=True,
 )
 configitem(
-    b'acl.deny.branches', b'.*', default=None, generic=True,
+    b'acl.deny.branches',
+    b'.*',
+    default=None,
+    generic=True,
 )
 configitem(
-    b'acl.allow.branches', b'.*', default=None, generic=True,
+    b'acl.allow.branches',
+    b'.*',
+    default=None,
+    generic=True,
 )
 configitem(
-    b'acl.deny', b'.*', default=None, generic=True,
+    b'acl.deny',
+    b'.*',
+    default=None,
+    generic=True,
 )
 configitem(
-    b'acl.allow', b'.*', default=None, generic=True,
+    b'acl.allow',
+    b'.*',
+    default=None,
+    generic=True,
 )
 configitem(
-    b'acl', b'sources', default=lambda: [b'serve'],
+    b'acl',
+    b'sources',
+    default=lambda: [b'serve'],
 )
 
 

@@ -362,7 +362,8 @@ def build_inno_installer(
             raise Exception("unhandled arch: %s" % arch)
 
         ps = BUILD_INNO_PYTHON3.format(
-            pyoxidizer_target=target_triple, version=version,
+            pyoxidizer_target=target_triple,
+            version=version,
         )
     else:
         extra_args = []
@@ -427,7 +428,8 @@ def build_wix_installer(
             raise Exception("unhandled arch: %s" % arch)
 
         ps = BUILD_WIX_PYTHON3.format(
-            pyoxidizer_target=target_triple, version=version,
+            pyoxidizer_target=target_triple,
+            version=version,
         )
     else:
         extra_args = []
@@ -460,7 +462,10 @@ def run_tests(winrm_client, python_version, arch, test_flags=''):
 
     python_path = 'python%s-%s' % (python_version.replace('.', ''), arch)
 
-    ps = RUN_TESTS.format(python_path=python_path, test_flags=test_flags or '',)
+    ps = RUN_TESTS.format(
+        python_path=python_path,
+        test_flags=test_flags or '',
+    )
 
     run_powershell(winrm_client, ps)
 

@@ -146,8 +146,8 @@ class remotestore(basestore.basestore):
         raise NotImplementedError(b'abstract method')
 
     def _stat(self, hashes):
-        '''Get information about availability of files specified by
+        """Get information about availability of files specified by
         hashes in the remote store. Return dictionary mapping hashes
         to return code where 0 means that file is available, other
-        values if not.'''
+        values if not."""
         raise NotImplementedError(b'abstract method')

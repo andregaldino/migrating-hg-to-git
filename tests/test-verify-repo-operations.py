@@ -112,7 +112,13 @@ safetext = st.text(
     min_size=1,
 ).map(lambda s: s.encode('utf-8'))
 
-extensions = st.sampled_from(('shelve', 'mq', 'blackbox',))
+extensions = st.sampled_from(
+    (
+        'shelve',
+        'mq',
+        'blackbox',
+    )
+)
 
 
 @contextmanager
@@ -233,7 +239,12 @@ class verifyingstatemachine(RuleBasedStateMachine):
                         t = r.read()
                         assert ext not in t, t
                     output = subprocess.check_output(
-                        [runtests, tf, "--local",], stderr=subprocess.STDOUT
+                        [
+                            runtests,
+                            tf,
+                            "--local",
+                        ],
+                        stderr=subprocess.STDOUT,
                     )
                     assert "Ran 1 test" in output, output
             except subprocess.CalledProcessError as e:
@@ -307,7 +318,8 @@ class verifyingstatemachine(RuleBasedStateMachine):
         return content
 
     @rule(
-        target=branches, name=safetext,
+        target=branches,
+        name=safetext,
     )
     def genbranch(self, name):
         return name
@@ -343,7 +355,10 @@ class verifyingstatemachine(RuleBasedStateMachine):
                 "$ python -c 'import binascii; "
                 "print(binascii.unhexlify(\"%s\"))' > %s"
             )
-            % (binascii.hexlify(content), pipes.quote(path),)
+            % (
+                binascii.hexlify(content),
+                pipes.quote(path),
+            )
         )
 
     @rule(path=paths)
@@ -354,7 +369,9 @@ class verifyingstatemachine(RuleBasedStateMachine):
     @rule(path=paths)
     def forgetpath(self, path):
         if os.path.exists(path):
-            with acceptableerrors("file is already untracked",):
+            with acceptableerrors(
+                "file is already untracked",
+            ):
                 self.hg("forget", "--", path)
 
     @rule(s=st.none() | st.integers(0, 100))
@@ -420,7 +437,9 @@ class verifyingstatemachine(RuleBasedStateMachine):
         return self.configperrepo.setdefault(self.currentrepo, {})
 
     @rule(
-        target=repos, source=repos, name=reponames,
+        target=repos,
+        source=repos,
+        name=reponames,
     )
     def clone(self, source, name):
         if not os.path.exists(os.path.join("..", name)):
@@ -430,7 +449,8 @@ class verifyingstatemachine(RuleBasedStateMachine):
         return name
 
     @rule(
-        target=repos, name=reponames,
+        target=repos,
+        name=reponames,
     )
     def fresh(self, name):
         if not os.path.exists(os.path.join("..", name)):
@@ -453,14 +473,16 @@ class verifyingstatemachine(RuleBasedStateMachine):
     @rule()
     def pull(self, repo=repos):
         with acceptableerrors(
-            "repository default not found", "repository is unrelated",
+            "repository default not found",
+            "repository is unrelated",
         ):
             self.hg("pull")
 
     @rule(newbranch=st.booleans())
     def push(self, newbranch):
         with acceptableerrors(
-            "default repository not configured", "no changes found",
+            "default repository not configured",
+            "no changes found",
         ):
             if newbranch:
                 self.hg("push", "--new-branch")
@@ -507,7 +529,8 @@ class verifyingstatemachine(RuleBasedStateMachine):
     @rule(branch=branches, clean=st.booleans())
     def update(self, branch, clean):
         with acceptableerrors(
-            'unknown revision', 'parse error',
+            'unknown revision',
+            'parse error',
         ):
             if clean:
                 self.hg("update", "-C", "--", branch)
@@ -570,7 +593,12 @@ def extensionconfigkey(extension):
 
 
 settings.register_profile(
-    'default', settings(timeout=300, stateful_step_count=50, max_examples=10,)
+    'default',
+    settings(
+        timeout=300,
+        stateful_step_count=50,
+        max_examples=10,
+    ),
 )
 
 settings.register_profile(

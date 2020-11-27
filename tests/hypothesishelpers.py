@@ -44,8 +44,7 @@ def check(*args, **kwargs):
 
 
 def roundtrips(data, decode, encode):
-    """helper to tests function that must do proper encode/decode roundtripping
-    """
+    """helper to tests function that must do proper encode/decode roundtripping"""
 
     @given(data)
     def testroundtrips(value):
@@ -71,6 +70,11 @@ bytestrings = (
     st.builds(
         lambda s, e: s.encode(e),
         st.text(),
-        st.sampled_from(['utf-8', 'utf-16',]),
+        st.sampled_from(
+            [
+                'utf-8',
+                'utf-16',
+            ]
+        ),
     )
 ) | st.binary()

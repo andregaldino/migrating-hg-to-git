@@ -148,11 +148,11 @@ def ancestors(pfunc, *orignodes):
 
 
 class incrementalmissingancestors(object):
-    '''persistent state used to calculate missing ancestors incrementally
+    """persistent state used to calculate missing ancestors incrementally
 
     Although similar in spirit to lazyancestors below, this is a separate class
     because trying to support contains and missingancestors operations with the
-    same internal data structures adds needless complexity.'''
+    same internal data structures adds needless complexity."""
 
     def __init__(self, pfunc, bases):
         self.bases = set(bases)
@@ -198,12 +198,12 @@ class incrementalmissingancestors(object):
                 break
 
     def missingancestors(self, revs):
-        '''return all the ancestors of revs that are not ancestors of self.bases
+        """return all the ancestors of revs that are not ancestors of self.bases
 
         This may include elements from revs.
 
         Equivalent to the revset (::revs - ::self.bases). Revs are returned in
-        revision number order, which is a topological order.'''
+        revision number order, which is a topological order."""
         revsvisit = set(revs)
         basesvisit = self.bases
         pfunc = self.pfunc

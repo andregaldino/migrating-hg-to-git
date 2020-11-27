@@ -53,12 +53,17 @@ defaultdateformats = (
     b'%I:%M%p',
 )
 
-extendeddateformats = defaultdateformats + (b"%Y", b"%Y-%m", b"%b", b"%b %Y",)
+extendeddateformats = defaultdateformats + (
+    b"%Y",
+    b"%Y-%m",
+    b"%b",
+    b"%b %Y",
+)
 
 
 def makedate(timestamp=None):
-    '''Return a unix timestamp (or the current time) as a (unixtime,
-    offset) tuple based off the local timezone.'''
+    """Return a unix timestamp (or the current time) as a (unixtime,
+    offset) tuple based off the local timezone."""
     if timestamp is None:
         timestamp = time.time()
     if timestamp < 0:
@@ -115,7 +120,7 @@ def shortdate(date=None):
 
 def parsetimezone(s):
     """find a trailing timezone, if any, in string, and return a
-       (offset, remainder) pair"""
+    (offset, remainder) pair"""
     s = pycompat.bytestr(s)
 
     if s.endswith(b"GMT") or s.endswith(b"UTC"):

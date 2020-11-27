@@ -158,13 +158,14 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'keywordset', b'svn', default=False,
+    b'keywordset',
+    b'svn',
+    default=False,
 )
 # date like in cvs' $Date
 @templatefilter(b'utcdate', intype=templateutil.date)
 def utcdate(date):
-    '''Date. Returns a UTC-date in this format: "2009/08/18 11:00:13".
-    '''
+    """Date. Returns a UTC-date in this format: "2009/08/18 11:00:13"."""
     dateformat = b'%Y/%m/%d %H:%M:%S'
     return dateutil.datestr((date[0], 0), dateformat)
 
@@ -172,18 +173,18 @@ def utcdate(date):
 # date like in svn's $Date
 @templatefilter(b'svnisodate', intype=templateutil.date)
 def svnisodate(date):
-    '''Date. Returns a date in this format: "2009-08-18 13:00:13
+    """Date. Returns a date in this format: "2009-08-18 13:00:13
     +0200 (Tue, 18 Aug 2009)".
-    '''
+    """
     return dateutil.datestr(date, b'%Y-%m-%d %H:%M:%S %1%2 (%a, %d %b %Y)')
 
 
 # date like in svn's $Id
 @templatefilter(b'svnutcdate', intype=templateutil.date)
 def svnutcdate(date):
-    '''Date. Returns a UTC-date in this format: "2009-08-18
+    """Date. Returns a UTC-date in this format: "2009-08-18
     11:00:13Z".
-    '''
+    """
     dateformat = b'%Y-%m-%d %H:%M:%SZ'
     return dateutil.datestr((date[0], 0), dateformat)
 
@@ -221,25 +222,25 @@ def _defaultkwmaps(ui):
 
 
 def _shrinktext(text, subfunc):
-    '''Helper for keyword expansion removal in text.
-    Depending on subfunc also returns number of substitutions.'''
+    """Helper for keyword expansion removal in text.
+    Depending on subfunc also returns number of substitutions."""
     return subfunc(br'$\1$', text)
 
 
 def _preselect(wstatus, changed):
-    '''Retrieves modified and added files from a working directory state
+    """Retrieves modified and added files from a working directory state
     and returns the subset of each contained in given changed files
-    retrieved from a change context.'''
+    retrieved from a change context."""
     modified = [f for f in wstatus.modified if f in changed]
     added = [f for f in wstatus.added if f in changed]
     return modified, added
 
 
 class kwtemplater(object):
-    '''
+    """
     Sets up keyword templates, corresponding keyword regex, and
     provides keyword substitution functions.
-    '''
+    """
 
     def __init__(self, ui, repo, inc, exc):
         self.ui = ui
@@ -304,8 +305,8 @@ class kwtemplater(object):
         return data
 
     def iskwfile(self, cand, ctx):
-        '''Returns subset of candidates which are configured for keyword
-        expansion but are not symbolic links.'''
+        """Returns subset of candidates which are configured for keyword
+        expansion but are not symbolic links."""
         return [f for f in cand if self.match(f) and b'l' not in ctx.flags(f)]
 
     def overwrite(self, ctx, candidates, lookup, expand, rekw=False):
@@ -374,18 +375,18 @@ class kwtemplater(object):
         return lines
 
     def wread(self, fname, data):
-        '''If in restricted mode returns data read from wdir with
-        keyword substitutions removed.'''
+        """If in restricted mode returns data read from wdir with
+        keyword substitutions removed."""
         if self.restrict:
             return self.shrink(fname, data)
         return data
 
 
 class kwfilelog(filelog.filelog):
-    '''
+    """
     Subclass of filelog to hook into its read, add, cmp methods.
     Keywords are "stored" unexpanded, and processed on reading.
-    '''
+    """
 
     def __init__(self, opener, kwt, path):
         super(kwfilelog, self).__init__(opener, path)
@@ -411,8 +412,8 @@ class kwfilelog(filelog.filelog):
 
 
 def _status(ui, repo, wctx, kwt, *pats, **opts):
-    '''Bails out if [keyword] configuration is not active.
-    Returns status of working directory.'''
+    """Bails out if [keyword] configuration is not active.
+    Returns status of working directory."""
     if kwt:
         opts = pycompat.byteskwargs(opts)
         return repo.status(
@@ -448,7 +449,7 @@ def _kwfwrite(ui, repo, expand, *pats, **opts):
     optionalrepo=True,
 )
 def demo(ui, repo, *args, **opts):
-    '''print [keywordmaps] configuration and an expansion example
+    """print [keywordmaps] configuration and an expansion example
 
     Show current, custom, or default keyword template maps and their
     expansions.
@@ -459,7 +460,7 @@ def demo(ui, repo, *args, **opts):
     Use -d/--default to disable current configuration.
 
     See :hg:`help templates` for information on templates and filters.
-    '''
+    """
 
     def demoitems(section, items):
         ui.write(b'[%s]\n' % section)
@@ -547,12 +548,12 @@ def demo(ui, repo, *args, **opts):
     inferrepo=True,
 )
 def expand(ui, repo, *pats, **opts):
-    '''expand keywords in the working directory
+    """expand keywords in the working directory
 
     Run after (re)enabling keyword expansion.
 
     kwexpand refuses to run if given files contain local changes.
-    '''
+    """
     # 3rd argument sets expansion to True
     _kwfwrite(ui, repo, True, *pats, **opts)
 
@@ -569,7 +570,7 @@ def expand(ui, repo, *pats, **opts):
     inferrepo=True,
 )
 def files(ui, repo, *pats, **opts):
-    '''show files configured for keyword expansion
+    """show files configured for keyword expansion
 
     List which files in the working directory are matched by the
     [keyword] configuration patterns.
@@ -588,7 +589,7 @@ def files(ui, repo, *pats, **opts):
       k = keyword expansion candidate (not tracked)
       I = ignored
       i = ignored (not tracked)
-    '''
+    """
     kwt = getattr(repo, '_keywordkwt', None)
     wctx = repo[None]
     status = _status(ui, repo, wctx, kwt, *pats, **opts)
@@ -634,12 +635,12 @@ def files(ui, repo, *pats, **opts):
     inferrepo=True,
 )
 def shrink(ui, repo, *pats, **opts):
-    '''revert expanded keywords in the working directory
+    """revert expanded keywords in the working directory
 
     Must be run before changing/disabling active keywords.
 
     kwshrink refuses to run if given files contain local changes.
-    '''
+    """
     # 3rd argument sets expansion to False
     _kwfwrite(ui, repo, False, *pats, **opts)
 
@@ -648,8 +649,8 @@ def shrink(ui, repo, *pats, **opts):
 
 
 def kwpatchfile_init(orig, self, ui, gp, backend, store, eolmode=None):
-    '''Monkeypatch/wrap patch.patchfile.__init__ to avoid
-    rejects or conflicts due to expanded keywords in working dir.'''
+    """Monkeypatch/wrap patch.patchfile.__init__ to avoid
+    rejects or conflicts due to expanded keywords in working dir."""
     orig(self, ui, gp, backend, store, eolmode)
     kwt = getattr(getattr(backend, 'repo', None), '_keywordkwt', None)
     if kwt:
@@ -702,7 +703,7 @@ def kw_amend(orig, ui, repo, old, extra, pats, opts):
 
 
 def kw_copy(orig, ui, repo, pats, opts, rename=False):
-    '''Wraps cmdutil.copy so that copy/rename destinations do not
+    """Wraps cmdutil.copy so that copy/rename destinations do not
     contain expanded keywords.
     Note that the source of a regular file destination may also be a
     symlink:
@@ -710,7 +711,7 @@ def kw_copy(orig, ui, repo, pats, opts, rename=False):
     cp sym x; hg cp -A sym x   -> x is file (maybe expanded keywords)
     For the latter we have to follow the symlink to find out whether its
     target is configured for expansion and we therefore must unexpand the
-    keywords in the destination.'''
+    keywords in the destination."""
     kwt = getattr(repo, '_keywordkwt', None)
     if kwt is None:
         return orig(ui, repo, pats, opts, rename)
@@ -722,9 +723,9 @@ def kw_copy(orig, ui, repo, pats, opts, rename=False):
         cwd = repo.getcwd()
 
         def haskwsource(dest):
-            '''Returns true if dest is a regular file and configured for
+            """Returns true if dest is a regular file and configured for
             expansion or a symlink which points to a file configured for
-            expansion. '''
+            expansion."""
             source = repo.dirstate.copied(dest)
             if b'l' in wctx.flags(source):
                 source = pathutil.canonpath(
@@ -785,12 +786,12 @@ def kwfilectx_cmp(orig, self, fctx):
 
 
 def uisetup(ui):
-    ''' Monkeypatches dispatch._parse to retrieve user command.
+    """Monkeypatches dispatch._parse to retrieve user command.
     Overrides file method to return kwfilelog instead of filelog
     if file matches user configuration.
     Wraps commit to overwrite configured files with updated
     keyword substitutions.
-    Monkeypatches patch and webcommands.'''
+    Monkeypatches patch and webcommands."""
 
     def kwdispatch_parse(orig, ui, args):
         '''Monkeypatch dispatch._parse to obtain running hg command.'''

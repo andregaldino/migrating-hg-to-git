@@ -486,13 +486,19 @@ class StreamSettingsTests(unittest.TestCase):
 
         response1 = b''.join(
             cborutil.streamencode(
-                {b'status': b'ok', b'extra': b'response1' * 10,}
+                {
+                    b'status': b'ok',
+                    b'extra': b'response1' * 10,
+                }
             )
         )
 
         response2 = b''.join(
             cborutil.streamencode(
-                {b'status': b'error', b'extra': b'response2' * 10,}
+                {
+                    b'status': b'error',
+                    b'extra': b'response2' * 10,
+                }
             )
         )
 
@@ -678,13 +684,19 @@ class StreamSettingsTests(unittest.TestCase):
 
         response1 = b''.join(
             cborutil.streamencode(
-                {b'status': b'ok', b'extra': b'response1' * 10,}
+                {
+                    b'status': b'ok',
+                    b'extra': b'response1' * 10,
+                }
             )
         )
 
         response2 = b''.join(
             cborutil.streamencode(
-                {b'status': b'error', b'extra': b'response2' * 10,}
+                {
+                    b'status': b'error',
+                    b'extra': b'response2' * 10,
+                }
             )
         )
 

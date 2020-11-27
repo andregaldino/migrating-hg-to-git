@@ -154,25 +154,40 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'fsmonitor', b'mode', default=b'on',
+    b'fsmonitor',
+    b'mode',
+    default=b'on',
 )
 configitem(
-    b'fsmonitor', b'walk_on_invalidate', default=False,
+    b'fsmonitor',
+    b'walk_on_invalidate',
+    default=False,
 )
 configitem(
-    b'fsmonitor', b'timeout', default=b'2',
+    b'fsmonitor',
+    b'timeout',
+    default=b'2',
 )
 configitem(
-    b'fsmonitor', b'blacklistusers', default=list,
+    b'fsmonitor',
+    b'blacklistusers',
+    default=list,
 )
 configitem(
-    b'fsmonitor', b'watchman_exe', default=b'watchman',
+    b'fsmonitor',
+    b'watchman_exe',
+    default=b'watchman',
 )
 configitem(
-    b'fsmonitor', b'verbose', default=True, experimental=True,
+    b'fsmonitor',
+    b'verbose',
+    default=True,
+    experimental=True,
 )
 configitem(
-    b'experimental', b'fsmonitor.transaction_notify', default=False,
+    b'experimental',
+    b'fsmonitor.transaction_notify',
+    default=False,
 )
 
 # This extension is incompatible with the following blacklisted extensions
@@ -271,11 +286,11 @@ def _watchmantofsencoding(path):
 
 
 def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
-    '''Replacement for dirstate.walk, hooking into Watchman.
+    """Replacement for dirstate.walk, hooking into Watchman.
 
     Whenever full is False, ignored is False, and the Watchman client is
     available, use Watchman combined with saved state to possibly return only a
-    subset of files.'''
+    subset of files."""
 
     def bail(reason):
         self._ui.debug(b'fsmonitor: fallback to core status, %s\n' % reason)
@@ -731,8 +746,8 @@ def extsetup(ui):
 
 
 def wrapsymlink(orig, source, link_name):
-    ''' if we create a dangling symlink, also touch the parent dir
-    to encourage fsevents notifications to work more correctly '''
+    """if we create a dangling symlink, also touch the parent dir
+    to encourage fsevents notifications to work more correctly"""
     try:
         return orig(source, link_name)
     finally:
@@ -743,13 +758,13 @@ def wrapsymlink(orig, source, link_name):
 
 
 class state_update(object):
-    ''' This context manager is responsible for dispatching the state-enter
-        and state-leave signals to the watchman service. The enter and leave
-        methods can be invoked manually (for scenarios where context manager
-        semantics are not possible). If parameters oldnode and newnode are None,
-        they will be populated based on current working copy in enter and
-        leave, respectively. Similarly, if the distance is none, it will be
-        calculated based on the oldnode and newnode in the leave method.'''
+    """This context manager is responsible for dispatching the state-enter
+    and state-leave signals to the watchman service. The enter and leave
+    methods can be invoked manually (for scenarios where context manager
+    semantics are not possible). If parameters oldnode and newnode are None,
+    they will be populated based on current working copy in enter and
+    leave, respectively. Similarly, if the distance is none, it will be
+    calculated based on the oldnode and newnode in the leave method."""
 
     def __init__(
         self,

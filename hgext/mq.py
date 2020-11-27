@@ -125,16 +125,24 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'mq', b'git', default=b'auto',
+    b'mq',
+    b'git',
+    default=b'auto',
 )
 configitem(
-    b'mq', b'keepchanges', default=False,
+    b'mq',
+    b'keepchanges',
+    default=False,
 )
 configitem(
-    b'mq', b'plain', default=False,
+    b'mq',
+    b'plain',
+    default=False,
 )
 configitem(
-    b'mq', b'secret', default=False,
+    b'mq',
+    b'secret',
+    default=False,
 )
 
 # force load strip extension formerly included in mq and import some utility
@@ -156,8 +164,8 @@ strip = strip.strip
 
 
 def checksubstate(repo, baserev=None):
-    '''return list of subrepos at a different revision than substate.
-    Abort if any subrepos have uncommitted changes.'''
+    """return list of subrepos at a different revision than substate.
+    Abort if any subrepos have uncommitted changes."""
     inclsubs = []
     wctx = repo[None]
     if baserev:
@@ -449,9 +457,9 @@ class patchheader(object):
     __str__ = encoding.strmethod(__bytes__)
 
     def _delmsg(self):
-        '''Remove existing message, keeping the rest of the comments fields.
+        """Remove existing message, keeping the rest of the comments fields.
         If comments contains 'subject: ', message will prepend
-        the field and a blank line.'''
+        the field and a blank line."""
         if self.message:
             subj = b'subject: ' + self.message[0].lower()
             for i in pycompat.xrange(len(self.comments)):
@@ -949,8 +957,8 @@ class queue(object):
         return (0, head)
 
     def patch(self, repo, patchfile):
-        '''Apply patchfile  to the working directory.
-        patchfile: name of patch file'''
+        """Apply patchfile  to the working directory.
+        patchfile: name of patch file"""
         files = set()
         try:
             fuzz = patchmod.patch(
@@ -1363,7 +1371,7 @@ class queue(object):
 
     def new(self, repo, patchfn, *pats, **opts):
         """options:
-           msg: a string or a no-argument function returning a string
+        msg: a string or a no-argument function returning a string
         """
         opts = pycompat.byteskwargs(opts)
         msg = opts.get(b'msg')
@@ -1718,7 +1726,10 @@ class queue(object):
             except:  # re-raises
                 self.ui.warn(_(b'cleaning up working directory...\n'))
                 cmdutil.revert(
-                    self.ui, repo, repo[b'.'], no_backup=True,
+                    self.ui,
+                    repo,
+                    repo[b'.'],
+                    no_backup=True,
                 )
                 # only remove unknown files that we know we touched or
                 # created while patching
@@ -2823,7 +2834,7 @@ def init(ui, repo, **opts):
     norepo=True,
 )
 def clone(ui, source, dest=None, **opts):
-    '''clone main and patch repository at same time
+    """clone main and patch repository at same time
 
     If source is local, destination will have no patches applied. If
     source is remote, this command can not check if patches are
@@ -2838,7 +2849,7 @@ def clone(ui, source, dest=None, **opts):
     would be created by :hg:`init --mq`.
 
     Return 0 on success.
-    '''
+    """
     opts = pycompat.byteskwargs(opts)
 
     def patchdir(repo):
@@ -2937,7 +2948,10 @@ def commit(ui, repo, *pats, **opts):
 
 @command(
     b"qseries",
-    [(b'm', b'missing', None, _(b'print patches not in series')),] + seriesopts,
+    [
+        (b'm', b'missing', None, _(b'print patches not in series')),
+    ]
+    + seriesopts,
     _(b'hg qseries [-ms]'),
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
 )
@@ -3282,9 +3296,9 @@ def fold(ui, repo, *files, **opts):
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
 )
 def goto(ui, repo, patch, **opts):
-    '''push or pop patches until named patch is at top of stack
+    """push or pop patches until named patch is at top of stack
 
-    Returns 0 on success.'''
+    Returns 0 on success."""
     opts = pycompat.byteskwargs(opts)
     opts = fixkeepchangesopts(ui, opts)
     q = repo.mq
@@ -3321,7 +3335,7 @@ def goto(ui, repo, patch, **opts):
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
 )
 def guard(ui, repo, *args, **opts):
-    '''set or print guards for a patch
+    """set or print guards for a patch
 
     Guards control whether a patch can be pushed. A patch with no
     guards is always pushed. A patch with a positive guard ("+foo") is
@@ -3341,7 +3355,7 @@ def guard(ui, repo, *args, **opts):
       hg qguard other.patch -- +2.6.17 -stable
 
     Returns 0 on success.
-    '''
+    """
 
     def status(idx):
         guards = q.seriesguards[idx] or [b'unguarded']
@@ -3712,7 +3726,7 @@ def save(ui, repo, **opts):
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
 )
 def select(ui, repo, *args, **opts):
-    '''set or print guarded patches to push
+    """set or print guarded patches to push
 
     Use the :hg:`qguard` command to set or print guards on patch, then use
     qselect to tell mq which guards to use. A patch will be pushed if
@@ -3744,7 +3758,7 @@ def select(ui, repo, *args, **opts):
     Use -s/--series to print a list of all guards in the series file
     (no other arguments needed). Use -v for more information.
 
-    Returns 0 on success.'''
+    Returns 0 on success."""
 
     q = repo.mq
     opts = pycompat.byteskwargs(opts)
@@ -3888,7 +3902,7 @@ def finish(ui, repo, *revrange, **opts):
     helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
 )
 def qqueue(ui, repo, name=None, **opts):
-    '''manage multiple patch queues
+    """manage multiple patch queues
 
     Supports switching between different patch queues, as well as creating
     new patch queues and deleting existing ones.
@@ -3907,7 +3921,7 @@ def qqueue(ui, repo, name=None, **opts):
     active queue.
 
     Returns 0 on success.
-    '''
+    """
     q = repo.mq
     _defaultqueue = b'patches'
     _allqueues = b'patches.queues'
@@ -4250,8 +4264,7 @@ revsetpredicate = registrar.revsetpredicate()
 
 @revsetpredicate(b'mq()')
 def revsetmq(repo, subset, x):
-    """Changesets managed by MQ.
-    """
+    """Changesets managed by MQ."""
     revsetlang.getargs(x, 0, 0, _(b"mq takes no arguments"))
     applied = {repo[r.node].rev() for r in repo.mq.applied}
     return smartset.baseset([r for r in subset if r in applied])

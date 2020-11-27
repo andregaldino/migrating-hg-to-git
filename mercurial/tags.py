@@ -177,12 +177,12 @@ def writediff(fp, difflist):
 
 
 def findglobaltags(ui, repo):
-    '''Find global tags in a repo: return a tagsmap
+    """Find global tags in a repo: return a tagsmap
 
     tagsmap: tag name to (node, hist) 2-tuples.
 
     The tags cache is read and updated as a side-effect of calling.
-    '''
+    """
     (heads, tagfnode, valid, cachetags, shouldwrite) = _readtagcache(ui, repo)
     if cachetags is not None:
         assert not shouldwrite
@@ -267,7 +267,7 @@ def readlocaltags(ui, repo, alltags, tagtypes):
 
 
 def _readtaghist(ui, repo, lines, fn, recode=None, calcnodelines=False):
-    '''Read tag definitions from a file (or any source of lines).
+    """Read tag definitions from a file (or any source of lines).
 
     This function returns two sortdicts with similar information:
 
@@ -283,7 +283,7 @@ def _readtaghist(ui, repo, lines, fn, recode=None, calcnodelines=False):
     When calcnodelines is False the hextaglines dict is not calculated (an
     empty dict is returned). This is done to improve this function's
     performance in cases where the line numbers are not needed.
-    '''
+    """
 
     bintaghist = util.sortdict()
     hextaglines = util.sortdict()
@@ -325,14 +325,14 @@ def _readtaghist(ui, repo, lines, fn, recode=None, calcnodelines=False):
 
 
 def _readtags(ui, repo, lines, fn, recode=None, calcnodelines=False):
-    '''Read tag definitions from a file (or any source of lines).
+    """Read tag definitions from a file (or any source of lines).
 
     Returns a mapping from tag name to (node, hist).
 
     "node" is the node id from the last line read for that name. "hist"
     is the list of node ids previously associated with it (in file order).
     All node ids are binary, not hex.
-    '''
+    """
     filetags, nodelines = _readtaghist(
         ui, repo, lines, fn, recode=recode, calcnodelines=calcnodelines
     )
@@ -390,7 +390,7 @@ def _filename(repo):
 
 
 def _readtagcache(ui, repo):
-    '''Read the tag cache.
+    """Read the tag cache.
 
     Returns a tuple (heads, fnodes, validinfo, cachetags, shouldwrite).
 
@@ -406,7 +406,7 @@ def _readtagcache(ui, repo):
 
     If the cache is not up to date, the caller is responsible for reading tag
     info from each returned head. (See findglobaltags().)
-    '''
+    """
     try:
         cachefile = repo.cachevfs(_filename(repo), b'r')
         # force reading the file for static-http
@@ -549,7 +549,7 @@ def _writetagcache(ui, repo, valid, cachetags):
 
 
 def tag(repo, names, node, message, local, user, date, editor=False):
-    '''tag a revision with one or more symbolic names.
+    """tag a revision with one or more symbolic names.
 
     names is a list of strings or, when adding a single tag, names may be a
     string.
@@ -567,7 +567,7 @@ def tag(repo, names, node, message, local, user, date, editor=False):
 
     user: name of user to use if committing
 
-    date: date tuple to use if committing'''
+    date: date tuple to use if committing"""
 
     if not local:
         m = matchmod.exact([b'.hgtags'])

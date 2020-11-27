@@ -154,37 +154,59 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'infinitepush', b'server', default=False,
+    b'infinitepush',
+    b'server',
+    default=False,
 )
 configitem(
-    b'infinitepush', b'storetype', default=b'',
+    b'infinitepush',
+    b'storetype',
+    default=b'',
 )
 configitem(
-    b'infinitepush', b'indextype', default=b'',
+    b'infinitepush',
+    b'indextype',
+    default=b'',
 )
 configitem(
-    b'infinitepush', b'indexpath', default=b'',
+    b'infinitepush',
+    b'indexpath',
+    default=b'',
 )
 configitem(
-    b'infinitepush', b'storeallparts', default=False,
+    b'infinitepush',
+    b'storeallparts',
+    default=False,
 )
 configitem(
-    b'infinitepush', b'reponame', default=b'',
+    b'infinitepush',
+    b'reponame',
+    default=b'',
 )
 configitem(
-    b'scratchbranch', b'storepath', default=b'',
+    b'scratchbranch',
+    b'storepath',
+    default=b'',
 )
 configitem(
-    b'infinitepush', b'branchpattern', default=b'',
+    b'infinitepush',
+    b'branchpattern',
+    default=b'',
 )
 configitem(
-    b'infinitepush', b'pushtobundlestore', default=False,
+    b'infinitepush',
+    b'pushtobundlestore',
+    default=False,
 )
 configitem(
-    b'experimental', b'server-bundlestore-bookmark', default=b'',
+    b'experimental',
+    b'server-bundlestore-bookmark',
+    default=b'',
 )
 configitem(
-    b'experimental', b'infinitepush-scratchpush', default=False,
+    b'experimental',
+    b'infinitepush-scratchpush',
+    default=False,
 )
 
 experimental = b'experimental'
@@ -249,13 +271,13 @@ def _getloglevel(ui):
 
 
 def _tryhoist(ui, remotebookmark):
-    '''returns a bookmarks with hoisted part removed
+    """returns a bookmarks with hoisted part removed
 
     Remotenames extension has a 'hoist' config that allows to use remote
     bookmarks without specifying remote path. For example, 'hg update master'
     works as well as 'hg update remote/master'. We want to allow the same in
     infinitepush.
-    '''
+    """
 
     if common.isremotebooksenabled(ui):
         hoist = ui.config(b'remotenames', b'hoistedpeer') + b'/'
@@ -427,11 +449,11 @@ def _readbundlerevs(bundlerepo):
 
 
 def _includefilelogstobundle(bundlecaps, bundlerepo, bundlerevs, ui):
-    '''Tells remotefilelog to include all changed files to the changegroup
+    """Tells remotefilelog to include all changed files to the changegroup
 
     By default remotefilelog doesn't include file content to the changegroup.
     But we need to include it if we are fetching from bundlestore.
-    '''
+    """
     changedfiles = set()
     cl = bundlerepo.changelog
     for r in bundlerevs:
@@ -457,11 +479,11 @@ def _includefilelogstobundle(bundlecaps, bundlerepo, bundlerevs, ui):
 
 
 def _rebundle(bundlerepo, bundleroots, unknownhead):
-    '''
+    """
     Bundle may include more revision then user requested. For example,
     if user asks for revision but bundle also consists its descendants.
     This function will filter out all revision that user is not requested.
-    '''
+    """
     parts = []
 
     version = b'02'
@@ -499,10 +521,10 @@ def _needsrebundling(head, bundlerepo):
 
 
 def _generateoutputparts(head, bundlerepo, bundleroots, bundlefile):
-    '''generates bundle that will be send to the user
+    """generates bundle that will be send to the user
 
     returns tuple with raw bundle string and bundle type
-    '''
+    """
     parts = []
     if not _needsrebundling(head, bundlerepo):
         with util.posixfile(bundlefile, b"rb") as f:
@@ -1022,7 +1044,12 @@ def storetobundlestore(orig, repo, op, unbundler):
                         )
                         rpart.addparam(b'return', b'1', mandatory=False)
 
-            op.records.add(part.type, {b'return': 1,})
+            op.records.add(
+                part.type,
+                {
+                    b'return': 1,
+                },
+            )
             if bundlepart:
                 bundler.addpart(bundlepart)
 
@@ -1112,7 +1139,12 @@ def processparts(orig, repo, op, unbundler):
                     bundle2._processpart(op, part)
 
             if handleallparts:
-                op.records.add(part.type, {b'return': 1,})
+                op.records.add(
+                    part.type,
+                    {
+                        b'return': 1,
+                    },
+                )
             if bundlepart:
                 bundler.addpart(bundlepart)
 
@@ -1284,11 +1316,11 @@ def _maybeaddpushbackpart(op, bookmark, newnode, oldnode, params):
 
 
 def bundle2pushkey(orig, op, part):
-    '''Wrapper of bundle2.handlepushkey()
+    """Wrapper of bundle2.handlepushkey()
 
     The only goal is to skip calling the original function if flag is set.
     It's set if infinitepush push is happening.
-    '''
+    """
     if op.records[scratchbranchparttype + b'_skippushkey']:
         if op.reply is not None:
             rpart = op.reply.newpart(b'reply:pushkey')
@@ -1300,11 +1332,11 @@ def bundle2pushkey(orig, op, part):
 
 
 def bundle2handlephases(orig, op, part):
-    '''Wrapper of bundle2.handlephases()
+    """Wrapper of bundle2.handlephases()
 
     The only goal is to skip calling the original function if flag is set.
     It's set if infinitepush push is happening.
-    '''
+    """
 
     if op.records[scratchbranchparttype + b'_skipphaseheads']:
         return
@@ -1313,11 +1345,11 @@ def bundle2handlephases(orig, op, part):
 
 
 def _asyncsavemetadata(root, nodes):
-    '''starts a separate process that fills metadata for the nodes
+    """starts a separate process that fills metadata for the nodes
 
     This function creates a separate process and doesn't wait for it's
     completion. This was done to avoid slowing down pushes
-    '''
+    """
 
     maxnodes = 50
     if len(nodes) > maxnodes:

@@ -27,7 +27,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'fakedirstatewritetime', b'fakenow', default=None,
+    b'fakedirstatewritetime',
+    b'fakenow',
+    default=None,
 )
 
 parsers = policy.importmod('parsers')

@@ -507,10 +507,10 @@ class rebaseruntime(object):
         ui.note(_(b'rebase merging completed\n'))
 
     def _concludenode(self, rev, editor, commitmsg=None):
-        '''Commit the wd changes with parents p1 and p2.
+        """Commit the wd changes with parents p1 and p2.
 
         Reuse commit info from rev but also store useful information in extra.
-        Return node of committed revision.'''
+        Return node of committed revision."""
         repo = self.repo
         ctx = repo[rev]
         if commitmsg is None:
@@ -1135,7 +1135,11 @@ def _dryrunrebase(ui, repo, action, opts):
             overrides = {(b'rebase', b'singletransaction'): True}
             with ui.configoverride(overrides, b'rebase'):
                 _origrebase(
-                    ui, repo, action, opts, rbsrt,
+                    ui,
+                    repo,
+                    action,
+                    opts,
+                    rbsrt,
                 )
         except error.ConflictResolutionRequired:
             ui.status(_(b'hit a merge conflict\n'))
@@ -1447,8 +1451,8 @@ def externalparent(repo, state, destancestors):
 
 
 def commitmemorynode(repo, wctx, editor, extra, user, date, commitmsg):
-    '''Commit the memory changes with parents p1 and p2.
-    Return node of committed revision.'''
+    """Commit the memory changes with parents p1 and p2.
+    Return node of committed revision."""
     # By convention, ``extra['branch']`` (set by extrafn) clobbers
     # ``branch`` (used when passing ``--keepbranches``).
     branch = None
@@ -1475,8 +1479,8 @@ def commitmemorynode(repo, wctx, editor, extra, user, date, commitmsg):
 
 
 def commitnode(repo, editor, extra, user, date, commitmsg):
-    '''Commit the wd changes with parents p1 and p2.
-    Return node of committed revision.'''
+    """Commit the wd changes with parents p1 and p2.
+    Return node of committed revision."""
     dsguard = util.nullcontextmanager()
     if not repo.ui.configbool(b'rebase', b'singletransaction'):
         dsguard = dirstateguard.dirstateguard(repo, b'rebase')
@@ -1965,11 +1969,11 @@ def sortsource(destmap):
 
 
 def buildstate(repo, destmap, collapse):
-    '''Define which revisions are going to be rebased and where
+    """Define which revisions are going to be rebased and where
 
     repo: repo
     destmap: {srcrev: destrev}
-    '''
+    """
     rebaseset = destmap.keys()
     originalwd = repo[b'.'].rev()
 

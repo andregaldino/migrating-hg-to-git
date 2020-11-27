@@ -76,7 +76,7 @@ else:
 
 
 def split(p):
-    '''Same as posixpath.split, but faster
+    """Same as posixpath.split, but faster
 
     >>> import posixpath
     >>> for f in [b'/absolute/path/to/file',
@@ -88,7 +88,7 @@ def split(p):
     ...           b'///multiple_leading_separators_at_root',
     ...           b'']:
     ...     assert split(f) == posixpath.split(f), f
-    '''
+    """
     ht = p.rsplit(b'/', 1)
     if len(ht) == 1:
         return b'', p
@@ -183,9 +183,9 @@ def setflags(f, l, x):
 
 
 def copymode(src, dst, mode=None, enforcewritable=False):
-    '''Copy the file mode from the file at path src to dst.
+    """Copy the file mode from the file at path src to dst.
     If src doesn't exist, we're using mode instead. If mode is None, we're
-    using umask.'''
+    using umask."""
     try:
         st_mode = os.lstat(src).st_mode & 0o777
     except OSError as inst:
@@ -359,24 +359,24 @@ def checklink(path):
 
 
 def checkosfilename(path):
-    '''Check that the base-relative path is a valid filename on this platform.
-    Returns None if the path is ok, or a UI string describing the problem.'''
+    """Check that the base-relative path is a valid filename on this platform.
+    Returns None if the path is ok, or a UI string describing the problem."""
     return None  # on posix platforms, every path is ok
 
 
 def getfsmountpoint(dirpath):
-    '''Get the filesystem mount point from a directory (best-effort)
+    """Get the filesystem mount point from a directory (best-effort)
 
     Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
-    '''
+    """
     return getattr(osutil, 'getfsmountpoint', lambda x: None)(dirpath)
 
 
 def getfstype(dirpath):
-    '''Get the filesystem type name from a directory (best-effort)
+    """Get the filesystem type name from a directory (best-effort)
 
     Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
-    '''
+    """
     return getattr(osutil, 'getfstype', lambda x: None)(dirpath)
 
 
@@ -419,7 +419,7 @@ normcasefallback = normcase
 if pycompat.isdarwin:
 
     def normcase(path):
-        '''
+        """
         Normalize a filename for OS X-compatible comparison:
         - escape-encode invalid characters
         - decompose to NFD
@@ -434,7 +434,7 @@ if pycompat.isdarwin:
         'e\\xcc\\x81'
         >>> normcase(b'\\xb8\\xca\\xc3\\xca\\xbe\\xc8.JPG') # issue3918
         '%b8%ca%c3\\xca\\xbe%c8.jpg'
-        '''
+        """
 
         try:
             return encoding.asciilower(path)  # exception for non-ASCII
@@ -475,7 +475,12 @@ if pycompat.sysplatform == b'cygwin':
 
     # default mount points
     cygwinmountpoints = sorted(
-        [b"/usr/bin", b"/usr/lib", b"/cygdrive",], reverse=True
+        [
+            b"/usr/bin",
+            b"/usr/lib",
+            b"/cygdrive",
+        ],
+        reverse=True,
     )
 
     # use upper-ing as normcase as same as NTFS workaround
@@ -553,10 +558,10 @@ def isowner(st):
 
 
 def findexe(command):
-    '''Find executable for command searching like which does.
+    """Find executable for command searching like which does.
     If command is a basename then PATH is searched for command.
     PATH isn't searched if command is an absolute or relative path.
-    If command isn't found None is returned.'''
+    If command isn't found None is returned."""
     if pycompat.sysplatform == b'OpenVMS':
         return command
 
@@ -587,8 +592,8 @@ _wantedkinds = {stat.S_IFREG, stat.S_IFLNK}
 
 
 def statfiles(files):
-    '''Stat each file in files. Yield each stat, or None if a file does not
-    exist or has a type we don't care about.'''
+    """Stat each file in files. Yield each stat, or None if a file does not
+    exist or has a type we don't care about."""
     lstat = os.lstat
     getkind = stat.S_IFMT
     for nf in files:

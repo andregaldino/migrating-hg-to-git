@@ -40,8 +40,7 @@ _sshv1server = wireprotoserver.sshv1protocolhandler
 
 
 def setupserver(ui, repo):
-    """Sets up a normal Mercurial repo so it can serve files to shallow repos.
-    """
+    """Sets up a normal Mercurial repo so it can serve files to shallow repos."""
     onetimesetup(ui)
 
     # don't send files to shallow clients during pulls
@@ -79,8 +78,7 @@ onetime = False
 
 
 def onetimesetup(ui):
-    """Configures the wireprotocol for both clients and servers.
-    """
+    """Configures the wireprotocol for both clients and servers."""
     global onetime
     if onetime:
         return
@@ -281,8 +279,7 @@ def _loadfileblob(repo, cachepath, path, node):
 
 
 def getflogheads(repo, proto, path):
-    """A server api for requesting a filelog's heads
-    """
+    """A server api for requesting a filelog's heads"""
     flog = repo.file(path)
     heads = flog.heads()
     return b'\n'.join((hex(head) for head in heads if head != nullid))
@@ -309,8 +306,7 @@ def getfile(repo, proto, file, node):
 
 
 def getfiles(repo, proto):
-    """A server api for requesting particular versions of particular files.
-    """
+    """A server api for requesting particular versions of particular files."""
     if shallowutil.isenabled(repo):
         raise error.Abort(_(b'cannot fetch remote files from shallow repo'))
     if not isinstance(proto, _sshv1server):

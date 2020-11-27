@@ -17,8 +17,7 @@ from . import (
 
 
 class ChainIndicies(object):
-    """A static class for easy reference to the delta chain indicies.
-    """
+    """A static class for easy reference to the delta chain indicies."""
 
     # The filename of this revision delta
     NAME = 0
@@ -73,8 +72,7 @@ class unioncontentstore(basestore.baseunionstore):
 
     @basestore.baseunionstore.retriable
     def getdelta(self, name, node):
-        """Return the single delta entry for the given name/node pair.
-        """
+        """Return the single delta entry for the given name/node pair."""
         for store in self.stores:
             try:
                 return store.getdelta(name, node)

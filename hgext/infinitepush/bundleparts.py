@@ -90,11 +90,11 @@ def _validaterevset(repo, revset, bookmark):
 
 
 def _handlelfs(repo, missing):
-    '''Special case if lfs is enabled
+    """Special case if lfs is enabled
 
     If lfs is enabled then we need to call prepush hook
     to make sure large files are uploaded to lfs
-    '''
+    """
     try:
         lfsmod = extensions.find(b'lfs')
         lfsmod.wrapper.uploadblobsfromrevs(repo, missing)

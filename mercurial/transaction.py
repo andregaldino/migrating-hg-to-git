@@ -425,10 +425,10 @@ class transaction(util.transactional):
 
     @active
     def replace(self, file, offset):
-        '''
+        """
         replace can only replace already committed entries
         that are not pending in the queue
-        '''
+        """
         if file in self._newfiles:
             if not offset:
                 return
@@ -476,9 +476,9 @@ class transaction(util.transactional):
 
     @active
     def writepending(self):
-        '''write pending file to temporary version
+        """write pending file to temporary version
 
-        This is used to allow hooks to view a transaction before commit'''
+        This is used to allow hooks to view a transaction before commit"""
         categories = sorted(self._pendingcallback)
         for cat in categories:
             # remove callback since the data will have been flushed
@@ -489,8 +489,7 @@ class transaction(util.transactional):
 
     @active
     def hasfinalize(self, category):
-        """check is a callback already exist for a category
-        """
+        """check is a callback already exist for a category"""
         return category in self._finalizecallback
 
     @active
@@ -533,11 +532,11 @@ class transaction(util.transactional):
 
     @active
     def addvalidator(self, category, callback):
-        """ adds a callback to be called when validating the transaction.
+        """adds a callback to be called when validating the transaction.
 
         The transaction will be given as the first argument to the callback.
 
-        callback should raise exception if to abort transaction """
+        callback should raise exception if to abort transaction"""
         self._validatecallback[category] = callback
 
     @active
@@ -624,9 +623,9 @@ class transaction(util.transactional):
 
     @active
     def abort(self):
-        '''abort the transaction (generally called on error, or when the
+        """abort the transaction (generally called on error, or when the
         transaction is not explicitly committed before going out of
-        scope)'''
+        scope)"""
         self._abort()
 
     def _writeundo(self):

@@ -122,8 +122,7 @@ predicate = registrar.filesetpredicate(symbols)
 
 @predicate(b'modified()', callstatus=True, weight=_WEIGHT_STATUS)
 def modified(mctx, x):
-    """File that is modified according to :hg:`status`.
-    """
+    """File that is modified according to :hg:`status`."""
     # i18n: "modified" is a keyword
     getargs(x, 0, 0, _(b"modified takes no arguments"))
     s = set(mctx.status().modified)
@@ -132,8 +131,7 @@ def modified(mctx, x):
 
 @predicate(b'added()', callstatus=True, weight=_WEIGHT_STATUS)
 def added(mctx, x):
-    """File that is added according to :hg:`status`.
-    """
+    """File that is added according to :hg:`status`."""
     # i18n: "added" is a keyword
     getargs(x, 0, 0, _(b"added takes no arguments"))
     s = set(mctx.status().added)
@@ -142,8 +140,7 @@ def added(mctx, x):
 
 @predicate(b'removed()', callstatus=True, weight=_WEIGHT_STATUS)
 def removed(mctx, x):
-    """File that is removed according to :hg:`status`.
-    """
+    """File that is removed according to :hg:`status`."""
     # i18n: "removed" is a keyword
     getargs(x, 0, 0, _(b"removed takes no arguments"))
     s = set(mctx.status().removed)
@@ -152,8 +149,7 @@ def removed(mctx, x):
 
 @predicate(b'deleted()', callstatus=True, weight=_WEIGHT_STATUS)
 def deleted(mctx, x):
-    """Alias for ``missing()``.
-    """
+    """Alias for ``missing()``."""
     # i18n: "deleted" is a keyword
     getargs(x, 0, 0, _(b"deleted takes no arguments"))
     s = set(mctx.status().deleted)
@@ -162,8 +158,7 @@ def deleted(mctx, x):
 
 @predicate(b'missing()', callstatus=True, weight=_WEIGHT_STATUS)
 def missing(mctx, x):
-    """File that is missing according to :hg:`status`.
-    """
+    """File that is missing according to :hg:`status`."""
     # i18n: "missing" is a keyword
     getargs(x, 0, 0, _(b"missing takes no arguments"))
     s = set(mctx.status().deleted)
@@ -190,8 +185,7 @@ def ignored(mctx, x):
 
 @predicate(b'clean()', callstatus=True, weight=_WEIGHT_STATUS)
 def clean(mctx, x):
-    """File that is clean according to :hg:`status`.
-    """
+    """File that is clean according to :hg:`status`."""
     # i18n: "clean" is a keyword
     getargs(x, 0, 0, _(b"clean takes no arguments"))
     s = set(mctx.status().clean)
@@ -208,8 +202,7 @@ def tracked(mctx, x):
 
 @predicate(b'binary()', weight=_WEIGHT_READ_CONTENTS)
 def binary(mctx, x):
-    """File that appears to be binary (contains NUL bytes).
-    """
+    """File that appears to be binary (contains NUL bytes)."""
     # i18n: "binary" is a keyword
     getargs(x, 0, 0, _(b"binary takes no arguments"))
     return mctx.fpredicate(
@@ -219,8 +212,7 @@ def binary(mctx, x):
 
 @predicate(b'exec()')
 def exec_(mctx, x):
-    """File that is marked as executable.
-    """
+    """File that is marked as executable."""
     # i18n: "exec" is a keyword
     getargs(x, 0, 0, _(b"exec takes no arguments"))
     ctx = mctx.ctx
@@ -229,8 +221,7 @@ def exec_(mctx, x):
 
 @predicate(b'symlink()')
 def symlink(mctx, x):
-    """File that is marked as a symlink.
-    """
+    """File that is marked as a symlink."""
     # i18n: "symlink" is a keyword
     getargs(x, 0, 0, _(b"symlink takes no arguments"))
     ctx = mctx.ctx
@@ -239,8 +230,7 @@ def symlink(mctx, x):
 
 @predicate(b'resolved()', weight=_WEIGHT_STATUS)
 def resolved(mctx, x):
-    """File that is marked resolved according to :hg:`resolve -l`.
-    """
+    """File that is marked resolved according to :hg:`resolve -l`."""
     # i18n: "resolved" is a keyword
     getargs(x, 0, 0, _(b"resolved takes no arguments"))
     if mctx.ctx.rev() is not None:
@@ -253,8 +243,7 @@ def resolved(mctx, x):
 
 @predicate(b'unresolved()', weight=_WEIGHT_STATUS)
 def unresolved(mctx, x):
-    """File that is marked unresolved according to :hg:`resolve -l`.
-    """
+    """File that is marked unresolved according to :hg:`resolve -l`."""
     # i18n: "unresolved" is a keyword
     getargs(x, 0, 0, _(b"unresolved takes no arguments"))
     if mctx.ctx.rev() is not None:
@@ -267,8 +256,7 @@ def unresolved(mctx, x):
 
 @predicate(b'hgignore()', weight=_WEIGHT_STATUS)
 def hgignore(mctx, x):
-    """File that matches the active .hgignore pattern.
-    """
+    """File that matches the active .hgignore pattern."""
     # i18n: "hgignore" is a keyword
     getargs(x, 0, 0, _(b"hgignore takes no arguments"))
     return mctx.ctx.repo().dirstate._ignore
@@ -288,8 +276,7 @@ def portable(mctx, x):
 
 @predicate(b'grep(regex)', weight=_WEIGHT_READ_CONTENTS)
 def grep(mctx, x):
-    """File contains the given regular expression.
-    """
+    """File contains the given regular expression."""
     try:
         # i18n: "grep" is a keyword
         r = re.compile(getstring(x, _(b"grep requires a pattern")))
@@ -414,8 +401,7 @@ def eol(mctx, x):
 
 @predicate(b'copied()')
 def copied(mctx, x):
-    """File that is recorded as being copied.
-    """
+    """File that is recorded as being copied."""
     # i18n: "copied" is a keyword
     getargs(x, 0, 0, _(b"copied takes no arguments"))
 
@@ -476,8 +462,7 @@ def status(mctx, x):
 
 @predicate(b'subrepo([pattern])')
 def subrepo(mctx, x):
-    """Subrepositories whose paths match the given pattern.
-    """
+    """Subrepositories whose paths match the given pattern."""
     # i18n: "subrepo" is a keyword
     getargs(x, 0, 1, _(b"subrepo takes at most one argument"))
     ctx = mctx.ctx
@@ -628,8 +613,7 @@ def match(ctx, cwd, expr, badfn=None):
 
 
 def loadpredicate(ui, extname, registrarobj):
-    """Load fileset predicates from specified registrarobj
-    """
+    """Load fileset predicates from specified registrarobj"""
     for name, func in pycompat.iteritems(registrarobj._table):
         symbols[name] = func
 

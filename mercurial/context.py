@@ -316,9 +316,9 @@ class basectx(object):
         return subrepo.nullsubrepo(self, path, pctx)
 
     def workingsub(self, path):
-        '''return a subrepo for the stored revision, or wdir if this is a wdir
+        """return a subrepo for the stored revision, or wdir if this is a wdir
         context.
-        '''
+        """
         return subrepo.subrepo(self, path, allowwdir=True)
 
     def match(
@@ -1054,8 +1054,7 @@ class basefilectx(object):
         return lkr
 
     def isintroducedafter(self, changelogrev):
-        """True if a filectx has been introduced after a given floor revision
-        """
+        """True if a filectx has been introduced after a given floor revision"""
         if self.linkrev() >= changelogrev:
             return True
         introrev = self._introrev(stoprev=changelogrev)
@@ -1232,7 +1231,7 @@ class basefilectx(object):
 
 class filectx(basefilectx):
     """A filecontext object makes access to data related to a particular
-       filerevision convenient."""
+    filerevision convenient."""
 
     def __init__(
         self,
@@ -1244,15 +1243,16 @@ class filectx(basefilectx):
         changectx=None,
     ):
         """changeid must be a revision number, if specified.
-           fileid can be a file revision or node."""
+        fileid can be a file revision or node."""
         self._repo = repo
         self._path = path
 
         assert (
             changeid is not None or fileid is not None or changectx is not None
-        ), (
-            b"bad args: changeid=%r, fileid=%r, changectx=%r"
-            % (changeid, fileid, changectx,)
+        ), b"bad args: changeid=%r, fileid=%r, changectx=%r" % (
+            changeid,
+            fileid,
+            changectx,
         )
 
         if filelog is not None:
@@ -1289,8 +1289,8 @@ class filectx(basefilectx):
             return self._repo.unfiltered()[self._changeid]
 
     def filectx(self, fileid, changeid=None):
-        '''opens an arbitrary revision of the file without
-        opening a new filelog'''
+        """opens an arbitrary revision of the file without
+        opening a new filelog"""
         return filectx(
             self._repo,
             self._path,
@@ -2101,7 +2101,7 @@ class committablefilectx(basefilectx):
 
 class workingfilectx(committablefilectx):
     """A workingfilectx object makes access to data related to a particular
-       file in the working directory convenient."""
+    file in the working directory convenient."""
 
     def __init__(self, repo, path, filelog=None, workingctx=None):
         super(workingfilectx, self).__init__(repo, path, filelog, workingctx)
@@ -2702,8 +2702,7 @@ class workingcommitctx(workingctx):
 
     @propertycache
     def _changedset(self):
-        """Return the set of files changed in this context
-        """
+        """Return the set of files changed in this context"""
         changed = set(self._status.modified)
         changed.update(self._status.added)
         changed.update(self._status.removed)
@@ -2877,8 +2876,7 @@ class memctx(committablectx):
 
     @propertycache
     def _status(self):
-        """Calculate exact status from ``files`` specified at construction
-        """
+        """Calculate exact status from ``files`` specified at construction"""
         man1 = self.p1().manifest()
         p2 = self._parents[1]
         # "1 < len(self._parents)" can't be used for checking

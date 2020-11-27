@@ -200,7 +200,7 @@ patchheadermap = [
 
 @contextlib.contextmanager
 def extract(ui, fileobj):
-    '''extract patch from data read from fileobj.
+    """extract patch from data read from fileobj.
 
     patch can be a normal patch or contained in an email message.
 
@@ -214,7 +214,7 @@ def extract(ui, fileobj):
       - p1,
       - p2.
     Any item can be missing from the dictionary. If filename is missing,
-    fileobj did not contain a patch. Caller must unlink filename when done.'''
+    fileobj did not contain a patch. Caller must unlink filename when done."""
 
     fd, tmpname = pycompat.mkstemp(prefix=b'hg-patch-')
     tmpfp = os.fdopen(fd, 'wb')
@@ -905,8 +905,7 @@ class patchfile(object):
 
 
 class header(object):
-    """patch header
-    """
+    """patch header"""
 
     diffgit_re = re.compile(b'diff --git a/(.*) b/(.*)$')
     diff_re = re.compile(b'diff -r .* (.*)$')
@@ -1854,7 +1853,7 @@ def parsepatch(originalchunks, maxcontext=None):
 
 
 def pathtransform(path, strip, prefix):
-    '''turn a path from a patch into a path suitable for the repository
+    """turn a path from a patch into a path suitable for the repository
 
     prefix, if not empty, is expected to be normalized with a / at the end.
 
@@ -1873,7 +1872,7 @@ def pathtransform(path, strip, prefix):
     >>> pathtransform(b'a/b/c', 3, b'')
     Traceback (most recent call last):
     PatchError: unable to strip away 1 of 3 dirs from a/b/c
-    '''
+    """
     pathlen = len(path)
     i = 0
     if strip == 0:
@@ -2503,7 +2502,7 @@ def diff(
     copysourcematch=None,
     hunksfilterfn=None,
 ):
-    '''yields diff of changes to files between two nodes, or node and
+    """yields diff of changes to files between two nodes, or node and
     working directory.
 
     if node1 is None, use first dirstate parent instead.
@@ -2531,7 +2530,7 @@ def diff(
 
     hunksfilterfn, if not None, should be a function taking a filectx and
     hunks generator that may yield filtered hunks.
-    '''
+    """
     if not node1 and not node2:
         node1 = repo.dirstate.p1()
 
@@ -2886,10 +2885,10 @@ def diffui(*args, **kw):
 
 
 def _filepairs(modified, added, removed, copy, opts):
-    '''generates tuples (f1, f2, copyop), where f1 is the name of the file
+    """generates tuples (f1, f2, copyop), where f1 is the name of the file
     before and f2 is the the name after. For added files, f1 will be None,
     and for removed files, f2 will be None. copyop may be set to None, 'copy'
-    or 'rename' (the latter two only if opts.git is set).'''
+    or 'rename' (the latter two only if opts.git is set)."""
     gone = set()
 
     copyto = {v: k for k, v in copy.items()}
@@ -2948,13 +2947,13 @@ def trydiff(
     losedatafn,
     pathfn,
 ):
-    '''given input data, generate a diff and yield it in blocks
+    """given input data, generate a diff and yield it in blocks
 
     If generating a diff would lose data like flags or binary data and
     losedatafn is not None, it will be called.
 
     pathfn is applied to every path in the diff output.
-    '''
+    """
 
     if opts.noprefix:
         aprefix = bprefix = b''
@@ -3079,7 +3078,7 @@ def trydiff(
 
 
 def diffcontent(data1, data2, header, binary, opts):
-    """ diffs two versions of a file.
+    """diffs two versions of a file.
 
     data1 and data2 are tuples containg:
 
@@ -3241,9 +3240,9 @@ def diffstat(lines, width=80):
 
 
 def diffstatui(*args, **kw):
-    '''like diffstat(), but yields 2-tuples of (output, label) for
+    """like diffstat(), but yields 2-tuples of (output, label) for
     ui.write()
-    '''
+    """
 
     for line in diffstat(*args, **kw).splitlines():
         if line and line[-1] in b'+-':

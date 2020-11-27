@@ -42,7 +42,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'automv', b'similarity', default=95,
+    b'automv',
+    b'similarity',
+    default=95,
 )
 
 

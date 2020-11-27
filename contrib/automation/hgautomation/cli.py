@@ -282,16 +282,20 @@ def get_parser():
         help='Path for local state files',
     )
     parser.add_argument(
-        '--aws-region', help='AWS region to use', default='us-west-2',
+        '--aws-region',
+        help='AWS region to use',
+        default='us-west-2',
     )
 
     subparsers = parser.add_subparsers()
 
     sp = subparsers.add_parser(
-        'bootstrap-linux-dev', help='Bootstrap Linux development environments',
+        'bootstrap-linux-dev',
+        help='Bootstrap Linux development environments',
     )
     sp.add_argument(
-        '--distros', help='Comma delimited list of distros to bootstrap',
+        '--distros',
+        help='Comma delimited list of distros to bootstrap',
     )
     sp.add_argument(
         '--parallel',
@@ -312,13 +316,17 @@ def get_parser():
     sp.set_defaults(func=bootstrap_windows_dev)
 
     sp = subparsers.add_parser(
-        'build-all-windows-packages', help='Build all Windows packages',
+        'build-all-windows-packages',
+        help='Build all Windows packages',
     )
     sp.add_argument(
-        '--revision', help='Mercurial revision to build', default='.',
+        '--revision',
+        help='Mercurial revision to build',
+        default='.',
     )
     sp.add_argument(
-        '--version', help='Mercurial version string to use',
+        '--version',
+        help='Mercurial version string to use',
     )
     sp.add_argument(
         '--base-image-name',
@@ -328,7 +336,8 @@ def get_parser():
     sp.set_defaults(func=build_all_windows_packages)
 
     sp = subparsers.add_parser(
-        'build-inno', help='Build Inno Setup installer(s)',
+        'build-inno',
+        help='Build Inno Setup installer(s)',
     )
     sp.add_argument(
         '--python-version',
@@ -346,10 +355,13 @@ def get_parser():
         default=['x64'],
     )
     sp.add_argument(
-        '--revision', help='Mercurial revision to build', default='.',
+        '--revision',
+        help='Mercurial revision to build',
+        default='.',
     )
     sp.add_argument(
-        '--version', help='Mercurial version string to use in installer',
+        '--version',
+        help='Mercurial version string to use in installer',
     )
     sp.add_argument(
         '--base-image-name',
@@ -359,7 +371,8 @@ def get_parser():
     sp.set_defaults(func=build_inno)
 
     sp = subparsers.add_parser(
-        'build-windows-wheel', help='Build Windows wheel(s)',
+        'build-windows-wheel',
+        help='Build Windows wheel(s)',
     )
     sp.add_argument(
         '--python-version',
@@ -376,7 +389,9 @@ def get_parser():
         default=['x64'],
     )
     sp.add_argument(
-        '--revision', help='Mercurial revision to build', default='.',
+        '--revision',
+        help='Mercurial revision to build',
+        default='.',
     )
     sp.add_argument(
         '--base-image-name',
@@ -402,10 +417,13 @@ def get_parser():
         default=['x64'],
     )
     sp.add_argument(
-        '--revision', help='Mercurial revision to build', default='.',
+        '--revision',
+        help='Mercurial revision to build',
+        default='.',
     )
     sp.add_argument(
-        '--version', help='Mercurial version string to use in installer',
+        '--version',
+        help='Mercurial version string to use in installer',
     )
     sp.add_argument(
         '--base-image-name',
@@ -421,11 +439,15 @@ def get_parser():
     sp.set_defaults(func=terminate_ec2_instances)
 
     sp = subparsers.add_parser(
-        'purge-ec2-resources', help='Purge all EC2 resources managed by us',
+        'purge-ec2-resources',
+        help='Purge all EC2 resources managed by us',
     )
     sp.set_defaults(func=purge_ec2_resources)
 
-    sp = subparsers.add_parser('run-tests-linux', help='Run tests on Linux',)
+    sp = subparsers.add_parser(
+        'run-tests-linux',
+        help='Run tests on Linux',
+    )
     sp.add_argument(
         '--distro',
         help='Linux distribution to run tests on',
@@ -468,10 +490,13 @@ def get_parser():
     sp.set_defaults(func=run_tests_linux)
 
     sp = subparsers.add_parser(
-        'run-tests-windows', help='Run tests on Windows',
+        'run-tests-windows',
+        help='Run tests on Windows',
     )
     sp.add_argument(
-        '--instance-type', help='EC2 instance type to use', default='t3.medium',
+        '--instance-type',
+        help='EC2 instance type to use',
+        default='t3.medium',
     )
     sp.add_argument(
         '--python-version',
@@ -486,7 +511,8 @@ def get_parser():
         default='x64',
     )
     sp.add_argument(
-        '--test-flags', help='Extra command line flags to pass to run-tests.py',
+        '--test-flags',
+        help='Extra command line flags to pass to run-tests.py',
     )
     sp.add_argument(
         '--base-image-name',
@@ -514,10 +540,12 @@ def get_parser():
         help='Skip uploading to www.mercurial-scm.org',
     )
     sp.add_argument(
-        '--ssh-username', help='SSH username for mercurial-scm.org',
+        '--ssh-username',
+        help='SSH username for mercurial-scm.org',
     )
     sp.add_argument(
-        'version', help='Mercurial version string to locate local packages',
+        'version',
+        help='Mercurial version string to locate local packages',
     )
     sp.set_defaults(func=publish_windows_artifacts)
 

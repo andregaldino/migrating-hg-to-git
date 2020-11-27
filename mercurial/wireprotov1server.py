@@ -602,10 +602,10 @@ def pushkey(repo, proto, namespace, key, old, new):
 
 @wireprotocommand(b'stream_out', permission=b'pull')
 def stream(repo, proto):
-    '''If the server supports streaming clone, it advertises the "stream"
+    """If the server supports streaming clone, it advertises the "stream"
     capability with a value representing the version and flags of the repo
     it is serving. Client checks to see if it understands the format.
-    '''
+    """
     return wireprototypes.streamreslegacy(streamclone.generatev1wireproto(repo))
 
 

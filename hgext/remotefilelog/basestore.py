@@ -103,7 +103,7 @@ class basestore(object):
     def _cleanupdirectory(self, rootdir):
         """Removes the empty directories and unnecessary files within the root
         directory recursively. Note that this method does not remove the root
-        directory itself. """
+        directory itself."""
 
         oldfiles = set()
         otherfiles = set()

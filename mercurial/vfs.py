@@ -83,12 +83,12 @@ class abstractvfs(object):
 
     @util.propertycache
     def open(self):
-        '''Open ``path`` file, which is relative to vfs root.
+        """Open ``path`` file, which is relative to vfs root.
 
         Newly created directories are marked as "not to be indexed by
         the content indexing service", if ``notindexed`` is specified
         for "write" mode access.
-        '''
+        """
         return self.__call__
 
     def read(self, path):
@@ -142,9 +142,9 @@ class abstractvfs(object):
         return os.path.islink(self.join(path))
 
     def isfileorlink(self, path=None):
-        '''return whether path is a regular file or a symlink
+        """return whether path is a regular file or a symlink
 
-        Unlike isfile, this doesn't follow symlinks.'''
+        Unlike isfile, this doesn't follow symlinks."""
         try:
             st = self.lstat(path)
         except OSError:
@@ -228,8 +228,7 @@ class abstractvfs(object):
         return util.readlink(self.join(path))
 
     def removedirs(self, path=None):
-        """Remove a leaf directory and all empty intermediate ones
-        """
+        """Remove a leaf directory and all empty intermediate ones"""
         return util.removedirs(self.join(path))
 
     def rmdir(self, path=None):
@@ -332,7 +331,7 @@ class abstractvfs(object):
 
 
 class vfs(abstractvfs):
-    '''Operate files relative to a base directory
+    """Operate files relative to a base directory
 
     This class is used to hide the details of COW semantics and
     remote file access from higher level code.
@@ -340,7 +339,7 @@ class vfs(abstractvfs):
     'cacheaudited' should be enabled only if (a) vfs object is short-lived, or
     (b) the base directory is managed by hg and considered sort-of append-only.
     See pathutil.pathauditor() for details.
-    '''
+    """
 
     def __init__(
         self,
@@ -397,7 +396,7 @@ class vfs(abstractvfs):
         auditpath=True,
         makeparentdirs=True,
     ):
-        '''Open ``path`` file, which is relative to vfs root.
+        """Open ``path`` file, which is relative to vfs root.
 
         By default, parent directories are created as needed. Newly created
         directories are marked as "not to be indexed by the content indexing
@@ -426,7 +425,7 @@ class vfs(abstractvfs):
         truncation), if it is owned by another. Therefore, use
         combination of append mode and checkambig=True only in limited
         cases (see also issue5418 and issue5584 for detail).
-        '''
+        """
         if auditpath:
             self._auditpath(path, mode)
         f = self.join(path)

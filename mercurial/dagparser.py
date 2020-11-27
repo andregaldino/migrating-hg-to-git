@@ -425,7 +425,7 @@ def dagtext(
     usedots=False,
     maxlinewidth=70,
 ):
-    '''generates lines of a textual representation for a dag event stream
+    """generates lines of a textual representation for a dag event stream
 
     events should generate what parsedag() does, so:
 
@@ -501,7 +501,7 @@ def dagtext(
         >>> dagtext(parsedag(b'+1 :f +1 :p2 *f */p2'))
         '+1 :f +1 :p2 *f */p2'
 
-    '''
+    """
     return b"\n".join(
         dagtextlines(
             dag,

@@ -117,7 +117,10 @@ def findcommonincoming(repo, remote, heads=None, force=False):
             for p in pycompat.xrange(0, len(r), 10):
                 with remote.commandexecutor() as e:
                     branches = e.callcommand(
-                        b'branches', {b'nodes': r[p : p + 10],}
+                        b'branches',
+                        {
+                            b'nodes': r[p : p + 10],
+                        },
                     ).result()
 
                 for b in branches:

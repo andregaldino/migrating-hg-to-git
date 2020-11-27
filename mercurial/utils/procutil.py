@@ -292,10 +292,10 @@ def pipefilter(s, cmd):
 
 
 def tempfilter(s, cmd):
-    '''filter string S through a pair of temporary files with CMD.
+    """filter string S through a pair of temporary files with CMD.
     CMD is used as a template to create the real command to be run,
     with the strings INFILE and OUTFILE replaced by the real names of
-    the temporary files generated.'''
+    the temporary files generated."""
     inname, outname = None, None
     try:
         infd, inname = pycompat.mkstemp(prefix=b'hg-filter-in-')
@@ -465,17 +465,16 @@ else:
 
 
 def tonativeenv(env):
-    '''convert the environment from bytes to strings suitable for Popen(), etc.
-    '''
+    """convert the environment from bytes to strings suitable for Popen(), etc."""
     return pycompat.rapply(tonativestr, env)
 
 
 def system(cmd, environ=None, cwd=None, out=None):
-    '''enhanced shell command execution.
+    """enhanced shell command execution.
     run with environment maybe modified, maybe in different dir.
 
     if out is specified, it is assumed to be a file-like object that has a
-    write() method. stdout and stderr will be redirected to out.'''
+    write() method. stdout and stderr will be redirected to out."""
     try:
         stdout.flush()
     except Exception:
@@ -685,14 +684,14 @@ else:
         record_wait=None,
         stdin_bytes=None,
     ):
-        '''Spawn a command without waiting for it to finish.
+        """Spawn a command without waiting for it to finish.
 
 
         When `record_wait` is not None, the spawned process will not be fully
         detached and the `record_wait` argument will be called with a the
         `Subprocess.wait` function for the spawned process.  This is mostly
         useful for developers that need to make sure the spawned process
-        finished before a certain point. (eg: writing test)'''
+        finished before a certain point. (eg: writing test)"""
         if pycompat.isdarwin:
             # avoid crash in CoreFoundation in case another thread
             # calls gui() while we're calling fork().

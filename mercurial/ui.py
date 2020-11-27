@@ -925,7 +925,7 @@ class ui(object):
                 yield section, name, value
 
     def plain(self, feature=None):
-        '''is plain mode active?
+        """is plain mode active?
 
         Plain mode means that all configuration variables which affect
         the behavior and output of Mercurial should be
@@ -939,7 +939,7 @@ class ui(object):
         - False if HGPLAIN is not set, or feature is in HGPLAINEXCEPT
         - False if feature is disabled by default and not included in HGPLAIN
         - True otherwise
-        '''
+        """
         if (
             b'HGPLAIN' not in encoding.environ
             and b'HGPLAINEXCEPT' not in encoding.environ
@@ -1112,7 +1112,7 @@ class ui(object):
         return self._colormode != b'win32'
 
     def write(self, *args, **opts):
-        '''write args to output
+        """write args to output
 
         By default, this method simply writes to the buffer or stdout.
         Color mode can be set on the UI class to have the output decorated
@@ -1133,7 +1133,7 @@ class ui(object):
         When labeling output for a specific command, a label of
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
-        '''
+        """
         dest = self._fout
 
         # inlined _write() for speed
@@ -1453,9 +1453,9 @@ class ui(object):
         return _reqexithandlers
 
     def atexit(self, func, *args, **kwargs):
-        '''register a function to run after dispatching a request
+        """register a function to run after dispatching a request
 
-        Handlers do not stay registered across request boundaries.'''
+        Handlers do not stay registered across request boundaries."""
         self._exithandlers.append((func, args, kwargs))
         return func
 
@@ -1484,8 +1484,14 @@ class ui(object):
         alldefaults = frozenset([b"text", b"curses"])
 
         featureinterfaces = {
-            b"chunkselector": [b"text", b"curses",],
-            b"histedit": [b"text", b"curses",],
+            b"chunkselector": [
+                b"text",
+                b"curses",
+            ],
+            b"histedit": [
+                b"text",
+                b"curses",
+            ],
         }
 
         # Feature-specific interface
@@ -1532,7 +1538,7 @@ class ui(object):
         return choseninterface
 
     def interactive(self):
-        '''is interactive input allowed?
+        """is interactive input allowed?
 
         An interactive session is a session where input can be reasonably read
         from `sys.stdin'. If this function returns false, any attempt to read
@@ -1544,7 +1550,7 @@ class ui(object):
         to a terminal device.
 
         This function refers to input only; for output, see `ui.formatted()'.
-        '''
+        """
         i = self.configbool(b"ui", b"interactive")
         if i is None:
             # some environments replace stdin without implementing isatty
@@ -1554,8 +1560,7 @@ class ui(object):
         return i
 
     def termwidth(self):
-        '''how wide is the terminal in columns?
-        '''
+        """how wide is the terminal in columns?"""
         if b'COLUMNS' in encoding.environ:
             try:
                 return int(encoding.environ[b'COLUMNS'])
@@ -1564,7 +1569,7 @@ class ui(object):
         return scmutil.termsize(self)[0]
 
     def formatted(self):
-        '''should formatted output be used?
+        """should formatted output be used?
 
         It is often desirable to format the output to suite the output medium.
         Examples of this are truncating long lines or colorizing messages.
@@ -1579,7 +1584,7 @@ class ui(object):
 
         This function refers to output only; for input, see `ui.interactive()'.
         This function always returns false when in plain mode, see `ui.plain()'.
-        '''
+        """
         if self.plain():
             return False
 
@@ -1746,40 +1751,40 @@ class ui(object):
             raise error.ResponseExpected()
 
     def status(self, *msg, **opts):
-        '''write status message to output (if ui.quiet is False)
+        """write status message to output (if ui.quiet is False)
 
         This adds an output label of "ui.status".
-        '''
+        """
         if not self.quiet:
             self._writemsg(self._fmsgout, type=b'status', *msg, **opts)
 
     def warn(self, *msg, **opts):
-        '''write warning message to output (stderr)
+        """write warning message to output (stderr)
 
         This adds an output label of "ui.warning".
-        '''
+        """
         self._writemsg(self._fmsgerr, type=b'warning', *msg, **opts)
 
     def error(self, *msg, **opts):
-        '''write error message to output (stderr)
+        """write error message to output (stderr)
 
         This adds an output label of "ui.error".
-        '''
+        """
         self._writemsg(self._fmsgerr, type=b'error', *msg, **opts)
 
     def note(self, *msg, **opts):
-        '''write note to output (if ui.verbose is True)
+        """write note to output (if ui.verbose is True)
 
         This adds an output label of "ui.note".
-        '''
+        """
         if self.verbose:
             self._writemsg(self._fmsgout, type=b'note', *msg, **opts)
 
     def debug(self, *msg, **opts):
-        '''write debug message to output (if ui.debugflag is True)
+        """write debug message to output (if ui.debugflag is True)
 
         This adds an output label of "ui.debug".
-        '''
+        """
         if self.debugflag:
             self._writemsg(self._fmsgout, type=b'debug', *msg, **opts)
             self.log(b'debug', b'%s', b''.join(msg))
@@ -1875,12 +1880,12 @@ class ui(object):
         errprefix=None,
         blockedtag=None,
     ):
-        '''execute shell command with appropriate output stream. command
+        """execute shell command with appropriate output stream. command
         output will be redirected if fout is not stdout.
 
         if command fails and onerr is None, return status, else raise onerr
         object as exception.
-        '''
+        """
         if blockedtag is None:
             # Long cmds tend to be because of an absolute path on cmd. Keep
             # the tail end instead
@@ -1907,9 +1912,9 @@ class ui(object):
         return procutil.system(cmd, environ=environ, cwd=cwd, out=out)
 
     def traceback(self, exc=None, force=False):
-        '''print exception traceback if traceback printing enabled or forced.
+        """print exception traceback if traceback printing enabled or forced.
         only to call in exception handler. returns true if traceback
-        printed.'''
+        printed."""
         if self.tracebackflag or force:
             if exc is None:
                 exc = sys.exc_info()
@@ -2011,7 +2016,7 @@ class ui(object):
         self._loggers[name] = logger
 
     def log(self, event, msgfmt, *msgargs, **opts):
-        '''hook for logging facility extensions
+        """hook for logging facility extensions
 
         event should be a readily-identifiable subsystem, which will
         allow filtering.
@@ -2020,7 +2025,7 @@ class ui(object):
         *msgargs are %-formatted into it.
 
         **opts currently has no defined meanings.
-        '''
+        """
         if not self._loggers:
             return
         activeloggers = [
@@ -2040,7 +2045,7 @@ class ui(object):
             self._loggers = registeredloggers
 
     def label(self, msg, label):
-        '''style msg based on supplied label
+        """style msg based on supplied label
 
         If some color mode is enabled, this will add the necessary control
         characters to apply such color. In addition, 'debug' color mode adds
@@ -2048,7 +2053,7 @@ class ui(object):
 
         ui.write(s, 'label') is equivalent to
         ui.write(ui.label(s, 'label')).
-        '''
+        """
         if self._colormode is not None:
             return color.colorlabel(self, msg, label)
         return msg

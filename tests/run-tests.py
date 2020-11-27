@@ -534,7 +534,9 @@ def getparser():
         help="install and use chg wrapper in place of hg",
     )
     hgconf.add_argument(
-        "--chg-debug", action="store_true", help="show chg debug logs",
+        "--chg-debug",
+        action="store_true",
+        help="show chg debug logs",
     )
     hgconf.add_argument("--compiler", help="compiler to build with")
     hgconf.add_argument(
@@ -1193,7 +1195,10 @@ class Test(unittest.TestCase):
         if self._keeptmpdir:
             log(
                 '\nKeeping testtmp dir: %s\nKeeping threadtmp dir: %s'
-                % (_bytes2sys(self._testtmp), _bytes2sys(self._threadtmp),)
+                % (
+                    _bytes2sys(self._testtmp),
+                    _bytes2sys(self._threadtmp),
+                )
             )
         else:
             try:
@@ -2091,11 +2096,11 @@ class TTest(Test):
 
     @staticmethod
     def parsehghaveoutput(lines):
-        '''Parse hghave log lines.
+        """Parse hghave log lines.
 
         Return tuple of lists (missing, failed):
           * the missing/unknown features
-          * the features for which existence check failed'''
+          * the features for which existence check failed"""
         missing = []
         failed = []
         for line in lines:
@@ -2155,12 +2160,10 @@ class TestResult(unittest._TextTestResult):
             self.color = pygmentspresent
 
     def onStart(self, test):
-        """ Can be overriden by custom TestResult
-        """
+        """Can be overriden by custom TestResult"""
 
     def onEnd(self):
-        """ Can be overriden by custom TestResult
-        """
+        """Can be overriden by custom TestResult"""
 
     def addFailure(self, test, reason):
         self.failures.append((test, reason))
@@ -3168,7 +3171,9 @@ class TestRunner(object):
         vlog("# Using HGTMP", _bytes2sys(self._hgtmp))
         vlog("# Using PATH", os.environ["PATH"])
         vlog(
-            "# Using", _bytes2sys(IMPL_PATH), _bytes2sys(osenvironb[IMPL_PATH]),
+            "# Using",
+            _bytes2sys(IMPL_PATH),
+            _bytes2sys(osenvironb[IMPL_PATH]),
         )
         vlog("# Writing to directory", _bytes2sys(self._outputdir))
 

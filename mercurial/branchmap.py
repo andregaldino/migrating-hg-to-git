@@ -41,7 +41,17 @@ if pycompat.TYPE_CHECKING:
     )
 
     assert any(
-        (Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union,)
+        (
+            Any,
+            Callable,
+            Dict,
+            Iterable,
+            List,
+            Optional,
+            Set,
+            Tuple,
+            Union,
+        )
     )
 
 subsettable = repoviewutil.subsettable
@@ -139,8 +149,7 @@ class BranchMapCache(object):
 
 
 def _unknownnode(node):
-    """ raises ValueError when branchcache found a node which does not exists
-    """
+    """raises ValueError when branchcache found a node which does not exists"""
     raise ValueError('node %s does not exist' % pycompat.sysstr(hex(node)))
 
 
@@ -183,9 +192,9 @@ class branchcache(object):
         hasnode=None,
     ):
         # type: (Union[Dict[bytes, List[bytes]], Iterable[Tuple[bytes, List[bytes]]]], bytes,  int, Optional[bytes], Optional[Set[bytes]], Optional[Callable[[bytes], bool]]) -> None
-        """ hasnode is a function which can be used to verify whether changelog
+        """hasnode is a function which can be used to verify whether changelog
         has a given node or not. If it's not provided, we assume that every node
-        we have exists in changelog """
+        we have exists in changelog"""
         self.tipnode = tipnode
         self.tiprev = tiprev
         self.filteredhash = filteredhash
@@ -304,7 +313,7 @@ class branchcache(object):
         return bcache
 
     def load(self, repo, lineiter):
-        """ fully loads the branchcache by reading from the file using the line
+        """fully loads the branchcache by reading from the file using the line
         iterator passed"""
         for line in lineiter:
             line = line.rstrip(b'\n')
@@ -340,8 +349,8 @@ class branchcache(object):
             return False
 
     def _branchtip(self, heads):
-        '''Return tuple with last open head in heads and false,
-        otherwise return last closed head and true.'''
+        """Return tuple with last open head in heads and false,
+        otherwise return last closed head and true."""
         tip = heads[-1]
         closed = True
         for h in reversed(heads):
@@ -352,9 +361,9 @@ class branchcache(object):
         return tip, closed
 
     def branchtip(self, branch):
-        '''Return the tipmost open head on branch head, otherwise return the
+        """Return the tipmost open head on branch head, otherwise return the
         tipmost closed head on branch.
-        Raise KeyError for unknown branch.'''
+        Raise KeyError for unknown branch."""
         return self._branchtip(self[branch])[0]
 
     def iteropen(self, nodes):

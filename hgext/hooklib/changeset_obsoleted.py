@@ -40,10 +40,14 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'notify_obsoleted', b'domain', default=None,
+    b'notify_obsoleted',
+    b'domain',
+    default=None,
 )
 configitem(
-    b'notify_obsoleted', b'messageidseed', default=None,
+    b'notify_obsoleted',
+    b'messageidseed',
+    default=None,
 )
 configitem(
     b'notify_obsoleted',

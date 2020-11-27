@@ -44,10 +44,10 @@ if pycompat.TYPE_CHECKING:
 
 
 class STARTTLS(smtplib.SMTP):
-    '''Derived class to verify the peer certificate for STARTTLS.
+    """Derived class to verify the peer certificate for STARTTLS.
 
     This class allows to pass any keyword arguments to SSL socket creation.
-    '''
+    """
 
     def __init__(self, ui, host=None, **kwargs):
         smtplib.SMTP.__init__(self, **kwargs)
@@ -76,10 +76,10 @@ class STARTTLS(smtplib.SMTP):
 
 
 class SMTPS(smtplib.SMTP):
-    '''Derived class to verify the peer certificate for SMTPS.
+    """Derived class to verify the peer certificate for SMTPS.
 
     This class allows to pass any keyword arguments to SSL socket creation.
-    '''
+    """
 
     def __init__(self, ui, keyfile=None, certfile=None, host=None, **kwargs):
         self.keyfile = keyfile
@@ -221,8 +221,8 @@ def _mbox(mbox, sender, recipients, msg):
 
 
 def connect(ui, mbox=None):
-    '''make a mail connection. return a function to send mail.
-    call as sendmail(sender, list-of-recipients, msg).'''
+    """make a mail connection. return a function to send mail.
+    call as sendmail(sender, list-of-recipients, msg)."""
     if mbox:
         open(mbox, b'wb').close()
         return lambda s, r, m: _mbox(mbox, s, r, m)
@@ -267,11 +267,11 @@ def codec2iana(cs):
 
 def mimetextpatch(s, subtype='plain', display=False):
     # type: (bytes, str, bool) -> email.message.Message
-    '''Return MIME message suitable for a patch.
+    """Return MIME message suitable for a patch.
     Charset will be detected by first trying to decode as us-ascii, then utf-8,
     and finally the global encodings. If all those fail, fall back to
     ISO-8859-1, an encoding with that allows all byte sequences.
-    Transfer encodings will be used if necessary.'''
+    Transfer encodings will be used if necessary."""
 
     cs = [
         'us-ascii',
@@ -293,9 +293,9 @@ def mimetextpatch(s, subtype='plain', display=False):
 
 def mimetextqp(body, subtype, charset):
     # type: (bytes, str, str) -> email.message.Message
-    '''Return MIME message.
+    """Return MIME message.
     Quoted-printable transfer encoding will be used if necessary.
-    '''
+    """
     cs = email.charset.Charset(charset)
     msg = email.message.Message()
     msg.set_type('text/' + subtype)
@@ -337,11 +337,11 @@ def _charsets(ui):
 
 def _encode(ui, s, charsets):
     # type: (Any, bytes, List[str]) -> Tuple[bytes, str]
-    '''Returns (converted) string, charset tuple.
+    """Returns (converted) string, charset tuple.
     Finds out best charset by cycling through sendcharsets in descending
     order. Tries both encoding and fallbackencoding for input. Only as
     last resort send as is in fake ascii.
-    Caveat: Do not use for mail parts containing patches!'''
+    Caveat: Do not use for mail parts containing patches!"""
     sendcharsets = charsets or _charsets(ui)
     if not isinstance(s, bytes):
         # We have unicode data, which we need to try and encode to
@@ -427,9 +427,9 @@ def addressencode(ui, address, charsets=None, display=False):
 
 def addrlistencode(ui, addrs, charsets=None, display=False):
     # type: (Any, List[bytes], List[str], bool) -> List[str]
-    '''Turns a list of addresses into a list of RFC-2047 compliant headers.
+    """Turns a list of addresses into a list of RFC-2047 compliant headers.
     A single element of input list may contain multiple addresses, but output
-    always has one address per item'''
+    always has one address per item"""
     straddrs = []
     for a in addrs:
         assert isinstance(a, bytes), '%r unexpectedly not a bytestr' % a
@@ -447,8 +447,8 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
 
 def mimeencode(ui, s, charsets=None, display=False):
     # type: (Any, bytes, List[str], bool) -> email.message.Message
-    '''creates mime text object, encodes it if needed, and sets
-    charset and transfer-encoding accordingly.'''
+    """creates mime text object, encodes it if needed, and sets
+    charset and transfer-encoding accordingly."""
     cs = 'us-ascii'
     if not display:
         s, cs = _encode(ui, s, charsets)

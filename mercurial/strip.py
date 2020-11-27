@@ -114,7 +114,12 @@ def strip(
             ),
         ),
         (b'', b'no-backup', None, _(b'do not save backup bundle')),
-        (b'', b'nobackup', None, _(b'do not save backup bundle (DEPRECATED)'),),
+        (
+            b'',
+            b'nobackup',
+            None,
+            _(b'do not save backup bundle (DEPRECATED)'),
+        ),
         (b'n', b'', None, _(b'ignored  (DEPRECATED)')),
         (
             b'k',

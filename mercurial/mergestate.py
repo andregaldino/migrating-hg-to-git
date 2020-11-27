@@ -132,7 +132,7 @@ NO_OP_ACTIONS = (
 
 
 class _mergestate_base(object):
-    '''track 3-way merge state of individual files
+    """track 3-way merge state of individual files
 
     The merge state is stored on disk when needed. Two files are used: one with
     an old format (version 1), and one with a new format (version 2). Version 2
@@ -164,7 +164,7 @@ class _mergestate_base(object):
 
     The resolve command transitions between 'u' and 'r' for conflicts and
     'pu' and 'pr' for path conflicts.
-    '''
+    """
 
     def __init__(self, repo):
         """Initialize the merge state.
@@ -275,8 +275,8 @@ class _mergestate_base(object):
         self._dirty = True
 
     def addcommitinfo(self, path, data):
-        """ stores information which is required at commit
-        into _stateextras """
+        """stores information which is required at commit
+        into _stateextras"""
         self._stateextras[path].update(data)
         self._dirty = True
 

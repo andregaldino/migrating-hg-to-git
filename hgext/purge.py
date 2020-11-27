@@ -67,7 +67,7 @@ testedwith = b'ships-with-hg-core'
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
 )
 def purge(ui, repo, *dirs, **opts):
-    '''removes files not tracked by Mercurial
+    """removes files not tracked by Mercurial
 
     Delete files not known to Mercurial. This is useful to test local
     and uncommitted changes in an otherwise-clean source tree.
@@ -95,7 +95,7 @@ def purge(ui, repo, *dirs, **opts):
     you forgot to add to the repository. If you only want to print the
     list of files that this program would delete, use the --print
     option.
-    '''
+    """
     opts = pycompat.byteskwargs(opts)
     cmdutil.check_at_most_one_arg(opts, b'all', b'ignored')
 

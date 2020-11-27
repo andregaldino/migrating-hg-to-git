@@ -292,9 +292,9 @@ def findcommonheads(
     ancestorsof=None,
     samplegrowth=1.05,
 ):
-    '''Return a tuple (common, anyincoming, remoteheads) used to identify
+    """Return a tuple (common, anyincoming, remoteheads) used to identify
     missing nodes from or in remote.
-    '''
+    """
     start = util.timer()
 
     roundtrips = 0
@@ -371,7 +371,10 @@ def findcommonheads(
     with remote.commandexecutor() as e:
         fheads = e.callcommand(b'heads', {})
         fknown = e.callcommand(
-            b'known', {b'nodes': [clnode(r) for r in sample],}
+            b'known',
+            {
+                b'nodes': [clnode(r) for r in sample],
+            },
         )
 
     srvheadhashes, yesno = fheads.result(), fknown.result()
@@ -449,7 +452,10 @@ def findcommonheads(
 
         with remote.commandexecutor() as e:
             yesno = e.callcommand(
-                b'known', {b'nodes': [clnode(r) for r in sample],}
+                b'known',
+                {
+                    b'nodes': [clnode(r) for r in sample],
+                },
             ).result()
 
         full = True

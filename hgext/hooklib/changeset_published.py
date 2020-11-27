@@ -39,10 +39,14 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'notify_published', b'domain', default=None,
+    b'notify_published',
+    b'domain',
+    default=None,
 )
 configitem(
-    b'notify_published', b'messageidseed', default=None,
+    b'notify_published',
+    b'messageidseed',
+    default=None,
 )
 configitem(
     b'notify_published',

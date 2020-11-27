@@ -43,14 +43,14 @@ def difffeatureopts(
     formatchanging=False,
     configprefix=b'',
 ):
-    '''return diffopts with only opted-in features parsed
+    """return diffopts with only opted-in features parsed
 
     Features:
     - git: git-style diffs
     - whitespace: whitespace options like ignoreblanklines and ignorews
     - formatchanging: options that will likely break or cause correctness issues
       with most diff parsers
-    '''
+    """
 
     def get(key, name=None, getter=ui.configbool, forceplain=None):
         if opts:

@@ -213,15 +213,19 @@ def replacetokens(tokens, opts):
             fn = t.string
 
             # *attr() builtins don't accept byte strings to 2nd argument.
-            if fn in (
-                'getattr',
-                'setattr',
-                'hasattr',
-                'safehasattr',
-                'wrapfunction',
-                'wrapclass',
-                'addattr',
-            ) and (opts['allow-attr-methods'] or not _isop(i - 1, '.')):
+            if (
+                fn
+                in (
+                    'getattr',
+                    'setattr',
+                    'hasattr',
+                    'safehasattr',
+                    'wrapfunction',
+                    'wrapclass',
+                    'addattr',
+                )
+                and (opts['allow-attr-methods'] or not _isop(i - 1, '.'))
+            ):
                 arg1idx = _findargnofcall(1)
                 if arg1idx is not None:
                     _ensuresysstr(arg1idx)

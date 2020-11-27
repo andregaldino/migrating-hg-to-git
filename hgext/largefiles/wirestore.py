@@ -30,13 +30,23 @@ class wirestore(remotestore.remotestore):
         return self.remote.getlfile(hash)
 
     def _stat(self, hashes):
-        '''For each hash, return 0 if it is available, other values if not.
+        """For each hash, return 0 if it is available, other values if not.
         It is usually 2 if the largefile is missing, but might be 1 the server
-        has a corrupted copy.'''
+        has a corrupted copy."""
 
         with self.remote.commandexecutor() as e:
             fs = []
             for hash in hashes:
-                fs.append((hash, e.callcommand(b'statlfile', {b'sha': hash,})))
+                fs.append(
+                    (
+                        hash,
+                        e.callcommand(
+                            b'statlfile',
+                            {
+                                b'sha': hash,
+                            },
+                        ),
+                    )
+                )
 
             return {hash: f.result() for hash, f in fs}

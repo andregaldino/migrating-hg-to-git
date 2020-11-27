@@ -17,7 +17,8 @@ from mercurial.testing import revlog as revlogtesting
 
 
 @unittest.skipIf(
-    rustext is None, "rustext module revlog relies on is not available",
+    rustext is None,
+    "rustext module revlog relies on is not available",
 )
 class RustRevlogIndexTest(revlogtesting.RevlogBasedTestBase):
     def test_heads(self):

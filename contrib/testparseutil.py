@@ -81,8 +81,7 @@ def writeerr(data):
 
 
 class embeddedmatcher(object):  # pytype: disable=ignored-metaclass
-    """Base class to detect embedded code fragments in *.t test script
-    """
+    """Base class to detect embedded code fragments in *.t test script"""
 
     __metaclass__ = abc.ABCMeta
 
@@ -103,8 +102,7 @@ class embeddedmatcher(object):  # pytype: disable=ignored-metaclass
 
     @abc.abstractmethod
     def isinside(self, ctx, line):
-        """Examine whether line is inside embedded code, if not yet endsat
-        """
+        """Examine whether line is inside embedded code, if not yet endsat"""
 
     @abc.abstractmethod
     def ignores(self, ctx):

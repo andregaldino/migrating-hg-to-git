@@ -9,12 +9,12 @@ from . import util as interfaceutil
 
 class idirstate(interfaceutil.Interface):
     def __init__(opener, ui, root, validate, sparsematchfn):
-        '''Create a new dirstate object.
+        """Create a new dirstate object.
 
         opener is an open()-like callable that can be used to open the
         dirstate file; root is the root of the directory tracked by
         the dirstate.
-        '''
+        """
 
     # TODO: all these private methods and attributes should be made
     # public or removed from the interface.
@@ -31,17 +31,17 @@ class idirstate(interfaceutil.Interface):
 
     @contextlib.contextmanager
     def parentchange():
-        '''Context manager for handling dirstate parents.
+        """Context manager for handling dirstate parents.
 
         If an exception occurs in the scope of the context manager,
         the incoherent dirstate won't be written when wlock is
         released.
-        '''
+        """
 
     def pendingparentchange():
-        '''Returns true if the dirstate is in the middle of a set of changes
+        """Returns true if the dirstate is in the middle of a set of changes
         that modify the dirstate parent.
-        '''
+        """
 
     def hasdir(d):
         pass
@@ -50,18 +50,18 @@ class idirstate(interfaceutil.Interface):
         pass
 
     def getcwd():
-        '''Return the path from which a canonical path is calculated.
+        """Return the path from which a canonical path is calculated.
 
         This path should be used to resolve file patterns or to convert
         canonical paths back to file paths for display. It shouldn't be
         used to get real file paths. Use vfs functions instead.
-        '''
+        """
 
     def pathto(f, cwd=None):
         pass
 
     def __getitem__(key):
-        '''Return the current state of key (a filename) in the dirstate.
+        """Return the current state of key (a filename) in the dirstate.
 
         States are:
           n  normal
@@ -69,7 +69,7 @@ class idirstate(interfaceutil.Interface):
           r  marked for removal
           a  marked for addition
           ?  not tracked
-        '''
+        """
 
     def __contains__(key):
         """Check if bytestring `key` is known to the dirstate."""
@@ -111,11 +111,11 @@ class idirstate(interfaceutil.Interface):
         pass
 
     def invalidate():
-        '''Causes the next access to reread the dirstate.
+        """Causes the next access to reread the dirstate.
 
         This is different from localrepo.invalidatedirstate() because it always
         rereads the dirstate. Use localrepo.invalidatedirstate() if you want to
-        check whether the dirstate has changed before rereading it.'''
+        check whether the dirstate has changed before rereading it."""
 
     def copy(source, dest):
         """Mark dest as a copy of source. Unmark dest if source is None."""
@@ -127,7 +127,7 @@ class idirstate(interfaceutil.Interface):
         pass
 
     def normal(f, parentfiledata=None):
-        '''Mark a file normal and clean.
+        """Mark a file normal and clean.
 
         parentfiledata: (mode, size, mtime) of the clean file
 
@@ -135,7 +135,7 @@ class idirstate(interfaceutil.Interface):
         size), as or close as possible from the point where we
         determined the file was clean, to limit the risk of the
         file having been changed by an external process between the
-        moment where the file was determined to be clean and now.'''
+        moment where the file was determined to be clean and now."""
         pass
 
     def normallookup(f):
@@ -157,7 +157,7 @@ class idirstate(interfaceutil.Interface):
         '''Drop a file from the dirstate'''
 
     def normalize(path, isknown=False, ignoremissing=False):
-        '''
+        """
         normalize the case of a pathname when on a casefolding filesystem
 
         isknown specifies whether the filename came from walking the
@@ -172,7 +172,7 @@ class idirstate(interfaceutil.Interface):
         - version of name already stored in the dirstate
         - version of name stored on disk
         - version provided via command arguments
-        '''
+        """
 
     def clear():
         pass
@@ -181,11 +181,11 @@ class idirstate(interfaceutil.Interface):
         pass
 
     def identity():
-        '''Return identity of dirstate it to detect changing in storage
+        """Return identity of dirstate it to detect changing in storage
 
         If identity of previous dirstate is equal to this, writing
         changes based on the former dirstate out can keep consistency.
-        '''
+        """
 
     def write(tr):
         pass
@@ -201,7 +201,7 @@ class idirstate(interfaceutil.Interface):
         """
 
     def walk(match, subrepos, unknown, ignored, full=True):
-        '''
+        """
         Walk recursively through the directory tree, finding all files
         matched by match.
 
@@ -210,10 +210,10 @@ class idirstate(interfaceutil.Interface):
         Return a dict mapping filename to stat-like object (either
         mercurial.osutil.stat instance or return value of os.stat()).
 
-        '''
+        """
 
     def status(match, subrepos, ignored, clean, unknown):
-        '''Determine the status of the working copy relative to the
+        """Determine the status of the working copy relative to the
         dirstate and return a pair of (unsure, status), where status is of type
         scmutil.status and:
 
@@ -227,12 +227,12 @@ class idirstate(interfaceutil.Interface):
           status.clean:
             files that have definitely not been modified since the
             dirstate was written
-        '''
+        """
 
     def matches(match):
-        '''
+        """
         return files in the dirstate (in whatever state) filtered by match
-        '''
+        """
 
     def savebackup(tr, backupname):
         '''Save current dirstate into backup file'''

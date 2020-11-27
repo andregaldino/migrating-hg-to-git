@@ -641,19 +641,28 @@ class sansiodecoder(object):
 
                 elif special == SPECIAL_START_ARRAY:
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': [],}
+                        {
+                            b'remaining': value,
+                            b'v': [],
+                        }
                     )
                     self._state = self._STATE_WANT_ARRAY_VALUE
 
                 elif special == SPECIAL_START_MAP:
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': {},}
+                        {
+                            b'remaining': value,
+                            b'v': {},
+                        }
                     )
                     self._state = self._STATE_WANT_MAP_KEY
 
                 elif special == SPECIAL_START_SET:
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': set(),}
+                        {
+                            b'remaining': value,
+                            b'v': set(),
+                        }
                     )
                     self._state = self._STATE_WANT_SET_VALUE
 
@@ -684,7 +693,10 @@ class sansiodecoder(object):
                     lastc[b'remaining'] -= 1
 
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': newvalue,}
+                        {
+                            b'remaining': value,
+                            b'v': newvalue,
+                        }
                     )
 
                     # self._state doesn't need changed.
@@ -711,7 +723,10 @@ class sansiodecoder(object):
                     lastc[b'remaining'] -= 1
 
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': newvalue,}
+                        {
+                            b'remaining': value,
+                            b'v': newvalue,
+                        }
                     )
 
                     self._state = self._STATE_WANT_SET_VALUE
@@ -775,7 +790,10 @@ class sansiodecoder(object):
                     lastc[b'remaining'] -= 1
 
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': newvalue,}
+                        {
+                            b'remaining': value,
+                            b'v': newvalue,
+                        }
                     )
 
                     self._state = self._STATE_WANT_ARRAY_VALUE
@@ -789,7 +807,10 @@ class sansiodecoder(object):
                     lastc[b'remaining'] -= 1
 
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': newvalue,}
+                        {
+                            b'remaining': value,
+                            b'v': newvalue,
+                        }
                     )
 
                     self._state = self._STATE_WANT_MAP_KEY
@@ -803,7 +824,10 @@ class sansiodecoder(object):
                     lastc[b'remaining'] -= 1
 
                     self._collectionstack.append(
-                        {b'remaining': value, b'v': newvalue,}
+                        {
+                            b'remaining': value,
+                            b'v': newvalue,
+                        }
                     )
 
                     self._state = self._STATE_WANT_SET_VALUE

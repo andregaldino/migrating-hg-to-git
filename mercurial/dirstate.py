@@ -74,12 +74,12 @@ def _getfsnow(vfs):
 @interfaceutil.implementer(intdirstate.idirstate)
 class dirstate(object):
     def __init__(self, opener, ui, root, validate, sparsematchfn):
-        '''Create a new dirstate object.
+        """Create a new dirstate object.
 
         opener is an open()-like callable that can be used to open the
         dirstate file; root is the root of the directory tracked by
         the dirstate.
-        '''
+        """
         self._opener = opener
         self._validate = validate
         self._root = root
@@ -112,12 +112,12 @@ class dirstate(object):
 
     @contextlib.contextmanager
     def parentchange(self):
-        '''Context manager for handling dirstate parents.
+        """Context manager for handling dirstate parents.
 
         If an exception occurs in the scope of the context manager,
         the incoherent dirstate won't be written when wlock is
         released.
-        '''
+        """
         self._parentwriters += 1
         yield
         # Typically we want the "undo" step of a context manager in a
@@ -128,9 +128,9 @@ class dirstate(object):
         self._parentwriters -= 1
 
     def pendingparentchange(self):
-        '''Returns true if the dirstate is in the middle of a set of changes
+        """Returns true if the dirstate is in the middle of a set of changes
         that modify the dirstate parent.
-        '''
+        """
         return self._parentwriters > 0
 
     @propertycache
@@ -247,12 +247,12 @@ class dirstate(object):
         return encoding.getcwd()
 
     def getcwd(self):
-        '''Return the path from which a canonical path is calculated.
+        """Return the path from which a canonical path is calculated.
 
         This path should be used to resolve file patterns or to convert
         canonical paths back to file paths for display. It shouldn't be
         used to get real file paths. Use vfs functions instead.
-        '''
+        """
         cwd = self._cwd
         if cwd == self._root:
             return b''
@@ -275,7 +275,7 @@ class dirstate(object):
         return path
 
     def __getitem__(self, key):
-        '''Return the current state of key (a filename) in the dirstate.
+        """Return the current state of key (a filename) in the dirstate.
 
         States are:
           n  normal
@@ -283,7 +283,7 @@ class dirstate(object):
           r  marked for removal
           a  marked for addition
           ?  not tracked
-        '''
+        """
         return self._map.get(key, (b"?",))[0]
 
     def __contains__(self, key):
@@ -370,11 +370,11 @@ class dirstate(object):
             raise
 
     def invalidate(self):
-        '''Causes the next access to reread the dirstate.
+        """Causes the next access to reread the dirstate.
 
         This is different from localrepo.invalidatedirstate() because it always
         rereads the dirstate. Use localrepo.invalidatedirstate() if you want to
-        check whether the dirstate has changed before rereading it.'''
+        check whether the dirstate has changed before rereading it."""
 
         for a in ("_map", "_branch", "_ignore"):
             if a in self.__dict__:
@@ -426,7 +426,7 @@ class dirstate(object):
         self._map.addfile(f, oldstate, state, mode, size, mtime)
 
     def normal(self, f, parentfiledata=None):
-        '''Mark a file normal and clean.
+        """Mark a file normal and clean.
 
         parentfiledata: (mode, size, mtime) of the clean file
 
@@ -434,7 +434,7 @@ class dirstate(object):
         size), as or close as possible from the point where we
         determined the file was clean, to limit the risk of the
         file having been changed by an external process between the
-        moment where the file was determined to be clean and now.'''
+        moment where the file was determined to be clean and now."""
         if parentfiledata:
             (mode, size, mtime) = parentfiledata
         else:
@@ -581,7 +581,7 @@ class dirstate(object):
         return folded
 
     def normalize(self, path, isknown=False, ignoremissing=False):
-        '''
+        """
         normalize the case of a pathname when on a casefolding filesystem
 
         isknown specifies whether the filename came from walking the
@@ -596,7 +596,7 @@ class dirstate(object):
         - version of name already stored in the dirstate
         - version of name stored on disk
         - version provided via command arguments
-        '''
+        """
 
         if self._checkcase:
             return self._normalize(path, isknown, ignoremissing)
@@ -643,11 +643,11 @@ class dirstate(object):
         self._dirty = True
 
     def identity(self):
-        '''Return identity of dirstate itself to detect changing in storage
+        """Return identity of dirstate itself to detect changing in storage
 
         If identity of previous dirstate is equal to this, writing
         changes based on the former dirstate out can keep consistency.
-        '''
+        """
         return self._map.identity
 
     def write(self, tr):
@@ -769,14 +769,14 @@ class dirstate(object):
         return (None, -1, b"")
 
     def _walkexplicit(self, match, subrepos):
-        '''Get stat data about the files explicitly specified by match.
+        """Get stat data about the files explicitly specified by match.
 
         Return a triple (results, dirsfound, dirsnotfound).
         - results is a mapping from filename to stat result. It also contains
           listings mapping subrepos and .hg to None.
         - dirsfound is a list of files found to be directories.
         - dirsnotfound is a list of files that the dirstate thinks are
-          directories and that were not found.'''
+          directories and that were not found."""
 
         def badtype(mode):
             kind = _(b'unknown')
@@ -904,7 +904,7 @@ class dirstate(object):
         return results, dirsfound, dirsnotfound
 
     def walk(self, match, subrepos, unknown, ignored, full=True):
-        '''
+        """
         Walk recursively through the directory tree, finding all files
         matched by match.
 
@@ -913,7 +913,7 @@ class dirstate(object):
         Return a dict mapping filename to stat-like object (either
         mercurial.osutil.stat instance or return value of os.stat()).
 
-        '''
+        """
         # full is a flag that extensions that hook into walk can use -- this
         # implementation doesn't use it at all. This satisfies the contract
         # because we only guarantee a "maybe".
@@ -1168,7 +1168,7 @@ class dirstate(object):
         return (lookup, status)
 
     def status(self, match, subrepos, ignored, clean, unknown):
-        '''Determine the status of the working copy relative to the
+        """Determine the status of the working copy relative to the
         dirstate and return a pair of (unsure, status), where status is of type
         scmutil.status and:
 
@@ -1182,7 +1182,7 @@ class dirstate(object):
           status.clean:
             files that have definitely not been modified since the
             dirstate was written
-        '''
+        """
         listignored, listclean, listunknown = ignored, clean, unknown
         lookup, modified, added, unknown, ignored = [], [], [], [], []
         removed, deleted, clean = [], [], []
@@ -1305,9 +1305,9 @@ class dirstate(object):
         return (lookup, status)
 
     def matches(self, match):
-        '''
+        """
         return files in the dirstate (in whatever state) filtered by match
-        '''
+        """
         dmap = self._map
         if rustmod is not None:
             dmap = self._map._rustmap

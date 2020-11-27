@@ -73,7 +73,10 @@ class teststate(object):
             self._acquirecalled,
             called,
             'expected acquire to be %s but was actually %s'
-            % (self._tocalled(called), self._tocalled(self._acquirecalled),),
+            % (
+                self._tocalled(called),
+                self._tocalled(self._acquirecalled),
+            ),
         )
 
     def resetacquirefn(self):
@@ -84,7 +87,10 @@ class teststate(object):
             self._releasecalled,
             called,
             'expected release to be %s but was actually %s'
-            % (self._tocalled(called), self._tocalled(self._releasecalled),),
+            % (
+                self._tocalled(called),
+                self._tocalled(self._releasecalled),
+            ),
         )
 
     def assertpostreleasecalled(self, called):
@@ -104,7 +110,10 @@ class teststate(object):
             actual,
             exists,
             'expected lock to %s but actually did %s'
-            % (self._toexists(exists), self._toexists(actual),),
+            % (
+                self._toexists(exists),
+                self._toexists(actual),
+            ),
         )
 
     def _tocalled(self, called):

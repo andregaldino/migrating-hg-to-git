@@ -24,7 +24,7 @@ def _lowerclean(s):
 
 
 class pathauditor(object):
-    '''ensure that a filesystem path contains no banned components.
+    """ensure that a filesystem path contains no banned components.
     the following properties of a path are checked:
 
     - ends with a directory separator
@@ -44,7 +44,7 @@ class pathauditor(object):
     If 'cached' is set to True, audited paths and sub-directories are cached.
     Be careful to not keep the cache of unmanaged directories for long because
     audited paths may be replaced with symlinks.
-    '''
+    """
 
     def __init__(self, root, callback=None, realfs=True, cached=False):
         self.audited = set()
@@ -59,8 +59,8 @@ class pathauditor(object):
             self.normcase = lambda x: x
 
     def __call__(self, path, mode=None):
-        '''Check the relative path.
-        path may contain a pattern (e.g. foodir/**.txt)'''
+        """Check the relative path.
+        path may contain a pattern (e.g. foodir/**.txt)"""
 
         path = util.localpath(path)
         normpath = self.normcase(path)
@@ -164,7 +164,7 @@ class pathauditor(object):
 
 
 def canonpath(root, cwd, myname, auditor=None):
-    '''return the canonical path of myname, given cwd and root
+    """return the canonical path of myname, given cwd and root
 
     >>> def check(root, cwd, myname):
     ...     a = pathauditor(root, realfs=False)
@@ -204,7 +204,7 @@ def canonpath(root, cwd, myname, auditor=None):
     'filename'
     >>> unixonly(b'/repo', b'/repo/subdir', b'filename', b'subdir/filename')
     'subdir/filename'
-    '''
+    """
     if util.endswithsep(root):
         rootsep = root
     else:
@@ -266,7 +266,7 @@ def canonpath(root, cwd, myname, auditor=None):
 
 
 def normasprefix(path):
-    '''normalize the specified path as path prefix
+    """normalize the specified path as path prefix
 
     Returned value can be used safely for "p.startswith(prefix)",
     "p[len(prefix):]", and so on.
@@ -280,7 +280,7 @@ def normasprefix(path):
     '/foo/bar/'
     >>> normasprefix(b'/').replace(pycompat.ossep, b'/')
     '/'
-    '''
+    """
     d, p = os.path.splitdrive(path)
     if len(p) != len(pycompat.ossep):
         return path + pycompat.ossep
@@ -300,9 +300,9 @@ class dirs(object):
     '''a multiset of directory names from a set of file paths'''
 
     def __init__(self, map, skip=None):
-        '''
+        """
         a dict map indicates a dirstate while a list indicates a manifest
-        '''
+        """
         self._dirs = {}
         addpath = self.addpath
         if isinstance(map, dict) and skip is not None:

@@ -529,8 +529,7 @@ def ancestorspec(repo, subset, x, n, order):
 
 @predicate(b'author(string)', safe=True, weight=10)
 def author(repo, subset, x):
-    """Alias for ``user(string)``.
-    """
+    """Alias for ``user(string)``."""
     # i18n: "author" is a keyword
     n = getstring(x, _(b"author requires a string"))
     kind, pattern, matcher = _substringmatcher(n, casesensitive=False)
@@ -737,8 +736,7 @@ def _children(repo, subset, parentset):
 
 @predicate(b'children(set)', safe=True)
 def children(repo, subset, x):
-    """Child changesets of changesets in set.
-    """
+    """Child changesets of changesets in set."""
     s = getset(repo, fullreposet(repo), x)
     cs = _children(repo, subset, s)
     return subset & cs
@@ -746,8 +744,7 @@ def children(repo, subset, x):
 
 @predicate(b'closed()', safe=True, weight=10)
 def closed(repo, subset, x):
-    """Changeset is closed.
-    """
+    """Changeset is closed."""
     # i18n: "closed" is a keyword
     getargs(x, 0, 0, _(b"closed takes no arguments"))
     return subset.filter(
@@ -771,8 +768,7 @@ def _commonancestorheads(repo, subset, x):
 
 @predicate(b'commonancestors(set)', safe=True)
 def commonancestors(repo, subset, x):
-    """Changesets that are ancestors of every changeset in set.
-    """
+    """Changesets that are ancestors of every changeset in set."""
     startrevs = getset(repo, fullreposet(repo), x, order=anyorder)
     if not startrevs:
         return baseset()
@@ -868,8 +864,7 @@ def converted(repo, subset, x):
 
 @predicate(b'date(interval)', safe=True, weight=10)
 def date(repo, subset, x):
-    """Changesets within the interval, see :hg:`help dates`.
-    """
+    """Changesets within the interval, see :hg:`help dates`."""
     # i18n: "date" is a keyword
     ds = getstring(x, _(b"date requires a string"))
     dm = dateutil.matchdate(ds)
@@ -1108,8 +1103,7 @@ def extdata(repo, subset, x):
 
 @predicate(b'extinct()', safe=True)
 def extinct(repo, subset, x):
-    """Obsolete changesets with obsolete descendants only. (EXPERIMENTAL)
-    """
+    """Obsolete changesets with obsolete descendants only. (EXPERIMENTAL)"""
     # i18n: "extinct" is a keyword
     getargs(x, 0, 0, _(b"extinct takes no arguments"))
     extincts = obsmod.getrevs(repo, b'extinct')
@@ -1216,8 +1210,7 @@ def filelog(repo, subset, x):
 
 @predicate(b'first(set, [n])', safe=True, takeorder=True, weight=0)
 def first(repo, subset, x, order):
-    """An alias for limit().
-    """
+    """An alias for limit()."""
     return limit(repo, subset, x, order)
 
 
@@ -1341,8 +1334,7 @@ def followlines(repo, subset, x):
 
 @predicate(b'all()', safe=True)
 def getall(repo, subset, x):
-    """All changesets, the same as ``0:tip``.
-    """
+    """All changesets, the same as ``0:tip``."""
     # i18n: "all" is a keyword
     getargs(x, 0, 0, _(b"all takes no arguments"))
     return subset & spanset(repo)  # drop "null" if any
@@ -1480,8 +1472,7 @@ def hasfile(repo, subset, x):
 
 @predicate(b'head()', safe=True)
 def head(repo, subset, x):
-    """Changeset is a named branch head.
-    """
+    """Changeset is a named branch head."""
     # i18n: "head" is a keyword
     getargs(x, 0, 0, _(b"head takes no arguments"))
     hs = set()
@@ -1493,8 +1484,7 @@ def head(repo, subset, x):
 
 @predicate(b'heads(set)', safe=True, takeorder=True)
 def heads(repo, subset, x, order):
-    """Members of set with no children in set.
-    """
+    """Members of set with no children in set."""
     # argument set should never define order
     if order == defineorder:
         order = followorder
@@ -1515,8 +1505,7 @@ def heads(repo, subset, x, order):
 
 @predicate(b'hidden()', safe=True)
 def hidden(repo, subset, x):
-    """Hidden changesets.
-    """
+    """Hidden changesets."""
     # i18n: "hidden" is a keyword
     getargs(x, 0, 0, _(b"hidden takes no arguments"))
     hiddenrevs = repoview.filterrevs(repo, b'visible')
@@ -1546,8 +1535,7 @@ def keyword(repo, subset, x):
 
 @predicate(b'limit(set[, n[, offset]])', safe=True, takeorder=True, weight=0)
 def limit(repo, subset, x, order):
-    """First n members of set, defaulting to 1, starting from offset.
-    """
+    """First n members of set, defaulting to 1, starting from offset."""
     args = getargsdict(x, b'limit', b'set n offset')
     if b'set' not in args:
         # i18n: "limit" is a keyword
@@ -1571,8 +1559,7 @@ def limit(repo, subset, x, order):
 
 @predicate(b'last(set, [n])', safe=True, takeorder=True)
 def last(repo, subset, x, order):
-    """Last n members of set, defaulting to 1.
-    """
+    """Last n members of set, defaulting to 1."""
     # i18n: "last" is a keyword
     l = getargs(x, 1, 2, _(b"last requires one or two arguments"))
     lim = 1
@@ -1592,8 +1579,7 @@ def last(repo, subset, x, order):
 
 @predicate(b'max(set)', safe=True)
 def maxrev(repo, subset, x):
-    """Changeset with highest revision number in set.
-    """
+    """Changeset with highest revision number in set."""
     os = getset(repo, fullreposet(repo), x)
     try:
         m = os.max()
@@ -1608,8 +1594,7 @@ def maxrev(repo, subset, x):
 
 @predicate(b'merge()', safe=True)
 def merge(repo, subset, x):
-    """Changeset is a merge changeset.
-    """
+    """Changeset is a merge changeset."""
     # i18n: "merge" is a keyword
     getargs(x, 0, 0, _(b"merge takes no arguments"))
     cl = repo.changelog
@@ -1626,8 +1611,7 @@ def merge(repo, subset, x):
 
 @predicate(b'branchpoint()', safe=True)
 def branchpoint(repo, subset, x):
-    """Changesets with more than one child.
-    """
+    """Changesets with more than one child."""
     # i18n: "branchpoint" is a keyword
     getargs(x, 0, 0, _(b"branchpoint takes no arguments"))
     cl = repo.changelog
@@ -1648,8 +1632,7 @@ def branchpoint(repo, subset, x):
 
 @predicate(b'min(set)', safe=True)
 def minrev(repo, subset, x):
-    """Changeset with lowest revision number in set.
-    """
+    """Changeset with lowest revision number in set."""
     os = getset(repo, fullreposet(repo), x)
     try:
         m = os.min()
@@ -1715,8 +1698,7 @@ def named(repo, subset, x):
 
 @predicate(b'id(string)', safe=True)
 def node_(repo, subset, x):
-    """Revision non-ambiguously specified by the given hex string prefix.
-    """
+    """Revision non-ambiguously specified by the given hex string prefix."""
     # i18n: "id" is a keyword
     l = getargs(x, 1, 1, _(b"id requires one argument"))
     # i18n: "id" is a keyword
@@ -1747,8 +1729,7 @@ def node_(repo, subset, x):
 
 @predicate(b'none()', safe=True)
 def none(repo, subset, x):
-    """No changesets.
-    """
+    """No changesets."""
     # i18n: "none" is a keyword
     getargs(x, 0, 0, _(b"none takes no arguments"))
     return baseset()
@@ -1869,8 +1850,7 @@ def outgoing(repo, subset, x):
 
 @predicate(b'p1([set])', safe=True)
 def p1(repo, subset, x):
-    """First parent of changesets in set, or the working directory.
-    """
+    """First parent of changesets in set, or the working directory."""
     if x is None:
         p = repo[x].p1().rev()
         if p >= 0:
@@ -1892,8 +1872,7 @@ def p1(repo, subset, x):
 
 @predicate(b'p2([set])', safe=True)
 def p2(repo, subset, x):
-    """Second parent of changesets in set, or the working directory.
-    """
+    """Second parent of changesets in set, or the working directory."""
     if x is None:
         ps = repo[x].parents()
         try:
@@ -2305,8 +2284,7 @@ def matching(repo, subset, x):
 
 @predicate(b'reverse(set)', safe=True, takeorder=True, weight=0)
 def reverse(repo, subset, x, order):
-    """Reverse order of set.
-    """
+    """Reverse order of set."""
     l = getset(repo, subset, x, order)
     if order == defineorder:
         l.reverse()
@@ -2315,8 +2293,7 @@ def reverse(repo, subset, x, order):
 
 @predicate(b'roots(set)', safe=True)
 def roots(repo, subset, x):
-    """Changesets in set with no parent changeset in set.
-    """
+    """Changesets in set with no parent changeset in set."""
     s = getset(repo, fullreposet(repo), x)
     parents = repo.changelog.parentrevs
 
@@ -2556,8 +2533,7 @@ def tagged(repo, subset, x):
 
 @predicate(b'orphan()', safe=True)
 def orphan(repo, subset, x):
-    """Non-obsolete changesets with obsolete ancestors. (EXPERIMENTAL)
-    """
+    """Non-obsolete changesets with obsolete ancestors. (EXPERIMENTAL)"""
     # i18n: "orphan" is a keyword
     getargs(x, 0, 0, _(b"orphan takes no arguments"))
     orphan = obsmod.getrevs(repo, b'orphan')
@@ -2566,8 +2542,7 @@ def orphan(repo, subset, x):
 
 @predicate(b'unstable()', safe=True)
 def unstable(repo, subset, x):
-    """Changesets with instabilities. (EXPERIMENTAL)
-    """
+    """Changesets with instabilities. (EXPERIMENTAL)"""
     # i18n: "unstable" is a keyword
     getargs(x, 0, 0, b'unstable takes no arguments')
     _unstable = set()
@@ -2781,8 +2756,7 @@ def makematcher(tree):
 
 
 def loadpredicate(ui, extname, registrarobj):
-    """Load revset predicates from specified registrarobj
-    """
+    """Load revset predicates from specified registrarobj"""
     for name, func in pycompat.iteritems(registrarobj._table):
         symbols[name] = func
         if func._safe:

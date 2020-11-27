@@ -26,7 +26,9 @@ import sys
 
 _hgenv = dict(os.environ)
 _hgenv.update(
-    {'HGPLAIN': '1',}
+    {
+        'HGPLAIN': '1',
+    }
 )
 
 _HG_FIRST_CHANGE = '9117c6561b0bd7792fa13b50d28239d51b78e51f'

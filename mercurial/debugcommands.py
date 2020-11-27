@@ -1062,11 +1062,14 @@ _chunksize = 4 << 10
 
 
 @command(
-    b'debugdownload', [(b'o', b'output', b'', _(b'path')),], optionalrepo=True
+    b'debugdownload',
+    [
+        (b'o', b'output', b'', _(b'path')),
+    ],
+    optionalrepo=True,
 )
 def debugdownload(ui, repo, url, output=None, **opts):
-    """download a resource using Mercurial logic and config
-    """
+    """download a resource using Mercurial logic and config"""
     fh = urlmod.open(ui, url, output)
 
     dest = ui
@@ -1510,10 +1513,10 @@ def debugindexstats(ui, repo):
 
 @command(b'debuginstall', [] + cmdutil.formatteropts, b'', norepo=True)
 def debuginstall(ui, **opts):
-    '''test Mercurial installation
+    """test Mercurial installation
 
     Returns 0 on success.
-    '''
+    """
     opts = pycompat.byteskwargs(opts)
 
     problems = 0
@@ -2173,8 +2176,7 @@ def debugnamecomplete(ui, repo, *args):
     ],
 )
 def debugnodemap(ui, repo, **opts):
-    """write and inspect on disk nodemap
-    """
+    """write and inspect on disk nodemap"""
     if opts['dump_new']:
         unfi = repo.unfiltered()
         cl = unfi.changelog
@@ -2402,13 +2404,13 @@ def debugp1copies(ui, repo, **opts):
     _(b'FILESPEC...'),
 )
 def debugpathcomplete(ui, repo, *specs, **opts):
-    '''complete part or all of a tracked path
+    """complete part or all of a tracked path
 
     This command supports shells that offer path name completion. It
     currently completes only files already known to the dirstate.
 
     Completion extends only to the next path segment unless
-    --full is specified, in which case entire paths are used.'''
+    --full is specified, in which case entire paths are used."""
 
     def complete(path, acceptable):
         dirstate = repo.dirstate
@@ -2587,13 +2589,13 @@ def debugpickmergetool(ui, repo, *pats, **opts):
 
 @command(b'debugpushkey', [], _(b'REPO NAMESPACE [KEY OLD NEW]'), norepo=True)
 def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
-    '''access the pushkey key/value protocol
+    """access the pushkey key/value protocol
 
     With two args, list the keys in the given namespace.
 
     With five args, set a key to new if it currently is set to old.
     Reports success or failure.
-    '''
+    """
 
     target = hg.peer(ui, {}, repopath)
     if keyinfo:
@@ -3432,7 +3434,7 @@ def debugsidedata(ui, repo, file_, rev=None, **opts):
 
 @command(b'debugssl', [], b'[SOURCE]', optionalrepo=True)
 def debugssl(ui, repo, source=None, **opts):
-    '''test a secure connection to a server
+    """test a secure connection to a server
 
     This builds the certificate chain for the server on Windows, installing the
     missing intermediates and trusted root via Windows Update if necessary.  It
@@ -3443,7 +3445,7 @@ def debugssl(ui, repo, source=None, **opts):
 
     If the update succeeds, retry the original operation.  Otherwise, the cause
     of the SSL error is likely another issue.
-    '''
+    """
     if not pycompat.iswindows:
         raise error.Abort(
             _(b'certificate chain building is only possible on Windows')
@@ -3785,7 +3787,9 @@ def debugtemplate(ui, repo, tmpl, **opts):
 
 @command(
     b'debuguigetpass',
-    [(b'p', b'prompt', b'', _(b'prompt text'), _(b'TEXT')),],
+    [
+        (b'p', b'prompt', b'', _(b'prompt text'), _(b'TEXT')),
+    ],
     _(b'[-p TEXT]'),
     norepo=True,
 )
@@ -3801,7 +3805,9 @@ def debuguigetpass(ui, prompt=b''):
 
 @command(
     b'debuguiprompt',
-    [(b'p', b'prompt', b'', _(b'prompt text'), _(b'TEXT')),],
+    [
+        (b'p', b'prompt', b'', _(b'prompt text'), _(b'TEXT')),
+    ],
     _(b'[-p TEXT]'),
     norepo=True,
 )
@@ -4314,7 +4320,10 @@ def debugwireproto(ui, repo, path=None, **opts):
                 {
                     'loggingfh': ui,
                     'loggingname': b's',
-                    'loggingopts': {'logdata': True, 'logdataapis': False,},
+                    'loggingopts': {
+                        'logdata': True,
+                        'logdataapis': False,
+                    },
                 }
             )
 

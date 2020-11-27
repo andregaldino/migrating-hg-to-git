@@ -202,7 +202,10 @@ class ServerReactorTests(unittest.TestCase):
             {
                 b'requestid': 1,
                 b'command': b'command',
-                b'args': {b'key': b'val', b'foo': b'bar',},
+                b'args': {
+                    b'key': b'val',
+                    b'foo': b'bar',
+                },
                 b'redirect': None,
                 b'data': b'value1value2',
             },
@@ -356,7 +359,10 @@ class ServerReactorTests(unittest.TestCase):
         self.assertaction(results[0], b'wantframe')
         self.assertaction(results[1], b'error')
         self.assertEqual(
-            results[1][1], {b'message': b'request with ID 1 already received',}
+            results[1][1],
+            {
+                b'message': b'request with ID 1 already received',
+            },
         )
 
     def testinterleavedcommands(self):
@@ -364,7 +370,10 @@ class ServerReactorTests(unittest.TestCase):
             cborutil.streamencode(
                 {
                     b'name': b'command1',
-                    b'args': {b'foo': b'bar', b'key1': b'val',},
+                    b'args': {
+                        b'foo': b'bar',
+                        b'key1': b'val',
+                    },
                 }
             )
         )
@@ -372,7 +381,10 @@ class ServerReactorTests(unittest.TestCase):
             cborutil.streamencode(
                 {
                     b'name': b'command3',
-                    b'args': {b'biz': b'baz', b'key': b'val',},
+                    b'args': {
+                        b'biz': b'baz',
+                        b'key': b'val',
+                    },
                 }
             )
         )
@@ -461,7 +473,10 @@ class ServerReactorTests(unittest.TestCase):
         self.assertaction(results[0], b'wantframe')
         self.assertaction(results[1], b'error')
         self.assertEqual(
-            results[1][1], {b'message': b'command data frame without flags',}
+            results[1][1],
+            {
+                b'message': b'command data frame without flags',
+            },
         )
 
     def testframefornonreceivingrequest(self):
@@ -651,7 +666,10 @@ class ServerReactorTests(unittest.TestCase):
 
         self.assertaction(results[0], b'error')
         self.assertEqual(
-            results[0][1], {b'message': b'request with ID 1 is already active',}
+            results[0][1],
+            {
+                b'message': b'request with ID 1 is already active',
+            },
         )
 
     def testduplicaterequestonactivecommandnosend(self):
@@ -668,7 +686,10 @@ class ServerReactorTests(unittest.TestCase):
         results = list(sendcommandframes(reactor, instream, 1, b'command1', {}))
         self.assertaction(results[0], b'error')
         self.assertEqual(
-            results[0][1], {b'message': b'request with ID 1 is already active',}
+            results[0][1],
+            {
+                b'message': b'request with ID 1 is already active',
+            },
         )
 
     def testduplicaterequestaftersend(self):
@@ -763,7 +784,9 @@ class ServerReactorTests(unittest.TestCase):
 
         data = b''.join(
             cborutil.streamencode(
-                {b'contentencodings': [b'value1', b'value2'],}
+                {
+                    b'contentencodings': [b'value1', b'value2'],
+                }
             )
         )
 
@@ -811,7 +834,10 @@ class ServerReactorTests(unittest.TestCase):
         )
         self.assertaction(result, b'error')
         self.assertEqual(
-            result[1], {b'message': b'expected command request frame; got 8',}
+            result[1],
+            {
+                b'message': b'expected command request frame; got 8',
+            },
         )
 
 

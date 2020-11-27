@@ -385,13 +385,13 @@ def _getfileinfo(name):
 
 
 def checkcertificatechain(cert, build=True):
-    '''Tests the given certificate to see if there is a complete chain to a
-       trusted root certificate.  As a side effect, missing certificates are
-       downloaded and installed unless ``build=False``.  True is returned if a
-       chain to a trusted root exists (even if built on the fly), otherwise
-       False.  NB: A chain to a trusted root does NOT imply that the certificate
-       is valid.
-    '''
+    """Tests the given certificate to see if there is a complete chain to a
+    trusted root certificate.  As a side effect, missing certificates are
+    downloaded and installed unless ``build=False``.  True is returned if a
+    chain to a trusted root exists (even if built on the fly), otherwise
+    False.  NB: A chain to a trusted root does NOT imply that the certificate
+    is valid.
+    """
 
     chainctxptr = ctypes.POINTER(CERT_CHAIN_CONTEXT)
 
@@ -488,8 +488,8 @@ def lasterrorwaspipeerror(err):
 
 
 def testpid(pid):
-    '''return True if pid is still running or unable to
-    determine, False otherwise'''
+    """return True if pid is still running or unable to
+    determine, False otherwise"""
     h = _kernel32.OpenProcess(_PROCESS_QUERY_INFORMATION, False, pid)
     if h:
         try:
@@ -576,10 +576,10 @@ _signalhandler = []
 
 
 def setsignalhandler():
-    '''Register a termination handler for console events including
+    """Register a termination handler for console events including
     CTRL+C. python signal handlers do not work well with socket
     operations.
-    '''
+    """
 
     def handler(event):
         _kernel32.ExitProcess(1)
@@ -627,8 +627,8 @@ def termsize():
 
 
 def enablevtmode():
-    '''Enable virtual terminal mode for the associated console.  Return True if
-    enabled, else False.'''
+    """Enable virtual terminal mode for the associated console.  Return True if
+    enabled, else False."""
 
     ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
 

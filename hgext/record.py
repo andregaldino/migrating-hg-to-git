@@ -39,7 +39,7 @@ testedwith = b'ships-with-hg-core'
     helpcategory=command.CATEGORY_COMMITTING,
 )
 def record(ui, repo, *pats, **opts):
-    '''interactively select changes to commit
+    """interactively select changes to commit
 
     If a list of files is omitted, all changes reported by :hg:`status`
     will be candidates for recording.
@@ -65,7 +65,7 @@ def record(ui, repo, *pats, **opts):
 
       ? - display help
 
-    This command is not available when committing a merge.'''
+    This command is not available when committing a merge."""
 
     if not ui.interactive():
         raise error.Abort(
@@ -106,11 +106,11 @@ def qrefresh(origfn, ui, repo, *pats, **opts):
     inferrepo=True,
 )
 def qrecord(ui, repo, patch, *pats, **opts):
-    '''interactively record a new patch
+    """interactively record a new patch
 
     See :hg:`help qnew` & :hg:`help record` for more information and
     usage.
-    '''
+    """
     return _qrecord(b'qnew', ui, repo, patch, *pats, **opts)
 
 

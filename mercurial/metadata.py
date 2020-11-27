@@ -254,8 +254,7 @@ def compute_all_files_changes(ctx):
 
 
 def _process_root(ctx):
-    """compute the appropriate changed files for a changeset with no parents
-    """
+    """compute the appropriate changed files for a changeset with no parents"""
     # Simple, there was nothing before it, so everything is added.
     md = ChangingFiles()
     manifest = ctx.manifest()
@@ -265,8 +264,7 @@ def _process_root(ctx):
 
 
 def _process_linear(parent_ctx, children_ctx, parent=1):
-    """compute the appropriate changed files for a changeset with a single parent
-    """
+    """compute the appropriate changed files for a changeset with a single parent"""
     md = ChangingFiles()
     parent_manifest = parent_ctx.manifest()
     children_manifest = children_ctx.manifest()
@@ -515,8 +513,7 @@ def _missing_from_all_ancestors(mas, filename):
 
 
 def computechangesetfilesadded(ctx):
-    """return the list of files added in a changeset
-    """
+    """return the list of files added in a changeset"""
     added = []
     for f in ctx.files():
         if not any(f in p for p in ctx.parents()):
@@ -580,8 +577,7 @@ def get_removal_filter(ctx, x=None):
 
 
 def computechangesetfilesremoved(ctx):
-    """return the list of files removed in a changeset
-    """
+    """return the list of files removed in a changeset"""
     removed = []
     for f in ctx.files():
         if f not in ctx:
@@ -593,8 +589,7 @@ def computechangesetfilesremoved(ctx):
 
 
 def computechangesetfilesmerged(ctx):
-    """return the list of files merged in a changeset
-    """
+    """return the list of files merged in a changeset"""
     merged = []
     if len(ctx.parents()) < 2:
         return merged

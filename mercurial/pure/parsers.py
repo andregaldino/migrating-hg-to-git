@@ -234,8 +234,7 @@ def parse_index2(data, inline):
 
 
 def parse_index_devel_nodemap(data, inline):
-    """like parse_index2, but alway return a PersistentNodeMapIndexObject
-    """
+    """like parse_index2, but alway return a PersistentNodeMapIndexObject"""
     return PersistentNodeMapIndexObject(data), None
 
 

@@ -63,8 +63,8 @@ class remotefilectx(context.filectx):
             return self.linkrev()
 
     def filectx(self, fileid, changeid=None):
-        '''opens an arbitrary revision of the file without
-        opening a new filelog'''
+        """opens an arbitrary revision of the file without
+        opening a new filelog"""
         return remotefilectx(
             self._repo,
             self._path,

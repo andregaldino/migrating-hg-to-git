@@ -62,7 +62,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'win32text', b'warn', default=True,
+    b'win32text',
+    b'warn',
+    default=True,
 )
 
 # regexp for single LF without CR preceding.

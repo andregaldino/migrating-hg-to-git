@@ -682,7 +682,7 @@ def _decoratelines(text, fctx):
 
 
 def _annotatepair(parents, childfctx, child, skipchild, diffopts):
-    r'''
+    r"""
     Given parent and child fctxes and annotate data for parents, for all lines
     in either parent that match the child, annotate the child with the parent's
     data.
@@ -691,7 +691,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
     annotate data as well such that child is never blamed for any lines.
 
     See test-annotate.py for unit tests.
-    '''
+    """
     pblocks = [
         (parent, mdiff.allblocks(parent.text, child.text, opts=diffopts))
         for parent in parents

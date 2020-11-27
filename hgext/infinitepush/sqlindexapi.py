@@ -28,9 +28,9 @@ def _convertbookmarkpattern(pattern):
 
 
 class sqlindexapi(indexapi.indexapi):
-    '''
+    """
     Sql backend for infinitepush index. See schema.sql
-    '''
+    """
 
     def __init__(
         self,

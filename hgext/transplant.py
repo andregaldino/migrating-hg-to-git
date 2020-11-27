@@ -62,10 +62,14 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'transplant', b'filter', default=None,
+    b'transplant',
+    b'filter',
+    default=None,
 )
 configitem(
-    b'transplant', b'log', default=None,
+    b'transplant',
+    b'log',
+    default=None,
 )
 
 
@@ -140,8 +144,8 @@ class transplanter(object):
         self.getcommiteditor = getcommiteditor
 
     def applied(self, repo, node, parent):
-        '''returns True if a node is already an ancestor of parent
-        or is parent or has already been transplanted'''
+        """returns True if a node is already an ancestor of parent
+        or is parent or has already been transplanted"""
         if hasnode(repo, parent):
             parentrev = repo.changelog.rev(parent)
         if hasnode(repo, node):
@@ -682,7 +686,7 @@ def browserevs(ui, repo, nodes, opts):
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
 )
 def transplant(ui, repo, *revs, **opts):
-    '''transplant changesets from another branch
+    """transplant changesets from another branch
 
     Selected changesets will be applied on top of the current working
     directory with the log of the original changeset. The changesets
@@ -731,7 +735,7 @@ def transplant(ui, repo, *revs, **opts):
     If a changeset application fails, you can fix the merge by hand
     and then resume where you left off by calling :hg:`transplant
     --continue/-c`.
-    '''
+    """
     with repo.wlock():
         return _dotransplant(ui, repo, *revs, **opts)
 
@@ -743,9 +747,9 @@ def _dotransplant(ui, repo, *revs, **opts):
                 yield node
 
     def transplantwalk(repo, dest, heads, match=util.always):
-        '''Yield all nodes that are ancestors of a head but not ancestors
+        """Yield all nodes that are ancestors of a head but not ancestors
         of dest.
-        If no heads are specified, the heads of repo will be used.'''
+        If no heads are specified, the heads of repo will be used."""
         if not heads:
             heads = repo.heads()
         ancestors = []
@@ -886,8 +890,7 @@ revsetpredicate = registrar.revsetpredicate()
 
 @revsetpredicate(b'transplanted([set])')
 def revsettransplanted(repo, subset, x):
-    """Transplanted changesets in set, or all transplanted changesets.
-    """
+    """Transplanted changesets in set, or all transplanted changesets."""
     if x:
         s = revset.getset(repo, subset, x)
     else:

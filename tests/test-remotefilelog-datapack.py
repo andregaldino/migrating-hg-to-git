@@ -82,8 +82,7 @@ class datapacktestsbase(object):
         return self.datapackreader(path)
 
     def _testAddSingle(self, content):
-        """Test putting a simple blob into a pack and reading it out.
-        """
+        """Test putting a simple blob into a pack and reading it out."""
         filename = b"foo"
         node = self.getHash(content)
 
@@ -124,8 +123,7 @@ class datapacktestsbase(object):
             self.assertEqual(content, chain[0][4])
 
     def testAddDeltas(self):
-        """Test putting multiple delta blobs into a pack and read the chain.
-        """
+        """Test putting multiple delta blobs into a pack and read the chain."""
         revisions = []
         filename = b"foo"
         lastnode = nullid
@@ -148,8 +146,7 @@ class datapacktestsbase(object):
             self.assertEqual(content, chain[-i - 1][4])
 
     def testPackMany(self):
-        """Pack many related and unrelated objects.
-        """
+        """Pack many related and unrelated objects."""
         # Build a random pack file
         revisions = []
         blobs = {}
@@ -198,8 +195,7 @@ class datapacktestsbase(object):
             self.assertEqual(parsedmeta, origmeta)
 
     def testGetMissing(self):
-        """Test the getmissing() api.
-        """
+        """Test the getmissing() api."""
         revisions = []
         filename = b"foo"
         lastnode = nullid

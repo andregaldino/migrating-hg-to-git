@@ -65,7 +65,9 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 configitem(
-    b'hgk', b'path', default=b'hgk',
+    b'hgk',
+    b'path',
+    default=b'hgk',
 )
 
 

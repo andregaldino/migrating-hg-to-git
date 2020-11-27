@@ -59,10 +59,10 @@ def convert(s):
     helpbasic=True,
 )
 def githelp(ui, repo, *args, **kwargs):
-    '''suggests the Mercurial equivalent of the given git command
+    """suggests the Mercurial equivalent of the given git command
 
     Usage: hg githelp -- <git command>
-    '''
+    """
 
     if len(args) == 0 or (len(args) == 1 and args[0] == b'git'):
         raise error.Abort(

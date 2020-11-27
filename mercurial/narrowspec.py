@@ -226,7 +226,7 @@ def clearwcbackup(repo, backupname):
 
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
-    r""" Restricts the patterns according to repo settings,
+    r"""Restricts the patterns according to repo settings,
     results in a logical AND operation
 
     :param req_includes: requested includes

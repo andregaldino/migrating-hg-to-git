@@ -528,8 +528,8 @@ class manifestdict(object):
         return dir in self._dirs
 
     def _filesfastpath(self, match):
-        '''Checks whether we can correctly and quickly iterate over matcher
-        files instead of over manifest files.'''
+        """Checks whether we can correctly and quickly iterate over matcher
+        files instead of over manifest files."""
         files = match.files()
         return len(files) < 100 and (
             match.isexact()
@@ -537,13 +537,13 @@ class manifestdict(object):
         )
 
     def walk(self, match):
-        '''Generates matching file names.
+        """Generates matching file names.
 
         Equivalent to manifest.matches(match).iterkeys(), but without creating
         an entirely new manifest.
 
         It also reports nonexistent files by marking them bad with match.bad().
-        '''
+        """
         if match.always():
             for f in iter(self):
                 yield f
@@ -591,7 +591,7 @@ class manifestdict(object):
         return m
 
     def diff(self, m2, match=None, clean=False):
-        '''Finds changes between the current manifest and m2.
+        """Finds changes between the current manifest and m2.
 
         Args:
           m2: the manifest to which this manifest should be compared.
@@ -604,7 +604,7 @@ class manifestdict(object):
         in the current/other manifest. Where the file does not exist,
         the nodeid will be None and the flags will be the empty
         string.
-        '''
+        """
         if match:
             m1 = self._matches(match)
             m2 = m2._matches(match)
@@ -703,14 +703,14 @@ class manifestdict(object):
 
 
 def _msearch(m, s, lo=0, hi=None):
-    '''return a tuple (start, end) that says where to find s within m.
+    """return a tuple (start, end) that says where to find s within m.
 
     If the string is found m[start:end] are the line containing
     that string.  If start == end the string was not found and
     they indicate the proper sorted insertion point.
 
     m should be a buffer, a memoryview or a byte string.
-    s is a byte string'''
+    s is a byte string"""
 
     def advance(i, c):
         while i < lenm and m[i : i + 1] != c:
@@ -909,14 +909,14 @@ class treemanifest(object):
         )
 
     def dir(self):
-        '''The directory that this tree manifest represents, including a
-        trailing '/'. Empty string for the repo root directory.'''
+        """The directory that this tree manifest represents, including a
+        trailing '/'. Empty string for the repo root directory."""
         return self._dir
 
     def node(self):
-        '''This node of this instance. nullid for unsaved instances. Should
+        """This node of this instance. nullid for unsaved instances. Should
         be updated when the instance is read or written from a revlog.
-        '''
+        """
         assert not self._dirty
         return self._node
 
@@ -1157,10 +1157,10 @@ class treemanifest(object):
         return dirslash in self._dirs or dirslash in self._lazydirs
 
     def walk(self, match):
-        '''Generates matching file names.
+        """Generates matching file names.
 
         It also reports nonexistent files by marking them bad with match.bad().
-        '''
+        """
         if match.always():
             for f in iter(self):
                 yield f
@@ -1202,8 +1202,7 @@ class treemanifest(object):
                         yield f
 
     def _matches(self, match):
-        '''recursively generate a new manifest filtered by the match argument.
-        '''
+        """recursively generate a new manifest filtered by the match argument."""
         if match.always():
             return self.copy()
         return self._matches_inner(match)
@@ -1253,7 +1252,7 @@ class treemanifest(object):
         raise FastdeltaUnavailable()
 
     def diff(self, m2, match=None, clean=False):
-        '''Finds changes between the current manifest and m2.
+        """Finds changes between the current manifest and m2.
 
         Args:
           m2: the manifest to which this manifest should be compared.
@@ -1266,7 +1265,7 @@ class treemanifest(object):
         in the current/other manifest. Where the file does not exist,
         the nodeid will be None and the flags will be the empty
         string.
-        '''
+        """
         if match and not match.always():
             m1 = self._matches(match)
             m2 = m2._matches(match)
@@ -1546,9 +1545,9 @@ class FastdeltaUnavailable(Exception):
 
 @interfaceutil.implementer(repository.imanifeststorage)
 class manifestrevlog(object):
-    '''A revlog that stores manifest texts. This is responsible for caching the
+    """A revlog that stores manifest texts. This is responsible for caching the
     full-text manifest contents.
-    '''
+    """
 
     def __init__(
         self,
@@ -2077,12 +2076,12 @@ class manifestctx(object):
         return self._data
 
     def readfast(self, shallow=False):
-        '''Calls either readdelta or read, based on which would be less work.
+        """Calls either readdelta or read, based on which would be less work.
         readdelta is called if the delta is against the p1, and therefore can be
         read quickly.
 
         If `shallow` is True, nothing changes since this is a flat manifest.
-        '''
+        """
         store = self._storage()
         r = store.rev(self._node)
         deltaparent = store.deltaparent(r)
@@ -2091,12 +2090,12 @@ class manifestctx(object):
         return self.read()
 
     def readdelta(self, shallow=False):
-        '''Returns a manifest containing just the entries that are present
+        """Returns a manifest containing just the entries that are present
         in this manifest, but not in its p1 manifest. This is efficient to read
         if the revlog delta is already p1.
 
         Changing the value of `shallow` has no effect on flat manifests.
-        '''
+        """
         store = self._storage()
         r = store.rev(self._node)
         d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
@@ -2208,7 +2207,7 @@ class treemanifestctx(object):
         return self._storage().parents(self._node)
 
     def readdelta(self, shallow=False):
-        '''Returns a manifest containing just the entries that are present
+        """Returns a manifest containing just the entries that are present
         in this manifest, but not in its p1 manifest. This is efficient to read
         if the revlog delta is already p1.
 
@@ -2217,7 +2216,7 @@ class treemanifestctx(object):
         subdirectory entry will be reported as it appears in the manifest, i.e.
         the subdirectory will be reported among files and distinguished only by
         its 't' flag.
-        '''
+        """
         store = self._storage()
         if shallow:
             r = store.rev(self._node)
@@ -2237,13 +2236,13 @@ class treemanifestctx(object):
             return md
 
     def readfast(self, shallow=False):
-        '''Calls either readdelta or read, based on which would be less work.
+        """Calls either readdelta or read, based on which would be less work.
         readdelta is called if the delta is against the p1, and therefore can be
         read quickly.
 
         If `shallow` is True, it only returns the entries from this manifest,
         and not any submanifests.
-        '''
+        """
         store = self._storage()
         r = store.rev(self._node)
         deltaparent = store.deltaparent(r)

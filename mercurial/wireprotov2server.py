@@ -982,7 +982,10 @@ def capabilitiesv2(repo, proto):
         b'revisions': {
             b'type': b'list',
             b'example': [
-                {b'type': b'changesetexplicit', b'nodes': [b'abcdef...'],}
+                {
+                    b'type': b'changesetexplicit',
+                    b'nodes': [b'abcdef...'],
+                }
             ],
         },
         b'fields': {
@@ -1166,14 +1169,20 @@ def makefilematcher(repo, pathfilter):
             b'default': lambda: False,
             b'example': True,
         },
-        b'nodes': {b'type': b'list', b'example': [b'0123456...'],},
+        b'nodes': {
+            b'type': b'list',
+            b'example': [b'0123456...'],
+        },
         b'fields': {
             b'type': b'set',
             b'default': set,
             b'example': {b'parents', b'revision'},
             b'validvalues': {b'parents', b'revision', b'linknode'},
         },
-        b'path': {b'type': b'bytes', b'example': b'foo.txt',},
+        b'path': {
+            b'type': b'bytes',
+            b'example': b'foo.txt',
+        },
     },
     permission=b'pull',
     # TODO censoring a file revision won't invalidate the cache.
@@ -1262,7 +1271,10 @@ def filesdatacapabilities(repo, proto):
         b'revisions': {
             b'type': b'list',
             b'example': [
-                {b'type': b'changesetexplicit', b'nodes': [b'abcdef...'],}
+                {
+                    b'type': b'changesetexplicit',
+                    b'nodes': [b'abcdef...'],
+                }
             ],
         },
     },
@@ -1375,7 +1387,12 @@ def knownv2(repo, proto, nodes):
 
 @wireprotocommand(
     b'listkeys',
-    args={b'namespace': {b'type': b'bytes', b'example': b'ns',},},
+    args={
+        b'namespace': {
+            b'type': b'bytes',
+            b'example': b'ns',
+        },
+    },
     permission=b'pull',
 )
 def listkeysv2(repo, proto, namespace):
@@ -1390,7 +1407,12 @@ def listkeysv2(repo, proto, namespace):
 
 @wireprotocommand(
     b'lookup',
-    args={b'key': {b'type': b'bytes', b'example': b'foo',},},
+    args={
+        b'key': {
+            b'type': b'bytes',
+            b'example': b'foo',
+        },
+    },
     permission=b'pull',
 )
 def lookupv2(repo, proto, key):
@@ -1415,7 +1437,10 @@ def manifestdatacapabilities(repo, proto):
 @wireprotocommand(
     b'manifestdata',
     args={
-        b'nodes': {b'type': b'list', b'example': [b'0123456...'],},
+        b'nodes': {
+            b'type': b'list',
+            b'example': [b'0123456...'],
+        },
         b'haveparents': {
             b'type': b'bool',
             b'default': lambda: False,
@@ -1427,7 +1452,10 @@ def manifestdatacapabilities(repo, proto):
             b'example': {b'parents', b'revision'},
             b'validvalues': {b'parents', b'revision'},
         },
-        b'tree': {b'type': b'bytes', b'example': b'',},
+        b'tree': {
+            b'type': b'bytes',
+            b'example': b'',
+        },
     },
     permission=b'pull',
     cachekeyfn=makecommandcachekeyfn(b'manifestdata', 1, allargs=True),
@@ -1485,10 +1513,22 @@ def manifestdata(repo, proto, haveparents, nodes, fields, tree):
 @wireprotocommand(
     b'pushkey',
     args={
-        b'namespace': {b'type': b'bytes', b'example': b'ns',},
-        b'key': {b'type': b'bytes', b'example': b'key',},
-        b'old': {b'type': b'bytes', b'example': b'old',},
-        b'new': {b'type': b'bytes', b'example': b'new',},
+        b'namespace': {
+            b'type': b'bytes',
+            b'example': b'ns',
+        },
+        b'key': {
+            b'type': b'bytes',
+            b'example': b'key',
+        },
+        b'old': {
+            b'type': b'bytes',
+            b'example': b'old',
+        },
+        b'new': {
+            b'type': b'bytes',
+            b'example': b'new',
+        },
     },
     permission=b'push',
 )
