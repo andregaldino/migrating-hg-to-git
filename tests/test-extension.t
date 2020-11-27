@@ -1415,7 +1415,7 @@ accessed.
 
 No declared supported version, extension complains:
   $ hg --config extensions.throw=throw.py throw 2>&1 | egrep '^\*\*'
-  ** Unknown exception encountered with possibly-broken third-party extension throw
+  ** Unknown exception encountered with possibly-broken third-party extension throw 1.0.0
   ** which supports versions unknown of Mercurial.
   ** Please disable throw and try your action again.
   ** If that fixes the bug please report it to the extension author.
@@ -1427,7 +1427,7 @@ empty declaration of supported version, extension complains (but doesn't choke i
 the value is improperly a str instead of bytes):
   $ echo "testedwith = ''" >> throw.py
   $ hg --config extensions.throw=throw.py throw 2>&1 | egrep '^\*\*'
-  ** Unknown exception encountered with possibly-broken third-party extension throw
+  ** Unknown exception encountered with possibly-broken third-party extension throw 1.0.0
   ** which supports versions unknown of Mercurial.
   ** Please disable throw and try your action again.
   ** If that fixes the bug please report it to the extension author.
@@ -1441,7 +1441,7 @@ improperly a str instead of bytes):
   $ rm -f throw.pyc throw.pyo
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py throw 2>&1 | egrep '^\*\*'
-  ** Unknown exception encountered with possibly-broken third-party extension throw
+  ** Unknown exception encountered with possibly-broken third-party extension throw 1.0.0
   ** which supports versions unknown of Mercurial.
   ** Please disable throw and try your action again.
   ** If that fixes the bug please report it to http://example.com/bts
@@ -1458,7 +1458,7 @@ If the extensions declare outdated versions, accuse the older extension first:
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
   >   throw 2>&1 | egrep '^\*\*'
-  ** Unknown exception encountered with possibly-broken third-party extension older
+  ** Unknown exception encountered with possibly-broken third-party extension older (version N/A)
   ** which supports versions 1.9 of Mercurial.
   ** Please disable older and try your action again.
   ** If that fixes the bug please report it to the extension author.
@@ -1472,7 +1472,7 @@ One extension only tested with older, one only with newer versions:
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
   >   throw 2>&1 | egrep '^\*\*'
-  ** Unknown exception encountered with possibly-broken third-party extension older
+  ** Unknown exception encountered with possibly-broken third-party extension older (version N/A)
   ** which supports versions 1.9 of Mercurial.
   ** Please disable older and try your action again.
   ** If that fixes the bug please report it to the extension author.
@@ -1486,7 +1486,7 @@ Older extension is tested with current version, the other only with newer:
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
   >   throw 2>&1 | egrep '^\*\*'
-  ** Unknown exception encountered with possibly-broken third-party extension throw
+  ** Unknown exception encountered with possibly-broken third-party extension throw 1.0.0
   ** which supports versions 2.1 of Mercurial.
   ** Please disable throw and try your action again.
   ** If that fixes the bug please report it to http://example.com/bts

@@ -1253,7 +1253,7 @@ def _exceptionwarning(ui):
     # of date) will be clueful enough to notice the implausible
     # version number and try updating.
     ct = util.versiontuple(n=2)
-    worst = None, ct, b''
+    worst = None, ct, b'', b''
     if ui.config(b'ui', b'supportcontact') is None:
         for name, mod in extensions.extensions():
             # 'testedwith' should be bytes, but not all extensions are ported
@@ -1261,10 +1261,11 @@ def _exceptionwarning(ui):
             testedwith = stringutil.forcebytestr(
                 getattr(mod, 'testedwith', b'')
             )
+            version = extensions.moduleversion(mod)
             report = getattr(mod, 'buglink', _(b'the extension author.'))
             if not testedwith.strip():
                 # We found an untested extension. It's likely the culprit.
-                worst = name, b'unknown', report
+                worst = name, b'unknown', report, version
                 break
 
             # Never blame on extensions bundled with Mercurial.
@@ -1278,20 +1279,21 @@ def _exceptionwarning(ui):
             lower = [t for t in tested if t < ct]
             nearest = max(lower or tested)
             if worst[0] is None or nearest < worst[1]:
-                worst = name, nearest, report
+                worst = name, nearest, report, version
     if worst[0] is not None:
-        name, testedwith, report = worst
+        name, testedwith, report, version = worst
         if not isinstance(testedwith, (bytes, str)):
             testedwith = b'.'.join(
                 [stringutil.forcebytestr(c) for c in testedwith]
             )
+        extver = version or _(b"(version N/A)")
         warning = _(
             b'** Unknown exception encountered with '
-            b'possibly-broken third-party extension %s\n'
+            b'possibly-broken third-party extension %s %s\n'
             b'** which supports versions %s of Mercurial.\n'
             b'** Please disable %s and try your action again.\n'
             b'** If that fixes the bug please report it to %s\n'
-        ) % (name, testedwith, name, stringutil.forcebytestr(report))
+        ) % (name, extver, testedwith, name, stringutil.forcebytestr(report))
     else:
         bugtracker = ui.config(b'ui', b'supportcontact')
         if bugtracker is None:
