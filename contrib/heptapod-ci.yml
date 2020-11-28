@@ -1,5 +1,6 @@
 stages:
   - tests
+  - phabricator
 
 image: registry.heptapod.net/mercurial/ci-images/mercurial-core
 
@@ -46,6 +47,11 @@ rust-cargo-test-py3:
     <<: *rust_cargo_test
     variables:
         PYTHON: python3
+
+phabricator-refresh:
+    stage: phabricator
+    script:
+      - ./contrib/phab-refresh-stack.sh
 
 rust-cargo-test-py3-dirstate-tree:
     <<: *rust_cargo_test
