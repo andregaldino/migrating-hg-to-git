@@ -43,6 +43,12 @@ Config::
     retry = 3
     retry.interval = 10
 
+    # the retry option can combine well with the http.timeout one.
+    #
+    # For example to give up on http request after 20 seconds:
+    [http]
+    timeout=20
+
     [auth]
     example.schemes = https
     example.prefix = phab.example.com
@@ -420,9 +426,12 @@ def callconduit(ui, name, params):
         urlopener = urlmod.opener(ui, authinfo)
         request = util.urlreq.request(pycompat.strurl(url), data=data)
         max_try = ui.configint(b'phabricator', b'retry') + 1
+        timeout = ui.configwith(float, b'http', b'timeout')
         for try_count in range(max_try):
             try:
-                with contextlib.closing(urlopener.open(request)) as rsp:
+                with contextlib.closing(
+                    urlopener.open(request, timeout=timeout)
+                ) as rsp:
                     body = rsp.read()
                 break
             except util.urlerr.urlerror as err:
