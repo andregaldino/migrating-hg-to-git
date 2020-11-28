@@ -1,3 +1,6 @@
+stages:
+  - tests
+
 image: registry.heptapod.net/mercurial/ci-images/mercurial-core
 
 # The runner made a clone as root.
@@ -15,6 +18,7 @@ variables:
     TEST_HGMODULEPOLICY: "allow"
 
 .runtests_template: &runtests
+    stage: tests
     script:
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
@@ -32,11 +36,13 @@ checks-py3:
         PYTHON: python3
 
 rust-cargo-test-py2: &rust_cargo_test
+    stage: tests
     script:
         - echo "python used, $PYTHON"
         - make rust-tests
 
 rust-cargo-test-py3:
+    stage: tests
     <<: *rust_cargo_test
     variables:
         PYTHON: python3
