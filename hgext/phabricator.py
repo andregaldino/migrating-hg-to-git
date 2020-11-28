@@ -35,6 +35,14 @@ Config::
     # the internal library.
     curlcmd = curl --connect-timeout 2 --retry 3 --silent
 
+    # retry failed command N time (default 0). Useful when using the extension
+    # over flakly connection.
+    #
+    # We wait `retry.interval` between each retry, in seconds.
+    # (default 1 second).
+    retry = 3
+    retry.interval = 10
+
     [auth]
     example.schemes = https
     example.prefix = phab.example.com
@@ -53,6 +61,7 @@ import json
 import mimetypes
 import operator
 import re
+import time
 
 from mercurial.node import bin, nullid, short
 from mercurial.i18n import _
@@ -133,6 +142,16 @@ eh.configitem(
     b'phabricator',
     b'repophid',
     default=None,
+)
+eh.configitem(
+    b'phabricator',
+    b'retry',
+    default=0,
+)
+eh.configitem(
+    b'phabricator',
+    b'retry.interval',
+    default=1,
 )
 eh.configitem(
     b'phabricator',
@@ -400,8 +419,22 @@ def callconduit(ui, name, params):
     else:
         urlopener = urlmod.opener(ui, authinfo)
         request = util.urlreq.request(pycompat.strurl(url), data=data)
-        with contextlib.closing(urlopener.open(request)) as rsp:
-            body = rsp.read()
+        max_try = ui.configint(b'phabricator', b'retry') + 1
+        for try_count in range(max_try):
+            try:
+                with contextlib.closing(urlopener.open(request)) as rsp:
+                    body = rsp.read()
+                break
+            except util.urlerr.urlerror as err:
+                if try_count == max_try - 1:
+                    raise
+                ui.debug(
+                    b'Conduit Request failed (try %d/%d): %r\n'
+                    % (try_count + 1, max_try, err)
+                )
+                # failing request might come from overloaded server
+                retry_interval = ui.configint(b'phabricator', b'retry.interval')
+                time.sleep(retry_interval)
     ui.debug(b'Conduit Response: %s\n' % body)
     parsed = pycompat.rapply(
         lambda x: encoding.unitolocal(x)
