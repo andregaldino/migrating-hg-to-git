@@ -372,7 +372,7 @@ def cleanup(repo, replacements, wdirwritten):
 
 
 def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
-    """ "Constructs the list of files to be fixed at specific revisions
+    """Constructs the list of files to be fixed at specific revisions
 
     It is up to the caller how to consume the work items, and the only
     dependence between them is that replacement revisions must be committed in

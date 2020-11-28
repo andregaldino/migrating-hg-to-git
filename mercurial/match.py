@@ -107,7 +107,7 @@ def _expandsubinclude(kindpats, root):
 
 
 def _kindpatsalwaysmatch(kindpats):
-    """ "Checks whether the kindspats match everything, as e.g.
+    """Checks whether the kindspats match everything, as e.g.
     'relpath:.' does.
     """
     for kind, pat, source in kindpats:
