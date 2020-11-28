@@ -1049,7 +1049,7 @@ def changesetdata(repo, proto, revisions, fields):
         followingdata = []
 
         if b'revision' in fields:
-            revisiondata = cl.rawdata(node)
+            revisiondata = cl.revision(node)
             followingmeta.append((b'revision', len(revisiondata)))
             followingdata.append(revisiondata)
 
