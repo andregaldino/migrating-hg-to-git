@@ -1444,7 +1444,7 @@ Test a help topic
       - "<DATE" - at or before a given date/time
       - ">DATE" - on or after a given date/time
       - "DATE to DATE" - a date range, inclusive
-      - "-DAYS" - within a given number of days of today
+      - "-DAYS" - within a given number of days from today
 
 Test repeated config section name
 
@@ -3281,7 +3281,7 @@ Dish up an empty repo; serve it cold.
    <li> &quot;&lt;DATE&quot; - at or before a given date/time
    <li> &quot;&gt;DATE&quot; - on or after a given date/time
    <li> &quot;DATE to DATE&quot; - a date range, inclusive
-   <li> &quot;-DAYS&quot; - within a given number of days of today
+   <li> &quot;-DAYS&quot; - within a given number of days from today
   </ul>
   
   </div>

@@ -36,4 +36,4 @@ The log command also accepts date ranges:
 - ``<DATE`` - at or before a given date/time
 - ``>DATE`` - on or after a given date/time
 - ``DATE to DATE`` - a date range, inclusive
-- ``-DAYS`` - within a given number of days of today
+- ``-DAYS`` - within a given number of days from today
