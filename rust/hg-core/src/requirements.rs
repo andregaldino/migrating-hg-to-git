@@ -7,7 +7,7 @@ pub enum RequirementsError {
     Io(io::Error),
     /// The `requires` file is corrupted
     Corrupted,
-    /// The repository requires a feature that we don’t support
+    /// The repository requires a feature that we don't support
     Unsupported {
         feature: String,
     },
@@ -55,7 +55,7 @@ pub fn load(repo_root: &Path) -> Result<Vec<String>, RequirementsError> {
 pub fn check(repo_root: &Path) -> Result<(), RequirementsError> {
     for feature in load(repo_root)? {
         if !SUPPORTED.contains(&&*feature) {
-            return Err(RequirementsError::Unsupported { feature })
+            return Err(RequirementsError::Unsupported { feature });
         }
     }
     Ok(())
