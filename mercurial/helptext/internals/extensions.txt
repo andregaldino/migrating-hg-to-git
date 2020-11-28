@@ -322,6 +322,15 @@ with the ``minimumhgversion`` variable::
 Older clients will print a warning that the extension requires a new version,
 instead of attempting to load it.
 
+The extension itself can be assigned a version value through one of two module
+attributes, and will be displayed in crash reports and  :hg:`version -v`::
+
+  * ``__version__`` is a plain value
+  * ``getversion`` is a no argument ``Callable`` that returns a value
+
+In both cases, the value must be either a byte string, or a list or tuple of
+numeric values which will be joined with ``.``.
+
 Wrap up: what belongs where?
 ============================
 
