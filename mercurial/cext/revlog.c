@@ -54,6 +54,7 @@ typedef struct {
 typedef struct {
 	indexObject *index;
 	nodetreenode *nodes;
+	Py_ssize_t nodelen;
 	unsigned length;   /* # nodes in use */
 	unsigned capacity; /* # nodes allocated */
 	int depth;         /* maximum depth of tree */
@@ -80,6 +81,8 @@ struct indexObjectStruct {
 	PyObject_HEAD
 	    /* Type-specific fields go here. */
 	    PyObject *data;     /* raw bytes of index */
+	Py_ssize_t nodelen;     /* digest size of the hash, 20 for SHA-1 */
+	PyObject *nullentry;    /* fast path for references to null */
 	Py_buffer buf;          /* buffer of data */
 	const char **offsets;   /* populated on demand */
 	Py_ssize_t length;      /* current on-disk number of elements */
@@ -101,14 +104,12 @@ static Py_ssize_t index_length(const indexObject *self)
 	return self->length + self->new_length;
 }
 
-static PyObject *nullentry = NULL;
-static const char nullid[20] = {0};
+static const char nullid[32] = {0};
 static const Py_ssize_t nullrev = -1;
 
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 
-static int index_find_node(indexObject *self, const char *node,
-                           Py_ssize_t nodelen);
+static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
 static const char *const tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
@@ -274,7 +275,7 @@ static inline int index_get_length(indexObject *self, Py_ssize_t rev)
  *    4 bytes: link revision
  *    4 bytes: parent 1 revision
  *    4 bytes: parent 2 revision
- *   32 bytes: nodeid (only 20 bytes used)
+ *   32 bytes: nodeid (only 20 bytes used with SHA-1)
  */
 static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 {
@@ -285,8 +286,8 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self);
 
 	if (pos == nullrev) {
-		Py_INCREF(nullentry);
-		return nullentry;
+		Py_INCREF(self->nullentry);
+		return self->nullentry;
 	}
 
 	if (pos < 0 || pos >= length) {
@@ -320,11 +321,11 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 
 	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
 	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
-	                     (Py_ssize_t)20);
+	                     self->nodelen);
 }
 
 /*
- * Return the 20-byte SHA of the node corresponding to the given rev.
+ * Return the hash of node corresponding to the given rev.
  */
 static const char *index_node(indexObject *self, Py_ssize_t pos)
 {
@@ -342,7 +343,7 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 }
 
 /*
- * Return the 20-byte SHA of the node corresponding to the given rev. The
+ * Return the hash of the node corresponding to the given rev. The
  * rev is assumed to be existing. If not, an exception is set.
  */
 static const char *index_node_existing(indexObject *self, Py_ssize_t pos)
@@ -357,14 +358,15 @@ static const char *index_node_existing(indexObject *self, Py_ssize_t pos)
 
 static int nt_insert(nodetree *self, const char *node, int rev);
 
-static int node_check(PyObject *obj, char **node)
+static int node_check(Py_ssize_t nodelen, PyObject *obj, char **node)
 {
-	Py_ssize_t nodelen;
-	if (PyBytes_AsStringAndSize(obj, node, &nodelen) == -1)
+	Py_ssize_t thisnodelen;
+	if (PyBytes_AsStringAndSize(obj, node, &thisnodelen) == -1)
 		return -1;
-	if (nodelen == 20)
+	if (nodelen == thisnodelen)
 		return 0;
-	PyErr_SetString(PyExc_ValueError, "20-byte hash required");
+	PyErr_Format(PyExc_ValueError, "node len %zd != expected node len %zd",
+	             thisnodelen, nodelen);
 	return -1;
 }
 
@@ -382,7 +384,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		PyErr_SetString(PyExc_TypeError, "8-tuple required");
 		return NULL;
 	}
-	if (c_node_id_len != 20 && c_node_id_len != 32) {
+	if (c_node_id_len != self->nodelen) {
 		PyErr_SetString(PyExc_TypeError, "invalid node");
 		return NULL;
 	}
@@ -697,9 +699,9 @@ static int add_roots_get_min(indexObject *self, PyObject *roots, char *phases,
 	if (iterator == NULL)
 		return -2;
 	while ((item = PyIter_Next(iterator))) {
-		if (node_check(item, &node) == -1)
+		if (node_check(self->nodelen, item, &node) == -1)
 			goto failed;
-		rev = index_find_node(self, node, 20);
+		rev = index_find_node(self, node);
 		/* null is implicitly public, so negative is invalid */
 		if (rev < 0 || rev >= len)
 			goto failed;
@@ -1493,13 +1495,17 @@ static int nt_find(nodetree *self, const char *node, Py_ssize_t nodelen,
 	int (*getnybble)(const char *, Py_ssize_t) = hex ? hexdigit : nt_level;
 	int level, maxlevel, off;
 
-	if (nodelen == 20 && node[0] == '\0' && memcmp(node, nullid, 20) == 0)
+	/* If the input is binary, do a fast check for the nullid first. */
+	if (!hex && nodelen == self->nodelen && node[0] == '\0' &&
+	    node[1] == '\0' && memcmp(node, nullid, self->nodelen) == 0)
 		return -1;
 
 	if (hex)
-		maxlevel = nodelen > 40 ? 40 : (int)nodelen;
+		maxlevel = nodelen;
 	else
-		maxlevel = nodelen > 20 ? 40 : ((int)nodelen * 2);
+		maxlevel = 2 * nodelen;
+	if (maxlevel > 2 * self->nodelen)
+		maxlevel = 2 * self->nodelen;
 
 	for (level = off = 0; level < maxlevel; level++) {
 		int k = getnybble(node, level);
@@ -1557,7 +1563,7 @@ static int nt_insert(nodetree *self, const char *node, int rev)
 	int level = 0;
 	int off = 0;
 
-	while (level < 40) {
+	while (level < 2 * self->nodelen) {
 		int k = nt_level(node, level);
 		nodetreenode *n;
 		int v;
@@ -1576,7 +1582,7 @@ static int nt_insert(nodetree *self, const char *node, int rev)
 
 			if (oldnode == NULL)
 				return -1;
-			if (!memcmp(oldnode, node, 20)) {
+			if (!memcmp(oldnode, node, self->nodelen)) {
 				n->children[k] = -rev - 2;
 				return 0;
 			}
@@ -1634,6 +1640,7 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 	/* The input capacity is in terms of revisions, while the field is in
 	 * terms of nodetree nodes. */
 	self->capacity = (capacity < 4 ? 4 : capacity / 2);
+	self->nodelen = index->nodelen;
 	self->depth = 0;
 	self->splits = 0;
 	if ((size_t)self->capacity > INT_MAX / sizeof(nodetreenode)) {
@@ -1678,7 +1685,7 @@ static int nt_shortest(nodetree *self, const char *node)
 {
 	int level, off;
 
-	for (level = off = 0; level < 40; level++) {
+	for (level = off = 0; level < 2 * self->nodelen; level++) {
 		int k, v;
 		nodetreenode *n = &self->nodes[off];
 		k = nt_level(node, level);
@@ -1689,7 +1696,7 @@ static int nt_shortest(nodetree *self, const char *node)
 			n = index_node_existing(self->index, v);
 			if (n == NULL)
 				return -3;
-			if (memcmp(node, n, 20) != 0)
+			if (memcmp(node, n, self->nodelen) != 0)
 				/*
 				 * Found a unique prefix, but it wasn't for the
 				 * requested node (i.e the requested node does
@@ -1719,7 +1726,7 @@ static PyObject *ntobj_shortest(nodetreeObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O", &val))
 		return NULL;
-	if (node_check(val, &node) == -1)
+	if (node_check(self->nt.nodelen, val, &node) == -1)
 		return NULL;
 
 	length = nt_shortest(&self->nt, node);
@@ -1819,8 +1826,7 @@ static int index_init_nt(indexObject *self)
  *   -2: not found (no exception set)
  * rest: valid rev
  */
-static int index_find_node(indexObject *self, const char *node,
-                           Py_ssize_t nodelen)
+static int index_find_node(indexObject *self, const char *node)
 {
 	int rev;
 
@@ -1828,7 +1834,7 @@ static int index_find_node(indexObject *self, const char *node,
 		return -3;
 
 	self->ntlookups++;
-	rev = nt_find(&self->nt, node, nodelen, 0);
+	rev = nt_find(&self->nt, node, self->nodelen, 0);
 	if (rev >= -1)
 		return rev;
 
@@ -1846,7 +1852,7 @@ static int index_find_node(indexObject *self, const char *node,
 			const char *n = index_node_existing(self, rev);
 			if (n == NULL)
 				return -3;
-			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
+			if (memcmp(node, n, self->nodelen) == 0) {
 				if (nt_insert(&self->nt, n, rev) == -1)
 					return -3;
 				break;
@@ -1861,7 +1867,7 @@ static int index_find_node(indexObject *self, const char *node,
 				self->ntrev = rev + 1;
 				return -3;
 			}
-			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
+			if (memcmp(node, n, self->nodelen) == 0) {
 				break;
 			}
 		}
@@ -1886,9 +1892,9 @@ static PyObject *index_getitem(indexObject *self, PyObject *value)
 		return index_get(self, idx);
 	}
 
-	if (node_check(value, &node) == -1)
+	if (node_check(self->nodelen, value, &node) == -1)
 		return NULL;
-	rev = index_find_node(self, node, 20);
+	rev = index_find_node(self, node);
 	if (rev >= -1)
 		return PyInt_FromLong(rev);
 	if (rev == -2)
@@ -1930,7 +1936,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (nodelen > 40) {
+	if (nodelen > 2 * self->nodelen) {
 		PyErr_SetString(PyExc_ValueError, "key too long");
 		return NULL;
 	}
@@ -1956,14 +1962,14 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 	case -2:
 		Py_RETURN_NONE;
 	case -1:
-		return PyBytes_FromStringAndSize(nullid, 20);
+		return PyBytes_FromStringAndSize(nullid, self->nodelen);
 	}
 
 	fullnode = index_node_existing(self, rev);
 	if (fullnode == NULL) {
 		return NULL;
 	}
-	return PyBytes_FromStringAndSize(fullnode, 20);
+	return PyBytes_FromStringAndSize(fullnode, self->nodelen);
 }
 
 static PyObject *index_shortest(indexObject *self, PyObject *args)
@@ -1974,7 +1980,7 @@ static PyObject *index_shortest(indexObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O", &val))
 		return NULL;
-	if (node_check(val, &node) == -1)
+	if (node_check(self->nodelen, val, &node) == -1)
 		return NULL;
 
 	self->ntlookups++;
@@ -2000,9 +2006,9 @@ static PyObject *index_m_get(indexObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O", &val))
 		return NULL;
-	if (node_check(val, &node) == -1)
+	if (node_check(self->nodelen, val, &node) == -1)
 		return NULL;
-	rev = index_find_node(self, node, 20);
+	rev = index_find_node(self, node);
 	if (rev == -3)
 		return NULL;
 	if (rev == -2)
@@ -2022,10 +2028,10 @@ static int index_contains(indexObject *self, PyObject *value)
 		return rev >= -1 && rev < index_length(self);
 	}
 
-	if (node_check(value, &node) == -1)
+	if (node_check(self->nodelen, value, &node) == -1)
 		return -1;
 
-	switch (index_find_node(self, node, 20)) {
+	switch (index_find_node(self, node)) {
 	case -3:
 		return -1;
 	case -2:
@@ -2048,9 +2054,9 @@ static PyObject *index_m_rev(indexObject *self, PyObject *val)
 	char *node;
 	int rev;
 
-	if (node_check(val, &node) == -1)
+	if (node_check(self->nodelen, val, &node) == -1)
 		return NULL;
-	rev = index_find_node(self, node, 20);
+	rev = index_find_node(self, node);
 	if (rev >= -1)
 		return PyInt_FromLong(rev);
 	if (rev == -2)
@@ -2529,7 +2535,7 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 	if (PySlice_Check(item) && value == NULL)
 		return index_slice_del(self, item);
 
-	if (node_check(item, &node) == -1)
+	if (node_check(self->nodelen, item, &node) == -1)
 		return -1;
 
 	if (value == NULL)
@@ -2596,6 +2602,8 @@ static int index_init(indexObject *self, PyObject *args)
 	Py_INCREF(Py_None);
 	self->ntinitialized = 0;
 	self->offsets = NULL;
+	self->nodelen = 20;
+	self->nullentry = NULL;
 
 	if (!PyArg_ParseTuple(args, "OO", &data_obj, &inlined_obj))
 		return -1;
@@ -2604,6 +2612,16 @@ static int index_init(indexObject *self, PyObject *args)
 		                "data does not support buffer interface");
 		return -1;
 	}
+	if (self->nodelen < 20 || self->nodelen > sizeof(nullid)) {
+		PyErr_SetString(PyExc_RuntimeError, "unsupported node size");
+		return -1;
+	}
+
+	self->nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
+	                                -1, -1, -1, -1, nullid, self->nodelen);
+	if (!self->nullentry)
+		return -1;
+	PyObject_GC_UnTrack(self->nullentry);
 
 	if (PyObject_GetBuffer(data_obj, &self->buf, PyBUF_SIMPLE) == -1)
 		return -1;
@@ -2671,6 +2689,7 @@ static void index_dealloc(indexObject *self)
 	}
 	Py_XDECREF(self->data);
 	PyMem_Free(self->added);
+	Py_XDECREF(self->nullentry);
 	PyObject_Del(self);
 }
 
@@ -2840,14 +2859,6 @@ void revlog_module_init(PyObject *mod)
 		return;
 	Py_INCREF(&nodetreeType);
 	PyModule_AddObject(mod, "nodetree", (PyObject *)&nodetreeType);
-
-	if (!nullentry) {
-		nullentry =
-		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
-		                  -1, -1, -1, nullid, (Py_ssize_t)20);
-	}
-	if (nullentry)
-		PyObject_GC_UnTrack(nullentry);
 
 	caps = PyCapsule_New(&CAPI, "mercurial.cext.parsers.revlog_CAPI", NULL);
 	if (caps != NULL)
