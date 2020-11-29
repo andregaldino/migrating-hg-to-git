@@ -47,6 +47,7 @@ from __future__ import absolute_import, print_function
 
 import argparse
 import collections
+import contextlib
 import difflib
 import distutils.version as version
 import errno
@@ -255,9 +256,8 @@ def checkportisavailable(port):
     else:
         family = socket.AF_INET
     try:
-        s = socket.socket(family, socket.SOCK_STREAM)
-        s.bind(('localhost', port))
-        s.close()
+        with contextlib.closing(socket.socket(family, socket.SOCK_STREAM)) as s:
+            s.bind(('localhost', port))
         return True
     except socket.error as exc:
         if exc.errno not in (
