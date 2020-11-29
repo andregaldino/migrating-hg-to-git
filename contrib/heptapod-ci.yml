@@ -6,7 +6,7 @@ image: registry.heptapod.net/mercurial/ci-images/mercurial-core
 # The runner made a clone as root.
 # We make a new clone owned by user used to run the step.
 before_script:
-    - hg clone . /tmp/mercurial-ci/ --noupdate
+    - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
     - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
     - cd /tmp/mercurial-ci/rust/rhg
     - cargo build
