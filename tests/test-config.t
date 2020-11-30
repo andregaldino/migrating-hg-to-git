@@ -6,35 +6,59 @@ Invalid syntax: no value
   $ cat > .hg/hgrc << EOF
   > novaluekey
   > EOF
+#if chg
+  $ hg showconfig
+  config error at $TESTTMP/.hg/hgrc:1: novaluekey
+  [255]
+#else
   $ hg showconfig
   config error at $TESTTMP/.hg/hgrc:1: novaluekey
   [30]
+#endif
 
 Invalid syntax: no key
 
   $ cat > .hg/hgrc << EOF
   > =nokeyvalue
   > EOF
+#if chg
+  $ hg showconfig
+  config error at $TESTTMP/.hg/hgrc:1: =nokeyvalue
+  [255]
+#else
   $ hg showconfig
   config error at $TESTTMP/.hg/hgrc:1: =nokeyvalue
   [30]
+#endif
 
 Test hint about invalid syntax from leading white space
 
   $ cat > .hg/hgrc << EOF
   >  key=value
   > EOF
+#if chg
+  $ hg showconfig
+  config error at $TESTTMP/.hg/hgrc:1: unexpected leading whitespace:  key=value
+  [255]
+#else
   $ hg showconfig
   config error at $TESTTMP/.hg/hgrc:1: unexpected leading whitespace:  key=value
   [30]
+#endif
 
   $ cat > .hg/hgrc << EOF
   >  [section]
   > key=value
   > EOF
+#if chg
+  $ hg showconfig
+  config error at $TESTTMP/.hg/hgrc:1: unexpected leading whitespace:  [section]
+  [255]
+#else
   $ hg showconfig
   config error at $TESTTMP/.hg/hgrc:1: unexpected leading whitespace:  [section]
   [30]
+#endif
 
 Reset hgrc
 
