@@ -30,6 +30,7 @@ Test auto-loading extension works:
   [255]
   $ git init
   Initialized empty Git repository in $TESTTMP/nogit/.git/
+  $ git config --global init.defaultBranch master
 This status invocation shows some hg gunk because we didn't use
 `hg init --git`, which fixes up .git/info/exclude for us.
   $ hg status
