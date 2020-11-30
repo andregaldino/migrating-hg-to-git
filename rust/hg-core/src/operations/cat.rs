@@ -26,6 +26,8 @@ pub enum CatRevErrorKind {
     IoError(std::io::Error),
     /// The revision has not been found.
     InvalidRevision,
+    /// Found more than one revision whose ID match the requested prefix
+    AmbiguousPrefix,
     /// A `revlog` file is corrupted.
     CorruptedRevlog,
     /// The `revlog` format version is not supported.
@@ -55,6 +57,7 @@ impl From<RevlogError> for CatRevError {
                 CatRevErrorKind::UnsuportedRevlogVersion(version)
             }
             RevlogError::InvalidRevision => CatRevErrorKind::InvalidRevision,
+            RevlogError::AmbiguousPrefix => CatRevErrorKind::AmbiguousPrefix,
             RevlogError::Corrupted => CatRevErrorKind::CorruptedRevlog,
             RevlogError::UnknowDataFormat(format) => {
                 CatRevErrorKind::UnknowRevlogDataFormat(format)

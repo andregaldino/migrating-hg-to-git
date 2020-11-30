@@ -91,6 +91,15 @@ fn map_rev_error(rev: &str, err: ListRevTrackedFilesError) -> CommandError {
                     .into(),
                 ))
             }
+            ListRevTrackedFilesErrorKind::AmbiguousPrefix => {
+                CommandErrorKind::Abort(Some(
+                    utf8_to_local(&format!(
+                        "abort: ambiguous revision identifier {}\n",
+                        rev
+                    ))
+                    .into(),
+                ))
+            }
             ListRevTrackedFilesErrorKind::UnsuportedRevlogVersion(version) => {
                 CommandErrorKind::Abort(Some(
                     utf8_to_local(&format!(

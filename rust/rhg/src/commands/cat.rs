@@ -75,6 +75,13 @@ fn map_rev_error(rev: &str, err: CatRevError) -> CommandError {
                 ))
                 .into(),
             )),
+            CatRevErrorKind::AmbiguousPrefix => CommandErrorKind::Abort(Some(
+                utf8_to_local(&format!(
+                    "abort: ambiguous revision identifier {}\n",
+                    rev
+                ))
+                .into(),
+            )),
             CatRevErrorKind::UnsuportedRevlogVersion(version) => {
                 CommandErrorKind::Abort(Some(
                     utf8_to_local(&format!(

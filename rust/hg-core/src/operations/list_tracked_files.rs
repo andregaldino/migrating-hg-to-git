@@ -86,6 +86,8 @@ pub enum ListRevTrackedFilesErrorKind {
     IoError(std::io::Error),
     /// The revision has not been found.
     InvalidRevision,
+    /// Found more than one revision whose ID match the requested prefix
+    AmbiguousPrefix,
     /// A `revlog` file is corrupted.
     CorruptedRevlog,
     /// The `revlog` format version is not supported.
@@ -118,6 +120,9 @@ impl From<RevlogError> for ListRevTrackedFilesError {
             }
             RevlogError::InvalidRevision => {
                 ListRevTrackedFilesErrorKind::InvalidRevision
+            }
+            RevlogError::AmbiguousPrefix => {
+                ListRevTrackedFilesErrorKind::AmbiguousPrefix
             }
             RevlogError::Corrupted => {
                 ListRevTrackedFilesErrorKind::CorruptedRevlog

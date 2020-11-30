@@ -21,6 +21,8 @@ pub enum RevlogError {
     IoError(std::io::Error),
     UnsuportedVersion(u16),
     InvalidRevision,
+    /// Found more than one entry whose ID match the requested prefix
+    AmbiguousPrefix,
     Corrupted,
     UnknowDataFormat(u8),
 }
@@ -93,14 +95,21 @@ impl Revlog {
     pub fn get_node_rev(&self, node: &[u8]) -> Result<Revision, RevlogError> {
         // This is brute force. But it is fast enough for now.
         // Optimization will come later.
+        let mut found_by_prefix = None;
         for rev in (0..self.len() as Revision).rev() {
             let index_entry =
                 self.index.get_entry(rev).ok_or(RevlogError::Corrupted)?;
-            if node == index_entry.hash() {
+            if index_entry.hash() == node {
                 return Ok(rev);
             }
+            if index_entry.hash().starts_with(node) {
+                if found_by_prefix.is_some() {
+                    return Err(RevlogError::AmbiguousPrefix);
+                }
+                found_by_prefix = Some(rev)
+            }
         }
-        Err(RevlogError::InvalidRevision)
+        found_by_prefix.ok_or(RevlogError::InvalidRevision)
     }
 
     /// Return the full data associated to a revision.

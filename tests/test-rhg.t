@@ -74,31 +74,49 @@ Debuging data in inline index
   $ rm -rf repository
   $ hg init repository
   $ cd repository
-  $ for i in 1 2 3; do
-  >   echo $i >> file$i
-  >   hg add file$i
-  >   hg commit -m "commit $i" -q
+  $ for i in 1 2 3 4 5 6; do
+  >   echo $i >> file-$i
+  >   hg add file-$i
+  >   hg commit -m "Commit $i" -q
   > done
   $ rhg debugdata -c 2
-  e36fa63d37a576b27a69057598351db6ee5746bd
+  8d0267cb034247ebfa5ee58ce59e22e57a492297
   test
   0 0
-  file3
+  file-3
   
-  commit 3 (no-eol)
+  Commit 3 (no-eol)
   $ rhg debugdata -m 2
-  file1\x00b8e02f6433738021a065f94175c7cd23db5f05be (esc)
-  file2\x005d9299349fc01ddd25d0070d149b124d8f10411e (esc)
-  file3\x002661d26c649684b482d10f91960cc3db683c38b4 (esc)
+  file-1\x00b8e02f6433738021a065f94175c7cd23db5f05be (esc)
+  file-2\x005d9299349fc01ddd25d0070d149b124d8f10411e (esc)
+  file-3\x002661d26c649684b482d10f91960cc3db683c38b4 (esc)
 
 Debuging with full node id
   $ rhg debugdata -c `hg log -r 0 -T '{node}'`
-  c8e64718e1ca0312eeee0f59d37f8dc612793856
+  d1d1c679d3053e8926061b6f45ca52009f011e3f
   test
   0 0
-  file1
+  file-1
   
-  commit 1 (no-eol)
+  Commit 1 (no-eol)
+
+Specifying revisions by changeset ID
+  $ hg log -T '{node}\n'
+  c6ad58c44207b6ff8a4fbbca7045a5edaa7e908b
+  d654274993d0149eecc3cc03214f598320211900
+  f646af7e96481d3a5470b695cf30ad8e3ab6c575
+  cf8b83f14ead62b374b6e91a0e9303b85dfd9ed7
+  91c6f6e73e39318534dc415ea4e8a09c99cd74d6
+  6ae9681c6d30389694d8701faf24b583cf3ccafe
+  $ rhg files -r cf8b83
+  file-1
+  file-2
+  file-3
+  $ rhg cat -r cf8b83 file-2
+  2
+  $ rhg cat -r c file-2
+  abort: invalid revision identifier c
+  [255]
 
 Cat files
   $ cd $TESTTMP
@@ -115,26 +133,6 @@ Cat copied file should not display copy metadata
   $ hg commit -m "add copy of original"
   $ rhg cat -r 1 copy_of_original
   original content
-
-Specifying revisions by changeset ID
-  $ hg log
-  changeset:   1:41263439dc17
-  tag:         tip
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     add copy of original
-  
-  changeset:   0:1c9e69808da7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     add original
-  
-  $ rhg files -r 41263439dc17
-  abort: invalid revision identifier 41263439dc17
-  [255]
-  $ rhg cat -r 41263439dc17 original
-  abort: invalid revision identifier 41263439dc17
-  [255]
 
 Requirements
   $ rhg debugrequirements

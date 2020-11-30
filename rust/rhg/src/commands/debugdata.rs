@@ -55,6 +55,15 @@ fn to_command_error(rev: &str, err: DebugDataError) -> CommandError {
                 .into(),
             )),
         },
+        DebugDataErrorKind::AmbiguousPrefix => CommandError {
+            kind: CommandErrorKind::Abort(Some(
+                utf8_to_local(&format!(
+                    "abort: ambiguous revision identifier{}\n",
+                    rev
+                ))
+                .into(),
+            )),
+        },
         DebugDataErrorKind::UnsuportedRevlogVersion(version) => CommandError {
             kind: CommandErrorKind::Abort(Some(
                 utf8_to_local(&format!(

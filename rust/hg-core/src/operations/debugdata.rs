@@ -24,6 +24,8 @@ pub enum DebugDataErrorKind {
     IoError(std::io::Error),
     /// The revision has not been found.
     InvalidRevision,
+    /// Found more than one revision whose ID match the requested prefix
+    AmbiguousPrefix,
     /// A `revlog` file is corrupted.
     CorruptedRevlog,
     /// The `revlog` format version is not supported.
@@ -68,6 +70,9 @@ impl From<RevlogError> for DebugDataError {
             }
             RevlogError::InvalidRevision => {
                 DebugDataErrorKind::InvalidRevision
+            }
+            RevlogError::AmbiguousPrefix => {
+                DebugDataErrorKind::AmbiguousPrefix
             }
             RevlogError::Corrupted => DebugDataErrorKind::CorruptedRevlog,
             RevlogError::UnknowDataFormat(format) => {
