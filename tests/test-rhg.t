@@ -116,6 +116,26 @@ Cat copied file should not display copy metadata
   $ rhg cat -r 1 copy_of_original
   original content
 
+Specifying revisions by changeset ID
+  $ hg log
+  changeset:   1:41263439dc17
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add copy of original
+  
+  changeset:   0:1c9e69808da7
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add original
+  
+  $ rhg files -r 41263439dc17
+  abort: invalid revision identifier 41263439dc17
+  [255]
+  $ rhg cat -r 41263439dc17 original
+  abort: invalid revision identifier 41263439dc17
+  [255]
+
 Requirements
   $ rhg debugrequirements
   dotencode

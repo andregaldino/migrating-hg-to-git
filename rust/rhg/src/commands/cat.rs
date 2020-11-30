@@ -70,7 +70,7 @@ fn map_rev_error(rev: &str, err: CatRevError) -> CommandError {
             )),
             CatRevErrorKind::InvalidRevision => CommandErrorKind::Abort(Some(
                 utf8_to_local(&format!(
-                    "abort: invalid revision identifier{}\n",
+                    "abort: invalid revision identifier {}\n",
                     rev
                 ))
                 .into(),
