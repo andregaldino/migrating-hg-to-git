@@ -563,6 +563,36 @@ class predicatematcher(basematcher):
         return b'<predicatenmatcher pred=%s>' % s
 
 
+def path_or_parents_in_set(path, prefix_set):
+    """Returns True if `path` (or any parent of `path`) is in `prefix_set`."""
+    l = len(prefix_set)
+    if l == 0:
+        return False
+    if path in prefix_set:
+        return True
+    # If there's more than 5 paths in prefix_set, it's *probably* quicker to
+    # "walk up" the directory hierarchy instead, with the assumption that most
+    # directory hierarchies are relatively shallow and hash lookup is cheap.
+    if l > 5:
+        return any(
+                parentdir in prefix_set for parentdir in pathutil.finddirs(path)
+        )
+
+    # FIXME: Ideally we'd never get to this point if this is the case - we'd
+    # recognize ourselves as an 'always' matcher and skip this.
+    if b'' in prefix_set:
+        return True
+
+    if pycompat.ispy3:
+        sl = ord(b'/')
+    else:
+        sl = '/'
+
+    # We already checked that path isn't in prefix_set exactly, so
+    # `path[len(pf)] should never raise IndexError.
+    return any(path.startswith(pf) and path[len(pf)] == sl for pf in prefix_set)
+
+
 class patternmatcher(basematcher):
     r"""Matches a set of (kind, pat, source) against a 'root' directory.
 
@@ -611,12 +641,8 @@ class patternmatcher(basematcher):
         if self._prefix and dir in self._fileset:
             return b'all'
         return (
-            dir in self._fileset
-            or dir in self._dirs
-            or any(
-                parentdir in self._fileset
-                for parentdir in pathutil.finddirs(dir)
-            )
+            dir in self._dirs
+            or path_or_parents_in_set(dir, self._fileset)
         )
 
     def visitchildrenset(self, dir):
@@ -698,12 +724,9 @@ class includematcher(basematcher):
         if self._prefix and dir in self._roots:
             return b'all'
         return (
-            dir in self._roots
-            or dir in self._dirs
+            dir in self._dirs
             or dir in self._parents
-            or any(
-                parentdir in self._roots for parentdir in pathutil.finddirs(dir)
-            )
+            or path_or_parents_in_set(dir, self._roots)
         )
 
     @propertycache
@@ -726,11 +749,8 @@ class includematcher(basematcher):
         # visitdir, that's handled below.
         if (
             b'' in self._roots
-            or dir in self._roots
             or dir in self._dirs
-            or any(
-                parentdir in self._roots for parentdir in pathutil.finddirs(dir)
-            )
+            or path_or_parents_in_set(dir, self._roots)
         ):
             return b'this'
 
