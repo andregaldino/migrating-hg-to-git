@@ -152,7 +152,7 @@ def preservedrequirements(repo):
 
 
 DEFICIENCY = b'deficiency'
-optimisation = b'optimization'
+OPTIMISATION = b'optimization'
 
 
 class improvement(object):
@@ -165,14 +165,14 @@ class improvement(object):
        will be mapped to an action later in the upgrade process.
 
     type
-       Either ``DEFICIENCY`` or ``optimisation``. A deficiency is an obvious
+       Either ``DEFICIENCY`` or ``OPTIMISATION``. A deficiency is an obvious
        problem. An optimization is an action (sometimes optional) that
        can be taken to further improve the state of the repository.
 
     description
        Message intended for humans explaining the improvement in more detail,
        including the implications of it. For ``DEFICIENCY`` types, should be
-       worded in the present tense. For ``optimisation`` types, should be
+       worded in the present tense. For ``OPTIMISATION`` types, should be
        worded in the future tense.
 
     upgrademessage
@@ -551,7 +551,7 @@ def findoptimizations(repo):
     optimizations.append(
         improvement(
             name=b're-delta-parent',
-            type=optimisation,
+            type=OPTIMISATION,
             description=_(
                 b'deltas within internal storage will be recalculated to '
                 b'choose an optimal base revision where this was not '
@@ -571,7 +571,7 @@ def findoptimizations(repo):
     optimizations.append(
         improvement(
             name=b're-delta-multibase',
-            type=optimisation,
+            type=OPTIMISATION,
             description=_(
                 b'deltas within internal storage will be recalculated '
                 b'against multiple base revision and the smallest '
@@ -595,7 +595,7 @@ def findoptimizations(repo):
     optimizations.append(
         improvement(
             name=b're-delta-all',
-            type=optimisation,
+            type=OPTIMISATION,
             description=_(
                 b'deltas within internal storage will always be '
                 b'recalculated without reusing prior deltas; this will '
@@ -613,7 +613,7 @@ def findoptimizations(repo):
     optimizations.append(
         improvement(
             name=b're-delta-fulladd',
-            type=optimisation,
+            type=OPTIMISATION,
             description=_(
                 b'every revision will be re-added as if it was new '
                 b'content. It will go through the full storage '
@@ -1295,7 +1295,7 @@ def upgraderepo(
         ui.write(b'\n')
 
     def printoptimisations():
-        optimisations = [a for a in actions if a.type == optimisation]
+        optimisations = [a for a in actions if a.type == OPTIMISATION]
         optimisations.sort(key=lambda a: a.name)
         if optimisations:
             ui.write(_(b'optimisations: '))
