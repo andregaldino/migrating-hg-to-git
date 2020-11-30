@@ -716,10 +716,10 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
 
 UPGRADE_CHANGELOG = object()
 UPGRADE_MANIFEST = object()
-UPGRADE_FILELOG = object()
+UPGRADE_FILELOGS = object()
 
 UPGRADE_ALL_REVLOGS = frozenset(
-    [UPGRADE_CHANGELOG, UPGRADE_MANIFEST, UPGRADE_FILELOG]
+    [UPGRADE_CHANGELOG, UPGRADE_MANIFEST, UPGRADE_FILELOGS]
 )
 
 
@@ -753,7 +753,7 @@ def matchrevlog(revlogfilter, entry):
         return UPGRADE_CHANGELOG in revlogfilter
     elif entry.endswith(b'00manifest.i'):
         return UPGRADE_MANIFEST in revlogfilter
-    return UPGRADE_FILELOG in revlogfilter
+    return UPGRADE_FILELOGS in revlogfilter
 
 
 def _clonerevlogs(
