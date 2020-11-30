@@ -8,16 +8,21 @@
 #
 # node: the node|short hg was built from, or empty if built from a tag
 gethgversion() {
+    if [ -z "${1+x}" ]; then
+        python="python"
+    else
+        python="$1"
+    fi
     export HGRCPATH=
     export HGPLAIN=
 
-    make cleanbutpackages
-    make local PURE=--pure
+    make cleanbutpackages PYTHON=$python
+    make local PURE=--pure PYTHON=$python
     HG="$PWD/hg"
 
-    "$HG" version > /dev/null || { echo 'abort: hg version failed!'; exit 1 ; }
+    $python "$HG" version > /dev/null || { echo 'abort: hg version failed!'; exit 1 ; }
 
-    hgversion=`LANGUAGE=C "$HG" version | sed -ne 's/.*(version \(.*\))$/\1/p'`
+    hgversion=`LANGUAGE=C $python "$HG" version | sed -ne 's/.*(version \(.*\))$/\1/p'`
 
     if echo $hgversion | grep + > /dev/null 2>&1 ; then
         tmp=`echo $hgversion | cut -d+ -f 2`

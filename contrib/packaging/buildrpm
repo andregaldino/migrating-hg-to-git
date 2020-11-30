@@ -56,7 +56,7 @@ if [ ! -d .hg ]; then
     exit 1
 fi
 
-gethgversion
+gethgversion $PYTHONEXE
 
 if [ -z "$type" ] ; then
     release=1
@@ -76,7 +76,7 @@ else
 fi
 
 mkdir -p $RPMBUILDDIR/{SOURCES,BUILD,SRPMS,RPMS}
-$HG archive -t tgz $RPMBUILDDIR/SOURCES/mercurial-$version-$release.tar.gz
+$PYTHONEXE $HG archive -t tgz $RPMBUILDDIR/SOURCES/mercurial-$version-$release.tar.gz
 if [ "$PYTHONVER" ]; then
 (
     mkdir -p build
@@ -112,7 +112,7 @@ echo "%changelog" >> $rpmspec
 
 if echo $version | grep '+' > /dev/null 2>&1; then
     latesttag="`echo $version | sed -e 's/+.*//'`"
-    $HG log -r .:"$latesttag" -fM \
+    $PYTHONEXE $HG log -r .:"$latesttag" -fM \
         --template '{date|hgdate}\t{author}\t{desc|firstline}\n' | python -c '
 import sys, time
 
@@ -136,9 +136,9 @@ for l in sorted(changelog, reverse=True):
 
 else
 
-    $HG log \
+    $PYTHONEXE $HG log \
          --template '{date|hgdate}\t{author}\t{desc|firstline}\n' \
-         .hgtags | python -c '
+         .hgtags | $PYTHONEXE -c '
 import sys, time
 
 def datestr(date, format):
