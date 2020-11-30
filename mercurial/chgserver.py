@@ -504,10 +504,21 @@ class chgcmdserver(commandserver.server):
         the instructions.
         """
         args = self._readlist()
+        errorraised = False
         try:
             self.ui, lui = _loadnewui(self.ui, args, self.cdebug)
+        except error.RepoError as inst:
+            # RepoError can be raised while trying to read shared source
+            # configuration
+            self.ui.error(_(b"abort: %s\n") % stringutil.forcebytestr(inst))
+            if inst.hint:
+                self.ui.error(_(b"(%s)\n") % inst.hint)
+            errorraised = True
         except error.Abort as inst:
             self.ui.error(inst.format())
+            errorraised = True
+
+        if errorraised:
             self.ui.flush()
             self.cresult.write(b'exit 255')
             return
