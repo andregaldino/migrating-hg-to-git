@@ -376,7 +376,7 @@ where
     #[timed]
     pub fn walk_explicit(
         &self,
-        traversed_sender: crossbeam::Sender<HgPathBuf>,
+        traversed_sender: crossbeam_channel::Sender<HgPathBuf>,
     ) -> (Vec<DispatchedPath<'a>>, Vec<DispatchedPath<'a>>) {
         self.matcher
             .file_set()
@@ -474,13 +474,13 @@ where
         path: impl AsRef<HgPath>,
         old_results: &FastHashMap<HgPathCow<'a>, Dispatch>,
         results: &mut Vec<DispatchedPath<'a>>,
-        traversed_sender: crossbeam::Sender<HgPathBuf>,
+        traversed_sender: crossbeam_channel::Sender<HgPathBuf>,
     ) {
         // The traversal is done in parallel, so use a channel to gather
-        // entries. `crossbeam::Sender` is `Sync`, while `mpsc::Sender`
+        // entries. `crossbeam_channel::Sender` is `Sync`, while `mpsc::Sender`
         // is not.
         let (files_transmitter, files_receiver) =
-            crossbeam::channel::unbounded();
+            crossbeam_channel::unbounded();
 
         self.traverse_dir(
             &files_transmitter,
@@ -506,11 +506,11 @@ where
     fn handle_traversed_entry<'b>(
         &'a self,
         scope: &rayon::Scope<'b>,
-        files_sender: &'b crossbeam::Sender<(HgPathBuf, Dispatch)>,
+        files_sender: &'b crossbeam_channel::Sender<(HgPathBuf, Dispatch)>,
         old_results: &'a FastHashMap<Cow<HgPath>, Dispatch>,
         filename: HgPathBuf,
         dir_entry: DirEntry,
-        traversed_sender: crossbeam::Sender<HgPathBuf>,
+        traversed_sender: crossbeam_channel::Sender<HgPathBuf>,
     ) -> IoResult<()>
     where
         'a: 'b,
@@ -592,11 +592,11 @@ where
     fn handle_traversed_dir<'b>(
         &'a self,
         scope: &rayon::Scope<'b>,
-        files_sender: &'b crossbeam::Sender<(HgPathBuf, Dispatch)>,
+        files_sender: &'b crossbeam_channel::Sender<(HgPathBuf, Dispatch)>,
         old_results: &'a FastHashMap<Cow<HgPath>, Dispatch>,
         entry_option: Option<&'a DirstateEntry>,
         directory: HgPathBuf,
-        traversed_sender: crossbeam::Sender<HgPathBuf>,
+        traversed_sender: crossbeam_channel::Sender<HgPathBuf>,
     ) where
         'a: 'b,
     {
@@ -631,10 +631,10 @@ where
     /// entries in a separate thread.
     fn traverse_dir(
         &self,
-        files_sender: &crossbeam::Sender<(HgPathBuf, Dispatch)>,
+        files_sender: &crossbeam_channel::Sender<(HgPathBuf, Dispatch)>,
         directory: impl AsRef<HgPath>,
         old_results: &FastHashMap<Cow<HgPath>, Dispatch>,
-        traversed_sender: crossbeam::Sender<HgPathBuf>,
+        traversed_sender: crossbeam_channel::Sender<HgPathBuf>,
     ) {
         let directory = directory.as_ref();
 

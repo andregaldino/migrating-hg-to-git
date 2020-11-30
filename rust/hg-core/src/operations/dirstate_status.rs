@@ -18,7 +18,7 @@ pub type LookupAndStatus<'a> = (Vec<HgPathCow<'a>>, DirstateStatus<'a>);
 impl<'a, M: Matcher + Sync> Status<'a, M> {
     pub(crate) fn run(&self) -> Result<LookupAndStatus<'a>, StatusError> {
         let (traversed_sender, traversed_receiver) =
-            crossbeam::channel::unbounded();
+            crossbeam_channel::unbounded();
 
         // Step 1: check the files explicitly mentioned by the user
         let (work, mut results) = self.walk_explicit(traversed_sender.clone());
@@ -77,7 +77,7 @@ impl<'a, M: Matcher + Sync> Status<'a, M> {
 impl<'a, M: Matcher + Sync> Status<'a, M> {
     pub(crate) fn run(&self) -> Result<LookupAndStatus<'a>, StatusError> {
         let (traversed_sender, traversed_receiver) =
-            crossbeam::channel::unbounded();
+            crossbeam_channel::unbounded();
 
         // Step 1: check the files explicitly mentioned by the user
         let (work, mut results) = self.walk_explicit(traversed_sender.clone());
