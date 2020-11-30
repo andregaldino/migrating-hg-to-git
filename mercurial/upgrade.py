@@ -1154,25 +1154,22 @@ def upgraderepo(
     repo = repo.unfiltered()
 
     revlogs = set(UPGRADE_ALL_REVLOGS)
-    specentries = ((b'c', changelog), (b'm', manifest))
+    specentries = (
+        (UPGRADE_CHANGELOG, changelog),
+        (UPGRADE_MANIFEST, manifest)
+    )
     specified = [(y, x) for (y, x) in specentries if x is not None]
     if specified:
         # we have some limitation on revlogs to be recloned
         if any(x for y, x in specified):
             revlogs = set()
-            for r, enabled in specified:
+            for upgrade, enabled in specified:
                 if enabled:
-                    if r == b'c':
-                        revlogs.add(UPGRADE_CHANGELOG)
-                    elif r == b'm':
-                        revlogs.add(UPGRADE_MANIFEST)
+                    revlogs.add(upgrade)
         else:
             # none are enabled
-            for r, __ in specified:
-                if r == b'c':
-                    revlogs.discard(UPGRADE_CHANGELOG)
-                elif r == b'm':
-                    revlogs.discard(UPGRADE_MANIFEST)
+            for upgrade, __ in specified:
+                revlogs.discard(upgrade)
 
     # Ensure the repository can be upgraded.
     missingreqs = requiredsourcerequirements(repo) - repo.requirements
