@@ -664,6 +664,11 @@ We upgrade a repository that is not using sidedata (the filelog case) and
      preserved: * (glob)
      added: exp-copies-sidedata-changeset, exp-sidedata-flag
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
 #endif
 
 

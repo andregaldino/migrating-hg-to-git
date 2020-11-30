@@ -215,6 +215,11 @@ Disable zstd related tests because its not present on pure version
      preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlogv1, sparserevlog, store
      added: revlog-compression-zstd
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg log -r .
   changeset:   1:5f6d8a4bf34a
   user:        test
@@ -236,6 +241,11 @@ Disable zstd related tests because its not present on pure version
      preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
      preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
      added: persistent-nodemap
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   $ hg log -r .
   changeset:   1:5f6d8a4bf34a
@@ -335,12 +345,22 @@ Upgrade
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      added: exp-sharesafe
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg debugupgraderepo --run -q
   upgrade will perform the following actions:
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      added: exp-sharesafe
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
 
@@ -408,12 +428,22 @@ Test that downgrading works too
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      removed: exp-sharesafe
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg debugupgraderepo -q --run
   upgrade will perform the following actions:
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      removed: exp-sharesafe
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   repository downgraded to not use share safe mode, existing shares will not work and needs to be reshared.
 

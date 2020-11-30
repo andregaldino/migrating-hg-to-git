@@ -742,9 +742,9 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
             destrepo.svfs.fncache.add(unencodedname[:-2] + b'.d')
 
 
-UPGRADE_CHANGELOG = object()
-UPGRADE_MANIFEST = object()
-UPGRADE_FILELOGS = object()
+UPGRADE_CHANGELOG = b"changelog"
+UPGRADE_MANIFEST = b"manifest"
+UPGRADE_FILELOGS = b"all-filelogs"
 
 UPGRADE_ALL_REVLOGS = frozenset(
     [UPGRADE_CHANGELOG, UPGRADE_MANIFEST, UPGRADE_FILELOGS]
@@ -1339,6 +1339,15 @@ def upgraderepo(
         for a in actions:
             ui.status(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
 
+    def print_affected_revlogs():
+        if not revlogs:
+            ui.write((b'no revlogs to process\n'))
+        else:
+            ui.write((b'processed revlogs:\n'))
+            for r in sorted(revlogs):
+                ui.write((b'  - %s\n' % r))
+        ui.write((b'\n'))
+
     if not run:
         fromconfig = []
         onlydefault = []
@@ -1390,6 +1399,7 @@ def upgraderepo(
         printrequirements()
         printoptimisations()
         printupgradeactions()
+        print_affected_revlogs()
 
         unusedoptimize = [i for i in alloptimizations if i not in actions]
 
@@ -1409,6 +1419,7 @@ def upgraderepo(
     printrequirements()
     printoptimisations()
     printupgradeactions()
+    print_affected_revlogs()
 
     upgradeactions = [a.name for a in actions]
 

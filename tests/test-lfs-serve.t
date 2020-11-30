@@ -133,6 +133,11 @@ non-lfs content, and the extension enabled.
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
 
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   [1]

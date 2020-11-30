@@ -492,6 +492,11 @@ downgrading
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      removed: persistent-nodemap
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   [1]
   $ hg debugnodemap --metadata
@@ -523,6 +528,11 @@ upgrading
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      added: persistent-nodemap
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)
   00changelog.n
@@ -546,6 +556,11 @@ Running unrelated upgrade
      preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store
   
   optimisations: re-delta-all
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)

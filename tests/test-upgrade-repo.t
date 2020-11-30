@@ -179,6 +179,11 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -198,6 +203,11 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
 
 --optimize can be used to add optimizations
 
@@ -212,6 +222,11 @@ An upgrade of a repository created with recommended settings only suggests optim
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   additional optimizations are available by specifying "--optimize <name>":
   
@@ -239,6 +254,11 @@ modern form of the option
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-multibase
@@ -255,6 +275,11 @@ modern form of the option
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
   optimisations: re-delta-parent
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
 
 unknown optimization:
@@ -357,6 +382,11 @@ Various sub-optimal detections work
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -375,6 +405,11 @@ Various sub-optimal detections work
   requirements
      preserved: revlogv1, store
      added: dotencode, fncache, generaldelta, sparserevlog
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
 
   $ hg --config format.dotencode=false debugupgraderepo
@@ -410,6 +445,11 @@ Various sub-optimal detections work
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   re-delta-parent
@@ -435,6 +475,11 @@ Upgrading a repository that is already modern essentially no-ops
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   beginning upgrade...
   repository locked and read-only
@@ -486,6 +531,11 @@ make sure we have a .d file
   
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   beginning upgrade...
   repository locked and read-only
@@ -583,6 +633,11 @@ unless --no-backup is passed
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
@@ -621,6 +676,9 @@ We can restrict optimization to some revlog:
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
+  
+  processed revlogs:
+    - manifest
   
   beginning upgrade...
   repository locked and read-only
@@ -698,6 +756,10 @@ Check we can select negatively
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
@@ -746,6 +808,9 @@ Check that we can select changelog only
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
+  processed revlogs:
+    - changelog
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
@@ -793,6 +858,9 @@ Check that we can select filelog only
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
+  
+  processed revlogs:
+    - all-filelogs
   
   beginning upgrade...
   repository locked and read-only
@@ -846,6 +914,11 @@ Check you can't skip revlog clone during important format downgrade
   
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   beginning upgrade...
   repository locked and read-only
@@ -901,6 +974,11 @@ Check you can't skip revlog clone during important format upgrade
   re-delta-parent
      deltas within internal storage will choose a new base revision if needed
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
@@ -952,6 +1030,11 @@ store files with special filenames aren't encoded during copy
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
@@ -987,6 +1070,11 @@ store files with special filenames aren't encoded during copy
   
   re-delta-fulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   beginning upgrade...
   repository locked and read-only
@@ -1049,6 +1137,11 @@ Check upgrading a large file repository
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, revlogv1, sparserevlog, store
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
@@ -1101,6 +1194,11 @@ Check upgrading a large file repository
   
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, lfs, revlogv1, sparserevlog, store
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   beginning upgrade...
   repository locked and read-only
@@ -1202,6 +1300,11 @@ repository config is taken in account
   re-delta-all
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/localconfig/.hg/upgrade.* (glob)
@@ -1261,6 +1364,11 @@ Check that we can add the sparse-revlog format requirement
      preserved: dotencode, fncache, generaldelta, revlogv1, store
      added: sparserevlog
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ cat .hg/requires
   dotencode
   fncache
@@ -1276,6 +1384,11 @@ Check that we can remove the sparse-revlog format requirement
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
      removed: sparserevlog
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   $ cat .hg/requires
   dotencode
@@ -1297,6 +1410,11 @@ upgrade
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
      added: revlog-compression-zstd, sparserevlog
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   $ hg debugformat -v
   format-variant     repo config default
@@ -1328,6 +1446,11 @@ downgrade
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      removed: revlog-compression-zstd
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   $ hg debugformat -v
   format-variant     repo config default
@@ -1362,6 +1485,11 @@ upgrade from hgrc
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      added: revlog-compression-zstd
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   $ hg debugformat -v
   format-variant     repo config default
@@ -1401,6 +1529,11 @@ upgrade
      added: exp-sidedata-flag (zstd !)
      added: exp-sidedata-flag, sparserevlog (no-zstd !)
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
@@ -1439,6 +1572,11 @@ downgrade
      preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
      removed: exp-sidedata-flag
   
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
@@ -1476,6 +1614,11 @@ upgrade from hgrc
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
      preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
      added: exp-sidedata-flag
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
   
   $ hg debugformat -v
   format-variant     repo config default
