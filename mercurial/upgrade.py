@@ -1152,6 +1152,7 @@ def upgraderepo(
     backup=True,
     manifest=None,
     changelog=None,
+    filelogs=None,
 ):
     """Upgrade a repository in place."""
     if optimize is None:
@@ -1162,7 +1163,8 @@ def upgraderepo(
     revlogs = set(UPGRADE_ALL_REVLOGS)
     specentries = (
         (UPGRADE_CHANGELOG, changelog),
-        (UPGRADE_MANIFEST, manifest)
+        (UPGRADE_MANIFEST, manifest),
+        (UPGRADE_FILELOGS, filelogs),
     )
     specified = [(y, x) for (y, x) in specentries if x is not None]
     if specified:
