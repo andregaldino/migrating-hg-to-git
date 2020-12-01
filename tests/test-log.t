@@ -1378,6 +1378,14 @@ are specified (issue5100):
   1 k1
   0 k0
 
+ log -b/-u/-k shouldn't accept string-matcher syntax:
+
+  $ hg log -b 're:.*'
+  abort: unknown revision 're:.*'
+  [255]
+  $ hg log -k 're:.*'
+  $ hg log -u 're:.*'
+
  log FILE in ascending order, against dagrange:
 
   $ hg log -r1:: -T '{rev} {files}\n' f1 f2

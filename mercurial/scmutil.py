@@ -2310,6 +2310,7 @@ def bookmarkrevs(repo, mark):
 def format_bookmark_revspec(mark):
     """Build a revset expression to select revisions reachable by a given
     bookmark"""
+    mark = b'literal:' + mark
     return revsetlang.formatspec(
         b"ancestors(bookmark(%s)) - "
         b"ancestors(head() and not bookmark(%s)) - "

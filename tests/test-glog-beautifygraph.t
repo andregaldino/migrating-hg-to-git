@@ -1588,19 +1588,19 @@ glog always reorders nodes which explains the difference with log
     (list
       (func
         (symbol 'user')
-        (string 'test'))
+        (string 'literal:test'))
       (func
         (symbol 'user')
-        (string 'not-a-user'))))
+        (string 'literal:not-a-user'))))
   <filteredset
     <spanset- 0:37>,
     <addset
       <filteredset
         <fullreposet+ 0:37>,
-        <user 'test'>>,
+        <user 'literal:test'>>,
       <filteredset
         <fullreposet+ 0:37>,
-        <user 'not-a-user'>>>>
+        <user 'literal:not-a-user'>>>>
   $ testlog -b not-a-branch
   abort: unknown revision 'not-a-branch'
   abort: unknown revision 'not-a-branch'
@@ -1611,28 +1611,28 @@ glog always reorders nodes which explains the difference with log
     (list
       (func
         (symbol 'branch')
-        (string 'default'))
+        (string 'literal:default'))
       (or
         (list
           (func
             (symbol 'branch')
-            (string 'branch'))
+            (string 'literal:branch'))
           (func
             (symbol 'branch')
-            (string 'branch'))))))
+            (string 'literal:branch'))))))
   <filteredset
     <spanset- 0:37>,
     <addset
       <filteredset
         <fullreposet+ 0:37>,
-        <branch 'default'>>,
+        <branch 'literal:default'>>,
       <addset
         <filteredset
           <fullreposet+ 0:37>,
-          <branch 'branch'>>,
+          <branch 'literal:branch'>>,
         <filteredset
           <fullreposet+ 0:37>,
-          <branch 'branch'>>>>>
+          <branch 'literal:branch'>>>>>
   $ testlog -k expand -k merge
   []
   (or

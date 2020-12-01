@@ -898,13 +898,13 @@ _opt2logrevset = {
 def _makerevset(repo, wopts, slowpath):
     """Return a revset string built from log options and file patterns"""
     opts = {
-        b'branch': [repo.lookupbranch(b) for b in wopts.branches],
+        b'branch': [b'literal:' + repo.lookupbranch(b) for b in wopts.branches],
         b'date': wopts.date,
         b'keyword': wopts.keywords,
         b'no_merges': wopts.no_merges,
         b'only_merges': wopts.only_merges,
         b'prune': wopts.prune_ancestors,
-        b'user': wopts.users,
+        b'user': [b'literal:' + v for v in wopts.users],
     }
 
     if wopts.filter_revisions_by_pats and slowpath:
