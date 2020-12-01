@@ -640,7 +640,7 @@ if pycompat.iswindows:
         # we can't use close_fds *and* redirect stdin. I'm not sure that we
         # need to because the detached process has no console connection.
         p = subprocess.Popen(
-            tonativestr(script),
+            pycompat.rapply(tonativestr, script),
             shell=shell,
             env=tonativeenv(env),
             close_fds=True,
