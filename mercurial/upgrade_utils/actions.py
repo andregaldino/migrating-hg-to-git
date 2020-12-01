@@ -24,38 +24,6 @@ RECLONES_REQUIREMENTS = {
 }
 
 
-def requiredsourcerequirements(repo):
-    """Obtain requirements required to be present to upgrade a repo.
-
-    An upgrade will not be allowed if the repository doesn't have the
-    requirements returned by this function.
-    """
-    return {
-        # Introduced in Mercurial 0.9.2.
-        b'revlogv1',
-        # Introduced in Mercurial 0.9.2.
-        b'store',
-    }
-
-
-def blocksourcerequirements(repo):
-    """Obtain requirements that will prevent an upgrade from occurring.
-
-    An upgrade cannot be performed if the source repository contains a
-    requirements in the returned set.
-    """
-    return {
-        # The upgrade code does not yet support these experimental features.
-        # This is an artificial limitation.
-        requirements.TREEMANIFEST_REQUIREMENT,
-        # This was a precursor to generaldelta and was never enabled by default.
-        # It should (hopefully) not exist in the wild.
-        b'parentdelta',
-        # Upgrade should operate on the actual store, not the shared link.
-        requirements.SHARED_REQUIREMENT,
-    }
-
-
 def supportremovedrequirements(repo):
     """Obtain requirements that can be removed during an upgrade.
 
@@ -665,6 +633,41 @@ def determineactions(repo, deficiencies, sourcereqs, destreqs):
     # e.g. adding generaldelta could schedule parent redeltas.
 
     return newactions
+
+
+###  Code checking if a repository can got through the upgrade process at all. #
+
+
+def requiredsourcerequirements(repo):
+    """Obtain requirements required to be present to upgrade a repo.
+
+    An upgrade will not be allowed if the repository doesn't have the
+    requirements returned by this function.
+    """
+    return {
+        # Introduced in Mercurial 0.9.2.
+        b'revlogv1',
+        # Introduced in Mercurial 0.9.2.
+        b'store',
+    }
+
+
+def blocksourcerequirements(repo):
+    """Obtain requirements that will prevent an upgrade from occurring.
+
+    An upgrade cannot be performed if the source repository contains a
+    requirements in the returned set.
+    """
+    return {
+        # The upgrade code does not yet support these experimental features.
+        # This is an artificial limitation.
+        requirements.TREEMANIFEST_REQUIREMENT,
+        # This was a precursor to generaldelta and was never enabled by default.
+        # It should (hopefully) not exist in the wild.
+        b'parentdelta',
+        # Upgrade should operate on the actual store, not the shared link.
+        requirements.SHARED_REQUIREMENT,
+    }
 
 
 def check_source_requirements(repo):
