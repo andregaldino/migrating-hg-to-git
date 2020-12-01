@@ -2300,8 +2300,9 @@ def _getrevsfromsymbols(repo, symbols):
 
 
 def bookmarkrevs(repo, mark):
-    """
-    Select revisions reachable by a given bookmark
+    """Select revisions reachable by a given bookmark
+
+    If the bookmarked revision isn't a head, an empty set will be returned.
     """
     return repo.revs(
         b"ancestors(bookmark(%s)) - "
