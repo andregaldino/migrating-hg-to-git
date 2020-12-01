@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 from ..i18n import _
 from .. import (
+    error,
     localrepo,
     requirements,
     util,
@@ -664,3 +665,21 @@ def determineactions(repo, deficiencies, sourcereqs, destreqs):
     # e.g. adding generaldelta could schedule parent redeltas.
 
     return newactions
+
+
+def check_source_requirements(repo):
+    """Ensure that no existing requirements prevent the repository upgrade"""
+
+    required = requiredsourcerequirements(repo)
+    missingreqs = required - repo.requirements
+    if missingreqs:
+        msg = _(b'cannot upgrade repository; requirement missing: %s')
+        missingreqs = b', '.join(sorted(missingreqs))
+        raise error.Abort(msg % missingreqs)
+
+    blocking = blocksourcerequirements(repo)
+    blockingreqs = blocking & repo.requirements
+    if blockingreqs:
+        m = _(b'cannot upgrade repository; unsupported source requirement: %s')
+        blockingreqs = b', '.join(sorted(blockingreqs))
+        raise error.Abort(m % blockingreqs)

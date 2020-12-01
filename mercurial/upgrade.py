@@ -72,26 +72,7 @@ def upgraderepo(
                 revlogs.discard(upgrade)
 
     # Ensure the repository can be upgraded.
-    missingreqs = (
-        upgrade_actions.requiredsourcerequirements(repo) - repo.requirements
-    )
-    if missingreqs:
-        raise error.Abort(
-            _(b'cannot upgrade repository; requirement missing: %s')
-            % _(b', ').join(sorted(missingreqs))
-        )
-
-    blockedreqs = (
-        upgrade_actions.blocksourcerequirements(repo) & repo.requirements
-    )
-    if blockedreqs:
-        raise error.Abort(
-            _(
-                b'cannot upgrade repository; unsupported source '
-                b'requirement: %s'
-            )
-            % _(b', ').join(sorted(blockedreqs))
-        )
+    upgrade_actions.check_source_requirements(repo)
 
     # FUTURE there is potentially a need to control the wanted requirements via
     # command arguments or via an extension hook point.
