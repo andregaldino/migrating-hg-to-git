@@ -17,9 +17,11 @@
    can be e.g. `rebase`. As part of this effort, the default format
    from `hg rebase` was reorganized a bit.
 
-
  * `hg strip`, from the strip extension, is now a core command, `hg
    debugstrip`. The extension remains for compatibility.
+
+ * The memory footprint per changeset during pull/unbundle
+   operations has been further reduced.
 
 == New Experimental Features ==
 
