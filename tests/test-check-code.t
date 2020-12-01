@@ -70,6 +70,7 @@ Prevent adding new files in the root directory accidentally.
   hg
   hgeditor
   hgweb.cgi
+  pyproject.toml
   rustfmt.toml
   setup.py
 
