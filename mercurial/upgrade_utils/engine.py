@@ -383,9 +383,7 @@ def _finishdatamigration(ui, srcrepo, dstrepo, requirements):
     """
 
 
-def upgrade(
-    ui, srcrepo, dstrepo, requirements, actions, revlogs=UPGRADE_ALL_REVLOGS
-):
+def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     """Do the low-level work of upgrading a repository.
 
     The upgrade is effectively performed as a copy between a source
@@ -405,13 +403,13 @@ def upgrade(
         )
     )
 
-    if b're-delta-all' in actions:
+    if b're-delta-all' in upgrade_op.actions:
         deltareuse = revlog.revlog.DELTAREUSENEVER
-    elif b're-delta-parent' in actions:
+    elif b're-delta-parent' in upgrade_op.actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif b're-delta-multibase' in actions:
+    elif b're-delta-multibase' in upgrade_op.actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif b're-delta-fulladd' in actions:
+    elif b're-delta-fulladd' in upgrade_op.actions:
         deltareuse = revlog.revlog.DELTAREUSEFULLADD
     else:
         deltareuse = revlog.revlog.DELTAREUSEALWAYS
@@ -423,14 +421,16 @@ def upgrade(
             dstrepo,
             tr,
             deltareuse,
-            b're-delta-multibase' in actions,
-            revlogs=revlogs,
+            b're-delta-multibase' in upgrade_op.actions,
+            revlogs=upgrade_op.revlogs_to_process,
         )
 
     # Now copy other files in the store directory.
     # The sorted() makes execution deterministic.
     for p, kind, st in sorted(srcrepo.store.vfs.readdir(b'', stat=True)):
-        if not _filterstorefile(srcrepo, dstrepo, requirements, p, kind, st):
+        if not _filterstorefile(
+            srcrepo, dstrepo, upgrade_op.requirements, p, kind, st
+        ):
             continue
 
         srcrepo.ui.status(_(b'copying %s\n') % p)
@@ -489,7 +489,7 @@ def upgrade(
             b'again\n'
         )
     )
-    scmutil.writereporequirements(srcrepo, requirements)
+    scmutil.writereporequirements(srcrepo, upgrade_op.requirements)
 
     # The lock file from the old store won't be removed because nothing has a
     # reference to its new location. So clean it up manually. Alternatively, we

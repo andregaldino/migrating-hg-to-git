@@ -176,6 +176,12 @@ def upgraderepo(
                 ui.write((b'  - %s\n' % r))
         ui.write((b'\n'))
 
+    upgrade_op = upgrade_actions.UpgradeOperation(
+        newreqs,
+        [a.name for a in actions],
+        revlogs,
+    )
+
     if not run:
         fromconfig = []
         onlydefault = []
@@ -249,8 +255,6 @@ def upgraderepo(
     printupgradeactions()
     print_affected_revlogs()
 
-    upgradeactions = [a.name for a in actions]
-
     ui.status(_(b'beginning upgrade...\n'))
     with repo.wlock(), repo.lock():
         ui.status(_(b'repository locked and read-only\n'))
@@ -276,7 +280,7 @@ def upgraderepo(
 
             with dstrepo.wlock(), dstrepo.lock():
                 backuppath = upgrade_engine.upgrade(
-                    ui, repo, dstrepo, newreqs, upgradeactions, revlogs=revlogs
+                    ui, repo, dstrepo, upgrade_op
                 )
             if not (backup or backuppath is None):
                 ui.status(

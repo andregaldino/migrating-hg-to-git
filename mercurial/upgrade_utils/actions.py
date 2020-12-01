@@ -554,6 +554,15 @@ def determineactions(repo, deficiencies, sourcereqs, destreqs):
     return newactions
 
 
+class UpgradeOperation(object):
+    """represent the work to be done during an upgrade"""
+
+    def __init__(self, requirements, actions, revlogs_to_process):
+        self.requirements = requirements
+        self.actions = actions
+        self.revlogs_to_process = revlogs_to_process
+
+
 ###  Code checking if a repository can got through the upgrade process at all. #
 
 
