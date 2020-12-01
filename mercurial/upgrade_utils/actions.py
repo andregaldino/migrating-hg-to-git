@@ -24,87 +24,6 @@ RECLONES_REQUIREMENTS = {
 }
 
 
-def supportremovedrequirements(repo):
-    """Obtain requirements that can be removed during an upgrade.
-
-    If an upgrade were to create a repository that dropped a requirement,
-    the dropped requirement must appear in the returned set for the upgrade
-    to be allowed.
-    """
-    supported = {
-        requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
-        requirements.COPIESSDC_REQUIREMENT,
-        requirements.NODEMAP_REQUIREMENT,
-        requirements.SHARESAFE_REQUIREMENT,
-    }
-    for name in compression.compengines:
-        engine = compression.compengines[name]
-        if engine.available() and engine.revlogheader():
-            supported.add(b'exp-compression-%s' % name)
-            if engine.name() == b'zstd':
-                supported.add(b'revlog-compression-zstd')
-    return supported
-
-
-def supporteddestrequirements(repo):
-    """Obtain requirements that upgrade supports in the destination.
-
-    If the result of the upgrade would create requirements not in this set,
-    the upgrade is disallowed.
-
-    Extensions should monkeypatch this to add their custom requirements.
-    """
-    supported = {
-        b'dotencode',
-        b'fncache',
-        b'generaldelta',
-        b'revlogv1',
-        b'store',
-        requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
-        requirements.COPIESSDC_REQUIREMENT,
-        requirements.NODEMAP_REQUIREMENT,
-        requirements.SHARESAFE_REQUIREMENT,
-    }
-    for name in compression.compengines:
-        engine = compression.compengines[name]
-        if engine.available() and engine.revlogheader():
-            supported.add(b'exp-compression-%s' % name)
-            if engine.name() == b'zstd':
-                supported.add(b'revlog-compression-zstd')
-    return supported
-
-
-def allowednewrequirements(repo):
-    """Obtain requirements that can be added to a repository during upgrade.
-
-    This is used to disallow proposed requirements from being added when
-    they weren't present before.
-
-    We use a list of allowed requirement additions instead of a list of known
-    bad additions because the whitelist approach is safer and will prevent
-    future, unknown requirements from accidentally being added.
-    """
-    supported = {
-        b'dotencode',
-        b'fncache',
-        b'generaldelta',
-        requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
-        requirements.COPIESSDC_REQUIREMENT,
-        requirements.NODEMAP_REQUIREMENT,
-        requirements.SHARESAFE_REQUIREMENT,
-    }
-    for name in compression.compengines:
-        engine = compression.compengines[name]
-        if engine.available() and engine.revlogheader():
-            supported.add(b'exp-compression-%s' % name)
-            if engine.name() == b'zstd':
-                supported.add(b'revlog-compression-zstd')
-    return supported
-
-
 def preservedrequirements(repo):
     return set()
 
@@ -689,6 +608,87 @@ def check_source_requirements(repo):
 
 
 ### Verify the validity of the planned requirement changes ####################
+
+
+def supportremovedrequirements(repo):
+    """Obtain requirements that can be removed during an upgrade.
+
+    If an upgrade were to create a repository that dropped a requirement,
+    the dropped requirement must appear in the returned set for the upgrade
+    to be allowed.
+    """
+    supported = {
+        requirements.SPARSEREVLOG_REQUIREMENT,
+        requirements.SIDEDATA_REQUIREMENT,
+        requirements.COPIESSDC_REQUIREMENT,
+        requirements.NODEMAP_REQUIREMENT,
+        requirements.SHARESAFE_REQUIREMENT,
+    }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == b'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
+
+
+def supporteddestrequirements(repo):
+    """Obtain requirements that upgrade supports in the destination.
+
+    If the result of the upgrade would create requirements not in this set,
+    the upgrade is disallowed.
+
+    Extensions should monkeypatch this to add their custom requirements.
+    """
+    supported = {
+        b'dotencode',
+        b'fncache',
+        b'generaldelta',
+        b'revlogv1',
+        b'store',
+        requirements.SPARSEREVLOG_REQUIREMENT,
+        requirements.SIDEDATA_REQUIREMENT,
+        requirements.COPIESSDC_REQUIREMENT,
+        requirements.NODEMAP_REQUIREMENT,
+        requirements.SHARESAFE_REQUIREMENT,
+    }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == b'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
+
+
+def allowednewrequirements(repo):
+    """Obtain requirements that can be added to a repository during upgrade.
+
+    This is used to disallow proposed requirements from being added when
+    they weren't present before.
+
+    We use a list of allowed requirement additions instead of a list of known
+    bad additions because the whitelist approach is safer and will prevent
+    future, unknown requirements from accidentally being added.
+    """
+    supported = {
+        b'dotencode',
+        b'fncache',
+        b'generaldelta',
+        requirements.SPARSEREVLOG_REQUIREMENT,
+        requirements.SIDEDATA_REQUIREMENT,
+        requirements.COPIESSDC_REQUIREMENT,
+        requirements.NODEMAP_REQUIREMENT,
+        requirements.SHARESAFE_REQUIREMENT,
+    }
+    for name in compression.compengines:
+        engine = compression.compengines[name]
+        if engine.available() and engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+            if engine.name() == b'zstd':
+                supported.add(b'revlog-compression-zstd')
+    return supported
 
 
 def check_requirements_changes(repo, new_reqs):
