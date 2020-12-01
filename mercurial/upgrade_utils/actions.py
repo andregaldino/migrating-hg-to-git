@@ -686,3 +686,34 @@ def check_source_requirements(repo):
         m = _(b'cannot upgrade repository; unsupported source requirement: %s')
         blockingreqs = b', '.join(sorted(blockingreqs))
         raise error.Abort(m % blockingreqs)
+
+
+### Verify the validity of the planned requirement changes ####################
+
+
+def check_requirements_changes(repo, new_reqs):
+    old_reqs = repo.requirements
+
+    support_removal = supportremovedrequirements(repo)
+    no_remove_reqs = old_reqs - new_reqs - support_removal
+    if no_remove_reqs:
+        msg = _(b'cannot upgrade repository; requirement would be removed: %s')
+        no_remove_reqs = b', '.join(sorted(no_remove_reqs))
+        raise error.Abort(msg % no_remove_reqs)
+
+    support_addition = allowednewrequirements(repo)
+    no_add_reqs = new_reqs - old_reqs - support_addition
+    if no_add_reqs:
+        m = _(b'cannot upgrade repository; do not support adding requirement: ')
+        no_add_reqs = b', '.join(sorted(no_add_reqs))
+        raise error.Abort(m + no_add_reqs)
+
+    supported = supporteddestrequirements(repo)
+    unsupported_reqs = new_reqs - supported
+    if unsupported_reqs:
+        msg = _(
+            b'cannot upgrade repository; do not support destination '
+            b'requirement: %s'
+        )
+        unsupported_reqs = b', '.join(sorted(unsupported_reqs))
+        raise error.Abort(msg % unsupported_reqs)

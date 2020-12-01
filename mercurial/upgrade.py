@@ -74,48 +74,11 @@ def upgraderepo(
     # Ensure the repository can be upgraded.
     upgrade_actions.check_source_requirements(repo)
 
-    newreqs = localrepo.newreporequirements(
-        repo.ui, localrepo.defaultcreateopts(repo.ui)
-    )
+    default_options = localrepo.defaultcreateopts(repo.ui)
+    newreqs = localrepo.newreporequirements(repo.ui, default_options)
     newreqs.update(upgrade_actions.preservedrequirements(repo))
 
-    noremovereqs = (
-        repo.requirements
-        - newreqs
-        - upgrade_actions.supportremovedrequirements(repo)
-    )
-    if noremovereqs:
-        raise error.Abort(
-            _(
-                b'cannot upgrade repository; requirement would be '
-                b'removed: %s'
-            )
-            % _(b', ').join(sorted(noremovereqs))
-        )
-
-    noaddreqs = (
-        newreqs
-        - repo.requirements
-        - upgrade_actions.allowednewrequirements(repo)
-    )
-    if noaddreqs:
-        raise error.Abort(
-            _(
-                b'cannot upgrade repository; do not support adding '
-                b'requirement: %s'
-            )
-            % _(b', ').join(sorted(noaddreqs))
-        )
-
-    unsupportedreqs = newreqs - upgrade_actions.supporteddestrequirements(repo)
-    if unsupportedreqs:
-        raise error.Abort(
-            _(
-                b'cannot upgrade repository; do not support '
-                b'destination requirement: %s'
-            )
-            % _(b', ').join(sorted(unsupportedreqs))
-        )
+    upgrade_actions.check_requirements_changes(repo, newreqs)
 
     # Find and validate all improvements that can be made.
     alloptimizations = upgrade_actions.findoptimizations(repo)
