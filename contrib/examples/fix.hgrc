@@ -5,7 +5,7 @@ clang-format:pattern = set:(**.c or **.cc or **.h) and not "include:contrib/clan
 rustfmt:command = rustfmt +nightly
 rustfmt:pattern = set:"**.rs" - "mercurial/thirdparty/**"
 
-black:command = black --config=black.toml -
+black:command = black
 black:pattern = set:**.py - mercurial/thirdparty/**
 
 # Mercurial doesn't have any Go code, but if we did this is how we
