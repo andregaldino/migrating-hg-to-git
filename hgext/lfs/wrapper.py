@@ -34,6 +34,8 @@ from mercurial import (
     wireprotov1server,
 )
 
+from mercurial.upgrade_utils import engine as upgrade_engine
+
 from mercurial.interfaces import repository
 
 from mercurial.utils import (
@@ -520,7 +522,7 @@ def uploadblobs(repo, pointers):
     remoteblob.writebatch(pointers, repo.svfs.lfslocalblobstore)
 
 
-@eh.wrapfunction(upgrade, b'_finishdatamigration')
+@eh.wrapfunction(upgrade_engine, b'_finishdatamigration')
 def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
     orig(ui, srcrepo, dstrepo, requirements)
 

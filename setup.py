@@ -1287,6 +1287,7 @@ packages = [
     'mercurial.thirdparty.attr',
     'mercurial.thirdparty.zope',
     'mercurial.thirdparty.zope.interface',
+    'mercurial.upgrade_utils',
     'mercurial.utils',
     'mercurial.revlogutils',
     'mercurial.testing',

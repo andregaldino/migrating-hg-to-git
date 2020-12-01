@@ -15,8 +15,9 @@ from mercurial import (
     node,
     requirements,
     revlog,
-    upgrade,
 )
+
+from mercurial.upgrade_utils import engine as upgrade_engine
 
 from mercurial.revlogutils import sidedata
 
@@ -79,5 +80,5 @@ def extsetup(ui):
     extensions.wrapfunction(revlog.revlog, 'addrevision', wrapaddrevision)
     extensions.wrapfunction(revlog.revlog, 'revision', wraprevision)
     extensions.wrapfunction(
-        upgrade, 'getsidedatacompanion', wrapgetsidedatacompanion
+        upgrade_engine, 'getsidedatacompanion', wrapgetsidedatacompanion
     )
