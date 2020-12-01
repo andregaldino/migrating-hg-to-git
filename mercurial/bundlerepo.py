@@ -17,7 +17,11 @@ import os
 import shutil
 
 from .i18n import _
-from .node import nullid, nullrev
+from .node import (
+    hex,
+    nullid,
+    nullrev,
+)
 
 from . import (
     bundle2,
@@ -32,7 +36,6 @@ from . import (
     localrepo,
     manifest,
     mdiff,
-    node as nodemod,
     pathutil,
     phases,
     pycompat,
@@ -437,9 +440,9 @@ class bundlerepository(object):
         p2rev = self.changelog.rev(p2)
         msg = _(b"setting parent to node %s that only exists in the bundle\n")
         if self.changelog.repotiprev < p1rev:
-            self.ui.warn(msg % nodemod.hex(p1))
+            self.ui.warn(msg % hex(p1))
         if self.changelog.repotiprev < p2rev:
-            self.ui.warn(msg % nodemod.hex(p2))
+            self.ui.warn(msg % hex(p2))
         return super(bundlerepository, self).setparents(p1, p2)
 
 

@@ -23,6 +23,7 @@ from mercurial.i18n import _
 from mercurial.node import (
     nullrev,
     short,
+    wdirrev,
 )
 from mercurial.pycompat import open
 from mercurial import (
@@ -37,7 +38,6 @@ from mercurial import (
     merge as mergemod,
     mergestate as mergestatemod,
     mergeutil,
-    node as nodemod,
     obsolete,
     obsutil,
     patch,
@@ -1374,7 +1374,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
                 )
             return None
 
-    if nodemod.wdirrev in rebaseset:
+    if wdirrev in rebaseset:
         raise error.Abort(_(b'cannot rebase the working copy'))
     rebasingwcp = repo[b'.'].rev() in rebaseset
     ui.log(

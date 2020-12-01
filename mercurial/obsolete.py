@@ -74,10 +74,14 @@ import struct
 
 from .i18n import _
 from .pycompat import getattr
+from .node import (
+    bin,
+    hex,
+    nullid,
+)
 from . import (
     encoding,
     error,
-    node,
     obsutil,
     phases,
     policy,
@@ -235,7 +239,7 @@ def _fm0readmarkers(data, off, stop):
             parents = ()
         if parents is not None:
             try:
-                parents = tuple(node.bin(p) for p in parents)
+                parents = tuple(bin(p) for p in parents)
                 # if parent content is not a nodeid, drop the data
                 for p in parents:
                     if len(p) != 20:
@@ -262,7 +266,7 @@ def _fm0encodeonemarker(marker):
             # mark that we explicitly recorded no parents
             metadata[b'p0'] = b''
         for i, p in enumerate(parents, 1):
-            metadata[b'p%i' % i] = node.hex(p)
+            metadata[b'p%i' % i] = hex(p)
     metadata = _fm0encodemeta(metadata)
     numsuc = len(sucs)
     format = _fm0fixed + (_fm0node * numsuc)
@@ -529,7 +533,7 @@ def _checkinvalidmarkers(markers):
     subtle handling.
     """
     for mark in markers:
-        if node.nullid in mark[1]:
+        if nullid in mark[1]:
             raise error.Abort(
                 _(
                     b'bad obsolescence marker detected: '
@@ -639,7 +643,7 @@ class obsstore(object):
                     raise ValueError(succ)
         if prec in succs:
             raise ValueError(
-                'in-marker cycle with %s' % pycompat.sysstr(node.hex(prec))
+                'in-marker cycle with %s' % pycompat.sysstr(hex(prec))
             )
 
         metadata = tuple(sorted(pycompat.iteritems(metadata)))
@@ -1031,7 +1035,7 @@ def makefoldid(relation, user):
         folddigest.update(p.node())
     # Since fold only has to compete against fold for the same successors, it
     # seems fine to use a small ID. Smaller ID save space.
-    return node.hex(folddigest.digest())[:8]
+    return hex(folddigest.digest())[:8]
 
 
 def createmarkers(

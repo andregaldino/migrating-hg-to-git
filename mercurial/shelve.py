@@ -29,6 +29,12 @@ import stat
 
 from .i18n import _
 from .pycompat import open
+from .node import (
+    bin,
+    hex,
+    nullid,
+    nullrev,
+)
 from . import (
     bookmarks,
     bundle2,
@@ -43,7 +49,6 @@ from . import (
     mdiff,
     merge,
     mergestate as mergestatemod,
-    node as nodemod,
     patch,
     phases,
     pycompat,
@@ -196,11 +201,11 @@ class shelvedstate(object):
     def _verifyandtransform(cls, d):
         """Some basic shelvestate syntactic verification and transformation"""
         try:
-            d[b'originalwctx'] = nodemod.bin(d[b'originalwctx'])
-            d[b'pendingctx'] = nodemod.bin(d[b'pendingctx'])
-            d[b'parents'] = [nodemod.bin(h) for h in d[b'parents'].split(b' ')]
+            d[b'originalwctx'] = bin(d[b'originalwctx'])
+            d[b'pendingctx'] = bin(d[b'pendingctx'])
+            d[b'parents'] = [bin(h) for h in d[b'parents'].split(b' ')]
             d[b'nodestoremove'] = [
-                nodemod.bin(h) for h in d[b'nodestoremove'].split(b' ')
+                bin(h) for h in d[b'nodestoremove'].split(b' ')
             ]
         except (ValueError, TypeError, KeyError) as err:
             raise error.CorruptedState(pycompat.bytestr(err))
@@ -296,14 +301,10 @@ class shelvedstate(object):
     ):
         info = {
             b"name": name,
-            b"originalwctx": nodemod.hex(originalwctx.node()),
-            b"pendingctx": nodemod.hex(pendingctx.node()),
-            b"parents": b' '.join(
-                [nodemod.hex(p) for p in repo.dirstate.parents()]
-            ),
-            b"nodestoremove": b' '.join(
-                [nodemod.hex(n) for n in nodestoremove]
-            ),
+            b"originalwctx": hex(originalwctx.node()),
+            b"pendingctx": hex(pendingctx.node()),
+            b"parents": b' '.join([hex(p) for p in repo.dirstate.parents()]),
+            b"nodestoremove": b' '.join([hex(n) for n in nodestoremove]),
             b"branchtorestore": branchtorestore,
             b"keep": cls._keep if keep else cls._nokeep,
             b"activebook": activebook or cls._noactivebook,
@@ -400,7 +401,7 @@ def mutableancestors(ctx):
     """return all mutable ancestors for ctx (included)
 
     Much faster than the revset ancestors(ctx) & draft()"""
-    seen = {nodemod.nullrev}
+    seen = {nullrev}
     visit = collections.deque()
     visit.append(ctx)
     while visit:
@@ -464,7 +465,7 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
 
 
 def _shelvecreatedcommit(repo, node, name, match):
-    info = {b'node': nodemod.hex(node)}
+    info = {b'node': hex(node)}
     shelvedfile(repo, name, b'shelve').writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, b'hg').writebundle(bases, node)
@@ -501,7 +502,7 @@ def _docreatecmd(ui, repo, pats, opts):
     parent = parents[0]
     origbranch = wctx.branch()
 
-    if parent.node() != nodemod.nullid:
+    if parent.node() != nullid:
         desc = b"changes to: %s" % parent.description().split(b'\n', 1)[0]
     else:
         desc = b'(changes in empty repository)'
@@ -816,7 +817,7 @@ def unshelvecontinue(ui, repo, state, opts):
         pendingctx = state.pendingctx
 
         with repo.dirstate.parentchange():
-            repo.setparents(state.pendingctx.node(), nodemod.nullid)
+            repo.setparents(state.pendingctx.node(), nullid)
             repo.dirstate.write(repo.currenttransaction())
 
         targetphase = phases.internal
@@ -825,7 +826,7 @@ def unshelvecontinue(ui, repo, state, opts):
         overrides = {(b'phases', b'new-commit'): targetphase}
         with repo.ui.configoverride(overrides, b'unshelve'):
             with repo.dirstate.parentchange():
-                repo.setparents(state.parents[0], nodemod.nullid)
+                repo.setparents(state.parents[0], nullid)
                 newnode, ispartialunshelve = _createunshelvectx(
                     ui, repo, shelvectx, basename, interactive, opts
                 )
@@ -901,7 +902,7 @@ def _unshelverestorecommit(ui, repo, tr, basename):
         # We might not strip the unbundled changeset, so we should keep track of
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:
-            info = {b'node': nodemod.hex(shelvectx.node())}
+            info = {b'node': hex(shelvectx.node())}
             shelvedfile(repo, basename, b'shelve').writeinfo(info)
     else:
         shelvectx = repo[node]
@@ -1020,7 +1021,7 @@ def _rebaserestoredcommit(
             raise error.ConflictResolutionRequired(b'unshelve')
 
         with repo.dirstate.parentchange():
-            repo.setparents(tmpwctx.node(), nodemod.nullid)
+            repo.setparents(tmpwctx.node(), nullid)
             newnode, ispartialunshelve = _createunshelvectx(
                 ui, repo, shelvectx, basename, interactive, opts
             )

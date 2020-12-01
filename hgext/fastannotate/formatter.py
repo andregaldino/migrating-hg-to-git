@@ -6,9 +6,12 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
+from mercurial.node import (
+    hex,
+    short,
+)
 from mercurial import (
     encoding,
-    node,
     pycompat,
     templatefilters,
     util,
@@ -116,9 +119,9 @@ class defaultformatter(object):
     @util.propertycache
     def _hexfunc(self):
         if self.ui.debugflag or self.opts.get(b'long_hash'):
-            return node.hex
+            return hex
         else:
-            return node.short
+            return short
 
     def end(self):
         pass
@@ -168,7 +171,7 @@ class jsonformatter(defaultformatter):
 
     @util.propertycache
     def _hexfunc(self):
-        return node.hex
+        return hex
 
     def end(self):
         self.ui.write(b'\n]\n')

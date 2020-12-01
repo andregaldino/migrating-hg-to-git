@@ -10,10 +10,13 @@ from __future__ import absolute_import
 import re
 
 from .i18n import _
+from .node import (
+    hex,
+    nullrev,
+)
 
 from . import (
     error,
-    node,
     obsolete,
     obsutil,
     revset,
@@ -30,7 +33,7 @@ def precheck(repo, revs, action=b'rewrite'):
 
     Make sure this function is called after taking the lock.
     """
-    if node.nullrev in revs:
+    if nullrev in revs:
         msg = _(b"cannot %s null changeset") % action
         hint = _(b"no changeset checked out")
         raise error.InputError(msg, hint=hint)
@@ -113,7 +116,7 @@ def update_hash_refs(repo, commitmsg, pending=None):
         if len(successors) == 1 and len(successors[0]) == 1:
             successor = successors[0][0]
             if successor is not None:
-                newhash = node.hex(successor)
+                newhash = hex(successor)
                 commitmsg = commitmsg.replace(h, newhash[: len(h)])
             else:
                 repo.ui.note(

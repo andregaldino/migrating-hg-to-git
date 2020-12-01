@@ -9,14 +9,18 @@ from __future__ import absolute_import
 import os
 import zlib
 
-from mercurial.node import bin, hex, nullid, short
+from mercurial.node import (
+    bin,
+    hex,
+    nullid,
+    short,
+)
 from mercurial.i18n import _
 from mercurial.pycompat import open
 from mercurial import (
     error,
     filelog,
     lock as lockmod,
-    node as nodemod,
     pycompat,
     revlog,
 )
@@ -61,7 +65,7 @@ def debugremotefilelog(ui, path, **opts):
 
 def buildtemprevlog(repo, file):
     # get filename key
-    filekey = nodemod.hex(hashutil.sha1(file).digest())
+    filekey = hex(hashutil.sha1(file).digest())
     filedir = os.path.join(repo.path, b'store/data', filekey)
 
     # sort all entries based on linkrev
@@ -421,7 +425,7 @@ def dumpdeltachain(ui, deltachain, **opts):
             % (
                 hashformatter(node),
                 hashformatter(deltabasenode),
-                nodemod.hex(hashutil.sha1(delta).digest()),
+                hex(hashutil.sha1(delta).digest()),
                 len(delta),
             )
         )

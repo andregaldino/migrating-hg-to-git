@@ -209,6 +209,11 @@ from mercurial.pycompat import (
     getattr,
     open,
 )
+from mercurial.node import (
+    bin,
+    hex,
+    short,
+)
 from mercurial import (
     bundle2,
     cmdutil,
@@ -225,7 +230,6 @@ from mercurial import (
     merge as mergemod,
     mergestate as mergestatemod,
     mergeutil,
-    node,
     obsolete,
     pycompat,
     registrar,
@@ -404,8 +408,8 @@ class histeditstate(object):
 
     def _write(self, fp):
         fp.write(b'v1\n')
-        fp.write(b'%s\n' % node.hex(self.parentctxnode))
-        fp.write(b'%s\n' % node.hex(self.topmost))
+        fp.write(b'%s\n' % hex(self.parentctxnode))
+        fp.write(b'%s\n' % hex(self.topmost))
         fp.write(b'%s\n' % (b'True' if self.keep else b'False'))
         fp.write(b'%d\n' % len(self.actions))
         for action in self.actions:
@@ -415,8 +419,8 @@ class histeditstate(object):
             fp.write(
                 b'%s%s\n'
                 % (
-                    node.hex(replacement[0]),
-                    b''.join(node.hex(r) for r in replacement[1]),
+                    hex(replacement[0]),
+                    b''.join(hex(r) for r in replacement[1]),
                 )
             )
         backupfile = self.backupfile
@@ -432,10 +436,10 @@ class histeditstate(object):
         lines[index]  # version number
         index += 1
 
-        parentctxnode = node.bin(lines[index])
+        parentctxnode = bin(lines[index])
         index += 1
 
-        topmost = node.bin(lines[index])
+        topmost = bin(lines[index])
         index += 1
 
         keep = lines[index] == b'True'
@@ -458,9 +462,9 @@ class histeditstate(object):
         index += 1
         for i in pycompat.xrange(replacementlen):
             replacement = lines[index]
-            original = node.bin(replacement[:40])
+            original = bin(replacement[:40])
             succ = [
-                node.bin(replacement[i : i + 40])
+                bin(replacement[i : i + 40])
                 for i in range(40, len(replacement), 40)
             ]
             replacements.append((original, succ))
@@ -494,12 +498,12 @@ class histeditaction(object):
         # ruleid can be anything from rev numbers, hashes, "bookmarks" etc
         # Check for validation of rule ids and get the rulehash
         try:
-            rev = node.bin(ruleid)
+            rev = bin(ruleid)
         except TypeError:
             try:
                 _ctx = scmutil.revsingle(state.repo, ruleid)
                 rulehash = _ctx.hex()
-                rev = node.bin(rulehash)
+                rev = bin(rulehash)
             except error.RepoLookupError:
                 raise error.ParseError(_(b"invalid changeset %s") % ruleid)
         return cls(state, rev)
@@ -507,7 +511,7 @@ class histeditaction(object):
     def verify(self, prev, expected, seen):
         """ Verifies semantic correctness of the rule"""
         repo = self.repo
-        ha = node.hex(self.node)
+        ha = hex(self.node)
         self.node = scmutil.resolvehexnodeidprefix(repo, ha)
         if self.node is None:
             raise error.ParseError(_(b'unknown changeset %s listed') % ha[:12])
@@ -518,14 +522,13 @@ class histeditaction(object):
         if self.node not in expected:
             raise error.ParseError(
                 _(b'%s "%s" changeset was not a candidate')
-                % (self.verb, node.short(self.node)),
+                % (self.verb, short(self.node)),
                 hint=_(b'only use listed changesets'),
             )
         # and only one command per node
         if self.node in seen:
             raise error.ParseError(
-                _(b'duplicated command for changeset %s')
-                % node.short(self.node)
+                _(b'duplicated command for changeset %s') % short(self.node)
             )
 
     def torule(self):
@@ -557,7 +560,7 @@ class histeditaction(object):
         """Print an action in format used by histedit state files
         (the first line is a verb, the remainder is the second)
         """
-        return b"%s\n%s" % (self.verb, node.hex(self.node))
+        return b"%s\n%s" % (self.verb, hex(self.node))
 
     def run(self):
         """Runs the action. The default behavior is simply apply the action's
@@ -578,8 +581,7 @@ class histeditaction(object):
         repo.dirstate.setbranch(rulectx.branch())
         if stats.unresolvedcount:
             raise error.InterventionRequired(
-                _(b'Fix up the change (%s %s)')
-                % (self.verb, node.short(self.node)),
+                _(b'Fix up the change (%s %s)') % (self.verb, short(self.node)),
                 hint=_(b'hg histedit --continue to resume'),
             )
 
@@ -614,8 +616,7 @@ class histeditaction(object):
         ctx = self.repo[b'.']
         if ctx.node() == self.state.parentctxnode:
             self.repo.ui.warn(
-                _(b'%s: skipping changeset (no changes)\n')
-                % node.short(self.node)
+                _(b'%s: skipping changeset (no changes)\n') % short(self.node)
             )
             return ctx, [(self.node, tuple())]
         if ctx.node() == self.node:
@@ -684,7 +685,7 @@ def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     for c in ctxs:
         if not c.mutable():
             raise error.ParseError(
-                _(b"cannot fold into public change %s") % node.short(c.node())
+                _(b"cannot fold into public change %s") % short(c.node())
             )
     base = firstctx.p1()
 
@@ -786,13 +787,17 @@ class pick(histeditaction):
     def run(self):
         rulectx = self.repo[self.node]
         if rulectx.p1().node() == self.state.parentctxnode:
-            self.repo.ui.debug(b'node %s unchanged\n' % node.short(self.node))
+            self.repo.ui.debug(b'node %s unchanged\n' % short(self.node))
             return rulectx, []
 
         return super(pick, self).run()
 
 
-@action([b'edit', b'e'], _(b'use commit, but allow edits before making new commit'), priority=True)
+@action(
+    [b'edit', b'e'],
+    _(b'use commit, but allow edits before making new commit'),
+    priority=True,
+)
 class edit(histeditaction):
     def run(self):
         repo = self.repo
@@ -802,8 +807,8 @@ class edit(histeditaction):
         hint = _(b'to edit %s, `hg histedit --continue` after making changes')
         raise error.InterventionRequired(
             _(b'Editing (%s), commit as needed now to split the change')
-            % node.short(self.node),
-            hint=hint % node.short(self.node),
+            % short(self.node),
+            hint=hint % short(self.node),
         )
 
     def commiteditor(self):
@@ -824,7 +829,7 @@ class fold(histeditaction):
             c = repo[prev.node]
         if not c.mutable():
             raise error.ParseError(
-                _(b"cannot fold into public change %s") % node.short(c.node())
+                _(b"cannot fold into public change %s") % short(c.node())
             )
 
     def continuedirty(self):
@@ -833,7 +838,7 @@ class fold(histeditaction):
 
         commit = commitfuncfor(repo, rulectx)
         commit(
-            text=b'fold-temp-revision %s' % node.short(self.node),
+            text=b'fold-temp-revision %s' % short(self.node),
             user=rulectx.user(),
             date=rulectx.date(),
             extra=rulectx.extra(),
@@ -845,7 +850,7 @@ class fold(histeditaction):
         rulectx = repo[self.node]
         parentctxnode = self.state.parentctxnode
         if ctx.node() == parentctxnode:
-            repo.ui.warn(_(b'%s: empty changeset\n') % node.short(self.node))
+            repo.ui.warn(_(b'%s: empty changeset\n') % short(self.node))
             return ctx, [(self.node, (parentctxnode,))]
 
         parentctx = repo[parentctxnode]
@@ -859,7 +864,7 @@ class fold(histeditaction):
                     b'%s: cannot fold - working copy is not a '
                     b'descendant of previous commit %s\n'
                 )
-                % (node.short(self.node), node.short(parentctxnode))
+                % (short(self.node), short(parentctxnode))
             )
             return ctx, [(self.node, (ctx.node(),))]
 
@@ -973,7 +978,7 @@ class base(histeditaction):
         if self.node in expected:
             msg = _(b'%s "%s" changeset was an edited list candidate')
             raise error.ParseError(
-                msg % (self.verb, node.short(self.node)),
+                msg % (self.verb, short(self.node)),
                 hint=_(b'base must only use unlisted changesets'),
             )
 
@@ -1717,8 +1722,7 @@ def _chistedit(ui, repo, freeargs, opts):
         revs = between(repo, root, topmost, keep)
         if not revs:
             raise error.Abort(
-                _(b'%s is not an ancestor of working directory')
-                % node.short(root)
+                _(b'%s is not an ancestor of working directory') % short(root)
             )
 
         ctxs = []
@@ -2071,16 +2075,16 @@ def _finishhistedit(ui, repo, state, fm):
     if mapping:
         for prec, succs in pycompat.iteritems(mapping):
             if not succs:
-                ui.debug(b'histedit: %s is dropped\n' % node.short(prec))
+                ui.debug(b'histedit: %s is dropped\n' % short(prec))
             else:
                 ui.debug(
                     b'histedit: %s is replaced by %s\n'
-                    % (node.short(prec), node.short(succs[0]))
+                    % (short(prec), short(succs[0]))
                 )
                 if len(succs) > 1:
                     m = b'histedit:                            %s'
                     for n in succs[1:]:
-                        ui.debug(m % node.short(n))
+                        ui.debug(m % short(n))
 
     if not state.keep:
         if mapping:
@@ -2125,7 +2129,7 @@ def _aborthistedit(ui, repo, state, nobackup=False):
     try:
         state.read()
         __, leafs, tmpnodes, __ = processreplacement(state)
-        ui.debug(b'restore wc to old parent %s\n' % node.short(state.topmost))
+        ui.debug(b'restore wc to old parent %s\n' % short(state.topmost))
 
         # Recover our old commits if necessary
         if not state.topmost in repo and state.backupfile:
@@ -2179,7 +2183,7 @@ def _edithisteditplan(ui, repo, state, rules):
     state.read()
     if not rules:
         comment = geteditcomment(
-            ui, node.short(state.parentctxnode), node.short(state.topmost)
+            ui, short(state.parentctxnode), short(state.topmost)
         )
         rules = ruleeditor(repo, ui, state.actions, comment)
     else:
@@ -2220,7 +2224,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     revs = between(repo, root, topmost, state.keep)
     if not revs:
         raise error.Abort(
-            _(b'%s is not an ancestor of working directory') % node.short(root)
+            _(b'%s is not an ancestor of working directory') % short(root)
         )
 
     ctxs = [repo[r] for r in revs]
@@ -2257,7 +2261,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
             )
 
     if not rules:
-        comment = geteditcomment(ui, node.short(root), node.short(topmost))
+        comment = geteditcomment(ui, short(root), short(topmost))
         actions = [pick(state, r) for r in revs]
         rules = ruleeditor(repo, ui, actions, comment)
     else:
@@ -2461,12 +2465,12 @@ def verifyactions(actions, state, ctxs):
         actions[:0] = drops
     elif missing:
         raise error.ParseError(
-            _(b'missing rules for changeset %s') % node.short(missing[0]),
+            _(b'missing rules for changeset %s') % short(missing[0]),
             hint=_(
                 b'use "drop %s" to discard, see also: '
                 b"'hg help -e histedit.config'"
             )
-            % node.short(missing[0]),
+            % short(missing[0]),
         )
 
 
@@ -2620,7 +2624,7 @@ def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
         if common_nodes:
             raise error.Abort(
                 _(b"histedit in progress, can't strip %s")
-                % b', '.join(node.short(x) for x in common_nodes)
+                % b', '.join(short(x) for x in common_nodes)
             )
     return orig(ui, repo, nodelist, *args, **kwargs)
 

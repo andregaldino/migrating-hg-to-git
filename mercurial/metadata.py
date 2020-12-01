@@ -11,9 +11,12 @@ from __future__ import absolute_import, print_function
 import multiprocessing
 import struct
 
+from .node import (
+    nullid,
+    nullrev,
+)
 from . import (
     error,
-    node,
     pycompat,
     util,
 )
@@ -239,11 +242,11 @@ def compute_all_files_changes(ctx):
     """compute the files changed by a revision"""
     p1 = ctx.p1()
     p2 = ctx.p2()
-    if p1.rev() == node.nullrev and p2.rev() == node.nullrev:
+    if p1.rev() == nullrev and p2.rev() == nullrev:
         return _process_root(ctx)
-    elif p1.rev() != node.nullrev and p2.rev() == node.nullrev:
+    elif p1.rev() != nullrev and p2.rev() == nullrev:
         return _process_linear(p1, ctx)
-    elif p1.rev() == node.nullrev and p2.rev() != node.nullrev:
+    elif p1.rev() == nullrev and p2.rev() != nullrev:
         # In the wild, one can encounter changeset where p1 is null but p2 is not
         return _process_linear(p1, ctx, parent=2)
     elif p1.rev() == p2.rev():
@@ -423,7 +426,7 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
         p1_ctx.node(), p2_ctx.node()
     )
     if not cahs:
-        cahs = [node.nullrev]
+        cahs = [nullrev]
     mas = [ctx.repo()[r].manifest() for r in cahs]
 
     copy_candidates = []
@@ -560,7 +563,7 @@ def get_removal_filter(ctx, x=None):
         p2n = p2.node()
         cahs = ctx.repo().changelog.commonancestorsheads(p1n, p2n)
         if not cahs:
-            cahs = [node.nullrev]
+            cahs = [nullrev]
         return [ctx.repo()[r].manifest() for r in cahs]
 
     def deletionfromparent(f):
@@ -597,7 +600,7 @@ def computechangesetfilesmerged(ctx):
         if f in ctx:
             fctx = ctx[f]
             parents = fctx._filelog.parents(fctx._filenode)
-            if parents[1] != node.nullid:
+            if parents[1] != nullid:
                 merged.append(f)
     return merged
 

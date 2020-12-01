@@ -24,6 +24,12 @@ import time
 
 from mercurial.i18n import _
 from mercurial.pycompat import open
+from mercurial.node import (
+    bin,
+    hex,
+    nullhex,
+    nullid,
+)
 from mercurial import (
     bookmarks,
     context,
@@ -32,7 +38,6 @@ from mercurial import (
     hg,
     lock as lockmod,
     merge as mergemod,
-    node as nodemod,
     phases,
     pycompat,
     scmutil,
@@ -155,7 +160,7 @@ class mercurial_sink(common.converter_sink):
                 continue
             revid = revmap.get(source.lookuprev(s[0]))
             if not revid:
-                if s[0] == nodemod.nullhex:
+                if s[0] == nullhex:
                     revid = s[0]
                 else:
                     # missing, but keep for hash stability
@@ -174,7 +179,7 @@ class mercurial_sink(common.converter_sink):
 
             revid = s[0]
             subpath = s[1]
-            if revid != nodemod.nullhex:
+            if revid != nullhex:
                 revmap = self.subrevmaps.get(subpath)
                 if revmap is None:
                     revmap = mapfile(
@@ -295,13 +300,13 @@ class mercurial_sink(common.converter_sink):
         parents = pl
         nparents = len(parents)
         if self.filemapmode and nparents == 1:
-            m1node = self.repo.changelog.read(nodemod.bin(parents[0]))[0]
+            m1node = self.repo.changelog.read(bin(parents[0]))[0]
             parent = parents[0]
 
         if len(parents) < 2:
-            parents.append(nodemod.nullid)
+            parents.append(nullid)
         if len(parents) < 2:
-            parents.append(nodemod.nullid)
+            parents.append(nullid)
         p2 = parents.pop(0)
 
         text = commit.desc
@@ -332,12 +337,12 @@ class mercurial_sink(common.converter_sink):
 
             # Only transplant stores its reference in binary
             if label == b'transplant_source':
-                node = nodemod.hex(node)
+                node = hex(node)
 
             newrev = revmap.get(node)
             if newrev is not None:
                 if label == b'transplant_source':
-                    newrev = nodemod.bin(newrev)
+                    newrev = bin(newrev)
 
                 extra[label] = newrev
 
@@ -351,7 +356,7 @@ class mercurial_sink(common.converter_sink):
             p2 = parents.pop(0)
             p1ctx = self.repo[p1]
             p2ctx = None
-            if p2 != nodemod.nullid:
+            if p2 != nullid:
                 p2ctx = self.repo[p2]
             fileset = set(files)
             if full:
@@ -389,7 +394,7 @@ class mercurial_sink(common.converter_sink):
                     origctx = commit.ctx
                 else:
                     origctx = None
-                node = nodemod.hex(self.repo.commitctx(ctx, origctx=origctx))
+                node = hex(self.repo.commitctx(ctx, origctx=origctx))
 
                 # If the node value has changed, but the phase is lower than
                 # draft, set it back to draft since it hasn't been exposed
@@ -406,7 +411,7 @@ class mercurial_sink(common.converter_sink):
 
         if self.filemapmode and nparents == 1:
             man = self.repo.manifestlog.getstorage(b'')
-            mnode = self.repo.changelog.read(nodemod.bin(p2))[0]
+            mnode = self.repo.changelog.read(bin(p2))[0]
             closed = b'close' in commit.extra
             if not closed and not man.cmp(m1node, man.revision(mnode)):
                 self.ui.status(_(b"filtering out empty revision\n"))
@@ -416,7 +421,7 @@ class mercurial_sink(common.converter_sink):
 
     def puttags(self, tags):
         tagparent = self.repo.branchtip(self.tagsbranch, ignoremissing=True)
-        tagparent = tagparent or nodemod.nullid
+        tagparent = tagparent or nullid
 
         oldlines = set()
         for branch, heads in pycompat.iteritems(self.repo.branchmap()):
@@ -468,7 +473,7 @@ class mercurial_sink(common.converter_sink):
             extra,
         )
         node = self.repo.commitctx(ctx)
-        return nodemod.hex(node), nodemod.hex(tagparent)
+        return hex(node), hex(tagparent)
 
     def setfilemapmode(self, active):
         self.filemapmode = active
@@ -484,7 +489,7 @@ class mercurial_sink(common.converter_sink):
             self.ui.status(_(b"updating bookmarks\n"))
             destmarks = self.repo._bookmarks
             changes = [
-                (bookmark, nodemod.bin(updatedbookmark[bookmark]))
+                (bookmark, bin(updatedbookmark[bookmark]))
                 for bookmark in updatedbookmark
             ]
             destmarks.applychanges(self.repo, tr, changes)
@@ -577,7 +582,7 @@ class mercurial_source(common.converter_source):
         return [p for p in ctx.parents() if p and self.keep(p.node())]
 
     def getheads(self):
-        return [nodemod.hex(h) for h in self._heads if self.keep(h)]
+        return [hex(h) for h in self._heads if self.keep(h)]
 
     def getfile(self, name, rev):
         try:
@@ -678,9 +683,7 @@ class mercurial_source(common.converter_source):
             for t in self.repo.tagslist()
             if self.repo.tagtype(t[0]) == b'global'
         ]
-        return {
-            name: nodemod.hex(node) for name, node in tags if self.keep(node)
-        }
+        return {name: hex(node) for name, node in tags if self.keep(node)}
 
     def getchangedfiles(self, rev, i):
         ctx = self._changectx(rev)
@@ -718,7 +721,7 @@ class mercurial_source(common.converter_source):
 
     def lookuprev(self, rev):
         try:
-            return nodemod.hex(self.repo.lookup(rev))
+            return hex(self.repo.lookup(rev))
         except (error.RepoError, error.LookupError):
             return None
 

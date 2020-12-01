@@ -75,15 +75,12 @@ from __future__ import absolute_import
 
 from .i18n import _
 from .node import (
-    hex,
-    nullid,
+    nullhex,
 )
 from . import (
     tags as tagsmod,
     util,
 )
-
-hexnullid = hex(nullid)
 
 
 def readtagsformerge(ui, repo, lines, fn=b'', keeplinenums=False):
@@ -246,8 +243,8 @@ def merge(repo, fcd, fco, fca):
         pnlosttagset = basetagset - pntagset
         for t in pnlosttagset:
             pntags[t] = basetags[t]
-            if pntags[t][-1][0] != hexnullid:
-                pntags[t].append([hexnullid, None])
+            if pntags[t][-1][0] != nullhex:
+                pntags[t].append([nullhex, None])
 
     conflictedtags = []  # for reporting purposes
     mergedtags = util.sortdict(p1tags)

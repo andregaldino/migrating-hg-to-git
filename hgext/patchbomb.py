@@ -83,6 +83,7 @@ import socket
 
 from mercurial.i18n import _
 from mercurial.pycompat import open
+from mercurial.node import bin
 from mercurial import (
     cmdutil,
     commands,
@@ -91,7 +92,6 @@ from mercurial import (
     formatter,
     hg,
     mail,
-    node as nodemod,
     patch,
     pycompat,
     registrar,
@@ -306,7 +306,7 @@ def makepatch(
         p = mail.mimetextpatch(
             b'\n'.join(patchlines), 'x-patch', opts.get(b'test')
         )
-        binnode = nodemod.bin(node)
+        binnode = bin(node)
         # if node is mq patch, it will have the patch file's name as a tag
         if not patchname:
             patchtags = [

@@ -11,10 +11,10 @@ import heapq
 
 from .node import nullrev
 from .thirdparty import attr
+from .node import nullrev
 from . import (
     error,
     mdiff,
-    node,
     patch,
     pycompat,
     scmutil,
@@ -77,7 +77,7 @@ def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
         pdepth = curdepth + 1
         if foundnew and pdepth < stopdepth:
             for prev in pfunc(currev):
-                if prev != node.nullrev:
+                if prev != nullrev:
                     heapq.heappush(pendingheap, (heapsign * prev, pdepth))
 
 
@@ -183,7 +183,6 @@ def _genrevdescendants(repo, revs, followfirst):
 
     cl = repo.changelog
     first = revs.min()
-    nullrev = node.nullrev
     if first == nullrev:
         # Are there nodes with a null first parent and a non-null
         # second one? Maybe. Do we care? Probably not.
@@ -206,7 +205,6 @@ def _genrevdescendants(repo, revs, followfirst):
 def _builddescendantsmap(repo, startrev, followfirst):
     """Build map of 'rev -> child revs', offset from startrev"""
     cl = repo.changelog
-    nullrev = node.nullrev
     descmap = [[] for _rev in pycompat.xrange(startrev, len(cl))]
     for currev in cl.revs(startrev + 1):
         p1rev, p2rev = cl.parentrevs(currev)
@@ -971,7 +969,7 @@ def toposort(revs, parentsfunc, firstbranch=()):
             if rev == currentrev:  # only display stuff in rev
                 gr[0].append(rev)
             gr[1].remove(rev)
-            parents = [p for p in parentsfunc(rev) if p > node.nullrev]
+            parents = [p for p in parentsfunc(rev) if p > nullrev]
             gr[1].update(parents)
             for p in parents:
                 if p not in pendingset:
@@ -1030,7 +1028,7 @@ def headrevs(revs, parentsfn):
     the input set.
     """
     headrevs = set(revs)
-    parents = {node.nullrev}
+    parents = {nullrev}
     up = parents.update
 
     for rev in revs:
@@ -1104,7 +1102,7 @@ def linearize(revs, parentsfn):
             visit.append(-rev - 1)
 
             for prev in parentsfn(rev):
-                if prev == node.nullrev or prev not in revs or prev in finished:
+                if prev == nullrev or prev not in revs or prev in finished:
                     continue
 
                 visit.append(prev)

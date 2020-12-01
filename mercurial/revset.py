@@ -11,6 +11,11 @@ import re
 
 from .i18n import _
 from .pycompat import getattr
+from .node import (
+    bin,
+    nullrev,
+    wdirrev,
+)
 from . import (
     dagop,
     destutil,
@@ -20,7 +25,6 @@ from . import (
     grep as grepmod,
     hbisect,
     match as matchmod,
-    node,
     obsolete as obsmod,
     obsutil,
     pathutil,
@@ -55,7 +59,7 @@ spanset = smartset.spanset
 fullreposet = smartset.fullreposet
 
 # revisions not included in all(), but populated if specified
-_virtualrevs = (node.nullrev, node.wdirrev)
+_virtualrevs = (nullrev, wdirrev)
 
 # Constants for ordering requirement, used in getset():
 #
@@ -177,9 +181,9 @@ def rangepost(repo, subset, x, order):
 def _makerangeset(repo, subset, m, n, order):
     if m == n:
         r = baseset([m])
-    elif n == node.wdirrev:
+    elif n == wdirrev:
         r = spanset(repo, m, len(repo)) + baseset([n])
-    elif m == node.wdirrev:
+    elif m == wdirrev:
         r = baseset([m]) + spanset(repo, repo.changelog.tiprev(), n - 1)
     elif m < n:
         r = spanset(repo, m, n + 1)
@@ -597,7 +601,7 @@ def bookmark(repo, subset, x):
                 bms.add(repo[bmrev].rev())
     else:
         bms = {repo[r].rev() for r in repo._bookmarks.values()}
-    bms -= {node.nullrev}
+    bms -= {nullrev}
     return subset & bms
 
 
@@ -722,7 +726,6 @@ def _children(repo, subset, parentset):
     cs = set()
     pr = repo.changelog.parentrevs
     minrev = parentset.min()
-    nullrev = node.nullrev
     for r in subset:
         if r <= minrev:
             continue
@@ -1396,7 +1399,7 @@ def _matchfiles(repo, subset, x):
                     b'_matchfiles expected at most one revision'
                 )
             if value == b'':  # empty means working directory
-                rev = node.wdirrev
+                rev = wdirrev
             else:
                 rev = value
         elif prefix == b'd:':
@@ -1416,7 +1419,6 @@ def _matchfiles(repo, subset, x):
     # This directly read the changelog data as creating changectx for all
     # revisions is quite expensive.
     getfiles = repo.changelog.readfiles
-    wdirrev = node.wdirrev
 
     def matches(x):
         if x == wdirrev:
@@ -1490,15 +1492,15 @@ def heads(repo, subset, x, order):
         order = followorder
     inputset = getset(repo, fullreposet(repo), x, order=order)
     wdirparents = None
-    if node.wdirrev in inputset:
+    if wdirrev in inputset:
         # a bit slower, but not common so good enough for now
         wdirparents = [p.rev() for p in repo[None].parents()]
         inputset = set(inputset)
-        inputset.discard(node.wdirrev)
+        inputset.discard(wdirrev)
     heads = repo.changelog.headrevs(inputset)
     if wdirparents is not None:
         heads.difference_update(wdirparents)
-        heads.add(node.wdirrev)
+        heads.add(wdirrev)
     heads = baseset(heads)
     return subset & heads
 
@@ -1598,7 +1600,6 @@ def merge(repo, subset, x):
     # i18n: "merge" is a keyword
     getargs(x, 0, 0, _(b"merge takes no arguments"))
     cl = repo.changelog
-    nullrev = node.nullrev
 
     def ismerge(r):
         try:
@@ -1692,7 +1693,7 @@ def named(repo, subset, x):
             if name not in ns.deprecated:
                 names.update(repo[n].rev() for n in ns.nodes(repo, name))
 
-    names -= {node.nullrev}
+    names -= {nullrev}
     return subset & names
 
 
@@ -1705,9 +1706,9 @@ def node_(repo, subset, x):
     n = getstring(l[0], _(b"id requires a string"))
     if len(n) == 40:
         try:
-            rn = repo.changelog.rev(node.bin(n))
+            rn = repo.changelog.rev(bin(n))
         except error.WdirUnsupported:
-            rn = node.wdirrev
+            rn = wdirrev
         except (LookupError, TypeError):
             rn = None
     else:
@@ -1719,7 +1720,7 @@ def node_(repo, subset, x):
         except LookupError:
             pass
         except error.WdirUnsupported:
-            rn = node.wdirrev
+            rn = wdirrev
 
     if rn is None:
         return baseset()
@@ -1864,7 +1865,7 @@ def p1(repo, subset, x):
             ps.add(cl.parentrevs(r)[0])
         except error.WdirUnsupported:
             ps.add(repo[r].p1().rev())
-    ps -= {node.nullrev}
+    ps -= {nullrev}
     # XXX we should turn this into a baseset instead of a set, smartset may do
     # some optimizations from the fact this is a baseset.
     return subset & ps
@@ -1892,7 +1893,7 @@ def p2(repo, subset, x):
             parents = repo[r].parents()
             if len(parents) == 2:
                 ps.add(parents[1])
-    ps -= {node.nullrev}
+    ps -= {nullrev}
     # XXX we should turn this into a baseset instead of a set, smartset may do
     # some optimizations from the fact this is a baseset.
     return subset & ps
@@ -1919,7 +1920,7 @@ def parents(repo, subset, x):
                 up(parentrevs(r))
             except error.WdirUnsupported:
                 up(p.rev() for p in repo[r].parents())
-    ps -= {node.nullrev}
+    ps -= {nullrev}
     return subset & ps
 
 
@@ -1994,7 +1995,7 @@ def parentspec(repo, subset, x, n, order):
         else:
             try:
                 parents = cl.parentrevs(r)
-                if parents[1] != node.nullrev:
+                if parents[1] != nullrev:
                     ps.add(parents[1])
             except error.WdirUnsupported:
                 parents = repo[r].parents()
@@ -2567,8 +2568,8 @@ def wdir(repo, subset, x):
     """Working directory. (EXPERIMENTAL)"""
     # i18n: "wdir" is a keyword
     getargs(x, 0, 0, _(b"wdir takes no arguments"))
-    if node.wdirrev in subset or isinstance(subset, fullreposet):
-        return baseset([node.wdirrev])
+    if wdirrev in subset or isinstance(subset, fullreposet):
+        return baseset([wdirrev])
     return baseset()
 
 
@@ -2638,7 +2639,7 @@ def _orderedhexlist(repo, subset, x):
     if not s:
         return baseset()
     cl = repo.changelog
-    ls = [cl.rev(node.bin(r)) for r in s.split(b'\0')]
+    ls = [cl.rev(bin(r)) for r in s.split(b'\0')]
     s = subset
     return baseset([r for r in ls if r in s])
 

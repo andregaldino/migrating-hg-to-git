@@ -36,6 +36,11 @@ from __future__ import absolute_import
 import collections
 
 from mercurial.i18n import _
+from mercurial.node import (
+    hex,
+    nullid,
+    short,
+)
 from mercurial import (
     cmdutil,
     commands,
@@ -44,7 +49,6 @@ from mercurial import (
     error,
     linelog,
     mdiff,
-    node,
     obsolete,
     patch,
     phases,
@@ -102,7 +106,7 @@ class emptyfilecontext(object):
         return b''
 
     def node(self):
-        return node.nullid
+        return nullid
 
 
 def uniq(lst):
@@ -367,7 +371,7 @@ class filefixupstate(object):
                 idx = (max(rev - 1, 0)) // 2
                 self.ui.write(
                     _(b'%s: chunk %d:%d -> %d lines\n')
-                    % (node.short(self.fctxs[idx].node()), a1, a2, len(blines))
+                    % (short(self.fctxs[idx].node()), a1, a2, len(blines))
                 )
             self.linelog.replacelines(rev, a1, a2, b1, b2)
         if self.opts.get(b'edit_lines', False):
@@ -486,7 +490,7 @@ class filefixupstate(object):
             editortext += _(b'HG: %s/%s %s %s\n') % (
                 b'|' * i,
                 b'-' * (len(visiblefctxs) - i + 1),
-                node.short(f.node()),
+                short(f.node()),
                 f.description().split(b'\n', 1)[0],
             )
         editortext += _(b'HG: %s\n') % (b'|' * len(visiblefctxs))
@@ -816,7 +820,7 @@ class fixupstate(object):
         if self.ui.debugflag:
             return b'%d:%s' % (ctx.rev(), ctx.hex())
         else:
-            return b'%d:%s' % (ctx.rev(), node.short(ctx.node()))
+            return b'%d:%s' % (ctx.rev(), short(ctx.node()))
 
     def _getnewfilecontents(self, ctx):
         """(ctx) -> {path: str}
@@ -849,7 +853,7 @@ class fixupstate(object):
                 changes.append((name, hsh))
                 if self.ui.verbose:
                     self.ui.write(
-                        _(b'moving bookmark %s to %s\n') % (name, node.hex(hsh))
+                        _(b'moving bookmark %s to %s\n') % (name, hex(hsh))
                     )
             else:
                 changes.append((name, None))
@@ -920,7 +924,7 @@ class fixupstate(object):
         the commit is a clone from ctx, with a (optionally) different p1, and
         different file contents replaced by memworkingcopy.
         """
-        parents = p1 and (p1, node.nullid)
+        parents = p1 and (p1, nullid)
         extra = ctx.extra()
         if self._useobsolete and self.ui.configbool(b'absorb', b'add-noise'):
             extra[b'absorb_source'] = ctx.hex()

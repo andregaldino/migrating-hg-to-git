@@ -14,6 +14,11 @@ import os
 import shutil
 
 from mercurial.i18n import _
+from mercurial.node import (
+    bin,
+    hex,
+    nullid,
+)
 
 from mercurial import (
     cmdutil,
@@ -23,7 +28,6 @@ from mercurial import (
     hg,
     lock,
     match as matchmod,
-    node,
     pycompat,
     scmutil,
     util,
@@ -111,7 +115,7 @@ def lfconvert(ui, src, dest, *pats, **opts):
             rsrc[ctx]
             for ctx in rsrc.changelog.nodesbetween(None, rsrc.heads())[0]
         )
-        revmap = {node.nullid: node.nullid}
+        revmap = {nullid: nullid}
         if tolfile:
             # Lock destination to prevent modification while it is converted to.
             # Don't need to lock src because we are just reading from its
@@ -275,7 +279,7 @@ def _lfconvert_addchangeset(
                 # largefile was modified, update standins
                 m = hashutil.sha1(b'')
                 m.update(ctx[f].data())
-                hash = node.hex(m.digest())
+                hash = hex(m.digest())
                 if f not in lfiletohash or lfiletohash[f] != hash:
                     rdst.wwrite(f, ctx[f].data(), ctx[f].flags())
                     executable = b'x' in ctx[f].flags()
@@ -336,7 +340,7 @@ def _commitcontext(rdst, parents, ctx, dstfiles, getfilectx, revmap):
 # Generate list of changed files
 def _getchangedfiles(ctx, parents):
     files = set(ctx.files())
-    if node.nullid not in parents:
+    if nullid not in parents:
         mc = ctx.manifest()
         for pctx in ctx.parents():
             for fn in pctx.manifest().diff(mc):
@@ -350,7 +354,7 @@ def _convertparents(ctx, revmap):
     for p in ctx.parents():
         parents.append(revmap[p.node()])
     while len(parents) < 2:
-        parents.append(node.nullid)
+        parents.append(nullid)
     return parents
 
 
@@ -380,12 +384,12 @@ def _converttags(ui, revmap, data):
             ui.warn(_(b'skipping incorrectly formatted tag %s\n') % line)
             continue
         try:
-            newid = node.bin(id)
+            newid = bin(id)
         except TypeError:
             ui.warn(_(b'skipping incorrectly formatted id %s\n') % id)
             continue
         try:
-            newdata.append(b'%s %s\n' % (node.hex(revmap[newid]), name))
+            newdata.append(b'%s %s\n' % (hex(revmap[newid]), name))
         except KeyError:
             ui.warn(_(b'no mapping for id %s\n') % id)
             continue

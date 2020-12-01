@@ -2,6 +2,14 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 
+from mercurial.node import (
+    bin,
+    hex,
+    nullhex,
+    nullid,
+    nullrev,
+    wdirhex,
+)
 from mercurial import (
     ancestor,
     changelog as hgchangelog,
@@ -9,7 +17,6 @@ from mercurial import (
     encoding,
     error,
     manifest,
-    node as nodemod,
     pycompat,
 )
 from mercurial.interfaces import (
@@ -39,7 +46,7 @@ class baselog(object):  # revlog.revlog):
         )
 
     def rev(self, n):
-        if n == nodemod.nullid:
+        if n == nullid:
             return -1
         t = self._db.execute(
             'SELECT rev FROM changelog WHERE node = ?', (gitutil.togitnode(n),)
@@ -49,14 +56,14 @@ class baselog(object):  # revlog.revlog):
         return t[0]
 
     def node(self, r):
-        if r == nodemod.nullrev:
-            return nodemod.nullid
+        if r == nullrev:
+            return nullid
         t = self._db.execute(
             'SELECT node FROM changelog WHERE rev = ?', (r,)
         ).fetchone()
         if t is None:
             raise error.LookupError(r, b'00changelog.i', _(b'no node'))
-        return nodemod.bin(t[0])
+        return bin(t[0])
 
     def hasnode(self, n):
         t = self._db.execute(
@@ -123,10 +130,10 @@ class changelog(baselog):
     @property
     def nodemap(self):
         r = {
-            nodemod.bin(v[0]): v[1]
+            bin(v[0]): v[1]
             for v in self._db.execute('SELECT node, rev FROM changelog')
         }
-        r[nodemod.nullid] = nodemod.nullrev
+        r[nullid] = nullrev
         return r
 
     def tip(self):
@@ -134,8 +141,8 @@ class changelog(baselog):
             'SELECT node FROM changelog ORDER BY rev DESC LIMIT 1'
         ).fetchone()
         if t:
-            return nodemod.bin(t[0])
-        return nodemod.nullid
+            return bin(t[0])
+        return nullid
 
     def revs(self, start=0, stop=None):
         if stop is None:
@@ -155,16 +162,16 @@ class changelog(baselog):
         return next(t)
 
     def _partialmatch(self, id):
-        if nodemod.wdirhex.startswith(id):
+        if wdirhex.startswith(id):
             raise error.WdirUnsupported
         candidates = [
-            nodemod.bin(x[0])
+            bin(x[0])
             for x in self._db.execute(
                 'SELECT node FROM changelog WHERE node LIKE ?', (id + b'%',)
             )
         ]
-        if nodemod.nullhex.startswith(id):
-            candidates.append(nodemod.nullid)
+        if nullhex.startswith(id):
+            candidates.append(nullid)
         if len(candidates) > 1:
             raise error.AmbiguousPrefixLookupError(
                 id, b'00changelog.i', _(b'ambiguous identifier')
@@ -177,7 +184,7 @@ class changelog(baselog):
         return 0
 
     def shortest(self, node, minlength=1):
-        nodehex = nodemod.hex(node)
+        nodehex = hex(node)
         for attempt in pycompat.xrange(minlength, len(nodehex) + 1):
             candidate = nodehex[:attempt]
             matches = int(
@@ -209,7 +216,7 @@ class changelog(baselog):
         else:
             n = nodeorrev
         # handle looking up nullid
-        if n == nodemod.nullid:
+        if n == nullid:
             return hgchangelog._changelogrevision(extra={})
         hn = gitutil.togitnode(n)
         # We've got a real commit!
@@ -226,7 +233,7 @@ class changelog(baselog):
             for r in self._db.execute(
                 'SELECT filename FROM changedfiles '
                 'WHERE node = ? and filenode = ?',
-                (hn, nodemod.nullhex),
+                (hn, nullhex),
             )
         ]
         c = self.gitrepo[hn]
@@ -267,7 +274,7 @@ class changelog(baselog):
         nullrev.
         """
         if common is None:
-            common = [nodemod.nullrev]
+            common = [nullrev]
 
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 
@@ -287,7 +294,7 @@ class changelog(baselog):
         not supplied, uses all of the revlog's heads.  If common is not
         supplied, uses nullid."""
         if common is None:
-            common = [nodemod.nullid]
+            common = [nullid]
         if heads is None:
             heads = self.heads()
 
@@ -302,12 +309,12 @@ class changelog(baselog):
         c = []
         p = self.rev(node)
         for r in self.revs(start=p + 1):
-            prevs = [pr for pr in self.parentrevs(r) if pr != nodemod.nullrev]
+            prevs = [pr for pr in self.parentrevs(r) if pr != nullrev]
             if prevs:
                 for pr in prevs:
                     if pr == p:
                         c.append(self.node(r))
-            elif p == nodemod.nullrev:
+            elif p == nullrev:
                 c.append(self.node(r))
         return c
 
@@ -323,7 +330,7 @@ class changelog(baselog):
 
     # Cleanup opportunity: this is *identical* to the revlog.py version
     def isancestorrev(self, a, b):
-        if a == nodemod.nullrev:
+        if a == nullrev:
             return True
         elif a == b:
             return True
@@ -337,8 +344,8 @@ class changelog(baselog):
         if hn != gitutil.nullgit:
             c = self.gitrepo[hn]
         else:
-            return nodemod.nullrev, nodemod.nullrev
-        p1 = p2 = nodemod.nullrev
+            return nullrev, nullrev
+        p1 = p2 = nullrev
         if c.parents:
             p1 = self.rev(c.parents[0].id.raw)
             if len(c.parents) > 2:
@@ -386,9 +393,9 @@ class changelog(baselog):
     ):
         parents = []
         hp1, hp2 = gitutil.togitnode(p1), gitutil.togitnode(p2)
-        if p1 != nodemod.nullid:
+        if p1 != nullid:
             parents.append(hp1)
-        if p2 and p2 != nodemod.nullid:
+        if p2 and p2 != nullid:
             parents.append(hp2)
         assert date is not None
         timestamp, tz = date
@@ -419,7 +426,7 @@ class manifestlog(baselog):
         return self.get(b'', node)
 
     def get(self, relpath, node):
-        if node == nodemod.nullid:
+        if node == nullid:
             # TODO: this should almost certainly be a memgittreemanifestctx
             return manifest.memtreemanifestctx(self, relpath)
         commit = self.gitrepo[gitutil.togitnode(node)]
@@ -440,7 +447,7 @@ class filelog(baselog):
         self.path = path
 
     def read(self, node):
-        if node == nodemod.nullid:
+        if node == nullid:
             return b''
         return self.gitrepo[gitutil.togitnode(node)].data
 
@@ -450,7 +457,7 @@ class filelog(baselog):
         if isinstance(node, int):
             assert False, b'todo revnums for nodes'
         if len(node) == 40:
-            node = nodemod.bin(node)
+            node = bin(node)
         hnode = gitutil.togitnode(node)
         if hnode in self.gitrepo:
             return node
@@ -500,7 +507,7 @@ WHERE changelog.rev = ? AND filename = ?
         ).fetchone()
         if maybe is None:
             raise IndexError('gitlog %r out of range %d' % (self.path, rev))
-        return nodemod.bin(maybe[0])
+        return bin(maybe[0])
 
     def parents(self, node):
         gn = gitutil.togitnode(node)
@@ -525,7 +532,7 @@ WHERE filenode = ? AND filename = ?
                 index.fill_in_filelog(self.gitrepo, self._db, commit, gp, gn)
                 return self.parents(node)
             else:
-                ps.append(nodemod.bin(p))
+                ps.append(bin(p))
         return ps
 
     def renamed(self, node):

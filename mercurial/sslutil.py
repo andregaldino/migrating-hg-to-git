@@ -16,10 +16,10 @@ import ssl
 
 from .i18n import _
 from .pycompat import getattr
+from .node import hex
 from . import (
     encoding,
     error,
-    node,
     pycompat,
     util,
 )
@@ -762,9 +762,9 @@ def validatesocket(sock):
     # If a certificate fingerprint is pinned, use it and only it to
     # validate the remote cert.
     peerfingerprints = {
-        b'sha1': node.hex(hashutil.sha1(peercert).digest()),
-        b'sha256': node.hex(hashlib.sha256(peercert).digest()),
-        b'sha512': node.hex(hashlib.sha512(peercert).digest()),
+        b'sha1': hex(hashutil.sha1(peercert).digest()),
+        b'sha256': hex(hashlib.sha256(peercert).digest()),
+        b'sha512': hex(hashlib.sha512(peercert).digest()),
     }
 
     def fmtfingerprint(s):

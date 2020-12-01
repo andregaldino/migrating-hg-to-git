@@ -17,12 +17,16 @@ from mercurial.pycompat import (
     open,
     setattr,
 )
+from mercurial.node import (
+    bin,
+    hex,
+    short,
+)
 from mercurial import (
     error,
     linelog as linelogmod,
     lock as lockmod,
     mdiff,
-    node,
     pycompat,
     scmutil,
     util,
@@ -150,7 +154,7 @@ def hashdiffopts(diffopts):
     diffoptstr = stringutil.pprint(
         sorted((k, getattr(diffopts, k)) for k in mdiff.diffopts.defaults)
     )
-    return node.hex(hashutil.sha1(diffoptstr).digest())[:6]
+    return hex(hashutil.sha1(diffoptstr).digest())[:6]
 
 
 _defaultdiffopthash = hashdiffopts(mdiff.defaultopts)
@@ -308,7 +312,7 @@ class _annotatecontext(object):
         # command could give us a revision number even if the user passes a
         # commit hash.
         if isinstance(rev, int):
-            rev = node.hex(self.repo.changelog.node(rev))
+            rev = hex(self.repo.changelog.node(rev))
 
         # fast path: if rev is in the main branch already
         directly, revfctx = self.canannotatedirectly(rev)
@@ -493,7 +497,7 @@ class _annotatecontext(object):
         result = True
         f = None
         if not isinstance(rev, int) and rev is not None:
-            hsh = {20: bytes, 40: node.bin}.get(len(rev), lambda x: None)(rev)
+            hsh = {20: bytes, 40: bin}.get(len(rev), lambda x: None)(rev)
             if hsh is not None and (hsh, self.path) in self.revmap:
                 f = hsh
         if f is None:
@@ -598,7 +602,7 @@ class _annotatecontext(object):
                             self.ui.debug(
                                 b'fastannotate: reading %s line #%d '
                                 b'to resolve lines %r\n'
-                                % (node.short(hsh), linenum, idxs)
+                                % (short(hsh), linenum, idxs)
                             )
                         fctx = self._resolvefctx(hsh, revmap.rev2path(rev))
                         lines = mdiff.splitnewlines(fctx.data())
@@ -610,8 +614,7 @@ class _annotatecontext(object):
 
             # run the annotate and the lines should match to the file content
             self.ui.debug(
-                b'fastannotate: annotate %s to resolve lines\n'
-                % node.short(hsh)
+                b'fastannotate: annotate %s to resolve lines\n' % short(hsh)
             )
             linelog.annotate(rev)
             fctx = self._resolvefctx(hsh, revmap.rev2path(rev))
@@ -640,12 +643,10 @@ class _annotatecontext(object):
             hsh = f.node()
         llrev = self.revmap.hsh2rev(hsh)
         if not llrev:
-            raise faerror.CorruptedFileError(
-                b'%s is not in revmap' % node.hex(hsh)
-            )
+            raise faerror.CorruptedFileError(b'%s is not in revmap' % hex(hsh))
         if (self.revmap.rev2flag(llrev) & revmapmod.sidebranchflag) != 0:
             raise faerror.CorruptedFileError(
-                b'%s is not in revmap mainbranch' % node.hex(hsh)
+                b'%s is not in revmap mainbranch' % hex(hsh)
             )
         self.linelog.annotate(llrev)
         result = [

@@ -54,13 +54,13 @@ from .pycompat import (
     getattr,
     setattr,
 )
+from .node import hex
 
 from . import (
     commandserver,
     encoding,
     error,
     extensions,
-    node,
     pycompat,
     util,
 )
@@ -74,7 +74,7 @@ from .utils import (
 
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
-    return node.hex(hashutil.sha1(stringutil.pprint(items)).digest())
+    return hex(hashutil.sha1(stringutil.pprint(items)).digest())
 
 
 # sensitive config sections affecting confighash

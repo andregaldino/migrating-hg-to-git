@@ -4,11 +4,11 @@ import contextlib
 import errno
 import os
 
+from mercurial.node import nullid
 from mercurial import (
     error,
     extensions,
     match as matchmod,
-    node as nodemod,
     pycompat,
     scmutil,
     util,
@@ -81,14 +81,14 @@ class gitdirstate(object):
         except pygit2.GitError:
             # Typically happens when peeling HEAD fails, as in an
             # empty repository.
-            return nodemod.nullid
+            return nullid
 
     def p2(self):
         # TODO: MERGE_HEAD? something like that, right?
-        return nodemod.nullid
+        return nullid
 
-    def setparents(self, p1, p2=nodemod.nullid):
-        assert p2 == nodemod.nullid, b'TODO merging support'
+    def setparents(self, p1, p2=nullid):
+        assert p2 == nullid, b'TODO merging support'
         self.git.head.set_target(gitutil.togitnode(p1))
 
     @util.propertycache
@@ -102,7 +102,7 @@ class gitdirstate(object):
 
     def parents(self):
         # TODO how on earth do we find p2 if a merge is in flight?
-        return self.p1(), nodemod.nullid
+        return self.p1(), nullid
 
     def __iter__(self):
         return (pycompat.fsencode(f.path) for f in self.git.index)

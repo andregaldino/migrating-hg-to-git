@@ -14,7 +14,12 @@ import shutil
 import stat
 
 from .i18n import _
-from .node import nullid
+from .node import (
+    hex,
+    nullhex,
+    nullid,
+    short,
+)
 from .pycompat import getattr
 
 from . import (
@@ -35,7 +40,6 @@ from . import (
     merge as mergemod,
     mergestate as mergestatemod,
     narrowspec,
-    node,
     phases,
     pycompat,
     requirements,
@@ -108,7 +112,7 @@ def addbranchrevs(lrepo, other, branches, revs):
                 raise error.Abort(_(b"dirstate branch not accessible"))
             branch = lrepo.dirstate.branch()
         if branch in branchmap:
-            revs.extend(node.hex(r) for r in reversed(branchmap[branch]))
+            revs.extend(hex(r) for r in reversed(branchmap[branch]))
             return True
         else:
             return False
@@ -762,8 +766,8 @@ def clone(
                         },
                     ).result()
 
-                if rootnode != node.nullid:
-                    sharepath = os.path.join(sharepool, node.hex(rootnode))
+                if rootnode != nullid:
+                    sharepath = os.path.join(sharepool, hex(rootnode))
                 else:
                     ui.status(
                         _(
@@ -780,7 +784,7 @@ def clone(
                 )
         elif sharenamemode == b'remote':
             sharepath = os.path.join(
-                sharepool, node.hex(hashutil.sha1(source).digest())
+                sharepool, hex(hashutil.sha1(source).digest())
             )
         else:
             raise error.Abort(
@@ -872,9 +876,7 @@ def clone(
             # we need to re-init the repo after manually copying the data
             # into it
             destpeer = peer(srcrepo, peeropts, dest)
-            srcrepo.hook(
-                b'outgoing', source=b'clone', node=node.hex(node.nullid)
-            )
+            srcrepo.hook(b'outgoing', source=b'clone', node=nullhex)
         else:
             try:
                 # only pass ui when no srcrepo
@@ -1379,7 +1381,7 @@ def verify(repo, level=None):
             except Exception:
                 repo.ui.warn(
                     _(b'.hgsubstate is corrupt in revision %s\n')
-                    % node.short(ctx.node())
+                    % short(ctx.node())
                 )
 
     return ret

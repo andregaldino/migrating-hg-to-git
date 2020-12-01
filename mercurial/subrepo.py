@@ -18,6 +18,12 @@ import tarfile
 import xml.dom.minidom
 
 from .i18n import _
+from .node import (
+    bin,
+    hex,
+    nullid,
+    short,
+)
 from . import (
     cmdutil,
     encoding,
@@ -26,7 +32,6 @@ from . import (
     logcmdutil,
     match as matchmod,
     merge as merge,
-    node,
     pathutil,
     phases,
     pycompat,
@@ -61,7 +66,7 @@ def _expandedabspath(path):
 
 def _getstorehashcachename(remotepath):
     '''get a unique filename for the store hash cache of a remote repository'''
-    return node.hex(hashutil.sha1(_expandedabspath(remotepath)).digest())[0:12]
+    return hex(hashutil.sha1(_expandedabspath(remotepath)).digest())[0:12]
 
 
 class SubrepoAbort(error.Abort):
@@ -508,7 +513,7 @@ class hgsubrepo(abstractsubrepo):
         yield b'# %s\n' % _expandedabspath(remotepath)
         vfs = self._repo.vfs
         for relname in filelist:
-            filehash = node.hex(hashutil.sha1(vfs.tryread(relname)).digest())
+            filehash = hex(hashutil.sha1(vfs.tryread(relname)).digest())
             yield b'%s = %s\n' % (relname, filehash)
 
     @propertycache
@@ -601,11 +606,11 @@ class hgsubrepo(abstractsubrepo):
     @annotatesubrepoerror
     def diff(self, ui, diffopts, node2, match, prefix, **opts):
         try:
-            node1 = node.bin(self._state[1])
+            node1 = bin(self._state[1])
             # We currently expect node2 to come from substate and be
             # in hex format
             if node2 is not None:
-                node2 = node.bin(node2)
+                node2 = bin(node2)
             logcmdutil.diffordiffstat(
                 ui,
                 self._repo,
@@ -669,7 +674,7 @@ class hgsubrepo(abstractsubrepo):
         n = self._repo.commit(text, user, date)
         if not n:
             return self._repo[b'.'].hex()  # different version checked out
-        return node.hex(n)
+        return hex(n)
 
     @annotatesubrepoerror
     def phase(self, state):
@@ -680,7 +685,7 @@ class hgsubrepo(abstractsubrepo):
         # we can't fully delete the repository as it may contain
         # local-only history
         self.ui.note(_(b'removing subrepo %s\n') % subrelpath(self))
-        hg.clean(self._repo, node.nullid, False)
+        hg.clean(self._repo, nullid, False)
 
     def _get(self, state):
         source, revision, kind = state
@@ -1019,7 +1024,7 @@ class hgsubrepo(abstractsubrepo):
                 # explicit warning.
                 msg = _(b"subrepo '%s' is hidden in revision %s") % (
                     self._relpath,
-                    node.short(self._ctx.node()),
+                    short(self._ctx.node()),
                 )
 
                 if onpush:
@@ -1032,7 +1037,7 @@ class hgsubrepo(abstractsubrepo):
             # don't treat this as an error for `hg verify`.
             msg = _(b"subrepo '%s' not found in revision %s") % (
                 self._relpath,
-                node.short(self._ctx.node()),
+                short(self._ctx.node()),
             )
 
             if onpush:

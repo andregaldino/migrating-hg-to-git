@@ -5,9 +5,9 @@
 from __future__ import absolute_import, print_function
 
 import sys
+from mercurial.node import hex
 from mercurial import (
     encoding,
-    node,
     pycompat,
     revlog,
 )
@@ -38,9 +38,9 @@ for f in sys.argv[1:]:
         n = r.node(i)
         p = r.parents(n)
         d = r.revision(n)
-        printb(b"node: %s" % node.hex(n))
+        printb(b"node: %s" % hex(n))
         printb(b"linkrev: %d" % r.linkrev(i))
-        printb(b"parents: %s %s" % (node.hex(p[0]), node.hex(p[1])))
+        printb(b"parents: %s %s" % (hex(p[0]), hex(p[1])))
         printb(b"length: %d" % len(d))
         printb(b"-start-")
         printb(d)

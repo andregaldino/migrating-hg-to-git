@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from .i18n import _
 from .pycompat import getattr
+from .node import nullid
 from . import (
     bookmarks as bookmarksmod,
     cmdutil,
@@ -9,7 +10,6 @@ from . import (
     hg,
     lock as lockmod,
     mergestate as mergestatemod,
-    node as nodemod,
     pycompat,
     registrar,
     repair,
@@ -17,7 +17,6 @@ from . import (
     util,
 )
 
-nullid = nodemod.nullid
 release = lockmod.release
 
 cmdtable = {}

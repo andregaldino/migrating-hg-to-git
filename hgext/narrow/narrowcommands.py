@@ -10,6 +10,11 @@ import itertools
 import os
 
 from mercurial.i18n import _
+from mercurial.node import (
+    hex,
+    nullid,
+    short,
+)
 from mercurial import (
     bundle2,
     cmdutil,
@@ -21,7 +26,6 @@ from mercurial import (
     extensions,
     hg,
     narrowspec,
-    node,
     pathutil,
     pycompat,
     registrar,
@@ -184,9 +188,9 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     # we have all the nodes
     if wireprototypes.ELLIPSESCAP1 in pullop.remote.capabilities():
         kwargs[b'known'] = [
-            node.hex(ctx.node())
+            hex(ctx.node())
             for ctx in repo.set(b'::%ln', pullop.common)
-            if ctx.node() != node.nullid
+            if ctx.node() != nullid
         ]
         if not kwargs[b'known']:
             # Mercurial serializes an empty list as '' and deserializes it as
@@ -239,10 +243,10 @@ def _narrow(
         maxnodes = 10
         if ui.verbose or len(visibletostrip) <= maxnodes:
             for n in visibletostrip:
-                ui.status(b'%s\n' % node.short(n))
+                ui.status(b'%s\n' % short(n))
         else:
             for n in visibletostrip[:maxnodes]:
-                ui.status(b'%s\n' % node.short(n))
+                ui.status(b'%s\n' % short(n))
             ui.status(
                 _(b'...and %d more, use --verbose to list all\n')
                 % (len(visibletostrip) - maxnodes)
@@ -362,7 +366,7 @@ def _widen(
             ds = repo.dirstate
             p1, p2 = ds.p1(), ds.p2()
             with ds.parentchange():
-                ds.setparents(node.nullid, node.nullid)
+                ds.setparents(nullid, nullid)
         if isoldellipses:
             with wrappedextraprepare:
                 exchange.pull(repo, remote, heads=common)
@@ -372,7 +376,7 @@ def _widen(
                 known = [
                     ctx.node()
                     for ctx in repo.set(b'::%ln', common)
-                    if ctx.node() != node.nullid
+                    if ctx.node() != nullid
                 ]
             with remote.commandexecutor() as e:
                 bundle = e.callcommand(

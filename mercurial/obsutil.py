@@ -10,11 +10,14 @@ from __future__ import absolute_import
 import re
 
 from .i18n import _
+from .node import (
+    hex,
+    short,
+)
 from . import (
     diffutil,
     encoding,
     error,
-    node as nodemod,
     phases,
     pycompat,
     util,
@@ -957,13 +960,13 @@ def _getfilteredreason(repo, changeid, ctx):
     elif fate == b'diverged':
         return filteredmsgtable[b'diverged'] % changeid
     elif fate == b'superseded':
-        single_successor = nodemod.short(successors[0][0])
+        single_successor = short(successors[0][0])
         return filteredmsgtable[b'superseded'] % (changeid, single_successor)
     elif fate == b'superseded_split':
 
         succs = []
         for node_id in successors[0]:
-            succs.append(nodemod.short(node_id))
+            succs.append(short(node_id))
 
         if len(succs) <= 2:
             fmtsuccs = b', '.join(succs)
@@ -1040,7 +1043,7 @@ def whyunstable(repo, ctx):
                     b'instability': b'content-divergent',
                     b'divergentnodes': divnodes,
                     b'reason': b'predecessor',
-                    b'node': nodemod.hex(dset[b'commonpredecessor']),
+                    b'node': hex(dset[b'commonpredecessor']),
                 }
             )
     return result

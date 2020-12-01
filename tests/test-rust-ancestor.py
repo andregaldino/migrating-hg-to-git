@@ -2,10 +2,8 @@ from __future__ import absolute_import
 import sys
 import unittest
 
-from mercurial import (
-    error,
-    node,
-)
+from mercurial.node import wdirrev
+from mercurial import error
 
 from mercurial.testing import revlog as revlogtesting
 
@@ -150,7 +148,7 @@ class rustancestorstest(revlogtesting.RevlogBasedTestBase):
         # WdirUnsupported directly
         idx = self.parseindex()
         with self.assertRaises(error.WdirUnsupported):
-            list(AncestorsIterator(idx, [node.wdirrev], -1, False))
+            list(AncestorsIterator(idx, [wdirrev], -1, False))
 
     def testheadrevs(self):
         idx = self.parseindex()

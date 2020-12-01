@@ -19,6 +19,11 @@ import os
 import weakref
 
 from mercurial.i18n import _
+from mercurial.node import (
+    bin,
+    hex,
+    nullid,
+)
 
 from mercurial import (
     bookmarks,
@@ -31,7 +36,6 @@ from mercurial import (
     localrepo,
     lock,
     logcmdutil,
-    node,
     pycompat,
     registrar,
     util,
@@ -113,8 +117,8 @@ def recorddirstateparents(dirstate, old, new):
     new = list(new)
     if util.safehasattr(dirstate, 'journalstorage'):
         # only record two hashes if there was a merge
-        oldhashes = old[:1] if old[1] == node.nullid else old
-        newhashes = new[:1] if new[1] == node.nullid else new
+        oldhashes = old[:1] if old[1] == nullid else old
+        newhashes = new[:1] if new[1] == nullid else new
         dirstate.journalstorage.record(
             wdirparenttype, b'.', oldhashes, newhashes
         )
@@ -127,7 +131,7 @@ def recordbookmarks(orig, store, fp):
     if util.safehasattr(repo, 'journal'):
         oldmarks = bookmarks.bmstore(repo)
         for mark, value in pycompat.iteritems(store):
-            oldvalue = oldmarks.get(mark, node.nullid)
+            oldvalue = oldmarks.get(mark, nullid)
             if value != oldvalue:
                 repo.journal.record(bookmarktype, mark, oldvalue, value)
     return orig(store, fp)
@@ -248,8 +252,8 @@ class journalentry(
         ) = line.split(b'\n')
         timestamp, tz = time.split()
         timestamp, tz = float(timestamp), int(tz)
-        oldhashes = tuple(node.bin(hash) for hash in oldhashes.split(b','))
-        newhashes = tuple(node.bin(hash) for hash in newhashes.split(b','))
+        oldhashes = tuple(bin(hash) for hash in oldhashes.split(b','))
+        newhashes = tuple(bin(hash) for hash in newhashes.split(b','))
         return cls(
             (timestamp, tz),
             user,
@@ -263,8 +267,8 @@ class journalentry(
     def __bytes__(self):
         """bytes representation for storage"""
         time = b' '.join(map(pycompat.bytestr, self.timestamp))
-        oldhashes = b','.join([node.hex(hash) for hash in self.oldhashes])
-        newhashes = b','.join([node.hex(hash) for hash in self.newhashes])
+        oldhashes = b','.join([hex(hash) for hash in self.oldhashes])
+        newhashes = b','.join([hex(hash) for hash in self.newhashes])
         return b'\n'.join(
             (
                 time,

@@ -15,7 +15,10 @@ import os
 import stat
 
 from mercurial.i18n import _
-from mercurial.node import hex
+from mercurial.node import (
+    hex,
+    nullid,
+)
 from mercurial.pycompat import open
 
 from mercurial import (
@@ -24,7 +27,6 @@ from mercurial import (
     error,
     httpconnection,
     match as matchmod,
-    node,
     pycompat,
     scmutil,
     sparse,
@@ -610,7 +612,7 @@ def getlfilestoupload(repo, missing, addfunc):
     ) as progress:
         for i, n in enumerate(missing):
             progress.update(i)
-            parents = [p for p in repo[n].parents() if p != node.nullid]
+            parents = [p for p in repo[n].parents() if p != nullid]
 
             with lfstatus(repo, value=False):
                 ctx = repo[n]

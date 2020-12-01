@@ -17,7 +17,6 @@ from mercurial.i18n import _
 from mercurial.node import bin, hex, nullid
 from mercurial import (
     error,
-    node,
     pycompat,
     revlog,
     sshpeer,
@@ -47,12 +46,12 @@ _lfsmod = None
 
 
 def getcachekey(reponame, file, id):
-    pathhash = node.hex(hashutil.sha1(file).digest())
+    pathhash = hex(hashutil.sha1(file).digest())
     return os.path.join(reponame, pathhash[:2], pathhash[2:], id)
 
 
 def getlocalkey(file, id):
-    pathhash = node.hex(hashutil.sha1(file).digest())
+    pathhash = hex(hashutil.sha1(file).digest())
     return os.path.join(pathhash, id)
 
 

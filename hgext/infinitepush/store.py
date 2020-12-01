@@ -9,11 +9,9 @@ import abc
 import os
 import subprocess
 
+from mercurial.node import hex
 from mercurial.pycompat import open
-from mercurial import (
-    node,
-    pycompat,
-)
+from mercurial import pycompat
 from mercurial.utils import (
     hashutil,
     procutil,
@@ -86,7 +84,7 @@ class filebundlestore(object):
         return os.path.join(self._dirpath(filename), filename)
 
     def write(self, data):
-        filename = node.hex(hashutil.sha1(data).digest())
+        filename = hex(hashutil.sha1(data).digest())
         dirpath = self._dirpath(filename)
 
         if not os.path.exists(dirpath):

@@ -86,11 +86,11 @@ import collections
 import itertools
 import re
 
+from mercurial.node import nullid
 from mercurial.i18n import _
 from mercurial import (
     context,
     error,
-    node,
     obsolete,
     pycompat,
     registrar,
@@ -299,7 +299,7 @@ class simplecommitctx(context.committablectx):
         self._added = added
         self._parents = parentctxs
         while len(self._parents) < 2:
-            self._parents.append(repo[node.nullid])
+            self._parents.append(repo[nullid])
 
     def filectx(self, key):
         return simplefilectx(key, self._added[key])
@@ -388,7 +388,7 @@ def debugdrawdag(ui, repo, **opts):
         content = content.replace(br'\n', b'\n').replace(br'\1', b'\1')
         files[name][path] = content
 
-    committed = {None: node.nullid}  # {name: node}
+    committed = {None: nullid}  # {name: node}
 
     # for leaf nodes, try to find existing nodes in repo
     for name, parents in edges.items():

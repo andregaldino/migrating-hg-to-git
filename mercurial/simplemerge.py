@@ -19,10 +19,10 @@
 from __future__ import absolute_import
 
 from .i18n import _
+from .node import nullid
 from . import (
     error,
     mdiff,
-    node as nodemod,
     pycompat,
     util,
 )
@@ -452,7 +452,7 @@ def _picklabels(defaults, overrides):
 def is_not_null(ctx):
     if not util.safehasattr(ctx, "node"):
         return False
-    return ctx.node() != nodemod.nullid
+    return ctx.node() != nullid
 
 
 def _mergediff(m3, name_a, name_b, name_base):

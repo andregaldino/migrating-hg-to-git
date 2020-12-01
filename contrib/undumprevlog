@@ -6,9 +6,9 @@
 from __future__ import absolute_import, print_function
 
 import sys
+from mercurial.node import bin
 from mercurial import (
     encoding,
-    node,
     revlog,
     transaction,
     vfs as vfsmod,
@@ -31,13 +31,13 @@ while True:
         r = revlog.revlog(opener, f)
         procutil.stdout.write(b'%s\n' % f)
     elif l.startswith("node:"):
-        n = node.bin(l[6:-1])
+        n = bin(l[6:-1])
     elif l.startswith("linkrev:"):
         lr = int(l[9:-1])
     elif l.startswith("parents:"):
         p = l[9:-1].split()
-        p1 = node.bin(p[0])
-        p2 = node.bin(p[1])
+        p1 = bin(p[0])
+        p2 = bin(p[1])
     elif l.startswith("length:"):
         length = int(l[8:-1])
         sys.stdin.readline()  # start marker

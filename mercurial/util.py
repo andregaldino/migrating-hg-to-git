@@ -42,12 +42,12 @@ from .pycompat import (
     open,
     setattr,
 )
+from .node import hex
 from hgdemandimport import tracing
 from . import (
     encoding,
     error,
     i18n,
-    node as nodemod,
     policy,
     pycompat,
     urllibcompat,
@@ -254,7 +254,7 @@ class digester(object):
     def __getitem__(self, key):
         if key not in DIGESTS:
             raise error.Abort(_(b'unknown digest type: %s') % k)
-        return nodemod.hex(self._hashes[key].digest())
+        return hex(self._hashes[key].digest())
 
     def __iter__(self):
         return iter(self._hashes)

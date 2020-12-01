@@ -11,9 +11,9 @@ import string
 
 from .i18n import _
 from .pycompat import getattr
+from .node import hex
 from . import (
     error,
-    node,
     parser,
     pycompat,
     smartset,
@@ -687,7 +687,7 @@ def _formatargtype(c, arg):
         parse(arg)  # make sure syntax errors are confined
         return b'(%s)' % arg
     elif c == b'n':
-        return _quote(node.hex(arg))
+        return _quote(hex(arg))
     elif c == b'b':
         try:
             return _quote(arg.branch())
@@ -707,7 +707,7 @@ def _formatlistexp(s, t):
     elif t == b's':
         return b"_list(%s)" % _quote(b"\0".join(s))
     elif t == b'n':
-        return b"_hexlist('%s')" % b"\0".join(node.hex(a) for a in s)
+        return b"_hexlist('%s')" % b"\0".join(hex(a) for a in s)
     elif t == b'b':
         try:
             return b"_list('%s')" % b"\0".join(a.branch() for a in s)

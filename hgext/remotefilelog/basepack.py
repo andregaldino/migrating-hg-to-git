@@ -12,8 +12,8 @@ from mercurial.pycompat import (
     getattr,
     open,
 )
+from mercurial.node import hex
 from mercurial import (
-    node as nodemod,
     policy,
     pycompat,
     util,
@@ -429,7 +429,7 @@ class mutablebasepack(versionmixin):
             return
 
         try:
-            sha = nodemod.hex(self.sha.digest())
+            sha = hex(self.sha.digest())
             self.packfp.close()
             self.writeindex()
 

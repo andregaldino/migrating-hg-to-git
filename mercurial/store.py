@@ -14,11 +14,11 @@ import stat
 
 from .i18n import _
 from .pycompat import getattr
+from .node import hex
 from . import (
     changelog,
     error,
     manifest,
-    node,
     policy,
     pycompat,
     util,
@@ -273,7 +273,7 @@ _maxshortdirslen = 8 * (_dirprefixlen + 1) - 4
 
 
 def _hashencode(path, dotencode):
-    digest = node.hex(hashutil.sha1(path).digest())
+    digest = hex(hashutil.sha1(path).digest())
     le = lowerencode(path[5:]).split(b'/')  # skips prefix 'data/' or 'meta/'
     parts = _auxencode(le, dotencode)
     basename = parts[-1]

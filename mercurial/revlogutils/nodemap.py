@@ -14,10 +14,10 @@ import re
 import struct
 
 from ..i18n import _
+from ..node import hex
 
 from .. import (
     error,
-    node as nodemod,
     util,
 )
 
@@ -278,7 +278,7 @@ def _make_uid():
     """return a new unique identifier.
 
     The identifier is random and composed of ascii characters."""
-    return nodemod.hex(os.urandom(ID_SIZE))
+    return hex(os.urandom(ID_SIZE))
 
 
 class NodeMapDocket(object):
@@ -461,8 +461,8 @@ def _build_trie(index):
     """
     root = Block()
     for rev in range(len(index)):
-        hex = nodemod.hex(index[rev][7])
-        _insert_into_block(index, 0, root, rev, hex)
+        current_hex = hex(index[rev][7])
+        _insert_into_block(index, 0, root, rev, current_hex)
     return root
 
 
@@ -470,8 +470,8 @@ def _update_trie(index, root, last_rev):
     """consume"""
     changed = 0
     for rev in range(last_rev + 1, len(index)):
-        hex = nodemod.hex(index[rev][7])
-        changed += _insert_into_block(index, 0, root, rev, hex)
+        current_hex = hex(index[rev][7])
+        changed += _insert_into_block(index, 0, root, rev, current_hex)
     return changed, root
 
 
@@ -500,7 +500,7 @@ def _insert_into_block(index, level, block, current_rev, current_hex):
     else:
         # collision with a previously unique prefix, inserting new
         # vertices to fit both entry.
-        other_hex = nodemod.hex(index[entry][7])
+        other_hex = hex(index[entry][7])
         other_rev = entry
         new = Block()
         block[hex_digit] = new
@@ -604,7 +604,7 @@ def check_data(ui, index, data):
             ret = 1
         else:
             all_revs.remove(r)
-        nm_rev = _find_node(root, nodemod.hex(index[r][7]))
+        nm_rev = _find_node(root, hex(index[r][7]))
         if nm_rev is None:
             msg = b"  revision node does not match any entries: %d\n" % r
             ui.write_err(msg)

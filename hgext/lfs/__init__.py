@@ -125,6 +125,7 @@ from __future__ import absolute_import
 import sys
 
 from mercurial.i18n import _
+from mercurial.node import bin
 
 from mercurial import (
     bundlecaches,
@@ -137,7 +138,6 @@ from mercurial import (
     filesetlang,
     localrepo,
     minifileset,
-    node,
     pycompat,
     revlog,
     scmutil,
@@ -260,11 +260,10 @@ def _reposetup(ui, repo):
                 return 0
 
             last = kwargs.get('node_last')
-            _bin = node.bin
             if last:
-                s = repo.set(b'%n:%n', _bin(kwargs['node']), _bin(last))
+                s = repo.set(b'%n:%n', bin(kwargs['node']), bin(last))
             else:
-                s = repo.set(b'%n', _bin(kwargs['node']))
+                s = repo.set(b'%n', bin(kwargs['node']))
             match = repo._storenarrowmatch
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?

@@ -11,11 +11,13 @@ import collections
 import os
 
 from .i18n import _
-
+from .node import (
+    nullid,
+    nullrev,
+)
 
 from . import (
     match as matchmod,
-    node,
     pathutil,
     policy,
     pycompat,
@@ -147,7 +149,7 @@ def _committedforwardcopies(a, b, base, match):
     # optimization, since the ctx.files() for a merge commit is not correct for
     # this comparison.
     forwardmissingmatch = match
-    if b.p1() == a and b.p2().node() == node.nullid:
+    if b.p1() == a and b.p2().node() == nullid:
         filesmatcher = matchmod.exact(b.files())
         forwardmissingmatch = matchmod.intersectmatchers(match, filesmatcher)
     missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
@@ -233,7 +235,7 @@ def _revinfo_getter(repo, match):
             else:
                 raw = None
             value = (p1, p2, raw)
-            if p1 != node.nullrev and p2 != node.nullrev:
+            if p1 != nullrev and p2 != nullrev:
                 # XXX some case we over cache, IGNORE
                 merge_caches[rev] = value
             return value
@@ -250,7 +252,7 @@ def _revinfo_getter(repo, match):
             if flags(rev) & HASCOPIESINFO:
                 changes = changelogrevision(rev).changes
             value = (p1, p2, changes)
-            if p1 != node.nullrev and p2 != node.nullrev:
+            if p1 != nullrev and p2 != nullrev:
                 # XXX some case we over cache, IGNORE
                 merge_caches[rev] = value
             return value
@@ -277,7 +279,7 @@ def cached_is_ancestor(is_ancestor):
 
 
 def _changesetforwardcopies(a, b, match):
-    if a.rev() in (node.nullrev, b.rev()):
+    if a.rev() in (nullrev, b.rev()):
         return {}
 
     repo = a.repo().unfiltered()
@@ -290,7 +292,7 @@ def _changesetforwardcopies(a, b, match):
     roots = set()
     for r in missingrevs:
         for p in cl.parentrevs(r):
-            if p == node.nullrev:
+            if p == nullrev:
                 continue
             if p not in children:
                 children[p] = [r]
@@ -494,7 +496,7 @@ def _revinfo_getter_extra(repo):
             parents = fctx._filelog.parents(fctx._filenode)
             nb_parents = 0
             for n in parents:
-                if n != node.nullid:
+                if n != nullid:
                     nb_parents += 1
             return nb_parents >= 2
 
@@ -668,7 +670,7 @@ def pathcopies(x, y, match=None):
         if debug:
             repo.ui.debug(b'debug.copies: search mode: combined\n')
         base = None
-        if a.rev() != node.nullrev:
+        if a.rev() != nullrev:
             base = x
         copies = _chain(
             _backwardrenames(x, a, match=match),

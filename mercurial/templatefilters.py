@@ -12,10 +12,10 @@ import re
 import time
 
 from .i18n import _
+from .node import hex
 from . import (
     encoding,
     error,
-    node,
     pycompat,
     registrar,
     smartset,
@@ -280,7 +280,7 @@ def hexfilter(text):
     """Any text. Convert a binary Mercurial node identifier into
     its long hexadecimal representation.
     """
-    return node.hex(text)
+    return hex(text)
 
 
 @templatefilter(b'hgdate', intype=templateutil.date)

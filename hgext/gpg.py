@@ -11,12 +11,17 @@ import binascii
 import os
 
 from mercurial.i18n import _
+from mercurial.node import (
+    bin,
+    hex,
+    nullid,
+    short,
+)
 from mercurial import (
     cmdutil,
     error,
     help,
     match,
-    node as hgnode,
     pycompat,
     registrar,
 )
@@ -155,7 +160,7 @@ def sigwalk(repo):
     # read the heads
     fl = repo.file(b".hgsigs")
     for r in reversed(fl.heads()):
-        fn = b".hgsigs|%s" % hgnode.short(r)
+        fn = b".hgsigs|%s" % short(r)
         for item in parsefile(fl.read(r).splitlines(), fn):
             yield item
     try:
@@ -172,7 +177,7 @@ def getkeys(ui, repo, mygpg, sigdata, context):
     fn, ln = context
     node, version, sig = sigdata
     prefix = b"%s:%d" % (fn, ln)
-    node = hgnode.bin(node)
+    node = bin(node)
 
     data = node2txt(repo, node, version)
     sig = binascii.a2b_base64(sig)
@@ -223,7 +228,7 @@ def sigs(ui, repo):
         revs[r].extend(keys)
     for rev in sorted(revs, reverse=True):
         for k in revs[rev]:
-            r = b"%5d:%s" % (rev, hgnode.hex(repo.changelog.node(rev)))
+            r = b"%5d:%s" % (rev, hex(repo.changelog.node(rev)))
             ui.write(b"%-30s %s\n" % (keystr(ui, k), r))
 
 
@@ -232,7 +237,7 @@ def sigcheck(ui, repo, rev):
     """verify all the signatures there may be for a particular revision"""
     mygpg = newgpg(ui)
     rev = repo.lookup(rev)
-    hexrev = hgnode.hex(rev)
+    hexrev = hex(rev)
     keys = []
 
     for data, context in sigwalk(repo):
@@ -243,11 +248,11 @@ def sigcheck(ui, repo, rev):
                 keys.extend(k)
 
     if not keys:
-        ui.write(_(b"no valid signature for %s\n") % hgnode.short(rev))
+        ui.write(_(b"no valid signature for %s\n") % short(rev))
         return
 
     # print summary
-    ui.write(_(b"%s is signed by:\n") % hgnode.short(rev))
+    ui.write(_(b"%s is signed by:\n") % short(rev))
     for key in keys:
         ui.write(b" %s\n" % keystr(ui, key))
 
@@ -309,9 +314,7 @@ def _dosign(ui, repo, *revs, **opts):
     if revs:
         nodes = [repo.lookup(n) for n in revs]
     else:
-        nodes = [
-            node for node in repo.dirstate.parents() if node != hgnode.nullid
-        ]
+        nodes = [node for node in repo.dirstate.parents() if node != nullid]
         if len(nodes) > 1:
             raise error.Abort(
                 _(b'uncommitted merge - please provide a specific revision')
@@ -320,10 +323,8 @@ def _dosign(ui, repo, *revs, **opts):
             nodes = [repo.changelog.tip()]
 
     for n in nodes:
-        hexnode = hgnode.hex(n)
-        ui.write(
-            _(b"signing %d:%s\n") % (repo.changelog.rev(n), hgnode.short(n))
-        )
+        hexnode = hex(n)
+        ui.write(_(b"signing %d:%s\n") % (repo.changelog.rev(n), short(n)))
         # build data
         data = node2txt(repo, n, sigver)
         sig = mygpg.sign(data)
@@ -360,10 +361,7 @@ def _dosign(ui, repo, *revs, **opts):
     if not message:
         # we don't translate commit messages
         message = b"\n".join(
-            [
-                b"Added signature for changeset %s" % hgnode.short(n)
-                for n in nodes
-            ]
+            [b"Added signature for changeset %s" % short(n) for n in nodes]
         )
     try:
         editor = cmdutil.getcommiteditor(
@@ -379,7 +377,7 @@ def _dosign(ui, repo, *revs, **opts):
 def node2txt(repo, node, ver):
     """map a manifest into some text"""
     if ver == b"0":
-        return b"%s\n" % hgnode.hex(node)
+        return b"%s\n" % hex(node)
     else:
         raise error.Abort(_(b"unknown signature version"))
 

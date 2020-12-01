@@ -6,9 +6,9 @@ import collections
 import hashlib
 import sys
 
+from mercurial.node import nullid
 from mercurial import (
     encoding,
-    node,
     revlog,
     transaction,
     vfs,
@@ -93,7 +93,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
     """
     nextrev = len(rlog)
     p1 = rlog.node(nextrev - 1)
-    p2 = node.nullid
+    p2 = nullid
     if isext:
         flags = revlog.REVIDX_EXTSTORED
     else:
@@ -127,7 +127,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     class dummychangegroup(object):
         @staticmethod
         def deltachunk(pnode):
-            pnode = pnode or node.nullid
+            pnode = pnode or nullid
             parentrev = rlog.rev(pnode)
             r = parentrev + 1
             if r >= len(rlog):
@@ -142,7 +142,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
             return {
                 b'node': rlog.node(r),
                 b'p1': pnode,
-                b'p2': node.nullid,
+                b'p2': nullid,
                 b'cs': rlog.node(rlog.linkrev(r)),
                 b'flags': rlog.flags(r),
                 b'deltabase': rlog.node(deltaparent),
@@ -181,7 +181,7 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
     dlog = newrevlog(destname, recreate=True)
     for r in rlog:
         p1 = rlog.node(r - 1)
-        p2 = node.nullid
+        p2 = nullid
         if r == 0 or (rlog.flags(r) & revlog.REVIDX_EXTSTORED):
             text = rlog.rawdata(r)
             cachedelta = None

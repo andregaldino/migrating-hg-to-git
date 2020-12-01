@@ -156,12 +156,16 @@ import struct
 import sys
 
 from .i18n import _
+from .node import (
+    hex,
+    nullid,
+    short,
+)
 from . import (
     bookmarks,
     changegroup,
     encoding,
     error,
-    node as nodemod,
     obsolete,
     phases,
     pushkey,
@@ -2131,14 +2135,14 @@ def handlecheckbookmarks(op, inpart):
         currentnode = op.repo._bookmarks.get(book)
         if currentnode != node:
             if node is None:
-                finalmsg = msgexist % (book, nodemod.short(currentnode))
+                finalmsg = msgexist % (book, short(currentnode))
             elif currentnode is None:
-                finalmsg = msgmissing % (book, nodemod.short(node))
+                finalmsg = msgmissing % (book, short(node))
             else:
                 finalmsg = msgstandard % (
                     book,
-                    nodemod.short(node),
-                    nodemod.short(currentnode),
+                    short(node),
+                    short(currentnode),
                 )
             raise error.PushRaced(finalmsg)
 
@@ -2215,7 +2219,7 @@ def handlecheckphases(op, inpart):
             actualphase = phasecache.phase(unfi, cl.rev(n))
             if actualphase != expectedphase:
                 finalmsg = msg % (
-                    nodemod.short(n),
+                    short(n),
                     phases.phasenames[actualphase],
                     phases.phasenames[expectedphase],
                 )
@@ -2360,10 +2364,8 @@ def handlebookmark(op, inpart):
                 hookargs[b'pushkeycompat'] = b'1'
                 hookargs[b'namespace'] = b'bookmarks'
                 hookargs[b'key'] = book
-                hookargs[b'old'] = nodemod.hex(bookstore.get(book, b''))
-                hookargs[b'new'] = nodemod.hex(
-                    node if node is not None else b''
-                )
+                hookargs[b'old'] = hex(bookstore.get(book, b''))
+                hookargs[b'new'] = hex(node if node is not None else b'')
                 allhooks.append(hookargs)
 
             for hookargs in allhooks:
@@ -2569,7 +2571,7 @@ def widen_bundle(
             fullnodes=commonnodes,
         )
         cgdata = packer.generate(
-            {nodemod.nullid},
+            {nullid},
             list(commonnodes),
             False,
             b'narrow_widen',

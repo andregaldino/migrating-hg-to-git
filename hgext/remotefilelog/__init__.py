@@ -130,7 +130,10 @@ import os
 import time
 import traceback
 
-from mercurial.node import hex
+from mercurial.node import (
+    hex,
+    wdirrev,
+)
 from mercurial.i18n import _
 from mercurial.pycompat import open
 from mercurial import (
@@ -150,7 +153,6 @@ from mercurial import (
     match as matchmod,
     merge,
     mergestate as mergestatemod,
-    node as nodemod,
     patch,
     pycompat,
     registrar,
@@ -1091,7 +1093,7 @@ def _fileprefetchhook(repo, revmatches):
     if isenabled(repo):
         allfiles = []
         for rev, match in revmatches:
-            if rev == nodemod.wdirrev or rev is None:
+            if rev == wdirrev or rev is None:
                 continue
             ctx = repo[rev]
             mf = ctx.manifest()

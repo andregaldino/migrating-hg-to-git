@@ -19,12 +19,12 @@ import re
 
 from mercurial.i18n import _
 from mercurial.pycompat import open
+from mercurial.node import hex
 from mercurial import (
     cmdutil,
     config,
     error,
     minirst,
-    node,
     pycompat,
     registrar,
     scmutil,
@@ -381,7 +381,7 @@ def parsenotesfromrevisions(repo, directives, revs):
             if not paragraphs:
                 repo.ui.warn(
                     _(b"error parsing releasenotes for revision: '%s'\n")
-                    % node.hex(ctx.node())
+                    % hex(ctx.node())
                 )
             if title:
                 notes.addtitleditem(directive, title, paragraphs)
