@@ -4636,12 +4636,6 @@ def log(ui, repo, *pats, **opts):
         # then filter the result by logcmdutil._makerevset() and --limit
         revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
 
-    if opts.get(b'bookmark'):
-        cmdutil.check_at_most_one_arg(opts, b'rev', b'bookmark')
-        bookmarks = opts.get(b'bookmark')
-        bookmark = bookmarks[0]
-        revs, differ = logcmdutil.get_bookmark_revs(repo, bookmark, walk_opts)
-
     getcopies = None
     if opts.get(b'copies'):
         endrev = None

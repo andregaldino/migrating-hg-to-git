@@ -691,6 +691,7 @@ class walkopts(object):
     revspec = attr.ib()  # type: List[bytes]
 
     # miscellaneous queries to filter revisions (see "hg help log" for details)
+    bookmarks = attr.ib(default=attr.Factory(list))  # type: List[bytes]
     branches = attr.ib(default=attr.Factory(list))  # type: List[bytes]
     date = attr.ib(default=None)  # type: Optional[bytes]
     keywords = attr.ib(default=attr.Factory(list))  # type: List[bytes]
@@ -746,6 +747,7 @@ def parseopts(ui, pats, opts):
         pats=pats,
         opts=opts,
         revspec=opts.get(b'rev', []),
+        bookmarks=opts.get(b'bookmark', []),
         # branch and only_branch are really aliases and must be handled at
         # the same time
         branches=opts.get(b'branch', []) + opts.get(b'only_branch', []),
@@ -937,6 +939,14 @@ def _makerevset(repo, wopts, slowpath):
                 val = [revsetlang.formatspec(revop, v) for v in val]
             expr.append(revsetlang.formatspec(listop, val))
 
+    if wopts.bookmarks:
+        expr.append(
+            revsetlang.formatspec(
+                b'%lr',
+                [scmutil.format_bookmark_revspec(v) for v in wopts.bookmarks],
+            )
+        )
+
     if expr:
         expr = b'(' + b' and '.join(expr) + b')'
     else:
@@ -1020,26 +1030,6 @@ def getrevs(repo, wopts):
         return revs, None
     differ = changesetdiffer()
     differ._makefilematcher = filematcher
-    return revs, differ
-
-
-def get_bookmark_revs(repo, bookmark, walk_opts):
-    # type: (Any, bookmark, walk_opts) -> Tuple[smartset.abstractsmartset, Optional[changesetdiffer]]
-    """Return (revs, differ) where revs is a smartset
-
-    differ is a changesetdiffer with pre-configured file matcher.
-    """
-    revs, filematcher = makewalker(repo, walk_opts)
-    if not revs:
-        return revs, None
-    differ = changesetdiffer()
-    differ._makefilematcher = filematcher
-
-    if bookmark:
-        if bookmark not in repo._bookmarks:
-            raise error.Abort(_(b"bookmark '%s' not found") % bookmark)
-        revs = scmutil.bookmarkrevs(repo, bookmark)
-
     return revs, differ
 
 

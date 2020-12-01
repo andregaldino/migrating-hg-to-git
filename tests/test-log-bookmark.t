@@ -125,3 +125,68 @@ Check the log of topic X, topic Y, and default branch
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     Add foo in 'default'
   
+
+Set up multiple bookmarked heads:
+
+  $ hg bookmark merged-head
+  $ hg up 1
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (leaving bookmark merged-head)
+  $ echo "Z" > z.txt
+  $ hg ci -Am 'Add Z'
+  adding z.txt
+  $ hg bookmark topic-Z
+
+  $ hg log -GT '{rev}: {branch}, {bookmarks}\n'
+  @  5: sebhtml, topic-Z
+  |
+  | o  4: default, merged-head
+  |/|
+  | o    3: default,
+  | |\
+  | | o  2: sebhtml, sebhtml/99992-topic-Y
+  | |/
+  o |  1: sebhtml, sebhtml/99991-topic-X
+  |/
+  o  0: default,
+  
+
+Multiple revisions under bookmarked head:
+
+  $ hg log -GT '{rev}: {branch}, {bookmarks}\n' -B merged-head
+  o    4: default, merged-head
+  |\
+  | ~
+  o    3: default,
+  |\
+  ~ ~
+
+Follows multiple bookmarks:
+
+  $ hg log -GT '{rev}: {branch}, {bookmarks}\n' -B merged-head -B topic-Z
+  @  5: sebhtml, topic-Z
+  |
+  ~
+  o    4: default, merged-head
+  |\
+  | ~
+  o    3: default,
+  |\
+  ~ ~
+
+Filter by bookmark and branch:
+
+  $ hg log -GT '{rev}: {branch}, {bookmarks}\n' -B merged-head -B topic-Z -b default
+  o    4: default, merged-head
+  |\
+  | ~
+  o    3: default,
+  |\
+  ~ ~
+
+
+Unknown bookmark:
+
+  $ hg log -B unknown
+  abort: bookmark 'unknown' does not exist
+  [255]
