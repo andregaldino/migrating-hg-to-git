@@ -74,8 +74,6 @@ def upgraderepo(
     # Ensure the repository can be upgraded.
     upgrade_actions.check_source_requirements(repo)
 
-    # FUTURE there is potentially a need to control the wanted requirements via
-    # command arguments or via an extension hook point.
     newreqs = localrepo.newreporequirements(
         repo.ui, localrepo.defaultcreateopts(repo.ui)
     )
