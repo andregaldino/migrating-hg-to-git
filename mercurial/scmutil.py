@@ -2304,7 +2304,13 @@ def bookmarkrevs(repo, mark):
 
     If the bookmarked revision isn't a head, an empty set will be returned.
     """
-    return repo.revs(
+    return repo.revs(format_bookmark_revspec(mark))
+
+
+def format_bookmark_revspec(mark):
+    """Build a revset expression to select revisions reachable by a given
+    bookmark"""
+    return revsetlang.formatspec(
         b"ancestors(bookmark(%s)) - "
         b"ancestors(head() and not bookmark(%s)) - "
         b"ancestors(bookmark() and not bookmark(%s))",
