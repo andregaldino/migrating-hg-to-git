@@ -37,9 +37,12 @@ from mercurial import (
     scmutil,
     smartset,
     subrepo,
-    upgrade,
     url as urlmod,
     util,
+)
+
+from mercurial.upgrade_utils import (
+    actions as upgrade_actions,
 )
 
 from . import (
@@ -1837,8 +1840,8 @@ def scmutilmarktouched(orig, repo, files, *args, **kwargs):
     return result
 
 
-@eh.wrapfunction(upgrade, b'preservedrequirements')
-@eh.wrapfunction(upgrade, b'supporteddestrequirements')
+@eh.wrapfunction(upgrade_actions, b'preservedrequirements')
+@eh.wrapfunction(upgrade_actions, b'supporteddestrequirements')
 def upgraderequirements(orig, repo):
     reqs = orig(repo)
     if b'largefiles' in repo.requirements:

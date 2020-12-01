@@ -28,13 +28,15 @@ from mercurial import (
     pycompat,
     revlog,
     scmutil,
-    upgrade,
     util,
     vfs as vfsmod,
     wireprotov1server,
 )
 
-from mercurial.upgrade_utils import engine as upgrade_engine
+from mercurial.upgrade_utils import (
+    actions as upgrade_actions,
+    engine as upgrade_engine,
+)
 
 from mercurial.interfaces import repository
 
@@ -539,8 +541,8 @@ def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
                 lfutil.link(srclfsvfs.join(oid), dstlfsvfs.join(oid))
 
 
-@eh.wrapfunction(upgrade, b'preservedrequirements')
-@eh.wrapfunction(upgrade, b'supporteddestrequirements')
+@eh.wrapfunction(upgrade_actions, b'preservedrequirements')
+@eh.wrapfunction(upgrade_actions, b'supporteddestrequirements')
 def upgraderequirements(orig, repo):
     reqs = orig(repo)
     if b'lfs' in repo.requirements:
