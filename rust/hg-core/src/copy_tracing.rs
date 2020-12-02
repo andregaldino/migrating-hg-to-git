@@ -244,7 +244,7 @@ impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
     }
 
     /// returns `true` if `anc` is an ancestors of `desc`, `false` otherwise
-    fn is_ancestor(&mut self, anc: Revision, desc: Revision) -> bool {
+    fn is_overwrite(&mut self, anc: Revision, desc: Revision) -> bool {
         if anc > desc {
             false
         } else if anc == desc {
@@ -705,7 +705,7 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
         if src_major.rev == src_minor.rev {
             // If the two entry are identical, they are both valid
             MergePick::Any
-        } else if oracle.is_ancestor(src_major.rev, src_minor.rev) {
+        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
             MergePick::Minor
         } else {
             MergePick::Major
@@ -733,7 +733,7 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
             // from each side might conflict.  The major side will
             // win such conflict.
             MergePick::Major
-        } else if oracle.is_ancestor(src_major.rev, src_minor.rev) {
+        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
             // If the minor side is strictly newer than the major
             // side, it should be kept.
             MergePick::Minor
@@ -741,7 +741,7 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
             // without any special case, the "major" value win
             // other the "minor" one.
             MergePick::Major
-        } else if oracle.is_ancestor(src_minor.rev, src_major.rev) {
+        } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
             // the "major" rev is a direct ancestors of "minor",
             // any different value should
             // overwrite
