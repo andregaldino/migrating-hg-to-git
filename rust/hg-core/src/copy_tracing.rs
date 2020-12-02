@@ -731,11 +731,13 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
         } else {
             // The last value comes the current merge, this value -will- win
             // eventually.
+            oracle.record_overwrite(src_minor.rev, src_major.rev);
             MergePick::Major
         }
     } else if src_minor.rev == current_merge {
         // The last value comes the current merge, this value -will- win
         // eventually.
+        oracle.record_overwrite(src_major.rev, src_minor.rev);
         MergePick::Minor
     } else if src_major.path == src_minor.path {
         // we have the same value, but from other source;
