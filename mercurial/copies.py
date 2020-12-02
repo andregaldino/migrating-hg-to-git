@@ -930,7 +930,6 @@ def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
     addedfiles: added files on the other side (compared to ctx)
     """
     # generate a directory move map
-    d = ctx.dirs()
     invalid = set()
     dirmove = {}
 
@@ -941,7 +940,7 @@ def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
         if dsrc in invalid:
             # already seen to be uninteresting
             continue
-        elif dsrc in d and ddst in d:
+        elif ctx.hasdir(dsrc) and ctx.hasdir(ddst):
             # directory wasn't entirely moved locally
             invalid.add(dsrc)
         elif dsrc in dirmove and dirmove[dsrc] != ddst:
@@ -954,7 +953,7 @@ def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
     for i in invalid:
         if i in dirmove:
             del dirmove[i]
-    del d, invalid
+    del invalid
 
     if not dirmove:
         return {}, {}
