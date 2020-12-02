@@ -523,13 +523,10 @@ fn add_from_changes(
                 // propagate this information when merging two
                 // TimeStampedPathCopies object.
                 let deleted = path_map.tokenize(deleted_path);
-                if copies.contains_key(&deleted) {
-                    let ttpc = TimeStampedPathCopy {
-                        rev: current_rev,
-                        path: None,
-                    };
-                    copies.insert(deleted, ttpc);
-                }
+                copies.entry(deleted).and_modify(|old| {
+                    old.rev = current_rev;
+                    old.path = None;
+                });
             }
         }
     }
