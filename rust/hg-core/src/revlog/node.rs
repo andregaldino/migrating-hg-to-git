@@ -9,6 +9,7 @@
 //! of a revision.
 
 use hex::{self, FromHex, FromHexError};
+use std::convert::{TryFrom, TryInto};
 
 /// The length in bytes of a `Node`
 ///
@@ -65,6 +66,19 @@ impl From<NodeData> for Node {
     }
 }
 
+/// Return an error if the slice has an unexpected length
+impl<'a> TryFrom<&'a [u8]> for &'a Node {
+    type Error = std::array::TryFromSliceError;
+
+    #[inline]
+    fn try_from(bytes: &'a [u8]) -> Result<&'a Node, Self::Error> {
+        let data = bytes.try_into()?;
+        // Safety: `#[repr(transparent)]` makes it ok to "wrap" the target
+        // of a reference to the type of the single field.
+        Ok(unsafe { std::mem::transmute::<&NodeData, &Node>(data) })
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum NodeError {
     ExactLengthRequired(usize, String),
@@ -103,8 +117,8 @@ impl Node {
     ///
     /// To be used in FFI and I/O only, in order to facilitate future
     /// changes of hash format.
-    pub fn from_hex(hex: &str) -> Result<Node, NodeError> {
-        Ok(NodeData::from_hex(hex)
+    pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Node, NodeError> {
+        Ok(NodeData::from_hex(hex.as_ref())
             .map_err(|e| NodeError::from((e, hex)))?
             .into())
     }
@@ -126,17 +140,15 @@ impl Node {
     }
 }
 
-impl<T: AsRef<str>> From<(FromHexError, T)> for NodeError {
+impl<T: AsRef<[u8]>> From<(FromHexError, T)> for NodeError {
     fn from(err_offender: (FromHexError, T)) -> Self {
         let (err, offender) = err_offender;
+        let offender = String::from_utf8_lossy(offender.as_ref()).into_owned();
         match err {
             FromHexError::InvalidStringLength => {
-                NodeError::ExactLengthRequired(
-                    NODE_NYBBLES_LENGTH,
-                    offender.as_ref().to_owned(),
-                )
+                NodeError::ExactLengthRequired(NODE_NYBBLES_LENGTH, offender)
             }
-            _ => NodeError::HexError(err, offender.as_ref().to_owned()),
+            _ => NodeError::HexError(err, offender),
         }
     }
 }
@@ -171,8 +183,8 @@ impl NodePrefix {
 
         let is_odd = len % 2 == 1;
         let even_part = if is_odd { &hex[..len - 1] } else { hex };
-        let mut buf: Vec<u8> = Vec::from_hex(&even_part)
-            .map_err(|e| (e, String::from_utf8_lossy(hex)))?;
+        let mut buf: Vec<u8> =
+            Vec::from_hex(&even_part).map_err(|e| (e, hex))?;
 
         if is_odd {
             let latest_char = char::from(hex[len - 1]);
@@ -182,7 +194,7 @@ impl NodePrefix {
                         c: latest_char,
                         index: len - 1,
                     },
-                    String::from_utf8_lossy(hex),
+                    hex,
                 )
             })? as u8;
             buf.push(latest_nybble << 4);
@@ -278,6 +290,12 @@ impl<'a> From<&'a Node> for NodePrefixRef<'a> {
     }
 }
 
+impl PartialEq<Node> for NodePrefixRef<'_> {
+    fn eq(&self, other: &Node) -> bool {
+        !self.is_odd && self.buf == other.data
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,7 +310,7 @@ mod tests {
     }
 
     /// Pad an hexadecimal string to reach `NODE_NYBBLES_LENGTH`
-    ///
+    ///check_hash
     /// The padding is made with zeros
     pub fn hex_pad_right(hex: &str) -> String {
         let mut res = hex.to_string();

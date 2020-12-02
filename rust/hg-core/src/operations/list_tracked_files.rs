@@ -8,6 +8,7 @@
 use crate::dirstate::parsers::parse_dirstate;
 use crate::revlog::changelog::Changelog;
 use crate::revlog::manifest::{Manifest, ManifestEntry};
+use crate::revlog::node::{Node, NodePrefix};
 use crate::revlog::revlog::RevlogError;
 use crate::revlog::Revision;
 use crate::utils::hg_path::HgPath;
@@ -171,15 +172,16 @@ impl<'a> ListRevTrackedFiles<'a> {
         let changelog_entry = match self.rev.parse::<Revision>() {
             Ok(rev) => self.changelog.get_rev(rev)?,
             _ => {
-                let changelog_node = hex::decode(&self.rev)
+                let changelog_node = NodePrefix::from_hex(&self.rev)
                     .or(Err(ListRevTrackedFilesErrorKind::InvalidRevision))?;
-                self.changelog.get_node(&changelog_node)?
+                self.changelog.get_node(changelog_node.borrow())?
             }
         };
-        let manifest_node = hex::decode(&changelog_entry.manifest_node()?)
+        let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
             .or(Err(ListRevTrackedFilesErrorKind::CorruptedRevlog))?;
 
-        self.manifest_entry = Some(self.manifest.get_node(&manifest_node)?);
+        self.manifest_entry =
+            Some(self.manifest.get_node((&manifest_node).into())?);
 
         if let Some(ref manifest_entry) = self.manifest_entry {
             Ok(manifest_entry.files())

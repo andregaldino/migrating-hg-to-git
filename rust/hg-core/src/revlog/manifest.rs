@@ -1,4 +1,5 @@
 use crate::revlog::revlog::{Revlog, RevlogError};
+use crate::revlog::NodePrefixRef;
 use crate::revlog::Revision;
 use crate::utils::hg_path::HgPath;
 use std::path::PathBuf;
@@ -18,7 +19,10 @@ impl Manifest {
     }
 
     /// Return the `ManifestEntry` of a given node id.
-    pub fn get_node(&self, node: &[u8]) -> Result<ManifestEntry, RevlogError> {
+    pub fn get_node(
+        &self,
+        node: NodePrefixRef,
+    ) -> Result<ManifestEntry, RevlogError> {
         let rev = self.revlog.get_node_rev(node)?;
         self.get_rev(rev)
     }

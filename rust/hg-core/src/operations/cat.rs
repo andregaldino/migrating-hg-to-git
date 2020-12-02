@@ -13,6 +13,8 @@ use crate::revlog::manifest::{Manifest, ManifestEntry};
 use crate::revlog::path_encode::path_encode;
 use crate::revlog::revlog::Revlog;
 use crate::revlog::revlog::RevlogError;
+use crate::revlog::Node;
+use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
@@ -108,15 +110,16 @@ impl<'a> CatRev<'a> {
         let changelog_entry = match self.rev.parse::<Revision>() {
             Ok(rev) => self.changelog.get_rev(rev)?,
             _ => {
-                let changelog_node = hex::decode(&self.rev)
+                let changelog_node = NodePrefix::from_hex(&self.rev)
                     .map_err(|_| CatRevErrorKind::InvalidRevision)?;
-                self.changelog.get_node(&changelog_node)?
+                self.changelog.get_node(changelog_node.borrow())?
             }
         };
-        let manifest_node = hex::decode(&changelog_entry.manifest_node()?)
+        let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
             .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
 
-        self.manifest_entry = Some(self.manifest.get_node(&manifest_node)?);
+        self.manifest_entry =
+            Some(self.manifest.get_node((&manifest_node).into())?);
         if let Some(ref manifest_entry) = self.manifest_entry {
             let mut bytes = vec![];
 
@@ -132,9 +135,10 @@ impl<'a> CatRev<'a> {
 
                         let file_log =
                             Revlog::open(&index_path, Some(&data_path))?;
-                        let file_node = hex::decode(&node_bytes)
+                        let file_node = Node::from_hex(node_bytes)
                             .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
-                        let file_rev = file_log.get_node_rev(&file_node)?;
+                        let file_rev =
+                            file_log.get_node_rev((&file_node).into())?;
                         let data = file_log.get_rev_data(file_rev)?;
                         if data.starts_with(&METADATA_DELIMITER) {
                             let end_delimiter_position = data

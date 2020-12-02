@@ -13,7 +13,7 @@ use micro_timer::timed;
 use zstd;
 
 use super::index::Index;
-use super::node::{NODE_BYTES_LENGTH, NULL_NODE_ID};
+use super::node::{NodePrefixRef, NODE_BYTES_LENGTH, NULL_NODE};
 use super::patch;
 use crate::revlog::Revision;
 
@@ -92,17 +92,20 @@ impl Revlog {
 
     /// Return the full data associated to a node.
     #[timed]
-    pub fn get_node_rev(&self, node: &[u8]) -> Result<Revision, RevlogError> {
+    pub fn get_node_rev(
+        &self,
+        node: NodePrefixRef,
+    ) -> Result<Revision, RevlogError> {
         // This is brute force. But it is fast enough for now.
         // Optimization will come later.
         let mut found_by_prefix = None;
         for rev in (0..self.len() as Revision).rev() {
             let index_entry =
                 self.index.get_entry(rev).ok_or(RevlogError::Corrupted)?;
-            if index_entry.hash() == node {
+            if node == *index_entry.hash() {
                 return Ok(rev);
             }
-            if index_entry.hash().starts_with(node) {
+            if node.is_prefix_of(index_entry.hash()) {
                 if found_by_prefix.is_some() {
                     return Err(RevlogError::AmbiguousPrefix);
                 }
@@ -143,7 +146,7 @@ impl Revlog {
         if self.check_hash(
             index_entry.p1(),
             index_entry.p2(),
-            index_entry.hash(),
+            index_entry.hash().as_bytes(),
             &data,
         ) {
             Ok(data)
@@ -163,15 +166,15 @@ impl Revlog {
         let e1 = self.index.get_entry(p1);
         let h1 = match e1 {
             Some(ref entry) => entry.hash(),
-            None => &NULL_NODE_ID,
+            None => &NULL_NODE,
         };
         let e2 = self.index.get_entry(p2);
         let h2 = match e2 {
             Some(ref entry) => entry.hash(),
-            None => &NULL_NODE_ID,
+            None => &NULL_NODE,
         };
 
-        hash(data, &h1, &h2).as_slice() == expected
+        hash(data, h1.as_bytes(), h2.as_bytes()).as_slice() == expected
     }
 
     /// Build the full data of a revision out its snapshot

@@ -1,4 +1,5 @@
 use crate::revlog::revlog::{Revlog, RevlogError};
+use crate::revlog::NodePrefixRef;
 use crate::revlog::Revision;
 use std::path::PathBuf;
 
@@ -19,7 +20,7 @@ impl Changelog {
     /// Return the `ChangelogEntry` a given node id.
     pub fn get_node(
         &self,
-        node: &[u8],
+        node: NodePrefixRef,
     ) -> Result<ChangelogEntry, RevlogError> {
         let rev = self.revlog.get_node_rev(node)?;
         self.get_rev(rev)

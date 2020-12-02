@@ -7,6 +7,7 @@
 
 use super::find_root;
 use crate::revlog::revlog::{Revlog, RevlogError};
+use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
 
 /// Kind of data to debug
@@ -107,9 +108,9 @@ impl<'a> DebugData<'a> {
         let data = match self.rev.parse::<Revision>() {
             Ok(rev) => revlog.get_rev_data(rev)?,
             _ => {
-                let node = hex::decode(&self.rev)
+                let node = NodePrefix::from_hex(&self.rev)
                     .map_err(|_| DebugDataErrorKind::InvalidRevision)?;
-                let rev = revlog.get_node_rev(&node)?;
+                let rev = revlog.get_node_rev(node.borrow())?;
                 revlog.get_rev_data(rev)?
             }
         };

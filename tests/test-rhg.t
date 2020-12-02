@@ -115,8 +115,10 @@ Specifying revisions by changeset ID
   $ rhg cat -r cf8b83 file-2
   2
   $ rhg cat -r c file-2
-  abort: invalid revision identifier c
+  abort: ambiguous revision identifier c
   [255]
+  $ rhg cat -r d file-2
+  2
 
 Cat files
   $ cd $TESTTMP

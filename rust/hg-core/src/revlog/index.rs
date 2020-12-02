@@ -1,7 +1,9 @@
+use std::convert::TryInto;
 use std::ops::Deref;
 
 use byteorder::{BigEndian, ByteOrder};
 
+use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
 use crate::revlog::{Revision, NULL_REVISION};
 
@@ -188,8 +190,8 @@ impl<'a> IndexEntry<'a> {
     ///
     /// Currently, SHA-1 is used and only the first 20 bytes of this field
     /// are used.
-    pub fn hash(&self) -> &[u8] {
-        &self.bytes[32..52]
+    pub fn hash(&self) -> &Node {
+        (&self.bytes[32..52]).try_into().unwrap()
     }
 }
 
