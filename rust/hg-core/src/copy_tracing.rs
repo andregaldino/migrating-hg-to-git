@@ -431,6 +431,7 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                     // them.
                     Some(copies) => Some(merge_copies_dict(
                         &path_map,
+                        rev,
                         vertex_copies,
                         copies,
                         &changes,
@@ -558,6 +559,7 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
 /// cases. See inline documentation for details.
 fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     path_map: &TwoWayPathMap,
+    current_merge: Revision,
     mut minor: TimeStampedPathCopies,
     mut major: TimeStampedPathCopies,
     changes: &ChangedFiles,
@@ -571,7 +573,13 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
          src_minor: &TimeStampedPathCopy,
          src_major: &TimeStampedPathCopy| {
             compare_value(
-                path_map, changes, oracle, dest, src_minor, src_major,
+                path_map,
+                current_merge,
+                changes,
+                oracle,
+                dest,
+                src_minor,
+                src_major,
             )
         };
     if minor.is_empty() {
@@ -703,13 +711,33 @@ enum MergePick {
 #[allow(clippy::if_same_then_else)]
 fn compare_value<A: Fn(Revision, Revision) -> bool>(
     path_map: &TwoWayPathMap,
+    current_merge: Revision,
     changes: &ChangedFiles,
     oracle: &mut AncestorOracle<A>,
     dest: &PathToken,
     src_minor: &TimeStampedPathCopy,
     src_major: &TimeStampedPathCopy,
 ) -> MergePick {
-    if src_major.path == src_minor.path {
+    if src_major.rev == current_merge {
+        if src_minor.rev == current_merge {
+            if src_major.path.is_none() {
+                // We cannot get different copy information for both p1 and p2
+                // from the same revision. Unless this was a
+                // deletion
+                MergePick::Any
+            } else {
+                unreachable!();
+            }
+        } else {
+            // The last value comes the current merge, this value -will- win
+            // eventually.
+            MergePick::Major
+        }
+    } else if src_minor.rev == current_merge {
+        // The last value comes the current merge, this value -will- win
+        // eventually.
+        MergePick::Minor
+    } else if src_major.path == src_minor.path {
         // we have the same value, but from other source;
         if src_major.rev == src_minor.rev {
             // If the two entry are identical, they are both valid
