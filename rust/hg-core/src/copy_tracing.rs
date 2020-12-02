@@ -4,6 +4,7 @@ use crate::Revision;
 use crate::NULL_REVISION;
 
 use im_rc::ordmap::DiffItem;
+use im_rc::ordmap::Entry;
 use im_rc::ordmap::OrdMap;
 
 use std::cmp::Ordering;
@@ -510,11 +511,20 @@ fn add_from_changes(
                 // record this information as we will need it to take
                 // the right decision when merging conflicting copy
                 // information. See merge_copies_dict for details.
-                let ttpc = TimeStampedPathCopy {
-                    rev: current_rev,
-                    path: entry,
-                };
-                copies.insert(dest.to_owned(), ttpc);
+                match copies.entry(dest) {
+                    Entry::Vacant(slot) => {
+                        let ttpc = TimeStampedPathCopy {
+                            rev: current_rev,
+                            path: entry,
+                        };
+                        slot.insert(ttpc);
+                    }
+                    Entry::Occupied(mut slot) => {
+                        let mut ttpc = slot.get_mut();
+                        ttpc.rev = current_rev;
+                        ttpc.path = entry;
+                    }
+                }
             }
             Action::Removed(deleted_path) => {
                 // We must drop copy information for removed file.
