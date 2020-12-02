@@ -187,15 +187,16 @@ if pycompat.ispy3:
             sys.stderr.buffer, sys.stderr.encoding, sys.stderr.errors, **kwargs
         )
 
-        # No write_through on read-only stream.
-        sys.stdin = io.TextIOWrapper(
-            sys.stdin.buffer,
-            sys.stdin.encoding,
-            sys.stdin.errors,
-            # None is universal newlines mode.
-            newline=None,
-            line_buffering=sys.stdin.line_buffering,
-        )
+        if sys.stdin is not None:
+            # No write_through on read-only stream.
+            sys.stdin = io.TextIOWrapper(
+                sys.stdin.buffer,
+                sys.stdin.encoding,
+                sys.stdin.errors,
+                # None is universal newlines mode.
+                newline=None,
+                line_buffering=sys.stdin.line_buffering,
+            )
 
     def _silencestdio():
         for fp in (sys.stdout, sys.stderr):
