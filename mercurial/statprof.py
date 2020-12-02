@@ -732,6 +732,9 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
                     i += 1
                 if i < len(stack):
                     child.add(stack[i:], time)
+            else:
+                # Normally this is done by the .add() calls
+                child.count += time
 
     root = HotNode(None)
     lasttime = data.samples[0].time
@@ -749,12 +752,8 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
         ]
         if site:
             indent = depth * 2 - 1
-            filename = b''
-            function = b''
-            if len(node.children) > 0:
-                childsite = list(pycompat.itervalues(node.children))[0].site
-                filename = (childsite.filename() + b':').ljust(15)
-                function = childsite.function
+            filename = (site.filename() + b':').ljust(15)
+            function = site.function
 
             # lots of string formatting
             listpattern = (

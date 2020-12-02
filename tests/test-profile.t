@@ -100,6 +100,8 @@ Various statprof formatters work
 
   $ hg --profile --config profiling.statformat=hotpath sleep 2>../out || cat ../out
   $ cat ../out | statprofran
+  $ grep sleepext.py ../out
+  .* [0-9.]+%  [0-9.]+s  sleepext.py:\s*sleep           line 7:  time\.sleep.* (re)
 
   $ hg --profile --config profiling.statformat=json sleep 2>../out || cat ../out
   $ cat ../out
