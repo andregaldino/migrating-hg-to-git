@@ -13,6 +13,7 @@ Create a repository:
   ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.promptecho=True
+  ui.timeout.warn=15
   web.address=localhost
   web\.ipv6=(?:True|False) (re)
   web.server-header=testing stub value

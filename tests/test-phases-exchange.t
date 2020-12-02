@@ -1322,7 +1322,7 @@ server won't turn changeset public.
 error, but EEXIST)
 
   $ touch .hg/store/lock
-  $ hg push ../Phi --config ui.timeout=1
+  $ hg push ../Phi --config ui.timeout=1 --config ui.timeout.warn=0
   pushing to ../Phi
   waiting for lock on repository $TESTTMP/Upsilon held by ''
   abort: repository $TESTTMP/Upsilon: timed out waiting for lock held by ''

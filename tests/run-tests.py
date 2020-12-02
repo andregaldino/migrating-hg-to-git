@@ -1448,6 +1448,7 @@ class Test(unittest.TestCase):
             hgrc.write(b'merge = internal:merge\n')
             hgrc.write(b'mergemarkers = detailed\n')
             hgrc.write(b'promptecho = True\n')
+            hgrc.write(b'timeout.warn=15\n')
             hgrc.write(b'[defaults]\n')
             hgrc.write(b'[devel]\n')
             hgrc.write(b'all-warnings = true\n')
