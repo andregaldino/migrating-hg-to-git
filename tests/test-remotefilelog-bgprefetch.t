@@ -271,9 +271,7 @@
   $ hg up -r 3
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ clearcache
-  $ hg prefetch --repack
-  waiting for lock on prefetching in $TESTTMP/shallow held by process * on host * (glob) (?)
-  got lock after * seconds (glob) (?)
+  $ hg prefetch --repack --config ui.timeout.warn=-1
   (running background incremental repack)
   * files fetched over 1 fetches - (* misses, 0.00% hit ratio) over *s (glob) (?)
 
@@ -312,9 +310,7 @@
 # Check that foreground prefetch fetches revs specified by '. + draft() + bgprefetchrevs + pullprefetch'
 
   $ clearcache
-  $ hg prefetch --repack
-  waiting for lock on prefetching in $TESTTMP/shallow held by process * on host * (glob) (?)
-  got lock after * seconds (glob) (?)
+  $ hg prefetch --repack --config ui.timeout.warn=-1
   (running background incremental repack)
   * files fetched over 1 fetches - (* misses, 0.00% hit ratio) over *s (glob) (?)
 
