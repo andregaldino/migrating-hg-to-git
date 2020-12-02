@@ -165,3 +165,36 @@ Requirements
   $ rhg debugrequirements
   abort: .hg/requires is corrupted
   [255]
+
+Persistent nodemap
+  $ cd $TESTTMP
+  $ rm -rf repository
+  $ hg init repository
+  $ cd repository
+  $ rhg debugrequirements | grep nodemap
+  [1]
+  $ hg debugbuilddag .+5000 --overwritten-file --config "storage.revlog.nodemap.mode=warn"
+  $ hg id -r tip
+  c3ae8dec9fad tip
+  $ ls .hg/store/00changelog*
+  .hg/store/00changelog.d
+  .hg/store/00changelog.i
+  $ rhg files -r c3ae8dec9fad
+  of
+
+  $ cd $TESTTMP
+  $ rm -rf repository
+  $ hg --config format.use-persistent-nodemap=True init repository
+  $ cd repository
+  $ rhg debugrequirements | grep nodemap
+  persistent-nodemap
+  $ hg debugbuilddag .+5000 --overwritten-file --config "storage.revlog.nodemap.mode=warn"
+  $ hg id -r tip
+  c3ae8dec9fad tip
+  $ ls .hg/store/00changelog*
+  .hg/store/00changelog-*.nd (glob)
+  .hg/store/00changelog.d
+  .hg/store/00changelog.i
+  .hg/store/00changelog.n
+  $ rhg files -r c3ae8dec9fad
+  [252]
