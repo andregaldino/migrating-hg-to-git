@@ -638,7 +638,12 @@ class rebaseruntime(object):
                                 b"commit again in the working copy\n"
                             )
                         )
-                        cmdutil.bailifchanged(repo)
+                        try:
+                            cmdutil.bailifchanged(repo)
+                        except error.Abort:
+                            clearstatus(repo)
+                            clearcollapsemsg(repo)
+                            raise
                         self.inmemory = False
                         self._assignworkingcopy()
                         mergemod.update(repo[p1], wc=self.wctx)
