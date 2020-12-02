@@ -487,6 +487,14 @@ Retrying without in-memory merge won't lose working copy changes
   [255]
   $ cat a
   dirty
+  $ hg status -v
+  M a
+  # The repository is in an unfinished *rebase* state.
+  
+  # To continue:    hg rebase --continue
+  # To abort:       hg rebase --abort
+  # To stop:        hg rebase --stop
+  
 
 Retrying without in-memory merge won't lose merge state
   $ cd ..
