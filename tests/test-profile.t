@@ -64,19 +64,19 @@ A single profile is logged because file logging doesn't append
 
 Install an extension that can sleep and guarantee a profiler has time to run
 
-  $ cat >> sleepext.py << EOF
+  $ cat >> sleepext_with_a_long_filename.py << EOF
   > import time
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'sleep', [], b'hg sleep')
-  > def sleep(ui, *args, **kwargs):
+  > def sleep_for_at_least_one_stat_cycle(ui, *args, **kwargs):
   >     time.sleep(0.1)
   > EOF
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
-  > sleep = `pwd`/sleepext.py
+  > sleep = `pwd`/sleepext_with_a_long_filename.py
   > EOF
 
 statistical profiler works
@@ -90,7 +90,7 @@ Various statprof formatters work
   $ grep -v _path_stat ../out | head -n 3
     %   cumulative      self          
    time    seconds   seconds  name    
-  * sleepext.py:*:sleep (glob)
+  * sleepext_with_a_long_filename.py:*:sleep_for_at_least_one_stat_cycle (glob)
   $ cat ../out | statprofran
 
   $ hg --profile --config profiling.statformat=bymethod sleep 2>../out || cat ../out
@@ -100,8 +100,8 @@ Various statprof formatters work
 
   $ hg --profile --config profiling.statformat=hotpath sleep 2>../out || cat ../out
   $ cat ../out | statprofran
-  $ grep sleepext.py ../out
-  .* [0-9.]+%  [0-9.]+s  sleepext.py:\s*sleep           line 7:  time\.sleep.* (re)
+  $ grep sleepext_with_a_long_filename.py ../out
+  .* [0-9.]+%  [0-9.]+s  sleepext_with_a_long_filename.py:\s*sleep_for_at_least_one_stat_cycle, line 7:    time\.sleep.* (re)
 
   $ hg --profile --config profiling.statformat=json sleep 2>../out || cat ../out
   $ cat ../out

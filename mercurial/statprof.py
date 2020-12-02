@@ -768,10 +768,18 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
                 filename,
                 function,
             )
-            codepattern = b'%' + (b'%d' % (55 - len(liststring))) + b's %d:  %s'
+            # 4 to account for the word 'line'
+            spacing_len = max(4, 55 - len(liststring))
+            prefix = b''
+            if spacing_len == 4:
+                prefix = b', '
+
+            codepattern = b'%s%s %d: %s%s'
             codestring = codepattern % (
-                b'line',
+                prefix,
+                b'line'.rjust(spacing_len),
                 site.lineno,
+                b''.ljust(max(0, 4 - len(str(site.lineno)))),
                 site.getsource(30),
             )
 
