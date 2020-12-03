@@ -1211,4 +1211,4 @@ def hook(ui, repo, hooktype, node=None, **kwargs):
                 bz.update(bug, bugs[bug], ctx)
             bz.notify(bugs, stringutil.email(ctx.user()))
     except Exception as e:
-        raise error.Abort(_(b'Bugzilla error: %s') % e)
+        raise error.Abort(_(b'Bugzilla error: %s') % stringutil.forcebytestr(e))
