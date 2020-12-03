@@ -429,11 +429,11 @@ Raise error on simultaneous usage of flags
   $ cd relnotes-raise-error
   $ hg releasenotes -r . -l
   abort: cannot specify both --list and --rev
-  [255]
+  [10]
 
   $ hg releasenotes -l -c
   abort: cannot specify both --list and --check
-  [255]
+  [10]
 
 Display release notes for specified revs if no file is mentioned
 
