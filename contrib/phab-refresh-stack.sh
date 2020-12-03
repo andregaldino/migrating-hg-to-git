@@ -6,7 +6,7 @@ revision_on_phab=`hg log --rev '.#stack and ::. and desc("re:\nDifferential Revi
 
 if [[ $revision_in_stack -eq 0 ]]; then
     echo "stack is empty" >&2
-    exit 1
+    exit 0
 fi
 
 if [[ $revision_on_phab -eq 0 ]]; then
