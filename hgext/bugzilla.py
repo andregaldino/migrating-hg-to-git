@@ -759,7 +759,9 @@ class bzxmlrpc(bzaccess):
         self.fixstatus = self.ui.config(b'bugzilla', b'fixstatus')
         self.fixresolution = self.ui.config(b'bugzilla', b'fixresolution')
 
-        self.bzproxy = xmlrpclib.ServerProxy(bzweb, self.transport(bzweb))
+        self.bzproxy = xmlrpclib.ServerProxy(
+            pycompat.strurl(bzweb), self.transport(bzweb)
+        )
         ver = self.bzproxy.Bugzilla.version()[b'version'].split(b'.')
         self.bzvermajor = int(ver[0])
         self.bzverminor = int(ver[1])
