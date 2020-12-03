@@ -818,23 +818,24 @@ class treemanifest(object):
 
     def _loadalllazy(self):
         selfdirs = self._dirs
-        for d, (path, node, readsubtree, docopy) in pycompat.iteritems(
+        subpath = self._subpath
+        for d, (node, readsubtree, docopy) in pycompat.iteritems(
             self._lazydirs
         ):
             if docopy:
-                selfdirs[d] = readsubtree(path, node).copy()
+                selfdirs[d] = readsubtree(subpath(d), node).copy()
             else:
-                selfdirs[d] = readsubtree(path, node)
+                selfdirs[d] = readsubtree(subpath(d), node)
         self._lazydirs = {}
 
     def _loadlazy(self, d):
         v = self._lazydirs.get(d)
         if v:
-            path, node, readsubtree, docopy = v
+            node, readsubtree, docopy = v
             if docopy:
-                self._dirs[d] = readsubtree(path, node).copy()
+                self._dirs[d] = readsubtree(self._subpath(d), node).copy()
             else:
-                self._dirs[d] = readsubtree(path, node)
+                self._dirs[d] = readsubtree(self._subpath(d), node)
             del self._lazydirs[d]
 
     def _loadchildrensetlazy(self, visit):
@@ -861,7 +862,7 @@ class treemanifest(object):
         toloadlazy = []
         for d, v1 in pycompat.iteritems(t1._lazydirs):
             v2 = t2._lazydirs.get(d)
-            if not v2 or v2[1] != v1[1]:
+            if not v2 or v2[0] != v1[0]:
                 toloadlazy.append(d)
         for d, v1 in pycompat.iteritems(t2._lazydirs):
             if d not in t1._lazydirs:
@@ -1092,8 +1093,8 @@ class treemanifest(object):
             def _copyfunc(s):
                 self._load()
                 s._lazydirs = {
-                    d: (p, n, r, True)
-                    for d, (p, n, r, c) in pycompat.iteritems(self._lazydirs)
+                    d: (n, r, True)
+                    for d, (n, r, c) in pycompat.iteritems(self._lazydirs)
                 }
                 sdirs = s._dirs
                 for d, v in pycompat.iteritems(self._dirs):
@@ -1317,13 +1318,12 @@ class treemanifest(object):
 
     def parse(self, text, readsubtree):
         selflazy = self._lazydirs
-        subpath = self._subpath
         for f, n, fl in _parse(text):
             if fl == b't':
                 f = f + b'/'
                 # False below means "doesn't need to be copied" and can use the
                 # cached value from readsubtree directly.
-                selflazy[f] = (subpath(f), n, readsubtree, False)
+                selflazy[f] = (n, readsubtree, False)
             elif b'/' in f:
                 # This is a flat manifest, so use __setitem__ and setflag rather
                 # than assigning directly to _files and _flags, so we can
@@ -1351,7 +1351,7 @@ class treemanifest(object):
         self._load()
         flags = self.flags
         lazydirs = [
-            (d[:-1], v[1], b't') for d, v in pycompat.iteritems(self._lazydirs)
+            (d[:-1], v[0], b't') for d, v in pycompat.iteritems(self._lazydirs)
         ]
         dirs = [(d[:-1], self._dirs[d]._node, b't') for d in self._dirs]
         files = [(f, self._files[f], flags(f)) for f in self._files]
@@ -1373,7 +1373,7 @@ class treemanifest(object):
         def getnode(m, d):
             ld = m._lazydirs.get(d)
             if ld:
-                return ld[1]
+                return ld[0]
             return m._dirs.get(d, emptytree)._node
 
         # let's skip investigating things that `match` says we do not need.
