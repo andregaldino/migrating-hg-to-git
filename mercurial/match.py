@@ -575,7 +575,7 @@ def path_or_parents_in_set(path, prefix_set):
     # directory hierarchies are relatively shallow and hash lookup is cheap.
     if l > 5:
         return any(
-                parentdir in prefix_set for parentdir in pathutil.finddirs(path)
+            parentdir in prefix_set for parentdir in pathutil.finddirs(path)
         )
 
     # FIXME: Ideally we'd never get to this point if this is the case - we'd
@@ -640,10 +640,7 @@ class patternmatcher(basematcher):
     def visitdir(self, dir):
         if self._prefix and dir in self._fileset:
             return b'all'
-        return (
-            dir in self._dirs
-            or path_or_parents_in_set(dir, self._fileset)
-        )
+        return dir in self._dirs or path_or_parents_in_set(dir, self._fileset)
 
     def visitchildrenset(self, dir):
         ret = self.visitdir(dir)
