@@ -276,6 +276,7 @@ static void execcmdserver(const struct cmdserveropts *opts)
 		debugmsg("closing files based on /proc contents");
 		struct dirent *de;
 		while ((de = readdir(dp))) {
+			errno = 0;
 			char *end;
 			long fd_value = strtol(de->d_name, &end, 10);
 			if (end == de->d_name) {
@@ -288,7 +289,8 @@ static void execcmdserver(const struct cmdserveropts *opts)
 				         de->d_name);
 				continue;
 			}
-			if (fd_value > STDERR_FILENO) {
+			if (fd_value > STDERR_FILENO && fd_value != dirfd(dp)) {
+				debugmsg("closing fd %ld", fd_value);
 				int res = close(fd_value);
 				if (res) {
 					debugmsg("tried to close fd %ld: %d "
@@ -297,6 +299,7 @@ static void execcmdserver(const struct cmdserveropts *opts)
 				}
 			}
 		}
+		closedir(dp);
 	}
 
 	if (putenv("CHGINTERNALMARK=") != 0)

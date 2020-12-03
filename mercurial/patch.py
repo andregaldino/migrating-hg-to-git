@@ -2730,8 +2730,8 @@ def diffsinglehunk(hunklines):
 def diffsinglehunkinline(hunklines):
     """yield tokens for a list of lines in a single hunk, with inline colors"""
     # prepare deleted, and inserted content
-    a = b''
-    b = b''
+    a = bytearray()
+    b = bytearray()
     for line in hunklines:
         if line[0:1] == b'-':
             a += line[1:]
@@ -2745,8 +2745,8 @@ def diffsinglehunkinline(hunklines):
             yield t
         return
     # re-split the content into words
-    al = wordsplitter.findall(a)
-    bl = wordsplitter.findall(b)
+    al = wordsplitter.findall(bytes(a))
+    bl = wordsplitter.findall(bytes(b))
     # re-arrange the words to lines since the diff algorithm is line-based
     aln = [s if s == b'\n' else s + b'\n' for s in al]
     bln = [s if s == b'\n' else s + b'\n' for s in bl]

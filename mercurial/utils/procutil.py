@@ -656,7 +656,7 @@ if pycompat.iswindows:
                 stdin.seek(0)
 
             p = subprocess.Popen(
-                tonativestr(script),
+                pycompat.rapply(tonativestr, script),
                 shell=shell,
                 env=tonativeenv(env),
                 close_fds=True,
