@@ -196,5 +196,9 @@ Persistent nodemap
   .hg/store/00changelog.d
   .hg/store/00changelog.i
   .hg/store/00changelog.n
+
+Specifying revisions by changeset ID
   $ rhg files -r c3ae8dec9fad
-  [252]
+  of
+  $ rhg cat -r c3ae8dec9fad of
+  r5000

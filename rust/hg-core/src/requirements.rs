@@ -69,4 +69,8 @@ const SUPPORTED: &[&str] = &[
     "revlogv1",
     "sparserevlog",
     "store",
+    // As of this writing everything rhg does is read-only.
+    // When it starts writing to the repository, it’ll need to either keep the
+    // persistent nodemap up to date or remove this entry:
+    "persistent-nodemap",
 ];

@@ -14,6 +14,9 @@ use zstd;
 
 use super::index::Index;
 use super::node::{NodePrefixRef, NODE_BYTES_LENGTH, NULL_NODE};
+use super::nodemap;
+use super::nodemap::NodeMap;
+use super::nodemap_docket::NodeMapDocket;
 use super::patch;
 use crate::revlog::Revision;
 
@@ -27,7 +30,7 @@ pub enum RevlogError {
     UnknowDataFormat(u8),
 }
 
-fn mmap_open(path: &Path) -> Result<Mmap, std::io::Error> {
+pub(super) fn mmap_open(path: &Path) -> Result<Mmap, std::io::Error> {
     let file = File::open(path)?;
     let mmap = unsafe { MmapOptions::new().map(&file) }?;
     Ok(mmap)
@@ -41,6 +44,8 @@ pub struct Revlog {
     index: Index,
     /// When index and data are not interleaved: bytes of the revlog data
     data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>>,
+    /// When present on disk: the persistent nodemap for this revlog
+    nodemap: Option<nodemap::NodeTree>,
 }
 
 impl Revlog {
@@ -77,7 +82,20 @@ impl Revlog {
                 Some(Box::new(data_mmap))
             };
 
-        Ok(Revlog { index, data_bytes })
+        let nodemap = NodeMapDocket::read_from_file(index_path)?.map(
+            |(docket, data)| {
+                nodemap::NodeTree::load_bytes(
+                    Box::new(data),
+                    docket.data_length,
+                )
+            },
+        );
+
+        Ok(Revlog {
+            index,
+            data_bytes,
+            nodemap,
+        })
     }
 
     /// Return number of entries of the `Revlog`.
@@ -96,8 +114,20 @@ impl Revlog {
         &self,
         node: NodePrefixRef,
     ) -> Result<Revision, RevlogError> {
-        // This is brute force. But it is fast enough for now.
-        // Optimization will come later.
+        if let Some(nodemap) = &self.nodemap {
+            return nodemap
+                .find_bin(&self.index, node)
+                // TODO: propagate details of this error:
+                .map_err(|_| RevlogError::Corrupted)?
+                .ok_or(RevlogError::InvalidRevision);
+        }
+
+        // Fallback to linear scan when a persistent nodemap is not present.
+        // This happens when the persistent-nodemap experimental feature is not
+        // enabled, or for small revlogs.
+        //
+        // TODO: consider building a non-persistent nodemap in memory to
+        // optimize these cases.
         let mut found_by_prefix = None;
         for rev in (0..self.len() as Revision).rev() {
             let index_entry =
