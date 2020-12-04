@@ -895,7 +895,7 @@ class httpv2peer(object):
             return True
 
         # Other concepts.
-        if name in b'bundle2':
+        if name in (b'bundle2',):
             return True
 
         # Alias command-* to presence of command of that name.
