@@ -744,7 +744,7 @@ def clearchangelog(repo):
 # perf commands
 
 
-@command(b'perfwalk', formatteropts)
+@command(b'perf--walk', formatteropts)
 def perfwalk(ui, repo, *pats, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -759,7 +759,7 @@ def perfwalk(ui, repo, *pats, **opts):
     fm.end()
 
 
-@command(b'perfannotate', formatteropts)
+@command(b'perf--annotate', formatteropts)
 def perfannotate(ui, repo, f, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -769,7 +769,7 @@ def perfannotate(ui, repo, f, **opts):
 
 
 @command(
-    b'perfstatus',
+    b'perf--status',
     [
         (b'u', b'unknown', False, b'ask status to look for unknown files'),
         (b'', b'dirstate', False, b'benchmark the internal dirstate call'),
@@ -806,7 +806,7 @@ def perfstatus(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfaddremove', formatteropts)
+@command(b'perf--addremove', formatteropts)
 def perfaddremove(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -837,7 +837,7 @@ def clearcaches(cl):
         cl._nodepos = None
 
 
-@command(b'perfheads', formatteropts)
+@command(b'perf--heads', formatteropts)
 def perfheads(ui, repo, **opts):
     """benchmark the computation of a changelog heads"""
     opts = _byteskwargs(opts)
@@ -855,7 +855,7 @@ def perfheads(ui, repo, **opts):
 
 
 @command(
-    b'perftags',
+    b'perf--tags',
     formatteropts
     + [
         (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
@@ -880,7 +880,7 @@ def perftags(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfancestors', formatteropts)
+@command(b'perf--ancestors', formatteropts)
 def perfancestors(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -894,7 +894,7 @@ def perfancestors(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfancestorset', formatteropts)
+@command(b'perf--ancestorset', formatteropts)
 def perfancestorset(ui, repo, revset, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -910,7 +910,7 @@ def perfancestorset(ui, repo, revset, **opts):
     fm.end()
 
 
-@command(b'perfdiscovery', formatteropts, b'PATH')
+@command(b'perf--discovery', formatteropts, b'PATH')
 def perfdiscovery(ui, repo, path, **opts):
     """benchmark discovery between local repo and the peer at given path"""
     repos = [repo, None]
@@ -928,7 +928,7 @@ def perfdiscovery(ui, repo, path, **opts):
 
 
 @command(
-    b'perfbookmarks',
+    b'perf--bookmarks',
     formatteropts
     + [
         (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
@@ -953,7 +953,7 @@ def perfbookmarks(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfbundleread', formatteropts, b'BUNDLE')
+@command(b'perf--bundleread', formatteropts, b'BUNDLE')
 def perfbundleread(ui, repo, bundlepath, **opts):
     """Benchmark reading of bundle files.
 
@@ -1080,7 +1080,7 @@ def perfbundleread(ui, repo, bundlepath, **opts):
 
 
 @command(
-    b'perfchangegroupchangelog',
+    b'perf--changegroupchangelog',
     formatteropts
     + [
         (b'', b'cgversion', b'02', b'changegroup version'),
@@ -1116,7 +1116,7 @@ def perfchangegroupchangelog(ui, repo, cgversion=b'02', rev=None, **opts):
     fm.end()
 
 
-@command(b'perfdirs', formatteropts)
+@command(b'perf--dirs', formatteropts)
 def perfdirs(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -1132,7 +1132,7 @@ def perfdirs(ui, repo, **opts):
 
 
 @command(
-    b'perfdirstate',
+    b'perf--dirstate',
     [
         (
             b'',
@@ -1195,7 +1195,7 @@ def perfdirstate(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfdirstatedirs', formatteropts)
+@command(b'perf--dirstatedirs', formatteropts)
 def perfdirstatedirs(ui, repo, **opts):
     """benchmap a 'dirstate.hasdir' call from an empty `dirs` cache"""
     opts = _byteskwargs(opts)
@@ -1212,7 +1212,7 @@ def perfdirstatedirs(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfdirstatefoldmap', formatteropts)
+@command(b'perf--dirstatefoldmap', formatteropts)
 def perfdirstatefoldmap(ui, repo, **opts):
     """benchmap a `dirstate._map.filefoldmap.get()` request
 
@@ -1233,7 +1233,7 @@ def perfdirstatefoldmap(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfdirfoldmap', formatteropts)
+@command(b'perf--dirfoldmap', formatteropts)
 def perfdirfoldmap(ui, repo, **opts):
     """benchmap a `dirstate._map.dirfoldmap.get()` request
 
@@ -1255,7 +1255,7 @@ def perfdirfoldmap(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfdirstatewrite', formatteropts)
+@command(b'perf--dirstatewrite', formatteropts)
 def perfdirstatewrite(ui, repo, **opts):
     """benchmap the time it take to write a dirstate on disk"""
     opts = _byteskwargs(opts)
@@ -1297,7 +1297,7 @@ def _getmergerevs(repo, opts):
 
 
 @command(
-    b'perfmergecalculate',
+    b'perf--mergecalculate',
     [
         (b'r', b'rev', b'.', b'rev to merge against'),
         (b'', b'from', b'', b'rev to merge from'),
@@ -1330,7 +1330,7 @@ def perfmergecalculate(ui, repo, **opts):
 
 
 @command(
-    b'perfmergecopies',
+    b'perf--mergecopies',
     [
         (b'r', b'rev', b'.', b'rev to merge against'),
         (b'', b'from', b'', b'rev to merge from'),
@@ -1353,7 +1353,7 @@ def perfmergecopies(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfpathcopies', [], b"REV REV")
+@command(b'perf--pathcopies', [], b"REV REV")
 def perfpathcopies(ui, repo, rev1, rev2, **opts):
     """benchmark the copy tracing logic"""
     opts = _byteskwargs(opts)
@@ -1369,7 +1369,7 @@ def perfpathcopies(ui, repo, rev1, rev2, **opts):
 
 
 @command(
-    b'perfphases',
+    b'perf--phases',
     [
         (b'', b'full', False, b'include file reading time too'),
     ],
@@ -1394,7 +1394,7 @@ def perfphases(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfphasesremote', [], b"[DEST]")
+@command(b'perf--phasesremote', [], b"[DEST]")
 def perfphasesremote(ui, repo, dest=None, **opts):
     """benchmark time needed to analyse phases of the remote server"""
     from mercurial.node import bin
@@ -1455,7 +1455,7 @@ def perfphasesremote(ui, repo, dest=None, **opts):
 
 
 @command(
-    b'perfmanifest',
+    b'perf--manifest',
     [
         (b'm', b'manifest-rev', False, b'Look up a manifest node revision'),
         (b'', b'clear-disk', False, b'clear on-disk caches too'),
@@ -1499,7 +1499,7 @@ def perfmanifest(ui, repo, rev, manifest_rev=False, clear_disk=False, **opts):
     fm.end()
 
 
-@command(b'perfchangeset', formatteropts)
+@command(b'perf--changeset', formatteropts)
 def perfchangeset(ui, repo, rev, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -1513,7 +1513,7 @@ def perfchangeset(ui, repo, rev, **opts):
     fm.end()
 
 
-@command(b'perfignore', formatteropts)
+@command(b'perf--ignore', formatteropts)
 def perfignore(ui, repo, **opts):
     """benchmark operation related to computing ignore"""
     opts = _byteskwargs(opts)
@@ -1532,7 +1532,7 @@ def perfignore(ui, repo, **opts):
 
 
 @command(
-    b'perfindex',
+    b'perf--index',
     [
         (b'', b'rev', [], b'revision to be looked up (default tip)'),
         (b'', b'no-lookup', None, b'do not revision lookup post creation'),
@@ -1596,7 +1596,7 @@ def perfindex(ui, repo, **opts):
 
 
 @command(
-    b'perfnodemap',
+    b'perf--nodemap',
     [
         (b'', b'rev', [], b'revision to be looked up (default tip)'),
         (b'', b'clear-caches', True, b'clear revlog cache between calls'),
@@ -1667,7 +1667,7 @@ def perfnodemap(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfstartup', formatteropts)
+@command(b'perf--startup', formatteropts)
 def perfstartup(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -1685,7 +1685,7 @@ def perfstartup(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfparents', formatteropts)
+@command(b'perf--parents', formatteropts)
 def perfparents(ui, repo, **opts):
     """benchmark the time necessary to fetch one changeset's parents.
 
@@ -1712,7 +1712,7 @@ def perfparents(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfctxfiles', formatteropts)
+@command(b'perf--ctxfiles', formatteropts)
 def perfctxfiles(ui, repo, x, **opts):
     opts = _byteskwargs(opts)
     x = int(x)
@@ -1725,7 +1725,7 @@ def perfctxfiles(ui, repo, x, **opts):
     fm.end()
 
 
-@command(b'perfrawfiles', formatteropts)
+@command(b'perf--rawfiles', formatteropts)
 def perfrawfiles(ui, repo, x, **opts):
     opts = _byteskwargs(opts)
     x = int(x)
@@ -1739,7 +1739,7 @@ def perfrawfiles(ui, repo, x, **opts):
     fm.end()
 
 
-@command(b'perflookup', formatteropts)
+@command(b'perf--lookup', formatteropts)
 def perflookup(ui, repo, rev, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -1748,7 +1748,7 @@ def perflookup(ui, repo, rev, **opts):
 
 
 @command(
-    b'perflinelogedits',
+    b'perf--linelogedits',
     [
         (b'n', b'edits', 10000, b'number of edits'),
         (b'', b'max-hunk-lines', 10, b'max lines in a hunk'),
@@ -1786,7 +1786,7 @@ def perflinelogedits(ui, **opts):
     fm.end()
 
 
-@command(b'perfrevrange', formatteropts)
+@command(b'perf--revrange', formatteropts)
 def perfrevrange(ui, repo, *specs, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -1795,7 +1795,7 @@ def perfrevrange(ui, repo, *specs, **opts):
     fm.end()
 
 
-@command(b'perfnodelookup', formatteropts)
+@command(b'perf--nodelookup', formatteropts)
 def perfnodelookup(ui, repo, rev, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -1814,7 +1814,7 @@ def perfnodelookup(ui, repo, rev, **opts):
 
 
 @command(
-    b'perflog',
+    b'perf--log',
     [(b'', b'rename', False, b'ask log to follow renames')] + formatteropts,
 )
 def perflog(ui, repo, rev=None, **opts):
@@ -1832,7 +1832,7 @@ def perflog(ui, repo, rev=None, **opts):
     fm.end()
 
 
-@command(b'perfmoonwalk', formatteropts)
+@command(b'perf--moonwalk', formatteropts)
 def perfmoonwalk(ui, repo, **opts):
     """benchmark walking the changelog backwards
 
@@ -1851,7 +1851,7 @@ def perfmoonwalk(ui, repo, **opts):
 
 
 @command(
-    b'perftemplating',
+    b'perf--templating',
     [
         (b'r', b'rev', [], b'revisions to run the template on'),
     ]
@@ -1941,7 +1941,7 @@ def _displaystats(ui, opts, entries, data):
 
 
 @command(
-    b'perfhelper-mergecopies',
+    b'perf--helper-mergecopies',
     formatteropts
     + [
         (b'r', b'revs', [], b'restrict search to these revisions'),
@@ -2124,7 +2124,7 @@ def perfhelpermergecopies(ui, repo, revs=[], **opts):
 
 
 @command(
-    b'perfhelper-pathcopies',
+    b'perf--helper-pathcopies',
     formatteropts
     + [
         (b'r', b'revs', [], b'restrict search to these revisions'),
@@ -2263,7 +2263,7 @@ def perfhelperpathcopies(ui, repo, revs=[], **opts):
         _displaystats(ui, opts, entries, alldata)
 
 
-@command(b'perfcca', formatteropts)
+@command(b'perf--cca', formatteropts)
 def perfcca(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -2271,7 +2271,7 @@ def perfcca(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perffncacheload', formatteropts)
+@command(b'perf--fncacheload', formatteropts)
 def perffncacheload(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -2284,7 +2284,7 @@ def perffncacheload(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perffncachewrite', formatteropts)
+@command(b'perf--fncachewrite', formatteropts)
 def perffncachewrite(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -2304,7 +2304,7 @@ def perffncachewrite(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perffncacheencode', formatteropts)
+@command(b'perf--fncacheencode', formatteropts)
 def perffncacheencode(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
@@ -2348,7 +2348,7 @@ def _manifestrevision(repo, mnode):
 
 
 @command(
-    b'perfbdiff',
+    b'perf--bdiff',
     revlogopts
     + formatteropts
     + [
@@ -2464,7 +2464,7 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
 
 
 @command(
-    b'perfunidiff',
+    b'perf--unidiff',
     revlogopts
     + formatteropts
     + [
@@ -2543,7 +2543,7 @@ def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
     fm.end()
 
 
-@command(b'perfdiffwd', formatteropts)
+@command(b'perf--diffwd', formatteropts)
 def perfdiffwd(ui, repo, **opts):
     """Profile diff of working directory changes"""
     opts = _byteskwargs(opts)
@@ -2568,7 +2568,7 @@ def perfdiffwd(ui, repo, **opts):
     fm.end()
 
 
-@command(b'perfrevlogindex', revlogopts + formatteropts, b'-c|-m|FILE')
+@command(b'perf--revlogindex', revlogopts + formatteropts, b'-c|-m|FILE')
 def perfrevlogindex(ui, repo, file_=None, **opts):
     """Benchmark operations against a revlog index.
 
@@ -2704,7 +2704,7 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
 
 
 @command(
-    b'perfrevlogrevisions',
+    b'perf--revlogrevisions',
     revlogopts
     + formatteropts
     + [
@@ -2754,7 +2754,7 @@ def perfrevlogrevisions(
 
 
 @command(
-    b'perfrevlogwrite',
+    b'perf--revlogwrite',
     revlogopts
     + formatteropts
     + [
@@ -3047,7 +3047,7 @@ def _temprevlog(ui, orig, truncaterev):
 
 
 @command(
-    b'perfrevlogchunks',
+    b'perf--revlogchunks',
     revlogopts
     + formatteropts
     + [
@@ -3176,7 +3176,7 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
 
 
 @command(
-    b'perfrevlogrevision',
+    b'perf--revlogrevision',
     revlogopts
     + formatteropts
     + [(b'', b'cache', False, b'use caches instead of clearing')],
@@ -3319,7 +3319,7 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
 
 
 @command(
-    b'perfrevset',
+    b'perf--revset',
     [
         (b'C', b'clear', False, b'clear volatile cache between each call.'),
         (b'', b'contexts', False, b'obtain changectx for each revision'),
@@ -3352,7 +3352,7 @@ def perfrevset(ui, repo, expr, clear=False, contexts=False, **opts):
 
 
 @command(
-    b'perfvolatilesets',
+    b'perf--volatilesets',
     [
         (b'', b'clear-obsstore', False, b'drop obsstore between each call.'),
     ]
@@ -3401,7 +3401,7 @@ def perfvolatilesets(ui, repo, *names, **opts):
 
 
 @command(
-    b'perfbranchmap',
+    b'perf--branchmap',
     [
         (b'f', b'full', False, b'Includes build time of subset'),
         (
@@ -3492,7 +3492,7 @@ def perfbranchmap(ui, repo, *filternames, **opts):
 
 
 @command(
-    b'perfbranchmapupdate',
+    b'perf--branchmapupdate',
     [
         (b'', b'base', [], b'subset of revision to start from'),
         (b'', b'target', [], b'subset of revision to end with'),
@@ -3602,7 +3602,7 @@ def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
 
 
 @command(
-    b'perfbranchmapload',
+    b'perf--branchmapload',
     [
         (b'f', b'filter', b'', b'Specify repoview filter'),
         (b'', b'list', False, b'List brachmap filter caches'),
@@ -3661,7 +3661,7 @@ def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
     fm.end()
 
 
-@command(b'perfloadmarkers')
+@command(b'perf--loadmarkers')
 def perfloadmarkers(ui, repo):
     """benchmark the time to parse the on-disk markers for a repo
 
@@ -3673,7 +3673,7 @@ def perfloadmarkers(ui, repo):
 
 
 @command(
-    b'perflrucachedict',
+    b'perf--lrucachedict',
     formatteropts
     + [
         (b'', b'costlimit', 0, b'maximum total cost of items in cache'),
@@ -3829,7 +3829,7 @@ def perflrucache(
 
 
 @command(
-    b'perfwrite',
+    b'perf--write',
     formatteropts
     + [
         (b'', b'write-method', b'write', b'ui write method'),
@@ -3892,7 +3892,7 @@ def uisetup(ui):
 
 
 @command(
-    b'perfprogress',
+    b'perf--progress',
     formatteropts
     + [
         (b'', b'topic', b'topic', b'topic for progress messages'),

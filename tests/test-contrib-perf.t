@@ -78,109 +78,121 @@ perfstatus
   
   list of commands:
   
-   perfaddremove
+   perf--addremove
                  (no help text available)
-   perfancestors
+   perf--ancestors
                  (no help text available)
-   perfancestorset
+   perf--ancestorset
                  (no help text available)
-   perfannotate  (no help text available)
-   perfbdiff     benchmark a bdiff between revisions
-   perfbookmarks
+   perf--annotate
+                 (no help text available)
+   perf--bdiff   benchmark a bdiff between revisions
+   perf--bookmarks
                  benchmark parsing bookmarks from disk to memory
-   perfbranchmap
+   perf--branchmap
                  benchmark the update of a branchmap
-   perfbranchmapload
+   perf--branchmapload
                  benchmark reading the branchmap
-   perfbranchmapupdate
+   perf--branchmapupdate
                  benchmark branchmap update from for <base> revs to <target>
                  revs
-   perfbundleread
+   perf--bundleread
                  Benchmark reading of bundle files.
-   perfcca       (no help text available)
-   perfchangegroupchangelog
+   perf--cca     (no help text available)
+   perf--changegroupchangelog
                  Benchmark producing a changelog group for a changegroup.
-   perfchangeset
+   perf--changeset
                  (no help text available)
-   perfctxfiles  (no help text available)
-   perfdiffwd    Profile diff of working directory changes
-   perfdirfoldmap
+   perf--ctxfiles
+                 (no help text available)
+   perf--diffwd  Profile diff of working directory changes
+   perf--dirfoldmap
                  benchmap a 'dirstate._map.dirfoldmap.get()' request
-   perfdirs      (no help text available)
-   perfdirstate  benchmap the time of various distate operations
-   perfdirstatedirs
+   perf--dirs    (no help text available)
+   perf--dirstate
+                 benchmap the time of various distate operations
+   perf--dirstatedirs
                  benchmap a 'dirstate.hasdir' call from an empty 'dirs' cache
-   perfdirstatefoldmap
+   perf--dirstatefoldmap
                  benchmap a 'dirstate._map.filefoldmap.get()' request
-   perfdirstatewrite
+   perf--dirstatewrite
                  benchmap the time it take to write a dirstate on disk
-   perfdiscovery
+   perf--discovery
                  benchmark discovery between local repo and the peer at given
                  path
-   perffncacheencode
+   perf--fncacheencode
                  (no help text available)
-   perffncacheload
+   perf--fncacheload
                  (no help text available)
-   perffncachewrite
+   perf--fncachewrite
                  (no help text available)
-   perfheads     benchmark the computation of a changelog heads
-   perfhelper-mergecopies
+   perf--heads   benchmark the computation of a changelog heads
+   perf--helper-mergecopies
                  find statistics about potential parameters for
                  'perfmergecopies'
-   perfhelper-pathcopies
+   perf--helper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'
-   perfignore    benchmark operation related to computing ignore
-   perfindex     benchmark index creation time followed by a lookup
-   perflinelogedits
+   perf--ignore  benchmark operation related to computing ignore
+   perf--index   benchmark index creation time followed by a lookup
+   perf--linelogedits
                  (no help text available)
-   perfloadmarkers
+   perf--loadmarkers
                  benchmark the time to parse the on-disk markers for a repo
-   perflog       (no help text available)
-   perflookup    (no help text available)
-   perflrucachedict
+   perf--log     (no help text available)
+   perf--lookup  (no help text available)
+   perf--lrucachedict
                  (no help text available)
-   perfmanifest  benchmark the time to read a manifest from disk and return a
+   perf--manifest
+                 benchmark the time to read a manifest from disk and return a
                  usable
-   perfmergecalculate
+   perf--mergecalculate
                  (no help text available)
-   perfmergecopies
+   perf--mergecopies
                  measure runtime of 'copies.mergecopies'
-   perfmoonwalk  benchmark walking the changelog backwards
-   perfnodelookup
+   perf--moonwalk
+                 benchmark walking the changelog backwards
+   perf--nodelookup
                  (no help text available)
-   perfnodemap   benchmark the time necessary to look up revision from a cold
+   perf--nodemap
+                 benchmark the time necessary to look up revision from a cold
                  nodemap
-   perfparents   benchmark the time necessary to fetch one changeset's parents.
-   perfpathcopies
+   perf--parents
+                 benchmark the time necessary to fetch one changeset's parents.
+   perf--pathcopies
                  benchmark the copy tracing logic
-   perfphases    benchmark phasesets computation
-   perfphasesremote
+   perf--phases  benchmark phasesets computation
+   perf--phasesremote
                  benchmark time needed to analyse phases of the remote server
-   perfprogress  printing of progress bars
-   perfrawfiles  (no help text available)
-   perfrevlogchunks
+   perf--progress
+                 printing of progress bars
+   perf--rawfiles
+                 (no help text available)
+   perf--revlogchunks
                  Benchmark operations on revlog chunks.
-   perfrevlogindex
+   perf--revlogindex
                  Benchmark operations against a revlog index.
-   perfrevlogrevision
+   perf--revlogrevision
                  Benchmark obtaining a revlog revision.
-   perfrevlogrevisions
+   perf--revlogrevisions
                  Benchmark reading a series of revisions from a revlog.
-   perfrevlogwrite
+   perf--revlogwrite
                  Benchmark writing a series of revisions to a revlog.
-   perfrevrange  (no help text available)
-   perfrevset    benchmark the execution time of a revset
-   perfstartup   (no help text available)
-   perfstatus    benchmark the performance of a single status call
-   perftags      (no help text available)
-   perftemplating
+   perf--revrange
+                 (no help text available)
+   perf--revset  benchmark the execution time of a revset
+   perf--startup
+                 (no help text available)
+   perf--status  benchmark the performance of a single status call
+   perf--tags    (no help text available)
+   perf--templating
                  test the rendering time of a given template
-   perfunidiff   benchmark a unified diff between revisions
-   perfvolatilesets
+   perf--unidiff
+                 benchmark a unified diff between revisions
+   perf--volatilesets
                  benchmark the computation of various volatile set
-   perfwalk      (no help text available)
-   perfwrite     microbenchmark ui.write (and others)
+   perf--walk    (no help text available)
+   perf--write   microbenchmark ui.write (and others)
   
   (use 'hg help -v perf' to show built-in aliases and global options)
   $ hg perfaddremove
