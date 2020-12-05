@@ -1,8 +1,14 @@
 #!/bin/bash
 set -eu
 
-revision_in_stack=`hg log --rev '.#stack and ::.' -T '\nONE-REV\n' | grep 'ONE-REV' | wc -l`
-revision_on_phab=`hg log --rev '.#stack and ::. and desc("re:\nDifferential Revision: [^\n]+D\d+$")' -T '\nONE-REV\n' | grep 'ONE-REV' | wc -l`
+revision_in_stack=`hg log \
+    --rev '.#stack and ::. and topic()' \
+    -T '\nONE-REV\n' \
+    | grep 'ONE-REV' | wc -l`
+revision_on_phab=`hg log \
+    --rev '.#stack and ::. and topic() and desc("re:\nDifferential Revision: [^\n]+D\d+$")'\
+    -T '\nONE-REV\n' \
+    | grep 'ONE-REV' | wc -l`
 
 if [[ $revision_in_stack -eq 0 ]]; then
     echo "stack is empty" >&2
@@ -31,4 +37,4 @@ hg \
 --config auth.phabricator.schemes=https \
 --config auth.phabricator.prefix=phab.mercurial-scm.org \
 --config auth.phabricator.phabtoken=$PHABRICATOR_TOKEN \
-phabsend --rev '.#stack and ::.'
+phabsend --rev '.#stack and ::. and topic()' \
