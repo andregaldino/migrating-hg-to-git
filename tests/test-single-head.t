@@ -277,7 +277,7 @@ Because of previous test, we'll also push c_aL0 and c_aM0.
   c_aL0
   c_aM0
 
-Let's make a new head and push everythin. The server feedback will mention
+Let's make a new head and push everything. The server feedback will mention
 exactly one new head because c_aM0 is closed.
 
   $ hg up 'desc("c_aG0")'
@@ -291,3 +291,98 @@ exactly one new head because c_aM0 is closed.
   adding manifests
   adding file changes
   added 3 changesets with 3 changes to 3 files (+1 heads)
+  $ cd ..
+
+
+Test that singe-head-per-branch can be restricted to public changes
+-------------------------------------------------------------------
+
+  $ hg clone -r 49003e504178 single-head-server public-only
+  adding changesets
+  adding manifests
+  adding file changes
+  added 9 changesets with 9 changes to 9 files
+  1 new obsolescence markers
+  new changesets ea207398892e:49003e504178 (9 drafts)
+  updating to branch branch_A
+  9 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd public-only
+  $ cat <<EOF >> .hg/hgrc
+  > [phases]
+  > publish = no
+  > [experimental]
+  > single-head-per-branch = yes
+  > single-head-per-branch:public-changes-only = yes
+  > EOF
+  > hg phase -p :
+  $ hg update 'desc("c_aG0")'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ mkcommit c_dO0
+  created new head
+  $ hg log -G
+  @  changeset:   9:8058fd35cc2b
+  |  branch:      branch_A
+  |  tag:         tip
+  |  parent:      7:a33fb808fb4b
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     c_dO0
+  |
+  | o  changeset:   8:49003e504178
+  |/|  branch:      branch_A
+  | |  parent:      7:a33fb808fb4b
+  | |  parent:      3:840af1c6bc88
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     c_aI0
+  | |
+  o |  changeset:   7:a33fb808fb4b
+  | |  branch:      branch_A
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     c_aG0
+  | |
+  o |  changeset:   6:99a2dc242c5d
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     c_dF1
+  | |
+  o |    changeset:   5:6ed1df20edb1
+  |\ \   parent:      4:9bf953aa81f6
+  | | |  parent:      2:286d02a6e2a2
+  | | |  user:        test
+  | | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | | |  summary:     c_dE0
+  | | |
+  | o |  changeset:   4:9bf953aa81f6
+  | | |  parent:      1:134bc3852ad2
+  | | |  user:        test
+  | | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | | |  summary:     c_dD0
+  | | |
+  | | o  changeset:   3:840af1c6bc88
+  | | |  branch:      branch_A
+  | | |  parent:      0:ea207398892e
+  | | |  user:        test
+  | | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | | |  summary:     c_aC0
+  | | |
+  o | |  changeset:   2:286d02a6e2a2
+  |/ /   user:        test
+  | |    date:        Thu Jan 01 00:00:00 1970 +0000
+  | |    summary:     c_dB0
+  | |
+  o |  changeset:   1:134bc3852ad2
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     c_dA0
+  |
+  o  changeset:   0:ea207398892e
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     ROOT
+  
+  $ hg phase -p .
+  abort: rejecting multiple heads on branch "branch_A"
+  (2 heads: 49003e504178 8058fd35cc2b)
+  [255]

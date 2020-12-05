@@ -26,8 +26,13 @@
  * The memory footprint per changeset during pull/unbundle
    operations has been further reduced.
 
+
 == New Experimental Features ==
 
+* `experimental.single-head-per-branch:public-changes-only` can be used
+  restrict the single head check to public revision. This is useful for
+  overlay repository that have both a publishing and non-publishing view
+  of the same storage.
 
 
 == Bug Fixes ==

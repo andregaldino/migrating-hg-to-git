@@ -2254,7 +2254,13 @@ class localrepository(object):
                 accountclosed = singleheadsub.get(
                     b"account-closed-heads", False
                 )
-                scmutil.enforcesinglehead(repo, tr2, desc, accountclosed)
+                if singleheadsub.get(b"public-changes-only", False):
+                    filtername = b"immutable"
+                else:
+                    filtername = b"visible"
+                scmutil.enforcesinglehead(
+                    repo, tr2, desc, accountclosed, filtername
+                )
             if hook.hashook(repo.ui, b'pretxnclose-bookmark'):
                 for name, (old, new) in sorted(
                     tr.changes[b'bookmarks'].items()

@@ -1079,6 +1079,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'single-head-per-branch:public-changes-only',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
     b'sshserver.support-v2',
     default=False,
 )

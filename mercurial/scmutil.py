@@ -2189,12 +2189,12 @@ def nodesummaries(repo, nodes, maxnumnodes=4):
     return _(b"%s and %d others") % (first, len(nodes) - maxnumnodes)
 
 
-def enforcesinglehead(repo, tr, desc, accountclosed=False):
+def enforcesinglehead(repo, tr, desc, accountclosed, filtername):
     """check that no named branch has multiple heads"""
     if desc in (b'strip', b'repair'):
         # skip the logic during strip
         return
-    visible = repo.filtered(b'visible')
+    visible = repo.filtered(filtername)
     # possible improvement: we could restrict the check to affected branch
     bm = visible.branchmap()
     for name in bm:
