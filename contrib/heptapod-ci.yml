@@ -51,7 +51,7 @@ rust-cargo-test-py3:
 phabricator-refresh:
     stage: phabricator
     script:
-      - ./contrib/phab-refresh-stack.sh
+      - "./contrib/phab-refresh-stack.sh --comment \":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)\""
 
 rust-cargo-test-py3-dirstate-tree:
     <<: *rust_cargo_test
