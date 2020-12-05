@@ -38,3 +38,4 @@ hg \
 --config auth.phabricator.prefix=phab.mercurial-scm.org \
 --config auth.phabricator.phabtoken=$PHABRICATOR_TOKEN \
 phabsend --rev '.#stack and ::. and topic()' \
+"$@"
