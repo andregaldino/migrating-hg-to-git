@@ -1034,6 +1034,14 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     roots_missing = repo.revs(b'roots(%ld)', missing)
     assert len(common) + len(missing) == len(all)
 
+    initial_undecided = repo.revs(
+        b'not (::%ln or %ln::)', heads_common_remote, heads_common_local
+    )
+    heads_initial_undecided = repo.revs(b'heads(%ld)', initial_undecided)
+    roots_initial_undecided = repo.revs(b'roots(%ld)', initial_undecided)
+    common_initial_undecided = initial_undecided & common
+    missing_initial_undecided = initial_undecided & missing
+
     data = {}
     data[b'elapsed'] = t.elapsed
     data[b'nb-common-heads'] = len(heads_common)
@@ -1052,6 +1060,11 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     data[b'nb-revs-missing'] = len(missing)
     data[b'nb-missing-heads'] = len(roots_missing)
     data[b'nb-missing-roots'] = len(heads_missing)
+    data[b'nb-ini_und'] = len(initial_undecided)
+    data[b'nb-ini_und-heads'] = len(heads_initial_undecided)
+    data[b'nb-ini_und-roots'] = len(roots_initial_undecided)
+    data[b'nb-ini_und-common'] = len(common_initial_undecided)
+    data[b'nb-ini_und-missing'] = len(missing_initial_undecided)
 
     # display discovery summary
     ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
@@ -1085,6 +1098,11 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     ui.writenoi18n(b"  missing:             %(nb-revs-missing)9d\n" % data)
     ui.writenoi18n(b"    heads:             %(nb-missing-heads)9d\n" % data)
     ui.writenoi18n(b"    roots:             %(nb-missing-roots)9d\n" % data)
+    ui.writenoi18n(b"  first undecided set: %(nb-ini_und)9d\n" % data)
+    ui.writenoi18n(b"    heads:             %(nb-ini_und-heads)9d\n" % data)
+    ui.writenoi18n(b"    roots:             %(nb-ini_und-roots)9d\n" % data)
+    ui.writenoi18n(b"    common:            %(nb-ini_und-common)9d\n" % data)
+    ui.writenoi18n(b"    missing:           %(nb-ini_und-missing)9d\n" % data)
 
     if ui.verbose:
         ui.writenoi18n(

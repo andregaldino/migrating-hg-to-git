@@ -62,6 +62,11 @@ Small superset:
     missing:                     0
       heads:                     0
       roots:                     0
+    first undecided set:         3
+      heads:                     1
+      roots:                     1
+      common:                    3
+      missing:                   0
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- a -> b set
@@ -88,6 +93,11 @@ Small superset:
     missing:                     0
       heads:                     0
       roots:                     0
+    first undecided set:         3
+      heads:                     1
+      roots:                     1
+      common:                    3
+      missing:                   0
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- a -> b set (tip only)
@@ -114,6 +124,11 @@ Small superset:
     missing:                     1
       heads:                     1
       roots:                     1
+    first undecided set:         6
+      heads:                     2
+      roots:                     1
+      common:                    5
+      missing:                   1
   common heads: b5714e113bc0
   
   % -- b -> a tree
@@ -139,6 +154,11 @@ Small superset:
     missing:                     8
       heads:                     2
       roots:                     2
+    first undecided set:         8
+      heads:                     2
+      roots:                     2
+      common:                    0
+      missing:                   8
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- b -> a set
@@ -165,6 +185,11 @@ Small superset:
     missing:                     8
       heads:                     2
       roots:                     2
+    first undecided set:         8
+      heads:                     2
+      roots:                     2
+      common:                    0
+      missing:                   8
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- b -> a set (tip only)
@@ -191,6 +216,11 @@ Small superset:
     missing:                     8
       heads:                     2
       roots:                     2
+    first undecided set:         8
+      heads:                     2
+      roots:                     2
+      common:                    0
+      missing:                   8
   common heads: 01241442b3c2 b5714e113bc0
 
 
@@ -223,6 +253,11 @@ Many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        34
+      heads:                     2
+      roots:                     1
+      common:                    4
+      missing:                  30
   common heads: bebd167eb94d
   
   % -- a -> b set
@@ -252,6 +287,11 @@ Many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        34
+      heads:                     2
+      roots:                     1
+      common:                    4
+      missing:                  30
   common heads: bebd167eb94d
   
   % -- a -> b set (tip only)
@@ -281,6 +321,11 @@ Many new:
     missing:                    33
       heads:                     2
       roots:                     2
+    first undecided set:        35
+      heads:                     2
+      roots:                     1
+      common:                    2
+      missing:                  33
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -306,6 +351,11 @@ Many new:
     missing:                     3
       heads:                     1
       roots:                     1
+    first undecided set:         3
+      heads:                     1
+      roots:                     1
+      common:                    0
+      missing:                   3
   common heads: bebd167eb94d
   
   % -- b -> a set
@@ -335,6 +385,11 @@ Many new:
     missing:                     3
       heads:                     1
       roots:                     1
+    first undecided set:         3
+      heads:                     1
+      roots:                     1
+      common:                    0
+      missing:                   3
   common heads: bebd167eb94d
   
   % -- b -> a set (tip only)
@@ -364,6 +419,11 @@ Many new:
     missing:                     3
       heads:                     1
       roots:                     1
+    first undecided set:         3
+      heads:                     1
+      roots:                     1
+      common:                    0
+      missing:                   3
   common heads: bebd167eb94d
 
 Both sides many new with stub:
@@ -395,6 +455,11 @@ Both sides many new with stub:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        33
+      heads:                     2
+      roots:                     1
+      common:                    3
+      missing:                  30
   common heads: 2dc09a01254d
   
   % -- a -> b set
@@ -424,6 +489,11 @@ Both sides many new with stub:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        33
+      heads:                     2
+      roots:                     1
+      common:                    3
+      missing:                  30
   common heads: 2dc09a01254d
   
   % -- a -> b set (tip only)
@@ -453,6 +523,11 @@ Both sides many new with stub:
     missing:                    32
       heads:                     2
       roots:                     2
+    first undecided set:        34
+      heads:                     2
+      roots:                     1
+      common:                    2
+      missing:                  32
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -478,6 +553,11 @@ Both sides many new with stub:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        30
+      heads:                     1
+      roots:                     1
+      common:                    0
+      missing:                  30
   common heads: 2dc09a01254d
   
   % -- b -> a set
@@ -507,6 +587,11 @@ Both sides many new with stub:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        30
+      heads:                     1
+      roots:                     1
+      common:                    0
+      missing:                  30
   common heads: 2dc09a01254d
   
   % -- b -> a set (tip only)
@@ -536,6 +621,11 @@ Both sides many new with stub:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        30
+      heads:                     1
+      roots:                     1
+      common:                    0
+      missing:                  30
   common heads: 2dc09a01254d
 
 
@@ -568,6 +658,11 @@ Both many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
   
   % -- a -> b set
@@ -597,6 +692,11 @@ Both many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
   
   % -- a -> b set (tip only)
@@ -626,6 +726,11 @@ Both many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -651,6 +756,11 @@ Both many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
   
   % -- b -> a set
@@ -680,6 +790,11 @@ Both many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
   
   % -- b -> a set (tip only)
@@ -709,6 +824,11 @@ Both many new:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
 
 
@@ -741,6 +861,11 @@ Both many new skewed:
     missing:                    50
       heads:                     1
       roots:                     1
+    first undecided set:        52
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  50
   common heads: 66f7d451a68b
   
   % -- a -> b set
@@ -770,6 +895,11 @@ Both many new skewed:
     missing:                    50
       heads:                     1
       roots:                     1
+    first undecided set:        52
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  50
   common heads: 66f7d451a68b
   
   % -- a -> b set (tip only)
@@ -799,6 +929,11 @@ Both many new skewed:
     missing:                    50
       heads:                     1
       roots:                     1
+    first undecided set:        52
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  50
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -824,6 +959,11 @@ Both many new skewed:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
   
   % -- b -> a set
@@ -853,6 +993,11 @@ Both many new skewed:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
   
   % -- b -> a set (tip only)
@@ -882,6 +1027,11 @@ Both many new skewed:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:        32
+      heads:                     1
+      roots:                     1
+      common:                    2
+      missing:                  30
   common heads: 66f7d451a68b
 
 
@@ -914,6 +1064,11 @@ Both many new on top of long history:
     missing:                    50
       heads:                     1
       roots:                     1
+    first undecided set:      1050
+      heads:                     1
+      roots:                     1
+      common:                 1000
+      missing:                  50
   common heads: 7ead0cba2838
   
   % -- a -> b set
@@ -946,6 +1101,11 @@ Both many new on top of long history:
     missing:                    50
       heads:                     1
       roots:                     1
+    first undecided set:      1050
+      heads:                     1
+      roots:                     1
+      common:                 1000
+      missing:                  50
   common heads: 7ead0cba2838
   
   % -- a -> b set (tip only)
@@ -978,6 +1138,11 @@ Both many new on top of long history:
     missing:                    50
       heads:                     1
       roots:                     1
+    first undecided set:      1050
+      heads:                     1
+      roots:                     1
+      common:                 1000
+      missing:                  50
   common heads: 7ead0cba2838
   
   % -- b -> a tree
@@ -1003,6 +1168,11 @@ Both many new on top of long history:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:      1030
+      heads:                     1
+      roots:                     1
+      common:                 1000
+      missing:                  30
   common heads: 7ead0cba2838
   
   % -- b -> a set
@@ -1035,6 +1205,11 @@ Both many new on top of long history:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:      1030
+      heads:                     1
+      roots:                     1
+      common:                 1000
+      missing:                  30
   common heads: 7ead0cba2838
   
   % -- b -> a set (tip only)
@@ -1067,6 +1242,11 @@ Both many new on top of long history:
     missing:                    30
       heads:                     1
       roots:                     1
+    first undecided set:      1030
+      heads:                     1
+      roots:                     1
+      common:                 1000
+      missing:                  30
   common heads: 7ead0cba2838
 
 
@@ -1151,6 +1331,11 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
     missing:                  1040
       heads:                   260
       roots:                   260
+    first undecided set:      1340
+      heads:                   260
+      roots:                     1
+      common:                  300
+      missing:                1040
   common heads: 3ee37d65064a
   $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true --rev tip
   comparing with b
@@ -1182,6 +1367,11 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
     missing:                  1040
       heads:                   260
       roots:                   260
+    first undecided set:      1340
+      heads:                   260
+      roots:                     1
+      common:                  300
+      missing:                1040
   common heads: 3ee37d65064a
 
 Test actual protocol when pulling one new head in addition to common heads
@@ -1304,4 +1494,9 @@ returned as common heads.
     missing:                     1
       heads:                     1
       roots:                     1
+    first undecided set:         1
+      heads:                     1
+      roots:                     1
+      common:                    0
+      missing:                   1
   common heads: 66f7d451a68b
