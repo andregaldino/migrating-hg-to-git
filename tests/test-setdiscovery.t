@@ -57,7 +57,11 @@ Small superset:
       unknown:                   2
   local changesets:              7
     common:                      7
+      heads:                     2
+      roots:                     1
     missing:                     0
+      heads:                     0
+      roots:                     0
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- a -> b set
@@ -79,7 +83,11 @@ Small superset:
       unknown:                   2
   local changesets:              7
     common:                      7
+      heads:                     2
+      roots:                     1
     missing:                     0
+      heads:                     0
+      roots:                     0
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- a -> b set (tip only)
@@ -101,7 +109,11 @@ Small superset:
       unknown:                   3
   local changesets:              7
     common:                      6
+      heads:                     1
+      roots:                     1
     missing:                     1
+      heads:                     1
+      roots:                     1
   common heads: b5714e113bc0
   
   % -- b -> a tree
@@ -122,7 +134,11 @@ Small superset:
       unknown:                   0
   local changesets:             15
     common:                      7
+      heads:                     2
+      roots:                     1
     missing:                     8
+      heads:                     2
+      roots:                     2
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- b -> a set
@@ -144,7 +160,11 @@ Small superset:
       unknown:                   0
   local changesets:             15
     common:                      7
+      heads:                     2
+      roots:                     1
     missing:                     8
+      heads:                     2
+      roots:                     2
   common heads: 01241442b3c2 b5714e113bc0
   
   % -- b -> a set (tip only)
@@ -166,7 +186,11 @@ Small superset:
       unknown:                   0
   local changesets:             15
     common:                      7
+      heads:                     2
+      roots:                     1
     missing:                     8
+      heads:                     2
+      roots:                     2
   common heads: 01241442b3c2 b5714e113bc0
 
 
@@ -194,7 +218,11 @@ Many new:
       unknown:                   1
   local changesets:             35
     common:                      5
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: bebd167eb94d
   
   % -- a -> b set
@@ -219,7 +247,11 @@ Many new:
       unknown:                   1
   local changesets:             35
     common:                      5
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: bebd167eb94d
   
   % -- a -> b set (tip only)
@@ -244,7 +276,11 @@ Many new:
       unknown:                   1
   local changesets:             35
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    33
+      heads:                     2
+      roots:                     2
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -265,7 +301,11 @@ Many new:
       unknown:                   1
   local changesets:              8
     common:                      5
+      heads:                     1
+      roots:                     1
     missing:                     3
+      heads:                     1
+      roots:                     1
   common heads: bebd167eb94d
   
   % -- b -> a set
@@ -290,7 +330,11 @@ Many new:
       unknown:                   1
   local changesets:              8
     common:                      5
+      heads:                     1
+      roots:                     1
     missing:                     3
+      heads:                     1
+      roots:                     1
   common heads: bebd167eb94d
   
   % -- b -> a set (tip only)
@@ -315,7 +359,11 @@ Many new:
       unknown:                   1
   local changesets:              8
     common:                      5
+      heads:                     1
+      roots:                     1
     missing:                     3
+      heads:                     1
+      roots:                     1
   common heads: bebd167eb94d
 
 Both sides many new with stub:
@@ -342,7 +390,11 @@ Both sides many new with stub:
       unknown:                   1
   local changesets:             34
     common:                      4
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 2dc09a01254d
   
   % -- a -> b set
@@ -367,7 +419,11 @@ Both sides many new with stub:
       unknown:                   1
   local changesets:             34
     common:                      4
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 2dc09a01254d
   
   % -- a -> b set (tip only)
@@ -392,7 +448,11 @@ Both sides many new with stub:
       unknown:                   1
   local changesets:             34
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    32
+      heads:                     2
+      roots:                     2
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -413,7 +473,11 @@ Both sides many new with stub:
       unknown:                   1
   local changesets:             34
     common:                      4
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 2dc09a01254d
   
   % -- b -> a set
@@ -438,7 +502,11 @@ Both sides many new with stub:
       unknown:                   1
   local changesets:             34
     common:                      4
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 2dc09a01254d
   
   % -- b -> a set (tip only)
@@ -463,7 +531,11 @@ Both sides many new with stub:
       unknown:                   1
   local changesets:             34
     common:                      4
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 2dc09a01254d
 
 
@@ -491,7 +563,11 @@ Both many new:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- a -> b set
@@ -516,7 +592,11 @@ Both many new:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- a -> b set (tip only)
@@ -541,7 +621,11 @@ Both many new:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -562,7 +646,11 @@ Both many new:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- b -> a set
@@ -587,7 +675,11 @@ Both many new:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- b -> a set (tip only)
@@ -612,7 +704,11 @@ Both many new:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
 
 
@@ -640,7 +736,11 @@ Both many new skewed:
       unknown:                   1
   local changesets:             52
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    50
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- a -> b set
@@ -665,7 +765,11 @@ Both many new skewed:
       unknown:                   1
   local changesets:             52
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    50
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- a -> b set (tip only)
@@ -690,7 +794,11 @@ Both many new skewed:
       unknown:                   1
   local changesets:             52
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    50
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -711,7 +819,11 @@ Both many new skewed:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- b -> a set
@@ -736,7 +848,11 @@ Both many new skewed:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
   
   % -- b -> a set (tip only)
@@ -761,7 +877,11 @@ Both many new skewed:
       unknown:                   1
   local changesets:             32
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b
 
 
@@ -789,7 +909,11 @@ Both many new on top of long history:
       unknown:                   1
   local changesets:           1050
     common:                   1000
+      heads:                     1
+      roots:                     1
     missing:                    50
+      heads:                     1
+      roots:                     1
   common heads: 7ead0cba2838
   
   % -- a -> b set
@@ -817,7 +941,11 @@ Both many new on top of long history:
       unknown:                   1
   local changesets:           1050
     common:                   1000
+      heads:                     1
+      roots:                     1
     missing:                    50
+      heads:                     1
+      roots:                     1
   common heads: 7ead0cba2838
   
   % -- a -> b set (tip only)
@@ -845,7 +973,11 @@ Both many new on top of long history:
       unknown:                   1
   local changesets:           1050
     common:                   1000
+      heads:                     1
+      roots:                     1
     missing:                    50
+      heads:                     1
+      roots:                     1
   common heads: 7ead0cba2838
   
   % -- b -> a tree
@@ -866,7 +998,11 @@ Both many new on top of long history:
       unknown:                   1
   local changesets:           1030
     common:                   1000
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 7ead0cba2838
   
   % -- b -> a set
@@ -894,7 +1030,11 @@ Both many new on top of long history:
       unknown:                   1
   local changesets:           1030
     common:                   1000
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 7ead0cba2838
   
   % -- b -> a set (tip only)
@@ -922,7 +1062,11 @@ Both many new on top of long history:
       unknown:                   1
   local changesets:           1030
     common:                   1000
+      heads:                     1
+      roots:                     1
     missing:                    30
+      heads:                     1
+      roots:                     1
   common heads: 7ead0cba2838
 
 
@@ -1002,7 +1146,11 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
       unknown:                   1
   local changesets:           1340
     common:                    300
+      heads:                     1
+      roots:                     1
     missing:                  1040
+      heads:                   260
+      roots:                   260
   common heads: 3ee37d65064a
   $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true --rev tip
   comparing with b
@@ -1029,7 +1177,11 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
       unknown:                   1
   local changesets:           1340
     common:                    300
+      heads:                     1
+      roots:                     1
     missing:                  1040
+      heads:                   260
+      roots:                   260
   common heads: 3ee37d65064a
 
 Test actual protocol when pulling one new head in addition to common heads
@@ -1147,5 +1299,9 @@ returned as common heads.
       unknown:                   0
   local changesets:              3
     common:                      2
+      heads:                     1
+      roots:                     1
     missing:                     1
+      heads:                     1
+      roots:                     1
   common heads: 66f7d451a68b

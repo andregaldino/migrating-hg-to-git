@@ -1028,7 +1028,10 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     all = repo.revs(b'all()')
     common = repo.revs(b'::%ln', common)
+    roots_common = repo.revs(b'roots(::%ld)', common)
     missing = repo.revs(b'not ::%ld', common)
+    heads_missing = repo.revs(b'heads(%ld)', missing)
+    roots_missing = repo.revs(b'roots(%ld)', missing)
     assert len(common) + len(missing) == len(all)
 
     data = {}
@@ -1037,6 +1040,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     data[b'nb-common-heads-local'] = len(heads_common_local)
     data[b'nb-common-heads-remote'] = len(heads_common_remote)
     data[b'nb-common-heads-both'] = len(heads_common_both)
+    data[b'nb-common-roots'] = len(roots_common)
     data[b'nb-head-local'] = len(heads_local)
     data[b'nb-head-local-missing'] = len(heads_local) - len(heads_common_local)
     data[b'nb-head-remote'] = len(heads_remote)
@@ -1046,6 +1050,8 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     data[b'nb-revs'] = len(all)
     data[b'nb-revs-common'] = len(common)
     data[b'nb-revs-missing'] = len(missing)
+    data[b'nb-missing-heads'] = len(roots_missing)
+    data[b'nb-missing-roots'] = len(heads_missing)
 
     # display discovery summary
     ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
@@ -1074,7 +1080,11 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     )
     ui.writenoi18n(b"local changesets:      %(nb-revs)9d\n" % data)
     ui.writenoi18n(b"  common:              %(nb-revs-common)9d\n" % data)
+    ui.writenoi18n(b"    heads:             %(nb-common-heads)9d\n" % data)
+    ui.writenoi18n(b"    roots:             %(nb-common-roots)9d\n" % data)
     ui.writenoi18n(b"  missing:             %(nb-revs-missing)9d\n" % data)
+    ui.writenoi18n(b"    heads:             %(nb-missing-heads)9d\n" % data)
+    ui.writenoi18n(b"    roots:             %(nb-missing-roots)9d\n" % data)
 
     if ui.verbose:
         ui.writenoi18n(
