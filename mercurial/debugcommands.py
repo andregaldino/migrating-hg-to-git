@@ -1017,27 +1017,35 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
         common, hds = doit(localrevs, remoterevs)
 
     # compute all statistics
-    common = set(common)
-    rheads = set(hds)
-    lheads = set(repo.heads())
+    heads_common = set(common)
+    heads_remote = set(hds)
+    heads_local = set(repo.heads())
+    # note: they cannot be a local or remote head that is in common and not
+    # itself a head of common.
+    heads_common_local = heads_common & heads_local
+    heads_common_remote = heads_common & heads_remote
+    heads_common_both = heads_common & heads_remote & heads_local
+
+    all = repo.revs(b'all()')
+    common = repo.revs(b'::%ln', common)
+    missing = repo.revs(b'not ::%ld', common)
+    assert len(common) + len(missing) == len(all)
 
     data = {}
     data[b'elapsed'] = t.elapsed
-    data[b'nb-common-heads'] = len(common)
-    data[b'nb-common-heads-local'] = len(common & lheads)
-    data[b'nb-common-heads-remote'] = len(common & rheads)
-    data[b'nb-common-heads-both'] = len(common & rheads & lheads)
-    data[b'nb-head-local'] = len(lheads)
-    data[b'nb-head-local-missing'] = (
-        data[b'nb-head-local'] - data[b'nb-common-heads-local']
+    data[b'nb-common-heads'] = len(heads_common)
+    data[b'nb-common-heads-local'] = len(heads_common_local)
+    data[b'nb-common-heads-remote'] = len(heads_common_remote)
+    data[b'nb-common-heads-both'] = len(heads_common_both)
+    data[b'nb-head-local'] = len(heads_local)
+    data[b'nb-head-local-missing'] = len(heads_local) - len(heads_common_local)
+    data[b'nb-head-remote'] = len(heads_remote)
+    data[b'nb-head-remote-unknown'] = len(heads_remote) - len(
+        heads_common_remote
     )
-    data[b'nb-head-remote'] = len(rheads)
-    data[b'nb-head-remote-unknown'] = (
-        data[b'nb-head-remote'] - data[b'nb-common-heads-remote']
-    )
-    data[b'nb-revs'] = len(repo.revs(b'all()'))
-    data[b'nb-revs-common'] = len(repo.revs(b'::%ln', common))
-    data[b'nb-revs-missing'] = data[b'nb-revs'] - data[b'nb-revs-common']
+    data[b'nb-revs'] = len(all)
+    data[b'nb-revs-common'] = len(common)
+    data[b'nb-revs-missing'] = len(missing)
 
     # display discovery summary
     ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
@@ -1070,7 +1078,8 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     if ui.verbose:
         ui.writenoi18n(
-            b"common heads: %s\n" % b" ".join(sorted(short(n) for n in common))
+            b"common heads: %s\n"
+            % b" ".join(sorted(short(n) for n in heads_common))
         )
 
 
