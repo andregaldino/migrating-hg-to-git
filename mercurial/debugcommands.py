@@ -1023,14 +1023,18 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     data = {}
     data[b'elapsed'] = t.elapsed
-    data[b'nb-common'] = len(common)
-    data[b'nb-common-local'] = len(common & lheads)
-    data[b'nb-common-remote'] = len(common & rheads)
-    data[b'nb-common-both'] = len(common & rheads & lheads)
-    data[b'nb-local'] = len(lheads)
-    data[b'nb-local-missing'] = data[b'nb-local'] - data[b'nb-common-local']
-    data[b'nb-remote'] = len(rheads)
-    data[b'nb-remote-unknown'] = data[b'nb-remote'] - data[b'nb-common-remote']
+    data[b'nb-common-heads'] = len(common)
+    data[b'nb-common-heads-local'] = len(common & lheads)
+    data[b'nb-common-heads-remote'] = len(common & rheads)
+    data[b'nb-common-heads-both'] = len(common & rheads & lheads)
+    data[b'nb-head-local'] = len(lheads)
+    data[b'nb-head-local-missing'] = (
+        data[b'nb-head-local'] - data[b'nb-common-heads-local']
+    )
+    data[b'nb-head-remote'] = len(rheads)
+    data[b'nb-head-remote-unknown'] = (
+        data[b'nb-head-remote'] - data[b'nb-common-heads-remote']
+    )
     data[b'nb-revs'] = len(repo.revs(b'all()'))
     data[b'nb-revs-common'] = len(repo.revs(b'::%ln', common))
     data[b'nb-revs-missing'] = data[b'nb-revs'] - data[b'nb-revs-common']
@@ -1038,16 +1042,28 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     # display discovery summary
     ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
     ui.writenoi18n(b"heads summary:\n")
-    ui.writenoi18n(b"  total common heads:  %(nb-common)9d\n" % data)
-    ui.writenoi18n(b"    also local heads:  %(nb-common-local)9d\n" % data)
-    ui.writenoi18n(b"    also remote heads: %(nb-common-remote)9d\n" % data)
-    ui.writenoi18n(b"    both:              %(nb-common-both)9d\n" % data)
-    ui.writenoi18n(b"  local heads:         %(nb-local)9d\n" % data)
-    ui.writenoi18n(b"    common:            %(nb-common-local)9d\n" % data)
-    ui.writenoi18n(b"    missing:           %(nb-local-missing)9d\n" % data)
-    ui.writenoi18n(b"  remote heads:        %(nb-remote)9d\n" % data)
-    ui.writenoi18n(b"    common:            %(nb-common-remote)9d\n" % data)
-    ui.writenoi18n(b"    unknown:           %(nb-remote-unknown)9d\n" % data)
+    ui.writenoi18n(b"  total common heads:  %(nb-common-heads)9d\n" % data)
+    ui.writenoi18n(
+        b"    also local heads:  %(nb-common-heads-local)9d\n" % data
+    )
+    ui.writenoi18n(
+        b"    also remote heads: %(nb-common-heads-remote)9d\n" % data
+    )
+    ui.writenoi18n(b"    both:              %(nb-common-heads-both)9d\n" % data)
+    ui.writenoi18n(b"  local heads:         %(nb-head-local)9d\n" % data)
+    ui.writenoi18n(
+        b"    common:            %(nb-common-heads-local)9d\n" % data
+    )
+    ui.writenoi18n(
+        b"    missing:           %(nb-head-local-missing)9d\n" % data
+    )
+    ui.writenoi18n(b"  remote heads:        %(nb-head-remote)9d\n" % data)
+    ui.writenoi18n(
+        b"    common:            %(nb-common-heads-remote)9d\n" % data
+    )
+    ui.writenoi18n(
+        b"    unknown:           %(nb-head-remote-unknown)9d\n" % data
+    )
     ui.writenoi18n(b"local changesets:      %(nb-revs)9d\n" % data)
     ui.writenoi18n(b"  common:              %(nb-revs-common)9d\n" % data)
     ui.writenoi18n(b"  missing:             %(nb-revs-missing)9d\n" % data)
