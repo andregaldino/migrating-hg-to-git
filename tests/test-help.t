@@ -1068,6 +1068,7 @@ Test list of internal help commands
    debugserve    run a server with advanced settings
    debugsetparents
                  manually set the parents of the current working directory
+                 (DANGEROUS)
    debugsidedata
                  dump the side data for a cl/manifest/file revision
    debugssl      test a secure connection to a server

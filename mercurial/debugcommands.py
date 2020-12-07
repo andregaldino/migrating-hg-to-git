@@ -3441,12 +3441,22 @@ def debugserve(ui, repo, **opts):
 
 @command(b'debugsetparents', [], _(b'REV1 [REV2]'))
 def debugsetparents(ui, repo, rev1, rev2=None):
-    """manually set the parents of the current working directory
+    """manually set the parents of the current working directory (DANGEROUS)
 
-    This is useful for writing repository conversion tools, but should
-    be used with care. For example, neither the working directory nor the
-    dirstate is updated, so file status may be incorrect after running this
-    command.
+    This command is not what you are looking for and should not be used. Using
+    this command will most certainly results in slight corruption of the file
+    level histories withing your repository. DO NOT USE THIS COMMAND.
+
+    The command update the p1 and p2 field in the dirstate, and not touching
+    anything else. This useful for writing repository conversion tools, but
+    should be used with extreme care. For example, neither the working
+    directory nor the dirstate is updated, so file status may be incorrect
+    after running this command. Only used if you are one of the few people that
+    deeply unstand both conversion tools and file level histories. If you are
+    reading this help, you are not one of this people (most of them sailed west
+    from Mithlond anyway.
+
+    So one last time DO NOT USE THIS COMMAND.
 
     Returns 0 on success.
     """
