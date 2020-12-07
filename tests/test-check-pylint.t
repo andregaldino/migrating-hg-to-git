@@ -17,6 +17,6 @@ Current checks:
   >   mercurial hgdemandimport hgext hgext3rd | sed 's/\r$//'
   Using config file *fakerc (glob) (?)
    (?)
-  ------------------------------------ (?)
-  Your code has been rated at 10.00/10 (?)
+  ------------------------------------* (glob) (?)
+  Your code has been rated at 10.00/10* (glob) (?)
    (?)
