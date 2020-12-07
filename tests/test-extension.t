@@ -154,7 +154,10 @@ Check that extensions are loaded in phases:
   > from mercurial import exthelper
   > from mercurial.utils import procutil
   > 
-  > write = procutil.stdout.write
+  > def write(msg):
+  >     procutil.stdout.write(msg)
+  >     procutil.stdout.flush()
+  > 
   > name = os.path.basename(__file__).rsplit('.', 1)[0]
   > bytesname = name.encode('utf-8')
   > write(b"1) %s imported\n" % bytesname)
@@ -194,6 +197,9 @@ Check that extensions are loaded in phases:
 
 Check normal command's load order of extensions and registration of functions
 
+ On chg server, extension should be first set up by the server. Then
+ object-level setup should follow in the worker process.
+
   $ hg log -r "foo() and bar()" -q
   1) foo imported
   1) bar imported
@@ -209,6 +215,18 @@ Check normal command's load order of extensions and registration of functions
   4) bar uipopulate
   5) foo reposetup
   5) bar reposetup
+  4) foo uipopulate (chg !)
+  4) bar uipopulate (chg !)
+  4) foo uipopulate (chg !)
+  4) bar uipopulate (chg !)
+  4) foo uipopulate (chg !)
+  4) bar uipopulate (chg !)
+  4) foo uipopulate (chg !)
+  4) bar uipopulate (chg !)
+  4) foo uipopulate (chg !)
+  4) bar uipopulate (chg !)
+  5) foo reposetup (chg !)
+  5) bar reposetup (chg !)
   0:c24b9ac61126
 
 Check hgweb's load order of extensions and registration of functions
