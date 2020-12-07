@@ -418,7 +418,7 @@ class transaction(util.transactional):
     def readjournal(self):
         self._file.seek(0)
         entries = []
-        for l in self._file:
+        for l in self._file.readlines():
             file, troffset = l.split(b'\0')
             entries.append((file, int(troffset)))
         return entries
