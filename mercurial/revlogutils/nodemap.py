@@ -58,7 +58,9 @@ def persisted_data(revlog):
             else:
                 data = fd.read(data_length)
     except OSError as e:
-        if e.errno != errno.ENOENT:
+        if e.errno == errno.ENOENT:
+            return None
+        else:
             raise
     if len(data) < data_length:
         return None
