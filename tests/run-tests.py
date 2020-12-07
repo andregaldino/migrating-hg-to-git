@@ -3484,7 +3484,29 @@ class TestRunner(object):
             path = os.environ['PATH'].split(os.pathsep)
             while exedir in path:
                 path.remove(exedir)
-            os.environ['PATH'] = os.pathsep.join([exedir] + path)
+
+            # Binaries installed by pip into the user area like pylint.exe may
+            # not be in PATH by default.
+            extra_paths = [exedir]
+            vi = sys.version_info
+            if 'APPDATA' in os.environ:
+                scripts_dir = os.path.join(
+                    os.environ['APPDATA'],
+                    'Python',
+                    'Python%d%d' % (vi[0], vi[1]),
+                    'Scripts',
+                )
+
+                if vi.major == 2:
+                    scripts_dir = os.path.join(
+                        os.environ['APPDATA'],
+                        'Python',
+                        'Scripts',
+                    )
+
+                extra_paths.append(scripts_dir)
+
+            os.environ['PATH'] = os.pathsep.join(extra_paths + path)
             if not self._findprogram(pyexename):
                 print("WARNING: Cannot find %s in search path" % pyexename)
 
