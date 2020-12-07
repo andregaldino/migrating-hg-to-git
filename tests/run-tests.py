@@ -3466,6 +3466,16 @@ class TestRunner(object):
                     if err.errno != errno.EEXIST:
                         raise
         else:
+            # Windows doesn't have `python3.exe`, and MSYS cannot understand the
+            # reparse point with that name provided by Microsoft.  Copy the
+            # current interpreter to PATH with that name so the shebang lines
+            # work.
+            if os.getenv('MSYSTEM'):
+                shutil.copy(
+                    sys.executable,
+                    _bytes2sys(self._tmpbindir + b'/python3.exe'),
+                )
+
             exedir, exename = os.path.split(sysexecutable)
             vlog(
                 "# Modifying search path to find %s as %s in '%s'"
