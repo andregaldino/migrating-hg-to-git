@@ -203,17 +203,23 @@ test interaction with ui.warn
 
 test interaction with ui.timestamp-output
 
+XXX: The timestamp on Windows with py2 hg is in 1970, and py3 hg is now.  But
+the py2/py3 checks here test the test runner, not the binary.  The Windows lines
+can be dropped when switching to py3-only.
+
   $ hg loop --warn --config ui.timestamp-output=true 6
   \r (no-eol) (esc)
   loop [                                                ] 0/6\r (no-eol) (esc)
                                                               \r (no-eol) (esc)
-  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] reached step 0 (re)
+  [*T*] reached step 0 (glob) (windows !)
+  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] reached step 0 (re) (no-windows !)
   \r (no-eol) (esc)
   loop [=======>                                        ] 1/6\r (no-eol) (esc)
   loop [===============>                                ] 2/6\r (no-eol) (esc)
   loop [=======================>                        ] 3/6\r (no-eol) (esc)
                                                               \r (no-eol) (esc)
-  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] reached step 3 (re)
+  [*T*] reached step 3 (glob) (windows !)
+  \[20[2-9][0-9]-[01][0-9]-[0-3][0-9]T[0-5][0-9]:[0-5][0-9]:[0-5][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]\] reached step 3 (re) (no-windows !)
   \r (no-eol) (esc)
   loop [===============================>                ] 4/6\r (no-eol) (esc)
   loop [=======================================>        ] 5/6\r (no-eol) (esc)
