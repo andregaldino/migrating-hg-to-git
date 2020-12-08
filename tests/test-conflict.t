@@ -80,6 +80,8 @@
    }
   ]
 
+  $ hg status -0
+  M a\x00? a.orig\x00 (no-eol) (esc)
   $ cat a
   Small Mathematical Series.
   1

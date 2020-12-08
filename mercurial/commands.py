@@ -6766,8 +6766,10 @@ def status(ui, repo, *pats, **opts):
 
     morestatus = None
     if (
-        ui.verbose or ui.configbool(b'commands', b'status.verbose')
-    ) and not ui.plain():
+        (ui.verbose or ui.configbool(b'commands', b'status.verbose'))
+        and not ui.plain()
+        and not opts.get(b'print0')
+    ):
         morestatus = cmdutil.readmorestatus(repo)
 
     ui.pager(b'status')
