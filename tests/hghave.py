@@ -886,17 +886,16 @@ def has_ensurepip():
         return False
 
 
-@check("py2virtualenv", "Python2 virtualenv support")
-def has_py2virtualenv():
-    if sys.version_info[0] != 2:
-        return False
-
+@check("virtualenv", "virtualenv support")
+def has_virtualenv():
     try:
         import virtualenv
 
-        virtualenv.ACTIVATE_SH
-        return True
-    except ImportError:
+        # --no-site-package became the default in 1.7 (Nov 2011), and the
+        # argument was removed in 20.0 (Feb 2020).  Rather than make the
+        # script complicated, just ignore ancient versions.
+        return int(virtualenv.__version__.split('.')[0]) > 1
+    except (AttributeError, ImportError, IndexError):
         return False
 
 

@@ -222,13 +222,11 @@ since it's bin on most platforms but Scripts on Windows.
   no problems detected
 #endif
 
-#if py2virtualenv
+#if virtualenv no-py3
 
-Note: --no-site-packages is deprecated, but some places have an
-ancient virtualenv from their linux distro or similar and it's not yet
-the default for them.
+Note: --no-site-packages is the default for all versions enabled by hghave
 
-  $ "$PYTHON" -m virtualenv --no-site-packages --never-download installenv >> pip.log
+  $ "$PYTHON" -m virtualenv --never-download installenv >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
 
@@ -237,6 +235,7 @@ since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
+  DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality. (?)
   $ ./installenv/*/hg debuginstall || cat pip.log
   checking encoding (ascii)...
   checking Python executable (*) (glob)
