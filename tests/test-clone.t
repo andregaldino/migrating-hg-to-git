@@ -1192,14 +1192,14 @@ SEC: check for unsafe ssh url
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
   $ hg clone "ssh://example.com:%26touch%20owned%20/" --debug
   running sh -c "read l; read l; read l" -p "&touch owned " example.com "hg -R . serve --stdio"
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
-  abort: no suitable response from remote hg!
+  abort: no suitable response from remote hg
   [255]
 #else
   $ hg clone "ssh://%3btouch%20owned%20/" --debug
