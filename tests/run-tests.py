@@ -2948,7 +2948,7 @@ class TestRunner(object):
         self._hgtmp = None
         self._installdir = None
         self._bindir = None
-        self._tmpbinddir = None
+        self._tmpbindir = None
         self._pythondir = None
         self._coveragefile = None
         self._createdfiles = []
