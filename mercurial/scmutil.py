@@ -1573,7 +1573,12 @@ def istreemanifest(repo):
 
 
 def writereporequirements(repo, requirements=None):
-    """ writes requirements for the repo to .hg/requires """
+    """writes requirements for the repo
+
+    Requirements are written to .hg/requires and .hg/store/requires based
+    on whether share-safe mode is enabled and which requirements are wdir
+    requirements and which are store requirements
+    """
     if requirements:
         repo.requirements = requirements
     wcreq, storereq = filterrequirements(repo.requirements)
