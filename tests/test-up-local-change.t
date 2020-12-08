@@ -70,8 +70,8 @@
    ancestor: 1e71731e6fbb, local: 1e71731e6fbb+, remote: c19d34741b0a
    b: other deleted -> r
   removing b
-   preserving a for resolve of a
   starting 4 threads for background file closing (?)
+   preserving a for resolve of a
    a: versions differ -> m (premerge)
   picked tool 'true' for a (binary False symlink False changedelete False)
   merging a

@@ -35,9 +35,9 @@ we get conflicts that shouldn't be there
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: e6dc8efe11cc, local: 6a0df1dad128+, remote: 484bf6903104
+  starting 4 threads for background file closing (?)
    preserving foo for resolve of bar
    preserving foo for resolve of foo
-  starting 4 threads for background file closing (?)
    bar: remote copied from foo -> m (premerge)
   picked tool ':merge' for bar (binary False symlink False changedelete False)
   merging foo and bar to bar

@@ -63,8 +63,8 @@ https://bz.mercurial-scm.org/672
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: c64f439569a9, local: f4a9cff3cd0b+, remote: 746e9549ea96
-   preserving 1a for resolve of 1a
   starting 4 threads for background file closing (?)
+   preserving 1a for resolve of 1a
    1a: local copied/moved from 1 -> m (premerge)
   picked tool ':merge' for 1a (binary False symlink False changedelete False)
   merging 1a and 1 to 1a
@@ -86,9 +86,9 @@ https://bz.mercurial-scm.org/672
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: c64f439569a9, local: 746e9549ea96+, remote: f4a9cff3cd0b
+  starting 4 threads for background file closing (?)
    preserving 1 for resolve of 1a
   removing 1
-  starting 4 threads for background file closing (?)
    1a: remote moved from 1 -> m (premerge)
   picked tool ':merge' for 1a (binary False symlink False changedelete False)
   merging 1 and 1a to 1a

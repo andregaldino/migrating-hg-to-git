@@ -100,10 +100,10 @@ Test Simple Merge
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: b8bf91eeebbc, local: add3f11052fa+, remote: 17c05bb7fcb6
+  starting 4 threads for background file closing (?)
    preserving a for resolve of b
    preserving a for resolve of c
   removing a
-  starting 4 threads for background file closing (?)
    b: remote moved from a -> m (premerge)
   picked tool ':merge' for b (binary False symlink False changedelete False)
   merging a and b to b

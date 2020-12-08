@@ -85,11 +85,10 @@ $4 = expected result
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: e300d1c794ec+, remote: 4ce40f5aca24
+  starting 4 threads for background file closing (?)
    preserving a for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: remote copied from a -> m (premerge)
-  starting 4 threads for background file closing (?)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging a and b to b
   my b@e300d1c794ec+ other b@4ce40f5aca24 ancestor a@924404dff337
@@ -165,10 +164,10 @@ $4 = expected result
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: e300d1c794ec+, remote: bdb19105162a
+  starting 4 threads for background file closing (?)
    preserving a for resolve of b
    preserving rev for resolve of rev
   removing a
-  starting 4 threads for background file closing (?)
    b: remote moved from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging a and b to b
@@ -204,9 +203,9 @@ $4 = expected result
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 02963e448370+, remote: f4db7e329e71
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: local copied/moved from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b and a to b
@@ -275,8 +274,8 @@ $4 = expected result
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: 97c705ade336
-   preserving rev for resolve of rev
   starting 4 threads for background file closing (?)
+   preserving rev for resolve of rev
    rev: versions differ -> m (premerge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
@@ -341,8 +340,8 @@ $4 = expected result
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 02963e448370+, remote: 97c705ade336
-   preserving rev for resolve of rev
   starting 4 threads for background file closing (?)
+   preserving rev for resolve of rev
    rev: versions differ -> m (premerge)
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
@@ -372,9 +371,9 @@ $4 = expected result
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 62e7bf090eba+, remote: 49b6d8032493
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -454,9 +453,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 86a2aa42fc76+, remote: af30c7647fc7
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -496,9 +495,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    ancestor: 924404dff337, local: 59318016310c+, remote: bdb19105162a
    a: other deleted -> r
   removing a
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -574,9 +573,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    ancestor: 924404dff337, local: 59318016310c+, remote: bdb19105162a
    a: other deleted -> r
   removing a
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -650,11 +649,10 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 0b76e65c8289+, remote: 4ce40f5aca24
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: both renamed from a -> m (premerge)
-  starting 4 threads for background file closing (?)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
   my b@0b76e65c8289+ other b@4ce40f5aca24 ancestor a@924404dff337
@@ -687,9 +685,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 02963e448370+, remote: 8dbce441892a
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -722,9 +720,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 0b76e65c8289+, remote: bdb19105162a
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: both renamed from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
@@ -760,10 +758,10 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: e300d1c794ec+, remote: 49b6d8032493
+  starting 4 threads for background file closing (?)
    preserving a for resolve of b
    preserving rev for resolve of rev
   removing a
-  starting 4 threads for background file closing (?)
    b: remote moved from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging a and b to b
@@ -803,9 +801,9 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 924404dff337, local: 62e7bf090eba+, remote: f4db7e329e71
+  starting 4 threads for background file closing (?)
    preserving b for resolve of b
    preserving rev for resolve of rev
-  starting 4 threads for background file closing (?)
    b: local copied/moved from a -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b and a to b

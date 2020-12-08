@@ -216,8 +216,8 @@ modify x and rename y to z on the other side.
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 5151c134577e, local: 07fcbc9a74ed+, remote: f21419739508
-   preserving z for resolve of z
   starting 4 threads for background file closing (?)
+   preserving z for resolve of z
    z: both renamed from y -> m (premerge)
   picked tool ':merge3' for z (binary False symlink False changedelete False)
   merging z

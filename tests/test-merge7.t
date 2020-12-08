@@ -84,8 +84,8 @@ pull and merge from test-a again
   resolving manifests
    branchmerge: True, force: False, partial: False
    ancestor: 96b70246a118, local: 50c3a7e29886+, remote: 40d11a4173a8
-   preserving test.txt for resolve of test.txt
   starting 4 threads for background file closing (?)
+   preserving test.txt for resolve of test.txt
    test.txt: versions differ -> m (premerge)
   picked tool ':merge' for test.txt (binary False symlink False changedelete False)
   merging test.txt
