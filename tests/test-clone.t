@@ -625,7 +625,7 @@ No remote source
 #if windows
   $ hg clone http://$LOCALIP:3121/a b
   abort: error: * (glob)
-  [255]
+  [100]
 #else
   $ hg clone http://$LOCALIP:3121/a b
   abort: error: *refused* (glob)

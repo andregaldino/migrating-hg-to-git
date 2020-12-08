@@ -787,7 +787,7 @@ TODO: Fix this on Windows. See issue 2020 and 5883
 
   $ printf 'y\ny\ny\n' | hg split
   abort: cannot split an empty revision
-  [255]
+  [10]
 #endif
 
 Test that splitting moves works properly (issue5723)

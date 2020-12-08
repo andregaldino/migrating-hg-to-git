@@ -332,7 +332,7 @@ test for rename awareness of case-folding collision check:
 
   $ hg update --check
   abort: uncommitted changes
-  [255]
+  [20]
 
   $ hg update --clean
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
