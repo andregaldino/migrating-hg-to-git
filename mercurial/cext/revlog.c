@@ -370,7 +370,7 @@ static int node_check(PyObject *obj, char **node)
 
 static PyObject *index_append(indexObject *self, PyObject *obj)
 {
-	unsigned long offset_flags;
+	uint64_t offset_flags;
 	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
 	Py_ssize_t c_node_id_len;
 	const char *c_node_id;
