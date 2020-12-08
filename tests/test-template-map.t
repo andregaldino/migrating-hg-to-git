@@ -139,7 +139,8 @@ Test map inheritance with directory as base
   $ mkdir somedir
   $ echo "__base__ = somedir" > map-base-dir
   $ hg log -l1 -T./map-base-dir
-  abort: Is a directory: '$TESTTMP/a/somedir'
+  abort: Is a directory: '$TESTTMP/a/somedir' (no-windows !)
+  abort: $TESTTMP/a/somedir: Access is denied (windows !)
   [255]
 
 Test including a built-in template map
@@ -1279,7 +1280,8 @@ Error if no style:
 Error if style is a directory:
 
   $ hg log --style somedir
-  abort: Is a directory: 'somedir'
+  abort: Is a directory: 'somedir' (no-windows !)
+  abort: somedir: Access is denied (windows !)
   [255]
 
 Error if style is a directory whose name is a built-in style:
