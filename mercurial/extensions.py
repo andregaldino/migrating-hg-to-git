@@ -810,7 +810,7 @@ def disabled():
     exts = {}
     for name, path in pycompat.iteritems(paths):
         doc = _disabledhelp(path)
-        if doc:
+        if doc and name != b'__index__':
             exts[name] = doc.splitlines()[0]
 
     return exts
