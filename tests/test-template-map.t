@@ -1972,6 +1972,7 @@ if it is a relative path
   > EOF
 
   $ HOME=`pwd`/home; export HOME
+  $ USERPROFILE=`pwd`/home; export USERPROFILE
 
   $ cat > latesttag/.hg/hgrc <<EOF
   > [ui]

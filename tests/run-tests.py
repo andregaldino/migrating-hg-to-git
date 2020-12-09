@@ -1335,6 +1335,9 @@ class Test(unittest.TestCase):
         env['TESTTMP'] = _bytes2sys(self._testtmp)
         env['TESTNAME'] = self.name
         env['HOME'] = _bytes2sys(self._testtmp)
+        if os.name == 'nt':
+            # py3.8+ ignores HOME: https://bugs.python.org/issue36264
+            env['USERPROFILE'] = env['HOME']
         formated_timeout = _bytes2sys(b"%d" % default_defaults['timeout'][1])
         env['HGTEST_TIMEOUT_DEFAULT'] = formated_timeout
         env['HGTEST_TIMEOUT'] = _bytes2sys(b"%d" % self._timeout)
