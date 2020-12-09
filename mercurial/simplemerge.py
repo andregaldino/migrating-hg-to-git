@@ -455,6 +455,68 @@ def is_not_null(ctx):
     return ctx.node() != nodemod.nullid
 
 
+def _mergediff(m3, name_a, name_b, name_base):
+    lines = []
+    conflicts = False
+    for group in m3.merge_groups():
+        if group[0] == b'conflict':
+            base_lines, a_lines, b_lines = group[1:]
+            base_text = b''.join(base_lines)
+            b_blocks = list(
+                mdiff.allblocks(
+                    base_text,
+                    b''.join(b_lines),
+                    lines1=base_lines,
+                    lines2=b_lines,
+                )
+            )
+            a_blocks = list(
+                mdiff.allblocks(
+                    base_text,
+                    b''.join(a_lines),
+                    lines1=base_lines,
+                    lines2=b_lines,
+                )
+            )
+
+            def matching_lines(blocks):
+                return sum(
+                    block[1] - block[0]
+                    for block, kind in blocks
+                    if kind == b'='
+                )
+
+            def diff_lines(blocks, lines1, lines2):
+                for block, kind in blocks:
+                    if kind == b'=':
+                        for line in lines1[block[0] : block[1]]:
+                            yield b' ' + line
+                    else:
+                        for line in lines1[block[0] : block[1]]:
+                            yield b'-' + line
+                        for line in lines2[block[2] : block[3]]:
+                            yield b'+' + line
+
+            lines.append(b"<<<<<<<\n")
+            if matching_lines(a_blocks) < matching_lines(b_blocks):
+                lines.append(b"======= %s\n" % name_a)
+                lines.extend(a_lines)
+                lines.append(b"------- %s\n" % name_base)
+                lines.append(b"+++++++ %s\n" % name_b)
+                lines.extend(diff_lines(b_blocks, base_lines, b_lines))
+            else:
+                lines.append(b"------- %s\n" % name_base)
+                lines.append(b"+++++++ %s\n" % name_a)
+                lines.extend(diff_lines(a_blocks, base_lines, a_lines))
+                lines.append(b"======= %s\n" % name_b)
+                lines.extend(b_lines)
+            lines.append(b">>>>>>>\n")
+            conflicts = True
+        else:
+            lines.extend(group[1])
+    return lines, conflicts
+
+
 def simplemerge(ui, localctx, basectx, otherctx, **opts):
     """Performs the simplemerge algorithm.
 
@@ -499,9 +561,15 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         extrakwargs[b'name_base'] = name_base
         extrakwargs[b'minimize'] = False
 
-    lines = m3.merge_lines(
-        name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
-    )
+    if mode == b'mergediff':
+        lines, conflicts = _mergediff(m3, name_a, name_b, name_base)
+    else:
+        lines = list(
+            m3.merge_lines(
+                name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
+            )
+        )
+        conflicts = m3.conflicts
 
     # merge flags if necessary
     flags = localctx.flags()
@@ -519,5 +587,5 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
     else:
         localctx.write(mergedtext, flags)
 
-    if m3.conflicts and not mode == b'union':
+    if conflicts and not mode == b'union':
         return 1

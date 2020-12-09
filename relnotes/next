@@ -27,6 +27,13 @@
  * The memory footprint per changeset during pull/unbundle
    operations has been further reduced.
 
+ * There is a new internal merge tool called `internal:mergediff` (can
+   be set as the value for the `merge` config in the `[ui]`
+   section). It resolves merges the same was as `internal:merge` and
+   `internal:merge3`, but it shows conflicts differently. Instead of
+   showing 2 or 3 snapshots of the conflicting pieces of code, it
+   shows one snapshot and a diff. This may be useful when at least one
+   side of the conflict is similar to the base.
 
 == New Experimental Features ==
 

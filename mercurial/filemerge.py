@@ -532,6 +532,33 @@ def _imerge3(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     return _imerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels)
 
 
+@internaltool(
+    b'mergediff',
+    fullmerge,
+    _(
+        b"warning: conflicts while merging %s! "
+        b"(edit, then use 'hg resolve --mark')\n"
+    ),
+    precheck=_mergecheck,
+)
+def _imerge_diff(
+    repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None
+):
+    """
+    Uses the internal non-interactive simple merge algorithm for merging
+    files. It will fail if there are any conflicts and leave markers in
+    the partially merged file. The marker will have two sections, one with the
+    content from one side of the merge, and one with a diff from the base
+    content to the content on the other side. (experimental)"""
+    if not labels:
+        labels = _defaultconflictlabels
+    if len(labels) < 3:
+        labels.append(b'base')
+    return _merge(
+        repo, mynode, orig, fcd, fco, fca, toolconf, files, labels, b'mergediff'
+    )
+
+
 def _imergeauto(
     repo,
     mynode,
