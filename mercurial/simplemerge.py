@@ -433,9 +433,9 @@ def _verifytext(text, path, ui, opts):
     then we just warn)"""
     if stringutil.binary(text):
         msg = _(b"%s looks like a binary file.") % path
-        if not opts.get(b'quiet'):
+        if not opts.get('quiet'):
             ui.warn(_(b'warning: %s\n') % msg)
-        if not opts.get(b'text'):
+        if not opts.get('text'):
             raise error.Abort(msg)
     return text
 
@@ -460,7 +460,6 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     The merged result is written into `localctx`.
     """
-    opts = pycompat.byteskwargs(opts)
 
     def readctx(ctx):
         # Merges were always run in the working copy before, which means
@@ -472,11 +471,11 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         # repository usually sees) might be more useful.
         return _verifytext(ctx.decodeddata(), ctx.path(), ui, opts)
 
-    mode = opts.get(b'mode', b'merge')
+    mode = opts.get('mode', b'merge')
     name_a, name_b, name_base = None, None, None
     if mode != b'union':
         name_a, name_b, name_base = _picklabels(
-            [localctx.path(), otherctx.path(), None], opts.get(b'label', [])
+            [localctx.path(), otherctx.path(), None], opts.get('label', [])
         )
 
     try:
@@ -488,7 +487,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     m3 = Merge3Text(basetext, localtext, othertext)
     extrakwargs = {
-        b"localorother": opts.get(b"localorother", None),
+        b"localorother": opts.get("localorother", None),
         b'minimize': True,
     }
     if mode == b'union':
@@ -504,7 +503,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
     for line in m3.merge_lines(
         name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
     ):
-        if opts.get(b'print'):
+        if opts.get('print'):
             ui.fout.write(line)
         else:
             mergedtext += line
@@ -519,7 +518,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         addedflags = (localflags ^ otherflags) - baseflags
         flags = b''.join(sorted(commonflags | addedflags))
 
-    if not opts.get(b'print'):
+    if not opts.get('print'):
         localctx.write(mergedtext, flags)
 
     if m3.conflicts and not mode == b'union':
