@@ -499,14 +499,14 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         extrakwargs[b'name_base'] = name_base
         extrakwargs[b'minimize'] = False
 
-    mergedtext = b""
+    lines = []
     for line in m3.merge_lines(
         name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
     ):
         if opts.get('print'):
             ui.fout.write(line)
         else:
-            mergedtext += line
+            lines.append(line)
 
     # merge flags if necessary
     flags = localctx.flags()
@@ -519,6 +519,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         flags = b''.join(sorted(commonflags | addedflags))
 
     if not opts.get('print'):
+        mergedtext = b''.join(lines)
         localctx.write(mergedtext, flags)
 
     if m3.conflicts and not mode == b'union':
