@@ -1956,9 +1956,12 @@ Test automatic pattern replacement
   $ cat << EOF >> test-config-opt.t
   >   $ hg init test-config-opt
   >   $ hg -R test-config-opt purge
+  >   $ echo "HGTESTEXTRAEXTENSIONS: \$HGTESTEXTRAEXTENSIONS"
+  >   HGTESTEXTRAEXTENSIONS: purge
   > EOF
 
-  $ rt --extra-config-opt extensions.purge= test-config-opt.t
+  $ rt --extra-config-opt extensions.purge= \
+  >    --extra-config-opt not.an.extension=True test-config-opt.t
   running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.

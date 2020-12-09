@@ -1364,14 +1364,14 @@ class Test(unittest.TestCase):
 
         extraextensions = []
         for opt in self._extraconfigopts:
-            section, key = _sys2bytes(opt).split(b'.', 1)
+            section, key = opt.split('.', 1)
             if section != 'extensions':
                 continue
-            name = key.split(b'=', 1)[0]
+            name = key.split('=', 1)[0]
             extraextensions.append(name)
 
         if extraextensions:
-            env['HGTESTEXTRAEXTENSIONS'] = b' '.join(extraextensions)
+            env['HGTESTEXTRAEXTENSIONS'] = ' '.join(extraextensions)
 
         # LOCALIP could be ::1 or 127.0.0.1. Useful for tests that require raw
         # IP addresses.
