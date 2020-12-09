@@ -298,7 +298,12 @@ if pycompat.ispy3:
     if pycompat.iswindows:
         # Python 3 on Windows issues a DeprecationWarning about using the bytes
         # API when os.getcwdb() is called.
-        getcwd = lambda: strtolocal(os.getcwd())  # re-exports
+        #
+        # Additionally, py3.8+ uppercases the drive letter when calling
+        # os.path.realpath(), which is used on ``repo.root``.  Since those
+        # strings are compared in various places as simple strings, also call
+        # realpath here.  See https://bugs.python.org/issue40368
+        getcwd = lambda: strtolocal(os.path.realpath(os.getcwd()))  # re-exports
     else:
         getcwd = os.getcwdb  # re-exports
 else:
