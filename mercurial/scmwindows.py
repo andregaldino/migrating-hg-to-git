@@ -68,13 +68,45 @@ def systemrcpath():
 
 def userrcpath():
     '''return os-specific hgrc search path to the user dir'''
-    home = os.path.expanduser(b'~')
+    home = _legacy_expanduser(b'~')
     path = [os.path.join(home, b'mercurial.ini'), os.path.join(home, b'.hgrc')]
     userprofile = encoding.environ.get(b'USERPROFILE')
     if userprofile and userprofile != home:
         path.append(os.path.join(userprofile, b'mercurial.ini'))
         path.append(os.path.join(userprofile, b'.hgrc'))
     return path
+
+
+def _legacy_expanduser(path):
+    """Expand ~ and ~user constructs in the pre 3.8 style"""
+
+    # Python 3.8+ changed the expansion of '~' from HOME to USERPROFILE.  See
+    # https://bugs.python.org/issue36264.  It also seems to capitalize the drive
+    # letter, as though it was processed through os.path.realpath().
+    if not path.startswith(b'~'):
+        return path
+
+    i, n = 1, len(path)
+    while i < n and path[i] not in b'\\/':
+        i += 1
+
+    if b'HOME' in encoding.environ:
+        userhome = encoding.environ[b'HOME']
+    elif b'USERPROFILE' in encoding.environ:
+        userhome = encoding.environ[b'USERPROFILE']
+    elif b'HOMEPATH' not in encoding.environ:
+        return path
+    else:
+        try:
+            drive = encoding.environ[b'HOMEDRIVE']
+        except KeyError:
+            drive = b''
+        userhome = os.path.join(drive, encoding.environ[b'HOMEPATH'])
+
+    if i != 1:  # ~user
+        userhome = os.path.join(os.path.dirname(userhome), path[1:i])
+
+    return userhome + path[i:]
 
 
 def termsize(ui):
