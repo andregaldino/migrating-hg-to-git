@@ -47,8 +47,7 @@ The following ``share.`` config options influence this feature:
 
 .. container:: verbose
 
-    Sharing requirements and configs of source repository with shares
-    -----------------------------------------------------------------
+    Sharing requirements and configs of source repository with shares:
 
     By default creating a shared repository only enables sharing a common
     history and does not share requirements and configs between them. This
