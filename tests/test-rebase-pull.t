@@ -88,8 +88,8 @@ Abort pull early if another operation (histedit) is in progress:
   $ hg histedit . -q --commands - << EOF
   > edit d80cc2da061e histedit: generate unfinished state
   > EOF
-  Editing (d80cc2da061e), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (d80cc2da061e), commit as needed now to split the change
+  (to edit d80cc2da061e, `hg histedit --continue` after making changes)
   [240]
   $ hg pull --rebase
   abort: histedit in progress

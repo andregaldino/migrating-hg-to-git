@@ -75,8 +75,8 @@ edit the history
   > pick 3c6a8ed2ebe8 g
   > EOF
   0 files updated, 0 files merged, 3 files removed, 0 files unresolved
-  Editing (e860deea161a), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (e860deea161a), commit as needed now to split the change
+  (to edit e860deea161a, `hg histedit --continue` after making changes)
 
 try to update and get an error
   $ hg update tip
@@ -205,8 +205,8 @@ Stripping necessary commits should not break --abort
   > pick b5f70786f9b0 g
   > EOF
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
-  Editing (1a60820cd1f6), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (1a60820cd1f6), commit as needed now to split the change
+  (to edit 1a60820cd1f6, `hg histedit --continue` after making changes)
 
   $ mv .hg/histedit-state .hg/histedit-state.bak
   $ hg strip -q -r b5f70786f9b0
@@ -247,8 +247,8 @@ check histedit_source
   > edit b5f70786f9b0 f
   > EOF
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  Editing (b5f70786f9b0), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (b5f70786f9b0), commit as needed now to split the change
+  (to edit b5f70786f9b0, `hg histedit --continue` after making changes)
   $ hg status
   A f
 
@@ -435,8 +435,8 @@ rollback should not work after a histedit
   > edit cb9a9f314b8b a > $EDITED
   > EOF
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  Editing (cb9a9f314b8b), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (cb9a9f314b8b), commit as needed now to split the change
+  (to edit cb9a9f314b8b, `hg histedit --continue` after making changes)
   [240]
   $ HGEDITOR=true hg histedit --continue
   saved backup bundle to $TESTTMP/r0/.hg/strip-backup/cb9a9f314b8b-cc5ccb0b-histedit.hg

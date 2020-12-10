@@ -142,8 +142,8 @@ edit the history
   > EOF
   $ HGEDITOR="cat \"$EDITED\" > " hg histedit 177f92b77385 2>&1 | fixbundle
   0 files updated, 0 files merged, 4 files removed, 0 files unresolved
-  Editing (177f92b77385), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (177f92b77385), commit as needed now to split the change
+  (to edit 177f92b77385, `hg histedit --continue` after making changes)
 
 rules should end up in .hg/histedit-last-edit.txt:
   $ cat .hg/histedit-last-edit.txt

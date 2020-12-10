@@ -799,10 +799,11 @@ class edit(histeditaction):
         rulectx = repo[self.node]
         hg.update(repo, self.state.parentctxnode, quietempty=True)
         applychanges(repo.ui, repo, rulectx, {})
+        hint = _(b'to edit %s, `hg histedit --continue` after making changes')
         raise error.InterventionRequired(
-            _(b'Editing (%s), you may commit or record as needed now.')
+            _(b'Editing (%s), commit as needed now to split the change')
             % node.short(self.node),
-            hint=_(b'hg histedit --continue to resume'),
+            hint=hint % node.short(self.node),
         )
 
     def commiteditor(self):

@@ -43,8 +43,8 @@ Test that histedit learns about obsolescence not stored in histedit state
   $ echo "pick `hg log -r 2 -T '{node|short}'`" >> plan
   $ echo "edit `hg log -r 1 -T '{node|short}'`" >> plan
   $ hg histedit -r 'all()' --commands plan
-  Editing (1b2d564fad96), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (1b2d564fad96), commit as needed now to split the change
+  (to edit 1b2d564fad96, `hg histedit --continue` after making changes)
   [240]
   $ hg st
   A b
@@ -70,8 +70,8 @@ With some node gone missing during the edit.
   $ echo "pick `hg log -r 5 -T '{node|short}'`" >> plan
   $ echo "edit `hg log -r 4 -T '{node|short}'`" >> plan
   $ hg histedit -r 'all()' --commands plan
-  Editing (49d44ab2be1b), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (49d44ab2be1b), commit as needed now to split the change
+  (to edit 49d44ab2be1b, `hg histedit --continue` after making changes)
   [240]
   $ hg st
   A b
@@ -225,8 +225,8 @@ Test that rewriting leaving instability behind is allowed
   > edit b346ab9a313d 6 c
   > EOF
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  Editing (b346ab9a313d), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (b346ab9a313d), commit as needed now to split the change
+  (to edit b346ab9a313d, `hg histedit --continue` after making changes)
   [240]
   $ echo c >> c
   $ hg histedit --continue
@@ -359,8 +359,8 @@ New-commit as draft (default)
   > pick ee118ab9fa44 16 k
   > EOF
   0 files updated, 0 files merged, 6 files removed, 0 files unresolved
-  Editing (b449568bf7fc), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (b449568bf7fc), commit as needed now to split the change
+  (to edit b449568bf7fc, `hg histedit --continue` after making changes)
   [240]
   $ echo f >> f
   $ hg histedit --continue
@@ -401,8 +401,8 @@ New-commit as secret (config)
   > pick ee118ab9fa44 16 k
   > EOF
   0 files updated, 0 files merged, 6 files removed, 0 files unresolved
-  Editing (b449568bf7fc), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (b449568bf7fc), commit as needed now to split the change
+  (to edit b449568bf7fc, `hg histedit --continue` after making changes)
   [240]
   $ echo f >> f
   $ hg histedit --continue
@@ -527,8 +527,8 @@ attempted later.
   > roll 3a6c53ee7f3d 17 j
   > edit ee118ab9fa44 18 k
   > EOF
-  Editing (ee118ab9fa44), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (ee118ab9fa44), commit as needed now to split the change
+  (to edit ee118ab9fa44, `hg histedit --continue` after making changes)
   [240]
 
 #if abortcommand
@@ -566,8 +566,8 @@ when in dry-run mode
   > pick 3a6c53ee7f3d 17 j
   > edit ee118ab9fa44 18 k
   > EOF
-  Editing (ee118ab9fa44), you may commit or record as needed now.
-  (hg histedit --continue to resume)
+  Editing (ee118ab9fa44), commit as needed now to split the change
+  (to edit ee118ab9fa44, `hg histedit --continue` after making changes)
   [240]
   $ hg histedit --continue --config experimental.evolution.track-operation=1
   $ hg log -G
