@@ -77,7 +77,7 @@ Run a dummy edit to make sure we get tip^^ correctly via revsingle.
   #
   # Commands:
   #
-  #  e, edit = use commit, but stop for amending
+  #  e, edit = use commit, but allow edits before making new commit
   #  m, mess = edit commit message without changing commit content
   #  p, pick = use commit
   #  b, base = checkout changeset and apply further changesets from there
@@ -319,7 +319,7 @@ Test that trimming description using multi-byte characters
   #
   # Commands:
   #
-  #  e, edit = use commit, but stop for amending
+  #  e, edit = use commit, but allow edits before making new commit
   #  m, mess = edit commit message without changing commit content
   #  p, pick = use commit
   #  b, base = checkout changeset and apply further changesets from there
@@ -557,7 +557,7 @@ Check that 'roll' is selected by default
   #
   # Commands:
   #
-  #  e, edit = use commit, but stop for amending
+  #  e, edit = use commit, but allow edits before making new commit
   #  m, mess = edit commit message without changing commit content
   #  p, pick = use commit
   #  b, base = checkout changeset and apply further changesets from there

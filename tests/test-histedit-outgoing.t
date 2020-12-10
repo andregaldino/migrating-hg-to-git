@@ -49,7 +49,7 @@ show the edit commands offered by outgoing
   #
   # Commands:
   #
-  #  e, edit = use commit, but stop for amending
+  #  e, edit = use commit, but allow edits before making new commit
   #  m, mess = edit commit message without changing commit content
   #  p, pick = use commit
   #  b, base = checkout changeset and apply further changesets from there
@@ -84,7 +84,7 @@ show the error from unrelated repos
   #
   # Commands:
   #
-  #  e, edit = use commit, but stop for amending
+  #  e, edit = use commit, but allow edits before making new commit
   #  m, mess = edit commit message without changing commit content
   #  p, pick = use commit
   #  b, base = checkout changeset and apply further changesets from there
@@ -111,7 +111,7 @@ test sensitivity to branch in URL:
   #
   # Commands:
   #
-  #  e, edit = use commit, but stop for amending
+  #  e, edit = use commit, but allow edits before making new commit
   #  m, mess = edit commit message without changing commit content
   #  p, pick = use commit
   #  b, base = checkout changeset and apply further changesets from there

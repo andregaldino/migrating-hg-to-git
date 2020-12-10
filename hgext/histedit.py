@@ -34,7 +34,7 @@ file open in your editor::
  #
  # Commands:
  #  p, pick = use commit
- #  e, edit = use commit, but stop for amending
+ #  e, edit = use commit, but allow edits before making new commit
  #  f, fold = use commit, but combine it with the one above
  #  r, roll = like fold, but discard this commit's description and date
  #  d, drop = remove commit from history
@@ -57,7 +57,7 @@ would reorganize the file to look like this::
  #
  # Commands:
  #  p, pick = use commit
- #  e, edit = use commit, but stop for amending
+ #  e, edit = use commit, but allow edits before making new commit
  #  f, fold = use commit, but combine it with the one above
  #  r, roll = like fold, but discard this commit's description and date
  #  d, drop = remove commit from history
@@ -792,7 +792,7 @@ class pick(histeditaction):
         return super(pick, self).run()
 
 
-@action([b'edit', b'e'], _(b'use commit, but stop for amending'), priority=True)
+@action([b'edit', b'e'], _(b'use commit, but allow edits before making new commit'), priority=True)
 class edit(histeditaction):
     def run(self):
         repo = self.repo

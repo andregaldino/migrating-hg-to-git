@@ -475,7 +475,7 @@ Attempting to fold a change into a public change should not work:
   #
   # Commands:
   #
-  #  e, edit = use commit, but stop for amending
+  #  e, edit = use commit, but allow edits before making new commit
   #  m, mess = edit commit message without changing commit content
   #  p, fold = use commit
   #  b, base = checkout changeset and apply further changesets from there
