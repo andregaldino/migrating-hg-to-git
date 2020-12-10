@@ -2483,14 +2483,17 @@ def diff(ui, repo, *pats, **opts):
        default to comparing against the working directory's first
        parent changeset if no revisions are specified.
 
-    When two revision arguments are given, then changes are shown
-    between those revisions. If only one revision is specified then
-    that revision is compared to the working directory, and, when no
-    revisions are specified, the working directory files are compared
-    to its first parent.
+    By default, the working directory files are compared to its first parent. To
+    see the differences from another revision, use --from. To see the difference
+    to another revision, use --to. For example, :hg:`diff --from .^` will show
+    the differences from the working copy's grandparent to the working copy,
+    :hg:`diff --to .` will show the diff from the working copy to its parent
+    (i.e. the reverse of the default), and :hg:`diff --from 1.0 --to 1.2` will
+    show the diff between those two revisions.
 
-    Alternatively you can specify -c/--change with a revision to see
-    the changes in that changeset relative to its first parent.
+    Alternatively you can specify -c/--change with a revision to see the changes
+    in that changeset relative to its first parent (i.e. :hg:`diff -c 42` is
+    equivalent to :hg:`diff --from 42^ --to 42`)
 
     Without the -a/--text option, diff will avoid generating diffs of
     files it detects as binary. With -a, diff will generate a diff
