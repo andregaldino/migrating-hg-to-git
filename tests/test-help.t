@@ -665,7 +665,6 @@ Test command without options
   
   options ([+] can be repeated):
   
-   -r --rev REV [+]         revision
       --from REV1           revision to diff from
       --to REV2             revision to diff to
    -c --change REV          change made by revision

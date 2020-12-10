@@ -2455,7 +2455,7 @@ def debugcomplete(ui, cmd=b'', **opts):
 @command(
     b'diff',
     [
-        (b'r', b'rev', [], _(b'revision'), _(b'REV')),
+        (b'r', b'rev', [], _(b'revision (DEPRECATED)'), _(b'REV')),
         (b'', b'from', b'', _(b'revision to diff from'), _(b'REV1')),
         (b'', b'to', b'', _(b'revision to diff to'), _(b'REV2')),
         (b'c', b'change', b'', _(b'change made by revision'), _(b'REV')),
