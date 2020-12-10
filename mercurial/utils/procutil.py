@@ -126,7 +126,11 @@ if pycompat.ispy3:
     # a silly wrapper to make a bytes stream backed by a unicode one.
 
     # sys.stdin can be None
-    stdin = sys.stdin.buffer if sys.stdin else sys.stdin
+    if sys.stdin:
+        stdin = sys.stdin.buffer
+    else:
+        stdin = open(os.devnull, 'rb')
+        os.close(stdin.fileno())
     stdout = _make_write_all(sys.stdout.buffer)
     stderr = _make_write_all(sys.stderr.buffer)
     if pycompat.iswindows:
