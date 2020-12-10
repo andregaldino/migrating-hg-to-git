@@ -186,7 +186,7 @@ Test recovery from misconfigured server sending no new data
   adding manifests
   adding file changes
   abort: 00changelog.i@66f7d451a68b: no node
-  [255]
+  [50]
   $ cd ..
   $ killdaemons.py
   $ grep 'sending pullbundle ' repo/.hg/blackbox.log

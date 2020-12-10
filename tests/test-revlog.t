@@ -8,7 +8,7 @@ Flags on revlog version 0 are rejected
 
   $ hg log
   abort: unknown flags (0x01) in version 0 revlog 00changelog.i
-  [255]
+  [50]
 
 Unknown flags on revlog version 1 are rejected
 
@@ -17,7 +17,7 @@ Unknown flags on revlog version 1 are rejected
 
   $ hg log
   abort: unknown flags (0x04) in version 1 revlog 00changelog.i
-  [255]
+  [50]
 
 Unknown version is rejected
 
@@ -26,7 +26,7 @@ Unknown version is rejected
 
   $ hg log
   abort: unknown version (2) in revlog 00changelog.i
-  [255]
+  [50]
 
   $ cd ..
 

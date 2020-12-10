@@ -734,7 +734,7 @@ partial history bundle, fails w/ unknown parent
 
   $ hg -R bundle.hg verify
   abort: 00changelog.i@bbd179dfa0a7: unknown parent
-  [255]
+  [50]
 
 full history bundle, refuses to verify non-local repo
 

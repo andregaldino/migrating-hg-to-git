@@ -224,7 +224,7 @@ revision 2
   transaction abort!
   rollback completed
   abort: 00changelog.i@93ee6ab32777: unknown parent
-  [255]
+  [50]
 
 revision 2
 

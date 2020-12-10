@@ -32,7 +32,7 @@ Uploads fail...
   searching for changes
   abort: LFS HTTP error: HTTP Error 400: no such method: .git
   (check that lfs serving is enabled on http://localhost:$HGPORT/.git/info/lfs and "upload" is supported)
-  [255]
+  [50]
 
 ... so do a local push to make the data available.  Remove the blob from the
 default cache, so it attempts to download.
@@ -54,7 +54,7 @@ Downloads fail...
   updating to branch default
   abort: LFS HTTP error: HTTP Error 400: no such method: .git
   (check that lfs serving is enabled on http://localhost:$HGPORT/.git/info/lfs and "download" is supported)
-  [255]
+  [50]
 
   $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
@@ -80,14 +80,14 @@ Reasonable hint for a misconfigured blob server
   $ hg -R httpclone update default --config lfs.url=http://localhost:$HGPORT/missing
   abort: LFS HTTP error: HTTP Error 404: Not Found
   (the "lfs.url" config may be used to override http://localhost:$HGPORT/missing)
-  [255]
+  [50]
 
   $ hg -R httpclone update default --config lfs.url=http://localhost:$HGPORT2/missing
   abort: LFS error: *onnection *refused* (glob) (?)
   abort: LFS error: $EADDRNOTAVAIL$ (glob) (?)
   abort: LFS error: No route to host (?)
   (the "lfs.url" config may be used to override http://localhost:$HGPORT2/missing)
-  [255]
+  [50]
 
 Blob URIs are correct when --prefix is used
 
@@ -267,7 +267,7 @@ Test an I/O error in localstore.verify() (Batch API) with GET
   new changesets 525251863cad
   updating to branch default
   abort: LFS server error for "lfs.bin": Internal server error
-  [255]
+  [50]
 
 Test an I/O error in localstore.verify() (Batch API) with PUT
 
@@ -277,7 +277,7 @@ Test an I/O error in localstore.verify() (Batch API) with PUT
   pushing to http://localhost:$HGPORT1/
   searching for changes
   abort: LFS server error for "unknown": Internal server error
-  [255]
+  [50]
 TODO: figure out how to associate the file name in the error above
 
 Test a bad checksum sent by the client in the transfer API
@@ -286,7 +286,7 @@ Test a bad checksum sent by the client in the transfer API
   pushing to http://localhost:$HGPORT1/
   searching for changes
   abort: LFS HTTP error: HTTP Error 422: corrupt blob (oid=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c, action=upload)
-  [255]
+  [50]
 
   $ echo 'test lfs file' > server/lfs3.bin
   $ hg --config experimental.lfs.disableusercache=True \
@@ -298,14 +298,14 @@ Test an I/O error during the processing of the GET request
   $ hg --config lfs.url=http://localhost:$HGPORT1/.git/info/lfs \
   >    -R client update -r tip
   abort: LFS HTTP error: HTTP Error 500: Internal Server Error (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)
-  [255]
+  [50]
 
 Test a checksum failure during the processing of the GET request
 
   $ hg --config lfs.url=http://localhost:$HGPORT1/.git/info/lfs \
   >    -R client update -r tip
   abort: LFS HTTP error: HTTP Error 422: corrupt blob (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)
-  [255]
+  [50]
 
   $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
@@ -453,7 +453,7 @@ Test that Digest Auth fails gracefully before testing the successful Basic Auth
   searching for changes
   abort: LFS HTTP error: HTTP Error 401: the server must support Basic Authentication
   (api=http://localhost:$HGPORT1/.git/info/lfs/objects/batch, action=upload)
-  [255]
+  [50]
 
   $ hg -R auth_clone --debug push | egrep '^[{}]|  '
   {

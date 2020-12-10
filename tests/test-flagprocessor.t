@@ -190,7 +190,7 @@ Ensure the data got to the server OK
   $ echo '[FAIL][BASE64][GZIP][NOOP]' > fail-base64-gzip-noop
   $ hg commit -Aqm 'fail+base64+gzip+noop'
   abort: missing processor for flag '0x1'
-  [255]
+  [50]
   $ rm fail-base64-gzip-noop
 
 # TEST: ensure we cannot register several flag processors on the same flag

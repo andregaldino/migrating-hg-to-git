@@ -986,7 +986,7 @@ Accessing a corrupt file will complain
 
   $ hg --cwd fromcorrupt2 cat -r 0 large
   abort: integrity check failed on data/large.i:0
-  [255]
+  [50]
 
 lfs -> normal -> lfs round trip conversions are possible.  The 'none()'
 predicate on the command line will override whatever is configured globally and

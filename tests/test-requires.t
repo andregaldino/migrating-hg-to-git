@@ -6,7 +6,7 @@
   $ rm .hg/requires
   $ hg tip
   abort: unknown version (2) in revlog 00changelog.i
-  [255]
+  [50]
   $ echo indoor-pool > .hg/requires
   $ hg tip
   abort: repository requires features unknown to this Mercurial: indoor-pool

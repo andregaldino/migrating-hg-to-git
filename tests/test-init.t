@@ -33,10 +33,10 @@ test custom revlog chunk cache sizes
 
   $ hg --config format.chunkcachesize=0 log -R local -pv
   abort: revlog chunk cache size 0 is not greater than 0
-  [255]
+  [50]
   $ hg --config format.chunkcachesize=1023 log -R local -pv
   abort: revlog chunk cache size 1023 is not a power of 2
-  [255]
+  [50]
   $ hg --config format.chunkcachesize=1024 log -R local -pv
   changeset:   0:08b9e9f63b32
   tag:         tip

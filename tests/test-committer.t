@@ -103,7 +103,7 @@
   transaction abort!
   rollback completed
   abort: empty username
-  [255]
+  [50]
 
 # don't add tests here, previous test is unstable
 

@@ -36,7 +36,7 @@ Unknown flags to revlog are rejected
 
   $ hg log
   abort: unknown flags (0xff00) in version 57005 revlog 00changelog.i
-  [255]
+  [50]
 
   $ cd ..
 
