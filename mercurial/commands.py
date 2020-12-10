@@ -2509,11 +2509,11 @@ def diff(ui, repo, *pats, **opts):
 
       - compare two historical versions of a directory, with rename info::
 
-          hg diff --git -r 1.0:1.2 lib/
+          hg diff --git --from 1.0 --to 1.2 lib/
 
       - get change stats relative to the last change on some date::
 
-          hg diff --stat -r "date('may 2')"
+          hg diff --stat --from "date('may 2')"
 
       - diff all newly-added files that contain a keyword::
 
@@ -2521,9 +2521,9 @@ def diff(ui, repo, *pats, **opts):
 
       - compare a revision and its parents::
 
-          hg diff -c 9353         # compare against first parent
-          hg diff -r 9353^:9353   # same using revset syntax
-          hg diff -r 9353^2:9353  # compare against the second parent
+          hg diff -c 9353                  # compare against first parent
+          hg diff --from 9353^ --to 9353   # same using revset syntax
+          hg diff --from 9353^2 --to 9353  # compare against the second parent
 
     Returns 0 on success.
     """
@@ -2964,7 +2964,7 @@ def graft(ui, repo, *revs, **opts):
 
       is thus pretty much the same as::
 
-        hg diff -r 234 -r 345 | hg import
+        hg diff --from 234 --to 345 | hg import
 
       but using merge to resolve conflicts and track moved files.
 
