@@ -1798,7 +1798,7 @@ def extdatasource(repo, source):
             k = encoding.tolocal(k)
             try:
                 data[revsingle(repo, k).rev()] = encoding.tolocal(v)
-            except (error.LookupError, error.RepoLookupError):
+            except (error.LookupError, error.RepoLookupError, error.InputError):
                 pass  # we ignore data for nodes that don't exist locally
     finally:
         if proc:

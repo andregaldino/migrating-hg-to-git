@@ -2691,7 +2691,15 @@ subscriptrelations = {
 
 
 def lookupfn(repo):
-    return lambda symbol: scmutil.isrevsymbol(repo, symbol)
+    def fn(symbol):
+        try:
+            return scmutil.isrevsymbol(repo, symbol)
+        except error.AmbiguousPrefixLookupError:
+            raise error.InputError(
+                b'ambiguous revision identifier: %s' % symbol
+            )
+
+    return fn
 
 
 def match(ui, spec, lookup=None):

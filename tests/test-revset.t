@@ -1873,8 +1873,8 @@ Test hexadecimal revision
   3
   $ hg log --template '{rev}\n' -r 'id(x)'
   $ hg log --template '{rev}\n' -r 'x'
-  abort: 00changelog.i@: ambiguous identifier
-  [255]
+  abort: ambiguous revision identifier: x
+  [10]
   $ log 'id(23268)'
   4
   $ log 'id(2785f51eece)'
@@ -2040,14 +2040,14 @@ Test short 'ff...' hash collision
   obsoleted 1 changesets
 
   $ hg debugrevspec 'fff'
-  abort: 00changelog.i@fff: ambiguous identifier
-  [255]
+  abort: ambiguous revision identifier: fff
+  [10]
   $ hg debugrevspec 'ffff'
-  abort: 00changelog.i@ffff: ambiguous identifier
-  [255]
+  abort: ambiguous revision identifier: ffff
+  [10]
   $ hg debugrevspec 'fffb'
-  abort: 00changelog.i@fffb: ambiguous identifier
-  [255]
+  abort: ambiguous revision identifier: fffb
+  [10]
 BROKEN should be '2' (node lookup uses unfiltered repo)
   $ hg debugrevspec 'id(fffb)'
 BROKEN should be '2' (node lookup uses unfiltered repo)
