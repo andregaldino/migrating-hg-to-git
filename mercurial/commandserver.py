@@ -355,18 +355,7 @@ class server(object):
         )
 
         try:
-            err = None
-            try:
-                status = self._dispatchcommand(req)
-            except error.StdioError as e:
-                status = -1
-                err = e
-
-            retval = dispatch.closestdio(req.ui, err)
-            if retval:
-                status = retval
-
-            ret = status & 255
+            ret = self._dispatchcommand(req) & 255
             # If shutdown-on-interrupt is off, it's important to write the
             # result code *after* SIGINT handler removed. If the result code
             # were lost, the client wouldn't be able to continue processing.

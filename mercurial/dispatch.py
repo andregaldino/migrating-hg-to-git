@@ -104,7 +104,7 @@ class request(object):
                 raise exc
 
 
-def closestdio(ui, err):
+def _flushstdio(ui, err):
     status = None
     # In all cases we try to flush stdio streams.
     if util.safehasattr(ui, b'fout'):
@@ -139,16 +139,8 @@ def run():
         initstdio()
         with tracing.log('parse args into request'):
             req = request(pycompat.sysargv[1:])
-        err = None
-        try:
-            status = dispatch(req)
-        except error.StdioError as e:
-            err = e
-            status = -1
 
-        ret = closestdio(req.ui, err)
-        if ret:
-            status = ret
+        status = dispatch(req)
         _silencestdio()
     except KeyboardInterrupt:
         # Catch early/late KeyboardInterrupt as last ditch. Here nothing will
@@ -240,7 +232,21 @@ def _formatargs(args):
 
 def dispatch(req):
     """run the command specified in req.args; returns an integer status code"""
-    with tracing.log('dispatch.dispatch'):
+    err = None
+    try:
+        status = _rundispatch(req)
+    except error.StdioError as e:
+        err = e
+        status = -1
+
+    ret = _flushstdio(req.ui, err)
+    if ret:
+        status = ret
+    return status
+
+
+def _rundispatch(req):
+    with tracing.log('dispatch._rundispatch'):
         if req.ferr:
             ferr = req.ferr
         elif req.ui:
