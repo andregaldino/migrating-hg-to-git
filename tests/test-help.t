@@ -629,7 +629,7 @@ Test command without options
   (some details hidden, use --verbose to show complete help)
 
   $ hg help diff
-  hg diff [OPTION]... ([-c REV] | [-r REV1 [-r REV2]]) [FILE]...
+  hg diff [OPTION]... ([-c REV] | [--from REV1] [--to REV2]) [FILE]...
   
   diff repository (or selected files)
   
@@ -666,8 +666,8 @@ Test command without options
   options ([+] can be repeated):
   
    -r --rev REV [+]         revision
-      --from REV            revision to diff from
-      --to REV              revision to diff to
+      --from REV1           revision to diff from
+      --to REV2             revision to diff to
    -c --change REV          change made by revision
    -a --text                treat all files as text
    -g --git                 use git extended diff format

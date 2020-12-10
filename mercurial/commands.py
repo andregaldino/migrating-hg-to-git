@@ -2456,15 +2456,15 @@ def debugcomplete(ui, cmd=b'', **opts):
     b'diff',
     [
         (b'r', b'rev', [], _(b'revision'), _(b'REV')),
-        (b'', b'from', b'', _(b'revision to diff from'), _(b'REV')),
-        (b'', b'to', b'', _(b'revision to diff to'), _(b'REV')),
+        (b'', b'from', b'', _(b'revision to diff from'), _(b'REV1')),
+        (b'', b'to', b'', _(b'revision to diff to'), _(b'REV2')),
         (b'c', b'change', b'', _(b'change made by revision'), _(b'REV')),
     ]
     + diffopts
     + diffopts2
     + walkopts
     + subrepoopts,
-    _(b'[OPTION]... ([-c REV] | [-r REV1 [-r REV2]]) [FILE]...'),
+    _(b'[OPTION]... ([-c REV] | [--from REV1] [--to REV2]) [FILE]...'),
     helpcategory=command.CATEGORY_FILE_CONTENTS,
     helpbasic=True,
     inferrepo=True,
