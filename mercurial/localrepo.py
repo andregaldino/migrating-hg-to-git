@@ -1754,11 +1754,7 @@ class localrepository(object):
             return context.workingctx(self)
 
     def __contains__(self, changeid):
-        """True if the given changeid exists
-
-        error.AmbiguousPrefixLookupError is raised if an ambiguous node
-        specified.
-        """
+        """True if the given changeid exists"""
         try:
             self[changeid]
             return True
