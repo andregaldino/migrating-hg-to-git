@@ -2456,6 +2456,8 @@ def debugcomplete(ui, cmd=b'', **opts):
     b'diff',
     [
         (b'r', b'rev', [], _(b'revision'), _(b'REV')),
+        (b'', b'from', b'', _(b'revision to diff from'), _(b'REV')),
+        (b'', b'to', b'', _(b'revision to diff to'), _(b'REV')),
         (b'c', b'change', b'', _(b'change made by revision'), _(b'REV')),
     ]
     + diffopts
@@ -2530,13 +2532,23 @@ def diff(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     revs = opts.get(b'rev')
     change = opts.get(b'change')
+    from_rev = opts.get(b'from')
+    to_rev = opts.get(b'to')
     stat = opts.get(b'stat')
     reverse = opts.get(b'reverse')
 
+    cmdutil.check_incompatible_arguments(opts, b'from', [b'rev', b'change'])
+    cmdutil.check_incompatible_arguments(opts, b'to', [b'rev', b'change'])
     if change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
         ctx2 = scmutil.revsingle(repo, change, None)
         ctx1 = ctx2.p1()
+    elif from_rev or to_rev:
+        repo = scmutil.unhidehashlikerevs(
+            repo, [from_rev] + [to_rev], b'nowarn'
+        )
+        ctx1 = scmutil.revsingle(repo, from_rev, None)
+        ctx2 = scmutil.revsingle(repo, to_rev, None)
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, b'nowarn')
         ctx1, ctx2 = scmutil.revpair(repo, revs)

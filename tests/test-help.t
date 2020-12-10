@@ -662,6 +662,8 @@ Test command without options
   options ([+] can be repeated):
   
    -r --rev REV [+]         revision
+      --from REV            revision to diff from
+      --to REV              revision to diff to
    -c --change REV          change made by revision
    -a --text                treat all files as text
    -g --git                 use git extended diff format

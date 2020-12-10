@@ -1,4 +1,4 @@
-Testing diff --change
+Testing diff --change, --from, --to
 
   $ hg init a
   $ cd a
@@ -28,6 +28,59 @@ Testing diff --change
   @@ -1,1 +1,1 @@
   -first
   +second
+
+Test --from and --to
+
+  $ hg diff --from . --rev .
+  abort: cannot specify both --from and --rev
+  [10]
+  $ hg diff --to . --rev .
+  abort: cannot specify both --to and --rev
+  [10]
+  $ hg diff --from . --change .
+  abort: cannot specify both --from and --change
+  [10]
+  $ hg diff --to . --change .
+  abort: cannot specify both --to and --change
+  [10]
+  $ echo dirty > file.txt
+  $ hg diff --from .
+  diff -r bf5ff72eb7e0 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -third
+  +dirty
+  $ hg diff --from . --reverse
+  diff -r bf5ff72eb7e0 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -dirty
+  +third
+  $ hg diff --to .
+  diff -r bf5ff72eb7e0 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -dirty
+  +third
+  $ hg diff --from 0 --to 2
+  diff -r 4bb65dda5db4 -r bf5ff72eb7e0 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -first
+  +third
+  $ hg diff --from 2 --to 0
+  diff -r bf5ff72eb7e0 -r 4bb65dda5db4 file.txt
+  --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -third
+  +first
+  $ hg co -C .
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ cd ..
 
