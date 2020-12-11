@@ -291,9 +291,14 @@ def findcommonheads(
     abortwhenunrelated=True,
     ancestorsof=None,
     samplegrowth=1.05,
+    audit=None,
 ):
     """Return a tuple (common, anyincoming, remoteheads) used to identify
     missing nodes from or in remote.
+
+    The audit argument is an optional dictionnary that a caller can pass. it
+    will be updated with extra data about the discovery, this is useful for
+    debug.
     """
     start = util.timer()
 
@@ -378,6 +383,9 @@ def findcommonheads(
         )
 
     srvheadhashes, yesno = fheads.result(), fknown.result()
+
+    if audit is not None:
+        audit[b'total-roundtrips'] = 1
 
     if cl.tip() == nullid:
         if srvheadhashes != [nullid]:
@@ -472,6 +480,9 @@ def findcommonheads(
     )
     missing = set(result) - set(knownsrvheads)
     ui.log(b'discovery', msg, len(result), len(missing), roundtrips, elapsed)
+
+    if audit is not None:
+        audit[b'total-roundtrips'] = roundtrips
 
     if not result and srvheadhashes != [nullid]:
         if abortwhenunrelated:

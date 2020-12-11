@@ -978,6 +978,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     # make sure tests are repeatable
     random.seed(int(opts[b'seed']))
 
+    data = {}
     if opts.get(b'old'):
 
         def doit(pushedrevs, remoteheads, remote=remote):
@@ -985,7 +986,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
                 # enable in-client legacy support
                 remote = localrepo.locallegacypeer(remote.local())
             common, _in, hds = treediscovery.findcommonincoming(
-                repo, remote, force=True
+                repo, remote, force=True, audit=data
             )
             common = set(common)
             if not opts.get(b'nonheads'):
@@ -1007,7 +1008,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
                 revs = scmutil.revrange(repo, pushedrevs)
                 nodes = [repo[r].node() for r in revs]
             common, any, hds = setdiscovery.findcommonheads(
-                ui, repo, remote, ancestorsof=nodes
+                ui, repo, remote, ancestorsof=nodes, audit=data
             )
             return common, hds
 
@@ -1042,7 +1043,6 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     common_initial_undecided = initial_undecided & common
     missing_initial_undecided = initial_undecided & missing
 
-    data = {}
     data[b'elapsed'] = t.elapsed
     data[b'nb-common-heads'] = len(heads_common)
     data[b'nb-common-heads-local'] = len(heads_common_local)
@@ -1068,6 +1068,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     # display discovery summary
     ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
+    ui.writenoi18n(b"round-trips:           %(total-roundtrips)9d\n" % data)
     ui.writenoi18n(b"heads summary:\n")
     ui.writenoi18n(b"  total common heads:  %(nb-common-heads)9d\n" % data)
     ui.writenoi18n(

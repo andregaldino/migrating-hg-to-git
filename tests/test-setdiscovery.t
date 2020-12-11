@@ -44,6 +44,7 @@ Small superset:
   searching for changes
   unpruned common: 01241442b3c2 66f7d451a68b b5714e113bc0
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          2
       also local heads:          2
@@ -75,6 +76,7 @@ Small superset:
   searching for changes
   all local changesets known remotely
   elapsed time:  * seconds (glob)
+  round-trips:                   1
   heads summary:
     total common heads:          2
       also local heads:          2
@@ -106,6 +108,7 @@ Small superset:
   searching for changes
   all local changesets known remotely
   elapsed time:  * seconds (glob)
+  round-trips:                   1
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -136,6 +139,7 @@ Small superset:
   searching for changes
   unpruned common: 01241442b3c2 b5714e113bc0
   elapsed time:  * seconds (glob)
+  round-trips:                   1
   heads summary:
     total common heads:          2
       also local heads:          1
@@ -167,6 +171,7 @@ Small superset:
   searching for changes
   all remote heads known locally
   elapsed time:  * seconds (glob)
+  round-trips:                   1
   heads summary:
     total common heads:          2
       also local heads:          1
@@ -198,6 +203,7 @@ Small superset:
   searching for changes
   all remote heads known locally
   elapsed time:  * seconds (glob)
+  round-trips:                   1
   heads summary:
     total common heads:          2
       also local heads:          1
@@ -235,6 +241,7 @@ Many new:
   searching for changes
   unpruned common: bebd167eb94d
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -269,6 +276,7 @@ Many new:
   query 2; still undecided: 29, sample size is: 29
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -303,6 +311,7 @@ Many new:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -333,6 +342,7 @@ Many new:
   searching for changes
   unpruned common: 66f7d451a68b bebd167eb94d
   elapsed time:  * seconds (glob)
+  round-trips:                   4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -367,6 +377,7 @@ Many new:
   query 2; still undecided: 2, sample size is: 2
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -401,6 +412,7 @@ Many new:
   query 2; still undecided: 2, sample size is: 2
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -437,6 +449,7 @@ Both sides many new with stub:
   searching for changes
   unpruned common: 2dc09a01254d
   elapsed time:  * seconds (glob)
+  round-trips:                   4
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -471,6 +484,7 @@ Both sides many new with stub:
   query 2; still undecided: 29, sample size is: 29
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -505,6 +519,7 @@ Both sides many new with stub:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -535,6 +550,7 @@ Both sides many new with stub:
   searching for changes
   unpruned common: 2dc09a01254d 66f7d451a68b
   elapsed time:  * seconds (glob)
+  round-trips:                   4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -569,6 +585,7 @@ Both sides many new with stub:
   query 2; still undecided: 29, sample size is: 29
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -603,6 +620,7 @@ Both sides many new with stub:
   query 2; still undecided: 29, sample size is: 29
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -640,6 +658,7 @@ Both many new:
   searching for changes
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
+  round-trips:                   4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -674,6 +693,7 @@ Both many new:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -708,6 +728,7 @@ Both many new:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -738,6 +759,7 @@ Both many new:
   searching for changes
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
+  round-trips:                   4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -772,6 +794,7 @@ Both many new:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -806,6 +829,7 @@ Both many new:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -843,6 +867,7 @@ Both many new skewed:
   searching for changes
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
+  round-trips:                   4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -877,6 +902,7 @@ Both many new skewed:
   query 2; still undecided: 51, sample size is: 51
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -911,6 +937,7 @@ Both many new skewed:
   query 2; still undecided: 51, sample size is: 51
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -941,6 +968,7 @@ Both many new skewed:
   searching for changes
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
+  round-trips:                   3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -975,6 +1003,7 @@ Both many new skewed:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1009,6 +1038,7 @@ Both many new skewed:
   query 2; still undecided: 31, sample size is: 31
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   2
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1046,6 +1076,7 @@ Both many new on top of long history:
   searching for changes
   unpruned common: 7ead0cba2838
   elapsed time:  * seconds (glob)
+  round-trips:                   4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1083,6 +1114,7 @@ Both many new on top of long history:
   query 3; still undecided: 31, sample size is: 31
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1120,6 +1152,7 @@ Both many new on top of long history:
   query 3; still undecided: 31, sample size is: 31
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1150,6 +1183,7 @@ Both many new on top of long history:
   searching for changes
   unpruned common: 7ead0cba2838
   elapsed time:  * seconds (glob)
+  round-trips:                   3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1187,6 +1221,7 @@ Both many new on top of long history:
   query 3; still undecided: 15, sample size is: 15
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1224,6 +1259,7 @@ Both many new on top of long history:
   query 3; still undecided: 15, sample size is: 15
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1313,6 +1349,7 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   query 6; still undecided: 63, sample size is: 63
   6 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   6
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1349,6 +1386,7 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   query 3; still undecided: 3, sample size is: 3
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
+  round-trips:                   3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1476,6 +1514,7 @@ returned as common heads.
   comparing with $TESTTMP/ancestorsof/a
   searching for changes
   elapsed time:  * seconds (glob)
+  round-trips:                   1
   heads summary:
     total common heads:          1
       also local heads:          1
