@@ -896,18 +896,33 @@ def _fullcopytracing(repo, c1, c2, base):
             )
 
     # find interesting file sets from manifests
-    addedinm1 = m1.filesnotin(mb, repo.narrowmatch())
-    addedinm2 = m2.filesnotin(mb, repo.narrowmatch())
-    u1 = sorted(addedinm1 - addedinm2)
-    u2 = sorted(addedinm2 - addedinm1)
+    cache = []
 
-    header = b"  unmatched files in %s"
-    if u1:
-        repo.ui.debug(b"%s:\n   %s\n" % (header % b'local', b"\n   ".join(u1)))
-    if u2:
-        repo.ui.debug(b"%s:\n   %s\n" % (header % b'other', b"\n   ".join(u2)))
+    def _get_addedfiles(idx):
+        if not cache:
+            addedinm1 = m1.filesnotin(mb, repo.narrowmatch())
+            addedinm2 = m2.filesnotin(mb, repo.narrowmatch())
+            u1 = sorted(addedinm1 - addedinm2)
+            u2 = sorted(addedinm2 - addedinm1)
+            cache.extend((u1, u2))
+        return cache[idx]
 
+    u1fn = lambda: _get_addedfiles(0)
+    u2fn = lambda: _get_addedfiles(1)
     if repo.ui.debugflag:
+        u1 = u1fn()
+        u2 = u2fn()
+
+        header = b"  unmatched files in %s"
+        if u1:
+            repo.ui.debug(
+                b"%s:\n   %s\n" % (header % b'local', b"\n   ".join(u1))
+            )
+        if u2:
+            repo.ui.debug(
+                b"%s:\n   %s\n" % (header % b'other', b"\n   ".join(u2))
+            )
+
         renamedeleteset = set()
         divergeset = set()
         for dsts in diverge.values():
@@ -941,8 +956,8 @@ def _fullcopytracing(repo, c1, c2, base):
 
     repo.ui.debug(b"  checking for directory renames\n")
 
-    dirmove1, movewithdir2 = _dir_renames(repo, c1, copy1, copies1, u2)
-    dirmove2, movewithdir1 = _dir_renames(repo, c2, copy2, copies2, u1)
+    dirmove1, movewithdir2 = _dir_renames(repo, c1, copy1, copies1, u2fn)
+    dirmove2, movewithdir1 = _dir_renames(repo, c2, copy2, copies2, u1fn)
 
     branch_copies1 = branch_copies(copy1, renamedelete1, dirmove1, movewithdir1)
     branch_copies2 = branch_copies(copy2, renamedelete2, dirmove2, movewithdir2)
@@ -950,14 +965,15 @@ def _fullcopytracing(repo, c1, c2, base):
     return branch_copies1, branch_copies2, diverge
 
 
-def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
+def _dir_renames(repo, ctx, copy, fullcopy, addedfilesfn):
     """Finds moved directories and files that should move with them.
 
     ctx: the context for one of the sides
     copy: files copied on the same side (as ctx)
     fullcopy: files copied on the same side (as ctx), including those that
               merge.manifestmerge() won't care about
-    addedfiles: added files on the other side (compared to ctx)
+    addedfilesfn: function returning added files on the other side (compared to
+                  ctx)
     """
     # generate a directory move map
     invalid = set()
@@ -997,7 +1013,7 @@ def _dir_renames(repo, ctx, copy, fullcopy, addedfiles):
 
     movewithdir = {}
     # check unaccounted nonoverlapping files against directory moves
-    for f in addedfiles:
+    for f in addedfilesfn():
         if f not in fullcopy:
             for d in dirmove:
                 if f.startswith(d):
