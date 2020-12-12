@@ -43,6 +43,27 @@ A requirement specifying an unknown compression engine results in bail
 
   $ cd ..
 
+Specifying a new format.compression on an existing repo won't introduce data
+with that engine or a requirement
+
+  $ cd default
+  $ touch bar
+  $ hg --config format.revlog-compression=none -q commit -A -m 'add bar with a lot of repeated repeated repeated text'
+
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+  testonly-simplestore (reposimplestore !)
+
+  $ hg debugrevlog -c | grep 0x78
+      0x78 (x)  :   2 (100.00%)
+      0x78 (x)  : 199 (100.00%)
+  $ cd ..
+
 #if zstd
 
   $ hg --config format.revlog-compression=zstd init zstd
@@ -66,25 +87,6 @@ A requirement specifying an unknown compression engine results in bail
 
   $ cd ..
 
-Specifying a new format.compression on an existing repo won't introduce data
-with that engine or a requirement
-
-  $ cd default
-  $ touch bar
-  $ hg --config format.revlog-compression=zstd -q commit -A -m 'add bar with a lot of repeated repeated repeated text'
-
-  $ cat .hg/requires
-  dotencode
-  fncache
-  generaldelta
-  revlogv1
-  sparserevlog
-  store
-  testonly-simplestore (reposimplestore !)
-
-  $ hg debugrevlog -c | grep 0x78
-      0x78 (x)  :   2 (100.00%)
-      0x78 (x)  : 199 (100.00%)
 
 #endif
 
@@ -116,10 +118,12 @@ checking zlib options
   > done
 
   $ $RUNTESTDIR/f -s */.hg/store/data/*
-  default/.hg/store/data/foo.i: size=64 (pure !)
+  default/.hg/store/data/bar.i: size=64
+  default/.hg/store/data/foo.i: size=64
   zlib-level-1/.hg/store/data/a.i: size=4146
   zlib-level-9/.hg/store/data/a.i: size=4138
   zlib-level-default/.hg/store/data/a.i: size=4138
+  zstd/.hg/store/data/foo.i: size=64 (zstd !)
 
 Test error cases
 
@@ -143,6 +147,41 @@ Test error cases
   abort: invalid value for `storage.revlog.zlib.level` config: 42
   abort: invalid value for `storage.revlog.zlib.level` config: 42
   [255]
+
+checking details of none compression
+====================================
+
+  $ hg init none-compression --config format.revlog-compression=none
+
+  $ commitone() {
+  >    repo=$1
+  >    cp $RUNTESTDIR/bundles/issue4438-r1.hg $repo/a
+  >    hg -R $repo add $repo/a
+  >    hg -R $repo commit -m some-commit
+  > }
+
+  $ commitone none-compression
+
+  $ hg log -R none-compression
+  changeset:   0:68b53da39cd8
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     some-commit
+  
+
+  $ cat none-compression/.hg/requires
+  dotencode
+  exp-compression-none
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+  testonly-simplestore (reposimplestore !)
+
+  $ $RUNTESTDIR/f -s none-compression/.hg/store/data/*
+  none-compression/.hg/store/data/a.i: size=4216
 
 #if zstd
 
