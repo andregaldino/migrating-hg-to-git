@@ -557,12 +557,32 @@ def determineactions(repo, deficiencies, sourcereqs, destreqs):
 class UpgradeOperation(object):
     """represent the work to be done during an upgrade"""
 
-    def __init__(self, ui, requirements, actions, revlogs_to_process):
+    def __init__(
+        self,
+        ui,
+        new_requirements,
+        current_requirements,
+        actions,
+        revlogs_to_process,
+    ):
         self.ui = ui
-        self.requirements = requirements
+        self.new_requirements = new_requirements
+        self.current_requirements = current_requirements
         self.actions = actions
         self._actions_names = set([a.name for a in actions])
         self.revlogs_to_process = revlogs_to_process
+        # requirements which will be added by the operation
+        self._added_requirements = (
+            self.new_requirements - self.current_requirements
+        )
+        # requirements which will be removed by the operation
+        self._removed_requirements = (
+            self.current_requirements - self.new_requirements
+        )
+        # requirements which will be preserved by the operation
+        self._preserved_requirements = (
+            self.current_requirements & self.new_requirements
+        )
 
     def _write_labeled(self, l, label):
         """
@@ -574,6 +594,27 @@ class UpgradeOperation(object):
                 self.ui.write(b', ')
             self.ui.write(r, label=label)
             first = False
+
+    def print_requirements(self):
+        self.ui.write(_(b'requirements\n'))
+        self.ui.write(_(b'   preserved: '))
+        self._write_labeled(
+            self._preserved_requirements, "upgrade-repo.requirement.preserved"
+        )
+        self.ui.write((b'\n'))
+        if self._removed_requirements:
+            self.ui.write(_(b'   removed: '))
+            self._write_labeled(
+                self._removed_requirements, "upgrade-repo.requirement.removed"
+            )
+            self.ui.write((b'\n'))
+        if self._added_requirements:
+            self.ui.write(_(b'   added: '))
+            self._write_labeled(
+                self._added_requirements, "upgrade-repo.requirement.added"
+            )
+            self.ui.write((b'\n'))
+        self.ui.write(b'\n')
 
     def print_optimisations(self):
         optimisations = [a for a in self.actions if a.type == OPTIMISATION]

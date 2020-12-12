@@ -429,7 +429,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     # The sorted() makes execution deterministic.
     for p, kind, st in sorted(srcrepo.store.vfs.readdir(b'', stat=True)):
         if not _filterstorefile(
-            srcrepo, dstrepo, upgrade_op.requirements, p, kind, st
+            srcrepo, dstrepo, upgrade_op.new_requirements, p, kind, st
         ):
             continue
 
@@ -489,7 +489,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
             b'again\n'
         )
     )
-    scmutil.writereporequirements(srcrepo, upgrade_op.requirements)
+    scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
 
     # The lock file from the old store won't be removed because nothing has a
     # reference to its new location. So clean it up manually. Alternatively, we

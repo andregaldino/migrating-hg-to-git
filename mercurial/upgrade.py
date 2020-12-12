@@ -123,36 +123,10 @@ def upgraderepo(
             ui.warn(msg % b', '.join(sorted(incompatible)))
             revlogs = upgrade_engine.UPGRADE_ALL_REVLOGS
 
-    def write_labeled(l, label):
-        first = True
-        for r in sorted(l):
-            if not first:
-                ui.write(b', ')
-            ui.write(r, label=label)
-            first = False
-
-    def printrequirements():
-        ui.write(_(b'requirements\n'))
-        ui.write(_(b'   preserved: '))
-        write_labeled(
-            newreqs & repo.requirements, "upgrade-repo.requirement.preserved"
-        )
-        ui.write((b'\n'))
-        removed = repo.requirements - newreqs
-        if repo.requirements - newreqs:
-            ui.write(_(b'   removed: '))
-            write_labeled(removed, "upgrade-repo.requirement.removed")
-            ui.write((b'\n'))
-        added = newreqs - repo.requirements
-        if added:
-            ui.write(_(b'   added: '))
-            write_labeled(added, "upgrade-repo.requirement.added")
-            ui.write((b'\n'))
-        ui.write(b'\n')
-
     upgrade_op = upgrade_actions.UpgradeOperation(
         ui,
         newreqs,
+        repo.requirements,
         actions,
         revlogs,
     )
@@ -205,7 +179,7 @@ def upgraderepo(
             )
         )
 
-        printrequirements()
+        upgrade_op.print_requirements()
         upgrade_op.print_optimisations()
         upgrade_op.print_upgrade_actions()
         upgrade_op.print_affected_revlogs()
@@ -225,7 +199,7 @@ def upgraderepo(
 
     # Else we're in the run=true case.
     ui.write(_(b'upgrade will perform the following actions:\n\n'))
-    printrequirements()
+    upgrade_op.print_requirements()
     upgrade_op.print_optimisations()
     upgrade_op.print_upgrade_actions()
     upgrade_op.print_affected_revlogs()
