@@ -167,16 +167,8 @@ def upgraderepo(
         for a in actions:
             ui.status(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
 
-    def print_affected_revlogs():
-        if not revlogs:
-            ui.write((b'no revlogs to process\n'))
-        else:
-            ui.write((b'processed revlogs:\n'))
-            for r in sorted(revlogs):
-                ui.write((b'  - %s\n' % r))
-        ui.write((b'\n'))
-
     upgrade_op = upgrade_actions.UpgradeOperation(
+        ui,
         newreqs,
         [a.name for a in actions],
         revlogs,
@@ -233,7 +225,7 @@ def upgraderepo(
         printrequirements()
         printoptimisations()
         printupgradeactions()
-        print_affected_revlogs()
+        upgrade_op.print_affected_revlogs()
 
         unusedoptimize = [i for i in alloptimizations if i not in actions]
 
@@ -253,7 +245,7 @@ def upgraderepo(
     printrequirements()
     printoptimisations()
     printupgradeactions()
-    print_affected_revlogs()
+    upgrade_op.print_affected_revlogs()
 
     ui.status(_(b'beginning upgrade...\n'))
     with repo.wlock(), repo.lock():

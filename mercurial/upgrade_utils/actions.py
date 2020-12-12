@@ -557,10 +557,20 @@ def determineactions(repo, deficiencies, sourcereqs, destreqs):
 class UpgradeOperation(object):
     """represent the work to be done during an upgrade"""
 
-    def __init__(self, requirements, actions, revlogs_to_process):
+    def __init__(self, ui, requirements, actions, revlogs_to_process):
+        self.ui = ui
         self.requirements = requirements
         self.actions = actions
         self.revlogs_to_process = revlogs_to_process
+
+    def print_affected_revlogs(self):
+        if not self.revlogs_to_process:
+            self.ui.write((b'no revlogs to process\n'))
+        else:
+            self.ui.write((b'processed revlogs:\n'))
+            for r in sorted(self.revlogs_to_process):
+                self.ui.write((b'  - %s\n' % r))
+        self.ui.write((b'\n'))
 
 
 ###  Code checking if a repository can got through the upgrade process at all. #
