@@ -114,3 +114,10 @@ test-py2-chg:
     variables:
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
         TEST_HGMODULEPOLICY: "c"
+
+test-py3-chg:
+    <<: *runtests
+    variables:
+        PYTHON: python3
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
+        TEST_HGMODULEPOLICY: "c"
