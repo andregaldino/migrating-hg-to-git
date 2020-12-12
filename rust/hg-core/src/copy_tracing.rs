@@ -568,20 +568,20 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     // This closure exist as temporary help while multiple developper are
     // actively working on this code. Feel free to re-inline it once this
     // code is more settled.
-    let mut cmp_value =
-        |dest: &PathToken,
-         src_minor: &TimeStampedPathCopy,
-         src_major: &TimeStampedPathCopy| {
-            compare_value(
-                path_map,
-                current_merge,
-                changes,
-                oracle,
-                dest,
-                src_minor,
-                src_major,
-            )
-        };
+    let cmp_value = |oracle: &mut AncestorOracle<A>,
+                     dest: &PathToken,
+                     src_minor: &TimeStampedPathCopy,
+                     src_major: &TimeStampedPathCopy| {
+        compare_value(
+            path_map,
+            current_merge,
+            changes,
+            oracle,
+            dest,
+            src_minor,
+            src_major,
+        )
+    };
     if minor.is_empty() {
         major
     } else if major.is_empty() {
@@ -605,11 +605,30 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
         for (dest, src_minor) in minor {
             let src_major = major.get(&dest);
             match src_major {
-                None => major.insert(dest, src_minor),
+                None => {
+                    major.insert(dest, src_minor);
+                }
                 Some(src_major) => {
-                    match cmp_value(&dest, &src_minor, src_major) {
-                        MergePick::Any | MergePick::Major => None,
-                        MergePick::Minor => major.insert(dest, src_minor),
+                    let (pick, overwrite) =
+                        cmp_value(oracle, &dest, &src_minor, src_major);
+                    if overwrite {
+                        oracle.record_overwrite(src_minor.rev, current_merge);
+                        oracle.record_overwrite(src_major.rev, current_merge);
+                        let path = match pick {
+                            MergePick::Major => src_major.path,
+                            MergePick::Minor => src_minor.path,
+                            MergePick::Any => src_major.path,
+                        };
+                        let src = TimeStampedPathCopy {
+                            rev: current_merge,
+                            path,
+                        };
+                        major.insert(dest, src);
+                    } else {
+                        match pick {
+                            MergePick::Any | MergePick::Major => None,
+                            MergePick::Minor => major.insert(dest, src_minor),
+                        };
                     }
                 }
             };
@@ -621,11 +640,30 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
         for (dest, src_major) in major {
             let src_minor = minor.get(&dest);
             match src_minor {
-                None => minor.insert(dest, src_major),
+                None => {
+                    minor.insert(dest, src_major);
+                }
                 Some(src_minor) => {
-                    match cmp_value(&dest, src_minor, &src_major) {
-                        MergePick::Any | MergePick::Minor => None,
-                        MergePick::Major => minor.insert(dest, src_major),
+                    let (pick, overwrite) =
+                        cmp_value(oracle, &dest, &src_major, src_minor);
+                    if overwrite {
+                        oracle.record_overwrite(src_minor.rev, current_merge);
+                        oracle.record_overwrite(src_major.rev, current_merge);
+                        let path = match pick {
+                            MergePick::Major => src_minor.path,
+                            MergePick::Minor => src_major.path,
+                            MergePick::Any => src_major.path,
+                        };
+                        let src = TimeStampedPathCopy {
+                            rev: current_merge,
+                            path,
+                        };
+                        minor.insert(dest, src);
+                    } else {
+                        match pick {
+                            MergePick::Any | MergePick::Major => None,
+                            MergePick::Minor => minor.insert(dest, src_major),
+                        };
                     }
                 }
             };
@@ -663,12 +701,32 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                 DiffItem::Update { old, new } => {
                     let (dest, src_major) = new;
                     let (_, src_minor) = old;
-                    match cmp_value(dest, src_minor, src_major) {
-                        MergePick::Major => to_minor(dest, src_major),
-                        MergePick::Minor => to_major(dest, src_minor),
-                        // If the two entry are identical, no need to do
-                        // anything (but diff should not have yield them)
-                        MergePick::Any => unreachable!(),
+                    let (pick, overwrite) =
+                        cmp_value(oracle, dest, src_minor, src_major);
+                    if overwrite {
+                        oracle.record_overwrite(src_minor.rev, current_merge);
+                        oracle.record_overwrite(src_major.rev, current_merge);
+                        let path = match pick {
+                            MergePick::Major => src_major.path,
+                            MergePick::Minor => src_minor.path,
+                            // If the two entry are identical, no need to do
+                            // anything (but diff should not have yield them)
+                            MergePick::Any => src_major.path,
+                        };
+                        let src = TimeStampedPathCopy {
+                            rev: current_merge,
+                            path,
+                        };
+                        to_minor(dest, &src);
+                        to_major(dest, &src);
+                    } else {
+                        match pick {
+                            MergePick::Major => to_minor(dest, src_major),
+                            MergePick::Minor => to_major(dest, src_minor),
+                            // If the two entry are identical, no need to do
+                            // anything (but diff should not have yield them)
+                            MergePick::Any => unreachable!(),
+                        }
                     }
                 }
             };
@@ -717,39 +775,37 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
     dest: &PathToken,
     src_minor: &TimeStampedPathCopy,
     src_major: &TimeStampedPathCopy,
-) -> MergePick {
+) -> (MergePick, bool) {
     if src_major.rev == current_merge {
         if src_minor.rev == current_merge {
             if src_major.path.is_none() {
                 // We cannot get different copy information for both p1 and p2
                 // from the same revision. Unless this was a
                 // deletion
-                MergePick::Any
+                (MergePick::Any, false)
             } else {
                 unreachable!();
             }
         } else {
             // The last value comes the current merge, this value -will- win
             // eventually.
-            oracle.record_overwrite(src_minor.rev, src_major.rev);
-            MergePick::Major
+            (MergePick::Major, true)
         }
     } else if src_minor.rev == current_merge {
         // The last value comes the current merge, this value -will- win
         // eventually.
-        oracle.record_overwrite(src_major.rev, src_minor.rev);
-        MergePick::Minor
+        (MergePick::Minor, true)
     } else if src_major.path == src_minor.path {
         // we have the same value, but from other source;
         if src_major.rev == src_minor.rev {
             // If the two entry are identical, they are both valid
-            MergePick::Any
+            (MergePick::Any, false)
         } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
-            MergePick::Minor
+            (MergePick::Minor, false)
         } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
-            MergePick::Major
+            (MergePick::Major, false)
         } else {
-            MergePick::Major
+            (MergePick::Any, true)
         }
     } else if src_major.rev == src_minor.rev {
         // We cannot get copy information for both p1 and p2 in the
@@ -766,7 +822,7 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
         {
             // If the file is "deleted" in the major side but was
             // salvaged by the merge, we keep the minor side alive
-            MergePick::Minor
+            (MergePick::Minor, true)
         } else if src_major.path.is_some()
             && src_minor.path.is_none()
             && action == MergeCase::Salvaged
@@ -774,7 +830,7 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
             // If the file is "deleted" in the minor side but was
             // salvaged by the merge, unconditionnaly preserve the
             // major side.
-            MergePick::Major
+            (MergePick::Major, true)
         } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
             // The information from the minor version are strictly older than
             // the major version
@@ -784,10 +840,10 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
                 // mean the older copy information are still relevant.
                 //
                 // The major side wins such conflict.
-                MergePick::Major
+                (MergePick::Major, true)
             } else {
                 // No activity on the minor branch, pick the newer one.
-                MergePick::Major
+                (MergePick::Major, false)
             }
         } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
             if action == MergeCase::Merged {
@@ -796,20 +852,20 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
                 // mean the older copy information are still relevant.
                 //
                 // The major side wins such conflict.
-                MergePick::Major
+                (MergePick::Major, true)
             } else {
                 // No activity on the minor branch, pick the newer one.
-                MergePick::Minor
+                (MergePick::Minor, false)
             }
         } else if src_minor.path.is_none() {
             // the minor side has no relevant information, pick the alive one
-            MergePick::Major
+            (MergePick::Major, true)
         } else if src_major.path.is_none() {
             // the major side has no relevant information, pick the alive one
-            MergePick::Minor
+            (MergePick::Minor, true)
         } else {
             // by default the major side wins
-            MergePick::Major
+            (MergePick::Major, true)
         }
     }
 }

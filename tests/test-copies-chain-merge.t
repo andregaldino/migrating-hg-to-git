@@ -3182,10 +3182,8 @@ The result from mAEm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mK,AEm")' f
   A f
     a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
-    b (known-bad-output sidedata !)
-    b (known-bad-output upgraded !)
+    a (sidedata !)
+    a (upgraded !)
 
 
 The result from mEAm is the same for the subsequent merge:
@@ -3205,10 +3203,8 @@ The result from mEAm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mJ,EAm")' f
   A f
     a (filelog !)
-    b (missing-correct-output sidedata !)
-    b (missing-correct-output upgraded !)
-    a (known-bad-output sidedata !)
-    a (known-bad-output upgraded !)
+    b (sidedata !)
+    b (upgraded !)
 
 Subcase: chaining conflicting rename resolution
 ```````````````````````````````````````````````
@@ -3235,10 +3231,8 @@ The result from mPQm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mT,PQm")' v
   A v
     r (filelog !)
-    p (missing-correct-output sidedata !)
-    p (missing-correct-output upgraded !)
-    r (known-bad-output sidedata !)
-    r (known-bad-output upgraded !)
+    p (sidedata !)
+    p (upgraded !)
 
 
 The result from mQPm is the same for the subsequent merge:
@@ -3254,10 +3248,8 @@ The result from mQPm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mS,QPm")' v
   A v
     r (filelog !)
-    r (missing-correct-output sidedata !)
-    r (missing-correct-output upgraded !)
-    p (known-bad-output sidedata !)
-    p (known-bad-output upgraded !)
+    r (sidedata !)
+    r (upgraded !)
 
 
 Subcase: chaining salvage information during a merge
@@ -3271,9 +3263,7 @@ reference output:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB-revert-m-0")'
   M b
   A d
-    a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
+    a (no-changeset no-compatibility !)
   A t
     p
   R a
@@ -3281,22 +3271,17 @@ reference output:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-revert-m-0")'
   M b
   A d
-    a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
+    a (no-changeset no-compatibility !)
   A t
     p
   R a
   R p
 
 chained output
-
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC+revert,Lm")'
   M b
   A d
-    a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
+    a (no-changeset no-compatibility !)
   A t
     p
   A unrelated-l
@@ -3305,9 +3290,7 @@ chained output
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB+revert,Lm")'
   M b
   A d
-    a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
+    a (no-changeset no-compatibility !)
   A t
     p
   A unrelated-l
@@ -3316,9 +3299,7 @@ chained output
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mL,BC+revertm")'
   M b
   A d
-    a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
+    a (no-changeset no-compatibility !)
   A t
     p
   A unrelated-l
@@ -3327,9 +3308,7 @@ chained output
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mL,CB+revertm")'
   M b
   A d
-    a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
+    a (no-changeset no-compatibility !)
   A t
     p
   A unrelated-l
@@ -3373,18 +3352,10 @@ Chained output
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGF,Nm")' d
   A d
-    a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
-    h (known-bad-output sidedata !)
-    h (known-bad-output upgraded !)
+    a (no-changeset no-compatibility !)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mN,GFm")' d
   A d
-    a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
-    h (known-bad-output sidedata !)
-    h (known-bad-output upgraded !)
+    a (no-changeset no-compatibility !)
 
 
 Subcase: chaining conflicting rename resolution, with extra change during the merge
@@ -3411,11 +3382,7 @@ The result from mAEm is the same for the subsequent merge:
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mK,AE-change-m")' f
   A f
-    a (filelog !)
-    a (missing-correct-output sidedata !)
-    a (missing-correct-output upgraded !)
-    b (known-bad-output sidedata !)
-    b (known-bad-output upgraded !)
+    a (no-changeset no-compatibility !)
 
 
 The result from mEAm is the same for the subsequent merge:
@@ -3435,7 +3402,5 @@ The result from mEAm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mJ,EA-change-m")' f
   A f
     a (filelog !)
-    b (missing-correct-output sidedata !)
-    b (missing-correct-output upgraded !)
-    a (known-bad-output sidedata !)
-    a (known-bad-output upgraded !)
+    b (sidedata !)
+    b (upgraded !)

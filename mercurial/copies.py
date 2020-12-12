@@ -434,7 +434,11 @@ def _combine_changeset_copies(
                     # potential filelog related behavior.
                     assert parent == 2
                     current_copies = _merge_copies_dict(
-                        newcopies, current_copies, isancestor, changes
+                        newcopies,
+                        current_copies,
+                        isancestor,
+                        changes,
+                        current_rev,
                     )
             all_copies[current_rev] = current_copies
 
@@ -456,7 +460,7 @@ PICK_MAJOR = 1
 PICK_EITHER = 2
 
 
-def _merge_copies_dict(minor, major, isancestor, changes):
+def _merge_copies_dict(minor, major, isancestor, changes, current_merge):
     """merge two copies-mapping together, minor and major
 
     In case of conflict, value from "major" will be picked.
@@ -474,8 +478,15 @@ def _merge_copies_dict(minor, major, isancestor, changes):
         if other is None:
             minor[dest] = value
         else:
-            pick = _compare_values(changes, isancestor, dest, other, value)
-            if pick == PICK_MAJOR:
+            pick, overwrite = _compare_values(
+                changes, isancestor, dest, other, value
+            )
+            if overwrite:
+                if pick == PICK_MAJOR:
+                    minor[dest] = (current_merge, value[1])
+                else:
+                    minor[dest] = (current_merge, other[1])
+            elif pick == PICK_MAJOR:
                 minor[dest] = value
     return minor
 
@@ -483,9 +494,10 @@ def _merge_copies_dict(minor, major, isancestor, changes):
 def _compare_values(changes, isancestor, dest, minor, major):
     """compare two value within a _merge_copies_dict loop iteration
 
-    return pick
+    return (pick, overwrite).
 
     - pick is one of PICK_MINOR, PICK_MAJOR or PICK_EITHER
+    - overwrite is True if pick is a return of an ambiguity that needs resolution.
     """
     major_tt, major_value = major
     minor_tt, minor_value = minor
@@ -493,7 +505,7 @@ def _compare_values(changes, isancestor, dest, minor, major):
     if major_tt == minor_tt:
         # if it comes from the same revision it must be the same value
         assert major_value == minor_value
-        return PICK_EITHER
+        return PICK_EITHER, False
     elif (
         changes is not None
         and minor_value is not None
@@ -502,7 +514,7 @@ def _compare_values(changes, isancestor, dest, minor, major):
     ):
         # In this case, a deletion was reverted, the "alive" value overwrite
         # the deleted one.
-        return PICK_MINOR
+        return PICK_MINOR, True
     elif (
         changes is not None
         and major_value is not None
@@ -511,30 +523,30 @@ def _compare_values(changes, isancestor, dest, minor, major):
     ):
         # In this case, a deletion was reverted, the "alive" value overwrite
         # the deleted one.
-        return PICK_MAJOR
+        return PICK_MAJOR, True
     elif isancestor(minor_tt, major_tt):
         if changes is not None and dest in changes.merged:
             # change to dest happened on the branch without copy-source change,
             # so both source are valid and "major" wins.
-            return PICK_MAJOR
+            return PICK_MAJOR, True
         else:
-            return PICK_MAJOR
+            return PICK_MAJOR, False
     elif isancestor(major_tt, minor_tt):
         if changes is not None and dest in changes.merged:
             # change to dest happened on the branch without copy-source change,
             # so both source are valid and "major" wins.
-            return PICK_MAJOR
+            return PICK_MAJOR, True
         else:
-            return PICK_MINOR
+            return PICK_MINOR, False
     elif minor_value is None:
         # in case of conflict, the "alive" side wins.
-        return PICK_MAJOR
+        return PICK_MAJOR, True
     elif major_value is None:
         # in case of conflict, the "alive" side wins.
-        return PICK_MINOR
+        return PICK_MINOR, True
     else:
         # in case of conflict where both side are alive, major wins.
-        return PICK_MAJOR
+        return PICK_MAJOR, True
 
 
 def _revinfo_getter_extra(repo):
