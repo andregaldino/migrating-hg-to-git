@@ -150,19 +150,6 @@ def upgraderepo(
             ui.write((b'\n'))
         ui.write(b'\n')
 
-    def printoptimisations():
-        optimisations = [
-            a for a in actions if a.type == upgrade_actions.OPTIMISATION
-        ]
-        optimisations.sort(key=lambda a: a.name)
-        if optimisations:
-            ui.write(_(b'optimisations: '))
-            write_labeled(
-                [a.name for a in optimisations],
-                "upgrade-repo.optimisation.performed",
-            )
-            ui.write(b'\n\n')
-
     upgrade_op = upgrade_actions.UpgradeOperation(
         ui,
         newreqs,
@@ -219,7 +206,7 @@ def upgraderepo(
         )
 
         printrequirements()
-        printoptimisations()
+        upgrade_op.print_optimisations()
         upgrade_op.print_upgrade_actions()
         upgrade_op.print_affected_revlogs()
 
@@ -239,7 +226,7 @@ def upgraderepo(
     # Else we're in the run=true case.
     ui.write(_(b'upgrade will perform the following actions:\n\n'))
     printrequirements()
-    printoptimisations()
+    upgrade_op.print_optimisations()
     upgrade_op.print_upgrade_actions()
     upgrade_op.print_affected_revlogs()
 

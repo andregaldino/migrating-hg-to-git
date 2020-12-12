@@ -564,6 +564,28 @@ class UpgradeOperation(object):
         self._actions_names = set([a.name for a in actions])
         self.revlogs_to_process = revlogs_to_process
 
+    def _write_labeled(self, l, label):
+        """
+        Utility function to aid writing of a list under one label
+        """
+        first = True
+        for r in sorted(l):
+            if not first:
+                self.ui.write(b', ')
+            self.ui.write(r, label=label)
+            first = False
+
+    def print_optimisations(self):
+        optimisations = [a for a in self.actions if a.type == OPTIMISATION]
+        optimisations.sort(key=lambda a: a.name)
+        if optimisations:
+            self.ui.write(_(b'optimisations: '))
+            self._write_labeled(
+                [a.name for a in optimisations],
+                "upgrade-repo.optimisation.performed",
+            )
+            self.ui.write(b'\n\n')
+
     def print_upgrade_actions(self):
         for a in self.actions:
             self.ui.status(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
