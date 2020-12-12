@@ -403,13 +403,13 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         )
     )
 
-    if b're-delta-all' in upgrade_op.actions:
+    if upgrade_op.has_action(b're-delta-all'):
         deltareuse = revlog.revlog.DELTAREUSENEVER
-    elif b're-delta-parent' in upgrade_op.actions:
+    elif upgrade_op.has_action(b're-delta-parent'):
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif b're-delta-multibase' in upgrade_op.actions:
+    elif upgrade_op.has_action(b're-delta-multibase'):
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif b're-delta-fulladd' in upgrade_op.actions:
+    elif upgrade_op.has_action(b're-delta-fulladd'):
         deltareuse = revlog.revlog.DELTAREUSEFULLADD
     else:
         deltareuse = revlog.revlog.DELTAREUSEALWAYS
@@ -421,7 +421,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
             dstrepo,
             tr,
             deltareuse,
-            b're-delta-multibase' in upgrade_op.actions,
+            upgrade_op.has_action(b're-delta-multibase'),
             revlogs=upgrade_op.revlogs_to_process,
         )
 

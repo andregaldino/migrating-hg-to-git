@@ -163,14 +163,10 @@ def upgraderepo(
             )
             ui.write(b'\n\n')
 
-    def printupgradeactions():
-        for a in actions:
-            ui.status(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
-
     upgrade_op = upgrade_actions.UpgradeOperation(
         ui,
         newreqs,
-        [a.name for a in actions],
+        actions,
         revlogs,
     )
 
@@ -224,7 +220,7 @@ def upgraderepo(
 
         printrequirements()
         printoptimisations()
-        printupgradeactions()
+        upgrade_op.print_upgrade_actions()
         upgrade_op.print_affected_revlogs()
 
         unusedoptimize = [i for i in alloptimizations if i not in actions]
@@ -244,7 +240,7 @@ def upgraderepo(
     ui.write(_(b'upgrade will perform the following actions:\n\n'))
     printrequirements()
     printoptimisations()
-    printupgradeactions()
+    upgrade_op.print_upgrade_actions()
     upgrade_op.print_affected_revlogs()
 
     ui.status(_(b'beginning upgrade...\n'))

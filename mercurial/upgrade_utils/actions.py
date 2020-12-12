@@ -561,7 +561,12 @@ class UpgradeOperation(object):
         self.ui = ui
         self.requirements = requirements
         self.actions = actions
+        self._actions_names = set([a.name for a in actions])
         self.revlogs_to_process = revlogs_to_process
+
+    def print_upgrade_actions(self):
+        for a in self.actions:
+            self.ui.status(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
 
     def print_affected_revlogs(self):
         if not self.revlogs_to_process:
@@ -571,6 +576,10 @@ class UpgradeOperation(object):
             for r in sorted(self.revlogs_to_process):
                 self.ui.write((b'  - %s\n' % r))
         self.ui.write((b'\n'))
+
+    def has_action(self, name):
+        """ Check whether the upgrade operation will perform this action """
+        return name in self._actions_names
 
 
 ###  Code checking if a repository can got through the upgrade process at all. #
