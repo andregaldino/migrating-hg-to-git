@@ -1427,11 +1427,6 @@ Merge:
 This case is similar to BF/FB, but an actual merge happens, so both side of the
 history are relevant.
 
-Note:
-| In this case, the merge get conflicting information since on one side we have
-| "a -> c -> d". and one the other one we have "h -> i -> d".
-|
-| The current code arbitrarily pick one side
 
   $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
   o    29 mGFm-0 simple merge - the other way
@@ -1450,6 +1445,33 @@ Note:
   |
   o  0 i-0 initial commit: a b h
   
+
+Note:
+| In this case, the merge get conflicting information since on one side we have
+| "a -> c -> d". and one the other one we have "h -> i -> d".
+|
+| The current code arbitrarily pick one side depending the ordering of the merged hash:
+
+In this case, the file hash from "f-2" is lower, so it will be `p1` of the resulting filenode its copy tracing information will win (and trace back to "h"):
+
+Details on this hash ordering pick:
+
+  $ hg manifest --debug 'desc("g-1")' | egrep 'd$'
+  f2b277c39e0d2bbac99d8aae075c0d8b5304d266 644   d (no-changeset !)
+  4ff57b4e8dceedb487e70e6965ea188a7c042cca 644   d (changeset !)
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("g-1")' d
+  A d
+    a (no-changeset no-compatibility !)
+
+  $ hg manifest --debug 'desc("f-2")' | egrep 'd$'
+  4a067cf8965d1bfff130057ade26b44f580231be 644   d (no-changeset !)
+  fe6f8b4f507fe3eb524c527192a84920a4288dac 644   d (changeset !)
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("f-2")' d
+  A d
+    h (no-changeset no-compatibility !)
+
+Copy tracing data on the resulting merge:
+
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFGm-0")'
   A d
     h
