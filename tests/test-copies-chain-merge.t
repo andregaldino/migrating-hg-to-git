@@ -872,6 +872,19 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 Test copy information chaining
 ==============================
 
+Check that matching only affect the destination and not intermediate path
+-------------------------------------------------------------------------
+
+The two status call should give the same value for f
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("a-2")'
+  A f
+    a
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("a-2")' f
+  A f
+    a (no-changeset no-compatibility !)
+
 merging with unrelated change does not interfere with the renames
 ---------------------------------------------------------------
 

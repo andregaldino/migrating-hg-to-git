@@ -196,9 +196,7 @@ def _revinfo_getter(repo, match):
 
     changelogrevision = cl.changelogrevision
 
-    alwaysmatch = match.always()
-
-    if rustmod is not None and alwaysmatch:
+    if rustmod is not None:
 
         def revinfo(rev):
             p1, p2 = parents(rev)
@@ -356,7 +354,7 @@ def _combine_changeset_copies(
 
     alwaysmatch = match.always()
 
-    if rustmod is not None and alwaysmatch:
+    if rustmod is not None:
         final_copies = rustmod.combine_changeset_copies(
             list(revs), children_count, targetrev, revinfo, isancestor
         )
@@ -396,12 +394,6 @@ def _combine_changeset_copies(
                     elif parent == 2:
                         childcopies = changes.copied_from_p2
 
-                    if not alwaysmatch:
-                        childcopies = {
-                            dst: src
-                            for dst, src in childcopies.items()
-                            if match(dst)
-                        }
                     if childcopies:
                         newcopies = copies.copy()
                         for dest, source in pycompat.iteritems(childcopies):
@@ -447,6 +439,10 @@ def _combine_changeset_copies(
         for dest, (tt, source) in all_copies[targetrev].items():
             if source is not None:
                 final_copies[dest] = source
+    if not alwaysmatch:
+        for filename in list(final_copies.keys()):
+            if not match(filename):
+                del final_copies[filename]
     return final_copies
 
 
