@@ -357,98 +357,96 @@ def _combine_changeset_copies(
     alwaysmatch = match.always()
 
     if rustmod is not None and alwaysmatch:
-        return rustmod.combine_changeset_copies(
+        final_copies = rustmod.combine_changeset_copies(
             list(revs), children_count, targetrev, revinfo, isancestor
         )
+    else:
+        isancestor = cached_is_ancestor(isancestor)
 
-    isancestor = cached_is_ancestor(isancestor)
+        all_copies = {}
+        # iterate over all the "children" side of copy tracing "edge"
+        for current_rev in revs:
+            p1, p2, changes = revinfo(current_rev)
+            current_copies = None
+            # iterate over all parents to chain the existing data with the
+            # data from the parent → child edge.
+            for parent, parent_rev in ((1, p1), (2, p2)):
+                if parent_rev == nullrev:
+                    continue
+                remaining_children = children_count.get(parent_rev)
+                if remaining_children is None:
+                    continue
+                remaining_children -= 1
+                children_count[parent_rev] = remaining_children
+                if remaining_children:
+                    copies = all_copies.get(parent_rev, None)
+                else:
+                    copies = all_copies.pop(parent_rev, None)
 
-    all_copies = {}
-    # iterate over all the "children" side of copy tracing "edge"
-    for current_rev in revs:
-        p1, p2, changes = revinfo(current_rev)
-        current_copies = None
+                if copies is None:
+                    # this is a root
+                    copies = {}
 
-        # iterate over all parents to chain the existing data with the
-        # data from the parent → child edge.
-        for parent, parent_rev in ((1, p1), (2, p2)):
-            if parent_rev == nullrev:
-                continue
-            remaining_children = children_count.get(parent_rev)
-            if remaining_children is None:
-                continue
-            remaining_children -= 1
-            children_count[parent_rev] = remaining_children
-            if remaining_children:
-                copies = all_copies.get(parent_rev, None)
-            else:
-                copies = all_copies.pop(parent_rev, None)
+                newcopies = copies
+                # chain the data in the edge with the existing data
+                if changes is not None:
+                    childcopies = {}
+                    if parent == 1:
+                        childcopies = changes.copied_from_p1
+                    elif parent == 2:
+                        childcopies = changes.copied_from_p2
 
-            if copies is None:
-                # this is a root
-                copies = {}
-
-            newcopies = copies
-            # chain the data in the edge with the existing data
-            if changes is not None:
-                childcopies = {}
-                if parent == 1:
-                    childcopies = changes.copied_from_p1
-                elif parent == 2:
-                    childcopies = changes.copied_from_p2
-
-                if not alwaysmatch:
-                    childcopies = {
-                        dst: src
-                        for dst, src in childcopies.items()
-                        if match(dst)
-                    }
-                if childcopies:
-                    newcopies = copies.copy()
-                    for dest, source in pycompat.iteritems(childcopies):
-                        prev = copies.get(source)
-                        if prev is not None and prev[1] is not None:
-                            source = prev[1]
-                        newcopies[dest] = (current_rev, source)
-                    assert newcopies is not copies
-                if changes.removed:
-                    if newcopies is copies:
+                    if not alwaysmatch:
+                        childcopies = {
+                            dst: src
+                            for dst, src in childcopies.items()
+                            if match(dst)
+                        }
+                    if childcopies:
                         newcopies = copies.copy()
-                    for f in changes.removed:
-                        if f in newcopies:
-                            if newcopies is copies:
-                                # copy on write to avoid affecting potential other
-                                # branches.  when there are no other branches, this
-                                # could be avoided.
-                                newcopies = copies.copy()
-                            newcopies[f] = (current_rev, None)
+                        for dest, source in pycompat.iteritems(childcopies):
+                            prev = copies.get(source)
+                            if prev is not None and prev[1] is not None:
+                                source = prev[1]
+                            newcopies[dest] = (current_rev, source)
+                        assert newcopies is not copies
+                    if changes.removed:
+                        if newcopies is copies:
+                            newcopies = copies.copy()
+                        for f in changes.removed:
+                            if f in newcopies:
+                                if newcopies is copies:
+                                    # copy on write to avoid affecting potential other
+                                    # branches.  when there are no other branches, this
+                                    # could be avoided.
+                                    newcopies = copies.copy()
+                                newcopies[f] = (current_rev, None)
+                # check potential need to combine the data from another parent (for
+                # that child). See comment below for details.
+                if current_copies is None:
+                    current_copies = newcopies
+                elif current_copies is newcopies:
+                    # nothing to merge:
+                    pass
+                else:
+                    # we are the second parent to work on c, we need to merge our
+                    # work with the other.
+                    #
+                    # In case of conflict, parent 1 take precedence over parent 2.
+                    # This is an arbitrary choice made anew when implementing
+                    # changeset based copies. It was made without regards with
+                    # potential filelog related behavior.
+                    assert parent == 2
+                    current_copies = _merge_copies_dict(
+                        newcopies, current_copies, isancestor, changes
+                    )
+            all_copies[current_rev] = current_copies
 
-            # check potential need to combine the data from another parent (for
-            # that child). See comment below for details.
-            if current_copies is None:
-                current_copies = newcopies
-            elif current_copies is newcopies:
-                # nothing to merge:
-                pass
-            else:
-                # we are the second parent to work on c, we need to merge our
-                # work with the other.
-                #
-                # In case of conflict, parent 1 take precedence over parent 2.
-                # This is an arbitrary choice made anew when implementing
-                # changeset based copies. It was made without regards with
-                # potential filelog related behavior.
-                assert parent == 2
-                current_copies = _merge_copies_dict(
-                    newcopies, current_copies, isancestor, changes
-                )
-        all_copies[current_rev] = current_copies
-
-    # filter out internal details and return a {dest: source mapping}
-    final_copies = {}
-    for dest, (tt, source) in all_copies[targetrev].items():
-        if source is not None:
-            final_copies[dest] = source
+        # filter out internal details and return a {dest: source mapping}
+        final_copies = {}
+        for dest, (tt, source) in all_copies[targetrev].items():
+            if source is not None:
+                final_copies[dest] = source
     return final_copies
 
 
