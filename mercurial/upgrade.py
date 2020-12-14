@@ -225,7 +225,7 @@ def upgraderepo(
                 )
             if not (backup or backuppath is None):
                 ui.status(
-                    _(b'removing old repository content%s\n') % backuppath
+                    _(b'removing old repository content %s\n') % backuppath
                 )
                 repo.vfs.rmtree(backuppath, forcibly=True)
                 backuppath = None

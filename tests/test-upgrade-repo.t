@@ -659,7 +659,7 @@ unless --no-backup is passed
   replacing store...
   store replacement complete; repository was inconsistent for * (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ ls -1 .hg/ | grep upgradebackup
   [1]
@@ -706,7 +706,7 @@ We can restrict optimization to some revlog:
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
 
 Check that the repo still works fine
@@ -786,7 +786,7 @@ Check we can select negatively
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -837,7 +837,7 @@ Check that we can select changelog only
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -888,7 +888,7 @@ Check that we can select filelog only
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -946,7 +946,7 @@ Check you can't skip revlog clone during important format downgrade
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -1005,7 +1005,7 @@ Check you can't skip revlog clone during important format upgrade
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content$TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
+  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
