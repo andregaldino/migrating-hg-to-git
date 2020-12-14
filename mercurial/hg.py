@@ -594,16 +594,15 @@ def clonewithshare(
     return srcpeer, peer(ui, peeropts, dest)
 
 
-# Recomputing branch cache might be slow on big repos,
-# so just copy it
+# Recomputing caches is often slow on big repos, so copy them.
 def _copycache(srcrepo, dstcachedir, fname):
     """copy a cache from srcrepo to destcachedir (if it exists)"""
-    srcbranchcache = srcrepo.vfs.join(b'cache/%s' % fname)
-    dstbranchcache = os.path.join(dstcachedir, fname)
-    if os.path.exists(srcbranchcache):
+    srcfname = srcrepo.cachevfs.join(fname)
+    dstfname = os.path.join(dstcachedir, fname)
+    if os.path.exists(srcfname):
         if not os.path.exists(dstcachedir):
             os.mkdir(dstcachedir)
-        util.copyfile(srcbranchcache, dstbranchcache)
+        util.copyfile(srcfname, dstfname)
 
 
 def clone(

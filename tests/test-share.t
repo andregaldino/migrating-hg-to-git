@@ -56,6 +56,17 @@ share shouldn't have a full cache dir, original repo should
   rbc-revs-v1
   tags2-visible
 
+Cloning a shared repo should pick up the full cache dir on the other hand.
+
+  $ hg clone . ../repo2-clone
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ ls -1 ../repo2-clone/.hg/cache
+  branch2-served
+  rbc-names-v1
+  rbc-revs-v1
+  tags2-visible
+
 Some sed versions appends newline, some don't, and some just fails
 
   $ cat .hg/sharedpath; echo
