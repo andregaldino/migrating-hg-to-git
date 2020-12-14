@@ -865,7 +865,100 @@ should preserve the fact eh file was salvaged.
   
 
 
+Subcase: chaining "merged" information during a merge
+``````````````````````````````````````````````````````
 
+When a non-rename change are merged with a copy overwrite, the merge pick the copy source from (p1) as the reference. We should preserve this information in subsequent merges.
+
+  $ case_desc="chained merges (copy-overwrite -> simple) - same content"
+
+(extra unrelated changes)
+
+  $ hg up 'desc("f-2")'
+  2 files updated, 0 files merged, 2 files removed, 0 files unresolved (no-changeset !)
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved (changeset !)
+  $ echo n > unrelated-n
+  $ hg add unrelated-n
+  $ hg ci -m 'n-1: unrelated changes (based on the "f" series of changes)'
+  created new head
+
+  $ hg up 'desc("g-1")'
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo o > unrelated-o
+  $ hg add unrelated-o
+  $ hg ci -m 'o-1: unrelated changes (based on "g" changes)'
+  created new head
+
+(merge variant 1)
+
+  $ hg up 'desc("mFGm")'
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved (changeset !)
+  $ hg merge 'desc("o-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mFG,Om: $case_desc"
+
+(merge variant 2)
+
+  $ hg up 'desc("o-1")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
+  $ hg merge 'desc("FGm")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mO,FGm: $case_desc"
+  created new head
+
+(merge variant 3)
+
+  $ hg up 'desc("mGFm")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("n-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mGF,Nm: $case_desc"
+
+(merge variant 4)
+
+  $ hg up 'desc("n-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("mGFm")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mN,GFm: $case_desc"
+  created new head
+
+  $ hg log -G --rev '::(desc("mFG,Om") + desc("mO,FGm") + desc("mGF,Nm") + desc("mN,GFm"))'
+  @    53 mN,GFm: chained merges (copy-overwrite -> simple) - same content
+  |\
+  +---o  52 mGF,Nm: chained merges (copy-overwrite -> simple) - same content
+  | |/
+  | | o    51 mO,FGm: chained merges (copy-overwrite -> simple) - same content
+  | | |\
+  | | +---o  50 mFG,Om: chained merges (copy-overwrite -> simple) - same content
+  | | | |/
+  | | | o  49 o-1: unrelated changes (based on "g" changes)
+  | | | |
+  | o | |  48 n-1: unrelated changes (based on the "f" series of changes)
+  | | | |
+  o-----+  29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
+  |/ / /
+  | o /  28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
+  |/|/
+  | o  25 g-1: update d
+  | |
+  o |  22 f-2: rename i -> d
+  | |
+  o |  21 f-1: rename h -> i
+  |/
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
 
 Summary of all created cases
 ----------------------------
@@ -914,15 +1007,21 @@ Summary of all created cases
   mEA,Jm: chained merges (conflict -> simple) - same content everywhere
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  mFG,Om: chained merges (copy-overwrite -> simple) - same content
   mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
+  mGF,Nm: chained merges (copy-overwrite -> simple) - same content
   mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
   mJ,EAm: chained merges (conflict -> simple) - same content everywhere
   mK,AEm: chained merges (conflict -> simple) - same content everywhere
   mL,BC+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
   mL,CB+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
+  mN,GFm: chained merges (copy-overwrite -> simple) - same content
+  mO,FGm: chained merges (copy-overwrite -> simple) - same content
+  n-1: unrelated changes (based on the "f" series of changes)
+  o-1: unrelated changes (based on "g" changes)
 
 
 Test that sidedata computations during upgrades are correct
@@ -1209,6 +1308,32 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 4
     '\x00\x00\x00\x00'
   ##### revision 47 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 48 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-n'
+  added      : unrelated-n, ;
+  ##### revision 49 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-o'
+  added      : unrelated-o, ;
+  ##### revision 50 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 51 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 52 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 53 #####
   1 sidedata entries
    entry-0014 size 4
     '\x00\x00\x00\x00'
@@ -2168,3 +2293,52 @@ chained output
   A unrelated-l
   R a
 
+Subcase: chaining "merged" information during a merge
+``````````````````````````````````````````````````````
+
+When a non-rename change are merged with a copy overwrite, the merge pick the copy source from (p1) as the reference. We should preserve this information in subsequent merges.
+
+
+reference output:
+
+ (for details about the filelog pick, check the mFGm/mGFm case)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFGm")' d
+  A d
+    a (filelog !)
+    h (sidedata !)
+    h (upgraded !)
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGFm")' d
+  A d
+    a (filelog !)
+    a (sidedata !)
+    a (upgraded !)
+
+Chained output
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mO,FGm")' d
+  A d
+    a (filelog !)
+    h (sidedata !)
+    h (upgraded !)
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFG,Om")' d
+  A d
+    a (filelog !)
+    h (sidedata !)
+    h (upgraded !)
+
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGF,Nm")' d
+  A d
+    a (filelog !)
+    a (missing-correct-output sidedata !)
+    a (missing-correct-output upgraded !)
+    h (known-bad-output sidedata !)
+    h (known-bad-output upgraded !)
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mN,GFm")' d
+  A d
+    a (filelog !)
+    a (missing-correct-output sidedata !)
+    a (missing-correct-output upgraded !)
+    h (known-bad-output sidedata !)
+    h (known-bad-output upgraded !)
