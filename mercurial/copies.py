@@ -478,15 +478,19 @@ def _merge_copies_dict(minor, major, isancestor, changes):
 
 def _compare_values(changes, isancestor, dest, minor, major):
     """compare two value within a _merge_copies_dict loop iteration"""
-    major_tt = major[0]
-    minor_tt = minor[0]
+    major_tt, major_value = major
+    minor_tt, minor_value = minor
 
-    if major[1] == minor[1]:
-        return PICK_EITHER
-    # content from "major" wins, unless it is older
-    # than the branch point or there is a merge
+    # evacuate some simple case first:
     if major_tt == minor_tt:
-        return PICK_MAJOR
+        # if it comes from the same revision it must be the same value
+        assert major_value == minor_value
+        return PICK_EITHER
+    elif major[1] == minor[1]:
+        return PICK_EITHER
+
+    # actual merging needed: content from "major" wins, unless it is older than
+    # the branch point or there is a merge
     elif changes is not None and major[1] is None and dest in changes.salvaged:
         return PICK_MINOR
     elif changes is not None and minor[1] is None and dest in changes.salvaged:
