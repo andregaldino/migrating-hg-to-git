@@ -476,27 +476,27 @@ def _merge_copies_dict(minor, major, isancestor, changes):
     return minor
 
 
-def _compare_values(changes, isancestor, dest, other, value):
+def _compare_values(changes, isancestor, dest, minor, major):
     """compare two value within a _merge_copies_dict loop iteration"""
-    new_tt = value[0]
-    other_tt = other[0]
+    major_tt = major[0]
+    minor_tt = minor[0]
 
-    if value[1] == other[1]:
+    if major[1] == minor[1]:
         return PICK_EITHER
     # content from "major" wins, unless it is older
     # than the branch point or there is a merge
-    if new_tt == other_tt:
+    if major_tt == minor_tt:
         return PICK_MAJOR
-    elif changes is not None and value[1] is None and dest in changes.salvaged:
+    elif changes is not None and major[1] is None and dest in changes.salvaged:
         return PICK_MINOR
-    elif changes is not None and other[1] is None and dest in changes.salvaged:
+    elif changes is not None and minor[1] is None and dest in changes.salvaged:
         return PICK_MAJOR
     elif changes is not None and dest in changes.merged:
         return PICK_MAJOR
-    elif not isancestor(new_tt, other_tt):
-        if value[1] is not None:
+    elif not isancestor(major_tt, minor_tt):
+        if major[1] is not None:
             return PICK_MAJOR
-        elif isancestor(other_tt, new_tt):
+        elif isancestor(minor_tt, major_tt):
             return PICK_MAJOR
     return PICK_MINOR
 
