@@ -118,6 +118,42 @@ def matchrevlog(revlogfilter, entry):
     return UPGRADE_FILELOGS in revlogfilter
 
 
+def _perform_clone(
+    ui,
+    dstrepo,
+    tr,
+    old_revlog,
+    unencoded,
+    deltareuse,
+    forcedeltabothparents,
+    revlogs,
+    sidedatacompanion,
+    oncopiedrevision,
+):
+    """ returns the new revlog object created"""
+    newrl = None
+    if matchrevlog(revlogs, unencoded):
+        ui.note(
+            _(b'cloning %d revisions from %s\n') % (len(old_revlog), unencoded)
+        )
+        newrl = _revlogfrompath(dstrepo, unencoded)
+        old_revlog.clone(
+            tr,
+            newrl,
+            addrevisioncb=oncopiedrevision,
+            deltareuse=deltareuse,
+            forcedeltabothparents=forcedeltabothparents,
+            sidedatacompanion=sidedatacompanion,
+        )
+    else:
+        msg = _(b'blindly copying %s containing %i revisions\n')
+        ui.note(msg % (unencoded, len(old_revlog)))
+        _copyrevlog(tr, dstrepo, old_revlog, unencoded)
+
+        newrl = _revlogfrompath(dstrepo, unencoded)
+    return newrl
+
+
 def _clonerevlogs(
     ui,
     srcrepo,
@@ -292,26 +328,18 @@ def _clonerevlogs(
                 _(b'file revisions'), total=frevcount
             )
 
-        if matchrevlog(revlogs, unencoded):
-            ui.note(
-                _(b'cloning %d revisions from %s\n') % (len(oldrl), unencoded)
-            )
-            newrl = _revlogfrompath(dstrepo, unencoded)
-            oldrl.clone(
-                tr,
-                newrl,
-                addrevisioncb=oncopiedrevision,
-                deltareuse=deltareuse,
-                forcedeltabothparents=forcedeltabothparents,
-                sidedatacompanion=sidedatacompanion,
-            )
-        else:
-            msg = _(b'blindly copying %s containing %i revisions\n')
-            ui.note(msg % (unencoded, len(oldrl)))
-            _copyrevlog(tr, dstrepo, oldrl, unencoded)
-
-            newrl = _revlogfrompath(dstrepo, unencoded)
-
+        newrl = _perform_clone(
+            ui,
+            dstrepo,
+            tr,
+            oldrl,
+            unencoded,
+            deltareuse,
+            forcedeltabothparents,
+            revlogs,
+            sidedatacompanion,
+            oncopiedrevision,
+        )
         info = newrl.storageinfo(storedsize=True)
         datasize = info[b'storedsize'] or 0
 
