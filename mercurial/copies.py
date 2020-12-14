@@ -446,6 +446,12 @@ def _combine_changeset_copies(
     return final_copies
 
 
+# constant to decide which side to pick with _merge_copies_dict
+PICK_MINOR = 0
+PICK_MAJOR = 1
+PICK_EITHER = 2
+
+
 def _merge_copies_dict(minor, major, isancestor, changes):
     """merge two copies-mapping together, minor and major
 
@@ -464,34 +470,35 @@ def _merge_copies_dict(minor, major, isancestor, changes):
         if other is None:
             minor[dest] = value
         else:
-            new_tt = value[0]
-            other_tt = other[0]
-            if value[1] == other[1]:
-                continue
-            # content from "major" wins, unless it is older
-            # than the branch point or there is a merge
-            if new_tt == other_tt:
+            pick = _compare_values(changes, isancestor, dest, other, value)
+            if pick == PICK_MAJOR:
                 minor[dest] = value
-            elif (
-                changes is not None
-                and value[1] is None
-                and dest in changes.salvaged
-            ):
-                pass
-            elif (
-                changes is not None
-                and other[1] is None
-                and dest in changes.salvaged
-            ):
-                minor[dest] = value
-            elif changes is not None and dest in changes.merged:
-                minor[dest] = value
-            elif not isancestor(new_tt, other_tt):
-                if value[1] is not None:
-                    minor[dest] = value
-                elif isancestor(other_tt, new_tt):
-                    minor[dest] = value
     return minor
+
+
+def _compare_values(changes, isancestor, dest, other, value):
+    """compare two value within a _merge_copies_dict loop iteration"""
+    new_tt = value[0]
+    other_tt = other[0]
+
+    if value[1] == other[1]:
+        return PICK_EITHER
+    # content from "major" wins, unless it is older
+    # than the branch point or there is a merge
+    if new_tt == other_tt:
+        return PICK_MAJOR
+    elif changes is not None and value[1] is None and dest in changes.salvaged:
+        return PICK_MINOR
+    elif changes is not None and other[1] is None and dest in changes.salvaged:
+        return PICK_MAJOR
+    elif changes is not None and dest in changes.merged:
+        return PICK_MAJOR
+    elif not isancestor(new_tt, other_tt):
+        if value[1] is not None:
+            return PICK_MAJOR
+        elif isancestor(other_tt, new_tt):
+            return PICK_MAJOR
+    return PICK_MINOR
 
 
 def _revinfo_getter_extra(repo):
