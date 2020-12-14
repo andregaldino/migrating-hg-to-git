@@ -23,7 +23,7 @@ use hg::Revision;
 pub fn combine_changeset_copies_wrapper(
     py: Python,
     revs: PyList,
-    children: PyDict,
+    children_count: PyDict,
     target_rev: Revision,
     rev_info: PyObject,
     is_ancestor: PyObject,
@@ -93,20 +93,15 @@ pub fn combine_changeset_copies_wrapper(
 
             (p1, p2, files)
         });
-    let children: PyResult<_> = children
+    let children_count: PyResult<_> = children_count
         .items(py)
         .iter()
-        .map(|(k, v)| {
-            let v: &PyList = v.cast_as(py)?;
-            let v: PyResult<_> =
-                v.iter(py).map(|child| Ok(child.extract(py)?)).collect();
-            Ok((k.extract(py)?, v?))
-        })
+        .map(|(k, v)| Ok((k.extract(py)?, v.extract(py)?)))
         .collect();
 
     let res = combine_changeset_copies(
         revs?,
-        children?,
+        children_count?,
         target_rev,
         rev_info_maker,
         &is_ancestor_wrap,

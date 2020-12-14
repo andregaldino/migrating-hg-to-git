@@ -1,6 +1,7 @@
 use crate::utils::hg_path::HgPath;
 use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
+use crate::NULL_REVISION;
 
 use im_rc::ordmap::DiffItem;
 use im_rc::ordmap::OrdMap;
@@ -328,7 +329,7 @@ enum Parent {
 ///                                 ancestor of another
 pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
     revs: Vec<Revision>,
-    children: HashMap<Revision, Vec<Revision>>,
+    mut children_count: HashMap<Revision, usize>,
     target_rev: Revision,
     rev_info: RevInfoMaker<D>,
     is_ancestor: &A,
@@ -337,57 +338,69 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
     let mut oracle = AncestorOracle::new(is_ancestor);
 
     for rev in revs {
-        // Retrieve data computed in a previous iteration
-        let copies = all_copies.remove(&rev);
-        let copies = match copies {
-            Some(c) => c,
-            None => TimeStampedPathCopies::default(), // root of the walked set
-        };
+        let mut d: DataHolder<D> = DataHolder { data: None };
+        let (p1, p2, changes) = rev_info(rev, &mut d);
 
-        let current_children = match children.get(&rev) {
-            Some(c) => c,
-            None => panic!("inconsistent `revs` and `children`"),
-        };
+        // We will chain the copies information accumulated for the parent with
+        // the individual copies information the curent revision.  Creating a
+        // new TimeStampedPath for each `rev` → `children` vertex.
+        let mut copies: Option<TimeStampedPathCopies> = None;
+        if p1 != NULL_REVISION {
+            // Retrieve data computed in a previous iteration
+            let parent_copies = get_and_clean_parent_copies(
+                &mut all_copies,
+                &mut children_count,
+                p1,
+            );
+            if let Some(parent_copies) = parent_copies {
+                // combine it with data for that revision
+                let vertex_copies = add_from_changes(
+                    &parent_copies,
+                    &changes,
+                    Parent::FirstParent,
+                    rev,
+                );
+                // keep that data around for potential later combination
+                copies = Some(vertex_copies);
+            }
+        }
+        if p2 != NULL_REVISION {
+            // Retrieve data computed in a previous iteration
+            let parent_copies = get_and_clean_parent_copies(
+                &mut all_copies,
+                &mut children_count,
+                p2,
+            );
+            if let Some(parent_copies) = parent_copies {
+                // combine it with data for that revision
+                let vertex_copies = add_from_changes(
+                    &parent_copies,
+                    &changes,
+                    Parent::SecondParent,
+                    rev,
+                );
 
-        for child in current_children {
-            // We will chain the copies information accumulated for `rev` with
-            // the individual copies information for each of its children.
-            // Creating a new PathCopies for each `rev` → `children` vertex.
-            let mut d: DataHolder<D> = DataHolder { data: None };
-            let (p1, p2, changes) = rev_info(*child, &mut d);
-
-            let parent = if rev == p1 {
-                Parent::FirstParent
-            } else {
-                assert_eq!(rev, p2);
-                Parent::SecondParent
-            };
-            let new_copies =
-                add_from_changes(&copies, &changes, parent, *child);
-
-            // Merge has two parents needs to combines their copy information.
-            //
-            // If the vertex from the other parent was already processed, we
-            // will have a value for the child ready to be used. We need to
-            // grab it and combine it with the one we already
-            // computed. If not we can simply store the newly
-            // computed data. The processing happening at
-            // the time of the second parent will take care of combining the
-            // two TimeStampedPathCopies instance.
-            match all_copies.remove(child) {
-                None => {
-                    all_copies.insert(child, new_copies);
-                }
-                Some(other_copies) => {
-                    let (minor, major) = match parent {
-                        Parent::FirstParent => (other_copies, new_copies),
-                        Parent::SecondParent => (new_copies, other_copies),
-                    };
-                    let merged_copies =
-                        merge_copies_dict(minor, major, &changes, &mut oracle);
-                    all_copies.insert(child, merged_copies);
-                }
-            };
+                copies = match copies {
+                    None => Some(vertex_copies),
+                    // Merge has two parents needs to combines their copy
+                    // information.
+                    //
+                    // If we got data from both parents, We need to combine
+                    // them.
+                    Some(copies) => Some(merge_copies_dict(
+                        vertex_copies,
+                        copies,
+                        &changes,
+                        &mut oracle,
+                    )),
+                };
+            }
+        }
+        match copies {
+            Some(copies) => {
+                all_copies.insert(rev, copies);
+            }
+            _ => {}
         }
     }
 
@@ -403,6 +416,32 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
         }
     }
     result
+}
+
+/// fetch previous computed information
+///
+/// If no other children are expected to need this information, we drop it from
+/// the cache.
+///
+/// If parent is not part of the set we are expected to walk, return None.
+fn get_and_clean_parent_copies(
+    all_copies: &mut HashMap<Revision, TimeStampedPathCopies>,
+    children_count: &mut HashMap<Revision, usize>,
+    parent_rev: Revision,
+) -> Option<TimeStampedPathCopies> {
+    let count = children_count.get_mut(&parent_rev)?;
+    *count -= 1;
+    if *count == 0 {
+        match all_copies.remove(&parent_rev) {
+            Some(c) => Some(c),
+            None => Some(TimeStampedPathCopies::default()),
+        }
+    } else {
+        match all_copies.get(&parent_rev) {
+            Some(c) => Some(c.clone()),
+            None => Some(TimeStampedPathCopies::default()),
+        }
+    }
 }
 
 /// Combine ChangedFiles with some existing PathCopies information and return

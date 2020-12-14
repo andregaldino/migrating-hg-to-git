@@ -288,40 +288,92 @@ def _changesetforwardcopies(a, b, match):
 
     cl = repo.changelog
     isancestor = cl.isancestorrev
-    missingrevs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
-    mrset = set(missingrevs)
+
+    # To track rename from "A" to B, we need to gather all parent → children
+    # edges that are contains in `::B` but not in `::A`.
+    #
+    #
+    # To do so, we need to gather all revisions exclusive¹ to "B" (ie¹: `::b -
+    # ::a`) and also all the "roots point", ie the parents of the exclusive set
+    # that belong to ::a. These are exactly all the revisions needed to express
+    # the parent → children we need to combine.
+    #
+    # [1] actually, we need to gather all the edges within `(::a)::b`, ie:
+    # excluding paths that leads to roots that are not ancestors of `a`. We
+    # keep this out of the explanation because it is hard enough without this special case..
+
+    parents = cl._uncheckedparentrevs
+    graph_roots = (nullrev, nullrev)
+
+    ancestors = cl.ancestors([a.rev()], inclusive=True)
+    revs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     roots = set()
-    for r in missingrevs:
-        for p in cl.parentrevs(r):
-            if p == nullrev:
-                continue
-            if p not in children:
-                children[p] = [r]
-            else:
-                children[p].append(r)
-            if p not in mrset:
-                roots.add(p)
+    has_graph_roots = False
+
+    # iterate over `only(B, A)`
+    for r in revs:
+        ps = parents(r)
+        if ps == graph_roots:
+            has_graph_roots = True
+        else:
+            p1, p2 = ps
+
+            # find all the "root points" (see larger comment above)
+            if p1 != nullrev and p1 in ancestors:
+                roots.add(p1)
+            if p2 != nullrev and p2 in ancestors:
+                roots.add(p2)
     if not roots:
         # no common revision to track copies from
         return {}
-    min_root = min(roots)
-
-    from_head = set(
-        cl.reachableroots(min_root, [b.rev()], list(roots), includepath=True)
-    )
-
-    iterrevs = set(from_head)
-    iterrevs &= mrset
-    iterrevs.update(roots)
-    iterrevs.remove(b.rev())
-    revs = sorted(iterrevs)
+    if has_graph_roots:
+        # this deal with the special case mentionned in the [1] footnotes. We
+        # must filter out revisions that leads to non-common graphroots.
+        roots = list(roots)
+        m = min(roots)
+        h = [b.rev()]
+        roots_to_head = cl.reachableroots(m, h, roots, includepath=True)
+        roots_to_head = set(roots_to_head)
+        revs = [r for r in revs if r in roots_to_head]
 
     if repo.filecopiesmode == b'changeset-sidedata':
+        # When using side-data, we will process the edges "from" the children.
+        # We iterate over the childre, gathering previous collected data for
+        # the parents. Do know when the parents data is no longer necessary, we
+        # keep a counter of how many children each revision has.
+        #
+        # An interresting property of `children_count` is that it only contains
+        # revision that will be relevant for a edge of the graph. So if a
+        # children has parent not in `children_count`, that edges should not be
+        # processed.
+        children_count = dict((r, 0) for r in roots)
+        for r in revs:
+            for p in cl.parentrevs(r):
+                if p == nullrev:
+                    continue
+                children_count[r] = 0
+                if p in children_count:
+                    children_count[p] += 1
         revinfo = _revinfo_getter(repo, match)
         return _combine_changeset_copies(
-            revs, children, b.rev(), revinfo, match, isancestor
+            revs, children_count, b.rev(), revinfo, match, isancestor
         )
     else:
+        # When not using side-data, we will process the edges "from" the parent.
+        # so we need a full mapping of the parent -> children relation.
+        children = dict((r, []) for r in roots)
+        for r in revs:
+            for p in cl.parentrevs(r):
+                if p == nullrev:
+                    continue
+                children[r] = []
+                if p in children:
+                    children[p].append(r)
+        x = revs.pop()
+        assert x == b.rev()
+        revs.extend(roots)
+        revs.sort()
+
         revinfo = _revinfo_getter_extra(repo)
         return _combine_changeset_copies_extra(
             revs, children, b.rev(), revinfo, match, isancestor
@@ -329,12 +381,12 @@ def _changesetforwardcopies(a, b, match):
 
 
 def _combine_changeset_copies(
-    revs, children, targetrev, revinfo, match, isancestor
+    revs, children_count, targetrev, revinfo, match, isancestor
 ):
     """combine the copies information for each item of iterrevs
 
     revs: sorted iterable of revision to visit
-    children: a {parent: [children]} mapping.
+    children_count: a {parent: <number-of-relevant-children>} mapping.
     targetrev: the final copies destination revision (not in iterrevs)
     revinfo(rev): a function that return (p1, p2, p1copies, p2copies, removed)
     match: a matcher
@@ -346,69 +398,76 @@ def _combine_changeset_copies(
 
     if rustmod is not None and alwaysmatch:
         return rustmod.combine_changeset_copies(
-            list(revs), children, targetrev, revinfo, isancestor
+            list(revs), children_count, targetrev, revinfo, isancestor
         )
 
     isancestor = cached_is_ancestor(isancestor)
 
     all_copies = {}
-    # iterate over all the "parent" side of copy tracing "edge"
-    for r in revs:
-        # fetch potential previously computed data for that parent
-        copies = all_copies.pop(r, None)
-        if copies is None:
-            # this is a root
-            copies = {}
+    # iterate over all the "children" side of copy tracing "edge"
+    for current_rev in revs:
+        p1, p2, changes = revinfo(current_rev)
+        current_copies = None
 
-        # iterate over all known children to chain the existing data with the
+        # iterate over all parents to chain the existing data with the
         # data from the parent → child edge.
-        for i, c in enumerate(children[r]):
-            p1, p2, changes = revinfo(c)
-            childcopies = {}
-
-            # select the right parent → child edge
-            if r == p1:
-                parent = 1
-                if changes is not None:
-                    childcopies = changes.copied_from_p1
+        for parent, parent_rev in ((1, p1), (2, p2)):
+            if parent_rev == nullrev:
+                continue
+            remaining_children = children_count.get(parent_rev)
+            if remaining_children is None:
+                continue
+            remaining_children -= 1
+            children_count[parent_rev] = remaining_children
+            if remaining_children:
+                copies = all_copies.get(parent_rev, None)
             else:
-                assert r == p2
-                parent = 2
-                if changes is not None:
-                    childcopies = changes.copied_from_p2
-            if not alwaysmatch:
-                childcopies = {
-                    dst: src for dst, src in childcopies.items() if match(dst)
-                }
+                copies = all_copies.pop(parent_rev, None)
 
-            # chain the data in the edge with the existing data
+            if copies is None:
+                # this is a root
+                copies = {}
+
             newcopies = copies
-            if childcopies:
-                newcopies = copies.copy()
-                for dest, source in pycompat.iteritems(childcopies):
-                    prev = copies.get(source)
-                    if prev is not None and prev[1] is not None:
-                        source = prev[1]
-                    newcopies[dest] = (c, source)
-                assert newcopies is not copies
-            if changes is not None and changes.removed:
-                if newcopies is copies:
+            # chain the data in the edge with the existing data
+            if changes is not None:
+                childcopies = {}
+                if parent == 1:
+                    childcopies = changes.copied_from_p1
+                elif parent == 2:
+                    childcopies = changes.copied_from_p2
+
+                if not alwaysmatch:
+                    childcopies = {
+                        dst: src
+                        for dst, src in childcopies.items()
+                        if match(dst)
+                    }
+                if childcopies:
                     newcopies = copies.copy()
-                for f in changes.removed:
-                    if f in newcopies:
-                        if newcopies is copies:
-                            # copy on write to avoid affecting potential other
-                            # branches.  when there are no other branches, this
-                            # could be avoided.
-                            newcopies = copies.copy()
-                        newcopies[f] = (c, None)
+                    for dest, source in pycompat.iteritems(childcopies):
+                        prev = copies.get(source)
+                        if prev is not None and prev[1] is not None:
+                            source = prev[1]
+                        newcopies[dest] = (current_rev, source)
+                    assert newcopies is not copies
+                if changes.removed:
+                    if newcopies is copies:
+                        newcopies = copies.copy()
+                    for f in changes.removed:
+                        if f in newcopies:
+                            if newcopies is copies:
+                                # copy on write to avoid affecting potential other
+                                # branches.  when there are no other branches, this
+                                # could be avoided.
+                                newcopies = copies.copy()
+                            newcopies[f] = (current_rev, None)
 
             # check potential need to combine the data from another parent (for
             # that child). See comment below for details.
-            othercopies = all_copies.get(c)
-            if othercopies is None:
-                all_copies[c] = newcopies
-            elif newcopies is othercopies:
+            if current_copies is None:
+                current_copies = newcopies
+            elif current_copies is newcopies:
                 # nothing to merge:
                 pass
             else:
@@ -419,17 +478,11 @@ def _combine_changeset_copies(
                 # This is an arbitrary choice made anew when implementing
                 # changeset based copies. It was made without regards with
                 # potential filelog related behavior.
-                if parent == 1:
-                    if newcopies is copies:
-                        newcopies = copies.copy()
-                    minor, major = othercopies, newcopies
-                else:
-                    # we do not know if the other dict is a copy or not, so we
-                    # need to blindly copy it. Future change should make this
-                    # unnecessary.
-                    minor, major = newcopies, othercopies.copy()
-                copies = _merge_copies_dict(minor, major, isancestor, changes)
-                all_copies[c] = copies
+                assert parent == 2
+                current_copies = _merge_copies_dict(
+                    newcopies, current_copies, isancestor, changes
+                )
+        all_copies[current_rev] = current_copies
 
     # filter out internal details and return a {dest: source mapping}
     final_copies = {}
