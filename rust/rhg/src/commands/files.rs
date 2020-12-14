@@ -14,7 +14,7 @@ use hg::operations::{
 use hg::requirements;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
 use hg::utils::hg_path::{HgPath, HgPathBuf};
-use std::path::PathBuf;
+use std::path::Path;
 
 pub const HELP_TEXT: &str = "
 List tracked files.
@@ -34,13 +34,13 @@ impl<'a> FilesCommand<'a> {
     fn display_files(
         &self,
         ui: &Ui,
-        root: &PathBuf,
+        root: &Path,
         files: impl IntoIterator<Item = &'a HgPath>,
     ) -> Result<(), CommandError> {
         let cwd = std::env::current_dir()
             .or_else(|e| Err(CommandErrorKind::CurrentDirNotFound(e)))?;
         let rooted_cwd = cwd
-            .strip_prefix(&root)
+            .strip_prefix(root)
             .expect("cwd was already checked within the repository");
         let rooted_cwd = HgPathBuf::from(get_bytes_from_path(rooted_cwd));
 

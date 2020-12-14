@@ -1,7 +1,7 @@
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefixRef;
 use crate::revlog::Revision;
-use std::path::PathBuf;
+use std::path::Path;
 
 /// A specialized `Revlog` to work with `changelog` data format.
 pub struct Changelog {
@@ -11,7 +11,7 @@ pub struct Changelog {
 
 impl Changelog {
     /// Open the `changelog` of a repository given by its root.
-    pub fn open(root: &PathBuf) -> Result<Self, RevlogError> {
+    pub fn open(root: &Path) -> Result<Self, RevlogError> {
         let index_file = root.join(".hg/store/00changelog.i");
         let revlog = Revlog::open(&index_file, None)?;
         Ok(Self { revlog })

@@ -71,7 +71,7 @@ impl From<RevlogError> for CatRevError {
 
 /// List files under Mercurial control at a given revision.
 pub struct CatRev<'a> {
-    root: &'a PathBuf,
+    root: &'a Path,
     /// The revision to cat the files from.
     rev: &'a str,
     /// The files to output.
@@ -88,7 +88,7 @@ pub struct CatRev<'a> {
 
 impl<'a> CatRev<'a> {
     pub fn new(
-        root: &'a PathBuf,
+        root: &'a Path,
         rev: &'a str,
         files: &'a [HgPathBuf],
     ) -> Result<Self, CatRevError> {

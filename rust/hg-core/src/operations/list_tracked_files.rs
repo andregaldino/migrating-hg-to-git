@@ -16,7 +16,7 @@ use crate::{DirstateParseError, EntryState};
 use rayon::prelude::*;
 use std::convert::From;
 use std::fs;
-use std::path::PathBuf;
+use std::path::Path;
 
 /// Kind of error encountered by `ListDirstateTrackedFiles`
 #[derive(Debug)]
@@ -57,7 +57,7 @@ pub struct ListDirstateTrackedFiles {
 }
 
 impl ListDirstateTrackedFiles {
-    pub fn new(root: &PathBuf) -> Result<Self, ListDirstateTrackedFilesError> {
+    pub fn new(root: &Path) -> Result<Self, ListDirstateTrackedFilesError> {
         let dirstate = root.join(".hg/dirstate");
         let content = fs::read(&dirstate)?;
         Ok(Self { content })
@@ -152,11 +152,11 @@ pub struct ListRevTrackedFiles<'a> {
 
 impl<'a> ListRevTrackedFiles<'a> {
     pub fn new(
-        root: &PathBuf,
+        root: &Path,
         rev: &'a str,
     ) -> Result<Self, ListRevTrackedFilesError> {
-        let changelog = Changelog::open(&root)?;
-        let manifest = Manifest::open(&root)?;
+        let changelog = Changelog::open(root)?;
+        let manifest = Manifest::open(root)?;
 
         Ok(Self {
             rev,
