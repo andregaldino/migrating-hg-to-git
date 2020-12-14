@@ -1309,6 +1309,13 @@ packages = [
     'hgdemandimport',
 ]
 
+# The pygit2 dependency dropped py2 support with the 1.0 release in Dec 2019.
+# Prior releases do not build at all on Windows, because Visual Studio 2008
+# doesn't understand C 11.  Older Linux releases are buggy.
+if sys.version_info[0] == 2:
+    packages.remove('hgext.git')
+
+
 for name in os.listdir(os.path.join('mercurial', 'templates')):
     if name != '__pycache__' and os.path.isdir(
         os.path.join('mercurial', 'templates', name)
