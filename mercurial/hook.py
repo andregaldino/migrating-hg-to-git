@@ -157,6 +157,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
             env[b'HG_PENDING'] = repo.root
     env[b'HG_HOOKTYPE'] = htype
     env[b'HG_HOOKNAME'] = name
+    env[b'HGPLAIN'] = b'1'
 
     for k, v in pycompat.iteritems(args):
         # transaction changes can accumulate MBs of data, so skip it
