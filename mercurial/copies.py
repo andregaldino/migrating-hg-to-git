@@ -1,3 +1,4 @@
+# coding: utf8
 # copies.py - copy detection for Mercurial
 #
 # Copyright 2008 Matt Mackall <mpm@selenic.com>
@@ -351,14 +352,21 @@ def _combine_changeset_copies(
     isancestor = cached_is_ancestor(isancestor)
 
     all_copies = {}
+    # iterate over all the "parent" side of copy tracing "edge"
     for r in revs:
+        # fetch potential previously computed data for that parent
         copies = all_copies.pop(r, None)
         if copies is None:
             # this is a root
             copies = {}
+
+        # iterate over all known children to chain the existing data with the
+        # data from the parent → child edge.
         for i, c in enumerate(children[r]):
             p1, p2, changes = revinfo(c)
             childcopies = {}
+
+            # select the right parent → child edge
             if r == p1:
                 parent = 1
                 if changes is not None:
@@ -372,6 +380,8 @@ def _combine_changeset_copies(
                 childcopies = {
                     dst: src for dst, src in childcopies.items() if match(dst)
                 }
+
+            # chain the data in the edge with the existing data
             newcopies = copies
             if childcopies:
                 newcopies = copies.copy()
@@ -392,6 +402,9 @@ def _combine_changeset_copies(
                             # could be avoided.
                             newcopies = copies.copy()
                         newcopies[f] = (c, None)
+
+            # check potential need to combine the data from another parent (for
+            # that child). See comment below for details.
             othercopies = all_copies.get(c)
             if othercopies is None:
                 all_copies[c] = newcopies
@@ -418,6 +431,7 @@ def _combine_changeset_copies(
                 copies = _merge_copies_dict(minor, major, isancestor, changes)
                 all_copies[c] = copies
 
+    # filter out internal details and return a {dest: source mapping}
     final_copies = {}
     for dest, (tt, source) in all_copies[targetrev].items():
         if source is not None:
