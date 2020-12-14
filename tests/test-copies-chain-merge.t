@@ -781,6 +781,91 @@ about that file should stay unchanged.
   o  0 i-0 initial commit: a b h
   
 
+Subcase: chaining salvage information during a merge
+````````````````````````````````````````````````````
+
+We add more change on the branch were the file was deleted. merging again
+should preserve the fact eh file was salvaged.
+
+  $ case_desc="chained merges (salvaged -> simple) - same content (when the file exists)"
+
+(creating the change)
+
+  $ hg up 'desc("c-1")'
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo l > unrelated-l
+  $ hg add unrelated-l
+  $ hg ci -m 'l-1: unrelated changes (based on "c" changes)'
+  created new head
+
+(Merge variant 1)
+
+  $ hg up 'desc("mBC-revert-m")'
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("l-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mBC+revert,Lm: $case_desc"
+
+(Merge variant 2)
+
+  $ hg up 'desc("mCB-revert-m")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("l-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mCB+revert,Lm: $case_desc"
+
+(Merge variant 3)
+
+  $ hg up 'desc("l-1")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+  $ hg merge 'desc("mBC-revert-m")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mL,BC+revertm: $case_desc"
+  created new head
+
+(Merge variant 4)
+
+  $ hg up 'desc("l-1")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+  $ hg merge 'desc("mCB-revert-m")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mL,CB+revertm: $case_desc"
+  created new head
+
+  $ hg log -G --rev '::(desc("mBC+revert,Lm") + desc("mCB+revert,Lm") + desc("mL,BC+revertm") + desc("mL,CB+revertm"))'
+  @    47 mL,CB+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
+  |\
+  | | o  46 mL,BC+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
+  | |/|
+  +-+---o  45 mCB+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
+  | | |
+  | +---o  44 mBC+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
+  | | |/
+  | o |  43 l-1: unrelated changes (based on "c" changes)
+  | | |
+  | | o  33 mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
+  | |/|
+  o---+  32 mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
+  |/ /
+  o |  6 c-1 delete d
+  | |
+  | o  5 b-1: b update
+  |/
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
+
+
+
 
 Summary of all created cases
 ----------------------------
@@ -807,15 +892,18 @@ Summary of all created cases
   i-2: c -move-> d
   j-1: unrelated changes (based on the "a" series of changes)
   k-1: unrelated changes (based on "e" changes)
+  l-1: unrelated changes (based on "c" changes)
   mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
   mAE,Km: chained merges (conflict -> simple) - same content everywhere
   mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
+  mBC+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
   mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
   mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   mBCm-1 re-add d
   mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
   mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  mCB+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
   mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   mCBm-1 re-add d
@@ -833,6 +921,8 @@ Summary of all created cases
   mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
   mJ,EAm: chained merges (conflict -> simple) - same content everywhere
   mK,AEm: chained merges (conflict -> simple) - same content everywhere
+  mL,BC+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
+  mL,CB+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
 
 
 Test that sidedata computations during upgrades are correct
@@ -1098,6 +1188,27 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 4
     '\x00\x00\x00\x00'
   ##### revision 42 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 43 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-l'
+  added      : unrelated-l, ;
+  ##### revision 44 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 45 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 46 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 47 #####
   1 sidedata entries
    entry-0014 size 4
     '\x00\x00\x00\x00'
@@ -1998,4 +2109,62 @@ The result from mEAm is the same for the subsequent merge:
     a (known-bad-output sidedata !)
     a (known-bad-output upgraded !)
 
+
+Subcase: chaining salvage information during a merge
+````````````````````````````````````````````````````
+
+We add more change on the branch were the file was deleted. merging again
+should preserve the fact eh file was salvaged.
+
+reference output:
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB-revert-m-0")'
+  M b
+  A d
+    a (filelog !)
+    a (sidedata !)
+    a (upgraded !)
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-revert-m-0")'
+  M b
+  A d
+    a (filelog !)
+    a (sidedata !)
+    a (upgraded !)
+  R a
+
+chained output
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC+revert,Lm")'
+  M b
+  A d
+    a (filelog !)
+    a (missing-correct-output sidedata !)
+    a (missing-correct-output upgraded !)
+  A unrelated-l
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB+revert,Lm")'
+  M b
+  A d
+    a (filelog !)
+    a (missing-correct-output sidedata !)
+    a (missing-correct-output upgraded !)
+  A unrelated-l
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mL,BC+revertm")'
+  M b
+  A d
+    a (filelog !)
+    a (missing-correct-output sidedata !)
+    a (missing-correct-output upgraded !)
+  A unrelated-l
+  R a
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mL,CB+revertm")'
+  M b
+  A d
+    a (filelog !)
+    a (missing-correct-output sidedata !)
+    a (missing-correct-output upgraded !)
+  A unrelated-l
+  R a
 
