@@ -630,6 +630,51 @@ rename information actually conflict with the other branch.
   
 
 
+Summary of all created cases
+----------------------------
+
+(This exists to help keeping a compact list of the various cases we have built)
+
+  $ hg log -T '{desc|firstline}\n'| sort
+  a-1: d -move-> e
+  a-2: e -move-> f
+  b-1: b update
+  c-1 delete d
+  d-1 delete d
+  d-2 re-add d
+  e-1 b -move-> g
+  e-2 g -move-> f
+  f-1: rename h -> i
+  f-2: rename i -> d
+  g-1: update d
+  h-1: b -(move)-> d
+  i-0 initial commit: a b h
+  i-1: a -move-> c
+  i-2: c -move-> d
+  mABm-0 simple merge - the other way
+  mAEm-0 simple merge - one way
+  mBAm-0 simple merge - one way
+  mBC-revert-m-0
+  mBCm-0 simple merge - one way
+  mBCm-1 re-add d
+  mBDm-0 simple merge - one way
+  mBFm-0 simple merge - one way
+  mCB-revert-m-0
+  mCBm-0 simple merge - the other way
+  mCBm-1 re-add d
+  mCGm-0
+  mCH-delete-before-conflict-m-0
+  mDBm-0 simple merge - the other way
+  mDGm-0 simple merge - one way
+  mEAm-0 simple merge - the other way
+  mFBm-0 simple merge - the other way
+  mFGm-0 simple merge - one way
+  mGCm-0
+  mGDm-0 simple merge - the other way
+  mGFm-0 simple merge - the other way
+  mHC-delete-before-conflict-m-0
+
+
 Test that sidedata computations during upgrades are correct
 ===========================================================
 
