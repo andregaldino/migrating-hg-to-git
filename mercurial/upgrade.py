@@ -97,9 +97,9 @@ def upgraderepo(
             hint=_(b'run without arguments to see valid optimizations'),
         )
 
-    deficiencies = upgrade_actions.finddeficiencies(repo)
+    format_upgrades = upgrade_actions.find_format_upgrades(repo)
     actions = upgrade_actions.determineactions(
-        repo, deficiencies, repo.requirements, newreqs
+        repo, format_upgrades, repo.requirements, newreqs
     )
     actions.extend(
         o
@@ -135,7 +135,7 @@ def upgraderepo(
         fromconfig = []
         onlydefault = []
 
-        for d in deficiencies:
+        for d in format_upgrades:
             if d.fromconfig(repo):
                 fromconfig.append(d)
             elif d.default:
@@ -165,12 +165,7 @@ def upgraderepo(
 
             ui.status(b'\n')
         else:
-            ui.status(
-                _(
-                    b'(no feature deficiencies found in existing '
-                    b'repository)\n'
-                )
-            )
+            ui.status(_(b'(no format upgrades found in existing repository)\n'))
 
         ui.status(
             _(

@@ -173,7 +173,7 @@ An upgrade of a repository created with recommended settings only suggests optim
    }
   ]
   $ hg debugupgraderepo
-  (no feature deficiencies found in existing repository)
+  (no format upgrades found in existing repository)
   performing an upgrade with "--run" will make the following changes:
   
   requirements
@@ -212,7 +212,7 @@ An upgrade of a repository created with recommended settings only suggests optim
 --optimize can be used to add optimizations
 
   $ hg debugupgrade --optimize redeltaparent
-  (no feature deficiencies found in existing repository)
+  (no format upgrades found in existing repository)
   performing an upgrade with "--run" will make the following changes:
   
   requirements
@@ -243,7 +243,7 @@ An upgrade of a repository created with recommended settings only suggests optim
 modern form of the option
 
   $ hg debugupgrade --optimize re-delta-parent
-  (no feature deficiencies found in existing repository)
+  (no format upgrades found in existing repository)
   performing an upgrade with "--run" will make the following changes:
   
   requirements

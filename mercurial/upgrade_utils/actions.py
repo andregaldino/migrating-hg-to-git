@@ -410,9 +410,9 @@ class compressionlevel(formatvariant):
         return bytes(level)
 
 
-def finddeficiencies(repo):
-    """returns a list of deficiencies that the repo suffer from"""
-    deficiencies = []
+def find_format_upgrades(repo):
+    """returns a list of format upgrades which can be perform on the repo"""
+    upgrades = []
 
     # We could detect lack of revlogv1 and store here, but they were added
     # in 0.9.2 and we don't support upgrading repos without these
@@ -420,9 +420,9 @@ def finddeficiencies(repo):
 
     for fv in allformatvariant:
         if not fv.fromrepo(repo):
-            deficiencies.append(fv)
+            upgrades.append(fv)
 
-    return deficiencies
+    return upgrades
 
 
 ALL_OPTIMISATIONS = []
@@ -523,10 +523,10 @@ def findoptimizations(repo):
     return list(ALL_OPTIMISATIONS)
 
 
-def determineactions(repo, deficiencies, sourcereqs, destreqs):
+def determineactions(repo, format_upgrades, sourcereqs, destreqs):
     """Determine upgrade actions that will be performed.
 
-    Given a list of improvements as returned by ``finddeficiencies`` and
+    Given a list of improvements as returned by ``find_format_upgrades`` and
     ``findoptimizations``, determine the list of upgrade actions that
     will be performed.
 
@@ -538,7 +538,7 @@ def determineactions(repo, deficiencies, sourcereqs, destreqs):
     """
     newactions = []
 
-    for d in deficiencies:
+    for d in format_upgrades:
         name = d._requirement
 
         # If the action is a requirement that doesn't show up in the
