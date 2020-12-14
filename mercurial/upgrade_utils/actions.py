@@ -583,6 +583,12 @@ class UpgradeOperation(object):
         self._preserved_requirements = (
             self.current_requirements & self.new_requirements
         )
+        # optimizations which are not used and it's recommended that they
+        # should use them
+        all_optimizations = findoptimizations(None)
+        self.unused_optimizations = [
+            i for i in all_optimizations if i not in self.actions
+        ]
 
     def _write_labeled(self, l, label):
         """
@@ -639,6 +645,10 @@ class UpgradeOperation(object):
             for r in sorted(self.revlogs_to_process):
                 self.ui.write((b'  - %s\n' % r))
         self.ui.write((b'\n'))
+
+    def print_unused_optimizations(self):
+        for i in self.unused_optimizations:
+            self.ui.status(_(b'%s\n   %s\n\n') % (i.name, i.description))
 
     def has_action(self, name):
         """ Check whether the upgrade operation will perform this action """

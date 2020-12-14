@@ -184,17 +184,14 @@ def upgraderepo(
         upgrade_op.print_upgrade_actions()
         upgrade_op.print_affected_revlogs()
 
-        unusedoptimize = [i for i in alloptimizations if i not in actions]
-
-        if unusedoptimize:
+        if upgrade_op.unused_optimizations:
             ui.status(
                 _(
                     b'additional optimizations are available by specifying '
                     b'"--optimize <name>":\n\n'
                 )
             )
-            for i in unusedoptimize:
-                ui.status(_(b'%s\n   %s\n\n') % (i.name, i.description))
+            upgrade_op.print_unused_optimizations()
         return
 
     # Else we're in the run=true case.
