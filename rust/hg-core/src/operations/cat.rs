@@ -6,8 +6,9 @@
 // GNU General Public License version 2 or any later version.
 
 use std::convert::From;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
+use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
 use crate::revlog::manifest::Manifest;
 use crate::revlog::path_encode::path_encode;
@@ -75,12 +76,12 @@ impl From<RevlogError> for CatRevError {
 /// * `rev`: The revision to cat the files from.
 /// * `files`: The files to output.
 pub fn cat(
-    root: &Path,
+    repo: &Repo,
     rev: &str,
     files: &[HgPathBuf],
 ) -> Result<Vec<u8>, CatRevError> {
-    let changelog = Changelog::open(&root)?;
-    let manifest = Manifest::open(&root)?;
+    let changelog = Changelog::open(repo)?;
+    let manifest = Manifest::open(repo)?;
 
     let changelog_entry = match rev.parse::<Revision>() {
         Ok(rev) => changelog.get_rev(rev)?,
@@ -99,10 +100,11 @@ pub fn cat(
     for (manifest_file, node_bytes) in manifest_entry.files_with_nodes() {
         for cat_file in files.iter() {
             if cat_file.as_bytes() == manifest_file.as_bytes() {
-                let index_path = store_path(root, manifest_file, b".i");
-                let data_path = store_path(root, manifest_file, b".d");
+                let index_path = store_path(manifest_file, b".i");
+                let data_path = store_path(manifest_file, b".d");
 
-                let file_log = Revlog::open(&index_path, Some(&data_path))?;
+                let file_log =
+                    Revlog::open(repo, &index_path, Some(&data_path))?;
                 let file_node = Node::from_hex(node_bytes)
                     .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
                 let file_rev = file_log.get_node_rev((&file_node).into())?;
@@ -126,14 +128,8 @@ pub fn cat(
     Ok(bytes)
 }
 
-fn store_path(root: &Path, hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
+fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
     let encoded_bytes =
         path_encode(&[b"data/", hg_path.as_bytes(), suffix].concat());
-    [
-        root,
-        &Path::new(".hg/store/"),
-        get_path_from_bytes(&encoded_bytes),
-    ]
-    .iter()
-    .collect()
+    get_path_from_bytes(&encoded_bytes).into()
 }

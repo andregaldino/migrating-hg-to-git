@@ -2,7 +2,8 @@ use memmap::Mmap;
 use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 
-use super::revlog::{mmap_open, RevlogError};
+use super::revlog::RevlogError;
+use crate::repo::Repo;
 use crate::utils::strip_suffix;
 
 const ONDISK_VERSION: u8 = 1;
@@ -23,10 +24,11 @@ impl NodeMapDocket {
     /// * The docket file points to a missing (likely deleted) data file (this
     ///   can happen in a rare race condition).
     pub fn read_from_file(
+        repo: &Repo,
         index_path: &Path,
     ) -> Result<Option<(Self, Mmap)>, RevlogError> {
         let docket_path = index_path.with_extension("n");
-        let docket_bytes = match std::fs::read(&docket_path) {
+        let docket_bytes = match repo.store_vfs().read(&docket_path) {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 return Ok(None)
             }
@@ -60,7 +62,7 @@ impl NodeMapDocket {
         let data_path = rawdata_path(&docket_path, uid);
         // TODO: use `std::fs::read` here when the `persistent-nodemap.mmap`
         // config is false?
-        match mmap_open(&data_path) {
+        match repo.store_vfs().mmap_open(&data_path) {
             Ok(mmap) => {
                 if mmap.len() >= data_length {
                     Ok(Some((docket, mmap)))

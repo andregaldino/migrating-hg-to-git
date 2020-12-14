@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::fs::File;
 use std::io::Read;
 use std::ops::Deref;
 use std::path::Path;
@@ -8,7 +7,6 @@ use byteorder::{BigEndian, ByteOrder};
 use crypto::digest::Digest;
 use crypto::sha1::Sha1;
 use flate2::read::ZlibDecoder;
-use memmap::{Mmap, MmapOptions};
 use micro_timer::timed;
 use zstd;
 
@@ -18,6 +16,7 @@ use super::nodemap;
 use super::nodemap::NodeMap;
 use super::nodemap_docket::NodeMapDocket;
 use super::patch;
+use crate::repo::Repo;
 use crate::revlog::Revision;
 
 pub enum RevlogError {
@@ -28,12 +27,6 @@ pub enum RevlogError {
     AmbiguousPrefix,
     Corrupted,
     UnknowDataFormat(u8),
-}
-
-pub(super) fn mmap_open(path: &Path) -> Result<Mmap, std::io::Error> {
-    let file = File::open(path)?;
-    let mmap = unsafe { MmapOptions::new().map(&file) }?;
-    Ok(mmap)
 }
 
 /// Read only implementation of revlog.
@@ -55,11 +48,15 @@ impl Revlog {
     /// interleaved.
     #[timed]
     pub fn open(
-        index_path: &Path,
+        repo: &Repo,
+        index_path: impl AsRef<Path>,
         data_path: Option<&Path>,
     ) -> Result<Self, RevlogError> {
-        let index_mmap =
-            mmap_open(&index_path).map_err(RevlogError::IoError)?;
+        let index_path = index_path.as_ref();
+        let index_mmap = repo
+            .store_vfs()
+            .mmap_open(&index_path)
+            .map_err(RevlogError::IoError)?;
 
         let version = get_version(&index_mmap);
         if version != 1 {
@@ -77,12 +74,14 @@ impl Revlog {
                 None
             } else {
                 let data_path = data_path.unwrap_or(&default_data_path);
-                let data_mmap =
-                    mmap_open(data_path).map_err(RevlogError::IoError)?;
+                let data_mmap = repo
+                    .store_vfs()
+                    .mmap_open(data_path)
+                    .map_err(RevlogError::IoError)?;
                 Some(Box::new(data_mmap))
             };
 
-        let nodemap = NodeMapDocket::read_from_file(index_path)?.map(
+        let nodemap = NodeMapDocket::read_from_file(repo, index_path)?.map(
             |(docket, data)| {
                 nodemap::NodeTree::load_bytes(
                     Box::new(data),

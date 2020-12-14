@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::dirstate::parsers::parse_dirstate;
+use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
 use crate::revlog::manifest::{Manifest, ManifestEntry};
 use crate::revlog::node::{Node, NodePrefix};
@@ -15,8 +16,6 @@ use crate::utils::hg_path::HgPath;
 use crate::{DirstateParseError, EntryState};
 use rayon::prelude::*;
 use std::convert::From;
-use std::fs;
-use std::path::Path;
 
 /// Kind of error encountered by `ListDirstateTrackedFiles`
 #[derive(Debug)]
@@ -57,9 +56,8 @@ pub struct Dirstate {
 }
 
 impl Dirstate {
-    pub fn new(root: &Path) -> Result<Self, ListDirstateTrackedFilesError> {
-        let dirstate = root.join(".hg/dirstate");
-        let content = fs::read(&dirstate)?;
+    pub fn new(repo: &Repo) -> Result<Self, ListDirstateTrackedFilesError> {
+        let content = repo.hg_vfs().read("dirstate")?;
         Ok(Self { content })
     }
 
@@ -138,11 +136,11 @@ impl From<RevlogError> for ListRevTrackedFilesError {
 
 /// List files under Mercurial control at a given revision.
 pub fn list_rev_tracked_files(
-    root: &Path,
+    repo: &Repo,
     rev: &str,
 ) -> Result<FilesForRev, ListRevTrackedFilesError> {
-    let changelog = Changelog::open(root)?;
-    let manifest = Manifest::open(root)?;
+    let changelog = Changelog::open(repo)?;
+    let manifest = Manifest::open(repo)?;
 
     let changelog_entry = match rev.parse::<Revision>() {
         Ok(rev) => changelog.get_rev(rev)?,

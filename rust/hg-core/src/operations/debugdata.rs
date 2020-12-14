@@ -5,8 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use std::path::Path;
-
+use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
@@ -79,15 +78,15 @@ impl From<RevlogError> for DebugDataError {
 
 /// Dump the contents data of a revision.
 pub fn debug_data(
-    root: &Path,
+    repo: &Repo,
     rev: &str,
     kind: DebugDataKind,
 ) -> Result<Vec<u8>, DebugDataError> {
     let index_file = match kind {
-        DebugDataKind::Changelog => root.join(".hg/store/00changelog.i"),
-        DebugDataKind::Manifest => root.join(".hg/store/00manifest.i"),
+        DebugDataKind::Changelog => "00changelog.i",
+        DebugDataKind::Manifest => "00manifest.i",
     };
-    let revlog = Revlog::open(&index_file, None)?;
+    let revlog = Revlog::open(repo, index_file, None)?;
 
     let data = match rev.parse::<Revision>() {
         Ok(rev) => revlog.get_rev_data(rev)?,

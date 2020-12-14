@@ -1,5 +1,5 @@
+use crate::repo::Repo;
 use std::io;
-use std::path::Path;
 
 #[derive(Debug)]
 pub enum RequirementsError {
@@ -33,8 +33,8 @@ fn parse(bytes: &[u8]) -> Result<Vec<String>, ()> {
         .collect()
 }
 
-pub fn load(repo_root: &Path) -> Result<Vec<String>, RequirementsError> {
-    match std::fs::read(repo_root.join(".hg").join("requires")) {
+pub fn load(repo: &Repo) -> Result<Vec<String>, RequirementsError> {
+    match repo.hg_vfs().read("requires") {
         Ok(bytes) => parse(&bytes).map_err(|()| RequirementsError::Corrupted),
 
         // Treat a missing file the same as an empty file.
@@ -52,8 +52,8 @@ pub fn load(repo_root: &Path) -> Result<Vec<String>, RequirementsError> {
     }
 }
 
-pub fn check(repo_root: &Path) -> Result<(), RequirementsError> {
-    for feature in load(repo_root)? {
+pub fn check(repo: &Repo) -> Result<(), RequirementsError> {
+    for feature in load(repo)? {
         if !SUPPORTED.contains(&&*feature) {
             return Err(RequirementsError::Unsupported { feature });
         }

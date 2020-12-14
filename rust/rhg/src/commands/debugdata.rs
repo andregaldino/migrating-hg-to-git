@@ -2,10 +2,10 @@ use crate::commands::Command;
 use crate::error::{CommandError, CommandErrorKind};
 use crate::ui::utf8_to_local;
 use crate::ui::Ui;
-use hg::operations::find_root;
 use hg::operations::{
     debug_data, DebugDataError, DebugDataErrorKind, DebugDataKind,
 };
+use hg::repo::Repo;
 use micro_timer::timed;
 
 pub const HELP_TEXT: &str = "
@@ -26,8 +26,8 @@ impl<'a> DebugDataCommand<'a> {
 impl<'a> Command for DebugDataCommand<'a> {
     #[timed]
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let root = find_root()?;
-        let data = debug_data(&root, self.rev, self.kind)
+        let repo = Repo::find()?;
+        let data = debug_data(&repo, self.rev, self.kind)
             .map_err(|e| to_command_error(self.rev, e))?;
 
         let mut stdout = ui.stdout_buffer();
