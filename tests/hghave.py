@@ -14,6 +14,8 @@ tempprefix = 'hg-hghave-'
 checks = {
     "true": (lambda: True, "yak shaving"),
     "false": (lambda: False, "nail clipper"),
+    "known-bad-output": (lambda: True, "use for currently known bad output"),
+    "missing-correct-output": (lambda: False, "use for missing good output"),
 }
 
 try:
