@@ -66,6 +66,18 @@ class improvement(object):
     postdowngrademessage
        Message intended for humans which will be shown post an upgrade
        operation in which this improvement was removed
+
+    touches_filelogs (bool)
+        Whether this improvement touches filelogs
+
+    touches_manifests (bool)
+        Whether this improvement touches manifests
+
+    touches_changelog (bool)
+        Whether this improvement touches changelog
+
+    touches_requirements (bool)
+        Whether this improvement changes repository requirements
     """
 
     def __init__(self, name, type, description, upgrademessage):
@@ -75,6 +87,12 @@ class improvement(object):
         self.upgrademessage = upgrademessage
         self.postupgrademessage = None
         self.postdowngrademessage = None
+        # By default for now, we assume every improvement touches
+        # all the things
+        self.touches_filelogs = True
+        self.touches_manifests = True
+        self.touches_changelog = True
+        self.touches_requirements = True
 
     def __eq__(self, other):
         if not isinstance(other, improvement):
@@ -127,6 +145,12 @@ class formatvariant(improvement):
     # Message intended for humans which will be shown post an upgrade
     # operation in which this improvement was removed
     postdowngrademessage = None
+
+    # By default for now, we assume every improvement touches all the things
+    touches_filelogs = True
+    touches_manifests = True
+    touches_changelog = True
+    touches_requirements = True
 
     def __init__(self):
         raise NotImplementedError()
@@ -673,6 +697,72 @@ class UpgradeOperation(object):
 
         # should this operation create a backup of the store
         self.backup_store = backup_store
+
+        # whether the operation touches different revlogs at all or not
+        self.touches_filelogs = self._touches_filelogs()
+        self.touches_manifests = self._touches_manifests()
+        self.touches_changelog = self._touches_changelog()
+        # whether the operation touches requirements file or not
+        self.touches_requirements = self._touches_requirements()
+        self.touches_store = (
+            self.touches_filelogs
+            or self.touches_manifests
+            or self.touches_changelog
+        )
+        # does the operation only touches repository requirement
+        self.requirements_only = (
+            self.touches_requirements and not self.touches_store
+        )
+
+    def _touches_filelogs(self):
+        for a in self.upgrade_actions:
+            # in optimisations, we re-process the revlogs again
+            if a.type == OPTIMISATION:
+                return True
+            elif a.touches_filelogs:
+                return True
+        for a in self.removed_actions:
+            if a.touches_filelogs:
+                return True
+        return False
+
+    def _touches_manifests(self):
+        for a in self.upgrade_actions:
+            # in optimisations, we re-process the revlogs again
+            if a.type == OPTIMISATION:
+                return True
+            elif a.touches_manifests:
+                return True
+        for a in self.removed_actions:
+            if a.touches_manifests:
+                return True
+        return False
+
+    def _touches_changelog(self):
+        for a in self.upgrade_actions:
+            # in optimisations, we re-process the revlogs again
+            if a.type == OPTIMISATION:
+                return True
+            elif a.touches_changelog:
+                return True
+        for a in self.removed_actions:
+            if a.touches_changelog:
+                return True
+        return False
+
+    def _touches_requirements(self):
+        for a in self.upgrade_actions:
+            # optimisations are used to re-process revlogs and does not result
+            # in a requirement being added or removed
+            if a.type == OPTIMISATION:
+                pass
+            elif a.touches_requirements:
+                return True
+        for a in self.removed_actions:
+            if a.touches_requirements:
+                return True
+
+        return False
 
     def _write_labeled(self, l, label):
         """
