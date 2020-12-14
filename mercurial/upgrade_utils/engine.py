@@ -184,6 +184,12 @@ def _clonerevlogs(
     cdstsize = 0
 
     alldatafiles = list(srcrepo.store.walk())
+    # mapping of data files which needs to be cloned
+    # key is unencoded filename
+    # value is revlog_object_from_srcrepo
+    manifests = {}
+    changelogs = {}
+    filelogs = {}
 
     # Perform a pass to collect metadata. This validates we can open all
     # source files and allows a unified progress bar to be displayed.
@@ -209,15 +215,18 @@ def _clonerevlogs(
 
         # This is for the separate progress bars.
         if isinstance(rl, changelog.changelog):
+            changelogs[unencoded] = rl
             crevcount += len(rl)
             csrcsize += datasize
             crawsize += rawsize
         elif isinstance(rl, manifest.manifestrevlog):
+            manifests[unencoded] = rl
             mcount += 1
             mrevcount += len(rl)
             msrcsize += datasize
             mrawsize += rawsize
         elif isinstance(rl, filelog.filelog):
+            filelogs[unencoded] = rl
             fcount += 1
             frevcount += len(rl)
             fsrcsize += datasize
@@ -248,86 +257,21 @@ def _clonerevlogs(
 
     sidedatacompanion = getsidedatacompanion(srcrepo, dstrepo)
 
-    # Do the actual copying.
-    # FUTURE this operation can be farmed off to worker processes.
-    seen = set()
-    for unencoded, encoded, size in alldatafiles:
-        if unencoded.endswith(b'.d'):
-            continue
-
-        oldrl = _revlogfrompath(srcrepo, unencoded)
-
-        if isinstance(oldrl, changelog.changelog) and b'c' not in seen:
-            ui.status(
-                _(
-                    b'finished migrating %d manifest revisions across %d '
-                    b'manifests; change in size: %s\n'
-                )
-                % (mrevcount, mcount, util.bytecount(mdstsize - msrcsize))
-            )
-
-            ui.status(
-                _(
-                    b'migrating changelog containing %d revisions '
-                    b'(%s in store; %s tracked data)\n'
-                )
-                % (
-                    crevcount,
-                    util.bytecount(csrcsize),
-                    util.bytecount(crawsize),
-                )
-            )
-            seen.add(b'c')
-            progress = srcrepo.ui.makeprogress(
-                _(b'changelog revisions'), total=crevcount
-            )
-        elif isinstance(oldrl, manifest.manifestrevlog) and b'm' not in seen:
-            ui.status(
-                _(
-                    b'finished migrating %d filelog revisions across %d '
-                    b'filelogs; change in size: %s\n'
-                )
-                % (frevcount, fcount, util.bytecount(fdstsize - fsrcsize))
-            )
-
-            ui.status(
-                _(
-                    b'migrating %d manifests containing %d revisions '
-                    b'(%s in store; %s tracked data)\n'
-                )
-                % (
-                    mcount,
-                    mrevcount,
-                    util.bytecount(msrcsize),
-                    util.bytecount(mrawsize),
-                )
-            )
-            seen.add(b'm')
-            if progress:
-                progress.complete()
-            progress = srcrepo.ui.makeprogress(
-                _(b'manifest revisions'), total=mrevcount
-            )
-        elif b'f' not in seen:
-            ui.status(
-                _(
-                    b'migrating %d filelogs containing %d revisions '
-                    b'(%s in store; %s tracked data)\n'
-                )
-                % (
-                    fcount,
-                    frevcount,
-                    util.bytecount(fsrcsize),
-                    util.bytecount(frawsize),
-                )
-            )
-            seen.add(b'f')
-            if progress:
-                progress.complete()
-            progress = srcrepo.ui.makeprogress(
-                _(b'file revisions'), total=frevcount
-            )
-
+    # Migrating filelogs
+    ui.status(
+        _(
+            b'migrating %d filelogs containing %d revisions '
+            b'(%s in store; %s tracked data)\n'
+        )
+        % (
+            fcount,
+            frevcount,
+            util.bytecount(fsrcsize),
+            util.bytecount(frawsize),
+        )
+    )
+    progress = srcrepo.ui.makeprogress(_(b'file revisions'), total=frevcount)
+    for unencoded, oldrl in sorted(filelogs.items()):
         newrl = _perform_clone(
             ui,
             dstrepo,
@@ -342,18 +286,94 @@ def _clonerevlogs(
         )
         info = newrl.storageinfo(storedsize=True)
         datasize = info[b'storedsize'] or 0
-
         dstsize += datasize
+        fdstsize += datasize
+    ui.status(
+        _(
+            b'finished migrating %d filelog revisions across %d '
+            b'filelogs; change in size: %s\n'
+        )
+        % (frevcount, fcount, util.bytecount(fdstsize - fsrcsize))
+    )
 
-        if isinstance(newrl, changelog.changelog):
-            cdstsize += datasize
-        elif isinstance(newrl, manifest.manifestrevlog):
-            mdstsize += datasize
-        else:
-            fdstsize += datasize
+    # Migrating manifests
+    ui.status(
+        _(
+            b'migrating %d manifests containing %d revisions '
+            b'(%s in store; %s tracked data)\n'
+        )
+        % (
+            mcount,
+            mrevcount,
+            util.bytecount(msrcsize),
+            util.bytecount(mrawsize),
+        )
+    )
+    if progress:
+        progress.complete()
+    progress = srcrepo.ui.makeprogress(
+        _(b'manifest revisions'), total=mrevcount
+    )
+    for unencoded, oldrl in sorted(manifests.items()):
+        newrl = _perform_clone(
+            ui,
+            dstrepo,
+            tr,
+            oldrl,
+            unencoded,
+            deltareuse,
+            forcedeltabothparents,
+            revlogs,
+            sidedatacompanion,
+            oncopiedrevision,
+        )
+        info = newrl.storageinfo(storedsize=True)
+        datasize = info[b'storedsize'] or 0
+        dstsize += datasize
+        mdstsize += datasize
+    ui.status(
+        _(
+            b'finished migrating %d manifest revisions across %d '
+            b'manifests; change in size: %s\n'
+        )
+        % (mrevcount, mcount, util.bytecount(mdstsize - msrcsize))
+    )
 
+    # Migrating changelog
+    ui.status(
+        _(
+            b'migrating changelog containing %d revisions '
+            b'(%s in store; %s tracked data)\n'
+        )
+        % (
+            crevcount,
+            util.bytecount(csrcsize),
+            util.bytecount(crawsize),
+        )
+    )
+    if progress:
+        progress.complete()
+    progress = srcrepo.ui.makeprogress(
+        _(b'changelog revisions'), total=crevcount
+    )
+    for unencoded, oldrl in sorted(changelogs.items()):
+        newrl = _perform_clone(
+            ui,
+            dstrepo,
+            tr,
+            oldrl,
+            unencoded,
+            deltareuse,
+            forcedeltabothparents,
+            revlogs,
+            sidedatacompanion,
+            oncopiedrevision,
+        )
+        info = newrl.storageinfo(storedsize=True)
+        datasize = info[b'storedsize'] or 0
+        dstsize += datasize
+        cdstsize += datasize
     progress.complete()
-
     ui.status(
         _(
             b'finished migrating %d changelog revisions; change in size: '
