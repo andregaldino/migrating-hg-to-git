@@ -481,32 +481,60 @@ def _merge_copies_dict(minor, major, isancestor, changes):
 
 
 def _compare_values(changes, isancestor, dest, minor, major):
-    """compare two value within a _merge_copies_dict loop iteration"""
+    """compare two value within a _merge_copies_dict loop iteration
+
+    return pick
+
+    - pick is one of PICK_MINOR, PICK_MAJOR or PICK_EITHER
+    """
     major_tt, major_value = major
     minor_tt, minor_value = minor
 
-    # evacuate some simple case first:
     if major_tt == minor_tt:
         # if it comes from the same revision it must be the same value
         assert major_value == minor_value
         return PICK_EITHER
-    elif major[1] == minor[1]:
-        return PICK_EITHER
-
-    # actual merging needed: content from "major" wins, unless it is older than
-    # the branch point or there is a merge
-    elif changes is not None and major[1] is None and dest in changes.salvaged:
+    elif (
+        changes is not None
+        and minor_value is not None
+        and major_value is None
+        and dest in changes.salvaged
+    ):
+        # In this case, a deletion was reverted, the "alive" value overwrite
+        # the deleted one.
         return PICK_MINOR
-    elif changes is not None and minor[1] is None and dest in changes.salvaged:
+    elif (
+        changes is not None
+        and major_value is not None
+        and minor_value is None
+        and dest in changes.salvaged
+    ):
+        # In this case, a deletion was reverted, the "alive" value overwrite
+        # the deleted one.
         return PICK_MAJOR
-    elif changes is not None and dest in changes.merged:
+    elif isancestor(minor_tt, major_tt):
+        if changes is not None and dest in changes.merged:
+            # change to dest happened on the branch without copy-source change,
+            # so both source are valid and "major" wins.
+            return PICK_MAJOR
+        else:
+            return PICK_MAJOR
+    elif isancestor(major_tt, minor_tt):
+        if changes is not None and dest in changes.merged:
+            # change to dest happened on the branch without copy-source change,
+            # so both source are valid and "major" wins.
+            return PICK_MAJOR
+        else:
+            return PICK_MINOR
+    elif minor_value is None:
+        # in case of conflict, the "alive" side wins.
         return PICK_MAJOR
-    elif not isancestor(major_tt, minor_tt):
-        if major[1] is not None:
-            return PICK_MAJOR
-        elif isancestor(minor_tt, major_tt):
-            return PICK_MAJOR
-    return PICK_MINOR
+    elif major_value is None:
+        # in case of conflict, the "alive" side wins.
+        return PICK_MINOR
+    else:
+        # in case of conflict where both side are alive, major wins.
+        return PICK_MAJOR
 
 
 def _revinfo_getter_extra(repo):

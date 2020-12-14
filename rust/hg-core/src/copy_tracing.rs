@@ -746,6 +746,8 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
             MergePick::Any
         } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
             MergePick::Minor
+        } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
+            MergePick::Major
         } else {
             MergePick::Major
         }
@@ -753,45 +755,61 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
         // We cannot get copy information for both p1 and p2 in the
         // same rev. So this is the same value.
         unreachable!(
-            "conflict information from p1 and p2 in the same revision"
+            "conflicting information from p1 and p2 in the same revision"
         );
     } else {
         let dest_path = path_map.untokenize(*dest);
         let action = changes.get_merge_case(dest_path);
-        if src_major.path.is_none() && action == MergeCase::Salvaged {
+        if src_minor.path.is_some()
+            && src_major.path.is_none()
+            && action == MergeCase::Salvaged
+        {
             // If the file is "deleted" in the major side but was
             // salvaged by the merge, we keep the minor side alive
             MergePick::Minor
-        } else if src_minor.path.is_none() && action == MergeCase::Salvaged {
+        } else if src_major.path.is_some()
+            && src_minor.path.is_none()
+            && action == MergeCase::Salvaged
+        {
             // If the file is "deleted" in the minor side but was
             // salvaged by the merge, unconditionnaly preserve the
             // major side.
             MergePick::Major
-        } else if action == MergeCase::Merged {
-            // If the file was actively merged, copy information
-            // from each side might conflict.  The major side will
-            // win such conflict.
-            MergePick::Major
-        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
-            // If the minor side is strictly newer than the major
-            // side, it should be kept.
-            MergePick::Minor
-        } else if src_major.path.is_some() {
-            // without any special case, the "major" value win
-            // other the "minor" one.
-            MergePick::Major
         } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
-            // the "major" rev is a direct ancestors of "minor",
-            // any different value should
-            // overwrite
+            // The information from the minor version are strictly older than
+            // the major version
+            if action == MergeCase::Merged {
+                // If the file was actively merged, its means some non-copy
+                // activity happened on the other branch. It
+                // mean the older copy information are still relevant.
+                //
+                // The major side wins such conflict.
+                MergePick::Major
+            } else {
+                // No activity on the minor branch, pick the newer one.
+                MergePick::Major
+            }
+        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
+            if action == MergeCase::Merged {
+                // If the file was actively merged, its means some non-copy
+                // activity happened on the other branch. It
+                // mean the older copy information are still relevant.
+                //
+                // The major side wins such conflict.
+                MergePick::Major
+            } else {
+                // No activity on the minor branch, pick the newer one.
+                MergePick::Minor
+            }
+        } else if src_minor.path.is_none() {
+            // the minor side has no relevant information, pick the alive one
             MergePick::Major
-        } else {
-            // major version is None (so the file was deleted on
-            // that branch) and that branch is independant (neither
-            // minor nor major is an ancestors of the other one.)
-            // We preserve the new
-            // information about the new file.
+        } else if src_major.path.is_none() {
+            // the major side has no relevant information, pick the alive one
             MergePick::Minor
+        } else {
+            // by default the major side wins
+            MergePick::Major
         }
     }
 }
