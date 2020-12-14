@@ -633,6 +633,8 @@ rename information actually conflict with the other branch.
 Summary of all created cases
 ----------------------------
 
+  $ hg up --quiet null
+
 (This exists to help keeping a compact list of the various cases we have built)
 
   $ hg log -T '{desc|firstline}\n'| sort
@@ -1713,7 +1715,7 @@ rename information actually conflict with the other branch.
 (the copy information from the branch that was not deleted should win).
 
   $ hg log -G --rev '::(desc("mCH-delete-before-conflict-m")+desc("mHC-delete-before-conflict-m"))'
-  @    36 mHC-delete-before-conflict-m-0
+  o    36 mHC-delete-before-conflict-m-0
   |\
   +---o  35 mCH-delete-before-conflict-m-0
   | |/
