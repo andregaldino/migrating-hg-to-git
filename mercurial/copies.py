@@ -383,9 +383,11 @@ def _combine_changeset_copies(
 
                 if copies is None:
                     # this is a root
-                    copies = {}
-
-                newcopies = copies
+                    newcopies = copies = {}
+                elif remaining_children:
+                    newcopies = copies.copy()
+                else:
+                    newcopies = copies
                 # chain the data in the edge with the existing data
                 if changes is not None:
                     childcopies = {}
@@ -403,8 +405,6 @@ def _combine_changeset_copies(
                             newcopies[dest] = (current_rev, source)
                         assert newcopies is not copies
                     if changes.removed:
-                        if newcopies is copies:
-                            newcopies = copies.copy()
                         for f in changes.removed:
                             if f in newcopies:
                                 if newcopies is copies:
@@ -417,9 +417,6 @@ def _combine_changeset_copies(
                 # that child). See comment below for details.
                 if current_copies is None:
                     current_copies = newcopies
-                elif current_copies is newcopies:
-                    # nothing to merge:
-                    pass
                 else:
                     # we are the second parent to work on c, we need to merge our
                     # work with the other.
