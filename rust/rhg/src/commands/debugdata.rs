@@ -2,8 +2,9 @@ use crate::commands::Command;
 use crate::error::{CommandError, CommandErrorKind};
 use crate::ui::utf8_to_local;
 use crate::ui::Ui;
+use hg::operations::find_root;
 use hg::operations::{
-    DebugData, DebugDataError, DebugDataErrorKind, DebugDataKind,
+    debug_data, DebugDataError, DebugDataErrorKind, DebugDataKind,
 };
 use micro_timer::timed;
 
@@ -25,9 +26,9 @@ impl<'a> DebugDataCommand<'a> {
 impl<'a> Command for DebugDataCommand<'a> {
     #[timed]
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let mut operation = DebugData::new(self.rev, self.kind);
-        let data =
-            operation.run().map_err(|e| to_command_error(self.rev, e))?;
+        let root = find_root()?;
+        let data = debug_data(&root, self.rev, self.kind)
+            .map_err(|e| to_command_error(self.rev, e))?;
 
         let mut stdout = ui.stdout_buffer();
         stdout.write_all(&data)?;
@@ -40,7 +41,6 @@ impl<'a> Command for DebugDataCommand<'a> {
 /// Convert operation errors to command errors
 fn to_command_error(rev: &str, err: DebugDataError) -> CommandError {
     match err.kind {
-        DebugDataErrorKind::FindRootError(err) => CommandError::from(err),
         DebugDataErrorKind::IoError(err) => CommandError {
             kind: CommandErrorKind::Abort(Some(
                 utf8_to_local(&format!("abort: {}\n", err)).into(),

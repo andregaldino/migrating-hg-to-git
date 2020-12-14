@@ -5,7 +5,8 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use super::find_root;
+use std::path::Path;
+
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
@@ -20,7 +21,6 @@ pub enum DebugDataKind {
 /// Kind of error encountered by DebugData
 #[derive(Debug)]
 pub enum DebugDataErrorKind {
-    FindRootError(find_root::FindRootError),
     /// Error when reading a `revlog` file.
     IoError(std::io::Error),
     /// The revision has not been found.
@@ -44,13 +44,6 @@ pub struct DebugDataError {
 
 impl From<DebugDataErrorKind> for DebugDataError {
     fn from(kind: DebugDataErrorKind) -> Self {
-        DebugDataError { kind }
-    }
-}
-
-impl From<find_root::FindRootError> for DebugDataError {
-    fn from(err: find_root::FindRootError) -> Self {
-        let kind = DebugDataErrorKind::FindRootError(err);
         DebugDataError { kind }
     }
 }
@@ -85,36 +78,26 @@ impl From<RevlogError> for DebugDataError {
 }
 
 /// Dump the contents data of a revision.
-pub struct DebugData<'a> {
-    /// Revision or hash of the revision.
-    rev: &'a str,
-    /// Kind of data to debug.
+pub fn debug_data(
+    root: &Path,
+    rev: &str,
     kind: DebugDataKind,
-}
+) -> Result<Vec<u8>, DebugDataError> {
+    let index_file = match kind {
+        DebugDataKind::Changelog => root.join(".hg/store/00changelog.i"),
+        DebugDataKind::Manifest => root.join(".hg/store/00manifest.i"),
+    };
+    let revlog = Revlog::open(&index_file, None)?;
 
-impl<'a> DebugData<'a> {
-    pub fn new(rev: &'a str, kind: DebugDataKind) -> Self {
-        DebugData { rev, kind }
-    }
+    let data = match rev.parse::<Revision>() {
+        Ok(rev) => revlog.get_rev_data(rev)?,
+        _ => {
+            let node = NodePrefix::from_hex(&rev)
+                .map_err(|_| DebugDataErrorKind::InvalidRevision)?;
+            let rev = revlog.get_node_rev(node.borrow())?;
+            revlog.get_rev_data(rev)?
+        }
+    };
 
-    pub fn run(&mut self) -> Result<Vec<u8>, DebugDataError> {
-        let root = find_root::FindRoot::new().run()?;
-        let index_file = match self.kind {
-            DebugDataKind::Changelog => root.join(".hg/store/00changelog.i"),
-            DebugDataKind::Manifest => root.join(".hg/store/00manifest.i"),
-        };
-        let revlog = Revlog::open(&index_file, None)?;
-
-        let data = match self.rev.parse::<Revision>() {
-            Ok(rev) => revlog.get_rev_data(rev)?,
-            _ => {
-                let node = NodePrefix::from_hex(&self.rev)
-                    .map_err(|_| DebugDataErrorKind::InvalidRevision)?;
-                let rev = revlog.get_node_rev(node.borrow())?;
-                revlog.get_rev_data(rev)?
-            }
-        };
-
-        Ok(data)
-    }
+    Ok(data)
 }

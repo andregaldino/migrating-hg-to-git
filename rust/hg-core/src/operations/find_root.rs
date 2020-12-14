@@ -28,46 +28,29 @@ impl fmt::Display for FindRootError {
 }
 
 /// Find the root of the repository
-/// by searching for a .hg directory in the current directory and its
+/// by searching for a .hg directory in the process’ current directory and its
 /// ancestors
-pub struct FindRoot<'a> {
-    current_dir: Option<&'a Path>,
+pub fn find_root() -> Result<PathBuf, FindRootError> {
+    let current_dir = std::env::current_dir().map_err(|e| FindRootError {
+        kind: FindRootErrorKind::GetCurrentDirError(e),
+    })?;
+    Ok(find_root_from_path(&current_dir)?.into())
 }
 
-impl<'a> FindRoot<'a> {
-    pub fn new() -> Self {
-        Self { current_dir: None }
+/// Find the root of the repository
+/// by searching for a .hg directory in the given directory and its ancestors
+pub fn find_root_from_path(start: &Path) -> Result<&Path, FindRootError> {
+    if start.join(".hg").exists() {
+        return Ok(start);
     }
-
-    pub fn new_from_path(current_dir: &'a Path) -> Self {
-        Self {
-            current_dir: Some(current_dir),
+    for ancestor in start.ancestors() {
+        if ancestor.join(".hg").exists() {
+            return Ok(ancestor);
         }
     }
-
-    pub fn run(&self) -> Result<PathBuf, FindRootError> {
-        let current_dir = match self.current_dir {
-            None => std::env::current_dir().or_else(|e| {
-                Err(FindRootError {
-                    kind: FindRootErrorKind::GetCurrentDirError(e),
-                })
-            })?,
-            Some(path) => path.into(),
-        };
-
-        if current_dir.join(".hg").exists() {
-            return Ok(current_dir);
-        }
-        let ancestors = current_dir.ancestors();
-        for parent in ancestors {
-            if parent.join(".hg").exists() {
-                return Ok(parent.into());
-            }
-        }
-        Err(FindRootError {
-            kind: FindRootErrorKind::RootNotFound(current_dir.to_path_buf()),
-        })
-    }
+    Err(FindRootError {
+        kind: FindRootErrorKind::RootNotFound(start.into()),
+    })
 }
 
 #[cfg(test)]
@@ -81,7 +64,7 @@ mod tests {
         let tmp_dir = tempfile::tempdir().unwrap();
         let path = tmp_dir.path();
 
-        let err = FindRoot::new_from_path(&path).run().unwrap_err();
+        let err = find_root_from_path(&path).unwrap_err();
 
         // TODO do something better
         assert!(match err {
@@ -98,7 +81,7 @@ mod tests {
         let root = tmp_dir.path();
         fs::create_dir_all(root.join(".hg")).unwrap();
 
-        let result = FindRoot::new_from_path(&root).run().unwrap();
+        let result = find_root_from_path(&root).unwrap();
 
         assert_eq!(result, root)
     }
@@ -109,10 +92,8 @@ mod tests {
         let root = tmp_dir.path();
         fs::create_dir_all(root.join(".hg")).unwrap();
 
-        let result =
-            FindRoot::new_from_path(&root.join("some/nested/directory"))
-                .run()
-                .unwrap();
+        let directory = root.join("some/nested/directory");
+        let result = find_root_from_path(&directory).unwrap();
 
         assert_eq!(result, root)
     }

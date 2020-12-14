@@ -1,7 +1,7 @@
 use crate::commands::Command;
 use crate::error::CommandError;
 use crate::ui::Ui;
-use hg::operations::FindRoot;
+use hg::operations::find_root;
 use hg::requirements;
 
 pub const HELP_TEXT: &str = "
@@ -18,7 +18,7 @@ impl DebugRequirementsCommand {
 
 impl Command for DebugRequirementsCommand {
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let root = FindRoot::new().run()?;
+        let root = find_root()?;
         let mut output = String::new();
         for req in requirements::load(&root)? {
             output.push_str(&req);

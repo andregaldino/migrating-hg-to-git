@@ -2,7 +2,7 @@ use crate::commands::Command;
 use crate::error::CommandError;
 use crate::ui::Ui;
 use format_bytes::format_bytes;
-use hg::operations::FindRoot;
+use hg::operations::find_root;
 use hg::utils::files::get_bytes_from_path;
 
 pub const HELP_TEXT: &str = "
@@ -21,7 +21,7 @@ impl RootCommand {
 
 impl Command for RootCommand {
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let path_buf = FindRoot::new().run()?;
+        let path_buf = find_root()?;
 
         let bytes = get_bytes_from_path(path_buf);
 

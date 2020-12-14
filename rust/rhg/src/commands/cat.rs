@@ -2,8 +2,8 @@ use crate::commands::Command;
 use crate::error::{CommandError, CommandErrorKind};
 use crate::ui::utf8_to_local;
 use crate::ui::Ui;
-use hg::operations::FindRoot;
-use hg::operations::{CatRev, CatRevError, CatRevErrorKind};
+use hg::operations::find_root;
+use hg::operations::{cat, CatRevError, CatRevErrorKind};
 use hg::requirements;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
@@ -32,7 +32,7 @@ impl<'a> CatCommand<'a> {
 impl<'a> Command for CatCommand<'a> {
     #[timed]
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let root = FindRoot::new().run()?;
+        let root = find_root()?;
         requirements::check(&root)?;
         let cwd = std::env::current_dir()
             .or_else(|e| Err(CommandErrorKind::CurrentDirNotFound(e)))?;
@@ -50,10 +50,8 @@ impl<'a> Command for CatCommand<'a> {
 
         match self.rev {
             Some(rev) => {
-                let mut operation = CatRev::new(&root, rev, &files)
+                let data = cat(&root, rev, &files)
                     .map_err(|e| map_rev_error(rev, e))?;
-                let data =
-                    operation.run().map_err(|e| map_rev_error(rev, e))?;
                 self.display(ui, &data)
             }
             None => Err(CommandErrorKind::Unimplemented.into()),

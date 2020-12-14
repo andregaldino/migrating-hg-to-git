@@ -7,22 +7,17 @@ mod debugdata;
 mod dirstate_status;
 mod find_root;
 mod list_tracked_files;
-pub use cat::{CatRev, CatRevError, CatRevErrorKind};
+pub use cat::{cat, CatRevError, CatRevErrorKind};
 pub use debugdata::{
-    DebugData, DebugDataError, DebugDataErrorKind, DebugDataKind,
+    debug_data, DebugDataError, DebugDataErrorKind, DebugDataKind,
 };
-pub use find_root::{FindRoot, FindRootError, FindRootErrorKind};
-pub use list_tracked_files::{
-    ListDirstateTrackedFiles, ListDirstateTrackedFilesError,
-    ListDirstateTrackedFilesErrorKind,
+pub use find_root::{
+    find_root, find_root_from_path, FindRootError, FindRootErrorKind,
 };
 pub use list_tracked_files::{
-    ListRevTrackedFiles, ListRevTrackedFilesError,
+    list_rev_tracked_files, FilesForRev, ListRevTrackedFilesError,
     ListRevTrackedFilesErrorKind,
 };
-
-// TODO add an `Operation` trait when GAT have landed (rust #44265):
-// there is no way to currently define a trait which can both return
-// references to `self` and to passed data, which is what we would need.
-// Generic Associated Types may fix this and allow us to have a unified
-// interface.
+pub use list_tracked_files::{
+    Dirstate, ListDirstateTrackedFilesError, ListDirstateTrackedFilesErrorKind,
+};
