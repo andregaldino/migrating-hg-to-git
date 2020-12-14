@@ -11,6 +11,7 @@ New errors are not allowed. Warnings are strongly discouraged.
   > -X contrib/python-zstandard \
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/thirdparty \
+  > -X mercurial/pythoncapi_compat.h \
   > | sed 's-\\-/-g' | "$check_code" --warnings --per-file=0 - || false
   Skipping contrib/automation/hgautomation/__init__.py it has no-che?k-code (glob)
   Skipping contrib/automation/hgautomation/aws.py it has no-che?k-code (glob)

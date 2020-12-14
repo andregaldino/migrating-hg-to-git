@@ -1811,7 +1811,7 @@ PyTypeObject ZstdDecompressorType = {
 };
 
 void decompressor_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdDecompressorType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdDecompressorType, &PyType_Type);
 	if (PyType_Ready(&ZstdDecompressorType) < 0) {
 		return;
 	}

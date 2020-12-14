@@ -119,7 +119,7 @@ static PyObject *listdir_stat_new(PyTypeObject *t, PyObject *a, PyObject *k)
 
 static void listdir_stat_dealloc(PyObject *o)
 {
-	o->ob_type->tp_free(o);
+	Py_TYPE(o)->tp_free(o);
 }
 
 static PyObject *listdir_stat_getitem(PyObject *self, PyObject *key)

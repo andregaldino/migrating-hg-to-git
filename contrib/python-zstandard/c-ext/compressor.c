@@ -619,7 +619,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		goto finally;
 	}
 
-	Py_SIZE(output) = outBuffer.pos;
+	Py_SET_SIZE(output, outBuffer.pos);
 
 finally:
 	PyBuffer_Release(&source);
@@ -1659,7 +1659,7 @@ PyTypeObject ZstdCompressorType = {
 };
 
 void compressor_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdCompressorType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdCompressorType, &PyType_Type);
 	if (PyType_Ready(&ZstdCompressorType) < 0) {
 		return;
 	}
