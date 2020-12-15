@@ -9,6 +9,7 @@ use im_rc::ordmap::OrdMap;
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::convert::TryInto;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
@@ -22,6 +23,9 @@ struct CopySource {
     /// the copy source, (Set to None in case of deletion of the associated
     /// key)
     path: Option<PathToken>,
+    /// a set of previous `CopySource.rev` value directly or indirectly
+    /// overwritten by this one.
+    overwritten: HashSet<Revision>,
 }
 
 impl CopySource {
@@ -29,7 +33,11 @@ impl CopySource {
     ///
     /// Use this when no previous copy source existed.
     fn new(rev: Revision, path: Option<PathToken>) -> Self {
-        Self { rev, path }
+        Self {
+            rev,
+            path,
+            overwritten: HashSet::new(),
+        }
     }
 
     /// create a new CopySource from merging two others
@@ -37,9 +45,15 @@ impl CopySource {
     /// Use this when merging two InternalPathCopies requires active merging of
     /// some entries.
     fn new_from_merge(rev: Revision, winner: &Self, loser: &Self) -> Self {
+        let mut overwritten = HashSet::new();
+        overwritten.extend(winner.overwritten.iter().copied());
+        overwritten.extend(loser.overwritten.iter().copied());
+        overwritten.insert(winner.rev);
+        overwritten.insert(loser.rev);
         Self {
             rev,
             path: winner.path,
+            overwritten: overwritten,
         }
     }
 
@@ -47,6 +61,7 @@ impl CopySource {
     ///
     /// Use this when recording copy information from  parent → child edges
     fn overwrite(&mut self, rev: Revision, path: Option<PathToken>) {
+        self.overwritten.insert(self.rev);
         self.rev = rev;
         self.path = path;
     }
@@ -55,8 +70,13 @@ impl CopySource {
     ///
     /// Use this when recording copy information from  parent → child edges
     fn mark_delete(&mut self, rev: Revision) {
+        self.overwritten.insert(self.rev);
         self.rev = rev;
         self.path = None;
+    }
+
+    fn is_overwritten_by(&self, other: &Self) -> bool {
+        other.overwritten.contains(&self.rev)
     }
 }
 
@@ -834,8 +854,12 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
             if src_major.path.is_none() {
                 // We cannot get different copy information for both p1 and p2
                 // from the same revision. Unless this was a
-                // deletion
-                (MergePick::Any, false)
+                // deletion.
+                //
+                // However the deletion might come over different data on each
+                // branch.
+                let need_over = src_major.overwritten != src_minor.overwritten;
+                (MergePick::Any, need_over)
             } else {
                 unreachable!();
             }
@@ -852,10 +876,11 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
         // we have the same value, but from other source;
         if src_major.rev == src_minor.rev {
             // If the two entry are identical, they are both valid
+            debug_assert!(src_minor.overwritten == src_minor.overwritten);
             (MergePick::Any, false)
-        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
+        } else if src_major.is_overwritten_by(src_minor) {
             (MergePick::Minor, false)
-        } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
+        } else if src_minor.is_overwritten_by(src_major) {
             (MergePick::Major, false)
         } else {
             (MergePick::Any, true)
@@ -884,7 +909,7 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
             // salvaged by the merge, unconditionnaly preserve the
             // major side.
             (MergePick::Major, true)
-        } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
+        } else if src_minor.is_overwritten_by(src_major) {
             // The information from the minor version are strictly older than
             // the major version
             if action == MergeCase::Merged {
@@ -898,7 +923,7 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
                 // No activity on the minor branch, pick the newer one.
                 (MergePick::Major, false)
             }
-        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
+        } else if src_major.is_overwritten_by(src_minor) {
             if action == MergeCase::Merged {
                 // If the file was actively merged, its means some non-copy
                 // activity happened on the other branch. It
