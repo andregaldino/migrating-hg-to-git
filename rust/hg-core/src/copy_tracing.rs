@@ -25,7 +25,7 @@ struct TimeStampedPathCopy {
 }
 
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
-type TimeStampedPathCopies = OrdMap<PathToken, TimeStampedPathCopy>;
+type InternalPathCopies = OrdMap<PathToken, TimeStampedPathCopy>;
 
 /// hold parent 1, parent 2 and relevant files actions.
 pub type RevInfo<'a> = (Revision, Revision, ChangedFiles<'a>);
@@ -382,7 +382,7 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
         // We will chain the copies information accumulated for the parent with
         // the individual copies information the curent revision.  Creating a
         // new TimeStampedPath for each `rev` → `children` vertex.
-        let mut copies: Option<TimeStampedPathCopies> = None;
+        let mut copies: Option<InternalPathCopies> = None;
         if p1 != NULL_REVISION {
             // Retrieve data computed in a previous iteration
             let parent_copies = get_and_clean_parent_copies(
@@ -471,21 +471,21 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
 ///
 /// If parent is not part of the set we are expected to walk, return None.
 fn get_and_clean_parent_copies(
-    all_copies: &mut HashMap<Revision, TimeStampedPathCopies>,
+    all_copies: &mut HashMap<Revision, InternalPathCopies>,
     children_count: &mut HashMap<Revision, usize>,
     parent_rev: Revision,
-) -> Option<TimeStampedPathCopies> {
+) -> Option<InternalPathCopies> {
     let count = children_count.get_mut(&parent_rev)?;
     *count -= 1;
     if *count == 0 {
         match all_copies.remove(&parent_rev) {
             Some(c) => Some(c),
-            None => Some(TimeStampedPathCopies::default()),
+            None => Some(InternalPathCopies::default()),
         }
     } else {
         match all_copies.get(&parent_rev) {
             Some(c) => Some(c.clone()),
-            None => Some(TimeStampedPathCopies::default()),
+            None => Some(InternalPathCopies::default()),
         }
     }
 }
@@ -495,11 +495,11 @@ fn get_and_clean_parent_copies(
 fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
     path_map: &mut TwoWayPathMap,
     oracle: &mut AncestorOracle<A>,
-    base_copies: &TimeStampedPathCopies,
+    base_copies: &InternalPathCopies,
     changes: &ChangedFiles,
     parent: Parent,
     current_rev: Revision,
-) -> TimeStampedPathCopies {
+) -> InternalPathCopies {
     let mut copies = base_copies.clone();
     for action in changes.iter_actions(parent) {
         match action {
@@ -540,7 +540,7 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
                 //
                 // We need to explicitly record them as dropped to
                 // propagate this information when merging two
-                // TimeStampedPathCopies object.
+                // InternalPathCopies object.
                 let deleted = path_map.tokenize(deleted_path);
                 copies.entry(deleted).and_modify(|old| {
                     oracle.record_overwrite(old.rev, current_rev);
@@ -560,11 +560,11 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
 fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     path_map: &TwoWayPathMap,
     current_merge: Revision,
-    mut minor: TimeStampedPathCopies,
-    mut major: TimeStampedPathCopies,
+    mut minor: InternalPathCopies,
+    mut major: InternalPathCopies,
     changes: &ChangedFiles,
     oracle: &mut AncestorOracle<A>,
-) -> TimeStampedPathCopies {
+) -> InternalPathCopies {
     // This closure exist as temporary help while multiple developper are
     // actively working on this code. Feel free to re-inline it once this
     // code is more settled.
@@ -587,7 +587,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     } else if major.is_empty() {
         minor
     } else if minor.len() * 2 < major.len() {
-        // Lets says we are merging two TimeStampedPathCopies instance A and B.
+        // Lets says we are merging two InternalPathCopies instance A and B.
         //
         // If A contains N items, the merge result will never contains more
         // than N values differents than the one in A
@@ -601,7 +601,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
         // between A and B.
         //
         // This help performance a lot in case were a tiny
-        // TimeStampedPathCopies is merged with a much larger one.
+        // InternalPathCopies is merged with a much larger one.
         for (dest, src_minor) in minor {
             let src_major = major.get(&dest);
             match src_major {
@@ -755,7 +755,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
 }
 
 /// represent the side that should prevail when merging two
-/// TimeStampedPathCopies
+/// InternalPathCopies
 enum MergePick {
     /// The "major" (p1) side prevails
     Major,
