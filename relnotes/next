@@ -33,7 +33,9 @@
    `internal:merge3`, but it shows conflicts differently. Instead of
    showing 2 or 3 snapshots of the conflicting pieces of code, it
    shows one snapshot and a diff. This may be useful when at least one
-   side of the conflict is similar to the base.
+   side of the conflict is similar to the base. The new marker style
+   is also supported by "premerge" as
+   `merge-tools.<tool>.premerge=keep-mergediff`.
 
 == New Experimental Features ==
 

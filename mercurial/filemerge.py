@@ -408,7 +408,7 @@ def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
 
     ui = repo.ui
 
-    validkeep = [b'keep', b'keep-merge3']
+    validkeep = [b'keep', b'keep-merge3', b'keep-mergediff']
 
     # do we attempt to simplemerge first?
     try:
@@ -423,12 +423,17 @@ def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
             )
 
     if premerge:
-        if premerge == b'keep-merge3':
+        mode = b'merge'
+        if premerge in {b'keep-merge3', b'keep-mergediff'}:
             if not labels:
                 labels = _defaultconflictlabels
             if len(labels) < 3:
                 labels.append(b'base')
-        r = simplemerge.simplemerge(ui, fcd, fca, fco, quiet=True, label=labels)
+            if premerge == b'keep-mergediff':
+                mode = b'mergediff'
+        r = simplemerge.simplemerge(
+            ui, fcd, fca, fco, quiet=True, label=labels, mode=mode
+        )
         if not r:
             ui.debug(b" premerge successful\n")
             return 0
