@@ -281,46 +281,6 @@ impl<'a> ChangedFiles<'a> {
     }
 }
 
-/// A struct responsible for answering "is X ancestors of Y" quickly
-///
-/// The structure will delegate ancestors call to a callback, and cache the
-/// result.
-#[derive(Debug)]
-struct AncestorOracle<'a, A: Fn(Revision, Revision) -> bool> {
-    inner: &'a A,
-    pairs: HashMap<(Revision, Revision), bool>,
-}
-
-impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
-    fn new(func: &'a A) -> Self {
-        Self {
-            inner: func,
-            pairs: HashMap::default(),
-        }
-    }
-
-    fn record_overwrite(&mut self, anc: Revision, desc: Revision) {
-        self.pairs.insert((anc, desc), true);
-    }
-
-    /// returns `true` if `anc` is an ancestors of `desc`, `false` otherwise
-    fn is_overwrite(&mut self, anc: Revision, desc: Revision) -> bool {
-        if anc > desc {
-            false
-        } else if anc == desc {
-            true
-        } else {
-            if let Some(b) = self.pairs.get(&(anc, desc)) {
-                *b
-            } else {
-                let b = (self.inner)(anc, desc);
-                self.pairs.insert((anc, desc), b);
-                b
-            }
-        }
-    }
-}
-
 struct ActionsIterator<'a> {
     changes: &'a ChangedFiles<'a>,
     parent: Parent,
@@ -419,15 +379,13 @@ impl TwoWayPathMap {
 ///   * ChangedFiles
 /// isancestors(low_rev, high_rev): callback to check if a revision is an
 ///                                 ancestor of another
-pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
+pub fn combine_changeset_copies<D>(
     revs: Vec<Revision>,
     mut children_count: HashMap<Revision, usize>,
     target_rev: Revision,
     rev_info: RevInfoMaker<D>,
-    is_ancestor: &A,
 ) -> PathCopies {
     let mut all_copies = HashMap::new();
-    let mut oracle = AncestorOracle::new(is_ancestor);
 
     let mut path_map = TwoWayPathMap::default();
 
@@ -450,7 +408,6 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                 // combine it with data for that revision
                 let vertex_copies = add_from_changes(
                     &mut path_map,
-                    &mut oracle,
                     &parent_copies,
                     &changes,
                     Parent::FirstParent,
@@ -471,7 +428,6 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                 // combine it with data for that revision
                 let vertex_copies = add_from_changes(
                     &mut path_map,
-                    &mut oracle,
                     &parent_copies,
                     &changes,
                     Parent::SecondParent,
@@ -491,7 +447,6 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
                         vertex_copies,
                         copies,
                         &changes,
-                        &mut oracle,
                     )),
                 };
             }
@@ -548,9 +503,8 @@ fn get_and_clean_parent_copies(
 
 /// Combine ChangedFiles with some existing PathCopies information and return
 /// the result
-fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
+fn add_from_changes(
     path_map: &mut TwoWayPathMap,
-    oracle: &mut AncestorOracle<A>,
     base_copies: &InternalPathCopies,
     changes: &ChangedFiles,
     parent: Parent,
@@ -582,7 +536,6 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
                     }
                     Entry::Occupied(mut slot) => {
                         let ttpc = slot.get_mut();
-                        oracle.record_overwrite(ttpc.rev, current_rev);
                         ttpc.overwrite(current_rev, entry);
                     }
                 }
@@ -595,7 +548,6 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
                 // InternalPathCopies object.
                 let deleted = path_map.tokenize(deleted_path);
                 copies.entry(deleted).and_modify(|old| {
-                    oracle.record_overwrite(old.rev, current_rev);
                     old.mark_delete(current_rev);
                 });
             }
@@ -608,31 +560,27 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
 ///
 /// In case of conflict, value from "major" will be picked, unless in some
 /// cases. See inline documentation for details.
-fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
+fn merge_copies_dict(
     path_map: &TwoWayPathMap,
     current_merge: Revision,
     mut minor: InternalPathCopies,
     mut major: InternalPathCopies,
     changes: &ChangedFiles,
-    oracle: &mut AncestorOracle<A>,
 ) -> InternalPathCopies {
     // This closure exist as temporary help while multiple developper are
     // actively working on this code. Feel free to re-inline it once this
     // code is more settled.
-    let cmp_value = |oracle: &mut AncestorOracle<A>,
-                     dest: &PathToken,
-                     src_minor: &CopySource,
-                     src_major: &CopySource| {
-        compare_value(
-            path_map,
-            current_merge,
-            changes,
-            oracle,
-            dest,
-            src_minor,
-            src_major,
-        )
-    };
+    let cmp_value =
+        |dest: &PathToken, src_minor: &CopySource, src_major: &CopySource| {
+            compare_value(
+                path_map,
+                current_merge,
+                changes,
+                dest,
+                src_minor,
+                src_major,
+            )
+        };
     if minor.is_empty() {
         major
     } else if major.is_empty() {
@@ -661,10 +609,8 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                 }
                 Some(src_major) => {
                     let (pick, overwrite) =
-                        cmp_value(oracle, &dest, &src_minor, src_major);
+                        cmp_value(&dest, &src_minor, src_major);
                     if overwrite {
-                        oracle.record_overwrite(src_minor.rev, current_merge);
-                        oracle.record_overwrite(src_major.rev, current_merge);
                         let src = match pick {
                             MergePick::Major => CopySource::new_from_merge(
                                 current_merge,
@@ -704,10 +650,8 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                 }
                 Some(src_minor) => {
                     let (pick, overwrite) =
-                        cmp_value(oracle, &dest, src_minor, &src_major);
+                        cmp_value(&dest, src_minor, &src_major);
                     if overwrite {
-                        oracle.record_overwrite(src_minor.rev, current_merge);
-                        oracle.record_overwrite(src_major.rev, current_merge);
                         let src = match pick {
                             MergePick::Major => CopySource::new_from_merge(
                                 current_merge,
@@ -769,10 +713,8 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                     let (dest, src_major) = new;
                     let (_, src_minor) = old;
                     let (pick, overwrite) =
-                        cmp_value(oracle, dest, src_minor, src_major);
+                        cmp_value(dest, src_minor, src_major);
                     if overwrite {
-                        oracle.record_overwrite(src_minor.rev, current_merge);
-                        oracle.record_overwrite(src_major.rev, current_merge);
                         let src = match pick {
                             MergePick::Major => CopySource::new_from_merge(
                                 current_merge,
@@ -840,11 +782,10 @@ enum MergePick {
 
 /// decide which side prevails in case of conflicting values
 #[allow(clippy::if_same_then_else)]
-fn compare_value<A: Fn(Revision, Revision) -> bool>(
+fn compare_value(
     path_map: &TwoWayPathMap,
     current_merge: Revision,
     changes: &ChangedFiles,
-    oracle: &mut AncestorOracle<A>,
     dest: &PathToken,
     src_minor: &CopySource,
     src_major: &CopySource,

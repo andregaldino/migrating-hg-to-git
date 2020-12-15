@@ -1,5 +1,4 @@
 use cpython::ObjectProtocol;
-use cpython::PyBool;
 use cpython::PyBytes;
 use cpython::PyDict;
 use cpython::PyList;
@@ -26,31 +25,9 @@ pub fn combine_changeset_copies_wrapper(
     children_count: PyDict,
     target_rev: Revision,
     rev_info: PyObject,
-    is_ancestor: PyObject,
 ) -> PyResult<PyDict> {
     let revs: PyResult<_> =
         revs.iter(py).map(|r| Ok(r.extract(py)?)).collect();
-
-    // Wrap the `is_ancestor` python callback as a Rust closure
-    //
-    // No errors are expected from the Python side, and they will should only
-    // happens in case of programing error or severe data corruption. Such
-    // errors will raise panic and the rust-cpython harness will turn them into
-    // Python exception.
-    let is_ancestor_wrap = |anc: Revision, desc: Revision| -> bool {
-        is_ancestor
-            .call(py, (anc, desc), None)
-            .expect(
-                "rust-copy-tracing: python call  to `is_ancestor` \
-                failed",
-            )
-            .cast_into::<PyBool>(py)
-            .expect(
-                "rust-copy-tracing: python call  to `is_ancestor` \
-                returned unexpected non-Bool value",
-            )
-            .is_true()
-    };
 
     // Wrap the `rev_info_maker` python callback as a Rust closure
     //
@@ -104,7 +81,6 @@ pub fn combine_changeset_copies_wrapper(
         children_count?,
         target_rev,
         rev_info_maker,
-        &is_ancestor_wrap,
     );
     let out = PyDict::new(py);
     for (dest, source) in res.into_iter() {
@@ -134,8 +110,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
                 revs: PyList,
                 children: PyDict,
                 target_rev: Revision,
-                rev_info: PyObject,
-                is_ancestor: PyObject
+                rev_info: PyObject
             )
         ),
     )?;

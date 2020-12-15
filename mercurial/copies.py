@@ -363,7 +363,7 @@ def _combine_changeset_copies(
 
     if rustmod is not None:
         final_copies = rustmod.combine_changeset_copies(
-            list(revs), children_count, targetrev, revinfo, isancestor
+            list(revs), children_count, targetrev, revinfo
         )
     else:
         isancestor = cached_is_ancestor(isancestor)
