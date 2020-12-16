@@ -526,7 +526,7 @@ def findoptimizations(repo):
     return list(ALL_OPTIMISATIONS)
 
 
-def determineactions(
+def determine_upgrade_actions(
     repo, format_upgrades, optimizations, sourcereqs, destreqs
 ):
     """Determine upgrade actions that will be performed.
@@ -569,14 +569,15 @@ class UpgradeOperation(object):
         ui,
         new_requirements,
         current_requirements,
-        actions,
+        upgrade_actions,
         revlogs_to_process,
     ):
         self.ui = ui
         self.new_requirements = new_requirements
         self.current_requirements = current_requirements
-        self.actions = actions
-        self._actions_names = set([a.name for a in actions])
+        # list of upgrade actions the operation will perform
+        self.upgrade_actions = upgrade_actions
+        self._upgrade_actions_names = set([a.name for a in upgrade_actions])
         self.revlogs_to_process = revlogs_to_process
         # requirements which will be added by the operation
         self._added_requirements = (
@@ -594,7 +595,7 @@ class UpgradeOperation(object):
         # should use them
         all_optimizations = findoptimizations(None)
         self.unused_optimizations = [
-            i for i in all_optimizations if i not in self.actions
+            i for i in all_optimizations if i not in self.upgrade_actions
         ]
 
     def _write_labeled(self, l, label):
@@ -630,7 +631,9 @@ class UpgradeOperation(object):
         self.ui.write(b'\n')
 
     def print_optimisations(self):
-        optimisations = [a for a in self.actions if a.type == OPTIMISATION]
+        optimisations = [
+            a for a in self.upgrade_actions if a.type == OPTIMISATION
+        ]
         optimisations.sort(key=lambda a: a.name)
         if optimisations:
             self.ui.write(_(b'optimisations: '))
@@ -641,7 +644,7 @@ class UpgradeOperation(object):
             self.ui.write(b'\n\n')
 
     def print_upgrade_actions(self):
-        for a in self.actions:
+        for a in self.upgrade_actions:
             self.ui.status(b'%s\n   %s\n\n' % (a.name, a.upgrademessage))
 
     def print_affected_revlogs(self):
@@ -657,9 +660,9 @@ class UpgradeOperation(object):
         for i in self.unused_optimizations:
             self.ui.status(_(b'%s\n   %s\n\n') % (i.name, i.description))
 
-    def has_action(self, name):
+    def has_upgrade_action(self, name):
         """ Check whether the upgrade operation will perform this action """
-        return name in self._actions_names
+        return name in self._upgrade_actions_names
 
 
 ###  Code checking if a repository can got through the upgrade process at all. #

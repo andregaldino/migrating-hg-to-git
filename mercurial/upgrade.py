@@ -84,7 +84,7 @@ def upgraderepo(
         )
 
     format_upgrades = upgrade_actions.find_format_upgrades(repo)
-    actions = upgrade_actions.determineactions(
+    up_actions = upgrade_actions.determine_upgrade_actions(
         repo, format_upgrades, optimizations, repo.requirements, newreqs
     )
 
@@ -107,7 +107,7 @@ def upgraderepo(
         ui,
         newreqs,
         repo.requirements,
-        actions,
+        up_actions,
         revlogs,
     )
 
