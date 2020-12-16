@@ -503,31 +503,14 @@ fn add_from_changes(
     for action in changes.iter_actions(parent) {
         match action {
             Action::Copied(path_dest, path_source) => {
-                let dest = path_map.tokenize(path_dest);
-                let source = path_map.tokenize(path_source);
-                let entry;
-                if let Some(v) = base_copies.get(&source) {
-                    entry = match &v.path {
-                        Some(path) => Some((*(path)).to_owned()),
-                        None => Some(source.to_owned()),
-                    }
-                } else {
-                    entry = Some(source.to_owned());
-                }
-                // Each new entry is introduced by the children, we
-                // record this information as we will need it to take
-                // the right decision when merging conflicting copy
-                // information. See merge_copies_dict for details.
-                match copies.entry(dest) {
-                    Entry::Vacant(slot) => {
-                        let ttpc = CopySource::new(current_rev, entry);
-                        slot.insert(ttpc);
-                    }
-                    Entry::Occupied(mut slot) => {
-                        let ttpc = slot.get_mut();
-                        ttpc.overwrite(current_rev, entry);
-                    }
-                }
+                add_one_copy(
+                    current_rev,
+                    &mut path_map,
+                    &mut copies,
+                    &base_copies,
+                    path_dest,
+                    path_source,
+                );
             }
             Action::Removed(deleted_path) => {
                 // We must drop copy information for removed file.
@@ -543,6 +526,44 @@ fn add_from_changes(
         }
     }
     copies
+}
+
+// insert one new copy information in an InternalPathCopies
+//
+// This deal with chaining and overwrite.
+fn add_one_copy(
+    current_rev: Revision,
+    path_map: &mut TwoWayPathMap,
+    copies: &mut InternalPathCopies,
+    base_copies: &InternalPathCopies,
+    path_dest: &HgPath,
+    path_source: &HgPath,
+) {
+    let dest = path_map.tokenize(path_dest);
+    let source = path_map.tokenize(path_source);
+    let entry;
+    if let Some(v) = base_copies.get(&source) {
+        entry = match &v.path {
+            Some(path) => Some((*(path)).to_owned()),
+            None => Some(source.to_owned()),
+        }
+    } else {
+        entry = Some(source.to_owned());
+    }
+    // Each new entry is introduced by the children, we
+    // record this information as we will need it to take
+    // the right decision when merging conflicting copy
+    // information. See merge_copies_dict for details.
+    match copies.entry(dest) {
+        Entry::Vacant(slot) => {
+            let ttpc = CopySource::new(current_rev, entry);
+            slot.insert(ttpc);
+        }
+        Entry::Occupied(mut slot) => {
+            let ttpc = slot.get_mut();
+            ttpc.overwrite(current_rev, entry);
+        }
+    }
 }
 
 /// merge two copies-mapping together, minor and major
