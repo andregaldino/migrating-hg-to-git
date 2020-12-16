@@ -428,6 +428,21 @@ def find_format_upgrades(repo):
     return upgrades
 
 
+def find_format_downgrades(repo):
+    """returns a list of format downgrades which will be performed on the repo
+    because of disabled config option for them"""
+
+    downgrades = []
+
+    for fv in allformatvariant:
+        # format variant exist in repo but does not exist in new repository
+        # config
+        if fv.fromrepo(repo) and not fv.fromconfig(repo):
+            downgrades.append(fv)
+
+    return downgrades
+
+
 ALL_OPTIMISATIONS = []
 
 
