@@ -414,49 +414,37 @@ pub fn combine_changeset_copies<D>(
                 p2,
             ), // will be None if the vertex is not to be traversed
         };
-        if let Some(parent_copies) = p1_copies {
-            // combine it with data for that revision
-            let vertex_copies = add_from_changes(
+        // combine it with data for that revision
+        let p1_copies = match p1_copies {
+            None => None,
+            Some(parent_copies) => Some(add_from_changes(
                 &mut path_map,
                 &parent_copies,
                 &changes,
                 Parent::FirstParent,
                 rev,
-            );
-            // keep that data around for potential later combination
-            copies = Some(vertex_copies);
-        }
-        if let Some(parent_copies) = p2_copies {
-            // combine it with data for that revision
-            let vertex_copies = add_from_changes(
+            )),
+        };
+        let p2_copies = match p2_copies {
+            None => None,
+            Some(parent_copies) => Some(add_from_changes(
                 &mut path_map,
                 &parent_copies,
                 &changes,
                 Parent::SecondParent,
                 rev,
-            );
-
-            copies = match copies {
-                None => Some(vertex_copies),
-                // Merge has two parents needs to combines their copy
-                // information.
-                //
-                // If we got data from both parents, We need to combine
-                // them.
-                Some(copies) => Some(merge_copies_dict(
-                    &path_map,
-                    rev,
-                    vertex_copies,
-                    copies,
-                    &changes,
-                )),
-            };
-        }
-        match copies {
-            Some(copies) => {
-                all_copies.insert(rev, copies);
-            }
-            _ => {}
+            )),
+        };
+        let copies = match (p1_copies, p2_copies) {
+            (None, None) => None,
+            (c, None) => c,
+            (None, c) => c,
+            (Some(p1_copies), Some(p2_copies)) => Some(merge_copies_dict(
+                &path_map, rev, p2_copies, p1_copies, &changes,
+            )),
+        };
+        if let Some(c) = copies {
+            all_copies.insert(rev, c);
         }
     }
 
