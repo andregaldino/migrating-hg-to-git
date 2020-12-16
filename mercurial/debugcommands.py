@@ -3933,7 +3933,7 @@ def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True, **opts):
       * `--no-changelog --no-manifest --no-filelogs`: skip all filelog optimisation
     """
     return upgrade.upgraderepo(
-        ui, repo, run=run, optimize=optimize, backup=backup, **opts
+        ui, repo, run=run, optimize=set(optimize), backup=backup, **opts
     )
 
 

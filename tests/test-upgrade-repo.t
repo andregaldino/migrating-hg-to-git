@@ -211,7 +211,7 @@ An upgrade of a repository created with recommended settings only suggests optim
 
 --optimize can be used to add optimizations
 
-  $ hg debugupgrade --optimize redeltaparent
+  $ hg debugupgrade --optimize 're-delta-parent'
   (no format upgrades found in existing repository)
   performing an upgrade with "--run" will make the following changes:
   
@@ -1060,7 +1060,7 @@ store files with special filenames aren't encoded during copy
   removing temporary repository $TESTTMP/store-filenames/.hg/upgrade.* (glob)
   copy of old repository backed up at $TESTTMP/store-filenames/.hg/upgradebackup.* (glob)
   the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
-  $ hg debugupgraderepo --run --optimize redeltafulladd
+  $ hg debugupgraderepo --run --optimize 're-delta-fulladd'
   upgrade will perform the following actions:
   
   requirements
@@ -1289,7 +1289,7 @@ repository config is taken in account
         1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
         2       1        2        0   other         30        200        107   0.53500       128        21    0.19626        128        128   0.83594        1
 
-  $ hg debugupgraderepo --run --optimize redeltaall
+  $ hg debugupgraderepo --run --optimize 're-delta-all'
   upgrade will perform the following actions:
   
   requirements

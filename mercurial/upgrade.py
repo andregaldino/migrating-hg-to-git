@@ -22,19 +22,6 @@ from .upgrade_utils import (
 
 allformatvariant = upgrade_actions.allformatvariant
 
-# search without '-' to support older form on newer client.
-#
-# We don't enforce backward compatibility for debug command so this
-# might eventually be dropped. However, having to use two different
-# forms in script when comparing result is anoying enough to add
-# backward compatibility for a while.
-legacy_opts_map = {
-    b'redeltaparent': b're-delta-parent',
-    b'redeltamultibase': b're-delta-multibase',
-    b'redeltaall': b're-delta-all',
-    b'redeltafulladd': b're-delta-fulladd',
-}
-
 
 def upgraderepo(
     ui,
@@ -48,8 +35,7 @@ def upgraderepo(
 ):
     """Upgrade a repository in place."""
     if optimize is None:
-        optimize = []
-    optimize = {legacy_opts_map.get(o, o) for o in optimize}
+        optimize = {}
     repo = repo.unfiltered()
 
     revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
