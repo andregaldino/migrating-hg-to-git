@@ -397,59 +397,60 @@ pub fn combine_changeset_copies<D>(
         // the individual copies information the curent revision.  Creating a
         // new TimeStampedPath for each `rev` → `children` vertex.
         let mut copies: Option<InternalPathCopies> = None;
-        if p1 != NULL_REVISION {
-            // Retrieve data computed in a previous iteration
-            let parent_copies = get_and_clean_parent_copies(
+        // Retrieve data computed in a previous iteration
+        let p1_copies = match p1 {
+            NULL_REVISION => None,
+            _ => get_and_clean_parent_copies(
                 &mut all_copies,
                 &mut children_count,
                 p1,
-            );
-            if let Some(parent_copies) = parent_copies {
-                // combine it with data for that revision
-                let vertex_copies = add_from_changes(
-                    &mut path_map,
-                    &parent_copies,
-                    &changes,
-                    Parent::FirstParent,
-                    rev,
-                );
-                // keep that data around for potential later combination
-                copies = Some(vertex_copies);
-            }
-        }
-        if p2 != NULL_REVISION {
-            // Retrieve data computed in a previous iteration
-            let parent_copies = get_and_clean_parent_copies(
+            ), // will be None if the vertex is not to be traversed
+        };
+        let p2_copies = match p2 {
+            NULL_REVISION => None,
+            _ => get_and_clean_parent_copies(
                 &mut all_copies,
                 &mut children_count,
                 p2,
+            ), // will be None if the vertex is not to be traversed
+        };
+        if let Some(parent_copies) = p1_copies {
+            // combine it with data for that revision
+            let vertex_copies = add_from_changes(
+                &mut path_map,
+                &parent_copies,
+                &changes,
+                Parent::FirstParent,
+                rev,
             );
-            if let Some(parent_copies) = parent_copies {
-                // combine it with data for that revision
-                let vertex_copies = add_from_changes(
-                    &mut path_map,
-                    &parent_copies,
-                    &changes,
-                    Parent::SecondParent,
-                    rev,
-                );
+            // keep that data around for potential later combination
+            copies = Some(vertex_copies);
+        }
+        if let Some(parent_copies) = p2_copies {
+            // combine it with data for that revision
+            let vertex_copies = add_from_changes(
+                &mut path_map,
+                &parent_copies,
+                &changes,
+                Parent::SecondParent,
+                rev,
+            );
 
-                copies = match copies {
-                    None => Some(vertex_copies),
-                    // Merge has two parents needs to combines their copy
-                    // information.
-                    //
-                    // If we got data from both parents, We need to combine
-                    // them.
-                    Some(copies) => Some(merge_copies_dict(
-                        &path_map,
-                        rev,
-                        vertex_copies,
-                        copies,
-                        &changes,
-                    )),
-                };
-            }
+            copies = match copies {
+                None => Some(vertex_copies),
+                // Merge has two parents needs to combines their copy
+                // information.
+                //
+                // If we got data from both parents, We need to combine
+                // them.
+                Some(copies) => Some(merge_copies_dict(
+                    &path_map,
+                    rev,
+                    vertex_copies,
+                    copies,
+                    &changes,
+                )),
+            };
         }
         match copies {
             Some(copies) => {
