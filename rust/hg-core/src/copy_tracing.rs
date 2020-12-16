@@ -16,7 +16,7 @@ pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
 type PathToken = usize;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 struct CopySource {
     /// revision at which the copy information was added
     rev: Revision,
@@ -90,6 +90,21 @@ impl CopySource {
 
     fn is_overwritten_by(&self, other: &Self) -> bool {
         other.overwritten.contains(&self.rev)
+    }
+}
+
+// For the same "dest", content generated for a given revision will always be
+// the same.
+impl PartialEq for CopySource {
+    fn eq(&self, other: &Self) -> bool {
+        #[cfg(debug_assertions)]
+        {
+            if self.rev == other.rev {
+                debug_assert!(self.path == other.path);
+                debug_assert!(self.overwritten == other.overwritten);
+            }
+        }
+        self.rev == other.rev
     }
 }
 
