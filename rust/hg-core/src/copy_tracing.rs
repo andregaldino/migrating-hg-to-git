@@ -510,22 +510,35 @@ fn chain_changes(
                 // propagate this information when merging two
                 // InternalPathCopies object.
                 let deleted = path_map.tokenize(deleted_path);
-                match &mut p1_copies {
-                    None => (),
-                    Some(copies) => {
-                        copies.entry(deleted).and_modify(|old| {
-                            old.mark_delete(current_rev);
-                        });
-                    }
+
+                let p1_entry = match &mut p1_copies {
+                    None => None,
+                    Some(copies) => match copies.entry(deleted) {
+                        Entry::Occupied(e) => Some(e),
+                        Entry::Vacant(_) => None,
+                    },
                 };
-                match &mut p2_copies {
-                    None => (),
-                    Some(copies) => {
-                        copies.entry(deleted).and_modify(|old| {
-                            old.mark_delete(current_rev);
-                        });
-                    }
+                let p2_entry = match &mut p2_copies {
+                    None => None,
+                    Some(copies) => match copies.entry(deleted) {
+                        Entry::Occupied(e) => Some(e),
+                        Entry::Vacant(_) => None,
+                    },
                 };
+
+                match (p1_entry, p2_entry) {
+                    (None, None) => (),
+                    (Some(mut e), None) => {
+                        e.get_mut().mark_delete(current_rev)
+                    }
+                    (None, Some(mut e)) => {
+                        e.get_mut().mark_delete(current_rev)
+                    }
+                    (Some(mut e1), Some(mut e2)) => {
+                        e1.get_mut().mark_delete(current_rev);
+                        e2.get_mut().mark_delete(current_rev);
+                    }
+                }
             }
         }
     }
