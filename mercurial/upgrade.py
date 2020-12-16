@@ -87,6 +87,7 @@ def upgraderepo(
     up_actions = upgrade_actions.determine_upgrade_actions(
         repo, format_upgrades, optimizations, repo.requirements, newreqs
     )
+    removed_actions = upgrade_actions.find_format_downgrades(repo)
 
     removedreqs = repo.requirements - newreqs
     addedreqs = newreqs - repo.requirements
@@ -108,6 +109,7 @@ def upgraderepo(
         newreqs,
         repo.requirements,
         up_actions,
+        removed_actions,
         revlogs,
     )
 
@@ -226,20 +228,4 @@ def upgraderepo(
                     )
                 )
 
-            if upgrade_actions.sharesafe.name in addedreqs:
-                ui.warn(
-                    _(
-                        b'repository upgraded to share safe mode, existing'
-                        b' shares will still work in old non-safe mode. '
-                        b'Re-share existing shares to use them in safe mode'
-                        b' New shares will be created in safe mode.\n'
-                    )
-                )
-            if upgrade_actions.sharesafe.name in removedreqs:
-                ui.warn(
-                    _(
-                        b'repository downgraded to not use share safe mode, '
-                        b'existing shares will not work and needs to'
-                        b' be reshared.\n'
-                    )
-                )
+            upgrade_op.print_post_op_messages()

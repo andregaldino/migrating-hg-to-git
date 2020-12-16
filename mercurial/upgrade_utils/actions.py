@@ -57,6 +57,14 @@ class improvement(object):
     upgrademessage
        Message intended for humans explaining what an upgrade addressing this
        issue will do. Should be worded in the future tense.
+
+    postupgrademessage
+       Message intended for humans which will be shown post an upgrade
+       operation when the improvement will be added
+
+    postdowngrademessage
+       Message intended for humans which will be shown post an upgrade
+       operation in which this improvement was removed
     """
 
     def __init__(self, name, type, description, upgrademessage):
@@ -64,6 +72,8 @@ class improvement(object):
         self.type = type
         self.description = description
         self.upgrademessage = upgrademessage
+        self.postupgrademessage = None
+        self.postdowngrademessage = None
 
     def __eq__(self, other):
         if not isinstance(other, improvement):
@@ -108,6 +118,14 @@ class formatvariant(improvement):
 
     # value of current Mercurial default for new repository
     default = None
+
+    # Message intended for humans which will be shown post an upgrade
+    # operation when the improvement will be added
+    postupgrademessage = None
+
+    # Message intended for humans which will be shown post an upgrade
+    # operation in which this improvement was removed
+    postdowngrademessage = None
 
     def __init__(self):
         raise NotImplementedError()
@@ -233,6 +251,19 @@ class sharesafe(requirementformatvariant):
     upgrademessage = _(
         b'Upgrades a repository to share-safe format so that future '
         b'shares of this repository share its requirements and configs.'
+    )
+
+    postdowngrademessage = _(
+        b'repository downgraded to not use share safe mode, '
+        b'existing shares will not work and needs to'
+        b' be reshared.'
+    )
+
+    postupgrademessage = _(
+        b'repository upgraded to share safe mode, existing'
+        b' shares will still work in old non-safe mode. '
+        b'Re-share existing shares to use them in safe mode'
+        b' New shares will be created in safe mode.'
     )
 
 
@@ -585,6 +616,7 @@ class UpgradeOperation(object):
         new_requirements,
         current_requirements,
         upgrade_actions,
+        removed_actions,
         revlogs_to_process,
     ):
         self.ui = ui
@@ -593,6 +625,7 @@ class UpgradeOperation(object):
         # list of upgrade actions the operation will perform
         self.upgrade_actions = upgrade_actions
         self._upgrade_actions_names = set([a.name for a in upgrade_actions])
+        self.removed_actions = removed_actions
         self.revlogs_to_process = revlogs_to_process
         # requirements which will be added by the operation
         self._added_requirements = (
@@ -678,6 +711,15 @@ class UpgradeOperation(object):
     def has_upgrade_action(self, name):
         """ Check whether the upgrade operation will perform this action """
         return name in self._upgrade_actions_names
+
+    def print_post_op_messages(self):
+        """ print post upgrade operation warning messages """
+        for a in self.upgrade_actions:
+            if a.postupgrademessage is not None:
+                self.ui.warn(b'%s\n' % a.postupgrademessage)
+        for a in self.removed_actions:
+            if a.postdowngrademessage is not None:
+                self.ui.warn(b'%s\n' % a.postdowngrademessage)
 
 
 ###  Code checking if a repository can got through the upgrade process at all. #
