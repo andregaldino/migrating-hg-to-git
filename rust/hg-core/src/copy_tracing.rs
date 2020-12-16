@@ -75,6 +75,19 @@ impl CopySource {
         self.path = None;
     }
 
+    /// Mark pre-existing copy information as "dropped" by a file deletion
+    ///
+    /// Use this when recording copy information from  parent → child edges
+    fn mark_delete_with_pair(&mut self, rev: Revision, other: &Self) {
+        self.overwritten.insert(self.rev);
+        if other.rev != rev {
+            self.overwritten.insert(other.rev);
+        }
+        self.overwritten.extend(other.overwritten.iter().copied());
+        self.rev = rev;
+        self.path = None;
+    }
+
     fn is_overwritten_by(&self, other: &Self) -> bool {
         other.overwritten.contains(&self.rev)
     }
@@ -535,8 +548,10 @@ fn chain_changes(
                         e.get_mut().mark_delete(current_rev)
                     }
                     (Some(mut e1), Some(mut e2)) => {
-                        e1.get_mut().mark_delete(current_rev);
-                        e2.get_mut().mark_delete(current_rev);
+                        let cs1 = e1.get_mut();
+                        let cs2 = e2.get();
+                        cs1.mark_delete_with_pair(current_rev, &cs2);
+                        e2.insert(cs1.clone());
                     }
                 }
             }
