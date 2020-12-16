@@ -85,13 +85,7 @@ def upgraderepo(
 
     format_upgrades = upgrade_actions.find_format_upgrades(repo)
     actions = upgrade_actions.determineactions(
-        repo, format_upgrades, repo.requirements, newreqs
-    )
-    actions.extend(
-        o
-        for o in sorted(optimizations)
-        # determineactions could have added optimisation
-        if o not in actions
+        repo, format_upgrades, optimizations, repo.requirements, newreqs
     )
 
     removedreqs = repo.requirements - newreqs

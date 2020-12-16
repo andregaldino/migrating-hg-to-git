@@ -526,7 +526,9 @@ def findoptimizations(repo):
     return list(ALL_OPTIMISATIONS)
 
 
-def determineactions(repo, format_upgrades, sourcereqs, destreqs):
+def determineactions(
+    repo, format_upgrades, optimizations, sourcereqs, destreqs
+):
     """Determine upgrade actions that will be performed.
 
     Given a list of improvements as returned by ``find_format_upgrades`` and
@@ -550,6 +552,8 @@ def determineactions(repo, format_upgrades, sourcereqs, destreqs):
             continue
 
         newactions.append(d)
+
+    newactions.extend(o for o in sorted(optimizations) if o not in newactions)
 
     # FUTURE consider adding some optimizations here for certain transitions.
     # e.g. adding generaldelta could schedule parent redeltas.
