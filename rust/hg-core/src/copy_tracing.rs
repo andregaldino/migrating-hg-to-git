@@ -323,15 +323,6 @@ pub struct DataHolder<D> {
 pub type RevInfoMaker<'a, D> =
     Box<dyn for<'r> Fn(Revision, &'r mut DataHolder<D>) -> RevInfo<'r> + 'a>;
 
-/// enum used to carry information about the parent → child currently processed
-#[derive(Copy, Clone, Debug)]
-enum Parent {
-    /// The `p1(x) → x` edge
-    FirstParent,
-    /// The `p2(x) → x` edge
-    SecondParent,
-}
-
 /// A small "tokenizer" responsible of turning full HgPath into lighter
 /// PathToken
 ///
@@ -393,7 +384,6 @@ pub fn combine_changeset_copies<D>(
         // We will chain the copies information accumulated for the parent with
         // the individual copies information the curent revision.  Creating a
         // new TimeStampedPath for each `rev` → `children` vertex.
-        let mut copies: Option<InternalPathCopies> = None;
         // Retrieve data computed in a previous iteration
         let p1_copies = match p1 {
             NULL_REVISION => None,
@@ -412,26 +402,8 @@ pub fn combine_changeset_copies<D>(
             ), // will be None if the vertex is not to be traversed
         };
         // combine it with data for that revision
-        let p1_copies = match p1_copies {
-            None => None,
-            Some(parent_copies) => Some(add_from_changes(
-                &mut path_map,
-                &parent_copies,
-                &changes,
-                Parent::FirstParent,
-                rev,
-            )),
-        };
-        let p2_copies = match p2_copies {
-            None => None,
-            Some(parent_copies) => Some(add_from_changes(
-                &mut path_map,
-                &parent_copies,
-                &changes,
-                Parent::SecondParent,
-                rev,
-            )),
-        };
+        let (p1_copies, p2_copies) =
+            chain_changes(&mut path_map, p1_copies, p2_copies, &changes, rev);
         let copies = match (p1_copies, p2_copies) {
             (None, None) => None,
             (c, None) => c,
@@ -489,41 +461,47 @@ fn get_and_clean_parent_copies(
 
 /// Combine ChangedFiles with some existing PathCopies information and return
 /// the result
-fn add_from_changes(
+fn chain_changes(
     path_map: &mut TwoWayPathMap,
-    base_copies: &InternalPathCopies,
+    base_p1_copies: Option<InternalPathCopies>,
+    base_p2_copies: Option<InternalPathCopies>,
     changes: &ChangedFiles,
-    parent: Parent,
     current_rev: Revision,
-) -> InternalPathCopies {
-    let mut copies = base_copies.clone();
+) -> (Option<InternalPathCopies>, Option<InternalPathCopies>) {
+    // Fast path the "nothing to do" case.
+    if let (None, None) = (&base_p1_copies, &base_p2_copies) {
+        return (None, None);
+    }
+
+    let mut p1_copies = base_p1_copies.clone();
+    let mut p2_copies = base_p2_copies.clone();
     for action in changes.iter_actions() {
         match action {
             Action::CopiedFromP1(path_dest, path_source) => {
-                match parent {
-                    _ => (), // not the parent we are looking for
-                    Parent::FirstParent => add_one_copy(
+                match &mut p1_copies {
+                    None => (), // This is not a vertex we should proceed.
+                    Some(copies) => add_one_copy(
                         current_rev,
                         path_map,
-                        &mut copies,
-                        &base_copies,
+                        copies,
+                        base_p1_copies.as_ref().unwrap(),
                         path_dest,
                         path_source,
                     ),
-                };
+                }
             }
             Action::CopiedFromP2(path_dest, path_source) => {
-                match parent {
-                    _ => (), //not the parent we are looking for
-                    Parent::SecondParent => add_one_copy(
+                match &mut p2_copies {
+                    None => (), // This is not a vertex we should proceed.
+                    Some(copies) => add_one_copy(
                         current_rev,
                         path_map,
-                        &mut copies,
-                        &base_copies,
+                        copies,
+                        base_p2_copies.as_ref().unwrap(),
                         path_dest,
                         path_source,
                     ),
-                };
+                }
             }
             Action::Removed(deleted_path) => {
                 // We must drop copy information for removed file.
@@ -532,13 +510,26 @@ fn add_from_changes(
                 // propagate this information when merging two
                 // InternalPathCopies object.
                 let deleted = path_map.tokenize(deleted_path);
-                copies.entry(deleted).and_modify(|old| {
-                    old.mark_delete(current_rev);
-                });
+                match &mut p1_copies {
+                    None => (),
+                    Some(copies) => {
+                        copies.entry(deleted).and_modify(|old| {
+                            old.mark_delete(current_rev);
+                        });
+                    }
+                };
+                match &mut p2_copies {
+                    None => (),
+                    Some(copies) => {
+                        copies.entry(deleted).and_modify(|old| {
+                            old.mark_delete(current_rev);
+                        });
+                    }
+                };
             }
         }
     }
-    copies
+    (p1_copies, p2_copies)
 }
 
 // insert one new copy information in an InternalPathCopies
