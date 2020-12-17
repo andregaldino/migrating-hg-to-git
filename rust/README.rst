@@ -40,7 +40,7 @@ Special features
 You might want to check the `features` section in ``hg-cpython/Cargo.toml``.
 It may contain features that might be interesting to try out.
 
-To use features from the Makefile, use the `HG_RUST_FEATURES` environment 
+To use features from the Makefile, use the `HG_RUST_FEATURES` environment
 variable: for instance `HG_RUST_FEATURES="some-feature other-feature"`
 
 Profiling
@@ -51,12 +51,25 @@ a few high level rust-related performance numbers. It can also
 indicate why the rust code cannot be used (say, using lookarounds in
 hgignore).
 
+Creating a ``.cargo/config`` file with the following content enables
+debug information in optimized builds. This make profiles more informative
+with source file name and line number for Rust stack frames and
+(in some cases) stack frames for Rust functions that have been inlined.
+
+  [profile.release]
+  debug = true
+
 ``py-spy`` (https://github.com/benfred/py-spy) can be used to
 construct a single profile with rust functions and python functions
 (as opposed to ``hg --profile``, which attributes time spent in rust
 to some unlucky python code running shortly after the rust code, and
 as opposed to tools for native code like ``perf``, which attribute
 time to the python interpreter instead of python functions).
+
+Example usage:
+
+  $ make PURE=--rust local # Don't forget to recompile after a code change
+  $ py-spy record --native --output /tmp/profile.svg -- ./hg ...
 
 Developing Rust
 ===============

@@ -64,6 +64,10 @@ rust/*/target/
 # Generated wheels
 wheelhouse/
 
+syntax: rootglob
+# See Profiling in rust/README.rst
+.cargo/config
+
 syntax: regexp
 ^\.pc/
 ^\.(pydev)?project
