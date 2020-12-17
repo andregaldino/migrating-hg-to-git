@@ -433,7 +433,7 @@ def diffrevs(
     #     ctx1a)
     dir1a_files = mod_a | rem_a | ((mod_b | add_b) - add_a)
     dir1a = snapshot(ui, repo, dir1a_files, ctx1a.node(), tmproot, subrepos)[0]
-    rev1a = b'@%d' % ctx1a.rev()
+    rev1a = b'' if ctx1a.rev() is None else b'@%d' % ctx1a.rev()
     if do3way:
         # file calculation criteria same as dir1a
         dir1b_files = mod_b | rem_b | ((mod_a | add_a) - add_b)

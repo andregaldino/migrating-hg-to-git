@@ -73,6 +73,15 @@ Should diff cloned files directly:
   diffing */extdiff.*/a.8a5febb7f867/a a.34eed99112ab/a (glob) (no-windows !)
   [1]
 
+Can show diff from working copy:
+  $ echo c >> a
+  $ hg falabala -r 'wdir()' -r 1
+  diffing "*\\extdiff.*\\a" "a.34eed99112ab\\a" (glob) (windows !)
+  diffing */extdiff.*/a a.34eed99112ab/a (glob) (no-windows !)
+  [1]
+  $ hg revert a
+  $ rm a.orig
+
 Specifying an empty revision should abort.
 
   $ hg extdiff -p diff --patch --rev 'ancestor()' --rev 1
