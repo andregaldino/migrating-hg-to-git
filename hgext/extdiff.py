@@ -552,12 +552,21 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
 
     cmdutil.check_at_most_one_arg(opts, b'rev', b'change')
     revs = opts.get(b'rev')
+    from_rev = opts.get(b'from')
+    to_rev = opts.get(b'to')
     change = opts.get(b'change')
     do3way = b'$parent2' in cmdline
 
     if change:
         ctx2 = scmutil.revsingle(repo, change, None)
         ctx1a, ctx1b = ctx2.p1(), ctx2.p2()
+    elif from_rev or to_rev:
+        repo = scmutil.unhidehashlikerevs(
+            repo, [from_rev] + [to_rev], b'nowarn'
+        )
+        ctx1a = scmutil.revsingle(repo, from_rev, None)
+        ctx1b = repo[nullid]
+        ctx2 = scmutil.revsingle(repo, to_rev, None)
     else:
         ctx1a, ctx2 = scmutil.revpair(repo, revs)
         if not revs:
@@ -615,7 +624,9 @@ extdiffopts = (
             _(b'pass option to comparison program'),
             _(b'OPT'),
         ),
-        (b'r', b'rev', [], _(b'revision'), _(b'REV')),
+        (b'r', b'rev', [], _(b'revision (DEPRECATED)'), _(b'REV')),
+        (b'', b'from', b'', _(b'revision to diff from'), _(b'REV1')),
+        (b'', b'to', b'', _(b'revision to diff to'), _(b'REV2')),
         (b'c', b'change', b'', _(b'change made by revision'), _(b'REV')),
         (
             b'',
@@ -659,11 +670,8 @@ def extdiff(ui, repo, *pats, **opts):
     additional options to the program, use -o/--option. These will be
     passed before the names of the directories or files to compare.
 
-    When two revision arguments are given, then changes are shown
-    between those revisions. If only one revision is specified then
-    that revision is compared to the working directory, and, when no
-    revisions are specified, the working directory files are compared
-    to its parent.
+    The --from, --to, and --change options work the same way they do for
+    :hg:`diff`.
 
     The --per-file option runs the external program repeatedly on each
     file to diff, instead of once on two directories. By default,

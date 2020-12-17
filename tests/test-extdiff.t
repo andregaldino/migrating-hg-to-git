@@ -50,7 +50,8 @@ Should diff cloned directories:
   options ([+] can be repeated):
   
    -o --option OPT [+]      pass option to comparison program
-   -r --rev REV [+]         revision
+      --from REV1           revision to diff from
+      --to REV2             revision to diff to
    -c --change REV          change made by revision
       --per-file            compare each file instead of revision snapshots
       --confirm             prompt user before each external program invocation
@@ -68,14 +69,14 @@ Should diff cloned directories:
 
 Should diff cloned files directly:
 
-  $ hg falabala -r 0:1
+  $ hg falabala --from 0 --to 1
   diffing "*\\extdiff.*\\a.8a5febb7f867\\a" "a.34eed99112ab\\a" (glob) (windows !)
   diffing */extdiff.*/a.8a5febb7f867/a a.34eed99112ab/a (glob) (no-windows !)
   [1]
 
 Can show diff from working copy:
   $ echo c >> a
-  $ hg falabala -r 'wdir()' -r 1
+  $ hg falabala --to 1
   diffing "*\\extdiff.*\\a" "a.34eed99112ab\\a" (glob) (windows !)
   diffing */extdiff.*/a a.34eed99112ab/a (glob) (no-windows !)
   [1]
@@ -139,7 +140,7 @@ issue3153: ensure using extdiff with removed subrepos doesn't crash:
   $ hg ci -Sm "adding subrepo"
   $ echo > .hgsub
   $ hg ci -m "removing subrepo"
-  $ hg falabala -r 4 -r 5 -S
+  $ hg falabala --from 4 --to 5 -S
   diffing a.398e36faf9c6 a.5ab95fb166c4
   [1]
 
@@ -292,7 +293,7 @@ Empty argument must be quoted
   > kdiff3.diffargs=--L1 \$plabel1 --L2 \$clabel \$parent \$child
   > EOF
 
-  $ hg --debug kdiff3 -r0 | grep '^running'
+  $ hg --debug kdiff3 --from 0 | grep '^running'
   running 'echo --L1 "@0" --L2 "" a.8a5febb7f867 a' in * (glob) (windows !)
   running "echo --L1 '@0' --L2 '' a.8a5febb7f867 a" in * (glob) (no-windows !)
 
@@ -496,7 +497,7 @@ Test symlinks handling (issue1909)
   $ echo a >> a
   $ ln -s missing linka
   $ hg add linka
-  $ hg falabala -r 0 --traceback
+  $ hg falabala --from 0 --traceback
   diffing testsymlinks.07f494440405 testsymlinks
   [1]
   $ cd ..

@@ -836,10 +836,8 @@ Extension module help vs command help:
       program, use -o/--option. These will be passed before the names of the
       directories or files to compare.
   
-      When two revision arguments are given, then changes are shown between
-      those revisions. If only one revision is specified then that revision is
-      compared to the working directory, and, when no revisions are specified,
-      the working directory files are compared to its parent.
+      The --from, --to, and --change options work the same way they do for 'hg
+      diff'.
   
       The --per-file option runs the external program repeatedly on each file to
       diff, instead of once on two directories. By default, this happens one by
@@ -859,7 +857,8 @@ Extension module help vs command help:
   
    -p --program CMD         comparison program to run
    -o --option OPT [+]      pass option to comparison program
-   -r --rev REV [+]         revision
+      --from REV1           revision to diff from
+      --to REV2             revision to diff to
    -c --change REV          change made by revision
       --per-file            compare each file instead of revision snapshots
       --confirm             prompt user before each external program invocation
