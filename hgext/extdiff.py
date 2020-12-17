@@ -395,9 +395,9 @@ def diffpatch(ui, repo, node1, node2, tmproot, matcher, cmdline):
 def diffrevs(
     ui,
     repo,
-    node1a,
-    node1b,
-    node2,
+    ctx1a,
+    ctx1b,
+    ctx2,
     matcher,
     tmproot,
     cmdline,
@@ -409,10 +409,10 @@ def diffrevs(
     subrepos = opts.get(b'subrepos')
 
     # calculate list of files changed between both revs
-    st = repo.status(node1a, node2, matcher, listsubrepos=subrepos)
+    st = ctx1a.status(ctx2, matcher, listsubrepos=subrepos)
     mod_a, add_a, rem_a = set(st.modified), set(st.added), set(st.removed)
     if do3way:
-        stb = repo.status(node1b, node2, matcher, listsubrepos=subrepos)
+        stb = ctx1b.status(ctx2, matcher, listsubrepos=subrepos)
         mod_b, add_b, rem_b = (
             set(stb.modified),
             set(stb.added),
@@ -425,32 +425,34 @@ def diffrevs(
     if not common:
         return 0
 
-    # Always make a copy of node1a (and node1b, if applicable)
+    # Always make a copy of ctx1a (and ctx1b, if applicable)
     # dir1a should contain files which are:
-    #   * modified or removed from node1a to node2
-    #   * modified or added from node1b to node2
-    #     (except file added from node1a to node2 as they were not present in
-    #     node1a)
+    #   * modified or removed from ctx1a to ctx2
+    #   * modified or added from ctx1b to ctx2
+    #     (except file added from ctx1a to ctx2 as they were not present in
+    #     ctx1a)
     dir1a_files = mod_a | rem_a | ((mod_b | add_b) - add_a)
-    dir1a = snapshot(ui, repo, dir1a_files, node1a, tmproot, subrepos)[0]
-    rev1a = b'@%d' % repo[node1a].rev()
+    dir1a = snapshot(ui, repo, dir1a_files, ctx1a.node(), tmproot, subrepos)[0]
+    rev1a = b'@%d' % ctx1a.rev()
     if do3way:
         # file calculation criteria same as dir1a
         dir1b_files = mod_b | rem_b | ((mod_a | add_a) - add_b)
-        dir1b = snapshot(ui, repo, dir1b_files, node1b, tmproot, subrepos)[0]
-        rev1b = b'@%d' % repo[node1b].rev()
+        dir1b = snapshot(
+            ui, repo, dir1b_files, ctx1b.node(), tmproot, subrepos
+        )[0]
+        rev1b = b'@%d' % ctx1b.rev()
     else:
         dir1b = None
         rev1b = b''
 
     fnsandstat = []
 
-    # If node2 in not the wc or there is >1 change, copy it
+    # If ctx2 is not the wc or there is >1 change, copy it
     dir2root = b''
     rev2 = b''
-    if node2:
-        dir2 = snapshot(ui, repo, modadd, node2, tmproot, subrepos)[0]
-        rev2 = b'@%d' % repo[node2].rev()
+    if ctx2.node() is not None:
+        dir2 = snapshot(ui, repo, modadd, ctx2.node(), tmproot, subrepos)[0]
+        rev2 = b'@%d' % ctx2.rev()
     elif len(common) > 1:
         # we only actually need to get the files to copy back to
         # the working dir in this case (because the other cases
@@ -563,36 +565,34 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         else:
             ctx1b = repo[nullid]
 
-    node1a = ctx1a.node()
-    node1b = ctx1b.node()
-    node2 = ctx2.node()
-
     # Disable 3-way merge if there is only one parent
     if do3way:
-        if node1b == nullid:
+        if ctx1b.node() == nullid:
             do3way = False
 
-    matcher = scmutil.match(repo[node2], pats, opts)
+    matcher = scmutil.match(ctx2, pats, opts)
 
     if opts.get(b'patch'):
         if opts.get(b'subrepos'):
             raise error.Abort(_(b'--patch cannot be used with --subrepos'))
         if opts.get(b'per_file'):
             raise error.Abort(_(b'--patch cannot be used with --per-file'))
-        if node2 is None:
+        if ctx2.node() is None:
             raise error.Abort(_(b'--patch requires two revisions'))
 
     tmproot = pycompat.mkdtemp(prefix=b'extdiff.')
     try:
         if opts.get(b'patch'):
-            return diffpatch(ui, repo, node1a, node2, tmproot, matcher, cmdline)
+            return diffpatch(
+                ui, repo, ctx1a.node(), ctx2.node(), tmproot, matcher, cmdline
+            )
 
         return diffrevs(
             ui,
             repo,
-            node1a,
-            node1b,
-            node2,
+            ctx1a,
+            ctx1b,
+            ctx2,
             matcher,
             tmproot,
             cmdline,
