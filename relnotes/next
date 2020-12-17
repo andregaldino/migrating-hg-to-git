@@ -37,6 +37,8 @@
    is also supported by "premerge" as
    `merge-tools.<tool>.premerge=keep-mergediff`.
 
+ * External hooks are now called with `HGPLAIN=1` preset.
+
 == New Experimental Features ==
 
 * `experimental.single-head-per-branch:public-changes-only` can be used
