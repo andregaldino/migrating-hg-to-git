@@ -2612,7 +2612,7 @@ static int index_init(indexObject *self, PyObject *args)
 		                "data does not support buffer interface");
 		return -1;
 	}
-	if (self->nodelen < 20 || self->nodelen > sizeof(nullid)) {
+	if (self->nodelen < 20 || self->nodelen > (Py_ssize_t)sizeof(nullid)) {
 		PyErr_SetString(PyExc_RuntimeError, "unsupported node size");
 		return -1;
 	}
