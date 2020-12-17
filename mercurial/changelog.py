@@ -601,7 +601,7 @@ class changelog(revlog.revlog):
 
         This function exists because creating a changectx object
         just to access this is costly."""
-        extra = self.read(rev)[5]
+        extra = self.changelogrevision(rev).extra
         return encoding.tolocal(extra.get(b"branch")), b'close' in extra
 
     def _nodeduplicatecallback(self, transaction, node):
