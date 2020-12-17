@@ -11,7 +11,7 @@
 
 Should diff cloned directories:
 
-  $ hg extdiff -o -r $opt
+  $ hg extdiff -o -r
   Only in a: a
   Only in a: b
   [1]
