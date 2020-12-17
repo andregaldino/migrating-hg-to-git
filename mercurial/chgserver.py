@@ -505,6 +505,7 @@ class chgcmdserver(commandserver.server):
         """
         args = self._readlist()
         errorraised = False
+        detailed_exit_code = 255
         try:
             self.ui, lui = _loadnewui(self.ui, args, self.cdebug)
         except error.RepoError as inst:
@@ -515,12 +516,17 @@ class chgcmdserver(commandserver.server):
                 self.ui.error(_(b"(%s)\n") % inst.hint)
             errorraised = True
         except error.Abort as inst:
+            if isinstance(inst, error.InputError):
+                detailed_exit_code = 10
             self.ui.error(inst.format())
             errorraised = True
 
         if errorraised:
             self.ui.flush()
-            self.cresult.write(b'exit 255')
+            exit_code = 255
+            if self.ui.configbool(b'ui', b'detailed-exit-code'):
+                exit_code = detailed_exit_code
+            self.cresult.write(b'exit %d' % exit_code)
             return
         newhash = hashstate.fromui(lui, self.hashstate.mtimepaths)
         insts = []
