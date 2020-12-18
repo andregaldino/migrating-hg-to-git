@@ -131,17 +131,25 @@ def _make_write_all(stream):
 
 
 if pycompat.ispy3:
-    # Python 3 implements its own I/O streams.
+    # Python 3 implements its own I/O streams. Unlike stdio of C library,
+    # sys.stdin/stdout/stderr may be None if underlying fd is closed.
+
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
 
-    # sys.stdin can be None
-    if sys.stdin:
-        stdin = sys.stdin.buffer
-    else:
+    if sys.stdin is None:
         stdin = BadFile()
-    stdout = _make_write_all(sys.stdout.buffer)
-    stderr = _make_write_all(sys.stderr.buffer)
+    else:
+        stdin = sys.stdin.buffer
+    if sys.stdout is None:
+        stdout = BadFile()
+    else:
+        stdout = _make_write_all(sys.stdout.buffer)
+    if sys.stderr is None:
+        stderr = BadFile()
+    else:
+        stderr = _make_write_all(sys.stderr.buffer)
+
     if pycompat.iswindows:
         # Work around Windows bugs.
         stdout = platform.winstdout(stdout)

@@ -49,6 +49,31 @@ Writes to stdio succeed and fail appropriately
   [255]
 #endif
 
+On Python 3, stdio may be None:
+
+  $ hg debuguiprompt --config ui.interactive=true 0<&-
+   abort: Bad file descriptor
+  [255]
+  $ hg version -q 0<&-
+  Mercurial Distributed SCM * (glob)
+
+#if py3
+  $ hg version -q 1>&-
+  abort: Bad file descriptor
+  [255]
+#else
+  $ hg version -q 1>&-
+#endif
+  $ hg unknown -q 1>&-
+  hg: unknown command 'unknown'
+  (did you mean debugknown?)
+  [255]
+
+  $ hg version -q 2>&-
+  Mercurial Distributed SCM * (glob)
+  $ hg unknown -q 2>&-
+  [255]
+
   $ hg commit -m test
 
 This command is ancient:
