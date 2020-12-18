@@ -39,6 +39,10 @@
 
  * External hooks are now called with `HGPLAIN=1` preset.
 
+ * The `branchmap` cache is updated more intelligently and can be
+   significantly faster for repositories with many branches and changesets.
+
+
 == New Experimental Features ==
 
 * `experimental.single-head-per-branch:public-changes-only` can be used

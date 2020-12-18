@@ -988,3 +988,257 @@ Test --force-close-branch to close a branch from a non-head changeset:
 
   $ hg ci -m "branch closed" --force-close-branch
   created new head
+  $ cd ..
+
+Test various special cases for the branchmap
+--------------------------------------------
+
+Basic fork of the same branch
+
+  $ hg init branchmap-testing1
+  $ cd branchmap-testing1
+  $ hg debugbuild '@A . :base . :p1 *base /p1'
+  $ hg log -G
+  o    changeset:   3:71ca9a6d524e
+  |\   branch:      A
+  | |  tag:         tip
+  | |  parent:      2:a3b807b3ff0b
+  | |  parent:      1:99ba08759bc7
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:03 1970 +0000
+  | |  summary:     r3
+  | |
+  | o  changeset:   2:a3b807b3ff0b
+  | |  branch:      A
+  | |  parent:      0:2ab8003a1750
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:02 1970 +0000
+  | |  summary:     r2
+  | |
+  o |  changeset:   1:99ba08759bc7
+  |/   branch:      A
+  |    tag:         p1
+  |    user:        debugbuilddag
+  |    date:        Thu Jan 01 00:00:01 1970 +0000
+  |    summary:     r1
+  |
+  o  changeset:   0:2ab8003a1750
+     branch:      A
+     tag:         base
+     user:        debugbuilddag
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     r0
+  
+  $ hg branches
+  A                              3:71ca9a6d524e
+  $ hg clone -r 1 -r 2 . ../branchmap-testing1-clone
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 0 changes to 0 files (+1 heads)
+  new changesets 2ab8003a1750:a3b807b3ff0b
+  updating to branch A
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd ../branchmap-testing1-clone
+  $ hg pull ../branchmap-testing1
+  pulling from ../branchmap-testing1
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files (-1 heads)
+  new changesets 71ca9a6d524e
+  (run 'hg update' to get a working copy)
+  $ hg branches
+  A                              3:71ca9a6d524e
+  $ cd ..
+
+Switching to a different branch and back
+
+  $ hg init branchmap-testing2
+  $ cd branchmap-testing2
+  $ hg debugbuild '@A . @B . @A .'
+  $ hg log -G
+  o  changeset:   2:9699e9f260b5
+  |  branch:      A
+  |  tag:         tip
+  |  user:        debugbuilddag
+  |  date:        Thu Jan 01 00:00:02 1970 +0000
+  |  summary:     r2
+  |
+  o  changeset:   1:0bc7d348d965
+  |  branch:      B
+  |  user:        debugbuilddag
+  |  date:        Thu Jan 01 00:00:01 1970 +0000
+  |  summary:     r1
+  |
+  o  changeset:   0:2ab8003a1750
+     branch:      A
+     user:        debugbuilddag
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     r0
+  
+  $ hg branches
+  A                              2:9699e9f260b5
+  B                              1:0bc7d348d965 (inactive)
+  $ hg clone -r 1 . ../branchmap-testing2-clone
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 0 files
+  new changesets 2ab8003a1750:0bc7d348d965
+  updating to branch B
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd ../branchmap-testing2-clone
+  $ hg pull ../branchmap-testing2
+  pulling from ../branchmap-testing2
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files
+  new changesets 9699e9f260b5
+  (run 'hg update' to get a working copy)
+  $ hg branches
+  A                              2:9699e9f260b5
+  B                              1:0bc7d348d965 (inactive)
+  $ cd ..
+
+A fork on a branch switching to a different branch and back
+is still collecting the fork.
+
+  $ hg init branchmap-testing3
+  $ cd branchmap-testing3
+  $ hg debugbuild '@A . :base . :p1 *base @B . @A /p1'
+  $ hg log -G
+  o    changeset:   4:3614a1711d23
+  |\   branch:      A
+  | |  tag:         tip
+  | |  parent:      3:e9c8abcf65aa
+  | |  parent:      1:99ba08759bc7
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:04 1970 +0000
+  | |  summary:     r4
+  | |
+  | o  changeset:   3:e9c8abcf65aa
+  | |  branch:      B
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:03 1970 +0000
+  | |  summary:     r3
+  | |
+  | o  changeset:   2:a3b807b3ff0b
+  | |  branch:      A
+  | |  parent:      0:2ab8003a1750
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:02 1970 +0000
+  | |  summary:     r2
+  | |
+  o |  changeset:   1:99ba08759bc7
+  |/   branch:      A
+  |    tag:         p1
+  |    user:        debugbuilddag
+  |    date:        Thu Jan 01 00:00:01 1970 +0000
+  |    summary:     r1
+  |
+  o  changeset:   0:2ab8003a1750
+     branch:      A
+     tag:         base
+     user:        debugbuilddag
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     r0
+  
+  $ hg branches
+  A                              4:3614a1711d23
+  B                              3:e9c8abcf65aa (inactive)
+  $ hg clone -r 1 -r 3 . ../branchmap-testing3-clone
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 0 changes to 0 files (+1 heads)
+  new changesets 2ab8003a1750:e9c8abcf65aa
+  updating to branch A
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd ../branchmap-testing3-clone
+  $ hg pull ../branchmap-testing3
+  pulling from ../branchmap-testing3
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files (-1 heads)
+  new changesets 3614a1711d23
+  (run 'hg update' to get a working copy)
+  $ hg branches
+  A                              4:3614a1711d23
+  B                              3:e9c8abcf65aa (inactive)
+  $ cd ..
+
+Intermediary parents are on different branches.
+
+  $ hg init branchmap-testing4
+  $ cd branchmap-testing4
+  $ hg debugbuild '@A . @B :base . @A :p1 *base @C . @A /p1'
+  $ hg log -G
+  o    changeset:   4:4bf67499b70a
+  |\   branch:      A
+  | |  tag:         tip
+  | |  parent:      3:4a546028fa8f
+  | |  parent:      1:0bc7d348d965
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:04 1970 +0000
+  | |  summary:     r4
+  | |
+  | o  changeset:   3:4a546028fa8f
+  | |  branch:      C
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:03 1970 +0000
+  | |  summary:     r3
+  | |
+  | o  changeset:   2:a3b807b3ff0b
+  | |  branch:      A
+  | |  parent:      0:2ab8003a1750
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:02 1970 +0000
+  | |  summary:     r2
+  | |
+  o |  changeset:   1:0bc7d348d965
+  |/   branch:      B
+  |    tag:         p1
+  |    user:        debugbuilddag
+  |    date:        Thu Jan 01 00:00:01 1970 +0000
+  |    summary:     r1
+  |
+  o  changeset:   0:2ab8003a1750
+     branch:      A
+     tag:         base
+     user:        debugbuilddag
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     r0
+  
+  $ hg branches
+  A                              4:4bf67499b70a
+  C                              3:4a546028fa8f (inactive)
+  B                              1:0bc7d348d965 (inactive)
+  $ hg clone -r 1 -r 3 . ../branchmap-testing4-clone
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 0 changes to 0 files (+1 heads)
+  new changesets 2ab8003a1750:4a546028fa8f
+  updating to branch B
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd ../branchmap-testing4-clone
+  $ hg pull ../branchmap-testing4
+  pulling from ../branchmap-testing4
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files (-1 heads)
+  new changesets 4bf67499b70a
+  (run 'hg update' to get a working copy)
+  $ hg branches
+  A                              4:4bf67499b70a
+  C                              3:4a546028fa8f (inactive)
+  B                              1:0bc7d348d965 (inactive)
+  $ cd ..

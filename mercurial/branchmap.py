@@ -443,33 +443,82 @@ class branchcache(object):
             if closesbranch:
                 self._closednodes.add(cl.node(r))
 
-        # fetch current topological heads to speed up filtering
-        topoheads = set(cl.headrevs())
-
         # new tip revision which we found after iterating items from new
         # branches
         ntiprev = self.tiprev
 
-        # if older branchheads are reachable from new ones, they aren't
-        # really branchheads. Note checking parents is insufficient:
-        # 1 (branch a) -> 2 (branch b) -> 3 (branch a)
+        # Delay fetching the topological heads until they are needed.
+        # A repository without non-continous branches can skip this part.
+        topoheads = None
+
+        # If a changeset is visible, its parents must be visible too, so
+        # use the faster unfiltered parent accessor.
+        parentrevs = repo.unfiltered().changelog.parentrevs
+
         for branch, newheadrevs in pycompat.iteritems(newbranches):
+            # For every branch, compute the new branchheads.
+            # A branchhead is a revision such that no descendant is on
+            # the same branch.
+            #
+            # The branchheads are computed iteratively in revision order.
+            # This ensures topological order, i.e. parents are processed
+            # before their children. Ancestors are inclusive here, i.e.
+            # any revision is an ancestor of itself.
+            #
+            # Core observations:
+            # - The current revision is always a branchhead for the
+            #   repository up to that point.
+            # - It is the first revision of the branch if and only if
+            #   there was no branchhead before. In that case, it is the
+            #   only branchhead as there are no possible ancestors on
+            #   the same branch.
+            # - If a parent is on the same branch, a branchhead can
+            #   only be an ancestor of that parent, if it is parent
+            #   itself. Otherwise it would have been removed as ancestor
+            #   of that parent before.
+            # - Therefore, if all parents are on the same branch, they
+            #   can just be removed from the branchhead set.
+            # - If one parent is on the same branch and the other is not
+            #   and there was exactly one branchhead known, the existing
+            #   branchhead can only be an ancestor if it is the parent.
+            #   Otherwise it would have been removed as ancestor of
+            #   the parent before. The other parent therefore can't have
+            #   a branchhead as ancestor.
+            # - In all other cases, the parents on different branches
+            #   could have a branchhead as ancestor. Those parents are
+            #   kept in the "uncertain" set. If all branchheads are also
+            #   topological heads, they can't have descendants and further
+            #   checks can be skipped. Otherwise, the ancestors of the
+            #   "uncertain" set are removed from branchheads.
+            #   This computation is heavy and avoided if at all possible.
             bheads = self._entries.setdefault(branch, [])
             bheadset = {cl.rev(node) for node in bheads}
+            uncertain = set()
+            for newrev in sorted(newheadrevs):
+                if not bheadset:
+                    bheadset.add(newrev)
+                    continue
 
-            # This have been tested True on all internal usage of this function.
-            # run it again in case of doubt
-            # assert not (set(bheadrevs) & set(newheadrevs))
-            bheadset.update(newheadrevs)
+                parents = [p for p in parentrevs(newrev) if p != nullrev]
+                samebranch = set()
+                otherbranch = set()
+                for p in parents:
+                    if p in bheadset or getbranchinfo(p)[0] == branch:
+                        samebranch.add(p)
+                    else:
+                        otherbranch.add(p)
+                if otherbranch and not (len(bheadset) == len(samebranch) == 1):
+                    uncertain.update(otherbranch)
+                bheadset.difference_update(samebranch)
+                bheadset.add(newrev)
 
-            # This prunes out two kinds of heads - heads that are superseded by
-            # a head in newheadrevs, and newheadrevs that are not heads because
-            # an existing head is their descendant.
-            uncertain = bheadset - topoheads
             if uncertain:
-                floorrev = min(uncertain)
-                ancestors = set(cl.ancestors(newheadrevs, floorrev))
-                bheadset -= ancestors
+                if topoheads is None:
+                    topoheads = set(cl.headrevs())
+                if bheadset - topoheads:
+                    floorrev = min(bheadset)
+                    ancestors = set(cl.ancestors(newheadrevs, floorrev))
+                    bheadset -= ancestors
             bheadrevs = sorted(bheadset)
             self[branch] = [cl.node(rev) for rev in bheadrevs]
             tiprev = bheadrevs[-1]
