@@ -166,26 +166,34 @@ if pycompat.ispy3:
         # "just work," here we change the sys.* streams to disable line ending
         # normalization, ensuring compatibility with our ui type.
 
-        # write_through is new in Python 3.7.
-        kwargs = {
-            "newline": "\n",
-            "line_buffering": sys.stdout.line_buffering,
-        }
-        if util.safehasattr(sys.stdout, "write_through"):
-            kwargs["write_through"] = sys.stdout.write_through
-        sys.stdout = io.TextIOWrapper(
-            sys.stdout.buffer, sys.stdout.encoding, sys.stdout.errors, **kwargs
-        )
+        if sys.stdout is not None:
+            # write_through is new in Python 3.7.
+            kwargs = {
+                "newline": "\n",
+                "line_buffering": sys.stdout.line_buffering,
+            }
+            if util.safehasattr(sys.stdout, "write_through"):
+                kwargs["write_through"] = sys.stdout.write_through
+            sys.stdout = io.TextIOWrapper(
+                sys.stdout.buffer,
+                sys.stdout.encoding,
+                sys.stdout.errors,
+                **kwargs
+            )
 
-        kwargs = {
-            "newline": "\n",
-            "line_buffering": sys.stderr.line_buffering,
-        }
-        if util.safehasattr(sys.stderr, "write_through"):
-            kwargs["write_through"] = sys.stderr.write_through
-        sys.stderr = io.TextIOWrapper(
-            sys.stderr.buffer, sys.stderr.encoding, sys.stderr.errors, **kwargs
-        )
+        if sys.stderr is not None:
+            kwargs = {
+                "newline": "\n",
+                "line_buffering": sys.stderr.line_buffering,
+            }
+            if util.safehasattr(sys.stderr, "write_through"):
+                kwargs["write_through"] = sys.stderr.write_through
+            sys.stderr = io.TextIOWrapper(
+                sys.stderr.buffer,
+                sys.stderr.encoding,
+                sys.stderr.errors,
+                **kwargs
+            )
 
         if sys.stdin is not None:
             # No write_through on read-only stream.
@@ -200,6 +208,8 @@ if pycompat.ispy3:
 
     def _silencestdio():
         for fp in (sys.stdout, sys.stderr):
+            if fp is None:
+                continue
             # Check if the file is okay
             try:
                 fp.flush()
