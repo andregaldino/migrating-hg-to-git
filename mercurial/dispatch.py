@@ -207,9 +207,7 @@ if pycompat.ispy3:
             except IOError:
                 pass
             # Otherwise mark it as closed to silence "Exception ignored in"
-            # message emitted by the interpreter finalizer. Be careful to
-            # not close procutil.stdout, which may be a fdopen-ed file object
-            # and its close() actually closes the underlying file descriptor.
+            # message emitted by the interpreter finalizer.
             try:
                 fp.close()
             except IOError:
