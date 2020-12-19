@@ -15,7 +15,7 @@
 ;
 araxis.args=/3 /a2 /wait /merge /title1:"Other" /title2:"Base" /title3:"Local :"$local $other $base $local $output
 araxis.binary=True
-araxis.checkconflict=True
+araxis.checkconflicts=True
 araxis.diffargs=/2 /wait /title1:$plabel1 /title2:$clabel $parent $child
 araxis.gui=True
 araxis.priority=-2
