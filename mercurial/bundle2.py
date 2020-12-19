@@ -1960,11 +1960,7 @@ def combinechangegroupresults(op):
     ),
 )
 def handlechangegroup(op, inpart):
-    """apply a changegroup part on the repo
-
-    This is a very early implementation that will massive rework before being
-    inflicted to any end-user.
-    """
+    """apply a changegroup part on the repo"""
     from . import localrepo
 
     tr = op.gettransaction()
