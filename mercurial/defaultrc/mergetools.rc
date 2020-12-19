@@ -1,6 +1,18 @@
 # Some default global settings for common merge tools
 
 [merge-tools]
+
+; The Araxis Merge tool is configured to work with newer versions of Araxis Merge
+; if you are using Araxis Merge 2008 or earlier, create a [merge-tools] section
+; in your mercurial.ini file, and add one of the two following "araxis.executable"
+; lines, depending on whether you have installed a 32 or a 64 bit version
+; of Araxis Merge and whether you are on a 32 or 64 bit version of windows
+;
+;araxis.executable=${ProgramFiles}/Araxis/Araxis Merge/ConsoleCompare.exe
+;araxis.executable=${ProgramFiles(x86)}/Araxis/Araxis Merge/ConsoleCompare.exe
+;
+; Please remember to remove the leading ";" to uncomment the line
+;
 araxis.args=/3 /a2 /wait /merge /title1:"Other" /title2:"Base" /title3:"Local :"$local $other $base $local $output
 araxis.binary=True
 araxis.checkconflict=True
@@ -10,7 +22,7 @@ araxis.priority=-2
 araxis.regappend=\ConsoleCompare.exe
 araxis.regkey=SOFTWARE\Classes\TypeLib\{46799e0a-7bd1-4330-911c-9660bb964ea2}\7.0\HELPDIR
 
-; Linux version of Beyond Compare
+; Linux version of BeyondCompare 3 and 4 (dirdiff is version 4 only)
 bcompare.args=$local $other $base -mergeoutput=$output -ro -lefttitle=$labellocal -centertitle=$labelbase -righttitle=$labelother -outputtitle=merged -automerge -reviewconflicts -solo
 bcompare.diffargs=-lro -lefttitle=$plabel1 -righttitle=$clabel -solo -expandall $parent $child
 bcompare.gui=True
@@ -23,7 +35,7 @@ bcomposx.executable = /Applications/Beyond Compare.app/Contents/MacOS/bcomp
 bcomposx.gui=True
 bcomposx.priority=-1
 
-; Windows version of Beyond Compare
+; Windows version of BeyondCompare 3
 beyondcompare3.args=$local $other $base $output /ro /lefttitle=$labellocal /centertitle=$labelbase /righttitle=$labelother /automerge /reviewconflicts /solo
 beyondcompare3.diffargs=/lro /lefttitle=$plabel1 /righttitle=$clabel /solo /expandall $parent $child
 beyondcompare3.gui=True
