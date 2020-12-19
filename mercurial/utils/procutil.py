@@ -50,6 +50,16 @@ def isatty(fp):
         return False
 
 
+class BadFile(io.RawIOBase):
+    """Dummy file object to simulate closed stdio behavior"""
+
+    def readinto(self, b):
+        raise IOError(errno.EBADF, 'Bad file descriptor')
+
+    def write(self, b):
+        raise IOError(errno.EBADF, 'Bad file descriptor')
+
+
 class LineBufferedWrapper(object):
     def __init__(self, orig):
         self.orig = orig
@@ -129,8 +139,7 @@ if pycompat.ispy3:
     if sys.stdin:
         stdin = sys.stdin.buffer
     else:
-        stdin = open(os.devnull, 'rb')
-        os.close(stdin.fileno())
+        stdin = BadFile()
     stdout = _make_write_all(sys.stdout.buffer)
     stderr = _make_write_all(sys.stderr.buffer)
     if pycompat.iswindows:
