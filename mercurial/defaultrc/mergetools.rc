@@ -44,6 +44,16 @@ beyondcompare3.regkey=Software\Scooter Software\Beyond Compare 3
 beyondcompare3.regkeyalt=Software\Wow6432Node\Scooter Software\Beyond Compare 3
 beyondcompare3.regname=ExePath
 
+; Windows version of BeyondCompare 4
+beyondcompare4.args=$local $other $base /mergeoutput=$output /ro /lefttitle=$labellocal /centertitle=$labelbase /righttitle=$labelother /outputtitle=merged /automerge /reviewconflicts /solo
+beyondcompare4.diffargs=/lro /lefttitle=$plabel1 /righttitle=$clabel /solo /expandall $parent $child
+beyondcompare4.gui=True
+beyondcompare4.premerge=False
+beyondcompare4.priority=-1
+beyondcompare4.regkey=Software\Scooter Software\Beyond Compare 4
+beyondcompare4.regkeyalt=Software\Wow6432Node\Scooter Software\Beyond Compare 4
+beyondcompare4.regname=ExePath
+
 diffmerge.args=-nosplash -merge -title1=$labellocal -title2=merged -title3=$labelother $local $base $other -result=$output
 diffmerge.check=changed
 diffmerge.diffargs=--nosplash --title1=$plabel1 --title2=$clabel $parent $child
