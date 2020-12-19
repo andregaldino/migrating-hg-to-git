@@ -26,15 +26,16 @@
 #include "procutil.h"
 #include "util.h"
 
-enum { CAP_GETENCODING = 0x0001,
-       CAP_RUNCOMMAND = 0x0002,
-       /* cHg extension: */
-       CAP_ATTACHIO = 0x0100,
-       CAP_CHDIR = 0x0200,
-       CAP_SETENV = 0x0800,
-       CAP_SETUMASK2 = 0x1000,
-       CAP_VALIDATE = 0x2000,
-       CAP_SETPROCNAME = 0x4000,
+enum {
+	CAP_GETENCODING = 0x0001,
+	CAP_RUNCOMMAND = 0x0002,
+	/* cHg extension: */
+	CAP_ATTACHIO = 0x0100,
+	CAP_CHDIR = 0x0200,
+	CAP_SETENV = 0x0800,
+	CAP_SETUMASK2 = 0x1000,
+	CAP_VALIDATE = 0x2000,
+	CAP_SETPROCNAME = 0x4000,
 };
 
 typedef struct {

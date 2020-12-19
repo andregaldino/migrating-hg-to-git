@@ -451,9 +451,10 @@ static int runinstructions(struct cmdserveropts *opts, const char **insts)
  */
 static int isunsupported(int argc, const char *argv[])
 {
-	enum { SERVE = 1,
-	       DAEMON = 2,
-	       SERVEDAEMON = SERVE | DAEMON,
+	enum {
+		SERVE = 1,
+		DAEMON = 2,
+		SERVEDAEMON = SERVE | DAEMON,
 	};
 	unsigned int state = 0;
 	int i;
