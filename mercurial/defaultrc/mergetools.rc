@@ -41,6 +41,7 @@ beyondcompare3.diffargs=/lro /lefttitle=$plabel1 /righttitle=$clabel /solo /expa
 beyondcompare3.gui=True
 beyondcompare3.priority=-2
 beyondcompare3.regkey=Software\Scooter Software\Beyond Compare 3
+beyondcompare3.regkeyalt=Software\Wow6432Node\Scooter Software\Beyond Compare 3
 beyondcompare3.regname=ExePath
 
 diffmerge.args=-nosplash -merge -title1=$labellocal -title2=merged -title3=$labelother $local $base $other -result=$output
