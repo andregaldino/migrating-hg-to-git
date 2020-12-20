@@ -7316,10 +7316,11 @@ def tags(ui, repo, **opts):
     for t, n in reversed(repo.tagslist()):
         hn = hexfunc(n)
         label = b'tags.normal'
-        tagtype = b''
-        if repo.tagtype(t) == b'local':
-            label = b'tags.local'
-            tagtype = b'local'
+        tagtype = repo.tagtype(t)
+        if not tagtype or tagtype == b'global':
+            tagtype = b''
+        else:
+            label = b'tags.' + tagtype
 
         fm.startitem()
         fm.context(repo=repo)
