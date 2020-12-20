@@ -1013,15 +1013,19 @@ def clone(
                                 pass
                 if uprev is None:
                     try:
-                        uprev = destrepo._bookmarks[b'@']
-                        update = b'@'
+                        if destrepo._activebookmark:
+                            uprev = destrepo.lookup(destrepo._activebookmark)
+                            update = destrepo._activebookmark
+                        else:
+                            uprev = destrepo._bookmarks[b'@']
+                            update = b'@'
                         bn = destrepo[uprev].branch()
                         if bn == b'default':
-                            status = _(b"updating to bookmark @\n")
+                            status = _(b"updating to bookmark %s\n" % update)
                         else:
                             status = (
-                                _(b"updating to bookmark @ on branch %s\n") % bn
-                            )
+                                _(b"updating to bookmark %s on branch %s\n")
+                            ) % (update, bn)
                     except KeyError:
                         try:
                             uprev = destrepo.branchtip(b'default')
