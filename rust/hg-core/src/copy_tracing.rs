@@ -107,7 +107,8 @@ enum Action<'a> {
     Removed(&'a HgPath),
     /// The parent ? children edge introduce copy information between (dest,
     /// source)
-    Copied(&'a HgPath, &'a HgPath),
+    CopiedFromP1(&'a HgPath, &'a HgPath),
+    CopiedFromP2(&'a HgPath, &'a HgPath),
 }
 
 /// This express the possible "special" case we can get in a merge
@@ -246,10 +247,9 @@ impl<'a> ChangedFiles<'a> {
     }
 
     /// Return an iterator over all the `Action` in this instance.
-    fn iter_actions(&self, parent: Parent) -> ActionsIterator {
+    fn iter_actions(&self) -> ActionsIterator {
         ActionsIterator {
             changes: &self,
-            parent: parent,
             current: 0,
         }
     }
@@ -283,7 +283,6 @@ impl<'a> ChangedFiles<'a> {
 
 struct ActionsIterator<'a> {
     changes: &'a ChangedFiles<'a>,
-    parent: Parent,
     current: u32,
 }
 
@@ -291,10 +290,6 @@ impl<'a> Iterator for ActionsIterator<'a> {
     type Item = Action<'a>;
 
     fn next(&mut self) -> Option<Action<'a>> {
-        let copy_flag = match self.parent {
-            Parent::FirstParent => P1_COPY,
-            Parent::SecondParent => P2_COPY,
-        };
         while self.current < self.changes.nb_items {
             let (flags, file, source) = self.changes.entry(self.current);
             self.current += 1;
@@ -302,8 +297,10 @@ impl<'a> Iterator for ActionsIterator<'a> {
                 return Some(Action::Removed(file));
             }
             let copy = flags & COPY_MASK;
-            if copy == copy_flag {
-                return Some(Action::Copied(file, source));
+            if copy == P1_COPY {
+                return Some(Action::CopiedFromP1(file, source));
+            } else if copy == P2_COPY {
+                return Some(Action::CopiedFromP2(file, source));
             }
         }
         return None;
@@ -500,17 +497,33 @@ fn add_from_changes(
     current_rev: Revision,
 ) -> InternalPathCopies {
     let mut copies = base_copies.clone();
-    for action in changes.iter_actions(parent) {
+    for action in changes.iter_actions() {
         match action {
-            Action::Copied(path_dest, path_source) => {
-                add_one_copy(
-                    current_rev,
-                    &mut path_map,
-                    &mut copies,
-                    &base_copies,
-                    path_dest,
-                    path_source,
-                );
+            Action::CopiedFromP1(path_dest, path_source) => {
+                match parent {
+                    _ => (), // not the parent we are looking for
+                    Parent::FirstParent => add_one_copy(
+                        current_rev,
+                        path_map,
+                        &mut copies,
+                        &base_copies,
+                        path_dest,
+                        path_source,
+                    ),
+                };
+            }
+            Action::CopiedFromP2(path_dest, path_source) => {
+                match parent {
+                    _ => (), //not the parent we are looking for
+                    Parent::SecondParent => add_one_copy(
+                        current_rev,
+                        path_map,
+                        &mut copies,
+                        &base_copies,
+                        path_dest,
+                        path_source,
+                    ),
+                };
             }
             Action::Removed(deleted_path) => {
                 // We must drop copy information for removed file.
