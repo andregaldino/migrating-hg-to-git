@@ -16,7 +16,7 @@ pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 type PathToken = usize;
 
 #[derive(Clone, Debug, PartialEq, Copy)]
-struct TimeStampedPathCopy {
+struct CopySource {
     /// revision at which the copy information was added
     rev: Revision,
     /// the copy source, (Set to None in case of deletion of the associated
@@ -25,7 +25,7 @@ struct TimeStampedPathCopy {
 }
 
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
-type InternalPathCopies = OrdMap<PathToken, TimeStampedPathCopy>;
+type InternalPathCopies = OrdMap<PathToken, CopySource>;
 
 /// hold parent 1, parent 2 and relevant files actions.
 pub type RevInfo<'a> = (Revision, Revision, ChangedFiles<'a>);
@@ -521,7 +521,7 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
                 // information. See merge_copies_dict for details.
                 match copies.entry(dest) {
                     Entry::Vacant(slot) => {
-                        let ttpc = TimeStampedPathCopy {
+                        let ttpc = CopySource {
                             rev: current_rev,
                             path: entry,
                         };
@@ -570,8 +570,8 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
     // code is more settled.
     let cmp_value = |oracle: &mut AncestorOracle<A>,
                      dest: &PathToken,
-                     src_minor: &TimeStampedPathCopy,
-                     src_major: &TimeStampedPathCopy| {
+                     src_minor: &CopySource,
+                     src_major: &CopySource| {
         compare_value(
             path_map,
             current_merge,
@@ -619,7 +619,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                             MergePick::Minor => src_minor.path,
                             MergePick::Any => src_major.path,
                         };
-                        let src = TimeStampedPathCopy {
+                        let src = CopySource {
                             rev: current_merge,
                             path,
                         };
@@ -654,7 +654,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                             MergePick::Minor => src_major.path,
                             MergePick::Any => src_major.path,
                         };
-                        let src = TimeStampedPathCopy {
+                        let src = CopySource {
                             rev: current_merge,
                             path,
                         };
@@ -673,10 +673,10 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
         let mut override_minor = Vec::new();
         let mut override_major = Vec::new();
 
-        let mut to_major = |k: &PathToken, v: &TimeStampedPathCopy| {
+        let mut to_major = |k: &PathToken, v: &CopySource| {
             override_major.push((k.clone(), v.clone()))
         };
-        let mut to_minor = |k: &PathToken, v: &TimeStampedPathCopy| {
+        let mut to_minor = |k: &PathToken, v: &CopySource| {
             override_minor.push((k.clone(), v.clone()))
         };
 
@@ -713,7 +713,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                             // anything (but diff should not have yield them)
                             MergePick::Any => src_major.path,
                         };
-                        let src = TimeStampedPathCopy {
+                        let src = CopySource {
                             rev: current_merge,
                             path,
                         };
@@ -773,8 +773,8 @@ fn compare_value<A: Fn(Revision, Revision) -> bool>(
     changes: &ChangedFiles,
     oracle: &mut AncestorOracle<A>,
     dest: &PathToken,
-    src_minor: &TimeStampedPathCopy,
-    src_major: &TimeStampedPathCopy,
+    src_minor: &CopySource,
+    src_major: &CopySource,
 ) -> (MergePick, bool) {
     if src_major.rev == current_merge {
         if src_minor.rev == current_merge {
