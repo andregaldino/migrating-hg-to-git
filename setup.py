@@ -196,6 +196,7 @@ from distutils.command.build_ext import build_ext
 from distutils.command.build_py import build_py
 from distutils.command.build_scripts import build_scripts
 from distutils.command.install import install
+from distutils.command.install_data import install_data
 from distutils.command.install_lib import install_lib
 from distutils.command.install_scripts import install_scripts
 from distutils import log
@@ -211,6 +212,12 @@ from distutils.version import StrictVersion
 
 # Explain to distutils.StrictVersion how our release candidates are versionned
 StrictVersion.version_re = re.compile(r'^(\d+)\.(\d+)(\.(\d+))?-?(rc(\d+))?$')
+
+# Can we build the documentation?
+try:
+    import docutils
+except ImportError:
+    docutils = None
 
 
 def write_if_changed(path, content):
@@ -470,6 +477,14 @@ class hgbuild(build):
     # Insert hgbuildmo first so that files in mercurial/locale/ are found
     # when build_py is run next.
     sub_commands = [('build_mo', None)] + build.sub_commands
+
+    def run(self):
+        if os.name == 'nt':
+            pass
+        elif docutils is None:
+            log.warn('not building optional documentation')
+        else:
+            self.run_command('build_doc')
 
 
 class hgbuildmo(build):
@@ -1040,6 +1055,43 @@ class hgbuilddoc(Command):
                 genhtml(root)
 
 
+class hginstalldata(install_data):
+    user_options = install_data.user_options + [
+        (
+            'install-man=',
+            None,
+            'installation directory for manual pages [share/man]',
+        ),
+    ]
+
+    install_man = None
+
+    def finalize_options(self):
+        install_data.finalize_options(self)
+
+        self.set_undefined_options('install', ('install_man', 'install_man'))
+
+        if self.install_man is None:
+            self.install_man = os.path.join('share', 'man')
+
+        if os.name == 'nt':
+            pass
+        elif docutils is None:
+            log.warn('not installing manual pages')
+        else:
+            manpages = [
+                f for f in os.listdir('doc') if re.search(r'\.[0-9]$', f)
+            ]
+
+            self.data_files += [
+                (
+                    os.path.join(self.install_man, 'man' + ext[1:]),
+                    ['doc/' + f for f in manpages if f.endswith(ext)],
+                )
+                for ext in set(os.path.splitext(f)[1] for f in manpages)
+            ]
+
+
 class hginstall(install):
 
     user_options = install.user_options + [
@@ -1053,17 +1105,26 @@ class hginstall(install):
             None,
             'noop, present for eggless setuptools compat',
         ),
+        (
+            'install-man=',
+            None,
+            'installation directory for manual pages [share/man]',
+        ),
     ]
 
     # Also helps setuptools not be sad while we refuse to create eggs.
     single_version_externally_managed = True
 
+    install_man = None
+
     def get_sub_commands(self):
+        subcommands = install.get_sub_commands(self)
+        subcommands.append('install_data')
         # Screen out egg related commands to prevent egg generation.  But allow
         # mercurial.egg-info generation, since that is part of modern
         # packaging.
         excl = {'bdist_egg'}
-        return filter(lambda x: x not in excl, install.get_sub_commands(self))
+        return filter(lambda x: x not in excl, subcommands)
 
 
 class hginstalllib(install_lib):
@@ -1265,6 +1326,7 @@ cmdclass = {
     'build_hgextindex': buildhgextindex,
     'install': hginstall,
     'install_lib': hginstalllib,
+    'install_data': hginstalldata,
     'install_scripts': hginstallscripts,
     'build_hgexe': buildhgexe,
 }
