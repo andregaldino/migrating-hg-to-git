@@ -565,7 +565,11 @@ fn chain_changes(
                     (Some(mut e1), Some(mut e2)) => {
                         let cs1 = e1.get_mut();
                         let cs2 = e2.get();
-                        cs1.mark_delete_with_pair(current_rev, &cs2);
+                        if cs1 == cs2 {
+                            cs1.mark_delete(current_rev);
+                        } else {
+                            cs1.mark_delete_with_pair(current_rev, &cs2);
+                        }
                         e2.insert(cs1.clone());
                     }
                 }
