@@ -847,49 +847,31 @@ fn compare_value(
     src_minor: &CopySource,
     src_major: &CopySource,
 ) -> (MergePick, bool) {
-    if src_major.rev == current_merge {
-        if src_minor.rev == current_merge {
-            if src_major.path.is_none() {
-                // We cannot get different copy information for both p1 and p2
-                // from the same revision. Unless this was a
-                // deletion.
-                //
-                // However the deletion might come over different data on each
-                // branch.
-                let need_over = src_major.overwritten != src_minor.overwritten;
-                (MergePick::Any, need_over)
-            } else {
-                unreachable!();
-            }
-        } else {
-            // The last value comes the current merge, this value -will- win
-            // eventually.
-            (MergePick::Major, true)
-        }
+    if src_major == src_minor {
+        (MergePick::Any, false)
+    } else if src_major.rev == current_merge {
+        // minor is different according to per minor == major check earlier
+        debug_assert!(src_minor.rev != current_merge);
+
+        // The last value comes the current merge, this value -will- win
+        // eventually.
+        (MergePick::Major, true)
     } else if src_minor.rev == current_merge {
         // The last value comes the current merge, this value -will- win
         // eventually.
         (MergePick::Minor, true)
     } else if src_major.path == src_minor.path {
+        debug_assert!(src_major.rev != src_major.rev);
         // we have the same value, but from other source;
-        if src_major.rev == src_minor.rev {
-            // If the two entry are identical, they are both valid
-            debug_assert!(src_minor.overwritten == src_minor.overwritten);
-            (MergePick::Any, false)
-        } else if src_major.is_overwritten_by(src_minor) {
+        if src_major.is_overwritten_by(src_minor) {
             (MergePick::Minor, false)
         } else if src_minor.is_overwritten_by(src_major) {
             (MergePick::Major, false)
         } else {
             (MergePick::Any, true)
         }
-    } else if src_major.rev == src_minor.rev {
-        // We cannot get copy information for both p1 and p2 in the
-        // same rev. So this is the same value.
-        unreachable!(
-            "conflicting information from p1 and p2 in the same revision"
-        );
     } else {
+        debug_assert!(src_major.rev != src_major.rev);
         let dest_path = path_map.untokenize(*dest);
         let action = changes.get_merge_case(dest_path);
         if src_minor.path.is_some()
