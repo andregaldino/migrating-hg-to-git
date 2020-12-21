@@ -6,10 +6,10 @@ use crate::NULL_REVISION;
 use im_rc::ordmap::DiffItem;
 use im_rc::ordmap::Entry;
 use im_rc::ordmap::OrdMap;
+use im_rc::OrdSet;
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::convert::TryInto;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
@@ -25,7 +25,7 @@ struct CopySource {
     path: Option<PathToken>,
     /// a set of previous `CopySource.rev` value directly or indirectly
     /// overwritten by this one.
-    overwritten: HashSet<Revision>,
+    overwritten: OrdSet<Revision>,
 }
 
 impl CopySource {
@@ -36,7 +36,7 @@ impl CopySource {
         Self {
             rev,
             path,
-            overwritten: HashSet::new(),
+            overwritten: OrdSet::new(),
         }
     }
 
@@ -45,7 +45,7 @@ impl CopySource {
     /// Use this when merging two InternalPathCopies requires active merging of
     /// some entries.
     fn new_from_merge(rev: Revision, winner: &Self, loser: &Self) -> Self {
-        let mut overwritten = HashSet::new();
+        let mut overwritten = OrdSet::new();
         overwritten.extend(winner.overwritten.iter().copied());
         overwritten.extend(loser.overwritten.iter().copied());
         overwritten.insert(winner.rev);
