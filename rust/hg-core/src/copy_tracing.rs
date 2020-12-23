@@ -645,7 +645,7 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                 }
                 Some(src_minor) => {
                     let (pick, overwrite) =
-                        cmp_value(oracle, &dest, &src_major, src_minor);
+                        cmp_value(oracle, &dest, src_minor, &src_major);
                     if overwrite {
                         oracle.record_overwrite(src_minor.rev, current_merge);
                         oracle.record_overwrite(src_major.rev, current_merge);
@@ -661,8 +661,8 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                         minor.insert(dest, src);
                     } else {
                         match pick {
-                            MergePick::Any | MergePick::Major => None,
-                            MergePick::Minor => minor.insert(dest, src_major),
+                            MergePick::Any | MergePick::Minor => None,
+                            MergePick::Major => minor.insert(dest, src_major),
                         };
                     }
                 }
