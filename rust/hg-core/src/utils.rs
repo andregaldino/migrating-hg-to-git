@@ -9,6 +9,8 @@
 
 use crate::errors::{HgError, IoErrorContext};
 use crate::utils::hg_path::HgPath;
+use im_rc::ordmap::DiffItem;
+use im_rc::ordmap::OrdMap;
 use std::{io::Write, ops::Deref};
 
 pub mod files;
@@ -198,4 +200,152 @@ pub fn current_exe() -> Result<std::path::PathBuf, HgError> {
         error,
         context: IoErrorContext::CurrentExe,
     })
+}
+
+pub(crate) enum MergeResult<V> {
+    UseLeftValue,
+    UseRightValue,
+    UseNewValue(V),
+}
+
+/// Return the union of the two given maps,
+/// calling `merge(key, left_value, right_value)` to resolve keys that exist in
+/// both.
+///
+/// CC https://github.com/bodil/im-rs/issues/166
+pub(crate) fn ordmap_union_with_merge<K, V>(
+    left: OrdMap<K, V>,
+    right: OrdMap<K, V>,
+    mut merge: impl FnMut(&K, &V, &V) -> MergeResult<V>,
+) -> OrdMap<K, V>
+where
+    K: Clone + Ord,
+    V: Clone + PartialEq,
+{
+    if left.ptr_eq(&right) {
+        // One of the two maps is an unmodified clone of the other
+        left
+    } else if left.len() / 2 > right.len() {
+        // When two maps have different sizes,
+        // their size difference is a lower bound on
+        // how many keys of the larger map are not also in the smaller map.
+        // This in turn is a lower bound on the number of differences in
+        // `OrdMap::diff` and the "amount of work" that would be done
+        // by `ordmap_union_with_merge_by_diff`.
+        //
+        // Here `left` is more than twice the size of `right`,
+        // so the number of differences is more than the total size of
+        // `right`. Therefore an algorithm based on iterating `right`
+        // is more efficient.
+        //
+        // This helps a lot when a tiny (or empty) map is merged
+        // with a large one.
+        ordmap_union_with_merge_by_iter(left, right, merge)
+    } else if left.len() < right.len() / 2 {
+        // Same as above but with `left` and `right` swapped
+        ordmap_union_with_merge_by_iter(right, left, |key, a, b| {
+            // Also swapped in `merge` arguments:
+            match merge(key, b, a) {
+                MergeResult::UseNewValue(v) => MergeResult::UseNewValue(v),
+                // … and swap back in `merge` result:
+                MergeResult::UseLeftValue => MergeResult::UseRightValue,
+                MergeResult::UseRightValue => MergeResult::UseLeftValue,
+            }
+        })
+    } else {
+        // For maps of similar size, use the algorithm based on `OrdMap::diff`
+        ordmap_union_with_merge_by_diff(left, right, merge)
+    }
+}
+
+/// Efficient if `right` is much smaller than `left`
+fn ordmap_union_with_merge_by_iter<K, V>(
+    mut left: OrdMap<K, V>,
+    right: OrdMap<K, V>,
+    mut merge: impl FnMut(&K, &V, &V) -> MergeResult<V>,
+) -> OrdMap<K, V>
+where
+    K: Clone + Ord,
+    V: Clone,
+{
+    for (key, right_value) in right {
+        match left.get(&key) {
+            None => {
+                left.insert(key, right_value);
+            }
+            Some(left_value) => match merge(&key, left_value, &right_value) {
+                MergeResult::UseLeftValue => {}
+                MergeResult::UseRightValue => {
+                    left.insert(key, right_value);
+                }
+                MergeResult::UseNewValue(new_value) => {
+                    left.insert(key, new_value);
+                }
+            },
+        }
+    }
+    left
+}
+
+/// Fallback when both maps are of similar size
+fn ordmap_union_with_merge_by_diff<K, V>(
+    mut left: OrdMap<K, V>,
+    mut right: OrdMap<K, V>,
+    mut merge: impl FnMut(&K, &V, &V) -> MergeResult<V>,
+) -> OrdMap<K, V>
+where
+    K: Clone + Ord,
+    V: Clone + PartialEq,
+{
+    // (key, value) pairs that would need to be inserted in either map
+    // in order to turn it into the union.
+    //
+    // TODO: if/when https://github.com/bodil/im-rs/pull/168 is accepted,
+    // change these from `Vec<(K, V)>` to `Vec<(&K, Cow<V>)>`
+    // with `left_updates` only borrowing from `right` and `right_updates` from
+    // `left`, and with `Cow::Owned` used for `MergeResult::UseNewValue`.
+    //
+    // This would allow moving all `.clone()` calls to after we’ve decided
+    // which of `right_updates` or `left_updates` to use
+    // (value ones becoming `Cow::into_owned`),
+    // and avoid making clones we don’t end up using.
+    let mut left_updates = Vec::new();
+    let mut right_updates = Vec::new();
+
+    for difference in left.diff(&right) {
+        match difference {
+            DiffItem::Add(key, value) => {
+                left_updates.push((key.clone(), value.clone()))
+            }
+            DiffItem::Remove(key, value) => {
+                right_updates.push((key.clone(), value.clone()))
+            }
+            DiffItem::Update {
+                old: (key, left_value),
+                new: (_, right_value),
+            } => match merge(key, left_value, right_value) {
+                MergeResult::UseLeftValue => {
+                    right_updates.push((key.clone(), left_value.clone()))
+                }
+                MergeResult::UseRightValue => {
+                    left_updates.push((key.clone(), right_value.clone()))
+                }
+                MergeResult::UseNewValue(new_value) => {
+                    left_updates.push((key.clone(), new_value.clone()));
+                    right_updates.push((key.clone(), new_value))
+                }
+            },
+        }
+    }
+    if left_updates.len() < right_updates.len() {
+        for (key, value) in left_updates {
+            left.insert(key, value);
+        }
+        left
+    } else {
+        for (key, value) in right_updates {
+            right.insert(key, value);
+        }
+        right
+    }
 }

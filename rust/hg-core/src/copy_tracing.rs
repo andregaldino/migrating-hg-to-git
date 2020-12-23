@@ -3,7 +3,6 @@ use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
 use crate::NULL_REVISION;
 
-use im_rc::ordmap::DiffItem;
 use im_rc::ordmap::Entry;
 use im_rc::ordmap::OrdMap;
 use im_rc::OrdSet;
@@ -624,210 +623,40 @@ fn add_one_copy(
 fn merge_copies_dict(
     path_map: &TwoWayPathMap,
     current_merge: Revision,
-    mut minor: InternalPathCopies,
-    mut major: InternalPathCopies,
+    minor: InternalPathCopies,
+    major: InternalPathCopies,
     changes: &ChangedFiles,
 ) -> InternalPathCopies {
-    // This closure exist as temporary help while multiple developper are
-    // actively working on this code. Feel free to re-inline it once this
-    // code is more settled.
-    let cmp_value =
-        |dest: &PathToken, src_minor: &CopySource, src_major: &CopySource| {
-            compare_value(
-                path_map,
+    use crate::utils::{ordmap_union_with_merge, MergeResult};
+
+    ordmap_union_with_merge(minor, major, |dest, src_minor, src_major| {
+        let (pick, overwrite) = compare_value(
+            path_map,
+            current_merge,
+            changes,
+            dest,
+            src_minor,
+            src_major,
+        );
+        if overwrite {
+            let (winner, loser) = match pick {
+                MergePick::Major | MergePick::Any => (src_major, src_minor),
+                MergePick::Minor => (src_minor, src_major),
+            };
+            MergeResult::UseNewValue(CopySource::new_from_merge(
                 current_merge,
-                changes,
-                dest,
-                src_minor,
-                src_major,
-            )
-        };
-    if minor.is_empty() {
-        major
-    } else if major.is_empty() {
-        minor
-    } else if minor.len() * 2 < major.len() {
-        // Lets says we are merging two InternalPathCopies instance A and B.
-        //
-        // If A contains N items, the merge result will never contains more
-        // than N values differents than the one in A
-        //
-        // If B contains M items, with M > N, the merge result will always
-        // result in a minimum of M - N value differents than the on in
-        // A
-        //
-        // As a result, if N < (M-N), we know that simply iterating over A will
-        // yield less difference than iterating over the difference
-        // between A and B.
-        //
-        // This help performance a lot in case were a tiny
-        // InternalPathCopies is merged with a much larger one.
-        for (dest, src_minor) in minor {
-            let src_major = major.get(&dest);
-            match src_major {
-                None => {
-                    major.insert(dest, src_minor);
-                }
-                Some(src_major) => {
-                    let (pick, overwrite) =
-                        cmp_value(&dest, &src_minor, src_major);
-                    if overwrite {
-                        let src = match pick {
-                            MergePick::Major => CopySource::new_from_merge(
-                                current_merge,
-                                src_major,
-                                &src_minor,
-                            ),
-                            MergePick::Minor => CopySource::new_from_merge(
-                                current_merge,
-                                &src_minor,
-                                src_major,
-                            ),
-                            MergePick::Any => CopySource::new_from_merge(
-                                current_merge,
-                                src_major,
-                                &src_minor,
-                            ),
-                        };
-                        major.insert(dest, src);
-                    } else {
-                        match pick {
-                            MergePick::Any | MergePick::Major => None,
-                            MergePick::Minor => major.insert(dest, src_minor),
-                        };
-                    }
-                }
-            };
-        }
-        major
-    } else if major.len() * 2 < minor.len() {
-        // This use the same rational than the previous block.
-        // (Check previous block documentation for details.)
-        for (dest, src_major) in major {
-            let src_minor = minor.get(&dest);
-            match src_minor {
-                None => {
-                    minor.insert(dest, src_major);
-                }
-                Some(src_minor) => {
-                    let (pick, overwrite) =
-                        cmp_value(&dest, src_minor, &src_major);
-                    if overwrite {
-                        let src = match pick {
-                            MergePick::Major => CopySource::new_from_merge(
-                                current_merge,
-                                &src_major,
-                                src_minor,
-                            ),
-                            MergePick::Minor => CopySource::new_from_merge(
-                                current_merge,
-                                src_minor,
-                                &src_major,
-                            ),
-                            MergePick::Any => CopySource::new_from_merge(
-                                current_merge,
-                                &src_major,
-                                src_minor,
-                            ),
-                        };
-                        minor.insert(dest, src);
-                    } else {
-                        match pick {
-                            MergePick::Any | MergePick::Minor => None,
-                            MergePick::Major => minor.insert(dest, src_major),
-                        };
-                    }
-                }
-            };
-        }
-        minor
-    } else {
-        let mut override_minor = Vec::new();
-        let mut override_major = Vec::new();
-
-        let mut to_major = |k: &PathToken, v: &CopySource| {
-            override_major.push((k.clone(), v.clone()))
-        };
-        let mut to_minor = |k: &PathToken, v: &CopySource| {
-            override_minor.push((k.clone(), v.clone()))
-        };
-
-        // The diff function leverage detection of the identical subpart if
-        // minor and major has some common ancestors. This make it very
-        // fast is most case.
-        //
-        // In case where the two map are vastly different in size, the current
-        // approach is still slowish because the iteration will iterate over
-        // all the "exclusive" content of the larger on. This situation can be
-        // frequent when the subgraph of revision we are processing has a lot
-        // of roots. Each roots adding they own fully new map to the mix (and
-        // likely a small map, if the path from the root to the "main path" is
-        // small.
-        //
-        // We could do better by detecting such situation and processing them
-        // differently.
-        for d in minor.diff(&major) {
-            match d {
-                DiffItem::Add(k, v) => to_minor(k, v),
-                DiffItem::Remove(k, v) => to_major(k, v),
-                DiffItem::Update { old, new } => {
-                    let (dest, src_major) = new;
-                    let (_, src_minor) = old;
-                    let (pick, overwrite) =
-                        cmp_value(dest, src_minor, src_major);
-                    if overwrite {
-                        let src = match pick {
-                            MergePick::Major => CopySource::new_from_merge(
-                                current_merge,
-                                src_major,
-                                src_minor,
-                            ),
-                            MergePick::Minor => CopySource::new_from_merge(
-                                current_merge,
-                                src_minor,
-                                src_major,
-                            ),
-                            MergePick::Any => CopySource::new_from_merge(
-                                current_merge,
-                                src_major,
-                                src_minor,
-                            ),
-                        };
-                        to_minor(dest, &src);
-                        to_major(dest, &src);
-                    } else {
-                        match pick {
-                            MergePick::Major => to_minor(dest, src_major),
-                            MergePick::Minor => to_major(dest, src_minor),
-                            // If the two entry are identical, no need to do
-                            // anything (but diff should not have yield them)
-                            MergePick::Any => unreachable!(),
-                        }
-                    }
-                }
-            };
-        }
-
-        let updates;
-        let mut result;
-        if override_major.is_empty() {
-            result = major
-        } else if override_minor.is_empty() {
-            result = minor
+                winner,
+                loser,
+            ))
         } else {
-            if override_minor.len() < override_major.len() {
-                updates = override_minor;
-                result = minor;
-            } else {
-                updates = override_major;
-                result = major;
-            }
-            for (k, v) in updates {
-                result.insert(k, v);
+            match pick {
+                MergePick::Any | MergePick::Major => {
+                    MergeResult::UseRightValue
+                }
+                MergePick::Minor => MergeResult::UseLeftValue,
             }
         }
-        result
-    }
+    })
 }
 
 /// represent the side that should prevail when merging two
