@@ -15,13 +15,49 @@ pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
 type PathToken = usize;
 
-#[derive(Clone, Debug, PartialEq, Copy)]
+#[derive(Clone, Debug, PartialEq)]
 struct CopySource {
     /// revision at which the copy information was added
     rev: Revision,
     /// the copy source, (Set to None in case of deletion of the associated
     /// key)
     path: Option<PathToken>,
+}
+
+impl CopySource {
+    /// create a new CopySource
+    ///
+    /// Use this when no previous copy source existed.
+    fn new(rev: Revision, path: Option<PathToken>) -> Self {
+        Self { rev, path }
+    }
+
+    /// create a new CopySource from merging two others
+    ///
+    /// Use this when merging two InternalPathCopies requires active merging of
+    /// some entries.
+    fn new_from_merge(rev: Revision, winner: &Self, loser: &Self) -> Self {
+        Self {
+            rev,
+            path: winner.path,
+        }
+    }
+
+    /// Update the value of a pre-existing CopySource
+    ///
+    /// Use this when recording copy information from  parent → child edges
+    fn overwrite(&mut self, rev: Revision, path: Option<PathToken>) {
+        self.rev = rev;
+        self.path = path;
+    }
+
+    /// Mark pre-existing copy information as "dropped" by a file deletion
+    ///
+    /// Use this when recording copy information from  parent → child edges
+    fn mark_delete(&mut self, rev: Revision) {
+        self.rev = rev;
+        self.path = None;
+    }
 }
 
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
@@ -521,17 +557,13 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
                 // information. See merge_copies_dict for details.
                 match copies.entry(dest) {
                     Entry::Vacant(slot) => {
-                        let ttpc = CopySource {
-                            rev: current_rev,
-                            path: entry,
-                        };
+                        let ttpc = CopySource::new(current_rev, entry);
                         slot.insert(ttpc);
                     }
                     Entry::Occupied(mut slot) => {
-                        let mut ttpc = slot.get_mut();
+                        let ttpc = slot.get_mut();
                         oracle.record_overwrite(ttpc.rev, current_rev);
-                        ttpc.rev = current_rev;
-                        ttpc.path = entry;
+                        ttpc.overwrite(current_rev, entry);
                     }
                 }
             }
@@ -544,8 +576,7 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
                 let deleted = path_map.tokenize(deleted_path);
                 copies.entry(deleted).and_modify(|old| {
                     oracle.record_overwrite(old.rev, current_rev);
-                    old.rev = current_rev;
-                    old.path = None;
+                    old.mark_delete(current_rev);
                 });
             }
         }
@@ -614,14 +645,22 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                     if overwrite {
                         oracle.record_overwrite(src_minor.rev, current_merge);
                         oracle.record_overwrite(src_major.rev, current_merge);
-                        let path = match pick {
-                            MergePick::Major => src_major.path,
-                            MergePick::Minor => src_minor.path,
-                            MergePick::Any => src_major.path,
-                        };
-                        let src = CopySource {
-                            rev: current_merge,
-                            path,
+                        let src = match pick {
+                            MergePick::Major => CopySource::new_from_merge(
+                                current_merge,
+                                src_major,
+                                &src_minor,
+                            ),
+                            MergePick::Minor => CopySource::new_from_merge(
+                                current_merge,
+                                &src_minor,
+                                src_major,
+                            ),
+                            MergePick::Any => CopySource::new_from_merge(
+                                current_merge,
+                                src_major,
+                                &src_minor,
+                            ),
                         };
                         major.insert(dest, src);
                     } else {
@@ -649,14 +688,22 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                     if overwrite {
                         oracle.record_overwrite(src_minor.rev, current_merge);
                         oracle.record_overwrite(src_major.rev, current_merge);
-                        let path = match pick {
-                            MergePick::Major => src_minor.path,
-                            MergePick::Minor => src_major.path,
-                            MergePick::Any => src_major.path,
-                        };
-                        let src = CopySource {
-                            rev: current_merge,
-                            path,
+                        let src = match pick {
+                            MergePick::Major => CopySource::new_from_merge(
+                                current_merge,
+                                &src_major,
+                                src_minor,
+                            ),
+                            MergePick::Minor => CopySource::new_from_merge(
+                                current_merge,
+                                src_minor,
+                                &src_major,
+                            ),
+                            MergePick::Any => CopySource::new_from_merge(
+                                current_merge,
+                                &src_major,
+                                src_minor,
+                            ),
                         };
                         minor.insert(dest, src);
                     } else {
@@ -706,16 +753,22 @@ fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
                     if overwrite {
                         oracle.record_overwrite(src_minor.rev, current_merge);
                         oracle.record_overwrite(src_major.rev, current_merge);
-                        let path = match pick {
-                            MergePick::Major => src_major.path,
-                            MergePick::Minor => src_minor.path,
-                            // If the two entry are identical, no need to do
-                            // anything (but diff should not have yield them)
-                            MergePick::Any => src_major.path,
-                        };
-                        let src = CopySource {
-                            rev: current_merge,
-                            path,
+                        let src = match pick {
+                            MergePick::Major => CopySource::new_from_merge(
+                                current_merge,
+                                src_major,
+                                src_minor,
+                            ),
+                            MergePick::Minor => CopySource::new_from_merge(
+                                current_merge,
+                                src_minor,
+                                src_major,
+                            ),
+                            MergePick::Any => CopySource::new_from_merge(
+                                current_merge,
+                                src_major,
+                                src_minor,
+                            ),
                         };
                         to_minor(dest, &src);
                         to_major(dest, &src);
