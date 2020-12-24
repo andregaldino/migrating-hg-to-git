@@ -4386,7 +4386,7 @@ def locate(ui, repo, *pats, **opts):
             b'r',
             b'rev',
             [],
-            _(b'show the specified revision or revset'),
+            _(b'revisions to select or follow from'),
             _(b'REV'),
         ),
         (
@@ -4448,13 +4448,13 @@ def log(ui, repo, *pats, **opts):
     project.
 
     If no revision range is specified, the default is ``tip:0`` unless
-    --follow is set, in which case the working directory parent is
-    used as the starting revision.
+    --follow is set.
 
     File history is shown without following rename or copy history of
     files. Use -f/--follow with a filename to follow history across
     renames and copies. --follow without a filename will only show
-    ancestors of the starting revision.
+    ancestors of the starting revisions. The starting revisions can be
+    specified by -r/--rev, which default to the working directory parent.
 
     By default this command prints revision number and changeset id,
     tags, non-trivial parents, user, date and time, and a summary for
