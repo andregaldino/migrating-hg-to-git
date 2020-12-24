@@ -104,7 +104,7 @@ The cache should have an empty entry for rev 0 and a valid entry for rev 1.
   0010: ff ff ff ff ff ff ff ff b9 15 46 36 26 b7 b4 a7 |..........F6&...|
   0020: 73 e0 9e e3 c5 2f 51 0e 19 e0 5e 1f f9 66 d8 59 |s..../Q...^..f.Y|
   $ hg debugtagscache
-  0 acb14030fe0a21b60322c440ad2d20cf7685a376 missing/invalid
+  0 acb14030fe0a21b60322c440ad2d20cf7685a376 missing
   1 b9154636be938d3d431e75a7c906504a079bfe07 26b7b4a773e09ee3c52f510e19e05e1ff966d859
 
 Repeat with cold tag cache:
@@ -381,13 +381,41 @@ On junk data + missing cache entries, hg also overwrites the junk.
 
   $ hg debugtagscache | tail -2
   4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
-  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 missing/invalid
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 missing
   $ hg tags
   tip                                5:8dbfe60eff30
   bar                                1:78391a272241
   $ hg debugtagscache | tail -2
   4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
   5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+
+If the 4 bytes of node hash for a record don't match an existing node, the entry
+is flagged as invalid.
+
+  >>> import os
+  >>> with open(".hg/cache/hgtagsfnodes1", "rb+") as fp:
+  ...     fp.seek(-24, os.SEEK_END) and None
+  ...     fp.write(b'\xde\xad') and None
+
+  $ f --size --hexdump .hg/cache/hgtagsfnodes1
+  .hg/cache/hgtagsfnodes1: size=144
+  0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0030: 7a 94 12 77 0c 04 f2 a8 af 31 de 17 fa b7 42 28 |z..w.....1....B(|
+  0040: 78 ee 5a 2d ad bc 94 3d 6f a4 50 21 7d 3b 71 8c |x.Z-...=o.P!};q.|
+  0050: 96 4e f3 7b 89 e5 50 eb da fd 57 89 e7 6c e1 b0 |.N.{..P...W..l..|
+  0060: 0c 19 2d 7d 0c 04 f2 a8 af 31 de 17 fa b7 42 28 |..-}.....1....B(|
+  0070: 78 ee 5a 2d ad bc 94 3d de ad e6 0e 0c 04 f2 a8 |x.Z-...=........|
+  0080: af 31 de 17 fa b7 42 28 78 ee 5a 2d ad bc 94 3d |.1....B(x.Z-...=|
+
+  $ hg debugtagscache | tail -2
+  4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 invalid
+
+  $ hg tags
+  tip                                5:8dbfe60eff30
+  bar                                1:78391a272241
 
 #if unix-permissions no-root
 Errors writing to .hgtags fnodes cache are silently ignored
@@ -405,7 +433,7 @@ Errors writing to .hgtags fnodes cache are silently ignored
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> couldn't write cache/hgtagsfnodes1: [Errno *] * (glob)
-  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 3/4 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 2/4 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> blackbox -l 6
@@ -420,7 +448,7 @@ Errors writing to .hgtags fnodes cache are silently ignored
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> writing 24 bytes to cache/hgtagsfnodes1
-  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 3/4 cache hits/lookups in * seconds (glob)
+  1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> 2/4 cache hits/lookups in * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> writing .hg/cache/tags2-visible with 1 tags
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> tags exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @b968051b5cf3f624b771779c6d5f84f1d4c3fb5d (5000)> blackbox -l 6

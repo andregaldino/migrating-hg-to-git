@@ -1769,7 +1769,7 @@ def addparttagsfnodescache(repo, bundler, outgoing):
     for node in outgoing.ancestorsof:
         # Don't compute missing, as this may slow down serving.
         fnode = cache.getfnode(node, computemissing=False)
-        if fnode is not None:
+        if fnode:
             chunks.extend([node, fnode])
 
     if chunks:

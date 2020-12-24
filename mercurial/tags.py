@@ -733,6 +733,7 @@ class hgtagsfnodescache(object):
         if rawlen < wantedlen:
             if self._dirtyoffset is None:
                 self._dirtyoffset = rawlen
+            # TODO: zero fill entire record, because it's invalid not missing?
             self._raw.extend(b'\xff' * (wantedlen - rawlen))
 
     def getfnode(self, node, computemissing=True):
@@ -740,7 +741,8 @@ class hgtagsfnodescache(object):
 
         If the value is in the cache, the entry will be validated and returned.
         Otherwise, the filenode will be computed and returned unless
-        "computemissing" is False, in which case None will be returned without
+        "computemissing" is False.  In that case, None will be returned if
+        the entry is missing or False if the entry is invalid without
         any potentially expensive computation being performed.
 
         If an .hgtags does not exist at the specified revision, nullid is
@@ -771,6 +773,8 @@ class hgtagsfnodescache(object):
         # If we get here, the entry is either missing or invalid.
 
         if not computemissing:
+            if record != _fnodesmissingrec:
+                return False
             return None
 
         fnode = None
@@ -788,7 +792,7 @@ class hgtagsfnodescache(object):
                 # we cannot rely on readfast because we don't know against what
                 # parent the readfast delta is computed
                 p1fnode = None
-        if p1fnode is not None:
+        if p1fnode:
             mctx = ctx.manifestctx()
             fnode = mctx.readfast().get(b'.hgtags')
             if fnode is None:
