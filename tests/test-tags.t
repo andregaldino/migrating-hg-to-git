@@ -417,6 +417,49 @@ is flagged as invalid.
   tip                                5:8dbfe60eff30
   bar                                1:78391a272241
 
+BUG: If the filenode part of an entry in hgtagsfnodes is corrupt and
+tags2-visible is missing, `hg tags` aborts.  Corrupting the leading 4 bytes of
+node hash (as above) doesn't seem to trigger the issue.  Also note that the
+debug command hides the corruption, both with and without tags2-visible.
+
+  $ mv .hg/cache/hgtagsfnodes1 .hg/cache/hgtagsfnodes1.bak
+  $ hg debugupdatecaches
+
+  >>> import os
+  >>> with open(".hg/cache/hgtagsfnodes1", "rb+") as fp:
+  ...     fp.seek(-16, os.SEEK_END) and None
+  ...     fp.write(b'\xde\xad') and None
+
+  $ f --size --hexdump .hg/cache/hgtagsfnodes1
+  .hg/cache/hgtagsfnodes1: size=144
+  0000: bb d1 79 df 00 00 00 00 00 00 00 00 00 00 00 00 |..y.............|
+  0010: 00 00 00 00 00 00 00 00 78 39 1a 27 0c 04 f2 a8 |........x9.'....|
+  0020: af 31 de 17 fa b7 42 28 78 ee 5a 2d ad bc 94 3d |.1....B(x.Z-...=|
+  0030: 7a 94 12 77 0c 04 f2 a8 af 31 de 17 fa b7 42 28 |z..w.....1....B(|
+  0040: 78 ee 5a 2d ad bc 94 3d 6f a4 50 21 7d 3b 71 8c |x.Z-...=o.P!};q.|
+  0050: 96 4e f3 7b 89 e5 50 eb da fd 57 89 e7 6c e1 b0 |.N.{..P...W..l..|
+  0060: 0c 19 2d 7d 0c 04 f2 a8 af 31 de 17 fa b7 42 28 |..-}.....1....B(|
+  0070: 78 ee 5a 2d ad bc 94 3d 8d bf e6 0e 0c 04 f2 a8 |x.Z-...=........|
+  0080: de ad de 17 fa b7 42 28 78 ee 5a 2d ad bc 94 3d |......B(x.Z-...=|
+
+  $ hg debugtagscache | tail -2
+  4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8deadde17fab7422878ee5a2dadbc943d
+
+  $ rm -f .hg/cache/tags2-visible
+  $ hg debugtagscache | tail -2
+  4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8deadde17fab7422878ee5a2dadbc943d
+
+  $ hg tags
+  abort: data/.hgtags.i@0c04f2a8deadde17fab7422878ee5a2dadbc943d: no match found
+  [50]
+
+BUG: Unless this file is restored, the `hg tags` in the next unix-permissions
+conditional will fail: "abort: data/.hgtags.i@0c04f2a8dead: no match found"
+
+  $ mv .hg/cache/hgtagsfnodes1.bak .hg/cache/hgtagsfnodes1
+
 #if unix-permissions no-root
 Errors writing to .hgtags fnodes cache are silently ignored
 
