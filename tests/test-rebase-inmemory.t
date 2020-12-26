@@ -338,6 +338,14 @@ Make sure it throws error while passing --continue or --abort with --dry-run
   abort: cannot specify both --abort and --dry-run
   [10]
 
+When nothing to rebase
+  $ hg reb -r . -d '.^' -n
+  starting dry-run rebase; repository will not be changed
+  nothing to rebase
+  dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase
+  abort: no rebase in progress
+  [20]
+
 Check dryrun gives correct results when there is no conflict in rebasing
   $ hg rebase -s 2 -d 6 -n
   starting dry-run rebase; repository will not be changed
