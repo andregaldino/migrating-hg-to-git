@@ -1139,13 +1139,16 @@ def _dryrunrebase(ui, repo, action, opts):
         try:
             overrides = {(b'rebase', b'singletransaction'): True}
             with ui.configoverride(overrides, b'rebase'):
-                _origrebase(
+                res = _origrebase(
                     ui,
                     repo,
                     action,
                     opts,
                     rbsrt,
                 )
+                if res == _nothingtorebase():
+                    needsabort = False
+                    return res
         except error.ConflictResolutionRequired:
             ui.status(_(b'hit a merge conflict\n'))
             return 1
