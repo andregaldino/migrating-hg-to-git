@@ -335,7 +335,7 @@ if ispy3:
     def strkwargs(dic):
         """
         Converts the keys of a python dictonary to str i.e. unicodes so that
-        they can be passed as keyword arguments as dictonaries with bytes keys
+        they can be passed as keyword arguments as dictionaries with bytes keys
         can't be passed as keyword arguments to functions on Python 3.
         """
         dic = {k.decode('latin-1'): v for k, v in dic.items()}
@@ -343,7 +343,7 @@ if ispy3:
 
     def byteskwargs(dic):
         """
-        Converts keys of python dictonaries to bytes as they were converted to
+        Converts keys of python dictionaries to bytes as they were converted to
         str to pass that dictonary as a keyword argument on Python 3.
         """
         dic = {k.encode('latin-1'): v for k, v in dic.items()}
