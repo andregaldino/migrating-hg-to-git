@@ -33,10 +33,6 @@ LARGEFILES_REQUIRED_MSG = (
 
 eh = exthelper.exthelper()
 
-# these will all be replaced by largefiles.uisetup
-ssholdcallstream = None
-httpoldcallstream = None
-
 
 def putlfile(repo, proto, sha):
     """Server command for putting a largefile into a repository's local store
@@ -106,7 +102,27 @@ def statlfile(repo, proto, sha):
 
 
 def wirereposetup(ui, repo):
+    orig_commandexecutor = repo.commandexecutor
+
     class lfileswirerepository(repo.__class__):
+        def commandexecutor(self):
+            executor = orig_commandexecutor()
+            if self.capable(b'largefiles'):
+                orig_callcommand = executor.callcommand
+
+                class lfscommandexecutor(executor.__class__):
+                    def callcommand(self, command, args):
+                        if command == b'heads':
+                            command = b'lheads'
+                        return orig_callcommand(command, args)
+
+                executor.__class__ = lfscommandexecutor
+            return executor
+
+        @wireprotov1peer.batchable
+        def lheads(self):
+            return self.heads.batchable(self)
+
         def putlfile(self, sha, fd):
             # unfortunately, httprepository._callpush tries to convert its
             # input file-like into a bundle before sending it, so we can't use
@@ -200,22 +216,3 @@ def heads(orig, repo, proto):
         return wireprototypes.ooberror(LARGEFILES_REQUIRED_MSG)
 
     return orig(repo, proto)
-
-
-def sshrepocallstream(self, cmd, **args):
-    if cmd == b'heads' and self.capable(b'largefiles'):
-        cmd = b'lheads'
-    if cmd == b'batch' and self.capable(b'largefiles'):
-        args['cmds'] = args[r'cmds'].replace(b'heads ', b'lheads ')
-    return ssholdcallstream(self, cmd, **args)
-
-
-headsre = re.compile(br'(^|;)heads\b')
-
-
-def httprepocallstream(self, cmd, **args):
-    if cmd == b'heads' and self.capable(b'largefiles'):
-        cmd = b'lheads'
-    if cmd == b'batch' and self.capable(b'largefiles'):
-        args['cmds'] = headsre.sub(b'lheads', args['cmds'])
-    return httpoldcallstream(self, cmd, **args)
