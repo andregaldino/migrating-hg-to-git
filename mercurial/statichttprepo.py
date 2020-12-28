@@ -61,7 +61,10 @@ class httprangereader(object):
             code = f.code
         except urlerr.httperror as inst:
             num = inst.code == 404 and errno.ENOENT or None
-            raise IOError(num, inst)
+            # Explicitly convert the exception to str as Py3 will try
+            # convert it to local encoding and with as the HTTPResponse
+            # instance doesn't support encode.
+            raise IOError(num, str(inst))
         except urlerr.urlerror as inst:
             raise IOError(None, inst.reason)
 
