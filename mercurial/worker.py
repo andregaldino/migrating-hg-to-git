@@ -67,6 +67,9 @@ def _numworkers(ui):
 
 if pycompat.ispy3:
 
+    def ismainthread():
+        return threading.current_thread() == threading.main_thread()
+
     class _blockingreader(object):
         def __init__(self, wrapped):
             self._wrapped = wrapped
@@ -99,6 +102,9 @@ if pycompat.ispy3:
 
 
 else:
+
+    def ismainthread():
+        return isinstance(threading.current_thread(), threading._MainThread)
 
     def _blockingreader(wrapped):
         return wrapped
@@ -155,6 +161,11 @@ def worker(
     release the GIL.
     """
     enabled = ui.configbool(b'worker', b'enabled')
+    if enabled and _platformworker is _posixworker and not ismainthread():
+        # The POSIX worker has to install a handler for SIGCHLD.
+        # Python up to 3.9 only allows this in the main thread.
+        enabled = False
+
     if enabled and worthwhile(ui, costperarg, len(args), threadsafe=threadsafe):
         return _platformworker(ui, func, staticargs, args, hasretval)
     return func(*staticargs + (args,))
