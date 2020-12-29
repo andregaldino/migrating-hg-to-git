@@ -206,6 +206,7 @@ mod tests {
 
         let base_dir = tempdir().unwrap();
         let base_dir_path = base_dir.path();
+        let skip = base_dir_path.components().count() - 1;
         let a = base_dir_path.join("a");
         let b = base_dir_path.join("b");
         create_dir(&a).unwrap();
@@ -215,7 +216,7 @@ mod tests {
         // TODO make portable
         std::os::unix::fs::symlink(&a, &b).unwrap();
 
-        let buf = b.join("in_a").components().skip(2).collect::<PathBuf>();
+        let buf = b.join("in_a").components().skip(skip).collect::<PathBuf>();
         eprintln!("buf: {}", buf.display());
         let path = path_to_hg_path_buf(buf).unwrap();
         assert_eq!(
