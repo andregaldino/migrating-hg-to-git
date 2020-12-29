@@ -431,7 +431,7 @@ impl DirstateMap {
         let mut new_file_fold_map = FileFoldMap::default();
 
         for (filename, DirstateEntry { state, .. }) in self.state_map.iter() {
-            if *state == EntryState::Removed {
+            if *state != EntryState::Removed {
                 new_file_fold_map
                     .insert(normalize_case(&filename), filename.to_owned());
             }
@@ -447,7 +447,7 @@ impl DirstateMap {
         let mut new_file_fold_map = FileFoldMap::default();
 
         for (filename, DirstateEntry { state, .. }) in self.state_map.iter() {
-            if state == EntryState::Removed {
+            if state != EntryState::Removed {
                 new_file_fold_map
                     .insert(normalize_case(&filename), filename.to_owned());
             }

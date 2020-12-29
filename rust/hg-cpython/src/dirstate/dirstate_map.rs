@@ -350,8 +350,8 @@ py_class!(pub class DirstateMap |py| {
         {
             dict.set_item(
                 py,
-                key.as_bytes().to_vec(),
-                value.as_bytes().to_vec(),
+                PyBytes::new(py, key.as_bytes()).into_object(),
+                PyBytes::new(py, value.as_bytes()).into_object(),
             )?;
         }
         Ok(dict)
