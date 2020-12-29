@@ -26,6 +26,7 @@ pub mod matchers;
 pub mod repo;
 pub mod revlog;
 pub use revlog::*;
+pub mod config;
 pub mod operations;
 pub mod utils;
 
