@@ -28,7 +28,7 @@ def preservedrequirements(repo):
     return set()
 
 
-DEFICIENCY = b'deficiency'
+FORMAT_VARIANT = b'deficiency'
 OPTIMISATION = b'optimization'
 
 
@@ -42,13 +42,15 @@ class improvement(object):
        will be mapped to an action later in the upgrade process.
 
     type
-       Either ``DEFICIENCY`` or ``OPTIMISATION``. A deficiency is an obvious
-       problem. An optimization is an action (sometimes optional) that
+       Either ``FORMAT_VARIANT`` or ``OPTIMISATION``.
+       A format variant is where we change the storage format. Not all format
+       variant changes are an obvious problem.
+       An optimization is an action (sometimes optional) that
        can be taken to further improve the state of the repository.
 
     description
        Message intended for humans explaining the improvement in more detail,
-       including the implications of it. For ``DEFICIENCY`` types, should be
+       including the implications of it. For ``FORMAT_VARIANT`` types, should be
        worded in the present tense. For ``OPTIMISATION`` types, should be
        worded in the future tense.
 
@@ -87,7 +89,7 @@ def registerformatvariant(cls):
 class formatvariant(improvement):
     """an improvement subclass dedicated to repository format"""
 
-    type = DEFICIENCY
+    type = FORMAT_VARIANT
     ### The following attributes should be defined for each class:
 
     # machine-readable string uniquely identifying this improvement. it will be
@@ -95,7 +97,8 @@ class formatvariant(improvement):
     name = None
 
     # message intended for humans explaining the improvement in more detail,
-    # including the implications of it ``DEFICIENCY`` types, should be worded
+    # including the implications of it ``FORMAT_VARIANT`` types, should be
+    # worded
     # in the present tense.
     description = None
 
