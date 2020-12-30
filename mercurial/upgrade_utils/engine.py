@@ -140,9 +140,7 @@ def _perform_clone(
             newrl,
             addrevisioncb=oncopiedrevision,
             deltareuse=upgrade_op.delta_reuse_mode,
-            forcedeltabothparents=upgrade_op.has_upgrade_action(
-                b're-delta-multibase'
-            ),
+            forcedeltabothparents=upgrade_op.force_re_delta_both_parents,
             sidedatacompanion=sidedatacompanion,
         )
     else:

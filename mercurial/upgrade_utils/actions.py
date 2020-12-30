@@ -658,6 +658,11 @@ class UpgradeOperation(object):
         elif b're-delta-fulladd' in self._upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSEFULLADD
 
+        # should this operation force re-delta of both parents
+        self.force_re_delta_both_parents = (
+            b're-delta-multibase' in self._upgrade_actions_names
+        )
+
     def _write_labeled(self, l, label):
         """
         Utility function to aid writing of a list under one label
