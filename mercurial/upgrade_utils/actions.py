@@ -12,6 +12,7 @@ from .. import (
     error,
     localrepo,
     requirements,
+    revlog,
     util,
 )
 
@@ -645,6 +646,17 @@ class UpgradeOperation(object):
         self.unused_optimizations = [
             i for i in all_optimizations if i not in self.upgrade_actions
         ]
+
+        # delta reuse mode of this upgrade operation
+        self.delta_reuse_mode = revlog.revlog.DELTAREUSEALWAYS
+        if b're-delta-all' in self._upgrade_actions_names:
+            self.delta_reuse_mode = revlog.revlog.DELTAREUSENEVER
+        elif b're-delta-parent' in self._upgrade_actions_names:
+            self.delta_reuse_mode = revlog.revlog.DELTAREUSESAMEREVS
+        elif b're-delta-multibase' in self._upgrade_actions_names:
+            self.delta_reuse_mode = revlog.revlog.DELTAREUSESAMEREVS
+        elif b're-delta-fulladd' in self._upgrade_actions_names:
+            self.delta_reuse_mode = revlog.revlog.DELTAREUSEFULLADD
 
     def _write_labeled(self, l, label):
         """

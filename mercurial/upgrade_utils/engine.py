@@ -446,24 +446,13 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         )
     )
 
-    if upgrade_op.has_upgrade_action(b're-delta-all'):
-        deltareuse = revlog.revlog.DELTAREUSENEVER
-    elif upgrade_op.has_upgrade_action(b're-delta-parent'):
-        deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif upgrade_op.has_upgrade_action(b're-delta-multibase'):
-        deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    elif upgrade_op.has_upgrade_action(b're-delta-fulladd'):
-        deltareuse = revlog.revlog.DELTAREUSEFULLADD
-    else:
-        deltareuse = revlog.revlog.DELTAREUSEALWAYS
-
     with dstrepo.transaction(b'upgrade') as tr:
         _clonerevlogs(
             ui,
             srcrepo,
             dstrepo,
             tr,
-            deltareuse,
+            upgrade_op.delta_reuse_mode,
             upgrade_op.has_upgrade_action(b're-delta-multibase'),
             revlogs=upgrade_op.revlogs_to_process,
         )
