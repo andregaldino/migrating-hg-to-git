@@ -159,9 +159,7 @@ def _clonerevlogs(
     srcrepo,
     dstrepo,
     tr,
-    deltareuse,
-    forcedeltabothparents,
-    revlogs=UPGRADE_ALL_REVLOGS,
+    upgrade_op,
 ):
     """Copy revlogs between 2 repos."""
     revcount = 0
@@ -278,9 +276,9 @@ def _clonerevlogs(
             tr,
             oldrl,
             unencoded,
-            deltareuse,
-            forcedeltabothparents,
-            revlogs,
+            upgrade_op.delta_reuse_mode,
+            upgrade_op.has_upgrade_action(b're-delta-multibase'),
+            upgrade_op.revlogs_to_process,
             sidedatacompanion,
             oncopiedrevision,
         )
@@ -319,9 +317,9 @@ def _clonerevlogs(
             tr,
             oldrl,
             unencoded,
-            deltareuse,
-            forcedeltabothparents,
-            revlogs,
+            upgrade_op.delta_reuse_mode,
+            upgrade_op.has_upgrade_action(b're-delta-multibase'),
+            upgrade_op.revlogs_to_process,
             sidedatacompanion,
             oncopiedrevision,
         )
@@ -359,9 +357,9 @@ def _clonerevlogs(
             tr,
             oldrl,
             unencoded,
-            deltareuse,
-            forcedeltabothparents,
-            revlogs,
+            upgrade_op.delta_reuse_mode,
+            upgrade_op.has_upgrade_action(b're-delta-multibase'),
+            upgrade_op.revlogs_to_process,
             sidedatacompanion,
             oncopiedrevision,
         )
@@ -452,9 +450,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
             srcrepo,
             dstrepo,
             tr,
-            upgrade_op.delta_reuse_mode,
-            upgrade_op.has_upgrade_action(b're-delta-multibase'),
-            revlogs=upgrade_op.revlogs_to_process,
+            upgrade_op,
         )
 
     # Now copy other files in the store directory.
