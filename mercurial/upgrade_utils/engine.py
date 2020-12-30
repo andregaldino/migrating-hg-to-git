@@ -124,15 +124,13 @@ def _perform_clone(
     tr,
     old_revlog,
     unencoded,
-    deltareuse,
-    forcedeltabothparents,
-    revlogs,
+    upgrade_op,
     sidedatacompanion,
     oncopiedrevision,
 ):
     """ returns the new revlog object created"""
     newrl = None
-    if matchrevlog(revlogs, unencoded):
+    if matchrevlog(upgrade_op.revlogs_to_process, unencoded):
         ui.note(
             _(b'cloning %d revisions from %s\n') % (len(old_revlog), unencoded)
         )
@@ -141,8 +139,10 @@ def _perform_clone(
             tr,
             newrl,
             addrevisioncb=oncopiedrevision,
-            deltareuse=deltareuse,
-            forcedeltabothparents=forcedeltabothparents,
+            deltareuse=upgrade_op.delta_reuse_mode,
+            forcedeltabothparents=upgrade_op.has_upgrade_action(
+                b're-delta-multibase'
+            ),
             sidedatacompanion=sidedatacompanion,
         )
     else:
@@ -276,9 +276,7 @@ def _clonerevlogs(
             tr,
             oldrl,
             unencoded,
-            upgrade_op.delta_reuse_mode,
-            upgrade_op.has_upgrade_action(b're-delta-multibase'),
-            upgrade_op.revlogs_to_process,
+            upgrade_op,
             sidedatacompanion,
             oncopiedrevision,
         )
@@ -317,9 +315,7 @@ def _clonerevlogs(
             tr,
             oldrl,
             unencoded,
-            upgrade_op.delta_reuse_mode,
-            upgrade_op.has_upgrade_action(b're-delta-multibase'),
-            upgrade_op.revlogs_to_process,
+            upgrade_op,
             sidedatacompanion,
             oncopiedrevision,
         )
@@ -357,9 +353,7 @@ def _clonerevlogs(
             tr,
             oldrl,
             unencoded,
-            upgrade_op.delta_reuse_mode,
-            upgrade_op.has_upgrade_action(b're-delta-multibase'),
-            upgrade_op.revlogs_to_process,
+            upgrade_op,
             sidedatacompanion,
             oncopiedrevision,
         )
