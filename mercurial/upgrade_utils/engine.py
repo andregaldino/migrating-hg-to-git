@@ -285,9 +285,7 @@ def _clonerevlogs(
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
-        datasize = info[b'storedsize'] or 0
-        dstsize += datasize
-        fdstsize += datasize
+        fdstsize += info[b'storedsize'] or 0
     ui.status(
         _(
             b'finished migrating %d filelog revisions across %d '
@@ -328,9 +326,7 @@ def _clonerevlogs(
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
-        datasize = info[b'storedsize'] or 0
-        dstsize += datasize
-        mdstsize += datasize
+        mdstsize += info[b'storedsize'] or 0
     ui.status(
         _(
             b'finished migrating %d manifest revisions across %d '
@@ -370,9 +366,7 @@ def _clonerevlogs(
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
-        datasize = info[b'storedsize'] or 0
-        dstsize += datasize
-        cdstsize += datasize
+        cdstsize += info[b'storedsize'] or 0
     progress.complete()
     ui.status(
         _(
@@ -382,6 +376,7 @@ def _clonerevlogs(
         % (crevcount, util.bytecount(cdstsize - csrcsize))
     )
 
+    dstsize = fdstsize + mdstsize + cdstsize
     ui.status(
         _(
             b'finished migrating %d total revisions; total change in store '
