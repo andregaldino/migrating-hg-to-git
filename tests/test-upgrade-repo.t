@@ -483,9 +483,9 @@ Upgrading a repository that is already modern essentially no-ops
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/modern/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/modern/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/modern/.hg/upgradebackup.* (glob)
@@ -539,7 +539,7 @@ make sure we have a .d file
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -551,7 +551,7 @@ make sure we have a .d file
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: -17 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -640,7 +640,7 @@ unless --no-backup is passed
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -652,7 +652,7 @@ unless --no-backup is passed
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -682,7 +682,7 @@ We can restrict optimization to some revlog:
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -699,7 +699,7 @@ We can restrict optimization to some revlog:
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -762,7 +762,7 @@ Check we can select negatively
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -779,7 +779,7 @@ Check we can select negatively
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -813,7 +813,7 @@ Check that we can select changelog only
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -830,7 +830,7 @@ Check that we can select changelog only
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -864,7 +864,7 @@ Check that we can select filelog only
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -881,7 +881,7 @@ Check that we can select filelog only
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -922,7 +922,7 @@ Check you can't skip revlog clone during important format downgrade
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -939,7 +939,7 @@ Check you can't skip revlog clone during important format downgrade
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -981,7 +981,7 @@ Check you can't skip revlog clone during important format upgrade
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 519 KB in store; 1.05 MB tracked data
@@ -998,7 +998,7 @@ Check you can't skip revlog clone during important format upgrade
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
@@ -1037,7 +1037,7 @@ store files with special filenames aren't encoded during copy
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
   migrating 301 bytes in store; 107 bytes tracked data
@@ -1050,7 +1050,7 @@ store files with special filenames aren't encoded during copy
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying .XX_special_filename
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/store-filenames/.hg/upgradebackup.* (glob)
@@ -1078,7 +1078,7 @@ store files with special filenames aren't encoded during copy
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
   migrating 301 bytes in store; 107 bytes tracked data
@@ -1091,7 +1091,7 @@ store files with special filenames aren't encoded during copy
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying .XX_special_filename
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/store-filenames/.hg/upgradebackup.* (glob)
@@ -1144,7 +1144,7 @@ Check upgrading a large file repository
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
   migrating 355 bytes in store; 160 bytes tracked data
@@ -1156,7 +1156,7 @@ Check upgrading a large file repository
   finished migrating 1 changelog revisions; change in size: 0 bytes
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/largefilesrepo/.hg/upgradebackup.* (glob)
@@ -1202,7 +1202,7 @@ Check upgrading a large file repository
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 6 total revisions (2 in filelogs, 2 in manifests, 2 in changelog)
   migrating 801 bytes in store; 467 bytes tracked data
@@ -1215,7 +1215,7 @@ Check upgrading a large file repository
   finished migrating 6 total revisions; total change in store size: 0 bytes
   copying phaseroots
   copying lfs blob d0beab232adff5ba365880366ad30b1edb85c4c5372442b5d2fe27adc96d653f
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/largefilesrepo/.hg/upgradebackup.* (glob)
@@ -1307,7 +1307,7 @@ repository config is taken in account
   
   beginning upgrade...
   repository locked and read-only
-  creating temporary repository to stage migrated data: $TESTTMP/localconfig/.hg/upgrade.* (glob)
+  creating temporary repository to stage upgraded data: $TESTTMP/localconfig/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
   migrating 1019 bytes in store; 882 bytes tracked data
@@ -1319,7 +1319,7 @@ repository config is taken in account
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: -9 bytes
   copying phaseroots
-  data fully migrated to temporary repository
+  data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
   replaced files will be backed up at $TESTTMP/localconfig/.hg/upgradebackup.* (glob)

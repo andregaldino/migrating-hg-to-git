@@ -191,7 +191,7 @@ def upgraderepo(
         try:
             ui.status(
                 _(
-                    b'creating temporary repository to stage migrated '
+                    b'creating temporary repository to stage upgraded '
                     b'data: %s\n'
                 )
                 % tmppath

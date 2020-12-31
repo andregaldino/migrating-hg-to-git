@@ -479,7 +479,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
 
     finishdatamigration(ui, srcrepo, dstrepo, requirements)
 
-    ui.status(_(b'data fully migrated to temporary repository\n'))
+    ui.status(_(b'data fully upgraded in a temporary repository\n'))
 
     backuppath = pycompat.mkdtemp(prefix=b'upgradebackup.', dir=srcrepo.path)
     backupvfs = vfsmod.vfs(backuppath)
