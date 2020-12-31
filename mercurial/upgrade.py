@@ -205,7 +205,7 @@ def upgraderepo(
                 backuppath = upgrade_engine.upgrade(
                     ui, repo, dstrepo, upgrade_op
                 )
-            if not (backup or backuppath is None):
+            if not backup:
                 ui.status(
                     _(b'removing old repository content %s\n') % backuppath
                 )
