@@ -376,36 +376,25 @@ def _clonerevlogs(
     )
 
 
-def _filterstorefile(srcrepo, dstrepo, requirements, path, mode, st):
-    """Determine whether to copy a store file during upgrade.
+def _files_to_copy_post_revlog_clone(srcrepo):
+    """yields files which should be copied to destination after revlogs
+    are cloned"""
+    for path, kind, st in sorted(srcrepo.store.vfs.readdir(b'', stat=True)):
+        # don't copy revlogs as they are already cloned
+        if path.endswith((b'.i', b'.d', b'.n', b'.nd')):
+            continue
+        # Skip transaction related files.
+        if path.startswith(b'undo'):
+            continue
+        # Only copy regular files.
+        if kind != stat.S_IFREG:
+            continue
+        # Skip other skipped files.
+        if path in (b'lock', b'fncache'):
+            continue
+        # TODO: should we skip cache too?
 
-    This function is called when migrating store files from ``srcrepo`` to
-    ``dstrepo`` as part of upgrading a repository.
-
-    Args:
-      srcrepo: repo we are copying from
-      dstrepo: repo we are copying to
-      requirements: set of requirements for ``dstrepo``
-      path: store file being examined
-      mode: the ``ST_MODE`` file type of ``path``
-      st: ``stat`` data structure for ``path``
-
-    Function should return ``True`` if the file is to be copied.
-    """
-    # Skip revlogs.
-    if path.endswith((b'.i', b'.d', b'.n', b'.nd')):
-        return False
-    # Skip transaction related files.
-    if path.startswith(b'undo'):
-        return False
-    # Only copy regular files.
-    if mode != stat.S_IFREG:
-        return False
-    # Skip other skipped files.
-    if path in (b'lock', b'fncache'):
-        return False
-
-    return True
+        yield path
 
 
 def _replacestores(currentrepo, upgradedrepo, backupvfs, upgrade_op):
@@ -465,13 +454,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         )
 
     # Now copy other files in the store directory.
-    # The sorted() makes execution deterministic.
-    for p, kind, st in sorted(srcrepo.store.vfs.readdir(b'', stat=True)):
-        if not _filterstorefile(
-            srcrepo, dstrepo, upgrade_op.new_requirements, p, kind, st
-        ):
-            continue
-
+    for p in _files_to_copy_post_revlog_clone(srcrepo):
         srcrepo.ui.status(_(b'copying %s\n') % p)
         src = srcrepo.store.rawvfs.join(p)
         dst = dstrepo.store.rawvfs.join(p)
