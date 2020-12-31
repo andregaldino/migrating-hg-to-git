@@ -408,6 +408,25 @@ def _filterstorefile(srcrepo, dstrepo, requirements, path, mode, st):
     return True
 
 
+def _replacestores(currentrepo, upgradedrepo, backupvfs, upgrade_op):
+    """Replace the stores after current repository is upgraded
+
+    Creates a backup of current repository store at backup path
+    Replaces upgraded store files in current repo from upgraded one
+
+    Arguments:
+      currentrepo: repo object of current repository
+      upgradedrepo: repo object of the upgraded data
+      backupvfs: vfs object for the backup path
+      upgrade_op: upgrade operation object
+                  to be used to decide what all is upgraded
+    """
+    # TODO: don't blindly rename everything in store
+    # There can be upgrades where store is not touched at all
+    util.rename(currentrepo.spath, backupvfs.join(b'store'))
+    util.rename(upgradedrepo.spath, currentrepo.spath)
+
+
 def finishdatamigration(ui, srcrepo, dstrepo, requirements):
     """Hook point for extensions to perform additional actions during upgrade.
 
@@ -490,8 +509,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     # environments).
     ui.status(_(b'replacing store...\n'))
     tstart = util.timer()
-    util.rename(srcrepo.spath, backupvfs.join(b'store'))
-    util.rename(dstrepo.spath, srcrepo.spath)
+    _replacestores(srcrepo, dstrepo, backupvfs, upgrade_op)
     elapsed = util.timer() - tstart
     ui.status(
         _(
