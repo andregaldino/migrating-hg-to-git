@@ -524,7 +524,7 @@ def uploadblobs(repo, pointers):
     remoteblob.writebatch(pointers, repo.svfs.lfslocalblobstore)
 
 
-@eh.wrapfunction(upgrade_engine, b'_finishdatamigration')
+@eh.wrapfunction(upgrade_engine, b'finishdatamigration')
 def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
     orig(ui, srcrepo, dstrepo, requirements)
 

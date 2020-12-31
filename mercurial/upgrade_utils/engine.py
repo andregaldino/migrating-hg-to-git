@@ -408,7 +408,7 @@ def _filterstorefile(srcrepo, dstrepo, requirements, path, mode, st):
     return True
 
 
-def _finishdatamigration(ui, srcrepo, dstrepo, requirements):
+def finishdatamigration(ui, srcrepo, dstrepo, requirements):
     """Hook point for extensions to perform additional actions during upgrade.
 
     This function is called after revlogs and store files have been copied but
@@ -458,7 +458,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         dst = dstrepo.store.rawvfs.join(p)
         util.copyfile(src, dst, copystat=True)
 
-    _finishdatamigration(ui, srcrepo, dstrepo, requirements)
+    finishdatamigration(ui, srcrepo, dstrepo, requirements)
 
     ui.status(_(b'data fully migrated to temporary repository\n'))
 
