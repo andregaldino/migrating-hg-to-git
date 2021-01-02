@@ -286,7 +286,7 @@ The extension should not turn on if we're using wide text.
 The rest of our tests will use the default narrow text UTF-8.
 
   $ hg log -G -q
-  \xe2\x97\x8d  34:fea3ac5810e0 (esc)
+  \xe2\x97\x89  34:fea3ac5810e0 (esc)
   \xe2\x94\x82 (esc)
   \xe2\x94\x82 \xe2\x97\x8b  33:68608f5145f9 (esc)
   \xe2\x94\x82 \xe2\x94\x82 (esc)
@@ -358,7 +358,7 @@ The rest of our tests will use the default narrow text UTF-8.
   
 
   $ hg log -G
-  \xe2\x97\x8d  changeset:   34:fea3ac5810e0 (esc)
+  \xe2\x97\x89  changeset:   34:fea3ac5810e0 (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x94\x82  parent:      32:d06dffa21a31 (esc)
   \xe2\x94\x82  user:        test (esc)
@@ -594,7 +594,7 @@ The rest of our tests will use the default narrow text UTF-8.
   
 File glog:
   $ hg log -G a
-  \xe2\x97\x8d  changeset:   34:fea3ac5810e0 (esc)
+  \xe2\x97\x89  changeset:   34:fea3ac5810e0 (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x94\x82  parent:      32:d06dffa21a31 (esc)
   \xe2\x94\x82  user:        test (esc)
@@ -831,7 +831,7 @@ File glog:
 File glog per revset:
 
   $ hg log -G -r 'file("a")'
-  \xe2\x97\x8d  changeset:   34:fea3ac5810e0 (esc)
+  \xe2\x97\x89  changeset:   34:fea3ac5810e0 (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x94\x82  parent:      32:d06dffa21a31 (esc)
   \xe2\x94\x82  user:        test (esc)
@@ -1268,7 +1268,7 @@ Empty revision range - display nothing:
 
 From outer space:
   $ hg log -G -l1 repo
-  \xe2\x97\x8d  changeset:   34:fea3ac5810e0 (esc)
+  \xe2\x97\x89  changeset:   34:fea3ac5810e0 (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x95\xa7  parent:      32:d06dffa21a31 (esc)
      user:        test
@@ -1276,7 +1276,7 @@ From outer space:
      summary:     (34) head
   
   $ hg log -G -l1 repo/a
-  \xe2\x97\x8d  changeset:   34:fea3ac5810e0 (esc)
+  \xe2\x97\x89  changeset:   34:fea3ac5810e0 (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x95\xa7  parent:      32:d06dffa21a31 (esc)
      user:        test
@@ -1299,7 +1299,7 @@ File log with revs != cset revs:
   $ echo more >two
   $ hg commit -mmore
   $ hg log -G two
-  \xe2\x97\x8d  changeset:   2:12c28321755b (esc)
+  \xe2\x97\x89  changeset:   2:12c28321755b (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x94\x82  user:        test (esc)
   \xe2\x94\x82  date:        Thu Jan 01 00:00:00 1970 +0000 (esc)
@@ -1375,7 +1375,7 @@ Incoming and outgoing:
   $ hg -R repo outgoing --graph repo2
   comparing with repo2
   searching for changes
-  \xe2\x97\x8d  changeset:   34:fea3ac5810e0 (esc)
+  \xe2\x97\x89  changeset:   34:fea3ac5810e0 (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x94\x82  parent:      32:d06dffa21a31 (esc)
   \xe2\x94\x82  user:        test (esc)
@@ -1518,7 +1518,7 @@ Do not crash or produce strange graphs if history is buggy
   (branches are permanent and global, did you want a bookmark?)
   $ commit 36 "buggy merge: identical parents" 35 35
   $ hg log -G -l5
-  \xe2\x97\x8d  changeset:   36:08a19a744424 (esc)
+  \xe2\x97\x89  changeset:   36:08a19a744424 (esc)
   \xe2\x94\x82  branch:      branch (esc)
   \xe2\x94\x82  tag:         tip (esc)
   \xe2\x94\x82  parent:      35:9159c3644c5e (esc)
@@ -1739,7 +1739,7 @@ have 2 filelog topological heads in a linear changeset graph.
   $ hg mv dir/b e
   $ hg ci -m "mv dir/b e"
   $ hg log -G --template '({rev}) {desc|firstline}\n'
-  \xe2\x97\x8d  (4) mv dir/b e (esc)
+  \xe2\x97\x89  (4) mv dir/b e (esc)
   \xe2\x94\x82 (esc)
   \xe2\x97\x8b  (3) mv a b; add d (esc)
   \xe2\x94\x82 (esc)
@@ -1948,7 +1948,7 @@ Cannot compare with log --follow-first FILE as it never worked
   []
   <generatorsetdesc->
   $ hg log -G --follow-first e --template '{rev} {desc|firstline}\n'
-  \xe2\x97\x8d  6 merge 5 and 4 (esc)
+  \xe2\x97\x89  6 merge 5 and 4 (esc)
   \xe2\x94\x82\xe2\x95\xb2 (esc)
   \xe2\x94\x82 \xe2\x95\xa7 (esc)
   \xe2\x97\x8b  5 add another e (esc)
@@ -1959,7 +1959,7 @@ Test --copies
 
   $ hg log -G --copies --template "{rev} {desc|firstline} \
   >   copies: {file_copies_switch}\n"
-  \xe2\x97\x8d  6 merge 5 and 4   copies: (esc)
+  \xe2\x97\x89  6 merge 5 and 4   copies: (esc)
   \xe2\x94\x82\xe2\x95\xb2 (esc)
   \xe2\x94\x82 \xe2\x97\x8b  5 add another e   copies: (esc)
   \xe2\x94\x82 \xe2\x94\x82 (esc)
@@ -2101,7 +2101,7 @@ Test --patch and --stat with --follow and --follow-first
 
   $ hg up -q 6
   $ hg log -G --git --patch --follow-first e
-  \xe2\x97\x8d  changeset:   6:9feeac35a70a (esc)
+  \xe2\x97\x89  changeset:   6:9feeac35a70a (esc)
   \xe2\x94\x82\xe2\x95\xb2   tag:         tip (esc)
   \xe2\x94\x82 \xe2\x95\xa7  parent:      5:99b31f1c2782 (esc)
   \xe2\x94\x82    parent:      4:17d952250a9d (esc)
@@ -2158,7 +2158,7 @@ Test --follow and forward --rev
   \xe2\x94\x82\xe2\x95\xb1 (esc)
   \xe2\x97\x8b  3 mv a b; add d (esc)
   \xe2\x94\x82 (esc)
-  \xe2\x97\x8d  2 mv b dir/b (esc)
+  \xe2\x97\x89  2 mv b dir/b (esc)
   \xe2\x94\x82 (esc)
   \xe2\x97\x8b  1 copy a b (esc)
   \xe2\x94\x82 (esc)
@@ -2445,7 +2445,7 @@ Test --hidden
   \xe2\x94\x82 \xe2\x94\x82 (esc)
   \xe2\x97\x8b \xe2\x94\x82  4 mv dir/b e (esc)
   \xe2\x94\x82\xe2\x95\xb1 (esc)
-  \xe2\x97\x8d  3 mv a b; add d (esc)
+  \xe2\x97\x89  3 mv a b; add d (esc)
   \xe2\x94\x82 (esc)
   \xe2\x97\x8b  2 mv b dir/b (esc)
   \xe2\x94\x82 (esc)
@@ -2528,7 +2528,7 @@ working-directory revision
   $ hg log -G -qr '. + wdir()'
   \xe2\x97\x8b  2147483647:ffffffffffff (esc)
   \xe2\x94\x82 (esc)
-  \xe2\x97\x8d  3:5918b8d165d1 (esc)
+  \xe2\x97\x89  3:5918b8d165d1 (esc)
   \xe2\x94\x82 (esc)
   \xe2\x95\xa7 (esc)
 
@@ -2776,7 +2776,7 @@ Setting HGPLAIN ignores graphmod styling:
 .. unless HGPLAINEXCEPT=graph is set:
 
   $ HGPLAIN=1 HGPLAINEXCEPT=graph hg log -G -r 'file("a")' -m
-  \xe2\x97\x8d  changeset:   36:08a19a744424 (esc)
+  \xe2\x97\x89  changeset:   36:08a19a744424 (esc)
   \xe2\x94\x86  branch:      branch (esc)
   \xe2\x94\x86  tag:         tip (esc)
   \xe2\x94\x86  parent:      35:9159c3644c5e (esc)
@@ -3051,7 +3051,7 @@ the right node styles are used (issue5174):
   (branch merge, don't forget to commit)
   $ hg ci -qm 6
   $ hg log -G -r '0 | 1 | 2 | 6'
-  \xe2\x97\x8d  changeset:   6:851fe89689ad (esc)
+  \xe2\x97\x89  changeset:   6:851fe89689ad (esc)
   \xe2\x94\x86\xe2\x95\xb2   tag:         tip (esc)
   \xe2\x94\x86 \xe2\x94\x86  parent:      5:4f1e3cf15f5d (esc)
   \xe2\x94\x86 \xe2\x94\x86  parent:      3:b74ba7084d2d (esc)
@@ -3095,7 +3095,7 @@ Multiple roots (issue5440):
   $ hg ci -Aqm bar
 
   $ hg log -Gr null:
-  \xe2\x97\x8d  1 bar (esc)
+  \xe2\x97\x89  1 bar (esc)
   \xe2\x94\x82 (esc)
   \xe2\x94\x82 \xe2\x97\x8b  0 foo (esc)
   \xe2\x94\x82\xe2\x95\xb1 (esc)
@@ -3107,7 +3107,7 @@ Multiple roots (issue5440):
   \xe2\x97\x8b  -1 (esc)
   
   $ hg log -Gr null+1
-  \xe2\x97\x8d  1 bar (esc)
+  \xe2\x97\x89  1 bar (esc)
   \xe2\x94\x82 (esc)
   \xe2\x97\x8b  -1 (esc)
   

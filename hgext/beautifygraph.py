@@ -70,7 +70,7 @@ def getprettygraphnode(orig, *args, **kwargs):
     if node == b'o':
         return b'\xE2\x97\x8B'  # U+25CB ○
     if node == b'@':
-        return b'\xE2\x97\x8D'  # U+25CD ◍
+        return b'\xE2\x97\x89'  # U+25C9 ◉
     if node == b'%':
         return b'\xE2\x97\x8D'  # U+25CE ◎
     if node == b'*':
