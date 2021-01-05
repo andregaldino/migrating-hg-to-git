@@ -110,9 +110,6 @@ impl PartialEq for CopySource {
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
 type InternalPathCopies = OrdMap<PathToken, CopySource>;
 
-/// hold parent 1, parent 2 and relevant files actions.
-pub type RevInfo<'a> = (Revision, Revision, ChangedFiles<'a>);
-
 /// represent the files affected by a changesets
 ///
 /// This hold a subset of mercurial.metadata.ChangingFiles as we do not need
@@ -334,22 +331,6 @@ impl<'a> Iterator for ActionsIterator<'a> {
     }
 }
 
-/// A small struct whose purpose is to ensure lifetime of bytes referenced in
-/// ChangedFiles
-///
-/// It is passed to the RevInfoMaker callback who can assign any necessary
-/// content to the `data` attribute. The copy tracing code is responsible for
-/// keeping the DataHolder alive at least as long as the ChangedFiles object.
-pub struct DataHolder<D> {
-    /// RevInfoMaker callback should assign data referenced by the
-    /// ChangedFiles struct it return to this attribute. The DataHolder
-    /// lifetime will be at least as long as the ChangedFiles one.
-    pub data: Option<D>,
-}
-
-pub type RevInfoMaker<'a, D> =
-    Box<dyn for<'r> Fn(Revision, &'r mut DataHolder<D>) -> RevInfo<'r> + 'a>;
-
 /// A small "tokenizer" responsible of turning full HgPath into lighter
 /// PathToken
 ///
@@ -382,82 +363,89 @@ impl TwoWayPathMap {
 }
 
 /// Same as mercurial.copies._combine_changeset_copies, but in Rust.
-///
-/// Arguments are:
-///
-/// revs: all revisions to be considered
-/// children: a {parent ? [childrens]} mapping
-/// target_rev: the final revision we are combining copies to
-/// rev_info(rev): callback to get revision information:
-///   * first parent
-///   * second parent
-///   * ChangedFiles
-/// isancestors(low_rev, high_rev): callback to check if a revision is an
-///                                 ancestor of another
-pub fn combine_changeset_copies<D>(
-    revs: Vec<Revision>,
-    mut children_count: HashMap<Revision, usize>,
-    target_rev: Revision,
-    rev_info: RevInfoMaker<D>,
-) -> PathCopies {
-    let mut all_copies = HashMap::new();
+pub struct CombineChangesetCopies {
+    all_copies: HashMap<Revision, InternalPathCopies>,
+    path_map: TwoWayPathMap,
+    children_count: HashMap<Revision, usize>,
+}
 
-    let mut path_map = TwoWayPathMap::default();
+impl CombineChangesetCopies {
+    pub fn new(children_count: HashMap<Revision, usize>) -> Self {
+        Self {
+            all_copies: HashMap::new(),
+            path_map: TwoWayPathMap::default(),
+            children_count,
+        }
+    }
 
-    for rev in revs {
-        let mut d: DataHolder<D> = DataHolder { data: None };
-        let (p1, p2, changes) = rev_info(rev, &mut d);
-
-        // We will chain the copies information accumulated for the parent with
-        // the individual copies information the curent revision.  Creating a
-        // new TimeStampedPath for each `rev` → `children` vertex.
+    /// Combined the given `changes` data specific to `rev` with the data
+    /// previously given for its parents (and transitively, its ancestors).
+    pub fn add_revision(
+        &mut self,
+        rev: Revision,
+        p1: Revision,
+        p2: Revision,
+        changes: ChangedFiles<'_>,
+    ) {
         // Retrieve data computed in a previous iteration
         let p1_copies = match p1 {
             NULL_REVISION => None,
             _ => get_and_clean_parent_copies(
-                &mut all_copies,
-                &mut children_count,
+                &mut self.all_copies,
+                &mut self.children_count,
                 p1,
             ), // will be None if the vertex is not to be traversed
         };
         let p2_copies = match p2 {
             NULL_REVISION => None,
             _ => get_and_clean_parent_copies(
-                &mut all_copies,
-                &mut children_count,
+                &mut self.all_copies,
+                &mut self.children_count,
                 p2,
             ), // will be None if the vertex is not to be traversed
         };
         // combine it with data for that revision
-        let (p1_copies, p2_copies) =
-            chain_changes(&mut path_map, p1_copies, p2_copies, &changes, rev);
+        let (p1_copies, p2_copies) = chain_changes(
+            &mut self.path_map,
+            p1_copies,
+            p2_copies,
+            &changes,
+            rev,
+        );
         let copies = match (p1_copies, p2_copies) {
             (None, None) => None,
             (c, None) => c,
             (None, c) => c,
             (Some(p1_copies), Some(p2_copies)) => Some(merge_copies_dict(
-                &path_map, rev, p2_copies, p1_copies, &changes,
+                &self.path_map,
+                rev,
+                p2_copies,
+                p1_copies,
+                &changes,
             )),
         };
         if let Some(c) = copies {
-            all_copies.insert(rev, c);
+            self.all_copies.insert(rev, c);
         }
     }
 
-    // Drop internal information (like the timestamp) and return the final
-    // mapping.
-    let tt_result = all_copies
-        .remove(&target_rev)
-        .expect("target revision was not processed");
-    let mut result = PathCopies::default();
-    for (dest, tt_source) in tt_result {
-        if let Some(path) = tt_source.path {
-            let path_dest = path_map.untokenize(dest).to_owned();
-            let path_path = path_map.untokenize(path).to_owned();
-            result.insert(path_dest, path_path);
+    /// Drop intermediate data (such as which revision a copy was from) and
+    /// return the final mapping.
+    pub fn finish(mut self, target_rev: Revision) -> PathCopies {
+        let tt_result = self
+            .all_copies
+            .remove(&target_rev)
+            .expect("target revision was not processed");
+        let mut result = PathCopies::default();
+        for (dest, tt_source) in tt_result {
+            if let Some(path) = tt_source.path {
+                let path_dest = self.path_map.untokenize(dest).to_owned();
+                let path_path = self.path_map.untokenize(path).to_owned();
+                result.insert(path_dest, path_path);
+            }
         }
+        result
     }
-    result
 }
 
 /// fetch previous computed information

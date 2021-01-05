@@ -8,11 +8,8 @@ use cpython::PyResult;
 use cpython::PyTuple;
 use cpython::Python;
 
-use hg::copy_tracing::combine_changeset_copies;
 use hg::copy_tracing::ChangedFiles;
-use hg::copy_tracing::DataHolder;
-use hg::copy_tracing::RevInfo;
-use hg::copy_tracing::RevInfoMaker;
+use hg::copy_tracing::CombineChangesetCopies;
 use hg::Revision;
 
 /// Combines copies information contained into revision `revs` to build a copy
@@ -26,64 +23,41 @@ pub fn combine_changeset_copies_wrapper(
     target_rev: Revision,
     rev_info: PyObject,
 ) -> PyResult<PyDict> {
-    let revs: PyResult<_> =
-        revs.iter(py).map(|r| Ok(r.extract(py)?)).collect();
-
-    // Wrap the `rev_info_maker` python callback as a Rust closure
-    //
-    // No errors are expected from the Python side, and they will should only
-    // happens in case of programing error or severe data corruption. Such
-    // errors will raise panic and the rust-cpython harness will turn them into
-    // Python exception.
-    let rev_info_maker: RevInfoMaker<PyBytes> =
-        Box::new(|rev: Revision, d: &mut DataHolder<PyBytes>| -> RevInfo {
-            let res: PyTuple = rev_info
-                .call(py, (rev,), None)
-                .expect("rust-copy-tracing: python call to `rev_info` failed")
-                .cast_into(py)
-                .expect(
-                    "rust-copy_tracing: python call to `rev_info` returned \
-                    unexpected non-Tuple value",
-                );
-            let p1 = res.get_item(py, 0).extract(py).expect(
-                "rust-copy-tracing: rev_info return is invalid, first item \
-                is a not a revision",
-            );
-            let p2 = res.get_item(py, 1).extract(py).expect(
-                "rust-copy-tracing: rev_info return is invalid, first item \
-                is a not a revision",
-            );
-
-            let files = match res.get_item(py, 2).extract::<PyBytes>(py) {
-                Ok(raw) => {
-                    // Give responsability for the raw bytes lifetime to
-                    // hg-core
-                    d.data = Some(raw);
-                    let addrs = d.data.as_ref().expect(
-                        "rust-copy-tracing: failed to get a reference to the \
-                        raw bytes for copy data").data(py);
-                    ChangedFiles::new(addrs)
-                }
-                // value was presumably None, meaning they was no copy data.
-                Err(_) => ChangedFiles::new_empty(),
-            };
-
-            (p1, p2, files)
-        });
-    let children_count: PyResult<_> = children_count
+    let children_count = children_count
         .items(py)
         .iter()
         .map(|(k, v)| Ok((k.extract(py)?, v.extract(py)?)))
-        .collect();
+        .collect::<PyResult<_>>()?;
 
-    let res = combine_changeset_copies(
-        revs?,
-        children_count?,
-        target_rev,
-        rev_info_maker,
-    );
+    /// (Revision number, parent 1, parent 2, copy data for this revision)
+    type RevInfo = (Revision, Revision, Revision, Option<PyBytes>);
+
+    let revs_info = revs.iter(py).map(|rev_py| -> PyResult<RevInfo> {
+        let rev = rev_py.extract(py)?;
+        let tuple: PyTuple =
+            rev_info.call(py, (rev_py,), None)?.cast_into(py)?;
+        let p1 = tuple.get_item(py, 0).extract(py)?;
+        let p2 = tuple.get_item(py, 1).extract(py)?;
+        let opt_bytes = tuple.get_item(py, 2).extract(py)?;
+        Ok((rev, p1, p2, opt_bytes))
+    });
+
+    let mut combine_changeset_copies =
+        CombineChangesetCopies::new(children_count);
+
+    for rev_info in revs_info {
+        let (rev, p1, p2, opt_bytes) = rev_info?;
+        let files = match &opt_bytes {
+            Some(bytes) => ChangedFiles::new(bytes.data(py)),
+            // value was presumably None, meaning they was no copy data.
+            None => ChangedFiles::new_empty(),
+        };
+
+        combine_changeset_copies.add_revision(rev, p1, p2, files)
+    }
+    let path_copies = combine_changeset_copies.finish(target_rev);
     let out = PyDict::new(py);
-    for (dest, source) in res.into_iter() {
+    for (dest, source) in path_copies.into_iter() {
         out.set_item(
             py,
             PyBytes::new(py, &dest.into_vec()),
