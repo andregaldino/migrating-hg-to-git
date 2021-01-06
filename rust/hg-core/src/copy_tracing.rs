@@ -3,13 +3,13 @@ use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
 use crate::NULL_REVISION;
 
+use bytes_cast::{unaligned, BytesCast};
 use im_rc::ordmap::Entry;
 use im_rc::ordmap::OrdMap;
 use im_rc::OrdSet;
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::convert::TryInto;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
@@ -110,18 +110,6 @@ impl PartialEq for CopySource {
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
 type InternalPathCopies = OrdMap<PathToken, CopySource>;
 
-/// represent the files affected by a changesets
-///
-/// This hold a subset of mercurial.metadata.ChangingFiles as we do not need
-/// all the data categories tracked by it.
-/// This hold a subset of mercurial.metadata.ChangingFiles as we do not need
-/// all the data categories tracked by it.
-pub struct ChangedFiles<'a> {
-    nb_items: u32,
-    index: &'a [u8],
-    data: &'a [u8],
-}
-
 /// Represent active changes that affect the copy tracing.
 enum Action<'a> {
     /// The parent ? children edge is removing a file
@@ -148,9 +136,6 @@ enum MergeCase {
     Normal,
 }
 
-type FileChange<'a> = (u8, &'a HgPath, &'a HgPath);
-
-const EMPTY: &[u8] = b"";
 const COPY_MASK: u8 = 3;
 const P1_COPY: u8 = 2;
 const P2_COPY: u8 = 3;
@@ -159,141 +144,94 @@ const REMOVED: u8 = 12;
 const MERGED: u8 = 8;
 const SALVAGED: u8 = 16;
 
+#[derive(BytesCast)]
+#[repr(C)]
+struct ChangedFilesIndexEntry {
+    flags: u8,
+
+    /// Only the end position is stored. The start is at the end of the
+    /// previous entry.
+    destination_path_end_position: unaligned::U32Be,
+
+    source_index_entry_position: unaligned::U32Be,
+}
+
+fn _static_assert_size_of() {
+    let _ = std::mem::transmute::<ChangedFilesIndexEntry, [u8; 9]>;
+}
+
+/// Represents the files affected by a changeset.
+///
+/// This holds a subset of `mercurial.metadata.ChangingFiles` as we do not need
+/// all the data categories tracked by it.
+pub struct ChangedFiles<'a> {
+    index: &'a [ChangedFilesIndexEntry],
+    paths: &'a [u8],
+}
+
 impl<'a> ChangedFiles<'a> {
-    const INDEX_START: usize = 4;
-    const ENTRY_SIZE: u32 = 9;
-    const FILENAME_START: u32 = 1;
-    const COPY_SOURCE_START: u32 = 5;
-
     pub fn new(data: &'a [u8]) -> Self {
-        assert!(
-            data.len() >= 4,
-            "data size ({}) is too small to contain the header (4)",
-            data.len()
-        );
-        let nb_items_raw: [u8; 4] = (&data[0..=3])
-            .try_into()
-            .expect("failed to turn 4 bytes into 4 bytes");
-        let nb_items = u32::from_be_bytes(nb_items_raw);
-
-        let index_size = (nb_items * Self::ENTRY_SIZE) as usize;
-        let index_end = Self::INDEX_START + index_size;
-
-        assert!(
-            data.len() >= index_end,
-            "data size ({}) is too small to fit the index_data ({})",
-            data.len(),
-            index_end
-        );
-
-        let ret = ChangedFiles {
-            nb_items,
-            index: &data[Self::INDEX_START..index_end],
-            data: &data[index_end..],
-        };
-        let max_data = ret.filename_end(nb_items - 1) as usize;
-        assert!(
-            ret.data.len() >= max_data,
-            "data size ({}) is too small to fit all data ({})",
-            data.len(),
-            index_end + max_data
-        );
-        ret
+        let (header, rest) = unaligned::U32Be::from_bytes(data).unwrap();
+        let nb_index_entries = header.get() as usize;
+        let (index, paths) =
+            ChangedFilesIndexEntry::slice_from_bytes(rest, nb_index_entries)
+                .unwrap();
+        Self { index, paths }
     }
 
     pub fn new_empty() -> Self {
         ChangedFiles {
-            nb_items: 0,
-            index: EMPTY,
-            data: EMPTY,
+            index: &[],
+            paths: &[],
         }
     }
 
-    /// internal function to return an individual entry at a given index
-    fn entry(&'a self, idx: u32) -> FileChange<'a> {
-        if idx >= self.nb_items {
-            panic!(
-                "index for entry is higher that the number of file {} >= {}",
-                idx, self.nb_items
-            )
-        }
-        let flags = self.flags(idx);
-        let filename = self.filename(idx);
-        let copy_idx = self.copy_idx(idx);
-        let copy_source = self.filename(copy_idx);
-        (flags, filename, copy_source)
-    }
-
-    /// internal function to return the filename of the entry at a given index
-    fn filename(&self, idx: u32) -> &HgPath {
-        let filename_start;
-        if idx == 0 {
-            filename_start = 0;
+    /// Internal function to return the filename of the entry at a given index
+    fn path(&self, idx: usize) -> &HgPath {
+        let start = if idx == 0 {
+            0
         } else {
-            filename_start = self.filename_end(idx - 1)
-        }
-        let filename_end = self.filename_end(idx);
-        let filename_start = filename_start as usize;
-        let filename_end = filename_end as usize;
-        HgPath::new(&self.data[filename_start..filename_end])
-    }
-
-    /// internal function to return the flag field of the entry at a given
-    /// index
-    fn flags(&self, idx: u32) -> u8 {
-        let idx = idx as usize;
-        self.index[idx * (Self::ENTRY_SIZE as usize)]
-    }
-
-    /// internal function to return the end of a filename part at a given index
-    fn filename_end(&self, idx: u32) -> u32 {
-        let start = (idx * Self::ENTRY_SIZE) + Self::FILENAME_START;
-        let end = (idx * Self::ENTRY_SIZE) + Self::COPY_SOURCE_START;
-        let start = start as usize;
-        let end = end as usize;
-        let raw = (&self.index[start..end])
-            .try_into()
-            .expect("failed to turn 4 bytes into 4 bytes");
-        u32::from_be_bytes(raw)
-    }
-
-    /// internal function to return index of the copy source of the entry at a
-    /// given index
-    fn copy_idx(&self, idx: u32) -> u32 {
-        let start = (idx * Self::ENTRY_SIZE) + Self::COPY_SOURCE_START;
-        let end = (idx + 1) * Self::ENTRY_SIZE;
-        let start = start as usize;
-        let end = end as usize;
-        let raw = (&self.index[start..end])
-            .try_into()
-            .expect("failed to turn 4 bytes into 4 bytes");
-        u32::from_be_bytes(raw)
+            self.index[idx - 1].destination_path_end_position.get() as usize
+        };
+        let end = self.index[idx].destination_path_end_position.get() as usize;
+        HgPath::new(&self.paths[start..end])
     }
 
     /// Return an iterator over all the `Action` in this instance.
-    fn iter_actions(&self) -> ActionsIterator {
-        ActionsIterator {
-            changes: &self,
-            current: 0,
-        }
+    fn iter_actions(&self) -> impl Iterator<Item = Action> {
+        self.index.iter().enumerate().flat_map(move |(idx, entry)| {
+            let path = self.path(idx);
+            if (entry.flags & ACTION_MASK) == REMOVED {
+                Some(Action::Removed(path))
+            } else if (entry.flags & COPY_MASK) == P1_COPY {
+                let source_idx =
+                    entry.source_index_entry_position.get() as usize;
+                Some(Action::CopiedFromP1(path, self.path(source_idx)))
+            } else if (entry.flags & COPY_MASK) == P2_COPY {
+                let source_idx =
+                    entry.source_index_entry_position.get() as usize;
+                Some(Action::CopiedFromP2(path, self.path(source_idx)))
+            } else {
+                None
+            }
+        })
     }
 
     /// return the MergeCase value associated with a filename
     fn get_merge_case(&self, path: &HgPath) -> MergeCase {
-        if self.nb_items == 0 {
+        if self.index.is_empty() {
             return MergeCase::Normal;
         }
         let mut low_part = 0;
-        let mut high_part = self.nb_items;
+        let mut high_part = self.index.len();
 
         while low_part < high_part {
             let cursor = (low_part + high_part - 1) / 2;
-            let (flags, filename, _source) = self.entry(cursor);
-            match path.cmp(filename) {
+            match path.cmp(self.path(cursor)) {
                 Ordering::Less => low_part = cursor + 1,
                 Ordering::Greater => high_part = cursor,
                 Ordering::Equal => {
-                    return match flags & ACTION_MASK {
+                    return match self.index[cursor].flags & ACTION_MASK {
                         MERGED => MergeCase::Merged,
                         SALVAGED => MergeCase::Salvaged,
                         _ => MergeCase::Normal,
@@ -302,32 +240,6 @@ impl<'a> ChangedFiles<'a> {
             }
         }
         MergeCase::Normal
-    }
-}
-
-struct ActionsIterator<'a> {
-    changes: &'a ChangedFiles<'a>,
-    current: u32,
-}
-
-impl<'a> Iterator for ActionsIterator<'a> {
-    type Item = Action<'a>;
-
-    fn next(&mut self) -> Option<Action<'a>> {
-        while self.current < self.changes.nb_items {
-            let (flags, file, source) = self.changes.entry(self.current);
-            self.current += 1;
-            if (flags & ACTION_MASK) == REMOVED {
-                return Some(Action::Removed(file));
-            }
-            let copy = flags & COPY_MASK;
-            if copy == P1_COPY {
-                return Some(Action::CopiedFromP1(file, source));
-            } else if copy == P2_COPY {
-                return Some(Action::CopiedFromP2(file, source));
-            }
-        }
-        return None;
     }
 }
 
