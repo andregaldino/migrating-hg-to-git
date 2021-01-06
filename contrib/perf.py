@@ -1627,12 +1627,12 @@ def perfnodemap(ui, repo, **opts):
     mercurial.revlog._prereadsize = 2 ** 24  # disable lazy parser in old hg
 
     unfi = repo.unfiltered()
-    clearcaches = opts['clear_caches']
+    clearcaches = opts[b'clear_caches']
     # find the filecache func directly
     # This avoid polluting the benchmark with the filecache logic
     makecl = unfi.__class__.changelog.func
     if not opts[b'rev']:
-        raise error.Abort('use --rev to specify revisions to look up')
+        raise error.Abort(b'use --rev to specify revisions to look up')
     revs = scmutil.revrange(repo, opts[b'rev'])
     cl = repo.changelog
     nodes = [cl.node(r) for r in revs]
