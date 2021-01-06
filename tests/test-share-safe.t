@@ -479,8 +479,63 @@ Make sure existing shares still works
   |
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
-  $ hg unshare -R ../nss-share
 
   $ hg log -GT "{node}: {desc}\n" -R ../ss-share
   abort: share source does not support exp-sharesafe requirement
   [255]
+
+
+Testing automatic upgrade of shares when config is set
+
+  $ hg debugupgraderepo -q --run --config format.exp-share-safe=True
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     added: exp-sharesafe
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
+  repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
+  $ hg debugrequirements
+  dotencode
+  exp-sharesafe
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share
+  warning: source repository supports share-safe functionality. Reshare to upgrade.
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
+Check that if lock is taken, upgrade fails but read operation are successful
+  $ touch ../nss-share/.hg/wlock
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true
+  failed to upgrade share, got error: Lock held
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+  $ rm ../nss-share/.hg/wlock
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true
+  repository upgraded to use share-safe mode
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
+Test that unshare works
+
+  $ hg unshare -R ../nss-share
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  

@@ -582,12 +582,23 @@ def makelocalrepository(baseui, path, intents=None):
     elif shared:
         sourcerequires = _readrequires(sharedvfs, False)
         if requirementsmod.SHARESAFE_REQUIREMENT in sourcerequires:
-            ui.warn(
-                _(
-                    b'warning: source repository supports share-safe functionality.'
-                    b' Reshare to upgrade.\n'
+            if ui.configbool(b'experimental', b'sharesafe-auto-upgrade-shares'):
+                # prevent cyclic import localrepo -> upgrade -> localrepo
+                from . import upgrade
+
+                upgrade.upgrade_share_to_safe(
+                    ui,
+                    hgvfs,
+                    storevfs,
+                    requirements,
                 )
-            )
+            else:
+                ui.warn(
+                    _(
+                        b'warning: source repository supports share-safe functionality.'
+                        b' Reshare to upgrade.\n'
+                    )
+                )
 
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and

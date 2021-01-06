@@ -1074,6 +1074,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'sharesafe-auto-upgrade-shares',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
     b'single-head-per-branch',
     default=False,
 )

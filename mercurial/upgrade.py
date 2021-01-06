@@ -12,12 +12,19 @@ from . import (
     error,
     hg,
     localrepo,
+    lock as lockmod,
     pycompat,
+    requirements as requirementsmod,
+    scmutil,
 )
 
 from .upgrade_utils import (
     actions as upgrade_actions,
     engine as upgrade_engine,
+)
+
+from .utils import (
+    stringutil,
 )
 
 allformatvariant = upgrade_actions.allformatvariant
@@ -232,3 +239,28 @@ def upgraderepo(
                 )
 
             upgrade_op.print_post_op_messages()
+
+
+def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
+    """Upgrades a share to use share-safe mechanism"""
+    wlock = None
+    try:
+        wlock = lockmod.trylock(ui, hgvfs, b'wlock', 0, 0)
+        store_requirements = localrepo._readrequires(storevfs, False)
+        # after upgrade, store requires will be shared, so lets find
+        # the requirements which are not present in store and
+        # write them to share's .hg/requires
+        diffrequires = current_requirements - store_requirements
+        # add share-safe requirement as it will mark the share as share-safe
+        diffrequires.add(requirementsmod.SHARESAFE_REQUIREMENT)
+        scmutil.writerequires(hgvfs, diffrequires)
+        current_requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
+        ui.warn(_(b'repository upgraded to use share-safe mode\n'))
+    except error.LockError as e:
+        ui.warn(
+            _(b'failed to upgrade share, got error: %s\n')
+            % stringutil.forcebytestr(e.strerror)
+        )
+    finally:
+        if wlock:
+            wlock.release()
