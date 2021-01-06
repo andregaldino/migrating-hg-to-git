@@ -1074,6 +1074,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'sharesafe-auto-downgrade-shares',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
     b'sharesafe-auto-upgrade-shares',
     default=False,
 )

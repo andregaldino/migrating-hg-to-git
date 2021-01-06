@@ -574,11 +574,26 @@ def makelocalrepository(baseui, path, intents=None):
             and requirementsmod.SHARESAFE_REQUIREMENT
             not in _readrequires(sharedvfs, True)
         ):
-            raise error.Abort(
-                _(b"share source does not support exp-sharesafe requirement")
-            )
+            if ui.configbool(
+                b'experimental', b'sharesafe-auto-downgrade-shares'
+            ):
+                # prevent cyclic import localrepo -> upgrade -> localrepo
+                from . import upgrade
 
-        requirements |= _readrequires(storevfs, False)
+                upgrade.downgrade_share_to_non_safe(
+                    ui,
+                    hgvfs,
+                    sharedvfs,
+                    requirements,
+                )
+            else:
+                raise error.Abort(
+                    _(
+                        b"share source does not support exp-sharesafe requirement"
+                    )
+                )
+        else:
+            requirements |= _readrequires(storevfs, False)
     elif shared:
         sourcerequires = _readrequires(sharedvfs, False)
         if requirementsmod.SHARESAFE_REQUIREMENT in sourcerequires:

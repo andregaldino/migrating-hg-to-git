@@ -484,6 +484,27 @@ Make sure existing shares still works
   abort: share source does not support exp-sharesafe requirement
   [255]
 
+Testing automatic downgrade of shares when config is set
+
+  $ touch ../ss-share/.hg/wlock
+  $ hg log -GT "{node}: {desc}\n" -R ../ss-share --config experimental.sharesafe-auto-downgrade-shares=true
+  abort: failed to downgrade share, got error: Lock held
+  [255]
+  $ rm ../ss-share/.hg/wlock
+
+  $ hg log -GT "{node}: {desc}\n" -R ../ss-share --config experimental.sharesafe-auto-downgrade-shares=true
+  repository downgraded to not use share-safe mode
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
+  $ hg log -GT "{node}: {desc}\n" -R ../ss-share
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
 
 Testing automatic upgrade of shares when config is set
 

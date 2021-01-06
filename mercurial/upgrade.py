@@ -264,3 +264,34 @@ def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
     finally:
         if wlock:
             wlock.release()
+
+
+def downgrade_share_to_non_safe(
+    ui,
+    hgvfs,
+    sharedvfs,
+    current_requirements,
+):
+    """Downgrades a share which use share-safe to not use it"""
+    wlock = None
+    try:
+        wlock = lockmod.trylock(ui, hgvfs, b'wlock', 0, 0)
+        source_requirements = localrepo._readrequires(sharedvfs, True)
+        # we cannot be 100% sure on which requirements were present in store when
+        # the source supported share-safe. However, we do know that working
+        # directory requirements were not there. Hence we remove them
+        source_requirements -= requirementsmod.WORKING_DIR_REQUIREMENTS
+        current_requirements |= source_requirements
+        current_requirements.remove(requirementsmod.SHARESAFE_REQUIREMENT)
+        scmutil.writerequires(hgvfs, current_requirements)
+        ui.warn(_(b'repository downgraded to not use share-safe mode\n'))
+    except error.LockError as e:
+        # raise error right away because if downgrade failed, we cannot load
+        # the repository because it does not have complete set of requirements
+        raise error.Abort(
+            _(b'failed to downgrade share, got error: %s')
+            % stringutil.forcebytestr(e.strerror)
+        )
+    finally:
+        if wlock:
+            wlock.release()
