@@ -549,8 +549,13 @@ def makelocalrepository(baseui, path, intents=None):
         requirementsmod.SHARED_REQUIREMENT in requirements
         or requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements
     )
+    storevfs = None
     if shared:
+        # This is a shared repo
         sharedvfs = _getsharedvfs(hgvfs, requirements)
+        storevfs = vfsmod.vfs(sharedvfs.join(b'store'))
+    else:
+        storevfs = vfsmod.vfs(hgvfs.join(b'store'))
 
     # if .hg/requires contains the sharesafe requirement, it means
     # there exists a `.hg/store/requires` too and we should read it
@@ -572,12 +577,6 @@ def makelocalrepository(baseui, path, intents=None):
             raise error.Abort(
                 _(b"share source does not support exp-sharesafe requirement")
             )
-
-        if shared:
-            # This is a shared repo
-            storevfs = vfsmod.vfs(sharedvfs.join(b'store'))
-        else:
-            storevfs = vfsmod.vfs(hgvfs.join(b'store'))
 
         requirements |= _readrequires(storevfs, False)
     elif shared:
