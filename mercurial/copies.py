@@ -274,6 +274,7 @@ def _changesetforwardcopies(a, b, match):
     revs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     roots = set()
     has_graph_roots = False
+    multi_thread = repo.ui.configbool(b'devel', b'copy-tracing.multi-thread')
 
     # iterate over `only(B, A)`
     for r in revs:
@@ -321,7 +322,13 @@ def _changesetforwardcopies(a, b, match):
                     children_count[p] += 1
         revinfo = _revinfo_getter(repo, match)
         return _combine_changeset_copies(
-            revs, children_count, b.rev(), revinfo, match, isancestor
+            revs,
+            children_count,
+            b.rev(),
+            revinfo,
+            match,
+            isancestor,
+            multi_thread,
         )
     else:
         # When not using side-data, we will process the edges "from" the parent.
@@ -346,7 +353,7 @@ def _changesetforwardcopies(a, b, match):
 
 
 def _combine_changeset_copies(
-    revs, children_count, targetrev, revinfo, match, isancestor
+    revs, children_count, targetrev, revinfo, match, isancestor, multi_thread
 ):
     """combine the copies information for each item of iterrevs
 
@@ -363,7 +370,7 @@ def _combine_changeset_copies(
 
     if rustmod is not None:
         final_copies = rustmod.combine_changeset_copies(
-            list(revs), children_count, targetrev, revinfo
+            list(revs), children_count, targetrev, revinfo, multi_thread
         )
     else:
         isancestor = cached_is_ancestor(isancestor)

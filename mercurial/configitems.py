@@ -700,6 +700,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'devel',
+    b'copy-tracing.multi-thread',
+    default=True,
+)
+coreconfigitem(
+    b'devel',
     b'debug.extensions',
     default=False,
 )

@@ -331,6 +331,7 @@ name = "hg-cpython"
 version = "0.1.0"
 dependencies = [
  "cpython 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "crossbeam-channel 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hg-core 0.1.0",
  "libc 0.2.81 (registry+https://github.com/rust-lang/crates.io-index)",
