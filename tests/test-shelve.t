@@ -278,10 +278,10 @@ is difficult to decide actual order of them from same timestamp)
 
   $ hg unshelve
   abort: no shelved changes to apply!
-  [255]
+  [20]
   $ hg unshelve foo
   abort: shelved change 'foo' not found
-  [255]
+  [10]
 
 named shelves, specific filenames, and "commit messages" should all work
 (this tests also that editor is invoked, if '--edit' is specified)
@@ -979,7 +979,7 @@ Test shelve --delete
   default         (*s ago)    changes to: create conflict (glob)
   $ hg shelve --delete doesnotexist
   abort: shelved change 'doesnotexist' not found
-  [255]
+  [10]
   $ hg shelve --delete default
 
   $ cd ..
@@ -1408,7 +1408,7 @@ Abort unshelve while merging (issue5123)
 -- using --continue with --interactive should throw an error
   $ hg unshelve --continue -i
   abort: cannot use both continue and interactive
-  [255]
+  [10]
 
   $ cat bar1
   A
@@ -1511,7 +1511,7 @@ Abort unshelve while merging (issue5123)
 -- test for --interactive --keep
   $ hg unshelve -i --keep
   abort: --keep on --interactive is not yet supported
-  [255]
+  [10]
 
   $ hg update -q --clean .
 

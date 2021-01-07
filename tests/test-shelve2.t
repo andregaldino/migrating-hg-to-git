@@ -769,10 +769,10 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
   $ hg shelve -l
   $ hg unshelve
   abort: no shelved changes to apply!
-  [255]
+  [20]
   $ hg shelve -d junk2
   abort: shelved change 'junk2' not found
-  [255]
+  [10]
   $ find .hg/shelve* | sort
   .hg/shelve-backup
   .hg/shelve-backup/junk1.patch
@@ -787,7 +787,7 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
   ValueError: * (glob)
   $ hg shelve -d junk3
   abort: shelved change 'junk3' not found
-  [255]
+  [10]
   $ find .hg/shelve* | sort
   .hg/shelve-backup
   .hg/shelve-backup/junk1.patch

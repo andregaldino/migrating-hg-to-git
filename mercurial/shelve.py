@@ -592,11 +592,13 @@ def cleanupcmd(ui, repo):
 def deletecmd(ui, repo, pats):
     """subcommand that deletes a specific shelve"""
     if not pats:
-        raise error.Abort(_(b'no shelved changes specified!'))
+        raise error.InputError(_(b'no shelved changes specified!'))
     with repo.wlock():
         for name in pats:
             if not shelvedfile(repo, name, patchextension).exists():
-                raise error.Abort(_(b"shelved change '%s' not found") % name)
+                raise error.InputError(
+                    _(b"shelved change '%s' not found") % name
+                )
             for suffix in shelvefileextensions:
                 shfile = shelvedfile(repo, name, suffix)
                 if shfile.exists():
@@ -1066,12 +1068,14 @@ def unshelvecmd(ui, repo, *shelved, **opts):
         shelved.append(opts[b"name"])
 
     if interactive and opts.get(b'keep'):
-        raise error.Abort(_(b'--keep on --interactive is not yet supported'))
+        raise error.InputError(
+            _(b'--keep on --interactive is not yet supported')
+        )
     if abortf or continuef:
         if abortf and continuef:
-            raise error.Abort(_(b'cannot use both abort and continue'))
+            raise error.InputError(_(b'cannot use both abort and continue'))
         if shelved:
-            raise error.Abort(
+            raise error.InputError(
                 _(
                     b'cannot combine abort/continue with '
                     b'naming a shelved change'
@@ -1084,22 +1088,24 @@ def unshelvecmd(ui, repo, *shelved, **opts):
         if abortf:
             return unshelveabort(ui, repo, state)
         elif continuef and interactive:
-            raise error.Abort(_(b'cannot use both continue and interactive'))
+            raise error.InputError(
+                _(b'cannot use both continue and interactive')
+            )
         elif continuef:
             return unshelvecontinue(ui, repo, state, opts)
     elif len(shelved) > 1:
-        raise error.Abort(_(b'can only unshelve one change at a time'))
+        raise error.InputError(_(b'can only unshelve one change at a time'))
     elif not shelved:
         shelved = listshelves(repo)
         if not shelved:
-            raise error.Abort(_(b'no shelved changes to apply!'))
+            raise error.StateError(_(b'no shelved changes to apply!'))
         basename = util.split(shelved[0][1])[1]
         ui.status(_(b"unshelving change '%s'\n") % basename)
     else:
         basename = shelved[0]
 
     if not shelvedfile(repo, basename, patchextension).exists():
-        raise error.Abort(_(b"shelved change '%s' not found") % basename)
+        raise error.InputError(_(b"shelved change '%s' not found") % basename)
 
     return _dounshelve(ui, repo, basename, opts)
 
