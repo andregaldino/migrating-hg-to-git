@@ -163,9 +163,6 @@ class shelvedfile(object):
             self.ui, cg, self.fname, btype, self.vfs, compression=compression
         )
 
-    def readinfo(self):
-        return scmutil.simplekeyvaluefile(self.vfs, self.fname).read()
-
 
 class Shelf(object):
     """Represents a shelf, including possibly multiple files storing it.
@@ -185,6 +182,11 @@ class Shelf(object):
 
     def writeinfo(self, info):
         scmutil.simplekeyvaluefile(self.vfs, self.name + b'.shelve').write(info)
+
+    def readinfo(self):
+        return scmutil.simplekeyvaluefile(
+            self.vfs, self.name + b'.shelve'
+        ).read()
 
 
 class shelvedstate(object):
@@ -894,7 +896,7 @@ def _unshelverestorecommit(ui, repo, tr, basename):
     repo = repo.unfiltered()
     node = None
     if shelvedfile(repo, basename, b'shelve').exists():
-        node = shelvedfile(repo, basename, b'shelve').readinfo()[b'node']
+        node = Shelf(repo, basename).readinfo()[b'node']
     if node is None or node not in repo:
         with ui.configoverride({(b'ui', b'quiet'): True}):
             shelvectx = shelvedfile(repo, basename, b'hg').applybundle(tr)
