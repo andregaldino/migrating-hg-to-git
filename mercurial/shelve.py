@@ -28,7 +28,6 @@ import itertools
 import stat
 
 from .i18n import _
-from .pycompat import open
 from .node import (
     bin,
     hex,
@@ -672,7 +671,7 @@ def listcmd(ui, repo, pats, opts):
         ui.write(age, label=b'shelve.age')
         ui.write(b' ' * (12 - len(age)))
         used += 12
-        with open(name + b'.' + patchextension, b'rb') as fp:
+        with Shelf(repo, sname).open_patch() as fp:
             while True:
                 line = fp.readline()
                 if not line:
