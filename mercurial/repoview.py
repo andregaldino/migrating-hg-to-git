@@ -159,7 +159,7 @@ def computeimpactable(repo, visibilityexceptions=None):
     This filter out any mutable changeset and any public changeset that may be
     impacted by something happening to a mutable revision.
 
-    This is achieved by filtered everything with a revision number egal or
+    This is achieved by filtered everything with a revision number equal or
     higher than the first mutable changeset is filtered."""
     assert not repo.changelog.filteredrevs
     cl = repo.changelog

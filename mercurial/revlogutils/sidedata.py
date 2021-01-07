@@ -13,8 +13,8 @@ important information related to a changesets.
 The current implementation is experimental and subject to changes. Do not rely
 on it in production.
 
-Sidedata are stored in the revlog itself, withing the revision rawtext. They
-are inserted, removed from it using the flagprocessors mechanism. The following
+Sidedata are stored in the revlog itself, within the revision rawtext. They
+are inserted and removed from it using the flagprocessors mechanism. The following
 format is currently used::
 
     initial header:
@@ -27,7 +27,7 @@ format is currently used::
     normal raw text:
         <all bytes remaining in the rawtext>
 
-This is a simple and effective format. It should be enought to experiment with
+This is a simple and effective format. It should be enough to experiment with
 the concept.
 """
 
