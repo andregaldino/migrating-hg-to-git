@@ -391,7 +391,9 @@ def _other_rawdata_filepath(revlog, docket):
 #
 #  * value >=  0 -> index of sub-block
 #  * value == -1 -> no value
-#  * value <  -1 -> a revision value: rev = -(value+10)
+#  * value <  -1 -> encoded revision: rev = -(value+2)
+#
+# See REV_OFFSET and _transform_rev below.
 #
 # The implementation focus on simplicity, not on performance. A Rust
 # implementation should provide a efficient version of the same binary
