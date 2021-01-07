@@ -163,9 +163,6 @@ class shelvedfile(object):
             self.ui, cg, self.fname, btype, self.vfs, compression=compression
         )
 
-    def writeinfo(self, info):
-        scmutil.simplekeyvaluefile(self.vfs, self.fname).write(info)
-
     def readinfo(self):
         return scmutil.simplekeyvaluefile(self.vfs, self.fname).read()
 
@@ -185,6 +182,9 @@ class Shelf(object):
 
     def exists(self):
         return self.vfs.exists(self.name + b'.' + patchextension)
+
+    def writeinfo(self, info):
+        scmutil.simplekeyvaluefile(self.vfs, self.name + b'.shelve').write(info)
 
 
 class shelvedstate(object):
@@ -471,7 +471,7 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
 
 def _shelvecreatedcommit(repo, node, name, match):
     info = {b'node': hex(node)}
-    shelvedfile(repo, name, b'shelve').writeinfo(info)
+    Shelf(repo, name).writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, b'hg').writebundle(bases, node)
     with shelvedfile(repo, name, patchextension).opener(b'wb') as fp:
@@ -902,7 +902,7 @@ def _unshelverestorecommit(ui, repo, tr, basename):
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:
             info = {b'node': hex(shelvectx.node())}
-            shelvedfile(repo, basename, b'shelve').writeinfo(info)
+            Shelf(repo, basename).writeinfo(info)
     else:
         shelvectx = repo[node]
 
