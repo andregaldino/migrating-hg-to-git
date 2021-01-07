@@ -170,6 +170,23 @@ class shelvedfile(object):
         return scmutil.simplekeyvaluefile(self.vfs, self.fname).read()
 
 
+class Shelf(object):
+    """Represents a shelf, including possibly multiple files storing it.
+
+    Old shelves will have a .patch and a .hg file. Newer shelves will
+    also have a .shelve file. This class abstracts away some of the
+    differences and lets you work with the shelf as a whole.
+    """
+
+    def __init__(self, repo, name):
+        self.repo = repo
+        self.name = name
+        self.vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
+
+    def exists(self):
+        return self.vfs.exists(self.name + b'.' + patchextension)
+
+
 class shelvedstate(object):
     """Handle persistence during unshelving operations.
 
@@ -364,7 +381,7 @@ def getshelvename(repo, parent, opts):
         label = label.replace(b'.', b'_', 1)
 
     if name:
-        if shelvedfile(repo, name, patchextension).exists():
+        if Shelf(repo, name).exists():
             e = _(b"a shelved change named '%s' already exists") % name
             raise error.Abort(e)
 
@@ -378,7 +395,7 @@ def getshelvename(repo, parent, opts):
 
     else:
         for n in gennames():
-            if not shelvedfile(repo, n, patchextension).exists():
+            if not Shelf(repo, n).exists():
                 name = n
                 break
 
@@ -595,7 +612,7 @@ def deletecmd(ui, repo, pats):
         raise error.InputError(_(b'no shelved changes specified!'))
     with repo.wlock():
         for name in pats:
-            if not shelvedfile(repo, name, patchextension).exists():
+            if not Shelf(repo, name).exists():
                 raise error.InputError(
                     _(b"shelved change '%s' not found") % name
                 )
@@ -682,7 +699,7 @@ def patchcmds(ui, repo, pats, opts):
         pats = [sname]
 
     for shelfname in pats:
-        if not shelvedfile(repo, shelfname, patchextension).exists():
+        if not Shelf(repo, shelfname).exists():
             raise error.Abort(_(b"cannot find shelf %s") % shelfname)
 
     listcmd(ui, repo, pats, opts)
@@ -1104,7 +1121,7 @@ def unshelvecmd(ui, repo, *shelved, **opts):
     else:
         basename = shelved[0]
 
-    if not shelvedfile(repo, basename, patchextension).exists():
+    if not Shelf(repo, basename).exists():
         raise error.InputError(_(b"shelved change '%s' not found") % basename)
 
     return _dounshelve(ui, repo, basename, opts)
