@@ -630,7 +630,7 @@ def deletecmd(ui, repo, pats):
 
 
 def listshelves(repo):
-    """return all shelves in repo as list of (time, filename)"""
+    """return all shelves in repo as list of (time, name)"""
     try:
         names = repo.vfs.readdir(shelvedir)
     except OSError as err:
@@ -643,7 +643,7 @@ def listshelves(repo):
         if not pfx or sfx != patchextension:
             continue
         mtime = Shelf(repo, pfx).mtime()
-        info.append((mtime, shelvedfile(repo, pfx).filename()))
+        info.append((mtime, pfx))
     return sorted(info, reverse=True)
 
 
@@ -656,22 +656,21 @@ def listcmd(ui, repo, pats, opts):
     namelabel = b'shelve.newest'
     ui.pager(b'shelve')
     for mtime, name in listshelves(repo):
-        sname = util.split(name)[1]
-        if pats and sname not in pats:
+        if pats and name not in pats:
             continue
-        ui.write(sname, label=namelabel)
+        ui.write(name, label=namelabel)
         namelabel = b'shelve.name'
         if ui.quiet:
             ui.write(b'\n')
             continue
-        ui.write(b' ' * (16 - len(sname)))
+        ui.write(b' ' * (16 - len(name)))
         used = 16
         date = dateutil.makedate(mtime)
         age = b'(%s)' % templatefilters.age(date, abbrev=True)
         ui.write(age, label=b'shelve.age')
         ui.write(b' ' * (12 - len(age)))
         used += 12
-        with Shelf(repo, sname).open_patch() as fp:
+        with Shelf(repo, name).open_patch() as fp:
             while True:
                 line = fp.readline()
                 if not line:
@@ -701,8 +700,7 @@ def patchcmds(ui, repo, pats, opts):
         if not shelves:
             raise error.Abort(_(b"there are no shelves to show"))
         mtime, name = shelves[0]
-        sname = util.split(name)[1]
-        pats = [sname]
+        pats = [name]
 
     for shelfname in pats:
         if not Shelf(repo, shelfname).exists():
@@ -1122,7 +1120,7 @@ def unshelvecmd(ui, repo, *shelved, **opts):
         shelved = listshelves(repo)
         if not shelved:
             raise error.StateError(_(b'no shelved changes to apply!'))
-        basename = util.split(shelved[0][1])[1]
+        basename = shelved[0][1]
         ui.status(_(b"unshelving change '%s'\n") % basename)
     else:
         basename = shelved[0]
