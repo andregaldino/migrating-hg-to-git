@@ -84,7 +84,6 @@ class shelvedfile(object):
         self.name = name
         self.vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
         self.backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
-        self.ui = self.repo.ui
         if filetype:
             self.fname = name + b'.' + filetype
         else:
@@ -143,26 +142,6 @@ class shelvedfile(object):
         finally:
             fp.close()
 
-    def writebundle(self, bases, node):
-        cgversion = changegroup.safeversion(self.repo)
-        if cgversion == b'01':
-            btype = b'HG10BZ'
-            compression = None
-        else:
-            btype = b'HG20'
-            compression = b'BZ'
-
-        repo = self.repo.unfiltered()
-
-        outgoing = discovery.outgoing(
-            repo, missingroots=bases, ancestorsof=[node]
-        )
-        cg = changegroup.makechangegroup(repo, outgoing, cgversion, b'shelve')
-
-        bundle2.writebundle(
-            self.ui, cg, self.fname, btype, self.vfs, compression=compression
-        )
-
 
 class Shelf(object):
     """Represents a shelf, including possibly multiple files storing it.
@@ -187,6 +166,32 @@ class Shelf(object):
         return scmutil.simplekeyvaluefile(
             self.vfs, self.name + b'.shelve'
         ).read()
+
+    def writebundle(self, bases, node):
+        cgversion = changegroup.safeversion(self.repo)
+        if cgversion == b'01':
+            btype = b'HG10BZ'
+            compression = None
+        else:
+            btype = b'HG20'
+            compression = b'BZ'
+
+        repo = self.repo.unfiltered()
+
+        outgoing = discovery.outgoing(
+            repo, missingroots=bases, ancestorsof=[node]
+        )
+        cg = changegroup.makechangegroup(repo, outgoing, cgversion, b'shelve')
+
+        bundle_filename = self.vfs.join(self.name + b'.hg')
+        bundle2.writebundle(
+            self.repo.ui,
+            cg,
+            bundle_filename,
+            btype,
+            self.vfs,
+            compression=compression,
+        )
 
 
 class shelvedstate(object):
@@ -475,7 +480,7 @@ def _shelvecreatedcommit(repo, node, name, match):
     info = {b'node': hex(node)}
     Shelf(repo, name).writeinfo(info)
     bases = list(mutableancestors(repo[node]))
-    shelvedfile(repo, name, b'hg').writebundle(bases, node)
+    Shelf(repo, name).writebundle(bases, node)
     with shelvedfile(repo, name, patchextension).opener(b'wb') as fp:
         cmdutil.exportfile(
             repo, [node], fp, opts=mdiff.diffopts(git=True), match=match
