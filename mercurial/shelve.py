@@ -38,7 +38,6 @@ from .node import (
 from . import (
     bookmarks,
     bundle2,
-    bundlerepo,
     changegroup,
     cmdutil,
     discovery,
@@ -148,12 +147,6 @@ class shelvedfile(object):
             return shelvectx
         finally:
             fp.close()
-
-    def bundlerepo(self):
-        path = self.vfs.join(self.fname)
-        return bundlerepo.instance(
-            self.repo.baseui, b'bundle://%s+%s' % (self.repo.root, path), False
-        )
 
     def writebundle(self, bases, node):
         cgversion = changegroup.safeversion(self.repo)
