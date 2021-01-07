@@ -80,7 +80,6 @@ class shelvedfile(object):
     the vfs layer"""
 
     def __init__(self, repo, name, filetype=None):
-        self.repo = repo
         self.name = name
         self.vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
         self.backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
@@ -117,30 +116,6 @@ class shelvedfile(object):
 
     def opener(self, mode=b'rb'):
         return self.vfs(self.fname, mode)
-
-    def applybundle(self, tr):
-        fp = self.opener()
-        try:
-            targetphase = phases.internal
-            if not phases.supportinternal(self.repo):
-                targetphase = phases.secret
-            gen = exchange.readbundle(self.repo.ui, fp, self.fname, self.vfs)
-            pretip = self.repo[b'tip']
-            bundle2.applybundle(
-                self.repo,
-                gen,
-                tr,
-                source=b'unshelve',
-                url=b'bundle:' + self.vfs.join(self.fname),
-                targetphase=targetphase,
-            )
-            shelvectx = self.repo[b'tip']
-            if pretip == shelvectx:
-                shelverev = tr.changes[b'revduplicates'][-1]
-                shelvectx = self.repo[shelverev]
-            return shelvectx
-        finally:
-            fp.close()
 
 
 class Shelf(object):
@@ -192,6 +167,31 @@ class Shelf(object):
             self.vfs,
             compression=compression,
         )
+
+    def applybundle(self, tr):
+        filename = self.name + b'.hg'
+        fp = self.vfs(filename)
+        try:
+            targetphase = phases.internal
+            if not phases.supportinternal(self.repo):
+                targetphase = phases.secret
+            gen = exchange.readbundle(self.repo.ui, fp, filename, self.vfs)
+            pretip = self.repo[b'tip']
+            bundle2.applybundle(
+                self.repo,
+                gen,
+                tr,
+                source=b'unshelve',
+                url=b'bundle:' + self.vfs.join(filename),
+                targetphase=targetphase,
+            )
+            shelvectx = self.repo[b'tip']
+            if pretip == shelvectx:
+                shelverev = tr.changes[b'revduplicates'][-1]
+                shelvectx = self.repo[shelverev]
+            return shelvectx
+        finally:
+            fp.close()
 
 
 class shelvedstate(object):
@@ -904,7 +904,7 @@ def _unshelverestorecommit(ui, repo, tr, basename):
         node = Shelf(repo, basename).readinfo()[b'node']
     if node is None or node not in repo:
         with ui.configoverride({(b'ui', b'quiet'): True}):
-            shelvectx = shelvedfile(repo, basename, b'hg').applybundle(tr)
+            shelvectx = Shelf(repo, basename).applybundle(tr)
         # We might not strip the unbundled changeset, so we should keep track of
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:
