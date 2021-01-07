@@ -110,9 +110,6 @@ class shelvedfile(object):
             self.backupvfs.makedir()
         util.rename(self.filename(), self.backupfilename())
 
-    def stat(self):
-        return self.vfs.stat(self.fname)
-
 
 class Shelf(object):
     """Represents a shelf, including possibly multiple files storing it.
@@ -129,6 +126,9 @@ class Shelf(object):
 
     def exists(self):
         return self.vfs.exists(self.name + b'.' + patchextension)
+
+    def mtime(self):
+        return self.vfs.stat(self.name + b'.' + patchextension)[stat.ST_MTIME]
 
     def writeinfo(self, info):
         scmutil.simplekeyvaluefile(self.vfs, self.name + b'.shelve').write(info)
@@ -642,8 +642,8 @@ def listshelves(repo):
         pfx, sfx = name.rsplit(b'.', 1)
         if not pfx or sfx != patchextension:
             continue
-        st = shelvedfile(repo, name).stat()
-        info.append((st[stat.ST_MTIME], shelvedfile(repo, pfx).filename()))
+        mtime = Shelf(repo, pfx).mtime()
+        info.append((mtime, shelvedfile(repo, pfx).filename()))
     return sorted(info, reverse=True)
 
 
