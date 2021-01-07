@@ -776,8 +776,8 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
   $ find .hg/shelve* | sort
   .hg/shelve-backup
   .hg/shelve-backup/junk1.patch
-  .hg/shelve-backup/junk2.hg
   .hg/shelved
+  .hg/shelved/junk2.hg
 
 # A file with an unexpected extension
   $ touch .hg/shelved/junk3
@@ -791,8 +791,8 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
   $ find .hg/shelve* | sort
   .hg/shelve-backup
   .hg/shelve-backup/junk1.patch
-  .hg/shelve-backup/junk2.hg
   .hg/shelved
+  .hg/shelved/junk2.hg
   .hg/shelved/junk3
 
   $ cd ..
