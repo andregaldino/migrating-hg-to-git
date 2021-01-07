@@ -114,9 +114,6 @@ class shelvedfile(object):
     def stat(self):
         return self.vfs.stat(self.fname)
 
-    def opener(self, mode=b'rb'):
-        return self.vfs(self.fname, mode)
-
 
 class Shelf(object):
     """Represents a shelf, including possibly multiple files storing it.
@@ -192,6 +189,9 @@ class Shelf(object):
             return shelvectx
         finally:
             fp.close()
+
+    def open_patch(self, mode=b'rb'):
+        return self.vfs(self.name + b'.patch', mode)
 
 
 class shelvedstate(object):
@@ -481,7 +481,7 @@ def _shelvecreatedcommit(repo, node, name, match):
     Shelf(repo, name).writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     Shelf(repo, name).writebundle(bases, node)
-    with shelvedfile(repo, name, patchextension).opener(b'wb') as fp:
+    with Shelf(repo, name).open_patch(b'wb') as fp:
         cmdutil.exportfile(
             repo, [node], fp, opts=mdiff.diffopts(git=True), match=match
         )
