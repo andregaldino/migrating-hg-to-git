@@ -117,12 +117,7 @@ class shelvedfile(object):
         return self.vfs.stat(self.fname)
 
     def opener(self, mode=b'rb'):
-        try:
-            return self.vfs(self.fname, mode)
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
-            raise error.Abort(_(b"shelved change '%s' not found") % self.name)
+        return self.vfs(self.fname, mode)
 
     def applybundle(self, tr):
         fp = self.opener()

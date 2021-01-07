@@ -756,7 +756,7 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
   junk1           (* ago)     (glob)
   $ hg unshelve
   unshelving change 'junk1'
-  abort: shelved change 'junk1' not found
+  abort: $ENOENT$: '$TESTTMP/corrupt-shelves/.hg/shelved/junk1.hg'
   [255]
   $ hg shelve -d junk1
   $ find .hg/shelve* | sort
