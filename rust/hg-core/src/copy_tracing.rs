@@ -617,7 +617,7 @@ fn merge_copies_dict(
 ) -> InternalPathCopies {
     use crate::utils::{ordmap_union_with_merge, MergeResult};
 
-    ordmap_union_with_merge(minor, major, |dest, src_minor, src_major| {
+    ordmap_union_with_merge(minor, major, |&dest, src_minor, src_major| {
         let (pick, overwrite) = compare_value(
             path_map,
             current_merge,
@@ -664,7 +664,7 @@ fn compare_value(
     path_map: &TwoWayPathMap,
     current_merge: Revision,
     changes: &ChangedFiles,
-    dest: &PathToken,
+    dest: PathToken,
     src_minor: &CopySource,
     src_major: &CopySource,
 ) -> (MergePick, bool) {
@@ -693,7 +693,7 @@ fn compare_value(
         }
     } else {
         debug_assert!(src_major.rev != src_major.rev);
-        let dest_path = path_map.untokenize(*dest);
+        let dest_path = path_map.untokenize(dest);
         let action = changes.get_merge_case(dest_path);
         if src_minor.path.is_some()
             && src_major.path.is_none()
