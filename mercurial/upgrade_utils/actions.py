@@ -467,6 +467,13 @@ def find_format_downgrades(repo):
     downgrades = []
 
     for fv in allformatvariant:
+        if fv.name == b'compression':
+            # If there is a compression change between repository
+            # and config, destination repository compression will change
+            # and current compression will be removed.
+            if fv.fromrepo(repo) != fv.fromconfig(repo):
+                downgrades.append(fv)
+            continue
         # format variant exist in repo but does not exist in new repository
         # config
         if fv.fromrepo(repo) and not fv.fromconfig(repo):
