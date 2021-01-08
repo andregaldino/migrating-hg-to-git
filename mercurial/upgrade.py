@@ -171,6 +171,9 @@ def upgraderepo(
             upgrade_op.print_unused_optimizations()
         return
 
+    if not (upgrade_op.upgrade_actions or upgrade_op.removed_actions):
+        ui.status(_(b'nothing to do\n'))
+        return
     # Else we're in the run=true case.
     ui.write(_(b'upgrade will perform the following actions:\n\n'))
     upgrade_op.print_requirements()
