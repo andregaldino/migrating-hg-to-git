@@ -97,10 +97,9 @@ class shelvedfile(object):
             for i in itertools.count(1):
                 yield b'%s-%d.%s' % (base, i, ext)
 
-        name = self.backupvfs.join(self.fname)
-        for n in gennames(name):
+        for n in gennames(self.fname):
             if not self.backupvfs.exists(n):
-                return n
+                return self.backupvfs.join(n)
 
     def movetobackup(self):
         if not self.backupvfs.isdir():
