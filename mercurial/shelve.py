@@ -90,9 +90,6 @@ class shelvedfile(object):
     def exists(self):
         return self.vfs.exists(self.fname)
 
-    def filename(self):
-        return self.vfs.join(self.fname)
-
     def backupfilename(self):
         def gennames(base):
             yield base
@@ -108,7 +105,7 @@ class shelvedfile(object):
     def movetobackup(self):
         if not self.backupvfs.isdir():
             self.backupvfs.makedir()
-        util.rename(self.filename(), self.backupfilename())
+        util.rename(self.vfs.join(self.fname), self.backupfilename())
 
 
 class Shelf(object):
