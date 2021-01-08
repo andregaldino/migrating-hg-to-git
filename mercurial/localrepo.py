@@ -607,7 +607,9 @@ def makelocalrepository(baseui, path, intents=None):
                     storevfs,
                     requirements,
                 )
-            else:
+            elif ui.configbool(
+                b'experimental', b'sharesafe-warn-outdated-shares'
+            ):
                 ui.warn(
                     _(
                         b'warning: source repository supports share-safe functionality.'

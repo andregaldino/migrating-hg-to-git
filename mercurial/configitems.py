@@ -1084,6 +1084,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'sharesafe-warn-outdated-shares',
+    default=True,
+)
+coreconfigitem(
+    b'experimental',
     b'single-head-per-branch',
     default=False,
 )

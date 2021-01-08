@@ -392,6 +392,12 @@ Upgrade
 
 Make sure existing shares still works
 
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-warn-outdated-shares=false
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share
   warning: source repository supports share-safe functionality. Reshare to upgrade.
   @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
@@ -544,6 +550,13 @@ Check that if lock is taken, upgrade fails but read operation are successful
   |
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
+
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true --config experimental.sharesafe-warn-outdated-shares=false
+  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
+  |
+  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
+  
+
   $ rm ../nss-share/.hg/wlock
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true
   repository upgraded to use share-safe mode
