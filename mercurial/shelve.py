@@ -81,7 +81,6 @@ class shelvedfile(object):
     def __init__(self, repo, name, filetype=None):
         self.name = name
         self.vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
-        self.backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
         if filetype:
             self.fname = name + b'.' + filetype
         else:
@@ -89,22 +88,6 @@ class shelvedfile(object):
 
     def exists(self):
         return self.vfs.exists(self.fname)
-
-    def backupfilename(self):
-        def gennames(base):
-            yield base
-            base, ext = base.rsplit(b'.', 1)
-            for i in itertools.count(1):
-                yield b'%s-%d.%s' % (base, i, ext)
-
-        for n in gennames(self.fname):
-            if not self.backupvfs.exists(n):
-                return self.backupvfs.join(n)
-
-    def movetobackup(self):
-        if not self.backupvfs.isdir():
-            self.backupvfs.makedir()
-        util.rename(self.vfs.join(self.fname), self.backupfilename())
 
 
 class Shelf(object):
@@ -119,6 +102,7 @@ class Shelf(object):
         self.repo = repo
         self.name = name
         self.vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
+        self.backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
 
     def exists(self):
         return self.vfs.exists(self.name + b'.' + patchextension)
@@ -187,6 +171,27 @@ class Shelf(object):
 
     def open_patch(self, mode=b'rb'):
         return self.vfs(self.name + b'.patch', mode)
+
+    def _backupfilename(self, filename):
+        def gennames(base):
+            yield base
+            base, ext = base.rsplit(b'.', 1)
+            for i in itertools.count(1):
+                yield b'%s-%d.%s' % (base, i, ext)
+
+        for n in gennames(filename):
+            if not self.backupvfs.exists(n):
+                return self.backupvfs.join(n)
+
+    def movetobackup(self):
+        if not self.backupvfs.isdir():
+            self.backupvfs.makedir()
+        for suffix in shelvefileextensions:
+            filename = self.name + b'.' + suffix
+            if self.vfs.exists(filename):
+                util.rename(
+                    self.vfs.join(filename), self._backupfilename(filename)
+                )
 
 
 class shelvedstate(object):
@@ -602,10 +607,7 @@ def cleanupcmd(ui, repo):
 
     with repo.wlock():
         for _mtime, name in listshelves(repo):
-            for suffix in shelvefileextensions:
-                shfile = shelvedfile(repo, name, suffix)
-                if shfile.exists():
-                    shfile.movetobackup()
+            Shelf(repo, name).movetobackup()
             cleanupoldbackups(repo)
 
 
@@ -619,10 +621,7 @@ def deletecmd(ui, repo, pats):
                 raise error.InputError(
                     _(b"shelved change '%s' not found") % name
                 )
-            for suffix in shelvefileextensions:
-                shfile = shelvedfile(repo, name, suffix)
-                if shfile.exists():
-                    shfile.movetobackup()
+            Shelf(repo, name).movetobackup()
             cleanupoldbackups(repo)
 
 
@@ -791,10 +790,7 @@ def restorebranch(ui, repo, branchtorestore):
 def unshelvecleanup(ui, repo, name, opts):
     """remove related files after an unshelve"""
     if not opts.get(b'keep'):
-        for filetype in shelvefileextensions:
-            shfile = shelvedfile(repo, name, filetype)
-            if shfile.exists():
-                shfile.movetobackup()
+        Shelf(repo, name).movetobackup()
         cleanupoldbackups(repo)
 
 
