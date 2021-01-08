@@ -1084,6 +1084,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'sharesafe-auto-upgrade-fail-error',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
     b'sharesafe-warn-outdated-shares',
     default=True,
 )

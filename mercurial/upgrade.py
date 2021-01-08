@@ -257,7 +257,12 @@ def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
         current_requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
         ui.warn(_(b'repository upgraded to use share-safe mode\n'))
     except error.LockError as e:
-        if ui.configbool(b'experimental', b'sharesafe-warn-outdated-shares'):
+        if ui.configbool(b'experimental', b'sharesafe-auto-upgrade-fail-error'):
+            raise error.Abort(
+                _(b'failed to upgrade share, got error: %s')
+                % stringutil.forcebytestr(e.strerror)
+            )
+        elif ui.configbool(b'experimental', b'sharesafe-warn-outdated-shares'):
             ui.warn(
                 _(b'failed to upgrade share, got error: %s\n')
                 % stringutil.forcebytestr(e.strerror)

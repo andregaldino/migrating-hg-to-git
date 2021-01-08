@@ -557,6 +557,10 @@ Check that if lock is taken, upgrade fails but read operation are successful
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
 
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true --config experimental.sharesafe-auto-upgrade-fail-error=true
+  abort: failed to upgrade share, got error: Lock held
+  [255]
+
   $ rm ../nss-share/.hg/wlock
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true
   repository upgraded to use share-safe mode
