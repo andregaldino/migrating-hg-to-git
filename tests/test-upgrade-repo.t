@@ -1644,3 +1644,42 @@ upgrade from hgrc
   sparserevlog
   store
   $ hg debugsidedata -c 0
+
+Demonstrate that nothing to perform upgrade will still run all the way through
+FIXME: this should return early
+
+  $ hg debugupgraderepo --run
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, exp-sidedata-flag, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
+  migrating 297 bytes in store; 103 bytes tracked data
+  migrating 1 filelogs containing 1 revisions (64 bytes in store; 0 bytes tracked data)
+  finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
+  migrating 1 manifests containing 1 revisions (110 bytes in store; 45 bytes tracked data)
+  finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
+  migrating changelog containing 1 revisions (123 bytes in store; 58 bytes tracked data)
+  finished migrating 1 changelog revisions; change in size: 0 bytes
+  finished migrating 3 total revisions; total change in store size: 0 bytes
+  copying phaseroots
+  data fully upgraded in a temporary repository
+  marking source repository as being upgraded; clients will be unable to read from repository
+  starting in-place swap of repository data
+  replaced files will be backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  replacing store...
+  store replacement complete; repository was inconsistent for *s (glob)
+  finalizing requirements file and making repository readable again
+  removing temporary repository $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
+  copy of old repository backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
