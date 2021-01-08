@@ -463,10 +463,11 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
 
 def _shelvecreatedcommit(repo, node, name, match):
     info = {b'node': hex(node)}
-    Shelf(repo, name).writeinfo(info)
+    shelf = Shelf(repo, name)
+    shelf.writeinfo(info)
     bases = list(mutableancestors(repo[node]))
-    Shelf(repo, name).writebundle(bases, node)
-    with Shelf(repo, name).open_patch(b'wb') as fp:
+    shelf.writebundle(bases, node)
+    with shelf.open_patch(b'wb') as fp:
         cmdutil.exportfile(
             repo, [node], fp, opts=mdiff.diffopts(git=True), match=match
         )
@@ -602,11 +603,12 @@ def deletecmd(ui, repo, pats):
         raise error.InputError(_(b'no shelved changes specified!'))
     with repo.wlock():
         for name in pats:
-            if not Shelf(repo, name).exists():
+            shelf = Shelf(repo, name)
+            if not shelf.exists():
                 raise error.InputError(
                     _(b"shelved change '%s' not found") % name
                 )
-            Shelf(repo, name).movetobackup()
+            shelf.movetobackup()
             cleanupoldbackups(repo)
 
 
@@ -875,16 +877,17 @@ def _unshelverestorecommit(ui, repo, tr, basename):
     """Recreate commit in the repository during the unshelve"""
     repo = repo.unfiltered()
     node = None
-    if Shelf(repo, basename).hasinfo():
-        node = Shelf(repo, basename).readinfo()[b'node']
+    shelf = Shelf(repo, basename)
+    if shelf.hasinfo():
+        node = shelf.readinfo()[b'node']
     if node is None or node not in repo:
         with ui.configoverride({(b'ui', b'quiet'): True}):
-            shelvectx = Shelf(repo, basename).applybundle(tr)
+            shelvectx = shelf.applybundle(tr)
         # We might not strip the unbundled changeset, so we should keep track of
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:
             info = {b'node': hex(shelvectx.node())}
-            Shelf(repo, basename).writeinfo(info)
+            shelf.writeinfo(info)
     else:
         shelvectx = repo[node]
 
