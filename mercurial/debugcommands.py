@@ -1889,10 +1889,10 @@ def debuglabelcomplete(ui, repo, *args):
 @command(
     b'debuglocks',
     [
-        (b'L', b'force-lock', None, _(b'free the store lock (DANGEROUS)')),
+        (b'L', b'force-free-lock', None, _(b'free the store lock (DANGEROUS)')),
         (
             b'W',
-            b'force-wlock',
+            b'force-free-wlock',
             None,
             _(b'free the working state lock (DANGEROUS)'),
         ),
@@ -1931,11 +1931,11 @@ def debuglocks(ui, repo, **opts):
 
     """
 
-    if opts.get('force_lock'):
+    if opts.get('force_free_lock'):
         repo.svfs.unlink(b'lock')
-    if opts.get('force_wlock'):
+    if opts.get('force_free_wlock'):
         repo.vfs.unlink(b'wlock')
-    if opts.get('force_lock') or opts.get('force_wlock'):
+    if opts.get('force_free_lock') or opts.get('force_free_wlock'):
         return 0
 
     locks = []

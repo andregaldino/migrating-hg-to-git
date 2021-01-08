@@ -295,7 +295,7 @@ Show all commands + options
   debuginstall: template
   debugknown: 
   debuglabelcomplete: 
-  debuglocks: force-lock, force-wlock, set-lock, set-wlock
+  debuglocks: force-free-lock, force-free-wlock, set-lock, set-wlock
   debugmanifestfulltextcache: clear, add
   debugmergestate: style, template
   debugnamecomplete: 

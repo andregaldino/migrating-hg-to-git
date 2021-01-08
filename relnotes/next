@@ -53,6 +53,8 @@
 
 == Backwards Compatibility Changes ==
 
+ * `--force-lock` and `--force-wlock` options on `hg debuglock` command are
+   renamed to `--force-free-lock` and `--force-free-wlock` respectively.
 
 
 == Internal API Changes ==
