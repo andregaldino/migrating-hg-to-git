@@ -52,12 +52,6 @@ phabricator-refresh:
     script:
       - "./contrib/phab-refresh-stack.sh --comment \":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)\""
 
-rust-cargo-test-py3-dirstate-tree:
-    <<: *rust_cargo_test
-    variables:
-        PYTHON: python3
-        HG_RUST_FEATURES: dirstate-tree
-
 test-py2:
     <<: *runtests
     variables:
@@ -98,15 +92,6 @@ test-py3-rust:
         RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "rust+c"
-
-test-py3-rust-dirstate-tree:
-    <<: *runtests
-    variables:
-        HGWITHRUSTEXT: cpython
-        RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
-        PYTHON: python3
-        TEST_HGMODULEPOLICY: "rust+c"
-        HG_RUST_FEATURES: "dirstate-tree"
 
 test-py2-chg:
     <<: *runtests
