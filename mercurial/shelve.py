@@ -602,10 +602,11 @@ def cleanupcmd(ui, repo):
     """subcommand that deletes all shelves"""
 
     with repo.wlock():
-        for (name, _type) in repo.vfs.readdir(shelvedir):
-            suffix = name.rsplit(b'.', 1)[-1]
-            if suffix in shelvefileextensions:
-                shelvedfile(repo, name).movetobackup()
+        for _mtime, name in listshelves(repo):
+            for suffix in shelvefileextensions:
+                shfile = shelvedfile(repo, name, suffix)
+                if shfile.exists():
+                    shfile.movetobackup()
             cleanupoldbackups(repo)
 
 
