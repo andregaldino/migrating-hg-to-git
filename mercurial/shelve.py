@@ -72,24 +72,6 @@ patchextension = b'patch'
 shelveuser = b'shelve@localhost'
 
 
-class shelvedfile(object):
-    """Helper for the file storing a single shelve
-
-    Handles common functions on shelve files (.hg/.patch) using
-    the vfs layer"""
-
-    def __init__(self, repo, name, filetype=None):
-        self.name = name
-        self.vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
-        if filetype:
-            self.fname = name + b'.' + filetype
-        else:
-            self.fname = name
-
-    def exists(self):
-        return self.vfs.exists(self.fname)
-
-
 class Shelf(object):
     """Represents a shelf, including possibly multiple files storing it.
 
@@ -112,6 +94,9 @@ class Shelf(object):
 
     def writeinfo(self, info):
         scmutil.simplekeyvaluefile(self.vfs, self.name + b'.shelve').write(info)
+
+    def hasinfo(self):
+        return self.vfs.exists(self.name + b'.shelve')
 
     def readinfo(self):
         return scmutil.simplekeyvaluefile(
@@ -890,7 +875,7 @@ def _unshelverestorecommit(ui, repo, tr, basename):
     """Recreate commit in the repository during the unshelve"""
     repo = repo.unfiltered()
     node = None
-    if shelvedfile(repo, basename, b'shelve').exists():
+    if Shelf(repo, basename).hasinfo():
         node = Shelf(repo, basename).readinfo()[b'node']
     if node is None or node not in repo:
         with ui.configoverride({(b'ui', b'quiet'): True}):
