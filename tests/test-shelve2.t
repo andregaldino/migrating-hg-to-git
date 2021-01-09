@@ -779,10 +779,10 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
 
 # A file with an unexpected extension
   $ touch .hg/shelved/junk3
-  $ hg shelve -l 2>&1 | grep ValueError
-  ValueError: * (glob)
-  $ hg unshelve 2>&1 | grep ValueError
-  ValueError: * (glob)
+  $ hg shelve -l
+  $ hg unshelve
+  abort: no shelved changes to apply!
+  [20]
   $ hg shelve -d junk3
   abort: shelved change 'junk3' not found
   [10]

@@ -625,7 +625,7 @@ def listshelves(repo):
     info = []
     seen = set()
     for (filename, _type) in names:
-        name, ext = filename.rsplit(b'.', 1)
+        name = filename.rsplit(b'.', 1)[0]
         if name in seen:
             continue
         seen.add(name)
