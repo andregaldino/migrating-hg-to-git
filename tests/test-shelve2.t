@@ -745,6 +745,58 @@ progress
 #endif
   $ cd ..
 
+Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
+  $ hg init corrupt-shelves
+  $ cd corrupt-shelves
+  $ mkdir .hg/shelved
+
+# A (corrupt) .patch file without a .hg file
+  $ touch .hg/shelved/junk1.patch
+  $ hg shelve -l
+  junk1           (* ago)     (glob)
+  $ hg unshelve
+  unshelving change 'junk1'
+  abort: shelved change 'junk1' not found
+  [255]
+  $ hg shelve -d junk1
+  $ find .hg/shelve* | sort
+  .hg/shelve-backup
+  .hg/shelve-backup/junk1.patch
+  .hg/shelved
+
+# A .hg file without a .patch file
+  $ touch .hg/shelved/junk2.hg
+  $ hg shelve -l
+  $ hg unshelve
+  abort: no shelved changes to apply!
+  [255]
+  $ hg shelve -d junk2
+  abort: shelved change 'junk2' not found
+  [255]
+  $ find .hg/shelve* | sort
+  .hg/shelve-backup
+  .hg/shelve-backup/junk1.patch
+  .hg/shelve-backup/junk2.hg
+  .hg/shelved
+
+# A file with an unexpected extension
+  $ touch .hg/shelved/junk3
+  $ hg shelve -l 2>&1 | grep ValueError
+  ValueError: * (glob)
+  $ hg unshelve 2>&1 | grep ValueError
+  ValueError: * (glob)
+  $ hg shelve -d junk3
+  abort: shelved change 'junk3' not found
+  [255]
+  $ find .hg/shelve* | sort
+  .hg/shelve-backup
+  .hg/shelve-backup/junk1.patch
+  .hg/shelve-backup/junk2.hg
+  .hg/shelved
+  .hg/shelved/junk3
+
+  $ cd ..
+
 Unshelve respects --keep even if user intervention is needed
   $ hg init unshelvekeep && cd unshelvekeep
   $ echo 1 > file && hg ci -Am 1
