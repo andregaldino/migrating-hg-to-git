@@ -4,22 +4,21 @@ stages:
 
 image: registry.heptapod.net/mercurial/ci-images/mercurial-core
 
-# The runner made a clone as root.
-# We make a new clone owned by user used to run the step.
-before_script:
-    - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
-    - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
-    - cd /tmp/mercurial-ci/rust/rhg
-    - cargo build
-    - cd /tmp/mercurial-ci/
-    - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
-
 variables:
     PYTHON: python
     TEST_HGMODULEPOLICY: "allow"
 
 .runtests_template: &runtests
     stage: tests
+    # The runner made a clone as root.
+    # We make a new clone owned by user used to run the step.
+    before_script:
+      - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
+      - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
+      - cd /tmp/mercurial-ci/rust/rhg
+      - cargo build
+      - cd /tmp/mercurial-ci/
+      - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
     script:
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
