@@ -179,7 +179,6 @@ import stat, subprocess, time
 import re
 import shutil
 import tempfile
-from distutils import log
 
 # We have issues with setuptools on some platforms and builders. Until
 # those are resolved, setuptools is opt-in except for platforms where
@@ -199,6 +198,7 @@ from distutils.command.build_scripts import build_scripts
 from distutils.command.install import install
 from distutils.command.install_lib import install_lib
 from distutils.command.install_scripts import install_scripts
+from distutils import log
 from distutils.spawn import spawn, find_executable
 from distutils import file_util
 from distutils.errors import (
