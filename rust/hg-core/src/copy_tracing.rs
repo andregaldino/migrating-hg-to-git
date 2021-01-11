@@ -1,3 +1,10 @@
+#[cfg(test)]
+#[macro_use]
+mod tests_support;
+
+#[cfg(test)]
+mod tests;
+
 use crate::utils::hg_path::HgPath;
 use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
