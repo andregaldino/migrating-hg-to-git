@@ -387,6 +387,21 @@ impl CombineChangesetCopies {
         p2: Revision,
         changes: ChangedFiles<'_>,
     ) {
+        self.add_revision_inner(rev, p1, p2, changes.iter_actions(), |path| {
+            changes.get_merge_case(path)
+        })
+    }
+
+    /// Separated out from `add_revsion` so that unit tests can call this
+    /// without synthetizing a `ChangedFiles` in binary format.
+    fn add_revision_inner<'a>(
+        &mut self,
+        rev: Revision,
+        p1: Revision,
+        p2: Revision,
+        copy_actions: impl Iterator<Item = Action<'a>>,
+        get_merge_case: impl Fn(&HgPath) -> MergeCase + Copy,
+    ) {
         // Retrieve data computed in a previous iteration
         let p1_copies = match p1 {
             NULL_REVISION => None,
@@ -409,7 +424,7 @@ impl CombineChangesetCopies {
             &mut self.path_map,
             p1_copies,
             p2_copies,
-            &changes,
+            copy_actions,
             rev,
         );
         let copies = match (p1_copies, p2_copies) {
@@ -421,7 +436,7 @@ impl CombineChangesetCopies {
                 rev,
                 p2_copies,
                 p1_copies,
-                &changes,
+                get_merge_case,
             )),
         };
         if let Some(c) = copies {
@@ -476,11 +491,11 @@ fn get_and_clean_parent_copies(
 
 /// Combine ChangedFiles with some existing PathCopies information and return
 /// the result
-fn chain_changes(
+fn chain_changes<'a>(
     path_map: &mut TwoWayPathMap,
     base_p1_copies: Option<InternalPathCopies>,
     base_p2_copies: Option<InternalPathCopies>,
-    changes: &ChangedFiles,
+    copy_actions: impl Iterator<Item = Action<'a>>,
     current_rev: Revision,
 ) -> (Option<InternalPathCopies>, Option<InternalPathCopies>) {
     // Fast path the "nothing to do" case.
@@ -490,7 +505,7 @@ fn chain_changes(
 
     let mut p1_copies = base_p1_copies.clone();
     let mut p2_copies = base_p2_copies.clone();
-    for action in changes.iter_actions() {
+    for action in copy_actions {
         match action {
             Action::CopiedFromP1(path_dest, path_source) => {
                 match &mut p1_copies {
@@ -613,16 +628,14 @@ fn merge_copies_dict(
     current_merge: Revision,
     minor: InternalPathCopies,
     major: InternalPathCopies,
-    changes: &ChangedFiles,
+    get_merge_case: impl Fn(&HgPath) -> MergeCase + Copy,
 ) -> InternalPathCopies {
     use crate::utils::{ordmap_union_with_merge, MergeResult};
 
     ordmap_union_with_merge(minor, major, |&dest, src_minor, src_major| {
         let (pick, overwrite) = compare_value(
-            path_map,
             current_merge,
-            changes,
-            dest,
+            || get_merge_case(path_map.untokenize(dest)),
             src_minor,
             src_major,
         );
@@ -649,6 +662,7 @@ fn merge_copies_dict(
 
 /// represent the side that should prevail when merging two
 /// InternalPathCopies
+#[derive(Debug, PartialEq)]
 enum MergePick {
     /// The "major" (p1) side prevails
     Major,
@@ -661,10 +675,8 @@ enum MergePick {
 /// decide which side prevails in case of conflicting values
 #[allow(clippy::if_same_then_else)]
 fn compare_value(
-    path_map: &TwoWayPathMap,
     current_merge: Revision,
-    changes: &ChangedFiles,
-    dest: PathToken,
+    merge_case_for_dest: impl Fn() -> MergeCase,
     src_minor: &CopySource,
     src_major: &CopySource,
 ) -> (MergePick, bool) {
@@ -693,8 +705,7 @@ fn compare_value(
         }
     } else {
         debug_assert!(src_major.rev != src_major.rev);
-        let dest_path = path_map.untokenize(dest);
-        let action = changes.get_merge_case(dest_path);
+        let action = merge_case_for_dest();
         if src_minor.path.is_some()
             && src_major.path.is_none()
             && action == MergeCase::Salvaged
