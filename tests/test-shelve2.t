@@ -753,16 +753,15 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
 # A (corrupt) .patch file without a .hg file
   $ touch .hg/shelved/junk1.patch
   $ hg shelve -l
-  junk1           (* ago)     (glob)
   $ hg unshelve
-  unshelving change 'junk1'
-  abort: $ENOENT$: '$TESTTMP/corrupt-shelves/.hg/shelved/junk1.hg'
-  [255]
+  abort: no shelved changes to apply!
+  [20]
   $ hg shelve -d junk1
+  abort: shelved change 'junk1' not found
+  [10]
   $ find .hg/shelve* | sort
-  .hg/shelve-backup
-  .hg/shelve-backup/junk1.patch
   .hg/shelved
+  .hg/shelved/junk1.patch
 
 # A .hg file without a .patch file
   $ touch .hg/shelved/junk2.hg
@@ -774,9 +773,8 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
   abort: shelved change 'junk2' not found
   [10]
   $ find .hg/shelve* | sort
-  .hg/shelve-backup
-  .hg/shelve-backup/junk1.patch
   .hg/shelved
+  .hg/shelved/junk1.patch
   .hg/shelved/junk2.hg
 
 # A file with an unexpected extension
@@ -789,9 +787,8 @@ Test corrupt shelves (in .hg/shelved/, not .hg/shelvestate)
   abort: shelved change 'junk3' not found
   [10]
   $ find .hg/shelve* | sort
-  .hg/shelve-backup
-  .hg/shelve-backup/junk1.patch
   .hg/shelved
+  .hg/shelved/junk1.patch
   .hg/shelved/junk2.hg
   .hg/shelved/junk3
 

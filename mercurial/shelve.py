@@ -87,7 +87,9 @@ class Shelf(object):
         self.backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
 
     def exists(self):
-        return self.vfs.exists(self.name + b'.' + patchextension)
+        return self.vfs.exists(
+            self.name + b'.' + patchextension
+        ) and self.vfs.exists(self.name + b'.hg')
 
     def mtime(self):
         return self.vfs.stat(self.name + b'.' + patchextension)[stat.ST_MTIME]
@@ -621,12 +623,17 @@ def listshelves(repo):
             raise
         return []
     info = []
-    for (name, _type) in names:
-        pfx, sfx = name.rsplit(b'.', 1)
-        if not pfx or sfx != patchextension:
+    seen = set()
+    for (filename, _type) in names:
+        name, ext = filename.rsplit(b'.', 1)
+        if name in seen:
             continue
-        mtime = Shelf(repo, pfx).mtime()
-        info.append((mtime, pfx))
+        seen.add(name)
+        shelf = Shelf(repo, name)
+        if not shelf.exists():
+            continue
+        mtime = shelf.mtime()
+        info.append((mtime, name))
     return sorted(info, reverse=True)
 
 
