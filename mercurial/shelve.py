@@ -64,8 +64,6 @@ from .utils import (
 backupdir = b'shelve-backup'
 shelvedir = b'shelved'
 shelvefileextensions = [b'hg', b'patch', b'shelve']
-# universal extension is present in all types of shelves
-patchextension = b'patch'
 
 # we never need the user, so we use a
 # generic user for all shelve operations
@@ -89,12 +87,12 @@ class Shelf(object):
         return Shelf(vfsmod.vfs(repo.vfs.join(shelvedir)), name)
 
     def exists(self):
-        return self.vfs.exists(
-            self.name + b'.' + patchextension
-        ) and self.vfs.exists(self.name + b'.hg')
+        return self.vfs.exists(self.name + b'.patch') and self.vfs.exists(
+            self.name + b'.hg'
+        )
 
     def mtime(self):
-        return self.vfs.stat(self.name + b'.' + patchextension)[stat.ST_MTIME]
+        return self.vfs.stat(self.name + b'.patch')[stat.ST_MTIME]
 
     def writeinfo(self, info):
         scmutil.simplekeyvaluefile(self.vfs, self.name + b'.shelve').write(info)
