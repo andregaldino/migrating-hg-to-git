@@ -617,14 +617,14 @@ def deletecmd(ui, repo, pats):
 def listshelves(repo):
     """return all shelves in repo as list of (time, name)"""
     try:
-        names = repo.vfs.readdir(shelvedir)
+        names = repo.vfs.listdir(shelvedir)
     except OSError as err:
         if err.errno != errno.ENOENT:
             raise
         return []
     info = []
     seen = set()
-    for (filename, _type) in names:
+    for filename in names:
         name = filename.rsplit(b'.', 1)[0]
         if name in seen:
             continue
