@@ -97,6 +97,17 @@ def fs2svn(s):
         return s.decode(fsencoding).encode('utf-8')
 
 
+def formatsvndate(date):
+    return dateutil.datestr(date, b'%Y-%m-%dT%H:%M:%S.000000Z')
+
+
+def parsesvndate(s):
+    # Example SVN datetime. Includes microseconds.
+    # ISO-8601 conformant
+    # '2007-01-04T17:35:00.902377Z'
+    return dateutil.parsedate(s[:19] + b' UTC', [b'%Y-%m-%dT%H:%M:%S'])
+
+
 class SvnPathNotFound(Exception):
     pass
 
@@ -1158,12 +1169,7 @@ class svn_source(converter_source):
                     continue
                 paths.append((path, ent))
 
-            # Example SVN datetime. Includes microseconds.
-            # ISO-8601 conformant
-            # '2007-01-04T17:35:00.902377Z'
-            date = dateutil.parsedate(
-                date[:19] + b" UTC", [b"%Y-%m-%dT%H:%M:%S"]
-            )
+            date = parsesvndate(date)
             if self.ui.configbool(b'convert', b'localtimezone'):
                 date = makedatetimestamp(date[0])
 
@@ -1380,7 +1386,7 @@ class svn_source(converter_source):
         return logstream(stdout)
 
 
-pre_revprop_change = b'''#!/bin/sh
+pre_revprop_change_template = b'''#!/bin/sh
 
 REPOS="$1"
 REV="$2"
@@ -1388,13 +1394,24 @@ USER="$3"
 PROPNAME="$4"
 ACTION="$5"
 
-if [ "$ACTION" = "M" -a "$PROPNAME" = "svn:log" ]; then exit 0; fi
-if [ "$ACTION" = "A" -a "$PROPNAME" = "hg:convert-branch" ]; then exit 0; fi
-if [ "$ACTION" = "A" -a "$PROPNAME" = "hg:convert-rev" ]; then exit 0; fi
+%(rules)s
 
 echo "Changing prohibited revision property" >&2
 exit 1
 '''
+
+
+def gen_pre_revprop_change_hook(prop_actions_allowed):
+    rules = []
+    for action, propname in prop_actions_allowed:
+        rules.append(
+            (
+                b'if [ "$ACTION" = "%s" -a "$PROPNAME" = "%s" ]; '
+                b'then exit 0; fi'
+            )
+            % (action, propname)
+        )
+    return pre_revprop_change_template % {b'rules': b'\n'.join(rules)}
 
 
 class svn_sink(converter_sink, commandline):
@@ -1470,9 +1487,20 @@ class svn_sink(converter_sink, commandline):
             self.is_exec = None
 
         if created:
+            prop_actions_allowed = [
+                (b'M', b'svn:log'),
+                (b'A', b'hg:convert-branch'),
+                (b'A', b'hg:convert-rev'),
+            ]
+
+            if self.ui.configbool(
+                b'convert', b'svn.dangerous-set-commit-dates'
+            ):
+                prop_actions_allowed.append((b'M', b'svn:date'))
+
             hook = os.path.join(created, b'hooks', b'pre-revprop-change')
             fp = open(hook, b'wb')
-            fp.write(pre_revprop_change)
+            fp.write(gen_pre_revprop_change_hook(prop_actions_allowed))
             fp.close()
             util.setflags(hook, False, True)
 
@@ -1667,6 +1695,23 @@ class svn_sink(converter_sink, commandline):
                     revprop=True,
                     revision=rev,
                 )
+
+            if self.ui.configbool(
+                b'convert', b'svn.dangerous-set-commit-dates'
+            ):
+                # Subverson always uses UTC to represent date and time
+                date = dateutil.parsedate(commit.date)
+                date = (date[0], 0)
+
+                # The only way to set date and time for svn commit is to use propset after commit is done
+                self.run(
+                    b'propset',
+                    b'svn:date',
+                    formatsvndate(date),
+                    revprop=True,
+                    revision=rev,
+                )
+
             for parent in parents:
                 self.addchild(parent, rev)
             return self.revid(rev)

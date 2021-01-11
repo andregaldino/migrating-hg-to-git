@@ -54,10 +54,12 @@ Modify
    2 2 test a
   revision: 2
   author: test
+  date: * (glob)
   msg: modify a file
    M /a
   revision: 1
   author: test
+  date: * (glob)
   msg: add a file
    A /a
    A /d1
@@ -95,6 +97,7 @@ Rename
    3 3 test b
   revision: 3
   author: test
+  date: * (glob)
   msg: rename a file
    D /a
    A /b (from /a@2)
@@ -131,6 +134,7 @@ Copy
    4 4 test c
   revision: 4
   author: test
+  date: * (glob)
   msg: copy a file
    A /c (from /b@3)
   $ ls a a-hg-wc
@@ -167,6 +171,7 @@ Remove
    5 5 test .
   revision: 5
   author: test
+  date: * (glob)
   msg: remove a file
    D /b
   $ ls a a-hg-wc
@@ -209,6 +214,7 @@ Executable
    6 6 test c
   revision: 6
   author: test
+  date: * (glob)
   msg: make a file executable
    M /c
 #if execbit
@@ -247,6 +253,7 @@ Symlinks
    8 8 test newlink
   revision: 8
   author: test
+  date: * (glob)
   msg: move symlink
    D /link
    A /newlink (from /link@7)
@@ -278,6 +285,7 @@ Convert with --full adds and removes files that didn't change
    7 7 test f
   revision: 7
   author: test
+  date: * (glob)
   msg: f
    D /c
    A /d
@@ -315,6 +323,7 @@ Executable in new directory
    1 1 test d1/a
   revision: 1
   author: test
+  date: * (glob)
   msg: add executable file in new directory
    A /d1
    A /d1/a
@@ -343,6 +352,7 @@ Copy to new directory
    2 2 test d2/a
   revision: 2
   author: test
+  date: * (glob)
   msg: copy file to new directory
    A /d2
    A /d2/a (from /d1/a@1)
@@ -416,21 +426,25 @@ Expect 4 changes
    4 4 test right-2
   revision: 4
   author: test
+  date: * (glob)
   msg: merge
    A /right-1
    A /right-2
   revision: 3
   author: test
+  date: * (glob)
   msg: left-2
    M /b
    A /left-2
   revision: 2
   author: test
+  date: * (glob)
   msg: left-1
    M /b
    A /left-1
   revision: 1
   author: test
+  date: * (glob)
   msg: base
    A /b
 
@@ -459,10 +473,12 @@ Tags are not supported, but must not break conversion
    2 2 test .hgtags
   revision: 2
   author: test
+  date: * (glob)
   msg: Tagged as v1.0
    A /.hgtags
   revision: 1
   author: test
+  date: * (glob)
   msg: Add file a
    A /a
   $ rm -rf a a-hg a-hg-wc
@@ -494,10 +510,12 @@ Executable bit removal
    2 2 test exec
   revision: 2
   author: test
+  date: * (glob)
   msg: remove executable bit
    M /exec
   revision: 1
   author: test
+  date: * (glob)
   msg: create executable
    A /exec
   $ test ! -x a-hg-wc/exec
@@ -540,11 +558,77 @@ Skipping empty commits
    2 2 test b
   revision: 2
   author: test
+  date: * (glob)
   msg: Another change
    A /b
   revision: 1
   author: test
+  date: * (glob)
   msg: Some change
+   A /a
+
+  $ rm -rf a a-hg a-hg-wc
+
+Commit dates convertion
+
+  $ hg init a
+
+  $ echo a >> a/a
+  $ hg add a
+  adding a/a
+  $ hg --cwd a ci -d '1 0' -A -m 'Change 1'
+
+  $ echo a >> a/a
+  $ hg --cwd a ci -d '2 0' -m 'Change 2'
+
+  $ echo a >> a/a
+  $ hg --cwd a ci -d '2 0' -m 'Change at the same time'
+
+  $ echo a >> a/a
+  $ hg --cwd a ci -d '1 0' -m 'Change in the past'
+
+  $ echo a >> a/a
+  $ hg --cwd a ci -d '3 0' -m 'Change in the future'
+
+  $ hg convert --config convert.svn.dangerous-set-commit-dates=true -d svn a
+  assuming destination a-hg
+  initializing svn repository 'a-hg'
+  initializing svn working copy 'a-hg-wc'
+  scanning source...
+  sorting...
+  converting...
+  4 Change 1
+  3 Change 2
+  2 Change at the same time
+  1 Change in the past
+  0 Change in the future
+  $ svnupanddisplay a-hg-wc 0
+   5 5 test .
+   5 5 test a
+  revision: 5
+  author: test
+  date: 1970-01-01T00:00:03.000000Z
+  msg: Change in the future
+   M /a
+  revision: 4
+  author: test
+  date: 1970-01-01T00:00:01.000000Z
+  msg: Change in the past
+   M /a
+  revision: 3
+  author: test
+  date: 1970-01-01T00:00:02.000000Z
+  msg: Change at the same time
+   M /a
+  revision: 2
+  author: test
+  date: 1970-01-01T00:00:02.000000Z
+  msg: Change 2
+   M /a
+  revision: 1
+  author: test
+  date: 1970-01-01T00:00:01.000000Z
+  msg: Change 1
    A /a
 
   $ rm -rf a a-hg a-hg-wc

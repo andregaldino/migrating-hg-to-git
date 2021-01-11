@@ -491,6 +491,22 @@ def convert(ui, src, dest=None, revmapfile=None, **opts):
 
     :convert.skiptags: does not convert tags from the source repo to the target
         repo. The default is False.
+
+    Subversion Destination
+    ######################
+
+    Original commit dates are not preserved by default.
+
+    :convert.svn.dangerous-set-commit-dates: preserve original commit dates,
+        forcefully setting ``svn:date`` revision properties. This option is
+        DANGEROUS and may break some subversion functionality for the resulting
+        repository (e.g. filtering revisions with date ranges in ``svn log``),
+        as original commit dates are not guaranteed to be monotonically
+        increasing.
+
+    For commit dates setting to work destination repository must have
+    ``pre-revprop-change`` hook configured to allow setting of ``svn:date``
+    revision properties. See Subversion documentation for more details.
     """
     return convcmd.convert(ui, src, dest, revmapfile, **opts)
 

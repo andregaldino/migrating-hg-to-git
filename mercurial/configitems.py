@@ -570,6 +570,11 @@ coreconfigitem(
     default=0,
 )
 coreconfigitem(
+    b'convert',
+    b'svn.dangerous-set-commit-dates',
+    default=False,
+)
+coreconfigitem(
     b'debug',
     b'dirstate.delaywrite',
     default=0,
