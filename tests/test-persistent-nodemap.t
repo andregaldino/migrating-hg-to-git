@@ -610,3 +610,13 @@ The persistent nodemap should exist after a streaming clone
   $ ls -1 local-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   [1]
   $ hg -R local-clone debugnodemap --metadata
+
+stream clone
+------------
+
+The persistent nodemap should exist after a streaming clone
+
+  $ hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone --quiet
+  $ ls -1 stream-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
+  [1]
+  $ hg -R stream-clone debugnodemap --metadata
