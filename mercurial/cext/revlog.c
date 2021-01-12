@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -55,10 +56,10 @@ typedef struct {
 	indexObject *index;
 	nodetreenode *nodes;
 	Py_ssize_t nodelen;
-	unsigned length;   /* # nodes in use */
-	unsigned capacity; /* # nodes allocated */
-	int depth;         /* maximum depth of tree */
-	int splits;        /* # splits performed */
+	size_t length;   /* # nodes in use */
+	size_t capacity; /* # nodes allocated */
+	int depth;       /* maximum depth of tree */
+	int splits;      /* # splits performed */
 } nodetree;
 
 typedef struct {
@@ -1536,10 +1537,10 @@ static int nt_find(nodetree *self, const char *node, Py_ssize_t nodelen,
 static int nt_new(nodetree *self)
 {
 	if (self->length == self->capacity) {
-		unsigned newcapacity;
+		size_t newcapacity;
 		nodetreenode *newnodes;
 		newcapacity = self->capacity * 2;
-		if (newcapacity >= INT_MAX / sizeof(nodetreenode)) {
+		if (newcapacity >= SIZE_MAX / sizeof(nodetreenode)) {
 			PyErr_SetString(PyExc_MemoryError,
 			                "overflow in nt_new");
 			return -1;
@@ -1643,7 +1644,7 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 	self->nodelen = index->nodelen;
 	self->depth = 0;
 	self->splits = 0;
-	if ((size_t)self->capacity > INT_MAX / sizeof(nodetreenode)) {
+	if (self->capacity > SIZE_MAX / sizeof(nodetreenode)) {
 		PyErr_SetString(PyExc_ValueError, "overflow in init_nt");
 		return -1;
 	}
