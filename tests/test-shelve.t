@@ -1512,3 +1512,26 @@ Abort unshelve while merging (issue5123)
   $ hg unshelve -i --keep
   abort: --keep on --interactive is not yet supported
   [255]
+
+  $ hg update -q --clean .
+
+Test that we can successfully shelve and unshelve a file with a trailing space
+in the filename. Such filenames are supposedly unsupported on Windows, so we
+wrap it in the no-windows check. Also test `hg patch` of the .patch file
+produced by `hg shelve`.
+#if no-windows
+  $ echo hi > 'my filename '
+  $ hg add 'my filename '
+  warning: filename ends with ' ', which is not allowed on Windows: 'my filename '
+  $ hg shelve
+  shelved as default-01
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ cp .hg/shelved/default-01.patch test_patch.patch
+  $ hg unshelve
+  unshelving change 'default-01'
+  $ cat 'my filename '
+  hi
+  $ hg update -q --clean .
+  $ hg patch -p1 test_patch.patch
+  applying test_patch.patch
+#endif

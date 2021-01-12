@@ -393,7 +393,7 @@ def readgitpatch(lr):
     gp = None
     gitpatches = []
     for line in lr:
-        line = line.rstrip(b' \r\n')
+        line = line.rstrip(b'\r\n')
         if line.startswith(b'diff --git a/'):
             m = gitre.match(line)
             if m:
@@ -2073,7 +2073,7 @@ def iterhunks(fp):
                 yield b'file', (afile, bfile, h, gp and gp.copy() or None)
             yield b'hunk', h
         elif x.startswith(b'diff --git a/'):
-            m = gitre.match(x.rstrip(b' \r\n'))
+            m = gitre.match(x.rstrip(b'\r\n'))
             if not m:
                 continue
             if gitpatches is None:
