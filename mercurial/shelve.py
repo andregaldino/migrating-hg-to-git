@@ -80,11 +80,13 @@ class Shelf(object):
     differences and lets you work with the shelf as a whole.
     """
 
-    def __init__(self, repo, name):
-        self.repo = repo
+    def __init__(self, vfs, name):
+        self.vfs = vfs
         self.name = name
-        self.vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
-        self.backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
+
+    @staticmethod
+    def open(repo, name):
+        return Shelf(vfsmod.vfs(repo.vfs.join(shelvedir)), name)
 
     def exists(self):
         return self.vfs.exists(
@@ -105,8 +107,8 @@ class Shelf(object):
             self.vfs, self.name + b'.shelve'
         ).read()
 
-    def writebundle(self, bases, node):
-        cgversion = changegroup.safeversion(self.repo)
+    def writebundle(self, repo, bases, node):
+        cgversion = changegroup.safeversion(repo)
         if cgversion == b'01':
             btype = b'HG10BZ'
             compression = None
@@ -114,7 +116,7 @@ class Shelf(object):
             btype = b'HG20'
             compression = b'BZ'
 
-        repo = self.repo.unfiltered()
+        repo = repo.unfiltered()
 
         outgoing = discovery.outgoing(
             repo, missingroots=bases, ancestorsof=[node]
@@ -123,7 +125,7 @@ class Shelf(object):
 
         bundle_filename = self.vfs.join(self.name + b'.hg')
         bundle2.writebundle(
-            self.repo.ui,
+            repo.ui,
             cg,
             bundle_filename,
             btype,
@@ -131,27 +133,27 @@ class Shelf(object):
             compression=compression,
         )
 
-    def applybundle(self, tr):
+    def applybundle(self, repo, tr):
         filename = self.name + b'.hg'
         fp = self.vfs(filename)
         try:
             targetphase = phases.internal
-            if not phases.supportinternal(self.repo):
+            if not phases.supportinternal(repo):
                 targetphase = phases.secret
-            gen = exchange.readbundle(self.repo.ui, fp, filename, self.vfs)
-            pretip = self.repo[b'tip']
+            gen = exchange.readbundle(repo.ui, fp, filename, self.vfs)
+            pretip = repo[b'tip']
             bundle2.applybundle(
-                self.repo,
+                repo,
                 gen,
                 tr,
                 source=b'unshelve',
                 url=b'bundle:' + self.vfs.join(filename),
                 targetphase=targetphase,
             )
-            shelvectx = self.repo[b'tip']
+            shelvectx = repo[b'tip']
             if pretip == shelvectx:
                 shelverev = tr.changes[b'revduplicates'][-1]
-                shelvectx = self.repo[shelverev]
+                shelvectx = repo[shelverev]
             return shelvectx
         finally:
             fp.close()
@@ -159,7 +161,7 @@ class Shelf(object):
     def open_patch(self, mode=b'rb'):
         return self.vfs(self.name + b'.patch', mode)
 
-    def _backupfilename(self, filename):
+    def _backupfilename(self, backupvfs, filename):
         def gennames(base):
             yield base
             base, ext = base.rsplit(b'.', 1)
@@ -167,17 +169,18 @@ class Shelf(object):
                 yield b'%s-%d.%s' % (base, i, ext)
 
         for n in gennames(filename):
-            if not self.backupvfs.exists(n):
-                return self.backupvfs.join(n)
+            if not backupvfs.exists(n):
+                return backupvfs.join(n)
 
-    def movetobackup(self):
-        if not self.backupvfs.isdir():
-            self.backupvfs.makedir()
+    def movetobackup(self, backupvfs):
+        if not backupvfs.isdir():
+            backupvfs.makedir()
         for suffix in shelvefileextensions:
             filename = self.name + b'.' + suffix
             if self.vfs.exists(filename):
                 util.rename(
-                    self.vfs.join(filename), self._backupfilename(filename)
+                    self.vfs.join(filename),
+                    self._backupfilename(backupvfs, filename),
                 )
 
 
@@ -375,7 +378,7 @@ def getshelvename(repo, parent, opts):
         label = label.replace(b'.', b'_', 1)
 
     if name:
-        if Shelf(repo, name).exists():
+        if Shelf.open(repo, name).exists():
             e = _(b"a shelved change named '%s' already exists") % name
             raise error.Abort(e)
 
@@ -389,7 +392,7 @@ def getshelvename(repo, parent, opts):
 
     else:
         for n in gennames():
-            if not Shelf(repo, n).exists():
+            if not Shelf.open(repo, n).exists():
                 name = n
                 break
 
@@ -465,10 +468,10 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
 
 def _shelvecreatedcommit(repo, node, name, match):
     info = {b'node': hex(node)}
-    shelf = Shelf(repo, name)
+    shelf = Shelf.open(repo, name)
     shelf.writeinfo(info)
     bases = list(mutableancestors(repo[node]))
-    shelf.writebundle(bases, node)
+    shelf.writebundle(repo, bases, node)
     with shelf.open_patch(b'wb') as fp:
         cmdutil.exportfile(
             repo, [node], fp, opts=mdiff.diffopts(git=True), match=match
@@ -594,8 +597,9 @@ def cleanupcmd(ui, repo):
     """subcommand that deletes all shelves"""
 
     with repo.wlock():
+        backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
         for _mtime, name in listshelves(repo):
-            Shelf(repo, name).movetobackup()
+            Shelf.open(repo, name).movetobackup(backupvfs)
             cleanupoldbackups(repo)
 
 
@@ -604,13 +608,14 @@ def deletecmd(ui, repo, pats):
     if not pats:
         raise error.InputError(_(b'no shelved changes specified!'))
     with repo.wlock():
+        backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
         for name in pats:
-            shelf = Shelf(repo, name)
+            shelf = Shelf.open(repo, name)
             if not shelf.exists():
                 raise error.InputError(
                     _(b"shelved change '%s' not found") % name
                 )
-            shelf.movetobackup()
+            shelf.movetobackup(backupvfs)
             cleanupoldbackups(repo)
 
 
@@ -629,7 +634,7 @@ def listshelves(repo):
         if name in seen:
             continue
         seen.add(name)
-        shelf = Shelf(repo, name)
+        shelf = Shelf.open(repo, name)
         if not shelf.exists():
             continue
         mtime = shelf.mtime()
@@ -660,7 +665,7 @@ def listcmd(ui, repo, pats, opts):
         ui.write(age, label=b'shelve.age')
         ui.write(b' ' * (12 - len(age)))
         used += 12
-        with Shelf(repo, name).open_patch() as fp:
+        with Shelf.open(repo, name).open_patch() as fp:
             while True:
                 line = fp.readline()
                 if not line:
@@ -693,7 +698,7 @@ def patchcmds(ui, repo, pats, opts):
         pats = [name]
 
     for shelfname in pats:
-        if not Shelf(repo, shelfname).exists():
+        if not Shelf.open(repo, shelfname).exists():
             raise error.Abort(_(b"cannot find shelf %s") % shelfname)
 
     listcmd(ui, repo, pats, opts)
@@ -784,7 +789,8 @@ def restorebranch(ui, repo, branchtorestore):
 def unshelvecleanup(ui, repo, name, opts):
     """remove related files after an unshelve"""
     if not opts.get(b'keep'):
-        Shelf(repo, name).movetobackup()
+        backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
+        Shelf.open(repo, name).movetobackup(backupvfs)
         cleanupoldbackups(repo)
 
 
@@ -884,12 +890,12 @@ def _unshelverestorecommit(ui, repo, tr, basename):
     """Recreate commit in the repository during the unshelve"""
     repo = repo.unfiltered()
     node = None
-    shelf = Shelf(repo, basename)
+    shelf = Shelf.open(repo, basename)
     if shelf.hasinfo():
         node = shelf.readinfo()[b'node']
     if node is None or node not in repo:
         with ui.configoverride({(b'ui', b'quiet'): True}):
-            shelvectx = shelf.applybundle(tr)
+            shelvectx = shelf.applybundle(repo, tr)
         # We might not strip the unbundled changeset, so we should keep track of
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:
@@ -1113,7 +1119,7 @@ def unshelvecmd(ui, repo, *shelved, **opts):
     else:
         basename = shelved[0]
 
-    if not Shelf(repo, basename).exists():
+    if not Shelf.open(repo, basename).exists():
         raise error.InputError(_(b"shelved change '%s' not found") % basename)
 
     return _dounshelve(ui, repo, basename, opts)
