@@ -2297,6 +2297,10 @@ class excludeddirmanifestctx(treemanifestctx):
     def read(self):
         return excludeddir(self._dir, self._node)
 
+    def readfast(self, shallow=False):
+        # special version of readfast since we don't have underlying storage
+        return self.read()
+
     def write(self, *args):
         raise error.ProgrammingError(
             b'attempt to write manifest from excluded dir %s' % self._dir
