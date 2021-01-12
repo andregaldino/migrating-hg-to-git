@@ -2,8 +2,8 @@
 
 Define an rhg function that will only run if rhg exists
   $ rhg() {
-  > if [ -f "$RUNTESTDIR/../rust/target/debug/rhg" ]; then
-  >   "$RUNTESTDIR/../rust/target/debug/rhg" "$@"
+  > if [ -f "$RUNTESTDIR/../rust/target/release/rhg" ]; then
+  >   "$RUNTESTDIR/../rust/target/release/rhg" "$@"
   > else
   >   echo "skipped: Cannot find rhg. Try to run cargo build in rust/rhg."
   >   exit 80
