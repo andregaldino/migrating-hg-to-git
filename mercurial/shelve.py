@@ -597,9 +597,10 @@ def cleanupcmd(ui, repo):
     """subcommand that deletes all shelves"""
 
     with repo.wlock():
+        vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
         backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
-        for _mtime, name in listshelves(repo):
-            Shelf.open(repo, name).movetobackup(backupvfs)
+        for _mtime, name in listshelves(vfs):
+            Shelf(vfs, name).movetobackup(backupvfs)
             cleanupoldbackups(repo)
 
 
@@ -619,10 +620,10 @@ def deletecmd(ui, repo, pats):
             cleanupoldbackups(repo)
 
 
-def listshelves(repo):
+def listshelves(vfs):
     """return all shelves in repo as list of (time, name)"""
     try:
-        names = repo.vfs.listdir(shelvedir)
+        names = vfs.listdir()
     except OSError as err:
         if err.errno != errno.ENOENT:
             raise
@@ -634,7 +635,7 @@ def listshelves(repo):
         if name in seen:
             continue
         seen.add(name)
-        shelf = Shelf.open(repo, name)
+        shelf = Shelf(vfs, name)
         if not shelf.exists():
             continue
         mtime = shelf.mtime()
@@ -650,7 +651,8 @@ def listcmd(ui, repo, pats, opts):
         width = ui.termwidth()
     namelabel = b'shelve.newest'
     ui.pager(b'shelve')
-    for mtime, name in listshelves(repo):
+    vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
+    for mtime, name in listshelves(vfs):
         if pats and name not in pats:
             continue
         ui.write(name, label=namelabel)
@@ -691,7 +693,8 @@ def listcmd(ui, repo, pats, opts):
 def patchcmds(ui, repo, pats, opts):
     """subcommand that displays shelves"""
     if len(pats) == 0:
-        shelves = listshelves(repo)
+        vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
+        shelves = listshelves(vfs)
         if not shelves:
             raise error.Abort(_(b"there are no shelves to show"))
         mtime, name = shelves[0]
@@ -1111,7 +1114,8 @@ def unshelvecmd(ui, repo, *shelved, **opts):
     elif len(shelved) > 1:
         raise error.InputError(_(b'can only unshelve one change at a time'))
     elif not shelved:
-        shelved = listshelves(repo)
+        vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
+        shelved = listshelves(vfs)
         if not shelved:
             raise error.StateError(_(b'no shelved changes to apply!'))
         basename = shelved[0][1]
