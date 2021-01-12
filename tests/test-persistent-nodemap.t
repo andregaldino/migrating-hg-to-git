@@ -575,3 +575,28 @@ Running unrelated upgrade
   data-length: 121088
   data-unused: 0
   data-unused: 0.000%
+
+Persistent nodemap and local/streaming clone
+============================================
+
+  $ cd ..
+
+standard clone
+--------------
+
+The persistent nodemap should exist after a streaming clone
+
+  $ hg clone --pull --quiet -U test-repo standard-clone
+  $ ls -1 standard-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
+  00changelog-*.nd (glob)
+  00changelog.n
+  00manifest-*.nd (glob)
+  00manifest.n
+  $ hg -R standard-clone debugnodemap --metadata
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+
