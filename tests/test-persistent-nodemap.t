@@ -600,3 +600,13 @@ The persistent nodemap should exist after a streaming clone
   data-unused: 0
   data-unused: 0.000%
 
+
+local clone
+------------
+
+The persistent nodemap should exist after a streaming clone
+
+  $ hg clone -U test-repo local-clone
+  $ ls -1 local-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
+  [1]
+  $ hg -R local-clone debugnodemap --metadata
