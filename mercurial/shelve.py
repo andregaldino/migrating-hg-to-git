@@ -80,6 +80,28 @@ class ShelfDir(object):
     def get(self, name):
         return Shelf(self.vfs, name)
 
+    def listshelves(self):
+        """return all shelves in repo as list of (time, name)"""
+        try:
+            names = self.vfs.listdir()
+        except OSError as err:
+            if err.errno != errno.ENOENT:
+                raise
+            return []
+        info = []
+        seen = set()
+        for filename in names:
+            name = filename.rsplit(b'.', 1)[0]
+            if name in seen:
+                continue
+            seen.add(name)
+            shelf = self.get(name)
+            if not shelf.exists():
+                continue
+            mtime = shelf.mtime()
+            info.append((mtime, name))
+        return sorted(info, reverse=True)
+
 
 class Shelf(object):
     """Represents a shelf, including possibly multiple files storing it.
@@ -332,9 +354,9 @@ class shelvedstate(object):
 
 
 def cleanupoldbackups(repo):
-    vfs = vfsmod.vfs(repo.vfs.join(backupdir))
     maxbackups = repo.ui.configint(b'shelve', b'maxbackups')
-    hgfiles = listshelves(vfs)
+    backup_dir = ShelfDir(repo, for_backups=True)
+    hgfiles = backup_dir.listshelves()
     if maxbackups > 0 and maxbackups < len(hgfiles):
         bordermtime = hgfiles[maxbackups - 1][0]
     else:
@@ -343,7 +365,7 @@ def cleanupoldbackups(repo):
         if mtime == bordermtime:
             # keep it, because timestamp can't decide exact order of backups
             continue
-        Shelf.open_backup(repo, name).delete()
+        backup_dir.get(name).delete()
 
 
 def _backupactivebookmark(repo):
@@ -604,10 +626,10 @@ def cleanupcmd(ui, repo):
     """subcommand that deletes all shelves"""
 
     with repo.wlock():
-        vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
+        shelf_dir = ShelfDir(repo)
         backupvfs = vfsmod.vfs(repo.vfs.join(backupdir))
-        for _mtime, name in listshelves(vfs):
-            Shelf(vfs, name).movetobackup(backupvfs)
+        for _mtime, name in shelf_dir.listshelves():
+            shelf_dir.get(name).movetobackup(backupvfs)
             cleanupoldbackups(repo)
 
 
@@ -627,29 +649,6 @@ def deletecmd(ui, repo, pats):
             cleanupoldbackups(repo)
 
 
-def listshelves(vfs):
-    """return all shelves in repo as list of (time, name)"""
-    try:
-        names = vfs.listdir()
-    except OSError as err:
-        if err.errno != errno.ENOENT:
-            raise
-        return []
-    info = []
-    seen = set()
-    for filename in names:
-        name = filename.rsplit(b'.', 1)[0]
-        if name in seen:
-            continue
-        seen.add(name)
-        shelf = Shelf(vfs, name)
-        if not shelf.exists():
-            continue
-        mtime = shelf.mtime()
-        info.append((mtime, name))
-    return sorted(info, reverse=True)
-
-
 def listcmd(ui, repo, pats, opts):
     """subcommand that displays the list of shelves"""
     pats = set(pats)
@@ -658,9 +657,8 @@ def listcmd(ui, repo, pats, opts):
         width = ui.termwidth()
     namelabel = b'shelve.newest'
     ui.pager(b'shelve')
-    vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
     shelf_dir = ShelfDir(repo)
-    for mtime, name in listshelves(vfs):
+    for mtime, name in shelf_dir.listshelves():
         if pats and name not in pats:
             continue
         ui.write(name, label=namelabel)
@@ -700,15 +698,14 @@ def listcmd(ui, repo, pats, opts):
 
 def patchcmds(ui, repo, pats, opts):
     """subcommand that displays shelves"""
+    shelf_dir = ShelfDir(repo)
     if len(pats) == 0:
-        vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
-        shelves = listshelves(vfs)
+        shelves = shelf_dir.listshelves()
         if not shelves:
             raise error.Abort(_(b"there are no shelves to show"))
         mtime, name = shelves[0]
         pats = [name]
 
-    shelf_dir = ShelfDir(repo)
     for shelfname in pats:
         if not shelf_dir.get(shelfname).exists():
             raise error.Abort(_(b"cannot find shelf %s") % shelfname)
@@ -1123,8 +1120,7 @@ def unshelvecmd(ui, repo, *shelved, **opts):
     elif len(shelved) > 1:
         raise error.InputError(_(b'can only unshelve one change at a time'))
     elif not shelved:
-        vfs = vfsmod.vfs(repo.vfs.join(shelvedir))
-        shelved = listshelves(vfs)
+        shelved = ShelfDir(repo).listshelves()
         if not shelved:
             raise error.StateError(_(b'no shelved changes to apply!'))
         basename = shelved[0][1]
