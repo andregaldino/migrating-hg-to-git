@@ -325,19 +325,17 @@ class shelvedstate(object):
 def cleanupoldbackups(repo):
     vfs = vfsmod.vfs(repo.vfs.join(backupdir))
     maxbackups = repo.ui.configint(b'shelve', b'maxbackups')
-    hgfiles = [f for f in vfs.listdir() if f.endswith(b'.' + patchextension)]
-    hgfiles = sorted([(vfs.stat(f)[stat.ST_MTIME], f) for f in hgfiles])
+    hgfiles = listshelves(vfs)
     if maxbackups > 0 and maxbackups < len(hgfiles):
-        bordermtime = hgfiles[-maxbackups][0]
+        bordermtime = hgfiles[maxbackups - 1][0]
     else:
         bordermtime = None
-    for mtime, f in hgfiles[: len(hgfiles) - maxbackups]:
+    for mtime, name in hgfiles[maxbackups:]:
         if mtime == bordermtime:
             # keep it, because timestamp can't decide exact order of backups
             continue
-        base = f[: -(1 + len(patchextension))]
         for ext in shelvefileextensions:
-            vfs.tryunlink(base + b'.' + ext)
+            vfs.tryunlink(name + b'.' + ext)
 
 
 def _backupactivebookmark(repo):
