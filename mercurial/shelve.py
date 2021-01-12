@@ -86,6 +86,10 @@ class Shelf(object):
     def open(repo, name):
         return Shelf(vfsmod.vfs(repo.vfs.join(shelvedir)), name)
 
+    @staticmethod
+    def open_backup(repo, name):
+        return Shelf(vfsmod.vfs(repo.vfs.join(backupdir)), name)
+
     def exists(self):
         return self.vfs.exists(self.name + b'.patch') and self.vfs.exists(
             self.name + b'.hg'
@@ -180,6 +184,10 @@ class Shelf(object):
                     self.vfs.join(filename),
                     self._backupfilename(backupvfs, filename),
                 )
+
+    def delete(self):
+        for ext in shelvefileextensions:
+            self.vfs.tryunlink(self.name + b'.' + ext)
 
 
 class shelvedstate(object):
@@ -332,8 +340,7 @@ def cleanupoldbackups(repo):
         if mtime == bordermtime:
             # keep it, because timestamp can't decide exact order of backups
             continue
-        for ext in shelvefileextensions:
-            vfs.tryunlink(name + b'.' + ext)
+        Shelf.open_backup(repo, name).delete()
 
 
 def _backupactivebookmark(repo):
