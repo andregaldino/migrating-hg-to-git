@@ -66,7 +66,7 @@
 
   $ cat >> $HGRCPATH <<EOF
   > [remotefilelog]
-  > cacheprocess = python $TESTTMP/cacheprocess-logger.py
+  > cacheprocess = $PYTHON $TESTTMP/cacheprocess-logger.py
   > EOF
 
 Test cache keys and cache misses.

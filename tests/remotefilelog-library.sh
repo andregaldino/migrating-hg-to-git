@@ -8,7 +8,7 @@ remotefilelog=
 rebase=
 strip=
 [ui]
-ssh=python "$TESTDIR/dummyssh"
+ssh=$PYTHON "$TESTDIR/dummyssh"
 [server]
 preferuncompressed=True
 [experimental]

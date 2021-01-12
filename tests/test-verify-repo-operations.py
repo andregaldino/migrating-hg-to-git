@@ -11,7 +11,9 @@ import subprocess
 import sys
 
 # Only run if slow tests are allowed
-if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'], 'slow']):
+if subprocess.call(
+    [os.environ['PYTHON'], '%s/hghave' % os.environ['TESTDIR'], 'slow']
+):
     sys.exit(80)
 
 # These tests require Hypothesis and pytz to be installed.
@@ -352,7 +354,7 @@ class verifyingstatemachine(RuleBasedStateMachine):
             o.write(content)
         self.log.append(
             (
-                "$ python -c 'import binascii; "
+                "$ $PYTHON -c 'import binascii; "
                 "print(binascii.unhexlify(\"%s\"))' > %s"
             )
             % (

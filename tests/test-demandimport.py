@@ -14,7 +14,7 @@ ispy3 = sys.version_info[0] >= 3
 
 # Only run if demandimport is allowed
 if subprocess.call(
-    ['python', '%s/hghave' % os.environ['TESTDIR'], 'demandimport']
+    [os.environ['PYTHON'], '%s/hghave' % os.environ['TESTDIR'], 'demandimport']
 ):
     sys.exit(80)
 

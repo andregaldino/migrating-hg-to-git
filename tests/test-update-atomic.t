@@ -54,7 +54,7 @@ Check behavior without update.atomic-file
   $ hg update -r 1 --config extensions.showwrites=.hg/showwrites.py 2>&1 | grep "a1'.*wb"
   ('vfs open', ('a1', 'wb'), [('atomictemp', False), ('backgroundclose', True)])
 
-  $ python $TESTTMP/show_mode.py *
+  $ $PYTHON $TESTTMP/show_mode.py *
   a1:0644
   a2:0755
   b1:0644
@@ -76,7 +76,7 @@ Check behavior without update.atomic-file first
   $ hg update -r 1
   6 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
-  $ python $TESTTMP/show_mode.py *
+  $ $PYTHON $TESTTMP/show_mode.py *
   a1:0644
   a2:0755
   b1:0644
@@ -88,7 +88,7 @@ Manually reset the mode of the read-only file
 
   $ chmod a-w ro
 
-  $ python $TESTTMP/show_mode.py ro
+  $ $PYTHON $TESTTMP/show_mode.py ro
   ro:0444
 
 Now the file is present, try to update and check the permissions of the file
@@ -96,7 +96,7 @@ Now the file is present, try to update and check the permissions of the file
   $ hg up -r 2
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ python $TESTTMP/show_mode.py ro
+  $ $PYTHON $TESTTMP/show_mode.py ro
   ro:0644
 
 # The file which was read-only is now writable in the default behavior
@@ -121,7 +121,7 @@ Check behavior with update.atomic-files
   C ro
 
 Check the file permission after update
-  $ python $TESTTMP/show_mode.py *
+  $ $PYTHON $TESTTMP/show_mode.py *
   a1:0644
   a2:0755
   b1:0644
@@ -133,7 +133,7 @@ Manually reset the mode of the read-only file
 
   $ chmod a-w ro
 
-  $ python $TESTTMP/show_mode.py ro
+  $ $PYTHON $TESTTMP/show_mode.py ro
   ro:0444
 
 Now the file is present, try to update and check the permissions of the file
@@ -141,7 +141,7 @@ Now the file is present, try to update and check the permissions of the file
   $ hg update -r 2 --traceback
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ python $TESTTMP/show_mode.py ro
+  $ $PYTHON $TESTTMP/show_mode.py ro
   ro:0644
 
 # The behavior is the same as without atomic update

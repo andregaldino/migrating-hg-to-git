@@ -59,7 +59,7 @@ Set up repository
   > EOF
 
 Test ctrl-c
-  $ python $TESTTMP/timeout.py -s INT 1 hg sleep 2
+  $ $PYTHON $TESTTMP/timeout.py -s INT 1 hg sleep 2
   interrupted!
   [124]
 
@@ -68,7 +68,7 @@ Test ctrl-c
   > nointerrupt = yes
   > EOF
 
-  $ python $TESTTMP/timeout.py -s INT 1 hg sleep 2
+  $ $PYTHON $TESTTMP/timeout.py -s INT 1 hg sleep 2
   interrupted!
   [124]
 
@@ -77,7 +77,7 @@ Test ctrl-c
   > nointerrupt-interactiveonly = False
   > EOF
 
-  $ python $TESTTMP/timeout.py -s INT 1 hg sleep 2
+  $ $PYTHON $TESTTMP/timeout.py -s INT 1 hg sleep 2
   shutting down cleanly
   press ^C again to terminate immediately (dangerous)
   end of unsafe operation
