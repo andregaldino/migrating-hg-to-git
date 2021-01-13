@@ -1,4 +1,4 @@
-#require test-repo
+#require test-repo py3
 
   $ cd $TESTDIR/../contrib/fuzz
   $ OUT=$TESTTMP ; export OUT
@@ -26,13 +26,23 @@ up without a valid executable, so we don't need to check $? here.
   >        -fsanitize=fuzzer-no-link,address || return 1
   > }
 
+Try to find a python3-config that's next to our sys.executable. If
+that doesn't work, fall back to looking for a global python3-config
+and hope that works out for the best.
+  $ PYBIN=`$PYTHON -c 'import sys, os; print(os.path.dirname(sys.executable))'`
+  $ if [ -x "$PYBIN/python3-config" ] ; then
+  >   PYTHON_CONFIG="$PYBIN/python3-config"
+  > else
+  >   PYTHON_CONFIG="`which python3-config`"
+  > fi
+
 #if clang-libfuzzer
   $ CXX=clang++ havefuzz || exit 80
-  $ $MAKE -s clean all PYTHON_CONFIG=`which python-config`
+  $ $MAKE -s clean all PYTHON_CONFIG="$PYTHON_CONFIG"
 #endif
 #if no-clang-libfuzzer clang-6.0
   $ CXX=clang++-6.0 havefuzz || exit 80
-  $ $MAKE -s clean all CC=clang-6.0 CXX=clang++-6.0 PYTHON_CONFIG=`which python-config`
+  $ $MAKE -s clean all CC=clang-6.0 CXX=clang++-6.0 PYTHON_CONFIG="$PYTHON_CONFIG"
 #endif
 #if no-clang-libfuzzer no-clang-6.0
   $ exit 80
