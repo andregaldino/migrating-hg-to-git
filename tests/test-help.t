@@ -1551,6 +1551,8 @@ Separate sections from subsections
   
       "usefncache"
   
+      "use-persistent-nodemap"
+  
       "usestore"
   
       "sparse-revlog"

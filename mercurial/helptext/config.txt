@@ -894,6 +894,23 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Enabled by default.
 
+``use-persistent-nodemap``
+    Enable or disable the "persistent-nodemap" feature which improves
+    performance if the rust extensions are available.
+
+    The "persistence-nodemap" persist the "node -> rev" on disk removing the
+    need to dynamically build that mapping for each Mercurial invocation. This
+    significantly reduce the startup cost of various local and server-side
+    operation for larger repository.
+
+    The performance improving version of this feature is currently only
+    implemented in Rust, so people using a version of Mercurial compiled
+    without the Rust part might actually suffer some slowdown.
+
+    Repository with this on-disk format require Mercurial version 5.4 or above.
+
+    Disabled by default.
+
 ``usestore``
     Enable or disable the "store" repository format which improves
     compatibility with systems that fold case or otherwise mangle
