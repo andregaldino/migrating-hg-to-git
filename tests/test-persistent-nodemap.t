@@ -169,12 +169,12 @@ Test code path without mmap
 
   $ echo bar > bar
   $ hg add bar
-  $ hg ci -m 'bar' --config storage.revlog.nodemap.mmap=no
+  $ hg ci -m 'bar' --config storage.revlog.persistent-nodemap.mmap=no
 
-  $ hg debugnodemap --check --config storage.revlog.nodemap.mmap=yes
+  $ hg debugnodemap --check --config storage.revlog.persistent-nodemap.mmap=yes
   revision in index:   5003
   revision in nodemap: 5003
-  $ hg debugnodemap --check --config storage.revlog.nodemap.mmap=no
+  $ hg debugnodemap --check --config storage.revlog.persistent-nodemap.mmap=no
   revision in index:   5003
   revision in nodemap: 5003
 

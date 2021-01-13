@@ -1784,7 +1784,10 @@ coreconfigitem(
 )
 # experimental as long as rust is experimental (or a C version is implemented)
 coreconfigitem(
-    b'storage', b'revlog.nodemap.mmap', default=True, experimental=True
+    b'storage',
+    b'revlog.persistent-nodemap.mmap',
+    default=True,
+    experimental=True,
 )
 # experimental as long as format.use-persistent-nodemap is.
 coreconfigitem(
