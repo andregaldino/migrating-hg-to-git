@@ -110,6 +110,15 @@ add a new commit
   $ echo foo > foo
   $ hg add foo
 
+
+Check slow-path config value handling
+-------------------------------------
+
+  $ hg id --config "storage.revlog.persistent-nodemap.slow-path=invalid-value"
+  unknown value for config "storage.revlog.persistent-nodemap.slow-path": "invalid-value"
+  falling back to default value: allow
+  6b02b8c7b966+ tip
+
 #if no-pure no-rust
 
   $ hg ci -m 'foo' --config "storage.revlog.nodemap.mode=strict"

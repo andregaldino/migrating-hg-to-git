@@ -1044,6 +1044,21 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if ui.configbool(b'experimental', b'rust.index'):
         options[b'rust.index'] = True
     if requirementsmod.NODEMAP_REQUIREMENT in requirements:
+        slow_path = ui.config(
+            b'storage', b'revlog.persistent-nodemap.slow-path'
+        )
+        if slow_path not in (b'allow'):
+            default = ui.config_default(
+                b'storage', b'revlog.persistent-nodemap.slow-path'
+            )
+            msg = _(
+                b'unknown value for config '
+                b'"storage.revlog.persistent-nodemap.slow-path": "%s"\n'
+            )
+            ui.warn(msg % slow_path)
+            if not ui.quiet:
+                ui.warn(_(b'falling back to default value: %s\n') % default)
+            slow_path = default
         options[b'persistent-nodemap'] = True
     if ui.configbool(b'storage', b'revlog.persistent-nodemap.mmap'):
         options[b'persistent-nodemap.mmap'] = True
