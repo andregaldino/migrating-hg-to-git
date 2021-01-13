@@ -97,7 +97,7 @@ class BranchMapCache(object):
                 revs.extend(r for r in extrarevs if r <= bcache.tiprev)
             else:
                 # nothing to fall back on, start empty.
-                bcache = branchcache()
+                bcache = branchcache(repo)
 
         revs.extend(cl.revs(start=bcache.tiprev + 1))
         if revs:
@@ -129,6 +129,7 @@ class BranchMapCache(object):
         if rbheads:
             rtiprev = max((int(clrev(node)) for node in rbheads))
             cache = branchcache(
+                repo,
                 remotebranchmap,
                 repo[rtiprev].node(),
                 rtiprev,
@@ -184,6 +185,7 @@ class branchcache(object):
 
     def __init__(
         self,
+        repo,
         entries=(),
         tipnode=nullid,
         tiprev=nullrev,
@@ -195,6 +197,7 @@ class branchcache(object):
         """hasnode is a function which can be used to verify whether changelog
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog"""
+        self._repo = repo
         self.tipnode = tipnode
         self.tiprev = tiprev
         self.filteredhash = filteredhash
@@ -280,6 +283,7 @@ class branchcache(object):
             if len(cachekey) > 2:
                 filteredhash = bin(cachekey[2])
             bcache = cls(
+                repo,
                 tipnode=last,
                 tiprev=lrev,
                 filteredhash=filteredhash,
@@ -388,6 +392,7 @@ class branchcache(object):
     def copy(self):
         """return an deep copy of the branchcache object"""
         return type(self)(
+            self._repo,
             self._entries,
             self.tipnode,
             self.tiprev,

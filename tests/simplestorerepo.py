@@ -106,7 +106,9 @@ class filestorage(object):
 
     _flagserrorclass = simplestoreerror
 
-    def __init__(self, svfs, path):
+    def __init__(self, repo, svfs, path):
+        self.nullid = repo.nullid
+        self._repo = repo
         self._svfs = svfs
         self._path = path
 
@@ -689,7 +691,7 @@ def reposetup(ui, repo):
 
     class simplestorerepo(repo.__class__):
         def file(self, f):
-            return filestorage(self.svfs, f)
+            return filestorage(repo, self.svfs, f)
 
     repo.__class__ = simplestorerepo
 

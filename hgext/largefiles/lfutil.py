@@ -206,6 +206,7 @@ def openlfdirstate(ui, repo, create=True):
         repo.root,
         repo.dirstate._validate,
         lambda: sparse.matcher(repo),
+        repo.nodeconstants,
     )
 
     # If the largefiles dirstate does not exist, populate and create

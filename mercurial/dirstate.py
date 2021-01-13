@@ -73,13 +73,16 @@ def _getfsnow(vfs):
 
 @interfaceutil.implementer(intdirstate.idirstate)
 class dirstate(object):
-    def __init__(self, opener, ui, root, validate, sparsematchfn):
+    def __init__(
+        self, opener, ui, root, validate, sparsematchfn, nodeconstants
+    ):
         """Create a new dirstate object.
 
         opener is an open()-like callable that can be used to open the
         dirstate file; root is the root of the directory tracked by
         the dirstate.
         """
+        self._nodeconstants = nodeconstants
         self._opener = opener
         self._validate = validate
         self._root = root
@@ -136,7 +139,9 @@ class dirstate(object):
     @propertycache
     def _map(self):
         """Return the dirstate contents (see documentation for dirstatemap)."""
-        self._map = self._mapcls(self._ui, self._opener, self._root)
+        self._map = self._mapcls(
+            self._ui, self._opener, self._root, self._nodeconstants
+        )
         return self._map
 
     @property
@@ -1420,12 +1425,13 @@ class dirstatemap(object):
       denormalized form that they appear as in the dirstate.
     """
 
-    def __init__(self, ui, opener, root):
+    def __init__(self, ui, opener, root, nodeconstants):
         self._ui = ui
         self._opener = opener
         self._root = root
         self._filename = b'dirstate'
         self._nodelen = 20
+        self._nodeconstants = nodeconstants
 
         self._parents = None
         self._dirtyparents = False
@@ -1724,7 +1730,8 @@ class dirstatemap(object):
 if rustmod is not None:
 
     class dirstatemap(object):
-        def __init__(self, ui, opener, root):
+        def __init__(self, ui, opener, root, nodeconstants):
+            self._nodeconstants = nodeconstants
             self._ui = ui
             self._opener = opener
             self._root = root

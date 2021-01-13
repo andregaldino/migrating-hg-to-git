@@ -6,6 +6,8 @@ import silenttestrunner
 import unittest
 import zlib
 
+from mercurial.node import sha1nodeconstants
+
 from mercurial import (
     manifest as manifestmod,
     match as matchmod,
@@ -436,7 +438,7 @@ class testmanifestdict(unittest.TestCase, basemanifesttests):
 
 class testtreemanifest(unittest.TestCase, basemanifesttests):
     def parsemanifest(self, text):
-        return manifestmod.treemanifest(b'', text)
+        return manifestmod.treemanifest(sha1nodeconstants, b'', text)
 
     def testWalkSubtrees(self):
         m = self.parsemanifest(A_DEEPER_MANIFEST)

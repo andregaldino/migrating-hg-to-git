@@ -33,6 +33,7 @@ class filelog(object):
         # Used by LFS.
         self._revlog.filename = path
         self._revlog.revlog_kind = b'filelog'
+        self.nullid = self._revlog.nullid
 
     def __len__(self):
         return len(self._revlog)

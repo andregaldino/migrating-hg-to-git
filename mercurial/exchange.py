@@ -827,7 +827,7 @@ def _pushb2checkbookmarks(pushop, bundler):
     data = []
     for book, old, new in pushop.outbookmarks:
         data.append((book, old))
-    checkdata = bookmod.binaryencode(data)
+    checkdata = bookmod.binaryencode(pushop.repo, data)
     bundler.newpart(b'check:bookmarks', data=checkdata)
 
 
@@ -1027,7 +1027,7 @@ def _pushb2bookmarkspart(pushop, bundler):
         _abortonsecretctx(pushop, new, book)
         data.append((book, new))
         allactions.append((book, _bmaction(old, new)))
-    checkdata = bookmod.binaryencode(data)
+    checkdata = bookmod.binaryencode(pushop.repo, data)
     bundler.newpart(b'bookmarks', data=checkdata)
 
     def handlereply(op):
@@ -2455,7 +2455,7 @@ def _getbundlebookmarkpart(
     if not b2caps or b'bookmarks' not in b2caps:
         raise error.Abort(_(b'no common bookmarks exchange method'))
     books = bookmod.listbinbookmarks(repo)
-    data = bookmod.binaryencode(books)
+    data = bookmod.binaryencode(repo, books)
     if data:
         bundler.newpart(b'bookmarks', data=data)
 

@@ -191,7 +191,7 @@ class _changelogrevision(object):
     # Extensions might modify _defaultextra, so let the constructor below pass
     # it in
     extra = attr.ib()
-    manifest = attr.ib(default=nullid)
+    manifest = attr.ib()
     user = attr.ib(default=b'')
     date = attr.ib(default=(0, 0))
     files = attr.ib(default=attr.Factory(list))
@@ -219,9 +219,9 @@ class changelogrevision(object):
         '_changes',
     )
 
-    def __new__(cls, text, sidedata, cpsd):
+    def __new__(cls, cl, text, sidedata, cpsd):
         if not text:
-            return _changelogrevision(extra=_defaultextra)
+            return _changelogrevision(extra=_defaultextra, manifest=nullid)
 
         self = super(changelogrevision, cls).__new__(cls)
         # We could return here and implement the following as an __init__.
@@ -526,7 +526,7 @@ class changelog(revlog.revlog):
         """
         d, s = self._revisiondata(nodeorrev)
         c = changelogrevision(
-            d, s, self._copiesstorage == b'changeset-sidedata'
+            self, d, s, self._copiesstorage == b'changeset-sidedata'
         )
         return (c.manifest, c.user, c.date, c.files, c.description, c.extra)
 
@@ -534,7 +534,7 @@ class changelog(revlog.revlog):
         """Obtain a ``changelogrevision`` for a node or revision."""
         text, sidedata = self._revisiondata(nodeorrev)
         return changelogrevision(
-            text, sidedata, self._copiesstorage == b'changeset-sidedata'
+            self, text, sidedata, self._copiesstorage == b'changeset-sidedata'
         )
 
     def readfiles(self, nodeorrev):

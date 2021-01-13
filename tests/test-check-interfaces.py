@@ -248,7 +248,10 @@ def main():
 
     # Conforms to imanifestlog.
     ml = manifest.manifestlog(
-        vfs, repo, manifest.manifestrevlog(repo.svfs), repo.narrowmatch()
+        vfs,
+        repo,
+        manifest.manifestrevlog(repo.nodeconstants, repo.svfs),
+        repo.narrowmatch(),
     )
     checkzobject(ml)
     checkzobject(repo.manifestlog)
@@ -263,7 +266,7 @@ def main():
     # Conforms to imanifestdict.
     checkzobject(mctx.read())
 
-    mrl = manifest.manifestrevlog(vfs)
+    mrl = manifest.manifestrevlog(repo.nodeconstants, vfs)
     checkzobject(mrl)
 
     ziverify.verifyClass(repository.irevisiondelta, revlog.revlogrevisiondelta)

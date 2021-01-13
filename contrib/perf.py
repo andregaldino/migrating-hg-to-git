@@ -3672,7 +3672,7 @@ def perfloadmarkers(ui, repo):
     Result is the number of markers in the repo."""
     timer, fm = gettimer(ui)
     svfs = getsvfs(repo)
-    timer(lambda: len(obsolete.obsstore(svfs)))
+    timer(lambda: len(obsolete.obsstore(repo, svfs)))
     fm.end()
 
 

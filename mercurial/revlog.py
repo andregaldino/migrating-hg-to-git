@@ -28,6 +28,7 @@ from .node import (
     nullhex,
     nullid,
     nullrev,
+    sha1nodeconstants,
     short,
     wdirfilenodeids,
     wdirhex,
@@ -651,6 +652,10 @@ class revlog(object):
             raise error.RevlogError(
                 _(b'unknown version (%d) in revlog %s') % (fmt, self.indexfile)
             )
+
+        self.nodeconstants = sha1nodeconstants
+        self.nullid = self.nodeconstants.nullid
+
         # sparse-revlog can't be on without general-delta (issue6056)
         if not self._generaldelta:
             self._sparserevlog = False

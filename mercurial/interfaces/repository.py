@@ -523,6 +523,10 @@ class ifileindex(interfaceutil.Interface):
     * Metadata to facilitate storage.
     """
 
+    nullid = interfaceutil.Attribute(
+        """node for the null revision for use as delta base."""
+    )
+
     def __len__():
         """Obtain the number of revisions stored for this file."""
 
@@ -1143,6 +1147,10 @@ class imanifestrevisionwritable(imanifestrevisionbase):
 class imanifeststorage(interfaceutil.Interface):
     """Storage interface for manifest data."""
 
+    nodeconstants = interfaceutil.Attribute(
+        """nodeconstants used by the current repository."""
+    )
+
     tree = interfaceutil.Attribute(
         """The path to the directory this manifest tracks.
 
@@ -1366,6 +1374,10 @@ class imanifestlog(interfaceutil.Interface):
     tree manifests.
     """
 
+    nodeconstants = interfaceutil.Attribute(
+        """nodeconstants used by the current repository."""
+    )
+
     def __getitem__(node):
         """Obtain a manifest instance for a given binary node.
 
@@ -1433,6 +1445,13 @@ class ilocalrepositorymain(interfaceutil.Interface):
 
     This currently captures the reality of things - not how things should be.
     """
+
+    nodeconstants = interfaceutil.Attribute(
+        """Constant nodes matching the hash function used by the repository."""
+    )
+    nullid = interfaceutil.Attribute(
+        """null revision for the hash function used by the repository."""
+    )
 
     supportedformats = interfaceutil.Attribute(
         """Set of requirements that apply to stream clone.

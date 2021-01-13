@@ -270,9 +270,12 @@ def _headssummary(pushop):
     # C. Update newmap with outgoing changes.
     # This will possibly add new heads and remove existing ones.
     newmap = branchmap.remotebranchcache(
-        (branch, heads[1])
-        for branch, heads in pycompat.iteritems(headssum)
-        if heads[0] is not None
+        repo,
+        (
+            (branch, heads[1])
+            for branch, heads in pycompat.iteritems(headssum)
+            if heads[0] is not None
+        ),
     )
     newmap.update(repo, (ctx.rev() for ctx in missingctx))
     for branch, newheads in pycompat.iteritems(newmap):

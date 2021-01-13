@@ -21,6 +21,7 @@ from .node import (
     hex,
     nullid,
     nullrev,
+    sha1nodeconstants,
     short,
 )
 from .pycompat import (
@@ -1330,6 +1331,8 @@ class localrepository(object):
         self.vfs = hgvfs
         self.path = hgvfs.base
         self.requirements = requirements
+        self.nodeconstants = sha1nodeconstants
+        self.nullid = self.nodeconstants.nullid
         self.supported = supportedrequirements
         self.sharedpath = sharedpath
         self.store = store
@@ -1676,7 +1679,12 @@ class localrepository(object):
         sparsematchfn = lambda: sparse.matcher(self)
 
         return dirstate.dirstate(
-            self.vfs, self.ui, self.root, self._dirstatevalidate, sparsematchfn
+            self.vfs,
+            self.ui,
+            self.root,
+            self._dirstatevalidate,
+            sparsematchfn,
+            self.nodeconstants,
         )
 
     def _dirstatevalidate(self, node):

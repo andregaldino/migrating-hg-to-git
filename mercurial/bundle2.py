@@ -2146,7 +2146,7 @@ def handlecheckbookmarks(op, inpart):
     contains binary encoded (bookmark, node) tuple. If the local state does
     not marks the one in the part, a PushRaced exception is raised
     """
-    bookdata = bookmarks.binarydecode(inpart)
+    bookdata = bookmarks.binarydecode(op.repo, inpart)
 
     msgstandard = (
         b'remote repository changed while pushing - please try again '
@@ -2376,7 +2376,7 @@ def handlebookmark(op, inpart):
     When mode is 'records', the information is recorded into the 'bookmarks'
     records of the bundle operation. This behavior is suitable for pulling.
     """
-    changes = bookmarks.binarydecode(inpart)
+    changes = bookmarks.binarydecode(op.repo, inpart)
 
     pushkeycompat = op.repo.ui.configbool(
         b'server', b'bookmarks-pushkey-compat'

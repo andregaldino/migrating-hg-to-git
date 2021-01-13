@@ -441,7 +441,7 @@ class basicstore(object):
         )
 
     def manifestlog(self, repo, storenarrowmatch):
-        rootstore = manifest.manifestrevlog(self.vfs)
+        rootstore = manifest.manifestrevlog(repo.nodeconstants, self.vfs)
         return manifest.manifestlog(self.vfs, repo, rootstore, storenarrowmatch)
 
     def datafiles(self, matcher=None):

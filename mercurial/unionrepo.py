@@ -153,9 +153,9 @@ class unionchangelog(unionrevlog, changelog.changelog):
 
 
 class unionmanifest(unionrevlog, manifest.manifestrevlog):
-    def __init__(self, opener, opener2, linkmapper):
-        manifest.manifestrevlog.__init__(self, opener)
-        manifest2 = manifest.manifestrevlog(opener2)
+    def __init__(self, nodeconstants, opener, opener2, linkmapper):
+        manifest.manifestrevlog.__init__(self, nodeconstants, opener)
+        manifest2 = manifest.manifestrevlog(nodeconstants, opener2)
         unionrevlog.__init__(
             self, opener, self.indexfile, manifest2, linkmapper
         )
@@ -205,7 +205,10 @@ class unionrepository(object):
     @localrepo.unfilteredpropertycache
     def manifestlog(self):
         rootstore = unionmanifest(
-            self.svfs, self.repo2.svfs, self.unfiltered()._clrev
+            self.nodeconstants,
+            self.svfs,
+            self.repo2.svfs,
+            self.unfiltered()._clrev,
         )
         return manifest.manifestlog(
             self.svfs, self, rootstore, self.narrowmatch()

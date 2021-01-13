@@ -12,6 +12,7 @@ from __future__ import absolute_import
 import errno
 
 from .i18n import _
+from .node import sha1nodeconstants
 from . import (
     branchmap,
     changelog,
@@ -198,6 +199,8 @@ class statichttprepository(
             requirements, supportedrequirements
         )
         localrepo.ensurerequirementscompatible(ui, requirements)
+        self.nodeconstants = sha1nodeconstants
+        self.nullid = self.nodeconstants.nullid
 
         # setup store
         self.store = localrepo.makestore(requirements, self.path, vfsclass)
@@ -207,7 +210,7 @@ class statichttprepository(
         self._filecache = {}
         self.requirements = requirements
 
-        rootmanifest = manifest.manifestrevlog(self.svfs)
+        rootmanifest = manifest.manifestrevlog(self.nodeconstants, self.svfs)
         self.manifestlog = manifest.manifestlog(
             self.svfs, self, rootmanifest, self.narrowmatch()
         )

@@ -792,8 +792,9 @@ _noop = lambda s: None
 
 @interfaceutil.implementer(repository.imanifestdict)
 class treemanifest(object):
-    def __init__(self, dir=b'', text=b''):
+    def __init__(self, nodeconstants, dir=b'', text=b''):
         self._dir = dir
+        self.nodeconstants = nodeconstants
         self._node = nullid
         self._loadfunc = _noop
         self._copyfunc = _noop
@@ -1051,7 +1052,9 @@ class treemanifest(object):
         if dir:
             self._loadlazy(dir)
             if dir not in self._dirs:
-                self._dirs[dir] = treemanifest(self._subpath(dir))
+                self._dirs[dir] = treemanifest(
+                    self.nodeconstants, self._subpath(dir)
+                )
             self._dirs[dir].__setitem__(subpath, n)
         else:
             # manifest nodes are either 20 bytes or 32 bytes,
@@ -1078,14 +1081,16 @@ class treemanifest(object):
         if dir:
             self._loadlazy(dir)
             if dir not in self._dirs:
-                self._dirs[dir] = treemanifest(self._subpath(dir))
+                self._dirs[dir] = treemanifest(
+                    self.nodeconstants, self._subpath(dir)
+                )
             self._dirs[dir].setflag(subpath, flags)
         else:
             self._flags[f] = flags
         self._dirty = True
 
     def copy(self):
-        copy = treemanifest(self._dir)
+        copy = treemanifest(self.nodeconstants, self._dir)
         copy._node = self._node
         copy._dirty = self._dirty
         if self._copyfunc is _noop:
@@ -1215,7 +1220,7 @@ class treemanifest(object):
         visit = match.visitchildrenset(self._dir[:-1])
         if visit == b'all':
             return self.copy()
-        ret = treemanifest(self._dir)
+        ret = treemanifest(self.nodeconstants, self._dir)
         if not visit:
             return ret
 
@@ -1272,7 +1277,7 @@ class treemanifest(object):
             m2 = m2._matches(match)
             return m1.diff(m2, clean=clean)
         result = {}
-        emptytree = treemanifest()
+        emptytree = treemanifest(self.nodeconstants)
 
         def _iterativediff(t1, t2, stack):
             """compares two tree manifests and append new tree-manifests which
@@ -1368,7 +1373,7 @@ class treemanifest(object):
         self._load()  # for consistency; should never have any effect here
         m1._load()
         m2._load()
-        emptytree = treemanifest()
+        emptytree = treemanifest(self.nodeconstants)
 
         def getnode(m, d):
             ld = m._lazydirs.get(d)
@@ -1551,6 +1556,7 @@ class manifestrevlog(object):
 
     def __init__(
         self,
+        nodeconstants,
         opener,
         tree=b'',
         dirlogcache=None,
@@ -1567,6 +1573,7 @@ class manifestrevlog(object):
         option takes precedence, so if it is set to True, we ignore whatever
         value is passed in to the constructor.
         """
+        self.nodeconstants = nodeconstants
         # During normal operations, we expect to deal with not more than four
         # revs at a time (such as during commit --amend). When rebasing large
         # stacks of commits, the number can go up, hence the config knob below.
@@ -1654,7 +1661,11 @@ class manifestrevlog(object):
             assert self._treeondisk
         if d not in self._dirlogcache:
             mfrevlog = manifestrevlog(
-                self.opener, d, self._dirlogcache, treemanifest=self._treeondisk
+                self.nodeconstants,
+                self.opener,
+                d,
+                self._dirlogcache,
+                treemanifest=self._treeondisk,
             )
             self._dirlogcache[d] = mfrevlog
         return self._dirlogcache[d]
@@ -1917,6 +1928,7 @@ class manifestlog(object):
     they receive (i.e. tree or flat or lazily loaded, etc)."""
 
     def __init__(self, opener, repo, rootstore, narrowmatch):
+        self.nodeconstants = repo.nodeconstants
         usetreemanifest = False
         cachesize = 4
 
@@ -1955,7 +1967,7 @@ class manifestlog(object):
 
         if not self._narrowmatch.always():
             if not self._narrowmatch.visitdir(tree[:-1]):
-                return excludeddirmanifestctx(tree, node)
+                return excludeddirmanifestctx(self.nodeconstants, tree, node)
         if tree:
             if self._rootstore._treeondisk:
                 if verify:
@@ -2118,7 +2130,7 @@ class memtreemanifestctx(object):
     def __init__(self, manifestlog, dir=b''):
         self._manifestlog = manifestlog
         self._dir = dir
-        self._treemanifest = treemanifest()
+        self._treemanifest = treemanifest(manifestlog.nodeconstants)
 
     def _storage(self):
         return self._manifestlog.getstorage(b'')
@@ -2168,17 +2180,19 @@ class treemanifestctx(object):
         narrowmatch = self._manifestlog._narrowmatch
         if not narrowmatch.always():
             if not narrowmatch.visitdir(self._dir[:-1]):
-                return excludedmanifestrevlog(self._dir)
+                return excludedmanifestrevlog(
+                    self._manifestlog.nodeconstants, self._dir
+                )
         return self._manifestlog.getstorage(self._dir)
 
     def read(self):
         if self._data is None:
             store = self._storage()
             if self._node == nullid:
-                self._data = treemanifest()
+                self._data = treemanifest(self._manifestlog.nodeconstants)
             # TODO accessing non-public API
             elif store._treeondisk:
-                m = treemanifest(dir=self._dir)
+                m = treemanifest(self._manifestlog.nodeconstants, dir=self._dir)
 
                 def gettext():
                     return store.revision(self._node)
@@ -2198,7 +2212,9 @@ class treemanifestctx(object):
                     text = store.revision(self._node)
                     arraytext = bytearray(text)
                     store.fulltextcache[self._node] = arraytext
-                self._data = treemanifest(dir=self._dir, text=text)
+                self._data = treemanifest(
+                    self._manifestlog.nodeconstants, dir=self._dir, text=text
+                )
 
         return self._data
 
@@ -2235,7 +2251,7 @@ class treemanifestctx(object):
             r0 = store.deltaparent(store.rev(self._node))
             m0 = self._manifestlog.get(self._dir, store.node(r0)).read()
             m1 = self.read()
-            md = treemanifest(dir=self._dir)
+            md = treemanifest(self._manifestlog.nodeconstants, dir=self._dir)
             for f, ((n0, fl0), (n1, fl1)) in pycompat.iteritems(m0.diff(m1)):
                 if n1:
                     md[f] = n1
@@ -2278,8 +2294,8 @@ class excludeddir(treemanifest):
     whose contents are unknown.
     """
 
-    def __init__(self, dir, node):
-        super(excludeddir, self).__init__(dir)
+    def __init__(self, nodeconstants, dir, node):
+        super(excludeddir, self).__init__(nodeconstants, dir)
         self._node = node
         # Add an empty file, which will be included by iterators and such,
         # appearing as the directory itself (i.e. something like "dir/")
@@ -2298,12 +2314,13 @@ class excludeddir(treemanifest):
 class excludeddirmanifestctx(treemanifestctx):
     """context wrapper for excludeddir - see that docstring for rationale"""
 
-    def __init__(self, dir, node):
+    def __init__(self, nodeconstants, dir, node):
+        self.nodeconstants = nodeconstants
         self._dir = dir
         self._node = node
 
     def read(self):
-        return excludeddir(self._dir, self._node)
+        return excludeddir(self.nodeconstants, self._dir, self._node)
 
     def readfast(self, shallow=False):
         # special version of readfast since we don't have underlying storage
@@ -2325,7 +2342,8 @@ class excludedmanifestrevlog(manifestrevlog):
     outside the narrowspec.
     """
 
-    def __init__(self, dir):
+    def __init__(self, nodeconstants, dir):
+        self.nodeconstants = nodeconstants
         self._dir = dir
 
     def __len__(self):

@@ -175,9 +175,15 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
 
 class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     def __init__(
-        self, opener, cgunpacker, linkmapper, dirlogstarts=None, dir=b''
+        self,
+        nodeconstants,
+        opener,
+        cgunpacker,
+        linkmapper,
+        dirlogstarts=None,
+        dir=b'',
     ):
-        manifest.manifestrevlog.__init__(self, opener, tree=dir)
+        manifest.manifestrevlog.__init__(self, nodeconstants, opener, tree=dir)
         bundlerevlog.__init__(
             self, opener, self.indexfile, cgunpacker, linkmapper
         )
@@ -192,6 +198,7 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
         if d in self._dirlogstarts:
             self.bundle.seek(self._dirlogstarts[d])
             return bundlemanifest(
+                self.nodeconstants,
                 self.opener,
                 self.bundle,
                 self._linkmapper,
@@ -368,7 +375,9 @@ class bundlerepository(object):
         # consume the header if it exists
         self._cgunpacker.manifestheader()
         linkmapper = self.unfiltered().changelog.rev
-        rootstore = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
+        rootstore = bundlemanifest(
+            self.nodeconstants, self.svfs, self._cgunpacker, linkmapper
+        )
         self.filestart = self._cgunpacker.tell()
 
         return manifest.manifestlog(

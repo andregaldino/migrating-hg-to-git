@@ -36,7 +36,9 @@ def _revlogfrompath(repo, path):
         return changelog.changelog(repo.svfs)
     elif path.endswith(b'00manifest.i'):
         mandir = path[: -len(b'00manifest.i')]
-        return manifest.manifestrevlog(repo.svfs, tree=mandir)
+        return manifest.manifestrevlog(
+            repo.nodeconstants, repo.svfs, tree=mandir
+        )
     else:
         # reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])

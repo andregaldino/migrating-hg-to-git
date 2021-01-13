@@ -662,7 +662,7 @@ class headerlessfixup(object):
         return readexactly(self._fh, n)
 
 
-def _revisiondeltatochunks(delta, headerfn):
+def _revisiondeltatochunks(repo, delta, headerfn):
     """Serialize a revisiondelta to changegroup chunks."""
 
     # The captured revision delta may be encoded as a delta against
@@ -1065,7 +1065,9 @@ class cgpacker(object):
             sidedata_helpers=sidedata_helpers,
         )
         for delta in deltas:
-            for chunk in _revisiondeltatochunks(delta, self._builddeltaheader):
+            for chunk in _revisiondeltatochunks(
+                self._repo, delta, self._builddeltaheader
+            ):
                 size += len(chunk)
                 yield chunk
 
@@ -1121,7 +1123,9 @@ class cgpacker(object):
                 yield chunk
 
             for delta in deltas:
-                chunks = _revisiondeltatochunks(delta, self._builddeltaheader)
+                chunks = _revisiondeltatochunks(
+                    self._repo, delta, self._builddeltaheader
+                )
                 for chunk in chunks:
                     size += len(chunk)
                     yield chunk
@@ -1160,7 +1164,9 @@ class cgpacker(object):
             yield h
 
             for delta in deltas:
-                chunks = _revisiondeltatochunks(delta, self._builddeltaheader)
+                chunks = _revisiondeltatochunks(
+                    self._repo, delta, self._builddeltaheader
+                )
                 for chunk in chunks:
                     size += len(chunk)
                     yield chunk

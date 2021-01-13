@@ -623,7 +623,7 @@ def unhexlifybookmarks(marks):
 _binaryentry = struct.Struct(b'>20sH')
 
 
-def binaryencode(bookmarks):
+def binaryencode(repo, bookmarks):
     """encode a '(bookmark, node)' iterable into a binary stream
 
     the binary format is:
@@ -645,7 +645,7 @@ def binaryencode(bookmarks):
     return b''.join(binarydata)
 
 
-def binarydecode(stream):
+def binarydecode(repo, stream):
     """decode a binary stream into an '(bookmark, node)' iterable
 
     the binary format is:

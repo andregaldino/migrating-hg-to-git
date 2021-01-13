@@ -8,6 +8,7 @@ from mercurial.node import (
     nullhex,
     nullid,
     nullrev,
+    sha1nodeconstants,
     wdirhex,
 )
 from mercurial import (
@@ -422,6 +423,8 @@ class changelog(baselog):
 
 
 class manifestlog(baselog):
+    nodeconstants = sha1nodeconstants
+
     def __getitem__(self, node):
         return self.get(b'', node)
 

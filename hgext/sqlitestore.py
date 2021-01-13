@@ -54,6 +54,7 @@ from mercurial.i18n import _
 from mercurial.node import (
     nullid,
     nullrev,
+    sha1nodeconstants,
     short,
 )
 from mercurial.thirdparty import attr
@@ -305,6 +306,7 @@ class sqlitefilestore(object):
     """Implements storage for an individual tracked path."""
 
     def __init__(self, db, path, compression):
+        self.nullid = sha1nodeconstants.nullid
         self._db = db
         self._path = path
 
