@@ -3484,7 +3484,7 @@ def perfbranchmap(ui, repo, *filternames, **opts):
             printname = name
             if name is None:
                 printname = b'unfiltered'
-            timer(getbranchmap(name), title=str(printname))
+            timer(getbranchmap(name), title=printname)
     finally:
         branchcacheread.restore()
         branchcachewrite.restore()
