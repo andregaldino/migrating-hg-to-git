@@ -673,6 +673,18 @@ class ui(object):
                     )
         return value
 
+    def config_default(self, section, name):
+        """return the default value for a config option
+
+        The default is returned "raw", for example if it is a callable, the
+        callable was not called.
+        """
+        item = self._knownconfig.get(section, {}).get(name)
+
+        if item is None:
+            raise KeyError((section, name))
+        return item.default
+
     def configsuboptions(self, section, name, default=_unset, untrusted=False):
         """Get a config option and all sub-options.
 
