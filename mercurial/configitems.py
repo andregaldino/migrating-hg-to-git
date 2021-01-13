@@ -635,6 +635,8 @@ coreconfigitem(
     b'legacy.exchange',
     default=list,
 )
+# When True, revlogs use a special reference version of the nodemap, that is not
+# performant but is "known" to behave properly.
 coreconfigitem(
     b'devel',
     b'persistent-nodemap',
