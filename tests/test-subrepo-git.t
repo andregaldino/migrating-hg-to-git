@@ -17,6 +17,10 @@ make git commits repeatable
   $ GIT_COMMITTER_DATE="$GIT_AUTHOR_DATE"; export GIT_COMMITTER_DATE
   $ GIT_CONFIG_NOSYSTEM=1; export GIT_CONFIG_NOSYSTEM
 
+set default branch to value compatible with new and old git version
+
+  $ git config --global init.defaultBranch master
+
 root hg repo
 
   $ hg init t
