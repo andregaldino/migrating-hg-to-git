@@ -111,9 +111,7 @@ from mercurial import (
     extensions,
     exthelper,
     hg,
-    httppeer,
     localrepo,
-    sshpeer,
     wireprotov1server,
 )
 
