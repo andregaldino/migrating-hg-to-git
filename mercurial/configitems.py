@@ -1791,10 +1791,6 @@ coreconfigitem(
 )
 # experimental as long as format.use-persistent-nodemap is.
 coreconfigitem(
-    b'storage', b'revlog.nodemap.mode', default=b'compat', experimental=True
-)
-# experimental as long as format.use-persistent-nodemap is.
-coreconfigitem(
     b'storage',
     b'revlog.persistent-nodemap.slow-path',
     default=b"abort",

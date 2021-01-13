@@ -13,7 +13,6 @@ import os
 import re
 import struct
 
-from ..i18n import _
 from ..node import hex
 
 from .. import (
@@ -143,13 +142,6 @@ def _persist_nodemap(tr, revlog, pending=False):
     ondisk_docket = revlog._nodemap_docket
     feed_data = util.safehasattr(revlog.index, "update_nodemap_data")
     use_mmap = revlog.opener.options.get(b"persistent-nodemap.mmap")
-    mode = revlog.opener.options.get(b"persistent-nodemap.mode")
-    if not can_incremental:
-        msg = _(b"persistent nodemap in strict mode without efficient method")
-        if mode == b'warn':
-            tr._report(b"%s\n" % msg)
-        elif mode == b'strict':
-            raise error.Abort(msg)
 
     data = None
     # first attemp an incremental update of the data
