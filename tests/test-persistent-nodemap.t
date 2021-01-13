@@ -17,9 +17,9 @@ Check handling of the default slow-path value
 #if no-pure no-rust
 
   $ hg id
-  warning: accessing `persistent-nodemap` repository without associated fast implementation.
+  abort: accessing `persistent-nodemap` repository without associated fast implementation.
   (check `hg help config.format.use-persistent-nodemap` for details)
-  000000000000 tip
+  [255]
 
 Unlock further check (we are here to test the feature)
 
@@ -135,14 +135,14 @@ add a new commit
 Check slow-path config value handling
 -------------------------------------
 
+#if no-pure no-rust
+
   $ hg id --config "storage.revlog.persistent-nodemap.slow-path=invalid-value"
   unknown value for config "storage.revlog.persistent-nodemap.slow-path": "invalid-value"
-  falling back to default value: warn
-  warning: accessing `persistent-nodemap` repository without associated fast implementation. (no-pure no-rust !)
-  (check `hg help config.format.use-persistent-nodemap` for details) (no-pure no-rust !)
-  6b02b8c7b966+ tip
-
-#if no-pure no-rust
+  falling back to default value: abort
+  abort: accessing `persistent-nodemap` repository without associated fast implementation.
+  (check `hg help config.format.use-persistent-nodemap` for details)
+  [255]
 
   $ hg log -r . --config "storage.revlog.persistent-nodemap.slow-path=warn"
   warning: accessing `persistent-nodemap` repository without associated fast implementation.
@@ -153,11 +153,17 @@ Check slow-path config value handling
   date:        Thu Jan 01 01:23:20 1970 +0000
   summary:     r5000
   
-  $ hg ci -m 'foo' --config "storage.revlog.nodemap.mode=strict"
-  transaction abort!
-  rollback completed
-  abort: persistent nodemap in strict mode without efficient method
+  $ hg ci -m 'foo' --config "storage.revlog.persistent-nodemap.slow-path=abort"
+  abort: accessing `persistent-nodemap` repository without associated fast implementation.
+  (check `hg help config.format.use-persistent-nodemap` for details)
   [255]
+
+#else
+
+  $ hg id --config "storage.revlog.persistent-nodemap.slow-path=invalid-value"
+  unknown value for config "storage.revlog.persistent-nodemap.slow-path": "invalid-value"
+  falling back to default value: abort
+  6b02b8c7b966+ tip
 
 #endif
 

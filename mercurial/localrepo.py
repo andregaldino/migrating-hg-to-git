@@ -1048,7 +1048,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         slow_path = ui.config(
             b'storage', b'revlog.persistent-nodemap.slow-path'
         )
-        if slow_path not in (b'allow', b'warn'):
+        if slow_path not in (b'allow', b'warn', b'abort'):
             default = ui.config_default(
                 b'storage', b'revlog.persistent-nodemap.slow-path'
             )
@@ -1069,12 +1069,15 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
             b"check `hg help config.format.use-persistent-nodemap` "
             b"for details"
         )
-        if slow_path == b'warn' and not revlog.HAS_FAST_PERSISTENT_NODEMAP:
-            msg = b"warning: " + msg + b'\n'
-            ui.warn(msg)
-            if not ui.quiet:
-                hint = b'(' + hint + b')\n'
-                ui.warn(hint)
+        if not revlog.HAS_FAST_PERSISTENT_NODEMAP:
+            if slow_path == b'warn':
+                msg = b"warning: " + msg + b'\n'
+                ui.warn(msg)
+                if not ui.quiet:
+                    hint = b'(' + hint + b')\n'
+                    ui.warn(hint)
+            if slow_path == b'abort':
+                raise error.Abort(msg, hint=hint)
         options[b'persistent-nodemap'] = True
     if ui.configbool(b'storage', b'revlog.persistent-nodemap.mmap'):
         options[b'persistent-nodemap.mmap'] = True

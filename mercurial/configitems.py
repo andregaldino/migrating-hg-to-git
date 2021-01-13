@@ -1797,7 +1797,7 @@ coreconfigitem(
 coreconfigitem(
     b'storage',
     b'revlog.persistent-nodemap.slow-path',
-    default=b"warn",
+    default=b"abort",
     experimental=True,
 )
 
