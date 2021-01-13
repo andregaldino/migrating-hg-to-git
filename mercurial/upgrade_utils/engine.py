@@ -190,7 +190,7 @@ def _clonerevlogs(
     # Perform a pass to collect metadata. This validates we can open all
     # source files and allows a unified progress bar to be displayed.
     for unencoded, encoded, size in alldatafiles:
-        if unencoded.endswith(b'.d'):
+        if not unencoded.endswith(b'.i'):
             continue
 
         rl = _revlogfrompath(srcrepo, unencoded)
