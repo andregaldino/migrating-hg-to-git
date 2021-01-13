@@ -5,6 +5,8 @@ setup
   > share =
   > [format]
   > exp-share-safe = True
+  > [storage]
+  > revlog.persistent-nodemap.slow-path=allow
   > EOF
 
 prepare source repo

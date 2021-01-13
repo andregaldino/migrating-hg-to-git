@@ -8,8 +8,30 @@ Test the persistent on-disk nodemap
   > [devel]
   > persistent-nodemap=yes
   > EOF
-  $ hg init test-repo
+
+  $ hg init test-repo --config storage.revlog.persistent-nodemap.slow-path=allow
   $ cd test-repo
+
+Check handling of the default slow-path value
+
+#if no-pure no-rust
+
+  $ hg id
+  warning: accessing `persistent-nodemap` repository without associated fast implementation.
+  (check `hg help config.format.use-persistent-nodemap` for details)
+  000000000000 tip
+
+Unlock further check (we are here to test the feature)
+
+  $ cat << EOF >> $HGRCPATH
+  > [storage]
+  > # to avoid spamming the test
+  > revlog.persistent-nodemap.slow-path=allow
+  > EOF
+
+#endif
+
+
   $ hg debugformat
   format-variant     repo
   fncache:            yes
@@ -23,9 +45,8 @@ Test the persistent on-disk nodemap
   plain-cl-delta:     yes
   compression:        zlib
   compression-level:  default
-  $ hg debugbuilddag .+5000 --new-file --config "storage.revlog.nodemap.mode=warn"
-  persistent nodemap in strict mode without efficient method (no-rust no-pure !)
-  persistent nodemap in strict mode without efficient method (no-rust no-pure !)
+  $ hg debugbuilddag .+5000 --new-file
+
   $ hg debugnodemap --metadata
   uid: ???????????????? (glob)
   tip-rev: 5000
@@ -116,11 +137,22 @@ Check slow-path config value handling
 
   $ hg id --config "storage.revlog.persistent-nodemap.slow-path=invalid-value"
   unknown value for config "storage.revlog.persistent-nodemap.slow-path": "invalid-value"
-  falling back to default value: allow
+  falling back to default value: warn
+  warning: accessing `persistent-nodemap` repository without associated fast implementation. (no-pure no-rust !)
+  (check `hg help config.format.use-persistent-nodemap` for details) (no-pure no-rust !)
   6b02b8c7b966+ tip
 
 #if no-pure no-rust
 
+  $ hg log -r . --config "storage.revlog.persistent-nodemap.slow-path=warn"
+  warning: accessing `persistent-nodemap` repository without associated fast implementation.
+  (check `hg help config.format.use-persistent-nodemap` for details)
+  changeset:   5000:6b02b8c7b966
+  tag:         tip
+  user:        debugbuilddag
+  date:        Thu Jan 01 01:23:20 1970 +0000
+  summary:     r5000
+  
   $ hg ci -m 'foo' --config "storage.revlog.nodemap.mode=strict"
   transaction abort!
   rollback completed

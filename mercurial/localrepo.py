@@ -59,6 +59,7 @@ from . import (
     rcutil,
     repoview,
     requirements as requirementsmod,
+    revlog,
     revset,
     revsetlang,
     scmutil,
@@ -1047,7 +1048,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         slow_path = ui.config(
             b'storage', b'revlog.persistent-nodemap.slow-path'
         )
-        if slow_path not in (b'allow'):
+        if slow_path not in (b'allow', b'warn'):
             default = ui.config_default(
                 b'storage', b'revlog.persistent-nodemap.slow-path'
             )
@@ -1059,6 +1060,21 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
             if not ui.quiet:
                 ui.warn(_(b'falling back to default value: %s\n') % default)
             slow_path = default
+
+        msg = _(
+            b"accessing `persistent-nodemap` repository without associated "
+            b"fast implementation."
+        )
+        hint = _(
+            b"check `hg help config.format.use-persistent-nodemap` "
+            b"for details"
+        )
+        if slow_path == b'warn' and not revlog.HAS_FAST_PERSISTENT_NODEMAP:
+            msg = b"warning: " + msg + b'\n'
+            ui.warn(msg)
+            if not ui.quiet:
+                hint = b'(' + hint + b')\n'
+                ui.warn(hint)
         options[b'persistent-nodemap'] = True
     if ui.configbool(b'storage', b'revlog.persistent-nodemap.mmap'):
         options[b'persistent-nodemap.mmap'] = True

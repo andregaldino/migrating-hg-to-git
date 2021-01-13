@@ -161,6 +161,16 @@ def _verify_revision(rl, skipflags, state, node):
         rl.revision(node)
 
 
+# True if a fast implementation for persistent-nodemap is available
+#
+# We also consider we have a "fast" implementation in "pure" python because
+# people using pure don't really have performance consideration (and a
+# wheelbarrow of other slowness source)
+HAS_FAST_PERSISTENT_NODEMAP = rustrevlog is not None or util.safehasattr(
+    parsers, 'BaseIndexObject'
+)
+
+
 @attr.s(slots=True, frozen=True)
 class _revisioninfo(object):
     """Information about a revision that allows building its fulltext

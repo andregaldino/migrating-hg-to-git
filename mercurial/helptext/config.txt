@@ -1959,8 +1959,9 @@ category impact performance and repository size.
     the feature:
 
     ``allow``: Silently use the slower implementation to access the repository.
+    ``warn``: Warn, but use the slower implementation to access the repository.
 
-    Default to "allow"
+    Default to ``warn``
 
     For details on the "persistent-nodemap" feature, see:
     :hg:`help config format.use-persistent-nodemap`.
