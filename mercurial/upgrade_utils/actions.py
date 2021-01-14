@@ -291,6 +291,12 @@ class sharesafe(requirementformatvariant):
         b' New shares will be created in safe mode.'
     )
 
+    # upgrade only needs to change the requirements
+    touches_filelogs = False
+    touches_manifests = False
+    touches_changelog = False
+    touches_requirements = True
+
 
 @registerformatvariant
 class sparserevlog(requirementformatvariant):
