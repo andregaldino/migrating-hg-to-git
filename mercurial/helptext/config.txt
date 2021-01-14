@@ -1953,6 +1953,18 @@ category impact performance and repository size.
     For details on the "persistent-nodemap" feature, see:
     :hg:`help config format.use-persistent-nodemap`.
 
+``revlog.persistent-nodemap.slow-path``
+    Control the behavior of Merucrial when using a repository with "persistent"
+    nodemap with an installation of Mercurial without a fast implementation for
+    the feature:
+
+    ``allow``: Silently use the slower implementation to access the repository.
+
+    Default to "allow"
+
+    For details on the "persistent-nodemap" feature, see:
+    :hg:`help config format.use-persistent-nodemap`.
+
 ``revlog.reuse-external-delta-parent``
     Control the order in which delta parents are considered when adding new
     revisions from an external source.
