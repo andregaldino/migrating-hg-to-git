@@ -107,6 +107,12 @@ XXX 10 files updated.
   merging d2/f6 (?)
   merging d2/f7 (?)
   3 files updated, 7 files merged, 0 files removed, 0 files unresolved (?)
+  4 files updated, 6 files merged, 0 files removed, 0 files unresolved (?)
+  5 files updated, 5 files merged, 0 files removed, 0 files unresolved (?)
+  6 files updated, 4 files merged, 0 files removed, 0 files unresolved (?)
+  7 files updated, 3 files merged, 0 files removed, 0 files unresolved (?)
+  8 files updated, 2 files merged, 0 files removed, 0 files unresolved (?)
+  9 files updated, 1 files merged, 0 files removed, 0 files unresolved (?)
   10 files updated, 0 files merged, 0 files removed, 0 files unresolved (?)
   $ cat d2/f7 d2/f8
   d2/f7 rev3
