@@ -1,4 +1,4 @@
-# genmerges is the workhorse of the test-merge-combination.t tests.
+# genmerges is the workhorse of the test-merge-combination-*.t tests.
 
 # Given:
 # - a `range` function describing the possible values for file a
