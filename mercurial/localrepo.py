@@ -608,13 +608,11 @@ def makelocalrepository(baseui, path, intents=None):
                     storevfs,
                     requirements,
                 )
-            elif ui.configbool(
-                b'experimental', b'sharesafe-warn-outdated-shares'
-            ):
-                ui.warn(
+            else:
+                raise error.Abort(
                     _(
-                        b'warning: source repository supports share-safe functionality.'
-                        b' Reshare to upgrade.\n'
+                        b'version mismatch: source uses share-safe'
+                        b' functionality while the current share does not'
                     )
                 )
 

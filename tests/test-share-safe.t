@@ -392,20 +392,11 @@ Upgrade
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
 
-Make sure existing shares still works
-
-  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-warn-outdated-shares=false
-  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
-  |
-  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
-  
+Make sure existing shares dont work with default config
 
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share
-  warning: source repository supports share-safe functionality. Reshare to upgrade.
-  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
-  |
-  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
-  
+  abort: version mismatch: source uses share-safe functionality while the current share does not
+  [255]
 
 
 Create a safe share from upgrade one
@@ -538,11 +529,8 @@ Testing automatic upgrade of shares when config is set
   sparserevlog
   store
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share
-  warning: source repository supports share-safe functionality. Reshare to upgrade.
-  @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
-  |
-  o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
-  
+  abort: version mismatch: source uses share-safe functionality while the current share does not
+  [255]
 
 Check that if lock is taken, upgrade fails but read operation are successful
   $ touch ../nss-share/.hg/wlock
