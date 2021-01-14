@@ -449,85 +449,90 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         )
     )
 
-    with dstrepo.transaction(b'upgrade') as tr:
-        _clonerevlogs(
-            ui,
-            srcrepo,
-            dstrepo,
-            tr,
-            upgrade_op,
+    if True:
+        with dstrepo.transaction(b'upgrade') as tr:
+            _clonerevlogs(
+                ui,
+                srcrepo,
+                dstrepo,
+                tr,
+                upgrade_op,
+            )
+
+        # Now copy other files in the store directory.
+        for p in _files_to_copy_post_revlog_clone(srcrepo):
+            srcrepo.ui.status(_(b'copying %s\n') % p)
+            src = srcrepo.store.rawvfs.join(p)
+            dst = dstrepo.store.rawvfs.join(p)
+            util.copyfile(src, dst, copystat=True)
+
+        finishdatamigration(ui, srcrepo, dstrepo, requirements)
+
+        ui.status(_(b'data fully upgraded in a temporary repository\n'))
+
+        if upgrade_op.backup_store:
+            backuppath = pycompat.mkdtemp(
+                prefix=b'upgradebackup.', dir=srcrepo.path
+            )
+            backupvfs = vfsmod.vfs(backuppath)
+
+            # Make a backup of requires file first, as it is the first to be modified.
+            util.copyfile(
+                srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires')
+            )
+
+        # We install an arbitrary requirement that clients must not support
+        # as a mechanism to lock out new clients during the data swap. This is
+        # better than allowing a client to continue while the repository is in
+        # an inconsistent state.
+        ui.status(
+            _(
+                b'marking source repository as being upgraded; clients will be '
+                b'unable to read from repository\n'
+            )
+        )
+        scmutil.writereporequirements(
+            srcrepo, srcrepo.requirements | {b'upgradeinprogress'}
         )
 
-    # Now copy other files in the store directory.
-    for p in _files_to_copy_post_revlog_clone(srcrepo):
-        srcrepo.ui.status(_(b'copying %s\n') % p)
-        src = srcrepo.store.rawvfs.join(p)
-        dst = dstrepo.store.rawvfs.join(p)
-        util.copyfile(src, dst, copystat=True)
+        ui.status(_(b'starting in-place swap of repository data\n'))
+        if upgrade_op.backup_store:
+            ui.status(
+                _(b'replaced files will be backed up at %s\n') % backuppath
+            )
 
-    finishdatamigration(ui, srcrepo, dstrepo, requirements)
-
-    ui.status(_(b'data fully upgraded in a temporary repository\n'))
-
-    if upgrade_op.backup_store:
-        backuppath = pycompat.mkdtemp(
-            prefix=b'upgradebackup.', dir=srcrepo.path
+        # Now swap in the new store directory. Doing it as a rename should make
+        # the operation nearly instantaneous and atomic (at least in well-behaved
+        # environments).
+        ui.status(_(b'replacing store...\n'))
+        tstart = util.timer()
+        _replacestores(srcrepo, dstrepo, backupvfs, upgrade_op)
+        elapsed = util.timer() - tstart
+        ui.status(
+            _(
+                b'store replacement complete; repository was inconsistent for '
+                b'%0.1fs\n'
+            )
+            % elapsed
         )
-        backupvfs = vfsmod.vfs(backuppath)
 
-        # Make a backup of requires file first, as it is the first to be modified.
-        util.copyfile(
-            srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires')
+        # We first write the requirements file. Any new requirements will lock
+        # out legacy clients.
+        ui.status(
+            _(
+                b'finalizing requirements file and making repository readable '
+                b'again\n'
+            )
         )
+        scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
 
-    # We install an arbitrary requirement that clients must not support
-    # as a mechanism to lock out new clients during the data swap. This is
-    # better than allowing a client to continue while the repository is in
-    # an inconsistent state.
-    ui.status(
-        _(
-            b'marking source repository as being upgraded; clients will be '
-            b'unable to read from repository\n'
-        )
-    )
-    scmutil.writereporequirements(
-        srcrepo, srcrepo.requirements | {b'upgradeinprogress'}
-    )
-
-    ui.status(_(b'starting in-place swap of repository data\n'))
-    if upgrade_op.backup_store:
-        ui.status(_(b'replaced files will be backed up at %s\n') % backuppath)
-
-    # Now swap in the new store directory. Doing it as a rename should make
-    # the operation nearly instantaneous and atomic (at least in well-behaved
-    # environments).
-    ui.status(_(b'replacing store...\n'))
-    tstart = util.timer()
-    _replacestores(srcrepo, dstrepo, backupvfs, upgrade_op)
-    elapsed = util.timer() - tstart
-    ui.status(
-        _(
-            b'store replacement complete; repository was inconsistent for '
-            b'%0.1fs\n'
-        )
-        % elapsed
-    )
-
-    # We first write the requirements file. Any new requirements will lock
-    # out legacy clients.
-    ui.status(
-        _(
-            b'finalizing requirements file and making repository readable '
-            b'again\n'
-        )
-    )
-    scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
-
-    if upgrade_op.backup_store:
-        # The lock file from the old store won't be removed because nothing has a
-        # reference to its new location. So clean it up manually. Alternatively, we
-        # could update srcrepo.svfs and other variables to point to the new
-        # location. This is simpler.
-        backupvfs.unlink(b'store/lock')
+        if upgrade_op.backup_store:
+            # The lock file from the old store won't be removed because nothing has a
+            # reference to its new location. So clean it up manually. Alternatively, we
+            # could update srcrepo.svfs and other variables to point to the new
+            # location. This is simpler.
+            backupvfs.unlink(b'store/lock')
+    else:
+        pass
 
     return backuppath
