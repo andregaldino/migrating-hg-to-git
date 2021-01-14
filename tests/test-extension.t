@@ -1018,7 +1018,7 @@ Test help topic with same name as extension
   multirevs command
   
   (use 'hg multirevs -h' to show more help)
-  [255]
+  [10]
 
 
 
@@ -1848,7 +1848,7 @@ Prohibit registration of commands that don't use @command (issue5137)
   *** (use @command decorator to register 'deprecatedcmd')
   hg: unknown command 'deprecatedcmd'
   (use 'hg help' for a list of commands)
-  [255]
+  [10]
 
  the extension shouldn't be loaded at all so the mq works:
 
@@ -1905,4 +1905,4 @@ Prohibit the use of unicode strings as the default value of options
   *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)
-  [255]
+  [10]

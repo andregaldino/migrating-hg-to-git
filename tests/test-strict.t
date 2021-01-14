@@ -16,7 +16,7 @@
   $ hg an a
   hg: unknown command 'an'
   (use 'hg help' for a list of commands)
-  [255]
+  [10]
   $ hg annotate a
   0: a
 

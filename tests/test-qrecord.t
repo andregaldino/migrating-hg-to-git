@@ -105,7 +105,7 @@ qrecord (mq not present)
   interactively record a new patch
   
   (use 'hg qrecord -h' to show more help)
-  [255]
+  [10]
 
 qrecord patch (mq not present)
 

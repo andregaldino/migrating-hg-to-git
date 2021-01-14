@@ -67,12 +67,12 @@ On Python 3, stdio may be None:
   $ hg unknown -q 1>&-
   hg: unknown command 'unknown'
   (did you mean debugknown?)
-  [255]
+  [10]
 
   $ hg version -q 2>&-
   Mercurial Distributed SCM * (glob)
   $ hg unknown -q 2>&-
-  [255]
+  [10]
 
   $ hg commit -m test
 

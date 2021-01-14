@@ -118,7 +118,7 @@ Testing the --import-rules flag of `hg tracked` command
                                    web.cacerts config)
   
   (use 'hg tracked -h' to show more help)
-  [255]
+  [10]
   $ hg tracked --import-rules doesnotexist
   abort: cannot read narrowspecs from '$TESTTMP/narrow/doesnotexist': $ENOENT$
   [50]

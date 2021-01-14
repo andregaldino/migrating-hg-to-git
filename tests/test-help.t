@@ -593,7 +593,7 @@ Test help option with version option
    -n --dry-run             do not perform actions, just print output
   
   (use 'hg add -h' to show more help)
-  [255]
+  [10]
 
 Test ambiguous command help
 
@@ -763,13 +763,13 @@ Test command without options
   $ hg skjdfks
   hg: unknown command 'skjdfks'
   (use 'hg help' for a list of commands)
-  [255]
+  [10]
 
 Typoed command gives suggestion
   $ hg puls
   hg: unknown command 'puls'
   (did you mean one of pull, push?)
-  [255]
+  [10]
 
 Not enabled extension gets suggested
 
@@ -780,7 +780,7 @@ Not enabled extension gets suggested
       rebase        command to move sets of revisions to a different ancestor
   
   (use 'hg help extensions' for information on enabling extensions)
-  [255]
+  [10]
 
 Disabled extension gets suggested
   $ hg --config extensions.rebase=! rebase
@@ -790,7 +790,7 @@ Disabled extension gets suggested
       rebase        command to move sets of revisions to a different ancestor
   
   (use 'hg help extensions' for information on enabling extensions)
-  [255]
+  [10]
 
 Checking that help adapts based on the config:
 
@@ -804,16 +804,16 @@ this is a section and erroring out weirdly.
   $ hg .log
   hg: unknown command '.log'
   (did you mean log?)
-  [255]
+  [10]
 
   $ hg log.
   hg: unknown command 'log.'
   (did you mean log?)
-  [255]
+  [10]
   $ hg pu.lh
   hg: unknown command 'pu.lh'
   (did you mean one of pull, push?)
-  [255]
+  [10]
 
   $ cat > helpext.py <<EOF
   > import os

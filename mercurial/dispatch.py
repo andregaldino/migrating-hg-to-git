@@ -470,14 +470,17 @@ def _callcatch(ui, func):
     config parsing and commands. besides, use handlecommandexception to handle
     uncaught exceptions.
     """
+    detailed_exit_code = -1
     try:
         return scmutil.callcatch(ui, func)
     except error.AmbiguousCommand as inst:
+        detailed_exit_code = 10
         ui.warn(
             _(b"hg: command '%s' is ambiguous:\n    %s\n")
             % (inst.prefix, b" ".join(inst.matches))
         )
     except error.CommandError as inst:
+        detailed_exit_code = 10
         if inst.command:
             ui.pager(b'help')
             msgbytes = pycompat.bytestr(inst.message)
@@ -487,6 +490,7 @@ def _callcatch(ui, func):
             ui.warn(_(b"hg: %s\n") % inst.message)
             ui.warn(_(b"(use 'hg help -v' for a list of global options)\n"))
     except error.UnknownCommand as inst:
+        detailed_exit_code = 10
         nocmdmsg = _(b"hg: unknown command '%s'\n") % inst.command
         try:
             # check if the command is in a disabled extension
@@ -515,7 +519,10 @@ def _callcatch(ui, func):
         if not handlecommandexception(ui):
             raise
 
-    return -1
+    if ui.configbool(b'ui', b'detailed-exit-code'):
+        return detailed_exit_code
+    else:
+        return -1
 
 
 def aliasargs(fn, givenargs):

@@ -782,7 +782,7 @@ Make sure no one adds back a -b option:
       --mq                    operate on patch repository
   
   (use 'hg debugstrip -h' to show more help)
-  [255]
+  [10]
 
   $ cd ..
 

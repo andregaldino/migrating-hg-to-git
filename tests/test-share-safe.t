@@ -92,7 +92,7 @@ Test that extensions of source repository are also loaded
       extdiff       command to allow external programs to compare revisions
   
   (use 'hg help extensions' for information on enabling extensions)
-  [255]
+  [10]
 
   $ echo "[extensions]" >> ../source/.hg/hgrc
   $ echo "extdiff=" >> ../source/.hg/hgrc

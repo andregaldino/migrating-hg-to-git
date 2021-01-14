@@ -29,7 +29,7 @@ Missing arg:
    -T --template TEMPLATE   display with template
   
   (use 'hg cat -h' to show more help)
-  [255]
+  [10]
 
 Missing parameter for early option:
 
@@ -110,7 +110,7 @@ applied before the command name is resolved:
   hg log: option -b not recognized
   error in definition for alias 'log': --config may only be given on the command
   line
-  [255]
+  [10]
 
   $ hg log -b '--config=defaults.log=--config=hooks.pre-log=false'
   abort: option --config may not be abbreviated

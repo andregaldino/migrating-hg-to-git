@@ -123,7 +123,7 @@ config option "fastannotate.modes"
   $ hg fastannotate --config fastannotate.modes=fctx -h -q
   hg: unknown command 'fastannotate'
   (did you mean *) (glob)
-  [255]
+  [10]
 
 rename
 

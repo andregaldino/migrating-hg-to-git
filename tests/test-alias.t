@@ -468,13 +468,13 @@ shadowing
   $ hg i
   hg: command 'i' is ambiguous:
       idalias idaliaslong idaliasshell identify import incoming init
-  [255]
+  [10]
   $ hg id
   042423737847 tip
   $ hg ida
   hg: command 'ida' is ambiguous:
       idalias idaliaslong idaliasshell
-  [255]
+  [10]
   $ hg idalias
   042423737847 tip
   $ hg idaliasl
@@ -484,7 +484,7 @@ shadowing
   $ hg parentsshell
   hg: command 'parentsshell' is ambiguous:
       parentsshell1 parentsshell2
-  [255]
+  [10]
   $ hg parentsshell1
   one
   $ hg parentsshell2
@@ -533,11 +533,11 @@ shell alias defined in current repo
   $ hg --cwd .. subalias > /dev/null
   hg: unknown command 'subalias'
   (did you mean idalias?)
-  [255]
+  [10]
   $ hg -R .. subalias > /dev/null
   hg: unknown command 'subalias'
   (did you mean idalias?)
-  [255]
+  [10]
 
 
 shell alias defined in other repo
@@ -545,7 +545,7 @@ shell alias defined in other repo
   $ hg mainalias > /dev/null
   hg: unknown command 'mainalias'
   (did you mean idalias?)
-  [255]
+  [10]
   $ hg -R .. mainalias
   main
   $ hg --cwd .. mainalias
@@ -555,7 +555,7 @@ typos get useful suggestions
   $ hg --cwd .. manalias
   hg: unknown command 'manalias'
   (did you mean one of idalias, mainalias, manifest?)
-  [255]
+  [10]
 
 shell aliases with escaped $ chars
 
@@ -593,7 +593,7 @@ command provided extension, should be aborted.
   $ hg reba
   hg: command 'reba' is ambiguous:
       rebase rebate
-  [255]
+  [10]
   $ hg rebat
   this is rebate
   $ hg rebat --foo-bar
@@ -650,22 +650,22 @@ invalid arguments
    -T --template TEMPLATE display with template
   
   (use 'hg rt -h' to show more help)
-  [255]
+  [10]
 
 invalid global arguments for normal commands, aliases, and shell aliases
 
   $ hg --invalid root
   hg: option --invalid not recognized
   (use 'hg help -v' for a list of global options)
-  [255]
+  [10]
   $ hg --invalid mylog
   hg: option --invalid not recognized
   (use 'hg help -v' for a list of global options)
-  [255]
+  [10]
   $ hg --invalid blank
   hg: option --invalid not recognized
   (use 'hg help -v' for a list of global options)
-  [255]
+  [10]
 
 environment variable changes in alias commands
 
