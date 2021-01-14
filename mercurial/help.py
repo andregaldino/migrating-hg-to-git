@@ -1064,7 +1064,7 @@ def help_(
         if not rst:
             msg = _(b'no matches')
             hint = _(b"try 'hg help' for a list of topics")
-            raise error.Abort(msg, hint=hint)
+            raise error.InputError(msg, hint=hint)
     elif name and name != b'shortlist':
         queries = []
         if unknowncmd:
@@ -1095,7 +1095,7 @@ def help_(
                     hintname = name
                 msg = _(b'no such help topic: %s') % formatname
                 hint = _(b"try 'hg help --keyword %s'") % hintname
-                raise error.Abort(msg, hint=hint)
+                raise error.InputError(msg, hint=hint)
     else:
         # program name
         if not ui.quiet:
@@ -1155,6 +1155,6 @@ def formattedhelp(
     # to look for, or we could have simply failed to found "foo.bar"
     # because bar isn't a section of foo
     if section and not (blocks and name):
-        raise error.Abort(_(b"help section not found: %s") % fullname)
+        raise error.InputError(_(b"help section not found: %s") % fullname)
 
     return minirst.formatplain(blocks, textwidth)

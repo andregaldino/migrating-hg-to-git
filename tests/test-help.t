@@ -758,7 +758,7 @@ Test command without options
   $ hg help foo
   abort: no such help topic: foo
   (try 'hg help --keyword foo')
-  [255]
+  [10]
 
   $ hg skjdfks
   hg: unknown command 'skjdfks'
@@ -1345,7 +1345,7 @@ non-existent subtopics print an error
   $ hg help internals.foo
   abort: no such help topic: internals.foo
   (try 'hg help --keyword foo')
-  [255]
+  [10]
 
 test advanced, deprecated and experimental options are hidden in command help
   $ hg help debugoptADV
@@ -1479,7 +1479,7 @@ Test section name with dot
 
   $ hg help config.annotate.git
   abort: help section not found: config.annotate.git
-  [255]
+  [10]
 
   $ hg help config.update.check
       "commands.update.check"
@@ -1509,7 +1509,7 @@ Test section name with dot
 
   $ hg help config.ommands.update.check
   abort: help section not found: config.ommands.update.check
-  [255]
+  [10]
 
 Unrelated trailing paragraphs shouldn't be included
 
@@ -1655,7 +1655,7 @@ Test -e / -c / -k combinations
   $ hg help -c schemes
   abort: no such help topic: schemes
   (try 'hg help --keyword schemes')
-  [255]
+  [10]
   $ hg help -e schemes |head -1
   schemes extension - extend schemes with shortcuts to repository swarms
   $ hg help -c -k dates |egrep '^(Topics|Extensions|Commands):'
@@ -1670,7 +1670,7 @@ Test -e / -c / -k combinations
   $ hg help -e commit
   abort: no such help topic: commit
   (try 'hg help --keyword commit')
-  [255]
+  [10]
 
 Test keyword search help
 
@@ -1715,14 +1715,14 @@ Test unfound topic
   $ hg help nonexistingtopicthatwillneverexisteverever
   abort: no such help topic: nonexistingtopicthatwillneverexisteverever
   (try 'hg help --keyword nonexistingtopicthatwillneverexisteverever')
-  [255]
+  [10]
 
 Test unfound keyword
 
   $ hg help --keyword nonexistingwordthatwillneverexisteverever
   abort: no matches
   (try 'hg help' for a list of topics)
-  [255]
+  [10]
 
 Test omit indicating for help
 
@@ -1869,11 +1869,11 @@ Test section lookup
   
   $ hg help glossary.mcguffin
   abort: help section not found: glossary.mcguffin
-  [255]
+  [10]
 
   $ hg help glossary.mc.guffin
   abort: help section not found: glossary.mc.guffin
-  [255]
+  [10]
 
   $ hg help template.files
       files         List of strings. All files modified, added, or removed by
