@@ -1943,6 +1943,16 @@ category impact performance and repository size.
     Turning this option off can result in large increase of repository size for
     repository with many merges.
 
+``revlog.persistent-nodemap.mmap``
+    Whether to use the Operating System "memory mapping" feature (when
+    possible) to access the persistent nodemap data. This improve performance
+    and reduce memory pressure.
+
+    Default to True.
+
+    For details on the "persistent-nodemap" feature, see:
+    :hg:`help config format.use-persistent-nodemap`.
+
 ``revlog.reuse-external-delta-parent``
     Control the order in which delta parents are considered when adding new
     revisions from an external source.
