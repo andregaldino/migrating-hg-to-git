@@ -118,6 +118,7 @@ def upgraderepo(
         up_actions,
         removed_actions,
         revlogs,
+        backup,
     )
 
     if not run:
@@ -215,12 +216,6 @@ def upgraderepo(
                 backuppath = upgrade_engine.upgrade(
                     ui, repo, dstrepo, upgrade_op
                 )
-            if not backup:
-                ui.status(
-                    _(b'removing old repository content %s\n') % backuppath
-                )
-                repo.vfs.rmtree(backuppath, forcibly=True)
-                backuppath = None
 
         finally:
             ui.status(_(b'removing temporary repository %s\n') % tmppath)

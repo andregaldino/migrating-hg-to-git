@@ -632,11 +632,9 @@ unless --no-backup is passed
   data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   replacing store...
   store replacement complete; repository was inconsistent for * (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ ls -1 .hg/ | grep upgradebackup
   [1]
@@ -679,11 +677,9 @@ We can restrict optimization to some revlog:
   data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
 
 Check that the repo still works fine
@@ -759,11 +755,9 @@ Check we can select negatively
   data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -810,11 +804,9 @@ Check that we can select changelog only
   data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -861,11 +853,9 @@ Check that we can select filelog only
   data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -919,11 +909,9 @@ Check you can't skip revlog clone during important format downgrade
   data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets
@@ -978,11 +966,9 @@ Check you can't skip revlog clone during important format upgrade
   data fully upgraded in a temporary repository
   marking source repository as being upgraded; clients will be unable to read from repository
   starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   replacing store...
   store replacement complete; repository was inconsistent for *s (glob)
   finalizing requirements file and making repository readable again
-  removing old repository content $TESTTMP/upgradegd/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   $ hg verify
   checking changesets

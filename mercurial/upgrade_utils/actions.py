@@ -626,6 +626,7 @@ class UpgradeOperation(object):
         upgrade_actions,
         removed_actions,
         revlogs_to_process,
+        backup_store,
     ):
         self.ui = ui
         self.new_requirements = new_requirements
@@ -669,6 +670,9 @@ class UpgradeOperation(object):
         self.force_re_delta_both_parents = (
             b're-delta-multibase' in self._upgrade_actions_names
         )
+
+        # should this operation create a backup of the store
+        self.backup_store = backup_store
 
     def _write_labeled(self, l, label):
         """

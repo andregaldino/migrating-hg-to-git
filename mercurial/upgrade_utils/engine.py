@@ -412,7 +412,10 @@ def _replacestores(currentrepo, upgradedrepo, backupvfs, upgrade_op):
     """
     # TODO: don't blindly rename everything in store
     # There can be upgrades where store is not touched at all
-    util.rename(currentrepo.spath, backupvfs.join(b'store'))
+    if upgrade_op.backup_store:
+        util.rename(currentrepo.spath, backupvfs.join(b'store'))
+    else:
+        currentrepo.vfs.rmtree(b'store', forcibly=True)
     util.rename(upgradedrepo.spath, currentrepo.spath)
 
 
@@ -436,6 +439,8 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     """
     assert srcrepo.currentwlock()
     assert dstrepo.currentwlock()
+    backuppath = None
+    backupvfs = None
 
     ui.status(
         _(
@@ -464,11 +469,16 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
 
     ui.status(_(b'data fully upgraded in a temporary repository\n'))
 
-    backuppath = pycompat.mkdtemp(prefix=b'upgradebackup.', dir=srcrepo.path)
-    backupvfs = vfsmod.vfs(backuppath)
+    if upgrade_op.backup_store:
+        backuppath = pycompat.mkdtemp(
+            prefix=b'upgradebackup.', dir=srcrepo.path
+        )
+        backupvfs = vfsmod.vfs(backuppath)
 
-    # Make a backup of requires file first, as it is the first to be modified.
-    util.copyfile(srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires'))
+        # Make a backup of requires file first, as it is the first to be modified.
+        util.copyfile(
+            srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires')
+        )
 
     # We install an arbitrary requirement that clients must not support
     # as a mechanism to lock out new clients during the data swap. This is
@@ -485,7 +495,8 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     )
 
     ui.status(_(b'starting in-place swap of repository data\n'))
-    ui.status(_(b'replaced files will be backed up at %s\n') % backuppath)
+    if upgrade_op.backup_store:
+        ui.status(_(b'replaced files will be backed up at %s\n') % backuppath)
 
     # Now swap in the new store directory. Doing it as a rename should make
     # the operation nearly instantaneous and atomic (at least in well-behaved
@@ -512,10 +523,11 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     )
     scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
 
-    # The lock file from the old store won't be removed because nothing has a
-    # reference to its new location. So clean it up manually. Alternatively, we
-    # could update srcrepo.svfs and other variables to point to the new
-    # location. This is simpler.
-    backupvfs.unlink(b'store/lock')
+    if upgrade_op.backup_store:
+        # The lock file from the old store won't be removed because nothing has a
+        # reference to its new location. So clean it up manually. Alternatively, we
+        # could update srcrepo.svfs and other variables to point to the new
+        # location. This is simpler.
+        backupvfs.unlink(b'store/lock')
 
     return backuppath
