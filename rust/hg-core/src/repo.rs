@@ -1,6 +1,8 @@
 use crate::errors::{HgError, IoResultExt};
 use crate::requirements;
+use crate::utils::files::get_path_from_bytes;
 use memmap::{Mmap, MmapOptions};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 /// A repository on disk
@@ -8,6 +10,7 @@ pub struct Repo {
     working_directory: PathBuf,
     dot_hg: PathBuf,
     store: PathBuf,
+    requirements: HashSet<String>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -32,15 +35,8 @@ impl Repo {
         let current_directory = crate::utils::current_dir()?;
         // ancestors() is inclusive: it first yields `current_directory` as-is.
         for ancestor in current_directory.ancestors() {
-            let dot_hg = ancestor.join(".hg");
-            if dot_hg.is_dir() {
-                let repo = Self {
-                    store: dot_hg.join("store"),
-                    dot_hg,
-                    working_directory: ancestor.to_owned(),
-                };
-                requirements::check(&repo)?;
-                return Ok(repo);
+            if ancestor.join(".hg").is_dir() {
+                return Ok(Self::new_at_path(ancestor.to_owned())?);
             }
         }
         Err(RepoFindError::NotFoundInCurrentDirectoryOrAncestors {
@@ -48,8 +44,52 @@ impl Repo {
         })
     }
 
+    /// To be called after checking that `.hg` is a sub-directory
+    fn new_at_path(working_directory: PathBuf) -> Result<Self, HgError> {
+        let dot_hg = working_directory.join(".hg");
+        let hg_vfs = Vfs { base: &dot_hg };
+        let reqs = requirements::load_if_exists(hg_vfs)?;
+        let relative =
+            reqs.contains(requirements::RELATIVE_SHARED_REQUIREMENT);
+        let shared =
+            reqs.contains(requirements::SHARED_REQUIREMENT) || relative;
+        let store_path;
+        if !shared {
+            store_path = dot_hg.join("store");
+        } else {
+            let bytes = hg_vfs.read("sharedpath")?;
+            let mut shared_path = get_path_from_bytes(&bytes).to_owned();
+            if relative {
+                shared_path = dot_hg.join(shared_path)
+            }
+            if !shared_path.is_dir() {
+                return Err(HgError::corrupted(format!(
+                    ".hg/sharedpath points to nonexistent directory {}",
+                    shared_path.display()
+                )));
+            }
+
+            store_path = shared_path.join("store");
+        }
+
+        let repo = Self {
+            requirements: reqs,
+            working_directory,
+            store: store_path,
+            dot_hg,
+        };
+
+        requirements::check(&repo)?;
+
+        Ok(repo)
+    }
+
     pub fn working_directory_path(&self) -> &Path {
         &self.working_directory
+    }
+
+    pub fn requirements(&self) -> &HashSet<String> {
+        &self.requirements
     }
 
     /// For accessing repository files (in `.hg`), except for the store

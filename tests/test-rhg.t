@@ -218,9 +218,9 @@ And check that basic rhg commands work with sharing
 
   $ cd repo2
   $ rhg files
-  [252]
+  a
   $ rhg cat -r 0 a
-  [252]
+  a
 
 Same with relative sharing
 
@@ -231,9 +231,9 @@ Same with relative sharing
 
   $ cd repo3
   $ rhg files
-  [252]
+  a
   $ rhg cat -r 0 a
-  [252]
+  a
 
 Same with share-safe
 

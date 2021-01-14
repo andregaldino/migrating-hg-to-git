@@ -40,6 +40,10 @@ impl HgError {
         // https://doc.rust-lang.org/std/backtrace/struct.Backtrace.html
         HgError::CorruptedRepository(explanation.into())
     }
+
+    pub fn unsupported(explanation: impl Into<String>) -> Self {
+        HgError::UnsupportedFeature(explanation.into())
+    }
 }
 
 // TODO: use `DisplayBytes` instead to show non-Unicode filenames losslessly?
