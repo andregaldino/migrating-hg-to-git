@@ -371,26 +371,8 @@ Upgrade
   repository locked and read-only
   creating temporary repository to stage upgraded data: $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
-  migrating 6 total revisions (2 in filelogs, 2 in manifests, 2 in changelog)
-  migrating 626 bytes in store; 271 bytes tracked data
-  migrating 2 filelogs containing 2 revisions (138 bytes in store; 8 bytes tracked data)
-  finished migrating 2 filelog revisions across 2 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 2 revisions (230 bytes in store; 135 bytes tracked data)
-  finished migrating 2 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 2 revisions (258 bytes in store; 128 bytes tracked data)
-  finished migrating 2 changelog revisions; change in size: 0 bytes
-  finished migrating 6 total revisions; total change in store size: 0 bytes
-  copying phaseroots
-  data fully upgraded in a temporary repository
-  marking source repository as being upgraded; clients will be unable to read from repository
-  starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/non-share-safe/.hg/upgradebackup.* (glob)
-  replacing store...
-  store replacement complete; repository was inconsistent for *s (glob)
-  finalizing requirements file and making repository readable again
+  upgrading repository requirements
   removing temporary repository $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
-  copy of old repository backed up at $TESTTMP/non-share-safe/.hg/upgradebackup.* (glob)
-  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
   repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
 
   $ hg debugrequirements
@@ -475,27 +457,8 @@ Test that downgrading works too
   repository locked and read-only
   creating temporary repository to stage upgraded data: $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
-  migrating 6 total revisions (2 in filelogs, 2 in manifests, 2 in changelog)
-  migrating 626 bytes in store; 271 bytes tracked data
-  migrating 2 filelogs containing 2 revisions (138 bytes in store; 8 bytes tracked data)
-  finished migrating 2 filelog revisions across 2 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 2 revisions (230 bytes in store; 135 bytes tracked data)
-  finished migrating 2 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 2 revisions (258 bytes in store; 128 bytes tracked data)
-  finished migrating 2 changelog revisions; change in size: 0 bytes
-  finished migrating 6 total revisions; total change in store size: 0 bytes
-  copying phaseroots
-  copying requires
-  data fully upgraded in a temporary repository
-  marking source repository as being upgraded; clients will be unable to read from repository
-  starting in-place swap of repository data
-  replaced files will be backed up at $TESTTMP/non-share-safe/.hg/upgradebackup.* (glob)
-  replacing store...
-  store replacement complete; repository was inconsistent for *s (glob)
-  finalizing requirements file and making repository readable again
+  upgrading repository requirements
   removing temporary repository $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
-  copy of old repository backed up at $TESTTMP/non-share-safe/.hg/upgradebackup.* (glob)
-  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
   repository downgraded to not use share safe mode, existing shares will not work and needs to be reshared.
 
   $ hg debugrequirements

@@ -449,7 +449,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         )
     )
 
-    if True:
+    if not upgrade_op.requirements_only:
         with dstrepo.transaction(b'upgrade') as tr:
             _clonerevlogs(
                 ui,
@@ -533,6 +533,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
             # location. This is simpler.
             backupvfs.unlink(b'store/lock')
     else:
-        pass
+        ui.status(_(b'upgrading repository requirements\n'))
+        scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
 
     return backuppath
