@@ -886,6 +886,7 @@ Check we deny its usage on older repository
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
@@ -914,6 +915,7 @@ Check it works fine with repository that supports it.
   fncache
   generaldelta
   internal-phase
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog

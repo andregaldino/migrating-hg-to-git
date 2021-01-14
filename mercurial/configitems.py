@@ -1325,10 +1325,22 @@ coreconfigitem(
     b'usestore',
     default=True,
 )
+
+
+def _persistent_nodemap_default():
+    """compute `use-persistent-nodemap` default value
+
+    The feature is disabled unless a fast implementation is available.
+    """
+    from . import policy
+
+    return policy.importrust('revlog') is not None
+
+
 coreconfigitem(
     b'format',
     b'use-persistent-nodemap',
-    default=False,
+    default=_persistent_nodemap_default,
 )
 # TODO needs to grow a docket file to at least store the last offset of the data
 # file when rewriting sidedata.

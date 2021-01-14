@@ -61,7 +61,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:       yes
   share-safe:          no
   sparserevlog:       yes
-  persistent-nodemap:  no
+  persistent-nodemap:  no (no-rust !)
+  persistent-nodemap: yes (rust !)
   copies-sdc:          no
   revlog-v2:           no
   plain-cl-delta:     yes
@@ -74,7 +75,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -88,7 +90,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -102,7 +105,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.uptodate|generaldelta:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|sparserevlog:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no] (no-rust !)
+  [formatvariant.name.mismatchdefault|persistent-nodemap:][formatvariant.repo.mismatchdefault| yes][formatvariant.config.special|    yes][formatvariant.default|      no] (rust !)
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
@@ -142,10 +146,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "repo": true
    },
    {
-    "config": false,
+    "config": false, (no-rust !)
+    "config": true, (rust !)
     "default": false,
     "name": "persistent-nodemap",
-    "repo": false
+    "repo": false (no-rust !)
+    "repo": true (rust !)
    },
    {
     "config": false,
@@ -184,7 +190,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   performing an upgrade with "--run" will make the following changes:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   processed revlogs:
     - all-filelogs
@@ -208,7 +215,8 @@ An upgrade of a repository created with recommended settings only suggests optim
 
   $ hg debugupgraderepo --quiet
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   processed revlogs:
     - all-filelogs
@@ -223,7 +231,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   performing an upgrade with "--run" will make the following changes:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-parent
   
@@ -254,7 +263,8 @@ modern form of the option
   performing an upgrade with "--run" will make the following changes:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-parent
   
@@ -279,7 +289,8 @@ modern form of the option
   
   $ hg debugupgrade --optimize re-delta-parent --quiet
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-parent
   
@@ -323,7 +334,8 @@ Various sub-optimal detections work
   generaldelta:        no    yes     yes
   share-safe:          no     no      no
   sparserevlog:        no    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap:  no    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -337,7 +349,8 @@ Various sub-optimal detections work
   generaldelta:        no     no     yes
   share-safe:          no     no      no
   sparserevlog:        no     no     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap:  no    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -351,7 +364,8 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchdefault|generaldelta:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.mismatchdefault|sparserevlog:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no] (no-rust !)
+  [formatvariant.name.mismatchconfig|persistent-nodemap:][formatvariant.repo.mismatchconfig|  no][formatvariant.config.special|    yes][formatvariant.default|      no] (rust !)
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
@@ -373,12 +387,16 @@ Various sub-optimal detections work
   sparserevlog
      in order to limit disk reading and memory usage on older version, the span of a delta chain from its root to its end is limited, whatever the relevant data in this span. This can severly limit Mercurial ability to build good chain of delta resulting is much more storage space being taken and limit reusability of on disk delta during exchange.
   
+  persistent-nodemap (rust !)
+     persist the node -> rev mapping on disk to speedup lookup (rust !)
+   (rust !)
   
   performing an upgrade with "--run" will make the following changes:
   
   requirements
      preserved: revlogv1, store
-     added: dotencode, fncache, generaldelta, sparserevlog
+     added: dotencode, fncache, generaldelta, sparserevlog (no-rust !)
+     added: dotencode, fncache, generaldelta, persistent-nodemap, sparserevlog (rust !)
   
   fncache
      repository will be more resilient to storing certain paths and performance of certain operations should be improved
@@ -392,6 +410,9 @@ Various sub-optimal detections work
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
+  persistent-nodemap (rust !)
+     Speedup revision lookup by node id. (rust !)
+   (rust !)
   processed revlogs:
     - all-filelogs
     - changelog
@@ -414,7 +435,8 @@ Various sub-optimal detections work
   $ hg debugupgraderepo --quiet
   requirements
      preserved: revlogv1, store
-     added: dotencode, fncache, generaldelta, sparserevlog
+     added: dotencode, fncache, generaldelta, sparserevlog (no-rust !)
+     added: dotencode, fncache, generaldelta, persistent-nodemap, sparserevlog (rust !)
   
   processed revlogs:
     - all-filelogs
@@ -434,6 +456,9 @@ Various sub-optimal detections work
   sparserevlog
      in order to limit disk reading and memory usage on older version, the span of a delta chain from its root to its end is limited, whatever the relevant data in this span. This can severly limit Mercurial ability to build good chain of delta resulting is much more storage space being taken and limit reusability of on disk delta during exchange.
   
+  persistent-nodemap (rust !)
+     persist the node -> rev mapping on disk to speedup lookup (rust !)
+   (rust !)
   repository lacks features used by the default config options:
   
   dotencode
@@ -444,7 +469,8 @@ Various sub-optimal detections work
   
   requirements
      preserved: revlogv1, store
-     added: fncache, generaldelta, sparserevlog
+     added: fncache, generaldelta, sparserevlog (no-rust !)
+     added: fncache, generaldelta, persistent-nodemap, sparserevlog (rust !)
   
   fncache
      repository will be more resilient to storing certain paths and performance of certain operations should be improved
@@ -455,6 +481,9 @@ Various sub-optimal detections work
   sparserevlog
      Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
+  persistent-nodemap (rust !)
+     Speedup revision lookup by node id. (rust !)
+   (rust !)
   processed revlogs:
     - all-filelogs
     - changelog
@@ -513,7 +542,8 @@ make sure we have a .d file
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, revlogv1, store
+     preserved: dotencode, fncache, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, persistent-nodemap, revlogv1, store (rust !)
      added: generaldelta
   
   generaldelta
@@ -554,6 +584,7 @@ Original requirements backed up
   $ cat .hg/upgradebackup.*/requires
   dotencode
   fncache
+  persistent-nodemap (rust !)
   revlogv1
   store
 
@@ -563,6 +594,7 @@ generaldelta added to original requirements files
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   store
 
@@ -614,7 +646,8 @@ unless --no-backup is passed
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
      added: sparserevlog
   
   sparserevlog
@@ -655,7 +688,8 @@ We can restrict optimization to some revlog:
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-parent
   
@@ -732,7 +766,8 @@ Check we can select negatively
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-parent
   
@@ -782,7 +817,8 @@ Check that we can select changelog only
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-parent
   
@@ -831,7 +867,8 @@ Check that we can select filelog only
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-parent
   
@@ -884,7 +921,8 @@ Check you can't skip revlog clone during important format downgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
      removed: sparserevlog
   
   optimisations: re-delta-parent
@@ -938,7 +976,8 @@ Check you can't skip revlog clone during important format upgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
      added: sparserevlog
   
   optimisations: re-delta-parent
@@ -1003,7 +1042,8 @@ store files with special filenames aren't encoded during copy
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-fulladd
   
@@ -1066,6 +1106,7 @@ Check upgrading a large file repository
   fncache
   generaldelta
   largefiles
+  persistent-nodemap (rust !)
   revlogv1
   sparserevlog
   store
@@ -1077,6 +1118,7 @@ Check upgrading a large file repository
   fncache
   generaldelta
   largefiles
+  persistent-nodemap (rust !)
   revlogv1
   sparserevlog
   store
@@ -1166,7 +1208,8 @@ repository config is taken in account
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
   optimisations: re-delta-all
   
@@ -1226,6 +1269,7 @@ Check upgrading a sparse-revlog repository
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   store
 
@@ -1234,7 +1278,8 @@ Check that we can add the sparse-revlog format requirement
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
      added: sparserevlog
   
   processed revlogs:
@@ -1246,6 +1291,7 @@ Check that we can add the sparse-revlog format requirement
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   sparserevlog
   store
@@ -1255,7 +1301,8 @@ Check that we can remove the sparse-revlog format requirement
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
      removed: sparserevlog
   
   processed revlogs:
@@ -1267,6 +1314,7 @@ Check that we can remove the sparse-revlog format requirement
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   store
 
@@ -1281,7 +1329,8 @@ upgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
      added: revlog-compression-zstd, sparserevlog
   
   processed revlogs:
@@ -1296,7 +1345,8 @@ upgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -1307,6 +1357,7 @@ upgrade
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd
   revlogv1
   sparserevlog
@@ -1318,7 +1369,8 @@ downgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
      removed: revlog-compression-zstd
   
   processed revlogs:
@@ -1333,7 +1385,8 @@ downgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -1344,6 +1397,7 @@ downgrade
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   sparserevlog
   store
@@ -1358,7 +1412,8 @@ upgrade from hgrc
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
      added: revlog-compression-zstd
   
   processed revlogs:
@@ -1373,7 +1428,8 @@ upgrade from hgrc
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -1384,6 +1440,7 @@ upgrade from hgrc
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd
   revlogv1
   sparserevlog
@@ -1401,7 +1458,8 @@ upgrade
   
   requirements
      preserved: dotencode, fncache, generaldelta, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store (rust !)
      removed: revlogv1
      added: exp-revlogv2.2, exp-sidedata-flag (zstd !)
      added: exp-revlogv2.2, exp-sidedata-flag, sparserevlog (no-zstd !)
@@ -1418,7 +1476,8 @@ upgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
@@ -1431,6 +1490,7 @@ upgrade
   exp-sidedata-flag
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   sparserevlog
   store
@@ -1446,7 +1506,8 @@ downgrade
   
   requirements
      preserved: dotencode, fncache, generaldelta, sparserevlog, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store (rust !)
      removed: exp-revlogv2.2, exp-sidedata-flag
      added: revlogv1
   
@@ -1462,7 +1523,8 @@ downgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -1473,6 +1535,7 @@ downgrade
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
@@ -1490,7 +1553,8 @@ upgrade from hgrc
   
   requirements
      preserved: dotencode, fncache, generaldelta, sparserevlog, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store (rust !)
      removed: revlogv1
      added: exp-revlogv2.2, exp-sidedata-flag
   
@@ -1506,7 +1570,8 @@ upgrade from hgrc
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
@@ -1519,6 +1584,7 @@ upgrade from hgrc
   exp-sidedata-flag
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   sparserevlog
   store

@@ -27,6 +27,7 @@
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
@@ -62,6 +63,7 @@
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
@@ -112,6 +114,7 @@ check its contents separately.
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog

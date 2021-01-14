@@ -176,6 +176,7 @@ Requirements
   dotencode
   fncache
   generaldelta
+  persistent-nodemap
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
@@ -202,7 +203,7 @@ Requirements
 Persistent nodemap
   $ cd $TESTTMP
   $ rm -rf repository
-  $ hg init repository
+  $ hg --config format.use-persistent-nodemap=no init repository
   $ cd repository
   $ $NO_FALLBACK rhg debugrequirements | grep nodemap
   [1]

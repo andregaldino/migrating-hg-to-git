@@ -486,9 +486,11 @@ debug output
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
-  remote: 444 (sshv1 !)
+  remote: 444 (sshv1 no-rust !)
+  remote: 463 (sshv1 rust !)
   protocol upgraded to exp-ssh-v2-0003 (sshv2 !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-rust !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,persistent-nodemap,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (rust !)
   remote: 1 (sshv1 !)
   sending protocaps command
   preparing listkeys for "bookmarks"

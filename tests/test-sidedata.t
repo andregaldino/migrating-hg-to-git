@@ -56,7 +56,8 @@ Check that we can upgrade to sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
@@ -70,7 +71,8 @@ Check that we can upgrade to sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no    yes      no
   plain-cl-delta:     yes    yes     yes
@@ -90,7 +92,8 @@ Check that we can downgrade from sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
@@ -104,7 +107,8 @@ Check that we can downgrade from sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes

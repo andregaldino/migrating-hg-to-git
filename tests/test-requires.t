@@ -53,6 +53,7 @@ another repository of push/pull/clone on localhost:
   featuresetup-test
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog

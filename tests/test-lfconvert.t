@@ -99,6 +99,7 @@ Test link+rename largefile codepath
   fncache
   generaldelta
   largefiles
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog

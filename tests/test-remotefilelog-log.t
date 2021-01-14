@@ -30,6 +30,7 @@ Shallow clone from full
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog

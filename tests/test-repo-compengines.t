@@ -13,6 +13,7 @@ A new repository uses zlib storage, which doesn't need a requirement
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   sparserevlog
   store
@@ -61,6 +62,7 @@ with that engine or a requirement
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   sparserevlog
   store
@@ -79,6 +81,7 @@ with that engine or a requirement
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd
   revlogv1
   sparserevlog
@@ -182,6 +185,7 @@ checking details of none compression
   exp-compression-none
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlogv1
   sparserevlog
   store

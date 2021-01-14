@@ -216,13 +216,16 @@ getbundle requests with stream=1 are uncompressed
 
   $ f --size --hex --bytes 256 body
   body: size=112262 (no-zstd !)
-  body: size=109410 (zstd !)
+  body: size=109410 (zstd no-rust !)
+  body: size=109431 (rust !)
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
   0010: 7f 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (no-zstd !)
   0020: 05 09 04 0c 44 62 79 74 65 63 6f 75 6e 74 39 38 |....Dbytecount98| (no-zstd !)
   0030: 37 37 35 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |775filecount1030| (no-zstd !)
-  0010: 99 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (zstd !)
-  0020: 05 09 04 0c 5e 62 79 74 65 63 6f 75 6e 74 39 35 |....^bytecount95| (zstd !)
+  0010: 99 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (zstd no-rust !)
+  0010: ae 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (rust !)
+  0020: 05 09 04 0c 5e 62 79 74 65 63 6f 75 6e 74 39 35 |....^bytecount95| (zstd no-rust !)
+  0020: 05 09 04 0c 73 62 79 74 65 63 6f 75 6e 74 39 35 |....sbytecount95| (rust !)
   0030: 38 39 37 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |897filecount1030| (zstd !)
   0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
   0050: 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 25 |ncode%2Cfncache%|
@@ -236,15 +239,24 @@ getbundle requests with stream=1 are uncompressed
   00d0: d1 ec 39 00 00 00 00 00 00 00 00 00 00 00 00 75 |..9............u| (no-zstd !)
   00e0: 30 73 08 42 64 61 74 61 2f 31 2e 69 00 03 00 01 |0s.Bdata/1.i....| (no-zstd !)
   00f0: 00 00 00 00 00 00 00 02 00 00 00 01 00 00 00 00 |................| (no-zstd !)
-  0070: 43 72 65 76 6c 6f 67 2d 63 6f 6d 70 72 65 73 73 |Crevlog-compress| (zstd !)
-  0080: 69 6f 6e 2d 7a 73 74 64 25 32 43 72 65 76 6c 6f |ion-zstd%2Crevlo| (zstd !)
-  0090: 67 76 31 25 32 43 73 70 61 72 73 65 72 65 76 6c |gv1%2Csparserevl| (zstd !)
-  00a0: 6f 67 25 32 43 73 74 6f 72 65 00 00 80 00 73 08 |og%2Cstore....s.| (zstd !)
-  00b0: 42 64 61 74 61 2f 30 2e 69 00 03 00 01 00 00 00 |Bdata/0.i.......| (zstd !)
-  00c0: 00 00 00 00 02 00 00 00 01 00 00 00 00 00 00 00 |................| (zstd !)
-  00d0: 01 ff ff ff ff ff ff ff ff 80 29 63 a0 49 d3 23 |..........)c.I.#| (zstd !)
-  00e0: 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 00 |....Vg.g,i..9...| (zstd !)
-  00f0: 00 00 00 00 00 00 00 00 00 75 30 73 08 42 64 61 |.........u0s.Bda| (zstd !)
+  0070: 43 72 65 76 6c 6f 67 2d 63 6f 6d 70 72 65 73 73 |Crevlog-compress| (zstd no-rust !)
+  0070: 43 70 65 72 73 69 73 74 65 6e 74 2d 6e 6f 64 65 |Cpersistent-node| (rust !)
+  0080: 69 6f 6e 2d 7a 73 74 64 25 32 43 72 65 76 6c 6f |ion-zstd%2Crevlo| (zstd no-rust !)
+  0080: 6d 61 70 25 32 43 72 65 76 6c 6f 67 2d 63 6f 6d |map%2Crevlog-com| (rust !)
+  0090: 67 76 31 25 32 43 73 70 61 72 73 65 72 65 76 6c |gv1%2Csparserevl| (zstd no-rust !)
+  0090: 70 72 65 73 73 69 6f 6e 2d 7a 73 74 64 25 32 43 |pression-zstd%2C| (rust !)
+  00a0: 6f 67 25 32 43 73 74 6f 72 65 00 00 80 00 73 08 |og%2Cstore....s.| (zstd no-rust !)
+  00a0: 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 72 73 |revlogv1%2Cspars| (rust !)
+  00b0: 42 64 61 74 61 2f 30 2e 69 00 03 00 01 00 00 00 |Bdata/0.i.......| (zstd no-rust !)
+  00b0: 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 65 00 |erevlog%2Cstore.| (rust !)
+  00c0: 00 00 00 00 02 00 00 00 01 00 00 00 00 00 00 00 |................| (zstd no-rust !)
+  00c0: 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 00 03 |...s.Bdata/0.i..| (rust !)
+  00d0: 01 ff ff ff ff ff ff ff ff 80 29 63 a0 49 d3 23 |..........)c.I.#| (zstd no-rust !)
+  00d0: 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 00 |................| (rust !)
+  00e0: 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 00 |....Vg.g,i..9...| (zstd no-rust !)
+  00e0: 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 29 |...............)| (rust !)
+  00f0: 00 00 00 00 00 00 00 00 00 75 30 73 08 42 64 61 |.........u0s.Bda| (zstd no-rust !)
+  00f0: 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 d1 |c.I.#....Vg.g,i.| (rust !)
 
 --uncompressed is an alias to --stream
 

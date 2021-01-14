@@ -2,12 +2,17 @@
 Test the persistent on-disk nodemap
 ===================================
 
+
+#if no-rust
+
   $ cat << EOF >> $HGRCPATH
   > [format]
   > use-persistent-nodemap=yes
   > [devel]
   > persistent-nodemap=yes
   > EOF
+
+#endif
 
   $ hg init test-repo --config storage.revlog.persistent-nodemap.slow-path=allow
   $ cd test-repo

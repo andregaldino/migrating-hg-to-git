@@ -279,7 +279,8 @@ Stream clone bundles are supported
 
   $ hg -R server debugcreatestreamclonebundle packed.hg
   writing 613 bytes for 4 files
-  bundle requirements: generaldelta, revlogv1, sparserevlog
+  bundle requirements: generaldelta, revlogv1, sparserevlog (no-rust !)
+  bundle requirements: generaldelta, persistent-nodemap, revlogv1, sparserevlog (rust !)
 
 No bundle spec should work
 

@@ -910,7 +910,8 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Repository with this on-disk format require Mercurial version 5.4 or above.
 
-    Disabled by default.
+    By default this format variant is disabled if fast implementation is not
+    available and enabled by default if the fast implementation is available.
 
 ``use-share-safe``
     Enforce "safe" behaviors for all "shares" that access this repository.

@@ -20,6 +20,7 @@ Enable sparse profile
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
@@ -39,6 +40,7 @@ Requirement for sparse added when sparse is enabled
   exp-sparse
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
@@ -59,6 +61,7 @@ Requirement for sparse is removed when sparse is disabled
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog

@@ -68,6 +68,7 @@ Making sure we have the correct set of requirements
   fncache (flat-fncache !)
   generaldelta
   narrowhg-experimental
+  persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
