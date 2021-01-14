@@ -1266,23 +1266,10 @@ coreconfigitem(
     b'usestore',
     default=True,
 )
-# Right now, the only efficient implement of the nodemap logic is in Rust,
-#
-# The case was discussed that the 5.6 sprint and the following was decided for
-# feature that have an optional fast implementation (and are a performance
-# regression in the others)
-#
-#   * If the fast implementation is not available, Mercurial will refuse to
-#     access repository that requires it. Pointing to proper documentation
-#
-#   * An option exist to lift that limitation and allow repository access.
-#
-#     Such access will emit a warning unless configured not to.
-#
-#   * When sufficiently mature, the feature can be enabled by default only for
-#   installation that supports it.
 coreconfigitem(
-    b'format', b'use-persistent-nodemap', default=False, experimental=True
+    b'format',
+    b'use-persistent-nodemap',
+    default=False,
 )
 coreconfigitem(
     b'format',
@@ -1787,14 +1774,12 @@ coreconfigitem(
     b'storage',
     b'revlog.persistent-nodemap.mmap',
     default=True,
-    experimental=True,
 )
 # experimental as long as format.use-persistent-nodemap is.
 coreconfigitem(
     b'storage',
     b'revlog.persistent-nodemap.slow-path',
     default=b"abort",
-    experimental=True,
 )
 
 coreconfigitem(
