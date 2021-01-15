@@ -1965,6 +1965,16 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
                            source setting
 
 
+``safe-mismatch.source-safe.warn``
+    Shows a warning on operations if the shared repository does not use
+    share-safe, but the source repository does.
+    (default: True)
+
+``safe-mismatch.source-not-safe.warn``
+    Shows a warning on operations if the shared repository uses share-safe,
+    but the source repository does not.
+    (default: True)
+
 ``storage``
 -----------
 

@@ -575,6 +575,9 @@ def makelocalrepository(baseui, path, intents=None):
             and requirementsmod.SHARESAFE_REQUIREMENT
             not in _readrequires(sharedvfs, True)
         ):
+            mismatch_warn = ui.configbool(
+                b'share', b'safe-mismatch.source-not-safe.warn'
+            )
             mismatch_config = ui.config(
                 b'share', b'safe-mismatch.source-not-safe'
             )
@@ -592,6 +595,7 @@ def makelocalrepository(baseui, path, intents=None):
                     sharedvfs,
                     requirements,
                     mismatch_config,
+                    mismatch_warn,
                 )
             elif mismatch_config == b'abort':
                 raise error.Abort(
@@ -618,6 +622,9 @@ def makelocalrepository(baseui, path, intents=None):
         sourcerequires = _readrequires(sharedvfs, False)
         if requirementsmod.SHARESAFE_REQUIREMENT in sourcerequires:
             mismatch_config = ui.config(b'share', b'safe-mismatch.source-safe')
+            mismatch_warn = ui.configbool(
+                b'share', b'safe-mismatch.source-safe.warn'
+            )
             if mismatch_config in (
                 b'upgrade-allow',
                 b'allow',
@@ -632,6 +639,7 @@ def makelocalrepository(baseui, path, intents=None):
                     storevfs,
                     requirements,
                     mismatch_config,
+                    mismatch_warn,
                 )
             elif mismatch_config == b'abort':
                 raise error.Abort(

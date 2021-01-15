@@ -1098,11 +1098,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'sharesafe-warn-outdated-shares',
-    default=True,
-)
-coreconfigitem(
-    b'experimental',
     b'single-head-per-branch',
     default=False,
 )
@@ -1919,6 +1914,16 @@ coreconfigitem(
     b'share',
     b'safe-mismatch.source-safe',
     default=b'abort',
+)
+coreconfigitem(
+    b'share',
+    b'safe-mismatch.source-not-safe.warn',
+    default=True,
+)
+coreconfigitem(
+    b'share',
+    b'safe-mismatch.source-safe.warn',
+    default=True,
 )
 coreconfigitem(
     b'shelve',
