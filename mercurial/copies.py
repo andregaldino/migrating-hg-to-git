@@ -60,13 +60,13 @@ def _filter(src, dst, t):
 
     for k, v in list(t.items()):
         # remove copies from files that didn't exist
-        if v not in src:
+        if v not in src:  # case 5
             del t[k]
         # remove criss-crossed copies
         elif k in src and v in dst:
             del t[k]
         # remove copies to files that were then removed
-        elif k not in dst:
+        elif k not in dst:  # case 1
             del t[k]
 
 
