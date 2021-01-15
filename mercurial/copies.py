@@ -41,7 +41,7 @@ def _filter(src, dst, t):
 
     # When _chain()'ing copies in 'a' (from 'src' via some other commit 'mid')
     # with copies in 'b' (from 'mid' to 'dst'), we can get the different cases
-    # in the following table (not including trivial cases). For example, case 2
+    # in the following table (not including trivial cases). For example, case 6
     # is where a file existed in 'src' and remained under that name in 'mid' and
     # then was renamed between 'mid' and 'dst'.
     #
