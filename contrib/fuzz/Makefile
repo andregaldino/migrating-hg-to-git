@@ -11,7 +11,7 @@ CXX = clang++
 LIB_FUZZING_ENGINE ?= standalone_fuzz_target_runner.o
 
 PYTHON_CONFIG ?= $$OUT/sanpy/bin/python-config
-PYTHON_CONFIG_FLAGS ?= --ldflags
+PYTHON_CONFIG_FLAGS ?= --ldflags --embed
 
 CXXFLAGS += -Wno-deprecated-register
 
