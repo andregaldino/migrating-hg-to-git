@@ -89,6 +89,7 @@ the source repo:
    a.txt: remote created -> g
   getting a.txt
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updating the branch cache
   $ cd repo-3
 
   $ cat a.txt

@@ -807,6 +807,7 @@ fred is not blocked from moving bookmarks
   acl: bookmark access granted: "ef1ea85a6374b77d6da9dcda9541f498f2d17df7" on bookmark "moving-bookmark"
   bundle2-input-bundle: 7 parts total
   updating the branch cache
+  invalid branch cache (served.hidden): tip differs
   added 1 changesets with 1 changes to 1 files
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
@@ -1788,6 +1789,7 @@ No branch acls specified
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 5 parts total
   updating the branch cache
+  invalid branch cache (served.hidden): tip differs
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
@@ -2094,6 +2096,7 @@ Branch acl allow other
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 5 parts total
   updating the branch cache
+  invalid branch cache (served.hidden): tip differs
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
@@ -2185,6 +2188,7 @@ push foobar into the remote
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 5 parts total
   updating the branch cache
+  invalid branch cache (served.hidden): tip differs
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
@@ -2348,6 +2352,7 @@ User 'astro' must not be denied
   bundle2-input-part: total payload size 48
   bundle2-input-bundle: 5 parts total
   updating the branch cache
+  invalid branch cache (served.hidden): tip differs
   added 4 changesets with 4 changes to 4 files (+1 heads)
   bundle2-output-bundle: "HG20", 1 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload

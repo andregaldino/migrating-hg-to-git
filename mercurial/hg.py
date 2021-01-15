@@ -1038,6 +1038,14 @@ def clone(
                 _update(destrepo, uprev)
                 if update in destrepo._bookmarks:
                     bookmarks.activate(destrepo, update)
+            if destlock is not None:
+                release(destlock)
+            # here is a tiny windows were someone could end up writing the
+            # repository before the cache are sure to be warm. This is "fine"
+            # as the only "bad" outcome would be some slowness. That potential
+            # slowness already affect reader.
+            with destrepo.lock():
+                destrepo.updatecaches(full=True)
     finally:
         release(srclock, destlock)
         if cleandir is not None:

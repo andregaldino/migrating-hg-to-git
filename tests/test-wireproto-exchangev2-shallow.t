@@ -168,6 +168,7 @@ Shallow clone pulls down latest revision of every file
    dir1/f: remote created -> g
   getting dir1/f
   6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ sqlite3 -line client-shallow-1/.hg/store/db.sqlite << EOF
@@ -333,6 +334,7 @@ Test a shallow clone with only some files
    dir0/d: remote created -> g
   getting dir0/d
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ sqlite3 -line client-shallow-narrow-1/.hg/store/db.sqlite << EOF
@@ -469,6 +471,7 @@ Cloning an old revision with depth=1 works
    dir1/f: remote created -> g
   getting dir1/f
   6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updating the branch cache
   (sent 6 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Incremental pull of shallow clone fetches new changesets

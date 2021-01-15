@@ -56,9 +56,17 @@ Default operation:
 Ensure branchcache got copied over:
 
   $ ls .hg/cache
+  branch2-base
+  branch2-immutable
   branch2-served
+  branch2-served.hidden
+  branch2-visible
+  branch2-visible-hidden
+  hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1
+  tags2
+  tags2-served
 
   $ cat a
   a
@@ -99,6 +107,7 @@ No update, with debug option:
   linking: 17 files (reposimplestore !)
   linking: 18 files (reposimplestore !)
   linked 18 files (reposimplestore !)
+  updating the branch cache
 #else
   $ hg --debug clone -U . ../c --config progress.debug=true
   linking: 1 files
@@ -127,9 +136,17 @@ No update, with debug option:
 Ensure branchcache got copied over:
 
   $ ls .hg/cache
+  branch2-base
+  branch2-immutable
   branch2-served
+  branch2-served.hidden
+  branch2-visible
+  branch2-visible-hidden
+  hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1
+  tags2
+  tags2-served
 
   $ cat a 2>/dev/null || echo "a not present"
   a not present

@@ -655,8 +655,17 @@ The persistent nodemap should exist after a streaming clone
 
   $ hg clone -U test-repo local-clone
   $ ls -1 local-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
-  [1]
+  00changelog-*.nd (glob)
+  00changelog.n
+  00manifest-*.nd (glob)
+  00manifest.n
   $ hg -R local-clone debugnodemap --metadata
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
 
 stream clone
 ------------
@@ -671,5 +680,14 @@ The persistent nodemap should exist after a streaming clone
   adding [s] 00changelog.i (313 KB)
   adding [s] 00changelog.d (360 KB)
   $ ls -1 stream-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
-  [1]
+  00changelog-*.nd (glob)
+  00changelog.n
+  00manifest-*.nd (glob)
+  00manifest.n
   $ hg -R stream-clone debugnodemap --metadata
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%

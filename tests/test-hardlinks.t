@@ -69,6 +69,7 @@ Create hardlinked clone r2:
   linking: 6 files
   linking: 7 files
   linked 7 files
+  updating the branch cache
 
 Create non-hardlinked clone r3:
 
@@ -238,9 +239,16 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/.hg/00changelog.i
   2 r4/.hg/branch
   2 r4/.hg/cache/branch2-base
+  2 r4/.hg/cache/branch2-immutable
   2 r4/.hg/cache/branch2-served
+  2 r4/.hg/cache/branch2-served.hidden
+  2 r4/.hg/cache/branch2-visible
+  2 r4/.hg/cache/branch2-visible-hidden
+  2 r4/.hg/cache/hgtagsfnodes1
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
+  2 r4/.hg/cache/tags2
+  2 r4/.hg/cache/tags2-served
   2 r4/.hg/dirstate
   2 r4/.hg/fsmonitor.state (fsmonitor !)
   2 r4/.hg/hgrc
@@ -289,9 +297,16 @@ Update back to revision 12 in r4 should break hardlink of file f1 and f3:
   2 r4/.hg/00changelog.i
   1 r4/.hg/branch
   2 r4/.hg/cache/branch2-base
+  2 r4/.hg/cache/branch2-immutable
   2 r4/.hg/cache/branch2-served
+  2 r4/.hg/cache/branch2-served.hidden
+  2 r4/.hg/cache/branch2-visible
+  2 r4/.hg/cache/branch2-visible-hidden
+  2 r4/.hg/cache/hgtagsfnodes1
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
+  2 r4/.hg/cache/tags2
+  2 r4/.hg/cache/tags2-served
   1 r4/.hg/dirstate
   1 r4/.hg/fsmonitor.state (fsmonitor !)
   2 r4/.hg/hgrc

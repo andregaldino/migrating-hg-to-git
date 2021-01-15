@@ -111,6 +111,7 @@ Output is flaky, save it in a file and check part independently
   }
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (3 drafts)
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"
@@ -239,6 +240,7 @@ Output is flaky, save it in a file and check part independently
   }
   updating the branch cache
   new changesets 3390ef850073:4432d83626e8
+  updating the branch cache
   (sent 6 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"
@@ -557,6 +559,7 @@ Output is flaky, save it in a file and check part independently
   }
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (1 drafts)
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"
@@ -758,6 +761,7 @@ Output is flaky, save it in a file and check part independently
   }
   updating the branch cache
   new changesets 3390ef850073:97765fc3cd62
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"
@@ -872,6 +876,7 @@ Output is flaky, save it in a file and check part independently
   }
   updating the branch cache
   new changesets 3390ef850073:97765fc3cd62
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"
@@ -988,6 +993,7 @@ Output is flaky, save it in a file and check part independently
   }
   updating the branch cache
   new changesets 3390ef850073:97765fc3cd62
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"
@@ -1087,6 +1093,7 @@ Output is flaky, save it in a file and check part independently
       }
     ]
   }
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"
@@ -1183,6 +1190,7 @@ Output is flaky, save it in a file and check part independently
       }
     ]
   }
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat clone-output | grep "received frame"

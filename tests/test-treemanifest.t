@@ -792,7 +792,7 @@ Stream clone with basicstore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT1 stream-clone-basicstore
   streaming all changes
-  21 files to transfer, * of data (glob)
+  29 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
   $ hg -R stream-clone-basicstore verify
   checking changesets
@@ -806,7 +806,7 @@ Stream clone with encodedstore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT2 stream-clone-encodedstore
   streaming all changes
-  21 files to transfer, * of data (glob)
+  29 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
   $ hg -R stream-clone-encodedstore verify
   checking changesets

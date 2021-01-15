@@ -44,6 +44,7 @@ Poke at a clone:
   checked 0 changesets with 0 changes to 0 files
   $ ls .hg
   00changelog.i
+  cache
   hgrc
   requires
   store

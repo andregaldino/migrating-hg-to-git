@@ -597,6 +597,7 @@ on a 32MB system.
   added 2 changesets with 2 changes to 2 files
   new changesets 53245c60e682:aaff8d2ffbbf
   calling hook changegroup.lfiles: hgext.largefiles.reposetup.checkrequireslfiles
+  updating the branch cache
   (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ hg clone -U --debug --config ui.available-memory=32MB http://localhost:$HGPORT gzip-too-large2
@@ -634,5 +635,6 @@ on a 32MB system.
   checking for updated bookmarks
   2 local changesets published
   calling hook changegroup.lfiles: hgext.largefiles.reposetup.checkrequireslfiles
+  updating the branch cache
   (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)
   $ killdaemons.py

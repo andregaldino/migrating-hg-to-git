@@ -62,9 +62,17 @@ Cloning a shared repo should pick up the full cache dir on the other hand.
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ ls -1 ../repo2-clone/.hg/cache
+  branch2-base
+  branch2-immutable
   branch2-served
+  branch2-served.hidden
+  branch2-visible
+  branch2-visible-hidden
+  hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1
+  tags2
+  tags2-served
   tags2-visible
 
 Some sed versions appends newline, some don't, and some just fails

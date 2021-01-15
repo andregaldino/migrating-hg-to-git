@@ -192,9 +192,17 @@ Basic clone
   transferred 96.5 KB in * seconds (* */sec) (glob)
 
   $ ls -1 clone1/.hg/cache
+  branch2-base
+  branch2-immutable
   branch2-served
+  branch2-served.hidden
+  branch2-visible
+  branch2-visible-hidden
+  hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1
+  tags2
+  tags2-served
 #endif
 
 getbundle requests with stream=1 are uncompressed
@@ -265,6 +273,7 @@ Clone with background file closing enabled
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
+  updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
 #if stream-bundle2
@@ -287,6 +296,7 @@ Clone with background file closing enabled
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
+  updating the branch cache
   (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
 
