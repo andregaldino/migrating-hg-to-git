@@ -204,6 +204,7 @@ Extension disabled for lack of acl.sources
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 5 parts total
+  truncating cache/rbc-revs-v1 to 8
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
@@ -283,6 +284,7 @@ No [acl.allow]/[acl.deny]
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 5 parts total
+  truncating cache/rbc-revs-v1 to 8
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
@@ -806,6 +808,7 @@ fred is not blocked from moving bookmarks
   acl: acl.deny.bookmarks not enabled
   acl: bookmark access granted: "ef1ea85a6374b77d6da9dcda9541f498f2d17df7" on bookmark "moving-bookmark"
   bundle2-input-bundle: 7 parts total
+  truncating cache/rbc-revs-v1 to 8
   updating the branch cache
   invalid branch cache (served.hidden): tip differs
   added 1 changesets with 1 changes to 1 files
@@ -982,6 +985,7 @@ barney is allowed everywhere
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 5 parts total
+  truncating cache/rbc-revs-v1 to 8
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
@@ -1318,6 +1322,7 @@ acl.config can set only [acl.allow]/[acl.deny]
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 5 parts total
+  truncating cache/rbc-revs-v1 to 8
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
@@ -1408,6 +1413,7 @@ fred is always allowed
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 5 parts total
+  truncating cache/rbc-revs-v1 to 8
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total
@@ -1577,6 +1583,7 @@ OS-level groups
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 5 parts total
+  truncating cache/rbc-revs-v1 to 8
   updating the branch cache
   added 3 changesets with 3 changes to 3 files
   bundle2-output-bundle: "HG20", 1 parts total

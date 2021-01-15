@@ -2063,7 +2063,7 @@ class localrepository(object):
         return self._revbranchcache
 
     def register_changeset(self, rev, changelogrevision):
-        pass
+        self.revbranchcache().setdata(rev, changelogrevision)
 
     def branchtip(self, branch, ignoremissing=False):
         """return the tip node for a given branch

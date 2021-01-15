@@ -706,8 +706,10 @@ class revbranchcache(object):
         self._setcachedata(rev, reponode, branchidx)
         return b, close
 
-    def setdata(self, branch, rev, node, close):
+    def setdata(self, rev, changelogrevision):
         """add new data information to the cache"""
+        branch, close = changelogrevision.branchinfo
+
         if branch in self._namesreverse:
             branchidx = self._namesreverse[branch]
         else:
@@ -716,7 +718,7 @@ class revbranchcache(object):
             self._namesreverse[branch] = branchidx
         if close:
             branchidx |= _rbccloseflag
-        self._setcachedata(rev, node, branchidx)
+        self._setcachedata(rev, self._repo.changelog.node(rev), branchidx)
         # If no cache data were readable (non exists, bad permission, etc)
         # the cache was bypassing itself by setting:
         #

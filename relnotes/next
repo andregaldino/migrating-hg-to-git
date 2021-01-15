@@ -44,6 +44,9 @@
  * The `branchmap` cache is updated more intelligently and can be
    significantly faster for repositories with many branches and changesets.
 
+ * The `rev-branch-cache` is now updated incrementally whenever changesets
+   are added.
+
 
 == New Experimental Features ==
 

@@ -318,10 +318,10 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   bundle2-input-part: total payload size 1686
   bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
   bundle2-input-part: total payload size 74
-  truncating cache/rbc-revs-v1 to 56
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 3 parts total
+  truncating cache/rbc-revs-v1 to 72
   added 2 changesets with 2 changes to 1 files
   updating the branch cache
   invalid branch cache (served): tip differs

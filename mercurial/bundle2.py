@@ -2478,35 +2478,10 @@ rbcstruct = struct.Struct(b'>III')
 
 @parthandler(b'cache:rev-branch-cache')
 def handlerbc(op, inpart):
-    """receive a rev-branch-cache payload and update the local cache
-
-    The payload is a series of data related to each branch
-
-    1) branch name length
-    2) number of open heads
-    3) number of closed heads
-    4) open heads nodes
-    5) closed heads nodes
-    """
-    total = 0
-    rawheader = inpart.read(rbcstruct.size)
-    cache = op.repo.revbranchcache()
-    cl = op.repo.unfiltered().changelog
-    while rawheader:
-        header = rbcstruct.unpack(rawheader)
-        total += header[1] + header[2]
-        utf8branch = inpart.read(header[0])
-        branch = encoding.tolocal(utf8branch)
-        for x in pycompat.xrange(header[1]):
-            node = inpart.read(20)
-            rev = cl.rev(node)
-            cache.setdata(branch, rev, node, False)
-        for x in pycompat.xrange(header[2]):
-            node = inpart.read(20)
-            rev = cl.rev(node)
-            cache.setdata(branch, rev, node, True)
-        rawheader = inpart.read(rbcstruct.size)
-    cache.write()
+    """Legacy part, ignored for compatibility with bundles from or
+    for Mercurial before 5.7. Newer Mercurial computes the cache
+    efficiently enough during unbundling that the additional transfer
+    is unnecessary."""
 
 
 @parthandler(b'pushvars')
