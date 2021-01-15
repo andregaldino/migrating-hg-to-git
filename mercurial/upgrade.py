@@ -242,7 +242,12 @@ def upgraderepo(
 
 
 def upgrade_share_to_safe(
-    ui, hgvfs, storevfs, current_requirements, mismatch_config
+    ui,
+    hgvfs,
+    storevfs,
+    current_requirements,
+    mismatch_config,
+    mismatch_warn,
 ):
     """Upgrades a share to use share-safe mechanism"""
     wlock = None
@@ -282,7 +287,7 @@ def upgrade_share_to_safe(
                 _(b'failed to upgrade share, got error: %s')
                 % stringutil.forcebytestr(e.strerror)
             )
-        elif ui.configbool(b'experimental', b'sharesafe-warn-outdated-shares'):
+        elif mismatch_warn:
             ui.warn(
                 _(b'failed to upgrade share, got error: %s\n')
                 % stringutil.forcebytestr(e.strerror)
@@ -298,6 +303,7 @@ def downgrade_share_to_non_safe(
     sharedvfs,
     current_requirements,
     mismatch_config,
+    mismatch_warn,
 ):
     """Downgrades a share which use share-safe to not use it"""
     wlock = None
@@ -333,6 +339,11 @@ def downgrade_share_to_non_safe(
         if mismatch_config == b'downgrade-abort':
             raise error.Abort(
                 _(b'failed to downgrade share, got error: %s')
+                % stringutil.forcebytestr(e.strerror)
+            )
+        elif mismatch_warn:
+            ui.warn(
+                _(b'failed to downgrade share, got error: %s\n')
                 % stringutil.forcebytestr(e.strerror)
             )
     finally:

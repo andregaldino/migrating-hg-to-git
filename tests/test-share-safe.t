@@ -546,7 +546,7 @@ Check that if lock is taken, upgrade fails but read operation are successful
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
 
-  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-allow --config experimental.sharesafe-warn-outdated-shares=false
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-allow --config share.safe-mismatch.source-safe.warn=False
   @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
   |
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
