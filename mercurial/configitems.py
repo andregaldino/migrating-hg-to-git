@@ -700,6 +700,8 @@ coreconfigitem(
     b'debug.peer-request',
     default=False,
 )
+# If discovery.randomize is False, random sampling during discovery are
+# deterministic. It is meant for integration tests.
 coreconfigitem(
     b'devel',
     b'discovery.randomize',
