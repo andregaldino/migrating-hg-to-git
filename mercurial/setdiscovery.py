@@ -290,7 +290,6 @@ def findcommonheads(
     fullsamplesize=200,
     abortwhenunrelated=True,
     ancestorsof=None,
-    samplegrowth=1.05,
     audit=None,
 ):
     """Return a tuple (common, anyincoming, remoteheads) used to identify
@@ -300,6 +299,9 @@ def findcommonheads(
     will be updated with extra data about the discovery, this is useful for
     debug.
     """
+
+    samplegrowth = float(ui.config(b'devel', b'discovery.grow-sample.rate'))
+
     start = util.timer()
 
     roundtrips = 0

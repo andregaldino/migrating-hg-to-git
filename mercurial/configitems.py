@@ -707,6 +707,12 @@ coreconfigitem(
     b'discovery.grow-sample',
     default=True,
 )
+# discovery.grow-sample.rate control the rate at which the sample grow
+coreconfigitem(
+    b'devel',
+    b'discovery.grow-sample.rate',
+    default=1.05,
+)
 # If discovery.randomize is False, random sampling during discovery are
 # deterministic. It is meant for integration tests.
 coreconfigitem(

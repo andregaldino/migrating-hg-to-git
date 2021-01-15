@@ -1412,6 +1412,48 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
       missing:                1040
   common heads: 3ee37d65064a
 
+  $ hg -R a debugdiscovery b --debug --config devel.discovery.randomize=false --config devel.discovery.grow-sample.rate=1.01
+  comparing with b
+  query 1; heads
+  searching for changes
+  taking quick initial sample
+  query 2; still undecided: 1080, sample size is: 100
+  sampling from both directions
+  query 3; still undecided: 980, sample size is: 200
+  sampling from both directions
+  query 4; still undecided: 497, sample size is: 202
+  sampling from both directions
+  query 5; still undecided: 294, sample size is: 204
+  sampling from both directions
+  query 6; still undecided: 90, sample size is: 90
+  6 total queries in *s (glob)
+  elapsed time: * seconds (glob)
+  round-trips:                   6
+  heads summary:
+    total common heads:          1
+      also local heads:          0
+      also remote heads:         0
+      both:                      0
+    local heads:               260
+      common:                    0
+      missing:                 260
+    remote heads:                1
+      common:                    0
+      unknown:                   1
+  local changesets:           1340
+    common:                    300
+      heads:                     1
+      roots:                     1
+    missing:                  1040
+      heads:                   260
+      roots:                   260
+    first undecided set:      1340
+      heads:                   260
+      roots:                     1
+      common:                  300
+      missing:                1040
+  common heads: 3ee37d65064a
+
 Test actual protocol when pulling one new head in addition to common heads
 
   $ hg clone -U b c
