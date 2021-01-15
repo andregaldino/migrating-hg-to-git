@@ -2618,7 +2618,7 @@ class localrepository(object):
             return
 
         if tr is None or tr.changes[b'origrepolen'] < len(self):
-            # accessing the 'ser ved' branchmap should refresh all the others,
+            # accessing the 'served' branchmap should refresh all the others,
             self.ui.debug(b'updating the branch cache\n')
             self.filtered(b'served').branchmap()
             self.filtered(b'served.hidden').branchmap()
