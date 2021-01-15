@@ -1,5 +1,5 @@
+use bytes_cast::{unaligned, BytesCast};
 use memmap::Mmap;
-use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 
 use super::revlog::RevlogError;
@@ -11,6 +11,16 @@ const ONDISK_VERSION: u8 = 1;
 pub(super) struct NodeMapDocket {
     pub data_length: usize,
     // TODO: keep here more of the data from `parse()` when we need it
+}
+
+#[derive(BytesCast)]
+#[repr(C)]
+struct DocketHeader {
+    uid_size: u8,
+    _tip_rev: unaligned::U64Be,
+    data_length: unaligned::U64Be,
+    _data_unused: unaligned::U64Be,
+    tip_node_size: unaligned::U64Be,
 }
 
 impl NodeMapDocket {
@@ -36,25 +46,22 @@ impl NodeMapDocket {
             Ok(bytes) => bytes,
         };
 
-        let mut input = if let Some((&ONDISK_VERSION, rest)) =
+        let input = if let Some((&ONDISK_VERSION, rest)) =
             docket_bytes.split_first()
         {
             rest
         } else {
             return Ok(None);
         };
-        let input = &mut input;
 
-        let uid_size = read_u8(input)? as usize;
-        let _tip_rev = read_be_u64(input)?;
+        let (header, rest) = DocketHeader::from_bytes(input)?;
+        let uid_size = header.uid_size as usize;
         // TODO: do we care about overflow for 4 GB+ nodemap files on 32-bit
         // systems?
-        let data_length = read_be_u64(input)? as usize;
-        let _data_unused = read_be_u64(input)?;
-        let tip_node_size = read_be_u64(input)? as usize;
-        let uid = read_bytes(input, uid_size)?;
-        let _tip_node = read_bytes(input, tip_node_size)?;
-
+        let tip_node_size = header.tip_node_size.get() as usize;
+        let data_length = header.data_length.get() as usize;
+        let (uid, rest) = u8::slice_from_bytes(rest, uid_size)?;
+        let (_tip_node, _rest) = u8::slice_from_bytes(rest, tip_node_size)?;
         let uid =
             std::str::from_utf8(uid).map_err(|_| RevlogError::Corrupted)?;
         let docket = NodeMapDocket { data_length };
@@ -79,29 +86,6 @@ impl NodeMapDocket {
             }
         }
     }
-}
-
-fn read_bytes<'a>(
-    input: &mut &'a [u8],
-    count: usize,
-) -> Result<&'a [u8], RevlogError> {
-    if let Some(start) = input.get(..count) {
-        *input = &input[count..];
-        Ok(start)
-    } else {
-        Err(RevlogError::Corrupted)
-    }
-}
-
-fn read_u8<'a>(input: &mut &[u8]) -> Result<u8, RevlogError> {
-    Ok(read_bytes(input, 1)?[0])
-}
-
-fn read_be_u64<'a>(input: &mut &[u8]) -> Result<u64, RevlogError> {
-    let array = read_bytes(input, std::mem::size_of::<u64>())?
-        .try_into()
-        .unwrap();
-    Ok(u64::from_be_bytes(array))
 }
 
 fn rawdata_path(docket_path: &Path, uid: &str) -> PathBuf {

@@ -29,6 +29,12 @@ pub enum RevlogError {
     UnknowDataFormat(u8),
 }
 
+impl From<bytes_cast::FromBytesError> for RevlogError {
+    fn from(_: bytes_cast::FromBytesError) -> Self {
+        RevlogError::Corrupted
+    }
+}
+
 /// Read only implementation of revlog.
 pub struct Revlog {
     /// When index and data are not interleaved: bytes of the revlog index.

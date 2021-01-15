@@ -9,6 +9,7 @@ edition = "2018"
 name = "hg"
 
 [dependencies]
+bytes-cast = "0.1"
 byteorder = "1.3.4"
 hex = "0.4.2"
 im-rc = "15.0.*"

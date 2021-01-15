@@ -17,12 +17,12 @@ use super::{
     RevlogIndex, NULL_REVISION,
 };
 
+use bytes_cast::{unaligned, BytesCast};
 use std::cmp::max;
 use std::fmt;
-use std::mem;
+use std::mem::{self, align_of, size_of};
 use std::ops::Deref;
 use std::ops::Index;
-use std::slice;
 
 #[derive(Debug, PartialEq)]
 pub enum NodeMapError {
@@ -149,7 +149,7 @@ pub trait MutableNodeMap: NodeMap {
 /// Low level NodeTree [`Blocks`] elements
 ///
 /// These are exactly as for instance on persistent storage.
-type RawElement = i32;
+type RawElement = unaligned::I32Be;
 
 /// High level representation of values in NodeTree
 /// [`Blocks`](struct.Block.html)
@@ -168,23 +168,24 @@ impl From<RawElement> for Element {
     ///
     /// See [`Block`](struct.Block.html) for explanation about the encoding.
     fn from(raw: RawElement) -> Element {
-        if raw >= 0 {
-            Element::Block(raw as usize)
-        } else if raw == -1 {
+        let int = raw.get();
+        if int >= 0 {
+            Element::Block(int as usize)
+        } else if int == -1 {
             Element::None
         } else {
-            Element::Rev(-raw - 2)
+            Element::Rev(-int - 2)
         }
     }
 }
 
 impl From<Element> for RawElement {
     fn from(element: Element) -> RawElement {
-        match element {
+        RawElement::from(match element {
             Element::None => 0,
-            Element::Block(i) => i as RawElement,
+            Element::Block(i) => i as i32,
             Element::Rev(rev) => -rev - 2,
-        }
+        })
     }
 }
 
@@ -212,42 +213,24 @@ impl From<Element> for RawElement {
 /// represented at all, because we want an immutable empty nodetree
 /// to be valid.
 
-#[derive(Copy, Clone)]
-pub struct Block([u8; BLOCK_SIZE]);
+const ELEMENTS_PER_BLOCK: usize = 16; // number of different values in a nybble
 
-/// Not derivable for arrays of length >32 until const generics are stable
-impl PartialEq for Block {
-    fn eq(&self, other: &Self) -> bool {
-        self.0[..] == other.0[..]
-    }
-}
-
-pub const BLOCK_SIZE: usize = 64;
+#[derive(Copy, Clone, BytesCast, PartialEq)]
+#[repr(transparent)]
+pub struct Block([RawElement; ELEMENTS_PER_BLOCK]);
 
 impl Block {
     fn new() -> Self {
-        // -1 in 2's complement to create an absent node
-        let byte: u8 = 255;
-        Block([byte; BLOCK_SIZE])
+        let absent_node = RawElement::from(-1);
+        Block([absent_node; ELEMENTS_PER_BLOCK])
     }
 
     fn get(&self, nybble: u8) -> Element {
-        let index = nybble as usize * mem::size_of::<RawElement>();
-        Element::from(RawElement::from_be_bytes([
-            self.0[index],
-            self.0[index + 1],
-            self.0[index + 2],
-            self.0[index + 3],
-        ]))
+        self.0[nybble as usize].into()
     }
 
     fn set(&mut self, nybble: u8, element: Element) {
-        let values = RawElement::to_be_bytes(element.into());
-        let index = nybble as usize * mem::size_of::<RawElement>();
-        self.0[index] = values[0];
-        self.0[index + 1] = values[1];
-        self.0[index + 2] = values[2];
-        self.0[index + 3] = values[3];
+        self.0[nybble as usize] = element.into()
     }
 }
 
@@ -398,16 +381,17 @@ impl NodeTree {
         // Transmute the `Vec<Block>` to a `Vec<u8>`. Blocks are contiguous
         // bytes, so this is perfectly safe.
         let bytes = unsafe {
-            // Assert that `Block` hasn't been changed and has no padding
-            let _: [u8; 4 * BLOCK_SIZE] =
-                std::mem::transmute([Block::new(); 4]);
+            // Check for compatible allocation layout.
+            // (Optimized away by constant-folding + dead code elimination.)
+            assert_eq!(size_of::<Block>(), 64);
+            assert_eq!(align_of::<Block>(), 1);
 
             // /!\ Any use of `vec` after this is use-after-free.
             // TODO: use `into_raw_parts` once stabilized
             Vec::from_raw_parts(
                 vec.as_ptr() as *mut u8,
-                vec.len() * BLOCK_SIZE,
-                vec.capacity() * BLOCK_SIZE,
+                vec.len() * size_of::<Block>(),
+                vec.capacity() * size_of::<Block>(),
             )
         };
         (readonly, bytes)
@@ -613,7 +597,7 @@ impl NodeTreeBytes {
         amount: usize,
     ) -> Self {
         assert!(buffer.len() >= amount);
-        let len_in_blocks = amount / BLOCK_SIZE;
+        let len_in_blocks = amount / size_of::<Block>();
         NodeTreeBytes {
             buffer,
             len_in_blocks,
@@ -625,12 +609,11 @@ impl Deref for NodeTreeBytes {
     type Target = [Block];
 
     fn deref(&self) -> &[Block] {
-        unsafe {
-            slice::from_raw_parts(
-                (&self.buffer).as_ptr() as *const Block,
-                self.len_in_blocks,
-            )
-        }
+        Block::slice_from_bytes(&self.buffer, self.len_in_blocks)
+            // `NodeTreeBytes::new` already asserted that `self.buffer` is
+            // large enough.
+            .unwrap()
+            .0
     }
 }
 
@@ -774,13 +757,13 @@ mod tests {
         let mut raw = [255u8; 64];
 
         let mut counter = 0;
-        for val in [0, 15, -2, -1, -3].iter() {
-            for byte in RawElement::to_be_bytes(*val).iter() {
+        for val in [0_i32, 15, -2, -1, -3].iter() {
+            for byte in val.to_be_bytes().iter() {
                 raw[counter] = *byte;
                 counter += 1;
             }
         }
-        let block = Block(raw);
+        let (block, _) = Block::from_bytes(&raw).unwrap();
         assert_eq!(block.get(0), Element::Block(0));
         assert_eq!(block.get(1), Element::Block(15));
         assert_eq!(block.get(3), Element::None);
@@ -1108,7 +1091,7 @@ mod tests {
         let (_, bytes) = idx.nt.into_readonly_and_added_bytes();
 
         // only the root block has been changed
-        assert_eq!(bytes.len(), BLOCK_SIZE);
+        assert_eq!(bytes.len(), size_of::<Block>());
         // big endian for -2
         assert_eq!(&bytes[4..2 * 4], [255, 255, 255, 254]);
         // big endian for -6
