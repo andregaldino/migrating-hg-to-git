@@ -93,8 +93,8 @@ Copy a file onto another file
      x y
   $ hg debugp1copies -r 1
   x -> y
-Incorrectly doesn't show the rename
   $ hg debugpathcopies 0 1
+  x -> y (no-filelog !)
 
 Copy a file onto another file with same content. If metadata is stored in changeset, this does not
 produce a new filelog entry. The changeset's "files" entry should still list the file.
@@ -111,8 +111,8 @@ produce a new filelog entry. The changeset's "files" entry should still list the
      x x2
   $ hg debugp1copies -r 1
   x -> x2
-Incorrectly doesn't show the rename
   $ hg debugpathcopies 0 1
+  x -> x2 (no-filelog !)
 
 Rename file in a loop: x->y->z->x
   $ newrepo
