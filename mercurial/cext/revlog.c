@@ -498,7 +498,7 @@ static int check_filter(PyObject *filter, Py_ssize_t arg)
 			return -1;
 		}
 
-		result = PyEval_CallObject(filter, arglist);
+		result = PyObject_Call(filter, arglist, NULL);
 		Py_DECREF(arglist);
 		if (!result) {
 			return -1;
