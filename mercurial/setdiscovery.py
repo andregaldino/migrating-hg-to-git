@@ -418,9 +418,14 @@ def findcommonheads(
 
     # full blown discovery
 
+    # if the server has a limit to its arguments size, we can't grow the sample.
+    hard_limit_sample = remote.limitedarguments
+    grow_sample = local.ui.configbool(b'devel', b'discovery.grow-sample')
+    hard_limit_sample = hard_limit_sample and grow_sample
+
     randomize = ui.configbool(b'devel', b'discovery.randomize')
     disco = partialdiscovery(
-        local, ownheads, remote.limitedarguments, randomize=randomize
+        local, ownheads, hard_limit_sample, randomize=randomize
     )
     # treat remote heads (and maybe own heads) as a first implicit sample
     # response
@@ -438,7 +443,7 @@ def findcommonheads(
                 ui.debug(b"taking initial sample\n")
             samplefunc = disco.takefullsample
             targetsize = fullsamplesize
-            if not remote.limitedarguments:
+            if not hard_limit_sample:
                 fullsamplesize = int(fullsamplesize * samplegrowth)
         else:
             # use even cheaper initial sample

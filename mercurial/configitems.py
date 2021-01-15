@@ -700,6 +700,13 @@ coreconfigitem(
     b'debug.peer-request',
     default=False,
 )
+# If discovery.grow-sample is False, the sample size used in set discovery will
+# not be increased through the process
+coreconfigitem(
+    b'devel',
+    b'discovery.grow-sample',
+    default=True,
+)
 # If discovery.randomize is False, random sampling during discovery are
 # deterministic. It is meant for integration tests.
 coreconfigitem(
