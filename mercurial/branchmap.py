@@ -566,6 +566,7 @@ _rbcrevs = b'rbc-revs' + _rbcversion
 # [4 byte hash prefix][4 byte branch name number with sign bit indicating open]
 _rbcrecfmt = b'>4sI'
 _rbcrecsize = calcsize(_rbcrecfmt)
+_rbcmininc = 64 * _rbcrecsize
 _rbcnodelen = 4
 _rbcbranchidxmask = 0x7FFFFFFF
 _rbccloseflag = 0x80000000
@@ -730,11 +731,15 @@ class revbranchcache(object):
         if rev == nullrev:
             return
         rbcrevidx = rev * _rbcrecsize
-        if len(self._rbcrevs) < rbcrevidx + _rbcrecsize:
-            self._rbcrevs.extend(
-                b'\0'
-                * (len(self._repo.changelog) * _rbcrecsize - len(self._rbcrevs))
-            )
+        requiredsize = rbcrevidx + _rbcrecsize
+        rbccur = len(self._rbcrevs)
+        if rbccur < requiredsize:
+            # bytearray doesn't allocate extra space at least in Python 3.7.
+            # When multiple changesets are added in a row, precise resize would
+            # result in quadratic complexity. Overallocate to compensate by
+            # use the classic doubling technique for dynamic arrays instead.
+            # If there was a gap in the map before, less space will be reserved.
+            self._rbcrevs.extend(b'\0' * max(_rbcmininc, requiredsize))
         pack_into(_rbcrecfmt, self._rbcrevs, rbcrevidx, node, branchidx)
         self._rbcrevslen = min(self._rbcrevslen, rev)
 
