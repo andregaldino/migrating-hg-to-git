@@ -1006,7 +1006,7 @@ def has_repofncache():
     return 'fncache' in getrepofeatures()
 
 
-@check('sqlite', 'sqlite3 module is available')
+@check('sqlite', 'sqlite3 module and matching cli is available')
 def has_sqlite():
     try:
         import sqlite3
