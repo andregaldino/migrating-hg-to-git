@@ -2,7 +2,7 @@ stages:
   - tests
   - phabricator
 
-image: registry.heptapod.net/mercurial/ci-images/mercurial-core
+image: registry.heptapod.net/mercurial/ci-images/mercurial-core:$HG_CI_IMAGE_TAG
 
 variables:
     PYTHON: python
