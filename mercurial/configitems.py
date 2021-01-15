@@ -615,6 +615,12 @@ coreconfigitem(
     b'check-relroot',
     default=False,
 )
+# Track copy information for all file, not just "added" one (very slow)
+coreconfigitem(
+    b'devel',
+    b'copy-tracing.trace-all-files',
+    default=False,
+)
 coreconfigitem(
     b'devel',
     b'default-date',

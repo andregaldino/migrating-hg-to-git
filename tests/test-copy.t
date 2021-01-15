@@ -228,6 +228,17 @@ should match
 should show no copies
   $ hg st -C
 
+note: since filelog based copy tracing only trace copy for new file, the copy information here is not displayed.
+
+  $ hg status --copies --change .
+  M bar
+
+They are a devel option to walk all file and fine this information anyway.
+
+  $ hg status --copies --change . --config devel.copy-tracing.trace-all-files=yes
+  M bar
+    foo
+
 copy --after on an added file
   $ cp bar baz
   $ hg add baz

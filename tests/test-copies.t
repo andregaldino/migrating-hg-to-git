@@ -95,6 +95,8 @@ Copy a file onto another file
   x -> y
   $ hg debugpathcopies 0 1
   x -> y (no-filelog !)
+  $ hg debugpathcopies 0 1  --config devel.copy-tracing.trace-all-files=yes
+  x -> y
 
 Copy a file onto another file with same content. If metadata is stored in changeset, this does not
 produce a new filelog entry. The changeset's "files" entry should still list the file.
@@ -113,6 +115,8 @@ produce a new filelog entry. The changeset's "files" entry should still list the
   x -> x2
   $ hg debugpathcopies 0 1
   x -> x2 (no-filelog !)
+  $ hg debugpathcopies 0 1  --config devel.copy-tracing.trace-all-files=yes
+  x -> x2
 
 Rename file in a loop: x->y->z->x
   $ newrepo

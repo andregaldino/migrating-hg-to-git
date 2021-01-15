@@ -152,12 +152,20 @@ def _committedforwardcopies(a, b, base, match):
     if b.p1() == a and b.p2().node() == nullid:
         filesmatcher = matchmod.exact(b.files())
         forwardmissingmatch = matchmod.intersectmatchers(match, filesmatcher)
-    missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
+    if repo.ui.configbool(b'devel', b'copy-tracing.trace-all-files'):
+        missing = list(b.walk(match))
+        # _computeforwardmissing(a, b, match=forwardmissingmatch)
+        if debug:
+            dbg(b'debug.copies:      searching all files: %d\n' % len(missing))
+    else:
+        missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
+        if debug:
+            dbg(
+                b'debug.copies:      missing files to search: %d\n'
+                % len(missing)
+            )
 
     ancestrycontext = a._repo.changelog.ancestors([b.rev()], inclusive=True)
-
-    if debug:
-        dbg(b'debug.copies:      missing files to search: %d\n' % len(missing))
 
     for f in sorted(missing):
         if debug:
