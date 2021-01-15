@@ -314,9 +314,6 @@ def findcommonheads(
     else:
         ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
 
-    # early exit if we know all the specified remote heads already
-    ui.debug(b"query 1; heads\n")
-    roundtrips += 1
     # We also ask remote about all the local heads. That set can be arbitrarily
     # large, so we used to limit it size to `initialsamplesize`. We no longer
     # do as it proved counter productive. The skipped heads could lead to a
@@ -375,6 +372,8 @@ def findcommonheads(
     else:
         sample = ownheads
 
+    ui.debug(b"query 1; heads\n")
+    roundtrips += 1
     with remote.commandexecutor() as e:
         fheads = e.callcommand(b'heads', {})
         fknown = e.callcommand(
@@ -409,6 +408,7 @@ def findcommonheads(
         except error.LookupError:
             continue
 
+    # early exit if we know all the specified remote heads already
     if len(knownsrvheads) == len(srvheadhashes):
         ui.debug(b"all remote heads known locally\n")
         return srvheadhashes, False, srvheadhashes
