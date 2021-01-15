@@ -65,4 +65,5 @@
 
 == Internal API Changes ==
 
-
+ * `changelog.branchinfo` is deprecated and will be removed after 5.8.
+   It is superseded by `changelogrevision.branchinfo`.

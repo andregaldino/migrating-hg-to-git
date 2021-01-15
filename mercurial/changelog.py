@@ -200,6 +200,7 @@ class _changelogrevision(object):
     p1copies = attr.ib(default=None)
     p2copies = attr.ib(default=None)
     description = attr.ib(default=b'')
+    branchinfo = attr.ib(default=(_defaultextra[b'branch'], False))
 
 
 class changelogrevision(object):
@@ -371,6 +372,11 @@ class changelogrevision(object):
     @property
     def description(self):
         return encoding.tolocal(self._text[self._offsets[3] + 2 :])
+
+    @property
+    def branchinfo(self):
+        extra = self.extra
+        return encoding.tolocal(extra.get(b"branch")), b'close' in extra
 
 
 class changelog(revlog.revlog):
@@ -601,8 +607,7 @@ class changelog(revlog.revlog):
 
         This function exists because creating a changectx object
         just to access this is costly."""
-        extra = self.changelogrevision(rev).extra
-        return encoding.tolocal(extra.get(b"branch")), b'close' in extra
+        return self.changelogrevision(rev).branchinfo
 
     def _nodeduplicatecallback(self, transaction, node):
         # keep track of revisions that got "re-added", eg: unbunde of know rev.
