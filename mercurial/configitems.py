@@ -702,6 +702,13 @@ coreconfigitem(
     b'debug.peer-request',
     default=False,
 )
+# If discovery.exchange-heads is False, the discovery will not start with
+# remote head fetching and local head querying.
+coreconfigitem(
+    b'devel',
+    b'discovery.exchange-heads',
+    default=True,
+)
 # If discovery.grow-sample is False, the sample size used in set discovery will
 # not be increased through the process
 coreconfigitem(

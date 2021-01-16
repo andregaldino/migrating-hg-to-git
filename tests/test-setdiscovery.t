@@ -1412,23 +1412,22 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
       missing:                1040
   common heads: 3ee37d65064a
 
-  $ hg -R a debugdiscovery b --debug --config devel.discovery.randomize=false --config devel.discovery.grow-sample.rate=1.01
+  $ hg -R a debugdiscovery b --debug --config devel.discovery.exchange-heads=false --config devel.discovery.randomize=false --config devel.discovery.grow-sample.rate=1.01
   comparing with b
-  query 1; heads
   searching for changes
-  taking quick initial sample
-  query 2; still undecided: 1080, sample size is: 100
   sampling from both directions
-  query 3; still undecided: 980, sample size is: 200
+  query 1; still undecided: 1340, sample size is: 200
   sampling from both directions
-  query 4; still undecided: 497, sample size is: 202
+  query 2; still undecided: 795, sample size is: 202
   sampling from both directions
-  query 5; still undecided: 294, sample size is: 204
+  query 3; still undecided: 525, sample size is: 204
   sampling from both directions
-  query 6; still undecided: 90, sample size is: 90
-  6 total queries in *s (glob)
+  query 4; still undecided: 252, sample size is: 206
+  sampling from both directions
+  query 5; still undecided: 44, sample size is: 44
+  5 total queries in *s (glob)
   elapsed time: * seconds (glob)
-  round-trips:                   6
+  round-trips:                   5
   heads summary:
     total common heads:          1
       also local heads:          0
