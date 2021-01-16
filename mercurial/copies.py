@@ -1220,6 +1220,12 @@ def graftcopies(wctx, ctx, base):
     by merge.update().
     """
     new_copies = pathcopies(base, ctx)
-    _filter(wctx.p1(), wctx, new_copies)
+    parent = wctx.p1()
+    _filter(parent, wctx, new_copies)
+    # extra filtering to drop copy information for files that existed before
+    # the graft (otherwise we would create merge filelog for non-merge commit
+    for dest, __ in list(new_copies.items()):
+        if dest in parent:
+            del new_copies[dest]
     for dst, src in pycompat.iteritems(new_copies):
         wctx[dst].markcopied(src)
