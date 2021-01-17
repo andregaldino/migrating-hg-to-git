@@ -708,6 +708,12 @@ def has_tic():
         import curses
 
         curses.COLOR_BLUE
+
+        # Windows doesn't have a `tic` executable, but the windows_curses
+        # package is sufficient to run the tests without it.
+        if os.name == 'nt':
+            return True
+
         return matchoutput('test -x "`which tic`"', br'')
     except (ImportError, AttributeError):
         return False
