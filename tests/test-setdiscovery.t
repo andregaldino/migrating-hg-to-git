@@ -1328,25 +1328,25 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   updating to branch b
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true --config devel.discovery.randomize=false
+  $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true --config devel.discovery.randomize=false  --config devel.discovery.sample-size.initial=50
   comparing with b
   query 1; heads
   searching for changes
   taking quick initial sample
   searching: 2 queries
-  query 2; still undecided: 1080, sample size is: 100
+  query 2; still undecided: 1080, sample size is: 50
   sampling from both directions
   searching: 3 queries
-  query 3; still undecided: 980, sample size is: 200
+  query 3; still undecided: 1030, sample size is: 200
   sampling from both directions
   searching: 4 queries
-  query 4; still undecided: 497, sample size is: 210
+  query 4; still undecided: 547, sample size is: 210
   sampling from both directions
   searching: 5 queries
-  query 5; still undecided: 285, sample size is: 220
+  query 5; still undecided: 336, sample size is: 220
   sampling from both directions
   searching: 6 queries
-  query 6; still undecided: 63, sample size is: 63
+  query 6; still undecided: 114, sample size is: 114
   6 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   6
@@ -1412,22 +1412,30 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
       missing:                1040
   common heads: 3ee37d65064a
 
-  $ hg -R a debugdiscovery b --debug --config devel.discovery.exchange-heads=false --config devel.discovery.randomize=false --config devel.discovery.grow-sample.rate=1.01
+  $ hg -R a debugdiscovery b --debug --config devel.discovery.exchange-heads=false --config devel.discovery.randomize=false --config devel.discovery.grow-sample.rate=1.20 --config devel.discovery.sample-size=50
   comparing with b
   searching for changes
   sampling from both directions
-  query 1; still undecided: 1340, sample size is: 200
+  query 1; still undecided: 1340, sample size is: 50
   sampling from both directions
-  query 2; still undecided: 795, sample size is: 202
+  query 2; still undecided: 995, sample size is: 60
   sampling from both directions
-  query 3; still undecided: 525, sample size is: 204
+  query 3; still undecided: 913, sample size is: 72
   sampling from both directions
-  query 4; still undecided: 252, sample size is: 206
+  query 4; still undecided: 816, sample size is: 204
   sampling from both directions
-  query 5; still undecided: 44, sample size is: 44
-  5 total queries in *s (glob)
-  elapsed time: * seconds (glob)
-  round-trips:                   5
+  query 5; still undecided: 612, sample size is: 153
+  sampling from both directions
+  query 6; still undecided: 456, sample size is: 123
+  sampling from both directions
+  query 7; still undecided: 332, sample size is: 147
+  sampling from both directions
+  query 8; still undecided: 184, sample size is: 176
+  sampling from both directions
+  query 9; still undecided: 8, sample size is: 8
+  9 total queries in *s (glob)
+  elapsed time:  * seconds (glob)
+  round-trips:                   9
   heads summary:
     total common heads:          1
       also local heads:          0

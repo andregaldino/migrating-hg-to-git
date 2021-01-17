@@ -286,8 +286,6 @@ def findcommonheads(
     ui,
     local,
     remote,
-    initialsamplesize=100,
-    fullsamplesize=200,
     abortwhenunrelated=True,
     ancestorsof=None,
     audit=None,
@@ -315,7 +313,8 @@ def findcommonheads(
         ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
 
     initial_head_exchange = ui.configbool(b'devel', b'discovery.exchange-heads')
-
+    initialsamplesize = ui.configint(b'devel', b'discovery.sample-size.initial')
+    fullsamplesize = ui.configint(b'devel', b'discovery.sample-size')
     # We also ask remote about all the local heads. That set can be arbitrarily
     # large, so we used to limit it size to `initialsamplesize`. We no longer
     # do as it proved counter productive. The skipped heads could lead to a

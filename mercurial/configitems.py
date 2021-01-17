@@ -729,6 +729,18 @@ coreconfigitem(
     b'discovery.randomize',
     default=True,
 )
+# Control the initial size of the discovery sample
+coreconfigitem(
+    b'devel',
+    b'discovery.sample-size',
+    default=200,
+)
+# Control the initial size of the discovery for initial change
+coreconfigitem(
+    b'devel',
+    b'discovery.sample-size.initial',
+    default=100,
+)
 _registerdiffopts(section=b'diff')
 coreconfigitem(
     b'email',
