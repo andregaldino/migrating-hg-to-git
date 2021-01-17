@@ -708,9 +708,11 @@ The persistent nodemap should exist after a streaming clone
   adding [s] 00manifest.n (70 bytes)
   adding [s] 00manifest.i (313 KB)
   adding [s] 00manifest.d (452 KB)
+  adding [s] 00manifest-*.nd (118 KB) (glob)
   adding [s] 00changelog.n (70 bytes)
   adding [s] 00changelog.i (313 KB)
   adding [s] 00changelog.d (360 KB)
+  adding [s] 00changelog-*.nd (118 KB) (glob)
   $ ls -1 stream-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)
   00changelog.n

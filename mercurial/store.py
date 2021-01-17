@@ -389,7 +389,11 @@ _data = [
 
 
 def isrevlog(f, kind, st):
-    return kind == stat.S_IFREG and f[-2:] in (b'.i', b'.d', b'.n', b'.nd')
+    if kind != stat.S_IFREG:
+        return False
+    if f[-2:] in (b'.i', b'.d', b'.n'):
+        return True
+    return f[-3:] == b'.nd'
 
 
 class basicstore(object):
