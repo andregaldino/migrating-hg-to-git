@@ -56,7 +56,7 @@ def persisted_data(revlog):
                 data = util.buffer(util.mmapread(fd, data_length))
             else:
                 data = fd.read(data_length)
-    except OSError as e:
+    except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             return None
         else:

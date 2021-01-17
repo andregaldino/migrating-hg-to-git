@@ -374,6 +374,38 @@ the nodemap should detect the changelog have been tampered with and recover.
   $ hg log -r "$OTHERNODE" -T '{rev}\n'
   5002
 
+missing data file
+-----------------
+
+  $ UUID=`hg debugnodemap --metadata| grep 'uid:' | \
+  > sed 's/uid: //'`
+  $ FILE=.hg/store/00changelog-"${UUID}".nd
+  $ mv $FILE ../tmp-data-file
+  $ cp .hg/store/00changelog.n ../tmp-docket
+
+mercurial don't crash
+
+  $ hg log -r .
+  changeset:   5002:b355ef8adce0
+  tag:         tip
+  parent:      4998:d918ad6d18d3
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     babar
+  
+  $ hg debugnodemap --metadata
+
+  $ hg debugupdatecache
+  $ hg debugnodemap --metadata
+  uid: * (glob)
+  tip-rev: 5002
+  tip-node: b355ef8adce0949b8bdf6afc72ca853740d65944
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+  $ mv ../tmp-data-file $FILE
+  $ mv ../tmp-docket .hg/store/00changelog.n
+
 Check transaction related property
 ==================================
 
