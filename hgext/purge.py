@@ -61,6 +61,7 @@ testedwith = b'ships-with-hg-core'
                 b' (implies -p/--print)'
             ),
         ),
+        (b'', b'confirm', None, _(b'ask before permanently deleting files')),
     ]
     + cmdutil.walkopts,
     _(b'hg purge [OPTION]... [DIR]...'),
@@ -113,6 +114,7 @@ def purge(ui, repo, *dirs, **opts):
 
     removefiles = opts.get(b'files')
     removedirs = opts.get(b'dirs')
+    confirm = opts.get(b'confirm')
 
     if not removefiles and not removedirs:
         removefiles = True
@@ -129,6 +131,7 @@ def purge(ui, repo, *dirs, **opts):
         removefiles=removefiles,
         abortonerror=opts.get(b'abort_on_err'),
         noop=not act,
+        confirm=confirm,
     )
 
     for path in paths:

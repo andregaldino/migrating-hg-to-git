@@ -2324,6 +2324,7 @@ def purge(
     removefiles=True,
     abortonerror=False,
     noop=False,
+    confirm=False,
 ):
     """Purge the working directory of untracked files.
 
@@ -2343,6 +2344,8 @@ def purge(
 
     ``noop`` controls whether to actually remove files. If not defined, actions
     will be taken.
+
+    ``confirm`` ask confirmation before actually removing anything.
 
     Returns an iterable of relative paths in the working directory that were
     or would be removed.
@@ -2370,6 +2373,25 @@ def purge(
             matcher.traversedir = directories.append
 
         status = repo.status(match=matcher, ignored=ignored, unknown=unknown)
+
+        if confirm:
+            nb_ignored = len(status.ignored)
+            nb_unkown = len(status.unknown)
+            if nb_unkown and nb_ignored:
+                msg = _(b"permanently delete %d unkown and %d ignored files?")
+                msg %= (nb_unkown, nb_ignored)
+            elif nb_unkown:
+                msg = _(b"permanently delete %d unkown files?")
+                msg %= nb_unkown
+            elif nb_ignored:
+                msg = _(b"permanently delete %d ignored files?")
+                msg %= nb_ignored
+            else:
+                # XXX we might be missing directory there
+                return res
+            msg += b" (yN)$$ &Yes $$ &No"
+            if repo.ui.promptchoice(msg, default=1) == 1:
+                raise error.CanceledError(_(b'removal cancelled'))
 
         if removefiles:
             for f in sorted(status.unknown + status.ignored):
