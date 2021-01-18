@@ -155,12 +155,12 @@ class remotefilelog(object):
         # text passed to "addrevision" includes hg filelog metadata header
         if node is None:
             node = storageutil.hashrevisionsha1(text, p1, p2)
-        if sidedata is None:
-            sidedata = {}
 
         meta, metaoffset = storageutil.parsemeta(text)
         rawtext, validatehash = flagutil.processflagswrite(
-            self, text, flags, sidedata=sidedata
+            self,
+            text,
+            flags,
         )
         return self.addrawrevision(
             rawtext,

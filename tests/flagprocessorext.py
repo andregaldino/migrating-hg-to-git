@@ -31,28 +31,28 @@ def bypass(self, text):
     return False
 
 
-def noopdonothing(self, text, sidedata):
+def noopdonothing(self, text):
     return (text, True)
 
 
 def noopdonothingread(self, text):
-    return (text, True, {})
+    return (text, True)
 
 
-def b64encode(self, text, sidedata):
+def b64encode(self, text):
     return (base64.b64encode(text), False)
 
 
 def b64decode(self, text):
-    return (base64.b64decode(text), True, {})
+    return (base64.b64decode(text), True)
 
 
-def gzipcompress(self, text, sidedata):
+def gzipcompress(self, text):
     return (zlib.compress(text), False)
 
 
 def gzipdecompress(self, text):
-    return (zlib.decompress(text), True, {})
+    return (zlib.decompress(text), True)
 
 
 def supportedoutgoingversions(orig, repo):

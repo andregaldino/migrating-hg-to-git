@@ -271,12 +271,13 @@ copy information on to the filelog
   $ hg ci --amend -m 'copy a to j, v2'
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
   $ hg debugsidedata -c -v -- -1
-  1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x00\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00aj'
+  1 sidedata entries (missing-correct-output !)
+   entry-0014 size 24 (missing-correct-output !)
+    '\x00\x00\x00\x02\x00\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00aj' (missing-correct-output !)
 #endif
   $ hg showcopies --config experimental.copies.read-from=filelog-only
-  a -> j
+  a -> j (sidedata missing-correct-output !)
+  a -> j (no-sidedata !)
 The entries should be written to extras even if they're empty (so the client
 won't have to fall back to reading from filelogs)
   $ echo x >> j
@@ -354,7 +355,8 @@ with no fallback.
   saved backup bundle to $TESTTMP/rebase-rename/.hg/strip-backup/*-*-rebase.hg (glob)
   $ hg st --change . --copies
   A b
-    a
+    a (sidedata missing-correct-output !)
+    a (no-sidedata !)
   R a
   $ cd ..
 

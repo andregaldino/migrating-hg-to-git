@@ -300,7 +300,7 @@ class filestorage(object):
             text = rawtext
         else:
             r = flagutil.processflagsread(self, rawtext, flags)
-            text, validatehash, sidedata = r
+            text, validatehash = r
         if validatehash:
             self.checkhash(text, node, rev=rev)
 

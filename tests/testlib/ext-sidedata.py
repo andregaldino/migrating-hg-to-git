@@ -40,19 +40,20 @@ def wrapaddrevision(
     return orig(self, text, transaction, link, p1, p2, *args, **kwargs)
 
 
-def wraprevision(orig, self, nodeorrev, *args, **kwargs):
-    text = orig(self, nodeorrev, *args, **kwargs)
+def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
+    text, sd = orig(self, nodeorrev, *args, **kwargs)
     if getattr(self, 'sidedatanocheck', False):
-        return text
+        return text, sd
+    if self.version & 0xFFFF != 2:
+        return text, sd
     if nodeorrev != nullrev and nodeorrev != nullid:
-        sd = self.sidedata(nodeorrev)
         if len(text) != struct.unpack('>I', sd[sidedata.SD_TEST1])[0]:
             raise RuntimeError('text size mismatch')
         expected = sd[sidedata.SD_TEST2]
         got = hashlib.sha256(text).digest()
         if got != expected:
             raise RuntimeError('sha256 mismatch')
-    return text
+    return text, sd
 
 
 def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
@@ -81,7 +82,7 @@ def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
 
 def extsetup(ui):
     extensions.wrapfunction(revlog.revlog, 'addrevision', wrapaddrevision)
-    extensions.wrapfunction(revlog.revlog, 'revision', wraprevision)
+    extensions.wrapfunction(revlog.revlog, '_revisiondata', wrap_revisiondata)
     extensions.wrapfunction(
         upgrade_engine, 'getsidedatacompanion', wrapgetsidedatacompanion
     )
