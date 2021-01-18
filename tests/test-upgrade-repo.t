@@ -56,7 +56,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:            yes
   dotencode:          yes
   generaldelta:       yes
-  exp-sharesafe:       no
+  share-safe:          no
   sparserevlog:       yes
   sidedata:            no
   persistent-nodemap:  no
@@ -69,7 +69,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -82,7 +82,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:            yes     no     yes
   dotencode:          yes     no     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -95,7 +95,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|exp-sharesafe:     ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|sparserevlog:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
@@ -126,7 +126,7 @@ An upgrade of a repository created with recommended settings only suggests optim
    {
     "config": false,
     "default": false,
-    "name": "exp-sharesafe",
+    "name": "share-safe",
     "repo": false
    },
    {
@@ -301,7 +301,7 @@ Various sub-optimal detections work
   fncache:             no
   dotencode:           no
   generaldelta:        no
-  exp-sharesafe:       no
+  share-safe:          no
   sparserevlog:        no
   sidedata:            no
   persistent-nodemap:  no
@@ -314,7 +314,7 @@ Various sub-optimal detections work
   fncache:             no    yes     yes
   dotencode:           no    yes     yes
   generaldelta:        no    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:        no    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -327,7 +327,7 @@ Various sub-optimal detections work
   fncache:             no    yes     yes
   dotencode:           no    yes     yes
   generaldelta:        no     no     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:        no     no     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -340,7 +340,7 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|generaldelta:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|exp-sharesafe:     ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.mismatchdefault|sparserevlog:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
@@ -1297,7 +1297,7 @@ upgrade
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -1333,7 +1333,7 @@ downgrade
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -1372,7 +1372,7 @@ upgrade from hgrc
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -1415,7 +1415,7 @@ upgrade
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes     no      no
   persistent-nodemap:  no     no      no
@@ -1458,7 +1458,7 @@ downgrade
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
@@ -1501,7 +1501,7 @@ upgrade from hgrc
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no

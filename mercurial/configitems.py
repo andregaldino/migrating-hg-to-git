@@ -1272,9 +1272,8 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format',
-    b'exp-share-safe',
+    b'use-share-safe',
     default=False,
-    experimental=True,
 )
 coreconfigitem(
     b'format',

@@ -55,7 +55,7 @@ RELATIVE_SHARED_REQUIREMENT = b'relshared'
 # A repository with share implemented safely. The repository has different
 # store and working copy requirements i.e. both `.hg/requires` and
 # `.hg/store/requires` are present.
-SHARESAFE_REQUIREMENT = b'exp-sharesafe'
+SHARESAFE_REQUIREMENT = b'share-safe'
 
 # List of requirements which are working directory specific
 # These requirements cannot be shared between repositories if they

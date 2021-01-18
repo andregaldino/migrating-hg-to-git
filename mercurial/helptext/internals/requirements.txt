@@ -159,10 +159,6 @@ keep the index up to date, but will suffer a slowdown.
 exp-sharesafe
 =============
 
-NOTE: This requirement is for internal development only. The semantics are not
-frozed yet, the feature is experimental. It's not advised to use it for any
-production repository yet.
-
 Represents that the repository can be shared safely. Requirements and config of
 the source repository will be shared.
 Requirements are stored in ``.hg/store`` instead of directly in ``.hg/`` where
@@ -172,5 +168,5 @@ Shares read the ``.hg/hgrc`` of the source repository.
 
 Support for this requirement was added in Mercurial 5.7 (released
 February 2021). The requirement will only be present on repositories that have
-opted in to this format (by having ``format.exp-share-safe=true`` set when
+opted in to this format (by having ``format.use-share-safe=true`` set when
 they were created).

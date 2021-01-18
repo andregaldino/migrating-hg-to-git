@@ -696,7 +696,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  exp-sharesafe:       no     no      no
+  share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
   sidedata:            no    yes      no
   persistent-nodemap:  no     no      no

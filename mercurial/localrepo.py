@@ -3474,7 +3474,7 @@ def newreporequirements(ui, createopts):
 
     # if share-safe is enabled, let's create the new repository with the new
     # requirement
-    if ui.configbool(b'format', b'exp-share-safe'):
+    if ui.configbool(b'format', b'use-share-safe'):
         requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
 
     return requirements
@@ -3513,7 +3513,7 @@ def checkrequirementscompat(ui, requirements):
         if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
             ui.warn(
                 _(
-                    b"ignoring enabled 'format.exp-share-safe' config because "
+                    b"ignoring enabled 'format.use-share-safe' config because "
                     b"it is incompatible with disabled 'format.usestore'"
                     b" config\n"
                 )
