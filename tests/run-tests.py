@@ -260,7 +260,9 @@ def checkportisavailable(port):
             s.bind(('localhost', port))
         return True
     except socket.error as exc:
-        if exc.errno not in (
+        if os.name == 'nt' and exc.errno == errno.WSAEACCES:
+            return False
+        elif exc.errno not in (
             errno.EADDRINUSE,
             errno.EADDRNOTAVAIL,
             errno.EPROTONOSUPPORT,
