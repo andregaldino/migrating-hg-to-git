@@ -237,7 +237,7 @@ class generaldelta(requirementformatvariant):
 
 @registerformatvariant
 class sharesafe(requirementformatvariant):
-    name = b'exp-sharesafe'
+    name = b'share-safe'
     _requirement = requirements.SHARESAFE_REQUIREMENT
 
     default = False

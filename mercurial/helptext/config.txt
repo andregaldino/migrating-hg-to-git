@@ -914,6 +914,12 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Disabled by default.
 
+``use-share-safe``
+    Enable or disable the "share-safe" functionality, which enables shares
+    to read requirements and configuration of its source repository.
+
+    Disabled by default.
+
 ``usestore``
     Enable or disable the "store" repository format which improves
     compatibility with systems that fold case or otherwise mangle

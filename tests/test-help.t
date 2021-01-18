@@ -1553,6 +1553,8 @@ Separate sections from subsections
   
       "use-persistent-nodemap"
   
+      "use-share-safe"
+  
       "usestore"
   
       "sparse-revlog"

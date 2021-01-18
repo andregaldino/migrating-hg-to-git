@@ -2,7 +2,7 @@
 
 #if safe
   $ echo "[format]"         >> $HGRCPATH
-  $ echo "exp-share-safe = True" >> $HGRCPATH
+  $ echo "use-share-safe = True" >> $HGRCPATH
 #endif
 
   $ echo "[extensions]"      >> $HGRCPATH
@@ -281,7 +281,7 @@ Explicitly kill daemons to let the test exit on Windows
 Test sharing a repository which was created with store requirement disable
 
   $ hg init nostore --config format.usestore=false
-  ignoring enabled 'format.exp-share-safe' config because it is incompatible with disabled 'format.usestore' config (safe !)
+  ignoring enabled 'format.use-share-safe' config because it is incompatible with disabled 'format.usestore' config (safe !)
   $ hg share nostore sharednostore
   abort: cannot create shared repository as source was created with 'format.usestore' config disabled
   [255]

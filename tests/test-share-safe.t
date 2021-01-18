@@ -4,7 +4,7 @@ setup
   > [extensions]
   > share =
   > [format]
-  > exp-share-safe = True
+  > use-share-safe = True
   > [storage]
   > revlog.persistent-nodemap.slow-path=allow
   > EOF
@@ -14,7 +14,7 @@ prepare source repo
   $ hg init source
   $ cd source
   $ cat .hg/requires
-  exp-sharesafe
+  share-safe
   $ cat .hg/store/requires
   dotencode
   fncache
@@ -24,10 +24,10 @@ prepare source repo
   store
   $ hg debugrequirements
   dotencode
-  exp-sharesafe
   fncache
   generaldelta
   revlogv1
+  share-safe
   sparserevlog
   store
 
@@ -47,24 +47,24 @@ Create a shared repo and check the requirements are shared and read correctly
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd shared1
   $ cat .hg/requires
-  exp-sharesafe
+  share-safe
   shared
 
   $ hg debugrequirements -R ../source
   dotencode
-  exp-sharesafe
   fncache
   generaldelta
   revlogv1
+  share-safe
   sparserevlog
   store
 
   $ hg debugrequirements
   dotencode
-  exp-sharesafe
   fncache
   generaldelta
   revlogv1
+  share-safe
   shared
   sparserevlog
   store
@@ -214,7 +214,7 @@ Disable zstd related tests because its not present on pure version
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store
      added: revlog-compression-zstd
   
   processed revlogs:
@@ -240,8 +240,8 @@ Disable zstd related tests because its not present on pure version
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
-     preserved: dotencode, exp-sharesafe, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd !)
      added: persistent-nodemap
   
   processed revlogs:
@@ -310,7 +310,7 @@ of current repo is still respected over the config which came from source config
 Test that upgrading using debugupgraderepo works
 =================================================
 
-  $ hg init non-share-safe --config format.exp-share-safe=false
+  $ hg init non-share-safe --config format.use-share-safe=false
   $ cd non-share-safe
   $ hg debugrequirements
   dotencode
@@ -345,7 +345,7 @@ Upgrade
   $ hg debugupgraderepo -q
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-     added: exp-sharesafe
+     added: share-safe
   
   processed revlogs:
     - all-filelogs
@@ -357,7 +357,7 @@ Upgrade
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-     added: exp-sharesafe
+     added: share-safe
   
   processed revlogs:
     - all-filelogs
@@ -368,15 +368,15 @@ Upgrade
 
   $ hg debugrequirements
   dotencode
-  exp-sharesafe
   fncache
   generaldelta
   revlogv1
+  share-safe
   sparserevlog
   store
 
   $ cat .hg/requires
-  exp-sharesafe
+  share-safe
 
   $ cat .hg/store/requires
   dotencode
@@ -419,13 +419,13 @@ Test that downgrading works too
   > [extensions]
   > share =
   > [format]
-  > exp-share-safe = False
+  > use-share-safe = False
   > EOF
 
   $ hg debugupgraderepo -q
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-     removed: exp-sharesafe
+     removed: share-safe
   
   processed revlogs:
     - all-filelogs
@@ -437,7 +437,7 @@ Test that downgrading works too
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-     removed: exp-sharesafe
+     removed: share-safe
   
   processed revlogs:
     - all-filelogs
@@ -507,12 +507,12 @@ Testing automatic downgrade of shares when config is set
 
 Testing automatic upgrade of shares when config is set
 
-  $ hg debugupgraderepo -q --run --config format.exp-share-safe=True
+  $ hg debugupgraderepo -q --run --config format.use-share-safe=True
   upgrade will perform the following actions:
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
-     added: exp-sharesafe
+     added: share-safe
   
   processed revlogs:
     - all-filelogs
@@ -522,10 +522,10 @@ Testing automatic upgrade of shares when config is set
   repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
   $ hg debugrequirements
   dotencode
-  exp-sharesafe
   fncache
   generaldelta
   revlogv1
+  share-safe
   sparserevlog
   store
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share
