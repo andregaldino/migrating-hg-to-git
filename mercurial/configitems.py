@@ -1098,21 +1098,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'sharesafe-auto-downgrade-shares',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'sharesafe-auto-upgrade-shares',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'sharesafe-auto-upgrade-fail-error',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
     b'sharesafe-warn-outdated-shares',
     default=True,
 )
@@ -1924,6 +1909,16 @@ coreconfigitem(
     b'share',
     b'poolnaming',
     default=b'identity',
+)
+coreconfigitem(
+    b'share',
+    b'safe-mismatch.source-not-safe',
+    default=b'abort',
+)
+coreconfigitem(
+    b'share',
+    b'safe-mismatch.source-safe',
+    default=b'abort',
 )
 coreconfigitem(
     b'shelve',

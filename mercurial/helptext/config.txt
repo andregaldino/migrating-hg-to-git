@@ -1932,6 +1932,39 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     Currently, only the rebase and absorb commands consider this configuration.
     (EXPERIMENTAL)
 
+``share``
+---------
+
+``safe-mismatch.source-safe``
+
+    Controls what happens when the shared repository does not use the
+    share-safe mechanism but its source repository does.
+
+    Possible values are `abort` (default), `allow`, `upgrade-abort` and
+    `upgrade-abort`.
+        `abort`: Disallows running any command and aborts
+        `allow`: Respects the feature presence in the share source
+        `upgrade-abort`: tries to upgrade the share to use share-safe;
+                         if it fails, aborts
+        `upgrade-allow`: tries to upgrade the share; if it fails, continue by
+                         respecting the share source setting
+
+``safe-mismatch.source-not-safe``
+
+    Controls what happens when the shared repository uses the share-safe
+    mechanism but its source does not.
+
+    Possible values are `abort` (default), `allow`, `downgrade-abort` and
+    `downgrade-abort`.
+        `abort`: Disallows running any command and aborts
+        `allow`: Respects the feature presence in the share source
+        `downgrade-abort`: tries to downgrade the share to not use share-safe;
+                           if it fails, aborts
+        `downgrade-allow`: tries to downgrade the share to not use share-safe;
+                           if it fails, continue by respecting the shared
+                           source setting
+
+
 ``storage``
 -----------
 

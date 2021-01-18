@@ -241,7 +241,9 @@ def upgraderepo(
             upgrade_op.print_post_op_messages()
 
 
-def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
+def upgrade_share_to_safe(
+    ui, hgvfs, storevfs, current_requirements, mismatch_config
+):
     """Upgrades a share to use share-safe mechanism"""
     wlock = None
     store_requirements = localrepo._readrequires(storevfs, False)
@@ -253,6 +255,10 @@ def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
     # add share-safe requirement as it will mark the share as share-safe
     diffrequires.add(requirementsmod.SHARESAFE_REQUIREMENT)
     current_requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
+    # in `allow` case, we don't try to upgrade, we just respect the source
+    # state, update requirements and continue
+    if mismatch_config == b'allow':
+        return
     try:
         wlock = lockmod.trylock(ui, hgvfs, b'wlock', 0, 0)
         # some process might change the requirement in between, re-read
@@ -271,7 +277,7 @@ def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
         scmutil.writerequires(hgvfs, diffrequires)
         ui.warn(_(b'repository upgraded to use share-safe mode\n'))
     except error.LockError as e:
-        if ui.configbool(b'experimental', b'sharesafe-auto-upgrade-fail-error'):
+        if mismatch_config == b'upgrade-abort':
             raise error.Abort(
                 _(b'failed to upgrade share, got error: %s')
                 % stringutil.forcebytestr(e.strerror)
@@ -291,6 +297,7 @@ def downgrade_share_to_non_safe(
     hgvfs,
     sharedvfs,
     current_requirements,
+    mismatch_config,
 ):
     """Downgrades a share which use share-safe to not use it"""
     wlock = None
@@ -302,6 +309,8 @@ def downgrade_share_to_non_safe(
     source_requirements -= requirementsmod.WORKING_DIR_REQUIREMENTS
     current_requirements |= source_requirements
     current_requirements.remove(requirementsmod.SHARESAFE_REQUIREMENT)
+    if mismatch_config == b'allow':
+        return
 
     try:
         wlock = lockmod.trylock(ui, hgvfs, b'wlock', 0, 0)
@@ -319,12 +328,13 @@ def downgrade_share_to_non_safe(
         scmutil.writerequires(hgvfs, current_requirements)
         ui.warn(_(b'repository downgraded to not use share-safe mode\n'))
     except error.LockError as e:
-        # raise error right away because if downgrade failed, we cannot load
-        # the repository because it does not have complete set of requirements
-        raise error.Abort(
-            _(b'failed to downgrade share, got error: %s')
-            % stringutil.forcebytestr(e.strerror)
-        )
+        # If upgrade-abort is set, abort when upgrade fails, else let the
+        # process continue as `upgrade-allow` is set
+        if mismatch_config == b'downgrade-abort':
+            raise error.Abort(
+                _(b'failed to downgrade share, got error: %s')
+                % stringutil.forcebytestr(e.strerror)
+            )
     finally:
         if wlock:
             wlock.release()

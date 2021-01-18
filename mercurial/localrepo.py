@@ -575,8 +575,13 @@ def makelocalrepository(baseui, path, intents=None):
             and requirementsmod.SHARESAFE_REQUIREMENT
             not in _readrequires(sharedvfs, True)
         ):
-            if ui.configbool(
-                b'experimental', b'sharesafe-auto-downgrade-shares'
+            mismatch_config = ui.config(
+                b'share', b'safe-mismatch.source-not-safe'
+            )
+            if mismatch_config in (
+                b'downgrade-allow',
+                b'allow',
+                b'downgrade-abort',
             ):
                 # prevent cyclic import localrepo -> upgrade -> localrepo
                 from . import upgrade
@@ -586,19 +591,38 @@ def makelocalrepository(baseui, path, intents=None):
                     hgvfs,
                     sharedvfs,
                     requirements,
+                    mismatch_config,
                 )
-            else:
+            elif mismatch_config == b'abort':
                 raise error.Abort(
                     _(
                         b"share source does not support exp-sharesafe requirement"
                     )
+                )
+            else:
+                hint = _(
+                    "run `hg help config.share.safe-mismatch.source-not-safe`"
+                )
+                raise error.Abort(
+                    _(
+                        b"share-safe mismatch with source.\nUnrecognized"
+                        b" value '%s' of `share.safe-mismatch.source-not-safe`"
+                        b" set."
+                    )
+                    % mismatch_config,
+                    hint=hint,
                 )
         else:
             requirements |= _readrequires(storevfs, False)
     elif shared:
         sourcerequires = _readrequires(sharedvfs, False)
         if requirementsmod.SHARESAFE_REQUIREMENT in sourcerequires:
-            if ui.configbool(b'experimental', b'sharesafe-auto-upgrade-shares'):
+            mismatch_config = ui.config(b'share', b'safe-mismatch.source-safe')
+            if mismatch_config in (
+                b'upgrade-allow',
+                b'allow',
+                b'upgrade-abort',
+            ):
                 # prevent cyclic import localrepo -> upgrade -> localrepo
                 from . import upgrade
 
@@ -607,13 +631,24 @@ def makelocalrepository(baseui, path, intents=None):
                     hgvfs,
                     storevfs,
                     requirements,
+                    mismatch_config,
                 )
-            else:
+            elif mismatch_config == b'abort':
                 raise error.Abort(
                     _(
                         b'version mismatch: source uses share-safe'
                         b' functionality while the current share does not'
                     )
+                )
+            else:
+                hint = _("run `hg help config.share.safe-mismatch.source-safe`")
+                raise error.Abort(
+                    _(
+                        b"share-safe mismatch with source.\nUnrecognized"
+                        b" value '%s' of `share.safe-mismatch.source-safe` set."
+                    )
+                    % mismatch_config,
+                    hint=hint,
                 )
 
     # The .hg/hgrc file may load extensions or contain config options
