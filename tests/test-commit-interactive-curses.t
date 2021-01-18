@@ -1,4 +1,4 @@
-#require tic
+#require curses
 
 Set up a repo
 

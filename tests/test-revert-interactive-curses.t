@@ -1,4 +1,4 @@
-#require tic
+#require curses
 
 Revert interactive tests with the Curses interface
 

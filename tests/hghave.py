@@ -702,8 +702,8 @@ def has_test_repo():
     return os.path.isdir(os.path.join(t, "..", ".hg"))
 
 
-@check("tic", "terminfo compiler and curses module")
-def has_tic():
+@check("curses", "terminfo compiler and curses module")
+def has_curses():
     try:
         import curses
 
@@ -714,9 +714,15 @@ def has_tic():
         if os.name == 'nt':
             return True
 
-        return matchoutput('test -x "`which tic`"', br'')
+        return has_tic()
+
     except (ImportError, AttributeError):
         return False
+
+
+@check("tic", "terminfo compiler")
+def has_tic():
+    return matchoutput('test -x "`which tic`"', br'')
 
 
 @check("xz", "xz compression utility")
