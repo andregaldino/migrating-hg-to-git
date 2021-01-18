@@ -17,6 +17,8 @@
    can be e.g. `rebase`. As part of this effort, the default format
    from `hg rebase` was reorganized a bit.
 
+ * `hg purge` is now a core command using `--confirm` by default.
+
  * `hg strip`, from the strip extension, is now a core command, `hg
    debugstrip`. The extension remains for compatibility.
 

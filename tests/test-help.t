@@ -107,6 +107,7 @@ the extension is unknown.
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
@@ -235,6 +236,7 @@ the extension is unknown.
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
@@ -375,8 +377,6 @@ Test extension help:
        mq            manage a stack of patches
        notify        hooks for sending email push notifications
        patchbomb     command to send changesets as (a series of) patch emails
-       purge         command to delete untracked files from the working
-                     directory
        relink        recreates hardlinks between repository clones
        schemes       extend schemes with shortcuts to repository swarms
        share         share a common history between several working directories
@@ -2718,6 +2718,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   set or show the current phase name
+  </td></tr>
+  <tr><td>
+  <a href="/help/purge">
+  purge
+  </a>
+  </td><td>
+  removes files not tracked by Mercurial
   </td></tr>
   <tr><td>
   <a href="/help/recover">

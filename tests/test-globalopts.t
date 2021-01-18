@@ -351,6 +351,7 @@ Testing -h/--help:
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
@@ -483,6 +484,7 @@ Testing -h/--help:
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files

@@ -1,8 +1,3 @@
-  $ cat <<EOF >> $HGRCPATH
-  > [extensions]
-  > purge =
-  > EOF
-
 init
 
   $ hg init t
@@ -17,6 +12,26 @@ setup
   $ hg ci -qAmr2 -d'1 0'
   $ echo 'ignored' > .hgignore
   $ hg ci -qAmr3 -d'2 0'
+
+purge without the extension
+
+  $ hg st
+  $ touch foo
+  $ hg purge
+  permanently delete 1 unkown files? (yN) n
+  abort: removal cancelled
+  [250]
+  $ hg st
+  ? foo
+  $ hg purge --no-confirm
+  $ hg st
+
+now enabling the extension
+
+  $ cat <<EOF >> $HGRCPATH
+  > [extensions]
+  > purge =
+  > EOF
 
 delete an empty directory
 

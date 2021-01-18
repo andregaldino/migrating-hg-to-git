@@ -5447,6 +5447,108 @@ def pull(ui, repo, source=b"default", **opts):
 
 
 @command(
+    b'purge|clean',
+    [
+        (b'a', b'abort-on-err', None, _(b'abort if an error occurs')),
+        (b'', b'all', None, _(b'purge ignored files too')),
+        (b'i', b'ignored', None, _(b'purge only ignored files')),
+        (b'', b'dirs', None, _(b'purge empty directories')),
+        (b'', b'files', None, _(b'purge files')),
+        (b'p', b'print', None, _(b'print filenames instead of deleting them')),
+        (
+            b'0',
+            b'print0',
+            None,
+            _(
+                b'end filenames with NUL, for use with xargs'
+                b' (implies -p/--print)'
+            ),
+        ),
+        (b'', b'confirm', None, _(b'ask before permanently deleting files')),
+    ]
+    + cmdutil.walkopts,
+    _(b'hg purge [OPTION]... [DIR]...'),
+    helpcategory=command.CATEGORY_WORKING_DIRECTORY,
+)
+def purge(ui, repo, *dirs, **opts):
+    """removes files not tracked by Mercurial
+
+    Delete files not known to Mercurial. This is useful to test local
+    and uncommitted changes in an otherwise-clean source tree.
+
+    This means that purge will delete the following by default:
+
+    - Unknown files: files marked with "?" by :hg:`status`
+    - Empty directories: in fact Mercurial ignores directories unless
+      they contain files under source control management
+
+    But it will leave untouched:
+
+    - Modified and unmodified tracked files
+    - Ignored files (unless -i or --all is specified)
+    - New files added to the repository (with :hg:`add`)
+
+    The --files and --dirs options can be used to direct purge to delete
+    only files, only directories, or both. If neither option is given,
+    both will be deleted.
+
+    If directories are given on the command line, only files in these
+    directories are considered.
+
+    Be careful with purge, as you could irreversibly delete some files
+    you forgot to add to the repository. If you only want to print the
+    list of files that this program would delete, use the --print
+    option.
+    """
+    opts = pycompat.byteskwargs(opts)
+    cmdutil.check_at_most_one_arg(opts, b'all', b'ignored')
+
+    act = not opts.get(b'print')
+    eol = b'\n'
+    if opts.get(b'print0'):
+        eol = b'\0'
+        act = False  # --print0 implies --print
+    if opts.get(b'all', False):
+        ignored = True
+        unknown = True
+    else:
+        ignored = opts.get(b'ignored', False)
+        unknown = not ignored
+
+    removefiles = opts.get(b'files')
+    removedirs = opts.get(b'dirs')
+    confirm = opts.get(b'confirm')
+    if confirm is None:
+        try:
+            extensions.find(b'purge')
+            confirm = False
+        except KeyError:
+            confirm = True
+
+    if not removefiles and not removedirs:
+        removefiles = True
+        removedirs = True
+
+    match = scmutil.match(repo[None], dirs, opts)
+
+    paths = mergemod.purge(
+        repo,
+        match,
+        unknown=unknown,
+        ignored=ignored,
+        removeemptydirs=removedirs,
+        removefiles=removefiles,
+        abortonerror=opts.get(b'abort_on_err'),
+        noop=not act,
+        confirm=confirm,
+    )
+
+    for path in paths:
+        if not act:
+            ui.write(b'%s%s' % (path, eol))
+
+
+@command(
     b'push',
     [
         (b'f', b'force', None, _(b'force push')),
