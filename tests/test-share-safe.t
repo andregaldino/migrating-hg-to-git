@@ -486,12 +486,12 @@ Make sure existing shares still works
 Testing automatic downgrade of shares when config is set
 
   $ touch ../ss-share/.hg/wlock
-  $ hg log -GT "{node}: {desc}\n" -R ../ss-share --config experimental.sharesafe-auto-downgrade-shares=true
+  $ hg log -GT "{node}: {desc}\n" -R ../ss-share --config share.safe-mismatch.source-not-safe=downgrade-abort
   abort: failed to downgrade share, got error: Lock held
   [255]
   $ rm ../ss-share/.hg/wlock
 
-  $ hg log -GT "{node}: {desc}\n" -R ../ss-share --config experimental.sharesafe-auto-downgrade-shares=true
+  $ hg log -GT "{node}: {desc}\n" -R ../ss-share --config share.safe-mismatch.source-not-safe=downgrade-abort
   repository downgraded to not use share-safe mode
   @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
   |
@@ -533,26 +533,31 @@ Testing automatic upgrade of shares when config is set
   [255]
 
 Check that if lock is taken, upgrade fails but read operation are successful
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgra
+  abort: share-safe mismatch with source.
+  Unrecognized value 'upgra' of `share.safe-mismatch.source-safe` set.
+  (run `hg help config.share.safe-mismatch.source-safe`)
+  [255]
   $ touch ../nss-share/.hg/wlock
-  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-allow
   failed to upgrade share, got error: Lock held
   @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
   |
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
 
-  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true --config experimental.sharesafe-warn-outdated-shares=false
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-allow --config experimental.sharesafe-warn-outdated-shares=false
   @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
   |
   o  f3ba8b99bb6f897c87bbc1c07b75c6ddf43a4f77: added foo
   
 
-  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true --config experimental.sharesafe-auto-upgrade-fail-error=true
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-abort
   abort: failed to upgrade share, got error: Lock held
   [255]
 
   $ rm ../nss-share/.hg/wlock
-  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config experimental.sharesafe-auto-upgrade-shares=true
+  $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-abort
   repository upgraded to use share-safe mode
   @  f63db81e6dde1d9c78814167f77fb1fb49283f4f: added bar
   |
