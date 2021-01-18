@@ -364,12 +364,13 @@ def _processchangesetdata(repo, tr, objs):
     def onchangeset(cl, node):
         progress.increment()
 
-        revision = cl.changelogrevision(node)
+        rev = cl.rev(node)
+        revision = cl.changelogrevision(rev)
         added.append(node)
 
         # We need to preserve the mapping of changelog revision to node
         # so we can set the linkrev accordingly when manifests are added.
-        manifestnodes[cl.rev(node)] = revision.manifest
+        manifestnodes[rev] = revision.manifest
 
     nodesbyphase = {phase: set() for phase in phases.phasenames.values()}
     remotebookmarks = {}
