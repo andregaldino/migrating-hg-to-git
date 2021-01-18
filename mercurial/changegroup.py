@@ -323,7 +323,10 @@ class cg1unpacker(object):
                     cgnodes.append(node)
 
             def onchangelog(cl, node):
-                efilesset.update(cl.readfiles(node))
+                rev = cl.rev(node)
+                ctx = cl.changelogrevision(rev)
+                efilesset.update(ctx.files)
+                repo.register_changeset(rev, ctx)
 
             self.changelogheader()
             deltas = self.deltaiter()

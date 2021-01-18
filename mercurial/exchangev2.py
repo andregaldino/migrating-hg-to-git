@@ -372,6 +372,8 @@ def _processchangesetdata(repo, tr, objs):
         # so we can set the linkrev accordingly when manifests are added.
         manifestnodes[rev] = revision.manifest
 
+        repo.register_changeset(rev, revision)
+
     nodesbyphase = {phase: set() for phase in phases.phasenames.values()}
     remotebookmarks = {}
 

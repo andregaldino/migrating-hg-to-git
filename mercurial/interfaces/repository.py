@@ -1641,6 +1641,14 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def revbranchcache():
         pass
 
+    def register_changeset(rev, changelogrevision):
+        """Extension point for caches for new nodes.
+
+        Multiple consumers are expected to need parts of the changelogrevision,
+        so it is provided as optimization to avoid duplicate lookups. A simple
+        cache would be fragile when other revisions are accessed, too."""
+        pass
+
     def branchtip(branchtip, ignoremissing=False):
         """Return the tip node for a given branch."""
 
