@@ -3470,14 +3470,13 @@ class TestRunner(object):
                         raise
         else:
             # Windows doesn't have `python3.exe`, and MSYS cannot understand the
-            # reparse point with that name provided by Microsoft.  Copy the
-            # current interpreter to PATH with that name so the shebang lines
-            # work.
+            # reparse point with that name provided by Microsoft.  Create a
+            # simple script on PATH with that name that delegates to the py3
+            # launcher so the shebang lines work.
             if os.getenv('MSYSTEM'):
-                shutil.copy(
-                    sys.executable,
-                    _bytes2sys(self._tmpbindir + b'/python3.exe'),
-                )
+                with open(osenvironb[b'RUNTESTDIR'] + b'/python3', 'wb') as f:
+                    f.write(b'#!/bin/sh\n')
+                    f.write(b'py -3 "$@"\n')
 
             exedir, exename = os.path.split(sysexecutable)
             vlog(

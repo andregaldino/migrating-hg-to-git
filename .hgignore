@@ -26,6 +26,7 @@ tests/.hypothesis
 tests/hypothesis-generated
 tests/annotated
 tests/exceptions
+tests/python3
 tests/*.err
 tests/htmlcov
 build
