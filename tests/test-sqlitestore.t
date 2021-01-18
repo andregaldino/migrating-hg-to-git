@@ -1,4 +1,9 @@
-#require sqlite
+#require sqlite no-chg
+
+The sqlitestore backend leaves transactions around when used with chg.
+Since this backend is primarily intended as proof-of-concept for
+alternative storage backends, disable it for chg test runs to avoid
+the instability.
 
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
