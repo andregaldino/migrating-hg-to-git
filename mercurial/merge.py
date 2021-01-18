@@ -2386,9 +2386,19 @@ def purge(
             elif nb_ignored:
                 msg = _(b"permanently delete %d ignored files?")
                 msg %= nb_ignored
-            else:
-                # XXX we might be missing directory there
-                return res
+            elif removeemptydirs:
+                dir_count = 0
+                for f in directories:
+                    if matcher(f) and not repo.wvfs.listdir(f):
+                        dir_count += 1
+                if dir_count:
+                    msg = _(
+                        b"permanently delete at least %d empty directories?"
+                    )
+                    msg %= dir_count
+                else:
+                    # XXX we might be missing directory there
+                    return res
             msg += b" (yN)$$ &Yes $$ &No"
             if repo.ui.promptchoice(msg, default=1) == 1:
                 raise error.CanceledError(_(b'removal cancelled'))

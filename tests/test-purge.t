@@ -23,6 +23,10 @@ delete an empty directory
   $ mkdir empty_dir
   $ hg purge -p -v
   empty_dir
+  $ hg purge --confirm
+  permanently delete at least 1 empty directories? (yN) n
+  abort: removal cancelled
+  [250]
   $ hg purge -v
   removing directory empty_dir
   $ ls -A
