@@ -245,6 +245,7 @@ def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
     """Upgrades a share to use share-safe mechanism"""
     wlock = None
     store_requirements = localrepo._readrequires(storevfs, False)
+    original_crequirements = current_requirements.copy()
     # after upgrade, store requires will be shared, so lets find
     # the requirements which are not present in store and
     # write them to share's .hg/requires
@@ -254,6 +255,19 @@ def upgrade_share_to_safe(ui, hgvfs, storevfs, current_requirements):
     current_requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
     try:
         wlock = lockmod.trylock(ui, hgvfs, b'wlock', 0, 0)
+        # some process might change the requirement in between, re-read
+        # and update current_requirements
+        locked_requirements = localrepo._readrequires(hgvfs, True)
+        if locked_requirements != original_crequirements:
+            removed = current_requirements - locked_requirements
+            # update current_requirements in place because it's passed
+            # as reference
+            current_requirements -= removed
+            current_requirements |= locked_requirements
+            diffrequires = current_requirements - store_requirements
+            # add share-safe requirement as it will mark the share as share-safe
+            diffrequires.add(requirementsmod.SHARESAFE_REQUIREMENT)
+            current_requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
         scmutil.writerequires(hgvfs, diffrequires)
         ui.warn(_(b'repository upgraded to use share-safe mode\n'))
     except error.LockError as e:
@@ -281,6 +295,7 @@ def downgrade_share_to_non_safe(
     """Downgrades a share which use share-safe to not use it"""
     wlock = None
     source_requirements = localrepo._readrequires(sharedvfs, True)
+    original_crequirements = current_requirements.copy()
     # we cannot be 100% sure on which requirements were present in store when
     # the source supported share-safe. However, we do know that working
     # directory requirements were not there. Hence we remove them
@@ -290,6 +305,17 @@ def downgrade_share_to_non_safe(
 
     try:
         wlock = lockmod.trylock(ui, hgvfs, b'wlock', 0, 0)
+        # some process might change the requirement in between, re-read
+        # and update current_requirements
+        locked_requirements = localrepo._readrequires(hgvfs, True)
+        if locked_requirements != original_crequirements:
+            removed = current_requirements - locked_requirements
+            # update current_requirements in place because it's passed
+            # as reference
+            current_requirements -= removed
+            current_requirements |= locked_requirements
+            current_requirements |= source_requirements
+            current_requirements -= set(requirementsmod.SHARESAFE_REQUIREMENT)
         scmutil.writerequires(hgvfs, current_requirements)
         ui.warn(_(b'repository downgraded to not use share-safe mode\n'))
     except error.LockError as e:
