@@ -344,6 +344,24 @@ Try with --all from the hint
   $ hg resolve -l
   R file1
   R file2
+Test with :mergediff conflict markers
+  $ hg resolve --unmark
+  $ hg resolve --re-merge -t :mergediff file2
+  merging file2
+  warning: conflicts while merging file2! (edit, then use 'hg resolve --mark')
+  [1]
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config commands.resolve.mark-check=abort resolve -m
+  warning: the following files still have conflict markers:
+    file2
+  abort: conflict markers detected
+  (use --all to mark anyway)
+  [20]
+  $ hg resolve -l
+  U file1
+  U file2
 Test option value 'warn'
   $ hg resolve --unmark
   $ hg resolve -l

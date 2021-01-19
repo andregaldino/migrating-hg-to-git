@@ -1195,7 +1195,11 @@ def _onfilemergefailure(ui):
 
 def hasconflictmarkers(data):
     return bool(
-        re.search(b"^(<<<<<<< .*|=======|>>>>>>> .*)$", data, re.MULTILINE)
+        re.search(
+            br"^(<<<<<<<.*|=======.*|------- .*|\+\+\+\+\+\+\+ .*|>>>>>>>.*)$",
+            data,
+            re.MULTILINE,
+        )
     )
 
 
