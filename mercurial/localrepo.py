@@ -568,6 +568,7 @@ def makelocalrepository(baseui, path, intents=None):
     # repository was shared the old way. We check the share source .hg/requires
     # for SHARESAFE_REQUIREMENT to detect whether the current repository needs
     # to be reshared
+    hint = _("see `hg help config.format.use-share-safe` for more information")
     if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
 
         if (
@@ -601,12 +602,10 @@ def makelocalrepository(baseui, path, intents=None):
                 raise error.Abort(
                     _(
                         b"share source does not support exp-sharesafe requirement"
-                    )
+                    ),
+                    hint=hint,
                 )
             else:
-                hint = _(
-                    "run `hg help config.share.safe-mismatch.source-not-safe`"
-                )
                 raise error.Abort(
                     _(
                         b"share-safe mismatch with source.\nUnrecognized"
@@ -646,10 +645,10 @@ def makelocalrepository(baseui, path, intents=None):
                     _(
                         b'version mismatch: source uses share-safe'
                         b' functionality while the current share does not'
-                    )
+                    ),
+                    hint=hint,
                 )
             else:
-                hint = _("run `hg help config.share.safe-mismatch.source-safe`")
                 raise error.Abort(
                     _(
                         b"share-safe mismatch with source.\nUnrecognized"

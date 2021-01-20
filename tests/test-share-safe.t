@@ -396,6 +396,7 @@ Make sure existing shares dont work with default config
 
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share
   abort: version mismatch: source uses share-safe functionality while the current share does not
+  (see `hg help config.format.use-share-safe` for more information)
   [255]
 
 
@@ -481,6 +482,7 @@ Make sure existing shares still works
 
   $ hg log -GT "{node}: {desc}\n" -R ../ss-share
   abort: share source does not support exp-sharesafe requirement
+  (see `hg help config.format.use-share-safe` for more information)
   [255]
 
 Testing automatic downgrade of shares when config is set
@@ -488,6 +490,7 @@ Testing automatic downgrade of shares when config is set
   $ touch ../ss-share/.hg/wlock
   $ hg log -GT "{node}: {desc}\n" -R ../ss-share --config share.safe-mismatch.source-not-safe=downgrade-abort
   abort: failed to downgrade share, got error: Lock held
+  (see `hg help config.format.use-share-safe` for more information)
   [255]
   $ rm ../ss-share/.hg/wlock
 
@@ -530,13 +533,14 @@ Testing automatic upgrade of shares when config is set
   store
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share
   abort: version mismatch: source uses share-safe functionality while the current share does not
+  (see `hg help config.format.use-share-safe` for more information)
   [255]
 
 Check that if lock is taken, upgrade fails but read operation are successful
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgra
   abort: share-safe mismatch with source.
   Unrecognized value 'upgra' of `share.safe-mismatch.source-safe` set.
-  (run `hg help config.share.safe-mismatch.source-safe`)
+  (see `hg help config.format.use-share-safe` for more information)
   [255]
   $ touch ../nss-share/.hg/wlock
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-allow
@@ -554,6 +558,7 @@ Check that if lock is taken, upgrade fails but read operation are successful
 
   $ hg log -GT "{node}: {desc}\n" -R ../nss-share --config share.safe-mismatch.source-safe=upgrade-abort
   abort: failed to upgrade share, got error: Lock held
+  (see `hg help config.format.use-share-safe` for more information)
   [255]
 
   $ rm ../nss-share/.hg/wlock
