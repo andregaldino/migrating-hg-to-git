@@ -638,7 +638,7 @@ static char parsers_doc[] = "Efficient content parsing.";
 PyObject *encodedir(PyObject *self, PyObject *args);
 PyObject *pathencode(PyObject *self, PyObject *args);
 PyObject *lowerencode(PyObject *self, PyObject *args);
-PyObject *parse_index2(PyObject *self, PyObject *args);
+PyObject *parse_index2(PyObject *self, PyObject *args, PyObject *kwargs);
 
 static PyMethodDef methods[] = {
     {"pack_dirstate", pack_dirstate, METH_VARARGS, "pack a dirstate\n"},
@@ -646,7 +646,8 @@ static PyMethodDef methods[] = {
      "create a set containing non-normal and other parent entries of given "
      "dirstate\n"},
     {"parse_dirstate", parse_dirstate, METH_VARARGS, "parse a dirstate\n"},
-    {"parse_index2", parse_index2, METH_VARARGS, "parse a revlog index\n"},
+    {"parse_index2", (PyCFunction)parse_index2, METH_VARARGS | METH_KEYWORDS,
+     "parse a revlog index\n"},
     {"isasciistr", isasciistr, METH_VARARGS, "check if an ASCII string\n"},
     {"asciilower", asciilower, METH_VARARGS, "lowercase an ASCII string\n"},
     {"asciiupper", asciiupper, METH_VARARGS, "uppercase an ASCII string\n"},
