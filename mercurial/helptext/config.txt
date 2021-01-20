@@ -913,8 +913,27 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     Disabled by default.
 
 ``use-share-safe``
-    Enable or disable the "share-safe" functionality, which enables shares
-    to read requirements and configuration of its source repository.
+    Enforce "safe" behaviors for all "shares" that access this repository.
+
+    With this feature, "shares" using this repository as a source will:
+
+    * read the source repository's configuration (`<source>/.hg/hgrc`).
+    * read and use the source repository's "requirements"
+      (except the working copy specific one).
+
+    Without this feature, "shares" using this repository as a source will:
+
+    * keep tracking the repository "requirements" in the share only, ignoring
+      the source "requirements", possibly diverging from them.
+    * ignore source repository config. This can create problems, like silently
+      ignoring important hooks.
+
+    Beware that existing shares will not be upgraded/downgraded, and by
+    default, Mercurial will refuse to interact with them until the mismatch
+    is resolved. See :hg:`help config share.safe-mismatch.source-safe` and
+    :hg:`help config share.safe-mismatch.source-not-safe` for details.
+
+    Introduced in Mercurial 5.7.
 
     Disabled by default.
 
