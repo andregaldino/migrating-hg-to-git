@@ -423,6 +423,7 @@ def _processchangesetdata(repo, tr, objs):
         iterrevisions(),
         linkrev,
         weakref.proxy(tr),
+        alwayscache=True,
         addrevisioncb=onchangeset,
         duplicaterevisioncb=ondupchangeset,
     )

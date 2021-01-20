@@ -1836,6 +1836,7 @@ class manifestrevlog(object):
         deltas,
         linkmapper,
         transaction,
+        alwayscache=False,
         addrevisioncb=None,
         duplicaterevisioncb=None,
     ):
@@ -1843,6 +1844,7 @@ class manifestrevlog(object):
             deltas,
             linkmapper,
             transaction,
+            alwayscache=alwayscache,
             addrevisioncb=addrevisioncb,
             duplicaterevisioncb=duplicaterevisioncb,
         )

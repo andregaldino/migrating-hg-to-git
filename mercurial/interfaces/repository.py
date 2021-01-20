@@ -769,7 +769,13 @@ class ifilemutation(interfaceutil.Interface):
         ``nullid``, in which case the header from the delta can be ignored
         and the delta used as the fulltext.
 
+        ``alwayscache`` instructs the lower layers to cache the content of the
+        newly added revision, even if it needs to be explicitly computed.
+        This used to be the default when ``addrevisioncb`` was provided up to
+        Mercurial 5.8.
+
         ``addrevisioncb`` should be called for each node as it is committed.
+        ``duplicaterevisioncb`` should be called for each pre-existing node.
 
         ``maybemissingparents`` is a bool indicating whether the incoming
         data may reference parents/ancestor revisions that aren't present.

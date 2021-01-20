@@ -334,6 +334,7 @@ class cg1unpacker(object):
                 deltas,
                 csmap,
                 trp,
+                alwayscache=True,
                 addrevisioncb=onchangelog,
                 duplicaterevisioncb=ondupchangelog,
             ):

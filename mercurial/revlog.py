@@ -2375,6 +2375,7 @@ class revlog(object):
         deltas,
         linkmapper,
         transaction,
+        alwayscache=False,
         addrevisioncb=None,
         duplicaterevisioncb=None,
     ):
@@ -2475,7 +2476,7 @@ class revlog(object):
                     (baserev, delta),
                     ifh,
                     dfh,
-                    alwayscache=bool(addrevisioncb),
+                    alwayscache=alwayscache,
                     deltacomputer=deltacomputer,
                 )
 

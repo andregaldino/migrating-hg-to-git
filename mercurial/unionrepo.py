@@ -128,6 +128,7 @@ class unionrevlog(revlog.revlog):
         deltas,
         linkmapper,
         transaction,
+        alwayscache=False,
         addrevisioncb=None,
         duplicaterevisioncb=None,
         maybemissingparents=False,
