@@ -42,6 +42,7 @@ Check that copies are recorded correctly
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:         yes    yes      no
+  revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -56,6 +57,7 @@ Check that copies are recorded correctly
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -427,6 +429,7 @@ downgrading (keeping some sidedata)
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:         yes    yes      no
+  revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -453,6 +456,7 @@ downgrading (keeping some sidedata)
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -481,6 +485,7 @@ upgrading
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:         yes    yes      no
+  revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default

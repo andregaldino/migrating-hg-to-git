@@ -59,6 +59,7 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   sidedata:            no
   persistent-nodemap: yes
   copies-sdc:          no
+  revlog-v2:           no
   plain-cl-delta:     yes
   compression:        zlib
   compression-level:  default
@@ -578,6 +579,7 @@ downgrading
   sidedata:            no     no      no
   persistent-nodemap: yes     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -623,6 +625,7 @@ upgrading
   sidedata:            no     no      no
   persistent-nodemap:  no    yes      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default

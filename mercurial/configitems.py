@@ -1299,6 +1299,12 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format',
+    b'exp-revlogv2.2',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
+    b'format',
     b'exp-use-copies-side-data-changeset',
     default=False,
     experimental=True,

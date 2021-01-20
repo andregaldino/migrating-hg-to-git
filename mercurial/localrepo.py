@@ -3447,9 +3447,13 @@ def newreporequirements(ui, createopts):
 
     # experimental config: format.exp-use-side-data
     if ui.configbool(b'format', b'exp-use-side-data'):
+        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
+        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
         requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
+        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
+        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
         requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
         requirements.add(requirementsmod.COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
@@ -3457,7 +3461,7 @@ def newreporequirements(ui, createopts):
 
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
-        requirements.remove(requirementsmod.REVLOGV1_REQUIREMENT)
+        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
         # generaldelta is implied by revlogv2.
         requirements.discard(requirementsmod.GENERALDELTA_REQUIREMENT)
         requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)

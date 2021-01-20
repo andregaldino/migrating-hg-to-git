@@ -59,6 +59,7 @@ Check that we can upgrade to sidedata
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -72,6 +73,7 @@ Check that we can upgrade to sidedata
   sidedata:            no    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -91,6 +93,7 @@ Check that we can downgrade from sidedata
   sidedata:           yes     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -104,6 +107,7 @@ Check that we can downgrade from sidedata
   sidedata:           yes     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default

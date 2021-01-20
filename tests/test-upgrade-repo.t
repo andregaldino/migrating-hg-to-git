@@ -21,7 +21,7 @@ store and revlogv1 are required in source
   > EOF
 
   $ hg -R no-revlogv1 debugupgraderepo
-  abort: cannot upgrade repository; requirement missing: revlogv1
+  abort: cannot upgrade repository; missing a revlog version
   [255]
 
 Cannot upgrade shared repositories
@@ -61,6 +61,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   sidedata:            no
   persistent-nodemap:  no
   copies-sdc:          no
+  revlog-v2:           no
   plain-cl-delta:     yes
   compression:        zlib
   compression-level:  default
@@ -74,6 +75,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -87,6 +89,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -100,6 +103,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   [formatvariant.name.uptodate|compression-level: ][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
@@ -151,6 +155,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "config": false,
     "default": false,
     "name": "copies-sdc",
+    "repo": false
+   },
+   {
+    "config": false,
+    "default": false,
+    "name": "revlog-v2",
     "repo": false
    },
    {
@@ -306,6 +316,7 @@ Various sub-optimal detections work
   sidedata:            no
   persistent-nodemap:  no
   copies-sdc:          no
+  revlog-v2:           no
   plain-cl-delta:     yes
   compression:        zlib
   compression-level:  default
@@ -319,6 +330,7 @@ Various sub-optimal detections work
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -332,6 +344,7 @@ Various sub-optimal detections work
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -345,6 +358,7 @@ Various sub-optimal detections work
   [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   [formatvariant.name.uptodate|compression-level: ][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
@@ -1288,6 +1302,7 @@ upgrade
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zstd   zlib    zlib
   compression-level:  default default default
@@ -1324,6 +1339,7 @@ downgrade
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
@@ -1363,6 +1379,7 @@ upgrade from hgrc
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zstd   zstd    zlib
   compression-level:  default default default
@@ -1386,10 +1403,11 @@ upgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
-     added: exp-sidedata-flag (zstd !)
-     added: exp-sidedata-flag, sparserevlog (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd !)
+     removed: revlogv1
+     added: exp-revlogv2.2, exp-sidedata-flag (zstd !)
+     added: exp-revlogv2.2, exp-sidedata-flag, sparserevlog (no-zstd !)
   
   processed revlogs:
     - all-filelogs
@@ -1406,17 +1424,18 @@ upgrade
   sidedata:           yes     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zlib (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode
+  exp-revlogv2.2
   exp-sidedata-flag
   fncache
   generaldelta
   revlog-compression-zstd (zstd !)
-  revlogv1
   sparserevlog
   store
   $ hg debugsidedata -c 0
@@ -1430,9 +1449,10 @@ downgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
-     removed: exp-sidedata-flag
+     preserved: dotencode, fncache, generaldelta, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd !)
+     removed: exp-revlogv2.2, exp-sidedata-flag
+     added: revlogv1
   
   processed revlogs:
     - all-filelogs
@@ -1449,6 +1469,7 @@ downgrade
   sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zlib (zstd !)
@@ -1473,9 +1494,10 @@ upgrade from hgrc
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
-     added: exp-sidedata-flag
+     preserved: dotencode, fncache, generaldelta, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd !)
+     removed: revlogv1
+     added: exp-revlogv2.2, exp-sidedata-flag
   
   processed revlogs:
     - all-filelogs
@@ -1492,17 +1514,18 @@ upgrade from hgrc
   sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
+  revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zlib (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode
+  exp-revlogv2.2
   exp-sidedata-flag
   fncache
   generaldelta
   revlog-compression-zstd (zstd !)
-  revlogv1
   sparserevlog
   store
   $ hg debugsidedata -c 0

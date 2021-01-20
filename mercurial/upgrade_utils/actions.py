@@ -328,7 +328,7 @@ class sparserevlog(requirementformatvariant):
 class sidedata(requirementformatvariant):
     name = b'sidedata'
 
-    _requirement = requirements.SIDEDATA_REQUIREMENT
+    _requirement = requirements.REVLOGV2_REQUIREMENT
 
     default = False
 
@@ -338,6 +338,11 @@ class sidedata(requirementformatvariant):
     )
 
     upgrademessage = _(b'Allows storage of extra data alongside a revision.')
+
+    @classmethod
+    def fromrepo(cls, repo):
+        assert cls._requirement is not None
+        return cls._requirement in repo.requirements
 
 
 @registerformatvariant
@@ -368,6 +373,15 @@ class copiessdc(requirementformatvariant):
     upgrademessage = _(
         b'Allows to use more efficient algorithm to deal with ' b'copy tracing.'
     )
+
+
+@registerformatvariant
+class revlogv2(requirementformatvariant):
+    name = b'revlog-v2'
+    _requirement = requirements.REVLOGV2_REQUIREMENT
+    default = False
+    description = _(b'Version 2 of the revlog.')
+    upgrademessage = _(b'very experimental')
 
 
 @registerformatvariant
@@ -857,8 +871,6 @@ def requiredsourcerequirements(repo):
     """
     return {
         # Introduced in Mercurial 0.9.2.
-        requirements.REVLOGV1_REQUIREMENT,
-        # Introduced in Mercurial 0.9.2.
         requirements.STORE_REQUIREMENT,
     }
 
@@ -881,9 +893,21 @@ def blocksourcerequirements(repo):
     }
 
 
+def check_revlog_version(reqs):
+    """Check that the requirements contain at least one Revlog version"""
+    all_revlogs = {
+        requirements.REVLOGV1_REQUIREMENT,
+        requirements.REVLOGV2_REQUIREMENT,
+    }
+    if not all_revlogs.intersection(reqs):
+        msg = _(b'cannot upgrade repository; missing a revlog version')
+        raise error.Abort(msg)
+
+
 def check_source_requirements(repo):
     """Ensure that no existing requirements prevent the repository upgrade"""
 
+    check_revlog_version(repo.requirements)
     required = requiredsourcerequirements(repo)
     missingreqs = required - repo.requirements
     if missingreqs:
@@ -915,6 +939,8 @@ def supportremovedrequirements(repo):
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
+        requirements.REVLOGV2_REQUIREMENT,
+        requirements.REVLOGV1_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -937,13 +963,14 @@ def supporteddestrequirements(repo):
         requirements.DOTENCODE_REQUIREMENT,
         requirements.FNCACHE_REQUIREMENT,
         requirements.GENERALDELTA_REQUIREMENT,
-        requirements.REVLOGV1_REQUIREMENT,
+        requirements.REVLOGV1_REQUIREMENT,  # allowed in case of downgrade
         requirements.STORE_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
         requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
+        requirements.REVLOGV2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -973,6 +1000,8 @@ def allowednewrequirements(repo):
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
+        requirements.REVLOGV1_REQUIREMENT,
+        requirements.REVLOGV2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -985,7 +1014,7 @@ def allowednewrequirements(repo):
 
 def check_requirements_changes(repo, new_reqs):
     old_reqs = repo.requirements
-
+    check_revlog_version(repo.requirements)
     support_removal = supportremovedrequirements(repo)
     no_remove_reqs = old_reqs - new_reqs - support_removal
     if no_remove_reqs:
