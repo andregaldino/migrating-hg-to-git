@@ -609,6 +609,12 @@ class hgbuildext(build_ext):
         # and its build is not explictely disabled (for external build
         # as Linux distributions would do)
         if self.distribution.rust and self.rust:
+            if not sys.platform.startswith('linux'):
+                self.warn(
+                    "rust extensions have only been tested on Linux "
+                    "and may not behave correctly on other platforms"
+                )
+
             for rustext in ruststandalones:
                 rustext.build('' if self.inplace else self.build_lib)
 
