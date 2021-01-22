@@ -1581,10 +1581,19 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
     def layout(mode):
         maxy, maxx = stdscr.getmaxyx()
         helplen = len(helplines(mode))
+        mainlen = maxy - helplen - 12
+        if mainlen < 1:
+            raise error.Abort(
+                _(b"terminal dimensions %d by %d too small for curses histedit")
+                % (maxy, maxx),
+                hint=_(
+                    b"enlarge your terminal or use --config ui.interface=text"
+                ),
+            )
         return {
             b'commit': (12, maxx),
             b'help': (helplen, maxx),
-            b'main': (maxy - helplen - 12, maxx),
+            b'main': (mainlen, maxx),
         }
 
     def drawvertwin(size, y, x):
