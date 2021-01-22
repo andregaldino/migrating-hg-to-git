@@ -600,9 +600,7 @@ def makelocalrepository(baseui, path, intents=None):
                 )
             elif mismatch_config == b'abort':
                 raise error.Abort(
-                    _(
-                        b"share source does not support exp-sharesafe requirement"
-                    ),
+                    _(b"share source does not support share-safe requirement"),
                     hint=hint,
                 )
             else:

@@ -481,7 +481,7 @@ Make sure existing shares still works
   
 
   $ hg log -GT "{node}: {desc}\n" -R ../ss-share
-  abort: share source does not support exp-sharesafe requirement
+  abort: share source does not support share-safe requirement
   (see `hg help config.format.use-share-safe` for more information)
   [255]
 
