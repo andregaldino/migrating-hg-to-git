@@ -1615,7 +1615,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
     stdscr.refresh()
     while True:
         try:
-            oldmode, _ = state[b'mode']
+            oldmode, unused = state[b'mode']
             if oldmode == MODE_INIT:
                 changemode(state, MODE_RULES)
             e = event(state, ch)
@@ -1630,7 +1630,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                     if size != stdscr.getmaxyx():
                         curses.resizeterm(*size)
 
-                curmode, _ = state[b'mode']
+                curmode, unused = state[b'mode']
                 sizes = layout(curmode)
                 if curmode != oldmode:
                     state[b'page_height'] = sizes[b'main'][0]
