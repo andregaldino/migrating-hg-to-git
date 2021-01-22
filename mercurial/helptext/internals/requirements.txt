@@ -131,7 +131,7 @@ be present on repositories that have opted in to a sparse working
 directory.
 
 bookmarksinstore
-==================
+================
 
 Bookmarks are stored in ``.hg/store/`` instead of directly in ``.hg/``
 where they used to be stored. The active bookmark is still stored
