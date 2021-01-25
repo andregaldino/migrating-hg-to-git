@@ -11,6 +11,7 @@
 use bytes_cast::BytesCast;
 use hex::{self, FromHex, FromHexError};
 use std::convert::TryFrom;
+use std::fmt;
 
 /// The length in bytes of a `Node`
 ///
@@ -80,6 +81,15 @@ impl<'a> TryFrom<&'a [u8]> for &'a Node {
     }
 }
 
+impl fmt::LowerHex for Node {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for &byte in &self.data {
+            write!(f, "{:02x}", byte)?
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum NodeError {
     ExactLengthRequired(usize, String),
@@ -122,14 +132,6 @@ impl Node {
         Ok(NodeData::from_hex(hex.as_ref())
             .map_err(|e| NodeError::from((e, hex)))?
             .into())
-    }
-
-    /// Convert to hexadecimal string representation
-    ///
-    /// To be used in FFI and I/O only, in order to facilitate future
-    /// changes of hash format.
-    pub fn encode_hex(&self) -> String {
-        hex::encode(self.data)
     }
 
     /// Provide access to binary data
@@ -349,7 +351,7 @@ mod tests {
 
     #[test]
     fn test_node_encode_hex() {
-        assert_eq!(sample_node().encode_hex(), sample_node_hex());
+        assert_eq!(format!("{:x}", sample_node()), sample_node_hex());
     }
 
     #[test]
@@ -391,7 +393,7 @@ mod tests {
                 "testgr".to_string()
             ))
         );
-        let mut long = NULL_NODE.encode_hex();
+        let mut long = format!("{:x}", NULL_NODE);
         long.push('c');
         match NodePrefix::from_hex(&long)
             .expect_err("should be refused as too long")

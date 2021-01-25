@@ -66,7 +66,7 @@ fn bench(index: &Index, nm: &NodeTree, queries: usize) {
         .collect();
     if queries < 10 {
         let nodes_hex: Vec<String> =
-            nodes.iter().map(|n| n.encode_hex()).collect();
+            nodes.iter().map(|n| format!("{:x}", n)).collect();
         println!("Nodes: {:?}", nodes_hex);
     }
     let mut last: Option<Revision> = None;
@@ -76,11 +76,11 @@ fn bench(index: &Index, nm: &NodeTree, queries: usize) {
     }
     let elapsed = start.elapsed();
     println!(
-        "Did {} queries in {:?} (mean {:?}), last was {:?} with result {:?}",
+        "Did {} queries in {:?} (mean {:?}), last was {:x} with result {:?}",
         queries,
         elapsed,
         elapsed / (queries as u32),
-        nodes.last().unwrap().encode_hex(),
+        nodes.last().unwrap(),
         last
     );
 }
