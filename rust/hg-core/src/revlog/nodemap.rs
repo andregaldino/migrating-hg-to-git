@@ -13,7 +13,7 @@
 //! is used in a more abstract context.
 
 use super::{
-    node::NULL_NODE, Node, NodeError, NodePrefix, NodePrefixRef, Revision,
+    node::NULL_NODE, FromHexError, Node, NodePrefix, NodePrefixRef, Revision,
     RevlogIndex, NULL_REVISION,
 };
 
@@ -27,14 +27,14 @@ use std::ops::Index;
 #[derive(Debug, PartialEq)]
 pub enum NodeMapError {
     MultipleResults,
-    InvalidNodePrefix(NodeError),
+    InvalidNodePrefix,
     /// A `Revision` stored in the nodemap could not be found in the index
     RevisionNotInIndex(Revision),
 }
 
-impl From<NodeError> for NodeMapError {
-    fn from(err: NodeError) -> Self {
-        NodeMapError::InvalidNodePrefix(err)
+impl From<FromHexError> for NodeMapError {
+    fn from(_: FromHexError) -> Self {
+        NodeMapError::InvalidNodePrefix
     }
 }
 

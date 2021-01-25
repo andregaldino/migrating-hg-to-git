@@ -9,7 +9,7 @@
 //! of a revision.
 
 use bytes_cast::BytesCast;
-use hex::{self, FromHex, FromHexError};
+use hex::{self, FromHex};
 use std::convert::TryFrom;
 use std::fmt;
 
@@ -47,10 +47,9 @@ type NodeData = [u8; NODE_BYTES_LENGTH];
 /// if they need a loop boundary.
 ///
 /// All methods that create a `Node` either take a type that enforces
-/// the size or fail immediately at runtime with [`ExactLengthRequired`].
+/// the size or return an error at runtime.
 ///
 /// [`nybbles_len`]: #method.nybbles_len
-/// [`ExactLengthRequired`]: struct.NodeError#variant.ExactLengthRequired
 #[derive(Clone, Debug, PartialEq, BytesCast)]
 #[repr(transparent)]
 pub struct Node {
@@ -90,12 +89,8 @@ impl fmt::LowerHex for Node {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum NodeError {
-    ExactLengthRequired(usize, String),
-    PrefixTooLong(String),
-    HexError(FromHexError, String),
-}
+#[derive(Debug)]
+pub struct FromHexError;
 
 /// Low level utility function, also for prefixes
 fn get_nybble(s: &[u8], i: usize) -> u8 {
@@ -128,9 +123,9 @@ impl Node {
     ///
     /// To be used in FFI and I/O only, in order to facilitate future
     /// changes of hash format.
-    pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Node, NodeError> {
+    pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Node, FromHexError> {
         Ok(NodeData::from_hex(hex.as_ref())
-            .map_err(|e| NodeError::from((e, hex)))?
+            .map_err(|_| FromHexError)?
             .into())
     }
 
@@ -140,19 +135,6 @@ impl Node {
     /// binary values to Python.
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
-    }
-}
-
-impl<T: AsRef<[u8]>> From<(FromHexError, T)> for NodeError {
-    fn from(err_offender: (FromHexError, T)) -> Self {
-        let (err, offender) = err_offender;
-        let offender = String::from_utf8_lossy(offender.as_ref()).into_owned();
-        match err {
-            FromHexError::InvalidStringLength => {
-                NodeError::ExactLengthRequired(NODE_NYBBLES_LENGTH, offender)
-            }
-            _ => NodeError::HexError(err, offender),
-        }
     }
 }
 
@@ -175,31 +157,22 @@ impl NodePrefix {
     ///
     /// To be used in FFI and I/O only, in order to facilitate future
     /// changes of hash format.
-    pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Self, NodeError> {
+    pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Self, FromHexError> {
         let hex = hex.as_ref();
         let len = hex.len();
         if len > NODE_NYBBLES_LENGTH {
-            return Err(NodeError::PrefixTooLong(
-                String::from_utf8_lossy(hex).to_owned().to_string(),
-            ));
+            return Err(FromHexError);
         }
 
         let is_odd = len % 2 == 1;
         let even_part = if is_odd { &hex[..len - 1] } else { hex };
         let mut buf: Vec<u8> =
-            Vec::from_hex(&even_part).map_err(|e| (e, hex))?;
+            Vec::from_hex(&even_part).map_err(|_| FromHexError)?;
 
         if is_odd {
             let latest_char = char::from(hex[len - 1]);
-            let latest_nybble = latest_char.to_digit(16).ok_or_else(|| {
-                (
-                    FromHexError::InvalidHexCharacter {
-                        c: latest_char,
-                        index: len - 1,
-                    },
-                    hex,
-                )
-            })? as u8;
+            let latest_nybble =
+                latest_char.to_digit(16).ok_or_else(|| FromHexError)? as u8;
             buf.push(latest_nybble << 4);
         }
         Ok(NodePrefix { buf, is_odd })
@@ -329,24 +302,15 @@ mod tests {
 
     #[test]
     fn test_node_from_hex() {
-        assert_eq!(Node::from_hex(&sample_node_hex()), Ok(sample_node()));
+        assert_eq!(Node::from_hex(&sample_node_hex()).unwrap(), sample_node());
 
         let mut short = hex_pad_right("0123");
         short.pop();
         short.pop();
-        assert_eq!(
-            Node::from_hex(&short),
-            Err(NodeError::ExactLengthRequired(NODE_NYBBLES_LENGTH, short)),
-        );
+        assert!(Node::from_hex(&short).is_err());
 
         let not_hex = hex_pad_right("012... oops");
-        assert_eq!(
-            Node::from_hex(&not_hex),
-            Err(NodeError::HexError(
-                FromHexError::InvalidHexCharacter { c: '.', index: 3 },
-                not_hex,
-            )),
-        );
+        assert!(Node::from_hex(&not_hex).is_err(),);
     }
 
     #[test]
@@ -355,7 +319,7 @@ mod tests {
     }
 
     #[test]
-    fn test_prefix_from_hex() -> Result<(), NodeError> {
+    fn test_prefix_from_hex() -> Result<(), FromHexError> {
         assert_eq!(
             NodePrefix::from_hex("0e1")?,
             NodePrefix {
@@ -386,25 +350,14 @@ mod tests {
 
     #[test]
     fn test_prefix_from_hex_errors() {
-        assert_eq!(
-            NodePrefix::from_hex("testgr"),
-            Err(NodeError::HexError(
-                FromHexError::InvalidHexCharacter { c: 't', index: 0 },
-                "testgr".to_string()
-            ))
-        );
+        assert!(NodePrefix::from_hex("testgr").is_err());
         let mut long = format!("{:x}", NULL_NODE);
         long.push('c');
-        match NodePrefix::from_hex(&long)
-            .expect_err("should be refused as too long")
-        {
-            NodeError::PrefixTooLong(s) => assert_eq!(s, long),
-            err => panic!(format!("Should have been TooLong, got {:?}", err)),
-        }
+        assert!(NodePrefix::from_hex(&long).is_err())
     }
 
     #[test]
-    fn test_is_prefix_of() -> Result<(), NodeError> {
+    fn test_is_prefix_of() -> Result<(), FromHexError> {
         let mut node_data = [0; NODE_BYTES_LENGTH];
         node_data[0] = 0x12;
         node_data[1] = 0xca;
@@ -417,7 +370,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_nybble() -> Result<(), NodeError> {
+    fn test_get_nybble() -> Result<(), FromHexError> {
         let prefix = NodePrefix::from_hex("dead6789cafe")?;
         assert_eq!(prefix.borrow().get_nybble(0), 13);
         assert_eq!(prefix.borrow().get_nybble(7), 9);

@@ -18,7 +18,7 @@ use cpython::{
 use hg::{
     nodemap::{Block, NodeMapError, NodeTree},
     revlog::{nodemap::NodeMap, RevlogIndex},
-    NodeError, Revision,
+    Revision,
 };
 use std::cell::RefCell;
 
@@ -468,15 +468,10 @@ fn nodemap_error(py: Python, err: NodeMapError) -> PyErr {
     match err {
         NodeMapError::MultipleResults => revlog_error(py),
         NodeMapError::RevisionNotInIndex(r) => rev_not_in_index(py, r),
-        NodeMapError::InvalidNodePrefix(s) => invalid_node_prefix(py, &s),
+        NodeMapError::InvalidNodePrefix => {
+            PyErr::new::<ValueError, _>(py, "Invalid node or prefix")
+        }
     }
-}
-
-fn invalid_node_prefix(py: Python, ne: &NodeError) -> PyErr {
-    PyErr::new::<ValueError, _>(
-        py,
-        format!("Invalid node or prefix: {:?}", ne),
-    )
 }
 
 /// Create the module, with __package__ given from parent

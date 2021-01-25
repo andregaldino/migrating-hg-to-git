@@ -9,7 +9,7 @@ pub mod node;
 pub mod nodemap;
 mod nodemap_docket;
 pub mod path_encode;
-pub use node::{Node, NodeError, NodePrefix, NodePrefixRef};
+pub use node::{FromHexError, Node, NodePrefix, NodePrefixRef};
 pub mod changelog;
 pub mod index;
 pub mod manifest;
