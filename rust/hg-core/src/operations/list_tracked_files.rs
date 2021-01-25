@@ -147,12 +147,12 @@ pub fn list_rev_tracked_files(
         _ => {
             let changelog_node = NodePrefix::from_hex(&rev)
                 .or(Err(ListRevTrackedFilesErrorKind::InvalidRevision))?;
-            changelog.get_node(changelog_node.borrow())?
+            changelog.get_node(changelog_node)?
         }
     };
     let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
         .or(Err(ListRevTrackedFilesErrorKind::CorruptedRevlog))?;
-    let manifest_entry = manifest.get_node((&manifest_node).into())?;
+    let manifest_entry = manifest.get_node(manifest_node.into())?;
     Ok(FilesForRev(manifest_entry))
 }
 

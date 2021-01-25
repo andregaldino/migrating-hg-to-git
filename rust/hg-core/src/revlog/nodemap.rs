@@ -13,8 +13,8 @@
 //! is used in a more abstract context.
 
 use super::{
-    node::NULL_NODE, FromHexError, Node, NodePrefix, NodePrefixRef, Revision,
-    RevlogIndex, NULL_REVISION,
+    node::NULL_NODE, FromHexError, Node, NodePrefix, Revision, RevlogIndex,
+    NULL_REVISION,
 };
 
 use bytes_cast::{unaligned, BytesCast};
@@ -82,7 +82,7 @@ pub trait NodeMap {
     fn find_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        prefix: NodePrefixRef<'a>,
+        prefix: NodePrefix,
     ) -> Result<Option<Revision>, NodeMapError>;
 
     /// Find the unique Revision whose `Node` hexadecimal string representation
@@ -97,7 +97,7 @@ pub trait NodeMap {
         idx: &impl RevlogIndex,
         prefix: &str,
     ) -> Result<Option<Revision>, NodeMapError> {
-        self.find_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
+        self.find_bin(idx, NodePrefix::from_hex(prefix)?)
     }
 
     /// Give the size of the shortest node prefix that determines
@@ -114,7 +114,7 @@ pub trait NodeMap {
     fn unique_prefix_len_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        node_prefix: NodePrefixRef<'a>,
+        node_prefix: NodePrefix,
     ) -> Result<Option<usize>, NodeMapError>;
 
     /// Same as `unique_prefix_len_bin`, with the hexadecimal representation
@@ -124,7 +124,7 @@ pub trait NodeMap {
         idx: &impl RevlogIndex,
         prefix: &str,
     ) -> Result<Option<usize>, NodeMapError> {
-        self.unique_prefix_len_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
+        self.unique_prefix_len_bin(idx, NodePrefix::from_hex(prefix)?)
     }
 
     /// Same as `unique_prefix_len_bin`, with a full `Node` as input
@@ -278,7 +278,7 @@ impl Index<usize> for NodeTree {
 /// Return `None` unless the `Node` for `rev` has given prefix in `index`.
 fn has_prefix_or_none(
     idx: &impl RevlogIndex,
-    prefix: NodePrefixRef,
+    prefix: NodePrefix,
     rev: Revision,
 ) -> Result<Option<Revision>, NodeMapError> {
     idx.node(rev)
@@ -299,7 +299,7 @@ fn has_prefix_or_none(
 /// revision is the only one for a *subprefix* of the one being looked up.
 fn validate_candidate(
     idx: &impl RevlogIndex,
-    prefix: NodePrefixRef,
+    prefix: NodePrefix,
     candidate: (Option<Revision>, usize),
 ) -> Result<(Option<Revision>, usize), NodeMapError> {
     let (rev, steps) = candidate;
@@ -426,7 +426,7 @@ impl NodeTree {
     /// `NodeTree`).
     fn lookup(
         &self,
-        prefix: NodePrefixRef,
+        prefix: NodePrefix,
     ) -> Result<(Option<Revision>, usize), NodeMapError> {
         for (i, visit_item) in self.visit(prefix).enumerate() {
             if let Some(opt) = visit_item.final_revision() {
@@ -436,10 +436,7 @@ impl NodeTree {
         Err(NodeMapError::MultipleResults)
     }
 
-    fn visit<'n, 'p>(
-        &'n self,
-        prefix: NodePrefixRef<'p>,
-    ) -> NodeTreeVisitor<'n, 'p> {
+    fn visit<'n>(&'n self, prefix: NodePrefix) -> NodeTreeVisitor<'n> {
         NodeTreeVisitor {
             nt: self,
             prefix,
@@ -617,9 +614,9 @@ impl Deref for NodeTreeBytes {
     }
 }
 
-struct NodeTreeVisitor<'n, 'p> {
+struct NodeTreeVisitor<'n> {
     nt: &'n NodeTree,
-    prefix: NodePrefixRef<'p>,
+    prefix: NodePrefix,
     visit: usize,
     nybble_idx: usize,
     done: bool,
@@ -632,11 +629,11 @@ struct NodeTreeVisitItem {
     element: Element,
 }
 
-impl<'n, 'p> Iterator for NodeTreeVisitor<'n, 'p> {
+impl<'n> Iterator for NodeTreeVisitor<'n> {
     type Item = NodeTreeVisitItem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.done || self.nybble_idx >= self.prefix.len() {
+        if self.done || self.nybble_idx >= self.prefix.nybbles_len() {
             return None;
         }
 
@@ -701,18 +698,18 @@ impl NodeMap for NodeTree {
     fn find_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        prefix: NodePrefixRef<'a>,
+        prefix: NodePrefix,
     ) -> Result<Option<Revision>, NodeMapError> {
-        validate_candidate(idx, prefix.clone(), self.lookup(prefix)?)
+        validate_candidate(idx, prefix, self.lookup(prefix)?)
             .map(|(opt, _shortest)| opt)
     }
 
     fn unique_prefix_len_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        prefix: NodePrefixRef<'a>,
+        prefix: NodePrefix,
     ) -> Result<Option<usize>, NodeMapError> {
-        validate_candidate(idx, prefix.clone(), self.lookup(prefix)?)
+        validate_candidate(idx, prefix, self.lookup(prefix)?)
             .map(|(opt, shortest)| opt.map(|_rev| shortest))
     }
 }

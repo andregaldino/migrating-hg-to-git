@@ -1,6 +1,6 @@
 use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
-use crate::revlog::NodePrefixRef;
+use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
 
 /// A specialized `Revlog` to work with `changelog` data format.
@@ -19,7 +19,7 @@ impl Changelog {
     /// Return the `ChangelogEntry` a given node id.
     pub fn get_node(
         &self,
-        node: NodePrefixRef,
+        node: NodePrefix,
     ) -> Result<ChangelogEntry, RevlogError> {
         let rev = self.revlog.get_node_rev(node)?;
         self.get_rev(rev)

@@ -9,8 +9,7 @@
 //! of a revision.
 
 use bytes_cast::BytesCast;
-use hex::{self, FromHex};
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
 
 /// The length in bytes of a `Node`
@@ -50,7 +49,7 @@ type NodeData = [u8; NODE_BYTES_LENGTH];
 /// the size or return an error at runtime.
 ///
 /// [`nybbles_len`]: #method.nybbles_len
-#[derive(Clone, Debug, PartialEq, BytesCast)]
+#[derive(Copy, Clone, Debug, PartialEq, BytesCast)]
 #[repr(transparent)]
 pub struct Node {
     data: NodeData,
@@ -72,11 +71,22 @@ impl<'a> TryFrom<&'a [u8]> for &'a Node {
     type Error = ();
 
     #[inline]
-    fn try_from(bytes: &'a [u8]) -> Result<&'a Node, Self::Error> {
+    fn try_from(bytes: &'a [u8]) -> Result<Self, Self::Error> {
         match Node::from_bytes(bytes) {
             Ok((node, rest)) if rest.is_empty() => Ok(node),
             _ => Err(()),
         }
+    }
+}
+
+/// Return an error if the slice has an unexpected length
+impl TryFrom<&'_ [u8]> for Node {
+    type Error = std::array::TryFromSliceError;
+
+    #[inline]
+    fn try_from(bytes: &'_ [u8]) -> Result<Self, Self::Error> {
+        let data = bytes.try_into()?;
+        Ok(Self { data })
     }
 }
 
@@ -124,9 +134,12 @@ impl Node {
     /// To be used in FFI and I/O only, in order to facilitate future
     /// changes of hash format.
     pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Node, FromHexError> {
-        Ok(NodeData::from_hex(hex.as_ref())
-            .map_err(|_| FromHexError)?
-            .into())
+        let prefix = NodePrefix::from_hex(hex)?;
+        if prefix.nybbles_len() == NODE_NYBBLES_LENGTH {
+            Ok(Self { data: prefix.data })
+        } else {
+            Err(FromHexError)
+        }
     }
 
     /// Provide access to binary data
@@ -143,10 +156,14 @@ impl Node {
 /// Since it can potentially come from an hexadecimal representation with
 /// odd length, it needs to carry around whether the last 4 bits are relevant
 /// or not.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct NodePrefix {
-    buf: Vec<u8>,
-    is_odd: bool,
+    /// In `1..=NODE_NYBBLES_LENGTH`
+    nybbles_len: u8,
+    /// The first `4 * length_in_nybbles` bits are used (considering bits
+    /// within a bytes in big-endian: most significant first), the rest
+    /// are zero.
+    data: NodeData,
 }
 
 impl NodePrefix {
@@ -164,52 +181,35 @@ impl NodePrefix {
             return Err(FromHexError);
         }
 
-        let is_odd = len % 2 == 1;
-        let even_part = if is_odd { &hex[..len - 1] } else { hex };
-        let mut buf: Vec<u8> =
-            Vec::from_hex(&even_part).map_err(|_| FromHexError)?;
-
-        if is_odd {
-            let latest_char = char::from(hex[len - 1]);
-            let latest_nybble =
-                latest_char.to_digit(16).ok_or_else(|| FromHexError)? as u8;
-            buf.push(latest_nybble << 4);
+        let mut data = [0; NODE_BYTES_LENGTH];
+        let mut nybbles_len = 0;
+        for &ascii_byte in hex {
+            let nybble = match char::from(ascii_byte).to_digit(16) {
+                Some(digit) => digit as u8,
+                None => return Err(FromHexError),
+            };
+            // Fill in the upper half of a byte first, then the lower half.
+            let shift = if nybbles_len % 2 == 0 { 4 } else { 0 };
+            data[nybbles_len as usize / 2] |= nybble << shift;
+            nybbles_len += 1;
         }
-        Ok(NodePrefix { buf, is_odd })
+        Ok(Self { data, nybbles_len })
     }
 
-    pub fn borrow(&self) -> NodePrefixRef {
-        NodePrefixRef {
-            buf: &self.buf,
-            is_odd: self.is_odd,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct NodePrefixRef<'a> {
-    buf: &'a [u8],
-    is_odd: bool,
-}
-
-impl<'a> NodePrefixRef<'a> {
-    pub fn len(&self) -> usize {
-        if self.is_odd {
-            self.buf.len() * 2 - 1
-        } else {
-            self.buf.len() * 2
-        }
+    pub fn nybbles_len(&self) -> usize {
+        self.nybbles_len as _
     }
 
     pub fn is_prefix_of(&self, node: &Node) -> bool {
-        if self.is_odd {
-            let buf = self.buf;
-            let last_pos = buf.len() - 1;
-            node.data.starts_with(buf.split_at(last_pos).0)
-                && node.data[last_pos] >> 4 == buf[last_pos] >> 4
-        } else {
-            node.data.starts_with(self.buf)
+        let full_bytes = self.nybbles_len() / 2;
+        if self.data[..full_bytes] != node.data[..full_bytes] {
+            return false;
         }
+        if self.nybbles_len() % 2 == 0 {
+            return true;
+        }
+        let last = self.nybbles_len() - 1;
+        self.get_nybble(last) == node.get_nybble(last)
     }
 
     /// Retrieve the `i`th half-byte from the prefix.
@@ -217,8 +217,12 @@ impl<'a> NodePrefixRef<'a> {
     /// This is also the `i`th hexadecimal digit in numeric form,
     /// also called a [nybble](https://en.wikipedia.org/wiki/Nibble).
     pub fn get_nybble(&self, i: usize) -> u8 {
-        assert!(i < self.len());
-        get_nybble(self.buf, i)
+        assert!(i < self.nybbles_len());
+        get_nybble(&self.data, i)
+    }
+
+    fn iter_nybbles(&self) -> impl Iterator<Item = u8> + '_ {
+        (0..self.nybbles_len()).map(move |i| get_nybble(&self.data, i))
     }
 
     /// Return the index first nybble that's different from `node`
@@ -229,42 +233,49 @@ impl<'a> NodePrefixRef<'a> {
     ///
     /// Returned index is as in `get_nybble`, i.e., starting at 0.
     pub fn first_different_nybble(&self, node: &Node) -> Option<usize> {
-        let buf = self.buf;
-        let until = if self.is_odd {
-            buf.len() - 1
-        } else {
-            buf.len()
-        };
-        for (i, item) in buf.iter().enumerate().take(until) {
-            if *item != node.data[i] {
-                return if *item & 0xf0 == node.data[i] & 0xf0 {
-                    Some(2 * i + 1)
-                } else {
-                    Some(2 * i)
-                };
-            }
+        self.iter_nybbles()
+            .zip(NodePrefix::from(*node).iter_nybbles())
+            .position(|(a, b)| a != b)
+    }
+}
+
+impl fmt::LowerHex for NodePrefix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let full_bytes = self.nybbles_len() / 2;
+        for &byte in &self.data[..full_bytes] {
+            write!(f, "{:02x}", byte)?
         }
-        if self.is_odd && buf[until] & 0xf0 != node.data[until] & 0xf0 {
-            Some(until * 2)
-        } else {
-            None
+        if self.nybbles_len() % 2 == 1 {
+            let last = self.nybbles_len() - 1;
+            write!(f, "{:x}", self.get_nybble(last))?
+        }
+        Ok(())
+    }
+}
+
+/// A shortcut for full `Node` references
+impl From<&'_ Node> for NodePrefix {
+    fn from(node: &'_ Node) -> Self {
+        NodePrefix {
+            nybbles_len: node.nybbles_len() as _,
+            data: node.data,
         }
     }
 }
 
 /// A shortcut for full `Node` references
-impl<'a> From<&'a Node> for NodePrefixRef<'a> {
-    fn from(node: &'a Node) -> Self {
-        NodePrefixRef {
-            buf: &node.data,
-            is_odd: false,
+impl From<Node> for NodePrefix {
+    fn from(node: Node) -> Self {
+        NodePrefix {
+            nybbles_len: node.nybbles_len() as _,
+            data: node.data,
         }
     }
 }
 
-impl PartialEq<Node> for NodePrefixRef<'_> {
+impl PartialEq<Node> for NodePrefix {
     fn eq(&self, other: &Node) -> bool {
-        !self.is_odd && self.buf == other.data
+        Self::from(*other) == *self
     }
 }
 
@@ -272,18 +283,16 @@ impl PartialEq<Node> for NodePrefixRef<'_> {
 mod tests {
     use super::*;
 
-    fn sample_node() -> Node {
-        let mut data = [0; NODE_BYTES_LENGTH];
-        data.copy_from_slice(&[
+    const SAMPLE_NODE_HEX: &str = "0123456789abcdeffedcba9876543210deadbeef";
+    const SAMPLE_NODE: Node = Node {
+        data: [
             0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0xfe, 0xdc, 0xba,
             0x98, 0x76, 0x54, 0x32, 0x10, 0xde, 0xad, 0xbe, 0xef,
-        ]);
-        data.into()
-    }
+        ],
+    };
 
     /// Pad an hexadecimal string to reach `NODE_NYBBLES_LENGTH`
-    ///check_hash
-    /// The padding is made with zeros
+    /// The padding is made with zeros.
     pub fn hex_pad_right(hex: &str) -> String {
         let mut res = hex.to_string();
         while res.len() < NODE_NYBBLES_LENGTH {
@@ -292,55 +301,30 @@ mod tests {
         res
     }
 
-    fn sample_node_hex() -> String {
-        hex_pad_right("0123456789abcdeffedcba9876543210deadbeef")
-    }
-
     #[test]
     fn test_node_from_hex() {
-        assert_eq!(Node::from_hex(&sample_node_hex()).unwrap(), sample_node());
-
-        let mut short = hex_pad_right("0123");
-        short.pop();
-        short.pop();
-        assert!(Node::from_hex(&short).is_err());
-
-        let not_hex = hex_pad_right("012... oops");
-        assert!(Node::from_hex(&not_hex).is_err(),);
+        let not_hex = "012... oops";
+        let too_short = "0123";
+        let too_long = format!("{}0", SAMPLE_NODE_HEX);
+        assert_eq!(Node::from_hex(SAMPLE_NODE_HEX).unwrap(), SAMPLE_NODE);
+        assert!(Node::from_hex(not_hex).is_err());
+        assert!(Node::from_hex(too_short).is_err());
+        assert!(Node::from_hex(&too_long).is_err());
     }
 
     #[test]
     fn test_node_encode_hex() {
-        assert_eq!(format!("{:x}", sample_node()), sample_node_hex());
+        assert_eq!(format!("{:x}", SAMPLE_NODE), SAMPLE_NODE_HEX);
     }
 
     #[test]
-    fn test_prefix_from_hex() -> Result<(), FromHexError> {
+    fn test_prefix_from_to_hex() -> Result<(), FromHexError> {
+        assert_eq!(format!("{:x}", NodePrefix::from_hex("0e1")?), "0e1");
+        assert_eq!(format!("{:x}", NodePrefix::from_hex("0e1a")?), "0e1a");
         assert_eq!(
-            NodePrefix::from_hex("0e1")?,
-            NodePrefix {
-                buf: vec![14, 16],
-                is_odd: true
-            }
+            format!("{:x}", NodePrefix::from_hex(SAMPLE_NODE_HEX)?),
+            SAMPLE_NODE_HEX
         );
-        assert_eq!(
-            NodePrefix::from_hex("0e1a")?,
-            NodePrefix {
-                buf: vec![14, 26],
-                is_odd: false
-            }
-        );
-
-        // checking limit case
-        let node_as_vec = sample_node().data.iter().cloned().collect();
-        assert_eq!(
-            NodePrefix::from_hex(sample_node_hex())?,
-            NodePrefix {
-                buf: node_as_vec,
-                is_odd: false
-            }
-        );
-
         Ok(())
     }
 
@@ -358,49 +342,47 @@ mod tests {
         node_data[0] = 0x12;
         node_data[1] = 0xca;
         let node = Node::from(node_data);
-        assert!(NodePrefix::from_hex("12")?.borrow().is_prefix_of(&node));
-        assert!(!NodePrefix::from_hex("1a")?.borrow().is_prefix_of(&node));
-        assert!(NodePrefix::from_hex("12c")?.borrow().is_prefix_of(&node));
-        assert!(!NodePrefix::from_hex("12d")?.borrow().is_prefix_of(&node));
+        assert!(NodePrefix::from_hex("12")?.is_prefix_of(&node));
+        assert!(!NodePrefix::from_hex("1a")?.is_prefix_of(&node));
+        assert!(NodePrefix::from_hex("12c")?.is_prefix_of(&node));
+        assert!(!NodePrefix::from_hex("12d")?.is_prefix_of(&node));
         Ok(())
     }
 
     #[test]
     fn test_get_nybble() -> Result<(), FromHexError> {
         let prefix = NodePrefix::from_hex("dead6789cafe")?;
-        assert_eq!(prefix.borrow().get_nybble(0), 13);
-        assert_eq!(prefix.borrow().get_nybble(7), 9);
+        assert_eq!(prefix.get_nybble(0), 13);
+        assert_eq!(prefix.get_nybble(7), 9);
         Ok(())
     }
 
     #[test]
     fn test_first_different_nybble_even_prefix() {
         let prefix = NodePrefix::from_hex("12ca").unwrap();
-        let prefref = prefix.borrow();
         let mut node = Node::from([0; NODE_BYTES_LENGTH]);
-        assert_eq!(prefref.first_different_nybble(&node), Some(0));
+        assert_eq!(prefix.first_different_nybble(&node), Some(0));
         node.data[0] = 0x13;
-        assert_eq!(prefref.first_different_nybble(&node), Some(1));
+        assert_eq!(prefix.first_different_nybble(&node), Some(1));
         node.data[0] = 0x12;
-        assert_eq!(prefref.first_different_nybble(&node), Some(2));
+        assert_eq!(prefix.first_different_nybble(&node), Some(2));
         node.data[1] = 0xca;
         // now it is a prefix
-        assert_eq!(prefref.first_different_nybble(&node), None);
+        assert_eq!(prefix.first_different_nybble(&node), None);
     }
 
     #[test]
     fn test_first_different_nybble_odd_prefix() {
         let prefix = NodePrefix::from_hex("12c").unwrap();
-        let prefref = prefix.borrow();
         let mut node = Node::from([0; NODE_BYTES_LENGTH]);
-        assert_eq!(prefref.first_different_nybble(&node), Some(0));
+        assert_eq!(prefix.first_different_nybble(&node), Some(0));
         node.data[0] = 0x13;
-        assert_eq!(prefref.first_different_nybble(&node), Some(1));
+        assert_eq!(prefix.first_different_nybble(&node), Some(1));
         node.data[0] = 0x12;
-        assert_eq!(prefref.first_different_nybble(&node), Some(2));
+        assert_eq!(prefix.first_different_nybble(&node), Some(2));
         node.data[1] = 0xca;
         // now it is a prefix
-        assert_eq!(prefref.first_different_nybble(&node), None);
+        assert_eq!(prefix.first_different_nybble(&node), None);
     }
 }
 

@@ -11,7 +11,7 @@ use micro_timer::timed;
 use zstd;
 
 use super::index::Index;
-use super::node::{NodePrefixRef, NODE_BYTES_LENGTH, NULL_NODE};
+use super::node::{NodePrefix, NODE_BYTES_LENGTH, NULL_NODE};
 use super::nodemap;
 use super::nodemap::NodeMap;
 use super::nodemap_docket::NodeMapDocket;
@@ -117,7 +117,7 @@ impl Revlog {
     #[timed]
     pub fn get_node_rev(
         &self,
-        node: NodePrefixRef,
+        node: NodePrefix,
     ) -> Result<Revision, RevlogError> {
         if let Some(nodemap) = &self.nodemap {
             return nodemap

@@ -93,7 +93,7 @@ pub fn debug_data(
         _ => {
             let node = NodePrefix::from_hex(&rev)
                 .map_err(|_| DebugDataErrorKind::InvalidRevision)?;
-            let rev = revlog.get_node_rev(node.borrow())?;
+            let rev = revlog.get_node_rev(node)?;
             revlog.get_rev_data(rev)?
         }
     };

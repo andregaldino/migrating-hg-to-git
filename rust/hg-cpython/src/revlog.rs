@@ -64,7 +64,7 @@ py_class!(pub class MixedIndex |py| {
         let nt = opt.as_ref().unwrap();
         let idx = &*self.cindex(py).borrow();
         let node = node_from_py_bytes(py, &node)?;
-        nt.find_bin(idx, (&node).into()).map_err(|e| nodemap_error(py, e))
+        nt.find_bin(idx, node.into()).map_err(|e| nodemap_error(py, e))
     }
 
     /// same as `get_rev()` but raises a bare `error.RevlogError` if node

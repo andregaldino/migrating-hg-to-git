@@ -88,13 +88,13 @@ pub fn cat(
         _ => {
             let changelog_node = NodePrefix::from_hex(&rev)
                 .map_err(|_| CatRevErrorKind::InvalidRevision)?;
-            changelog.get_node(changelog_node.borrow())?
+            changelog.get_node(changelog_node)?
         }
     };
     let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
         .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
 
-    let manifest_entry = manifest.get_node((&manifest_node).into())?;
+    let manifest_entry = manifest.get_node(manifest_node.into())?;
     let mut bytes = vec![];
 
     for (manifest_file, node_bytes) in manifest_entry.files_with_nodes() {
@@ -107,7 +107,7 @@ pub fn cat(
                     Revlog::open(repo, &index_path, Some(&data_path))?;
                 let file_node = Node::from_hex(node_bytes)
                     .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
-                let file_rev = file_log.get_node_rev((&file_node).into())?;
+                let file_rev = file_log.get_node_rev(file_node.into())?;
                 let data = file_log.get_rev_data(file_rev)?;
                 if data.starts_with(&METADATA_DELIMITER) {
                     let end_delimiter_position = data
