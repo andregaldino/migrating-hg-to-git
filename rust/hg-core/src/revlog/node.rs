@@ -160,7 +160,7 @@ impl NodePrefix {
     pub fn from_hex(hex: impl AsRef<[u8]>) -> Result<Self, FromHexError> {
         let hex = hex.as_ref();
         let len = hex.len();
-        if len > NODE_NYBBLES_LENGTH {
+        if len > NODE_NYBBLES_LENGTH || len == 0 {
             return Err(FromHexError);
         }
 
@@ -199,10 +199,6 @@ impl<'a> NodePrefixRef<'a> {
         } else {
             self.buf.len() * 2
         }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 
     pub fn is_prefix_of(&self, node: &Node) -> bool {
