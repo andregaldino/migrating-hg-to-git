@@ -387,13 +387,13 @@ _data = [
     b'requires',
 ]
 
+REVLOG_FILES_EXT = (b'.i', b'.d', b'.n', b'.nd')
+
 
 def isrevlog(f, kind, st):
     if kind != stat.S_IFREG:
         return False
-    if f[-2:] in (b'.i', b'.d', b'.n'):
-        return True
-    return f[-3:] == b'.nd'
+    return f.endswith(REVLOG_FILES_EXT)
 
 
 class basicstore(object):
