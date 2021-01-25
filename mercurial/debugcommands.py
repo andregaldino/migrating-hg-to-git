@@ -2212,9 +2212,9 @@ def debugnamecomplete(ui, repo, *args):
             b'',
             b'dump-new',
             False,
-            _(b'write a (new) persistent binary nodemap on stdin'),
+            _(b'write a (new) persistent binary nodemap on stdout'),
         ),
-        (b'', b'dump-disk', False, _(b'dump on-disk data on stdin')),
+        (b'', b'dump-disk', False, _(b'dump on-disk data on stdout')),
         (
             b'',
             b'check',
