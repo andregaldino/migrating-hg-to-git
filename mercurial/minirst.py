@@ -158,7 +158,7 @@ _bulletre = re.compile(br'(\*|-|[0-9A-Za-z]+\.|\(?[0-9A-Za-z]+\)|\|) ')
 _optionre = re.compile(
     br'^(-([a-zA-Z0-9]), )?(--[a-z0-9-]+)' br'((.*)  +)(.*)$'
 )
-_fieldre = re.compile(br':(?![: ])([^:]*)(?<! ):[ ]+(.*)')
+_fieldre = re.compile(br':(?![: ])((?:\:|[^:])*)(?<! ):[ ]+(.*)')
 _definitionre = re.compile(br'[^ ]')
 _tablere = re.compile(br'(=+\s+)*=+')
 
@@ -229,7 +229,7 @@ def updatefieldlists(blocks):
             m = _fieldre.match(blocks[j][b'lines'][0])
             key, rest = m.groups()
             blocks[j][b'lines'][0] = rest
-            blocks[j][b'key'] = key
+            blocks[j][b'key'] = key.replace(br'\:', b':')
             j += 1
 
         i = j + 1

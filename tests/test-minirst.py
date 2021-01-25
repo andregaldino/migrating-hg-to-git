@@ -159,6 +159,8 @@ fields = b"""
 :a: First item.
 :ab: Second item. Indentation and wrapping
      is handled automatically.
+:c\:d: a key with colon
+:efg\:\:hh: a key with many colon
 
 Next list:
 
