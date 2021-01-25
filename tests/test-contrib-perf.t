@@ -78,126 +78,126 @@ perfstatus
   
   list of commands:
   
-   perf--addremove
+   perf::addremove
                  (no help text available)
-   perf--ancestors
+   perf::ancestors
                  (no help text available)
-   perf--ancestorset
+   perf::ancestorset
                  (no help text available)
-   perf--annotate
+   perf::annotate
                  (no help text available)
-   perf--bdiff   benchmark a bdiff between revisions
-   perf--bookmarks
+   perf::bdiff   benchmark a bdiff between revisions
+   perf::bookmarks
                  benchmark parsing bookmarks from disk to memory
-   perf--branchmap
+   perf::branchmap
                  benchmark the update of a branchmap
-   perf--branchmapload
+   perf::branchmapload
                  benchmark reading the branchmap
-   perf--branchmapupdate
+   perf::branchmapupdate
                  benchmark branchmap update from for <base> revs to <target>
                  revs
-   perf--bundleread
+   perf::bundleread
                  Benchmark reading of bundle files.
-   perf--cca     (no help text available)
-   perf--changegroupchangelog
+   perf::cca     (no help text available)
+   perf::changegroupchangelog
                  Benchmark producing a changelog group for a changegroup.
-   perf--changeset
+   perf::changeset
                  (no help text available)
-   perf--ctxfiles
+   perf::ctxfiles
                  (no help text available)
-   perf--diffwd  Profile diff of working directory changes
-   perf--dirfoldmap
+   perf::diffwd  Profile diff of working directory changes
+   perf::dirfoldmap
                  benchmap a 'dirstate._map.dirfoldmap.get()' request
-   perf--dirs    (no help text available)
-   perf--dirstate
+   perf::dirs    (no help text available)
+   perf::dirstate
                  benchmap the time of various distate operations
-   perf--dirstatedirs
+   perf::dirstatedirs
                  benchmap a 'dirstate.hasdir' call from an empty 'dirs' cache
-   perf--dirstatefoldmap
+   perf::dirstatefoldmap
                  benchmap a 'dirstate._map.filefoldmap.get()' request
-   perf--dirstatewrite
+   perf::dirstatewrite
                  benchmap the time it take to write a dirstate on disk
-   perf--discovery
+   perf::discovery
                  benchmark discovery between local repo and the peer at given
                  path
-   perf--fncacheencode
+   perf::fncacheencode
                  (no help text available)
-   perf--fncacheload
+   perf::fncacheload
                  (no help text available)
-   perf--fncachewrite
+   perf::fncachewrite
                  (no help text available)
-   perf--heads   benchmark the computation of a changelog heads
-   perf--helper-mergecopies
+   perf::heads   benchmark the computation of a changelog heads
+   perf::helper-mergecopies
                  find statistics about potential parameters for
                  'perfmergecopies'
-   perf--helper-pathcopies
+   perf::helper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'
-   perf--ignore  benchmark operation related to computing ignore
-   perf--index   benchmark index creation time followed by a lookup
-   perf--linelogedits
+   perf::ignore  benchmark operation related to computing ignore
+   perf::index   benchmark index creation time followed by a lookup
+   perf::linelogedits
                  (no help text available)
-   perf--loadmarkers
+   perf::loadmarkers
                  benchmark the time to parse the on-disk markers for a repo
-   perf--log     (no help text available)
-   perf--lookup  (no help text available)
-   perf--lrucachedict
+   perf::log     (no help text available)
+   perf::lookup  (no help text available)
+   perf::lrucachedict
                  (no help text available)
-   perf--manifest
+   perf::manifest
                  benchmark the time to read a manifest from disk and return a
                  usable
-   perf--mergecalculate
+   perf::mergecalculate
                  (no help text available)
-   perf--mergecopies
+   perf::mergecopies
                  measure runtime of 'copies.mergecopies'
-   perf--moonwalk
+   perf::moonwalk
                  benchmark walking the changelog backwards
-   perf--nodelookup
+   perf::nodelookup
                  (no help text available)
-   perf--nodemap
+   perf::nodemap
                  benchmark the time necessary to look up revision from a cold
                  nodemap
-   perf--parents
+   perf::parents
                  benchmark the time necessary to fetch one changeset's parents.
-   perf--pathcopies
+   perf::pathcopies
                  benchmark the copy tracing logic
-   perf--phases  benchmark phasesets computation
-   perf--phasesremote
+   perf::phases  benchmark phasesets computation
+   perf::phasesremote
                  benchmark time needed to analyse phases of the remote server
-   perf--progress
+   perf::progress
                  printing of progress bars
-   perf--rawfiles
+   perf::rawfiles
                  (no help text available)
-   perf--revlogchunks
+   perf::revlogchunks
                  Benchmark operations on revlog chunks.
-   perf--revlogindex
+   perf::revlogindex
                  Benchmark operations against a revlog index.
-   perf--revlogrevision
+   perf::revlogrevision
                  Benchmark obtaining a revlog revision.
-   perf--revlogrevisions
+   perf::revlogrevisions
                  Benchmark reading a series of revisions from a revlog.
-   perf--revlogwrite
+   perf::revlogwrite
                  Benchmark writing a series of revisions to a revlog.
-   perf--revrange
+   perf::revrange
                  (no help text available)
-   perf--revset  benchmark the execution time of a revset
-   perf--startup
+   perf::revset  benchmark the execution time of a revset
+   perf::startup
                  (no help text available)
-   perf--status  benchmark the performance of a single status call
-   perf--tags    (no help text available)
-   perf--templating
+   perf::status  benchmark the performance of a single status call
+   perf::tags    (no help text available)
+   perf::templating
                  test the rendering time of a given template
-   perf--unidiff
+   perf::unidiff
                  benchmark a unified diff between revisions
-   perf--volatilesets
+   perf::volatilesets
                  benchmark the computation of various volatile set
-   perf--walk    (no help text available)
-   perf--write   microbenchmark ui.write (and others)
+   perf::walk    (no help text available)
+   perf::write   microbenchmark ui.write (and others)
   
   (use 'hg help -v perf' to show built-in aliases and global options)
 
   $ hg help perfaddremove
-  hg perf--addremove
+  hg perf::addremove
   
   aliases: perfaddremove
   
