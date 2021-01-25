@@ -8,8 +8,9 @@
 //! In Mercurial code base, it is customary to call "a node" the binary SHA
 //! of a revision.
 
+use bytes_cast::BytesCast;
 use hex::{self, FromHex, FromHexError};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 
 /// The length in bytes of a `Node`
 ///
@@ -49,7 +50,7 @@ type NodeData = [u8; NODE_BYTES_LENGTH];
 ///
 /// [`nybbles_len`]: #method.nybbles_len
 /// [`ExactLengthRequired`]: struct.NodeError#variant.ExactLengthRequired
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, BytesCast)]
 #[repr(transparent)]
 pub struct Node {
     data: NodeData,
@@ -68,14 +69,14 @@ impl From<NodeData> for Node {
 
 /// Return an error if the slice has an unexpected length
 impl<'a> TryFrom<&'a [u8]> for &'a Node {
-    type Error = std::array::TryFromSliceError;
+    type Error = ();
 
     #[inline]
     fn try_from(bytes: &'a [u8]) -> Result<&'a Node, Self::Error> {
-        let data = bytes.try_into()?;
-        // Safety: `#[repr(transparent)]` makes it ok to "wrap" the target
-        // of a reference to the type of the single field.
-        Ok(unsafe { std::mem::transmute::<&NodeData, &Node>(data) })
+        match Node::from_bytes(bytes) {
+            Ok((node, rest)) if rest.is_empty() => Ok(node),
+            _ => Err(()),
+        }
     }
 }
 
