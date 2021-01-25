@@ -67,6 +67,7 @@ def build_py2exe(
     extra_excludes=None,
     extra_dll_excludes=None,
     extra_packages_script=None,
+    extra_includes=None,
 ):
     """Build Mercurial with py2exe.
 
@@ -176,6 +177,8 @@ def build_py2exe(
         )
         if hgext3rd_extras:
             env['HG_PY2EXE_EXTRA_INSTALL_PACKAGES'] = ' '.join(hgext3rd_extras)
+    if extra_includes:
+        env['HG_PY2EXE_EXTRA_INCLUDES'] = ' '.join(sorted(extra_includes))
     if extra_excludes:
         env['HG_PY2EXE_EXTRA_EXCLUDES'] = ' '.join(sorted(extra_excludes))
     if extra_dll_excludes:
