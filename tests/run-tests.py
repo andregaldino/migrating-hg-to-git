@@ -2278,7 +2278,7 @@ class TestResult(unittest._TextTestResult):
                         if test.path.endswith(b'.t'):
                             rename(test.errpath, test.path)
                         else:
-                            rename(test.errpath, '%s.out' % test.path)
+                            rename(test.errpath, b'%s.out' % test.path)
                         accepted = True
             if not accepted:
                 self.faildata[test.name] = b''.join(lines)
