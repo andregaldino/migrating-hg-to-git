@@ -195,6 +195,20 @@ perfstatus
    perf--write   microbenchmark ui.write (and others)
   
   (use 'hg help -v perf' to show built-in aliases and global options)
+
+  $ hg help perfaddremove
+  hg perf--addremove
+  
+  aliases: perfaddremove
+  
+  (no help text available)
+  
+  options:
+  
+   -T --template TEMPLATE display with template
+  
+  (some details hidden, use --verbose to show complete help)
+
   $ hg perfaddremove
   $ hg perfancestors
   $ hg perfancestorset 2
