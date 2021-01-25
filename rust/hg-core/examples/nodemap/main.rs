@@ -49,7 +49,7 @@ fn create(index: &Index, path: &Path) -> io::Result<()> {
 
 fn query(index: &Index, nm: &NodeTree, prefix: &str) {
     let start = Instant::now();
-    let res = nm.find_hex(index, prefix);
+    let res = NodePrefix::from_hex(prefix).map(|p| nm.find_bin(index, p));
     println!("Result found in {:?}: {:?}", start.elapsed(), res);
 }
 

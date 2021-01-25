@@ -13,8 +13,7 @@
 //! is used in a more abstract context.
 
 use super::{
-    node::NULL_NODE, FromHexError, Node, NodePrefix, Revision, RevlogIndex,
-    NULL_REVISION,
+    node::NULL_NODE, Node, NodePrefix, Revision, RevlogIndex, NULL_REVISION,
 };
 
 use bytes_cast::{unaligned, BytesCast};
@@ -27,15 +26,8 @@ use std::ops::Index;
 #[derive(Debug, PartialEq)]
 pub enum NodeMapError {
     MultipleResults,
-    InvalidNodePrefix,
     /// A `Revision` stored in the nodemap could not be found in the index
     RevisionNotInIndex(Revision),
-}
-
-impl From<FromHexError> for NodeMapError {
-    fn from(_: FromHexError) -> Self {
-        NodeMapError::InvalidNodePrefix
-    }
 }
 
 /// Mapping system from Mercurial nodes to revision numbers.
@@ -85,21 +77,6 @@ pub trait NodeMap {
         prefix: NodePrefix,
     ) -> Result<Option<Revision>, NodeMapError>;
 
-    /// Find the unique Revision whose `Node` hexadecimal string representation
-    /// starts with a given prefix
-    ///
-    /// If no Revision matches the given prefix, `Ok(None)` is returned.
-    ///
-    /// If several Revisions match the given prefix, a [`MultipleResults`]
-    /// error is returned.
-    fn find_hex(
-        &self,
-        idx: &impl RevlogIndex,
-        prefix: &str,
-    ) -> Result<Option<Revision>, NodeMapError> {
-        self.find_bin(idx, NodePrefix::from_hex(prefix)?)
-    }
-
     /// Give the size of the shortest node prefix that determines
     /// the revision uniquely.
     ///
@@ -116,16 +93,6 @@ pub trait NodeMap {
         idx: &impl RevlogIndex,
         node_prefix: NodePrefix,
     ) -> Result<Option<usize>, NodeMapError>;
-
-    /// Same as `unique_prefix_len_bin`, with the hexadecimal representation
-    /// of the prefix as input.
-    fn unique_prefix_len_hex(
-        &self,
-        idx: &impl RevlogIndex,
-        prefix: &str,
-    ) -> Result<Option<usize>, NodeMapError> {
-        self.unique_prefix_len_bin(idx, NodePrefix::from_hex(prefix)?)
-    }
 
     /// Same as `unique_prefix_len_bin`, with a full `Node` as input
     fn unique_prefix_len_node(
@@ -802,6 +769,10 @@ mod tests {
         ])
     }
 
+    fn hex(s: &str) -> NodePrefix {
+        NodePrefix::from_hex(s).unwrap()
+    }
+
     #[test]
     fn test_nt_debug() {
         let nt = sample_nodetree();
@@ -820,11 +791,11 @@ mod tests {
         pad_insert(&mut idx, 1, "1234deadcafe");
 
         let nt = NodeTree::from(vec![block! {1: Rev(1)}]);
-        assert_eq!(nt.find_hex(&idx, "1")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "12")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "1234de")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "1a")?, None);
-        assert_eq!(nt.find_hex(&idx, "ab")?, None);
+        assert_eq!(nt.find_bin(&idx, hex("1"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("12"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("1234de"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("1a"))?, None);
+        assert_eq!(nt.find_bin(&idx, hex("ab"))?, None);
 
         // and with full binary Nodes
         assert_eq!(nt.find_node(&idx, idx.get(&1).unwrap())?, Some(1));
@@ -841,12 +812,12 @@ mod tests {
 
         let nt = sample_nodetree();
 
-        assert_eq!(nt.find_hex(&idx, "0"), Err(MultipleResults));
-        assert_eq!(nt.find_hex(&idx, "01"), Ok(Some(9)));
-        assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
-        assert_eq!(nt.find_hex(&idx, "00a"), Ok(Some(0)));
-        assert_eq!(nt.unique_prefix_len_hex(&idx, "00a"), Ok(Some(3)));
-        assert_eq!(nt.find_hex(&idx, "000"), Ok(Some(NULL_REVISION)));
+        assert_eq!(nt.find_bin(&idx, hex("0")), Err(MultipleResults));
+        assert_eq!(nt.find_bin(&idx, hex("01")), Ok(Some(9)));
+        assert_eq!(nt.find_bin(&idx, hex("00")), Err(MultipleResults));
+        assert_eq!(nt.find_bin(&idx, hex("00a")), Ok(Some(0)));
+        assert_eq!(nt.unique_prefix_len_bin(&idx, hex("00a")), Ok(Some(3)));
+        assert_eq!(nt.find_bin(&idx, hex("000")), Ok(Some(NULL_REVISION)));
     }
 
     #[test]
@@ -864,13 +835,13 @@ mod tests {
             root: block![0: Block(1), 1:Block(3), 12: Rev(2)],
             masked_inner_blocks: 1,
         };
-        assert_eq!(nt.find_hex(&idx, "10")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "c")?, Some(2));
-        assert_eq!(nt.unique_prefix_len_hex(&idx, "c")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
-        assert_eq!(nt.find_hex(&idx, "000")?, Some(NULL_REVISION));
-        assert_eq!(nt.unique_prefix_len_hex(&idx, "000")?, Some(3));
-        assert_eq!(nt.find_hex(&idx, "01")?, Some(9));
+        assert_eq!(nt.find_bin(&idx, hex("10"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("c"))?, Some(2));
+        assert_eq!(nt.unique_prefix_len_bin(&idx, hex("c"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("00")), Err(MultipleResults));
+        assert_eq!(nt.find_bin(&idx, hex("000"))?, Some(NULL_REVISION));
+        assert_eq!(nt.unique_prefix_len_bin(&idx, hex("000"))?, Some(3));
+        assert_eq!(nt.find_bin(&idx, hex("01"))?, Some(9));
         assert_eq!(nt.masked_readonly_blocks(), 2);
         Ok(())
     }
@@ -903,14 +874,14 @@ mod tests {
             &self,
             prefix: &str,
         ) -> Result<Option<Revision>, NodeMapError> {
-            self.nt.find_hex(&self.index, prefix)
+            self.nt.find_bin(&self.index, hex(prefix))
         }
 
         fn unique_prefix_len_hex(
             &self,
             prefix: &str,
         ) -> Result<Option<usize>, NodeMapError> {
-            self.nt.unique_prefix_len_hex(&self.index, prefix)
+            self.nt.unique_prefix_len_bin(&self.index, hex(prefix))
         }
 
         /// Drain `added` and restart a new one

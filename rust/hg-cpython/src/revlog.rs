@@ -17,7 +17,7 @@ use cpython::{
 };
 use hg::{
     nodemap::{Block, NodeMapError, NodeTree},
-    revlog::{nodemap::NodeMap, RevlogIndex},
+    revlog::{nodemap::NodeMap, NodePrefix, RevlogIndex},
     Revision,
 };
 use std::cell::RefCell;
@@ -107,7 +107,9 @@ py_class!(pub class MixedIndex |py| {
             String::from_utf8_lossy(node.data(py)).to_string()
         };
 
-        nt.find_hex(idx, &node_as_string)
+        let prefix = NodePrefix::from_hex(&node_as_string).map_err(|_| PyErr::new::<ValueError, _>(py, "Invalid node or prefix"))?;
+
+        nt.find_bin(idx, prefix)
             // TODO make an inner API returning the node directly
             .map(|opt| opt.map(
                 |rev| PyBytes::new(py, idx.node(rev).unwrap().as_bytes())))
@@ -468,9 +470,6 @@ fn nodemap_error(py: Python, err: NodeMapError) -> PyErr {
     match err {
         NodeMapError::MultipleResults => revlog_error(py),
         NodeMapError::RevisionNotInIndex(r) => rev_not_in_index(py, r),
-        NodeMapError::InvalidNodePrefix => {
-            PyErr::new::<ValueError, _>(py, "Invalid node or prefix")
-        }
     }
 }
 
