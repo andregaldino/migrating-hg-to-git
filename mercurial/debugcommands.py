@@ -3717,6 +3717,23 @@ def debugsub(ui, repo, rev=None):
         ui.writenoi18n(b' revision %s\n' % v[1])
 
 
+@command(b'debugshell', optionalrepo=True)
+def debugshell(ui, repo):
+    """run an interactive Python interpreter
+
+    The local namespace is provided with a reference to the ui and
+    the repo instance (if available).
+    """
+    import code
+
+    imported_objects = {
+        'ui': ui,
+        'repo': repo,
+    }
+
+    code.interact(local=imported_objects)
+
+
 @command(
     b'debugsuccessorssets',
     [(b'', b'closest', False, _(b'return closest successors sets only'))],

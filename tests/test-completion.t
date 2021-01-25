@@ -130,6 +130,7 @@ Show debug commands if there are no other candidates
   debugrevspec
   debugserve
   debugsetparents
+  debugshell
   debugsidedata
   debugssl
   debugstrip
@@ -319,6 +320,7 @@ Show all commands + options
   debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized
   debugserve: sshstdio, logiofd, logiofile
   debugsetparents: 
+  debugshell: 
   debugsidedata: changelog, manifest, dir
   debugssl: 
   debugstrip: rev, force, no-backup, nobackup, , keep, bookmark, soft

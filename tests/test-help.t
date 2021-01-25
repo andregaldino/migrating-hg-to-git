@@ -1069,6 +1069,7 @@ Test list of internal help commands
    debugsetparents
                  manually set the parents of the current working directory
                  (DANGEROUS)
+   debugshell    run an interactive Python interpreter
    debugsidedata
                  dump the side data for a cl/manifest/file revision
    debugssl      test a secure connection to a server
