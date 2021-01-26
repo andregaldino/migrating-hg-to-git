@@ -15,47 +15,12 @@ pub enum DebugDataKind {
     Manifest,
 }
 
-/// Error type for `debug_data`
-#[derive(Debug, derive_more::From)]
-pub enum DebugDataError {
-    /// Error when reading a `revlog` file.
-    #[from]
-    IoError(std::io::Error),
-    /// The revision has not been found.
-    InvalidRevision,
-    /// Found more than one revision whose ID match the requested prefix
-    AmbiguousPrefix,
-    /// A `revlog` file is corrupted.
-    CorruptedRevlog,
-    /// The `revlog` format version is not supported.
-    UnsuportedRevlogVersion(u16),
-    /// The `revlog` data format is not supported.
-    UnknowRevlogDataFormat(u8),
-}
-
-impl From<RevlogError> for DebugDataError {
-    fn from(err: RevlogError) -> Self {
-        match err {
-            RevlogError::IoError(err) => DebugDataError::IoError(err),
-            RevlogError::UnsuportedVersion(version) => {
-                DebugDataError::UnsuportedRevlogVersion(version)
-            }
-            RevlogError::InvalidRevision => DebugDataError::InvalidRevision,
-            RevlogError::AmbiguousPrefix => DebugDataError::AmbiguousPrefix,
-            RevlogError::Corrupted => DebugDataError::CorruptedRevlog,
-            RevlogError::UnknowDataFormat(format) => {
-                DebugDataError::UnknowRevlogDataFormat(format)
-            }
-        }
-    }
-}
-
 /// Dump the contents data of a revision.
 pub fn debug_data(
     repo: &Repo,
     revset: &str,
     kind: DebugDataKind,
-) -> Result<Vec<u8>, DebugDataError> {
+) -> Result<Vec<u8>, RevlogError> {
     let index_file = match kind {
         DebugDataKind::Changelog => "00changelog.i",
         DebugDataKind::Manifest => "00manifest.i",

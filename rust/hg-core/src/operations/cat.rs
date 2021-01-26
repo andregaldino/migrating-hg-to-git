@@ -5,7 +5,6 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use std::convert::From;
 use std::path::PathBuf;
 
 use crate::repo::Repo;
@@ -20,40 +19,6 @@ use crate::utils::hg_path::{HgPath, HgPathBuf};
 
 const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
 
-/// Error type for `cat`
-#[derive(Debug)]
-pub enum CatRevError {
-    /// Error when reading a `revlog` file.
-    IoError(std::io::Error),
-    /// The revision has not been found.
-    InvalidRevision,
-    /// Found more than one revision whose ID match the requested prefix
-    AmbiguousPrefix,
-    /// A `revlog` file is corrupted.
-    CorruptedRevlog,
-    /// The `revlog` format version is not supported.
-    UnsuportedRevlogVersion(u16),
-    /// The `revlog` data format is not supported.
-    UnknowRevlogDataFormat(u8),
-}
-
-impl From<RevlogError> for CatRevError {
-    fn from(err: RevlogError) -> Self {
-        match err {
-            RevlogError::IoError(err) => CatRevError::IoError(err),
-            RevlogError::UnsuportedVersion(version) => {
-                CatRevError::UnsuportedRevlogVersion(version)
-            }
-            RevlogError::InvalidRevision => CatRevError::InvalidRevision,
-            RevlogError::AmbiguousPrefix => CatRevError::AmbiguousPrefix,
-            RevlogError::Corrupted => CatRevError::CorruptedRevlog,
-            RevlogError::UnknowDataFormat(format) => {
-                CatRevError::UnknowRevlogDataFormat(format)
-            }
-        }
-    }
-}
-
 /// List files under Mercurial control at a given revision.
 ///
 /// * `root`: Repository root
@@ -63,13 +28,13 @@ pub fn cat(
     repo: &Repo,
     revset: &str,
     files: &[HgPathBuf],
-) -> Result<Vec<u8>, CatRevError> {
+) -> Result<Vec<u8>, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
     let changelog = Changelog::open(repo)?;
     let manifest = Manifest::open(repo)?;
     let changelog_entry = changelog.get_rev(rev)?;
     let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
-        .map_err(|_| CatRevError::CorruptedRevlog)?;
+        .map_err(|_| RevlogError::Corrupted)?;
     let manifest_entry = manifest.get_node(manifest_node.into())?;
     let mut bytes = vec![];
 
@@ -82,7 +47,7 @@ pub fn cat(
                 let file_log =
                     Revlog::open(repo, &index_path, Some(&data_path))?;
                 let file_node = Node::from_hex(node_bytes)
-                    .map_err(|_| CatRevError::CorruptedRevlog)?;
+                    .map_err(|_| RevlogError::Corrupted)?;
                 let file_rev = file_log.get_node_rev(file_node.into())?;
                 let data = file_log.get_rev_data(file_rev)?;
                 if data.starts_with(&METADATA_DELIMITER) {
