@@ -1034,7 +1034,7 @@ def has_sqlite():
     return matchoutput('sqlite3 -version', br'^3\.\d+')
 
 
-@check('vcr', 'vcr http mocking library')
+@check('vcr', 'vcr http mocking library (pytest-vcr)')
 def has_vcr():
     try:
         import vcr
