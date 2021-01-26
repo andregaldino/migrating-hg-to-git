@@ -89,6 +89,7 @@ impl From<std::io::Error> for DirstatePackError {
         DirstatePackError::CorruptedEntry(e.to_string())
     }
 }
+
 #[derive(Debug, PartialEq)]
 pub enum DirstateMapError {
     PathNotFound(HgPathBuf),
@@ -108,7 +109,7 @@ impl ToString for DirstateMapError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum DirstateError {
     Parse(DirstateParseError),
     Pack(DirstatePackError),
@@ -116,24 +117,14 @@ pub enum DirstateError {
     IO(std::io::Error),
 }
 
-impl From<DirstateParseError> for DirstateError {
-    fn from(e: DirstateParseError) -> Self {
-        DirstateError::Parse(e)
-    }
-}
-
-impl From<DirstatePackError> for DirstateError {
-    fn from(e: DirstatePackError) -> Self {
-        DirstateError::Pack(e)
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum PatternError {
+    #[from]
     Path(HgPathError),
     UnsupportedSyntax(String),
     UnsupportedSyntaxInFile(String, String, usize),
     TooLong(usize),
+    #[from]
     IO(std::io::Error),
     /// Needed a pattern that can be turned into a regex but got one that
     /// can't. This should only happen through programmer error.
@@ -161,29 +152,5 @@ impl ToString for PatternError {
                 format!("'{:?}' cannot be turned into a regex", pattern)
             }
         }
-    }
-}
-
-impl From<DirstateMapError> for DirstateError {
-    fn from(e: DirstateMapError) -> Self {
-        DirstateError::Map(e)
-    }
-}
-
-impl From<std::io::Error> for DirstateError {
-    fn from(e: std::io::Error) -> Self {
-        DirstateError::IO(e)
-    }
-}
-
-impl From<std::io::Error> for PatternError {
-    fn from(e: std::io::Error) -> Self {
-        PatternError::IO(e)
-    }
-}
-
-impl From<HgPathError> for PatternError {
-    fn from(e: HgPathError) -> Self {
-        PatternError::Path(e)
     }
 }

@@ -367,7 +367,9 @@ impl fmt::Display for HgPath {
     }
 }
 
-#[derive(Default, Eq, Ord, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(
+    Default, Eq, Ord, Clone, PartialEq, PartialOrd, Hash, derive_more::From,
+)]
 pub struct HgPathBuf {
     inner: Vec<u8>,
 }
@@ -405,12 +407,6 @@ impl Deref for HgPathBuf {
     #[inline]
     fn deref(&self) -> &HgPath {
         &HgPath::new(&self.inner)
-    }
-}
-
-impl From<Vec<u8>> for HgPathBuf {
-    fn from(vec: Vec<u8>) -> Self {
-        Self { inner: vec }
     }
 }
 

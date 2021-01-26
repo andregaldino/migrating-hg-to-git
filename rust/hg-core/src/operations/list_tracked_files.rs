@@ -17,18 +17,12 @@ use rayon::prelude::*;
 use std::convert::From;
 
 /// Error type for `Dirstate` methods
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum ListDirstateTrackedFilesError {
     /// Error when reading the `dirstate` file
     IoError(std::io::Error),
     /// Error when parsing the `dirstate` file
     ParseError(DirstateParseError),
-}
-
-impl From<std::io::Error> for ListDirstateTrackedFilesError {
-    fn from(err: std::io::Error) -> Self {
-        ListDirstateTrackedFilesError::IoError(err)
-    }
 }
 
 /// List files under Mercurial control in the working directory

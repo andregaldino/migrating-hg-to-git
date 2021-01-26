@@ -8,13 +8,14 @@ use std::convert::From;
 use std::path::PathBuf;
 
 /// The kind of command error
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum CommandError {
     /// The root of the repository cannot be found
     RootNotFound(PathBuf),
     /// The current directory cannot be found
     CurrentDirNotFound(std::io::Error),
     /// `.hg/requires`
+    #[from]
     RequirementsError(RequirementsError),
     /// The standard output stream cannot be written to
     StdoutError,
@@ -91,11 +92,5 @@ impl From<FindRootError> for CommandError {
                 CommandError::CurrentDirNotFound(e)
             }
         }
-    }
-}
-
-impl From<RequirementsError> for CommandError {
-    fn from(err: RequirementsError) -> Self {
-        CommandError::RequirementsError(err)
     }
 }

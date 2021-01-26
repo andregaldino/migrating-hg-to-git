@@ -265,7 +265,7 @@ pub struct DirstateStatus<'a> {
     pub traversed: Vec<HgPathBuf>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum StatusError {
     /// Generic IO error
     IO(std::io::Error),
@@ -276,22 +276,6 @@ pub enum StatusError {
 }
 
 pub type StatusResult<T> = Result<T, StatusError>;
-
-impl From<PatternError> for StatusError {
-    fn from(e: PatternError) -> Self {
-        StatusError::Pattern(e)
-    }
-}
-impl From<HgPathError> for StatusError {
-    fn from(e: HgPathError) -> Self {
-        StatusError::Path(e)
-    }
-}
-impl From<std::io::Error> for StatusError {
-    fn from(e: std::io::Error) -> Self {
-        StatusError::IO(e)
-    }
-}
 
 impl ToString for StatusError {
     fn to_string(&self) -> String {

@@ -16,9 +16,10 @@ pub enum DebugDataKind {
 }
 
 /// Error type for `debug_data`
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum DebugDataError {
     /// Error when reading a `revlog` file.
+    #[from]
     IoError(std::io::Error),
     /// The revision has not been found.
     InvalidRevision,
@@ -30,12 +31,6 @@ pub enum DebugDataError {
     UnsuportedRevlogVersion(u16),
     /// The `revlog` data format is not supported.
     UnknowRevlogDataFormat(u8),
-}
-
-impl From<std::io::Error> for DebugDataError {
-    fn from(err: std::io::Error) -> Self {
-        DebugDataError::IoError(err)
-    }
 }
 
 impl From<RevlogError> for DebugDataError {

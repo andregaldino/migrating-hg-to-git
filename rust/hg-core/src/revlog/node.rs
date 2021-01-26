@@ -49,7 +49,7 @@ type NodeData = [u8; NODE_BYTES_LENGTH];
 /// the size or return an error at runtime.
 ///
 /// [`nybbles_len`]: #method.nybbles_len
-#[derive(Copy, Clone, Debug, PartialEq, BytesCast)]
+#[derive(Copy, Clone, Debug, PartialEq, BytesCast, derive_more::From)]
 #[repr(transparent)]
 pub struct Node {
     data: NodeData,
@@ -59,12 +59,6 @@ pub struct Node {
 pub const NULL_NODE: Node = Node {
     data: [0; NODE_BYTES_LENGTH],
 };
-
-impl From<NodeData> for Node {
-    fn from(data: NodeData) -> Node {
-        Node { data }
-    }
-}
 
 /// Return an error if the slice has an unexpected length
 impl<'a> TryFrom<&'a [u8]> for &'a Node {

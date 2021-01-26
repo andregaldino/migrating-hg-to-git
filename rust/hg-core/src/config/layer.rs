@@ -226,7 +226,7 @@ impl ConfigOrigin {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum ConfigError {
     Parse {
         origin: ConfigOrigin,
@@ -239,13 +239,8 @@ pub enum ConfigError {
         io_error: std::io::Error,
     },
     /// Any IO error that isn't expected
+    #[from]
     IO(std::io::Error),
-}
-
-impl From<std::io::Error> for ConfigError {
-    fn from(e: std::io::Error) -> Self {
-        Self::IO(e)
-    }
 }
 
 fn make_regex(pattern: &'static str) -> Regex {
