@@ -2145,7 +2145,7 @@ class revlog(object):
             dfh = self._datafp(b"a+")
         ifh = self._indexfp(b"a+")
         try:
-            return self._addrevision(
+            self._addrevision(
                 node,
                 rawtext,
                 transaction,
@@ -2158,6 +2158,7 @@ class revlog(object):
                 dfh,
                 deltacomputer=deltacomputer,
             )
+            return node
         finally:
             if dfh:
                 dfh.close()
@@ -2329,7 +2330,7 @@ class revlog(object):
         if type(rawtext) == bytes:  # only accept immutable objects
             self._revisioncache = (node, curr, rawtext)
         self._chainbasecache[curr] = deltainfo.chainbase
-        return node
+        return curr
 
     def _writeentry(self, transaction, ifh, dfh, entry, data, link, offset):
         # Files opened in a+ mode have inconsistent behavior on various
