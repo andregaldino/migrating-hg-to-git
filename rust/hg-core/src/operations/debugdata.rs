@@ -15,9 +15,9 @@ pub enum DebugDataKind {
     Manifest,
 }
 
-/// Kind of error encountered by DebugData
+/// Error type for `debug_data`
 #[derive(Debug)]
-pub enum DebugDataErrorKind {
+pub enum DebugDataError {
     /// Error when reading a `revlog` file.
     IoError(std::io::Error),
     /// The revision has not been found.
@@ -32,45 +32,26 @@ pub enum DebugDataErrorKind {
     UnknowRevlogDataFormat(u8),
 }
 
-/// A DebugData error
-#[derive(Debug)]
-pub struct DebugDataError {
-    /// Kind of error encountered by DebugData
-    pub kind: DebugDataErrorKind,
-}
-
-impl From<DebugDataErrorKind> for DebugDataError {
-    fn from(kind: DebugDataErrorKind) -> Self {
-        DebugDataError { kind }
-    }
-}
-
 impl From<std::io::Error> for DebugDataError {
     fn from(err: std::io::Error) -> Self {
-        let kind = DebugDataErrorKind::IoError(err);
-        DebugDataError { kind }
+        DebugDataError::IoError(err)
     }
 }
 
 impl From<RevlogError> for DebugDataError {
     fn from(err: RevlogError) -> Self {
         match err {
-            RevlogError::IoError(err) => DebugDataErrorKind::IoError(err),
+            RevlogError::IoError(err) => DebugDataError::IoError(err),
             RevlogError::UnsuportedVersion(version) => {
-                DebugDataErrorKind::UnsuportedRevlogVersion(version)
+                DebugDataError::UnsuportedRevlogVersion(version)
             }
-            RevlogError::InvalidRevision => {
-                DebugDataErrorKind::InvalidRevision
-            }
-            RevlogError::AmbiguousPrefix => {
-                DebugDataErrorKind::AmbiguousPrefix
-            }
-            RevlogError::Corrupted => DebugDataErrorKind::CorruptedRevlog,
+            RevlogError::InvalidRevision => DebugDataError::InvalidRevision,
+            RevlogError::AmbiguousPrefix => DebugDataError::AmbiguousPrefix,
+            RevlogError::Corrupted => DebugDataError::CorruptedRevlog,
             RevlogError::UnknowDataFormat(format) => {
-                DebugDataErrorKind::UnknowRevlogDataFormat(format)
+                DebugDataError::UnknowRevlogDataFormat(format)
             }
         }
-        .into()
     }
 }
 

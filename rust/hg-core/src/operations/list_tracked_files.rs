@@ -16,34 +16,18 @@ use crate::{DirstateParseError, EntryState};
 use rayon::prelude::*;
 use std::convert::From;
 
-/// Kind of error encountered by `ListDirstateTrackedFiles`
+/// Error type for `Dirstate` methods
 #[derive(Debug)]
-pub enum ListDirstateTrackedFilesErrorKind {
+pub enum ListDirstateTrackedFilesError {
     /// Error when reading the `dirstate` file
     IoError(std::io::Error),
     /// Error when parsing the `dirstate` file
     ParseError(DirstateParseError),
 }
 
-/// A `ListDirstateTrackedFiles` error
-#[derive(Debug)]
-pub struct ListDirstateTrackedFilesError {
-    /// Kind of error encountered by `ListDirstateTrackedFiles`
-    pub kind: ListDirstateTrackedFilesErrorKind,
-}
-
-impl From<ListDirstateTrackedFilesErrorKind>
-    for ListDirstateTrackedFilesError
-{
-    fn from(kind: ListDirstateTrackedFilesErrorKind) -> Self {
-        ListDirstateTrackedFilesError { kind }
-    }
-}
-
 impl From<std::io::Error> for ListDirstateTrackedFilesError {
     fn from(err: std::io::Error) -> Self {
-        let kind = ListDirstateTrackedFilesErrorKind::IoError(err);
-        ListDirstateTrackedFilesError { kind }
+        ListDirstateTrackedFilesError::IoError(err)
     }
 }
 
@@ -64,7 +48,7 @@ impl Dirstate {
         &self,
     ) -> Result<Vec<&HgPath>, ListDirstateTrackedFilesError> {
         let (_, entries, _) = parse_dirstate(&self.content)
-            .map_err(ListDirstateTrackedFilesErrorKind::ParseError)?;
+            .map_err(ListDirstateTrackedFilesError::ParseError)?;
         let mut files: Vec<&HgPath> = entries
             .into_iter()
             .filter_map(|(path, entry)| match entry.state {
@@ -77,9 +61,9 @@ impl Dirstate {
     }
 }
 
-/// Kind of error encountered by `ListRevTrackedFiles`
+/// Error type `list_rev_tracked_files`
 #[derive(Debug)]
-pub enum ListRevTrackedFilesErrorKind {
+pub enum ListRevTrackedFilesError {
     /// Error when reading a `revlog` file.
     IoError(std::io::Error),
     /// The revision has not been found.
@@ -94,42 +78,28 @@ pub enum ListRevTrackedFilesErrorKind {
     UnknowRevlogDataFormat(u8),
 }
 
-/// A `ListRevTrackedFiles` error
-#[derive(Debug)]
-pub struct ListRevTrackedFilesError {
-    /// Kind of error encountered by `ListRevTrackedFiles`
-    pub kind: ListRevTrackedFilesErrorKind,
-}
-
-impl From<ListRevTrackedFilesErrorKind> for ListRevTrackedFilesError {
-    fn from(kind: ListRevTrackedFilesErrorKind) -> Self {
-        ListRevTrackedFilesError { kind }
-    }
-}
-
 impl From<RevlogError> for ListRevTrackedFilesError {
     fn from(err: RevlogError) -> Self {
         match err {
             RevlogError::IoError(err) => {
-                ListRevTrackedFilesErrorKind::IoError(err)
+                ListRevTrackedFilesError::IoError(err)
             }
             RevlogError::UnsuportedVersion(version) => {
-                ListRevTrackedFilesErrorKind::UnsuportedRevlogVersion(version)
+                ListRevTrackedFilesError::UnsuportedRevlogVersion(version)
             }
             RevlogError::InvalidRevision => {
-                ListRevTrackedFilesErrorKind::InvalidRevision
+                ListRevTrackedFilesError::InvalidRevision
             }
             RevlogError::AmbiguousPrefix => {
-                ListRevTrackedFilesErrorKind::AmbiguousPrefix
+                ListRevTrackedFilesError::AmbiguousPrefix
             }
             RevlogError::Corrupted => {
-                ListRevTrackedFilesErrorKind::CorruptedRevlog
+                ListRevTrackedFilesError::CorruptedRevlog
             }
             RevlogError::UnknowDataFormat(format) => {
-                ListRevTrackedFilesErrorKind::UnknowRevlogDataFormat(format)
+                ListRevTrackedFilesError::UnknowRevlogDataFormat(format)
             }
         }
-        .into()
     }
 }
 
@@ -143,7 +113,7 @@ pub fn list_rev_tracked_files(
     let manifest = Manifest::open(repo)?;
     let changelog_entry = changelog.get_rev(rev)?;
     let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
-        .or(Err(ListRevTrackedFilesErrorKind::CorruptedRevlog))?;
+        .or(Err(ListRevTrackedFilesError::CorruptedRevlog))?;
     let manifest_entry = manifest.get_node(manifest_node.into())?;
     Ok(FilesForRev(manifest_entry))
 }

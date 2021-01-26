@@ -20,9 +20,9 @@ use crate::utils::hg_path::{HgPath, HgPathBuf};
 
 const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
 
-/// Kind of error encountered by `CatRev`
+/// Error type for `cat`
 #[derive(Debug)]
-pub enum CatRevErrorKind {
+pub enum CatRevError {
     /// Error when reading a `revlog` file.
     IoError(std::io::Error),
     /// The revision has not been found.
@@ -37,34 +37,20 @@ pub enum CatRevErrorKind {
     UnknowRevlogDataFormat(u8),
 }
 
-/// A `CatRev` error
-#[derive(Debug)]
-pub struct CatRevError {
-    /// Kind of error encountered by `CatRev`
-    pub kind: CatRevErrorKind,
-}
-
-impl From<CatRevErrorKind> for CatRevError {
-    fn from(kind: CatRevErrorKind) -> Self {
-        CatRevError { kind }
-    }
-}
-
 impl From<RevlogError> for CatRevError {
     fn from(err: RevlogError) -> Self {
         match err {
-            RevlogError::IoError(err) => CatRevErrorKind::IoError(err),
+            RevlogError::IoError(err) => CatRevError::IoError(err),
             RevlogError::UnsuportedVersion(version) => {
-                CatRevErrorKind::UnsuportedRevlogVersion(version)
+                CatRevError::UnsuportedRevlogVersion(version)
             }
-            RevlogError::InvalidRevision => CatRevErrorKind::InvalidRevision,
-            RevlogError::AmbiguousPrefix => CatRevErrorKind::AmbiguousPrefix,
-            RevlogError::Corrupted => CatRevErrorKind::CorruptedRevlog,
+            RevlogError::InvalidRevision => CatRevError::InvalidRevision,
+            RevlogError::AmbiguousPrefix => CatRevError::AmbiguousPrefix,
+            RevlogError::Corrupted => CatRevError::CorruptedRevlog,
             RevlogError::UnknowDataFormat(format) => {
-                CatRevErrorKind::UnknowRevlogDataFormat(format)
+                CatRevError::UnknowRevlogDataFormat(format)
             }
         }
-        .into()
     }
 }
 
@@ -83,7 +69,7 @@ pub fn cat(
     let manifest = Manifest::open(repo)?;
     let changelog_entry = changelog.get_rev(rev)?;
     let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
-        .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
+        .map_err(|_| CatRevError::CorruptedRevlog)?;
     let manifest_entry = manifest.get_node(manifest_node.into())?;
     let mut bytes = vec![];
 
@@ -96,7 +82,7 @@ pub fn cat(
                 let file_log =
                     Revlog::open(repo, &index_path, Some(&data_path))?;
                 let file_node = Node::from_hex(node_bytes)
-                    .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
+                    .map_err(|_| CatRevError::CorruptedRevlog)?;
                 let file_rev = file_log.get_node_rev(file_node.into())?;
                 let data = file_log.get_rev_data(file_rev)?;
                 if data.starts_with(&METADATA_DELIMITER) {

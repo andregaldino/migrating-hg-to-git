@@ -7,17 +7,10 @@ mod debugdata;
 mod dirstate_status;
 mod find_root;
 mod list_tracked_files;
-pub use cat::{cat, CatRevError, CatRevErrorKind};
-pub use debugdata::{
-    debug_data, DebugDataError, DebugDataErrorKind, DebugDataKind,
-};
-pub use find_root::{
-    find_root, find_root_from_path, FindRootError, FindRootErrorKind,
-};
+pub use cat::{cat, CatRevError};
+pub use debugdata::{debug_data, DebugDataError, DebugDataKind};
+pub use find_root::{find_root, find_root_from_path, FindRootError};
 pub use list_tracked_files::{
     list_rev_tracked_files, FilesForRev, ListRevTrackedFilesError,
-    ListRevTrackedFilesErrorKind,
 };
-pub use list_tracked_files::{
-    Dirstate, ListDirstateTrackedFilesError, ListDirstateTrackedFilesErrorKind,
-};
+pub use list_tracked_files::{Dirstate, ListDirstateTrackedFilesError};

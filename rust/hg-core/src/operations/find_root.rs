@@ -1,9 +1,8 @@
-use std::fmt;
 use std::path::{Path, PathBuf};
 
-/// Kind of error encoutered by FindRoot
+/// Error type for `find_root`
 #[derive(Debug)]
-pub enum FindRootErrorKind {
+pub enum FindRootError {
     /// Root of the repository has not been found
     /// Contains the current directory used by FindRoot
     RootNotFound(PathBuf),
@@ -12,28 +11,12 @@ pub enum FindRootErrorKind {
     GetCurrentDirError(std::io::Error),
 }
 
-/// A FindRoot error
-#[derive(Debug)]
-pub struct FindRootError {
-    /// Kind of error encoutered by FindRoot
-    pub kind: FindRootErrorKind,
-}
-
-impl std::error::Error for FindRootError {}
-
-impl fmt::Display for FindRootError {
-    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        unimplemented!()
-    }
-}
-
 /// Find the root of the repository
 /// by searching for a .hg directory in the process’ current directory and its
 /// ancestors
 pub fn find_root() -> Result<PathBuf, FindRootError> {
-    let current_dir = std::env::current_dir().map_err(|e| FindRootError {
-        kind: FindRootErrorKind::GetCurrentDirError(e),
-    })?;
+    let current_dir = std::env::current_dir()
+        .map_err(|e| FindRootError::GetCurrentDirError(e))?;
     Ok(find_root_from_path(&current_dir)?.into())
 }
 
@@ -48,9 +31,7 @@ pub fn find_root_from_path(start: &Path) -> Result<&Path, FindRootError> {
             return Ok(ancestor);
         }
     }
-    Err(FindRootError {
-        kind: FindRootErrorKind::RootNotFound(start.into()),
-    })
+    Err(FindRootError::RootNotFound(start.into()))
 }
 
 #[cfg(test)]
@@ -68,10 +49,8 @@ mod tests {
 
         // TODO do something better
         assert!(match err {
-            FindRootError { kind } => match kind {
-                FindRootErrorKind::RootNotFound(p) => p == path.to_path_buf(),
-                _ => false,
-            },
+            FindRootError::RootNotFound(p) => p == path.to_path_buf(),
+            _ => false,
         })
     }
 

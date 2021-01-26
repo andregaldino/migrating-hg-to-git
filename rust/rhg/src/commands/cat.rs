@@ -1,8 +1,8 @@
 use crate::commands::Command;
-use crate::error::{CommandError, CommandErrorKind};
+use crate::error::CommandError;
 use crate::ui::utf8_to_local;
 use crate::ui::Ui;
-use hg::operations::{cat, CatRevError, CatRevErrorKind};
+use hg::operations::{cat, CatRevError};
 use hg::repo::Repo;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
@@ -34,16 +34,16 @@ impl<'a> Command for CatCommand<'a> {
         let repo = Repo::find()?;
         repo.check_requirements()?;
         let cwd = std::env::current_dir()
-            .or_else(|e| Err(CommandErrorKind::CurrentDirNotFound(e)))?;
+            .or_else(|e| Err(CommandError::CurrentDirNotFound(e)))?;
 
         let mut files = vec![];
         for file in self.files.iter() {
             let normalized = cwd.join(&file);
             let stripped = normalized
                 .strip_prefix(&repo.working_directory_path())
-                .or(Err(CommandErrorKind::Abort(None)))?;
+                .or(Err(CommandError::Abort(None)))?;
             let hg_file = HgPathBuf::try_from(stripped.to_path_buf())
-                .or(Err(CommandErrorKind::Abort(None)))?;
+                .or(Err(CommandError::Abort(None)))?;
             files.push(hg_file);
         }
 
@@ -53,53 +53,51 @@ impl<'a> Command for CatCommand<'a> {
                     .map_err(|e| map_rev_error(rev, e))?;
                 self.display(ui, &data)
             }
-            None => Err(CommandErrorKind::Unimplemented.into()),
+            None => Err(CommandError::Unimplemented.into()),
         }
     }
 }
 
-/// Convert `CatRevErrorKind` to `CommandError`
+/// Convert `CatRevError` to `CommandError`
 fn map_rev_error(rev: &str, err: CatRevError) -> CommandError {
-    CommandError {
-        kind: match err.kind {
-            CatRevErrorKind::IoError(err) => CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!("abort: {}\n", err)).into(),
-            )),
-            CatRevErrorKind::InvalidRevision => CommandErrorKind::Abort(Some(
+    match err {
+        CatRevError::IoError(err) => CommandError::Abort(Some(
+            utf8_to_local(&format!("abort: {}\n", err)).into(),
+        )),
+        CatRevError::InvalidRevision => CommandError::Abort(Some(
+            utf8_to_local(&format!(
+                "abort: invalid revision identifier {}\n",
+                rev
+            ))
+            .into(),
+        )),
+        CatRevError::AmbiguousPrefix => CommandError::Abort(Some(
+            utf8_to_local(&format!(
+                "abort: ambiguous revision identifier {}\n",
+                rev
+            ))
+            .into(),
+        )),
+        CatRevError::UnsuportedRevlogVersion(version) => {
+            CommandError::Abort(Some(
                 utf8_to_local(&format!(
-                    "abort: invalid revision identifier {}\n",
-                    rev
+                    "abort: unsupported revlog version {}\n",
+                    version
                 ))
                 .into(),
-            )),
-            CatRevErrorKind::AmbiguousPrefix => CommandErrorKind::Abort(Some(
+            ))
+        }
+        CatRevError::CorruptedRevlog => {
+            CommandError::Abort(Some("abort: corrupted revlog\n".into()))
+        }
+        CatRevError::UnknowRevlogDataFormat(format) => {
+            CommandError::Abort(Some(
                 utf8_to_local(&format!(
-                    "abort: ambiguous revision identifier {}\n",
-                    rev
+                    "abort: unknow revlog dataformat {:?}\n",
+                    format
                 ))
                 .into(),
-            )),
-            CatRevErrorKind::UnsuportedRevlogVersion(version) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unsupported revlog version {}\n",
-                        version
-                    ))
-                    .into(),
-                ))
-            }
-            CatRevErrorKind::CorruptedRevlog => CommandErrorKind::Abort(Some(
-                "abort: corrupted revlog\n".into(),
-            )),
-            CatRevErrorKind::UnknowRevlogDataFormat(format) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unknow revlog dataformat {:?}\n",
-                        format
-                    ))
-                    .into(),
-                ))
-            }
-        },
+            ))
+        }
     }
 }

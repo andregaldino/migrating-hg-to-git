@@ -1,10 +1,8 @@
 use crate::commands::Command;
-use crate::error::{CommandError, CommandErrorKind};
+use crate::error::CommandError;
 use crate::ui::utf8_to_local;
 use crate::ui::Ui;
-use hg::operations::{
-    debug_data, DebugDataError, DebugDataErrorKind, DebugDataKind,
-};
+use hg::operations::{debug_data, DebugDataError, DebugDataKind};
 use hg::repo::Repo;
 use micro_timer::timed;
 
@@ -40,52 +38,44 @@ impl<'a> Command for DebugDataCommand<'a> {
 
 /// Convert operation errors to command errors
 fn to_command_error(rev: &str, err: DebugDataError) -> CommandError {
-    match err.kind {
-        DebugDataErrorKind::IoError(err) => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!("abort: {}\n", err)).into(),
-            )),
-        },
-        DebugDataErrorKind::InvalidRevision => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: invalid revision identifier{}\n",
-                    rev
-                ))
-                .into(),
-            )),
-        },
-        DebugDataErrorKind::AmbiguousPrefix => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: ambiguous revision identifier{}\n",
-                    rev
-                ))
-                .into(),
-            )),
-        },
-        DebugDataErrorKind::UnsuportedRevlogVersion(version) => CommandError {
-            kind: CommandErrorKind::Abort(Some(
+    match err {
+        DebugDataError::IoError(err) => CommandError::Abort(Some(
+            utf8_to_local(&format!("abort: {}\n", err)).into(),
+        )),
+        DebugDataError::InvalidRevision => CommandError::Abort(Some(
+            utf8_to_local(&format!(
+                "abort: invalid revision identifier{}\n",
+                rev
+            ))
+            .into(),
+        )),
+        DebugDataError::AmbiguousPrefix => CommandError::Abort(Some(
+            utf8_to_local(&format!(
+                "abort: ambiguous revision identifier{}\n",
+                rev
+            ))
+            .into(),
+        )),
+        DebugDataError::UnsuportedRevlogVersion(version) => {
+            CommandError::Abort(Some(
                 utf8_to_local(&format!(
                     "abort: unsupported revlog version {}\n",
                     version
                 ))
                 .into(),
-            )),
-        },
-        DebugDataErrorKind::CorruptedRevlog => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                "abort: corrupted revlog\n".into(),
-            )),
-        },
-        DebugDataErrorKind::UnknowRevlogDataFormat(format) => CommandError {
-            kind: CommandErrorKind::Abort(Some(
+            ))
+        }
+        DebugDataError::CorruptedRevlog => {
+            CommandError::Abort(Some("abort: corrupted revlog\n".into()))
+        }
+        DebugDataError::UnknowRevlogDataFormat(format) => {
+            CommandError::Abort(Some(
                 utf8_to_local(&format!(
                     "abort: unknow revlog dataformat {:?}\n",
                     format
                 ))
                 .into(),
-            )),
-        },
+            ))
+        }
     }
 }
