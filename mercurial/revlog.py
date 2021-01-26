@@ -2112,7 +2112,7 @@ class revlog(object):
         if validatehash:
             self.checkhash(rawtext, node, p1=p1, p2=p2)
 
-        return self.addrawrevision(
+        rev = self.addrawrevision(
             rawtext,
             transaction,
             link,
@@ -2123,6 +2123,7 @@ class revlog(object):
             cachedelta=cachedelta,
             deltacomputer=deltacomputer,
         )
+        return node
 
     def addrawrevision(
         self,
@@ -2145,7 +2146,7 @@ class revlog(object):
             dfh = self._datafp(b"a+")
         ifh = self._indexfp(b"a+")
         try:
-            self._addrevision(
+            return self._addrevision(
                 node,
                 rawtext,
                 transaction,
@@ -2158,7 +2159,6 @@ class revlog(object):
                 dfh,
                 deltacomputer=deltacomputer,
             )
-            return node
         finally:
             if dfh:
                 dfh.close()
