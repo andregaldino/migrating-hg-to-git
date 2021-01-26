@@ -1,9 +1,8 @@
 use crate::commands::Command;
 use crate::error::CommandError;
-use crate::ui::utf8_to_local;
 use crate::ui::Ui;
-use hg::operations::{list_rev_tracked_files, ListRevTrackedFilesError};
-use hg::operations::{Dirstate, ListDirstateTrackedFilesError};
+use hg::operations::list_rev_tracked_files;
+use hg::operations::Dirstate;
 use hg::repo::Repo;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
 use hg::utils::hg_path::{HgPath, HgPathBuf};
@@ -52,76 +51,13 @@ impl<'a> Command for FilesCommand<'a> {
         let repo = Repo::find()?;
         repo.check_requirements()?;
         if let Some(rev) = self.rev {
-            let files = list_rev_tracked_files(&repo, rev)
-                .map_err(|e| map_rev_error(rev, e))?;
+            let files =
+                list_rev_tracked_files(&repo, rev).map_err(|e| (e, rev))?;
             self.display_files(ui, &repo, files.iter())
         } else {
-            let distate = Dirstate::new(&repo).map_err(map_dirstate_error)?;
-            let files = distate.tracked_files().map_err(map_dirstate_error)?;
+            let distate = Dirstate::new(&repo)?;
+            let files = distate.tracked_files()?;
             self.display_files(ui, &repo, files)
-        }
-    }
-}
-
-/// Convert `ListRevTrackedFilesError` to `CommandError`
-fn map_rev_error(rev: &str, err: ListRevTrackedFilesError) -> CommandError {
-    match err {
-        ListRevTrackedFilesError::IoError(err) => CommandError::Abort(Some(
-            utf8_to_local(&format!("abort: {}\n", err)).into(),
-        )),
-        ListRevTrackedFilesError::InvalidRevision => {
-            CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: invalid revision identifier {}\n",
-                    rev
-                ))
-                .into(),
-            ))
-        }
-        ListRevTrackedFilesError::AmbiguousPrefix => {
-            CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: ambiguous revision identifier {}\n",
-                    rev
-                ))
-                .into(),
-            ))
-        }
-        ListRevTrackedFilesError::UnsuportedRevlogVersion(version) => {
-            CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: unsupported revlog version {}\n",
-                    version
-                ))
-                .into(),
-            ))
-        }
-        ListRevTrackedFilesError::CorruptedRevlog => {
-            CommandError::Abort(Some("abort: corrupted revlog\n".into()))
-        }
-        ListRevTrackedFilesError::UnknowRevlogDataFormat(format) => {
-            CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: unknow revlog dataformat {:?}\n",
-                    format
-                ))
-                .into(),
-            ))
-        }
-    }
-}
-
-/// Convert `ListDirstateTrackedFilesError` to `CommandError`
-fn map_dirstate_error(err: ListDirstateTrackedFilesError) -> CommandError {
-    match err {
-        ListDirstateTrackedFilesError::IoError(err) => CommandError::Abort(
-            Some(utf8_to_local(&format!("abort: {}\n", err)).into()),
-        ),
-        ListDirstateTrackedFilesError::ParseError(_) => {
-            CommandError::Abort(Some(
-                // TODO find a better error message
-                b"abort: parse error\n".to_vec(),
-            ))
         }
     }
 }

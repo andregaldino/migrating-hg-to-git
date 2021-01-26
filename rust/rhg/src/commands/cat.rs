@@ -1,8 +1,7 @@
 use crate::commands::Command;
 use crate::error::CommandError;
-use crate::ui::utf8_to_local;
 use crate::ui::Ui;
-use hg::operations::{cat, CatRevError};
+use hg::operations::cat;
 use hg::repo::Repo;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
@@ -49,55 +48,10 @@ impl<'a> Command for CatCommand<'a> {
 
         match self.rev {
             Some(rev) => {
-                let data = cat(&repo, rev, &files)
-                    .map_err(|e| map_rev_error(rev, e))?;
+                let data = cat(&repo, rev, &files).map_err(|e| (e, rev))?;
                 self.display(ui, &data)
             }
             None => Err(CommandError::Unimplemented.into()),
-        }
-    }
-}
-
-/// Convert `CatRevError` to `CommandError`
-fn map_rev_error(rev: &str, err: CatRevError) -> CommandError {
-    match err {
-        CatRevError::IoError(err) => CommandError::Abort(Some(
-            utf8_to_local(&format!("abort: {}\n", err)).into(),
-        )),
-        CatRevError::InvalidRevision => CommandError::Abort(Some(
-            utf8_to_local(&format!(
-                "abort: invalid revision identifier {}\n",
-                rev
-            ))
-            .into(),
-        )),
-        CatRevError::AmbiguousPrefix => CommandError::Abort(Some(
-            utf8_to_local(&format!(
-                "abort: ambiguous revision identifier {}\n",
-                rev
-            ))
-            .into(),
-        )),
-        CatRevError::UnsuportedRevlogVersion(version) => {
-            CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: unsupported revlog version {}\n",
-                    version
-                ))
-                .into(),
-            ))
-        }
-        CatRevError::CorruptedRevlog => {
-            CommandError::Abort(Some("abort: corrupted revlog\n".into()))
-        }
-        CatRevError::UnknowRevlogDataFormat(format) => {
-            CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: unknow revlog dataformat {:?}\n",
-                    format
-                ))
-                .into(),
-            ))
         }
     }
 }
