@@ -20,6 +20,11 @@ extern "C" {
 #include "frameobject.h"          // PyFrameObject, PyFrame_GetBack()
 
 
+/* VC 2008 doesn't know about the inline keyword. */
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#define inline __forceinline
+#endif
+
 // Cast argument to PyObject* type.
 #ifndef _PyObject_CAST
 #  define _PyObject_CAST(op) ((PyObject*)(op))
