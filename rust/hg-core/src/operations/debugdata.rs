@@ -7,8 +7,6 @@
 
 use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
-use crate::revlog::NodePrefix;
-use crate::revlog::Revision;
 
 /// Kind of data to debug
 #[derive(Debug, Copy, Clone)]
@@ -79,7 +77,7 @@ impl From<RevlogError> for DebugDataError {
 /// Dump the contents data of a revision.
 pub fn debug_data(
     repo: &Repo,
-    rev: &str,
+    revset: &str,
     kind: DebugDataKind,
 ) -> Result<Vec<u8>, DebugDataError> {
     let index_file = match kind {
@@ -87,16 +85,8 @@ pub fn debug_data(
         DebugDataKind::Manifest => "00manifest.i",
     };
     let revlog = Revlog::open(repo, index_file, None)?;
-
-    let data = match rev.parse::<Revision>() {
-        Ok(rev) => revlog.get_rev_data(rev)?,
-        _ => {
-            let node = NodePrefix::from_hex(&rev)
-                .map_err(|_| DebugDataErrorKind::InvalidRevision)?;
-            let rev = revlog.get_node_rev(node)?;
-            revlog.get_rev_data(rev)?
-        }
-    };
-
+    let rev =
+        crate::revset::resolve_rev_number_or_hex_prefix(revset, &revlog)?;
+    let data = revlog.get_rev_data(rev)?;
     Ok(data)
 }

@@ -6,7 +6,7 @@ use crate::revlog::Revision;
 /// A specialized `Revlog` to work with `changelog` data format.
 pub struct Changelog {
     /// The generic `revlog` format.
-    revlog: Revlog,
+    pub(crate) revlog: Revlog,
 }
 
 impl Changelog {

@@ -15,8 +15,6 @@ use crate::revlog::path_encode::path_encode;
 use crate::revlog::revlog::Revlog;
 use crate::revlog::revlog::RevlogError;
 use crate::revlog::Node;
-use crate::revlog::NodePrefix;
-use crate::revlog::Revision;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 
@@ -77,23 +75,15 @@ impl From<RevlogError> for CatRevError {
 /// * `files`: The files to output.
 pub fn cat(
     repo: &Repo,
-    rev: &str,
+    revset: &str,
     files: &[HgPathBuf],
 ) -> Result<Vec<u8>, CatRevError> {
+    let rev = crate::revset::resolve_single(revset, repo)?;
     let changelog = Changelog::open(repo)?;
     let manifest = Manifest::open(repo)?;
-
-    let changelog_entry = match rev.parse::<Revision>() {
-        Ok(rev) => changelog.get_rev(rev)?,
-        _ => {
-            let changelog_node = NodePrefix::from_hex(&rev)
-                .map_err(|_| CatRevErrorKind::InvalidRevision)?;
-            changelog.get_node(changelog_node)?
-        }
-    };
+    let changelog_entry = changelog.get_rev(rev)?;
     let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
         .map_err(|_| CatRevErrorKind::CorruptedRevlog)?;
-
     let manifest_entry = manifest.get_node(manifest_node.into())?;
     let mut bytes = vec![];
 

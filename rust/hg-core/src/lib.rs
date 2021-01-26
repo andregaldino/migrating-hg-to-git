@@ -28,6 +28,7 @@ pub mod revlog;
 pub use revlog::*;
 pub mod config;
 pub mod operations;
+pub mod revset;
 pub mod utils;
 
 use crate::utils::hg_path::{HgPathBuf, HgPathError};

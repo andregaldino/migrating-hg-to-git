@@ -9,9 +9,8 @@ use crate::dirstate::parsers::parse_dirstate;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
 use crate::revlog::manifest::{Manifest, ManifestEntry};
-use crate::revlog::node::{Node, NodePrefix};
+use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
-use crate::revlog::Revision;
 use crate::utils::hg_path::HgPath;
 use crate::{DirstateParseError, EntryState};
 use rayon::prelude::*;
@@ -137,19 +136,12 @@ impl From<RevlogError> for ListRevTrackedFilesError {
 /// List files under Mercurial control at a given revision.
 pub fn list_rev_tracked_files(
     repo: &Repo,
-    rev: &str,
+    revset: &str,
 ) -> Result<FilesForRev, ListRevTrackedFilesError> {
+    let rev = crate::revset::resolve_single(revset, repo)?;
     let changelog = Changelog::open(repo)?;
     let manifest = Manifest::open(repo)?;
-
-    let changelog_entry = match rev.parse::<Revision>() {
-        Ok(rev) => changelog.get_rev(rev)?,
-        _ => {
-            let changelog_node = NodePrefix::from_hex(&rev)
-                .or(Err(ListRevTrackedFilesErrorKind::InvalidRevision))?;
-            changelog.get_node(changelog_node)?
-        }
-    };
+    let changelog_entry = changelog.get_rev(rev)?;
     let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
         .or(Err(ListRevTrackedFilesErrorKind::CorruptedRevlog))?;
     let manifest_entry = manifest.get_node(manifest_node.into())?;

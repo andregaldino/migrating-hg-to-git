@@ -150,6 +150,11 @@ impl Revlog {
         found_by_prefix.ok_or(RevlogError::InvalidRevision)
     }
 
+    /// Returns whether the given revision exists in this revlog.
+    pub fn has_rev(&self, rev: Revision) -> bool {
+        self.index.get_entry(rev).is_some()
+    }
+
     /// Return the full data associated to a revision.
     ///
     /// All entries required to build the final data out of deltas will be
