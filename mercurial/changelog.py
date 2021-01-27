@@ -598,9 +598,10 @@ class changelog(revlog.revlog):
             parseddate = b"%s %s" % (parseddate, extra)
         l = [hex(manifest), user, parseddate] + sortedfiles + [b"", desc]
         text = b"\n".join(l)
-        return self.addrevision(
+        rev = self.addrevision(
             text, transaction, len(self), p1, p2, sidedata=sidedata, flags=flags
         )
+        return self.node(rev)
 
     def branchinfo(self, rev):
         """return the branch name and open/close state of a revision

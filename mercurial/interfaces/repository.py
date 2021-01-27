@@ -734,7 +734,7 @@ class ifilemutation(interfaceutil.Interface):
         flags=0,
         cachedelta=None,
     ):
-        """Add a new revision to the store.
+        """Add a new revision to the store and return its number.
 
         This is similar to ``add()`` except it operates at a lower level.
 

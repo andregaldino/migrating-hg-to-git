@@ -2106,13 +2106,14 @@ class revlog(object):
             )
 
         node = node or self.hash(rawtext, p1, p2)
-        if self.index.has_node(node):
-            return node
+        rev = self.index.get_rev(node)
+        if rev is not None:
+            return rev
 
         if validatehash:
             self.checkhash(rawtext, node, p1=p1, p2=p2)
 
-        rev = self.addrawrevision(
+        return self.addrawrevision(
             rawtext,
             transaction,
             link,
@@ -2123,7 +2124,6 @@ class revlog(object):
             cachedelta=cachedelta,
             deltacomputer=deltacomputer,
         )
-        return node
 
     def addrawrevision(
         self,

@@ -1704,9 +1704,10 @@ class manifestrevlog(object):
             arraytext, deltatext = m.fastdelta(self.fulltextcache[p1], work)
             cachedelta = self._revlog.rev(p1), deltatext
             text = util.buffer(arraytext)
-            n = self._revlog.addrevision(
+            rev = self._revlog.addrevision(
                 text, transaction, link, p1, p2, cachedelta
             )
+            n = self._revlog.node(rev)
         except FastdeltaUnavailable:
             # The first parent manifest isn't already loaded or the
             # manifest implementation doesn't support fastdelta, so
@@ -1724,7 +1725,8 @@ class manifestrevlog(object):
                 arraytext = None
             else:
                 text = m.text()
-                n = self._revlog.addrevision(text, transaction, link, p1, p2)
+                rev = self._revlog.addrevision(text, transaction, link, p1, p2)
+                n = self._revlog.node(rev)
                 arraytext = bytearray(text)
 
         if arraytext is not None:
@@ -1765,9 +1767,10 @@ class manifestrevlog(object):
                 n = m2.node()
 
         if not n:
-            n = self._revlog.addrevision(
+            rev = self._revlog.addrevision(
                 text, transaction, link, m1.node(), m2.node()
             )
+            n = self._revlog.node(rev)
 
         # Save nodeid so parent manifest can calculate its nodeid
         m.setnode(n)

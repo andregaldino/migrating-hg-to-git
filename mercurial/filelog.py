@@ -176,7 +176,8 @@ class filelog(object):
     def add(self, text, meta, transaction, link, p1=None, p2=None):
         if meta or text.startswith(b'\1\n'):
             text = storageutil.packmeta(meta, text)
-        return self.addrevision(text, transaction, link, p1, p2)
+        rev = self.addrevision(text, transaction, link, p1, p2)
+        return self.node(rev)
 
     def renamed(self, node):
         return storageutil.filerevisioncopied(self, node)

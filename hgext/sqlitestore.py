@@ -636,7 +636,8 @@ class sqlitefilestore(object):
         if meta or filedata.startswith(b'\x01\n'):
             filedata = storageutil.packmeta(meta, filedata)
 
-        return self.addrevision(filedata, transaction, linkrev, p1, p2)
+        rev = self.addrevision(filedata, transaction, linkrev, p1, p2)
+        return self.node(rev)
 
     def addrevision(
         self,
@@ -658,15 +659,16 @@ class sqlitefilestore(object):
         if validatehash:
             self._checkhash(revisiondata, node, p1, p2)
 
-        if node in self._nodetorev:
-            return node
+        rev = self._nodetorev.get(node)
+        if rev is not None:
+            return rev
 
-        node = self._addrawrevision(
+        rev = self._addrawrevision(
             node, revisiondata, transaction, linkrev, p1, p2
         )
 
         self._revisioncache[node] = revisiondata
-        return node
+        return rev
 
     def addgroup(
         self,
@@ -1079,7 +1081,7 @@ class sqlitefilestore(object):
         self._revtonode[rev] = node
         self._revisions[node] = entry
 
-        return node
+        return rev
 
 
 class sqliterepository(localrepo.localrepository):
