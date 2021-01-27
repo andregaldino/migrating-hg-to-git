@@ -163,7 +163,7 @@ Requirements
 
   $ echo -e '\xFF' >> .hg/requires
   $ rhg debugrequirements
-  abort: .hg/requires is corrupted
+  corrupted repository: parse error in 'requires' file
   [255]
 
 Persistent nodemap

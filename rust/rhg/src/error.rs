@@ -4,7 +4,6 @@ use crate::ui::UiError;
 use format_bytes::format_bytes;
 use hg::errors::HgError;
 use hg::operations::FindRootError;
-use hg::requirements::RequirementsError;
 use hg::revlog::revlog::RevlogError;
 use hg::utils::files::get_bytes_from_path;
 use std::convert::From;
@@ -17,9 +16,6 @@ pub enum CommandError {
     RootNotFound(PathBuf),
     /// The current directory cannot be found
     CurrentDirNotFound(std::io::Error),
-    /// `.hg/requires`
-    #[from]
-    RequirementsError(RequirementsError),
     /// The standard output stream cannot be written to
     StdoutError,
     /// The standard error stream cannot be written to
@@ -38,10 +34,6 @@ impl CommandError {
         match self {
             CommandError::RootNotFound(_) => exitcode::ABORT,
             CommandError::CurrentDirNotFound(_) => exitcode::ABORT,
-            CommandError::RequirementsError(
-                RequirementsError::Unsupported { .. },
-            ) => exitcode::UNIMPLEMENTED_COMMAND,
-            CommandError::RequirementsError(_) => exitcode::ABORT,
             CommandError::StdoutError => exitcode::ABORT,
             CommandError::StderrError => exitcode::ABORT,
             CommandError::Abort(_) => exitcode::ABORT,
@@ -67,15 +59,9 @@ impl CommandError {
                 b"abort: error getting current working directory: {}\n",
                 e.to_string().as_bytes(),
             )),
-            CommandError::RequirementsError(RequirementsError::Corrupted) => {
-                Some(
-                    "abort: .hg/requires is corrupted\n".as_bytes().to_owned(),
-                )
-            }
             CommandError::Abort(message) => message.to_owned(),
 
-            CommandError::RequirementsError(_)
-            | CommandError::StdoutError
+            CommandError::StdoutError
             | CommandError::StderrError
             | CommandError::Unimplemented
             | CommandError::Other(HgError::UnsupportedFeature(_)) => None,

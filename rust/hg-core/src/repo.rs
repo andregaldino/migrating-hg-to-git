@@ -1,3 +1,4 @@
+use crate::errors::HgError;
 use crate::operations::{find_root, FindRootError};
 use crate::requirements;
 use memmap::{Mmap, MmapOptions};
@@ -33,9 +34,7 @@ impl Repo {
         find_root().map(Self::for_path)
     }
 
-    pub fn check_requirements(
-        &self,
-    ) -> Result<(), requirements::RequirementsError> {
+    pub fn check_requirements(&self) -> Result<(), HgError> {
         requirements::check(self)
     }
 

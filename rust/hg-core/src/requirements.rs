@@ -1,19 +1,7 @@
+use crate::errors::{HgError, HgResultExt, IoResultExt};
 use crate::repo::Repo;
-use std::io;
 
-#[derive(Debug)]
-pub enum RequirementsError {
-    // TODO: include a path?
-    Io(io::Error),
-    /// The `requires` file is corrupted
-    Corrupted,
-    /// The repository requires a feature that we don't support
-    Unsupported {
-        feature: String,
-    },
-}
-
-fn parse(bytes: &[u8]) -> Result<Vec<String>, ()> {
+fn parse(bytes: &[u8]) -> Result<Vec<String>, HgError> {
     // The Python code reading this file uses `str.splitlines`
     // which looks for a number of line separators (even including a couple of
     // non-ASCII ones), but Python code writing it always uses `\n`.
@@ -27,16 +15,21 @@ fn parse(bytes: &[u8]) -> Result<Vec<String>, ()> {
             if line[0].is_ascii_alphanumeric() && line.is_ascii() {
                 Ok(String::from_utf8(line.into()).unwrap())
             } else {
-                Err(())
+                Err(HgError::corrupted("parse error in 'requires' file"))
             }
         })
         .collect()
 }
 
-pub fn load(repo: &Repo) -> Result<Vec<String>, RequirementsError> {
-    match repo.hg_vfs().read("requires") {
-        Ok(bytes) => parse(&bytes).map_err(|()| RequirementsError::Corrupted),
-
+pub fn load(repo: &Repo) -> Result<Vec<String>, HgError> {
+    if let Some(bytes) = repo
+        .hg_vfs()
+        .read("requires")
+        .for_file("requires".as_ref())
+        .io_not_found_as_none()?
+    {
+        parse(&bytes)
+    } else {
         // Treat a missing file the same as an empty file.
         // From `mercurial/localrepo.py`:
         // > requires file contains a newline-delimited list of
@@ -44,18 +37,19 @@ pub fn load(repo: &Repo) -> Result<Vec<String>, RequirementsError> {
         // > the repository. This file was introduced in Mercurial 0.9.2,
         // > which means very old repositories may not have one. We assume
         // > a missing file translates to no requirements.
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            Ok(Vec::new())
-        }
-
-        Err(error) => Err(RequirementsError::Io(error))?,
+        Ok(Vec::new())
     }
 }
 
-pub fn check(repo: &Repo) -> Result<(), RequirementsError> {
+pub fn check(repo: &Repo) -> Result<(), HgError> {
     for feature in load(repo)? {
         if !SUPPORTED.contains(&&*feature) {
-            return Err(RequirementsError::Unsupported { feature });
+            // TODO: collect and all unknown features and include them in the
+            // error message?
+            return Err(HgError::UnsupportedFeature(format!(
+                "repository requires feature unknown to this Mercurial: {}",
+                feature
+            )));
         }
     }
     Ok(())
