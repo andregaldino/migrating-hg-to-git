@@ -1,4 +1,4 @@
-use crate::errors::HgError;
+use crate::errors::{HgError, IoResultExt};
 use crate::operations::{find_root, FindRootError};
 use crate::requirements;
 use memmap::{Mmap, MmapOptions};
@@ -68,24 +68,19 @@ impl Vfs<'_> {
     pub(crate) fn read(
         &self,
         relative_path: impl AsRef<Path>,
-    ) -> std::io::Result<Vec<u8>> {
-        std::fs::read(self.base.join(relative_path))
-    }
-
-    pub(crate) fn open(
-        &self,
-        relative_path: impl AsRef<Path>,
-    ) -> std::io::Result<std::fs::File> {
-        std::fs::File::open(self.base.join(relative_path))
+    ) -> Result<Vec<u8>, HgError> {
+        let path = self.base.join(relative_path);
+        std::fs::read(&path).for_file(&path)
     }
 
     pub(crate) fn mmap_open(
         &self,
         relative_path: impl AsRef<Path>,
-    ) -> std::io::Result<Mmap> {
-        let file = self.open(relative_path)?;
+    ) -> Result<Mmap, HgError> {
+        let path = self.base.join(relative_path);
+        let file = std::fs::File::open(&path).for_file(&path)?;
         // TODO: what are the safety requirements here?
-        let mmap = unsafe { MmapOptions::new().map(&file) }?;
+        let mmap = unsafe { MmapOptions::new().map(&file) }.for_file(&path)?;
         Ok(mmap)
     }
 }

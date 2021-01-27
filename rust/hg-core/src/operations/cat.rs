@@ -33,8 +33,8 @@ pub fn cat(
     let changelog = Changelog::open(repo)?;
     let manifest = Manifest::open(repo)?;
     let changelog_entry = changelog.get_rev(rev)?;
-    let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
-        .map_err(|_| RevlogError::Corrupted)?;
+    let manifest_node =
+        Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
     let manifest_entry = manifest.get_node(manifest_node.into())?;
     let mut bytes = vec![];
 
@@ -46,8 +46,7 @@ pub fn cat(
 
                 let file_log =
                     Revlog::open(repo, &index_path, Some(&data_path))?;
-                let file_node = Node::from_hex(node_bytes)
-                    .map_err(|_| RevlogError::Corrupted)?;
+                let file_node = Node::from_hex_for_repo(node_bytes)?;
                 let file_rev = file_log.get_node_rev(file_node.into())?;
                 let data = file_log.get_rev_data(file_rev)?;
                 if data.starts_with(&METADATA_DELIMITER) {

@@ -13,25 +13,34 @@ use zstd;
 use super::index::Index;
 use super::node::{NodePrefix, NODE_BYTES_LENGTH, NULL_NODE};
 use super::nodemap;
-use super::nodemap::NodeMap;
+use super::nodemap::{NodeMap, NodeMapError};
 use super::nodemap_docket::NodeMapDocket;
 use super::patch;
+use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
 
+#[derive(derive_more::From)]
 pub enum RevlogError {
-    IoError(std::io::Error),
-    UnsuportedVersion(u16),
     InvalidRevision,
     /// Found more than one entry whose ID match the requested prefix
     AmbiguousPrefix,
-    Corrupted,
-    UnknowDataFormat(u8),
+    #[from]
+    Other(HgError),
 }
 
-impl From<bytes_cast::FromBytesError> for RevlogError {
-    fn from(_: bytes_cast::FromBytesError) -> Self {
-        RevlogError::Corrupted
+impl From<NodeMapError> for RevlogError {
+    fn from(error: NodeMapError) -> Self {
+        match error {
+            NodeMapError::MultipleResults => RevlogError::AmbiguousPrefix,
+            NodeMapError::RevisionNotInIndex(_) => RevlogError::corrupted(),
+        }
+    }
+}
+
+impl RevlogError {
+    fn corrupted() -> Self {
+        RevlogError::Other(HgError::corrupted("corrupted revlog"))
     }
 }
 
@@ -59,14 +68,12 @@ impl Revlog {
         data_path: Option<&Path>,
     ) -> Result<Self, RevlogError> {
         let index_path = index_path.as_ref();
-        let index_mmap = repo
-            .store_vfs()
-            .mmap_open(&index_path)
-            .map_err(RevlogError::IoError)?;
+        let index_mmap = repo.store_vfs().mmap_open(&index_path)?;
 
         let version = get_version(&index_mmap);
         if version != 1 {
-            return Err(RevlogError::UnsuportedVersion(version));
+            // A proper new version should have had a repo/store requirement.
+            return Err(RevlogError::corrupted());
         }
 
         let index = Index::new(Box::new(index_mmap))?;
@@ -80,10 +87,7 @@ impl Revlog {
                 None
             } else {
                 let data_path = data_path.unwrap_or(&default_data_path);
-                let data_mmap = repo
-                    .store_vfs()
-                    .mmap_open(data_path)
-                    .map_err(RevlogError::IoError)?;
+                let data_mmap = repo.store_vfs().mmap_open(data_path)?;
                 Some(Box::new(data_mmap))
             };
 
@@ -121,9 +125,7 @@ impl Revlog {
     ) -> Result<Revision, RevlogError> {
         if let Some(nodemap) = &self.nodemap {
             return nodemap
-                .find_bin(&self.index, node)
-                // TODO: propagate details of this error:
-                .map_err(|_| RevlogError::Corrupted)?
+                .find_bin(&self.index, node)?
                 .ok_or(RevlogError::InvalidRevision);
         }
 
@@ -136,7 +138,9 @@ impl Revlog {
         let mut found_by_prefix = None;
         for rev in (0..self.len() as Revision).rev() {
             let index_entry =
-                self.index.get_entry(rev).ok_or(RevlogError::Corrupted)?;
+                self.index.get_entry(rev).ok_or(HgError::corrupted(
+                    "revlog references a revision not in the index",
+                ))?;
             if node == *index_entry.hash() {
                 return Ok(rev);
             }
@@ -167,8 +171,9 @@ impl Revlog {
         let mut delta_chain = vec![];
         while let Some(base_rev) = entry.base_rev {
             delta_chain.push(entry);
-            entry =
-                self.get_entry(base_rev).or(Err(RevlogError::Corrupted))?;
+            entry = self
+                .get_entry(base_rev)
+                .map_err(|_| RevlogError::corrupted())?;
         }
 
         // TODO do not look twice in the index
@@ -191,7 +196,7 @@ impl Revlog {
         ) {
             Ok(data)
         } else {
-            Err(RevlogError::Corrupted)
+            Err(RevlogError::corrupted())
         }
     }
 
@@ -301,7 +306,8 @@ impl<'a> RevlogEntry<'a> {
             b'x' => Ok(Cow::Owned(self.uncompressed_zlib_data()?)),
             // zstd data.
             b'\x28' => Ok(Cow::Owned(self.uncompressed_zstd_data()?)),
-            format_type => Err(RevlogError::UnknowDataFormat(format_type)),
+            // A proper new format should have had a repo/store requirement.
+            _format_type => Err(RevlogError::corrupted()),
         }
     }
 
@@ -311,13 +317,13 @@ impl<'a> RevlogEntry<'a> {
             let mut buf = Vec::with_capacity(self.compressed_len);
             decoder
                 .read_to_end(&mut buf)
-                .or(Err(RevlogError::Corrupted))?;
+                .map_err(|_| RevlogError::corrupted())?;
             Ok(buf)
         } else {
             let mut buf = vec![0; self.uncompressed_len];
             decoder
                 .read_exact(&mut buf)
-                .or(Err(RevlogError::Corrupted))?;
+                .map_err(|_| RevlogError::corrupted())?;
             Ok(buf)
         }
     }
@@ -326,14 +332,14 @@ impl<'a> RevlogEntry<'a> {
         if self.is_delta() {
             let mut buf = Vec::with_capacity(self.compressed_len);
             zstd::stream::copy_decode(self.bytes, &mut buf)
-                .or(Err(RevlogError::Corrupted))?;
+                .map_err(|_| RevlogError::corrupted())?;
             Ok(buf)
         } else {
             let mut buf = vec![0; self.uncompressed_len];
             let len = zstd::block::decompress_to_buffer(self.bytes, &mut buf)
-                .or(Err(RevlogError::Corrupted))?;
+                .map_err(|_| RevlogError::corrupted())?;
             if len != self.uncompressed_len {
-                Err(RevlogError::Corrupted)
+                Err(RevlogError::corrupted())
             } else {
                 Ok(buf)
             }

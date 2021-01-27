@@ -1,3 +1,4 @@
+use crate::errors::{HgError, HgResultExt};
 use bytes_cast::{unaligned, BytesCast};
 use memmap::Mmap;
 use std::path::{Path, PathBuf};
@@ -38,12 +39,12 @@ impl NodeMapDocket {
         index_path: &Path,
     ) -> Result<Option<(Self, Mmap)>, RevlogError> {
         let docket_path = index_path.with_extension("n");
-        let docket_bytes = match repo.store_vfs().read(&docket_path) {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                return Ok(None)
-            }
-            Err(e) => return Err(RevlogError::IoError(e)),
-            Ok(bytes) => bytes,
+        let docket_bytes = if let Some(bytes) =
+            repo.store_vfs().read(&docket_path).io_not_found_as_none()?
+        {
+            bytes
+        } else {
+            return Ok(None);
         };
 
         let input = if let Some((&ONDISK_VERSION, rest)) =
@@ -54,36 +55,40 @@ impl NodeMapDocket {
             return Ok(None);
         };
 
-        let (header, rest) = DocketHeader::from_bytes(input)?;
+        /// Treat any error as a parse error
+        fn parse<T, E>(result: Result<T, E>) -> Result<T, RevlogError> {
+            result.map_err(|_| {
+                HgError::corrupted("nodemap docket parse error").into()
+            })
+        }
+
+        let (header, rest) = parse(DocketHeader::from_bytes(input))?;
         let uid_size = header.uid_size as usize;
         // TODO: do we care about overflow for 4 GB+ nodemap files on 32-bit
         // systems?
         let tip_node_size = header.tip_node_size.get() as usize;
         let data_length = header.data_length.get() as usize;
-        let (uid, rest) = u8::slice_from_bytes(rest, uid_size)?;
-        let (_tip_node, _rest) = u8::slice_from_bytes(rest, tip_node_size)?;
-        let uid =
-            std::str::from_utf8(uid).map_err(|_| RevlogError::Corrupted)?;
+        let (uid, rest) = parse(u8::slice_from_bytes(rest, uid_size))?;
+        let (_tip_node, _rest) =
+            parse(u8::slice_from_bytes(rest, tip_node_size))?;
+        let uid = parse(std::str::from_utf8(uid))?;
         let docket = NodeMapDocket { data_length };
 
         let data_path = rawdata_path(&docket_path, uid);
-        // TODO: use `std::fs::read` here when the `persistent-nodemap.mmap`
+        // TODO: use `vfs.read()` here when the `persistent-nodemap.mmap`
         // config is false?
-        match repo.store_vfs().mmap_open(&data_path) {
-            Ok(mmap) => {
-                if mmap.len() >= data_length {
-                    Ok(Some((docket, mmap)))
-                } else {
-                    Err(RevlogError::Corrupted)
-                }
+        if let Some(mmap) = repo
+            .store_vfs()
+            .mmap_open(&data_path)
+            .io_not_found_as_none()?
+        {
+            if mmap.len() >= data_length {
+                Ok(Some((docket, mmap)))
+            } else {
+                Err(HgError::corrupted("persistent nodemap too short").into())
             }
-            Err(error) => {
-                if error.kind() == std::io::ErrorKind::NotFound {
-                    Ok(None)
-                } else {
-                    Err(RevlogError::IoError(error))
-                }
-            }
+        } else {
+            Ok(None)
         }
     }
 }

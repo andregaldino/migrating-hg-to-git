@@ -8,6 +8,7 @@
 //! In Mercurial code base, it is customary to call "a node" the binary SHA
 //! of a revision.
 
+use crate::errors::HgError;
 use bytes_cast::BytesCast;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
@@ -134,6 +135,19 @@ impl Node {
         } else {
             Err(FromHexError)
         }
+    }
+
+    /// `from_hex`, but for input from an internal file of the repository such
+    /// as a changelog or manifest entry.
+    ///
+    /// An error is treated as repository corruption.
+    pub fn from_hex_for_repo(hex: impl AsRef<[u8]>) -> Result<Node, HgError> {
+        Self::from_hex(hex.as_ref()).map_err(|FromHexError| {
+            HgError::CorruptedRepository(format!(
+                "Expected a full hexadecimal node ID, found {}",
+                String::from_utf8_lossy(hex.as_ref())
+            ))
+        })
     }
 
     /// Provide access to binary data

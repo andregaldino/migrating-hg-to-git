@@ -1,4 +1,4 @@
-use crate::errors::{HgError, HgResultExt, IoResultExt};
+use crate::errors::{HgError, HgResultExt};
 use crate::repo::Repo;
 
 fn parse(bytes: &[u8]) -> Result<Vec<String>, HgError> {
@@ -22,11 +22,8 @@ fn parse(bytes: &[u8]) -> Result<Vec<String>, HgError> {
 }
 
 pub fn load(repo: &Repo) -> Result<Vec<String>, HgError> {
-    if let Some(bytes) = repo
-        .hg_vfs()
-        .read("requires")
-        .for_file("requires".as_ref())
-        .io_not_found_as_none()?
+    if let Some(bytes) =
+        repo.hg_vfs().read("requires").io_not_found_as_none()?
     {
         parse(&bytes)
     } else {

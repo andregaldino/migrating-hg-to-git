@@ -6,7 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::dirstate::parsers::parse_dirstate;
-use crate::errors::{HgError, IoResultExt};
+use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
 use crate::revlog::manifest::{Manifest, ManifestEntry};
@@ -25,12 +25,7 @@ pub struct Dirstate {
 
 impl Dirstate {
     pub fn new(repo: &Repo) -> Result<Self, HgError> {
-        let content = repo
-            .hg_vfs()
-            .read("dirstate")
-            // TODO: this will be more accurate when we use `HgError` in
-            // `Vfs::read`.
-            .for_file("dirstate".as_ref())?;
+        let content = repo.hg_vfs().read("dirstate")?;
         Ok(Self { content })
     }
 
@@ -57,8 +52,8 @@ pub fn list_rev_tracked_files(
     let changelog = Changelog::open(repo)?;
     let manifest = Manifest::open(repo)?;
     let changelog_entry = changelog.get_rev(rev)?;
-    let manifest_node = Node::from_hex(&changelog_entry.manifest_node()?)
-        .map_err(|_| RevlogError::Corrupted)?;
+    let manifest_node =
+        Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
     let manifest_entry = manifest.get_node(manifest_node.into())?;
     Ok(FilesForRev(manifest_entry))
 }

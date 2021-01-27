@@ -35,6 +35,9 @@ pub enum IoErrorContext {
 
 impl HgError {
     pub fn corrupted(explanation: impl Into<String>) -> Self {
+        // TODO: capture a backtrace here and keep it in the error value
+        // to aid debugging?
+        // https://doc.rust-lang.org/std/backtrace/struct.Backtrace.html
         HgError::CorruptedRepository(explanation.into())
     }
 }

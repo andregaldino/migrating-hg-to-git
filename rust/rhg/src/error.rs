@@ -103,9 +103,6 @@ impl From<FindRootError> for CommandError {
 impl From<(RevlogError, &str)> for CommandError {
     fn from((err, rev): (RevlogError, &str)) -> CommandError {
         match err {
-            RevlogError::IoError(err) => CommandError::Abort(Some(
-                utf8_to_local(&format!("abort: {}\n", err)).into(),
-            )),
             RevlogError::InvalidRevision => CommandError::Abort(Some(
                 utf8_to_local(&format!(
                     "abort: invalid revision identifier {}\n",
@@ -120,27 +117,7 @@ impl From<(RevlogError, &str)> for CommandError {
                 ))
                 .into(),
             )),
-            RevlogError::UnsuportedVersion(version) => {
-                CommandError::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unsupported revlog version {}\n",
-                        version
-                    ))
-                    .into(),
-                ))
-            }
-            RevlogError::Corrupted => {
-                CommandError::Abort(Some("abort: corrupted revlog\n".into()))
-            }
-            RevlogError::UnknowDataFormat(format) => {
-                CommandError::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unknow revlog dataformat {:?}\n",
-                        format
-                    ))
-                    .into(),
-                ))
-            }
+            RevlogError::Other(err) => CommandError::Other(err),
         }
     }
 }

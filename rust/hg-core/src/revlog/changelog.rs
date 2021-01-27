@@ -1,3 +1,4 @@
+use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefix;
@@ -53,6 +54,8 @@ impl ChangelogEntry {
     /// Return the node id of the `manifest` referenced by this `changelog`
     /// entry.
     pub fn manifest_node(&self) -> Result<&[u8], RevlogError> {
-        self.lines().next().ok_or(RevlogError::Corrupted)
+        self.lines()
+            .next()
+            .ok_or_else(|| HgError::corrupted("empty changelog entry").into())
     }
 }

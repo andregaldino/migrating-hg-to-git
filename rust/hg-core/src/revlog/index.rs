@@ -3,6 +3,7 @@ use std::ops::Deref;
 
 use byteorder::{BigEndian, ByteOrder};
 
+use crate::errors::HgError;
 use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
 use crate::revlog::{Revision, NULL_REVISION};
@@ -44,7 +45,8 @@ impl Index {
                     offsets: Some(offsets),
                 })
             } else {
-                Err(RevlogError::Corrupted)
+                Err(HgError::corrupted("unexpected inline revlog length")
+                    .into())
             }
         } else {
             Ok(Self {
