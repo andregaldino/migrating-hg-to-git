@@ -316,11 +316,11 @@ class cg1unpacker(object):
             self.callback = progress.increment
 
             efilesset = set()
-            cgnodes = []
+            duprevs = []
 
             def ondupchangelog(cl, rev):
                 if rev < clstart:
-                    cgnodes.append(cl.node(rev))
+                    duprevs.append(rev)
 
             def onchangelog(cl, rev):
                 ctx = cl.changelogrevision(rev)
@@ -448,8 +448,12 @@ class cg1unpacker(object):
             if added:
                 phases.registernew(repo, tr, targetphase, added)
             if phaseall is not None:
-                phases.advanceboundary(repo, tr, phaseall, cgnodes, revs=added)
-                cgnodes = []
+                if duprevs:
+                    duprevs.extend(added)
+                else:
+                    duprevs = added
+                phases.advanceboundary(repo, tr, phaseall, [], revs=duprevs)
+                duprevs = []
 
             if changesets > 0:
 
