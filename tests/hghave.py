@@ -591,7 +591,7 @@ def has_pylint():
     return matchoutput("pylint --help", br"Usage:[ ]+pylint", True)
 
 
-@check("clang-format", "clang-format C code formatter")
+@check("clang-format", "clang-format C code formatter (>= 11)")
 def has_clang_format():
     m = matchoutput('clang-format --version', br'clang-format version (\d+)')
     # style changed somewhere between 10.x and 11.x
