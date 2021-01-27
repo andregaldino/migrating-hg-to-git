@@ -5,6 +5,7 @@
 // GNU General Public License version 2 or any later version.
 mod ancestors;
 pub mod dagops;
+pub mod errors;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
 mod dirstate;
 pub mod discovery;
