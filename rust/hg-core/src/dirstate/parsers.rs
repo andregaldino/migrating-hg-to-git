@@ -3,10 +3,11 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::errors::HgError;
 use crate::utils::hg_path::HgPath;
 use crate::{
     dirstate::{CopyMap, EntryState, StateMap},
-    DirstateEntry, DirstatePackError, DirstateParents, DirstateParseError,
+    DirstateEntry, DirstateParents, DirstateParseError,
 };
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use micro_timer::timed;
@@ -90,7 +91,7 @@ pub fn pack_dirstate(
     copy_map: &CopyMap,
     parents: DirstateParents,
     now: Duration,
-) -> Result<Vec<u8>, DirstatePackError> {
+) -> Result<Vec<u8>, HgError> {
     // TODO move away from i32 before 2038.
     let now: i32 = now.as_secs().try_into().expect("time overflow");
 
@@ -136,16 +137,23 @@ pub fn pack_dirstate(
             new_filename.extend(copy.bytes());
         }
 
-        packed.write_u8(entry.state.into())?;
-        packed.write_i32::<BigEndian>(entry.mode)?;
-        packed.write_i32::<BigEndian>(entry.size)?;
-        packed.write_i32::<BigEndian>(new_mtime)?;
-        packed.write_i32::<BigEndian>(new_filename.len() as i32)?;
+        // Unwrapping because `impl std::io::Write for Vec<u8>` never errors
+        packed.write_u8(entry.state.into()).unwrap();
+        packed.write_i32::<BigEndian>(entry.mode).unwrap();
+        packed.write_i32::<BigEndian>(entry.size).unwrap();
+        packed.write_i32::<BigEndian>(new_mtime).unwrap();
+        packed
+            .write_i32::<BigEndian>(new_filename.len() as i32)
+            .unwrap();
         packed.extend(new_filename)
     }
 
     if packed.len() != expected_size {
-        return Err(DirstatePackError::BadSize(expected_size, packed.len()));
+        return Err(HgError::CorruptedRepository(format!(
+            "bad dirstate size: {} != {}",
+            expected_size,
+            packed.len()
+        )));
     }
 
     Ok(packed)

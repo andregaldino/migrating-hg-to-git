@@ -79,19 +79,6 @@ impl ToString for DirstateParseError {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum DirstatePackError {
-    CorruptedEntry(String),
-    CorruptedParent,
-    BadSize(usize, usize),
-}
-
-impl From<std::io::Error> for DirstatePackError {
-    fn from(e: std::io::Error) -> Self {
-        DirstatePackError::CorruptedEntry(e.to_string())
-    }
-}
-
-#[derive(Debug, PartialEq)]
 pub enum DirstateMapError {
     PathNotFound(HgPathBuf),
     EmptyPath,
@@ -113,9 +100,9 @@ impl ToString for DirstateMapError {
 #[derive(Debug, derive_more::From)]
 pub enum DirstateError {
     Parse(DirstateParseError),
-    Pack(DirstatePackError),
     Map(DirstateMapError),
     IO(std::io::Error),
+    Common(errors::HgError),
 }
 
 #[derive(Debug, derive_more::From)]

@@ -15,8 +15,7 @@ use cpython::{
 };
 use hg::{
     pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf, DirstateEntry,
-    DirstatePackError, DirstateParents, DirstateParseError, FastHashMap,
-    PARENT_SIZE,
+    DirstateParents, DirstateParseError, FastHashMap, PARENT_SIZE,
 };
 use std::convert::TryInto;
 
@@ -128,18 +127,9 @@ fn pack_dirstate_wrapper(
             }
             Ok(PyBytes::new(py, &packed))
         }
-        Err(error) => Err(PyErr::new::<exc::ValueError, _>(
-            py,
-            match error {
-                DirstatePackError::CorruptedParent => {
-                    "expected a 20-byte hash".to_string()
-                }
-                DirstatePackError::CorruptedEntry(e) => e,
-                DirstatePackError::BadSize(expected, actual) => {
-                    format!("bad dirstate size: {} != {}", actual, expected)
-                }
-            },
-        )),
+        Err(error) => {
+            Err(PyErr::new::<exc::ValueError, _>(py, error.to_string()))
+        }
     }
 }
 
