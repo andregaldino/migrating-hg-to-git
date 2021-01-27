@@ -7,7 +7,7 @@ use crate::errors::HgError;
 use crate::utils::hg_path::HgPath;
 use crate::{
     dirstate::{CopyMap, EntryState, StateMap},
-    DirstateEntry, DirstateParents, DirstateParseError,
+    DirstateEntry, DirstateParents,
 };
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use micro_timer::timed;
@@ -27,11 +27,9 @@ type ParseResult<'a> = (
 );
 
 #[timed]
-pub fn parse_dirstate(
-    contents: &[u8],
-) -> Result<ParseResult, DirstateParseError> {
+pub fn parse_dirstate(contents: &[u8]) -> Result<ParseResult, HgError> {
     if contents.len() < PARENT_SIZE * 2 {
-        return Err(DirstateParseError::TooLittleData);
+        return Err(HgError::corrupted("Too little data for dirstate."));
     }
     let mut copies = vec![];
     let mut entries = vec![];
@@ -44,19 +42,21 @@ pub fn parse_dirstate(
 
     while curr_pos < contents.len() {
         if curr_pos + MIN_ENTRY_SIZE > contents.len() {
-            return Err(DirstateParseError::Overflow);
+            return Err(HgError::corrupted("Overflow in dirstate."));
         }
         let entry_bytes = &contents[curr_pos..];
 
         let mut cursor = Cursor::new(entry_bytes);
-        let state = EntryState::try_from(cursor.read_u8()?)?;
-        let mode = cursor.read_i32::<BigEndian>()?;
-        let size = cursor.read_i32::<BigEndian>()?;
-        let mtime = cursor.read_i32::<BigEndian>()?;
-        let path_len = cursor.read_i32::<BigEndian>()? as usize;
+        // Unwraping errors from `byteorder` as we’ve already checked
+        // `MIN_ENTRY_SIZE` so the input should never be too short.
+        let state = EntryState::try_from(cursor.read_u8().unwrap())?;
+        let mode = cursor.read_i32::<BigEndian>().unwrap();
+        let size = cursor.read_i32::<BigEndian>().unwrap();
+        let mtime = cursor.read_i32::<BigEndian>().unwrap();
+        let path_len = cursor.read_i32::<BigEndian>().unwrap() as usize;
 
         if path_len > contents.len() - curr_pos {
-            return Err(DirstateParseError::Overflow);
+            return Err(HgError::corrupted("Overflow in dirstate."));
         }
 
         // Slice instead of allocating a Vec needed for `read_exact`

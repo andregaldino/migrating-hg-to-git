@@ -26,10 +26,10 @@ use crate::{
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
 };
 use hg::{
+    errors::HgError,
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
-    DirstateMapError, DirstateParents, DirstateParseError, EntryState,
-    StateMapIter, PARENT_SIZE,
+    DirstateMapError, DirstateParents, EntryState, StateMapIter, PARENT_SIZE,
 };
 
 // TODO
@@ -84,13 +84,13 @@ py_class!(pub class DirstateMap |py| {
             HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
             oldstate.extract::<PyBytes>(py)?.data(py)[0]
                 .try_into()
-                .map_err(|e: DirstateParseError| {
+                .map_err(|e: HgError| {
                     PyErr::new::<exc::ValueError, _>(py, e.to_string())
                 })?,
             DirstateEntry {
                 state: state.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
-                    .map_err(|e: DirstateParseError| {
+                    .map_err(|e: HgError| {
                         PyErr::new::<exc::ValueError, _>(py, e.to_string())
                     })?,
                 mode: mode.extract(py)?,
@@ -113,7 +113,7 @@ py_class!(pub class DirstateMap |py| {
                 HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
                 oldstate.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
-                    .map_err(|e: DirstateParseError| {
+                    .map_err(|e: HgError| {
                         PyErr::new::<exc::ValueError, _>(py, e.to_string())
                     })?,
                 size.extract(py)?,
@@ -137,7 +137,7 @@ py_class!(pub class DirstateMap |py| {
                 HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
                 oldstate.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
-                    .map_err(|e: DirstateParseError| {
+                    .map_err(|e: HgError| {
                         PyErr::new::<exc::ValueError, _>(py, e.to_string())
                     })?,
             )

@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::errors::HgError;
 use crate::revlog::node::NULL_NODE_ID;
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState, SIZE_FROM_OTHER_PARENT},
@@ -14,7 +15,7 @@ use crate::{
         hg_path::{HgPath, HgPathBuf},
     },
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
-    DirstateParents, DirstateParseError, FastHashMap, StateMap,
+    DirstateParents, FastHashMap, StateMap,
 };
 use micro_timer::timed;
 use std::collections::HashSet;
@@ -370,7 +371,9 @@ impl DirstateMap {
                 p2: NULL_NODE_ID,
             };
         } else {
-            return Err(DirstateError::Parse(DirstateParseError::Damaged));
+            return Err(
+                HgError::corrupted("Dirstate appears to be damaged").into()
+            );
         }
 
         self.parents = Some(parents);

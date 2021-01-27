@@ -15,7 +15,7 @@ use cpython::{
 };
 use hg::{
     pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf, DirstateEntry,
-    DirstateParents, DirstateParseError, FastHashMap, PARENT_SIZE,
+    DirstateParents, FastHashMap, PARENT_SIZE,
 };
 use std::convert::TryInto;
 
@@ -58,21 +58,7 @@ fn parse_dirstate_wrapper(
                     .to_py_object(py),
             )
         }
-        Err(e) => Err(PyErr::new::<exc::ValueError, _>(
-            py,
-            match e {
-                DirstateParseError::TooLittleData => {
-                    "too little data for parents".to_string()
-                }
-                DirstateParseError::Overflow => {
-                    "overflow in dirstate".to_string()
-                }
-                DirstateParseError::CorruptedEntry(e) => e,
-                DirstateParseError::Damaged => {
-                    "dirstate appears to be damaged".to_string()
-                }
-            },
-        )),
+        Err(e) => Err(PyErr::new::<exc::ValueError, _>(py, e.to_string())),
     }
 }
 

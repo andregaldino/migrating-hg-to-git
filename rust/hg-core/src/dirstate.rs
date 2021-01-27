@@ -5,7 +5,8 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::{utils::hg_path::HgPathBuf, DirstateParseError, FastHashMap};
+use crate::errors::HgError;
+use crate::{utils::hg_path::HgPathBuf, FastHashMap};
 use std::collections::hash_map;
 use std::convert::TryFrom;
 
@@ -60,7 +61,7 @@ pub enum EntryState {
 }
 
 impl TryFrom<u8> for EntryState {
-    type Error = DirstateParseError;
+    type Error = HgError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -69,8 +70,8 @@ impl TryFrom<u8> for EntryState {
             b'r' => Ok(EntryState::Removed),
             b'm' => Ok(EntryState::Merged),
             b'?' => Ok(EntryState::Unknown),
-            _ => Err(DirstateParseError::CorruptedEntry(format!(
-                "Incorrect entry state {}",
+            _ => Err(HgError::CorruptedRepository(format!(
+                "Incorrect dirstate entry state {}",
                 value
             ))),
         }

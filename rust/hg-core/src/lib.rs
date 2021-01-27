@@ -51,33 +51,6 @@ pub type LineNumber = usize;
 /// write access to your repository, you have other issues.
 pub type FastHashMap<K, V> = HashMap<K, V, RandomXxHashBuilder64>;
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum DirstateParseError {
-    TooLittleData,
-    Overflow,
-    // TODO refactor to use bytes instead of String
-    CorruptedEntry(String),
-    Damaged,
-}
-
-impl From<std::io::Error> for DirstateParseError {
-    fn from(e: std::io::Error) -> Self {
-        DirstateParseError::CorruptedEntry(e.to_string())
-    }
-}
-
-impl ToString for DirstateParseError {
-    fn to_string(&self) -> String {
-        use crate::DirstateParseError::*;
-        match self {
-            TooLittleData => "Too little data for dirstate.".to_string(),
-            Overflow => "Overflow in dirstate.".to_string(),
-            CorruptedEntry(e) => format!("Corrupted entry: {:?}.", e),
-            Damaged => "Dirstate appears to be damaged.".to_string(),
-        }
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub enum DirstateMapError {
     PathNotFound(HgPathBuf),
@@ -99,9 +72,7 @@ impl ToString for DirstateMapError {
 
 #[derive(Debug, derive_more::From)]
 pub enum DirstateError {
-    Parse(DirstateParseError),
     Map(DirstateMapError),
-    IO(std::io::Error),
     Common(errors::HgError),
 }
 

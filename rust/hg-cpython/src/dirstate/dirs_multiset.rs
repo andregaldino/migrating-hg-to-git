@@ -18,9 +18,9 @@ use cpython::{
 
 use crate::dirstate::extract_dirstate;
 use hg::{
+    errors::HgError,
     utils::hg_path::{HgPath, HgPathBuf},
-    DirsMultiset, DirsMultisetIter, DirstateMapError, DirstateParseError,
-    EntryState,
+    DirsMultiset, DirsMultisetIter, DirstateMapError, EntryState,
 };
 
 py_class!(pub class Dirs |py| {
@@ -38,7 +38,7 @@ py_class!(pub class Dirs |py| {
             skip_state = Some(
                 skip.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
-                    .map_err(|e: DirstateParseError| {
+                    .map_err(|e: HgError| {
                         PyErr::new::<exc::ValueError, _>(py, e.to_string())
                     })?,
             );
@@ -46,7 +46,7 @@ py_class!(pub class Dirs |py| {
         let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
             let dirstate = extract_dirstate(py, &map)?;
             DirsMultiset::from_dirstate(&dirstate, skip_state)
-                .map_err(|e| {
+                .map_err(|e: DirstateMapError| {
                     PyErr::new::<exc::ValueError, _>(py, e.to_string())
                 })?
         } else {

@@ -24,10 +24,7 @@ use cpython::{
     exc, PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult,
     PySequence, Python,
 };
-use hg::{
-    utils::hg_path::HgPathBuf, DirstateEntry, DirstateParseError, EntryState,
-    StateMap,
-};
+use hg::{utils::hg_path::HgPathBuf, DirstateEntry, EntryState, StateMap};
 use libc::{c_char, c_int};
 use std::convert::TryFrom;
 
@@ -79,11 +76,10 @@ pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
         .map(|(filename, stats)| {
             let stats = stats.extract::<PySequence>(py)?;
             let state = stats.get_item(py, 0)?.extract::<PyBytes>(py)?;
-            let state = EntryState::try_from(state.data(py)[0]).map_err(
-                |e: DirstateParseError| {
+            let state =
+                EntryState::try_from(state.data(py)[0]).map_err(|e| {
                     PyErr::new::<exc::ValueError, _>(py, e.to_string())
-                },
-            )?;
+                })?;
             let mode = stats.get_item(py, 1)?.extract(py)?;
             let size = stats.get_item(py, 2)?.extract(py)?;
             let mtime = stats.get_item(py, 3)?.extract(py)?;

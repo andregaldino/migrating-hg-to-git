@@ -2,7 +2,8 @@ use crate::exitcode;
 use crate::ui::utf8_to_local;
 use crate::ui::UiError;
 use format_bytes::format_bytes;
-use hg::operations::{FindRootError, ListDirstateTrackedFilesError};
+use hg::errors::HgError;
+use hg::operations::FindRootError;
 use hg::requirements::RequirementsError;
 use hg::revlog::revlog::RevlogError;
 use hg::utils::files::get_bytes_from_path;
@@ -27,6 +28,9 @@ pub enum CommandError {
     Abort(Option<Vec<u8>>),
     /// A mercurial capability as not been implemented.
     Unimplemented,
+    /// Common cases
+    #[from]
+    Other(HgError),
 }
 
 impl CommandError {
@@ -42,6 +46,10 @@ impl CommandError {
             CommandError::StderrError => exitcode::ABORT,
             CommandError::Abort(_) => exitcode::ABORT,
             CommandError::Unimplemented => exitcode::UNIMPLEMENTED_COMMAND,
+            CommandError::Other(HgError::UnsupportedFeature(_)) => {
+                exitcode::UNIMPLEMENTED_COMMAND
+            }
+            CommandError::Other(_) => exitcode::ABORT,
         }
     }
 
@@ -136,24 +144,6 @@ impl From<(RevlogError, &str)> for CommandError {
                         format
                     ))
                     .into(),
-                ))
-            }
-        }
-    }
-}
-
-impl From<ListDirstateTrackedFilesError> for CommandError {
-    fn from(err: ListDirstateTrackedFilesError) -> Self {
-        match err {
-            ListDirstateTrackedFilesError::IoError(err) => {
-                CommandError::Abort(Some(
-                    utf8_to_local(&format!("abort: {}\n", err)).into(),
-                ))
-            }
-            ListDirstateTrackedFilesError::ParseError(_) => {
-                CommandError::Abort(Some(
-                    // TODO find a better error message
-                    b"abort: parse error\n".to_vec(),
                 ))
             }
         }
