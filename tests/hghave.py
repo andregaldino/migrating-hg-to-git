@@ -1054,7 +1054,7 @@ def has_emacs():
     return matchoutput('emacs --version', b'GNU Emacs 2(4.4|4.5|5|6|7|8|9)')
 
 
-@check('black', 'the black formatter for python')
+@check('black', 'the black formatter for python (>= 20.8b1)')
 def has_black():
     blackcmd = 'black --version'
     version_regex = b'black, version ([0-9a-b.]+)'
