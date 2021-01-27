@@ -21,6 +21,7 @@ variables:
       - cd /tmp/mercurial-ci/
       - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
       - black --version
+      - clang-format --version
     script:
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
