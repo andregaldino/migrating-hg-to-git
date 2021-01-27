@@ -73,7 +73,16 @@ impl CommandError {
                 )
             }
             CommandError::Abort(message) => message.to_owned(),
-            _ => None,
+
+            CommandError::RequirementsError(_)
+            | CommandError::StdoutError
+            | CommandError::StderrError
+            | CommandError::Unimplemented
+            | CommandError::Other(HgError::UnsupportedFeature(_)) => None,
+
+            CommandError::Other(e) => {
+                Some(format_bytes!(b"{}\n", e.to_string().as_bytes()))
+            }
         }
     }
 
