@@ -774,8 +774,9 @@ class ifilemutation(interfaceutil.Interface):
         This used to be the default when ``addrevisioncb`` was provided up to
         Mercurial 5.8.
 
-        ``addrevisioncb`` should be called for each node as it is committed.
-        ``duplicaterevisioncb`` should be called for each pre-existing node.
+        ``addrevisioncb`` should be called for each new rev as it is committed.
+        ``duplicaterevisioncb`` should be called for all revs with a
+        pre-existing node.
 
         ``maybemissingparents`` is a bool indicating whether the incoming
         data may reference parents/ancestor revisions that aren't present.

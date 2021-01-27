@@ -1129,12 +1129,13 @@ class ifilemutationtests(basetestcase):
         with self._maketransactionfn() as tr:
             nodes = []
 
-            def onchangeset(cl, node):
+            def onchangeset(cl, rev):
+                node = cl.node(rev)
                 nodes.append(node)
                 cb(cl, node)
 
-            def ondupchangeset(cl, node):
-                nodes.append(node)
+            def ondupchangeset(cl, rev):
+                nodes.append(cl.node(rev))
 
             f.addgroup(
                 [],
@@ -1163,12 +1164,13 @@ class ifilemutationtests(basetestcase):
         with self._maketransactionfn() as tr:
             nodes = []
 
-            def onchangeset(cl, node):
+            def onchangeset(cl, rev):
+                node = cl.node(rev)
                 nodes.append(node)
                 cb(cl, node)
 
-            def ondupchangeset(cl, node):
-                nodes.append(node)
+            def ondupchangeset(cl, rev):
+                nodes.append(cl.node(rev))
 
             f.addgroup(
                 deltas,
@@ -1217,8 +1219,8 @@ class ifilemutationtests(basetestcase):
         with self._maketransactionfn() as tr:
             newnodes = []
 
-            def onchangeset(cl, node):
-                newnodes.append(node)
+            def onchangeset(cl, rev):
+                newnodes.append(cl.node(rev))
 
             f.addgroup(
                 deltas,

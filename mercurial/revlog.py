@@ -2419,11 +2419,12 @@ class revlog(object):
                 link = linkmapper(linknode)
                 flags = flags or REVIDX_DEFAULT_FLAGS
 
-                if self.index.has_node(node):
+                rev = self.index.get_rev(node)
+                if rev is not None:
                     # this can happen if two branches make the same change
-                    self._nodeduplicatecallback(transaction, node)
+                    self._nodeduplicatecallback(transaction, rev)
                     if duplicaterevisioncb:
-                        duplicaterevisioncb(self, node)
+                        duplicaterevisioncb(self, rev)
                     empty = False
                     continue
 
@@ -2461,7 +2462,7 @@ class revlog(object):
                 # We're only using addgroup() in the context of changegroup
                 # generation so the revision data can always be handled as raw
                 # by the flagprocessor.
-                self._addrevision(
+                rev = self._addrevision(
                     node,
                     None,
                     transaction,
@@ -2477,7 +2478,7 @@ class revlog(object):
                 )
 
                 if addrevisioncb:
-                    addrevisioncb(self, node)
+                    addrevisioncb(self, rev)
                 empty = False
 
                 if not dfh and not self._inline:

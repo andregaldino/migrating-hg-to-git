@@ -610,9 +610,9 @@ class changelog(revlog.revlog):
         just to access this is costly."""
         return self.changelogrevision(rev).branchinfo
 
-    def _nodeduplicatecallback(self, transaction, node):
+    def _nodeduplicatecallback(self, transaction, rev):
         # keep track of revisions that got "re-added", eg: unbunde of know rev.
         #
         # We track them in a list to preserve their order from the source bundle
         duplicates = transaction.changes.setdefault(b'revduplicates', [])
-        duplicates.append(self.rev(node))
+        duplicates.append(rev)

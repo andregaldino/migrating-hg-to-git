@@ -743,7 +743,7 @@ class sqlitefilestore(object):
                     )
 
                 if duplicaterevisioncb:
-                    duplicaterevisioncb(self, node)
+                    duplicaterevisioncb(self, self.rev(node))
                 empty = False
                 continue
 
@@ -754,7 +754,7 @@ class sqlitefilestore(object):
                 text = None
                 storedelta = (deltabase, delta)
 
-            self._addrawrevision(
+            rev = self._addrawrevision(
                 node,
                 text,
                 transaction,
@@ -766,7 +766,7 @@ class sqlitefilestore(object):
             )
 
             if addrevisioncb:
-                addrevisioncb(self, node)
+                addrevisioncb(self, rev)
             empty = False
 
         return not empty

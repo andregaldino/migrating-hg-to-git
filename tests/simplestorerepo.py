@@ -550,7 +550,7 @@ class filestorage(object):
 
             if node in self._indexbynode:
                 if duplicaterevisioncb:
-                    duplicaterevisioncb(self, node)
+                    duplicaterevisioncb(self, self.rev(node))
                 empty = False
                 continue
 
@@ -560,12 +560,12 @@ class filestorage(object):
             else:
                 text = mdiff.patch(self.revision(deltabase), delta)
 
-            self._addrawrevision(
+            rev = self._addrawrevision(
                 node, text, transaction, linkrev, p1, p2, flags
             )
 
             if addrevisioncb:
-                addrevisioncb(self, node)
+                addrevisioncb(self, rev)
             empty = False
         return not empty
 

@@ -318,12 +318,11 @@ class cg1unpacker(object):
             efilesset = set()
             cgnodes = []
 
-            def ondupchangelog(cl, node):
-                if cl.rev(node) < clstart:
-                    cgnodes.append(node)
+            def ondupchangelog(cl, rev):
+                if rev < clstart:
+                    cgnodes.append(cl.node(rev))
 
-            def onchangelog(cl, node):
-                rev = cl.rev(node)
+            def onchangelog(cl, rev):
                 ctx = cl.changelogrevision(rev)
                 efilesset.update(ctx.files)
                 repo.register_changeset(rev, ctx)

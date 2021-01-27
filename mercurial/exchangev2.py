@@ -358,15 +358,14 @@ def _processchangesetdata(repo, tr, objs):
         # Linkrev for changelog is always self.
         return len(cl)
 
-    def ondupchangeset(cl, node):
-        added.append(node)
+    def ondupchangeset(cl, rev):
+        added.append(cl.node(rev))
 
-    def onchangeset(cl, node):
+    def onchangeset(cl, rev):
         progress.increment()
 
-        rev = cl.rev(node)
         revision = cl.changelogrevision(rev)
-        added.append(node)
+        added.append(cl.node(rev))
 
         # We need to preserve the mapping of changelog revision to node
         # so we can set the linkrev accordingly when manifests are added.
@@ -537,8 +536,8 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
             # Chomp off header object.
             next(objs)
 
-            def onchangeset(cl, node):
-                added.append(node)
+            def onchangeset(cl, rev):
+                added.append(cl.node(rev))
 
             rootmanifest.addgroup(
                 iterrevisions(objs, progress),
