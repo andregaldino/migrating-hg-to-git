@@ -2536,8 +2536,6 @@ def widen_bundle(
     for r in repo.revs(b"::%ln", common):
         commonnodes.add(cl.node(r))
     if commonnodes:
-        # XXX: we should only send the filelogs (and treemanifest). user
-        # already has the changelog and manifest
         packer = changegroup.getbundler(
             cgversion,
             repo,
