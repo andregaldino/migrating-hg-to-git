@@ -15,7 +15,6 @@ from ..interfaces import repository
 REVLOGV0 = 0
 REVLOGV1 = 1
 # Dummy value until file format is finalized.
-# Reminder: change the bounds check in revlog.__init__ when this is changed.
 REVLOGV2 = 0xDEAD
 # Shared across v1 and v2.
 FLAG_INLINE_DATA = 1 << 16

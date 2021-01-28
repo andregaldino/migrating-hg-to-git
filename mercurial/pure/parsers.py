@@ -233,10 +233,61 @@ class InlinedIndexObject(BaseIndexObject):
         return self._offsets[i]
 
 
-def parse_index2(data, inline):
+def parse_index2(data, inline, revlogv2=False):
     if not inline:
-        return IndexObject(data), None
-    return InlinedIndexObject(data, inline), (0, data)
+        cls = IndexObject2 if revlogv2 else IndexObject
+        return cls(data), None
+    cls = InlinedIndexObject2 if revlogv2 else InlinedIndexObject
+    return cls(data, inline), (0, data)
+
+
+class Index2Mixin(object):
+    #  6 bytes: offset
+    #  2 bytes: flags
+    #  4 bytes: compressed length
+    #  4 bytes: uncompressed length
+    #  4 bytes: base rev
+    #  4 bytes: link rev
+    #  4 bytes: parent 1 rev
+    #  4 bytes: parent 2 rev
+    # 32 bytes: nodeid
+    #  8 bytes: sidedata offset
+    #  4 bytes: sidedata compressed length
+    #  20 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
+    index_format = b">Qiiiiii20s12xQi20x"
+    index_size = struct.calcsize(index_format)
+    assert index_size == 96, index_size
+    null_item = (0, 0, 0, -1, -1, -1, -1, nullid, 0, 0)
+
+
+class IndexObject2(Index2Mixin, IndexObject):
+    pass
+
+
+class InlinedIndexObject2(Index2Mixin, InlinedIndexObject):
+    def _inline_scan(self, lgt):
+        sidedata_length_pos = 72
+        off = 0
+        if lgt is not None:
+            self._offsets = [0] * lgt
+        count = 0
+        while off <= len(self._data) - self.index_size:
+            start = off + self.big_int_size
+            (data_size,) = struct.unpack(
+                b'>i',
+                self._data[start : start + self.int_size],
+            )
+            start = off + sidedata_length_pos
+            (side_data_size,) = struct.unpack(
+                b'>i', self._data[start : start + self.int_size]
+            )
+            if lgt is not None:
+                self._offsets[count] = off
+            count += 1
+            off += self.index_size + data_size + side_data_size
+        if off != len(self._data):
+            raise ValueError(b"corrupted data")
+        return count
 
 
 def parse_index_devel_nodemap(data, inline):

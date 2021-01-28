@@ -83,6 +83,7 @@ from .utils import (
     storageutil,
     stringutil,
 )
+from .pure import parsers as pureparsers
 
 # blanked usage of all the name to prevent pyflakes constraints
 # We need these name available in the module for extensions.
@@ -359,6 +360,25 @@ class revlogio(object):
 
     def packentry(self, entry, node, version, rev):
         p = indexformatng_pack(*entry)
+        if rev == 0:
+            p = versionformat_pack(version) + p[4:]
+        return p
+
+
+indexformatv2 = struct.Struct(pureparsers.Index2Mixin.index_format)
+indexformatv2_pack = indexformatv2.pack
+
+
+class revlogv2io(object):
+    def __init__(self):
+        self.size = indexformatv2.size
+
+    def parseindex(self, data, inline):
+        index, cache = parsers.parse_index2(data, inline, revlogv2=True)
+        return index, cache
+
+    def packentry(self, entry, node, version, rev):
+        p = indexformatv2_pack(*entry)
         if rev == 0:
             p = versionformat_pack(version) + p[4:]
         return p
@@ -650,6 +670,8 @@ class revlog(object):
         self._io = revlogio()
         if self.version == REVLOGV0:
             self._io = revlogoldio()
+        elif fmt == REVLOGV2:
+            self._io = revlogv2io()
         elif devel_nodemap:
             self._io = NodemapRevlogIO()
         elif use_rust_index:
@@ -2337,7 +2359,13 @@ class revlog(object):
             p1r,
             p2r,
             node,
+            0,
+            0,
         )
+
+        if self.version & 0xFFFF != REVLOGV2:
+            e = e[:8]
+
         self.index.append(e)
 
         entry = self._io.packentry(e, self.node, self.version, curr)

@@ -117,8 +117,8 @@ data_non_inlined = (
 )
 
 
-def parse_index2(data, inline):
-    index, chunkcache = parsers.parse_index2(data, inline)
+def parse_index2(data, inline, revlogv2=False):
+    index, chunkcache = parsers.parse_index2(data, inline, revlogv2=revlogv2)
     return list(index), chunkcache
 
 

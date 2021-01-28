@@ -22,7 +22,7 @@ Can create and open repo with revlog v2 requirement
   $ cd empty-repo
   $ cat .hg/requires
   dotencode
-  exp-revlogv2.1
+  exp-revlogv2.2
   fncache
   sparserevlog
   store
