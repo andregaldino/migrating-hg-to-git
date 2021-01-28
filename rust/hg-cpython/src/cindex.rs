@@ -16,7 +16,7 @@ use cpython::{
 };
 use hg::revlog::{Node, RevlogIndex};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
-use libc::c_int;
+use libc::{c_int, ssize_t};
 
 const REVLOG_CABI_VERSION: c_int = 2;
 
@@ -24,10 +24,10 @@ const REVLOG_CABI_VERSION: c_int = 2;
 pub struct Revlog_CAPI {
     abi_version: c_int,
     index_length:
-        unsafe extern "C" fn(index: *mut revlog_capi::RawPyObject) -> c_int,
+        unsafe extern "C" fn(index: *mut revlog_capi::RawPyObject) -> ssize_t,
     index_node: unsafe extern "C" fn(
         index: *mut revlog_capi::RawPyObject,
-        rev: c_int,
+        rev: ssize_t,
     ) -> *const Node,
     index_parents: unsafe extern "C" fn(
         index: *mut revlog_capi::RawPyObject,
@@ -157,7 +157,7 @@ impl RevlogIndex for Index {
 
     fn node(&self, rev: Revision) -> Option<&Node> {
         let raw = unsafe {
-            (self.capi.index_node)(self.index.as_ptr(), rev as c_int)
+            (self.capi.index_node)(self.index.as_ptr(), rev as ssize_t)
         };
         if raw.is_null() {
             None
