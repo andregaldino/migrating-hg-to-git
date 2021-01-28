@@ -33,13 +33,6 @@ def dirstatetuple(*x):
     return x
 
 
-indexformatng = b">Qiiiiii20s12x"
-indexfirst = struct.calcsize(b'Q')
-sizeint = struct.calcsize(b'i')
-indexsize = struct.calcsize(indexformatng)
-nullitem = (0, 0, 0, -1, -1, -1, -1, nullid)
-
-
 def gettype(q):
     return int(q & 0xFFFF)
 
@@ -49,6 +42,12 @@ def offset_type(offset, type):
 
 
 class BaseIndexObject(object):
+    index_format = b">Qiiiiii20s12x"
+    big_int_size = struct.calcsize(b'Q')
+    int_size = struct.calcsize(b'i')
+    index_size = struct.calcsize(index_format)
+    null_item = (0, 0, 0, -1, -1, -1, -1, nullid)
+
     @property
     def nodemap(self):
         msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
@@ -94,7 +93,7 @@ class BaseIndexObject(object):
     def append(self, tup):
         if '_nodemap' in vars(self):
             self._nodemap[tup[7]] = len(self)
-        data = _pack(indexformatng, *tup)
+        data = _pack(self.index_format, *tup)
         self._extra.append(data)
 
     def _check_index(self, i):
@@ -105,14 +104,14 @@ class BaseIndexObject(object):
 
     def __getitem__(self, i):
         if i == -1:
-            return nullitem
+            return self.null_item
         self._check_index(i)
         if i >= self._lgt:
             data = self._extra[i - self._lgt]
         else:
             index = self._calculate_index(i)
-            data = self._data[index : index + indexsize]
-        r = _unpack(indexformatng, data)
+            data = self._data[index : index + self.index_size]
+        r = _unpack(self.index_format, data)
         if self._lgt and i == 0:
             r = (offset_type(0, gettype(r[0])),) + r[1:]
         return r
@@ -120,13 +119,13 @@ class BaseIndexObject(object):
 
 class IndexObject(BaseIndexObject):
     def __init__(self, data):
-        assert len(data) % indexsize == 0
+        assert len(data) % self.index_size == 0
         self._data = data
-        self._lgt = len(data) // indexsize
+        self._lgt = len(data) // self.index_size
         self._extra = []
 
     def _calculate_index(self, i):
-        return i * indexsize
+        return i * self.index_size
 
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
@@ -135,7 +134,7 @@ class IndexObject(BaseIndexObject):
         self._check_index(i)
         self._stripnodes(i)
         if i < self._lgt:
-            self._data = self._data[: i * indexsize]
+            self._data = self._data[: i * self.index_size]
             self._lgt = i
             self._extra = []
         else:
@@ -198,14 +197,16 @@ class InlinedIndexObject(BaseIndexObject):
         if lgt is not None:
             self._offsets = [0] * lgt
         count = 0
-        while off <= len(self._data) - indexsize:
+        while off <= len(self._data) - self.index_size:
+            start = off + self.big_int_size
             (s,) = struct.unpack(
-                b'>i', self._data[off + indexfirst : off + sizeint + indexfirst]
+                b'>i',
+                self._data[start : start + self.int_size],
             )
             if lgt is not None:
                 self._offsets[count] = off
             count += 1
-            off += indexsize + s
+            off += self.index_size + s
         if off != len(self._data):
             raise ValueError(b"corrupted data")
         return count
