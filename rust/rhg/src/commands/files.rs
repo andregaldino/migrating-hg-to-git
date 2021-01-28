@@ -28,8 +28,7 @@ impl<'a> FilesCommand<'a> {
         repo: &Repo,
         files: impl IntoIterator<Item = &'a HgPath>,
     ) -> Result<(), CommandError> {
-        let cwd = std::env::current_dir()
-            .or_else(|e| Err(CommandError::CurrentDirNotFound(e)))?;
+        let cwd = hg::utils::current_dir()?;
         let rooted_cwd = cwd
             .strip_prefix(repo.working_directory_path())
             .expect("cwd was already checked within the repository");

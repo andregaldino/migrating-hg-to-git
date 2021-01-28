@@ -38,7 +38,7 @@ Unwritable file descriptor
 Deleted repository
   $ rm -rf `pwd`
   $ rhg root
-  abort: error getting current working directory: $ENOENT$
+  abort: $ENOENT$: current directory
   [255]
 
 Listing tracked files
@@ -163,7 +163,7 @@ Requirements
 
   $ echo -e '\xFF' >> .hg/requires
   $ rhg debugrequirements
-  corrupted repository: parse error in 'requires' file
+  abort: corrupted repository: parse error in 'requires' file
   [255]
 
 Persistent nodemap

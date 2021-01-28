@@ -1,101 +1,65 @@
-use crate::exitcode;
 use crate::ui::utf8_to_local;
 use crate::ui::UiError;
-use format_bytes::format_bytes;
-use hg::errors::HgError;
+use hg::errors::{HgError, IoErrorContext};
 use hg::operations::FindRootError;
 use hg::revlog::revlog::RevlogError;
-use hg::utils::files::get_bytes_from_path;
 use std::convert::From;
-use std::path::PathBuf;
 
 /// The kind of command error
-#[derive(Debug, derive_more::From)]
+#[derive(Debug)]
 pub enum CommandError {
-    /// The root of the repository cannot be found
-    RootNotFound(PathBuf),
-    /// The current directory cannot be found
-    CurrentDirNotFound(std::io::Error),
-    /// The standard output stream cannot be written to
-    StdoutError,
-    /// The standard error stream cannot be written to
-    StderrError,
-    /// The command aborted
-    Abort(Option<Vec<u8>>),
+    /// Exit with an error message and "standard" failure exit code.
+    Abort { message: Vec<u8> },
+
     /// A mercurial capability as not been implemented.
+    ///
+    /// There is no error message printed in this case.
+    /// Instead, we exit with a specic status code and a wrapper script may
+    /// fallback to Python-based Mercurial.
     Unimplemented,
-    /// Common cases
-    #[from]
-    Other(HgError),
 }
 
 impl CommandError {
-    pub fn get_exit_code(&self) -> exitcode::ExitCode {
-        match self {
-            CommandError::RootNotFound(_) => exitcode::ABORT,
-            CommandError::CurrentDirNotFound(_) => exitcode::ABORT,
-            CommandError::StdoutError => exitcode::ABORT,
-            CommandError::StderrError => exitcode::ABORT,
-            CommandError::Abort(_) => exitcode::ABORT,
-            CommandError::Unimplemented => exitcode::UNIMPLEMENTED_COMMAND,
-            CommandError::Other(HgError::UnsupportedFeature(_)) => {
-                exitcode::UNIMPLEMENTED_COMMAND
-            }
-            CommandError::Other(_) => exitcode::ABORT,
+    pub fn abort(message: impl AsRef<str>) -> Self {
+        CommandError::Abort {
+            // TODO: bytes-based (instead of Unicode-based) formatting
+            // of error messages to handle non-UTF-8 filenames etc:
+            // https://www.mercurial-scm.org/wiki/EncodingStrategy#Mixing_output
+            message: utf8_to_local(message.as_ref()).into(),
         }
     }
+}
 
-    /// Return the message corresponding to the error if any
-    pub fn get_error_message_bytes(&self) -> Option<Vec<u8>> {
-        match self {
-            CommandError::RootNotFound(path) => {
-                let bytes = get_bytes_from_path(path);
-                Some(format_bytes!(
-                    b"abort: no repository found in '{}' (.hg not found)!\n",
-                    bytes.as_slice()
-                ))
-            }
-            CommandError::CurrentDirNotFound(e) => Some(format_bytes!(
-                b"abort: error getting current working directory: {}\n",
-                e.to_string().as_bytes(),
-            )),
-            CommandError::Abort(message) => message.to_owned(),
-
-            CommandError::StdoutError
-            | CommandError::StderrError
-            | CommandError::Unimplemented
-            | CommandError::Other(HgError::UnsupportedFeature(_)) => None,
-
-            CommandError::Other(e) => {
-                Some(format_bytes!(b"{}\n", e.to_string().as_bytes()))
-            }
+impl From<HgError> for CommandError {
+    fn from(error: HgError) -> Self {
+        match error {
+            HgError::UnsupportedFeature(_) => CommandError::Unimplemented,
+            _ => CommandError::abort(error.to_string()),
         }
-    }
-
-    /// Exist the process with the corresponding exit code.
-    pub fn exit(&self) {
-        std::process::exit(self.get_exit_code())
     }
 }
 
 impl From<UiError> for CommandError {
-    fn from(error: UiError) -> Self {
-        match error {
-            UiError::StdoutError(_) => CommandError::StdoutError,
-            UiError::StderrError(_) => CommandError::StderrError,
-        }
+    fn from(_error: UiError) -> Self {
+        // If we already failed writing to stdout or stderr,
+        // writing an error message to stderr about it would be likely to fail
+        // too.
+        CommandError::abort("")
     }
 }
 
 impl From<FindRootError> for CommandError {
     fn from(err: FindRootError) -> Self {
         match err {
-            FindRootError::RootNotFound(path) => {
-                CommandError::RootNotFound(path)
+            FindRootError::RootNotFound(path) => CommandError::abort(format!(
+                "no repository found in '{}' (.hg not found)!",
+                path.display()
+            )),
+            FindRootError::GetCurrentDirError(error) => HgError::IoError {
+                error,
+                context: IoErrorContext::CurrentDir,
             }
-            FindRootError::GetCurrentDirError(e) => {
-                CommandError::CurrentDirNotFound(e)
-            }
+            .into(),
         }
     }
 }
@@ -103,21 +67,15 @@ impl From<FindRootError> for CommandError {
 impl From<(RevlogError, &str)> for CommandError {
     fn from((err, rev): (RevlogError, &str)) -> CommandError {
         match err {
-            RevlogError::InvalidRevision => CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: invalid revision identifier {}\n",
-                    rev
-                ))
-                .into(),
+            RevlogError::InvalidRevision => CommandError::abort(format!(
+                "invalid revision identifier {}",
+                rev
             )),
-            RevlogError::AmbiguousPrefix => CommandError::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: ambiguous revision identifier {}\n",
-                    rev
-                ))
-                .into(),
+            RevlogError::AmbiguousPrefix => CommandError::abort(format!(
+                "ambiguous revision identifier {}",
+                rev
             )),
-            RevlogError::Other(err) => CommandError::Other(err),
+            RevlogError::Other(error) => error.into(),
         }
     }
 }

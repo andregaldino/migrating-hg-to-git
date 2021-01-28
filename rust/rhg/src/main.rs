@@ -5,6 +5,7 @@ use clap::Arg;
 use clap::ArgGroup;
 use clap::ArgMatches;
 use clap::SubCommand;
+use format_bytes::format_bytes;
 use hg::operations::DebugDataKind;
 use std::convert::TryFrom;
 
@@ -91,26 +92,31 @@ fn main() {
 
     let matches = app.clone().get_matches_safe().unwrap_or_else(|err| {
         let _ = ui::Ui::new().writeln_stderr_str(&err.message);
-        std::process::exit(exitcode::UNIMPLEMENTED_COMMAND)
+        std::process::exit(exitcode::UNIMPLEMENTED)
     });
 
     let ui = ui::Ui::new();
 
     let command_result = match_subcommand(matches, &ui);
 
-    match command_result {
-        Ok(_) => std::process::exit(exitcode::OK),
-        Err(e) => {
-            let message = e.get_error_message_bytes();
-            if let Some(msg) = message {
-                match ui.write_stderr(&msg) {
-                    Ok(_) => (),
-                    Err(_) => std::process::exit(exitcode::ABORT),
-                };
-            };
-            e.exit()
+    let exit_code = match command_result {
+        Ok(_) => exitcode::OK,
+
+        // Exit with a specific code and no error message to let a potential
+        // wrapper script fallback to Python-based Mercurial.
+        Err(CommandError::Unimplemented) => exitcode::UNIMPLEMENTED,
+
+        Err(CommandError::Abort { message }) => {
+            if !message.is_empty() {
+                // Ignore errors when writing to stderr, we’re already exiting
+                // with failure code so there’s not much more we can do.
+                let _ =
+                    ui.write_stderr(&format_bytes!(b"abort: {}\n", message));
+            }
+            exitcode::ABORT
         }
-    }
+    };
+    std::process::exit(exit_code)
 }
 
 fn match_subcommand(

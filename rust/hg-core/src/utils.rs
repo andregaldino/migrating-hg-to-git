@@ -7,6 +7,7 @@
 
 //! Contains useful functions, traits, structs, etc. for use in core.
 
+use crate::errors::{HgError, IoErrorContext};
 use crate::utils::hg_path::HgPath;
 use std::{io::Write, ops::Deref};
 
@@ -175,4 +176,11 @@ pub(crate) fn strip_suffix<'a>(s: &'a str, suffix: &str) -> Option<&'a str> {
     } else {
         None
     }
+}
+
+pub fn current_dir() -> Result<std::path::PathBuf, HgError> {
+    std::env::current_dir().map_err(|error| HgError::IoError {
+        error,
+        context: IoErrorContext::CurrentDir,
+    })
 }

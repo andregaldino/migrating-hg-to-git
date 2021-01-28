@@ -32,17 +32,18 @@ impl<'a> Command for CatCommand<'a> {
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let repo = Repo::find()?;
         repo.check_requirements()?;
-        let cwd = std::env::current_dir()
-            .or_else(|e| Err(CommandError::CurrentDirNotFound(e)))?;
+        let cwd = hg::utils::current_dir()?;
 
         let mut files = vec![];
         for file in self.files.iter() {
+            // TODO: actually normalize `..` path segments etc?
             let normalized = cwd.join(&file);
             let stripped = normalized
                 .strip_prefix(&repo.working_directory_path())
-                .or(Err(CommandError::Abort(None)))?;
+                // TODO: error message for path arguments outside of the repo
+                .map_err(|_| CommandError::abort(""))?;
             let hg_file = HgPathBuf::try_from(stripped.to_path_buf())
-                .or(Err(CommandError::Abort(None)))?;
+                .map_err(|e| CommandError::abort(e.to_string()))?;
             files.push(hg_file);
         }
 
