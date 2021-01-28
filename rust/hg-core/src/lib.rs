@@ -39,6 +39,7 @@ pub use filepatterns::{
     PatternFileWarning, PatternSyntax,
 };
 use std::collections::HashMap;
+use std::fmt;
 use twox_hash::RandomXxHashBuilder64;
 
 /// This is a contract between the `micro-timer` crate and us, to expose
@@ -59,14 +60,16 @@ pub enum DirstateMapError {
     InvalidPath(HgPathError),
 }
 
-impl ToString for DirstateMapError {
-    fn to_string(&self) -> String {
+impl fmt::Display for DirstateMapError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             DirstateMapError::PathNotFound(_) => {
-                "expected a value, found none".to_string()
+                f.write_str("expected a value, found none")
             }
-            DirstateMapError::EmptyPath => "Overflow in dirstate.".to_string(),
-            DirstateMapError::InvalidPath(e) => e.to_string(),
+            DirstateMapError::EmptyPath => {
+                f.write_str("Overflow in dirstate.")
+            }
+            DirstateMapError::InvalidPath(path_error) => path_error.fmt(f),
         }
     }
 }
@@ -91,25 +94,26 @@ pub enum PatternError {
     NonRegexPattern(IgnorePattern),
 }
 
-impl ToString for PatternError {
-    fn to_string(&self) -> String {
+impl fmt::Display for PatternError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             PatternError::UnsupportedSyntax(syntax) => {
-                format!("Unsupported syntax {}", syntax)
+                write!(f, "Unsupported syntax {}", syntax)
             }
             PatternError::UnsupportedSyntaxInFile(syntax, file_path, line) => {
-                format!(
+                write!(
+                    f,
                     "{}:{}: unsupported syntax {}",
                     file_path, line, syntax
                 )
             }
             PatternError::TooLong(size) => {
-                format!("matcher pattern is too long ({} bytes)", size)
+                write!(f, "matcher pattern is too long ({} bytes)", size)
             }
-            PatternError::IO(e) => e.to_string(),
-            PatternError::Path(e) => e.to_string(),
+            PatternError::IO(error) => error.fmt(f),
+            PatternError::Path(error) => error.fmt(f),
             PatternError::NonRegexPattern(pattern) => {
-                format!("'{:?}' cannot be turned into a regex", pattern)
+                write!(f, "'{:?}' cannot be turned into a regex", pattern)
             }
         }
     }

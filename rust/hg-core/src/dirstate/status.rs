@@ -33,6 +33,7 @@ use rayon::prelude::*;
 use std::{
     borrow::Cow,
     collections::HashSet,
+    fmt,
     fs::{read_dir, DirEntry},
     io::ErrorKind,
     ops::Deref,
@@ -51,17 +52,16 @@ pub enum BadType {
     Unknown,
 }
 
-impl ToString for BadType {
-    fn to_string(&self) -> String {
-        match self {
+impl fmt::Display for BadType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(match self {
             BadType::CharacterDevice => "character device",
             BadType::BlockDevice => "block device",
             BadType::FIFO => "fifo",
             BadType::Socket => "socket",
             BadType::Directory => "directory",
             BadType::Unknown => "unknown",
-        }
-        .to_string()
+        })
     }
 }
 
@@ -277,12 +277,12 @@ pub enum StatusError {
 
 pub type StatusResult<T> = Result<T, StatusError>;
 
-impl ToString for StatusError {
-    fn to_string(&self) -> String {
+impl fmt::Display for StatusError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            StatusError::IO(e) => e.to_string(),
-            StatusError::Path(e) => e.to_string(),
-            StatusError::Pattern(e) => e.to_string(),
+            StatusError::IO(error) => error.fmt(f),
+            StatusError::Path(error) => error.fmt(f),
+            StatusError::Pattern(error) => error.fmt(f),
         }
     }
 }

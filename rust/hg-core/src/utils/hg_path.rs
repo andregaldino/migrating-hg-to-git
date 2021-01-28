@@ -47,57 +47,68 @@ pub enum HgPathError {
     },
 }
 
-impl ToString for HgPathError {
-    fn to_string(&self) -> String {
+impl fmt::Display for HgPathError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             HgPathError::LeadingSlash(bytes) => {
-                format!("Invalid HgPath '{:?}': has a leading slash.", bytes)
+                write!(f, "Invalid HgPath '{:?}': has a leading slash.", bytes)
             }
             HgPathError::ConsecutiveSlashes {
                 bytes,
                 second_slash_index: pos,
-            } => format!(
+            } => write!(
+                f,
                 "Invalid HgPath '{:?}': consecutive slashes at pos {}.",
                 bytes, pos
             ),
             HgPathError::ContainsNullByte {
                 bytes,
                 null_byte_index: pos,
-            } => format!(
+            } => write!(
+                f,
                 "Invalid HgPath '{:?}': contains null byte at pos {}.",
                 bytes, pos
             ),
-            HgPathError::DecodeError(bytes) => {
-                format!("Invalid HgPath '{:?}': could not be decoded.", bytes)
-            }
+            HgPathError::DecodeError(bytes) => write!(
+                f,
+                "Invalid HgPath '{:?}': could not be decoded.",
+                bytes
+            ),
             HgPathError::EndsWithSlash(path) => {
-                format!("Audit failed for '{}': ends with a slash.", path)
+                write!(f, "Audit failed for '{}': ends with a slash.", path)
             }
-            HgPathError::ContainsIllegalComponent(path) => format!(
+            HgPathError::ContainsIllegalComponent(path) => write!(
+                f,
                 "Audit failed for '{}': contains an illegal component.",
                 path
             ),
-            HgPathError::InsideDotHg(path) => format!(
+            HgPathError::InsideDotHg(path) => write!(
+                f,
                 "Audit failed for '{}': is inside the '.hg' folder.",
                 path
             ),
             HgPathError::IsInsideNestedRepo {
                 path,
                 nested_repo: nested,
-            } => format!(
+            } => {
+                write!(f,
                 "Audit failed for '{}': is inside a nested repository '{}'.",
                 path, nested
-            ),
-            HgPathError::TraversesSymbolicLink { path, symlink } => format!(
+            )
+            }
+            HgPathError::TraversesSymbolicLink { path, symlink } => write!(
+                f,
                 "Audit failed for '{}': traverses symbolic link '{}'.",
                 path, symlink
             ),
-            HgPathError::NotFsCompliant(path) => format!(
+            HgPathError::NotFsCompliant(path) => write!(
+                f,
                 "Audit failed for '{}': cannot be turned into a \
                  filesystem path.",
                 path
             ),
-            HgPathError::NotUnderRoot { path, root } => format!(
+            HgPathError::NotUnderRoot { path, root } => write!(
+                f,
                 "Audit failed for '{}': not under root {}.",
                 path.display(),
                 root.display()
