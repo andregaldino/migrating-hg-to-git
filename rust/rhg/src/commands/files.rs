@@ -48,7 +48,6 @@ impl<'a> FilesCommand<'a> {
 impl<'a> Command for FilesCommand<'a> {
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let repo = Repo::find()?;
-        repo.check_requirements()?;
         if let Some(rev) = self.rev {
             let files =
                 list_rev_tracked_files(&repo, rev).map_err(|e| (e, rev))?;

@@ -11,7 +11,7 @@ use super::layer;
 use crate::config::layer::{ConfigError, ConfigLayer, ConfigValue};
 use std::path::PathBuf;
 
-use crate::operations::find_root;
+use crate::repo::Repo;
 use crate::utils::files::read_whole_file;
 
 /// Holds the config values for the current repository
@@ -76,10 +76,9 @@ impl Config {
 
     /// Loads the local config. In a future version, this will also load the
     /// `$HOME/.hgrc` and more to mirror the Python implementation.
-    pub fn load() -> Result<Self, ConfigError> {
-        let root = find_root().unwrap();
+    pub fn load_for_repo(repo: &Repo) -> Result<Self, ConfigError> {
         Ok(Self::load_from_explicit_sources(vec![
-            ConfigSource::AbsPath(root.join(".hg/hgrc")),
+            ConfigSource::AbsPath(repo.hg_vfs().join("hgrc")),
         ])?)
     }
 

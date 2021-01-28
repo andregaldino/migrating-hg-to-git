@@ -153,13 +153,7 @@ Requirements
   [252]
 
   $ rhg debugrequirements
-  dotencode
-  fncache
-  generaldelta
-  revlogv1
-  sparserevlog
-  store
-  indoor-pool
+  [252]
 
   $ echo -e '\xFF' >> .hg/requires
   $ rhg debugrequirements

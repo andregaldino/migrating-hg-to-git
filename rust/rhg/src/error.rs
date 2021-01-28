@@ -1,8 +1,10 @@
 use crate::ui::utf8_to_local;
 use crate::ui::UiError;
-use hg::errors::{HgError, IoErrorContext};
-use hg::operations::FindRootError;
+use format_bytes::format_bytes;
+use hg::errors::HgError;
+use hg::repo::RepoFindError;
 use hg::revlog::revlog::RevlogError;
+use hg::utils::files::get_bytes_from_path;
 use std::convert::From;
 
 /// The kind of command error
@@ -48,18 +50,18 @@ impl From<UiError> for CommandError {
     }
 }
 
-impl From<FindRootError> for CommandError {
-    fn from(err: FindRootError) -> Self {
-        match err {
-            FindRootError::RootNotFound(path) => CommandError::abort(format!(
-                "no repository found in '{}' (.hg not found)!",
-                path.display()
-            )),
-            FindRootError::GetCurrentDirError(error) => HgError::IoError {
-                error,
-                context: IoErrorContext::CurrentDir,
-            }
-            .into(),
+impl From<RepoFindError> for CommandError {
+    fn from(error: RepoFindError) -> Self {
+        match error {
+            RepoFindError::NotFoundInCurrentDirectoryOrAncestors {
+                current_directory,
+            } => CommandError::Abort {
+                message: format_bytes!(
+                    b"no repository found in '{}' (.hg not found)!",
+                    get_bytes_from_path(current_directory)
+                ),
+            },
+            RepoFindError::Other(error) => error.into(),
         }
     }
 }

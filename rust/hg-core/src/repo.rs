@@ -1,5 +1,4 @@
 use crate::errors::{HgError, IoResultExt};
-use crate::operations::{find_root, FindRootError};
 use crate::requirements;
 use memmap::{Mmap, MmapOptions};
 use std::path::{Path, PathBuf};
@@ -11,6 +10,15 @@ pub struct Repo {
     store: PathBuf,
 }
 
+#[derive(Debug, derive_more::From)]
+pub enum RepoFindError {
+    NotFoundInCurrentDirectoryOrAncestors {
+        current_directory: PathBuf,
+    },
+    #[from]
+    Other(HgError),
+}
+
 /// Filesystem access abstraction for the contents of a given "base" diretory
 #[derive(Clone, Copy)]
 pub(crate) struct Vfs<'a> {
@@ -18,24 +26,26 @@ pub(crate) struct Vfs<'a> {
 }
 
 impl Repo {
-    /// Returns `None` if the given path doesn’t look like a repository
-    /// (doesn’t contain a `.hg` sub-directory).
-    pub fn for_path(root: impl Into<PathBuf>) -> Self {
-        let working_directory = root.into();
-        let dot_hg = working_directory.join(".hg");
-        Self {
-            store: dot_hg.join("store"),
-            dot_hg,
-            working_directory,
+    /// Search the current directory and its ancestores for a repository:
+    /// a working directory that contains a `.hg` sub-directory.
+    pub fn find() -> Result<Self, RepoFindError> {
+        let current_directory = crate::utils::current_dir()?;
+        // ancestors() is inclusive: it first yields `current_directory` as-is.
+        for ancestor in current_directory.ancestors() {
+            let dot_hg = ancestor.join(".hg");
+            if dot_hg.is_dir() {
+                let repo = Self {
+                    store: dot_hg.join("store"),
+                    dot_hg,
+                    working_directory: ancestor.to_owned(),
+                };
+                requirements::check(&repo)?;
+                return Ok(repo);
+            }
         }
-    }
-
-    pub fn find() -> Result<Self, FindRootError> {
-        find_root().map(Self::for_path)
-    }
-
-    pub fn check_requirements(&self) -> Result<(), HgError> {
-        requirements::check(self)
+        Err(RepoFindError::NotFoundInCurrentDirectoryOrAncestors {
+            current_directory,
+        })
     }
 
     pub fn working_directory_path(&self) -> &Path {
@@ -65,11 +75,15 @@ impl Repo {
 }
 
 impl Vfs<'_> {
+    pub(crate) fn join(&self, relative_path: impl AsRef<Path>) -> PathBuf {
+        self.base.join(relative_path)
+    }
+
     pub(crate) fn read(
         &self,
         relative_path: impl AsRef<Path>,
     ) -> Result<Vec<u8>, HgError> {
-        let path = self.base.join(relative_path);
+        let path = self.join(relative_path);
         std::fs::read(&path).for_file(&path)
     }
 

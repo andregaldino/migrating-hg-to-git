@@ -31,7 +31,6 @@ impl<'a> Command for CatCommand<'a> {
     #[timed]
     fn run(&self, ui: &Ui) -> Result<(), CommandError> {
         let repo = Repo::find()?;
-        repo.check_requirements()?;
         let cwd = hg::utils::current_dir()?;
 
         let mut files = vec![];

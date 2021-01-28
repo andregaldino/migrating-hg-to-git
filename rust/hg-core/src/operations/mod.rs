@@ -5,10 +5,8 @@
 mod cat;
 mod debugdata;
 mod dirstate_status;
-mod find_root;
 mod list_tracked_files;
 pub use cat::cat;
 pub use debugdata::{debug_data, DebugDataKind};
-pub use find_root::{find_root, find_root_from_path, FindRootError};
 pub use list_tracked_files::Dirstate;
 pub use list_tracked_files::{list_rev_tracked_files, FilesForRev};
