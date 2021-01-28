@@ -31,6 +31,15 @@ Unlock further check (we are here to test the feature)
 
 #endif
 
+#if rust
+
+Reported bug: some Rust code panics when handling the null revision
+
+  $ hg log -r 00000000 2>&1 | grep panicked
+  thread '<unnamed>' panicked at 'called `Option::unwrap()` on a `None` value', hg-cpython/src/revlog.rs:* (glob)
+
+#endif
+
 
   $ hg debugformat
   format-variant     repo
