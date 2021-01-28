@@ -5,7 +5,7 @@
   $ hg commit -m test
   $ rm .hg/requires
   $ hg tip
-  abort: unknown version (2) in revlog 00changelog.i
+  abort: unknown version (65535) in revlog 00changelog.i
   [50]
   $ echo indoor-pool > .hg/requires
   $ hg tip

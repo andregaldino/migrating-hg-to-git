@@ -3639,11 +3639,11 @@ def createrepository(ui, path, createopts=None):
         # effectively locks out old clients and prevents them from
         # mucking with a repo in an unknown format.
         #
-        # The revlog header has version 2, which won't be recognized by
+        # The revlog header has version 65535, which won't be recognized by
         # such old clients.
         hgvfs.append(
             b'00changelog.i',
-            b'\0\0\0\2 dummy changelog to prevent using the old repo '
+            b'\0\0\xFF\xFF dummy changelog to prevent using the old repo '
             b'layout',
         )
 
