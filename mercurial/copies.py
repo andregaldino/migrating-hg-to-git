@@ -1229,8 +1229,11 @@ def graftcopies(wctx, ctx, base):
     new_copies = pathcopies(base, ctx)
     parent = wctx.p1()
     _filter(parent, wctx, new_copies)
-    # extra filtering to drop copy information for files that existed before
-    # the graft (otherwise we would create merge filelog for non-merge commit
+    # Extra filtering to drop copy information for files that existed before
+    # the graft. This is to handle the case of grafting a rename onto a commit
+    # that already has the rename. Otherwise the presence of copy information
+    # would result in the creation of an empty commit where we would prefer to
+    # not create one.
     for dest, __ in list(new_copies.items()):
         if dest in parent:
             del new_copies[dest]
