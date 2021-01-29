@@ -476,15 +476,12 @@ being true if the config have other alias. In other word, the config value read
 earlier will be considered "lower level" and the config read later would be
 considered "higher level". And higher level values wins.
 
-BROKEN: currently not the case.
-
   $ HGRCPATH="file-A.rc" hg log -r .
   value-A
   $ HGRCPATH="file-B.rc" hg log -r .
   value-B
   $ HGRCPATH="file-A.rc:file-B.rc" hg log -r .
-  value-A (known-bad-output !)
-  value-B (missing-correct-output !)
+  value-B
 
 Alias and include
 -----------------
@@ -493,15 +490,12 @@ The pre/post include priority should also apply when tie-breaking alternatives.
 See the case above for details about the two config options used.
 
   $ HGRCPATH="file-C.rc" hg log -r .
-  value-included (known-bad-output !)
-  value-C (missing-correct-output !)
+  value-C
   $ HGRCPATH="file-D.rc" hg log -r .
-  value-D (known-bad-output !)
-  value-included (missing-correct-output !)
+  value-included
 
 command line override
 ---------------------
 
   $ HGRCPATH="file-A.rc:file-B.rc" hg log -r . --config ui.logtemplate="value-CLI\n"
-  value-A (known-bad-output !)
-  value-CLI (missing-correct-output !)
+  value-CLI
