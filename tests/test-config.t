@@ -400,11 +400,15 @@ setup necessary file
   > pre-include= value-A
   > %include ./included.rc
   > post-include= value-A
+  > [command-templates]
+  > log = "value-A\n"
   > EOF
 
   $ cat > file-B.rc << EOF
   > [config-test]
   > basic = value-B
+  > [ui]
+  > logtemplate = "value-B\n"
   > EOF
 
 
@@ -437,3 +441,24 @@ command line override
 
   $ HGRCPATH="file-A.rc:file-B.rc" hg config config-test.basic --config config-test.basic=value-CLI
   value-CLI
+
+Alias ordering
+--------------
+
+The official config is now `command-templates.log`, the historical
+`ui.logtemplate` is a valid alternative for it.
+
+When both are defined, The config value read the last "win", this should keep
+being true if the config have other alias. In other word, the config value read
+earlier will be considered "lower level" and the config read later would be
+considered "higher level". And higher level values wins.
+
+BROKEN: currently not the case.
+
+  $ HGRCPATH="file-A.rc" hg log -r .
+  value-A
+  $ HGRCPATH="file-B.rc" hg log -r .
+  value-B
+  $ HGRCPATH="file-A.rc:file-B.rc" hg log -r .
+  value-A (known-bad-output !)
+  value-B (missing-correct-output !)
