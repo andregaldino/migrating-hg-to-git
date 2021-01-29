@@ -32,7 +32,7 @@ variables:
       - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
       - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
       - cd /tmp/mercurial-ci/rust/rhg
-      - cargo build
+      - cargo build --release
       - cd /tmp/mercurial-ci/
 
 
