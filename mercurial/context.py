@@ -2597,6 +2597,7 @@ class overlayworkingctx(committablectx):
             b'flags': flags,
             b'copied': copied,
         }
+        util.clearcachedproperty(self, b'_manifest')
 
     def filectx(self, path, filelog=None):
         return overlayworkingfilectx(
