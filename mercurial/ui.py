@@ -554,7 +554,7 @@ class ui(object):
                     p = util.expandpath(p)
                     if not util.hasscheme(p) and not os.path.isabs(p):
                         p = os.path.normpath(os.path.join(root, p))
-                    c.set(b"paths", n, p)
+                    c.alter(b"paths", n, p)
 
         if section in (None, b'ui'):
             # update ui options

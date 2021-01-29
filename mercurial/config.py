@@ -108,6 +108,16 @@ class config(object):
             self._source = self._source.preparewrite()
             self._source[(section, item)] = source
 
+    def alter(self, section, key, new_value):
+        """alter a value without altering its source or level
+
+        This method is meant to be used by `ui.fixconfig` only."""
+        item = self._data[section][key]
+        size = len(item)
+        new_item = (new_value,) + item[1:]
+        assert len(new_item) == size
+        self._data[section][key] = new_item
+
     def restore(self, data):
         """restore data returned by self.backup"""
         self._source = self._source.preparewrite()
