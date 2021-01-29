@@ -498,3 +498,10 @@ See the case above for details about the two config options used.
   $ HGRCPATH="file-D.rc" hg log -r .
   value-D (known-bad-output !)
   value-included (missing-correct-output !)
+
+command line override
+---------------------
+
+  $ HGRCPATH="file-A.rc:file-B.rc" hg log -r . --config ui.logtemplate="value-CLI\n"
+  value-A (known-bad-output !)
+  value-CLI (missing-correct-output !)
