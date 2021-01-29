@@ -78,7 +78,7 @@ Interrupting the pull is safe
   transaction abort!
   rollback completed
   abort: pretxnchangegroup.bad hook exited with status 1
-  [255]
+  [40]
   $ hg id
   223311e70a6f tip
 

@@ -638,7 +638,7 @@ Doing the actual push: hook abort
   remote: Cleaning up the mess...
   remote: rollback completed
   abort: pretxnclose.failpush hook exited with status 1
-  [255]
+  [40]
 
   $ hg -R main push ssh://user@dummy/other -r e7ec4e813ba6
   pushing to ssh://user@dummy/other
@@ -699,7 +699,7 @@ Check error from hook during the unbundling process itself
   remote: Cleaning up the mess...
   remote: rollback completed
   abort: pretxnchangegroup hook exited with status 1
-  [255]
+  [40]
   $ hg -R main push ssh://user@dummy/other -r e7ec4e813ba6
   pushing to ssh://user@dummy/other
   searching for changes
@@ -747,7 +747,7 @@ Check output capture control.
   Cleaning up the mess...
   rollback completed
   abort: pretxnchangegroup hook exited with status 1
-  [255]
+  [40]
   $ hg -R main push ssh://user@dummy/other -r e7ec4e813ba6
   pushing to ssh://user@dummy/other
   searching for changes

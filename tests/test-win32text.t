@@ -38,7 +38,7 @@ commit should fail
   transaction abort!
   rollback completed
   abort: pretxncommit.crlf hook failed
-  [255]
+  [40]
 
   $ mv .hg/hgrc .hg/hgrc.bak
 
@@ -77,7 +77,7 @@ push should fail
   transaction abort!
   rollback completed
   abort: pretxnchangegroup.crlf hook failed
-  [255]
+  [40]
 
   $ mv .hg/hgrc.bak .hg/hgrc
   $ echo hello > f
@@ -109,7 +109,7 @@ and now for something completely different
   transaction abort!
   rollback completed
   abort: pretxncommit.crlf hook failed
-  [255]
+  [40]
   $ hg revert -a
   forgetting d/f2
   $ rm d/f2
@@ -286,7 +286,7 @@ and now for something completely different
   transaction abort!
   rollback completed
   abort: pretxnchangegroup.crlf hook failed
-  [255]
+  [40]
 
   $ hg log -v
   changeset:   5:f0b1c8d75fce

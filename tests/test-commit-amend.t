@@ -209,7 +209,7 @@ at first, test saving last-message.txt
   transaction abort!
   rollback completed
   abort: pretxncommit.test-saving-last-message hook exited with status 1
-  [255]
+  [40]
   $ cat .hg/last-message.txt
   message given from command line (no-eol)
 
@@ -234,7 +234,7 @@ at first, test saving last-message.txt
   transaction abort!
   rollback completed
   abort: pretxncommit.test-saving-last-message hook exited with status 1
-  [255]
+  [40]
 
   $ cat .hg/last-message.txt
   another precious commit message

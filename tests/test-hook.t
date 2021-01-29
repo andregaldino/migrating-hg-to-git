@@ -227,7 +227,7 @@ test generic hooks
   HG_PATS=[]
   
   abort: pre-identify hook exited with status 1
-  [255]
+  [40]
   $ hg cat b
   pre-cat hook: HG_ARGS=cat b
   HG_HOOKNAME=pre-cat
@@ -390,7 +390,7 @@ pretag hook can forbid tagging
   HG_TAG=fa
   
   abort: pretag.forbid hook exited with status 1
-  [255]
+  [40]
   $ hg tag -l fla
   pretag hook: HG_HOOKNAME=pretag
   HG_HOOKTYPE=pretag
@@ -405,7 +405,7 @@ pretag hook can forbid tagging
   HG_TAG=fla
   
   abort: pretag.forbid hook exited with status 1
-  [255]
+  [40]
 
 pretxncommit hook can see changeset, can roll back txn, changeset no
 more there after
@@ -451,7 +451,7 @@ more there after
   
   rollback completed
   abort: pretxncommit.forbid1 hook exited with status 1
-  [255]
+  [40]
   $ hg -q tip
   4:539e4b31b6dc
 
@@ -485,7 +485,7 @@ precommit hook can prevent commit
   HG_PARENT1=539e4b31b6dc99b3cfbaa6b53cbc1c1f9a1e3a10
   
   abort: precommit.forbid hook exited with status 1
-  [255]
+  [40]
   $ hg -q tip
   4:539e4b31b6dc
 
@@ -644,7 +644,7 @@ test that prepushkey can prevent incoming keys
   HG_URL=file:$TESTTMP/a
   
   abort: prepushkey hook exited with status 1
-  [255]
+  [40]
   $ cd ../a
 
 test that prelistkeys can prevent listing keys
@@ -679,7 +679,7 @@ test that prelistkeys can prevent listing keys
   HG_NAMESPACE=bookmarks
   
   abort: prelistkeys hook exited with status 1
-  [255]
+  [40]
   $ cd ../a
   $ rm .hg/hgrc
 
@@ -704,7 +704,7 @@ prechangegroup hook can prevent incoming changes
   HG_URL=file:$TESTTMP/a
   
   abort: prechangegroup.forbid hook exited with status 1
-  [255]
+  [40]
 
 pretxnchangegroup hook can see incoming changes, can roll back txn,
 incoming changes no longer there after
@@ -735,7 +735,7 @@ incoming changes no longer there after
   transaction abort!
   rollback completed
   abort: pretxnchangegroup.forbid1 hook exited with status 1
-  [255]
+  [40]
   $ hg -q tip
   3:07f3376c1e65
 
@@ -786,7 +786,7 @@ preoutgoing hook can prevent outgoing changes
   HG_SOURCE=pull
   
   abort: preoutgoing.forbid hook exited with status 1
-  [255]
+  [40]
 
 outgoing hooks work for local clones
 
@@ -825,7 +825,7 @@ preoutgoing hook can prevent outgoing changes for local clones
   HG_SOURCE=clone
   
   abort: preoutgoing.forbid hook exited with status 1
-  [255]
+  [40]
 
   $ cd "$TESTTMP/b"
 
@@ -915,7 +915,7 @@ test python hooks
     hooktype preoutgoing
     source pull
   abort: preoutgoing.fail hook failed
-  [255]
+  [40]
 
   $ echo '[hooks]' > ../a/.hg/hgrc
   $ echo 'preoutgoing.uncallable = python:hooktests.uncallable' >> ../a/.hg/hgrc
@@ -1283,7 +1283,7 @@ pretxnclose hook failure should abort the transaction
   rollback completed
   strip failed, backup bundle stored in * (glob)
   abort: pretxnclose.error hook exited with status 1
-  [255]
+  [40]
   $ hg recover
   no interrupted transaction available
   [1]
@@ -1306,7 +1306,7 @@ repositories visible to an external hook.
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
   $ cp .hg/store/00changelog.i.a.saved .hg/store/00changelog.i.a
 
 (check (in)visibility of new changeset while transaction running in
@@ -1331,7 +1331,7 @@ repo)
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
 
 Hook from untrusted hgrc are reported as failure
 ================================================
@@ -1382,7 +1382,7 @@ Non-blocking hook
   rollback completed
   abort: untrusted hook pretxnclose.testing not executed
   (see 'hg help config.trusted')
-  [255]
+  [40]
   $ hg log
   changeset:   0:3903775176ed
   tag:         tip

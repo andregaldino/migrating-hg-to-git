@@ -27,7 +27,7 @@
   transaction abort!
   rollback completed
   abort: pretxncommit.cr hook failed
-  [255]
+  [40]
   $ hg cat f | f --hexdump
   
   0000: 68 65 6c 6c 6f 0a                               |hello.|

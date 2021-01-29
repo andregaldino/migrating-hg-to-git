@@ -427,7 +427,7 @@ Failed hook while applying "saveheads" bundle.
   strip failed, unrecovered changes stored in '$TESTTMP/test/.hg/strip-backup/*-temp.hg' (glob)
   (fix the problem, then recover the changesets with "hg unbundle '$TESTTMP/test/.hg/strip-backup/*-temp.hg'") (glob)
   abort: pretxnchangegroup.bad hook exited with status 1
-  [255]
+  [40]
   $ restore
   $ hg log -G
   o  changeset:   4:443431ffac4f

@@ -377,7 +377,7 @@ executable set to python script that fails:
   merging f
   some fail message
   abort: $TESTTMP/mybrokenmerge.py hook failed
-  [255]
+  [40]
   $ aftermerge
   # cat f
   revision 1

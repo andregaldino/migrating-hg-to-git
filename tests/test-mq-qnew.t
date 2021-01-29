@@ -310,7 +310,7 @@ Test saving last-message.txt
   note: commit message saved in .hg/last-message.txt
   note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
   abort: pretxncommit.unexpectedabort hook exited with status 1
-  [255]
+  [40]
   $ cat .hg/last-message.txt
   
   

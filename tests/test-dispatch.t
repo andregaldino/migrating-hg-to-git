@@ -154,7 +154,7 @@ Early options must come first if HGPLAIN=+strictflags is specified:
 
   $ HGPLAIN=+strictflags hg --config='hooks.pre-log=false' log -b default
   abort: pre-log hook exited with status 1
-  [255]
+  [40]
   $ HGPLAIN=+strictflags hg --cwd .. -q -Ra log -b default
   0:cb9a9f314b8b
   $ HGPLAIN=+strictflags hg --cwd .. -q --repository a log -b default
@@ -166,7 +166,7 @@ For compatibility reasons, HGPLAIN=+strictflags is not enabled by plain HGPLAIN:
 
   $ HGPLAIN= hg log --config='hooks.pre-log=false' -b default
   abort: pre-log hook exited with status 1
-  [255]
+  [40]
   $ HGPLAINEXCEPT= hg log --cwd .. -q -Ra -b default
   0:cb9a9f314b8b
 

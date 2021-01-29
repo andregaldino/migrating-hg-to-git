@@ -1177,7 +1177,7 @@ Local push
   searching for changes
   no changes found
   abort: prepushkey hook exited with status 1
-  [255]
+  [40]
 
 #endif
 

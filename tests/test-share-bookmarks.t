@@ -102,7 +102,7 @@ Therefore, this test scenario ignores checking visibility of
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
   $ hg book bm1
 
 FYI, in contrast to above test, bmX is invisible in repo1 (= shared
@@ -127,7 +127,7 @@ src), because (1) HG_PENDING refers only repo3 and (2)
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
   $ hg book bm3
 
 clean up bm2 since it's uninteresting (not shared in the vfs case and
@@ -249,7 +249,7 @@ verify that bookmarks are not written on failed transaction
   no changes found
   adding remote bookmark bm3
   abort: forced failure by extension
-  [255]
+  [40]
   $ hg boo
      bm1                       3:b87954705719
      bm4                       5:92793bfc8cad

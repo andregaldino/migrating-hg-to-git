@@ -290,7 +290,7 @@ at first, test saving last-message.txt
   $ rm -f .hg/last-message.txt
   $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg tag custom-tag -e
   abort: pretag.test-saving-lastmessage hook exited with status 1
-  [255]
+  [40]
   $ test -f .hg/last-message.txt
   [1]
 
@@ -325,7 +325,7 @@ regardless of '--message')
   note: commit message saved in .hg/last-message.txt
   note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
   abort: pretxncommit.unexpectedabort hook exited with status 1
-  [255]
+  [40]
   $ cat .hg/last-message.txt
   custom tag message
   second line
