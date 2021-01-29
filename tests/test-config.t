@@ -388,3 +388,26 @@ configs should be read in lexicographical order
   > done
   $ HGRCPATH=configs hg config section.key
   99
+
+Configuration priority
+======================
+
+setup necessary file
+
+  $ cat > file-A.rc << EOF
+  > [config-test]
+  > basic = value-A
+  > EOF
+
+  $ cat > file-B.rc << EOF
+  > [config-test]
+  > basic = value-B
+  > EOF
+
+Simple order checking
+---------------------
+
+If file B is read after file A, value from B overwrite value from A.
+
+  $ HGRCPATH="file-A.rc:file-B.rc" hg config config-test.basic
+  value-B
