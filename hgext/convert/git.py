@@ -247,7 +247,8 @@ class convert_git(common.converter_source, common.commandline):
             b'\n'.join(line.strip() for line in content.split(b'\n')),
         )
         for sec in c.sections():
-            s = c[sec]
+            # turn the config object into a real dict
+            s = dict(c.items(sec))
             if b'url' in s and b'path' in s:
                 self.submodules.append(submodule(s[b'path'], b'', s[b'url']))
 
