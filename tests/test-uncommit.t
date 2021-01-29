@@ -114,12 +114,12 @@ Uncommit of non-existent and unchanged files aborts
   $ hg uncommit nothinghere
   abort: cannot uncommit "nothinghere"
   (file does not exist)
-  [255]
+  [10]
   $ hg status
   $ hg uncommit file-abc
   abort: cannot uncommit "file-abc"
   (file was not changed in working directory parent)
-  [255]
+  [10]
   $ hg status
 
 Try partial uncommit, also moves bookmark
@@ -419,7 +419,7 @@ Add and expect uncommit to fail on both merge working dir and merge changeset
 
   $ hg uncommit
   abort: cannot uncommit merge changeset
-  [255]
+  [10]
 
   $ hg status
   $ hg log -G -T '{rev}:{node} {desc}' --hidden
@@ -585,12 +585,12 @@ Bad option combinations
   $ hg uncommit emptydir
   abort: cannot uncommit "emptydir"
   (file was untracked in working directory parent)
-  [255]
+  [10]
 
   $ cd emptydir
   $ hg uncommit .
   abort: cannot uncommit "emptydir"
   (file was untracked in working directory parent)
-  [255]
+  [10]
   $ hg status
   $ cd ..

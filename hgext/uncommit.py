@@ -175,7 +175,7 @@ def uncommit(ui, repo, *pats, **opts):
         old = repo[b'.']
         rewriteutil.precheck(repo, [old.rev()], b'uncommit')
         if len(old.parents()) > 1:
-            raise error.Abort(_(b"cannot uncommit merge changeset"))
+            raise error.InputError(_(b"cannot uncommit merge changeset"))
 
         match = scmutil.match(old, pats, opts)
 
@@ -202,7 +202,7 @@ def uncommit(ui, repo, *pats, **opts):
                 else:
                     hint = _(b"file does not exist")
 
-                raise error.Abort(
+                raise error.InputError(
                     _(b'cannot uncommit "%s"') % scmutil.getuipathfn(repo)(f),
                     hint=hint,
                 )
@@ -280,7 +280,7 @@ def unamend(ui, repo, **opts):
         markers = list(predecessormarkers(curctx))
         if len(markers) != 1:
             e = _(b"changeset must have one predecessor, found %i predecessors")
-            raise error.Abort(e % len(markers))
+            raise error.InputError(e % len(markers))
 
         prednode = markers[0].prednode()
         predctx = unfi[prednode]
