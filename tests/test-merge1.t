@@ -113,7 +113,7 @@ merge should fail
   $ hg merge 1
   b: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
 
 #if symlink
 symlinks to directories should be treated as regular files (issue5027)
@@ -122,7 +122,7 @@ symlinks to directories should be treated as regular files (issue5027)
   $ hg merge 1
   b: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
 symlinks shouldn't be followed
   $ rm b
   $ echo This is file b1 > .hg/b
@@ -130,7 +130,7 @@ symlinks shouldn't be followed
   $ hg merge 1
   b: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
 
   $ rm b
   $ echo This is file b2 > b
@@ -144,7 +144,7 @@ this merge should fail
   $ hg merge 1 --config merge.checkunknown=abort
   b: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
 
 this merge should warn
   $ hg merge 1 --config merge.checkunknown=warn
@@ -188,7 +188,7 @@ remote .hgignore shouldn't be used for determining whether a file is ignored
   $ hg merge 3 --config merge.checkignored=ignore --config merge.checkunknown=abort
   remoteignored: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg merge 3 --config merge.checkignored=abort --config merge.checkunknown=ignore
   merging .hgignore
   merging for .hgignore
@@ -210,15 +210,15 @@ also test other conflicting files to see we output the full set of warnings
   b: untracked file differs
   localignored: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg merge 3 --config merge.checkignored=abort --config merge.checkunknown=ignore
   localignored: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg merge 3 --config merge.checkignored=warn --config merge.checkunknown=abort
   b: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg merge 3 --config merge.checkignored=warn --config merge.checkunknown=warn
   b: replacing untracked file
   localignored: replacing untracked file

@@ -153,15 +153,15 @@ can not update or merge when there are unresolved conflicts
   $ hg up 0
   abort: outstanding merge conflicts
   (use 'hg resolve' to resolve)
-  [255]
+  [20]
   $ hg merge 2
   abort: outstanding merge conflicts
   (use 'hg resolve' to resolve)
-  [255]
+  [20]
   $ hg merge --force 2
   abort: outstanding merge conflicts
   (use 'hg resolve' to resolve)
-  [255]
+  [20]
 
 set up conflict-free merge
 

@@ -175,7 +175,7 @@ test conflicting untracked files
   $ hg up 1
   b: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ rm b
 
 test conflicting untracked ignored file
@@ -195,7 +195,7 @@ test conflicting untracked ignored file
   $ hg up 'desc("add ignored file")'
   ignored: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
 
 test a local add
 

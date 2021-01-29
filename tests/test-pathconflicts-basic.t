@@ -53,7 +53,7 @@ Basic update - local directory conflicts with remote file
   $ hg up file
   a: untracked directory conflicts with file
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg up --clean file
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (activating bookmark file)

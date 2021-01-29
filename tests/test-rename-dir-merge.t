@@ -110,7 +110,7 @@ and untracked in local target directory.
   $ hg merge 2
   b/c: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ cat b/c
   target
 but it should succeed if the content matches

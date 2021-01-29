@@ -233,7 +233,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
         else:
             warn(_(b"%s: untracked file differs\n") % f)
     if abortconflicts:
-        raise error.Abort(
+        raise error.StateError(
             _(
                 b"untracked files in working directory "
                 b"differ from files in requested revision"
@@ -341,7 +341,7 @@ def _checkcollision(repo, wmf, mresult):
     for f in pmmf:
         fold = util.normcase(f)
         if fold in foldmap:
-            raise error.Abort(
+            raise error.StateError(
                 _(b"case-folding collision between %s and %s")
                 % (f, foldmap[fold])
             )
@@ -352,7 +352,7 @@ def _checkcollision(repo, wmf, mresult):
     for fold, f in sorted(foldmap.items()):
         if fold.startswith(foldprefix) and not f.startswith(unfoldprefix):
             # the folded prefix matches but actual casing is different
-            raise error.Abort(
+            raise error.StateError(
                 _(b"case-folding collision between %s and directory of %s")
                 % (lastfull, f)
             )
@@ -504,7 +504,9 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
     if invalidconflicts:
         for p in invalidconflicts:
             repo.ui.warn(_(b"%s: is both a file and a directory\n") % p)
-        raise error.Abort(_(b"destination manifest contains path conflicts"))
+        raise error.StateError(
+            _(b"destination manifest contains path conflicts")
+        )
 
 
 def _filternarrowactions(narrowmatch, branchmerge, mresult):
@@ -1918,10 +1920,10 @@ def _update(
         ### check phase
         if not overwrite:
             if len(pl) > 1:
-                raise error.Abort(_(b"outstanding uncommitted merge"))
+                raise error.StateError(_(b"outstanding uncommitted merge"))
             ms = wc.mergestate()
             if ms.unresolvedcount():
-                raise error.Abort(
+                raise error.StateError(
                     _(b"outstanding merge conflicts"),
                     hint=_(b"use 'hg resolve' to resolve"),
                 )
@@ -2007,7 +2009,7 @@ def _update(
             if mresult.hasconflicts():
                 msg = _(b"conflicting changes")
                 hint = _(b"commit or update --clean to discard changes")
-                raise error.Abort(msg, hint=hint)
+                raise error.StateError(msg, hint=hint)
 
         # Prompt and create actions. Most of this is in the resolve phase
         # already, but we can't handle .hgsubstate in filemerge or

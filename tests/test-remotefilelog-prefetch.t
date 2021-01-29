@@ -180,7 +180,7 @@
   x: untracked file differs
   3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over * (glob)
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg revert --all
 
 # Test batch fetching of lookup files during hg status
