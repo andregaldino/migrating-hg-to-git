@@ -891,7 +891,7 @@ def _readmapfile(fp, mapfile):
         fp = _open_mapfile(path)
         cache, tmap, aliases = _readmapfile(fp, path)
 
-    for key, val in conf[b'templates'].items():
+    for key, val in conf.items(b'templates'):
         if not val:
             raise error.ParseError(
                 _(b'missing value'), conf.source(b'templates', key)
@@ -904,7 +904,7 @@ def _readmapfile(fp, mapfile):
             cache[key] = unquotestring(val)
         elif key != b'__base__':
             tmap[key] = os.path.join(base, val)
-    aliases.extend(conf[b'templatealias'].items())
+    aliases.extend(conf.items(b'templatealias'))
     return cache, tmap, aliases
 
 
