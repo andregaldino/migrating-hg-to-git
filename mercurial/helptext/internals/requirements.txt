@@ -131,7 +131,7 @@ be present on repositories that have opted in to a sparse working
 directory.
 
 bookmarksinstore
-==================
+================
 
 Bookmarks are stored in ``.hg/store/`` instead of directly in ``.hg/``
 where they used to be stored. The active bookmark is still stored
@@ -156,8 +156,8 @@ Note that as of 5.5, only installations compiled with the Rust extension will
 benefit from a speedup. The other installations will do the necessary work to
 keep the index up to date, but will suffer a slowdown.
 
-exp-sharesafe
-=============
+share-safe
+==========
 
 Represents that the repository can be shared safely. Requirements and config of
 the source repository will be shared.

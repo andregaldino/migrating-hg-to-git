@@ -1700,6 +1700,8 @@ py2exepackages = [
     'mercurial.pure',
 ]
 
+py2exe_includes = []
+
 py2exeexcludes = []
 py2exedllexcludes = ['crypt32.dll']
 
@@ -1710,7 +1712,7 @@ if py2exeloaded:
     extra['console'] = [
         {
             'script': 'hg',
-            'copyright': 'Copyright (C) 2005-2020 Matt Mackall and others',
+            'copyright': 'Copyright (C) 2005-2021 Matt Mackall and others',
             'product_version': version,
         }
     ]
@@ -1727,6 +1729,10 @@ if py2exeloaded:
     extrapackages = os.environ.get('HG_PY2EXE_EXTRA_PACKAGES')
     if extrapackages:
         py2exepackages.extend(extrapackages.split(' '))
+
+    extra_includes = os.environ.get('HG_PY2EXE_EXTRA_INCLUDES')
+    if extra_includes:
+        py2exe_includes.extend(extra_includes.split(' '))
 
     excludes = os.environ.get('HG_PY2EXE_EXTRA_EXCLUDES')
     if excludes:
@@ -1827,6 +1833,7 @@ setup(
         'py2exe': {
             'bundle_files': 3,
             'dll_excludes': py2exedllexcludes,
+            'includes': py2exe_includes,
             'excludes': py2exeexcludes,
             'packages': py2exepackages,
         },

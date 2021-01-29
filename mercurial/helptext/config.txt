@@ -147,14 +147,12 @@ be overridden in other configuration files. So far the directory only contains
 merge tool configuration but packagers can also put other default configuration
 there.
 
-.. container:: verbose
+On versions 5.7 and later, if share-safe functionality is enabled,
+shares will read config file of share source too.
+`<share-source/.hg/hgrc>` is read before reading `<repo/.hg/hgrc>`.
 
-    On versions 5.7 and later, if share-safe functionality is enabled,
-    shares will read config file of share source too.
-    `<share-source/.hg/hgrc>` is read before reading `<repo/.hg/hgrc>`.
-
-    For configs which should not be shared, `<repo/.hg/hgrc-not-shared>`
-    should be used.
+For configs which should not be shared, `<repo/.hg/hgrc-not-shared>`
+should be used.
 
 Syntax
 ======
@@ -915,8 +913,27 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     Disabled by default.
 
 ``use-share-safe``
-    Enable or disable the "share-safe" functionality, which enables shares
-    to read requirements and configuration of its source repository.
+    Enforce "safe" behaviors for all "shares" that access this repository.
+
+    With this feature, "shares" using this repository as a source will:
+
+    * read the source repository's configuration (`<source>/.hg/hgrc`).
+    * read and use the source repository's "requirements"
+      (except the working copy specific one).
+
+    Without this feature, "shares" using this repository as a source will:
+
+    * keep tracking the repository "requirements" in the share only, ignoring
+      the source "requirements", possibly diverging from them.
+    * ignore source repository config. This can create problems, like silently
+      ignoring important hooks.
+
+    Beware that existing shares will not be upgraded/downgraded, and by
+    default, Mercurial will refuse to interact with them until the mismatch
+    is resolved. See :hg:`help config share.safe-mismatch.source-safe` and
+    :hg:`help config share.safe-mismatch.source-not-safe` for details.
+
+    Introduced in Mercurial 5.7.
 
     Disabled by default.
 
@@ -1959,6 +1976,14 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     tries to upgrade the share; if it fails, continue by
     respecting the share source setting
 
+    Check :hg:`help config format.use-share-safe` for details about the
+    share-safe feature.
+
+``safe-mismatch.source-safe.warn``
+    Shows a warning on operations if the shared repository does not use
+    share-safe, but the source repository does.
+    (default: True)
+
 ``safe-mismatch.source-not-safe``
 
     Controls what happens when the shared repository uses the share-safe
@@ -1977,11 +2002,8 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     tries to downgrade the share to not use share-safe;
     if it fails, continue by respecting the shared source setting
 
-
-``safe-mismatch.source-safe.warn``
-    Shows a warning on operations if the shared repository does not use
-    share-safe, but the source repository does.
-    (default: True)
+    Check :hg:`help config format.use-share-safe` for details about the
+    share-safe feature.
 
 ``safe-mismatch.source-not-safe.warn``
     Shows a warning on operations if the shared repository uses share-safe,

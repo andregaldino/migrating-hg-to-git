@@ -277,15 +277,20 @@ def upgrade_share_to_safe(
         scmutil.writerequires(hgvfs, diffrequires)
         ui.warn(_(b'repository upgraded to use share-safe mode\n'))
     except error.LockError as e:
+        hint = _(
+            "see `hg help config.format.use-share-safe` for more information"
+        )
         if mismatch_config == b'upgrade-abort':
             raise error.Abort(
                 _(b'failed to upgrade share, got error: %s')
-                % stringutil.forcebytestr(e.strerror)
+                % stringutil.forcebytestr(e.strerror),
+                hint=hint,
             )
         elif mismatch_warn:
             ui.warn(
                 _(b'failed to upgrade share, got error: %s\n')
-                % stringutil.forcebytestr(e.strerror)
+                % stringutil.forcebytestr(e.strerror),
+                hint=hint,
             )
     finally:
         if wlock:
@@ -329,17 +334,22 @@ def downgrade_share_to_non_safe(
         scmutil.writerequires(hgvfs, current_requirements)
         ui.warn(_(b'repository downgraded to not use share-safe mode\n'))
     except error.LockError as e:
+        hint = _(
+            "see `hg help config.format.use-share-safe` for more information"
+        )
         # If upgrade-abort is set, abort when upgrade fails, else let the
         # process continue as `upgrade-allow` is set
         if mismatch_config == b'downgrade-abort':
             raise error.Abort(
                 _(b'failed to downgrade share, got error: %s')
-                % stringutil.forcebytestr(e.strerror)
+                % stringutil.forcebytestr(e.strerror),
+                hint=hint,
             )
         elif mismatch_warn:
             ui.warn(
                 _(b'failed to downgrade share, got error: %s\n')
-                % stringutil.forcebytestr(e.strerror)
+                % stringutil.forcebytestr(e.strerror),
+                hint=hint,
             )
     finally:
         if wlock:

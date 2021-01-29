@@ -39,6 +39,10 @@ EXTRA_PACKAGES = {
     'win32ctypes',
 }
 
+EXTRA_INCLUDES = {
+    '_curses',
+    '_curses_panel',
+}
 
 EXTRA_INSTALL_RULES = [
     ('contrib/packaging/wix/COPYING.rtf', 'COPYING.rtf'),
@@ -330,6 +334,7 @@ def build_installer_py2exe(
         requirements_txt,
         extra_packages=EXTRA_PACKAGES,
         extra_packages_script=extra_packages_script,
+        extra_includes=EXTRA_INCLUDES,
     )
 
     build_dir = hg_build_dir / ('wix-%s' % arch)

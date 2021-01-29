@@ -16,8 +16,6 @@ variables:
     before_script:
       - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
       - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
-      - cd /tmp/mercurial-ci/rust/rhg
-      - cargo build
       - cd /tmp/mercurial-ci/
       - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
       - black --version
@@ -26,6 +24,17 @@ variables:
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
         - HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" tests/run-tests.py --color=always $RUNTEST_ARGS
+
+
+.rust_template: &rust
+    before_script:
+      - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
+      - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
+      - ls -1 tests/test-check-*.* > /tmp/check-tests.txt
+      - cd /tmp/mercurial-ci/rust/rhg
+      - cargo build
+      - cd /tmp/mercurial-ci/
+
 
 checks-py2:
     <<: *runtests
@@ -83,6 +92,7 @@ test-py3-pure:
 
 test-py2-rust:
     <<: *runtests
+    <<: *rust
     variables:
         HGWITHRUSTEXT: cpython
         RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
@@ -90,6 +100,7 @@ test-py2-rust:
 
 test-py3-rust:
     <<: *runtests
+    <<: *rust
     variables:
         HGWITHRUSTEXT: cpython
         RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"

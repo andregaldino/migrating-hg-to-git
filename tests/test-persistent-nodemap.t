@@ -31,6 +31,23 @@ Unlock further check (we are here to test the feature)
 
 #endif
 
+#if rust
+
+Regression test for a previous bug in Rust/C FFI for the `Revlog_CAPI` capsule:
+in places where `mercurial/cext/revlog.c` function signatures use `Py_ssize_t`
+(64 bits on Linux x86_64), corresponding declarations in `rust/hg-cpython/src/cindex.rs`
+incorrectly used `libc::c_int` (32 bits).
+As a result, -1 passed from Rust for the null revision became 4294967295 in C.
+
+  $ hg log -r 00000000
+  changeset:   -1:000000000000
+  tag:         tip
+  user:        
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  
+
+#endif
+
 
   $ hg debugformat
   format-variant     repo

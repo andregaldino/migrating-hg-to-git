@@ -420,7 +420,10 @@ lfs-test-server.
 
 TODO: give the proper error indication from `hg serve`
 
-  $ hg --repo ../repo1 update -C tip --debug
+TODO: reconsider the except base class so that the git and hg errors yield the
+same exit status.
+
+  $ hg --repo ../repo1 update -C tip --debug --config ui.detailed-exit-code=False
   http auth: user foo, password ***
   resolving manifests
    branchmerge: False, force: True, partial: False
@@ -460,7 +463,7 @@ TODO: give the proper error indication from `hg serve`
   Date: $HTTP_DATE$ (git-server !)
   abort: corrupt remote lfs object: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (git-server !)
   abort: LFS server error for "c": Validation error (hg-server !)
-  [50]
+  [255]
 
 The corrupted blob is not added to the usercache or local store
 
