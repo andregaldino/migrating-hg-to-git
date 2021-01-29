@@ -397,11 +397,21 @@ setup necessary file
   $ cat > file-A.rc << EOF
   > [config-test]
   > basic = value-A
+  > pre-include= value-A
+  > %include ./included.rc
+  > post-include= value-A
   > EOF
 
   $ cat > file-B.rc << EOF
   > [config-test]
   > basic = value-B
+  > EOF
+
+
+  $ cat > included.rc << EOF
+  > [config-test]
+  > pre-include= value-included
+  > post-include= value-included
   > EOF
 
 Simple order checking
@@ -411,3 +421,13 @@ If file B is read after file A, value from B overwrite value from A.
 
   $ HGRCPATH="file-A.rc:file-B.rc" hg config config-test.basic
   value-B
+
+Ordering from include
+---------------------
+
+value from an include overwrite value defined before the include, but not the one defined after the include
+
+  $ HGRCPATH="file-A.rc" hg config config-test.pre-include
+  value-included
+  $ HGRCPATH="file-A.rc" hg config config-test.post-include
+  value-A
