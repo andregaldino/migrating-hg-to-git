@@ -431,3 +431,9 @@ value from an include overwrite value defined before the include, but not the on
   value-included
   $ HGRCPATH="file-A.rc" hg config config-test.post-include
   value-A
+
+command line override
+---------------------
+
+  $ HGRCPATH="file-A.rc:file-B.rc" hg config config-test.basic --config config-test.basic=value-CLI
+  value-CLI
