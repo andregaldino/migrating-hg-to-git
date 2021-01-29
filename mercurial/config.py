@@ -22,11 +22,19 @@ from . import (
 
 class config(object):
     def __init__(self, data=None):
+        self._current_source_level = 0
         self._data = {}
         self._unset = []
         if data:
             for k in data._data:
                 self._data[k] = data[k].copy()
+            self._current_source_level = data._current_source_level + 1
+
+    def new_source(self):
+        """increment the source counter
+
+        This is used to define source priority when reading"""
+        self._current_source_level += 1
 
     def copy(self):
         return config(self)
@@ -45,6 +53,9 @@ class config(object):
             yield d
 
     def update(self, src):
+        current_level = self._current_source_level
+        current_level += 1
+        max_level = self._current_source_level
         for s, n in src._unset:
             ds = self._data.get(s, None)
             if ds is not None and n in ds:
@@ -56,7 +67,12 @@ class config(object):
                 self._data[s] = ds.preparewrite()
             else:
                 self._data[s] = util.cowsortdict()
-            self._data[s].update(src._data[s])
+            for k, v in src._data[s].items():
+                value, source, level = v
+                level += current_level
+                max_level = max(level, current_level)
+                self._data[s][k] = (value, source, level)
+        self._current_source_level = max_level
 
     def _get(self, section, item):
         return self._data.get(section, {}).get(item)
@@ -85,12 +101,18 @@ class config(object):
             return b""
         return result[1]
 
+    def level(self, section, item):
+        result = self._get(section, item)
+        if result is None:
+            return None
+        return result[2]
+
     def sections(self):
         return sorted(self._data.keys())
 
     def items(self, section):
         items = pycompat.iteritems(self._data.get(section, {}))
-        return [(k, v) for (k, (v, s)) in items]
+        return [(k, v[0]) for (k, v) in items]
 
     def set(self, section, item, value, source=b""):
         if pycompat.ispy3:
@@ -107,7 +129,7 @@ class config(object):
             self._data[section] = util.cowsortdict()
         else:
             self._data[section] = self._data[section].preparewrite()
-        self._data[section][item] = (value, source)
+        self._data[section][item] = (value, source, self._current_source_level)
 
     def alter(self, section, key, new_value):
         """alter a value without altering its source or level
@@ -215,6 +237,7 @@ class config(object):
             raise error.ConfigError(message, (b"%s:%d" % (src, line)))
 
     def read(self, path, fp=None, sections=None, remap=None):
+        self.new_source()
         if not fp:
             fp = util.posixfile(path, b'rb')
         assert (
@@ -229,6 +252,8 @@ class config(object):
         def include(rel, remap, sections):
             abs = os.path.normpath(os.path.join(dir, rel))
             self.read(abs, remap=remap, sections=sections)
+            # anything after the include has a higher level
+            self.new_source()
 
         self.parse(
             path, fp.read(), sections=sections, remap=remap, include=include

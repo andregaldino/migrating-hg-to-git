@@ -302,6 +302,11 @@ class ui(object):
                 if k in self.environ:
                     self._exportableenviron[k] = self.environ[k]
 
+    def _new_source(self):
+        self._ocfg.new_source()
+        self._tcfg.new_source()
+        self._ucfg.new_source()
+
     @classmethod
     def load(cls):
         """Create a ui and load global and user configs"""
@@ -313,6 +318,7 @@ class ui(object):
             elif t == b'resource':
                 u.read_resource_config(f, trust=True)
             elif t == b'items':
+                u._new_source()
                 sections = set()
                 for section, name, value, source in f:
                     # do not set u._ocfg
@@ -325,6 +331,7 @@ class ui(object):
             else:
                 raise error.ProgrammingError(b'unknown rctype: %s' % t)
         u._maybetweakdefaults()
+        u._new_source()  # anything after that is a different level
         return u
 
     def _maybetweakdefaults(self):
