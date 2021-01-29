@@ -69,6 +69,7 @@ from . import (
     pycompat,
     registrar,
     repair,
+    repoview,
     revlog,
     revset,
     revsetlang,
@@ -964,19 +965,72 @@ def debugstate(ui, repo, **opts):
         ),
         (b'', b'rev', [], b'restrict discovery to this set of revs'),
         (b'', b'seed', b'12323', b'specify the random seed use for discovery'),
+        (
+            b'',
+            b'local-as-revs',
+            "",
+            'treat local has having these revisions only',
+        ),
+        (
+            b'',
+            b'remote-as-revs',
+            "",
+            'use local as remote, with only these these revisions',
+        ),
     ]
     + cmdutil.remoteopts,
     _(b'[--rev REV] [OTHER]'),
 )
 def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
-    """runs the changeset discovery protocol in isolation"""
+    """runs the changeset discovery protocol in isolation
+
+    The local peer can be "replaced" by a subset of the local repository by
+    using the `--local-as-revs` flag. Int he same way, usual `remote` peer can
+    be "replaced" by a subset of the local repository using the
+    `--local-as-revs` flag. This is useful to efficiently debug pathological
+    discovery situation.
+    """
     opts = pycompat.byteskwargs(opts)
-    remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl))
-    remote = hg.peer(repo, opts, remoteurl)
-    ui.status(_(b'comparing with %s\n') % util.hidepassword(remoteurl))
+    unfi = repo.unfiltered()
+
+    # setup potential extra filtering
+    local_revs = opts[b"local_as_revs"]
+    remote_revs = opts[b"remote_as_revs"]
 
     # make sure tests are repeatable
     random.seed(int(opts[b'seed']))
+
+    if not remote_revs:
+
+        remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl))
+        remote = hg.peer(repo, opts, remoteurl)
+        ui.status(_(b'comparing with %s\n') % util.hidepassword(remoteurl))
+    else:
+        branches = (None, [])
+        remote_filtered_revs = scmutil.revrange(
+            unfi, [b"not (::(%s))" % remote_revs]
+        )
+        remote_filtered_revs = frozenset(remote_filtered_revs)
+
+        def remote_func(x):
+            return remote_filtered_revs
+
+        repoview.filtertable[b'debug-discovery-remote-filter'] = remote_func
+
+        remote = repo.peer()
+        remote._repo = remote._repo.filtered(b'debug-discovery-remote-filter')
+
+    if local_revs:
+        local_filtered_revs = scmutil.revrange(
+            unfi, [b"not (::(%s))" % local_revs]
+        )
+        local_filtered_revs = frozenset(local_filtered_revs)
+
+        def local_func(x):
+            return local_filtered_revs
+
+        repoview.filtertable[b'debug-discovery-local-filter'] = local_func
+        repo = repo.filtered(b'debug-discovery-local-filter')
 
     data = {}
     if opts.get(b'old'):
