@@ -105,7 +105,7 @@ def state(ctx, ui):
         return src
 
     state = {}
-    for path, src in p[b''].items():
+    for path, src in p.items(b''):
         kind = b'hg'
         if src.startswith(b'['):
             if b']' not in src:
