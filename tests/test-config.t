@@ -418,6 +418,29 @@ setup necessary file
   > post-include= value-included
   > EOF
 
+  $ cat > file-C.rc << EOF
+  > %include ./included-alias-C.rc
+  > [ui]
+  > logtemplate = "value-C\n"
+  > EOF
+
+  $ cat > included-alias-C.rc << EOF
+  > [command-templates]
+  > log = "value-included\n"
+  > EOF
+
+
+  $ cat > file-D.rc << EOF
+  > [command-templates]
+  > log = "value-D\n"
+  > %include ./included-alias-D.rc
+  > EOF
+
+  $ cat > included-alias-D.rc << EOF
+  > [ui]
+  > logtemplate = "value-included\n"
+  > EOF
+
 Simple order checking
 ---------------------
 
@@ -462,3 +485,16 @@ BROKEN: currently not the case.
   $ HGRCPATH="file-A.rc:file-B.rc" hg log -r .
   value-A (known-bad-output !)
   value-B (missing-correct-output !)
+
+Alias and include
+-----------------
+
+The pre/post include priority should also apply when tie-breaking alternatives.
+See the case above for details about the two config options used.
+
+  $ HGRCPATH="file-C.rc" hg log -r .
+  value-included (known-bad-output !)
+  value-C (missing-correct-output !)
+  $ HGRCPATH="file-D.rc" hg log -r .
+  value-D (known-bad-output !)
+  value-included (missing-correct-output !)
