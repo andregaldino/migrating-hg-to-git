@@ -560,7 +560,7 @@ Detach both parents
   rebasing 2:b18e25de2cf5 D "D"
   rebasing 6:f15c3adaf214 F tip "F"
   abort: cannot rebase 6:f15c3adaf214 without moving at least one of its parents
-  [255]
+  [10]
 
   $ cd ..
 
@@ -948,7 +948,7 @@ If a rebase is going to create divergence, it should abort
   $ hg rebase -s 10 -d 12
   abort: this rebase will cause divergences from: 121d9e3bc4c6
   (to force the rebase please set experimental.evolution.allowdivergence=True)
-  [255]
+  [20]
   $ hg log -G
   @  14:73568ab6879d bar foo
   |
@@ -1152,7 +1152,7 @@ By allowing divergence, we can perform the rebase.
   $ hg rebase -r 'c'::'f' -d 'x'
   abort: this rebase will cause divergences from: 76be324c128b
   (to force the rebase please set experimental.evolution.allowdivergence=True)
-  [255]
+  [20]
   $ hg rebase --config experimental.evolution.allowdivergence=true -r 'c'::'f' -d 'x'
   rebasing 3:a82ac2b38757 c "c"
   rebasing 4:76be324c128b d "d"
@@ -1566,7 +1566,7 @@ This strip seems to be the key to avoid an early divergence warning.
   $ hg rebase -b 'desc("D")' -d 'desc("J")'
   abort: this rebase will cause divergences from: 112478962961
   (to force the rebase please set experimental.evolution.allowdivergence=True)
-  [255]
+  [20]
 
 Rebase merge where both parents have successors in destination
 
@@ -1585,7 +1585,7 @@ Rebase merge where both parents have successors in destination
   note: not rebasing 5:b23a2cc00842 B "B", already in destination as 1:058c1e1fb10a D "D"
   rebasing 7:dac5d11c5a7d E tip "E"
   abort: rebasing 7:dac5d11c5a7d will include unwanted changes from 3:59c792af609c, 5:b23a2cc00842 or 2:ba2b7fa7166d, 4:a3d17304151f
-  [255]
+  [10]
   $ cd ..
 
 Rebase a non-clean merge. One parent has successor in destination, the other
@@ -1941,7 +1941,7 @@ Test it aborts if unstable csets is not allowed:
   $ hg rebase --stop
   abort: cannot remove original changesets with unrebased descendants
   (either enable obsmarkers to allow unstable revisions or use --keep to keep original changesets)
-  [255]
+  [20]
   $ hg rebase --abort
   saved backup bundle to $TESTTMP/rbstop/.hg/strip-backup/b15528633407-6eb72b6f-backup.hg
   rebase aborted
@@ -2020,7 +2020,7 @@ Test --stop aborts when --collapse was passed:
   [240]
   $ hg rebase --stop
   abort: cannot stop in --collapse session
-  [255]
+  [20]
   $ hg rebase --abort
   rebase aborted
   $ hg diff

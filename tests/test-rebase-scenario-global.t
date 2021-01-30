@@ -266,14 +266,14 @@ F onto G - rebase onto a descendant:
 
   $ hg rebase -s 5 -d 6
   abort: source and destination form a cycle
-  [255]
+  [10]
 
 G onto B - merge revision with both parents not in ancestors of target:
 
   $ hg rebase -s 6 -d 1
   rebasing 6:eea13746799a "G"
   abort: cannot rebase 6:eea13746799a without moving at least one of its parents
-  [255]
+  [10]
   $ hg rebase --abort
   rebase aborted
 

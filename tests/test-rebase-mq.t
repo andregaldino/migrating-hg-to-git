@@ -46,14 +46,14 @@ Rebase - try to rebase on an applied mq patch:
 
   $ hg rebase -s 1 -d 3
   abort: cannot rebase onto an applied mq patch
-  [255]
+  [20]
 
 Rebase - same thing, but mq patch is default dest:
 
   $ hg up -q 1
   $ hg rebase
   abort: cannot rebase onto an applied mq patch
-  [255]
+  [20]
   $ hg up -q qtip
 
 Rebase - generate a conflict:

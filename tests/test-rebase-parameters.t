@@ -66,7 +66,7 @@ These fail:
 
   $ hg rebase --continue --collapse
   abort: cannot use collapse with continue or abort
-  [255]
+  [10]
 
   $ hg rebase --continue --dest 4
   abort: cannot specify both --continue and --dest
@@ -94,15 +94,15 @@ These fail:
 
   $ hg rebase --rev 'wdir()' --dest 6
   abort: cannot rebase the working copy
-  [255]
+  [10]
 
   $ hg rebase --source 'wdir()' --dest 6
   abort: cannot rebase the working copy
-  [255]
+  [10]
 
   $ hg rebase --source 1 --source 'wdir()' --dest 6
   abort: cannot rebase the working copy
-  [255]
+  [10]
 
   $ hg rebase --source '1 & !1' --dest 8
   empty "source" revision set - nothing to rebase
@@ -508,11 +508,11 @@ Test --tool parameter:
 
   $ hg rebase -i
   abort: interactive history editing is supported by the 'histedit' extension (see "hg --config extensions.histedit= help -e histedit")
-  [255]
+  [10]
 
   $ hg rebase --interactive
   abort: interactive history editing is supported by the 'histedit' extension (see "hg --config extensions.histedit= help -e histedit")
-  [255]
+  [10]
 
   $ cd ..
 

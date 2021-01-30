@@ -144,7 +144,7 @@ def _revsetdestautoorphanrebase(repo, subset, x):
         return smartset.baseset()
     dests = destutil.orphanpossibledestination(repo, src)
     if len(dests) > 1:
-        raise error.Abort(
+        raise error.StateError(
             _(b"ambiguous automatic rebase: %r could end up on any of %r")
             % (src, dests)
         )
@@ -424,7 +424,7 @@ class rebaseruntime(object):
         if self.collapsef:
             dests = set(self.destmap.values())
             if len(dests) != 1:
-                raise error.Abort(
+                raise error.InputError(
                     _(b'--collapse does not work with multiple destinations')
                 )
             destrev = next(iter(dests))
@@ -469,7 +469,7 @@ class rebaseruntime(object):
                 for rev in self.state:
                     branches.add(repo[rev].branch())
                     if len(branches) > 1:
-                        raise error.Abort(
+                        raise error.InputError(
                             _(b'cannot collapse multiple named branches')
                         )
 
@@ -1093,10 +1093,10 @@ def rebase(ui, repo, **opts):
         with repo.wlock(), repo.lock():
             rbsrt.restorestatus()
             if rbsrt.collapsef:
-                raise error.Abort(_(b"cannot stop in --collapse session"))
+                raise error.StateError(_(b"cannot stop in --collapse session"))
             allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)
             if not (rbsrt.keepf or allowunstable):
-                raise error.Abort(
+                raise error.StateError(
                     _(
                         b"cannot remove original changesets with"
                         b" unrebased descendants"
@@ -1220,14 +1220,16 @@ def _origrebase(ui, repo, action, opts, rbsrt):
                 )
                 % help
             )
-            raise error.Abort(msg)
+            raise error.InputError(msg)
 
         if rbsrt.collapsemsg and not rbsrt.collapsef:
-            raise error.Abort(_(b'message can only be specified with collapse'))
+            raise error.InputError(
+                _(b'message can only be specified with collapse')
+            )
 
         if action:
             if rbsrt.collapsef:
-                raise error.Abort(
+                raise error.InputError(
                     _(b'cannot use collapse with continue or abort')
                 )
             if action == b'abort' and opts.get(b'tool', False):
@@ -1294,7 +1296,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
         cmdutil.bailifchanged(repo)
 
     if ui.configbool(b'commands', b'rebase.requiredest') and not destf:
-        raise error.Abort(
+        raise error.InputError(
             _(b'you must specify a destination'),
             hint=_(b'use: hg rebase -d REV'),
         )
@@ -1388,7 +1390,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
             return None
 
     if wdirrev in rebaseset:
-        raise error.Abort(_(b'cannot rebase the working copy'))
+        raise error.InputError(_(b'cannot rebase the working copy'))
     rebasingwcp = repo[b'.'].rev() in rebaseset
     ui.log(
         b"rebase",
@@ -1426,7 +1428,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
                 elif size == 0:
                     ui.note(_(b'skipping %s - empty destination\n') % repo[r])
                 else:
-                    raise error.Abort(
+                    raise error.InputError(
                         _(b'rebase destination for %s is not unique') % repo[r]
                     )
 
@@ -1459,7 +1461,7 @@ def externalparent(repo, state, destancestors):
         return nullrev
     if len(parents) == 1:
         return parents.pop()
-    raise error.Abort(
+    raise error.StateError(
         _(
             b'unable to collapse on top of %d, there is more '
             b'than one external parent: %s'
@@ -1659,7 +1661,7 @@ def _checkobsrebase(repo, ui, rebaseobsrevs, rebaseobsskipped):
             b"to force the rebase please set "
             b"experimental.evolution.allowdivergence=True"
         )
-        raise error.Abort(msg % (b",".join(divhashes),), hint=h)
+        raise error.StateError(msg % (b",".join(divhashes),), hint=h)
 
 
 def successorrevs(unfi, rev):
@@ -1762,7 +1764,7 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
         #    /|    # None of A and B will be changed to D and rebase fails.
         #   A B D
         if set(newps) == set(oldps) and dest not in newps:
-            raise error.Abort(
+            raise error.InputError(
                 _(
                     b'cannot rebase %d:%s without '
                     b'moving at least one of its parents'
@@ -1774,7 +1776,7 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
     # impossible. With multi-dest, the initial check does not cover complex
     # cases since we don't have abstractions to dry-run rebase cheaply.
     if any(p != nullrev and isancestor(rev, p) for p in newps):
-        raise error.Abort(_(b'source is ancestor of destination'))
+        raise error.InputError(_(b'source is ancestor of destination'))
 
     # Check if the merge will contain unwanted changes. That may happen if
     # there are multiple special (non-changelog ancestor) merge bases, which
@@ -1836,7 +1838,7 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
                         if revs is not None
                     )
                 )
-                raise error.Abort(
+                raise error.InputError(
                     _(b'rebasing %d:%s will include unwanted changes from %s')
                     % (rev, repo[rev], unwanteddesc)
                 )
@@ -1981,7 +1983,7 @@ def sortsource(destmap):
             if destmap[r] not in srcset:
                 result.append(r)
         if not result:
-            raise error.Abort(_(b'source and destination form a cycle'))
+            raise error.InputError(_(b'source and destination form a cycle'))
         srcset -= set(result)
         yield result
 
@@ -2001,12 +2003,12 @@ def buildstate(repo, destmap, collapse):
     if b'qtip' in repo.tags():
         mqapplied = {repo[s.node].rev() for s in repo.mq.applied}
         if set(destmap.values()) & mqapplied:
-            raise error.Abort(_(b'cannot rebase onto an applied mq patch'))
+            raise error.StateError(_(b'cannot rebase onto an applied mq patch'))
 
     # Get "cycle" error early by exhausting the generator.
     sortedsrc = list(sortsource(destmap))  # a list of sorted revs
     if not sortedsrc:
-        raise error.Abort(_(b'no matching revisions'))
+        raise error.InputError(_(b'no matching revisions'))
 
     # Only check the first batch of revisions to rebase not depending on other
     # rebaseset. This means "source is ancestor of destination" for the second
@@ -2014,7 +2016,7 @@ def buildstate(repo, destmap, collapse):
     # "defineparents" to do that check.
     roots = list(repo.set(b'roots(%ld)', sortedsrc[0]))
     if not roots:
-        raise error.Abort(_(b'no matching revisions'))
+        raise error.InputError(_(b'no matching revisions'))
 
     def revof(r):
         return r.rev()
@@ -2026,7 +2028,7 @@ def buildstate(repo, destmap, collapse):
         dest = repo[destmap[root.rev()]]
         commonbase = root.ancestor(dest)
         if commonbase == root:
-            raise error.Abort(_(b'source is ancestor of destination'))
+            raise error.InputError(_(b'source is ancestor of destination'))
         if commonbase == dest:
             wctx = repo[None]
             if dest == wctx.p1():
@@ -2119,7 +2121,7 @@ def pullrebase(orig, ui, repo, *args, **opts):
         if ui.configbool(b'commands', b'rebase.requiredest'):
             msg = _(b'rebase destination required by configuration')
             hint = _(b'use hg pull followed by hg rebase -d DEST')
-            raise error.Abort(msg, hint=hint)
+            raise error.InputError(msg, hint=hint)
 
         with repo.wlock(), repo.lock():
             if opts.get('update'):
@@ -2176,7 +2178,7 @@ def pullrebase(orig, ui, repo, *args, **opts):
                         commands.update(ui, repo)
     else:
         if opts.get('tool'):
-            raise error.Abort(_(b'--tool can only be used with --rebase'))
+            raise error.InputError(_(b'--tool can only be used with --rebase'))
         ret = orig(ui, repo, *args, **opts)
 
     return ret

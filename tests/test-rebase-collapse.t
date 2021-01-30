@@ -134,7 +134,7 @@ Custom message:
 
   $ hg rebase --base B -m 'custom message'
   abort: message can only be specified with collapse
-  [255]
+  [10]
 
   $ cat > $TESTTMP/checkeditform.sh <<EOF
   > env | grep HGEDITFORM
@@ -180,7 +180,7 @@ Rebase and collapse - more than one external (fail):
 
   $ hg rebase -s C --dest H --collapse
   abort: unable to collapse on top of 3, there is more than one external parent: 1, 6
-  [255]
+  [20]
 
 Rebase and collapse - E onto H:
 
@@ -386,7 +386,7 @@ With non-contiguous commits:
 BROKEN: should be allowed
   $ hg rebase --collapse -r 'B+D+F' -d G
   abort: unable to collapse on top of 2, there is more than one external parent: 3, 5
-  [255]
+  [20]
   $ cd ..
 
 
@@ -404,7 +404,7 @@ BROKEN: should be allowed
 
   $ hg rebase --collapse -d H -s 'B+F'
   abort: unable to collapse on top of 5, there is more than one external parent: 1, 3
-  [255]
+  [20]
   $ cd ..
 
 With internal merge:
@@ -484,7 +484,7 @@ Interactions between collapse and keepbranches
   
   $ hg rebase --keepbranches --collapse -s 1 -d 3
   abort: cannot collapse multiple named branches
-  [255]
+  [10]
 
   $ cd ..
 

@@ -154,7 +154,7 @@ Grafty cherry picking rebasing:
   rebasing 2:ec2c14fb2984 "dev: f-dev stuff"
   rebasing 4:4b019212aaf6 "dev: merge default"
   abort: rebasing 4:4b019212aaf6 will include unwanted changes from 1:1d1a643d390e
-  [255]
+  [10]
   $ cd ..
 
 
@@ -314,7 +314,7 @@ may include unwanted content:
   rebasing 6:b296604d9846 E "E"
   rebasing 7:caa9781e507d F tip "F"
   abort: rebasing 7:caa9781e507d will include unwanted changes from 4:d6003a550c2c or 3:c1e6b162678d
-  [255]
+  [10]
 
 The warning does not get printed if there is no unwanted change detected:
 
