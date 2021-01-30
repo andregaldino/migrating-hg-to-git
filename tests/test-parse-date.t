@@ -103,43 +103,43 @@ Negative range
 
   $ hg log -d "--2"
   abort: -2 must be nonnegative (see 'hg help dates')
-  [255]
+  [10]
 
 Whitespace only
 
   $ hg log -d " "
   abort: dates cannot consist entirely of whitespace
-  [255]
+  [10]
 
 Test date formats with '>' or '<' accompanied by space characters
 
   $ hg log -d '>' --template '{date|date}\n'
   abort: invalid day spec, use '>DATE'
-  [255]
+  [10]
   $ hg log -d '<' --template '{date|date}\n'
   abort: invalid day spec, use '<DATE'
-  [255]
+  [10]
 
   $ hg log -d ' >' --template '{date|date}\n'
   abort: invalid day spec, use '>DATE'
-  [255]
+  [10]
   $ hg log -d ' <' --template '{date|date}\n'
   abort: invalid day spec, use '<DATE'
-  [255]
+  [10]
 
   $ hg log -d '> ' --template '{date|date}\n'
   abort: invalid day spec, use '>DATE'
-  [255]
+  [10]
   $ hg log -d '< ' --template '{date|date}\n'
   abort: invalid day spec, use '<DATE'
-  [255]
+  [10]
 
   $ hg log -d ' > ' --template '{date|date}\n'
   abort: invalid day spec, use '>DATE'
-  [255]
+  [10]
   $ hg log -d ' < ' --template '{date|date}\n'
   abort: invalid day spec, use '<DATE'
-  [255]
+  [10]
 
   $ hg log -d '>02/01' --template '{date|date}\n'
   $ hg log -d '<02/01' --template '{date|date}\n'

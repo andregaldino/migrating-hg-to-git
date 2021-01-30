@@ -68,7 +68,9 @@ def makedate(timestamp=None):
         timestamp = time.time()
     if timestamp < 0:
         hint = _(b"check your clock")
-        raise error.Abort(_(b"negative timestamp: %d") % timestamp, hint=hint)
+        raise error.InputError(
+            _(b"negative timestamp: %d") % timestamp, hint=hint
+        )
     delta = datetime.datetime.utcfromtimestamp(
         timestamp
     ) - datetime.datetime.fromtimestamp(timestamp)
@@ -328,24 +330,26 @@ def matchdate(date):
     date = date.strip()
 
     if not date:
-        raise error.Abort(_(b"dates cannot consist entirely of whitespace"))
+        raise error.InputError(
+            _(b"dates cannot consist entirely of whitespace")
+        )
     elif date[0:1] == b"<":
         if not date[1:]:
-            raise error.Abort(_(b"invalid day spec, use '<DATE'"))
+            raise error.InputError(_(b"invalid day spec, use '<DATE'"))
         when = upper(date[1:])
         return lambda x: x <= when
     elif date[0:1] == b">":
         if not date[1:]:
-            raise error.Abort(_(b"invalid day spec, use '>DATE'"))
+            raise error.InputError(_(b"invalid day spec, use '>DATE'"))
         when = lower(date[1:])
         return lambda x: x >= when
     elif date[0:1] == b"-":
         try:
             days = int(date[1:])
         except ValueError:
-            raise error.Abort(_(b"invalid day spec: %s") % date[1:])
+            raise error.InputError(_(b"invalid day spec: %s") % date[1:])
         if days < 0:
-            raise error.Abort(
+            raise error.InputError(
                 _(b"%s must be nonnegative (see 'hg help dates')") % date[1:]
             )
         when = makedate()[0] - days * 3600 * 24
