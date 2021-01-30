@@ -38,11 +38,16 @@ testedwith = b'ships-with-hg-core'
 def changedlines(ui, repo, ctx1, ctx2, fmatch):
     added, removed = 0, 0
     diff = b''.join(patch.diff(repo, ctx1.node(), ctx2.node(), fmatch))
+    inhunk = False
     for l in diff.split(b'\n'):
-        if l.startswith(b"+") and not l.startswith(b"+++ "):
+        if inhunk and l.startswith(b"+"):
             added += 1
-        elif l.startswith(b"-") and not l.startswith(b"--- "):
+        elif inhunk and l.startswith(b"-"):
             removed += 1
+        elif l.startswith(b"@"):
+            inhunk = True
+        elif l.startswith(b"d"):
+            inhunk = False
     return (added, removed)
 
 
