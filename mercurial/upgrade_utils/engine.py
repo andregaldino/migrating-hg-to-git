@@ -24,6 +24,7 @@ from .. import (
     util,
     vfs as vfsmod,
 )
+from ..revlogutils import nodemap
 
 
 def _revlogfrompath(repo, path):
@@ -451,6 +452,22 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
 
     if upgrade_op.requirements_only:
         ui.status(_(b'upgrading repository requirements\n'))
+        scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
+    # if there is only one action and that is persistent nodemap upgrade
+    # directly write the nodemap file and update requirements instead of going
+    # through the whole cloning process
+    elif (
+        len(upgrade_op.upgrade_actions) == 1
+        and b'persistent-nodemap' in upgrade_op._upgrade_actions_names
+        and not upgrade_op.removed_actions
+    ):
+        ui.status(
+            _(b'upgrading repository to use persistent nodemap feature\n')
+        )
+        with srcrepo.transaction(b'upgrade') as tr:
+            unfi = srcrepo.unfiltered()
+            cl = unfi.changelog
+            nodemap.persist_nodemap(tr, cl, force=True)
         scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
     else:
         with dstrepo.transaction(b'upgrade') as tr:

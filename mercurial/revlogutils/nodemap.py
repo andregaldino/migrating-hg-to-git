@@ -128,15 +128,20 @@ def update_persistent_nodemap(revlog):
         notr._postclose[k](None)
 
 
-def persist_nodemap(tr, revlog, pending=False):
+def persist_nodemap(tr, revlog, pending=False, force=False):
     """Write nodemap data on disk for a given revlog"""
     if getattr(revlog, 'filteredrevs', ()):
         raise error.ProgrammingError(
             "cannot persist nodemap of a filtered changelog"
         )
     if revlog.nodemap_file is None:
-        msg = "calling persist nodemap on a revlog without the feature enabled"
-        raise error.ProgrammingError(msg)
+        if force:
+            revlog.nodemap_file = get_nodemap_file(
+                revlog.opener, revlog.indexfile
+            )
+        else:
+            msg = "calling persist nodemap on a revlog without the feature enabled"
+            raise error.ProgrammingError(msg)
 
     can_incremental = util.safehasattr(revlog.index, "nodemap_data_incremental")
     ondisk_docket = revlog._nodemap_docket

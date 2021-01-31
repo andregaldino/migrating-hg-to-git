@@ -636,28 +636,11 @@ upgrading
   repository locked and read-only
   creating temporary repository to stage upgraded data: $TESTTMP/test-repo/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
-  migrating 15018 total revisions (5006 in filelogs, 5006 in manifests, 5006 in changelog)
-  migrating 1.74 MB in store; 569 MB tracked data
-  migrating 5004 filelogs containing 5006 revisions (346 KB in store; 28.2 KB tracked data)
-  finished migrating 5006 filelog revisions across 5004 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 5006 revisions (765 KB in store; 569 MB tracked data)
-  finished migrating 5006 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 5006 revisions (673 KB in store; 363 KB tracked data)
-  finished migrating 5006 changelog revisions; change in size: 0 bytes
-  finished migrating 15018 total revisions; total change in store size: 0 bytes
-  copying phaseroots
-  data fully upgraded in a temporary repository
-  marking source repository as being upgraded; clients will be unable to read from repository
-  starting in-place swap of repository data
-  replacing store...
-  store replacement complete; repository was inconsistent for *s (glob)
-  finalizing requirements file and making repository readable again
+  upgrading repository to use persistent nodemap feature
   removing temporary repository $TESTTMP/test-repo/.hg/upgrade.* (glob)
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)
   00changelog.n
-  00manifest-*.nd (glob)
-  00manifest.n
 
   $ hg debugnodemap --metadata
   uid: * (glob)
