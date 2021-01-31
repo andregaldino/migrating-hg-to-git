@@ -135,7 +135,7 @@ def persist_nodemap(tr, revlog, pending=False):
             "cannot persist nodemap of a filtered changelog"
         )
     if revlog.nodemap_file is None:
-        msg = "calling persist nodemap on a revlog without the feature enableb"
+        msg = "calling persist nodemap on a revlog without the feature enabled"
         raise error.ProgrammingError(msg)
 
     can_incremental = util.safehasattr(revlog.index, "nodemap_data_incremental")
