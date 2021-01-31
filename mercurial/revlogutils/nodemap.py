@@ -634,3 +634,14 @@ def _find_node(block, node):
     if isinstance(entry, dict):
         return _find_node(entry, node[1:])
     return entry
+
+
+def get_nodemap_file(opener, indexfile):
+    if indexfile.endswith(b'.a'):
+        pending_path = indexfile[:-4] + b".n.a"
+        if opener.exists(pending_path):
+            return pending_path
+        else:
+            return indexfile[:-4] + b".n"
+    else:
+        return indexfile[:-2] + b".n"
