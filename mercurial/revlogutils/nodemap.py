@@ -81,9 +81,9 @@ def setup_persistent_nodemap(tr, revlog):
     if tr.hasfinalize(callback_id):
         return  # no need to register again
     tr.addpending(
-        callback_id, lambda tr: _persist_nodemap(tr, revlog, pending=True)
+        callback_id, lambda tr: persist_nodemap(tr, revlog, pending=True)
     )
-    tr.addfinalize(callback_id, lambda tr: _persist_nodemap(tr, revlog))
+    tr.addfinalize(callback_id, lambda tr: persist_nodemap(tr, revlog))
 
 
 class _NoTransaction(object):
@@ -123,12 +123,12 @@ def update_persistent_nodemap(revlog):
         return  # we do not use persistent_nodemap on this revlog
 
     notr = _NoTransaction()
-    _persist_nodemap(notr, revlog)
+    persist_nodemap(notr, revlog)
     for k in sorted(notr._postclose):
         notr._postclose[k](None)
 
 
-def _persist_nodemap(tr, revlog, pending=False):
+def persist_nodemap(tr, revlog, pending=False):
     """Write nodemap data on disk for a given revlog"""
     if getattr(revlog, 'filteredrevs', ()):
         raise error.ProgrammingError(
