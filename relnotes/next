@@ -8,6 +8,11 @@
 
 == New Experimental Features ==
 
+ * `hg diff` now takes an experimental `--merge` flag which causes `hg
+    diff --change` to show the changes relative to an automerge for
+    merge changesets. This makes it easier to detect and review manual
+    changes performed in merge changesets.
+
 
 == Bug Fixes ==
 
