@@ -2576,7 +2576,9 @@ def diff(ui, repo, *pats, **opts):
                 },
                 b'diff --merge',
             ):
+                repo.ui.pushbuffer()
                 mergemod.merge(pctx2, wc=wctx)
+                repo.ui.popbuffer()
             ctx1 = wctx
         else:
             ctx1 = ctx2.p1()
