@@ -7,6 +7,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::errors::{HgError, IoResultExt};
 use crate::utils::files::{
     get_bytes_from_path, get_path_from_bytes, read_whole_file,
 };
@@ -99,20 +100,12 @@ impl ConfigLayer {
             if let Some(m) = INCLUDE_RE.captures(&bytes) {
                 let filename_bytes = &m[1];
                 let filename_to_include = get_path_from_bytes(&filename_bytes);
-                match read_include(&src, &filename_to_include) {
-                    (include_src, Ok(data)) => {
-                        layers.push(current_layer);
-                        layers.extend(Self::parse(&include_src, &data)?);
-                        current_layer =
-                            Self::new(ConfigOrigin::File(src.to_owned()));
-                    }
-                    (_, Err(e)) => {
-                        return Err(ConfigError::IncludeError {
-                            path: filename_to_include.to_owned(),
-                            io_error: e,
-                        })
-                    }
-                }
+                let (include_src, result) =
+                    read_include(&src, &filename_to_include);
+                let data = result.for_file(filename_to_include)?;
+                layers.push(current_layer);
+                layers.extend(Self::parse(&include_src, &data)?);
+                current_layer = Self::new(ConfigOrigin::File(src.to_owned()));
             } else if let Some(_) = EMPTY_RE.captures(&bytes) {
             } else if let Some(m) = SECTION_RE.captures(&bytes) {
                 section = m[1].to_vec();
@@ -145,11 +138,12 @@ impl ConfigLayer {
                     map.remove(&m[1]);
                 }
             } else {
-                return Err(ConfigError::Parse {
+                return Err(ConfigParseError {
                     origin: ConfigOrigin::File(src.to_owned()),
                     line: Some(index + 1),
                     bytes: bytes.to_owned(),
-                });
+                }
+                .into());
             }
         }
         if !current_layer.is_empty() {
@@ -226,21 +220,17 @@ impl ConfigOrigin {
     }
 }
 
+#[derive(Debug)]
+pub struct ConfigParseError {
+    pub origin: ConfigOrigin,
+    pub line: Option<usize>,
+    pub bytes: Vec<u8>,
+}
+
 #[derive(Debug, derive_more::From)]
 pub enum ConfigError {
-    Parse {
-        origin: ConfigOrigin,
-        line: Option<usize>,
-        bytes: Vec<u8>,
-    },
-    /// Failed to include a sub config file
-    IncludeError {
-        path: PathBuf,
-        io_error: std::io::Error,
-    },
-    /// Any IO error that isn't expected
-    #[from]
-    IO(std::io::Error),
+    Parse(ConfigParseError),
+    Other(HgError),
 }
 
 fn make_regex(pattern: &'static str) -> Regex {

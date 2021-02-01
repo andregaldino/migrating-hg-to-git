@@ -8,7 +8,9 @@
 // GNU General Public License version 2 or any later version.
 
 use super::layer;
-use crate::config::layer::{ConfigError, ConfigLayer, ConfigValue};
+use crate::config::layer::{
+    ConfigError, ConfigLayer, ConfigParseError, ConfigValue,
+};
 use std::path::PathBuf;
 
 use crate::repo::Repo;
@@ -89,11 +91,11 @@ impl Config {
         &self,
         section: &[u8],
         item: &[u8],
-    ) -> Result<Option<bool>, ConfigError> {
+    ) -> Result<Option<bool>, ConfigParseError> {
         match self.get_inner(&section, &item) {
             Some((layer, v)) => match parse_bool(&v.bytes) {
                 Some(b) => Ok(Some(b)),
-                None => Err(ConfigError::Parse {
+                None => Err(ConfigParseError {
                     origin: layer.origin.to_owned(),
                     line: v.line,
                     bytes: v.bytes.to_owned(),
