@@ -18,7 +18,6 @@ use lazy_static::lazy_static;
 use same_file::is_same_file;
 use std::borrow::{Cow, ToOwned};
 use std::fs::Metadata;
-use std::io::Read;
 use std::iter::FusedIterator;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -307,17 +306,6 @@ pub fn relativize_path(path: &HgPath, cwd: impl AsRef<HgPath>) -> Cow<[u8]> {
         }
         Cow::Owned(res)
     }
-}
-
-/// Reads a file in one big chunk instead of doing multiple reads
-pub fn read_whole_file(filepath: &Path) -> std::io::Result<Vec<u8>> {
-    let mut file = std::fs::File::open(filepath)?;
-    let size = file.metadata()?.len();
-
-    let mut res = vec![0; size as usize];
-    file.read_exact(&mut res)?;
-
-    Ok(res)
 }
 
 #[cfg(test)]

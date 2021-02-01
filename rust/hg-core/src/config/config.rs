@@ -14,7 +14,6 @@ use crate::config::layer::{
 use std::path::PathBuf;
 
 use crate::repo::Repo;
-use crate::utils::files::read_whole_file;
 
 /// Holds the config values for the current repository
 /// TODO update this docstring once we support more sources
@@ -64,7 +63,7 @@ impl Config {
                 ConfigSource::AbsPath(c) => {
                     // TODO check if it should be trusted
                     // mercurial/ui.py:427
-                    let data = match read_whole_file(&c) {
+                    let data = match std::fs::read(&c) {
                         Err(_) => continue, // same as the python code
                         Ok(data) => data,
                     };

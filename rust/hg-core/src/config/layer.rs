@@ -8,9 +8,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::errors::{HgError, IoResultExt};
-use crate::utils::files::{
-    get_bytes_from_path, get_path_from_bytes, read_whole_file,
-};
+use crate::utils::files::{get_bytes_from_path, get_path_from_bytes};
 use format_bytes::format_bytes;
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
@@ -244,10 +242,10 @@ fn read_include(
     new_src: &Path,
 ) -> (PathBuf, io::Result<Vec<u8>>) {
     if new_src.is_absolute() {
-        (new_src.to_path_buf(), read_whole_file(&new_src))
+        (new_src.to_path_buf(), std::fs::read(&new_src))
     } else {
         let dir = old_src.parent().unwrap();
         let new_src = dir.join(&new_src);
-        (new_src.to_owned(), read_whole_file(&new_src))
+        (new_src.to_owned(), std::fs::read(&new_src))
     }
 }
