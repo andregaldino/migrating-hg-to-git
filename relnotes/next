@@ -37,7 +37,11 @@
    is also supported by "premerge" as
    `merge-tools.<tool>.premerge=keep-mergediff`.
 
- * External hooks are now called with `HGPLAIN=1` preset.
+ * External hooks are now called with `HGPLAIN=1` preset.  This has the side
+   effect of ignoring aliases, templates, revsetaliases, and a few other config
+   options in any `hg` command spawned by the hook.  The previous behavior
+   can be restored by setting HGPLAINEXCEPT appropriately in the parent process.
+   See `hg help environment` for the list of items, and how to set it.
 
  * The `branchmap` cache is updated more intelligently and can be
    significantly faster for repositories with many branches and changesets.
