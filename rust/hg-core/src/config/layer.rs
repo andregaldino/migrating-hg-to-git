@@ -13,7 +13,6 @@ use format_bytes::format_bytes;
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
 use std::collections::HashMap;
-use std::io;
 use std::path::{Path, PathBuf};
 
 lazy_static! {
@@ -97,12 +96,16 @@ impl ConfigLayer {
         while let Some((index, bytes)) = lines_iter.next() {
             if let Some(m) = INCLUDE_RE.captures(&bytes) {
                 let filename_bytes = &m[1];
-                let filename_to_include = get_path_from_bytes(&filename_bytes);
-                let (include_src, result) =
-                    read_include(&src, &filename_to_include);
-                let data = result.for_file(filename_to_include)?;
+                // `Path::parent` only fails for the root directory,
+                // which `src` can’t be since we’ve managed to open it as a file.
+                let dir = src
+                    .parent()
+                    .expect("Path::parent fail on a file we’ve read");
+                // `Path::join` with an absolute argument correctly ignores the base path
+                let filename = dir.join(&get_path_from_bytes(&filename_bytes));
+                let data = std::fs::read(&filename).for_file(&filename)?;
                 layers.push(current_layer);
-                layers.extend(Self::parse(&include_src, &data)?);
+                layers.extend(Self::parse(&filename, &data)?);
                 current_layer = Self::new(ConfigOrigin::File(src.to_owned()));
             } else if let Some(_) = EMPTY_RE.captures(&bytes) {
             } else if let Some(m) = SECTION_RE.captures(&bytes) {
@@ -233,19 +236,4 @@ pub enum ConfigError {
 
 fn make_regex(pattern: &'static str) -> Regex {
     Regex::new(pattern).expect("expected a valid regex")
-}
-
-/// Includes are relative to the file they're defined in, unless they're
-/// absolute.
-fn read_include(
-    old_src: &Path,
-    new_src: &Path,
-) -> (PathBuf, io::Result<Vec<u8>>) {
-    if new_src.is_absolute() {
-        (new_src.to_path_buf(), std::fs::read(&new_src))
-    } else {
-        let dir = old_src.parent().unwrap();
-        let new_src = dir.join(&new_src);
-        (new_src.to_owned(), std::fs::read(&new_src))
-    }
 }
