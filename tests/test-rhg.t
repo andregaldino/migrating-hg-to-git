@@ -196,3 +196,67 @@ Specifying revisions by changeset ID
   of
   $ rhg cat -r c3ae8dec9fad of
   r5000
+
+Crate a shared repository
+
+  $ echo "[extensions]"      >> $HGRCPATH
+  $ echo "share = "          >> $HGRCPATH
+
+  $ cd $TESTTMP
+  $ hg init repo1
+  $ cd repo1
+  $ echo a > a
+  $ hg commit -A -m'init'
+  adding a
+
+  $ cd ..
+  $ hg share repo1 repo2
+  updating working directory
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+And check that basic rhg commands work with sharing
+
+  $ cd repo2
+  $ rhg files
+  [252]
+  $ rhg cat -r 0 a
+  [252]
+
+Same with relative sharing
+
+  $ cd ..
+  $ hg share repo2 repo3 --relative
+  updating working directory
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ cd repo3
+  $ rhg files
+  [252]
+  $ rhg cat -r 0 a
+  [252]
+
+Same with share-safe
+
+  $ echo "[format]"         >> $HGRCPATH
+  $ echo "use-share-safe = True" >> $HGRCPATH
+
+  $ cd $TESTTMP
+  $ hg init repo4
+  $ cd repo4
+  $ echo a > a
+  $ hg commit -A -m'init'
+  adding a
+
+  $ cd ..
+  $ hg share repo4 repo5
+  updating working directory
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+And check that basic rhg commands work with sharing
+
+  $ cd repo5
+  $ rhg files
+  [252]
+  $ rhg cat -r 0 a
+  [252]
+
