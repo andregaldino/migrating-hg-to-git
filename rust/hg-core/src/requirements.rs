@@ -22,6 +22,10 @@ fn parse(bytes: &[u8]) -> Result<HashSet<String>, HgError> {
         .collect()
 }
 
+pub(crate) fn load(hg_vfs: Vfs) -> Result<HashSet<String>, HgError> {
+    parse(&hg_vfs.read("requires")?)
+}
+
 pub(crate) fn load_if_exists(hg_vfs: Vfs) -> Result<HashSet<String>, HgError> {
     if let Some(bytes) = hg_vfs.read("requires").io_not_found_as_none()? {
         parse(&bytes)
@@ -58,6 +62,7 @@ const SUPPORTED: &[&str] = &[
     "generaldelta",
     "revlogv1",
     SHARED_REQUIREMENT,
+    SHARESAFE_REQUIREMENT,
     SPARSEREVLOG_REQUIREMENT,
     RELATIVE_SHARED_REQUIREMENT,
     "store",
@@ -130,4 +135,4 @@ pub(crate) const RELATIVE_SHARED_REQUIREMENT: &str = "relshared";
 /// store and working copy requirements i.e. both `.hg/requires` and
 /// `.hg/store/requires` are present.
 #[allow(unused)]
-pub(crate) const SHARESAFE_REQUIREMENT: &str = "exp-sharesafe";
+pub(crate) const SHARESAFE_REQUIREMENT: &str = "share-safe";

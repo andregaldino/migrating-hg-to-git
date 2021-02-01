@@ -256,7 +256,7 @@ And check that basic rhg commands work with sharing
 
   $ cd repo5
   $ rhg files
-  [252]
+  a
   $ rhg cat -r 0 a
-  [252]
+  a
 

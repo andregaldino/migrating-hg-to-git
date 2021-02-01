@@ -47,15 +47,34 @@ impl Repo {
     /// To be called after checking that `.hg` is a sub-directory
     fn new_at_path(working_directory: PathBuf) -> Result<Self, HgError> {
         let dot_hg = working_directory.join(".hg");
+
         let hg_vfs = Vfs { base: &dot_hg };
-        let reqs = requirements::load_if_exists(hg_vfs)?;
+        let mut reqs = requirements::load_if_exists(hg_vfs)?;
         let relative =
             reqs.contains(requirements::RELATIVE_SHARED_REQUIREMENT);
         let shared =
             reqs.contains(requirements::SHARED_REQUIREMENT) || relative;
+
+        // From `mercurial/localrepo.py`:
+        //
+        // if .hg/requires contains the sharesafe requirement, it means
+        // there exists a `.hg/store/requires` too and we should read it
+        // NOTE: presence of SHARESAFE_REQUIREMENT imply that store requirement
+        // is present. We never write SHARESAFE_REQUIREMENT for a repo if store
+        // is not present, refer checkrequirementscompat() for that
+        //
+        // However, if SHARESAFE_REQUIREMENT is not present, it means that the
+        // repository was shared the old way. We check the share source
+        // .hg/requires for SHARESAFE_REQUIREMENT to detect whether the
+        // current repository needs to be reshared
+        let share_safe = reqs.contains(requirements::SHARESAFE_REQUIREMENT);
+
         let store_path;
         if !shared {
             store_path = dot_hg.join("store");
+            if share_safe {
+                reqs.extend(requirements::load(Vfs { base: &store_path })?);
+            }
         } else {
             let bytes = hg_vfs.read("sharedpath")?;
             let mut shared_path = get_path_from_bytes(&bytes).to_owned();
@@ -70,6 +89,17 @@ impl Repo {
             }
 
             store_path = shared_path.join("store");
+
+            let source_is_share_safe =
+                requirements::load(Vfs { base: &shared_path })?
+                    .contains(requirements::SHARESAFE_REQUIREMENT);
+
+            // TODO: support for `share.safe-mismatch.*` config
+            if share_safe && !source_is_share_safe {
+                return Err(HgError::unsupported("share-safe downgrade"));
+            } else if source_is_share_safe && !share_safe {
+                return Err(HgError::unsupported("share-safe upgrade"));
+            }
         }
 
         let repo = Self {
