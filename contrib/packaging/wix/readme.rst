@@ -40,7 +40,7 @@ From the prompt, change to the Mercurial source directory. e.g.
 Next, invoke ``packaging.py`` to produce an MSI installer. You will need
 to supply the path to the Python interpreter to use.::
 
-   $ python3 contrib\packaging\packaging.py \
+   $ py -3 contrib\packaging\packaging.py \
       wix --python c:\python27\python.exe
 
 .. note::
