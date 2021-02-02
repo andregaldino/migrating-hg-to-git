@@ -66,6 +66,7 @@ Prevent adding new files in the root directory accidentally.
   COPYING
   Makefile
   README.rst
+  black.toml
   hg
   hgeditor
   hgweb.cgi
