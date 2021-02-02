@@ -1135,7 +1135,7 @@ class revlogfilestorage(object):
     """File storage when using revlogs."""
 
     def file(self, path):
-        if path[0] == b'/':
+        if path.startswith(b'/'):
             path = path[1:]
 
         return filelog.filelog(self.svfs, path)
@@ -1146,7 +1146,7 @@ class revlognarrowfilestorage(object):
     """File storage when using revlogs and narrow files."""
 
     def file(self, path):
-        if path[0] == b'/':
+        if path.startswith(b'/'):
             path = path[1:]
 
         return filelog.narrowfilelog(self.svfs, path, self._storenarrowmatch)
