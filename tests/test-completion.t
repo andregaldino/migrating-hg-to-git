@@ -272,7 +272,7 @@ Show all commands + options
   debugbuilddag: mergeable-file, overwritten-file, new-file
   debugbundle: all, part-type, spec
   debugcapabilities: 
-  debugchangedfiles: 
+  debugchangedfiles: compute
   debugcheckstate: 
   debugcolor: style
   debugcommands: 

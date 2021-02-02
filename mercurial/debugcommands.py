@@ -484,14 +484,31 @@ def debugcapabilities(ui, path, **opts):
                 ui.write(b'    %s\n' % v)
 
 
-@command(b'debugchangedfiles', [], b'REV')
-def debugchangedfiles(ui, repo, rev):
+@command(
+    b'debugchangedfiles',
+    [
+        (
+            b'',
+            b'compute',
+            False,
+            b"compute information instead of reading it from storage",
+        ),
+    ],
+    b'REV',
+)
+def debugchangedfiles(ui, repo, rev, **opts):
     """list the stored files changes for a revision"""
     ctx = scmutil.revsingle(repo, rev, None)
-    sd = repo.changelog.sidedata(ctx.rev())
-    files_block = sd.get(sidedata.SD_FILES)
-    if files_block is not None:
-        files = metadata.decode_files_sidedata(sd)
+    files = None
+
+    if opts['compute']:
+        files = metadata.compute_all_files_changes(ctx)
+    else:
+        sd = repo.changelog.sidedata(ctx.rev())
+        files_block = sd.get(sidedata.SD_FILES)
+        if files_block is not None:
+            files = metadata.decode_files_sidedata(sd)
+    if files is not None:
         for f in sorted(files.touched):
             if f in files.added:
                 action = b"added"

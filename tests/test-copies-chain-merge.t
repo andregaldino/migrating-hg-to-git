@@ -721,6 +721,11 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 
 #if no-compatibility no-filelog no-changeset
 
+  $ hg debugchangedfiles --compute 0
+  added      : a, ;
+  added      : b, ;
+  added      : h, ;
+
   $ for rev in `hg log --rev 'all()' -T '{rev}\n'`; do
   >     echo "##### revision $rev #####"
   >     hg debugsidedata -c -v -- $rev
