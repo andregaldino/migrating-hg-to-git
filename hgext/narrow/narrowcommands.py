@@ -214,6 +214,7 @@ def _narrow(
     newincludes,
     newexcludes,
     force,
+    backup,
 ):
     oldmatch = narrowspec.match(repo.root, oldincludes, oldexcludes)
     newmatch = narrowspec.match(repo.root, newincludes, newexcludes)
@@ -272,7 +273,7 @@ def _narrow(
                 hg.clean(repo, urev)
             overrides = {(b'devel', b'strip-obsmarkers'): False}
             with ui.configoverride(overrides, b'narrow'):
-                repair.strip(ui, unfi, tostrip, topic=b'narrow')
+                repair.strip(ui, unfi, tostrip, topic=b'narrow', backup=backup)
 
         todelete = []
         for f, f2, size in repo.store.datafiles():
@@ -439,6 +440,12 @@ def _widen(
             b'force-delete-local-changes',
             False,
             _(b'forces deletion of local changes when narrowing'),
+        ),
+        (
+            b'',
+            b'backup',
+            True,
+            _(b'back up local changes when narrowing'),
         ),
         (
             b'',
@@ -639,6 +646,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
                 newincludes,
                 newexcludes,
                 opts[b'force_delete_local_changes'],
+                opts[b'backup'],
             )
             # _narrow() updated the narrowspec and _widen() below needs to
             # use the updated values as its base (otherwise removed includes
