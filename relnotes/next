@@ -11,7 +11,8 @@
  * There's a new `diff.merge` config option to show the changes
     relative to an automerge for merge changesets. This makes it
     easier to detect and review manual changes performed in merge
-    changesets. It is only supported by `hg diff --change` so far.
+    changesets. It is supported by `hg diff --change`, `hg log -p`
+    `hg incoming -p`, and `hg outgoing -p` so far.
 
 
 == Bug Fixes ==

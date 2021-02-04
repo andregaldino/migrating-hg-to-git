@@ -1966,6 +1966,26 @@ Diff here should be the same:
   @@ -0,0 +1,1 @@
   +b
   
+
+Test that diff.merge is respected (file b was added on one side and
+and therefore merged cleanly)
+
+  $ hg log -pr 3 --config diff.merge=yes
+  changeset:   3:8e07aafe1edc
+  tag:         tip
+  parent:      2:b09be438c43a
+  parent:      1:925d80f479bb
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     3
+  
+  diff -r 8e07aafe1edc a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -b
+  +c
+  
   $ cd ..
 
 'hg log -r rev fn' when last(filelog(fn)) != rev

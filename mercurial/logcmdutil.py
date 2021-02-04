@@ -247,7 +247,7 @@ class changesetdiffer(object):
             ui,
             ctx.repo(),
             diffopts,
-            ctx.p1(),
+            diff_parent(ctx),
             ctx,
             match=self._makefilematcher(ctx),
             stat=stat,
