@@ -32,12 +32,12 @@ pub(crate) struct Vfs<'a> {
 impl Repo {
     /// Search the current directory and its ancestores for a repository:
     /// a working directory that contains a `.hg` sub-directory.
-    pub fn find(_config: &Config) -> Result<Self, RepoFindError> {
+    pub fn find(config: &Config) -> Result<Self, RepoFindError> {
         let current_directory = crate::utils::current_dir()?;
         // ancestors() is inclusive: it first yields `current_directory` as-is.
         for ancestor in current_directory.ancestors() {
             if ancestor.join(".hg").is_dir() {
-                return Ok(Self::new_at_path(ancestor.to_owned())?);
+                return Ok(Self::new_at_path(ancestor.to_owned(), config)?);
             }
         }
         Err(RepoFindError::NotFoundInCurrentDirectoryOrAncestors {
@@ -46,7 +46,10 @@ impl Repo {
     }
 
     /// To be called after checking that `.hg` is a sub-directory
-    fn new_at_path(working_directory: PathBuf) -> Result<Self, HgError> {
+    fn new_at_path(
+        working_directory: PathBuf,
+        config: &Config,
+    ) -> Result<Self, HgError> {
         let dot_hg = working_directory.join(".hg");
 
         let hg_vfs = Vfs { base: &dot_hg };
@@ -95,11 +98,23 @@ impl Repo {
                 requirements::load(Vfs { base: &shared_path })?
                     .contains(requirements::SHARESAFE_REQUIREMENT);
 
-            // TODO: support for `share.safe-mismatch.*` config
             if share_safe && !source_is_share_safe {
-                return Err(HgError::unsupported("share-safe downgrade"));
+                return Err(match config.get(b"safe-mismatch", b"source-not-safe") {
+                    Some(b"abort") | None => HgError::abort(
+                        "share source does not support share-safe requirement"
+                    ),
+                    _ => HgError::unsupported("share-safe downgrade")
+                });
             } else if source_is_share_safe && !share_safe {
-                return Err(HgError::unsupported("share-safe upgrade"));
+                return Err(
+                    match config.get(b"safe-mismatch", b"source-safe") {
+                        Some(b"abort") | None => HgError::abort(
+                            "version mismatch: source uses share-safe \
+                            functionality while the current share does not",
+                        ),
+                        _ => HgError::unsupported("share-safe upgrade"),
+                    },
+                );
             }
         }
 

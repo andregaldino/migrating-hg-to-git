@@ -8,7 +8,9 @@ pub enum HgError {
         context: IoErrorContext,
     },
 
-    /// A file under `.hg/` normally only written by Mercurial
+    /// A file under `.hg/` normally only written by Mercurial is not in the
+    /// expected format. This indicates a bug in Mercurial, filesystem
+    /// corruption, or hardware failure.
     ///
     /// The given string is a short explanation for users, not intended to be
     /// machine-readable.
@@ -21,6 +23,12 @@ pub enum HgError {
     /// The given string is a short explanation for users, not intended to be
     /// machine-readable.
     UnsupportedFeature(String),
+
+    /// Operation cannot proceed for some other reason.
+    ///
+    /// The given string is a short explanation for users, not intended to be
+    /// machine-readable.
+    Abort(String),
 }
 
 /// Details about where an I/O error happened
@@ -46,6 +54,9 @@ impl HgError {
     pub fn unsupported(explanation: impl Into<String>) -> Self {
         HgError::UnsupportedFeature(explanation.into())
     }
+    pub fn abort(explanation: impl Into<String>) -> Self {
+        HgError::Abort(explanation.into())
+    }
 }
 
 // TODO: use `DisplayBytes` instead to show non-Unicode filenames losslessly?
@@ -61,6 +72,7 @@ impl fmt::Display for HgError {
             HgError::UnsupportedFeature(explanation) => {
                 write!(f, "unsupported feature: {}", explanation)
             }
+            HgError::Abort(explanation) => explanation.fmt(f),
         }
     }
 }
