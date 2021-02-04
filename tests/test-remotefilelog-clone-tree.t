@@ -91,7 +91,6 @@
 #   flakiness here
   $ hg clone --noupdate ssh://user@dummy/shallow full 2>/dev/null
   streaming all changes
-  remote: abort: Cannot clone from a shallow repo to a full repo.
   [255]
 
 # getbundle full clone

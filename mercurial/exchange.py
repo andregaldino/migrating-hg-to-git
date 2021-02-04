@@ -1135,9 +1135,9 @@ def _pushbundle2(pushop):
         except error.BundleValueError as exc:
             raise error.Abort(_(b'missing support for %s') % exc)
         except bundle2.AbortFromPart as exc:
-            pushop.ui.status(_(b'remote: %s\n') % exc)
+            pushop.ui.error(_(b'remote: %s\n') % exc)
             if exc.hint is not None:
-                pushop.ui.status(_(b'remote: %s\n') % (b'(%s)' % exc.hint))
+                pushop.ui.error(_(b'remote: %s\n') % (b'(%s)' % exc.hint))
             raise error.Abort(_(b'push failed on remote'))
     except error.PushkeyFailed as exc:
         partid = int(exc.partid)
@@ -1832,7 +1832,7 @@ def _pullbundle2(pullop):
             op.modes[b'bookmarks'] = b'records'
             bundle2.processbundle(pullop.repo, bundle, op=op)
         except bundle2.AbortFromPart as exc:
-            pullop.repo.ui.status(_(b'remote: abort: %s\n') % exc)
+            pullop.repo.ui.error(_(b'remote: abort: %s\n') % exc)
             raise error.Abort(_(b'pull failed on remote'), hint=exc.hint)
         except error.BundleValueError as exc:
             raise error.Abort(_(b'missing support for %s') % exc)

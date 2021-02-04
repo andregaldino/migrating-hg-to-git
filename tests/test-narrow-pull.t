@@ -147,6 +147,7 @@ Can pull into repo with a single commit
   $ hg clone -q --narrow ssh://user@dummy/master narrow2 --include "f1" -r 0
   $ cd narrow2
   $ hg pull -q -r 1
+  remote: abort: unexpected error: unable to resolve parent while packing b'00manifest.i' 1 for changeset 0
   transaction abort!
   rollback completed
   abort: pull failed on remote
