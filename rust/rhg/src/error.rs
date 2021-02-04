@@ -3,7 +3,7 @@ use crate::ui::UiError;
 use format_bytes::format_bytes;
 use hg::config::{ConfigError, ConfigParseError};
 use hg::errors::HgError;
-use hg::repo::RepoFindError;
+use hg::repo::RepoError;
 use hg::revlog::revlog::RevlogError;
 use hg::utils::files::get_bytes_from_path;
 use std::convert::From;
@@ -51,18 +51,17 @@ impl From<UiError> for CommandError {
     }
 }
 
-impl From<RepoFindError> for CommandError {
-    fn from(error: RepoFindError) -> Self {
+impl From<RepoError> for CommandError {
+    fn from(error: RepoError) -> Self {
         match error {
-            RepoFindError::NotFoundInCurrentDirectoryOrAncestors {
-                current_directory,
-            } => CommandError::Abort {
+            RepoError::NotFound { current_directory } => CommandError::Abort {
                 message: format_bytes!(
                     b"no repository found in '{}' (.hg not found)!",
                     get_bytes_from_path(current_directory)
                 ),
             },
-            RepoFindError::Other(error) => error.into(),
+            RepoError::ConfigParseError(error) => error.into(),
+            RepoError::Other(error) => error.into(),
         }
     }
 }
@@ -70,29 +69,31 @@ impl From<RepoFindError> for CommandError {
 impl From<ConfigError> for CommandError {
     fn from(error: ConfigError) -> Self {
         match error {
-            ConfigError::Parse(ConfigParseError {
-                origin,
-                line,
-                bytes,
-            }) => {
-                let line_message = if let Some(line_number) = line {
-                    format_bytes!(
-                        b" at line {}",
-                        line_number.to_string().into_bytes()
-                    )
-                } else {
-                    Vec::new()
-                };
-                CommandError::Abort {
-                    message: format_bytes!(
-                        b"config parse error in {}{}: '{}'",
-                        origin.to_bytes(),
-                        line_message,
-                        bytes
-                    ),
-                }
-            }
+            ConfigError::Parse(error) => error.into(),
             ConfigError::Other(error) => error.into(),
+        }
+    }
+}
+
+impl From<ConfigParseError> for CommandError {
+    fn from(error: ConfigParseError) -> Self {
+        let ConfigParseError {
+            origin,
+            line,
+            bytes,
+        } = error;
+        let line_message = if let Some(line_number) = line {
+            format_bytes!(b" at line {}", line_number.to_string().into_bytes())
+        } else {
+            Vec::new()
+        };
+        CommandError::Abort {
+            message: format_bytes!(
+                b"config parse error in {}{}: '{}'",
+                origin.to_bytes(),
+                line_message,
+                bytes
+            ),
         }
     }
 }

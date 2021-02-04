@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::errors::{HgError, IoResultExt};
 use crate::requirements;
 use crate::utils::files::get_path_from_bytes;
@@ -12,15 +12,27 @@ pub struct Repo {
     dot_hg: PathBuf,
     store: PathBuf,
     requirements: HashSet<String>,
+    config: Config,
 }
 
 #[derive(Debug, derive_more::From)]
-pub enum RepoFindError {
-    NotFoundInCurrentDirectoryOrAncestors {
+pub enum RepoError {
+    NotFound {
         current_directory: PathBuf,
     },
     #[from]
+    ConfigParseError(ConfigParseError),
+    #[from]
     Other(HgError),
+}
+
+impl From<ConfigError> for RepoError {
+    fn from(error: ConfigError) -> Self {
+        match error {
+            ConfigError::Parse(error) => error.into(),
+            ConfigError::Other(error) => error.into(),
+        }
+    }
 }
 
 /// Filesystem access abstraction for the contents of a given "base" diretory
@@ -32,7 +44,7 @@ pub(crate) struct Vfs<'a> {
 impl Repo {
     /// Search the current directory and its ancestores for a repository:
     /// a working directory that contains a `.hg` sub-directory.
-    pub fn find(config: &Config) -> Result<Self, RepoFindError> {
+    pub fn find(config: &Config) -> Result<Self, RepoError> {
         let current_directory = crate::utils::current_dir()?;
         // ancestors() is inclusive: it first yields `current_directory` as-is.
         for ancestor in current_directory.ancestors() {
@@ -40,17 +52,19 @@ impl Repo {
                 return Ok(Self::new_at_path(ancestor.to_owned(), config)?);
             }
         }
-        Err(RepoFindError::NotFoundInCurrentDirectoryOrAncestors {
-            current_directory,
-        })
+        Err(RepoError::NotFound { current_directory })
     }
 
     /// To be called after checking that `.hg` is a sub-directory
     fn new_at_path(
         working_directory: PathBuf,
         config: &Config,
-    ) -> Result<Self, HgError> {
+    ) -> Result<Self, RepoError> {
         let dot_hg = working_directory.join(".hg");
+
+        let mut repo_config_files = Vec::new();
+        repo_config_files.push(dot_hg.join("hgrc"));
+        repo_config_files.push(dot_hg.join("hgrc-not-shared"));
 
         let hg_vfs = Vfs { base: &dot_hg };
         let mut reqs = requirements::load_if_exists(hg_vfs)?;
@@ -89,7 +103,8 @@ impl Repo {
                 return Err(HgError::corrupted(format!(
                     ".hg/sharedpath points to nonexistent directory {}",
                     shared_path.display()
-                )));
+                ))
+                .into());
             }
 
             store_path = shared_path.join("store");
@@ -99,12 +114,15 @@ impl Repo {
                     .contains(requirements::SHARESAFE_REQUIREMENT);
 
             if share_safe && !source_is_share_safe {
-                return Err(match config.get(b"safe-mismatch", b"source-not-safe") {
+                return Err(match config
+                    .get(b"safe-mismatch", b"source-not-safe")
+                {
                     Some(b"abort") | None => HgError::abort(
-                        "share source does not support share-safe requirement"
+                        "share source does not support share-safe requirement",
                     ),
-                    _ => HgError::unsupported("share-safe downgrade")
-                });
+                    _ => HgError::unsupported("share-safe downgrade"),
+                }
+                .into());
             } else if source_is_share_safe && !share_safe {
                 return Err(
                     match config.get(b"safe-mismatch", b"source-safe") {
@@ -113,16 +131,24 @@ impl Repo {
                             functionality while the current share does not",
                         ),
                         _ => HgError::unsupported("share-safe upgrade"),
-                    },
+                    }
+                    .into(),
                 );
             }
+
+            if share_safe {
+                repo_config_files.insert(0, shared_path.join("hgrc"))
+            }
         }
+
+        let repo_config = config.combine_with_repo(&repo_config_files)?;
 
         let repo = Self {
             requirements: reqs,
             working_directory,
             store: store_path,
             dot_hg,
+            config: repo_config,
         };
 
         requirements::check(&repo)?;
@@ -136,6 +162,10 @@ impl Repo {
 
     pub fn requirements(&self) -> &HashSet<String> {
         &self.requirements
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     /// For accessing repository files (in `.hg`), except for the store

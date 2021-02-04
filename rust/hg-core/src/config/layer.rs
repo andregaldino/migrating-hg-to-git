@@ -51,6 +51,15 @@ impl ConfigLayer {
         }
     }
 
+    /// Returns whether this layer comes from `--config` CLI arguments
+    pub(crate) fn is_from_command_line(&self) -> bool {
+        if let ConfigOrigin::CommandLine = self.origin {
+            true
+        } else {
+            false
+        }
+    }
+
     /// Add an entry to the config, overwriting the old one if already present.
     pub fn add(
         &mut self,
@@ -97,11 +106,13 @@ impl ConfigLayer {
             if let Some(m) = INCLUDE_RE.captures(&bytes) {
                 let filename_bytes = &m[1];
                 // `Path::parent` only fails for the root directory,
-                // which `src` can’t be since we’ve managed to open it as a file.
+                // which `src` can’t be since we’ve managed to open it as a
+                // file.
                 let dir = src
                     .parent()
                     .expect("Path::parent fail on a file we’ve read");
-                // `Path::join` with an absolute argument correctly ignores the base path
+                // `Path::join` with an absolute argument correctly ignores the
+                // base path
                 let filename = dir.join(&get_path_from_bytes(&filename_bytes));
                 let data = std::fs::read(&filename).for_file(&filename)?;
                 layers.push(current_layer);
@@ -200,9 +211,11 @@ pub struct ConfigValue {
 
 #[derive(Clone, Debug)]
 pub enum ConfigOrigin {
-    /// The value comes from a configuration file
+    /// From a configuration file
     File(PathBuf),
-    /// The value comes from the environment like `$PAGER` or `$EDITOR`
+    /// From a `--config` CLI argument
+    CommandLine,
+    /// From environment variables like `$PAGER` or `$EDITOR`
     Environment(Vec<u8>),
     /* TODO cli
      * TODO defaults (configitems.py)
@@ -216,6 +229,7 @@ impl ConfigOrigin {
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
             ConfigOrigin::File(p) => get_bytes_from_path(p),
+            ConfigOrigin::CommandLine => b"--config".to_vec(),
             ConfigOrigin::Environment(e) => format_bytes!(b"${}", e),
         }
     }

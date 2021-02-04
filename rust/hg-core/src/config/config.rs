@@ -16,7 +16,6 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use crate::errors::{HgResultExt, IoResultExt};
-use crate::repo::Repo;
 
 /// Holds the config values for the current repository
 /// TODO update this docstring once we support more sources
@@ -196,12 +195,28 @@ impl Config {
         Ok(Config { layers })
     }
 
-    /// Loads the local config. In a future version, this will also load the
-    /// `$HOME/.hgrc` and more to mirror the Python implementation.
-    pub fn load_for_repo(repo: &Repo) -> Result<Self, ConfigError> {
-        Ok(Self::load_from_explicit_sources(vec![
-            ConfigSource::AbsPath(repo.hg_vfs().join("hgrc")),
-        ])?)
+    /// Loads the per-repository config into a new `Config` which is combined
+    /// with `self`.
+    pub(crate) fn combine_with_repo(
+        &self,
+        repo_config_files: &[PathBuf],
+    ) -> Result<Self, ConfigError> {
+        let (cli_layers, other_layers) = self
+            .layers
+            .iter()
+            .cloned()
+            .partition(ConfigLayer::is_from_command_line);
+
+        let mut repo_config = Self {
+            layers: other_layers,
+        };
+        for path in repo_config_files {
+            // TODO: check if this file should be trusted:
+            // `mercurial/ui.py:427`
+            repo_config.add_trusted_file(path)?;
+        }
+        repo_config.layers.extend(cli_layers);
+        Ok(repo_config)
     }
 
     /// Returns an `Err` if the first value found is not a valid boolean.
@@ -296,8 +311,6 @@ mod tests {
         let sources = vec![ConfigSource::AbsPath(base_config_path)];
         let config = Config::load_from_explicit_sources(sources)
             .expect("expected valid config");
-
-        dbg!(&config);
 
         let (_, value) = config.get_inner(b"section", b"item").unwrap();
         assert_eq!(
