@@ -702,6 +702,12 @@ def has_test_repo():
     return os.path.isdir(os.path.join(t, "..", ".hg"))
 
 
+@check("network-io", "whether tests are allowed to access 3rd party services")
+def has_test_repo():
+    t = os.environ.get("HGTESTS_ALLOW_NETIO")
+    return t == "1"
+
+
 @check("curses", "terminfo compiler and curses module")
 def has_curses():
     try:

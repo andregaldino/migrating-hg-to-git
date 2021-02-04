@@ -184,7 +184,7 @@ On Python 2, we use the 3rd party virtualenv module, if available.
   $ cd $TESTTMP
   $ unset PYTHONPATH
 
-#if py3 ensurepip
+#if py3 ensurepip network-io
   $ "$PYTHON" -m venv installenv >> pip.log
 
 Hack: Debian does something a bit different in ensurepip.bootstrap. This makes
@@ -197,8 +197,10 @@ our virtual env. Then pip doesn't think it's installed and doesn't try to build.
 
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
-  $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
+  $ ./installenv/*/pip install $TESTDIR/.. >> pip.log
     Failed building wheel for mercurial (?)
+  WARNING: You are using pip version *; however, version * is available. (glob) (?)
+  You should consider upgrading via the '$TESTTMP/installenv/bin/python* -m pip install --upgrade pip' command. (glob) (?)
   $ ./installenv/*/hg debuginstall || cat pip.log
   checking encoding (ascii)...
   checking Python executable (*) (glob)
@@ -222,17 +224,17 @@ since it's bin on most platforms but Scripts on Windows.
   no problems detected
 #endif
 
-#if virtualenv no-py3
+#if virtualenv no-py3 network-io
 
 Note: --no-site-packages is the default for all versions enabled by hghave
 
-  $ "$PYTHON" -m virtualenv --never-download installenv >> pip.log
+  $ "$PYTHON" -m virtualenv installenv >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
 
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
-  $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log
+  $ ./installenv/*/pip install $TESTDIR/.. >> pip.log
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. (?)
   DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7. More details about Python 2 support in pip, can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support (?)
   DEPRECATION: Python 2.7 reached the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 is no longer maintained. pip 21.0 will drop support for Python 2.7 in January 2021. More details about Python 2 support in pip can be found at https://pip.pypa.io/en/latest/development/release-process/#python-2-support pip 21.0 will remove support for this functionality. (?)
