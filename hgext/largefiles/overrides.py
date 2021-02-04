@@ -1853,7 +1853,7 @@ _lfscheme = b'largefile://'
 
 
 @eh.wrapfunction(urlmod, b'open')
-def openlargefile(orig, ui, url_, data=None):
+def openlargefile(orig, ui, url_, data=None, **kwargs):
     if url_.startswith(_lfscheme):
         if data:
             msg = b"cannot use data on a 'largefile://' url"
@@ -1861,4 +1861,4 @@ def openlargefile(orig, ui, url_, data=None):
         lfid = url_[len(_lfscheme) :]
         return storefactory.getlfile(ui, lfid)
     else:
-        return orig(ui, url_, data=data)
+        return orig(ui, url_, data=data, **kwargs)
