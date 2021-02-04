@@ -84,7 +84,10 @@ from .utils import (
     stringutil,
 )
 
-from .revlogutils import constants as revlogconst
+from .revlogutils import (
+    concurrency_checker as revlogchecker,
+    constants as revlogconst,
+)
 
 release = lockmod.release
 urlerr = util.urlerr
@@ -1639,7 +1642,10 @@ class localrepository(object):
     def changelog(self):
         # load dirstate before changelog to avoid race see issue6303
         self.dirstate.prefetch_parents()
-        return self.store.changelog(txnutil.mayhavepending(self.root))
+        return self.store.changelog(
+            txnutil.mayhavepending(self.root),
+            concurrencychecker=revlogchecker.get_checker(self.ui, b'changelog'),
+        )
 
     @storecache(b'00manifest.i')
     def manifestlog(self):

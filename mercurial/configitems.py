@@ -580,6 +580,11 @@ coreconfigitem(
     default=0,
 )
 coreconfigitem(
+    b'debug',
+    b'revlog.verifyposition.changelog',
+    default=b'',
+)
+coreconfigitem(
     b'defaults',
     b'.*',
     default=None,

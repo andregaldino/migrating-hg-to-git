@@ -421,6 +421,11 @@ class revlog(object):
 
     If `upperboundcomp` is not None, this is the expected maximal gain from
     compression for the data content.
+
+    `concurrencychecker` is an optional function that receives 3 arguments: a
+    file handle, a filename, and an expected position. It should check whether
+    the current position in the file handle is valid, and log/warn/fail (by
+    raising).
     """
 
     _flagserrorclass = error.RevlogError
@@ -435,6 +440,7 @@ class revlog(object):
         censorable=False,
         upperboundcomp=None,
         persistentnodemap=False,
+        concurrencychecker=None,
     ):
         """
         create a revlog object
@@ -489,6 +495,8 @@ class revlog(object):
         self._writinghandles = None
 
         self._loadindex()
+
+        self._concurrencychecker = concurrencychecker
 
     def _loadindex(self):
         mmapindexthreshold = None
@@ -2284,6 +2292,21 @@ class revlog(object):
         curr = len(self)
         prev = curr - 1
         offset = self.end(prev)
+
+        if self._concurrencychecker:
+            if self._inline:
+                # offset is "as if" it were in the .d file, so we need to add on
+                # the size of the entry metadata.
+                self._concurrencychecker(
+                    ifh, self.indexfile, offset + curr * self._io.size
+                )
+            else:
+                # Entries in the .i are a consistent size.
+                self._concurrencychecker(
+                    ifh, self.indexfile, curr * self._io.size
+                )
+                self._concurrencychecker(dfh, self.datafile, offset)
+
         p1r, p2r = self.rev(p1), self.rev(p2)
 
         # full versions are inserted when the needed deltas

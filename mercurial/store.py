@@ -433,8 +433,12 @@ class basicstore(object):
         l.sort()
         return l
 
-    def changelog(self, trypending):
-        return changelog.changelog(self.vfs, trypending=trypending)
+    def changelog(self, trypending, concurrencychecker=None):
+        return changelog.changelog(
+            self.vfs,
+            trypending=trypending,
+            concurrencychecker=concurrencychecker,
+        )
 
     def manifestlog(self, repo, storenarrowmatch):
         rootstore = manifest.manifestrevlog(self.vfs)
