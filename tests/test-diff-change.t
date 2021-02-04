@@ -196,7 +196,7 @@ must be similar to 'hg diff --change 5':
 
 merge diff should show only manual edits to a merge:
 
-  $ hg diff --merge -c 6
+  $ hg diff --config diff.merge=yes -c 6
 (no diff output is expected here)
 
 Construct an "evil merge" that does something other than just the merge.
@@ -226,7 +226,7 @@ Construct an "evil merge" that does something other than just the merge.
 Contrast with the `hg diff -c 7` version above: only the manual edit shows
 up, making it easy to identify changes someone is otherwise trying to sneak
 into a merge.
-  $ hg diff --merge -c 7
+  $ hg diff --config diff.merge=yes -c 7
   diff -r 8ad85e839ba7 file.txt
   --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
   +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000
@@ -266,15 +266,15 @@ Set up a conflict.
   $ hg resolve -ma
   (no more unresolved files)
   $ hg commit -m 'merge conflicted edit'
-Without --merge, it's a diff against p1
-  $ hg diff --no-merge -c 11
+Without diff.merge, it's a diff against p1
+  $ hg diff --config diff.merge=no -c 11
   diff -r fd1f17c90d7c -r 5010caab09f6 new-file-p2.txt
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/new-file-p2.txt	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@
   +this file is new in p2 of the merge
-With --merge, it's a diff against the conflicted content.
-  $ hg diff --merge -c 11
+With diff.merge, it's a diff against the conflicted content.
+  $ hg diff --config diff.merge=yes -c 11
   diff -r 5010caab09f6 file.txt
   --- a/file.txt	Thu Jan 01 00:00:00 1970 +0000
   +++ b/file.txt	Thu Jan 01 00:00:00 1970 +0000

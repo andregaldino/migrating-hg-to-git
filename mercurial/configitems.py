@@ -754,6 +754,12 @@ coreconfigitem(
 )
 _registerdiffopts(section=b'diff')
 coreconfigitem(
+    b'diff',
+    b'merge',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
     b'email',
     b'bcc',
     default=None,

@@ -546,7 +546,7 @@ def _imerge3(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
 def _imerge3alwaysgood(*args, **kwargs):
     # Like merge3, but record conflicts as resolved with markers in place.
     #
-    # This is used for `hg diff --merge` to show the differences between
+    # This is used for `diff.merge` to show the differences between
     # the auto-merge state and the committed merge state. It may be
     # useful for other things.
     b1, junk, b2 = _imerge3(*args, **kwargs)

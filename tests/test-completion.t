@@ -336,7 +336,7 @@ Show all commands + options
   debugwhyunstable: 
   debugwireargs: three, four, five, ssh, remotecmd, insecure
   debugwireproto: localssh, peer, noreadstderr, nologhandshake, ssh, remotecmd, insecure
-  diff: rev, from, to, change, merge, text, git, binary, nodates, noprefix, show-function, reverse, ignore-all-space, ignore-space-change, ignore-blank-lines, ignore-space-at-eol, unified, stat, root, include, exclude, subrepos
+  diff: rev, from, to, change, text, git, binary, nodates, noprefix, show-function, reverse, ignore-all-space, ignore-space-change, ignore-blank-lines, ignore-space-at-eol, unified, stat, root, include, exclude, subrepos
   export: bookmark, output, switch-parent, rev, text, git, binary, nodates, template
   files: rev, print0, include, exclude, template, subrepos
   forget: interactive, include, exclude, dry-run

@@ -2465,16 +2465,6 @@ def debugcomplete(ui, cmd=b'', **opts):
         (b'', b'from', b'', _(b'revision to diff from'), _(b'REV1')),
         (b'', b'to', b'', _(b'revision to diff to'), _(b'REV2')),
         (b'c', b'change', b'', _(b'change made by revision'), _(b'REV')),
-        (
-            b'',
-            b'merge',
-            False,
-            _(
-                b'show difference between auto-merge and committed '
-                b'merge for merge commits (EXPERIMENTAL)'
-            ),
-            _(b'REV'),
-        ),
     ]
     + diffopts
     + diffopts2
@@ -2555,7 +2545,7 @@ def diff(ui, repo, *pats, **opts):
     to_rev = opts.get(b'to')
     stat = opts.get(b'stat')
     reverse = opts.get(b'reverse')
-    diffmerge = opts.get(b'merge')
+    diffmerge = ui.configbool(b'diff', b'merge')
 
     cmdutil.check_incompatible_arguments(opts, b'from', [b'rev', b'change'])
     cmdutil.check_incompatible_arguments(opts, b'to', [b'rev', b'change'])
