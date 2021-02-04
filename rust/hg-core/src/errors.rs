@@ -26,11 +26,13 @@ pub enum HgError {
 /// Details about where an I/O error happened
 #[derive(Debug, derive_more::From)]
 pub enum IoErrorContext {
-    /// A filesystem operation returned `std::io::Error`
+    /// A filesystem operation for the given file
     #[from]
     File(std::path::PathBuf),
-    /// `std::env::current_dir` returned `std::io::Error`
+    /// `std::env::current_dir`
     CurrentDir,
+    /// `std::env::current_exe`
+    CurrentExe,
 }
 
 impl HgError {
@@ -69,6 +71,7 @@ impl fmt::Display for IoErrorContext {
         match self {
             IoErrorContext::File(path) => path.display().fmt(f),
             IoErrorContext::CurrentDir => f.write_str("current directory"),
+            IoErrorContext::CurrentExe => f.write_str("current executable"),
         }
     }
 }

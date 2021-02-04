@@ -184,3 +184,10 @@ pub fn current_dir() -> Result<std::path::PathBuf, HgError> {
         context: IoErrorContext::CurrentDir,
     })
 }
+
+pub fn current_exe() -> Result<std::path::PathBuf, HgError> {
+    std::env::current_exe().map_err(|error| HgError::IoError {
+        error,
+        context: IoErrorContext::CurrentExe,
+    })
+}

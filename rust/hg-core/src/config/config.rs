@@ -11,8 +11,11 @@ use super::layer;
 use crate::config::layer::{
     ConfigError, ConfigLayer, ConfigParseError, ConfigValue,
 };
-use std::path::PathBuf;
+use crate::utils::files::get_bytes_from_path;
+use std::env;
+use std::path::{Path, PathBuf};
 
+use crate::errors::{HgResultExt, IoResultExt};
 use crate::repo::Repo;
 
 /// Holds the config values for the current repository
@@ -50,6 +53,124 @@ pub fn parse_bool(v: &[u8]) -> Option<bool> {
 }
 
 impl Config {
+    /// Load system and user configuration from various files.
+    ///
+    /// This is also affected by some environment variables.
+    ///
+    /// TODO: add a parameter for `--config` CLI arguments
+    pub fn load() -> Result<Self, ConfigError> {
+        let mut config = Self { layers: Vec::new() };
+        let opt_rc_path = env::var_os("HGRCPATH");
+        // HGRCPATH replaces system config
+        if opt_rc_path.is_none() {
+            config.add_system_config()?
+        }
+        config.add_for_environment_variable("EDITOR", b"ui", b"editor");
+        config.add_for_environment_variable("VISUAL", b"ui", b"editor");
+        config.add_for_environment_variable("PAGER", b"pager", b"pager");
+        // HGRCPATH replaces user config
+        if opt_rc_path.is_none() {
+            config.add_user_config()?
+        }
+        if let Some(rc_path) = &opt_rc_path {
+            for path in env::split_paths(rc_path) {
+                if !path.as_os_str().is_empty() {
+                    if path.is_dir() {
+                        config.add_trusted_dir(&path)?
+                    } else {
+                        config.add_trusted_file(&path)?
+                    }
+                }
+            }
+        }
+        Ok(config)
+    }
+
+    fn add_trusted_dir(&mut self, path: &Path) -> Result<(), ConfigError> {
+        if let Some(entries) = std::fs::read_dir(path)
+            .for_file(path)
+            .io_not_found_as_none()?
+        {
+            for entry in entries {
+                let file_path = entry.for_file(path)?.path();
+                if file_path.extension() == Some(std::ffi::OsStr::new("rc")) {
+                    self.add_trusted_file(&file_path)?
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn add_trusted_file(&mut self, path: &Path) -> Result<(), ConfigError> {
+        if let Some(data) =
+            std::fs::read(path).for_file(path).io_not_found_as_none()?
+        {
+            self.layers.extend(ConfigLayer::parse(path, &data)?)
+        }
+        Ok(())
+    }
+
+    fn add_for_environment_variable(
+        &mut self,
+        var: &str,
+        section: &[u8],
+        key: &[u8],
+    ) {
+        if let Some(value) = env::var_os(var) {
+            let origin = layer::ConfigOrigin::Environment(var.into());
+            let mut layer = ConfigLayer::new(origin);
+            layer.add(
+                section.to_owned(),
+                key.to_owned(),
+                // `value` is not a path but this works for any `OsStr`:
+                get_bytes_from_path(value),
+                None,
+            );
+            self.layers.push(layer)
+        }
+    }
+
+    #[cfg(unix)] // TODO: other platforms
+    fn add_system_config(&mut self) -> Result<(), ConfigError> {
+        let mut add_for_prefix = |prefix: &Path| -> Result<(), ConfigError> {
+            let etc = prefix.join("etc").join("mercurial");
+            self.add_trusted_file(&etc.join("hgrc"))?;
+            self.add_trusted_dir(&etc.join("hgrc.d"))
+        };
+        let root = Path::new("/");
+        // TODO: use `std::env::args_os().next().unwrap()` a.k.a. argv[0]
+        // instead? TODO: can this be a relative path?
+        let hg = crate::utils::current_exe()?;
+        // TODO: this order (per-installation then per-system) matches
+        // `systemrcpath()` in `mercurial/scmposix.py`, but
+        // `mercurial/helptext/config.txt` suggests it should be reversed
+        if let Some(installation_prefix) = hg.parent().and_then(Path::parent) {
+            if installation_prefix != root {
+                add_for_prefix(&installation_prefix)?
+            }
+        }
+        add_for_prefix(root)?;
+        Ok(())
+    }
+
+    #[cfg(unix)] // TODO: other plateforms
+    fn add_user_config(&mut self) -> Result<(), ConfigError> {
+        let opt_home = home::home_dir();
+        if let Some(home) = &opt_home {
+            self.add_trusted_file(&home.join(".hgrc"))?
+        }
+        let darwin = cfg!(any(target_os = "macos", target_os = "ios"));
+        if !darwin {
+            if let Some(config_home) = env::var_os("XDG_CONFIG_HOME")
+                .map(PathBuf::from)
+                .or_else(|| opt_home.map(|home| home.join(".config")))
+            {
+                self.add_trusted_file(&config_home.join("hg").join("hgrc"))?
+            }
+        }
+        Ok(())
+    }
+
     /// Loads in order, which means that the precedence is the same
     /// as the order of `sources`.
     pub fn load_from_explicit_sources(

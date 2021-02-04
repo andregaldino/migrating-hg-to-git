@@ -216,7 +216,7 @@ impl ConfigOrigin {
     pub fn to_bytes(&self) -> Vec<u8> {
         match self {
             ConfigOrigin::File(p) => get_bytes_from_path(p),
-            ConfigOrigin::Environment(e) => e.to_owned(),
+            ConfigOrigin::Environment(e) => format_bytes!(b"${}", e),
         }
     }
 }
