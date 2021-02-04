@@ -27,6 +27,7 @@ from . import (
     graphmod,
     match as matchmod,
     mdiff,
+    merge,
     patch,
     pathutil,
     pycompat,
@@ -71,6 +72,36 @@ def getlimit(opts):
     else:
         limit = None
     return limit
+
+
+def diff_parent(ctx):
+    """get the context object to use as parent when diffing
+
+
+    If diff.merge is enabled, an overlayworkingctx of the auto-merged parents will be returned.
+    """
+    repo = ctx.repo()
+    if repo.ui.configbool(b"diff", b"merge") and ctx.p2().node() != nullid:
+        # avoid cycle context -> subrepo -> cmdutil -> logcmdutil
+        from . import context
+
+        wctx = context.overlayworkingctx(repo)
+        wctx.setbase(ctx.p1())
+        with repo.ui.configoverride(
+            {
+                (
+                    b"ui",
+                    b"forcemerge",
+                ): b"internal:merge3-lie-about-conflicts",
+            },
+            b"merge-diff",
+        ):
+            repo.ui.pushbuffer()
+            merge.merge(ctx.p2(), wc=wctx)
+            repo.ui.popbuffer()
+        return wctx
+    else:
+        return ctx.p1()
 
 
 def diffordiffstat(

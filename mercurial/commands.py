@@ -29,7 +29,6 @@ from . import (
     bundlecaches,
     changegroup,
     cmdutil,
-    context as contextmod,
     copies,
     debugcommands as debugcommandsmod,
     destutil,
@@ -2545,33 +2544,13 @@ def diff(ui, repo, *pats, **opts):
     to_rev = opts.get(b'to')
     stat = opts.get(b'stat')
     reverse = opts.get(b'reverse')
-    diffmerge = ui.configbool(b'diff', b'merge')
 
     cmdutil.check_incompatible_arguments(opts, b'from', [b'rev', b'change'])
     cmdutil.check_incompatible_arguments(opts, b'to', [b'rev', b'change'])
     if change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
         ctx2 = scmutil.revsingle(repo, change, None)
-        if diffmerge and ctx2.p2().node() != nullid:
-            pctx1 = ctx2.p1()
-            pctx2 = ctx2.p2()
-            wctx = contextmod.overlayworkingctx(repo)
-            wctx.setbase(pctx1)
-            with ui.configoverride(
-                {
-                    (
-                        b'ui',
-                        b'forcemerge',
-                    ): b'internal:merge3-lie-about-conflicts',
-                },
-                b'diff --merge',
-            ):
-                repo.ui.pushbuffer()
-                mergemod.merge(pctx2, wc=wctx)
-                repo.ui.popbuffer()
-            ctx1 = wctx
-        else:
-            ctx1 = ctx2.p1()
+        ctx1 = logcmdutil.diff_parent(ctx2)
     elif from_rev or to_rev:
         repo = scmutil.unhidehashlikerevs(
             repo, [from_rev] + [to_rev], b'nowarn'
