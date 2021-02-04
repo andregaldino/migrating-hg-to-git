@@ -123,20 +123,23 @@ fn match_subcommand(
     matches: ArgMatches,
     ui: &ui::Ui,
 ) -> Result<(), CommandError> {
+    let config = hg::config::Config::load()?;
+
     match matches.subcommand() {
-        ("root", _) => commands::root::RootCommand::new().run(&ui),
+        ("root", _) => commands::root::RootCommand::new().run(&ui, &config),
         ("files", Some(matches)) => {
-            commands::files::FilesCommand::try_from(matches)?.run(&ui)
+            commands::files::FilesCommand::try_from(matches)?.run(&ui, &config)
         }
         ("cat", Some(matches)) => {
-            commands::cat::CatCommand::try_from(matches)?.run(&ui)
+            commands::cat::CatCommand::try_from(matches)?.run(&ui, &config)
         }
         ("debugdata", Some(matches)) => {
-            commands::debugdata::DebugDataCommand::try_from(matches)?.run(&ui)
+            commands::debugdata::DebugDataCommand::try_from(matches)?
+                .run(&ui, &config)
         }
         ("debugrequirements", _) => {
             commands::debugrequirements::DebugRequirementsCommand::new()
-                .run(&ui)
+                .run(&ui, &config)
         }
         _ => unreachable!(), // Because of AppSettings::SubcommandRequired,
     }

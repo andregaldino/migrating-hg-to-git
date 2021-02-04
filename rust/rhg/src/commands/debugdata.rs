@@ -1,6 +1,7 @@
 use crate::commands::Command;
 use crate::error::CommandError;
 use crate::ui::Ui;
+use hg::config::Config;
 use hg::operations::{debug_data, DebugDataKind};
 use hg::repo::Repo;
 use micro_timer::timed;
@@ -22,8 +23,8 @@ impl<'a> DebugDataCommand<'a> {
 
 impl<'a> Command for DebugDataCommand<'a> {
     #[timed]
-    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let repo = Repo::find()?;
+    fn run(&self, ui: &Ui, config: &Config) -> Result<(), CommandError> {
+        let repo = Repo::find(config)?;
         let data = debug_data(&repo, self.rev, self.kind)
             .map_err(|e| (e, self.rev))?;
 

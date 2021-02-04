@@ -1,6 +1,7 @@
 use crate::commands::Command;
 use crate::error::CommandError;
 use crate::ui::Ui;
+use hg::config::Config;
 use hg::repo::Repo;
 
 pub const HELP_TEXT: &str = "
@@ -16,8 +17,8 @@ impl DebugRequirementsCommand {
 }
 
 impl Command for DebugRequirementsCommand {
-    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let repo = Repo::find()?;
+    fn run(&self, ui: &Ui, config: &Config) -> Result<(), CommandError> {
+        let repo = Repo::find(config)?;
         let mut output = String::new();
         let mut requirements: Vec<_> = repo.requirements().iter().collect();
         requirements.sort();

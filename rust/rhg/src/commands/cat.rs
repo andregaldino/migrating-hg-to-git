@@ -1,6 +1,7 @@
 use crate::commands::Command;
 use crate::error::CommandError;
 use crate::ui::Ui;
+use hg::config::Config;
 use hg::operations::cat;
 use hg::repo::Repo;
 use hg::utils::hg_path::HgPathBuf;
@@ -29,8 +30,8 @@ impl<'a> CatCommand<'a> {
 
 impl<'a> Command for CatCommand<'a> {
     #[timed]
-    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let repo = Repo::find()?;
+    fn run(&self, ui: &Ui, config: &Config) -> Result<(), CommandError> {
+        let repo = Repo::find(config)?;
         let cwd = hg::utils::current_dir()?;
 
         let mut files = vec![];

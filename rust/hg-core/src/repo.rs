@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::errors::{HgError, IoResultExt};
 use crate::requirements;
 use crate::utils::files::get_path_from_bytes;
@@ -31,7 +32,7 @@ pub(crate) struct Vfs<'a> {
 impl Repo {
     /// Search the current directory and its ancestores for a repository:
     /// a working directory that contains a `.hg` sub-directory.
-    pub fn find() -> Result<Self, RepoFindError> {
+    pub fn find(_config: &Config) -> Result<Self, RepoFindError> {
         let current_directory = crate::utils::current_dir()?;
         // ancestors() is inclusive: it first yields `current_directory` as-is.
         for ancestor in current_directory.ancestors() {
