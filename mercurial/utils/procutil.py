@@ -546,7 +546,11 @@ def _gui():
             # pure build; use a safe default
             return True
     else:
-        return pycompat.iswindows or encoding.environ.get(b"DISPLAY")
+        return (
+            pycompat.iswindows
+            or encoding.environ.get(b"DISPLAY")
+            or encoding.environ.get(b"WAYLAND_DISPLAY")
+        )
 
 
 def gui():
