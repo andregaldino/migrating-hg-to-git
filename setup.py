@@ -419,9 +419,9 @@ if os.path.isdir('.hg'):
         ltag = sysstr(hg.run(ltagcmd))
         changessincecmd = ['log', '-T', 'x\n', '-r', "only(.,'%s')" % ltag]
         changessince = len(hg.run(changessincecmd).splitlines())
-        version = '%s+%s-%s' % (ltag, changessince, hgid)
+        version = '%s+hg%s.%s' % (ltag, changessince, hgid)
     if version.endswith('+'):
-        version += time.strftime('%Y%m%d')
+        version = version[:-1] + 'local' + time.strftime('%Y%m%d')
 elif os.path.exists('.hg_archival.txt'):
     kw = dict(
         [[t.strip() for t in l.split(':', 1)] for l in open('.hg_archival.txt')]
@@ -430,11 +430,13 @@ elif os.path.exists('.hg_archival.txt'):
         version = kw['tag']
     elif 'latesttag' in kw:
         if 'changessincelatesttag' in kw:
-            version = '%(latesttag)s+%(changessincelatesttag)s-%(node).12s' % kw
+            version = (
+                '%(latesttag)s+.%(changessincelatesttag)s.%(node).12s' % kw
+            )
         else:
-            version = '%(latesttag)s+%(latesttagdistance)s-%(node).12s' % kw
+            version = '%(latesttag)s+.%(latesttagdistance)s.%(node).12s' % kw
     else:
-        version = kw.get('node', '')[:12]
+        version = '0+' + kw.get('node', '')[:12]
 
 if version:
     versionb = version
@@ -450,20 +452,6 @@ if version:
             ]
         ),
     )
-
-try:
-    oldpolicy = os.environ.get('HGMODULEPOLICY', None)
-    os.environ['HGMODULEPOLICY'] = 'py'
-    from mercurial import __version__
-
-    version = __version__.version
-except ImportError:
-    version = b'unknown'
-finally:
-    if oldpolicy is None:
-        del os.environ['HGMODULEPOLICY']
-    else:
-        os.environ['HGMODULEPOLICY'] = oldpolicy
 
 
 class hgbuild(build):
@@ -1683,8 +1671,8 @@ datafiles = []
 # unicode on Python 2 still works because it won't contain any
 # non-ascii bytes and will be implicitly converted back to bytes
 # when operated on.
-assert isinstance(version, bytes)
-setupversion = version.decode('ascii')
+assert isinstance(version, str)
+setupversion = version
 
 extra = {}
 
