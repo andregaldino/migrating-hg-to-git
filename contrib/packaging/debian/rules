@@ -18,6 +18,10 @@
 #   DEB_HG_PYTHON_VERSIONS="3.7 3.8" make deb
 DEB_HG_MULTI_VERSION?=0
 
+# Set to 1 to make /usr/bin/hg a symlink to chg, and move hg to
+# /usr/lib/mercurial/hg.
+DEB_HG_CHG_BY_DEFAULT?=0
+
 CPUS=$(shell cat /proc/cpuinfo | grep -E ^processor | wc -l)
 
 # By default, only build for the version of python3 that the system considers
@@ -38,6 +42,12 @@ else
 	# have to duplicate the rules below for multi-version vs. single-version. The
 	# shebang line will still be /usr/bin/python3 (no minor version).
 	DEB_HG_PYTHON_VERSIONS?=$(shell py3versions -vd)
+endif
+
+ifeq ($(DEB_HG_CHG_BY_DEFAULT), 1)
+	# Important: the "real" hg must have a 'basename' of 'hg'. Otherwise, hg
+	# behaves differently when setting $HG and breaks aliases that use that.
+	export HGPATH=/usr/lib/mercurial/hg
 endif
 
 export HGPYTHON3=1
@@ -86,3 +96,8 @@ override_dh_auto_install: $(DEB_HG_PYTHON_VERSIONS:%=install-python%)
 	cp contrib/bash_completion "$(CURDIR)"/debian/mercurial/usr/share/bash-completion/completions/hg
 	mkdir -p "$(CURDIR)"/debian/mercurial/usr/share/zsh/vendor-completions
 	cp contrib/zsh_completion "$(CURDIR)"/debian/mercurial/usr/share/zsh/vendor-completions/_hg
+	if [[ "$(DEB_HG_CHG_BY_DEFAULT)" -eq 1 ]]; then \
+		mkdir -p "$(CURDIR)"/debian/mercurial/usr/lib/mercurial; \
+		mv "$(CURDIR)"/debian/mercurial/usr/bin/hg "$(CURDIR)"/debian/mercurial/usr/lib/mercurial/hg; \
+		ln -s chg "$(CURDIR)"/debian/mercurial/usr/bin/hg; \
+	fi
