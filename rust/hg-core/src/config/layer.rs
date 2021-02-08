@@ -51,6 +51,49 @@ impl ConfigLayer {
         }
     }
 
+    /// Parse `--config` CLI arguments and return a layer if there’s any
+    pub(crate) fn parse_cli_args(
+        cli_config_args: impl IntoIterator<Item = impl AsRef<[u8]>>,
+    ) -> Result<Option<Self>, ConfigError> {
+        fn parse_one(arg: &[u8]) -> Option<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+            use crate::utils::SliceExt;
+
+            let (section_and_item, value) = split_2(arg, b'=')?;
+            let (section, item) = split_2(section_and_item.trim(), b'.')?;
+            Some((
+                section.to_owned(),
+                item.to_owned(),
+                value.trim().to_owned(),
+            ))
+        }
+
+        fn split_2(bytes: &[u8], separator: u8) -> Option<(&[u8], &[u8])> {
+            let mut iter = bytes.splitn(2, |&byte| byte == separator);
+            let a = iter.next()?;
+            let b = iter.next()?;
+            Some((a, b))
+        }
+
+        let mut layer = Self::new(ConfigOrigin::CommandLine);
+        for arg in cli_config_args {
+            let arg = arg.as_ref();
+            if let Some((section, item, value)) = parse_one(arg) {
+                layer.add(section, item, value, None);
+            } else {
+                Err(HgError::abort(format!(
+                    "malformed --config option: \"{}\" \
+                    (use --config section.name=value)",
+                    String::from_utf8_lossy(arg),
+                )))?
+            }
+        }
+        if layer.sections.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(layer))
+        }
+    }
+
     /// Returns whether this layer comes from `--config` CLI arguments
     pub(crate) fn is_from_command_line(&self) -> bool {
         if let ConfigOrigin::CommandLine = self.origin {

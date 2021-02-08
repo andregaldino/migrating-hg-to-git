@@ -20,6 +20,17 @@ fn add_global_args<'a, 'b>(app: App<'a, 'b>) -> App<'a, 'b> {
             .value_name("REPO")
             .takes_value(true),
     )
+    .arg(
+        Arg::with_name("config")
+            .help("set/override config option (use 'section.name=value')")
+            .long("--config")
+            .value_name("CONFIG")
+            .takes_value(true)
+            // Ok: `--config section.key1=val --config section.key2=val2`
+            .multiple(true)
+            // Not ok: `--config section.key1=val section.key2=val2`
+            .number_of_values(1),
+    )
 }
 
 fn main() {
@@ -47,12 +58,22 @@ fn main() {
 
     // Global arguments can be in either based on e.g. `hg -R ./foo log` v.s.
     // `hg log -R ./foo`
-    let global_arg =
+    let value_of_global_arg =
         |name| args.value_of_os(name).or_else(|| matches.value_of_os(name));
+    // For arguments where multiple occurences are allowed, return a
+    // possibly-iterator of all values.
+    let values_of_global_arg = |name: &str| {
+        let a = matches.values_of_os(name).into_iter().flatten();
+        let b = args.values_of_os(name).into_iter().flatten();
+        a.chain(b)
+    };
 
-    let repo_path = global_arg("repository").map(Path::new);
+    let repo_path = value_of_global_arg("repository").map(Path::new);
     let result = (|| -> Result<(), CommandError> {
-        let config = hg::config::Config::load()?;
+        let config_args = values_of_global_arg("config")
+            // `get_bytes_from_path` works for OsStr the same as for Path
+            .map(hg::utils::files::get_bytes_from_path);
+        let config = hg::config::Config::load(config_args)?;
         run(&ui, &config, repo_path, args)
     })();
 

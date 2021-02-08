@@ -65,9 +65,9 @@ impl Config {
     /// Load system and user configuration from various files.
     ///
     /// This is also affected by some environment variables.
-    ///
-    /// TODO: add a parameter for `--config` CLI arguments
-    pub fn load() -> Result<Self, ConfigError> {
+    pub fn load(
+        cli_config_args: impl IntoIterator<Item = impl AsRef<[u8]>>,
+    ) -> Result<Self, ConfigError> {
         let mut config = Self { layers: Vec::new() };
         let opt_rc_path = env::var_os("HGRCPATH");
         // HGRCPATH replaces system config
@@ -91,6 +91,9 @@ impl Config {
                     }
                 }
             }
+        }
+        if let Some(layer) = ConfigLayer::parse_cli_args(cli_config_args)? {
+            config.layers.push(layer)
         }
         Ok(config)
     }
