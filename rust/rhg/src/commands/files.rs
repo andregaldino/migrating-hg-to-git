@@ -1,5 +1,6 @@
 use crate::error::CommandError;
 use crate::ui::Ui;
+use clap::Arg;
 use clap::ArgMatches;
 use hg::config::Config;
 use hg::operations::list_rev_tracked_files;
@@ -13,6 +14,19 @@ List tracked files.
 
 Returns 0 on success.
 ";
+
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("files")
+        .arg(
+            Arg::with_name("rev")
+                .help("search the repository as it is in REV")
+                .short("-r")
+                .long("--revision")
+                .value_name("REV")
+                .takes_value(true),
+        )
+        .about(HELP_TEXT)
+}
 
 pub fn run(
     ui: &Ui,

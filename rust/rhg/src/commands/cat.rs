@@ -1,5 +1,6 @@
 use crate::error::CommandError;
 use crate::ui::Ui;
+use clap::Arg;
 use clap::ArgMatches;
 use hg::config::Config;
 use hg::operations::cat;
@@ -11,6 +12,27 @@ use std::convert::TryFrom;
 pub const HELP_TEXT: &str = "
 Output the current or given revision of files
 ";
+
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("cat")
+        .arg(
+            Arg::with_name("rev")
+                .help("search the repository as it is in REV")
+                .short("-r")
+                .long("--revision")
+                .value_name("REV")
+                .takes_value(true),
+        )
+        .arg(
+            clap::Arg::with_name("files")
+                .required(true)
+                .multiple(true)
+                .empty_values(false)
+                .value_name("FILE")
+                .help("Activity to start: activity@category"),
+        )
+        .about(HELP_TEXT)
+}
 
 #[timed]
 pub fn run(

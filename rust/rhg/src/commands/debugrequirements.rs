@@ -8,6 +8,10 @@ pub const HELP_TEXT: &str = "
 Print the current repo requirements.
 ";
 
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("debugrequirements").about(HELP_TEXT)
+}
+
 pub fn run(
     ui: &Ui,
     config: &Config,

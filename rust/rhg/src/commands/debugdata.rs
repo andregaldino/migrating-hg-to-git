@@ -1,5 +1,7 @@
 use crate::error::CommandError;
 use crate::ui::Ui;
+use clap::Arg;
+use clap::ArgGroup;
 use clap::ArgMatches;
 use hg::config::Config;
 use hg::operations::{debug_data, DebugDataKind};
@@ -9,6 +11,34 @@ use micro_timer::timed;
 pub const HELP_TEXT: &str = "
 Dump the contents of a data file revision
 ";
+
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("debugdata")
+        .arg(
+            Arg::with_name("changelog")
+                .help("open changelog")
+                .short("-c")
+                .long("--changelog"),
+        )
+        .arg(
+            Arg::with_name("manifest")
+                .help("open manifest")
+                .short("-m")
+                .long("--manifest"),
+        )
+        .group(
+            ArgGroup::with_name("")
+                .args(&["changelog", "manifest"])
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("rev")
+                .help("revision")
+                .required(true)
+                .value_name("REV"),
+        )
+        .about(HELP_TEXT)
+}
 
 #[timed]
 pub fn run(

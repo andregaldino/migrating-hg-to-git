@@ -1,10 +1,7 @@
 extern crate log;
 use clap::App;
 use clap::AppSettings;
-use clap::Arg;
-use clap::ArgGroup;
 use clap::ArgMatches;
-use clap::SubCommand;
 use format_bytes::format_bytes;
 
 mod commands;
@@ -20,72 +17,11 @@ fn main() {
         .setting(AppSettings::SubcommandRequired)
         .setting(AppSettings::VersionlessSubcommands)
         .version("0.0.1")
-        .subcommand(
-            SubCommand::with_name("root").about(commands::root::HELP_TEXT),
-        )
-        .subcommand(
-            SubCommand::with_name("files")
-                .arg(
-                    Arg::with_name("rev")
-                        .help("search the repository as it is in REV")
-                        .short("-r")
-                        .long("--revision")
-                        .value_name("REV")
-                        .takes_value(true),
-                )
-                .about(commands::files::HELP_TEXT),
-        )
-        .subcommand(
-            SubCommand::with_name("cat")
-                .arg(
-                    Arg::with_name("rev")
-                        .help("search the repository as it is in REV")
-                        .short("-r")
-                        .long("--revision")
-                        .value_name("REV")
-                        .takes_value(true),
-                )
-                .arg(
-                    clap::Arg::with_name("files")
-                        .required(true)
-                        .multiple(true)
-                        .empty_values(false)
-                        .value_name("FILE")
-                        .help("Activity to start: activity@category"),
-                )
-                .about(commands::cat::HELP_TEXT),
-        )
-        .subcommand(
-            SubCommand::with_name("debugdata")
-                .about(commands::debugdata::HELP_TEXT)
-                .arg(
-                    Arg::with_name("changelog")
-                        .help("open changelog")
-                        .short("-c")
-                        .long("--changelog"),
-                )
-                .arg(
-                    Arg::with_name("manifest")
-                        .help("open manifest")
-                        .short("-m")
-                        .long("--manifest"),
-                )
-                .group(
-                    ArgGroup::with_name("")
-                        .args(&["changelog", "manifest"])
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("rev")
-                        .help("revision")
-                        .required(true)
-                        .value_name("REV"),
-                ),
-        )
-        .subcommand(
-            SubCommand::with_name("debugrequirements")
-                .about(commands::debugrequirements::HELP_TEXT),
-        );
+        .subcommand(commands::root::args())
+        .subcommand(commands::files::args())
+        .subcommand(commands::cat::args())
+        .subcommand(commands::debugdata::args())
+        .subcommand(commands::debugrequirements::args());
 
     let matches = app.clone().get_matches_safe().unwrap_or_else(|err| {
         let _ = ui::Ui::new().writeln_stderr_str(&err.message);
