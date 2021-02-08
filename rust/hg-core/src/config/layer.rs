@@ -58,20 +58,13 @@ impl ConfigLayer {
         fn parse_one(arg: &[u8]) -> Option<(Vec<u8>, Vec<u8>, Vec<u8>)> {
             use crate::utils::SliceExt;
 
-            let (section_and_item, value) = split_2(arg, b'=')?;
-            let (section, item) = split_2(section_and_item.trim(), b'.')?;
+            let (section_and_item, value) = arg.split_2(b'=')?;
+            let (section, item) = section_and_item.trim().split_2(b'.')?;
             Some((
                 section.to_owned(),
                 item.to_owned(),
                 value.trim().to_owned(),
             ))
-        }
-
-        fn split_2(bytes: &[u8], separator: u8) -> Option<(&[u8], &[u8])> {
-            let mut iter = bytes.splitn(2, |&byte| byte == separator);
-            let a = iter.next()?;
-            let b = iter.next()?;
-            Some((a, b))
         }
 
         let mut layer = Self::new(ConfigOrigin::CommandLine);

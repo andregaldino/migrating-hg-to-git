@@ -43,10 +43,14 @@ pub(crate) struct Vfs<'a> {
 }
 
 impl Repo {
-    /// Search the current directory and its ancestores for a repository:
-    /// a working directory that contains a `.hg` sub-directory.
+    /// Find a repository, either at the given path (which must contain a `.hg`
+    /// sub-directory) or by searching the current directory and its
+    /// ancestors.
     ///
-    /// `explicit_path` is for `--repository` command-line arguments.
+    /// A method with two very different "modes" like this usually a code smell
+    /// to make two methods instead, but in this case an `Option` is what rhg
+    /// sub-commands get from Clap for the `-R` / `--repository` CLI argument.
+    /// Having two methods would just move that `if` to almost all callers.
     pub fn find(
         config: &Config,
         explicit_path: Option<&Path>,
@@ -74,6 +78,28 @@ impl Repo {
             Err(RepoError::NotFound {
                 at: current_directory,
             })
+        }
+    }
+
+    /// Like `Repo::find`, but not finding a repository is not an error if no
+    /// explicit path is given. `Ok(None)` is returned in that case.
+    ///
+    /// If an explicit path *is* given, not finding a repository there is still
+    /// an error.
+    ///
+    /// For sub-commands that don’t need a repository, configuration should
+    /// still be affected by a repository’s `.hg/hgrc` file. This is the
+    /// constructor to use.
+    pub fn find_optional(
+        config: &Config,
+        explicit_path: Option<&Path>,
+    ) -> Result<Option<Self>, RepoError> {
+        match Self::find(config, explicit_path) {
+            Ok(repo) => Ok(Some(repo)),
+            Err(RepoError::NotFound { .. }) if explicit_path.is_none() => {
+                Ok(None)
+            }
+            Err(error) => Err(error),
         }
     }
 

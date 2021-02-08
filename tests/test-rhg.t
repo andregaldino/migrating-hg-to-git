@@ -30,6 +30,18 @@ Finding root
   $ rhg root
   $TESTTMP/repository
 
+Reading and setting configuration
+  $ echo "[ui]" >> $HGRCPATH
+  $ echo "username = user1" >> $HGRCPATH
+  $ rhg config ui.username
+  user1
+  $ echo "[ui]" >> .hg/hgrc
+  $ echo "username = user2" >> .hg/hgrc
+  $ rhg config ui.username
+  user2
+  $ rhg --config ui.username=user3 config ui.username
+  user3
+
 Unwritable file descriptor
   $ rhg root > /dev/full
   abort: No space left on device (os error 28)

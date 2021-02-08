@@ -134,4 +134,5 @@ subcommands! {
     debugrequirements
     files
     root
+    config
 }

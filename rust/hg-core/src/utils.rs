@@ -67,6 +67,7 @@ pub trait SliceExt {
     fn trim_start(&self) -> &Self;
     fn trim(&self) -> &Self;
     fn drop_prefix(&self, needle: &Self) -> Option<&Self>;
+    fn split_2(&self, separator: u8) -> Option<(&[u8], &[u8])>;
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
@@ -115,6 +116,13 @@ impl SliceExt for [u8] {
         } else {
             None
         }
+    }
+
+    fn split_2(&self, separator: u8) -> Option<(&[u8], &[u8])> {
+        let mut iter = self.splitn(2, |&byte| byte == separator);
+        let a = iter.next()?;
+        let b = iter.next()?;
+        Some((a, b))
     }
 }
 
