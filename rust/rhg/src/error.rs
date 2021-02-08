@@ -90,7 +90,7 @@ impl From<ConfigParseError> for CommandError {
         CommandError::Abort {
             message: format_bytes!(
                 b"config parse error in {}{}: '{}'",
-                origin.to_bytes(),
+                origin,
                 line_message,
                 bytes
             ),

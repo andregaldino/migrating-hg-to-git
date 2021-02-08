@@ -9,7 +9,7 @@
 
 use crate::errors::{HgError, IoResultExt};
 use crate::utils::files::{get_bytes_from_path, get_path_from_bytes};
-use format_bytes::format_bytes;
+use format_bytes::{write_bytes, DisplayBytes};
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
 use std::collections::HashMap;
@@ -165,8 +165,11 @@ impl ConfigLayer {
     }
 }
 
-impl std::fmt::Debug for ConfigLayer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl DisplayBytes for ConfigLayer {
+    fn display_bytes(
+        &self,
+        out: &mut dyn std::io::Write,
+    ) -> std::io::Result<()> {
         let mut sections: Vec<_> = self.sections.iter().collect();
         sections.sort_by(|e0, e1| e0.0.cmp(e1.0));
 
@@ -175,16 +178,13 @@ impl std::fmt::Debug for ConfigLayer {
             items.sort_by(|e0, e1| e0.0.cmp(e1.0));
 
             for (item, config_entry) in items {
-                writeln!(
-                    f,
-                    "{}",
-                    String::from_utf8_lossy(&format_bytes!(
-                        b"{}.{}={} # {}",
-                        section,
-                        item,
-                        &config_entry.bytes,
-                        &self.origin.to_bytes(),
-                    ))
+                write_bytes!(
+                    out,
+                    b"{}.{}={} # {}\n",
+                    section,
+                    item,
+                    &config_entry.bytes,
+                    &self.origin,
                 )?
             }
         }
@@ -224,13 +224,15 @@ pub enum ConfigOrigin {
      * Others? */
 }
 
-impl ConfigOrigin {
-    /// TODO use some kind of dedicated trait?
-    pub fn to_bytes(&self) -> Vec<u8> {
+impl DisplayBytes for ConfigOrigin {
+    fn display_bytes(
+        &self,
+        out: &mut dyn std::io::Write,
+    ) -> std::io::Result<()> {
         match self {
-            ConfigOrigin::File(p) => get_bytes_from_path(p),
-            ConfigOrigin::CommandLine => b"--config".to_vec(),
-            ConfigOrigin::Environment(e) => format_bytes!(b"${}", e),
+            ConfigOrigin::File(p) => out.write_all(&get_bytes_from_path(p)),
+            ConfigOrigin::CommandLine => out.write_all(b"--config"),
+            ConfigOrigin::Environment(e) => write_bytes!(out, b"${}", e),
         }
     }
 }

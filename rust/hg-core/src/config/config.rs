@@ -12,6 +12,7 @@ use crate::config::layer::{
     ConfigError, ConfigLayer, ConfigParseError, ConfigValue,
 };
 use crate::utils::files::get_bytes_from_path;
+use format_bytes::{write_bytes, DisplayBytes};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -23,13 +24,22 @@ pub struct Config {
     layers: Vec<layer::ConfigLayer>,
 }
 
-impl std::fmt::Debug for Config {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl DisplayBytes for Config {
+    fn display_bytes(
+        &self,
+        out: &mut dyn std::io::Write,
+    ) -> std::io::Result<()> {
         for (index, layer) in self.layers.iter().rev().enumerate() {
-            write!(
-                f,
-                "==== Layer {} (trusted: {}) ====\n{:?}",
-                index, layer.trusted, layer
+            write_bytes!(
+                out,
+                b"==== Layer {} (trusted: {}) ====\n{}",
+                index,
+                if layer.trusted {
+                    &b"yes"[..]
+                } else {
+                    &b"no"[..]
+                },
+                layer
             )?;
         }
         Ok(())
