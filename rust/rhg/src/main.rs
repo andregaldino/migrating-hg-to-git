@@ -4,7 +4,6 @@ use clap::AppSettings;
 use clap::ArgMatches;
 use format_bytes::format_bytes;
 
-mod commands;
 mod error;
 mod exitcode;
 mod ui;
@@ -16,23 +15,27 @@ fn main() {
         .setting(AppSettings::AllowInvalidUtf8)
         .setting(AppSettings::SubcommandRequired)
         .setting(AppSettings::VersionlessSubcommands)
-        .version("0.0.1")
-        .subcommand(commands::root::args())
-        .subcommand(commands::files::args())
-        .subcommand(commands::cat::args())
-        .subcommand(commands::debugdata::args())
-        .subcommand(commands::debugrequirements::args());
-
-    let matches = app.clone().get_matches_safe().unwrap_or_else(|err| {
-        let _ = ui::Ui::new().writeln_stderr_str(&err.message);
-        std::process::exit(exitcode::UNIMPLEMENTED)
-    });
+        .version("0.0.1");
+    let app = add_subcommand_args(app);
 
     let ui = ui::Ui::new();
 
-    let command_result = match_subcommand(matches, &ui);
+    let matches = app.clone().get_matches_safe().unwrap_or_else(|err| {
+        let _ = ui.writeln_stderr_str(&err.message);
+        std::process::exit(exitcode::UNIMPLEMENTED)
+    });
+    let (subcommand_name, subcommand_matches) = matches.subcommand();
+    let run = subcommand_run_fn(subcommand_name)
+        .expect("unknown subcommand name from clap despite AppSettings::SubcommandRequired");
+    let args = subcommand_matches
+        .expect("no subcommand arguments from clap despite AppSettings::SubcommandRequired");
 
-    let exit_code = match command_result {
+    let result = (|| -> Result<(), CommandError> {
+        let config = hg::config::Config::load()?;
+        run(&ui, &config, args)
+    })();
+
+    let exit_code = match result {
         Ok(_) => exitcode::OK,
 
         // Exit with a specific code and no error message to let a potential
@@ -52,22 +55,40 @@ fn main() {
     std::process::exit(exit_code)
 }
 
-fn match_subcommand(
-    matches: ArgMatches,
-    ui: &ui::Ui,
-) -> Result<(), CommandError> {
-    let config = hg::config::Config::load()?;
+macro_rules! subcommands {
+    ($( $command: ident )+) => {
+        mod commands {
+            $(
+                pub mod $command;
+            )+
+        }
 
-    match matches.subcommand() {
-        ("root", Some(matches)) => commands::root::run(ui, &config, matches),
-        ("files", Some(matches)) => commands::files::run(ui, &config, matches),
-        ("cat", Some(matches)) => commands::cat::run(ui, &config, matches),
-        ("debugdata", Some(matches)) => {
-            commands::debugdata::run(ui, &config, matches)
+        fn add_subcommand_args<'a, 'b>(app: App<'a, 'b>) -> App<'a, 'b> {
+            app
+            $(
+                .subcommand(commands::$command::args())
+            )+
         }
-        ("debugrequirements", Some(matches)) => {
-            commands::debugrequirements::run(ui, &config, matches)
+
+        fn subcommand_run_fn(name: &str) -> Option<fn(
+            &ui::Ui,
+            &hg::config::Config,
+            &ArgMatches,
+        ) -> Result<(), CommandError>> {
+            match name {
+                $(
+                    stringify!($command) => Some(commands::$command::run),
+                )+
+                _ => None,
+            }
         }
-        _ => unreachable!(), // Because of AppSettings::SubcommandRequired,
-    }
+    };
+}
+
+subcommands! {
+    cat
+    debugdata
+    debugrequirements
+    files
+    root
 }
