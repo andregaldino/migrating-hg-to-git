@@ -1,6 +1,7 @@
 use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::errors::{HgError, IoResultExt};
 use crate::requirements;
+use crate::utils::current_dir;
 use crate::utils::files::get_path_from_bytes;
 use memmap::{Mmap, MmapOptions};
 use std::collections::HashSet;
@@ -18,7 +19,7 @@ pub struct Repo {
 #[derive(Debug, derive_more::From)]
 pub enum RepoError {
     NotFound {
-        current_directory: PathBuf,
+        at: PathBuf,
     },
     #[from]
     ConfigParseError(ConfigParseError),
@@ -44,15 +45,36 @@ pub(crate) struct Vfs<'a> {
 impl Repo {
     /// Search the current directory and its ancestores for a repository:
     /// a working directory that contains a `.hg` sub-directory.
-    pub fn find(config: &Config) -> Result<Self, RepoError> {
-        let current_directory = crate::utils::current_dir()?;
-        // ancestors() is inclusive: it first yields `current_directory` as-is.
-        for ancestor in current_directory.ancestors() {
-            if ancestor.join(".hg").is_dir() {
-                return Ok(Self::new_at_path(ancestor.to_owned(), config)?);
+    ///
+    /// `explicit_path` is for `--repository` command-line arguments.
+    pub fn find(
+        config: &Config,
+        explicit_path: Option<&Path>,
+    ) -> Result<Self, RepoError> {
+        if let Some(root) = explicit_path {
+            // Having an absolute path isn’t necessary here but can help code
+            // elsewhere
+            let root = current_dir()?.join(root);
+            if root.join(".hg").is_dir() {
+                Self::new_at_path(root, config)
+            } else {
+                Err(RepoError::NotFound {
+                    at: root.to_owned(),
+                })
             }
+        } else {
+            let current_directory = crate::utils::current_dir()?;
+            // ancestors() is inclusive: it first yields `current_directory`
+            // as-is.
+            for ancestor in current_directory.ancestors() {
+                if ancestor.join(".hg").is_dir() {
+                    return Self::new_at_path(ancestor.to_owned(), config);
+                }
+            }
+            Err(RepoError::NotFound {
+                at: current_directory,
+            })
         }
-        Err(RepoError::NotFound { current_directory })
     }
 
     /// To be called after checking that `.hg` is a sub-directory

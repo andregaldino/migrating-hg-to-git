@@ -7,6 +7,7 @@ use hg::config::Config;
 use hg::operations::{debug_data, DebugDataKind};
 use hg::repo::Repo;
 use micro_timer::timed;
+use std::path::Path;
 
 pub const HELP_TEXT: &str = "
 Dump the contents of a data file revision
@@ -44,6 +45,7 @@ pub fn args() -> clap::App<'static, 'static> {
 pub fn run(
     ui: &Ui,
     config: &Config,
+    repo_path: Option<&Path>,
     args: &ArgMatches,
 ) -> Result<(), CommandError> {
     let rev = args
@@ -61,7 +63,7 @@ pub fn run(
             }
         };
 
-    let repo = Repo::find(config)?;
+    let repo = Repo::find(config, repo_path)?;
     let data = debug_data(&repo, rev, kind).map_err(|e| (e, rev))?;
 
     let mut stdout = ui.stdout_buffer();

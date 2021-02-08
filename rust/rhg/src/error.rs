@@ -54,10 +54,10 @@ impl From<UiError> for CommandError {
 impl From<RepoError> for CommandError {
     fn from(error: RepoError) -> Self {
         match error {
-            RepoError::NotFound { current_directory } => CommandError::Abort {
+            RepoError::NotFound { at } => CommandError::Abort {
                 message: format_bytes!(
                     b"no repository found in '{}' (.hg not found)!",
-                    get_bytes_from_path(current_directory)
+                    get_bytes_from_path(at)
                 ),
             },
             RepoError::ConfigParseError(error) => error.into(),

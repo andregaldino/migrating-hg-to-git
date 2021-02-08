@@ -15,7 +15,7 @@ Unimplemented command
   error: Found argument 'unimplemented-command' which wasn't expected, or isn't valid in this context
   
   USAGE:
-      rhg <SUBCOMMAND>
+      rhg [OPTIONS] <SUBCOMMAND>
   
   For more information try --help
   [252]
@@ -204,35 +204,30 @@ Crate a shared repository
 
   $ cd $TESTTMP
   $ hg init repo1
-  $ cd repo1
-  $ echo a > a
-  $ hg commit -A -m'init'
+  $ echo a > repo1/a
+  $ hg -R repo1 commit -A -m'init'
   adding a
 
-  $ cd ..
   $ hg share repo1 repo2
   updating working directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 And check that basic rhg commands work with sharing
 
-  $ cd repo2
-  $ rhg files
-  a
-  $ rhg cat -r 0 a
+  $ rhg files -R repo2
+  repo2/a
+  $ rhg -R repo2 cat -r 0 repo2/a
   a
 
 Same with relative sharing
 
-  $ cd ..
   $ hg share repo2 repo3 --relative
   updating working directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ cd repo3
-  $ rhg files
-  a
-  $ rhg cat -r 0 a
+  $ rhg files -R repo3
+  repo3/a
+  $ rhg -R repo3 cat -r 0 repo3/a
   a
 
 Same with share-safe

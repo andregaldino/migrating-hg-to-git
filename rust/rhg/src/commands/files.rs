@@ -8,6 +8,7 @@ use hg::operations::Dirstate;
 use hg::repo::Repo;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
 use hg::utils::hg_path::{HgPath, HgPathBuf};
+use std::path::Path;
 
 pub const HELP_TEXT: &str = "
 List tracked files.
@@ -31,11 +32,12 @@ pub fn args() -> clap::App<'static, 'static> {
 pub fn run(
     ui: &Ui,
     config: &Config,
+    repo_path: Option<&Path>,
     args: &ArgMatches,
 ) -> Result<(), CommandError> {
     let rev = args.value_of("rev");
 
-    let repo = Repo::find(config)?;
+    let repo = Repo::find(config, repo_path)?;
     if let Some(rev) = rev {
         let files =
             list_rev_tracked_files(&repo, rev).map_err(|e| (e, rev))?;
@@ -52,16 +54,15 @@ fn display_files<'a>(
     repo: &Repo,
     files: impl IntoIterator<Item = &'a HgPath>,
 ) -> Result<(), CommandError> {
-    let cwd = hg::utils::current_dir()?;
-    let rooted_cwd = cwd
-        .strip_prefix(repo.working_directory_path())
-        .expect("cwd was already checked within the repository");
-    let rooted_cwd = HgPathBuf::from(get_bytes_from_path(rooted_cwd));
+    let cwd = HgPathBuf::from(get_bytes_from_path(hg::utils::current_dir()?));
+    let working_directory =
+        HgPathBuf::from(get_bytes_from_path(repo.working_directory_path()));
 
     let mut stdout = ui.stdout_buffer();
 
     for file in files {
-        stdout.write_all(relativize_path(file, &rooted_cwd).as_ref())?;
+        let file = working_directory.join(file);
+        stdout.write_all(relativize_path(&file, &cwd).as_ref())?;
         stdout.write_all(b"\n")?;
     }
     stdout.flush()?;

@@ -8,6 +8,7 @@ use hg::repo::Repo;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
 use std::convert::TryFrom;
+use std::path::Path;
 
 pub const HELP_TEXT: &str = "
 Output the current or given revision of files
@@ -38,6 +39,7 @@ pub fn args() -> clap::App<'static, 'static> {
 pub fn run(
     ui: &Ui,
     config: &Config,
+    repo_path: Option<&Path>,
     args: &ArgMatches,
 ) -> Result<(), CommandError> {
     let rev = args.value_of("rev");
@@ -46,7 +48,7 @@ pub fn run(
         None => vec![],
     };
 
-    let repo = Repo::find(config)?;
+    let repo = Repo::find(config, repo_path)?;
     let cwd = hg::utils::current_dir()?;
 
     let mut files = vec![];
