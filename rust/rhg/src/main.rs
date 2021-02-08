@@ -6,14 +6,11 @@ use clap::ArgGroup;
 use clap::ArgMatches;
 use clap::SubCommand;
 use format_bytes::format_bytes;
-use hg::operations::DebugDataKind;
-use std::convert::TryFrom;
 
 mod commands;
 mod error;
 mod exitcode;
 mod ui;
-use commands::Command;
 use error::CommandError;
 
 fn main() {
@@ -126,69 +123,15 @@ fn match_subcommand(
     let config = hg::config::Config::load()?;
 
     match matches.subcommand() {
-        ("root", _) => commands::root::RootCommand::new().run(&ui, &config),
-        ("files", Some(matches)) => {
-            commands::files::FilesCommand::try_from(matches)?.run(&ui, &config)
-        }
-        ("cat", Some(matches)) => {
-            commands::cat::CatCommand::try_from(matches)?.run(&ui, &config)
-        }
+        ("root", Some(matches)) => commands::root::run(ui, &config, matches),
+        ("files", Some(matches)) => commands::files::run(ui, &config, matches),
+        ("cat", Some(matches)) => commands::cat::run(ui, &config, matches),
         ("debugdata", Some(matches)) => {
-            commands::debugdata::DebugDataCommand::try_from(matches)?
-                .run(&ui, &config)
+            commands::debugdata::run(ui, &config, matches)
         }
-        ("debugrequirements", _) => {
-            commands::debugrequirements::DebugRequirementsCommand::new()
-                .run(&ui, &config)
+        ("debugrequirements", Some(matches)) => {
+            commands::debugrequirements::run(ui, &config, matches)
         }
         _ => unreachable!(), // Because of AppSettings::SubcommandRequired,
-    }
-}
-
-impl<'a> TryFrom<&'a ArgMatches<'_>> for commands::files::FilesCommand<'a> {
-    type Error = CommandError;
-
-    fn try_from(args: &'a ArgMatches) -> Result<Self, Self::Error> {
-        let rev = args.value_of("rev");
-        Ok(commands::files::FilesCommand::new(rev))
-    }
-}
-
-impl<'a> TryFrom<&'a ArgMatches<'_>> for commands::cat::CatCommand<'a> {
-    type Error = CommandError;
-
-    fn try_from(args: &'a ArgMatches) -> Result<Self, Self::Error> {
-        let rev = args.value_of("rev");
-        let files = match args.values_of("files") {
-            Some(files) => files.collect(),
-            None => vec![],
-        };
-        Ok(commands::cat::CatCommand::new(rev, files))
-    }
-}
-
-impl<'a> TryFrom<&'a ArgMatches<'_>>
-    for commands::debugdata::DebugDataCommand<'a>
-{
-    type Error = CommandError;
-
-    fn try_from(args: &'a ArgMatches) -> Result<Self, Self::Error> {
-        let rev = args
-            .value_of("rev")
-            .expect("rev should be a required argument");
-        let kind = match (
-            args.is_present("changelog"),
-            args.is_present("manifest"),
-        ) {
-            (true, false) => DebugDataKind::Changelog,
-            (false, true) => DebugDataKind::Manifest,
-            (true, true) => {
-                unreachable!("Should not happen since options are exclusive")
-            }
-            (false, false) => {
-                unreachable!("Should not happen since options are required")
-            }
-        };
-        Ok(commands::debugdata::DebugDataCommand::new(rev, kind))
     }
 }

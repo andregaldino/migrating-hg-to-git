@@ -1,6 +1,6 @@
-use crate::commands::Command;
 use crate::error::CommandError;
 use crate::ui::Ui;
+use clap::ArgMatches;
 use hg::config::Config;
 use hg::operations::{debug_data, DebugDataKind};
 use hg::repo::Repo;
@@ -10,28 +10,33 @@ pub const HELP_TEXT: &str = "
 Dump the contents of a data file revision
 ";
 
-pub struct DebugDataCommand<'a> {
-    rev: &'a str,
-    kind: DebugDataKind,
-}
+#[timed]
+pub fn run(
+    ui: &Ui,
+    config: &Config,
+    args: &ArgMatches,
+) -> Result<(), CommandError> {
+    let rev = args
+        .value_of("rev")
+        .expect("rev should be a required argument");
+    let kind =
+        match (args.is_present("changelog"), args.is_present("manifest")) {
+            (true, false) => DebugDataKind::Changelog,
+            (false, true) => DebugDataKind::Manifest,
+            (true, true) => {
+                unreachable!("Should not happen since options are exclusive")
+            }
+            (false, false) => {
+                unreachable!("Should not happen since options are required")
+            }
+        };
 
-impl<'a> DebugDataCommand<'a> {
-    pub fn new(rev: &'a str, kind: DebugDataKind) -> Self {
-        DebugDataCommand { rev, kind }
-    }
-}
+    let repo = Repo::find(config)?;
+    let data = debug_data(&repo, rev, kind).map_err(|e| (e, rev))?;
 
-impl<'a> Command for DebugDataCommand<'a> {
-    #[timed]
-    fn run(&self, ui: &Ui, config: &Config) -> Result<(), CommandError> {
-        let repo = Repo::find(config)?;
-        let data = debug_data(&repo, self.rev, self.kind)
-            .map_err(|e| (e, self.rev))?;
+    let mut stdout = ui.stdout_buffer();
+    stdout.write_all(&data)?;
+    stdout.flush()?;
 
-        let mut stdout = ui.stdout_buffer();
-        stdout.write_all(&data)?;
-        stdout.flush()?;
-
-        Ok(())
-    }
+    Ok(())
 }
