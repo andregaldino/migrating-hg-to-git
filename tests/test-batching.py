@@ -204,7 +204,7 @@ class remotething(thing):
 
     @wireprotov1peer.batchable
     def foo(self, one, two=None):
-        encargs = [
+        encoded_args = [
             (
                 b'one',
                 mangle(one),
@@ -214,9 +214,9 @@ class remotething(thing):
                 mangle(two),
             ),
         ]
-        encresref = wireprotov1peer.future()
-        yield encargs, encresref
-        yield unmangle(encresref.value)
+        encoded_res_future = wireprotov1peer.future()
+        yield encoded_args, encoded_res_future
+        yield unmangle(encoded_res_future.value)
 
     @wireprotov1peer.batchable
     def bar(self, b, a):

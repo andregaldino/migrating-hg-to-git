@@ -43,14 +43,14 @@ def batchable(f):
     @batchable
     def sample(self, one, two=None):
         # Build list of encoded arguments suitable for your wire protocol:
-        encargs = [('one', encode(one),), ('two', encode(two),)]
+        encoded_args = [('one', encode(one),), ('two', encode(two),)]
         # Create future for injection of encoded result:
-        encresref = future()
+        encoded_res_future = future()
         # Return encoded arguments and future:
-        yield encargs, encresref
+        yield encoded_args, encoded_res_future
         # Assuming the future to be filled with the result from the batched
         # request now. Decode it:
-        yield decode(encresref.value)
+        yield decode(encoded_res_future.value)
 
     The decorator returns a function which wraps this coroutine as a plain
     method, but adds the original method as an attribute called "batchable",
@@ -60,12 +60,12 @@ def batchable(f):
 
     def plain(*args, **opts):
         batchable = f(*args, **opts)
-        encargsorres, encresref = next(batchable)
-        if not encresref:
-            return encargsorres  # a local result in this case
+        encoded_args_or_res, encoded_res_future = next(batchable)
+        if not encoded_res_future:
+            return encoded_args_or_res  # a local result in this case
         self = args[0]
         cmd = pycompat.bytesurl(f.__name__)  # ensure cmd is ascii bytestr
-        encresref.set(self._submitone(cmd, encargsorres))
+        encoded_res_future.set(self._submitone(cmd, encoded_args_or_res))
         return next(batchable)
 
     setattr(plain, 'batchable', f)
@@ -257,15 +257,15 @@ class peerexecutor(object):
 
             # Encoded arguments and future holding remote result.
             try:
-                encargsorres, fremote = next(batchable)
+                encoded_args_or_res, fremote = next(batchable)
             except Exception:
                 pycompat.future_set_exception_info(f, sys.exc_info()[1:])
                 return
 
             if not fremote:
-                f.set_result(encargsorres)
+                f.set_result(encoded_args_or_res)
             else:
-                requests.append((command, encargsorres))
+                requests.append((command, encoded_args_or_res))
                 states.append((command, f, batchable, fremote))
 
         if not requests:

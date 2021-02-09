@@ -171,9 +171,9 @@ def makev1commandrequest(
         # Send arguments via HTTP headers.
         if headersize > 0:
             # The headers can typically carry more data than the URL.
-            encargs = urlreq.urlencode(sorted(args.items()))
+            encoded_args = urlreq.urlencode(sorted(args.items()))
             for header, value in encodevalueinheaders(
-                encargs, b'X-HgArg', headersize
+                encoded_args, b'X-HgArg', headersize
             ):
                 headers[header] = value
         # Send arguments via query string (Mercurial <1.9).
