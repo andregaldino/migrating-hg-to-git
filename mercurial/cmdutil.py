@@ -3145,7 +3145,7 @@ def commitstatus(repo, node, branch, bheads=None, tip=None, opts=None):
         # avoid reporting something like "committed new head" when
         # recommitting old changesets, and issue a helpful warning
         # for most instances
-        repo.ui.warn(_("warning: commit already existed in the repository!\n"))
+        repo.ui.warn(_(b"warning: commit already existed in the repository!\n"))
     elif (
         not opts.get(b'amend')
         and bheads
