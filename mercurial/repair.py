@@ -308,6 +308,7 @@ def softstrip(ui, repo, nodelist, backup=True, topic=b'backup'):
     if not tostrip:
         return None
 
+    backupfile = None
     if backup:
         node = tostrip[0]
         backupfile = _createstripbackup(repo, tostrip, node, topic)
