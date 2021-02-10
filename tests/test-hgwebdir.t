@@ -103,7 +103,7 @@ should give a 404 - file does not exist
   404 Not Found
   
   
-  error: bork@8580ff50825a: not found in manifest
+  error: bork@8580ff50825a50c8f716709acdf8de0deddcd6ab: not found in manifest
   [1]
 
 should succeed

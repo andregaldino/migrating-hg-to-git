@@ -73,9 +73,9 @@ class LookupError(RevlogError, KeyError):
         # Python 2.6+ complain about the 'message' property being deprecated
         self.lookupmessage = message
         if isinstance(name, bytes) and len(name) == 20:
-            from .node import short
+            from .node import hex
 
-            name = short(name)
+            name = hex(name)
         # if name is a binary node, it can be None
         RevlogError.__init__(
             self, b'%s@%s: %s' % (index, pycompat.bytestr(name), message)

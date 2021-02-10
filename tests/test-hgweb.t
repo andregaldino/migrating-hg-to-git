@@ -149,7 +149,7 @@ should give a 404 - file does not exist
   404 Not Found
   
   
-  error: bork@2ef0ac749a14: not found in manifest
+  error: bork@2ef0ac749a14e4f57a5a822464a0902c6f7f448f: not found in manifest
   [1]
   $ get-with-headers.py localhost:$HGPORT 'file/tip/bork'
   404 Not Found
@@ -202,7 +202,7 @@ should give a 404 - file does not exist
   An error occurred while processing your request:
   </p>
   <p>
-  bork@2ef0ac749a14: not found in manifest
+  bork@2ef0ac749a14e4f57a5a822464a0902c6f7f448f: not found in manifest
   </p>
   </div>
   </div>
@@ -218,7 +218,7 @@ should give a 404 - file does not exist
   404 Not Found
   
   
-  error: bork@2ef0ac749a14: not found in manifest
+  error: bork@2ef0ac749a14e4f57a5a822464a0902c6f7f448f: not found in manifest
   [1]
 
 try bad style
