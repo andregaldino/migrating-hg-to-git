@@ -308,11 +308,11 @@ def softstrip(ui, repo, nodelist, backup=True, topic=b'backup'):
     if not tostrip:
         return None
 
-    newbmtarget, updatebm = _bookmarkmovements(repo, tostrip)
     if backup:
         node = tostrip[0]
         backupfile = _createstripbackup(repo, tostrip, node, topic)
 
+    newbmtarget, updatebm = _bookmarkmovements(repo, tostrip)
     with repo.transaction(b'strip') as tr:
         phases.retractboundary(repo, tr, phases.archived, tostrip)
         bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
