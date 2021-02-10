@@ -476,6 +476,27 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
                 tr, unfi.manifestlog._rootstore._revlog, force=True
             )
         scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
+    elif (
+        len(upgrade_op.removed_actions) == 1
+        and [
+            x
+            for x in upgrade_op.removed_actions
+            if x.name == b'persistent-nodemap'
+        ]
+        and not upgrade_op.upgrade_actions
+    ):
+        ui.status(
+            _(b'downgrading repository to not use persistent nodemap feature\n')
+        )
+        with srcrepo.transaction(b'upgrade') as tr:
+            unfi = srcrepo.unfiltered()
+            cl = unfi.changelog
+            nodemap.delete_nodemap(tr, srcrepo, cl)
+            # check comment 20 lines above for accessing private attributes
+            nodemap.delete_nodemap(
+                tr, srcrepo, unfi.manifestlog._rootstore._revlog
+            )
+        scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
     else:
         with dstrepo.transaction(b'upgrade') as tr:
             _clonerevlogs(

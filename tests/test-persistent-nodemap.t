@@ -581,7 +581,7 @@ downgrading
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib
   compression-level:  default default default
-  $ hg debugupgraderepo --run --no-backup --quiet
+  $ hg debugupgraderepo --run --no-backup
   upgrade will perform the following actions:
   
   requirements
@@ -593,8 +593,17 @@ downgrading
     - changelog
     - manifest
   
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/test-repo/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  downgrading repository to not use persistent nodemap feature
+  removing temporary repository $TESTTMP/test-repo/.hg/upgrade.* (glob)
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
-  [1]
+  00changelog-*.nd (glob)
+  00manifest-*.nd (glob)
+  undo.backup.00changelog.n
+  undo.backup.00manifest.n
   $ hg debugnodemap --metadata
 
 
@@ -643,6 +652,8 @@ upgrading
   00changelog.n
   00manifest-*.nd (glob)
   00manifest.n
+  undo.backup.00changelog.n
+  undo.backup.00manifest.n
 
   $ hg debugnodemap --metadata
   uid: * (glob)
