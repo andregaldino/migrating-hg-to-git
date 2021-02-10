@@ -224,7 +224,11 @@ def _hookitems(ui, _untrusted=False):
     """return all hooks items ready to be sorted"""
     hooks = {}
     for name, cmd in ui.configitems(b'hooks', untrusted=_untrusted):
-        if name.startswith(b'priority.') or name.startswith(b'tonative.'):
+        if (
+            name.startswith(b'priority.')
+            or name.startswith(b'tonative.')
+            or b':' in name
+        ):
             continue
 
         priority = ui.configint(b'hooks', b'priority.%s' % name, 0)

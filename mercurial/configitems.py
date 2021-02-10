@@ -1310,7 +1310,7 @@ coreconfigitem(
 )
 coreconfigitem(
     b'hooks',
-    b'.*',
+    b'[^:]*',
     default=dynamicdefault,
     generic=True,
 )
