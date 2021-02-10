@@ -158,7 +158,10 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     env[b'HG_HOOKTYPE'] = htype
     env[b'HG_HOOKNAME'] = name
 
-    plain = ui.configbool(b'hooks', b'%s:run-with-plain' % name)
+    if ui.config(b'hooks', b'%s:run-with-plain' % name) == b'auto':
+        plain = ui.plain()
+    else:
+        plain = ui.configbool(b'hooks', b'%s:run-with-plain' % name)
     if plain:
         env[b'HGPLAIN'] = b'1'
     else:

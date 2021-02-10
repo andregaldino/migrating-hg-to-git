@@ -1412,16 +1412,20 @@ HGPLAIN setting in hooks
   > pre-version.testing-yes:run-with-plain=yes
   > pre-version.testing-no=echo '### no ########' plain: \${HGPLAIN:-'<unset>'}
   > pre-version.testing-no:run-with-plain=no
+  > pre-version.testing-auto=echo '### auto ######' plain: \${HGPLAIN:-'<unset>'}
+  > pre-version.testing-auto:run-with-plain=auto
   > EOF
 
   $ (unset HGPLAIN; hg version --quiet)
   ### default ### plain: 1
   ### yes ####### plain: 1
   ### no ######## plain: <unset>
+  ### auto ###### plain: <unset>
   Mercurial Distributed SCM (*) (glob)
 
   $ HGPLAIN=1 hg version --quiet
   ### default ### plain: 1
   ### yes ####### plain: 1
   ### no ######## plain: <unset>
+  ### auto ###### plain: 1
   Mercurial Distributed SCM (*) (glob)
