@@ -691,4 +691,3 @@ the working directory (issue6483)
   $ hg add a.py b.rs
   $ hg st -aI "*.py"
   A a.py
-  A b.rs (known-bad-output rust !)
