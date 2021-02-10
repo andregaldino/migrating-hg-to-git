@@ -1315,6 +1315,12 @@ coreconfigitem(
     generic=True,
 )
 coreconfigitem(
+    b'hooks',
+    b'.*:run-with-plain',
+    default=True,
+    generic=True,
+)
+coreconfigitem(
     b'hgweb-paths',
     b'.*',
     default=list,
