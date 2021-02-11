@@ -1,5 +1,5 @@
 use crate::config::{Config, ConfigError, ConfigParseError};
-use crate::errors::{HgError, IoResultExt};
+use crate::errors::{HgError, IoErrorContext, IoResultExt};
 use crate::requirements;
 use crate::utils::current_dir;
 use crate::utils::files::get_path_from_bytes;
@@ -38,8 +38,8 @@ impl From<ConfigError> for RepoError {
 
 /// Filesystem access abstraction for the contents of a given "base" diretory
 #[derive(Clone, Copy)]
-pub(crate) struct Vfs<'a> {
-    base: &'a Path,
+pub struct Vfs<'a> {
+    pub(crate) base: &'a Path,
 }
 
 impl Repo {
@@ -196,12 +196,12 @@ impl Repo {
 
     /// For accessing repository files (in `.hg`), except for the store
     /// (`.hg/store`).
-    pub(crate) fn hg_vfs(&self) -> Vfs<'_> {
+    pub fn hg_vfs(&self) -> Vfs<'_> {
         Vfs { base: &self.dot_hg }
     }
 
     /// For accessing repository store files (in `.hg/store`)
-    pub(crate) fn store_vfs(&self) -> Vfs<'_> {
+    pub fn store_vfs(&self) -> Vfs<'_> {
         Vfs { base: &self.store }
     }
 
@@ -209,7 +209,7 @@ impl Repo {
 
     // The undescore prefix silences the "never used" warning. Remove before
     // using.
-    pub(crate) fn _working_directory_vfs(&self) -> Vfs<'_> {
+    pub fn _working_directory_vfs(&self) -> Vfs<'_> {
         Vfs {
             base: &self.working_directory,
         }
@@ -217,26 +217,38 @@ impl Repo {
 }
 
 impl Vfs<'_> {
-    pub(crate) fn join(&self, relative_path: impl AsRef<Path>) -> PathBuf {
+    pub fn join(&self, relative_path: impl AsRef<Path>) -> PathBuf {
         self.base.join(relative_path)
     }
 
-    pub(crate) fn read(
+    pub fn read(
         &self,
         relative_path: impl AsRef<Path>,
     ) -> Result<Vec<u8>, HgError> {
         let path = self.join(relative_path);
-        std::fs::read(&path).for_file(&path)
+        std::fs::read(&path).when_reading_file(&path)
     }
 
-    pub(crate) fn mmap_open(
+    pub fn mmap_open(
         &self,
         relative_path: impl AsRef<Path>,
     ) -> Result<Mmap, HgError> {
         let path = self.base.join(relative_path);
-        let file = std::fs::File::open(&path).for_file(&path)?;
+        let file = std::fs::File::open(&path).when_reading_file(&path)?;
         // TODO: what are the safety requirements here?
-        let mmap = unsafe { MmapOptions::new().map(&file) }.for_file(&path)?;
+        let mmap = unsafe { MmapOptions::new().map(&file) }
+            .when_reading_file(&path)?;
         Ok(mmap)
+    }
+
+    pub fn rename(
+        &self,
+        relative_from: impl AsRef<Path>,
+        relative_to: impl AsRef<Path>,
+    ) -> Result<(), HgError> {
+        let from = self.join(relative_from);
+        let to = self.join(relative_to);
+        std::fs::rename(&from, &to)
+            .with_context(|| IoErrorContext::RenamingFile { from, to })
     }
 }

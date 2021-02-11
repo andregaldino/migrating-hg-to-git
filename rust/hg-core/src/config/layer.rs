@@ -150,7 +150,8 @@ impl ConfigLayer {
                 // `Path::join` with an absolute argument correctly ignores the
                 // base path
                 let filename = dir.join(&get_path_from_bytes(&filename_bytes));
-                let data = std::fs::read(&filename).for_file(&filename)?;
+                let data =
+                    std::fs::read(&filename).when_reading_file(&filename)?;
                 layers.push(current_layer);
                 layers.extend(Self::parse(&filename, &data)?);
                 current_layer = Self::new(ConfigOrigin::File(src.to_owned()));

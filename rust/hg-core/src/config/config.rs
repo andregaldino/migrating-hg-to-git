@@ -137,11 +137,11 @@ impl Config {
 
     fn add_trusted_dir(&mut self, path: &Path) -> Result<(), ConfigError> {
         if let Some(entries) = std::fs::read_dir(path)
-            .for_file(path)
+            .when_reading_file(path)
             .io_not_found_as_none()?
         {
             for entry in entries {
-                let file_path = entry.for_file(path)?.path();
+                let file_path = entry.when_reading_file(path)?.path();
                 if file_path.extension() == Some(std::ffi::OsStr::new("rc")) {
                     self.add_trusted_file(&file_path)?
                 }
@@ -151,8 +151,9 @@ impl Config {
     }
 
     fn add_trusted_file(&mut self, path: &Path) -> Result<(), ConfigError> {
-        if let Some(data) =
-            std::fs::read(path).for_file(path).io_not_found_as_none()?
+        if let Some(data) = std::fs::read(path)
+            .when_reading_file(path)
+            .io_not_found_as_none()?
         {
             self.layers.extend(ConfigLayer::parse(path, &data)?)
         }

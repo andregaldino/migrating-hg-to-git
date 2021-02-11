@@ -41,11 +41,15 @@ pub enum HgError {
 }
 
 /// Details about where an I/O error happened
-#[derive(Debug, derive_more::From)]
+#[derive(Debug)]
 pub enum IoErrorContext {
-    /// A filesystem operation for the given file
-    #[from]
-    File(std::path::PathBuf),
+    ReadingFile(std::path::PathBuf),
+    WritingFile(std::path::PathBuf),
+    RemovingFile(std::path::PathBuf),
+    RenamingFile {
+        from: std::path::PathBuf,
+        to: std::path::PathBuf,
+    },
     /// `std::env::current_dir`
     CurrentDir,
     /// `std::env::current_exe`
@@ -109,28 +113,55 @@ impl fmt::Display for HgError {
 impl fmt::Display for IoErrorContext {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            IoErrorContext::File(path) => path.display().fmt(f),
-            IoErrorContext::CurrentDir => f.write_str("current directory"),
-            IoErrorContext::CurrentExe => f.write_str("current executable"),
+            IoErrorContext::ReadingFile(path) => {
+                write!(f, "when reading {}", path.display())
+            }
+            IoErrorContext::WritingFile(path) => {
+                write!(f, "when writing {}", path.display())
+            }
+            IoErrorContext::RemovingFile(path) => {
+                write!(f, "when removing {}", path.display())
+            }
+            IoErrorContext::RenamingFile { from, to } => write!(
+                f,
+                "when renaming {} to {}",
+                from.display(),
+                to.display()
+            ),
+            IoErrorContext::CurrentDir => write!(f, "current directory"),
+            IoErrorContext::CurrentExe => write!(f, "current executable"),
         }
     }
 }
 
 pub trait IoResultExt<T> {
-    /// Annotate a possible I/O error as related to a file at the given path.
+    /// Annotate a possible I/O error as related to a reading a file at the
+    /// given path.
     ///
-    /// This allows printing something like “File not found: example.txt”
-    /// instead of just “File not found”.
+    /// This allows printing something like “File not found when reading
+    /// example.txt” instead of just “File not found”.
     ///
     /// Converts a `Result` with `std::io::Error` into one with `HgError`.
-    fn for_file(self, path: &std::path::Path) -> Result<T, HgError>;
+    fn when_reading_file(self, path: &std::path::Path) -> Result<T, HgError>;
+
+    fn with_context(
+        self,
+        context: impl FnOnce() -> IoErrorContext,
+    ) -> Result<T, HgError>;
 }
 
 impl<T> IoResultExt<T> for std::io::Result<T> {
-    fn for_file(self, path: &std::path::Path) -> Result<T, HgError> {
+    fn when_reading_file(self, path: &std::path::Path) -> Result<T, HgError> {
+        self.with_context(|| IoErrorContext::ReadingFile(path.to_owned()))
+    }
+
+    fn with_context(
+        self,
+        context: impl FnOnce() -> IoErrorContext,
+    ) -> Result<T, HgError> {
         self.map_err(|error| HgError::IoError {
             error,
-            context: IoErrorContext::File(path.to_owned()),
+            context: context(),
         })
     }
 }
