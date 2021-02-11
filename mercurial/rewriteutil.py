@@ -54,7 +54,10 @@ def precheck(repo, revs, action=b'rewrite'):
 
     newunstable = disallowednewunstable(repo, revs)
     if newunstable:
-        raise error.InputError(_(b"cannot %s changeset with children") % action)
+        hint = _(b"see 'hg help evolution.instability'")
+        raise error.InputError(
+            _(b"cannot %s changeset with children") % action, hint=hint
+        )
 
 
 def disallowednewunstable(repo, revs):

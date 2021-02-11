@@ -453,7 +453,7 @@ Source on have two descendant heads but ask for one
   $ cd ah1
   $ hg rebase -r '2::8' -d 1
   abort: cannot rebase changeset with children
-  (use --keep to keep original changesets)
+  (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '2::8' -d 1 -k
   rebasing 2:c9e50f6cdc55 "C"
@@ -499,7 +499,7 @@ Base on have one descendant heads we ask for but common ancestor have two
   $ cd ah2
   $ hg rebase -r '3::8' -d 1
   abort: cannot rebase changeset with children
-  (use --keep to keep original changesets)
+  (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '3::8' -d 1 --keep
   rebasing 3:ffd453c31098 "D"
@@ -542,7 +542,7 @@ rebase subset
   $ cd ah3
   $ hg rebase -r '3::7' -d 1
   abort: cannot rebase changeset with children
-  (use --keep to keep original changesets)
+  (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '3::7' -d 1 --keep
   rebasing 3:ffd453c31098 "D"
@@ -582,7 +582,7 @@ rebase subset with multiple head
   $ cd ah4
   $ hg rebase -r '3::(7+5)' -d 1
   abort: cannot rebase changeset with children
-  (use --keep to keep original changesets)
+  (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '3::(7+5)' -d 1 --keep
   rebasing 3:ffd453c31098 "D"

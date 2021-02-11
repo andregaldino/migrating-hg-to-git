@@ -58,6 +58,7 @@ Change in middle of the stack (linear commits)
 
   $ hg branch -r 1::3 foo
   abort: cannot change branch of changeset with children
+  (see 'hg help evolution.instability')
   [10]
 
 Change with dirty working directory
@@ -129,6 +130,7 @@ Changing on a branch head which is not topological head
 
   $ hg branch -r 2 stable
   abort: cannot change branch of changeset with children
+  (see 'hg help evolution.instability')
   [10]
 
 Enabling the allowunstable config and trying to change branch on a branch head

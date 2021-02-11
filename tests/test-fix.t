@@ -1173,6 +1173,7 @@ an orphan. We must respect experimental.evolution.allowunstable.
   $ hg commit -m "second"
   $ hg --config experimental.evolution.allowunstable=False fix -r '.^'
   abort: cannot fix changeset with children
+  (see 'hg help evolution.instability')
   [10]
   $ hg fix -r '.^'
   1 new orphan changesets

@@ -197,6 +197,7 @@ Amend in the middle of a stack
   $ echo 2 >> B
   $ hg amend
   abort: cannot amend changeset with children
+  (see 'hg help evolution.instability')
   [10]
 
 #if obsstore-on
