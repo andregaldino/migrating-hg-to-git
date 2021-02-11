@@ -21,6 +21,7 @@ from . import (
     obsutil,
     revset,
     scmutil,
+    util,
 )
 
 
@@ -37,6 +38,10 @@ def precheck(repo, revs, action=b'rewrite'):
         msg = _(b"cannot %s the null revision") % action
         hint = _(b"no changeset checked out")
         raise error.InputError(msg, hint=hint)
+
+    if any(util.safehasattr(r, 'rev') for r in revs):
+        repo.ui.develwarn(b"rewriteutil.precheck called with ctx not revs")
+        revs = (r.rev() for r in revs)
 
     if len(repo[None].parents()) > 1:
         raise error.StateError(_(b"cannot %s while merging") % action)
