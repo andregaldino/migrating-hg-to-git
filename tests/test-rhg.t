@@ -12,12 +12,6 @@ Define an rhg function that will only run if rhg exists
 
 Unimplemented command
   $ rhg unimplemented-command
-  error: Found argument 'unimplemented-command' which wasn't expected, or isn't valid in this context
-  
-  USAGE:
-      rhg [OPTIONS] <SUBCOMMAND>
-  
-  For more information try --help
   [252]
 
 Finding root

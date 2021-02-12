@@ -33,6 +33,14 @@ impl CommandError {
     }
 }
 
+/// For now we don’t differenciate between invalid CLI args and valid for `hg`
+/// but not supported yet by `rhg`.
+impl From<clap::Error> for CommandError {
+    fn from(_: clap::Error) -> Self {
+        CommandError::Unimplemented
+    }
+}
+
 impl From<HgError> for CommandError {
     fn from(error: HgError) -> Self {
         match error {

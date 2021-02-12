@@ -33,7 +33,7 @@ fn add_global_args<'a, 'b>(app: App<'a, 'b>) -> App<'a, 'b> {
     )
 }
 
-fn main() {
+fn main_with_result(ui: &ui::Ui) -> Result<(), CommandError> {
     env_logger::init();
     let app = App::new("rhg")
         .setting(AppSettings::AllowInvalidUtf8)
@@ -43,12 +43,7 @@ fn main() {
     let app = add_global_args(app);
     let app = add_subcommand_args(app);
 
-    let ui = ui::Ui::new();
-
-    let matches = app.clone().get_matches_safe().unwrap_or_else(|err| {
-        let _ = ui.writeln_stderr_str(&err.message);
-        std::process::exit(exitcode::UNIMPLEMENTED)
-    });
+    let matches = app.clone().get_matches_safe()?;
 
     let (subcommand_name, subcommand_matches) = matches.subcommand();
     let run = subcommand_run_fn(subcommand_name)
@@ -69,16 +64,18 @@ fn main() {
     };
 
     let repo_path = value_of_global_arg("repository").map(Path::new);
-    let result = (|| -> Result<(), CommandError> {
-        let config_args = values_of_global_arg("config")
-            // `get_bytes_from_path` works for OsStr the same as for Path
-            .map(hg::utils::files::get_bytes_from_path);
-        let config = hg::config::Config::load(config_args)?;
-        run(&ui, &config, repo_path, args)
-    })();
+    let config_args = values_of_global_arg("config")
+        // `get_bytes_from_path` works for OsStr the same as for Path
+        .map(hg::utils::files::get_bytes_from_path);
+    let config = hg::config::Config::load(config_args)?;
+    run(&ui, &config, repo_path, args)
+}
 
-    let exit_code = match result {
-        Ok(_) => exitcode::OK,
+fn main() {
+    let ui = ui::Ui::new();
+
+    let exit_code = match main_with_result(&ui) {
+        Ok(()) => exitcode::OK,
 
         // Exit with a specific code and no error message to let a potential
         // wrapper script fallback to Python-based Mercurial.
