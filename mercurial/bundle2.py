@@ -2001,7 +2001,7 @@ def handlechangegroup(op, inpart):
         op,
         cg,
         tr,
-        b'bundle2',
+        op.source,
         b'bundle2',
         expectedtotal=nbchangesets,
         **extrakwargs
@@ -2083,7 +2083,7 @@ def handleremotechangegroup(op, inpart):
         raise error.Abort(
             _(b'%s: not a bundle version 1.0') % util.hidepassword(raw_url)
         )
-    ret = _processchangegroup(op, cg, tr, b'bundle2', b'bundle2')
+    ret = _processchangegroup(op, cg, tr, op.source, b'bundle2')
     if op.reply is not None:
         # This is definitely not the final form of this
         # return. But one need to start somewhere.
