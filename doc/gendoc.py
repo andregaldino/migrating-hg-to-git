@@ -330,6 +330,11 @@ if __name__ == "__main__":
         doc = encoding.strtolocal(sys.argv[1])
 
     ui = uimod.ui.load()
+    # Trigger extensions to load. This is disabled by default because it uses
+    # the current user's configuration, which is often not what is wanted.
+    if encoding.environ.get(b'GENDOC_LOAD_CONFIGURED_EXTENSIONS', b'0') != b'0':
+        extensions.loadall(ui)
+
     if doc == b'hg.1.gendoc':
         showdoc(ui)
     else:
