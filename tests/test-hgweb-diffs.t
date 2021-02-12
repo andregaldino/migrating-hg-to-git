@@ -1138,6 +1138,21 @@ test import rev as raw-rev
   $ cd test1
   $ hg import -q --bypass --exact http://localhost:$HGPORT/rev/1
 
+repeat test above, with largefiles enabled
+
+  $ cd ..
+  $ rm -r test1
+  $ hg clone -r0 test test1
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 2 changes to 2 files
+  new changesets 0cd96de13884
+  updating to branch default
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd test1
+  $ hg import --config extensions.largefiles= -q --bypass --exact http://localhost:$HGPORT/rev/1
+
 raw revision with diff block numbers
 
   $ killdaemons.py

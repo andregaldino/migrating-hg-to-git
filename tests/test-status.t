@@ -680,3 +680,14 @@ Make sure .hg doesn't show up even as a symlink
   $ cd symlink-repo0
   $ ln -s ../repo0/.hg
   $ hg status
+
+Check using include flag with pattern when status does not need to traverse
+the working directory (issue6483)
+
+  $ cd ..
+  $ hg init issue6483
+  $ cd issue6483
+  $ touch a.py b.rs
+  $ hg add a.py b.rs
+  $ hg st -aI "*.py"
+  A a.py

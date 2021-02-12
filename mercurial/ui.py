@@ -60,8 +60,6 @@ _keepalnum = b''.join(
 # The config knobs that will be altered (if unset) by ui.tweakdefaults.
 tweakrc = b"""
 [ui]
-# Gives detailed exit codes for input/user errors, config errors, etc.
-detailed-exit-code = True
 # The rollback command is dangerous. As a rule, don't use it.
 rollback = False
 # Make `hg status` report copy information

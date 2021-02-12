@@ -1390,3 +1390,42 @@ Non-blocking hook
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     a
   
+
+unsetup the test
+----------------
+
+# touch the file to unconfuse chg with a diffrent mtime
+  $ sleep 1
+  $ touch $TESTTMP/untrusted.py
+  $ cat << EOF >> $HGRCPATH
+  > [extensions]
+  > untrusted=!
+  > EOF
+
+HGPLAIN setting in hooks
+========================
+
+  $ cat << EOF >> .hg/hgrc
+  > [hooks]
+  > pre-version.testing-default=echo '### default ###' plain: \${HGPLAIN:-'<unset>'}
+  > pre-version.testing-yes=echo '### yes #######' plain: \${HGPLAIN:-'<unset>'}
+  > pre-version.testing-yes:run-with-plain=yes
+  > pre-version.testing-no=echo '### no ########' plain: \${HGPLAIN:-'<unset>'}
+  > pre-version.testing-no:run-with-plain=no
+  > pre-version.testing-auto=echo '### auto ######' plain: \${HGPLAIN:-'<unset>'}
+  > pre-version.testing-auto:run-with-plain=auto
+  > EOF
+
+  $ (unset HGPLAIN; hg version --quiet)
+  ### default ### plain: 1
+  ### yes ####### plain: 1
+  ### no ######## plain: <unset>
+  ### auto ###### plain: <unset>
+  Mercurial Distributed SCM (*) (glob)
+
+  $ HGPLAIN=1 hg version --quiet
+  ### default ### plain: 1
+  ### yes ####### plain: 1
+  ### no ######## plain: <unset>
+  ### auto ###### plain: 1
+  Mercurial Distributed SCM (*) (glob)

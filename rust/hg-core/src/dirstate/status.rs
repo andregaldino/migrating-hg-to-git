@@ -776,58 +776,66 @@ where
     #[cfg(not(feature = "dirstate-tree"))]
     #[timed]
     pub fn extend_from_dmap(&self, results: &mut Vec<DispatchedPath<'a>>) {
-        results.par_extend(self.dmap.par_iter().map(
-            move |(filename, entry)| {
-                let filename: &HgPath = filename;
-                let filename_as_path = match hg_path_to_path_buf(filename) {
-                    Ok(f) => f,
-                    Err(_) => {
-                        return (
-                            Cow::Borrowed(filename),
-                            INVALID_PATH_DISPATCH,
-                        )
-                    }
-                };
-                let meta =
-                    self.root_dir.join(filename_as_path).symlink_metadata();
-                match meta {
-                    Ok(m)
-                        if !(m.file_type().is_file()
-                            || m.file_type().is_symlink()) =>
+        results.par_extend(
+            self.dmap
+                .par_iter()
+                .filter(|(path, _)| self.matcher.matches(path))
+                .map(move |(filename, entry)| {
+                    let filename: &HgPath = filename;
+                    let filename_as_path = match hg_path_to_path_buf(filename)
                     {
-                        (
+                        Ok(f) => f,
+                        Err(_) => {
+                            return (
+                                Cow::Borrowed(filename),
+                                INVALID_PATH_DISPATCH,
+                            )
+                        }
+                    };
+                    let meta = self
+                        .root_dir
+                        .join(filename_as_path)
+                        .symlink_metadata();
+                    match meta {
+                        Ok(m)
+                            if !(m.file_type().is_file()
+                                || m.file_type().is_symlink()) =>
+                        {
+                            (
+                                Cow::Borrowed(filename),
+                                dispatch_missing(entry.state),
+                            )
+                        }
+                        Ok(m) => (
                             Cow::Borrowed(filename),
-                            dispatch_missing(entry.state),
-                        )
-                    }
-                    Ok(m) => (
-                        Cow::Borrowed(filename),
-                        dispatch_found(
-                            filename,
-                            *entry,
-                            HgMetadata::from_metadata(m),
-                            &self.dmap.copy_map,
-                            self.options,
+                            dispatch_found(
+                                filename,
+                                *entry,
+                                HgMetadata::from_metadata(m),
+                                &self.dmap.copy_map,
+                                self.options,
+                            ),
                         ),
-                    ),
-                    Err(e)
-                        if e.kind() == ErrorKind::NotFound
-                            || e.raw_os_error() == Some(20) =>
-                    {
-                        // Rust does not yet have an `ErrorKind` for
-                        // `NotADirectory` (errno 20)
-                        // It happens if the dirstate contains `foo/bar`
-                        // and foo is not a
-                        // directory
-                        (
-                            Cow::Borrowed(filename),
-                            dispatch_missing(entry.state),
-                        )
+                        Err(e)
+                            if e.kind() == ErrorKind::NotFound
+                                || e.raw_os_error() == Some(20) =>
+                        {
+                            // Rust does not yet have an `ErrorKind` for
+                            // `NotADirectory` (errno 20)
+                            // It happens if the dirstate contains `foo/bar`
+                            // and foo is not a
+                            // directory
+                            (
+                                Cow::Borrowed(filename),
+                                dispatch_missing(entry.state),
+                            )
+                        }
+                        Err(e) => {
+                            (Cow::Borrowed(filename), dispatch_os_error(&e))
+                        }
                     }
-                    Err(e) => (Cow::Borrowed(filename), dispatch_os_error(&e)),
-                }
-            },
-        ));
+                }),
+        );
     }
 
     /// Checks all files that are in the dirstate but were not found during the
