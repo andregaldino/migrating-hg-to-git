@@ -317,7 +317,12 @@ def commandprinter(ui, cmdtable, sectionfunc, subsectionfunc):
                 ui.write(b"\n")
             # aliases
             if d[b'aliases']:
-                ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
+                # Note the empty comment, this is required to separate this
+                # (which should be a blockquote) from any preceding things (such
+                # as a definition list).
+                ui.write(
+                    _(b"..\n\n    aliases: %s\n\n") % b" ".join(d[b'aliases'])
+                )
 
 
 def allextensionnames():
