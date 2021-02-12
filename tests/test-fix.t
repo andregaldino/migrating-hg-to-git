@@ -1169,8 +1169,9 @@ obsolete revision.
   $ hg commit -Aqm "foo"
   $ hg ci --amend -m rewritten
   $ hg --hidden fix -r 0
-  abort: fixing obsolete revision could cause divergence
-  [255]
+  abort: cannot fix b87e30dbf19b, as that creates content-divergence with 2e007a78dfb8
+  (add --verbose for details or see 'hg help evolution.instability')
+  [10]
 
   $ hg --hidden fix -r 0 --config experimental.evolution.allowdivergence=true
   2 new content-divergent changesets

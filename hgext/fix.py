@@ -149,7 +149,6 @@ from mercurial import (
     mdiff,
     merge,
     mergestate as mergestatemod,
-    obsolete,
     pycompat,
     registrar,
     rewriteutil,
@@ -463,8 +462,6 @@ def getrevstofix(ui, repo, opts):
         revs = set(logcmdutil.revrange(repo, opts[b'rev']))
         if opts.get(b'working_dir'):
             revs.add(wdirrev)
-        for rev in revs:
-            checkfixablectx(ui, repo, repo[rev])
     # Allow fixing only wdir() even if there's an unfinished operation
     if not (len(revs) == 1 and wdirrev in revs):
         cmdutil.checkunfinished(repo)
@@ -479,16 +476,6 @@ def getrevstofix(ui, repo, opts):
             b'no changesets specified', hint=b'use --source or --working-dir'
         )
     return revs
-
-
-def checkfixablectx(ui, repo, ctx):
-    """Aborts if the revision shouldn't be replaced with a fixed one."""
-    if ctx.obsolete():
-        # It would be better to actually check if the revision has a successor.
-        if not obsolete.isenabled(repo, obsolete.allowdivergenceopt):
-            raise error.Abort(
-                b'fixing obsolete revision could cause divergence'
-            )
 
 
 def pathstofix(ui, repo, pats, opts, match, basectxs, fixctx):
