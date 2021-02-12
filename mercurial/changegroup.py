@@ -685,7 +685,7 @@ def _resolvenarrowrevisioninfo(
                 # We failed to resolve a parent for this node, so
                 # we crash the changegroup construction.
                 raise error.Abort(
-                    b'unable to resolve parent while packing %r %r'
+                    b"unable to resolve parent while packing '%s' %r"
                     b' for changeset %r' % (store.indexfile, rev, clrev)
                 )
 
