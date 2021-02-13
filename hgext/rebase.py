@@ -348,20 +348,16 @@ class rebaseruntime(object):
 
         return data
 
-    def _handleskippingobsolete(self, obsoleterevs, destmap):
-        """Compute structures necessary for skipping obsolete revisions
-
-        obsoleterevs:   iterable of all obsolete revisions in rebaseset
-        destmap:        {srcrev: destrev} destination revisions
-        """
+    def _handleskippingobsolete(self):
+        """Compute structures necessary for skipping obsolete revisions"""
         self.obsoletenotrebased = {}
         if not self.ui.configbool(b'experimental', b'rebaseskipobsolete'):
             return
-        obsoleteset = set(obsoleterevs)
+        obsoleteset = {r for r in self.state if self.repo[r].obsolete()}
         (
             self.obsoletenotrebased,
             self.obsoletewithoutsuccessorindestination,
-        ) = _computeobsoletenotrebased(self.repo, obsoleteset, destmap)
+        ) = _computeobsoletenotrebased(self.repo, obsoleteset, self.destmap)
         skippedset = set(self.obsoletenotrebased)
         skippedset.update(self.obsoletewithoutsuccessorindestination)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
@@ -472,8 +468,7 @@ class rebaseruntime(object):
                         )
 
         # Calculate self.obsoletenotrebased
-        obsrevs = {r for r in self.state if self.repo[r].obsolete()}
-        self._handleskippingobsolete(obsrevs, self.destmap)
+        self._handleskippingobsolete()
 
         # Keep track of the active bookmarks in order to reset them later
         self.activebookmark = self.activebookmark or repo._activebookmark
