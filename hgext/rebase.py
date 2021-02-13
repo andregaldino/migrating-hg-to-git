@@ -368,6 +368,8 @@ class rebaseruntime(object):
         self.resume = True
         try:
             self.restorestatus()
+            # Calculate self.obsoletenotrebased
+            self._handleskippingobsolete()
             self.collapsemsg = restorecollapsemsg(self.repo, isabort)
         except error.RepoLookupError:
             if isabort:
@@ -434,6 +436,9 @@ class rebaseruntime(object):
 
         self.prepared = True
 
+        # Calculate self.obsoletenotrebased
+        self._handleskippingobsolete()
+
     def _assignworkingcopy(self):
         if self.inmemory:
             from mercurial.context import overlayworkingctx
@@ -466,9 +471,6 @@ class rebaseruntime(object):
                         raise error.InputError(
                             _(b'cannot collapse multiple named branches')
                         )
-
-        # Calculate self.obsoletenotrebased
-        self._handleskippingobsolete()
 
         # Keep track of the active bookmarks in order to reset them later
         self.activebookmark = self.activebookmark or repo._activebookmark
