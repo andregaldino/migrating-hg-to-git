@@ -474,7 +474,7 @@ class rebaseruntime(object):
                         )
 
         # Calculate self.obsoletenotrebased
-        obsrevs = _filterobsoleterevs(self.repo, self.state)
+        obsrevs = {r for r in self.state if self.repo[r].obsolete()}
         self._handleskippingobsolete(obsrevs, self.destmap)
 
         # Keep track of the active bookmarks in order to reset them later
@@ -2182,11 +2182,6 @@ def pullrebase(orig, ui, repo, *args, **opts):
         ret = orig(ui, repo, *args, **opts)
 
     return ret
-
-
-def _filterobsoleterevs(repo, revs):
-    """returns a set of the obsolete revisions in revs"""
-    return {r for r in revs if repo[r].obsolete()}
 
 
 def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
