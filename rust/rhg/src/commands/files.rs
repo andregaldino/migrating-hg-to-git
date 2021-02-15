@@ -29,15 +29,14 @@ pub fn args() -> clap::App<'static, 'static> {
 pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     let rev = invocation.subcommand_args.value_of("rev");
 
-    let repo = Repo::find(invocation.non_repo_config, invocation.repo_path)?;
+    let repo = invocation.repo?;
     if let Some(rev) = rev {
-        let files =
-            list_rev_tracked_files(&repo, rev).map_err(|e| (e, rev))?;
-        display_files(invocation.ui, &repo, files.iter())
+        let files = list_rev_tracked_files(repo, rev).map_err(|e| (e, rev))?;
+        display_files(invocation.ui, repo, files.iter())
     } else {
-        let distate = Dirstate::new(&repo)?;
+        let distate = Dirstate::new(repo)?;
         let files = distate.tracked_files()?;
-        display_files(invocation.ui, &repo, files)
+        display_files(invocation.ui, repo, files)
     }
 }
 

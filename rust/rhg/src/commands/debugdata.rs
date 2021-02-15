@@ -2,7 +2,6 @@ use crate::error::CommandError;
 use clap::Arg;
 use clap::ArgGroup;
 use hg::operations::{debug_data, DebugDataKind};
-use hg::repo::Repo;
 use micro_timer::timed;
 
 pub const HELP_TEXT: &str = "
@@ -55,8 +54,8 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             }
         };
 
-    let repo = Repo::find(invocation.non_repo_config, invocation.repo_path)?;
-    let data = debug_data(&repo, rev, kind).map_err(|e| (e, rev))?;
+    let repo = invocation.repo?;
+    let data = debug_data(repo, rev, kind).map_err(|e| (e, rev))?;
 
     let mut stdout = invocation.ui.stdout_buffer();
     stdout.write_all(&data)?;

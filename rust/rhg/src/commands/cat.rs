@@ -1,7 +1,6 @@
 use crate::error::CommandError;
 use clap::Arg;
 use hg::operations::cat;
-use hg::repo::Repo;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
 use std::convert::TryFrom;
@@ -39,7 +38,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         None => vec![],
     };
 
-    let repo = Repo::find(invocation.non_repo_config, invocation.repo_path)?;
+    let repo = invocation.repo?;
     let cwd = hg::utils::current_dir()?;
 
     let mut files = vec![];

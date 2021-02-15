@@ -6,7 +6,8 @@ use clap::Arg;
 use clap::ArgMatches;
 use format_bytes::format_bytes;
 use hg::config::Config;
-use std::path::Path;
+use hg::repo::{Repo, RepoError};
+use std::path::{Path, PathBuf};
 
 mod error;
 mod exitcode;
@@ -74,17 +75,25 @@ fn main_with_result(ui: &ui::Ui) -> Result<(), CommandError> {
     let non_repo_config = &hg::config::Config::load(config_args)?;
 
     let repo_path = value_of_global_arg("repository").map(Path::new);
+    let repo = match Repo::find(non_repo_config, repo_path) {
+        Ok(repo) => Ok(repo),
+        Err(RepoError::NotFound { at }) if repo_path.is_none() => {
+            // Not finding a repo is not fatal yet, if `-R` was not given
+            Err(NoRepoInCwdError { cwd: at })
+        }
+        Err(error) => return Err(error.into()),
+    };
 
     run(&CliInvocation {
         ui,
         subcommand_args,
         non_repo_config,
-        repo_path,
+        repo: repo.as_ref(),
     })
 }
 
 fn main() {
-    let ui = Ui::new();
+    let ui = ui::Ui::new();
 
     let exit_code = match main_with_result(&ui) {
         Ok(()) => exitcode::OK,
@@ -146,5 +155,22 @@ pub struct CliInvocation<'a> {
     ui: &'a Ui,
     subcommand_args: &'a ArgMatches<'a>,
     non_repo_config: &'a Config,
-    repo_path: Option<&'a Path>,
+    /// References inside `Result` is a bit peculiar but allow
+    /// `invocation.repo?` to work out with `&CliInvocation` since this
+    /// `Result` type is `Copy`.
+    repo: Result<&'a Repo, &'a NoRepoInCwdError>,
+}
+
+struct NoRepoInCwdError {
+    cwd: PathBuf,
+}
+
+impl CliInvocation<'_> {
+    fn config(&self) -> &Config {
+        if let Ok(repo) = self.repo {
+            repo.config()
+        } else {
+            self.non_repo_config
+        }
+    }
 }

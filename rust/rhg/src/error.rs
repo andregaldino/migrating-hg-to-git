@@ -1,5 +1,6 @@
 use crate::ui::utf8_to_local;
 use crate::ui::UiError;
+use crate::NoRepoInCwdError;
 use format_bytes::format_bytes;
 use hg::config::{ConfigError, ConfigParseError};
 use hg::errors::HgError;
@@ -64,12 +65,24 @@ impl From<RepoError> for CommandError {
         match error {
             RepoError::NotFound { at } => CommandError::Abort {
                 message: format_bytes!(
-                    b"no repository found in '{}' (.hg not found)!",
+                    b"repository {} not found",
                     get_bytes_from_path(at)
                 ),
             },
             RepoError::ConfigParseError(error) => error.into(),
             RepoError::Other(error) => error.into(),
+        }
+    }
+}
+
+impl<'a> From<&'a NoRepoInCwdError> for CommandError {
+    fn from(error: &'a NoRepoInCwdError) -> Self {
+        let NoRepoInCwdError { cwd } = error;
+        CommandError::Abort {
+            message: format_bytes!(
+                b"no repository found in '{}' (.hg not found)!",
+                get_bytes_from_path(cwd)
+            ),
         }
     }
 }

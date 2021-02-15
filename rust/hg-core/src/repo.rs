@@ -81,28 +81,6 @@ impl Repo {
         }
     }
 
-    /// Like `Repo::find`, but not finding a repository is not an error if no
-    /// explicit path is given. `Ok(None)` is returned in that case.
-    ///
-    /// If an explicit path *is* given, not finding a repository there is still
-    /// an error.
-    ///
-    /// For sub-commands that don’t need a repository, configuration should
-    /// still be affected by a repository’s `.hg/hgrc` file. This is the
-    /// constructor to use.
-    pub fn find_optional(
-        config: &Config,
-        explicit_path: Option<&Path>,
-    ) -> Result<Option<Self>, RepoError> {
-        match Self::find(config, explicit_path) {
-            Ok(repo) => Ok(Some(repo)),
-            Err(RepoError::NotFound { .. }) if explicit_path.is_none() => {
-                Ok(None)
-            }
-            Err(error) => Err(error),
-        }
-    }
-
     /// To be called after checking that `.hg` is a sub-directory
     fn new_at_path(
         working_directory: PathBuf,

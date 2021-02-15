@@ -1,5 +1,4 @@
 use crate::error::CommandError;
-use hg::repo::Repo;
 
 pub const HELP_TEXT: &str = "
 Print the current repo requirements.
@@ -10,7 +9,7 @@ pub fn args() -> clap::App<'static, 'static> {
 }
 
 pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
-    let repo = Repo::find(invocation.non_repo_config, invocation.repo_path)?;
+    let repo = invocation.repo?;
     let mut output = String::new();
     let mut requirements: Vec<_> = repo.requirements().iter().collect();
     requirements.sort();
