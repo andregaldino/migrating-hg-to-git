@@ -444,12 +444,12 @@ debug command hides the corruption, both with and without tags2-visible.
 
   $ hg debugtagscache | tail -2
   4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
-  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8deadde17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8deadde17fab7422878ee5a2dadbc943d (unknown node)
 
   $ rm -f .hg/cache/tags2-visible
   $ hg debugtagscache | tail -2
   4 0c192d7d5e6b78a714de54a2e9627952a877e25a 0c04f2a8af31de17fab7422878ee5a2dadbc943d
-  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8deadde17fab7422878ee5a2dadbc943d
+  5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8deadde17fab7422878ee5a2dadbc943d (unknown node)
 
   $ hg tags
   abort: data/.hgtags.i@0c04f2a8deadde17fab7422878ee5a2dadbc943d: no match found

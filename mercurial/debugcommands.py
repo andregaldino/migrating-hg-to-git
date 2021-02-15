@@ -3865,11 +3865,14 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
 def debugtagscache(ui, repo):
     """display the contents of .hg/cache/hgtagsfnodes1"""
     cache = tagsmod.hgtagsfnodescache(repo.unfiltered())
+    flog = repo.file(b'.hgtags')
     for r in repo:
         node = repo[r].node()
         tagsnode = cache.getfnode(node, computemissing=False)
         if tagsnode:
             tagsnodedisplay = hex(tagsnode)
+            if not flog.hasnode(tagsnode):
+                tagsnodedisplay += b' (unknown node)'
         elif tagsnode is None:
             tagsnodedisplay = b'missing'
         else:
