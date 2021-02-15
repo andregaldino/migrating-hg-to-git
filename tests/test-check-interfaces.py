@@ -113,6 +113,10 @@ class dummypipe(object):
     def close(self):
         pass
 
+    @property
+    def closed(self):
+        pass
+
 
 def main():
     ui = uimod.ui()

@@ -140,6 +140,10 @@ class doublepipe(object):
     def close(self):
         return self._main.close()
 
+    @property
+    def closed(self):
+        return self._main.closed
+
     def flush(self):
         return self._main.flush()
 
