@@ -434,7 +434,7 @@ class sshv1peer(wireprotov1peer.wirepeer):
         return True
 
     def close(self):
-        pass
+        self._cleanup()
 
     # End of ipeerconnection interface.
 
