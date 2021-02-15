@@ -1,9 +1,11 @@
 extern crate log;
+use crate::ui::Ui;
 use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
 use format_bytes::format_bytes;
+use hg::config::Config;
 use std::path::Path;
 
 mod error;
@@ -48,31 +50,41 @@ fn main_with_result(ui: &ui::Ui) -> Result<(), CommandError> {
     let (subcommand_name, subcommand_matches) = matches.subcommand();
     let run = subcommand_run_fn(subcommand_name)
         .expect("unknown subcommand name from clap despite AppSettings::SubcommandRequired");
-    let args = subcommand_matches
+    let subcommand_args = subcommand_matches
         .expect("no subcommand arguments from clap despite AppSettings::SubcommandRequired");
 
     // Global arguments can be in either based on e.g. `hg -R ./foo log` v.s.
     // `hg log -R ./foo`
-    let value_of_global_arg =
-        |name| args.value_of_os(name).or_else(|| matches.value_of_os(name));
+    let value_of_global_arg = |name| {
+        subcommand_args
+            .value_of_os(name)
+            .or_else(|| matches.value_of_os(name))
+    };
     // For arguments where multiple occurences are allowed, return a
     // possibly-iterator of all values.
     let values_of_global_arg = |name: &str| {
         let a = matches.values_of_os(name).into_iter().flatten();
-        let b = args.values_of_os(name).into_iter().flatten();
+        let b = subcommand_args.values_of_os(name).into_iter().flatten();
         a.chain(b)
     };
 
-    let repo_path = value_of_global_arg("repository").map(Path::new);
     let config_args = values_of_global_arg("config")
         // `get_bytes_from_path` works for OsStr the same as for Path
         .map(hg::utils::files::get_bytes_from_path);
-    let config = hg::config::Config::load(config_args)?;
-    run(&ui, &config, repo_path, args)
+    let non_repo_config = &hg::config::Config::load(config_args)?;
+
+    let repo_path = value_of_global_arg("repository").map(Path::new);
+
+    run(&CliInvocation {
+        ui,
+        subcommand_args,
+        non_repo_config,
+        repo_path,
+    })
 }
 
 fn main() {
-    let ui = ui::Ui::new();
+    let ui = Ui::new();
 
     let exit_code = match main_with_result(&ui) {
         Ok(()) => exitcode::OK,
@@ -109,12 +121,9 @@ macro_rules! subcommands {
             )+
         }
 
-        fn subcommand_run_fn(name: &str) -> Option<fn(
-            &ui::Ui,
-            &hg::config::Config,
-            Option<&Path>,
-            &ArgMatches,
-        ) -> Result<(), CommandError>> {
+        pub type RunFn = fn(&CliInvocation) -> Result<(), CommandError>;
+
+        fn subcommand_run_fn(name: &str) -> Option<RunFn> {
             match name {
                 $(
                     stringify!($command) => Some(commands::$command::run),
@@ -132,4 +141,10 @@ subcommands! {
     files
     root
     config
+}
+pub struct CliInvocation<'a> {
+    ui: &'a Ui,
+    subcommand_args: &'a ArgMatches<'a>,
+    non_repo_config: &'a Config,
+    repo_path: Option<&'a Path>,
 }

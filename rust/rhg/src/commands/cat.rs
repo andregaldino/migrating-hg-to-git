@@ -1,14 +1,10 @@
 use crate::error::CommandError;
-use crate::ui::Ui;
 use clap::Arg;
-use clap::ArgMatches;
-use hg::config::Config;
 use hg::operations::cat;
 use hg::repo::Repo;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
 use std::convert::TryFrom;
-use std::path::Path;
 
 pub const HELP_TEXT: &str = "
 Output the current or given revision of files
@@ -36,19 +32,14 @@ pub fn args() -> clap::App<'static, 'static> {
 }
 
 #[timed]
-pub fn run(
-    ui: &Ui,
-    config: &Config,
-    repo_path: Option<&Path>,
-    args: &ArgMatches,
-) -> Result<(), CommandError> {
-    let rev = args.value_of("rev");
-    let file_args = match args.values_of("files") {
+pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let rev = invocation.subcommand_args.value_of("rev");
+    let file_args = match invocation.subcommand_args.values_of("files") {
         Some(files) => files.collect(),
         None => vec![],
     };
 
-    let repo = Repo::find(config, repo_path)?;
+    let repo = Repo::find(invocation.non_repo_config, invocation.repo_path)?;
     let cwd = hg::utils::current_dir()?;
 
     let mut files = vec![];
@@ -67,7 +58,7 @@ pub fn run(
     match rev {
         Some(rev) => {
             let data = cat(&repo, rev, &files).map_err(|e| (e, rev))?;
-            ui.write_stdout(&data)?;
+            invocation.ui.write_stdout(&data)?;
             Ok(())
         }
         None => Err(CommandError::Unimplemented.into()),

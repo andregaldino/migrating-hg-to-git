@@ -1,14 +1,11 @@
 use crate::error::CommandError;
 use crate::ui::Ui;
 use clap::Arg;
-use clap::ArgMatches;
-use hg::config::Config;
 use hg::operations::list_rev_tracked_files;
 use hg::operations::Dirstate;
 use hg::repo::Repo;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
 use hg::utils::hg_path::{HgPath, HgPathBuf};
-use std::path::Path;
 
 pub const HELP_TEXT: &str = "
 List tracked files.
@@ -29,23 +26,18 @@ pub fn args() -> clap::App<'static, 'static> {
         .about(HELP_TEXT)
 }
 
-pub fn run(
-    ui: &Ui,
-    config: &Config,
-    repo_path: Option<&Path>,
-    args: &ArgMatches,
-) -> Result<(), CommandError> {
-    let rev = args.value_of("rev");
+pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let rev = invocation.subcommand_args.value_of("rev");
 
-    let repo = Repo::find(config, repo_path)?;
+    let repo = Repo::find(invocation.non_repo_config, invocation.repo_path)?;
     if let Some(rev) = rev {
         let files =
             list_rev_tracked_files(&repo, rev).map_err(|e| (e, rev))?;
-        display_files(ui, &repo, files.iter())
+        display_files(invocation.ui, &repo, files.iter())
     } else {
         let distate = Dirstate::new(&repo)?;
         let files = distate.tracked_files()?;
-        display_files(ui, &repo, files)
+        display_files(invocation.ui, &repo, files)
     }
 }
 

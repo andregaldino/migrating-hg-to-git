@@ -1,13 +1,9 @@
 use crate::error::CommandError;
-use crate::ui::Ui;
 use clap::Arg;
 use clap::ArgGroup;
-use clap::ArgMatches;
-use hg::config::Config;
 use hg::operations::{debug_data, DebugDataKind};
 use hg::repo::Repo;
 use micro_timer::timed;
-use std::path::Path;
 
 pub const HELP_TEXT: &str = "
 Dump the contents of a data file revision
@@ -42,12 +38,8 @@ pub fn args() -> clap::App<'static, 'static> {
 }
 
 #[timed]
-pub fn run(
-    ui: &Ui,
-    config: &Config,
-    repo_path: Option<&Path>,
-    args: &ArgMatches,
-) -> Result<(), CommandError> {
+pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let args = invocation.subcommand_args;
     let rev = args
         .value_of("rev")
         .expect("rev should be a required argument");
@@ -63,10 +55,10 @@ pub fn run(
             }
         };
 
-    let repo = Repo::find(config, repo_path)?;
+    let repo = Repo::find(invocation.non_repo_config, invocation.repo_path)?;
     let data = debug_data(&repo, rev, kind).map_err(|e| (e, rev))?;
 
-    let mut stdout = ui.stdout_buffer();
+    let mut stdout = invocation.ui.stdout_buffer();
     stdout.write_all(&data)?;
     stdout.flush()?;
 
