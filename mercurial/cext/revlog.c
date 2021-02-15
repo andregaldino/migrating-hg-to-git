@@ -458,6 +458,56 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	Py_RETURN_NONE;
 }
 
+/* Replace an existing index entry's sidedata offset and length with new ones.
+   This cannot be used outside of the context of sidedata rewriting,
+   inside the transaction that creates the given revision. */
+static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
+{
+	uint64_t sidedata_offset;
+	int rev;
+	Py_ssize_t sidedata_comp_len;
+	char *data;
+  #if LONG_MAX == 0x7fffffffL
+	  const char *const sidedata_format = PY23("nKi", "nKi");
+	#else
+	  const char *const sidedata_format = PY23("nki", "nki");
+	#endif
+
+	if (self->hdrsize == v1_hdrsize || self->inlined) {
+		/*
+		 There is a bug in the transaction handling when going from an
+	   inline revlog to a separate index and data file. Turn it off until
+	   it's fixed, since v2 revlogs sometimes get rewritten on exchange.
+	   See issue6485.
+	  */
+		raise_revlog_error();
+		return NULL;
+	}
+
+	if (!PyArg_ParseTuple(args, sidedata_format, &rev, &sidedata_offset,
+	                      &sidedata_comp_len))
+		return NULL;
+
+	if (rev < 0 || rev >= index_length(self)) {
+		PyErr_SetString(PyExc_IndexError, "revision outside index");
+		return NULL;
+	}
+	if (rev < self->length) {
+		PyErr_SetString(
+		    PyExc_IndexError,
+		    "cannot rewrite entries outside of this transaction");
+		return NULL;
+	}
+
+	/* Find the newly added node, offset from the "already on-disk" length */
+	data = self->added + self->hdrsize * (rev - self->length);
+	putbe64(sidedata_offset, data + 64);
+	putbe32(sidedata_comp_len, data + 72);
+
+
+	Py_RETURN_NONE;
+}
+
 static PyObject *index_stats(indexObject *self)
 {
 	PyObject *obj = PyDict_New();
@@ -2789,6 +2839,8 @@ static PyMethodDef index_methods[] = {
      "compute phases"},
     {"reachableroots2", (PyCFunction)reachableroots2, METH_VARARGS,
      "reachableroots"},
+    {"replace_sidedata_info", (PyCFunction)index_replace_sidedata_info,
+     METH_VARARGS, "replace an existing index entry with a new value"},
     {"headrevs", (PyCFunction)index_headrevs, METH_VARARGS,
      "get head revisions"}, /* Can do filtering since 3.2 */
     {"headrevsfiltered", (PyCFunction)index_headrevs, METH_VARARGS,

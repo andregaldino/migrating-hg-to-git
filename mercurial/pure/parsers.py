@@ -259,6 +259,27 @@ class Index2Mixin(object):
     assert index_size == 96, index_size
     null_item = (0, 0, 0, -1, -1, -1, -1, nullid, 0, 0)
 
+    def replace_sidedata_info(self, i, sidedata_offset, sidedata_length):
+        """
+        Replace an existing index entry's sidedata offset and length with new
+        ones.
+        This cannot be used outside of the context of sidedata rewriting,
+        inside the transaction that creates the revision `i`.
+        """
+        if i < 0:
+            raise KeyError
+        self._check_index(i)
+        sidedata_format = b">Qi"
+        packed_size = struct.calcsize(sidedata_format)
+        if i >= self._lgt:
+            packed = _pack(sidedata_format, sidedata_offset, sidedata_length)
+            old = self._extra[i - self._lgt]
+            new = old[:64] + packed + old[64 + packed_size :]
+            self._extra[i - self._lgt] = new
+        else:
+            msg = b"cannot rewrite entries outside of this transaction"
+            raise KeyError(msg)
+
 
 class IndexObject2(Index2Mixin, IndexObject):
     pass
