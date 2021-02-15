@@ -175,10 +175,7 @@ def _cleanuppipes(ui, pipei, pipeo, pipee, warn):
         # to deadlocks due to a peer get gc'ed in a fork
         # We add our own stack trace, because the stacktrace when called
         # from __del__ is useless.
-        if False:  # enabled in next commit
-            ui.develwarn(
-                b'missing close on SSH connection created at:\n%s' % warn
-            )
+        ui.develwarn(b'missing close on SSH connection created at:\n%s' % warn)
 
 
 def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):

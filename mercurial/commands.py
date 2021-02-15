@@ -3820,132 +3820,138 @@ def identify(
     output = []
     revs = []
 
-    if source:
-        source, branches = hg.parseurl(ui.expandpath(source))
-        peer = hg.peer(repo or ui, opts, source)  # only pass ui when no repo
-        repo = peer.local()
-        revs, checkout = hg.addbranchrevs(repo, peer, branches, None)
+    peer = None
+    try:
+        if source:
+            source, branches = hg.parseurl(ui.expandpath(source))
+            # only pass ui when no repo
+            peer = hg.peer(repo or ui, opts, source)
+            repo = peer.local()
+            revs, checkout = hg.addbranchrevs(repo, peer, branches, None)
 
-    fm = ui.formatter(b'identify', opts)
-    fm.startitem()
+        fm = ui.formatter(b'identify', opts)
+        fm.startitem()
 
-    if not repo:
-        if num or branch or tags:
-            raise error.InputError(
-                _(b"can't query remote revision number, branch, or tags")
-            )
-        if not rev and revs:
-            rev = revs[0]
-        if not rev:
-            rev = b"tip"
+        if not repo:
+            if num or branch or tags:
+                raise error.InputError(
+                    _(b"can't query remote revision number, branch, or tags")
+                )
+            if not rev and revs:
+                rev = revs[0]
+            if not rev:
+                rev = b"tip"
 
-        remoterev = peer.lookup(rev)
-        hexrev = fm.hexfunc(remoterev)
-        if default or id:
-            output = [hexrev]
-        fm.data(id=hexrev)
+            remoterev = peer.lookup(rev)
+            hexrev = fm.hexfunc(remoterev)
+            if default or id:
+                output = [hexrev]
+            fm.data(id=hexrev)
 
-        @util.cachefunc
-        def getbms():
-            bms = []
+            @util.cachefunc
+            def getbms():
+                bms = []
 
-            if b'bookmarks' in peer.listkeys(b'namespaces'):
-                hexremoterev = hex(remoterev)
-                bms = [
-                    bm
-                    for bm, bmr in pycompat.iteritems(
-                        peer.listkeys(b'bookmarks')
+                if b'bookmarks' in peer.listkeys(b'namespaces'):
+                    hexremoterev = hex(remoterev)
+                    bms = [
+                        bm
+                        for bm, bmr in pycompat.iteritems(
+                            peer.listkeys(b'bookmarks')
+                        )
+                        if bmr == hexremoterev
+                    ]
+
+                return sorted(bms)
+
+            if fm.isplain():
+                if bookmarks:
+                    output.extend(getbms())
+                elif default and not ui.quiet:
+                    # multiple bookmarks for a single parent separated by '/'
+                    bm = b'/'.join(getbms())
+                    if bm:
+                        output.append(bm)
+            else:
+                fm.data(node=hex(remoterev))
+                if bookmarks or b'bookmarks' in fm.datahint():
+                    fm.data(bookmarks=fm.formatlist(getbms(), name=b'bookmark'))
+        else:
+            if rev:
+                repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
+            ctx = scmutil.revsingle(repo, rev, None)
+
+            if ctx.rev() is None:
+                ctx = repo[None]
+                parents = ctx.parents()
+                taglist = []
+                for p in parents:
+                    taglist.extend(p.tags())
+
+                dirty = b""
+                if ctx.dirty(missing=True, merge=False, branch=False):
+                    dirty = b'+'
+                fm.data(dirty=dirty)
+
+                hexoutput = [fm.hexfunc(p.node()) for p in parents]
+                if default or id:
+                    output = [b"%s%s" % (b'+'.join(hexoutput), dirty)]
+                fm.data(id=b"%s%s" % (b'+'.join(hexoutput), dirty))
+
+                if num:
+                    numoutput = [b"%d" % p.rev() for p in parents]
+                    output.append(b"%s%s" % (b'+'.join(numoutput), dirty))
+
+                fm.data(
+                    parents=fm.formatlist(
+                        [fm.hexfunc(p.node()) for p in parents], name=b'node'
                     )
-                    if bmr == hexremoterev
-                ]
+                )
+            else:
+                hexoutput = fm.hexfunc(ctx.node())
+                if default or id:
+                    output = [hexoutput]
+                fm.data(id=hexoutput)
 
-            return sorted(bms)
+                if num:
+                    output.append(pycompat.bytestr(ctx.rev()))
+                taglist = ctx.tags()
 
-        if fm.isplain():
-            if bookmarks:
-                output.extend(getbms())
-            elif default and not ui.quiet:
+            if default and not ui.quiet:
+                b = ctx.branch()
+                if b != b'default':
+                    output.append(b"(%s)" % b)
+
+                # multiple tags for a single parent separated by '/'
+                t = b'/'.join(taglist)
+                if t:
+                    output.append(t)
+
                 # multiple bookmarks for a single parent separated by '/'
-                bm = b'/'.join(getbms())
+                bm = b'/'.join(ctx.bookmarks())
                 if bm:
                     output.append(bm)
-        else:
-            fm.data(node=hex(remoterev))
-            if bookmarks or b'bookmarks' in fm.datahint():
-                fm.data(bookmarks=fm.formatlist(getbms(), name=b'bookmark'))
-    else:
-        if rev:
-            repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-        ctx = scmutil.revsingle(repo, rev, None)
+            else:
+                if branch:
+                    output.append(ctx.branch())
 
-        if ctx.rev() is None:
-            ctx = repo[None]
-            parents = ctx.parents()
-            taglist = []
-            for p in parents:
-                taglist.extend(p.tags())
+                if tags:
+                    output.extend(taglist)
 
-            dirty = b""
-            if ctx.dirty(missing=True, merge=False, branch=False):
-                dirty = b'+'
-            fm.data(dirty=dirty)
+                if bookmarks:
+                    output.extend(ctx.bookmarks())
 
-            hexoutput = [fm.hexfunc(p.node()) for p in parents]
-            if default or id:
-                output = [b"%s%s" % (b'+'.join(hexoutput), dirty)]
-            fm.data(id=b"%s%s" % (b'+'.join(hexoutput), dirty))
+            fm.data(node=ctx.hex())
+            fm.data(branch=ctx.branch())
+            fm.data(tags=fm.formatlist(taglist, name=b'tag', sep=b':'))
+            fm.data(bookmarks=fm.formatlist(ctx.bookmarks(), name=b'bookmark'))
+            fm.context(ctx=ctx)
 
-            if num:
-                numoutput = [b"%d" % p.rev() for p in parents]
-                output.append(b"%s%s" % (b'+'.join(numoutput), dirty))
-
-            fm.data(
-                parents=fm.formatlist(
-                    [fm.hexfunc(p.node()) for p in parents], name=b'node'
-                )
-            )
-        else:
-            hexoutput = fm.hexfunc(ctx.node())
-            if default or id:
-                output = [hexoutput]
-            fm.data(id=hexoutput)
-
-            if num:
-                output.append(pycompat.bytestr(ctx.rev()))
-            taglist = ctx.tags()
-
-        if default and not ui.quiet:
-            b = ctx.branch()
-            if b != b'default':
-                output.append(b"(%s)" % b)
-
-            # multiple tags for a single parent separated by '/'
-            t = b'/'.join(taglist)
-            if t:
-                output.append(t)
-
-            # multiple bookmarks for a single parent separated by '/'
-            bm = b'/'.join(ctx.bookmarks())
-            if bm:
-                output.append(bm)
-        else:
-            if branch:
-                output.append(ctx.branch())
-
-            if tags:
-                output.extend(taglist)
-
-            if bookmarks:
-                output.extend(ctx.bookmarks())
-
-        fm.data(node=ctx.hex())
-        fm.data(branch=ctx.branch())
-        fm.data(tags=fm.formatlist(taglist, name=b'tag', sep=b':'))
-        fm.data(bookmarks=fm.formatlist(ctx.bookmarks(), name=b'bookmark'))
-        fm.context(ctx=ctx)
-
-    fm.plain(b"%s\n" % b' '.join(output))
-    fm.end()
+        fm.plain(b"%s\n" % b' '.join(output))
+        fm.end()
+    finally:
+        if peer:
+            peer.close()
 
 
 @command(
@@ -4291,12 +4297,15 @@ def incoming(ui, repo, source=b"default", **opts):
             ui.expandpath(source), opts.get(b'branch')
         )
         other = hg.peer(repo, opts, source)
-        if b'bookmarks' not in other.listkeys(b'namespaces'):
-            ui.warn(_(b"remote doesn't support bookmarks\n"))
-            return 0
-        ui.pager(b'incoming')
-        ui.status(_(b'comparing with %s\n') % util.hidepassword(source))
-        return bookmarks.incoming(ui, repo, other)
+        try:
+            if b'bookmarks' not in other.listkeys(b'namespaces'):
+                ui.warn(_(b"remote doesn't support bookmarks\n"))
+                return 0
+            ui.pager(b'incoming')
+            ui.status(_(b'comparing with %s\n') % util.hidepassword(source))
+            return bookmarks.incoming(ui, repo, other)
+        finally:
+            other.close()
 
     repo._subtoppath = ui.expandpath(source)
     try:
@@ -4327,7 +4336,8 @@ def init(ui, dest=b".", **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    hg.peer(ui, opts, ui.expandpath(dest), create=True)
+    peer = hg.peer(ui, opts, ui.expandpath(dest), create=True)
+    peer.close()
 
 
 @command(
@@ -4963,12 +4973,15 @@ def outgoing(ui, repo, dest=None, **opts):
     if opts.get(b'bookmarks'):
         dest = path.pushloc or path.loc
         other = hg.peer(repo, opts, dest)
-        if b'bookmarks' not in other.listkeys(b'namespaces'):
-            ui.warn(_(b"remote doesn't support bookmarks\n"))
-            return 0
-        ui.status(_(b'comparing with %s\n') % util.hidepassword(dest))
-        ui.pager(b'outgoing')
-        return bookmarks.outgoing(ui, repo, other)
+        try:
+            if b'bookmarks' not in other.listkeys(b'namespaces'):
+                ui.warn(_(b"remote doesn't support bookmarks\n"))
+                return 0
+            ui.status(_(b'comparing with %s\n') % util.hidepassword(dest))
+            ui.pager(b'outgoing')
+            return bookmarks.outgoing(ui, repo, other)
+        finally:
+            other.close()
 
     repo._subtoppath = path.pushloc or path.loc
     try:
@@ -5679,63 +5692,67 @@ def push(ui, repo, dest=None, **opts):
     revs, checkout = hg.addbranchrevs(repo, repo, branches, opts.get(b'rev'))
     other = hg.peer(repo, opts, dest)
 
-    if revs:
-        revs = [repo[r].node() for r in scmutil.revrange(repo, revs)]
-        if not revs:
+    try:
+        if revs:
+            revs = [repo[r].node() for r in scmutil.revrange(repo, revs)]
+            if not revs:
+                raise error.InputError(
+                    _(b"specified revisions evaluate to an empty set"),
+                    hint=_(b"use different revision arguments"),
+                )
+        elif path.pushrev:
+            # It doesn't make any sense to specify ancestor revisions. So limit
+            # to DAG heads to make discovery simpler.
+            expr = revsetlang.formatspec(b'heads(%r)', path.pushrev)
+            revs = scmutil.revrange(repo, [expr])
+            revs = [repo[rev].node() for rev in revs]
+            if not revs:
+                raise error.InputError(
+                    _(b'default push revset for path evaluates to an empty set')
+                )
+        elif ui.configbool(b'commands', b'push.require-revs'):
             raise error.InputError(
-                _(b"specified revisions evaluate to an empty set"),
-                hint=_(b"use different revision arguments"),
+                _(b'no revisions specified to push'),
+                hint=_(b'did you mean "hg push -r ."?'),
             )
-    elif path.pushrev:
-        # It doesn't make any sense to specify ancestor revisions. So limit
-        # to DAG heads to make discovery simpler.
-        expr = revsetlang.formatspec(b'heads(%r)', path.pushrev)
-        revs = scmutil.revrange(repo, [expr])
-        revs = [repo[rev].node() for rev in revs]
-        if not revs:
-            raise error.InputError(
-                _(b'default push revset for path evaluates to an empty set')
-            )
-    elif ui.configbool(b'commands', b'push.require-revs'):
-        raise error.InputError(
-            _(b'no revisions specified to push'),
-            hint=_(b'did you mean "hg push -r ."?'),
+
+        repo._subtoppath = dest
+        try:
+            # push subrepos depth-first for coherent ordering
+            c = repo[b'.']
+            subs = c.substate  # only repos that are committed
+            for s in sorted(subs):
+                result = c.sub(s).push(opts)
+                if result == 0:
+                    return not result
+        finally:
+            del repo._subtoppath
+
+        opargs = dict(
+            opts.get(b'opargs', {})
+        )  # copy opargs since we may mutate it
+        opargs.setdefault(b'pushvars', []).extend(opts.get(b'pushvars', []))
+
+        pushop = exchange.push(
+            repo,
+            other,
+            opts.get(b'force'),
+            revs=revs,
+            newbranch=opts.get(b'new_branch'),
+            bookmarks=opts.get(b'bookmark', ()),
+            publish=opts.get(b'publish'),
+            opargs=opargs,
         )
 
-    repo._subtoppath = dest
-    try:
-        # push subrepos depth-first for coherent ordering
-        c = repo[b'.']
-        subs = c.substate  # only repos that are committed
-        for s in sorted(subs):
-            result = c.sub(s).push(opts)
-            if result == 0:
-                return not result
+        result = not pushop.cgresult
+
+        if pushop.bkresult is not None:
+            if pushop.bkresult == 2:
+                result = 2
+            elif not result and pushop.bkresult:
+                result = 2
     finally:
-        del repo._subtoppath
-
-    opargs = dict(opts.get(b'opargs', {}))  # copy opargs since we may mutate it
-    opargs.setdefault(b'pushvars', []).extend(opts.get(b'pushvars', []))
-
-    pushop = exchange.push(
-        repo,
-        other,
-        opts.get(b'force'),
-        revs=revs,
-        newbranch=opts.get(b'new_branch'),
-        bookmarks=opts.get(b'bookmark', ()),
-        publish=opts.get(b'publish'),
-        opargs=opargs,
-    )
-
-    result = not pushop.cgresult
-
-    if pushop.bkresult is not None:
-        if pushop.bkresult == 2:
-            result = 2
-        elif not result and pushop.bkresult:
-            result = 2
-
+        other.close()
     return result
 
 

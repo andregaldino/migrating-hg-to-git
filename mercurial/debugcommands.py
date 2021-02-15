@@ -471,17 +471,20 @@ def debugcapabilities(ui, path, **opts):
     """lists the capabilities of a remote peer"""
     opts = pycompat.byteskwargs(opts)
     peer = hg.peer(ui, opts, path)
-    caps = peer.capabilities()
-    ui.writenoi18n(b'Main capabilities:\n')
-    for c in sorted(caps):
-        ui.write(b'  %s\n' % c)
-    b2caps = bundle2.bundle2caps(peer)
-    if b2caps:
-        ui.writenoi18n(b'Bundle2 capabilities:\n')
-        for key, values in sorted(pycompat.iteritems(b2caps)):
-            ui.write(b'  %s\n' % key)
-            for v in values:
-                ui.write(b'    %s\n' % v)
+    try:
+        caps = peer.capabilities()
+        ui.writenoi18n(b'Main capabilities:\n')
+        for c in sorted(caps):
+            ui.write(b'  %s\n' % c)
+        b2caps = bundle2.bundle2caps(peer)
+        if b2caps:
+            ui.writenoi18n(b'Bundle2 capabilities:\n')
+            for key, values in sorted(pycompat.iteritems(b2caps)):
+                ui.write(b'  %s\n' % key)
+                for v in values:
+                    ui.write(b'    %s\n' % v)
+    finally:
+        peer.close()
 
 
 @command(
@@ -2615,12 +2618,17 @@ def debugpeer(ui, path):
     with ui.configoverride(overrides):
         peer = hg.peer(ui, {}, path)
 
-        local = peer.local() is not None
-        canpush = peer.canpush()
+        try:
+            local = peer.local() is not None
+            canpush = peer.canpush()
 
-        ui.write(_(b'url: %s\n') % peer.url())
-        ui.write(_(b'local: %s\n') % (_(b'yes') if local else _(b'no')))
-        ui.write(_(b'pushable: %s\n') % (_(b'yes') if canpush else _(b'no')))
+            ui.write(_(b'url: %s\n') % peer.url())
+            ui.write(_(b'local: %s\n') % (_(b'yes') if local else _(b'no')))
+            ui.write(
+                _(b'pushable: %s\n') % (_(b'yes') if canpush else _(b'no'))
+            )
+        finally:
+            peer.close()
 
 
 @command(
@@ -2723,26 +2731,30 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
     """
 
     target = hg.peer(ui, {}, repopath)
-    if keyinfo:
-        key, old, new = keyinfo
-        with target.commandexecutor() as e:
-            r = e.callcommand(
-                b'pushkey',
-                {
-                    b'namespace': namespace,
-                    b'key': key,
-                    b'old': old,
-                    b'new': new,
-                },
-            ).result()
+    try:
+        if keyinfo:
+            key, old, new = keyinfo
+            with target.commandexecutor() as e:
+                r = e.callcommand(
+                    b'pushkey',
+                    {
+                        b'namespace': namespace,
+                        b'key': key,
+                        b'old': old,
+                        b'new': new,
+                    },
+                ).result()
 
-        ui.status(pycompat.bytestr(r) + b'\n')
-        return not r
-    else:
-        for k, v in sorted(pycompat.iteritems(target.listkeys(namespace))):
-            ui.write(
-                b"%s\t%s\n" % (stringutil.escapestr(k), stringutil.escapestr(v))
-            )
+            ui.status(pycompat.bytestr(r) + b'\n')
+            return not r
+        else:
+            for k, v in sorted(pycompat.iteritems(target.listkeys(namespace))):
+                ui.write(
+                    b"%s\t%s\n"
+                    % (stringutil.escapestr(k), stringutil.escapestr(v))
+                )
+    finally:
+        target.close()
 
 
 @command(b'debugpvec', [], _(b'A B'))
@@ -4095,19 +4107,22 @@ def debugwhyunstable(ui, repo, rev):
 def debugwireargs(ui, repopath, *vals, **opts):
     opts = pycompat.byteskwargs(opts)
     repo = hg.peer(ui, opts, repopath)
-    for opt in cmdutil.remoteopts:
-        del opts[opt[1]]
-    args = {}
-    for k, v in pycompat.iteritems(opts):
-        if v:
-            args[k] = v
-    args = pycompat.strkwargs(args)
-    # run twice to check that we don't mess up the stream for the next command
-    res1 = repo.debugwireargs(*vals, **args)
-    res2 = repo.debugwireargs(*vals, **args)
-    ui.write(b"%s\n" % res1)
-    if res1 != res2:
-        ui.warn(b"%s\n" % res2)
+    try:
+        for opt in cmdutil.remoteopts:
+            del opts[opt[1]]
+        args = {}
+        for k, v in pycompat.iteritems(opts):
+            if v:
+                args[k] = v
+        args = pycompat.strkwargs(args)
+        # run twice to check that we don't mess up the stream for the next command
+        res1 = repo.debugwireargs(*vals, **args)
+        res2 = repo.debugwireargs(*vals, **args)
+        ui.write(b"%s\n" % res1)
+        if res1 != res2:
+            ui.warn(b"%s\n" % res2)
+    finally:
+        repo.close()
 
 
 def _parsewirelangblocks(fh):

@@ -595,77 +595,83 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         ui.status(_(b'comparing with %s\n') % util.hidepassword(url))
         remote = hg.peer(repo, opts, url)
 
-        # check narrow support before doing anything if widening needs to be
-        # performed. In future we should also abort if client is ellipses and
-        # server does not support ellipses
-        if widening and wireprototypes.NARROWCAP not in remote.capabilities():
-            raise error.Abort(_(b"server does not support narrow clones"))
+        try:
+            # check narrow support before doing anything if widening needs to be
+            # performed. In future we should also abort if client is ellipses and
+            # server does not support ellipses
+            if (
+                widening
+                and wireprototypes.NARROWCAP not in remote.capabilities()
+            ):
+                raise error.Abort(_(b"server does not support narrow clones"))
 
-        commoninc = discovery.findcommonincoming(repo, remote)
+            commoninc = discovery.findcommonincoming(repo, remote)
 
-        if autoremoveincludes:
-            outgoing = discovery.findcommonoutgoing(
-                repo, remote, commoninc=commoninc
-            )
-            ui.status(_(b'looking for unused includes to remove\n'))
-            localfiles = set()
-            for n in itertools.chain(outgoing.missing, outgoing.excluded):
-                localfiles.update(repo[n].files())
-            suggestedremovals = []
-            for include in sorted(oldincludes):
-                match = narrowspec.match(repo.root, [include], oldexcludes)
-                if not any(match(f) for f in localfiles):
-                    suggestedremovals.append(include)
-            if suggestedremovals:
-                for s in suggestedremovals:
-                    ui.status(b'%s\n' % s)
-                if (
-                    ui.promptchoice(
-                        _(
-                            b'remove these unused includes (yn)?'
-                            b'$$ &Yes $$ &No'
+            if autoremoveincludes:
+                outgoing = discovery.findcommonoutgoing(
+                    repo, remote, commoninc=commoninc
+                )
+                ui.status(_(b'looking for unused includes to remove\n'))
+                localfiles = set()
+                for n in itertools.chain(outgoing.missing, outgoing.excluded):
+                    localfiles.update(repo[n].files())
+                suggestedremovals = []
+                for include in sorted(oldincludes):
+                    match = narrowspec.match(repo.root, [include], oldexcludes)
+                    if not any(match(f) for f in localfiles):
+                        suggestedremovals.append(include)
+                if suggestedremovals:
+                    for s in suggestedremovals:
+                        ui.status(b'%s\n' % s)
+                    if (
+                        ui.promptchoice(
+                            _(
+                                b'remove these unused includes (yn)?'
+                                b'$$ &Yes $$ &No'
+                            )
                         )
-                    )
-                    == 0
-                ):
-                    removedincludes.update(suggestedremovals)
-                    narrowing = True
-            else:
-                ui.status(_(b'found no unused includes\n'))
+                        == 0
+                    ):
+                        removedincludes.update(suggestedremovals)
+                        narrowing = True
+                else:
+                    ui.status(_(b'found no unused includes\n'))
 
-        if narrowing:
-            newincludes = oldincludes - removedincludes
-            newexcludes = oldexcludes | addedexcludes
-            _narrow(
-                ui,
-                repo,
-                remote,
-                commoninc,
-                oldincludes,
-                oldexcludes,
-                newincludes,
-                newexcludes,
-                opts[b'force_delete_local_changes'],
-                opts[b'backup'],
-            )
-            # _narrow() updated the narrowspec and _widen() below needs to
-            # use the updated values as its base (otherwise removed includes
-            # and addedexcludes will be lost in the resulting narrowspec)
-            oldincludes = newincludes
-            oldexcludes = newexcludes
+            if narrowing:
+                newincludes = oldincludes - removedincludes
+                newexcludes = oldexcludes | addedexcludes
+                _narrow(
+                    ui,
+                    repo,
+                    remote,
+                    commoninc,
+                    oldincludes,
+                    oldexcludes,
+                    newincludes,
+                    newexcludes,
+                    opts[b'force_delete_local_changes'],
+                    opts[b'backup'],
+                )
+                # _narrow() updated the narrowspec and _widen() below needs to
+                # use the updated values as its base (otherwise removed includes
+                # and addedexcludes will be lost in the resulting narrowspec)
+                oldincludes = newincludes
+                oldexcludes = newexcludes
 
-        if widening:
-            newincludes = oldincludes | addedincludes
-            newexcludes = oldexcludes - removedexcludes
-            _widen(
-                ui,
-                repo,
-                remote,
-                commoninc,
-                oldincludes,
-                oldexcludes,
-                newincludes,
-                newexcludes,
-            )
+            if widening:
+                newincludes = oldincludes | addedincludes
+                newexcludes = oldexcludes - removedexcludes
+                _widen(
+                    ui,
+                    repo,
+                    remote,
+                    commoninc,
+                    oldincludes,
+                    oldexcludes,
+                    newincludes,
+                    newexcludes,
+                )
+        finally:
+            remote.close()
 
     return 0

@@ -1841,9 +1841,12 @@ def outgoing(repo, subset, x):
     if revs:
         revs = [repo.lookup(rev) for rev in revs]
     other = hg.peer(repo, {}, dest)
-    repo.ui.pushbuffer()
-    outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
-    repo.ui.popbuffer()
+    try:
+        repo.ui.pushbuffer()
+        outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
+        repo.ui.popbuffer()
+    finally:
+        other.close()
     cl = repo.changelog
     o = {cl.rev(r) for r in outgoing.missing}
     return subset & o

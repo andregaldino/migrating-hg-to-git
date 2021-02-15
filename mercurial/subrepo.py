@@ -716,13 +716,17 @@ class hgsubrepo(abstractsubrepo):
                     _(b'sharing subrepo %s from %s\n')
                     % (subrelpath(self), srcurl)
                 )
-                shared = hg.share(
-                    self._repo._subparent.baseui,
-                    getpeer(),
-                    self._repo.root,
-                    update=False,
-                    bookmarks=False,
-                )
+                peer = getpeer()
+                try:
+                    shared = hg.share(
+                        self._repo._subparent.baseui,
+                        peer,
+                        self._repo.root,
+                        update=False,
+                        bookmarks=False,
+                    )
+                finally:
+                    peer.close()
                 self._repo = shared.local()
             else:
                 # TODO: find a common place for this and this code in the
@@ -743,14 +747,18 @@ class hgsubrepo(abstractsubrepo):
                     _(b'cloning subrepo %s from %s\n')
                     % (subrelpath(self), util.hidepassword(srcurl))
                 )
-                other, cloned = hg.clone(
-                    self._repo._subparent.baseui,
-                    {},
-                    getpeer(),
-                    self._repo.root,
-                    update=False,
-                    shareopts=shareopts,
-                )
+                peer = getpeer()
+                try:
+                    other, cloned = hg.clone(
+                        self._repo._subparent.baseui,
+                        {},
+                        peer,
+                        self._repo.root,
+                        update=False,
+                        shareopts=shareopts,
+                    )
+                finally:
+                    peer.close()
                 self._repo = cloned.local()
             self._initrepo(parentrepo, source, create=True)
             self._cachestorehash(srcurl)
@@ -760,7 +768,11 @@ class hgsubrepo(abstractsubrepo):
                 % (subrelpath(self), util.hidepassword(srcurl))
             )
             cleansub = self.storeclean(srcurl)
-            exchange.pull(self._repo, getpeer())
+            peer = getpeer()
+            try:
+                exchange.pull(self._repo, peer)
+            finally:
+                peer.close()
             if cleansub:
                 # keep the repo clean after pull
                 self._cachestorehash(srcurl)
@@ -845,7 +857,10 @@ class hgsubrepo(abstractsubrepo):
             % (subrelpath(self), util.hidepassword(dsturl))
         )
         other = hg.peer(self._repo, {b'ssh': ssh}, dsturl)
-        res = exchange.push(self._repo, other, force, newbranch=newbranch)
+        try:
+            res = exchange.push(self._repo, other, force, newbranch=newbranch)
+        finally:
+            other.close()
 
         # the repo is now clean
         self._cachestorehash(dsturl)

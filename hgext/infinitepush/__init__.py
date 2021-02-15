@@ -704,16 +704,19 @@ def _pull(orig, ui, repo, source=b"default", **opts):
 
         if scratchbookmarks:
             other = hg.peer(repo, opts, source)
-            fetchedbookmarks = other.listkeyspatterns(
-                b'bookmarks', patterns=scratchbookmarks
-            )
-            for bookmark in scratchbookmarks:
-                if bookmark not in fetchedbookmarks:
-                    raise error.Abort(
-                        b'remote bookmark %s not found!' % bookmark
-                    )
-                scratchbookmarks[bookmark] = fetchedbookmarks[bookmark]
-                revs.append(fetchedbookmarks[bookmark])
+            try:
+                fetchedbookmarks = other.listkeyspatterns(
+                    b'bookmarks', patterns=scratchbookmarks
+                )
+                for bookmark in scratchbookmarks:
+                    if bookmark not in fetchedbookmarks:
+                        raise error.Abort(
+                            b'remote bookmark %s not found!' % bookmark
+                        )
+                    scratchbookmarks[bookmark] = fetchedbookmarks[bookmark]
+                    revs.append(fetchedbookmarks[bookmark])
+            finally:
+                other.close()
         opts[b'bookmark'] = bookmarks
         opts[b'rev'] = revs
 
@@ -848,10 +851,13 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
         if common.isremotebooksenabled(ui):
             if bookmark and scratchpush:
                 other = hg.peer(repo, opts, destpath)
-                fetchedbookmarks = other.listkeyspatterns(
-                    b'bookmarks', patterns=[bookmark]
-                )
-                remotescratchbookmarks.update(fetchedbookmarks)
+                try:
+                    fetchedbookmarks = other.listkeyspatterns(
+                        b'bookmarks', patterns=[bookmark]
+                    )
+                    remotescratchbookmarks.update(fetchedbookmarks)
+                finally:
+                    other.close()
             _saveremotebookmarks(repo, remotescratchbookmarks, destpath)
     if oldphasemove:
         exchange._localphasemove = oldphasemove
