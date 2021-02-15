@@ -47,7 +47,7 @@ class connectionpool(object):
             if util.safehasattr(peer, '_cleanup'):
 
                 class mypeer(peer.__class__):
-                    def _cleanup(self):
+                    def _cleanup(self, warn=None):
                         # close pipee first so peer.cleanup reading it won't
                         # deadlock, if there are other processes with pipeo
                         # open (i.e. us).
