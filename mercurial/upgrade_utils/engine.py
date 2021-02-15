@@ -468,6 +468,13 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
             unfi = srcrepo.unfiltered()
             cl = unfi.changelog
             nodemap.persist_nodemap(tr, cl, force=True)
+            # we want to directly operate on the underlying revlog to force
+            # create a nodemap file. This is fine since this is upgrade code
+            # and it heavily relies on repository being revlog based
+            # hence accessing private attributes can be justified
+            nodemap.persist_nodemap(
+                tr, unfi.manifestlog._rootstore._revlog, force=True
+            )
         scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
     else:
         with dstrepo.transaction(b'upgrade') as tr:
