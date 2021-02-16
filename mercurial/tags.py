@@ -777,6 +777,15 @@ class hgtagsfnodescache(object):
                 return False
             return None
 
+        fnode = self._computefnode(node)
+        self._writeentry(offset, properprefix, fnode)
+        return fnode
+
+    def _computefnode(self, node):
+        """Finds the tag filenode for a node which is missing or invalid
+        in cache"""
+        ctx = self._repo[node]
+        rev = ctx.rev()
         fnode = None
         cl = self._repo.changelog
         p1rev, p2rev = cl._uncheckedparentrevs(rev)
@@ -804,8 +813,6 @@ class hgtagsfnodescache(object):
             except error.LookupError:
                 # No .hgtags file on this revision.
                 fnode = nullid
-
-        self._writeentry(offset, properprefix, fnode)
         return fnode
 
     def setfnode(self, node, fnode):
