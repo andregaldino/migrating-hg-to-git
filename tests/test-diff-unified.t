@@ -467,7 +467,7 @@ for git blob oids
   $ hg ci -Am "empty a"
   adding a
   $ hg diff -c 0 --git --config experimental.extendedheader.index=full | grep index
-  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+  index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
 
 Make sure `hg diff --git` differentiate "file was empty" and "file is removed"
 for git blob oids
@@ -476,6 +476,6 @@ for git blob oids
   $ hg ci -Am "removed a"
   removing a
   $ hg diff -c 1 --git --config experimental.extendedheader.index=full | grep index
-  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..0000000000000000000000000000000000000000 100644
 
   $ cd ..
