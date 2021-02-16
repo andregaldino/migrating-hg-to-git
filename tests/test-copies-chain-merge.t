@@ -227,7 +227,7 @@ case summary:
 - one deleting the change
 and recreate an unrelated file after the merge
 
-  $ case_desc="simple merge"
+  $ case_desc="simple merge - C side: delete a file with copies history , B side: unrelated update"
 
   $ hg up 'desc("b-1")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -251,11 +251,11 @@ and recreate an unrelated file after the merge
   $ hg log -G --rev '::(desc("mCBm")+desc("mBCm"))'
   @  16 mCBm-1 re-add d
   |
-  o    15 mCBm-0 simple merge - the other way
+  o    15 mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   |\
   | | o  14 mBCm-1 re-add d
   | | |
-  +---o  13 mBCm-0 simple merge - one way
+  +---o  13 mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   | |/
   | o  6 c-1 delete d
   | |
@@ -686,12 +686,12 @@ Summary of all created cases
   mAEm-0 simple merge - one way
   mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   mBC-revert-m-0
-  mBCm-0 simple merge - one way
+  mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   mBCm-1 re-add d
   mBDm-0 simple merge - one way
   mBFm-0 simple merge - one way
   mCB-revert-m-0
-  mCBm-0 simple merge - the other way
+  mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   mCBm-1 re-add d
   mCGm-0
   mCH-delete-before-conflict-m-0
@@ -1034,11 +1034,11 @@ and recreate an unrelated file after the merge
   $ hg log -G --rev '::(desc("mCBm")+desc("mBCm"))'
   o  16 mCBm-1 re-add d
   |
-  o    15 mCBm-0 simple merge - the other way
+  o    15 mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   |\
   | | o  14 mBCm-1 re-add d
   | | |
-  +---o  13 mBCm-0 simple merge - one way
+  +---o  13 mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   | |/
   | o  6 c-1 delete d
   | |
