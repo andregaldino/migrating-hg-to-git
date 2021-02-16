@@ -9,6 +9,7 @@ use hg::config::Config;
 use hg::repo::{Repo, RepoError};
 use std::path::{Path, PathBuf};
 
+mod blackbox;
 mod error;
 mod exitcode;
 mod ui;
@@ -36,7 +37,10 @@ fn add_global_args<'a, 'b>(app: App<'a, 'b>) -> App<'a, 'b> {
     )
 }
 
-fn main_with_result(ui: &ui::Ui) -> Result<(), CommandError> {
+fn main_with_result(
+    ui: &ui::Ui,
+    process_start_time: &blackbox::ProcessStartTime,
+) -> Result<(), CommandError> {
     env_logger::init();
     let app = App::new("rhg")
         .setting(AppSettings::AllowInvalidUtf8)
@@ -83,35 +87,47 @@ fn main_with_result(ui: &ui::Ui) -> Result<(), CommandError> {
         Err(error) => return Err(error.into()),
     };
 
-    run(&CliInvocation {
+    let invocation = CliInvocation {
         ui,
         subcommand_args,
         non_repo_config,
         repo: repo.as_ref(),
-    })
+    };
+    let blackbox = blackbox::Blackbox::new(&invocation, process_start_time)?;
+    blackbox.log_command_start();
+    let result = run(&invocation);
+    blackbox.log_command_end(exit_code(&result));
+    result
 }
 
 fn main() {
+    // Run this first, before we find out if the blackbox extension is even
+    // enabled, in order to include everything in-between in the duration
+    // measurements. Reading config files can be slow if they’re on NFS.
+    let process_start_time = blackbox::ProcessStartTime::now();
+
     let ui = ui::Ui::new();
 
-    let exit_code = match main_with_result(&ui) {
+    let result = main_with_result(&ui, &process_start_time);
+    if let Err(CommandError::Abort { message }) = &result {
+        if !message.is_empty() {
+            // Ignore errors when writing to stderr, we’re already exiting
+            // with failure code so there’s not much more we can do.
+            let _ = ui.write_stderr(&format_bytes!(b"abort: {}\n", message));
+        }
+    }
+    std::process::exit(exit_code(&result))
+}
+
+fn exit_code(result: &Result<(), CommandError>) -> i32 {
+    match result {
         Ok(()) => exitcode::OK,
+        Err(CommandError::Abort { .. }) => exitcode::ABORT,
 
         // Exit with a specific code and no error message to let a potential
         // wrapper script fallback to Python-based Mercurial.
         Err(CommandError::Unimplemented) => exitcode::UNIMPLEMENTED,
-
-        Err(CommandError::Abort { message }) => {
-            if !message.is_empty() {
-                // Ignore errors when writing to stderr, we’re already exiting
-                // with failure code so there’s not much more we can do.
-                let _ =
-                    ui.write_stderr(&format_bytes!(b"abort: {}\n", message));
-            }
-            exitcode::ABORT
-        }
-    };
-    std::process::exit(exit_code)
+    }
 }
 
 macro_rules! subcommands {

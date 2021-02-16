@@ -261,3 +261,15 @@ And check that basic rhg commands work with sharing
   $ rhg cat -r 0 a
   a
 
+The blackbox extension is supported
+
+  $ echo "[extensions]" >> $HGRCPATH
+  $ echo "blackbox =" >> $HGRCPATH
+  $ echo "[blackbox]" >> $HGRCPATH
+  $ echo "maxsize = 1" >> $HGRCPATH
+  $ rhg files > /dev/null
+  $ cat .hg/blackbox.log
+  ????/??/?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files exited 0 after 0.??? seconds (glob)
+  $ cat .hg/blackbox.log.1
+  ????/??/?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files (glob)
+

@@ -26,6 +26,14 @@ type ParseResult<'a> = (
     Vec<(&'a HgPath, &'a HgPath)>,
 );
 
+pub fn parse_dirstate_parents(
+    contents: &[u8],
+) -> Result<&DirstateParents, HgError> {
+    let (parents, _rest) = DirstateParents::from_bytes(contents)
+        .map_err(|_| HgError::corrupted("Too little data for dirstate."))?;
+    Ok(parents)
+}
+
 #[timed]
 pub fn parse_dirstate(mut contents: &[u8]) -> Result<ParseResult, HgError> {
     let mut copies = Vec::new();

@@ -214,6 +214,15 @@ impl Repo {
             base: &self.working_directory,
         }
     }
+
+    pub fn dirstate_parents(
+        &self,
+    ) -> Result<crate::dirstate::DirstateParents, HgError> {
+        let dirstate = self.hg_vfs().mmap_open("dirstate")?;
+        let parents =
+            crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?;
+        Ok(parents.clone())
+    }
 }
 
 impl Vfs<'_> {

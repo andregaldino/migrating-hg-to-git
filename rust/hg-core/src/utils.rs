@@ -188,6 +188,35 @@ pub(crate) fn strip_suffix<'a>(s: &'a str, suffix: &str) -> Option<&'a str> {
     }
 }
 
+#[cfg(unix)]
+pub fn shell_quote(value: &[u8]) -> Vec<u8> {
+    // TODO: Use the `matches!` macro when we require Rust 1.42+
+    if value.iter().all(|&byte| match byte {
+        b'a'..=b'z'
+        | b'A'..=b'Z'
+        | b'0'..=b'9'
+        | b'.'
+        | b'_'
+        | b'/'
+        | b'+'
+        | b'-' => true,
+        _ => false,
+    }) {
+        value.to_owned()
+    } else {
+        let mut quoted = Vec::with_capacity(value.len() + 2);
+        quoted.push(b'\'');
+        for &byte in value {
+            if byte == b'\'' {
+                quoted.push(b'\\');
+            }
+            quoted.push(byte);
+        }
+        quoted.push(b'\'');
+        quoted
+    }
+}
+
 pub fn current_dir() -> Result<std::path::PathBuf, HgError> {
     std::env::current_dir().map_err(|error| HgError::IoError {
         error,
