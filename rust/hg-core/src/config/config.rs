@@ -15,6 +15,7 @@ use crate::utils::files::get_bytes_from_os_str;
 use format_bytes::{write_bytes, DisplayBytes};
 use std::env;
 use std::path::{Path, PathBuf};
+use std::str;
 
 use crate::errors::{HgResultExt, IoResultExt};
 
@@ -59,6 +60,32 @@ pub fn parse_bool(v: &[u8]) -> Option<bool> {
         b"0" | b"no" | b"false" | b"off" | b"never" => Some(false),
         _ => None,
     }
+}
+
+pub fn parse_byte_size(value: &[u8]) -> Option<u64> {
+    let value = str::from_utf8(value).ok()?.to_ascii_lowercase();
+    const UNITS: &[(&str, u64)] = &[
+        ("g", 1 << 30),
+        ("gb", 1 << 30),
+        ("m", 1 << 20),
+        ("mb", 1 << 20),
+        ("k", 1 << 10),
+        ("kb", 1 << 10),
+        ("b", 1 << 0), // Needs to be last
+    ];
+    for &(unit, multiplier) in UNITS {
+        // TODO: use `value.strip_suffix(unit)` when we require Rust 1.45+
+        if value.ends_with(unit) {
+            let value_before_unit = &value[..value.len() - unit.len()];
+            let float: f64 = value_before_unit.trim().parse().ok()?;
+            if float >= 0.0 {
+                return Some((float * multiplier as f64).round() as u64);
+            } else {
+                return None;
+            }
+        }
+    }
+    value.parse().ok()
 }
 
 impl Config {
@@ -231,16 +258,14 @@ impl Config {
         Ok(repo_config)
     }
 
-    /// Returns an `Err` if the first value found is not a valid boolean.
-    /// Otherwise, returns an `Ok(option)`, where `option` is the boolean if
-    /// found, or `None`.
-    pub fn get_option(
-        &self,
+    fn get_parse<'config, T: 'config>(
+        &'config self,
         section: &[u8],
         item: &[u8],
-    ) -> Result<Option<bool>, ConfigParseError> {
+        parse: impl Fn(&'config [u8]) -> Option<T>,
+    ) -> Result<Option<T>, ConfigParseError> {
         match self.get_inner(&section, &item) {
-            Some((layer, v)) => match parse_bool(&v.bytes) {
+            Some((layer, v)) => match parse(&v.bytes) {
                 Some(b) => Ok(Some(b)),
                 None => Err(ConfigParseError {
                     origin: layer.origin.to_owned(),
@@ -250,6 +275,50 @@ impl Config {
             },
             None => Ok(None),
         }
+    }
+
+    /// Returns an `Err` if the first value found is not a valid UTF-8 string.
+    /// Otherwise, returns an `Ok(value)` if found, or `None`.
+    pub fn get_str(
+        &self,
+        section: &[u8],
+        item: &[u8],
+    ) -> Result<Option<&str>, ConfigParseError> {
+        self.get_parse(section, item, |value| str::from_utf8(value).ok())
+    }
+
+    /// Returns an `Err` if the first value found is not a valid unsigned
+    /// integer. Otherwise, returns an `Ok(value)` if found, or `None`.
+    pub fn get_u32(
+        &self,
+        section: &[u8],
+        item: &[u8],
+    ) -> Result<Option<u32>, ConfigParseError> {
+        self.get_parse(section, item, |value| {
+            str::from_utf8(value).ok()?.parse().ok()
+        })
+    }
+
+    /// Returns an `Err` if the first value found is not a valid file size
+    /// value such as `30` (default unit is bytes), `7 MB`, or `42.5 kb`.
+    /// Otherwise, returns an `Ok(value_in_bytes)` if found, or `None`.
+    pub fn get_byte_size(
+        &self,
+        section: &[u8],
+        item: &[u8],
+    ) -> Result<Option<u64>, ConfigParseError> {
+        self.get_parse(section, item, parse_byte_size)
+    }
+
+    /// Returns an `Err` if the first value found is not a valid boolean.
+    /// Otherwise, returns an `Ok(option)`, where `option` is the boolean if
+    /// found, or `None`.
+    pub fn get_option(
+        &self,
+        section: &[u8],
+        item: &[u8],
+    ) -> Result<Option<bool>, ConfigParseError> {
+        self.get_parse(section, item, parse_bool)
     }
 
     /// Returns the corresponding boolean in the config. Returns `Ok(false)`
@@ -317,7 +386,8 @@ mod tests {
         let base_config_path = tmpdir_path.join("base.rc");
         let mut config_file = File::create(&base_config_path).unwrap();
         let data =
-            b"[section]\nitem=value0\n%include included.rc\nitem=value2";
+            b"[section]\nitem=value0\n%include included.rc\nitem=value2\n\
+              [section2]\ncount = 4\nsize = 1.5 KB\nnot-count = 1.5\nnot-size = 1 ub";
         config_file.write_all(data).unwrap();
 
         let sources = vec![ConfigSource::AbsPath(base_config_path)];
@@ -339,5 +409,13 @@ mod tests {
             config.get_all(b"section", b"item"),
             [b"value2", b"value1", b"value0"]
         );
+
+        assert_eq!(config.get_u32(b"section2", b"count").unwrap(), Some(4));
+        assert_eq!(
+            config.get_byte_size(b"section2", b"size").unwrap(),
+            Some(1024 + 512)
+        );
+        assert!(config.get_u32(b"section2", b"not-count").is_err());
+        assert!(config.get_byte_size(b"section2", b"not-size").is_err());
     }
 }
