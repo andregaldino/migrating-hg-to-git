@@ -674,6 +674,113 @@ rename information actually conflict with the other branch.
   o  0 i-0 initial commit: a b h
   
 
+Decision from previous merge are properly chained with later merge
+------------------------------------------------------------------
+
+Subcase: chaining conflicting rename resolution
+```````````````````````````````````````````````
+
+The "mAEm" and "mEAm" case create a rename tracking conflict on file 'f'. We
+add more change on the respective branch and merge again. These second merge
+does not involve the file 'f' and the arbitration done within "mAEm" and "mEA"
+about that file should stay unchanged.
+
+  $ case_desc="chained merges (conflict -> simple) - same content everywhere"
+
+(extra unrelated changes)
+
+  $ hg up 'desc("a-2")'
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo j > unrelated-j
+  $ hg add unrelated-j
+  $ hg ci -m 'j-1: unrelated changes (based on the "a" series of changes)'
+  created new head
+
+  $ hg up 'desc("e-2")'
+  2 files updated, 0 files merged, 2 files removed, 0 files unresolved (no-changeset !)
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved (changeset !)
+  $ echo k > unrelated-k
+  $ hg add unrelated-k
+  $ hg ci -m 'k-1: unrelated changes (based on "e" changes)'
+  created new head
+
+(merge variant 1)
+
+  $ hg up 'desc("mAEm")'
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved (changeset !)
+  $ hg merge 'desc("k-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mAE,Km: $case_desc"
+
+(merge variant 2)
+
+  $ hg up 'desc("k-1")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
+
+  $ hg merge 'desc("mAEm")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mK,AEm: $case_desc"
+  created new head
+
+(merge variant 3)
+
+  $ hg up 'desc("mEAm")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("j-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mEA,Jm: $case_desc"
+
+(merge variant 4)
+
+  $ hg up 'desc("j-1")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
+  $ hg merge 'desc("mEAm")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mJ,EAm: $case_desc"
+  created new head
+
+
+  $ hg log -G --rev '::(desc("mAE,Km") + desc("mK,AEm") + desc("mEA,Jm") + desc("mJ,EAm"))'
+  @    42 mJ,EAm: chained merges (conflict -> simple) - same content everywhere
+  |\
+  +---o  41 mEA,Jm: chained merges (conflict -> simple) - same content everywhere
+  | |/
+  | | o    40 mK,AEm: chained merges (conflict -> simple) - same content everywhere
+  | | |\
+  | | +---o  39 mAE,Km: chained merges (conflict -> simple) - same content everywhere
+  | | | |/
+  | | | o  38 k-1: unrelated changes (based on "e" changes)
+  | | | |
+  | o | |  37 j-1: unrelated changes (based on the "a" series of changes)
+  | | | |
+  o-----+  20 mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
+  |/ / /
+  | o /  19 mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
+  |/|/
+  | o  10 e-2 g -move-> f
+  | |
+  | o  9 e-1 b -move-> g
+  | |
+  o |  4 a-2: e -move-> f
+  | |
+  o |  3 a-1: d -move-> e
+  |/
+  o  2 i-2: c -move-> d
+  |
+  o  1 i-1: a -move-> c
+  |
+  o  0 i-0 initial commit: a b h
+  
+
 
 Summary of all created cases
 ----------------------------
@@ -698,7 +805,10 @@ Summary of all created cases
   i-0 initial commit: a b h
   i-1: a -move-> c
   i-2: c -move-> d
+  j-1: unrelated changes (based on the "a" series of changes)
+  k-1: unrelated changes (based on "e" changes)
   mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
+  mAE,Km: chained merges (conflict -> simple) - same content everywhere
   mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
@@ -713,6 +823,7 @@ Summary of all created cases
   mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
   mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
+  mEA,Jm: chained merges (conflict -> simple) - same content everywhere
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
@@ -720,6 +831,8 @@ Summary of all created cases
   mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
+  mJ,EAm: chained merges (conflict -> simple) - same content everywhere
+  mK,AEm: chained merges (conflict -> simple) - same content everywhere
 
 
 Test that sidedata computations during upgrades are correct
@@ -959,6 +1072,32 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 4
     '\x00\x00\x00\x00'
   ##### revision 36 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 37 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j'
+  added      : unrelated-j, ;
+  ##### revision 38 #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-k'
+  added      : unrelated-k, ;
+  ##### revision 39 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 40 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 41 #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision 42 #####
   1 sidedata entries
    entry-0014 size 4
     '\x00\x00\x00\x00'
@@ -1801,3 +1940,62 @@ rename information actually conflict with the other branch.
   R a
   $ hg status --copies --rev 'desc("h-1")' --rev 'desc("mHC-delete-before-conflict-m")'
   R a
+
+Decision from previous merge are properly chained with later merge
+------------------------------------------------------------------
+
+
+Subcase: chaining conflicting rename resolution
+```````````````````````````````````````````````
+
+The "mAEm" and "mEAm" case create a rename tracking conflict on file 'f'. We
+add more change on the respective branch and merge again. These second merge
+does not involve the file 'f' and the arbitration done within "mAEm" and "mEA"
+about that file should stay unchanged.
+
+The result from mAEm is the same for the subsequent merge:
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAEm")' f
+  A f
+    a (filelog !)
+    a (sidedata !)
+    a (upgraded !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE,Km")' f
+  A f
+    a (filelog !)
+    a (sidedata !)
+    a (upgraded !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mK,AEm")' f
+  A f
+    a (filelog !)
+    a (missing-correct-output sidedata !)
+    a (missing-correct-output upgraded !)
+    b (known-bad-output sidedata !)
+    b (known-bad-output upgraded !)
+
+
+The result from mEAm is the same for the subsequent merge:
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEAm")' f
+  A f
+    a (filelog !)
+    b (sidedata !)
+    b (upgraded !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA,Jm")' f
+  A f
+    a (filelog !)
+    b (sidedata !)
+    b (upgraded !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mJ,EAm")' f
+  A f
+    a (filelog !)
+    b (missing-correct-output sidedata !)
+    b (missing-correct-output upgraded !)
+    a (known-bad-output sidedata !)
+    a (known-bad-output upgraded !)
+
+
